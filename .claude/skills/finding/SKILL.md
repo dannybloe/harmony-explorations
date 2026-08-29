@@ -31,10 +31,23 @@ the honest move is to write it up as unconfirmed, using that word.
 
 * **How many independent samples?** Two is the minimum. Two configs from one remote are not
   two samples for a claim about the format; two architectures are. The corpus is inventoried by
-  `make corpus` and currently spans arch 8, 9, 12 and 14.
+  `make corpus` and currently spans arch 8, 9, 12 and 14. **A span is a claim about independent
+  dimensions**, so count them carefully: the container's was written as "four architectures, five
+  base addresses, three format versions and three pointer table lengths"<!--superseded--> until section 194 read the
+  format word and found it **is** the pointer count. One property counted twice inflates a span, and
+  the coverage was one dimension narrower than the claim.
 * **Is there an independent closure?** The best findings here check out twice by different
   routes. The IR carrier is believed because 38 kHz implies a stored 263, and the code's own
   arithmetic turns 263 into exactly 26.25 us. Look for that shape before settling for one.
+  **A closure is only independent if its test reads both ends**, and that one did not until 13
+  August 2026: it was four lines of arithmetic over its own literals, so it passed with no lab and
+  would have passed whatever the firmware did. The multiplier, the divisor and the 19 cycle overhead
+  are decoded out of the image now. **State the slack**, here 0.2506%, because 26.3 us is not
+  representable in whole units of 0.1 us and a closure whose slack nobody wrote down is one nobody
+  can check. Related and easy to miss: two numbers are independent when they come from different
+  **fields**, not when different arithmetic computes them, which is how a bit count and a header
+  timing were held against each other for 2137 records while both came from the same neighbouring
+  record.
 * **Is there a calibration case?** When deriving something, run the derivation on a case whose
   answer is already known, and report the score for wrong answers too. The base address
   derivation scores 98.9 percent for the right base against 11 to 30 percent for wrong ones.
@@ -72,8 +85,70 @@ Two habits worth copying from the existing suite:
 * **Assert the negative too.** `test_a_flipped_payload_byte_breaks_the_checksum` exists because
   a checksum that cannot fail is not a check.
 * **Assert the span of the corpus**, not just the values. There is a test whose only job is to
-  fail if the samples stop covering more than one architecture, base address and format
-  version, because a derivation confirmed on one value of a variable is not confirmed.
+  fail if the samples stop covering more than one architecture and base address, because a
+  derivation confirmed on one value of a variable is not confirmed. It used to name the format
+  version as a third dimension and that was the same double count section 194 corrected: the format
+  word is the pointer table length.
+
+### Three rules about the shape of an assertion
+
+Moved out of `CLAUDE.md` on 29 August 2026, where they sat in every session's context to describe a
+moment that happens only while writing a test.
+
+* **Assert the count, not a bound under it.** A floor well under the figure absorbs a whole sample
+  dropping out, `instructions > 10_000` against 47839. A floor that **equals** the population is
+  worse, because it reads as tolerance and has none: `agree >= 62` against 62 fails on the first
+  sample that adds a key and passes on any that removes one. Every corpus loop here walks a list that
+  is a literal in its own file, so an exact count moves only when somebody changes a reader or adds a
+  sample, and then it moves in the diff. Same for a share: state both counts, since `0.95` hides which
+  side moved.
+
+  **All of them were measured on 14 August 2026 and there were 93**, section 143, 52 in TypeScript and
+  41 in Python, and the two halves were loose in different ways. The TypeScript median floor sat
+  **41%** below the value it guarded, because a floor is a **fossil**: `glyphs > 65000` was 0.7% under
+  the truth the day it was written and 62% under now. The Python median sat 13% under, and **fifteen
+  sat exactly on the value**, four of them on the smallest sample of a per sample loop, which is tight
+  on one sample and 39% loose on its neighbour. Two things a floor cannot do at all: notice a total
+  moving **up**, which is how a double counted sample gets in, and tell a control's magnitude, where
+  54 against 227 is the evidence. Three turned out to want a **closure** rather than a number.
+
+  Both halves are enforced now, by `ABoundOnACorpusTotalIsExact` and
+  `APythonBoundOnACorpusTotalIsExact` in `tests/test_toolchain.py`: a numeric lower bound has to be
+  named in `TYPESCRIPT_BOUNDS_WITH_A_REASON` or `PYTHON_BOUNDS_WITH_A_REASON`, which hold the 25 and
+  the 10 that are a per item claim, a physical band, a consequence beside an exact assertion, somebody
+  else's source, or a **churning population**, the last being the one ground only Python needs.
+
+* **A test's title is a claim and gets checked like one.** Four titles in that sweep named more than
+  their bodies carried, and the failure is invisible because the test passes: `every key a screen
+  labels gets a label` where 74 of 6988 have none, `six reads and nothing that writes` over a table of
+  nine routes that nothing counted. When a body cannot reach the claim, rename the body's claim and
+  say where the real one is tested.
+
+* **Two population lists that nobody compares will differ.** `packages/codec/test`'s `ACCOUNTED`,
+  `REBUILT` and `ALL_CONTAINERS` are the same nineteen containers, and one held eighteen for as long
+  as that sample had existed, because each file's own totals stayed self consistent.
+  `TheCorpusWidePopulationsAgree` compares them statically, in a fresh clone with no lab. The same
+  check was needed one boundary further out, sections 140 and 141: the Python side had its own corpus
+  of fifteen against those nineteen, and twenty nine hand written populations between the test files,
+  nine of them smaller than the claim above them. There are three lists now and each states its
+  question: `lab.ALL_CONTAINERS` at 21 for a per container claim, `lab.CONTAINERS` at
+  19<!--fact:containers--> for a corpus wide total, `lab.USER_CONFIGS` at 15 for every programmed
+  config. **The corpus is nineteen and that was decided rather than derived**, section 142, on the
+  ground that a corpus wide total measures what a reader can read and not how many remotes exist, so
+  the unit is the container. **Prefer a predicate to a list**: the three sites that could not simply be
+  widened are the ones where the exclusion had a reason, and stating the reason as a measurement turns
+  an exclusion into a check.
+
+  **A third pair turned up the same day**, section 143: the `EXPECTED` tables every container framing
+  claim is asserted over held **17** names in `tests/test_gspm.py` and **13** in
+  `packages/codec/test/gspm.test.ts`, the Python set a strict superset, so the two sides reported 5
+  base addresses and 4 from the same reader on the same corpus. It surfaced only because making both
+  spans exact put two numbers beside each other that a pair of floors had hidden, which is the lesson:
+  **when two lists disagree, look for the assertion that was letting them.**
+  `TheTwoExpectationTablesNameTheSameContainers` keeps them equal now. The data entry was the cheap
+  part: four names broke three tests and falsified a fourth title, so `NOT_A_USER_CONFIG` is named and
+  asserted, and a claim about "every config" has to say which population it means.
+
 
 ## Corrections
 

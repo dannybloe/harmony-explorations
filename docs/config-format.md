@@ -3211,6 +3211,65 @@ nanoseconds, 26315 for that example, section 92, and 26315 divided by 100 is 263
 readings agree and the prediction above was made before any value had been read out of a config.
 Where the division happens is not established.
 
+## What is known, by base slot
+
+*Moved out of `CLAUDE.md` on 29 August 2026: a per slot summary belongs beside the structured spec a tool reads.*
+
+Twenty base slots, all accounted for. 0 and 1 are header records, 2 to 17 are named sections, 18
+and 19 are NULL in all 21 containers. `gspm.base_slot` and `gspm.arch_slot` translate, since
+arch 8 inserts a NULL at slot 8 and arch 12 inserts that plus a real section at slot 18.
+
+| slot | what it is | sections |
+|---|---|---|
+| 0 | a `0xFEED` framed tree of state variable names, which say what each variable is for and which device it belongs to | 20, 77, 86, 126 |
+| 1 | seven bytes stating the architecture, the only place the config says it | 20 |
+| 2 | the log area: three numbers reserving flash above the config, arch 12 only writer | 47 |
+| 3 | the clock. Starts Timer 1; on arch 12 the epoch the firmware measures elapsed time from | 21, 38, 111, 138 |
+| 4 | the firmware event map | 36, 39 |
+| 5 | the infrared database: one group per device, then records. Class 5 spells a code from a dictionary; a record's three block pointers are once, held and tail | 32, 42, 61, 65, 82, 86, 126, 127 |
+| 6 | the mode table. A record carries a screen program, and its entry an array of pages, each with a tagged list and a copy of it | 37, 52, 53, 66, 68, 69 |
+| 7 | the font table, indexed by screen opcode 16. A glyph code is per config, and the text reads back from the pixels | 46, 63, 112 |
+| 8 | key press bindings: one leading action list, then every mode page's list | 27, 38, 83 |
+| 9 | the binding table: lists of button bindings, pushed onto a key lookup stack by their enter handler and removed by their leave handler, section 176 | 39, 67, 69, 176 |
+| 10 | the action list table | 38 |
+| 11 | screen language programs | 40 |
+| 12 | the timer table | 43 |
+| 13 | the state variable table: a range, and transitions carrying one instruction. Variables 0 to 12 are the firmware's own, and 0 to 6 **are** its clock | 35, 60, 86, 130, 138 |
+| 14 | the state value map, indexed by opcode `0x72`'s high byte | 39 |
+| 15 | the parameter block: numbered groups of `u16` | 44 |
+| 16 | the number sender: one record per appliance that takes a number, with a table per digit. Seven made configs populate it and no found one does, and it carries only the channels that survive being written as an integer | 39, 154, 156, 165 |
+| 17 | the touch screen hit map on arch 12, indexed by a mode page's spare byte; elsewhere the picture bank | 45, 62, 125 |
+
+**Most of a config is pictures**, sections 49 to 55, 62, 66, 146 and 179: one contiguous array from the
+end of the named content to the trailer, no table and no count, addressed by screen opcodes 2 **and 3**
+inside mode programs. `u8 kind; u16 stride; u16 rows`, stride in **pixels**, two bytes a pixel on arch
+8, 12 and 14 and one bit on arch 9. Walking the array lands exactly on the trailer in all nine
+containers that have one, and **every picture in every bank is drawn by a program**, on all four
+architectures, with two exceptions in the whole corpus and both in the arch 9 safe mode container.
+That used to read "addressed only by screen opcode 2" with "exactly two per container unreached on<!--superseded-->
+arch 8 and arch 14", and the two were opcode 3's: 4548 of 4548 of its instructions name a picture,
+arch 12 (Harmony One) emits none at all and arch 9 (Harmony 525) emits nothing else, so a reader
+written from opcode 2 looked complete on the architecture this project reads code on and reported
+zero pictures for a Harmony 525 whose bank holds four.
+
+**Two interpreters, both read.** The action list language, a 120 byte circular queue of three byte
+instructions dispatched by binary search on the opcode, section 34. And the screen language, one
+byte opcodes, section 40, whose closure is that 22846<!--fact:screen_programs--> programs across the
+corpus decode with nothing left over.
+
+**And the queue is writable because the language has an if/else**, section 140, which is the one
+thing about the action list interpreter that had never been explained. Bit 15 of a `0x70` or `0x71`
+comparison is the **else** arm: with it set, a comparison that comes out **true** zeroes the three
+bytes two slots ahead, and opcode `0x00` does nothing, so the two instructions after a flagged
+comparison are its two arms and the untaken one is overwritten rather than jumped over. It has to be
+overwritten, because the handler returns before either arm runs. Section 34 saw the bit and wrote
+"the dispatcher masks it off"<!--superseded-->, which was true of the nibble decode and read as
+though nothing consumed it. The corpus closure is exact both ways, 600<!--fact:compare_else_arms-->
+flagged instructions each followed by exactly two instructions and
+2084<!--fact:compare_one_arm--> unflagged each by exactly one, with the list ending there, no list
+holding two conditionals and no arm being one. **It is one table across architectures**, measured on
+all seven images rather than ported, which matters because three structures in this language are not.
+
 ## Open questions
 
 1. ~~What are the 19, 20 or 21 section slots?~~ **Answered.** All twenty base slots are accounted

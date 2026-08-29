@@ -36,6 +36,15 @@ recovers a shape like that. It also carries the tilt, the symbols and the exact 
 **A photograph otherwise.** `../lab/reference/forum-images/<model>-full.jpg`. Both stay in the lab: not
 published, not committed, not copied into FreeHarmony.
 
+**Tracing was decided by Danny on 21 August 2026, against a recorded objection**, and the objection is
+kept here because a decision without the argument it beat reads as an oversight. The objection: a traced
+path is arguably Logitech's own expression rather than a fact about the product, and this repository is
+public and MIT. What outweighed it is the measurement in the paragraph above, that no drawing measured
+off a photograph gets a key's shape right, and the containment that follows from it: the traced SVG
+itself never leaves the lab, and what is committed is `bin/extract.ts`'s output in this package's own
+coordinates. What that replaced was a schematic drawing, and **placement is no longer schematic**: a
+traced key is where it is on the product, which is what unparked the other 33 models.
+
 The photographs are not to a common scale. That comparison table scaled them to fit its rows, so
 `600-full.jpg` being 290 by 1000 and `525-full.jpg` being 230 by 875 says nothing about which remote is
 longer. Never derive one model's size from another's image. **The two sources also disagree**, and the

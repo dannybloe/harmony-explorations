@@ -84,6 +84,86 @@ always have been:
 * One remote at a time, and identify which one before trusting any per unit number. Two Harmony Ones
   are on the bench and they are not interchangeable.
 
+## What a bench session does to a remote, measured
+
+Moved out of `CLAUDE.md` on 29 August 2026. Every paragraph is a measurement on the remotes here, and
+the reason they belong at the moment of connecting rather than in every session's context is that
+none of them is a rule to obey: they are what to expect, and what not to re-derive.
+
+**The first one is a rail as well as a hazard**, and `packages/usb` enforces it, so the mechanism
+below is why the refusal exists rather than something a caller has to remember.
+
+**Reads of internal program memory restart a remote, so read only is not the same as harmless.**
+`READ_FLASH` with top address byte `0xFF`, when the transfer ends in a one byte chunk, makes the
+remote leave the USB bus. Reproduced deliberately on the spare One, then still unprogrammed: 5
+restarts, all self-recovering, config verified against the dump afterwards. Ruled out: ordering,
+chunk count, and the size 63 by itself. **The cause is read now**, section 94: the internal fetch
+primitive can only read a word, the loop emits two bytes and subtracts two, and its exit test is
+equality with zero, so an **odd** count never terminates and `CLRWDT` inside the loop keeps the
+watchdog from ending it. `packages/usb` refuses an odd count. Two earlier refusals were bounds
+around the hazard rather than the hazard, and the second would have let 65 and 127 hang a remote.
+**The trigger is read all the way through, section 96, and there is no address threshold.** The
+sender at `0x20394` has no bound, so an unterminated loop walks a write pointer up through data
+memory writing what it reads, and after 2247 bytes it overwrites its own counter. The read returns
+if and only if the flash byte it lands on, `0x8C7` above the failing chunk, is **even**. So the
+outcome is content, not location: the threshold at `0x010A56` reported earlier the same day was an
+artefact of which offsets the bisection tried, and it is corrected in place. The rail refuses odd
+counts everywhere, and the case that returns is no better, because it has already scribbled 2247
+bytes over the remote's memory.
+
+**A clean read only session does not strand a remote, and that is measured three times out of three.**
+On 10 August 2026 three rounds of one plain 32 byte read, then the cable out, each left the spare One
+**out** of USB mode and on its normal display. So version 1 of FreeHarmony needs to send nothing at
+the end, and the awkward choice section 95 posed does not arise. USB mode's exit is gated on the command state variable
+`0x284` being zero, section 99, and a completed `READ_FLASH` clears its own state, so a clean session
+leaves the gate open.
+
+**A hang does not strand one either, and it ends in a genuine device reset**, section 100, measured on
+10 August 2026: the remote reboots, comes up in USB mode, and **its clock is reset**, which a
+re-enumeration does not do. So data memory is reinitialised and no corruption survives a hang, which
+refutes the idle flag hypothesis by mechanism rather than by measurement. "A self-clearing restart" was
+the weaker name for two days.
+
+**What does strand one is unexplained, and it is PARKED**, decided on 10 August 2026 on the reading
+that it may be an anomaly of that one unit: the spare has been synced by Logitech's
+software, hung deliberately more than a dozen times and had its batteries pulled repeatedly, and it is
+the only remote it has ever happened to. **What reopens it is another occurrence, nothing else.** Three leads followed
+and all three dead: the disconnect on its own, falsified by three control rounds; the hang's RAM
+corruption, refuted by mechanism since the hang resets the device; and the charger to USB transition,
+which behaved like every other round on 10 August 2026. **Do not read that as a narrowing.** A bench
+session should expect a stranding, a battery pull clears it, and nothing here knows why. Untested and
+not leads until something suggests a mechanism: those two sessions ran dozens of commands where every
+round here ran one, and both followed hours of continuous bench work rather than a remote picked up
+cold. `session-end-control.ts [--from-charger]` is the instrument, and its charger mode refuses to
+start with the remote already on USB because its first wait is the measurement. **Do not re-derive the
+dead leads**: each cost a round of hardware, and if it happens again the two things to capture in the
+moment are how many commands the session had sent and whether the screen still said USB mode before
+anything was unplugged. Every previous occurrence lost both.
+
+**Both were captured on 23 August 2026 and the answer narrows it**, section 155, on a milder instance
+that recovered by itself. A Harmony One that had sat in USB mode for about forty minutes after a sync
+by Logitech's own software dropped its first `GET_VERSION` entirely; the screen said "USB Connected",
+this session had sent it **zero** commands, the cable was never touched, and the next attempt answered
+and read the whole config off it. Its clock excludes the obvious explanation by measurement rather than
+by argument: uptime was continuous with the boot that followed the sync, so **no reset happened between
+the failure and the recovery**. So a busy session is not the trigger and a disconnect is not the cure,
+and what the cases share is idleness rather than traffic. It is **not proof they are the same event**,
+since this one cleared on a retry and the earlier two needed a battery pull, and the unexplained case
+stays open. What changed in the code is one bounded thing: `getVersion` resends once when a remote that
+has never spoken says nothing, because otherwise a person plugging a remote in sees a hard failure that
+a second attempt clears.
+`packages/usb/bin/idle-flags-after-hang.ts` is kept for its baseline leg and because it is what
+demonstrates the reset. It needs `HARMONY_ODD_READ_EXPERIMENT=1`, which is a **named door** in
+`rails.ts` rather than a source edit: the odd count refusal was bypassed twice by patching
+`remote.ts` and patching it back, and a rail edited under time pressure with nothing in the tests to
+say so is worse than a door that announces itself. `0xE0 0x01` clears the gate and is not a reset, `0xE0 0x02` reboots, section 97;
+`packages/usb/bin/end-session-experiment.ts` exists, is gated by `assertSessionEndAllowed`, and is
+**deliberately unrun** because the control made it unnecessary.
+
+**Two things to capture if a stranding happens**, because every previous occurrence lost both: how
+many commands this session had sent, and whether the screen still said USB mode before anything was
+unplugged.
+
 ## What works on this machine, and what silently does not
 
 * **`system_profiler SPUSBDataType` produces nothing at all here**, not even for unrelated

@@ -397,3 +397,589 @@ block opens with a lead in silence, and an over-long duration is spelt as maxima
 remainder balanced across the last two. Both conventions were measured before being adopted, and
 the five remaining differences between their addition and ours are bookkeeping, written down in the
 finding.
+
+## Where the work stands
+
+*Moved out of `CLAUDE.md` on 29 August 2026, where it was a second copy of this document's own subject.*
+
+`docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
+and step 3 is done as far as the firmware can take it. **This section is a status board, not a
+summary of what is known**: that is `docs/findings.md`, 209 sections, and `docs/config-format.md`
+for the structured form. Section numbers below are the pointer into them.
+
+**The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
+and `READ_FLASH` run from our own host code on both bench architectures, a config read matches each
+unit's lab dump byte for byte, and all four remotes are fully read and verified against their
+backups: user config, application firmware, safe mode, and the internal pages where the architecture
+serves them, no differences. What is
+verified is that each backup is faithful; **restoring from one has never been tried.**
+
+Byte accounting, `make coverage`, zero overlaps everywhere:
+
+| arch 8 | arch 9 | arch 12 | arch 14 |
+|---|---|---|---|
+| 100.0%<!--fact:coverage_arch8_config_a--> | 100.0%<!--fact:coverage_h525_config--> | 100.0%<!--fact:coverage_one_config--> | 100.0%<!--fact:coverage_h600_config--> |
+
+## What is still open
+
+*Moved out of `CLAUDE.md` on 29 August 2026. Fourteen questions with the argument for each, read when a session needs them rather than carried into every one.*
+
+* **`GET_VERSION` field 6**, a compiled in `0x0C` with no reading, and **field 9's accessor**, a
+  table read at program `0x020024` whose byte is `0xDE` while the remote reports `0x16`. The other
+  ten fields have a reading, section 59 and section 87. The installed image is ruled out as the
+  explanation: the One's own flash dump is byte identical to the package there, so what is left is
+  what a `TBLRD` does past the on-chip flash, which is a hardware question and not a firmware one.
+  **Field 6 has a reading now and it is unconfirmed rather than absent**, section 116: it names a
+  **platform**, not an architecture, and arch 12 and arch 14 are one platform under it. `0x0C` on both
+  of those across six images, `0x09` on arch 9, `0x08` on arch 8. **What a recovery role image
+  answers is per architecture**, sections 118 and 190: a live Harmony 525 in safe mode reports `0x00`,
+  as the arch 8 bootloaders do, and a live **Harmony One in safe mode reports `0x0C`**, the same as
+  running normally. So section 118's "for an application image only" was one architecture written as a
+  rule, which is what it had just criticised section 116 for in the other direction, and section 116's
+  arch 12 figure turns out to have been right. Arch 14 is unmeasured on hardware. The mechanism is
+  section 189's, that arch 9 copies its safe mode image over the application and arch 12 copies
+  nothing, so the two findings predict each other. **Field 4's low nibble is what actually says which
+  state a remote is in**, 0 running and 4 in safe mode, and on a Harmony One it is the only one of the
+  twelve fields that moves between them. Everything else already grouped those two: same MCU family, same
+  `GSPM` cookie, and Logitech's own platform table calls arch 12 the Gin family. What moved it was the
+  population going from four images to eleven; four could not tell "equals the architecture, except
+  once" from "equals the platform, always". The `bcdDevice` high byte has the same shape and different
+  values, `0x08`, `0x09`, `0x10`, `0x10`, so the two are not one variable.
+* **What the One's analogue channel 1 measures**, section 103, and **USB cannot settle it**, section
+  111. Two readings fit and they differ only in the sensor's wiring, so the firmware cannot choose, and
+  the bench read that was meant to choose landed on outcome 2: the converter is off and its result
+  register frozen across 60 seconds while the clock ticks in the same poll, so covering the sensor
+  cannot move `0x110`. What the read did settle is that the band, the state and the level in RAM agree
+  with each other through the config's own base slot 15, which is how we know an arch 12 remote on USB
+  has read its config. Finishing the sensor needs the remote off USB, which no read path reaches.
+  Channel 0 is the battery, `0x111`, eight levels, and it reads 7 of 8 on a charging remote.
+* **Arch 9 (Harmony 525) has no read path to its data memory at all**, section 137, which the same round
+  established with a control worth copying: the `READ_FLASH` window at top byte `0x40` answers zero for
+  the bank 2 bytes holding the offset and buffer pointer of the read in progress, so the zeros are the
+  window's and not the memory's. `READ_MISC` was already dead there, section 90. So the reading of a
+  Harmony 600 (arch 14) is the only bench measurement left of the two, and on arch 14 a remote does not
+  load its config on USB at all, section 110, which would make a null result there mean less than it looks.
+* **Which routine increments the minute on arch 12 (Harmony One)**, section 111, and the reason it was
+  never found is closed rather than the routine: `0x109` is **state variable 1**, section 138, and every
+  write to a state variable goes through a store whose `FSR0` is computed from a literal 8 and an index.
+  So there is no direct write and no `LFSR` because there is no pointer variable, which was the dead end
+  `trace-section` names first and it was the right dead end for the wrong reason. What is left is which
+  caller passes index 1, and **nothing depends on it**: the field is named from the firmware's own
+  subtraction against base slot 3's record and its behaviour is measured twice.
+* **The rate the arch 12 clock loses time**, section 111. Two mechanisms are read and both only lose, so
+  5.6 minutes a day is an upper bound rather than a figure. **Deliberately not measured**, decided on 10 August 2026, since
+  it would need the One left alone for a day and read at both ends, and no
+  document or code anywhere wants the number. Recorded so that the bound is never quoted as a
+  measurement.
+* **The arch 12 calibration words at `0x01F5C0` and `0x01F5C2`**, section 105: 94 and `0xFFFF` on
+  both units, fetched by the same helper as the battery scale, consumer not traced. The scale itself
+  is read, `4 + trim/65536` millivolts a converter count, and **section 44's battery conjecture is a
+  finding now**. Two hazards worth carrying: `0x01F580` is **on chip**, so a firmware `TBLRD` there
+  and a `READ_FLASH` over USB at the same number read different memories; and the words had been in
+  the lab for a day, filed as "unidentified" in `docs/memory-map-one.md` two rows above the note that
+  says two remotes differ at `+0xF582`.
+* **Which I2C device sits at address 0x60 on the Harmony One**, section 106. Thirteen channels of
+  three states, two eight bit level registers, an enable on `LATC` bit 5 and no readback, which is the
+  shape of an LED driver and most plausibly the keypad backlight, dimmed by the same band that dims
+  the screen. **Not confirmed and deliberately not named.** A datasheet search on the address and the
+  register numbers, or a photograph of the board, settles it; firmware cannot.
+* ~~**Our frame decoder reads an unmerged pulse train and should not**~~, **merged now**, section 164.
+  Adjacent durations of one kind are one interval physically, so the reader merges them, and it costs 45
+  records of three arch 8 (Harmony 880) configs that all read the same eight bit value, which forty five
+  different commands cannot be. Logitech's own decoder refuses all 36 of them it was asked about. **It
+  cost less than section 153 predicted**, because section 163 landed first: the partition is 3502, **0**
+  and 1128 rather than the 3502, 764 and 57 predicted, since requiring a constant non carrying half
+  already refuses everything the merge would have made ambiguous. Two things to carry. The merge is
+  **not** applied to the biphase reader, where two adjacent cells of one kind are two cells. And after
+  it a biphase code can produce a plausible pulse distance reading, two `Magnavox 13 Bit` records among
+  them, so the rhythm table's join prefers a reading that lands on a number by **value** over one that
+  lands only by matching a width.
+* **A frame's non carrying half has to be one length**, sections 163 and 165, which is the rule the
+  terminator constant had been standing in for. **One length means it does not split**, by the same ratio
+  the carried half has to split by, and not byte identical: exact equality refused ten records of the
+  compiled sample whose flat half alternates between 433 and 434, nine of which our reader now puts on
+  the exact number Logitech's own analyser states. The margin is 6.1% admitted against 100% refused, with
+  nothing in between. `decode` now demands it as `timingsOfFrame` always did, so `GAP_US`
+  could rise from 4000 to 8000 and `JerroldO1 16 Bit`, whose set bit is a 4505 space, is the twenty first
+  entry in the table. It cost one direction of section 134's biconditional: the 148 records that read
+  under **both** conventions now read under none, which is exactly the biphase population, so the
+  detector moved to the reader that names the cause.
+* ~~**148 biphase codes are readable and we cannot read them**~~, **read now**, section 162. A biphase
+  code has one duration, the half cell, and the bit is which half of it carries, so there is nothing for
+  `irFrame` to split and its two conventions both fit. `biphaseFrames` reads them and three families are
+  in the rhythm table, each reproducing every one of its records byte for byte. The confirmation is that
+  the reading, worked out on a configuration Logitech's compiler made for appliances chosen here, lands
+  on 48 of 48 records of four **contributed** configs where their analyser had already stated the number.
+  `irFrame` still refuses them, which is deliberate: that refusal is the corpus's only detector for the
+  family, section 134.
+* **Three of the four infrared encoding classes**, used by no config in the corpus, so a firmware
+  problem rather than a decoding one, section 42. **Why they are unused is settled**: Logitech's own
+  user manuals say the learned signal was uploaded to their web site, which did the pattern matching
+  and chose the storage form, so the class was a server decision and the unused ones are the ones
+  that service never emitted for these devices. A miss was "stored as-is in its original format",
+  which predicts a raw class. That matters for FreeHarmony: the service that made the choice is the
+  discontinued one, so learning a code without it means making that choice locally.
+* **Where a learn session's samples leave the remote is read**, section 98, and the two searches
+  that failed did so because both assumed the bytes are **sent**. They are not. `START_IRCAP` clears
+  two 66 byte buffers at `0x0600` and `0x0642` and a toggle at `0x0684`, the capture path fills
+  whichever is open, and the transport points the **endpoint 1 IN buffer descriptor** straight at it,
+  `0x40E` and `0x40F`, with the count at `0x40D`. So no routine ever emits `0x90`: it is stored into
+  the buffer at `0x602`. On arch 12 a report is 64 bytes, `0x90`, a sequence byte advancing by
+  `0x10`, then samples as **big endian `u16` durations** differenced from CCP2, with the payload
+  length repeated in the last byte. That encoding is the config's own, bit 15 marking a pulse, so
+  what comes off the remote is already the shape a record wants. **Arch 14 has the same header**,
+  written through `INDF` because it reaches the buffers by `FSR`, which is why a scan keyed on the
+  buffer offsets missed it; what stays arch 12 only is the differencing that makes a sample a
+  duration. **The reports are unsolicited**, so a
+  host must keep reading during the session; that settles section 91's disagreement between the two
+  clients in the classic one's favour.
+  **Do not argue this from a literal scan**: a data response code carries a computed length nibble
+  and never appears as a literal, which cost one wrong negative here, `reference/superseded.md`.
+* **The physical button map**, meaning the matrix keypad. **The Harmony One's touch panel is mapped**,
+  section 125, and out of the config rather than the hardware: base slot 17's rectangles, the mode page
+  byte saying which page is in force, and a transform onto the display. That leaves the 44 keys around
+  the panel, and every other model. Measured as far as USB allows and no further, section 48: a remote on
+  USB never runs its **keypad handler**, because USB mode's own loop does not scan the matrix. It does
+  run the rest of its application, section 111, and "never runs its application" was the wording here
+  until a Harmony One was watched ticking. **On arch 14 it does not even load its config**, section
+  110: the journal's five variables are zero on the 600, so neither the container's marker check nor
+  the allocator has run, and anything the host wants to know it computes from the bytes itself. On arch
+  12 it does load it, section 111, because the config is memory mapped and there is no load step.
+  Arch 14 yields the **column**
+  only, `(code - 1) mod 4`, and arch 12 yields nothing at all, since sixteen buttons from every
+  region of the One share one sense line. Finishing it **over USB** needs a RAM write to drive the
+  rows, which the rails forbid, and **that is not proposed here.**
+  **The cheapest route needs no remote on the bus at all, and it is the board**, section 144: a
+  survey of an 885's circuit board, done by somebody else and checked here against our own configs,
+  is what settled arch 8's lattice as 4 by 16 with `scan = (line - 1) * 4 + input`. The 885 config's
+  column census and that board agree at 14, 14, 14, 13 through routes with nothing in common. **The
+  arithmetic is per architecture and must not be ported**: arch 9 (Harmony 525) is `group * 8 +
+  column`, arch 14 (Harmony 600 and 700) is 4 by 14, and searching all nine images this project
+  holds finds arch 8's encoder in the four arch 8 ones and in none of the others. On arch 12
+  (Harmony One) the board is the **only** route left, since a live census there yields nothing.
+  **There is a second route that needs no write**,
+  section 123: the 525 implements infrared learning, so pointing the original equipment's own remote
+  at it and matching the capture against the class 5 records section 82 read names the command, and
+  the config already binds a scan code to it. `0x70` is still a command that changes a remote's
+  state rather than reading it, so it sits behind the write flag, and nothing here has sent one. Neither of Logitech's own applications has
+  it either, checked on 9 August 2026: a host names buttons and the firmware resolves the name to
+  hardware, so no host ever held the map. `docs/host-client.md`.
+  **Arch 9 sits below both and needs no census**, section 89: the 525 senses on a single line like
+  the One, so a press is not even worth a column, and its matrix falls out of the firmware instead.
+  8 by 8, scan code `group * 8 + column` running 1 to 64, and both its configs bind the same 50
+  codes, none a multiple of eight and contiguous in the resulting lattice to 57. So **the 525 has
+  fifty matrix buttons**, predicted from firmware plus config and then **counted on the remote**,
+  which makes it the one architecture where every matrix button is bound and no bound code lacks a
+  button. **Counted a third way on 11 August 2026 and it is fifty**, from a product photograph, which
+  is a free confirmation of a number that had cost a firmware read and a hardware census.
+  `reference/silhouettes/h525.svg` is that count as a drawing, and what it does
+  **not** carry is any scan code, because arch 9 (Harmony 525) has none measured at all: the positions
+  are drawn and the assignment is open, since section 48 is why no read path here can produce it. Nor is
+  it yet a usable map of **where** the keys are, since every key in it sits on a horizontal axis and a
+  525's rows do not, which is what the traced geometry fixes on the models that have it. The four soft keys are narrowed to the set
+  `{30, 31, 38, 39}` and deliberately not assigned within it, because nothing establishes which of
+  columns 6 and 7 is the left one. A test refuses a `data-scan` attribute anywhere in the file, so
+  filling one in has to be a deliberate change with a measurement behind it.
+  **The 600 and the One are drawn too**, and the pair is instructive about what a third count is
+  worth. The **600 came to 54**, which is exactly what section 17's field split and section 48's
+  column census of 14, 14, 13 and 13 both give, so three independent routes agree. The **One came to
+  44 and nothing can check it**: arch 12 yields no column from a USB census because sixteen buttons
+  share one sense line, so that number is a count of a photograph and the drawing says so rather than
+  implying confirmation. Both carry `data-scan` on their measured keys since the traced geometry
+  landed on 21 August 2026: the 600 its 36 mapped buttons, the One its 32 plus the two touch arrows
+  section 125 placed, which corrects the next paragraph's original ending in place.
+  **A scan code has a name now, read only, and it still has no place**, section 133: the code a scan
+  sends decodes back into the **bit frame** the device sees, `packages/codec/src/irframe.ts`, and a frame
+  matched against the command catalogue and button maps of the account that generated a config names the
+  button. 32 buttons of a Harmony One and 36 of a Harmony 600, `reference/button-maps.md`, with nothing
+  written to anything. **It is a calibration instrument and not a reader**: it needs the generating
+  account, so it works on the two configs Logitech compiled to our specification and cannot name a key in
+  a contributed config. Three things to carry. The ambiguity was mostly a **scope** error, eight scans a
+  remote down to four: a scan's command is per activity and its button is not, only an `ActivityButtonMap`
+  may name an activity's set, and the assignment is globally injective because a button is one physical
+  key. The four that remain are real, two up keys and two down keys sending one command each, and no
+  decoding breaks a symmetry. So the tables stay out of `packages/usb/src/models.ts`, since the rest is
+  **unbound**: these configs drive three devices in two activities and a library answering for a scan
+  they never bound would answer from nothing. The silhouettes were going to get no `data-scan` on the
+  same ground and got them on 21 August 2026 anyway, for the measured keys only, which serves both: a
+  drawn key answers with its code or with nothing, never from nothing. And **the
+  geometry does not
+  follow**: under section 48's own column formula the digits 1, 2 and 3 of a Harmony 600 sit in columns 3,
+  2 and 2, and no divisor to 19 in either direction puts a digit row on one line, so a matrix position is
+  a wiring decision and a test asserts it cannot be recovered.
+* **`MCU_ID` is unreachable by construction**, not a task: a PIC18 keeps its device id at `0x3FFFFE`
+  and the internal read window is two 64 KiB pages. The arch 12 part number stays inferred.
+
+## What moved most recently
+
+*Moved out of `CLAUDE.md` on 29 August 2026, where it was a rolling account of the newest findings. Every claim in it is in `docs/findings.md` with a section number and a regression test.*
+
+**The screen's text reads back**, section 112, which is what the application needed before it could
+show a config's activities: their names are drawn by a mode page's screen program and nothing else
+names them. A glyph code is **not** a character and not an encoding: it indexes the config's own font
+table and is assigned per config, in the order characters first appear in the generator's string list,
+so two configs of one remote disagree about code 20. What is stable is the typeface, so a code is
+resolved from its glyph's **pixels** against a hand read alphabet, seven of which cover the corpus.
+170920<!--fact:text_read--> of 170922<!--fact:text_glyphs--> drawn glyphs come back; `make text`. The
+seeds and the method for an eighth typeface are in `packages/codec/bin/alphabets.ts`.
+
+**A code is one character and a character is one code**, section 124, and that rule is the check to
+reach for before trusting a seed: it is the generator's own, since a code is a character's position in
+the string list it walks. Three hand read labels were wrong and each showed up as a character sitting on
+two codes at once, `9` read as `8` on arch 9, a lowercase `z` read as `Z` on arch 14, and an `I` read as
+`l` on arch 12. Every one of them was drawn in a single word in its own container, which is why the
+proof string each seed carries could not catch any of them, and every one was caught by a **second**
+container of the same skin. The rule also resolves what no shape can, `I` against `l`, in place of a
+fallback that assumed two configs of one skin number their codes alike. **Adding a gap filling source
+labels a shape and not just a code**, so when two characters share a shape both codes have to be named
+or the shape is claimed for one of them.
+
+**Which key starts which activity is read**, section 120, and **which drawn name it carries is read on
+all four architectures**, sections 121 and 125. The chain is four hops, because nothing in the format names
+an activity: a mode page's tagged list binds a key to `0x7F`, that base slot 10 list carries `0x1F` with
+operand `0xFF | set` selecting a base slot 9 entry, that entry's list writes `CurrentActivityState` with
+`0x80 | n`. Eleven of eleven containers, four architectures. Every binding is a press, every activity is
+reachable, and **all of an activity's keys are on one page**, which is what makes "the page that names
+this activity" mean something. The structural closure is that an activity page's `0x7F` operands are a
+contiguous ascending run of base slot 10 indices, 16 of 16 activity pages against 373 of 1152 pages
+generally that are not.
+
+**The idle value is base slot 13's `first`**, the field section 60 marked unconfirmed, and it is exactly
+the value no binding writes. `one_config` is what makes that a finding rather than arithmetic: `first` is
+7 where the highest is 8 and 8 **is** bound to a key. So section 86's "value 0 is no activity running"
+was the wrong reason for a right count, corrected in section 120.
+
+**The name comes from the modes the chain enters**, not from geometry: an activity's lists also carry
+`0x7E`, and the mode they enter draws the activity's own name, so the page's string that relates to one
+of those is its label. That is how three architectures do it: arch 8 22 of 22, arch 9 4 of 4, arch 14 13
+of 13, and with arch 12's own route below, **50<!--fact:activities_named--> of
+50<!--fact:activities_total--> activities**, `make activities`. Four rules make it a function and each was found by having it fail: an exact match beats a
+contained one, a per mode chrome test, one label to one activity, and a second pass for a label the menu
+wrapped onto another row. **The exact match rule is the one to remember**, section 124: an activity's
+chain enters the mode that lists the devices, so every activity says every device's name, and reading
+containment as sufficient let one label be claimed by all four activities of a Harmony 880 and then
+dropped from all four as chrome. The number was 23 of 35 for a day, and three of those 23 were fragments
+of a wrapped label, two of them belonging to a different activity than the one they were reported for.
+
+**Arch 12 does not use any of that, and it is the better route**, section 125. No string rule can work on
+a touch panel: `one_config`'s three activity pages bind scans {50,51,52}, {50,48,49} and {48,49} while all
+three draw labels on the same rows, so no fixed code to row map can exist. What a One needs is base slot
+17's hit map, and the missing link was **`ModePage.lead`**, the arch 12 only byte section 66 read and
+nobody explained: it is a zero based index into that map, so the rectangle a key covers is **stated** and
+the label is the text the firmware's own hit test puts inside it. 11 of 11, and it runs before the string
+matching, because a stated answer beats an inferred one. The closure is a demand the container makes on
+itself, that a page only binds codes its own hit page offers, 268 of 268 and 104 of 104 where every shift
+breaks 54 to 227. `packages/codec/src/touch.ts` also carries the **panel to pixel transform**, whose y
+half is arithmetic (872 panel units and 54 pixels are one row measured twice) and whose **x half rests on
+one reading** and is marked as such, though no name depends on it. Under it the panel is three blocks at
+pixel rows 33, 87 and 141, one or two across and never three, plus a bar from 191 to 253 that runs off a
+220 pixel display: which is exactly the unprompted description of the remote itself, two touch points below the
+screen and a key at each side, so 48 to 53 are the blocks, 43 and 44 the points and 46 and 47 the keys.
+**Which code lands where is per page**, in the order the rectangles are stored, so section 121's proof
+holds for the codes too.
+
+**Every key a screen labels now carries that label**, section 128, which is what turns the button table
+from `group 3 #29` into a word. Two populations first: a scan bound by a **mode page** is a key the screen
+speaks for and a scan bound by a **base slot 9 set** is a key on the keypad, and the two are **disjoint**,
+sharing no code at all on arch 9 (Harmony 525), arch 12 (Harmony One) and arch 14 (Harmony 600 and 700)
+and exactly one on arch 8 (Harmony 880). Then the place: on a One base slot 17 states the rectangle, so the
+label is the text inside it, attributed to the **nearest** region rather than the firmware's own first
+match, which is right for a touch and wrong for a label since a long right hand string starts inside the
+left hand rectangle. Elsewhere the keys are two columns beside the screen and the rows are **measured**
+from where the activities section 121 names without geometry are drawn: four rows on arch 8, two on arch 9
+and two on arch 14, with the left of each pair settled per architecture and not assumed. 98.9% of 6989
+screen key bindings, and 3100 of the 3106 that send a code.
+
+**The rule that suggested itself fits the counts and is wrong**, and it is the lesson of the section: the
+k-th key in ascending scan order taking the k-th row of text pairs four keys with four rows on the 600's
+own activity menu and gets two of them wrong, because two keys share a row and the outer rows are chrome.
+A key belongs to a **place**. Two closures hold the reading up, one of which reads no text at all: every
+two item row in the corpus has its two keys on **different** action lists, with no exception, and the
+labels agree with the activity chain on 62 of 63 keys, the exception being a "1 OF 2" page indicator drawn
+in the bottom row's continuation slot and left in rather than special cased.
+
+**A config's screens can be drawn now**, section 129, and the bench shows one beside the keys it
+binds, made out of the bytes per request. That is the shape FreeHarmony needs, since an editor has to
+show what a screen will look like after a change and must not carry a second implementation to do it.
+It is `packages/codec/src/render.ts` and `make render`, with the PNG encoding in `src/png.ts` because
+the bench serves the same rasters over HTTP and two encoders would be two things to keep right.
+It is here rather than in FreeHarmony because it is also the check that fails differently from every other
+test in this repository: a reader test says a number came back and cannot see a label half a row out, an
+icon over its own caption or a colour channel one bit wrong. **Every mode page of every container
+renders with nothing unresolved**, over 1500 pages on four architectures, which needs a picture's
+extent, a glyph's encoding, a font set's first code, a referenced string's address and a page's program
+pointer all to be right at once. **And that claim was hollow for a month**, section 148: it counts
+pictures the renderer looked for and could not decode, so an instruction the renderer never looks at
+contributes nothing to it. The renderer knew screen opcode 2 and not opcode 3, and on arch 9 (Harmony
+525) every picture is an opcode 3, so a rendered Harmony 525 page drew its text and left 4549 of 6144
+pixels untouched while the check reported nothing missing. Same defect as section 103's catch-all
+owner: a claim whose falsifier is outside its own population. The test that can fail counts the naming
+instructions by walking the programs and compares that with the renderer's own tally, **per
+architecture**, because the whole shape of the mistake was one architecture at zero while a total
+looked healthy. Three things it needed that no reader did: the display size, which the
+configs state through their own full screen pictures, **both picture opcodes saying it and agreeing
+exactly on nine containers**, which is what took arch 9 (Harmony 525) from having no witness for its
+96 by 64 to having the only one; the pen advance, which is **nothing** because the
+gap between letters is a column the glyph carries; and the pixel byte order, where the first reading was
+wrong. **A pixel is big endian RGB565**, the only field here that is not little endian, because it is
+stored the way a display controller is fed rather than the way the container is written. Little endian
+drew a Harmony One's buttons as rainbow stripes, and the test that pins it says out loud that **most
+pictures cannot tell the two apart**, since a black and white picture reads the same either way.
+
+**A page is a set of screens, not one**, and `renderVariants` walks the arms: a screen program switches
+on a state variable, so each appearance carries the condition that selects it, named through base slot 0
+where the variable has a name. The bench offers them as buttons. **What that immediately produced is
+section 130**, because it made the question "which variable is this" unavoidable: **base slot 13's first
+seven records are the firmware's clock**, `first` being the value a variable holds when the config is
+generated, and all seven equal the corresponding field of base slot 3's build timestamp in all 21
+containers. Section 74 had read three of them as a date from the action list language alone, and the
+weekday's zero is base slot 3's own epoch, a Saturday. That also generalises section 120's idle value:
+it is the generated value, and for `CurrentActivityState` the two coincide because nothing is running
+when a config is compiled.
+
+**Two thirds of a config's drawn text had never been read**, section 121, which is what fell out on the
+way. Screen opcode 4 draws the glyph string at a `u24`, and in 12052 of 12052 instances that address is
+the payload of an opcode 5 instruction in **another** program, so a string is stored once inline and
+referenced everywhere else. `make text` went from 65456 glyphs to 146846 on the day, and stands at
+170922<!--fact:text_glyphs--> now that two more configs are in its population, with every sample still
+reading at 100.0%. Nobody had followed the pointer because the byte accounting never
+complained: the bytes were already claimed by the program holding them, and a comment in `screen.ts`
+said opcode 2 was the only instruction naming a place outside its own program. **A shared string is a
+writer rail**: editing one in place changes every draw that names it.
+
+Step 8, the contribution probe, exists. **Step 6's action list language is read**, section 73:
+both dispatchers, every branch, to the `RETURN`. All twenty base slots were already labelled, so
+what is left of step 6 is small and it is measured rather than estimated.
+
+**The number now carries a depth, and that distinction is the point.** Knowing which routine an
+opcode reaches is not knowing what it means for a config, and counting the first as the second
+reported 100% for a language a tenth of which nobody can name. `packages/codec/src/actions.ts` is
+the table, `reading` gives one instruction's, `readingCoverage` gives a config's:
+
+| | share of 86947<!--fact:action_instructions--> instructions |
+|---|---|
+| meaning | 98.6%<!--fact:reading_meaning--> |
+| placement only | 1.4%<!--fact:reading_placement--> |
+| no reading at all | 0<!--fact:reading_unread--> instructions, nothing left anywhere in the corpus |
+
+**The population is 58<!--fact:reading_arguments--> smaller than it was, and that is a correction**,
+section 139: `0x3F` with a high byte in `0xD0` to `0xDF` is a **six byte** instruction and the slot after
+it is its argument, which the table had been resolving as an instruction of its own at depth `meaning`
+every time. Section 73 wrote that consequence down and nothing acted on it for a month. `takesFollowingSlot`
+is the predicate; `Container.actionList` still returns the slot, because the emitter reproduces it.
+
+Against 24.5% with no reading before sections 70 to 74. Per architecture: 98.6%<!--fact:reading_arch14-->
+on arch 14, 98.8%<!--fact:reading_arch12--> on arch 12, 98.6%<!--fact:reading_arch8--> on arch 8 and
+95.9%<!--fact:reading_arch9--> on arch 9. **Every figure here is recomputed**, `make reading`, and
+that is new: the table used to quote 97537 instructions and 97.9% and nothing checked either, so when
+section 103 moved the number for the first time it turned out that no sample list reproduces 97537 at
+all. The population is defined in `packages/codec/bin/reading.ts` and nowhere else now.
+
+**The unread column is empty and the state is unreachable**, sections 107 and 108: `0x6E` was the
+last opcode in it, six instructions, and it is a modulo, and section 108 read the last three opcodes
+that had a handler and no reading, `0x65`, `0x66` and `0x76`. **An action list can make a remote write
+to its own external flash**, which is what those first two do, and the region they write to is one the
+firmware allocates itself rather than the one base slot 2 declares. What is left is all placement and mostly one thing, `0x3F` band `0xC0` on arch 12, and
+it is hardware state rather than config structure. Section 102 read it and it stayed placement;
+**section 103 read the state machine behind selector 17 and it did not**, which is 68 of the band's
+106 uses per config. The band is three
+fields, `{ bit 0; bits 1 to 3; bits 4 to 8 }`, and three mechanisms: selector 17 sets the display's
+light level, from four levels, three thresholds and a fade rate that base slot 15 states; selector 16
+enables an I2C device at address 0x60 through `LATC` bit 5; and 0 to 12 set that device's thirteen
+channels from a two bit table in base slot 15's twelve spare bytes. **Which device it is is not
+established**, section 106, and the firmware never switches it on: only a config does. Two closures: the corpus uses **exactly** the fifteen
+selector values the handler accepts out of thirty two, and the light level is an index into the 27
+distinct `CVREF` voltages the part can produce, a table derivable from the datasheet. **Do not expect
+what is left to move by comparing configs**: the band's uses are identical in both One configs despite
+one having five devices and eight activities and the other one and one.
+
+**The two biggest items turned out to be things the remote does, not things a config describes.**
+`0x75` is the **beeper**, four tones from 461 Hz to 4.7 kHz, gated by `0x3F` high byte `0xF3`; and
+`0x07` high byte `0xF8` **steps a date** held in state variables 3, 5 and 6, which are therefore
+firmware defined and must not be reused. Sections 73 and 74.
+
+**Read a dispatcher, not one handler at a time**, and **count who uses an opcode before choosing
+which firmware to open**. The second rule is new and it cost three misreadings in one section:
+`0x73` and two `0x3F` bands were all read on arch 14 and all used only elsewhere. One query says
+which image to open.
+
+Above `0x65` the opcode is the instruction and the binary search at `0x0EC8E` names a handler for
+each; `0x80 | n` is one instruction with a seven bit field, a write into state variable `n`. **Below
+`0x65` the operand carries the rest of the opcode**, in bands: `0x1F` is a register machine, `0x07`
+thirteen operations with no argument, `0x0F` peripherals and diagnostics, `0x3F` four bands one of
+which is a six byte instruction. **`0x3F`'s bands are the only structure in the format that is not<!--superseded-->
+one table across architectures**, so they must not be ported. Nor may `0x0F`'s, section 139.
+
+**Below `0x65` the dispatcher tests ranges rather than those four values**, section 108, so `0x20`
+behaves exactly like `0x1F`; the corpus only ever emits the canonical four, which is why reading it as
+four exact cases never showed up in a number. **Three structures are not one table**, sections 107 and
+139: `0x3F`'s bands, the whole opcode block `0x65` to `0x6E`, which only arch 14 implements, and
+`0x0F`'s bands, whose table was read from arch 12 (Harmony One) and arch 14 (Harmony 600 and 700) and
+answered for arch 9 (Harmony 525) too, calling a call a no-op twelve times per config. Arch 9 and arch 12 test each of those ten opcodes in
+the same ladder and branch to the dispatcher's exit, and their configs never emit one. So the shift,
+the boolean operations, the device record writer and the **modulo** are arch 14's alone, while the
+multiply and divide just above them, `0x78` and `0x77`, are everyone's. `0x6F` belongs to nobody: it
+tests the accumulator and returns from both arms, on all three architectures we hold firmware for.
+
+The byte accounting has **no architecture sized remainder left**. It used to name two: 5437 bytes<!--superseded-->
+in the arch 12 safe mode container, which was one font set the reader had cut to a single glyph,
+section 78; and 25819 on arch 9, which was infrared class 5 and is section 82. Section 83 then took
+the six shapes that were left in every container down to three: base slot 0's frame is `length + 2`
+because the terminator sits outside the field, an empty counted array is still an array, and the 4
+or 34 bytes above base slot 7's table are **base slot 8's leading action list**, which also turned
+up that every mode page's list is inside base slot 8's section. Section 84 read the last three and
+two more: a screen program carries a `SCREEN_END` even where a jump means nothing reaches it, which
+was the whole arch 8 family of 49 to 64 single zero bytes; base slot 3's section is three bytes
+longer than the clock record and base slot 17's is two where it names the picture bank; the key
+table's extent is its mode record's, and an empty record is the **wide** form; and twelve arch 12
+bytes belong to base slot 15 and to no group, by position rather than by reading. **Those twelve are
+read now**, section 103: group 9 continuing past the six entries its header declares, four bytes as
+one more pair of device levels and eight as a table of two bit fields, with no remainder. **And they
+are claimed by reading now too**, which took a year longer than reading them: the accounting kept a
+`slot-15-spare` owner filling whatever was unclaimed between the lowest group and the pointer array,
+so zeroing any group's entry count let the catch-all absorb what the group stopped claiming and the
+report still said 100.00% with no gap and no overlap, over 32 bytes on a Harmony One and 28 on a
+Harmony 600 and a Harmony 880. A claim made because a run was left over cannot fail, which is the
+same defect as an unfalsifiable test and it sat inside the number that measures M2.
+
+**Every user config is accounted for to the byte**, sections 66, 67, 75, 82, 83 and 84, with zero
+overlaps in all nineteen containers. Not 100.0% to one decimal, which it reached a section earlier:
+nothing unattributed at all, in eighteen of the nineteen containers. The last
+structure was a pool of tagged lists packed end to end, one per mode page plus one per base slot 9
+set, bounded below by a mode entry's end and above by the lowest address another reader names.
+That completes the first two of milestone M2's three parts on every architecture. **The exception is
+`h525_safemode_ahcm`**, the arch 9 safe mode container, at 98.2% after section 85, which corrected
+two arch 9 readers that every other container agreed with: opcode 22 takes **one** operand and not
+eleven, so the picture belongs to the opcode 3 after it, and a monochrome picture row is padded to a
+whole byte. Both were invisible until a container turned up with an odd width and four instructions
+in an order the corpus had never carried. Its last 283 bytes are four runs nothing points at, named
+in section 85 and deliberately unclaimed.
+
+**The third part exists and round trips**, `packages/codec/src/emit.ts`, `make emit`. `rebuilds` is
+the mirror of `claims`, owner name for owner name, and **every owner the accounting claims is
+rebuilt**; the bytes come back identical on all nineteen containers and **the residue copy writes
+nothing at all** on eighteen of them, since every byte is now written by a rebuilder. It builds into
+a buffer
+filled with `0xA5` rather than into a copy of its input,
+because **an emitter that starts from a copy passes a round trip test while writing nothing at
+all**, so the tests that carry weight are the negatives.
+
+**The number has a depth, the same way `actions.ts` does.** `framed` bytes come from typed fields,
+5.5% to 38.3% depending on the sample; `carried` bytes came out of a reader as an opaque run, and
+that is nearly all of a config, because **a glyph and an encoded picture cannot be re-encoded from
+their pixels**: the encoder chose where to skip and where to emit literals and several encodings
+draw the same image. **Do not treat moving those bytes as the obvious next job**: what a picture
+means is already read, so framing the body would move the number 60 to 80 points without anything
+becoming clearer. What it would buy is the ability to **change** an image rather than reproduce
+one, which is a product question. `docs/roadmap.md`, milestone M2.
+
+**Base slot 0 is read**, section 77, and it was the emitter that found it worth reading: it was the
+one section whose bytes the accounting counted while nothing inside it had ever been named, because
+its `0xFEED` frame states its own length. It is a list of `0xA7` framed nodes, `u8 tag; u16 4 +
+len(name); u16 level; u16 index; char name[]`, and **level 1 names base slot 13's state variables,
+entry by entry**. What opened it was the arch 9 safe mode container, whose first node is not called
+`Root`: `FRAME_PROLOGUE` was never a prologue, it was the first node, and two of its nine bytes were
+that node's own length.
+
+**Every device in the corpus has its name, section 126**, 63<!--fact:devices_named--> of
+63<!--fact:devices_total--> in 15<!--fact:user_configs--> user configs, and the route is ASCII rather than pixels. Base slot 0
+names no devices: a device's label is a **prefix** of a state variable's name, `<label>_<property>_<values>`,
+where a name belonging to the config has a **number** in the property's place instead, which is the
+discriminator. What ties a label to an infrared group is base slot 13: the variable's transitions carry
+one action list instruction, and for a `Power` or `Input` variable that list is the one that sends the
+code, so `0x7D`'s own operand names the device. 102 variables reach exactly one group and **none reaches
+two**. Behind that, elimination for 5 and a mode's drawn title for 3, in that order because the title is
+the label on arch 9 and arch 14 and a command name on arch 8 and arch 12. Two closures: the ASCII label
+is also **drawn**, 53 of 55 exactly, which is two readers with no shared code agreeing; and on arch 9 and
+14 shifting the pairing to the next group breaks 16 of 16. `make devices`, and the column to watch is the
+source rather than the total.
+
+**The shared walk from a list to the groups it sends to must not be memoised**, section 126, and only
+arch 14 could show it: a nested walk stops at whatever the outer one had visited, so caching it lets a
+list inherit a truncated answer. Arch 8, 9 and 12 carry `0x7D` directly and passed; arch 14 emits
+`{0x7F, 0x7D, 0x7C}` with the send one list down, and every arch 14 device lost its name at once, 63 to
+47.
+
+**And `0x7D` answers two more questions the application asks**, section 126: **what a button sends**,
+3106 bindings across the corpus and **every one of them a press**, 85 of those macros of several codes in
+an order that matters; and **which devices an activity drives**, the groups its base slot 9 set
+addresses, one to three per activity. `inventory` composes devices, activities, the build timestamp and
+the idle value into one object, which exists so that FreeHarmony does not assemble it and become the
+second copy.
+
+**A config states its devices and its activities, section 86, which is what the application needs
+before it can show anything.** A level 1 name is `<label>_<qualifier>_<values>` and `values` is its
+variable's highest value plus one, 250 of 250, which settles the field section 60 could not explain.
+Every container with a name tree names exactly one `CurrentActivityState`, whose highest value is
+the **number of activities**, and **a device is an infrared group**. The calibration is section 58's
+deliberate pair: a config Logitech compiled for one device and one activity reports one and one, and
+the arch 9 safe mode container reports zero activities. The record's eight byte values are
+transitions, `u8 zero; i16 from; i16 to; { u16 operand; u8 opcode }`, and the instruction is an
+action list one. `packages/codec/src/inventory.ts` is the application's view of it.
+
+**The names are the user's own equipment, so no brand out of a contributor's config is quoted**, in
+a document or in a test: counts and shapes. The generic role words the generator emits are structure
+and appear freely, and the one brand in the repository is from our own sync, section 58.
+
+**What the pool holds is settled too**, section 69: each non slot 9 list is a second copy of one
+mode page's own list, the k-th copy belonging to the k-th page in mode table order, identical in
+meaning except that opcode `0x7F`'s operand names a different base slot 10 entry holding an
+identical action list. Nothing reads a copy, and an emitter must still reproduce it. Section 68 got
+this wrong twice by pairing the runs by address rather than by mode table order and by comparing
+them byte for byte.
+
+**Arch 8 closed on 8 August 2026 and needed no firmware to do it**, section 75. Its whole
+remainder came from one byte: an infrared record header is `12 + 9 * count` with the count at
+`+0x0B`, not the flat 21 bytes section 61 read, and 37 records of that contributor's four configs
+carry a second pointer group. That one number explained three separate gap families at once, 37 short
+headers, 37 unclaimed blocks and the 37 gaps between them, and none of the counts moves when the
+config grows from 234 records to 462.
+
+**What that second group holds is read now, and the 37 was never a property of arch 8**, section 134.
+It is the same code with **one biphase bit cell inverted**, a mark and a space of equal duration
+exchanged at a fixed offset, in every block pair of every one of the 37; the records read as RC6 mode 6
+at 36200 Hz, they all sit in **one device group**, and the two arch 8 configs contributed later have
+**zero**. So the count follows the equipment. Two things to carry from it. The test asserting the
+count was called `every arch 8 config has exactly 37 two group records`<!--superseded--> and its body
+looped over four configs of one contributor, so **its title was false while it passed**, which is
+section 75's own falsifier met and unnoticed. And it was found by a decoder **declining** to read
+those records rather than by looking for it, which is the second time a rule survived because the
+corpus agreed with itself.
+
+**Read the whole gap list before choosing a target**, and this is the second finding it produced:
+`make coverage --detail` used to print only the largest few of 128, and both this and section 66
+came from asking for all of them and noticing families with the same count. **It prints the
+families now**, length times count sorted by total bytes, computed over every gap rather than the
+listed ones, so the next one of these does not need the hand count.
+
+**Arch 9's class 5 infrared is read**, section 82, out of the 525's own firmware: `h525_code` is its
+whole internal program flash, loading at `0x0000` with the application from `0x1000`, and its SPI
+primitive at `0x07F8E` is arch 9's single config read choke point, the analogue of arch 14's
+`0x1B9AC`. Class 5 turned out to be **class 1 with a dictionary**: a header pointer names a body of
+one byte indices, the body names a symbol table, and the table names short pulse blocks that every
+code with that pulse pair reuses. One body expands to a textbook NEC frame, repeat header included,
+which is the closure. Every field width is a literal in the firmware that reads it.
+
+**Disassemble it with `--part 4550`.** The 525 is a PIC18F4550 and the default register map is the
+67J50 family's: 65 of 139 addresses disagree, the whole CCP block moves, and the infrared carrier
+setup reads as a duty cycle write instead of a PWM mode write. The wrong map produces a listing
+that is readable and wrong, which is the failure this project has recorded twice before.
+
+**Its safe mode config was the next piece of work and it was bigger than it looked.** Found at
+flash `0x818000`, it parses, its checksum recomputes, and it contradicted six claims the corpus
+asserts. **All six are re-derived and not one of them was a fix**, sections 77 to 79. Four became
+findings: base slot 0 is a list of named nodes, and a font set's second header byte is the **first
+glyph code** with the count not keyed on the architecture, which took the arch 12 safe mode
+container from 39.1% attributed to 99.6%. Two dissolved on measurement: base slot 1's extent is the
+gap to the next pointer like every section's, and the log area's range obeys every rule section 47
+states once it is not measured against a chip size taken from the same field.
+
+**It is in the corpus now**, `h525_safemode_ahcm`, and in the corpus wide claim lists rather than
+excluded from them, where it is the counterexample two of them name: its font sets start at code 32
+and declare four counts. **Excluding it would have left the corpus agreeing with itself**, which is
+the condition that hid the first glyph code, and section 85 is the same lesson twice more: it holds
+the only picture whose width is not a multiple of eight and the only opcode 22 that is not followed
+by an opcode 3, and each of those broke a rule every other container had confirmed. Three arch 12 assumptions came out of `packages/usb`
+on the way: the version reply was matched as a whole byte, its length was fixed at twelve, and the
+region validator was hard coded. `docs/memory-map-525.md` holds the predictions against the
+measurements.

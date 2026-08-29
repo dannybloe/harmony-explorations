@@ -100,36 +100,17 @@ designing around its absence.
 2. **Read Logitech's own client and the firmware, both, before deriving anything.** Danny's decision
    of 28 August 2026, and it is an ordering rather than a licence change: before working out how a
    remote is driven, what a packet looks like, which call to make or what a field means, **look in
-   their code and in the image**. Neither is the junior partner, and Danny said so explicitly the day
-   the rule was written: the firmware is as important as the client and often more. What the client
-   is, is **cheap and legible**, so it is the fastest place to find out whether an answer exists at
-   all, and it says outright what the firmware only implies. That is a reason to open it early, not a
-   reason to skip the image. It is the cheapest
-   source there is and it states outright what the firmware only implies. The reason is measured, not
-   argued: nineteen days of an unread protocol map, section 197; six rounds of hardware guessing a
-   framing that was one function of theirs, section 200; and a wrong reading published in four
-   documents while the source refuting it sat in the lab, section 202. This entry used to put the
-   firmware first and admit the client only where the firmware could not settle something, which made
-   the cheap check the last resort.
-   **The client to read is MyHarmony**, `../lab/work/myharmony/src/`, which is 1999 files of C#,
-   the whole application decompiled. Read that rather than the compiled assemblies beside it, since
-   section 202's wrong reading came from finding a method name in a DLL and taking adjacency for a
-   call site. **Harmony Desktop's web application is not the reference**, on Danny's instruction the
-   same day: everything the newer one does MyHarmony does too and better, so a reading off it
-   describes the hub generation rather than the remotes here. Its mirror keeps two uses nothing else
-   covers, the file family's per skin protocol templates and the parameter encoder, both confirmed
-   against hardware.
-   **Reading the client does not make it right, and that half is unchanged.** The USB protocol is
-   still derived from the **firmware**, with `concordance/specs/protocol.txt` as corroboration and
-   concordance kept as a cross-check oracle, which is also technically necessary since concordance has
-   two known defects on these architectures. Where the firmware or the hardware can answer, that is
-   the citation; where neither can, the fact is marked client sourced per fact and may still be acted
-   on. Its arch 8 constants contradict four real configs, so it is a generator of hypotheses and not
-   an authority. The weighing, the legal basis and the ledger of everything currently believed on the
-   client's word alone are in `docs/host-client.md`.
-   **What does not change is what may be copied.** Their code stays in the private lab, nothing of it
-   is quoted or republished here, and no identifier, comment or structure of theirs travels into this
-   repository. That is a copyright rule and it is untouched by the ordering above.
+   their code and in the image**. Neither is the junior partner. What the client is, is **cheap and
+   legible**, so it is the fastest place to find out whether an answer exists at all. The client to
+   read is **MyHarmony**, `../lab/work/myharmony/src/`, decompiled to C#, rather than the compiled
+   assemblies beside it or Harmony Desktop's web application.
+   **Reading the client does not make it right.** The firmware is still the authority and still wins
+   a disagreement; where neither firmware nor hardware can answer, the fact is marked client sourced
+   per fact and may still be acted on. **What may be copied does not change**: their code stays in
+   the private lab, and no identifier, comment or structure of theirs travels into this repository.
+   The argument, the measured cost of the old ordering and the legal basis are decision 9 in
+   `docs/roadmap.md`; the ledger of what is believed on the client's word alone is
+   `docs/host-client.md`.
 3. **TypeScript owns the config codec, Python stays reverse engineering only.** One codec, in
    the application's language, for the same reason there is one opcode table.
 4. **Spec and libraries together, product apart.** The documents, the research tooling and the
@@ -162,152 +143,10 @@ designing around its absence.
    designer is active in harmony-decompiler discussion #1 and is a privileged source, held in
    reserve for when we are genuinely stuck.
 8. **Version 1 of the application is read only.** Write code exists behind a flag that is off.
-9. **`docs/findings.md` stays one file.** Splitting it is the obvious idea at 14957 lines and it was
-   measured and rejected on 8 August 2026, so do not re-derive this. It **costs no tokens**, because
-   it is never loaded whole, only grepped and read in ranges; the per-session cost was `CLAUDE.md`
-   and that has been cut. **No cutting line is better than another**: 140 references run between
-   sections and both an era split and a subject split push about 40% of them across a file boundary,
-   so the correction chains that give the document its value do not survive either. And it is **the
-   one document that has never drifted**, because every section in it carries a regression test,
-   where the eleven contradictions the audit found were all in summaries. What would reopen it is
-   size alone, at roughly 5700 bytes a section: if it outgrows rendering, split by era, keep section
-   numbers global, and keep the index at `docs/findings.md` so the 159 references that name that
-   path stay correct.
-
-Scope is the Harmony One (arch 12) and the Harmony 600 (arch 14), the remotes on the bench, with
-the 700 2.8 image as the arch 14 reference. **Arch 9 is a target**: the Harmony 525 arrived on 8
-August 2026, its config and its firmware are in the lab, and `docs/memory-map-525.md` records what
-was predicted before it was connected against what it measured. **It will not get a known answer sample**,
-sections 135 and 136: the live service accepts a skin 22 remote record and names it a Harmony 525, so
-Harmony Desktop's refusal to see one is the client's, but the compile is accepted and then ends in a bare
-`status='Error'`. **The reason is confirmed and it is a policy field**, section 145: a stated per product
-`IsEnabled` flag, false for skin 22, whose true set is exactly the client's own supported list, 19 skins
-of 120 with no exception in either direction. The earlier reading added "minus the two hubs"<!--superseded-->,
-which was an artefact of comparing 27 records against 19 skins rather than skins against skins. **And no other model can be
-tried**, because `ValidateRemote` refuses a synthetic serial, so registering a remote nobody here owns is
-not possible: an 880 or an 890 needs the hardware, and the contributed dumps carry no serial. Other models are iterated on later.
-
-**Arch 8 has firmware now and is still not a target**, sections 113, 114 and 116: two application
-images of one build, an 880 and an 885, contributed on 10 August 2026, plus **two bootloaders**, plus
-eleven configs and an arch 8 safe mode container found inside the application firmware itself. The
-bootloaders carry the reset vector and hand both interrupt vectors to the application, so arch 8 is
-the only architecture here whose whole program flash is accounted for. It stays a control for container claims, and what the
-images bought is a **counterexample supply**: they broke the skin rule, they gave `GET_VERSION` field 6
-its fourth value, and they showed that "whatever in the lab table parses as a container" is not a
-corpus. Reach for them when a claim holds on every architecture here, because a claim that nothing can
-contradict is the failure mode this file warns about throughout.
-
-**Arch 10 has a known answer now and still nothing reads it**, sections 115, 117 and 178. A Harmony
-895 arrived on 26 August 2026 with its contents stated by its owner, six devices, which is the
-calibration case the slot mapping search never had. It **refutes** the insertion model, though **not for the reason section 178 gave**, sections 181
-and 182: that argument needed the Harmony 895's base slot 5 to hold six entries because its owner
-states six devices, and the 895 turns out to have **no infrared records at all**, so the premise fails.
-The real reason is that arch 10 carries **nineteen** base slots and four insertions rather than twenty
-and three, because **base slot 0 is absent**: raw slot 0 holds the architecture record, `0a 0a` plus
-the skin, so **an arch 10 config does state its architecture and it is 10**, skin 19 for a Harmony 890
-and 23 for a Harmony 895. Seven base slots are anchored by content, base 1 to raw 0, 3 to 4, 5 to 6,
-7 to 10, 17 to 20 and 18 and 19 to the trailing NULLs, and **the mapping is determined since section 183**
-and corrected in section 184: fifteen base slots are present, five are absent and eight raw slots are
-not base slots at all, per the paragraph below. The anchor that closed it is base slot 10's **packing closure**, that consecutive table entries
-sit `1 + 3 * count` apart with the addresses coming from the table and the counts from the lists: on both
-arch 10 containers exactly one slot scores like arch 8's, raw 12, with the same four breaks, where every
-other array scores near zero. That forced base slot 9 onto raw 11, twelve tagged lists and 323 bindings
-against the Harmony 880's twelve and 322, and left base slot 8 nowhere to go. **Section 182's own
-arithmetic was wrong about five slots** and the lesson is the instrument: it assumed a shape for the
-difference, insertions only, and one free parameter against seven constraints looked conclusive and was
-not. **The mapping is adopted since section 184**, on Danny's call of 26 August 2026, and the two objections
-it waited on were both settled: `SLOT_MAPS` is a table per architecture now, so a base slot can be
-**absent**, with the four insertion architectures still derived from `INSERTED_SLOTS` so their alignment
-is stated once. `archSlot` **throws** for an absent base slot rather than returning a number, which is
-the section 178 rail relocated rather than removed, since a number would hand a reader the neighbouring
-section. `INSERTED_SLOTS` still gets no arch 10 entry and never will.
-
-**Switching it on corrected the mapping it adopted, and the four rows placed by order were the risk in
-exactly the way section 183 named**: base slots 4 and 6 confirmed on content, base slots **13 and 14
-refuted and absent**. So the standing figures are **fifteen** base slots present, **five** absent, 0, 2,
-8, 13 and 14, and **eight** raw slots that are not base slots. Base slot 13's refutation is the strong
-one, because section 130 gives it the best closure in the container: its first seven records hold the
-build timestamp's own fields, and no run of pointers in either payload has targets carrying those seven
-values, at any field offset and either width, where an arch 8 container hits exactly once. **The lesson
-is section 183's own sentence turned around**: a slot with only one home under a monotone mapping is not
-thereby a slot that is there, and the argument that placed four rows equally permitted the two absences.
-What separated 4 and 6 from 13 and 14 was reading the bytes.
-
-**What it bought**: the screens, the button bindings, the mode pages, the action lists with arch 8's
-exact packing signature of four breaks, and the **drawn text**, 5634 of 5634 glyphs on the Harmony 890
-and 6486 of 6490 on the Harmony 895, which name the same four activities and four appliances as the
-arch 8 Harmony 880 from the same household. **What it did not buy is the device names and the activity
-count**, and that is structural rather than pending: both routes need base slot 0's name tree, which
-arch 10 has no slot for, or base slot 13's transitions, which is the slot just refuted.
-
-**The byte accounting sits at 99.3% and 97.2% with zero overlaps**, where the corpus is at 100%. Section
-185 read the biggest remaining family, 18 runs of 111 bytes and 21, and they were **mode page screen
-programs** blocked by one table entry: screen opcode 22 is the one opcode whose operand width is per
-architecture and arch 10 had none, so 49 and 34 programs were abandoned unread along with a fifth of the
-drawn text. **The instrument is the thing to carry from it, not the width**: measured off the coverage
-percentage, width 2 gives the Harmony 895 a clean 100.00% and is wrong, because a program read short
-overruns and claims what follows, 308344 bytes of overlap. Measured per program, asking whether a decode
-lands exactly on the run's own end, width 3 gets 49 of 49 and 34 of 34 and the others get 0 and 1. A
-percentage is a sum, and a sum cannot be falsified by one term being wrong in the generous direction.
-What is left is runs with no family, the largest a single 7187 bytes on the Harmony 895, plus the eight
-raw slots that are no base slot, of which three are the same size on both containers and therefore
-fixed structures.
-
-**The unprompted confirmation is the best evidence the mapping is right**, and nothing was looking for
-it: with the clock routed through the map, three of one contributor's configurations, two remotes and
-two architectures, were built inside fifteen minutes of one afternoon, the Harmony 880 at 21:25:34 and
-the two Harmony 890 reads at 21:37:44 and 21:40:26. The arch 8 date was already believed and the arch 10
-ones come out of a slot the arch 8 map does not use. What does read on arch 10 without any mapping at
-all is everything the header
-or the marker locates rather than a pointer slot: the framing, the checksum, the base anchor, the
-key table, which is how section 177 matched a hand probed circuit board without any mapping at all,
-and since sections 179, 180 and 181 the **picture bank**, the **font sets** and the **infrared
-records**. Those two were section
-178's own prediction and it paid off the same day: the bank is found from the trailer's position alone,
-so a Harmony 890 and a Harmony 895 now state their display, **128 by 160**, the same as a Harmony 885,
-with the same ten distinct picture sizes where a Harmony 600 and a Harmony One share none of them; and
-their eight font sets are found by requiring every pointer to decode into a glyph that tiles exactly,
-which names 213 of 237 glyph shapes against the arch 8 alphabet and **0** against the Harmony One's.
-A Harmony 890's whole
-infrared database reads, 300 codes with every duration block decoding, and a Harmony 895 turns out to
-have **none**, which is proven rather than unfound. **The common mechanism is the thing to reach for,
-not the four results**: a structure that refuses to decode when misread can be located by trying every
-offset, so it needs no pointer slot, and a record is the cleanest case because it **states its own
-address**. The shape filter around a hit is not optional: an ascending pointer table crosses the self
-pointer line dozens of times, which is the misaligned ascending table pitfall again, and 198 such hits
-in the Harmony 895 look exactly like a result. It is also
-**not** progress towards the mapping, and the alphabet was not the words either, since a string's address
-comes out of a screen program: that stood until the mapping was switched on and it is dead now, per the
-paragraph above. Section 179's own next step was **wrong** and
-measuring it cost nothing: the font table is not at the bank's lower edge, it is 1918 to 48385 bytes
-below it.
-The earlier state of this entry, and the two Harmony 890 samples it describes: two Harmony 890
-configs, format 1.7, 23 pointer slots, both based at flash `0x030000`. The container framing
-verifies and **the slot mapping is not a relabelling of the twenty**, which is stronger than the
-"unknown" this said for a day: all 1330 placements of three insertions were scored against
-seventeen readers and the best reaches 34 of 47 where arch 8, 9 and 14 each score 47 uniquely, with
-five readers satisfied by no mapping at all. So every reader stays gated, and **adding an entry to
-`INSERTED_SLOTS` to ungate them is the one thing not to do**: a guessed mapping turns twenty
-refusals into twenty plausible wrong answers. Two things the samples do say: the clock record is raw
-slot 4's target, so arch 10 inserts a slot below base slot 3, and no `0xFEED` frame validates
-anywhere in either payload, so an 890 is not known to name its devices and activities at all.
-
-**The container's base address is anchored on the clock record, not on the end marker**, section
-117, and that correction is the instructive one in this file. The old
-`base = end_addr - offset_of_end_marker` was right on 23 of 24 containers and 864 bytes wrong on the
-second 890, and it was **circular**: `end_addr_points_at_end_marker` tested the assumption the base
-had just been computed from, so no input could fail it. A wrong base does not error, it reads the
-neighbouring bytes. The anchor is one candidate per pointer, filtered by `0x1000` alignment, and
-exactly one survives on 26 of the 27 containers here. `packages/probe` had a second copy of the old
-reading, which is the two-diverging-derivations state this file warns about below, and it now calls
-the codec's.
-
-**The 27th is where the anchor refuses, and that is the behaviour to keep**, section 122: a second
-read of the same 890 has its clock record 54 bytes off its pointer, so no candidate is aligned and
-none survives. The fallback then returns an unaligned base and the circular check pronounces the file
-consistent. So the refusal is the finding and the fallback is the warning, and **why that file is
-damaged is now read**: an arch 10 read duplicates whole 54 byte chunks, 16 in the first read of that
-remote and 2 in the second, which is what section 117 measured as a generator error.
+9. **`docs/findings.md` stays one file.** Splitting it is the obvious idea at 15000 lines and it was
+   measured and rejected on 8 August 2026, so do not re-derive it. It costs no tokens, since it is
+   never loaded whole, only grepped and read in ranges. The measurement, the two candidate cutting
+   lines and the one condition that would reopen it are decision 13 in `docs/roadmap.md`.
 
 ## The two repositories
 
@@ -716,236 +555,58 @@ Read paths only, for now. These devices are irreplaceable. Note that patching a 
 architecture constant to fix the firmware dump also redirects `erase_firmware()` and
 `write_firmware_to_remote(direct=1)`, so a patched build must be treated as read-only.
 
-**This section used to say "and Logitech's recovery servers are gone". That is wrong and the
-correction is instructive.** Measured on 7 August 2026 from the bench machine:
-`sl.dhg.myharmony.com` serves live assets over CloudFront, `svcs.myharmony.com` resolves to an AWS
-load balancer named `prod-auto-lb-2` and answers, its certificate was renewed on 5 July 2026, and
-we can sign in with our own account and have a connected remote recognised. What **is**
-discontinued is the **classic** service:
-`members.harmonyremote.com` serves a page titled "Logitech Harmony Remote Software Discontinuation",
-and that is the 7.x software the Harmony One originally shipped with. Two services, one gone and one
-not, and the project had collapsed them into one sentence.
-
-The rail does not change and the reason it does not is worth stating: a remote is still
-irreplaceable and the service can be withdrawn at any time without notice. This used to add "and
-whether it still compiles a new config is not established". **It is established, and it does**:
-section 58, a config compiled on 6 August 2026 for a device chosen that day and written to the
-spare One. So the premise was wrong twice over, and the rail rests on the half that was always
-carrying it. `docs/findings.md` sections 56 and 58.
+**Logitech's current service is alive and that changes nothing here.** `svcs.myharmony.com` answers,
+recognises a connected remote and still compiles a config, section 58; what is discontinued is the
+**classic** service the Harmony One originally shipped with. This section used to say the recovery
+servers were gone, which collapsed two services into one. The rail rests on the half that was always
+carrying it: a remote is irreplaceable and a service can be withdrawn without notice.
 
 Writing is a later milestone, and when it arrives the rails live in the code rather than in a
 document:
 
-* **Firmware is never written.** `WRITE_FLASH` is restricted to the config region for the
-  detected architecture (One `0x040000`, 600/700 `0x030000`) and a write outside it is refused by
-  the library, not by the user interface.
-* Four remotes are on the bench: a programmed Harmony One, a Harmony 600, a **spare
-  Harmony One**, and a **Harmony 525**, which is arch 9 and therefore has no write target either. The spare is the only write target until a write has been
-  demonstrated repeatable on it. The spare is arch 12, so **arch 14 has no write target at all**
-  and writing to it stays blocked until a second arch 14 remote exists. Reading arch 14 is
-  unaffected: the 600 on the bench is arch 14. **The spare is no longer blank**: on 7 August 2026
-  Logitech's own software synced a config to it, section 58. Its original contents are in the lab,
-  byte for byte and verified against the device, so anything that wanted a virgin arch 12 remote
-  wants that dump rather than the unit.
-* No write proceeds without a verified original dump of that exact unit in the lab, and without
-  the config's `INTENDEDVERSION` matching the connected remote's protocol, skin, board and flash
-  id.
-* Every write is followed by a `READ_FLASH` of the same range and a byte comparison. A mismatch
-  is a failure, not a warning.
-* Recovery paths first, and **check what the file actually holds before trusting its name**. On
-  arch 12 `*-safe.bin` is flash `0x000000` to `0x010000`, which contains the safe mode `GSPM`
-  container at `0x002000`, and the One's has been verified against the device byte for byte. On
-  **arch 14 the file called `-safe.bin` is not a safe mode image at all**: the 600's is the
-  application firmware from program `0x9000`, truncated at 64 KiB, byte identical to
-  `600-0.2-code-base0x9000-TRUNCATED64k.bin`. Its real safe mode is the 24320 byte image at
-  internal `0xFE+0x1000`, which verifies its own checksum and was first read in August 2026. A rail
-  that says "restore from the safe dump" would have restored the wrong thing on arch 14.
-  The hardwired reset key combination at `0x19120` is the other path.
-  **Entering safe mode on arch 9 destroys the application firmware**, section 118, measured on the
-  bench 525 by reading its internal flash before and after: the bootloader is byte identical, the
-  28 KiB application is gone, and an image under 10 KiB sits in its place with everything above
-  `0x3800` erased. The part has 32 KiB, so there is no room for a second image **in internal program
-  flash** and safe mode has to be copied over the application. **So safe mode is not a free fallback on
-  arch 9 and must never be entered as an experiment**: a power cycle does not leave it, and leaving it
-  needs the application copied back, which is why the rail demanding a verified dump of that exact unit
-  is what separates a recoverable remote from a lost one. Arch 14 keeps both images resident in
-  internal flash and does not have this problem. **On arch 9 both images are resident too, in external
-  flash, and the internal region is a copy of whichever the bootloader last put there**: the
-  application at `0x810000`, read twice and matching the internal copy byte for byte, and the safe mode
-  image at `0x800000`, whose five version accessors are exactly what a stranded 525 reported. That
-  second identification is the calibration worth remembering, because the label was written from the
-  header on 8 August and the device confirmed it on 11 August. So nothing is transferred from a host to
-  enter safe mode and nothing has to be to leave it. What tells the bootloader which image to install
-  is **byte 0 of the on chip EEPROM**, section 119, and `0x02` selects the application: 1 and 5 request
-  safe mode, 2 requests the application, the bootloader marks 3 or 4 **before** copying, writes **6** on
-  success, and the running image consumes the 6 by writing 0 and putting a message on the screen. So 3
-  and 4 are in progress marks that make an interrupted install retry, and **0 is the resting value**, at
-  which nothing is installed and whatever is resident runs. **The address
-  space the protocol calls flash is a set of tagged windows and only one of them is flash**: on arch 9
-  top byte `0x00` is 32 KiB of internal program flash, `0x20` is 256 bytes of EEPROM, `0x40` is 2048
-  bytes of data memory, `0x30` is eight bytes, and `0x80` to `0x87` is the serial chip. Every bound is
-  a documented size of the PIC18F4550. So concordance's `FinishFirmware` byte is **confirmed from the
-  firmware and no longer client sourced**, and section 88's arch 9 rule was the validator's default arm
-  read as the whole rule, which is why `packages/usb` refused three regions the device serves.
-  `ARCH9_WINDOWS` carries them now. **A read only measurement refuted the first reading of the latch**:
-  the stranded 525's EEPROM byte 0 is 0, not the 3 predicted, so safe mode persists by being resident
-  and not by being reinstalled, and only the byte could tell those apart. **The recovery has been
-  performed and it worked**, by hand, on 11 August 2026, from the private lab script: the 525 came
-  back with software type 0, its version reply matching 8 August byte for byte, its application region
-  restored including two offsets that were erased flash while it was stranded, and its config intact.
-  Its screen said the upgrade was complete, which was observed **before** the firmware path that emits
-  that message had been found, and looking for what emitted it is what completed the state machine.
-  **This project must still not be what performs the write**: it has never written to a remote, arch 9
-  has no write target, and a first write should not install firmware on an irreplaceable unit.
-  **Safe mode has a published entry procedure and it is a cold boot key test**, section 118: charge,
-  pull the battery, hold Off, insert the battery while still holding, up to 30 seconds. So it involves
-  no config, no host and no USB command, which is why searching the running firmware for it failed.
-  The source is a third party repair business rather than Logitech, so **which key** it names is a
-  hypothesis of the same standing as an upstream finding, and **the cheap confirmation is read only
-  hardware on the spare One**. The mechanism itself is **read and closed**, section 189, and this
-  entry had it backwards for a fortnight: the arch 12 internal bootloader **does** test a key, and
-  saying it had "zero port reads so it does not test the key"<!--superseded--> came from a test whose
-  guard discarded the one instruction that reads, a `MOVFF`, because a `MOVFF` has no addressing mode
-  field. Section 87 had the right answer in `docs/findings.md` the whole time, so two sections of the
-  one document that has never drifted contradicted each other, each with a passing test.
-* **The Harmony One's bootloader is a USB flash programmer, and that is the recovery route**, section
-  189. It scans the keypad before anything else, over the external memory bus rather than through a
-  port; a byte of `0x0E` keeps it resident in a USB service loop that never returns, `0x1E` forces the
-  image above `0x1000` to run without validating it, and **every path that does not hand off converges
-  on that loop**, including the one taken when the image is gone. Twelve commands, `0x00` to `0x0A`
-  plus `0xFF`, identical on the Harmony 600 down to the instruction sequence of the erase, so it is one
-  programmer from one source rather than one reading. **It protects itself**: erase refuses any address
-  below `0x001000`, which is the bootloader's own end, and has no upper bound. **Unlike arch 9 it
-  copies nothing**, so entering recovery on a Harmony One destroys nothing and the Harmony 525's one
-  way door does not transfer. **The limit is per level and section 191 moved it**: the
-  **bootloader** writes only internal flash, through `EECON1` and `EECON2`, so it cannot restore a
-  config, and this file said that of recovery as a whole for a few hours. The **safe mode image** one
-  level up carries its own external flash programmer, 601 bytes byte identical to the resident library
-  at `0x01E018` the application calls, with the AMD command set and separate erase and program gates.
-  So a Harmony One **can** write the flash a config lives in. **And we can drive it, since section
-  192**: safe mode is not a second protocol, its dispatcher carries six of the application's seven
-  commands with the same command bytes and the same state numbers, absent only infrared capture, and
-  both flash commands reach that programmer. So the restore route needs no protocol work and what is
-  left is a rehearsal. The reassurance for a first write also
-  sits elsewhere and is structural: a damaged config cannot reach the bootloader or the image, so the
-  remote still boots and our own read path still works.
-* **A flash address is classified before it is used, and that is the write protect interlock**, section
-  192. One routine, three callers in every image where it is located, being the write, read and erase
-  handlers: a top byte of `0xFE` or `0xFF` means internal program flash page `top & 1`, a top byte below
-  the architecture's ceiling means the external medium, and anything else selects nothing. The ceiling
-  is `0x40` on arch 12 (Harmony One) and `0x20` on arch 14, measured on both the Harmony 600 and the
-  Harmony 700 images, so it states
-  the size of the medium, and the arch 12 figure is section 47's log area bound reached by a second
-  consumer with no shared code. **The interlock is a byte and it rests at refuse**, so a rejected
-  address is a no operation rather than a write elsewhere, and it **composes** with section 175's bit
-  rather than replacing it: that bit decides whether a write below `0x020000` proceeds and this routine
-  decides whether a request means that region, whose whole reach is exactly `[0x000000, 0x020000)`.
-  **On arch 12 the top byte is a page number and not an address**: it is written biased by three to a
-  register at external `0x020025` and then replaced by `0x13`, which leaves sixteen bits of offset and
-  is where the 64 KiB erase block comes from.
-* **The external flash programmer is at internal `0x01E000` and we have held it since section 22**,
-  section 191, which is where section 186's blind reviewer said the instruction "is not in anything this
-  project holds". True of the review packet, which deliberately excluded the internal pages, and false
-  of the repository, so **a blind reviewer's statement is scoped to the packet** and copying one out of
-  that scope is how a withhold list produces a wrong claim rather than a missing one. It also closes
-  section 186's other half: erase and program are separate gates, so **neither bench architecture erases
-  before it programs** and the caller erasing is measured on both.
-* The other two arch 12 measurements from section 118 stand: the safe mode image does read the
-  matrix, and the config base reaches `TBLPTRU` from a variable with no literal anywhere.
-* **A config cannot choose where the remote writes**, section 118, which is the measured answer to the
-  caveat that a config might make the runtime write to arbitrary flash including firmware. The path is
-  real, action list opcodes `0x65` and `0x66`, and section 108 read it. It is bounded three ways, all
-  in the firmware: five zero tests and two range tests that return rather than write, and a region the
-  firmware computes rather than the config declaring it. The structural half is stronger than the
-  bounds: **arch 14 writes over SPI to a chip its firmware does not live on, and arch 12, whose
-  firmware does share the mapped NOR with its config, implements neither opcode.** Scoped to three
-  architectures and to the action list language, and no config in the corpus emits either opcode.
-* **Flash is not the only write path.** `WRITE_MISC` selector `0x07` writes an arbitrary byte
-  into the data memory of a running remote over USB, the mirror of the RAM read that replaces the
-  emulator. **This said "volatile, so it cannot brick anything" and that was a claim about the
-  address**, section 139: the request carries a sixteen bit data address, and on this MCU family bank
-  15 from `0xF40` up is the special function registers, with `EECON1` at `0xFA6`, `EECON2` at `0xFA7`,
-  `TABLAT` at `0xFF5` and `TBLPTR` at `0xFF6` to `0xFF8`, which are a PIC18's self programming path.
-  Whether the firmware bounds the address is unread, so `assertRamWriteAllowed` bounds it below the SFR
-  page and checks the architecture, which it did not. Below that bound it is volatile and it still sits
-  behind the same flag. `ERASE_FLASH` takes an address and **no** count, so an erase
-  cannot be scoped by the caller, only refused. **How much it destroys is known now**: 64 KiB on
-  arch 12, so the rail requires a block aligned address and a whole block inside the region, and
-  the ceiling is `0x3D0000` rather than `0x400000` because the **stored application firmware**
-  sits inside the nominally writable region. Client sourced when adopted because it only refuses
-  more, and **the 64 KiB has a firmware reason since section 192**, since forcing the access window's
-  top byte leaves exactly sixteen bits of offset. `docs/host-client.md`.
+* **Firmware is never written.** `WRITE_FLASH` is restricted to the config region for the detected
+  architecture (One `0x040000`, 600/700 `0x030000`) and a write outside it is refused by the
+  library, not by the user interface.
+* **The spare Harmony One is the only write target**, until a write has been demonstrated repeatable
+  on it. Four remotes are on the bench: a programmed Harmony One, a Harmony 600, the spare Harmony
+  One, and a Harmony 525. **Arch 14 (Harmony 600) has no write target at all** and writing to it
+  stays blocked until a second arch 14 remote exists; **arch 9 (Harmony 525) has none either.**
+  Reading arch 14 is unaffected. The spare is no longer blank, so anything wanting a virgin arch 12
+  remote wants its lab dump rather than the unit.
+* No write proceeds without a verified original dump of that exact unit in the lab, and without the
+  config's `INTENDEDVERSION` matching the connected remote's protocol, skin, board and flash id.
+* Every write is followed by a `READ_FLASH` of the same range and a byte comparison. A mismatch is
+  a failure, not a warning.
+* **Entering safe mode on arch 9 (Harmony 525) destroys the application firmware** and a power cycle
+  does not leave it, so it must never be entered as an experiment. Arch 12 (Harmony One) copies
+  nothing and does not have this problem. **Check what a file actually holds before trusting its
+  name**: on arch 14 the file called `-safe.bin` is not a safe mode image at all.
+* **A config cannot choose where the remote writes**, section 118. The path is real, action list
+  opcodes `0x65` and `0x66`, and it is bounded three ways in the firmware; structurally, arch 14
+  writes over a chip its firmware does not live on and arch 12 implements neither opcode. No config
+  in the corpus emits either.
+* **Flash is not the only write path.** `WRITE_MISC` selector `0x07` writes a byte into the data
+  memory of a running remote, and its address reaches the special function registers, which on this
+  MCU family are a PIC18's self programming path; `assertRamWriteAllowed` bounds it below that page
+  and checks the architecture. `ERASE_FLASH` takes an address and **no** count, so an erase cannot be
+  scoped by the caller, only refused: 64 KiB goes on arch 12, so the rail requires a block aligned
+  address and a whole block inside the region, with the ceiling at `0x3D0000` because the stored
+  application firmware sits inside the nominally writable region.
+* **A new architecture refuses writes by construction**, because the gate is
+  `ARCHITECTURES_WITH_A_WRITE_TARGET` in `packages/usb/src/rails.ts` and it is `[12]`. Adding a read
+  profile does not add a write target and must not.
 
-**Reads of internal program memory restart a remote, so read only is not the same as harmless.**
-`READ_FLASH` with top address byte `0xFF`, when the transfer ends in a one byte chunk, makes the
-remote leave the USB bus. Reproduced deliberately on the spare One, then still unprogrammed: 5
-restarts, all self-recovering, config verified against the dump afterwards. Ruled out: ordering,
-chunk count, and the size 63 by itself. **The cause is read now**, section 94: the internal fetch
-primitive can only read a word, the loop emits two bytes and subtracts two, and its exit test is
-equality with zero, so an **odd** count never terminates and `CLRWDT` inside the loop keeps the
-watchdog from ending it. `packages/usb` refuses an odd count. Two earlier refusals were bounds
-around the hazard rather than the hazard, and the second would have let 65 and 127 hang a remote.
-**The trigger is read all the way through, section 96, and there is no address threshold.** The
-sender at `0x20394` has no bound, so an unterminated loop walks a write pointer up through data
-memory writing what it reads, and after 2247 bytes it overwrites its own counter. The read returns
-if and only if the flash byte it lands on, `0x8C7` above the failing chunk, is **even**. So the
-outcome is content, not location: the threshold at `0x010A56` reported earlier the same day was an
-artefact of which offsets the bisection tried, and it is corrected in place. The rail refuses odd
-counts everywhere, and the case that returns is no better, because it has already scribbled 2247
-bytes over the remote's memory.
+**Read only is not the same as harmless, and the two hazards are enforced in code.** An internal
+program memory read whose transfer ends in a one byte chunk never terminates and hangs the remote, so
+`packages/usb` refuses an odd count everywhere; `HARMONY_ODD_READ_EXPERIMENT` is the named door in
+`rails.ts` rather than a source edit. And a Harmony One occasionally strands after sitting idle on
+USB, which a battery pull clears and which nothing here explains.
 
-**A clean read only session does not strand a remote, and that is measured three times out of three.**
-On 10 August 2026 three rounds of one plain 32 byte read, then the cable out, each left the spare One
-**out** of USB mode and on its normal display. So version 1 of FreeHarmony needs to send nothing at
-the end, and the awkward choice section 95 posed does not arise. USB mode's exit is gated on the command state variable
-`0x284` being zero, section 99, and a completed `READ_FLASH` clears its own state, so a clean session
-leaves the gate open.
-
-**A hang does not strand one either, and it ends in a genuine device reset**, section 100, measured on
-10 August 2026: the remote reboots, comes up in USB mode, and **its clock is reset**, which a
-re-enumeration does not do. So data memory is reinitialised and no corruption survives a hang, which
-refutes the idle flag hypothesis by mechanism rather than by measurement. "A self-clearing restart" was
-the weaker name for two days.
-
-**What does strand one is unexplained, and it is PARKED**, decided on 10 August 2026 on the reading
-that it may be an anomaly of that one unit: the spare has been synced by Logitech's
-software, hung deliberately more than a dozen times and had its batteries pulled repeatedly, and it is
-the only remote it has ever happened to. **What reopens it is another occurrence, nothing else.** Three leads followed
-and all three dead: the disconnect on its own, falsified by three control rounds; the hang's RAM
-corruption, refuted by mechanism since the hang resets the device; and the charger to USB transition,
-which behaved like every other round on 10 August 2026. **Do not read that as a narrowing.** A bench
-session should expect a stranding, a battery pull clears it, and nothing here knows why. Untested and
-not leads until something suggests a mechanism: those two sessions ran dozens of commands where every
-round here ran one, and both followed hours of continuous bench work rather than a remote picked up
-cold. `session-end-control.ts [--from-charger]` is the instrument, and its charger mode refuses to
-start with the remote already on USB because its first wait is the measurement. **Do not re-derive the
-dead leads**: each cost a round of hardware, and if it happens again the two things to capture in the
-moment are how many commands the session had sent and whether the screen still said USB mode before
-anything was unplugged. Every previous occurrence lost both.
-
-**Both were captured on 23 August 2026 and the answer narrows it**, section 155, on a milder instance
-that recovered by itself. A Harmony One that had sat in USB mode for about forty minutes after a sync
-by Logitech's own software dropped its first `GET_VERSION` entirely; the screen said "USB Connected",
-this session had sent it **zero** commands, the cable was never touched, and the next attempt answered
-and read the whole config off it. Its clock excludes the obvious explanation by measurement rather than
-by argument: uptime was continuous with the boot that followed the sync, so **no reset happened between
-the failure and the recovery**. So a busy session is not the trigger and a disconnect is not the cure,
-and what the cases share is idleness rather than traffic. It is **not proof they are the same event**,
-since this one cleared on a retry and the earlier two needed a battery pull, and the unexplained case
-stays open. What changed in the code is one bounded thing: `getVersion` resends once when a remote that
-has never spoken says nothing, because otherwise a person plugging a remote in sees a hard failure that
-a second attempt clears.
-`packages/usb/bin/idle-flags-after-hang.ts` is kept for its baseline leg and because it is what
-demonstrates the reset. It needs `HARMONY_ODD_READ_EXPERIMENT=1`, which is a **named door** in
-`rails.ts` rather than a source edit: the odd count refusal was bypassed twice by patching
-`remote.ts` and patching it back, and a rail edited under time pressure with nothing in the tests to
-say so is worse than a door that announces itself. `0xE0 0x01` clears the gate and is not a reset, `0xE0 0x02` reboots, section 97;
-`packages/usb/bin/end-session-experiment.ts` exists, is gated by `assertSessionEndAllowed`, and is
-**deliberately unrun** because the control made it unnecessary.
-
-**A new architecture refuses writes by construction**, because the gate is
-`ARCHITECTURES_WITH_A_WRITE_TARGET` in `packages/usb/src/rails.ts` and it is `[12]`. Adding a read
-profile does not add a write target and must not.
+**`probe-remote` holds the measurements behind both**, and `recovering-a-remote` holds what a restore
+would consist of per architecture: safe mode, the bootloader, the flash programmer, the EEPROM latch
+and the write protect interlock. Both moved out of this file on 29 August 2026, where fifteen
+thousand characters of evidence sat in every session to describe two moments, connecting a remote and
+recovering one. **The rails above did not move**, because they have no moment to hook them to.
 
 ## Never write a bare architecture number in conversation
 
@@ -1022,17 +683,21 @@ All current documents report zero.
 
 ## Where things go
 
-```
-README.md                       front page, written for somebody looking for a replacement for
+```README.md                       front page, written for somebody looking for a replacement for
                                 Logitech's software rather than for a contributor: what the problem
                                 is, what FreeHarmony will be, where the work stands in plain words,
                                 and links out for the detail. No architecture numbers, no licence
                                 argument, no call for dumps, per decision 10 in docs/roadmap.md
 docs/status.md                  where the work stands: what reads, what the corpus holds per
-                                architecture, the headline findings. A snapshot, not the plan
+                                architecture, the headline findings, what is still open, and what
+                                moved most recently. A snapshot, not the plan. The last three
+                                sections moved out of this file on 29 August 2026, because carrying
+                                them here cost about 12600 tokens in every session to restate
+                                claims that live in docs/findings.md with a test each
 docs/roadmap.md                 THE plan of record: decisions, milestones, sequence
 docs/findings.md                authoritative technical reference, narrative
-docs/config-format.md           the config format spec, structured, for tools to track
+docs/config-format.md           the config format spec, structured, for tools to track, ending
+                                with the per base slot summary that used to sit in this file
 docs/glossary.md                the vocabulary: which terms are Logitech's, which are ours
 docs/usb-protocol.md            the USB protocol spec, step 3, transport done, commands open
 docs/host-client.md             Logitech's own client as a source: the rule, and the ledger of
@@ -1049,20 +714,8 @@ docs/growing-a-config.md        what a length change would move, counted: the st
 docs/adding-a-device.md         THE checklist for one goal: pick an appliance out of Logitech's
                                 catalogue, put it on a Harmony One, press the button and have the
                                 appliance respond. Nine phases, each ending in a check that can
-                                fail, written on 24 August 2026 because every part of it had been
-                                started and none finished. A session working towards that goal
-                                starts at its first unticked box and ticks one only when its check
-                                is a test in the repository. **The ungated checklist is phases 1 to 7, all ticked on 25 August 2026**,
-                                which need no remote plugged in and move no rail; the write and the
-                                button press are behind a gate, because they would be the first
-                                write this project has ever performed and the restore route is
-                                unproven. Danny opened the gate on 25 August 2026, rehearsal
-                                first, and the derivation that stood in front of it is done the
-                                same day, section 175: the transfer is an announce, `0x4A` data
-                                packets nothing answers, and a done packet acknowledged once.
-                                `writeFlash` still throws, now on the medium rather than the
-                                protocol, whether the firmware erases before it programs and
-                                whether a host must pace its packets
+                                fail, and the document tracks which are ticked. The write and the
+                                button press are behind a gate Danny opened on 25 August 2026
 docs/lab-excavation.md          the method for step 9: the seventeen things worth finding in the lab as
                                 greppable tags, the register's schema, and the loop per square. Its
                                 load bearing rule is that **a catalogue is not a claim and only a
@@ -1072,22 +725,13 @@ docs/how-a-harmony-works.md     the operating concept: activities, device mode, 
                                 the keypad and the screen each do. Read before designing anything about
                                 behaviour, since every other document here is about bytes
 docs/review-before-first-write.md
-                                the brief for an independent review of the write path, written on 27
-                                August 2026 before the first write. Four jobs, one of them **blind**:
-                                a re-derivation of the write transfer from the firmware by a reviewer
-                                that has not seen ours, because two derivations of one thing
-                                disagreeing is this project's sharpest instrument and a rubber stamp
-                                before a first write reads as evidence. **It carries a withhold list
-                                and that list is the operative part**: hand a reviewer
-                                `docs/findings.md`, `docs/usb-protocol.md` or
-                                `reference/superseded.md` and job 1 is over, since the last of those
-                                pairs each answer we got wrong on the interlock with the corrected
-                                one. `TheWriteReviewWithholdListIsComplete` in
-                                `tests/test_toolchain.py` parses both lists out of the document and
-                                sweeps the tree against them, so a new document quoting the transfer
-                                fails a test rather than quietly widening what a reviewer may see.
-                                Two of the four questions are **open here** and stated as open, which
-                                is the honest bar: leaving them open is a match, not a failure
+                                the brief for an independent review of the write path, one of whose
+                                four jobs is **blind**: a re-derivation from the firmware by a
+                                reviewer that has not seen ours. **It carries a withhold list and
+                                that list is the operative part**, enforced by
+                                TheWriteReviewWithholdListIsComplete, so a new document quoting the
+                                transfer fails a test rather than quietly widening what a reviewer
+                                may see
 docs/plan.md                    the earlier proposal, superseded, kept for its arguments
 docs/emulator-design.md         design for the emulator harness, deferred, not built
 src/harmony/                    the research library, see below
@@ -1101,30 +745,13 @@ reference/capabilities.md       what each model's hardware can do, per skin, wit
                                 column. Third party and unconfirmed except where that column says
                                 otherwise, and `packages/usb/src/models.ts` is the executable form
 reference/silhouettes/          the front face of a model, one SVG per model, **generated** from
-                                `packages/silhouettes/src/models/<id>.ts` and never edited by hand.
-                                What the interface needs of it: every key addressable by name,
-                                every colour from a custom property, and layers a thumbnail can
-                                drop. `.claude/skills/draw-remote/SKILL.md` is the method.
-                                **The geometry is traced from Logitech's own documentation**, by
-                                hand, into an SVG that lives in the lab, and `bin/extract.ts` moves
-                                it into this package's coordinates. Decided on 21 August 2026 by
-                                Danny, against the argument recorded here that a traced path is
-                                Logitech's expression rather than a fact about the product and that
-                                this repository is public and MIT. What that replaced was a drawing
-                                measured off a photograph, and the measurement is why: a key on
-                                these remotes is four cubics with no straight side, so the best
-                                rounded rectangle through one sits a whole unit out on a key nine
-                                units tall. **Placement is no longer schematic**, which is the
-                                claim this entry used to carry and the reason the other 33 models
-                                were parked on 11 August 2026: a traced key is where it is on the
-                                product. The button map is drawn in since 21 August 2026: a key whose
-                                scan code is measured carries it as `data-scan`, 36 of the 600's 54
-                                keys from `reference/button-maps.md` and 34 of the One's 44, being
-                                its 32 mapped buttons plus the two touch arrows section 125 placed,
-                                and the rest carry none rather than a guess. The 525 stays
-                                candidates only. The printed words, the colour on the teletext keys
-                                and the regions a rocker's halves cover are ours and not the
-                                document's, and each says so where it sits
+                                packages/silhouettes/src/models/<id>.ts and never edited by hand.
+                                The geometry is traced from Logitech's own documentation, by hand,
+                                which Danny decided on 21 August 2026 against a recorded objection.
+                                `.claude/skills/draw-remote/SKILL.md` is the method and holds both
+                                the objection and the measurement that outweighed it. A key whose
+                                scan code is measured carries it as data-scan and the rest carry
+                                none rather than a guess
 reference/button-maps.md        which button a scan code is, per model, measured through the account
                                 that generated the calibration configs. Partial and honest about it:
                                 the scans two buttons share are listed as sets, not assigned
@@ -1141,7 +768,7 @@ bin/setup-ghidra.sh             build or refresh the Ghidra project
 pyrightconfig.json              what pyright checks and, at length, what it deliberately does not
 .agents/skills/                 the project skills, as relative symlinks into .claude/skills/, so a
                                 second agent runs the same rituals rather than a copy of them. All
-                                eight are there and the two language server directories deliberately
+                                ten are there and the two language server directories deliberately
                                 are not, since those are Claude Code's own plugin mechanism and point
                                 into node_modules
 .codex/hooks.json               the publication check, wired into Codex's pre-tool hook. The git hook
@@ -1151,110 +778,31 @@ samples/                        empty by policy
 
 The TypeScript workspace, per `docs/roadmap.md` step 4:
 
-```
-packages/codec/                 TS: the one config codec, container through compiler,
-                                src/growth.ts the read only survey of what a length change would
-                                move, whose implied set is derived from coverage minus the address
-                                census rather than listed, so a new reader joins one side or the
-                                other on its own, src/relocate.ts the write side of that survey,
-                                section 172: insert bytes, rewrite the census, restamp end_addr and
-                                the checksum, checked by insert and compare over the corpus with a
-                                per address class negative, while edit.ts keeps refusing a length
-                                change as a separate entry point,
-                                src/coverage.ts the M2 byte accounting, src/emit.ts the
-                                emitter that reads it back the other way and is the round trip
-                                side on purpose, and src/edit.ts the M3 groundwork: same length
-                                edits, rails as refusals, and FIELD_RULES, which is why a round
-                                trip and a save differ. src/text.ts reads the screen's text, with
-                                src/alphabets.ts generated from the seeds in bin/alphabets.ts.
-                                src/irframe.ts turns a record's durations back into the bit frame a
-                                device sees, which is what lets a code be compared to a number stated
-                                outside the config, and it is **the only** frame decoder here since
-                                section 139. It **encodes** as well since section 152, in the same file
-                                because a field's encoder lives next to its decoder: five durations read
-                                off a record rebuild its frame byte for byte, and it stops at the frame
-                                because nothing after it follows from the bits. **A command is often
-                                several frames**, so `frameSegments` cuts the train first: a boundary is a
-                                space at least four times the median space, and the factor is a gap
-                                between two populations rather than a fitted number, since four and six
-                                give the same reading. Two things it needs. A boundary may not fall inside
-                                the first cells, or a lead in's own long space cuts the header off and
-                                every frame reads a bit short. And **whether the separator belongs to the
-                                frame before it depends on which half carries**, so both are tried:
-                                keeping it refuses every Samsung code and dropping it refuses every Sony
-                                one, each found by breaking the other. Not applied to the biphase reader,
-                                for the same reason the merge is not. src/summary.ts is the
-                                golden vector shape, above gspm.ts and ir.ts because it composes both.
-                                src/protocols.ts is the generated table of what rhythm each protocol
-                                family uses and src/stated.ts the lookup and encoder over it, which is
-                                what lets a code Logitech's database states as a name and a number be
-                                emitted with no sibling code to copy the durations from, section 157.
-                                Thirty eight entries, six of them measured on both routes, and each
-                                carries the route it came from, since a rhythm two independent routes
-                                agree on is worth more than one, section 160. Two
-                                shapes in FrameTimings exist for one family and both are measured rather
-                                than allowed for: a `[0, 0]` header means a protocol with no lead in, and
-                                `firstMark` a longer opening burst, which Sharp has and which a reader
-                                demanding one flat length throughout refuses. **A row has one of five
-                                shapes**, sections 162, 166, 168 and 169: five durations and a carrier
-                                convention; a half cell, a lead in and a polarity, for a biphase family
-                                where the bit is which half of the cell carries; the five durations
-                                plus section widths, for a family sending one value in sections whose
-                                final bits ride in a structural space and in the closing silence; the long toggle shape, three regions under the one rule that a set bit
-                                is the cell whose first half is silence, reproduced whole with its
-                                copies and gaps; and the quaternary shape, four space lengths sending
-                                two bits per cell, the same base 4 the family's catalogue digits are
-                                written in. **The row type lives in the generator's template**, in
-                                bin/protocols.ts, because src/protocols.ts is generated and a hand
-                                edit to it survives exactly until the next --write, which section 168
-                                paid to relearn. A biphase reading has
-                                to **reach the end of the frame region**, section 163, because a Sony
-                                frame's durations are whole multiples of one length and 50 of them read
-                                as biphase by luck without that rule. **The reader merges adjacent
-                                durations of one kind**, section 164, since two words of one kind in a
-                                row are one interval and no receiver can see the join;
-                                `mergedIntervals` is in `src/irframe.ts` for that reason and is
-                                deliberately **not** applied to the biphase reader, where two adjacent
-                                cells of one kind are two cells. **A family's bit polarity
-                                is in the table without a field for it**, section 161: one entry has a
-                                `zero` longer than its `one`, which is how `Logitech 24 Bit` says that a
-                                set bit is its shorter space, and a test looks for that shape rather
-                                than for the name.
-                                **A table entry says where its durations came from**: three off the
-                                corpus, twenty nine off a configuration Logitech's own compiler produced, and
-                                six off both, which is the column to look at first. The fourth value,
-                                a rhythm taken from published documentation and judged only by their
-                                analyser, is deliberately **empty**: the one entry that had it was out
-                                by a fifth to a quarter on every duration and their analyser read it
-                                back perfectly, section 160. src/stated.ts reads their code
-                                notation as the grammar it is, two frame slots and three words, which
-                                recovered every Toshiba code in their catalogue and stopped the families
-                                that put a frame in each slot from sending half a command
+```packages/codec/                 TS: the one config codec, container through compiler. Reading and
+                                writing a container, the byte accounting behind M2, the emitter that
+                                reads it back, same length edits with their refusals, the screen's
+                                text, the renderer, and the infrared frame decoder and encoder
 packages/lab/                   TS: finds the private lab directory, mirrors tests/lab.py
-packages/usb/                   TS: the command protocol and the write rails, read path measured,
-                                plus src/filepipe.ts, the **second** protocol, for the file based
-                                family that `openHarmony` refuses: open a path, get a handle, read
-                                through it. Read paths only, and enforced on the transport rather
-                                than on a method, per section 188. Its file name table and the
-                                identity file's field names come out of the Harmony 300 and 350
-                                firmware rather than out of Logitech's client, which is what makes
-                                them firmware derived, and a test asserts every one of them is a
-                                string in that image. Its file **table** is section 199: 11 byte
-                                records giving each name a medium, an offset and a size, and
-                                `/cfg/usercfg` is external flash `0x020000` for 256 KiB, so a
-                                Harmony 350's config has an address after all and it is the host
-                                that does not have it,
-                                plus src/models.ts, which turns the skin a remote reports into a
-                                model and its hardware capabilities, and readVersion, which reads
-                                the six identified fields of a version block and keeps the rest.
-                                That reading lived only as a table of names in packages/bench until
-                                21 August 2026, and it moved because FreeHarmony needed the values
+packages/usb/                   TS: the command protocol and the write rails, read path measured.
+                                Also the **second** protocol, for the file based family openHarmony
+                                refuses, and the table that turns a reported skin into a model and
+                                its hardware capabilities
 packages/corpus/                TS: read a config off a remote and file it, composes the other three
 packages/bench/                 TS: the bench instrument, a server plus a page in web/
 packages/probe/                 TS: the contribution probe, a report with shape and no contents
 ```
 
 There is no `apps/` here. The application is FreeHarmony, and the workspace globs say so.
+
+**A source file's own header is where its reading lives, not this map.** Until 29 August 2026 the
+block above carried about seven thousand characters describing individual modules: what `irframe.ts`
+cuts a train on, which two conventions `frameSegments` tries, why `protocols.ts` is generated and a
+hand edit to it dies at the next `--write`. Every one of those was already in that file's own
+docstring, in more detail and beside the code it describes, so the map was a second copy of a
+derivation, which is the state this file's oldest rule forbids. It was cut rather than moved.
+
+So the map says what a package is and the file says what it does. When a module's reading changes,
+the docstring is the one place to change; when a package's **purpose** changes, this is.
 
 **Both halves have a language server, and neither is installed on the machine.**
 `.claude/skills/ts-lsp/` and `.claude/skills/py-lsp/` are plugin shaped directories whose `.lsp.json`
@@ -1312,7 +860,7 @@ side reads infrared durations and does not decode them into a bit frame, because
 the two decoders disagreed about 37 records of one arch 8 (Harmony 880) config. A reader that exists
 twice is the state this file's oldest rule forbids, so the direction to add one is towards
 `packages/codec` and the direction to remove one is away from Python. `packages/codec/src/coverage.ts` is the M2 progress number and
-`make coverage` prints it; the current figures are in "Where the work stands" below.
+`make coverage` prints it; the current figures are in `docs/status.md`.
 
 **This paragraph used to end "it stops there and another reader will not move it", and that was<!--superseded-->
 wrong twice over.** It read 26.3% of a Harmony 700 against 98.1% today, and seven readers have
@@ -1658,12 +1206,14 @@ about the 700 itself, and as a second arch 14 sample.
 
 ## Commands
 
-Seven project skills carry the rituals that are easy to half-perform:
+Ten project skills carry the rituals that are easy to half-perform, and three of them exist because
+the guidance was too long to keep in this file:
 
 * **`trace-section`**, the method for labelling a config section by finding the firmware code
   that consumes its pointer, with the pitfalls that have already cost time here.
-* **`finding`**, the verification gate plus the three places a confirmed fact must land, and the
-  convention for correcting an earlier claim in place.
+* **`finding`**, the verification gate plus the four places a confirmed fact must land, the
+  convention for correcting an earlier claim in place, and since 29 August 2026 the three rules
+  about the shape of an assertion that used to sit under "Verification standard" here.
 * **`probe-remote`**, how to measure a connected remote read only: the rails, which enumeration
   commands actually work on this machine, and where a hardware number has to land. **It also holds the
   gate in front of an experiment**: before sending a packet to learn a format rather than to check one,
@@ -1680,12 +1230,25 @@ Seven project skills carry the rituals that are easy to half-perform:
   with real numbers, where that puts us in `docs/roadmap.md`, and one next step so that "doe maar" is a
   complete answer. It carries a good example and a bad one, because the bad one is what gets written by
   default.
+* **`writing-a-config`**, every rail a config writer must respect and the evidence behind each,
+  which is what the table under "Rails a writer will have to respect" points at. Invoke it before
+  changing any byte of a container, not after: each rail is a way to produce a file the remote
+  accepts and mishandles, and one of them killed a Harmony One three times out of three.
+* **`recovering-a-remote`**, what a restore consists of per architecture: safe mode, the
+  bootloader, the flash programmer, the EEPROM latch and the write protect interlock. Invoke it
+  before planning a write and before entering safe mode on any model, since on a Harmony 525 that is
+  a one way door.
 * **`myharmony-service`**, how to talk to Logitech's live services, both of them: the configuration
   service and the **software update service** that serves firmware, plus the hidden recovery screen in
   each client that is how the second one was found. The instrument in the lab, the two
   accounts and what each holds, the named doors in front of every write, and the traps already met,
   starting with the read that is secretly a compile. Written on 27 August 2026 after a session had to
   be reminded of all of it.
+
+`probe-remote` also holds what a bench session does to a remote, measured, which moved out of "Never
+write to a remote" on 29 August 2026: the odd read hazard's mechanism, the three-of-three control
+showing a clean session strands nothing, the reset a hang ends in, and the parked stranding with its
+three dead leads.
 
 ```
 make test          run the suite; image-backed tests need a lab directory
@@ -1970,868 +1533,75 @@ over the runner-up before trusting its answer.
 
 ## Verification standard
 
-Output here is AI-produced and published as such, so claims are expected to be checkable.
-Established norms:
+Output here is AI-produced and published as such, so claims are expected to be checkable. Two
+norms are always on, because neither has a moment to hook them to: **record corrections in place**
+rather than quietly fixing them, so readers can calibrate the rest against the recorded mistakes;
+and **mark anything unconfirmed as unconfirmed**, which `docs/config-format.md` does explicitly.
 
-* Prefer two independent samples. The container is validated against seventeen, spanning four
-  architectures, five base addresses and three pointer table lengths. **That list used to end
-  "three format versions and three pointer table lengths"**,<!--superseded--> which is one property counted twice,
-  since section 194 read the format word and it **is** the pointer count. A span is a claim about
-  independent dimensions, so a redundant entry inflates it: the container's coverage is one
-  dimension narrower than this file said. Two samples of one model prove much less than two
-  architectures.
-* Prefer an independent numeric closure. The IR carrier finding is confirmed by 38 kHz implying
-  a stored 263, which the code's arithmetic turns into exactly 26.25 us. **And a closure is only
-  independent if its test reads both ends**, which this one did not until 13 August 2026: it was four
-  lines of arithmetic on its own literals, so it passed with no lab and would have passed whatever the
-  firmware did. The multiplier, the divisor and the 19 cycle overhead are decoded out of the image now,
-  and the slack is stated, 0.2506%, because 26.3 us is not representable in whole units of 0.1 us.
-  A closure whose slack nobody wrote down is one nobody can check.
-* When deriving something like a load address, include a calibration case where the answer is
-  already known, and report the score for wrong answers too. The base-address test scores 98.9%
-  for the correct base against 11 to 30% for wrong ones.
-* Record corrections in place rather than quietly fixing them, so readers can calibrate.
-* Mark anything unconfirmed as unconfirmed. `docs/config-format.md` does this explicitly.
-* **Assert the count, not a bound under it.** A review sweep on 13 August 2026 found this shape
-  thirty times across both languages, and it has two variants. A floor well under the figure absorbs
-  a whole sample dropping out, `instructions > 10_000` against 47839. And a floor that **equals** the
-  population is worse, because it reads as tolerance and has none: `agree >= 62` against 62 fails on
-  the first sample that adds a key and passes on any that removes one. Every corpus loop here walks a
-  list that is a literal in its own file, so an exact count moves only when somebody changes a reader
-  or adds a sample, and then it moves in the diff. Same rule for a share: state both counts, since
-  `0.95` hides which side moved.
-  **All of them were measured on 14 August 2026 and there were 93**, section 143, 52 in the TypeScript
-  tests and 41 in the Python ones, and **the two halves were loose in different ways**. TypeScript: the
-  median floor sat **41%** below the value it guarded, because a floor is a **fossil**, `glyphs > 65000`
-  being 0.7% under the truth the day it was written and 62% under now. Python: the median sat 13% under
-  and **fifteen sat exactly on the value**, four of them on the **smallest sample** of a per sample
-  loop, which is tight on one sample and 39% loose on its neighbour. Two things a floor cannot do at
-  all: notice a total moving **up**, which is how a double counted sample gets in, and tell a control's
-  magnitude, where 54 against 227 is the evidence. Three turned out to want a **closure** rather than a
-  number, which cannot be restamped from one side. Both halves are enforced now, by
-  `ABoundOnACorpusTotalIsExact` and `APythonBoundOnACorpusTotalIsExact` in `tests/test_toolchain.py`:
-  a numeric lower bound has to be named in `TYPESCRIPT_BOUNDS_WITH_A_REASON` or
-  `PYTHON_BOUNDS_WITH_A_REASON`, which hold the 25 and the 10 that are a per item claim, a physical
-  band, a consequence beside an exact assertion, somebody else's source, or a **churning population**,
-  the last being the one ground only the Python side needs.
-* **A test's title is a claim and gets checked like one.** Four titles in that sweep named more than
-  their bodies carried, and the failure is invisible because the test passes: `every key a screen
-  labels gets a label` where 74 of 6988 have none, `six reads and nothing that writes` over a table
-  of nine routes that nothing counted. When a body cannot reach the claim, rename the body's claim
-  and say where the real one is tested.
-* **Two population lists that nobody compares will differ.** `packages/codec/test`'s `ACCOUNTED`,
-  `REBUILT` and `ALL_CONTAINERS` are the same nineteen containers and one of them held eighteen for
-  as long as that sample had existed, because each file's own totals stayed self consistent.
-  `TheCorpusWidePopulationsAgree` in `tests/test_toolchain.py` compares them statically, in a fresh
-  clone with no lab. **And the same check was needed one boundary further out**, sections 140 and 141:
-  the Python side had its own corpus of fifteen against those nineteen, and twenty nine hand written
-  populations between the test files, nine of which were smaller than the claim above them. There are
-  three lists now and each states its question: `lab.ALL_CONTAINERS` at 21 for a per container claim,
-  `lab.CONTAINERS` at 19<!--fact:containers--> for a corpus wide total, `lab.USER_CONFIGS` at 15 for
-  every programmed config. **The corpus is nineteen and that was decided rather than derived**, section
-  142: it was fifteen here and nineteen in TypeScript, and it was settled on the ground that a
-  corpus wide total measures what a reader can read and not how many remotes exist, so the unit is the
-  container rather than the unit. Sixteen numbers in five documents moved in one commit and
-  `make facts-write` is what did it. **Prefer a predicate to a list**: the three sites that could not simply be widened are the
-  ones where the exclusion had a reason, and stating the reason as a measurement turns an exclusion
-  into a check.
-  **A third pair turned up on 14 August and was settled the same day**, section 143: the
-  `EXPECTED` tables that every container framing claim is asserted over held **17** names in
-  `tests/test_gspm.py` and **13** in `packages/codec/test/gspm.test.ts`, the Python set being a strict
-  superset, so the two sides reported 5 base addresses and 4 from the same reader on the same corpus. It
-  surfaced only because making both corpus spans exact put two numbers beside each other that a pair of
-  floors had hidden, which is the lesson to carry: **when two lists disagree, look for the assertion that
-  was letting them.** Both tables name the same seventeen now and
-  `TheTwoExpectationTablesNameTheSameContainers` keeps them equal. **The data entry was the cheap part**:
-  four names broke three tests and falsified a fourth title, because the added safe mode containers landed
-  on the user config side of a hand written line of three names, and because one Harmony 525 config packs
-  into four action list runs where every other packs into five. So `NOT_A_USER_CONFIG` is named and
-  asserted, and a claim about "every config" has to say which population it means.
+**The rest is the `finding` skill**, and it moved there on 29 August 2026 because it describes two
+moments rather than a standing state: passing the gate before a claim is written, and choosing the
+shape of an assertion while writing a test. Six things live there now, each with the measurement
+that produced it: two independent samples and what makes a span a span, an independent closure whose
+test reads both ends, a calibration case scored against wrong answers, asserting the count rather
+than a bound under it, a test's title being a claim, and two population lists that nobody compares
+drifting apart. Invoke it when recording a finding or writing a test.
 
 ## Where the work stands
 
-`docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
-and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 209 sections, and `docs/config-format.md`
-for the structured form. Section numbers below are the pointer into them.
-
-**The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
-and `READ_FLASH` run from our own host code on both bench architectures, a config read matches each
-unit's lab dump byte for byte, and all four remotes are fully read and verified against their
-backups: user config, application firmware, safe mode, and the internal pages where the architecture
-serves them, no differences. What is
-verified is that each backup is faithful; **restoring from one has never been tried.**
-
-Byte accounting, `make coverage`, zero overlaps everywhere:
-
-| arch 8 | arch 9 | arch 12 | arch 14 |
-|---|---|---|---|
-| 100.0%<!--fact:coverage_arch8_config_a--> | 100.0%<!--fact:coverage_h525_config--> | 100.0%<!--fact:coverage_one_config--> | 100.0%<!--fact:coverage_h600_config--> |
-
+**Moved to `docs/status.md` on 29 August 2026.** That document is named for this question in
+"Where things go" above, and carrying a second copy here is the two-copies state this file
+warns about everywhere else.
 ## What is known, by base slot
 
-Twenty base slots, all accounted for. 0 and 1 are header records, 2 to 17 are named sections, 18
-and 19 are NULL in all 21 containers. `gspm.base_slot` and `gspm.arch_slot` translate, since
-arch 8 inserts a NULL at slot 8 and arch 12 inserts that plus a real section at slot 18.
-
-| slot | what it is | sections |
-|---|---|---|
-| 0 | a `0xFEED` framed tree of state variable names, which say what each variable is for and which device it belongs to | 20, 77, 86, 126 |
-| 1 | seven bytes stating the architecture, the only place the config says it | 20 |
-| 2 | the log area: three numbers reserving flash above the config, arch 12 only writer | 47 |
-| 3 | the clock. Starts Timer 1; on arch 12 the epoch the firmware measures elapsed time from | 21, 38, 111, 138 |
-| 4 | the firmware event map | 36, 39 |
-| 5 | the infrared database: one group per device, then records. Class 5 spells a code from a dictionary; a record's three block pointers are once, held and tail | 32, 42, 61, 65, 82, 86, 126, 127 |
-| 6 | the mode table. A record carries a screen program, and its entry an array of pages, each with a tagged list and a copy of it | 37, 52, 53, 66, 68, 69 |
-| 7 | the font table, indexed by screen opcode 16. A glyph code is per config, and the text reads back from the pixels | 46, 63, 112 |
-| 8 | key press bindings: one leading action list, then every mode page's list | 27, 38, 83 |
-| 9 | the binding table: lists of button bindings, pushed onto a key lookup stack by their enter handler and removed by their leave handler, section 176 | 39, 67, 69, 176 |
-| 10 | the action list table | 38 |
-| 11 | screen language programs | 40 |
-| 12 | the timer table | 43 |
-| 13 | the state variable table: a range, and transitions carrying one instruction. Variables 0 to 12 are the firmware's own, and 0 to 6 **are** its clock | 35, 60, 86, 130, 138 |
-| 14 | the state value map, indexed by opcode `0x72`'s high byte | 39 |
-| 15 | the parameter block: numbered groups of `u16` | 44 |
-| 16 | the number sender: one record per appliance that takes a number, with a table per digit. Seven made configs populate it and no found one does, and it carries only the channels that survive being written as an integer | 39, 154, 156, 165 |
-| 17 | the touch screen hit map on arch 12, indexed by a mode page's spare byte; elsewhere the picture bank | 45, 62, 125 |
-
-**Most of a config is pictures**, sections 49 to 55, 62, 66, 146 and 179: one contiguous array from the
-end of the named content to the trailer, no table and no count, addressed by screen opcodes 2 **and 3**
-inside mode programs. `u8 kind; u16 stride; u16 rows`, stride in **pixels**, two bytes a pixel on arch
-8, 12 and 14 and one bit on arch 9. Walking the array lands exactly on the trailer in all nine
-containers that have one, and **every picture in every bank is drawn by a program**, on all four
-architectures, with two exceptions in the whole corpus and both in the arch 9 safe mode container.
-That used to read "addressed only by screen opcode 2" with "exactly two per container unreached on<!--superseded-->
-arch 8 and arch 14", and the two were opcode 3's: 4548 of 4548 of its instructions name a picture,
-arch 12 (Harmony One) emits none at all and arch 9 (Harmony 525) emits nothing else, so a reader
-written from opcode 2 looked complete on the architecture this project reads code on and reported
-zero pictures for a Harmony 525 whose bank holds four.
-
-**Two interpreters, both read.** The action list language, a 120 byte circular queue of three byte
-instructions dispatched by binary search on the opcode, section 34. And the screen language, one
-byte opcodes, section 40, whose closure is that 22846<!--fact:screen_programs--> programs across the
-corpus decode with nothing left over.
-
-**And the queue is writable because the language has an if/else**, section 140, which is the one
-thing about the action list interpreter that had never been explained. Bit 15 of a `0x70` or `0x71`
-comparison is the **else** arm: with it set, a comparison that comes out **true** zeroes the three
-bytes two slots ahead, and opcode `0x00` does nothing, so the two instructions after a flagged
-comparison are its two arms and the untaken one is overwritten rather than jumped over. It has to be
-overwritten, because the handler returns before either arm runs. Section 34 saw the bit and wrote
-"the dispatcher masks it off"<!--superseded-->, which was true of the nibble decode and read as
-though nothing consumed it. The corpus closure is exact both ways, 600<!--fact:compare_else_arms-->
-flagged instructions each followed by exactly two instructions and
-2084<!--fact:compare_one_arm--> unflagged each by exactly one, with the list ending there, no list
-holding two conditionals and no arm being one. **It is one table across architectures**, measured on
-all seven images rather than ported, which matters because three structures in this language are not.
-
+**Moved to `docs/config-format.md` on 29 August 2026**, which is the structured spec and already
+the place a tool reads a slot's meaning from.
 ## Rails a writer will have to respect
 
-Collected here because they are scattered across a dozen findings and every one of them is a way to
-produce a config the remote accepts and mishandles.
+**Every one of these is a way to produce a config the remote accepts and mishandles**, which is a
+hazard class of its own: the file passes both checksums, renders identically, closes every count this
+project can check, and is wrong. One of them, an oversized sequence, killed a Harmony One three times
+out of three.
 
-* **Base slot 13's first seven records are the clock and are stamped too**, section 130: `first` is the
-  value a variable holds when the config is generated, and records 0 to 6 are second, minute, hour, day,
-  weekday, month and year, each equal to the corresponding field of base slot 3's timestamp in all 21
-  containers. So a carried over config carries a stale clock in two places, not one, and none of them may
-  be reused for anything else, which section 74 had already said of 3, 5 and 6. **The firmware owns
-  thirteen and not seven**, section 138: variables 7 to 12 state the identical value and maximum in every
-  container of their architecture and base slot 0 names none of them, index 13 being where both stop. So
-  the rail is to reuse none of 0 to 12, and on arch 9 (Harmony 525) their values differ from the other
-  three architectures, so a carried over config must keep each architecture's own. **It is eight
-  values and not seven**, which building the rail found rather than reading it: six maxima are constants
-  and the year's is that year plus one, so stamping the year without its maximum leaves a config
-  declaring a value outside a variable's own range. `clockStateEdits` in `packages/codec/src/edit.ts`,
-  and it refuses a base slot 13 whose other six maxima are not the clock's.
-* **Base slot 3's timestamp is stamped at write time, not copied**, section 111: an arch 12 remote's
-  clock holds this value at every boot, so a stale timestamp is a wrong clock by exactly its staleness.
-  The rail holds on the other architectures too without needing their measurement, because stamping the
-  moment of writing is the right provenance value whatever the remote does with it, and it holds whether
-  the firmware reads this record or base slot 13's `first`, which section 137 says nothing separates:
-  both get stamped by a save. This is the one
-  field where reproducing the input byte for byte, which is what a round trip test wants, is the wrong
-  thing for a save.
-* **`end_addr` is restamped when anything changes length**, and it is the only header field that
-  moves with a section's growth, which is also why the container's base is anchored on the clock
-  record here rather than computed from the marker. **This used to add "and a real generator got that<!--superseded-->
-  wrong", and no generator did**, section 122: the Harmony 890 config that declared an end 864 bytes
-  before its own end marker was a **read** with 16 duplicated 54 byte chunks in it, and a second read
-  of the same remote duplicated 2. So no config in the corpus shows a generator getting this wrong,
-  and what the case actually demonstrates is the next rail down.
-* **A read can insert bytes without losing any, so a config that parses is not a config that
-  arrived**, section 122. Every read of an arch 10 remote here came back with 2 to 28 surplus chunks,
-  and the two that were usable were the two where the duplicates happened to land in the zero fill
-  past the container. The two independent checks are the trailer checksum, which the boot validator
-  computes, and the end marker's position against the declared `end_addr`. Neither is sufficient: a
-  duplicated run of zeroes leaves the checksum untouched, and the checksum is blind to two transposed
-  words. `packages/corpus/src/read.ts` performs both after every read, and the checksum half was
-  added because of this, not before it.
-* **Parsing is not validating, and somebody else's experiment is the proof**, section 117:
-  harmony-decompiler's author cloned a device into an arch 9 config, and the result passed both
-  checksums, rendered every screen pixel identical, closed its counts and **was accepted by this
-  project's parser**, while every infrared command in it addressed the wrong place. Inserting bytes
-  moved the class 5 symbol tables that section 82 reads, and pointers inside a carried run are
-  checked by nothing here. This is the demonstration behind `edit.ts` refusing to change a length.
-* **The trailer checksum is weak**, section 41: a `u16` XOR of little endian words seeded `0x4321`.
-  Blind to two transposed words, so passing means the remote will not refuse the file, not that the
-  file is right. **Demonstrated rather than argued now**: writing one operand into a mode page's
-  list and into its copy leaves the checksum bit for bit identical, because the two edits sit at the
-  same word parity and cancel. `packages/codec/test/edit.test.ts`.
-* **Base slot 15's group lengths are demanded by the firmware**, section 44. A group whose length
-  differs is silently replaced by compiled in defaults. A group index is **not** portable between
-  architectures, unlike every other indexed structure here.
-* **Base slot 15's entry count** is likewise demanded, 9 on arch 14 and 11 on arch 12: a different
-  count gets a silent no-op, not an error.
-* **A timer fires one instruction, not a list**, and its duration is clamped to sixteen bits with no
-  error, section 43.
-* **Infrared duration blocks are shared** between records, section 61, so a writer cannot edit one
-  in place without checking who else names it.
-* **A record's three block pointers are once, held and tail**, section 127: the firmware samples the
-  keypad at every block boundary, so slot 1 is sent only while the key is down and then **repeats for as
-  long as it is**, and the interval a user feels is that block's own duration. Editing its trailing gap
-  is how a repeat rate changes, per code, and a duration word caps at 32767 us so a same length edit can
-  only reach the ceiling of the words already there. `0x7C` is **not** what repeats a held key, which is
-  the reading section 70 guessed at and this refutes.
-* **A frame can be written and its tail cannot simply be copied**, section 152. Five durations off a
-  record rebuild its frame exactly, and 52 of 58 device groups use one set of timings for every code,
-  so a code stated as a bare number elsewhere can be written using a sibling code's timings. What
-  follows the frame does **not** follow from the bits: 151 distinct shapes across the corpus, no rule
-  behind them, and a constant total block duration explains only 31 of 41 classes. **And 226 records
-  hold a second, different code in the tail**, so copying a sibling's tail would emit the sibling's
-  second command. The second code is systematic rather than authored, a complement, a near variant or a
-  constant lead in, so a writer has to know which shape its group is in. A config with no record of that
-  appliance cannot have one invented for it either way.
-* **A record's carrier period is truncated, not rounded**, section 92: it is `floor(1e9 / f)` in
-  nanoseconds, so 36 kHz is stored as 27777 and a writer that rounds emits 27778 and differs from
-  Logitech's generator by one byte per device. The carrier is per record, not per device.
-* **A picture's position is implied by everything before it**, section 55, so inserting or resizing
-  one moves every later address.
-* **Every mode page's tagged list has a second copy that nothing reads**, section 69, whose position
-  is likewise implied rather than stated. An editor that changes a page's bindings has to change
-  both, and an emitter that omits the copy still passes every check the remote makes.
-* **A section's size is not the gap to the next pointer**, section 36. Slot 4 holds 125 bytes where
-  the gap is up to 1532, because slot 5's group arrays sit inside it.
-* **The log area's writer refuses out of range rather than erroring**, section 47: an address
-  outside `[0x040000, 0x400000)` zeroes the remaining count instead of writing. **On arch 12 that is
-  what actually happens**, section 111: both One configs declare `[0x3FFFF0, 0x400000)`, which is the
-  top sixteen bytes of a 64 KiB block both bench units carry a `00 FF` pattern in, so the boot scan
-  recovers `0x400000` and the writer disarms itself. The rail read as protection against a bad config
-  is what fires on a good one, and using the facility at all would need a 64 KiB erase inside the
-  config region.
-* **A glyph and an encoded picture cannot be re-encoded from their pixels**, which the emitter
-  found rather than the firmware: several control streams draw the same image, so re-encoding one
-  produces a valid file that is not the original. An editor carries every image it did not change
-  through byte for byte.
-* **A favourite channel is not a key binding**, section 154, and a writer that adds one has to touch
-  four sections rather than a keypad map. Base slot 16 gains a record **per appliance** that takes a
-  number, not per channel; base slot 10 gains a list per channel, loading the number and handing it to
-  that record; base slot 13 gains the state variable values whose transitions run those lists, which is
-  where the reference actually lives; and the screen gains a page. No new key binding and no new
-  infrared group. Reading a favourite channel as a page of keys is the mistake to avoid, and it is the
-  same mistake `docs/how-a-harmony-works.md` warns about generally: the format answers "what is in this
-  file" and not "how does the product model this".
-* **And it is not one mechanism either**, section 156. A channel that survives being written as an
-  integer goes through base slot 16, and one that does not, meaning anything with a leading zero, is
-  **spelled out** instead: one base slot 10 list per digit, each sending that appliance's own digit
-  code. Measured on a config authored with `1` and `001` together, where the two take different roads
-  and the record's minimum digit count stays zero. So a writer chooses, and the choice has a
-  precondition on each side: the spelled out form needs the digit codes to exist as sends in base slot
-  5, the sender form needs the record in base slot 16. The floor field is **not** how a leading zero is
-  expressed, which is what a reading of the firmware alone would have concluded.
-* **A record's three digit tables are three pointers and may be shared**, section 154. The one sample
-  carries three byte identical copies at three addresses, and nothing in the format requires that, so
-  editing a digit's instruction in place needs the same check base slot 5's duration blocks need: who
-  else names this table. The accounting and the emitter both deduplicate by address for that reason.
-* **A sequence at Logitech's own stated limit can hang a remote for good**, measured on 23 August 2026 and
-  deliberately not a finding, by Danny's call: the notes sit in the lab beside the config,
-  `../lab/reads/20260823T1408Z-onres-sequence-NOTES.md`, so a session that finds no section for it must not
-  conclude it is unread. A 25 step sequence, their maximum, expands to roughly 55 three byte instructions
-  in one action list, and heavy tapping of the touch panel while it runs killed a Harmony One three times
-  out of three with the batteries out each time, against five gentle or untouched runs that all completed.
-  The mechanism is open and two readings are dead. **This is a new hazard class**: a config the remote
-  accepts, whose checksums verify, which this project accounts for to the byte, and which writes nowhere it
-  should not. It simply runs. So a writer **refuses** an oversized sequence rather than warning, bounded by
-  the expanded instruction count and not by their item count, which permits this one. The pause itself is
-  opcode `0x7C` inline in tenths of a second in the low byte, so 25.5 seconds is the ceiling the format can
-  express and their 20 second limit sits just under it.
-* **A same length edit is not a small write, and the cheapest one costs two erase blocks**, section
-  187. `edit.ts` permits a same length edit and refuses a length change, which is the right rule for
-  the **container** and says nothing about the **medium**: flash only clears bits, so changing one
-  byte means erasing its whole 64 KiB block and writing back everything else in it. And it is two
-  blocks rather than one because of section 69, since every mode page's tagged list has a second copy
-  an editor must also change and the copy sits 72 to 214 KiB away. Measured at **187 of 187** editable
-  pages across five configs on two architectures, exactly two blocks every time. So one button on one
-  screen means erasing and rewriting 128 KiB, preserving about 131000 bytes nobody asked to change,
-  and opening **two** windows where a block is erased and not yet written. The rehearsal does not have
-  this problem because it writes a whole block back from a verified dump, so the properties that make
-  it a safe first write are exactly the ones an editor lacks. **The consequence is a design
-  constraint**: an editor's write step is read the affected blocks, apply the edits, erase, write back
-  whole, verify by reading, and not "write the bytes that changed", which is what `Edit` being a start
-  and a run of bytes suggests.
-* **A small logical change reshuffles the whole image.** Three arch 8 configs generated ten minutes
-  apart differ in 73 to 84% of their bytes, and two compiles of an **unchanged** arch 12 (Harmony One)
-  account differ in 67%, section 154. So an editor makes minimal diffs against an existing
-  config; reproducing what Logitech's generator would have emitted is not achievable. What that
-  section adds is the other half: two compiles that share a build timestamp are **byte identical**, so
-  the reshuffle travels with that field and asking twice can hand back the same artefact rather than a
-  second sample.
+**Before changing any byte of a container, invoke the `writing-a-config` skill.** It holds the
+evidence, the counts and the corrections for each row below, which moved out of this file on 29
+August 2026 because the argument only matters at the moment of an edit. The table stays so that a
+session can see a rail exists without loading the reason for it. **The hardware rails are not here**:
+"Never write to a remote" above is always loaded and is about the device, where these are about the
+file.
+
+| the rail | what a writer must do |
+|---|---|
+| base slot 13's first seven records are the clock | stamp them, and reuse none of variables 0 to 12: the firmware owns thirteen, not seven. Eight values, since the year's maximum moves with it. Arch 9 (Harmony 525) keeps its own |
+| base slot 3's timestamp is stamped at write time | never copied. The one field where a round trip and a save differ |
+| `end_addr` is restamped when anything changes length | the only header field that moves with a section's growth |
+| parsing is not validating | a container can pass both checksums, render pixel identical, close its counts, and address every infrared command wrongly. This is why `edit.ts` refuses a length change |
+| the trailer checksum is weak | a `u16` XOR of little endian words. Blind to two transposed words, and two edits at the same word parity cancel exactly |
+| base slot 15's group lengths are demanded | a group whose length differs is silently replaced by compiled in defaults. A group index is **not** portable between architectures |
+| base slot 15's entry count is demanded | 9 on arch 14 (Harmony 600 and 700), 11 on arch 12 (Harmony One). A different count is a silent no-op, not an error |
+| a timer fires one instruction, not a list | and its duration is clamped to sixteen bits with no error |
+| infrared duration blocks are shared | check who else names a block before editing it in place |
+| a record's three block pointers are once, held and tail | slot 1 repeats for as long as the key is down, so its trailing gap **is** the repeat rate. A duration word caps at 32767 us |
+| a frame can be written, its tail cannot be copied | 151 distinct tail shapes with no rule behind them, and 226 records hold a second, different code in the tail |
+| a record's carrier period is truncated, not rounded | `floor(1e9 / f)` nanoseconds, per record rather than per device |
+| a picture's position is implied by everything before it | inserting or resizing one moves every later address |
+| every mode page's tagged list has a second copy | nothing reads it and an editor must still change both. Its position is implied, not stated |
+| a section's size is not the gap to the next pointer | base slot 5's group arrays sit inside base slot 4's gap |
+| the log area's writer refuses out of range rather than erroring | and on arch 12 (Harmony One) a good config is what disarms it |
+| a glyph and an encoded picture cannot be re-encoded | several control streams draw the same image, so carry anything unchanged through byte for byte |
+| a favourite channel is not a key binding | it touches four sections and adds no key binding and no infrared group |
+| and it is not one mechanism either | a channel that survives being written as an integer goes through base slot 16; one with a leading zero is spelled out digit by digit. Each side has its own precondition |
+| a record's three digit tables are three pointers and may be shared | the same check base slot 5's duration blocks need |
+| a sequence at Logitech's own stated limit can hang a remote for good | **refuse** an oversized sequence rather than warning, bounded by the expanded instruction count and not by their item count, which permits the one that killed a remote |
+| a same length edit is not a small write | the cheapest costs **two** 64 KiB erase blocks, so the step is read the blocks, apply, erase, write back whole, verify by reading |
+| a small logical change reshuffles the whole image | make minimal diffs against an existing config; reproducing what their generator would emit is not achievable |
 
 ## Open
 
-* **`GET_VERSION` field 6**, a compiled in `0x0C` with no reading, and **field 9's accessor**, a
-  table read at program `0x020024` whose byte is `0xDE` while the remote reports `0x16`. The other
-  ten fields have a reading, section 59 and section 87. The installed image is ruled out as the
-  explanation: the One's own flash dump is byte identical to the package there, so what is left is
-  what a `TBLRD` does past the on-chip flash, which is a hardware question and not a firmware one.
-  **Field 6 has a reading now and it is unconfirmed rather than absent**, section 116: it names a
-  **platform**, not an architecture, and arch 12 and arch 14 are one platform under it. `0x0C` on both
-  of those across six images, `0x09` on arch 9, `0x08` on arch 8. **What a recovery role image
-  answers is per architecture**, sections 118 and 190: a live Harmony 525 in safe mode reports `0x00`,
-  as the arch 8 bootloaders do, and a live **Harmony One in safe mode reports `0x0C`**, the same as
-  running normally. So section 118's "for an application image only" was one architecture written as a
-  rule, which is what it had just criticised section 116 for in the other direction, and section 116's
-  arch 12 figure turns out to have been right. Arch 14 is unmeasured on hardware. The mechanism is
-  section 189's, that arch 9 copies its safe mode image over the application and arch 12 copies
-  nothing, so the two findings predict each other. **Field 4's low nibble is what actually says which
-  state a remote is in**, 0 running and 4 in safe mode, and on a Harmony One it is the only one of the
-  twelve fields that moves between them. Everything else already grouped those two: same MCU family, same
-  `GSPM` cookie, and Logitech's own platform table calls arch 12 the Gin family. What moved it was the
-  population going from four images to eleven; four could not tell "equals the architecture, except
-  once" from "equals the platform, always". The `bcdDevice` high byte has the same shape and different
-  values, `0x08`, `0x09`, `0x10`, `0x10`, so the two are not one variable.
-* **What the One's analogue channel 1 measures**, section 103, and **USB cannot settle it**, section
-  111. Two readings fit and they differ only in the sensor's wiring, so the firmware cannot choose, and
-  the bench read that was meant to choose landed on outcome 2: the converter is off and its result
-  register frozen across 60 seconds while the clock ticks in the same poll, so covering the sensor
-  cannot move `0x110`. What the read did settle is that the band, the state and the level in RAM agree
-  with each other through the config's own base slot 15, which is how we know an arch 12 remote on USB
-  has read its config. Finishing the sensor needs the remote off USB, which no read path reaches.
-  Channel 0 is the battery, `0x111`, eight levels, and it reads 7 of 8 on a charging remote.
-* **Arch 9 (Harmony 525) has no read path to its data memory at all**, section 137, which the same round
-  established with a control worth copying: the `READ_FLASH` window at top byte `0x40` answers zero for
-  the bank 2 bytes holding the offset and buffer pointer of the read in progress, so the zeros are the
-  window's and not the memory's. `READ_MISC` was already dead there, section 90. So the reading of a
-  Harmony 600 (arch 14) is the only bench measurement left of the two, and on arch 14 a remote does not
-  load its config on USB at all, section 110, which would make a null result there mean less than it looks.
-* **Which routine increments the minute on arch 12 (Harmony One)**, section 111, and the reason it was
-  never found is closed rather than the routine: `0x109` is **state variable 1**, section 138, and every
-  write to a state variable goes through a store whose `FSR0` is computed from a literal 8 and an index.
-  So there is no direct write and no `LFSR` because there is no pointer variable, which was the dead end
-  `trace-section` names first and it was the right dead end for the wrong reason. What is left is which
-  caller passes index 1, and **nothing depends on it**: the field is named from the firmware's own
-  subtraction against base slot 3's record and its behaviour is measured twice.
-* **The rate the arch 12 clock loses time**, section 111. Two mechanisms are read and both only lose, so
-  5.6 minutes a day is an upper bound rather than a figure. **Deliberately not measured**, decided on 10 August 2026, since
-  it would need the One left alone for a day and read at both ends, and no
-  document or code anywhere wants the number. Recorded so that the bound is never quoted as a
-  measurement.
-* **The arch 12 calibration words at `0x01F5C0` and `0x01F5C2`**, section 105: 94 and `0xFFFF` on
-  both units, fetched by the same helper as the battery scale, consumer not traced. The scale itself
-  is read, `4 + trim/65536` millivolts a converter count, and **section 44's battery conjecture is a
-  finding now**. Two hazards worth carrying: `0x01F580` is **on chip**, so a firmware `TBLRD` there
-  and a `READ_FLASH` over USB at the same number read different memories; and the words had been in
-  the lab for a day, filed as "unidentified" in `docs/memory-map-one.md` two rows above the note that
-  says two remotes differ at `+0xF582`.
-* **Which I2C device sits at address 0x60 on the Harmony One**, section 106. Thirteen channels of
-  three states, two eight bit level registers, an enable on `LATC` bit 5 and no readback, which is the
-  shape of an LED driver and most plausibly the keypad backlight, dimmed by the same band that dims
-  the screen. **Not confirmed and deliberately not named.** A datasheet search on the address and the
-  register numbers, or a photograph of the board, settles it; firmware cannot.
-* ~~**Our frame decoder reads an unmerged pulse train and should not**~~, **merged now**, section 164.
-  Adjacent durations of one kind are one interval physically, so the reader merges them, and it costs 45
-  records of three arch 8 (Harmony 880) configs that all read the same eight bit value, which forty five
-  different commands cannot be. Logitech's own decoder refuses all 36 of them it was asked about. **It
-  cost less than section 153 predicted**, because section 163 landed first: the partition is 3502, **0**
-  and 1128 rather than the 3502, 764 and 57 predicted, since requiring a constant non carrying half
-  already refuses everything the merge would have made ambiguous. Two things to carry. The merge is
-  **not** applied to the biphase reader, where two adjacent cells of one kind are two cells. And after
-  it a biphase code can produce a plausible pulse distance reading, two `Magnavox 13 Bit` records among
-  them, so the rhythm table's join prefers a reading that lands on a number by **value** over one that
-  lands only by matching a width.
-* **A frame's non carrying half has to be one length**, sections 163 and 165, which is the rule the
-  terminator constant had been standing in for. **One length means it does not split**, by the same ratio
-  the carried half has to split by, and not byte identical: exact equality refused ten records of the
-  compiled sample whose flat half alternates between 433 and 434, nine of which our reader now puts on
-  the exact number Logitech's own analyser states. The margin is 6.1% admitted against 100% refused, with
-  nothing in between. `decode` now demands it as `timingsOfFrame` always did, so `GAP_US`
-  could rise from 4000 to 8000 and `JerroldO1 16 Bit`, whose set bit is a 4505 space, is the twenty first
-  entry in the table. It cost one direction of section 134's biconditional: the 148 records that read
-  under **both** conventions now read under none, which is exactly the biphase population, so the
-  detector moved to the reader that names the cause.
-* ~~**148 biphase codes are readable and we cannot read them**~~, **read now**, section 162. A biphase
-  code has one duration, the half cell, and the bit is which half of it carries, so there is nothing for
-  `irFrame` to split and its two conventions both fit. `biphaseFrames` reads them and three families are
-  in the rhythm table, each reproducing every one of its records byte for byte. The confirmation is that
-  the reading, worked out on a configuration Logitech's compiler made for appliances chosen here, lands
-  on 48 of 48 records of four **contributed** configs where their analyser had already stated the number.
-  `irFrame` still refuses them, which is deliberate: that refusal is the corpus's only detector for the
-  family, section 134.
-* **Three of the four infrared encoding classes**, used by no config in the corpus, so a firmware
-  problem rather than a decoding one, section 42. **Why they are unused is settled**: Logitech's own
-  user manuals say the learned signal was uploaded to their web site, which did the pattern matching
-  and chose the storage form, so the class was a server decision and the unused ones are the ones
-  that service never emitted for these devices. A miss was "stored as-is in its original format",
-  which predicts a raw class. That matters for FreeHarmony: the service that made the choice is the
-  discontinued one, so learning a code without it means making that choice locally.
-* **Where a learn session's samples leave the remote is read**, section 98, and the two searches
-  that failed did so because both assumed the bytes are **sent**. They are not. `START_IRCAP` clears
-  two 66 byte buffers at `0x0600` and `0x0642` and a toggle at `0x0684`, the capture path fills
-  whichever is open, and the transport points the **endpoint 1 IN buffer descriptor** straight at it,
-  `0x40E` and `0x40F`, with the count at `0x40D`. So no routine ever emits `0x90`: it is stored into
-  the buffer at `0x602`. On arch 12 a report is 64 bytes, `0x90`, a sequence byte advancing by
-  `0x10`, then samples as **big endian `u16` durations** differenced from CCP2, with the payload
-  length repeated in the last byte. That encoding is the config's own, bit 15 marking a pulse, so
-  what comes off the remote is already the shape a record wants. **Arch 14 has the same header**,
-  written through `INDF` because it reaches the buffers by `FSR`, which is why a scan keyed on the
-  buffer offsets missed it; what stays arch 12 only is the differencing that makes a sample a
-  duration. **The reports are unsolicited**, so a
-  host must keep reading during the session; that settles section 91's disagreement between the two
-  clients in the classic one's favour.
-  **Do not argue this from a literal scan**: a data response code carries a computed length nibble
-  and never appears as a literal, which cost one wrong negative here, `reference/superseded.md`.
-* **The physical button map**, meaning the matrix keypad. **The Harmony One's touch panel is mapped**,
-  section 125, and out of the config rather than the hardware: base slot 17's rectangles, the mode page
-  byte saying which page is in force, and a transform onto the display. That leaves the 44 keys around
-  the panel, and every other model. Measured as far as USB allows and no further, section 48: a remote on
-  USB never runs its **keypad handler**, because USB mode's own loop does not scan the matrix. It does
-  run the rest of its application, section 111, and "never runs its application" was the wording here
-  until a Harmony One was watched ticking. **On arch 14 it does not even load its config**, section
-  110: the journal's five variables are zero on the 600, so neither the container's marker check nor
-  the allocator has run, and anything the host wants to know it computes from the bytes itself. On arch
-  12 it does load it, section 111, because the config is memory mapped and there is no load step.
-  Arch 14 yields the **column**
-  only, `(code - 1) mod 4`, and arch 12 yields nothing at all, since sixteen buttons from every
-  region of the One share one sense line. Finishing it **over USB** needs a RAM write to drive the
-  rows, which the rails forbid, and **that is not proposed here.**
-  **The cheapest route needs no remote on the bus at all, and it is the board**, section 144: a
-  survey of an 885's circuit board, done by somebody else and checked here against our own configs,
-  is what settled arch 8's lattice as 4 by 16 with `scan = (line - 1) * 4 + input`. The 885 config's
-  column census and that board agree at 14, 14, 14, 13 through routes with nothing in common. **The
-  arithmetic is per architecture and must not be ported**: arch 9 (Harmony 525) is `group * 8 +
-  column`, arch 14 (Harmony 600 and 700) is 4 by 14, and searching all nine images this project
-  holds finds arch 8's encoder in the four arch 8 ones and in none of the others. On arch 12
-  (Harmony One) the board is the **only** route left, since a live census there yields nothing.
-  **There is a second route that needs no write**,
-  section 123: the 525 implements infrared learning, so pointing the original equipment's own remote
-  at it and matching the capture against the class 5 records section 82 read names the command, and
-  the config already binds a scan code to it. `0x70` is still a command that changes a remote's
-  state rather than reading it, so it sits behind the write flag, and nothing here has sent one. Neither of Logitech's own applications has
-  it either, checked on 9 August 2026: a host names buttons and the firmware resolves the name to
-  hardware, so no host ever held the map. `docs/host-client.md`.
-  **Arch 9 sits below both and needs no census**, section 89: the 525 senses on a single line like
-  the One, so a press is not even worth a column, and its matrix falls out of the firmware instead.
-  8 by 8, scan code `group * 8 + column` running 1 to 64, and both its configs bind the same 50
-  codes, none a multiple of eight and contiguous in the resulting lattice to 57. So **the 525 has
-  fifty matrix buttons**, predicted from firmware plus config and then **counted on the remote**,
-  which makes it the one architecture where every matrix button is bound and no bound code lacks a
-  button. **Counted a third way on 11 August 2026 and it is fifty**, from a product photograph, which
-  is a free confirmation of a number that had cost a firmware read and a hardware census.
-  `reference/silhouettes/h525.svg` is that count as a drawing, and what it does
-  **not** carry is any scan code, because arch 9 (Harmony 525) has none measured at all: the positions
-  are drawn and the assignment is open, since section 48 is why no read path here can produce it. Nor is
-  it yet a usable map of **where** the keys are, since every key in it sits on a horizontal axis and a
-  525's rows do not, which is what the traced geometry fixes on the models that have it. The four soft keys are narrowed to the set
-  `{30, 31, 38, 39}` and deliberately not assigned within it, because nothing establishes which of
-  columns 6 and 7 is the left one. A test refuses a `data-scan` attribute anywhere in the file, so
-  filling one in has to be a deliberate change with a measurement behind it.
-  **The 600 and the One are drawn too**, and the pair is instructive about what a third count is
-  worth. The **600 came to 54**, which is exactly what section 17's field split and section 48's
-  column census of 14, 14, 13 and 13 both give, so three independent routes agree. The **One came to
-  44 and nothing can check it**: arch 12 yields no column from a USB census because sixteen buttons
-  share one sense line, so that number is a count of a photograph and the drawing says so rather than
-  implying confirmation. Both carry `data-scan` on their measured keys since the traced geometry
-  landed on 21 August 2026: the 600 its 36 mapped buttons, the One its 32 plus the two touch arrows
-  section 125 placed, which corrects the next paragraph's original ending in place.
-  **A scan code has a name now, read only, and it still has no place**, section 133: the code a scan
-  sends decodes back into the **bit frame** the device sees, `packages/codec/src/irframe.ts`, and a frame
-  matched against the command catalogue and button maps of the account that generated a config names the
-  button. 32 buttons of a Harmony One and 36 of a Harmony 600, `reference/button-maps.md`, with nothing
-  written to anything. **It is a calibration instrument and not a reader**: it needs the generating
-  account, so it works on the two configs Logitech compiled to our specification and cannot name a key in
-  a contributed config. Three things to carry. The ambiguity was mostly a **scope** error, eight scans a
-  remote down to four: a scan's command is per activity and its button is not, only an `ActivityButtonMap`
-  may name an activity's set, and the assignment is globally injective because a button is one physical
-  key. The four that remain are real, two up keys and two down keys sending one command each, and no
-  decoding breaks a symmetry. So the tables stay out of `packages/usb/src/models.ts`, since the rest is
-  **unbound**: these configs drive three devices in two activities and a library answering for a scan
-  they never bound would answer from nothing. The silhouettes were going to get no `data-scan` on the
-  same ground and got them on 21 August 2026 anyway, for the measured keys only, which serves both: a
-  drawn key answers with its code or with nothing, never from nothing. And **the
-  geometry does not
-  follow**: under section 48's own column formula the digits 1, 2 and 3 of a Harmony 600 sit in columns 3,
-  2 and 2, and no divisor to 19 in either direction puts a digit row on one line, so a matrix position is
-  a wiring decision and a test asserts it cannot be recovered.
-* **`MCU_ID` is unreachable by construction**, not a task: a PIC18 keeps its device id at `0x3FFFFE`
-  and the internal read window is two 64 KiB pages. The arch 12 part number stays inferred.
-
+**Moved to `docs/status.md` on 29 August 2026**, under "What is still open". Fourteen questions
+with the argument for each. They are reference rather than instruction, so they are read when a
+session needs them rather than carried into every one.
 ## Next
 
-**The screen's text reads back**, section 112, which is what the application needed before it could
-show a config's activities: their names are drawn by a mode page's screen program and nothing else
-names them. A glyph code is **not** a character and not an encoding: it indexes the config's own font
-table and is assigned per config, in the order characters first appear in the generator's string list,
-so two configs of one remote disagree about code 20. What is stable is the typeface, so a code is
-resolved from its glyph's **pixels** against a hand read alphabet, seven of which cover the corpus.
-170920<!--fact:text_read--> of 170922<!--fact:text_glyphs--> drawn glyphs come back; `make text`. The
-seeds and the method for an eighth typeface are in `packages/codec/bin/alphabets.ts`.
-
-**A code is one character and a character is one code**, section 124, and that rule is the check to
-reach for before trusting a seed: it is the generator's own, since a code is a character's position in
-the string list it walks. Three hand read labels were wrong and each showed up as a character sitting on
-two codes at once, `9` read as `8` on arch 9, a lowercase `z` read as `Z` on arch 14, and an `I` read as
-`l` on arch 12. Every one of them was drawn in a single word in its own container, which is why the
-proof string each seed carries could not catch any of them, and every one was caught by a **second**
-container of the same skin. The rule also resolves what no shape can, `I` against `l`, in place of a
-fallback that assumed two configs of one skin number their codes alike. **Adding a gap filling source
-labels a shape and not just a code**, so when two characters share a shape both codes have to be named
-or the shape is claimed for one of them.
-
-**Which key starts which activity is read**, section 120, and **which drawn name it carries is read on
-all four architectures**, sections 121 and 125. The chain is four hops, because nothing in the format names
-an activity: a mode page's tagged list binds a key to `0x7F`, that base slot 10 list carries `0x1F` with
-operand `0xFF | set` selecting a base slot 9 entry, that entry's list writes `CurrentActivityState` with
-`0x80 | n`. Eleven of eleven containers, four architectures. Every binding is a press, every activity is
-reachable, and **all of an activity's keys are on one page**, which is what makes "the page that names
-this activity" mean something. The structural closure is that an activity page's `0x7F` operands are a
-contiguous ascending run of base slot 10 indices, 16 of 16 activity pages against 373 of 1152 pages
-generally that are not.
-
-**The idle value is base slot 13's `first`**, the field section 60 marked unconfirmed, and it is exactly
-the value no binding writes. `one_config` is what makes that a finding rather than arithmetic: `first` is
-7 where the highest is 8 and 8 **is** bound to a key. So section 86's "value 0 is no activity running"
-was the wrong reason for a right count, corrected in section 120.
-
-**The name comes from the modes the chain enters**, not from geometry: an activity's lists also carry
-`0x7E`, and the mode they enter draws the activity's own name, so the page's string that relates to one
-of those is its label. That is how three architectures do it: arch 8 22 of 22, arch 9 4 of 4, arch 14 13
-of 13, and with arch 12's own route below, **50<!--fact:activities_named--> of
-50<!--fact:activities_total--> activities**, `make activities`. Four rules make it a function and each was found by having it fail: an exact match beats a
-contained one, a per mode chrome test, one label to one activity, and a second pass for a label the menu
-wrapped onto another row. **The exact match rule is the one to remember**, section 124: an activity's
-chain enters the mode that lists the devices, so every activity says every device's name, and reading
-containment as sufficient let one label be claimed by all four activities of a Harmony 880 and then
-dropped from all four as chrome. The number was 23 of 35 for a day, and three of those 23 were fragments
-of a wrapped label, two of them belonging to a different activity than the one they were reported for.
-
-**Arch 12 does not use any of that, and it is the better route**, section 125. No string rule can work on
-a touch panel: `one_config`'s three activity pages bind scans {50,51,52}, {50,48,49} and {48,49} while all
-three draw labels on the same rows, so no fixed code to row map can exist. What a One needs is base slot
-17's hit map, and the missing link was **`ModePage.lead`**, the arch 12 only byte section 66 read and
-nobody explained: it is a zero based index into that map, so the rectangle a key covers is **stated** and
-the label is the text the firmware's own hit test puts inside it. 11 of 11, and it runs before the string
-matching, because a stated answer beats an inferred one. The closure is a demand the container makes on
-itself, that a page only binds codes its own hit page offers, 268 of 268 and 104 of 104 where every shift
-breaks 54 to 227. `packages/codec/src/touch.ts` also carries the **panel to pixel transform**, whose y
-half is arithmetic (872 panel units and 54 pixels are one row measured twice) and whose **x half rests on
-one reading** and is marked as such, though no name depends on it. Under it the panel is three blocks at
-pixel rows 33, 87 and 141, one or two across and never three, plus a bar from 191 to 253 that runs off a
-220 pixel display: which is exactly the unprompted description of the remote itself, two touch points below the
-screen and a key at each side, so 48 to 53 are the blocks, 43 and 44 the points and 46 and 47 the keys.
-**Which code lands where is per page**, in the order the rectangles are stored, so section 121's proof
-holds for the codes too.
-
-**Every key a screen labels now carries that label**, section 128, which is what turns the button table
-from `group 3 #29` into a word. Two populations first: a scan bound by a **mode page** is a key the screen
-speaks for and a scan bound by a **base slot 9 set** is a key on the keypad, and the two are **disjoint**,
-sharing no code at all on arch 9 (Harmony 525), arch 12 (Harmony One) and arch 14 (Harmony 600 and 700)
-and exactly one on arch 8 (Harmony 880). Then the place: on a One base slot 17 states the rectangle, so the
-label is the text inside it, attributed to the **nearest** region rather than the firmware's own first
-match, which is right for a touch and wrong for a label since a long right hand string starts inside the
-left hand rectangle. Elsewhere the keys are two columns beside the screen and the rows are **measured**
-from where the activities section 121 names without geometry are drawn: four rows on arch 8, two on arch 9
-and two on arch 14, with the left of each pair settled per architecture and not assumed. 98.9% of 6989
-screen key bindings, and 3100 of the 3106 that send a code.
-
-**The rule that suggested itself fits the counts and is wrong**, and it is the lesson of the section: the
-k-th key in ascending scan order taking the k-th row of text pairs four keys with four rows on the 600's
-own activity menu and gets two of them wrong, because two keys share a row and the outer rows are chrome.
-A key belongs to a **place**. Two closures hold the reading up, one of which reads no text at all: every
-two item row in the corpus has its two keys on **different** action lists, with no exception, and the
-labels agree with the activity chain on 62 of 63 keys, the exception being a "1 OF 2" page indicator drawn
-in the bottom row's continuation slot and left in rather than special cased.
-
-**A config's screens can be drawn now**, section 129, and the bench shows one beside the keys it
-binds, made out of the bytes per request. That is the shape FreeHarmony needs, since an editor has to
-show what a screen will look like after a change and must not carry a second implementation to do it.
-It is `packages/codec/src/render.ts` and `make render`, with the PNG encoding in `src/png.ts` because
-the bench serves the same rasters over HTTP and two encoders would be two things to keep right.
-It is here rather than in FreeHarmony because it is also the check that fails differently from every other
-test in this repository: a reader test says a number came back and cannot see a label half a row out, an
-icon over its own caption or a colour channel one bit wrong. **Every mode page of every container
-renders with nothing unresolved**, over 1500 pages on four architectures, which needs a picture's
-extent, a glyph's encoding, a font set's first code, a referenced string's address and a page's program
-pointer all to be right at once. **And that claim was hollow for a month**, section 148: it counts
-pictures the renderer looked for and could not decode, so an instruction the renderer never looks at
-contributes nothing to it. The renderer knew screen opcode 2 and not opcode 3, and on arch 9 (Harmony
-525) every picture is an opcode 3, so a rendered Harmony 525 page drew its text and left 4549 of 6144
-pixels untouched while the check reported nothing missing. Same defect as section 103's catch-all
-owner: a claim whose falsifier is outside its own population. The test that can fail counts the naming
-instructions by walking the programs and compares that with the renderer's own tally, **per
-architecture**, because the whole shape of the mistake was one architecture at zero while a total
-looked healthy. Three things it needed that no reader did: the display size, which the
-configs state through their own full screen pictures, **both picture opcodes saying it and agreeing
-exactly on nine containers**, which is what took arch 9 (Harmony 525) from having no witness for its
-96 by 64 to having the only one; the pen advance, which is **nothing** because the
-gap between letters is a column the glyph carries; and the pixel byte order, where the first reading was
-wrong. **A pixel is big endian RGB565**, the only field here that is not little endian, because it is
-stored the way a display controller is fed rather than the way the container is written. Little endian
-drew a Harmony One's buttons as rainbow stripes, and the test that pins it says out loud that **most
-pictures cannot tell the two apart**, since a black and white picture reads the same either way.
-
-**A page is a set of screens, not one**, and `renderVariants` walks the arms: a screen program switches
-on a state variable, so each appearance carries the condition that selects it, named through base slot 0
-where the variable has a name. The bench offers them as buttons. **What that immediately produced is
-section 130**, because it made the question "which variable is this" unavoidable: **base slot 13's first
-seven records are the firmware's clock**, `first` being the value a variable holds when the config is
-generated, and all seven equal the corresponding field of base slot 3's build timestamp in all 21
-containers. Section 74 had read three of them as a date from the action list language alone, and the
-weekday's zero is base slot 3's own epoch, a Saturday. That also generalises section 120's idle value:
-it is the generated value, and for `CurrentActivityState` the two coincide because nothing is running
-when a config is compiled.
-
-**Two thirds of a config's drawn text had never been read**, section 121, which is what fell out on the
-way. Screen opcode 4 draws the glyph string at a `u24`, and in 12052 of 12052 instances that address is
-the payload of an opcode 5 instruction in **another** program, so a string is stored once inline and
-referenced everywhere else. `make text` went from 65456 glyphs to 146846 on the day, and stands at
-170922<!--fact:text_glyphs--> now that two more configs are in its population, with every sample still
-reading at 100.0%. Nobody had followed the pointer because the byte accounting never
-complained: the bytes were already claimed by the program holding them, and a comment in `screen.ts`
-said opcode 2 was the only instruction naming a place outside its own program. **A shared string is a
-writer rail**: editing one in place changes every draw that names it.
-
-Step 8, the contribution probe, exists. **Step 6's action list language is read**, section 73:
-both dispatchers, every branch, to the `RETURN`. All twenty base slots were already labelled, so
-what is left of step 6 is small and it is measured rather than estimated.
-
-**The number now carries a depth, and that distinction is the point.** Knowing which routine an
-opcode reaches is not knowing what it means for a config, and counting the first as the second
-reported 100% for a language a tenth of which nobody can name. `packages/codec/src/actions.ts` is
-the table, `reading` gives one instruction's, `readingCoverage` gives a config's:
-
-| | share of 86947<!--fact:action_instructions--> instructions |
-|---|---|
-| meaning | 98.6%<!--fact:reading_meaning--> |
-| placement only | 1.4%<!--fact:reading_placement--> |
-| no reading at all | 0<!--fact:reading_unread--> instructions, nothing left anywhere in the corpus |
-
-**The population is 58<!--fact:reading_arguments--> smaller than it was, and that is a correction**,
-section 139: `0x3F` with a high byte in `0xD0` to `0xDF` is a **six byte** instruction and the slot after
-it is its argument, which the table had been resolving as an instruction of its own at depth `meaning`
-every time. Section 73 wrote that consequence down and nothing acted on it for a month. `takesFollowingSlot`
-is the predicate; `Container.actionList` still returns the slot, because the emitter reproduces it.
-
-Against 24.5% with no reading before sections 70 to 74. Per architecture: 98.6%<!--fact:reading_arch14-->
-on arch 14, 98.8%<!--fact:reading_arch12--> on arch 12, 98.6%<!--fact:reading_arch8--> on arch 8 and
-95.9%<!--fact:reading_arch9--> on arch 9. **Every figure here is recomputed**, `make reading`, and
-that is new: the table used to quote 97537 instructions and 97.9% and nothing checked either, so when
-section 103 moved the number for the first time it turned out that no sample list reproduces 97537 at
-all. The population is defined in `packages/codec/bin/reading.ts` and nowhere else now.
-
-**The unread column is empty and the state is unreachable**, sections 107 and 108: `0x6E` was the
-last opcode in it, six instructions, and it is a modulo, and section 108 read the last three opcodes
-that had a handler and no reading, `0x65`, `0x66` and `0x76`. **An action list can make a remote write
-to its own external flash**, which is what those first two do, and the region they write to is one the
-firmware allocates itself rather than the one base slot 2 declares. What is left is all placement and mostly one thing, `0x3F` band `0xC0` on arch 12, and
-it is hardware state rather than config structure. Section 102 read it and it stayed placement;
-**section 103 read the state machine behind selector 17 and it did not**, which is 68 of the band's
-106 uses per config. The band is three
-fields, `{ bit 0; bits 1 to 3; bits 4 to 8 }`, and three mechanisms: selector 17 sets the display's
-light level, from four levels, three thresholds and a fade rate that base slot 15 states; selector 16
-enables an I2C device at address 0x60 through `LATC` bit 5; and 0 to 12 set that device's thirteen
-channels from a two bit table in base slot 15's twelve spare bytes. **Which device it is is not
-established**, section 106, and the firmware never switches it on: only a config does. Two closures: the corpus uses **exactly** the fifteen
-selector values the handler accepts out of thirty two, and the light level is an index into the 27
-distinct `CVREF` voltages the part can produce, a table derivable from the datasheet. **Do not expect
-what is left to move by comparing configs**: the band's uses are identical in both One configs despite
-one having five devices and eight activities and the other one and one.
-
-**The two biggest items turned out to be things the remote does, not things a config describes.**
-`0x75` is the **beeper**, four tones from 461 Hz to 4.7 kHz, gated by `0x3F` high byte `0xF3`; and
-`0x07` high byte `0xF8` **steps a date** held in state variables 3, 5 and 6, which are therefore
-firmware defined and must not be reused. Sections 73 and 74.
-
-**Read a dispatcher, not one handler at a time**, and **count who uses an opcode before choosing
-which firmware to open**. The second rule is new and it cost three misreadings in one section:
-`0x73` and two `0x3F` bands were all read on arch 14 and all used only elsewhere. One query says
-which image to open.
-
-Above `0x65` the opcode is the instruction and the binary search at `0x0EC8E` names a handler for
-each; `0x80 | n` is one instruction with a seven bit field, a write into state variable `n`. **Below
-`0x65` the operand carries the rest of the opcode**, in bands: `0x1F` is a register machine, `0x07`
-thirteen operations with no argument, `0x0F` peripherals and diagnostics, `0x3F` four bands one of
-which is a six byte instruction. **`0x3F`'s bands are the only structure in the format that is not<!--superseded-->
-one table across architectures**, so they must not be ported. Nor may `0x0F`'s, section 139.
-
-**Below `0x65` the dispatcher tests ranges rather than those four values**, section 108, so `0x20`
-behaves exactly like `0x1F`; the corpus only ever emits the canonical four, which is why reading it as
-four exact cases never showed up in a number. **Three structures are not one table**, sections 107 and
-139: `0x3F`'s bands, the whole opcode block `0x65` to `0x6E`, which only arch 14 implements, and
-`0x0F`'s bands, whose table was read from arch 12 (Harmony One) and arch 14 (Harmony 600 and 700) and
-answered for arch 9 (Harmony 525) too, calling a call a no-op twelve times per config. Arch 9 and arch 12 test each of those ten opcodes in
-the same ladder and branch to the dispatcher's exit, and their configs never emit one. So the shift,
-the boolean operations, the device record writer and the **modulo** are arch 14's alone, while the
-multiply and divide just above them, `0x78` and `0x77`, are everyone's. `0x6F` belongs to nobody: it
-tests the accumulator and returns from both arms, on all three architectures we hold firmware for.
-
-The byte accounting has **no architecture sized remainder left**. It used to name two: 5437 bytes<!--superseded-->
-in the arch 12 safe mode container, which was one font set the reader had cut to a single glyph,
-section 78; and 25819 on arch 9, which was infrared class 5 and is section 82. Section 83 then took
-the six shapes that were left in every container down to three: base slot 0's frame is `length + 2`
-because the terminator sits outside the field, an empty counted array is still an array, and the 4
-or 34 bytes above base slot 7's table are **base slot 8's leading action list**, which also turned
-up that every mode page's list is inside base slot 8's section. Section 84 read the last three and
-two more: a screen program carries a `SCREEN_END` even where a jump means nothing reaches it, which
-was the whole arch 8 family of 49 to 64 single zero bytes; base slot 3's section is three bytes
-longer than the clock record and base slot 17's is two where it names the picture bank; the key
-table's extent is its mode record's, and an empty record is the **wide** form; and twelve arch 12
-bytes belong to base slot 15 and to no group, by position rather than by reading. **Those twelve are
-read now**, section 103: group 9 continuing past the six entries its header declares, four bytes as
-one more pair of device levels and eight as a table of two bit fields, with no remainder. **And they
-are claimed by reading now too**, which took a year longer than reading them: the accounting kept a
-`slot-15-spare` owner filling whatever was unclaimed between the lowest group and the pointer array,
-so zeroing any group's entry count let the catch-all absorb what the group stopped claiming and the
-report still said 100.00% with no gap and no overlap, over 32 bytes on a Harmony One and 28 on a
-Harmony 600 and a Harmony 880. A claim made because a run was left over cannot fail, which is the
-same defect as an unfalsifiable test and it sat inside the number that measures M2.
-
-**Every user config is accounted for to the byte**, sections 66, 67, 75, 82, 83 and 84, with zero
-overlaps in all nineteen containers. Not 100.0% to one decimal, which it reached a section earlier:
-nothing unattributed at all, in eighteen of the nineteen containers. The last
-structure was a pool of tagged lists packed end to end, one per mode page plus one per base slot 9
-set, bounded below by a mode entry's end and above by the lowest address another reader names.
-That completes the first two of milestone M2's three parts on every architecture. **The exception is
-`h525_safemode_ahcm`**, the arch 9 safe mode container, at 98.2% after section 85, which corrected
-two arch 9 readers that every other container agreed with: opcode 22 takes **one** operand and not
-eleven, so the picture belongs to the opcode 3 after it, and a monochrome picture row is padded to a
-whole byte. Both were invisible until a container turned up with an odd width and four instructions
-in an order the corpus had never carried. Its last 283 bytes are four runs nothing points at, named
-in section 85 and deliberately unclaimed.
-
-**The third part exists and round trips**, `packages/codec/src/emit.ts`, `make emit`. `rebuilds` is
-the mirror of `claims`, owner name for owner name, and **every owner the accounting claims is
-rebuilt**; the bytes come back identical on all nineteen containers and **the residue copy writes
-nothing at all** on eighteen of them, since every byte is now written by a rebuilder. It builds into
-a buffer
-filled with `0xA5` rather than into a copy of its input,
-because **an emitter that starts from a copy passes a round trip test while writing nothing at
-all**, so the tests that carry weight are the negatives.
-
-**The number has a depth, the same way `actions.ts` does.** `framed` bytes come from typed fields,
-5.5% to 38.3% depending on the sample; `carried` bytes came out of a reader as an opaque run, and
-that is nearly all of a config, because **a glyph and an encoded picture cannot be re-encoded from
-their pixels**: the encoder chose where to skip and where to emit literals and several encodings
-draw the same image. **Do not treat moving those bytes as the obvious next job**: what a picture
-means is already read, so framing the body would move the number 60 to 80 points without anything
-becoming clearer. What it would buy is the ability to **change** an image rather than reproduce
-one, which is a product question. `docs/roadmap.md`, milestone M2.
-
-**Base slot 0 is read**, section 77, and it was the emitter that found it worth reading: it was the
-one section whose bytes the accounting counted while nothing inside it had ever been named, because
-its `0xFEED` frame states its own length. It is a list of `0xA7` framed nodes, `u8 tag; u16 4 +
-len(name); u16 level; u16 index; char name[]`, and **level 1 names base slot 13's state variables,
-entry by entry**. What opened it was the arch 9 safe mode container, whose first node is not called
-`Root`: `FRAME_PROLOGUE` was never a prologue, it was the first node, and two of its nine bytes were
-that node's own length.
-
-**Every device in the corpus has its name, section 126**, 63<!--fact:devices_named--> of
-63<!--fact:devices_total--> in 15<!--fact:user_configs--> user configs, and the route is ASCII rather than pixels. Base slot 0
-names no devices: a device's label is a **prefix** of a state variable's name, `<label>_<property>_<values>`,
-where a name belonging to the config has a **number** in the property's place instead, which is the
-discriminator. What ties a label to an infrared group is base slot 13: the variable's transitions carry
-one action list instruction, and for a `Power` or `Input` variable that list is the one that sends the
-code, so `0x7D`'s own operand names the device. 102 variables reach exactly one group and **none reaches
-two**. Behind that, elimination for 5 and a mode's drawn title for 3, in that order because the title is
-the label on arch 9 and arch 14 and a command name on arch 8 and arch 12. Two closures: the ASCII label
-is also **drawn**, 53 of 55 exactly, which is two readers with no shared code agreeing; and on arch 9 and
-14 shifting the pairing to the next group breaks 16 of 16. `make devices`, and the column to watch is the
-source rather than the total.
-
-**The shared walk from a list to the groups it sends to must not be memoised**, section 126, and only
-arch 14 could show it: a nested walk stops at whatever the outer one had visited, so caching it lets a
-list inherit a truncated answer. Arch 8, 9 and 12 carry `0x7D` directly and passed; arch 14 emits
-`{0x7F, 0x7D, 0x7C}` with the send one list down, and every arch 14 device lost its name at once, 63 to
-47.
-
-**And `0x7D` answers two more questions the application asks**, section 126: **what a button sends**,
-3106 bindings across the corpus and **every one of them a press**, 85 of those macros of several codes in
-an order that matters; and **which devices an activity drives**, the groups its base slot 9 set
-addresses, one to three per activity. `inventory` composes devices, activities, the build timestamp and
-the idle value into one object, which exists so that FreeHarmony does not assemble it and become the
-second copy.
-
-**A config states its devices and its activities, section 86, which is what the application needs
-before it can show anything.** A level 1 name is `<label>_<qualifier>_<values>` and `values` is its
-variable's highest value plus one, 250 of 250, which settles the field section 60 could not explain.
-Every container with a name tree names exactly one `CurrentActivityState`, whose highest value is
-the **number of activities**, and **a device is an infrared group**. The calibration is section 58's
-deliberate pair: a config Logitech compiled for one device and one activity reports one and one, and
-the arch 9 safe mode container reports zero activities. The record's eight byte values are
-transitions, `u8 zero; i16 from; i16 to; { u16 operand; u8 opcode }`, and the instruction is an
-action list one. `packages/codec/src/inventory.ts` is the application's view of it.
-
-**The names are the user's own equipment, so no brand out of a contributor's config is quoted**, in
-a document or in a test: counts and shapes. The generic role words the generator emits are structure
-and appear freely, and the one brand in the repository is from our own sync, section 58.
-
-**What the pool holds is settled too**, section 69: each non slot 9 list is a second copy of one
-mode page's own list, the k-th copy belonging to the k-th page in mode table order, identical in
-meaning except that opcode `0x7F`'s operand names a different base slot 10 entry holding an
-identical action list. Nothing reads a copy, and an emitter must still reproduce it. Section 68 got
-this wrong twice by pairing the runs by address rather than by mode table order and by comparing
-them byte for byte.
-
-**Arch 8 closed on 8 August 2026 and needed no firmware to do it**, section 75. Its whole
-remainder came from one byte: an infrared record header is `12 + 9 * count` with the count at
-`+0x0B`, not the flat 21 bytes section 61 read, and 37 records of that contributor's four configs
-carry a second pointer group. That one number explained three separate gap families at once, 37 short
-headers, 37 unclaimed blocks and the 37 gaps between them, and none of the counts moves when the
-config grows from 234 records to 462.
-
-**What that second group holds is read now, and the 37 was never a property of arch 8**, section 134.
-It is the same code with **one biphase bit cell inverted**, a mark and a space of equal duration
-exchanged at a fixed offset, in every block pair of every one of the 37; the records read as RC6 mode 6
-at 36200 Hz, they all sit in **one device group**, and the two arch 8 configs contributed later have
-**zero**. So the count follows the equipment. Two things to carry from it. The test asserting the
-count was called `every arch 8 config has exactly 37 two group records`<!--superseded--> and its body
-looped over four configs of one contributor, so **its title was false while it passed**, which is
-section 75's own falsifier met and unnoticed. And it was found by a decoder **declining** to read
-those records rather than by looking for it, which is the second time a rule survived because the
-corpus agreed with itself.
-
-**Read the whole gap list before choosing a target**, and this is the second finding it produced:
-`make coverage --detail` used to print only the largest few of 128, and both this and section 66
-came from asking for all of them and noticing families with the same count. **It prints the
-families now**, length times count sorted by total bytes, computed over every gap rather than the
-listed ones, so the next one of these does not need the hand count.
-
-**Arch 9's class 5 infrared is read**, section 82, out of the 525's own firmware: `h525_code` is its
-whole internal program flash, loading at `0x0000` with the application from `0x1000`, and its SPI
-primitive at `0x07F8E` is arch 9's single config read choke point, the analogue of arch 14's
-`0x1B9AC`. Class 5 turned out to be **class 1 with a dictionary**: a header pointer names a body of
-one byte indices, the body names a symbol table, and the table names short pulse blocks that every
-code with that pulse pair reuses. One body expands to a textbook NEC frame, repeat header included,
-which is the closure. Every field width is a literal in the firmware that reads it.
-
-**Disassemble it with `--part 4550`.** The 525 is a PIC18F4550 and the default register map is the
-67J50 family's: 65 of 139 addresses disagree, the whole CCP block moves, and the infrared carrier
-setup reads as a duty cycle write instead of a PWM mode write. The wrong map produces a listing
-that is readable and wrong, which is the failure this project has recorded twice before.
-
-**Its safe mode config was the next piece of work and it was bigger than it looked.** Found at
-flash `0x818000`, it parses, its checksum recomputes, and it contradicted six claims the corpus
-asserts. **All six are re-derived and not one of them was a fix**, sections 77 to 79. Four became
-findings: base slot 0 is a list of named nodes, and a font set's second header byte is the **first
-glyph code** with the count not keyed on the architecture, which took the arch 12 safe mode
-container from 39.1% attributed to 99.6%. Two dissolved on measurement: base slot 1's extent is the
-gap to the next pointer like every section's, and the log area's range obeys every rule section 47
-states once it is not measured against a chip size taken from the same field.
-
-**It is in the corpus now**, `h525_safemode_ahcm`, and in the corpus wide claim lists rather than
-excluded from them, where it is the counterexample two of them name: its font sets start at code 32
-and declare four counts. **Excluding it would have left the corpus agreeing with itself**, which is
-the condition that hid the first glyph code, and section 85 is the same lesson twice more: it holds
-the only picture whose width is not a multiple of eight and the only opcode 22 that is not followed
-by an opcode 3, and each of those broke a rule every other container had confirmed. Three arch 12 assumptions came out of `packages/usb`
-on the way: the version reply was matched as a whole byte, its length was fixed at twelve, and the
-region validator was hard coded. `docs/memory-map-525.md` holds the predictions against the
-measurements.
+**Moved to `docs/status.md` on 29 August 2026.** It was a rolling account of the most recent
+findings, which is that document's stated job, and it cost about 7900 tokens in every session
+to carry a summary of claims `docs/findings.md` already holds with a test each.
