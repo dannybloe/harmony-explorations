@@ -524,6 +524,16 @@ paragraph above states. So the rule is now written down three times and has fail
 not add a fourth paragraph about it**: what is missing is not a statement, it is a check that runs
 without being remembered.
 
+**So it is a hook now**, `bin/lab-register-hook.py`, wired into both agents' `PreToolUse` on the tools
+that open a file rather than on `Bash` alone, because both of section 213's re-derivations read their
+files through an ordinary read. **It interrupts the first touch of a lab directory and then stays
+quiet**: exit 2 carrying the register's own rows, and the retry straight afterwards succeeds, so the
+cost is one round trip per new directory and the guarantee is that nobody digs a mined square without
+having been shown its row. Advisory output was not tried, deliberately, because text that scrolls past
+is exactly what the eight occurrences prove gets ignored. It **fails open** on anything it cannot
+parse, since losing the reminder costs an afternoon and blocking a session on a broken hook costs more.
+`make lab-check` is unchanged and is still the way to ask on purpose.
+
 What the fifth occurrence bought is real and is the shape to aim for when this happens
 again: the ledger of client sourced numbers had no executable check at all and has one now, and three
 of its rows moved on bytes that were already here.
@@ -805,6 +815,10 @@ reference/lab-register.md       the lab, artefact by artefact: what each thing i
 reference/concordance-notes.md  the two concordance defects, with patches
 reference/ghidra_functions.txt  derived metadata: 521 functions by reference count
 bin/setup-ghidra.sh             build or refresh the Ghidra project
+bin/lab-register-hook.py        prints the lab register's rows for a path at the moment that path is
+                                opened, and interrupts the first touch of each directory so it cannot
+                                be scrolled past. The structural fix for a rule written down three
+                                times and broken eight, section 213. Fails open by design
 pyrightconfig.json              what pyright checks and, at length, what it deliberately does not
 .agents/skills/                 the project skills, as relative symlinks into .claude/skills/, so a
                                 second agent runs the same rituals rather than a copy of them. All
@@ -814,8 +828,11 @@ pyrightconfig.json              what pyright checks and, at length, what it deli
                                 maintained second copy of files that point into node_modules, so
                                 they are the shape this repository refuses everywhere else and the
                                 reason given for excluding them was sound
-.codex/hooks.json               the publication check, wired into Codex's pre-tool hook. The git hook
-                                cannot see a tool call, so this is the same guard at the other end
+.codex/hooks.json               the publication check and the lab register hook, wired into Codex's
+                                pre-tool hooks. The git hook cannot see a tool call, so the first is
+                                the same guard at the other end; the second is the eight occurrence
+                                rule made mechanical, and tests/test_toolchain.py fails if either
+                                agent's file loses it
 samples/                        empty by policy
 ```
 

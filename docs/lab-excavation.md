@@ -205,7 +205,10 @@ Per square, the loop is the same four steps, and **step 0 is a command**:
 **Step 0 is per path, not per dig, and that distinction is the whole of section 209.**
 
 **It failed twice more in the session that wrote it**, section 213, so read the next paragraph as a
-description of something that actually happens rather than as advice. Both times the check was run on
+description of something that actually happens rather than as advice. **Step 0 is a hook since then**,
+`bin/lab-register-hook.py`: it prints these rows when a lab path is opened and interrupts the first
+touch of each directory, so the step happens whether or not anybody performs it. Run `make lab-check`
+when you want to ask deliberately; do not rely on remembering to. Both times the check was run on
 the paths the dig set out to open, correctly, and then a method name led into a directory whose row
 says mined and the check was not re-run, because the subject had not changed. A dig
 wanders: a string in one square names a class in another, and following that name is what a dig is

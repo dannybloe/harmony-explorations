@@ -27511,6 +27511,23 @@ So the count is eight, and the honest reading is that a rule stated once and an 
 are not enough. What would have caught both is one command, `make lab-check PATH_ARG=<path>`, run at
 the moment a file in a new directory is opened rather than at the moment a dig begins.
 
+**So it runs by itself now**, `bin/lab-register-hook.py`, wired into both agents' pre-tool hooks on
+the tools that open a file rather than on the shell alone, which matters because both of this
+session's re-derivations read their files through an ordinary read rather than through a command.
+**It interrupts the first touch of each lab directory and then stays quiet**, carrying the register's
+rows, and the retry immediately afterwards succeeds. So the cost is one round trip per new directory,
+bounded and self limiting, and the thing it guarantees is the one thing eight occurrences say cannot
+be guaranteed by writing it down: that the row was in front of somebody before the digging started.
+
+Advisory output was considered and rejected. The eight occurrences are eight cases of a rule being
+available and not consulted, so a reminder that can be scrolled past is the failure mode rather than
+the fix. It fails open on anything it cannot parse, which is the same trade `bin/check-publishable.py`
+makes for the same reason: a guard that breaks a session is worse than a guard that misses one.
+
+**The ninth occurrence, if it comes, will say something this one cannot.** Either the hook did not
+fire, which is a bug with a test, or it fired and was read and the digging happened anyway, which
+would be about attention rather than about instruments and would need a different answer.
+
 **What the two occurrences cost is not nothing, and not much.** Section 212's finding stands: the note
 had the name and not the detail numbers, not the firmware reading, and not the stale third arm. This
 section's genuinely new material is below and is the larger part of it. The cost is an afternoon of

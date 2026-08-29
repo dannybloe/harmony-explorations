@@ -11,6 +11,17 @@
             "statusMessage": "Checking the staged tree is publishable"
           }
         ]
+      },
+      {
+        "matcher": "Read|Grep|Glob|Bash|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/bin/lab-register-hook.py\" --hook",
+            "timeout": 30,
+            "statusMessage": "Asking the lab register about that path"
+          }
+        ]
       }
     ]
   }

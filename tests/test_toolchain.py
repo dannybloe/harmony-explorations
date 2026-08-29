@@ -18,6 +18,7 @@ import io
 import json
 import os
 import re
+import subprocess
 import sys
 import unittest
 
@@ -1527,6 +1528,85 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         self.assertEqual(len(stating), 25,
                          'the number of files stating the write path moved, so re-read the withhold '
                          'list before restamping this: %s' % stating)
+
+
+class TheLabRegisterHookRunsWithoutBeingRemembered(unittest.TestCase):
+    """Section 213: the rule has been written three times and failed eight, so it is a hook now.
+
+    What is asserted is the behaviour that makes it worth having rather than annoying: it interrupts
+    the **first** touch of a lab directory and then stays quiet, it fails open on anything it cannot
+    understand, and both agents are wired to it. Its report is `tools/lab_register.py`, which has its
+    own tests.
+    """
+
+    HOOK = os.path.join(ROOT, 'bin', 'lab-register-hook.py')
+
+    def _run(self, payload, session):
+        body = dict(payload)
+        body['session_id'] = session
+        done = subprocess.run([sys.executable, self.HOOK, '--hook'],
+                              input=json.dumps(body), capture_output=True, text=True, cwd=ROOT)
+        return done.returncode, done.stderr
+
+    def _lab(self):
+        lab = os.environ.get('HARMONY_LAB') or os.path.join(os.path.dirname(ROOT), 'lab')
+        return lab if os.path.isdir(lab) else None
+
+    def setUp(self):
+        # A session id nothing else uses, so the hook's own memory cannot make this test order
+        # dependent. The name carries the test's identity for the same reason.
+        self.session = 'toolchain-test-%d' % os.getpid()
+
+    def test_it_interrupts_the_first_touch_of_a_directory_and_then_stays_quiet(self):
+        if self._lab() is None:
+            self.skipTest('no lab directory, so there is no path to report on')
+        first = os.path.join(self._lab(), 'software', 'classic', 'README.md')
+        if not os.path.exists(first):
+            self.skipTest('the square this test names is not in this lab')
+        code, err = self._run({'tool_input': {'file_path': first}}, self.session)
+        self.assertEqual(code, 2, 'the first touch has to be impossible to scroll past')
+        self.assertIn('lab register', err)
+        # And the retry immediately afterwards goes through, which is what bounds the cost at one
+        # round trip per directory rather than making the square unreadable.
+        again, _ = self._run({'tool_input': {'file_path': first}}, self.session)
+        self.assertEqual(again, 0, 'the retry must succeed or the hook is a wall')
+
+    def test_it_fails_open_on_everything_it_cannot_understand(self):
+        """A reminder that breaks a session is worse than a reminder that is missed."""
+        for name, payload in (
+            ('no tool input', {}),
+            ('a path outside the lab', {'tool_input': {'file_path': 'docs/findings.md'}}),
+            ('an unexpanded variable', {'tool_input': {'command': 'cat $HARMONY_LAB/x'}}),
+            ('a field of the wrong type', {'tool_input': {'file_path': 17}}),
+        ):
+            with self.subTest(case=name):
+                code, _ = self._run(payload, self.session + name)
+                self.assertEqual(code, 0)
+        # Unparseable input, which is the one case that cannot go through the helper above.
+        done = subprocess.run([sys.executable, self.HOOK, '--hook'],
+                              input='not json at all', capture_output=True, text=True, cwd=ROOT)
+        self.assertEqual(done.returncode, 0)
+
+    def test_both_agents_are_wired_to_it(self):
+        """A guard installed for one agent is a guard the other walks past.
+
+        `.agents/skills` exists so a second agent runs the same rituals rather than a copy of them,
+        and a hook is the same argument: the check has to be in both files or the next session using
+        the other agent re-derives the ninth occurrence.
+        """
+        for settings in ('.claude/settings.json', '.codex/hooks.json'):
+            with self.subTest(file=settings):
+                with open(os.path.join(ROOT, settings), encoding='utf-8') as handle:
+                    data = json.load(handle)
+                commands = [h['command']
+                            for entry in data['hooks']['PreToolUse'] for h in entry['hooks']]
+                self.assertTrue(any('lab-register-hook.py' in c for c in commands),
+                                '%s does not run the register hook' % settings)
+                # And it must be reached by the tools that actually open a file, not by Bash alone:
+                # both re-derivations in section 213 read their files through Read and Grep.
+                matchers = [entry['matcher'] for entry in data['hooks']['PreToolUse']
+                            if any('lab-register-hook.py' in h['command'] for h in entry['hooks'])]
+                self.assertTrue(any('Read' in m and 'Grep' in m for m in matchers), matchers)
 
 
 if __name__ == '__main__':
