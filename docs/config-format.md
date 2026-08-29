@@ -352,9 +352,14 @@ arch 14 use the base layout directly.
 `tests/lab.py`. There are three, and the difference between them is a difference in the question:
 
 * `ALL_CONTAINERS`, 21, every container a **per container** claim is made over.
-* `CONTAINERS`, 15, the narrower population a corpus wide **total** is computed from. It leaves the
-  Harmony One sync pair out so one unit is not counted twice, and the two arch 8 (Harmony 880 and 885)
-  configs out because adding them moves every coverage figure in one commit.
+* `CONTAINERS`, 19, the narrower population a corpus wide **total** is computed from. It leaves the
+  two arch 8 (Harmony 880 and 885) configs out because adding them moves every coverage figure in one
+  commit. **It does include the Harmony One sync pair**, and this entry said 15 and gave excluding
+  that pair as the reason until 29 August 2026. Both halves were wrong, and the reason was a
+  paraphrase of a claim `reference/superseded.md` already carries: a config before a sync and the
+  same remote's config after one are two containers, because the bytes differ, and a total over
+  containers is not a headcount of remotes. This paragraph exists to stop exactly this drift, which
+  is the part worth recording.
 * `USER_CONFIGS`, 15, every config a remote was actually programmed with.
 
 Where a row says "user configs" the count carries a marker `make facts` recomputes, because a count in
@@ -1052,7 +1057,7 @@ pairs, then 96 by 8, then the picture. [findings.md](findings.md) section 85.
 #### What fills the region
 
 The pictures above, and nothing else. The region is one contiguous array of them from the end of
-the named content to the trailer, walkable end to end in all nine containers that have a trailer,
+the named content to the trailer, walkable end to end in all nine containers that have a **bank**,
 and screen opcode 2 inside a mode program is what addresses them.
 
 **This subsection used to say the opposite and the correction is worth reading.** It described the
@@ -1650,10 +1655,18 @@ hardware reading and a config field with no shared code behind them.
 timestamp, and **reuse none of 0 to 12 for anything**. A carried over config sets the remote's clock to
 when the old config was made.
 
-**And record 6's `max` moves with it**, which is eight values written and not seven. Six of the maxima
-are fixed and the year's is that year plus one, so stamping the year alone leaves a config declaring a
-value outside the variable's own range: built in 2023 the record is 23 with a max of 24, and saved in
-2026 it would be 26 in a range that stops at 24. No remote has been watched mishandling that, so this
+**Two of the seven maxima move with their value**, so a save writes eight values and sometimes nine
+rather than seven. **Five** of the maxima are constants, `59, 59, 23, 6, 11` for the second, minute,
+hour, weekday and month. The year's is that year plus one and therefore always moves: stamping the
+year alone leaves a config declaring a value outside the variable's own range, since built in 2023 the
+record is 23 with a max of 24, and saved in 2026 it would be 26 in a range that stops at 24. **And the
+day of the month is the second such place**, which this paragraph missed until 29 August 2026 while
+saying "six of the maxima are fixed"<!--superseded-->: the day's maximum is 30 in every container here, because none
+was built on a 31st, so a save on a 31st writes a one based day of 31 into a variable whose stated
+range stops at 30. `edit.ts` stamps `max(30, day)` there, which is the year's treatment applied to the
+same shape; that choice is ours and is marked unconfirmed, since what Logitech's generator does on
+such a day is unknown and the corpus bounds the maximum below without saying anything about the
+ceiling. No remote has been watched mishandling that, so this
 is a rail taken from the format's own rule rather than from an observed failure. The transitions those
 records carry are **not** touched: they are the same skeleton in every container, one each on the
 minute, hour, day and month records and none on the other three, and the only part that varies between
@@ -1881,10 +1894,16 @@ looking for the shape rather than for the name.
 
 #### A biphase code has one duration, and the bit is which half of the cell carries it
 
-Section 162. Three families in the corpus and the compiled sample state a bit by **position** rather than
+Section 162, and section 163 added the fourth. Four families in the corpus and the compiled sample state a bit by **position** rather than
 by length: there is one half cell, and a set bit is the carrier in one half and silence in the other.
-None of the five durations above applies, so a row of the rhythm table has one shape or the other and
-never both.
+None of the five durations above applies to a biphase family. **A row of the rhythm table has one of
+five shapes, not one of two**, and this said "one shape or the other and never both"<!--superseded-->
+until 29 August 2026, which was true when only the pulse timing and biphase shapes existed. Sections
+166 to 169 added three more: the five durations plus section widths, for a family sending one value in
+sections whose final bits ride in a structural space and in the closing silence; the long toggle shape,
+three regions under the one rule that a set bit is the cell whose first half is silence; and the
+quaternary shape, four space lengths sending two bits per cell. `stated.test.ts` asserts each of the
+three is a shape of its own rather than a patched frame.
 
 | the number | what it is |
 |---|---|
@@ -2483,12 +2502,19 @@ section's own tail rather than part of the framing, and a writer emits them as z
 
 **What the arch 12 firmware does with it is established**, section 111, and it is two things.
 
-**It initialises the remote's clock from it, at every boot.** Measured: a Harmony One was power cycled
-and read 90 seconds later, and it held this record's date exactly and its time plus 90 seconds. So the
-clock's seven data memory bytes at `0x108` to `0x10E` carry **this record's encoding field for field**,
-including the zero based month and the Saturday epoch weekday. The code that performs the copy has not
-been located, so the mechanism is behavioural; the field pairing is not, being read out of the
-subtraction below.
+**The remote's clock agrees with it at every boot, and does not come from it.** Measured: a Harmony
+One was power cycled and read 90 seconds later, and it held this record's date exactly and its time
+plus 90 seconds. So the clock's seven data memory bytes at `0x108` to `0x10E` carry **this record's
+encoding field for field**, including the zero based month and the Saturday epoch weekday.
+
+**Corrected on 29 August 2026.** This said the firmware initialises the clock from base slot 3 and
+that "the code that performs the copy has not been located", so the mechanism was behavioural. Both
+halves are dead. Section 138 located the seeding and it is not from here: state variable `n` lives at
+`0x108 + n`, base slot 13's records **are** the clock, and the firmware seeds each variable from its
+own record's `first` at `0x2A266`. Base slot 3 is the epoch the firmware subtracts against, at
+`0x27F20`, to work out how long ago the config was built. The two records agree at boot because
+Logitech's generator stamps both from the same moment, which is why the measurement looked like a
+copy. The live reading is under base slot 13 above.
 
 **And it subtracts the record from that clock**, accumulating the difference in seconds and in days, so
 the remote can compute how long ago the config was built. The subtraction skips the weekday on both
@@ -2527,7 +2553,7 @@ Three bytes, not four, because 24 bits covers the config region with room to spa
 arrays are large: slot 10 of the Harmony 700 config holds 8037 entries, where a fourth byte
 would cost 8 KiB in that one section.
 
-That test picks out **the same six base slots in all nine config samples** across four
+That test picks out **the same six base slots in all fifteen config samples** across four
 architectures, and rejects every other section. Every entry lands inside the container, and
 every array ascends.
 
@@ -3056,7 +3082,7 @@ So a base slot `b` sits at `b`, at `b + 1` for `b >= 8`, and arch 12 additionall
 `b >= 17` up by one more. `src/harmony/gspm.py` implements this as `base_slot` and `arch_slot`,
 and refuses rather than guesses for an architecture whose insertions are not established.
 
-Three independent fingerprints agree on this alignment across nine configs: the six pointer array
+Three independent fingerprints agree on this alignment across fifteen configs: the six pointer array
 slots land on base slots 5, 7, 10, 11, 12 and 15; the single **one byte** section lands on base
 slot 16; and base slot 18 is NULL. Any one of those alone would be arithmetic, and all three
 agreeing is an alignment.

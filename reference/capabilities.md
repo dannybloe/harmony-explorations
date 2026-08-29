@@ -62,7 +62,14 @@ mechanism, since teletext is European. **Which name carries them is settled on o
 885's own face says 885. Both 5xx images say "Harmony 520" on the face, so there the direction rests on
 the community site's file naming and the analogy, which is upstream standing and not measurement.
 
-## The models this library can address
+## The models this library can recognise
+
+**Recognise, not address, and the difference is the whole point of the heading.** `packages/usb`
+turns a reported skin into a model for arch 2 through 14, which is what this table is for. **Reading
+a remote's flash is narrower**: `FLASH_TOP_BYTE_BOUND` has an entry for architectures 9, 12 and 14
+and for nothing else, so those are the only ones an address can be sent to. `models.ts` was corrected
+on this in section 139 and this heading was not, so a caller trusting it would hand architecture 10
+to a read and have every address refused.
 
 Arch 2 through 14. Arch 15, the 900, 1000, 1000i, 1100 and 1100i, enumerates as a network class rather
 than HID, so `packages/usb` cannot reach it and it is deliberately absent rather than listed as
@@ -78,7 +85,7 @@ unknown. `reference/models.md` has the architecture map and the full skin table.
 | 18 | 520 | 525 | 9 | 12 | | monochrome | no | | yes | no | no | 3.0 | arch; the 525's row, same remote |
 | 68 | 510 | 515 | 9 | 5 | | monochrome | no | | yes | no | no | 3.4.0 | arch only |
 | 67 | 515 | 510 | 9 | 5 | | monochrome | no | | yes | no | no | 3.4.0 | arch only |
-| 36 | Xbox 360 | | 9 | 11 | | monochrome | no | | yes | no | no | 3.0.0 | arch only |
+| 36 | Xbox 360 | | 9 | 12 | | monochrome | no | | yes | no | no | 3.0.0 | arch only |
 | 15 | 880 | 885 | 8 | 15 | 16 | colour | no | | yes | yes | no | 4.4.2 | skin, arch, touch; devices consistent |
 | 17 | 885 | 880 | 8 | 15 | 16 | colour | no | | yes | yes | no | 4.4.2 | skin, arch; the 880's row, same remote |
 | 19 | 890 | 895 | 10 | 15 | 16 | colour | no | 6 | yes | yes | no | 4.9.0 | arch, touch; **display 128 by 160 measured**, section 179, from the picture bank, which is the same size a Harmony 885 has. The panel column is still **not** confirmed by it: the Harmony 600 carries two byte pixels on a monochrome screen, so a size says nothing about colour |
@@ -92,10 +99,13 @@ unknown. `reference/models.md` has the architecture map and the full skin table.
 | 3 | 768 | | 3 | 15 | | monochrome | no | | yes | no | no | | arch only |
 | 7 | 748 | | 3 | 15 | | monochrome | no | | **no** | no | no | | arch only |
 
-Eight more models have capability data and **no skin number anywhere**, so a connected one cannot be
+Eight models had capability data and no skin number anywhere, so a connected one could not be
 recognised: the 550 and 555, the 620, the 665, the 670, the 720 and 785, the 745, the 880 Pro and the
-890 Pro. They are in `MODELS_WITHOUT_A_SKIN` rather than dropped, because an empty list there would
-suggest the skin table is complete and it is not.
+890 Pro. **All eight have a skin now** and each has a row in `MODELS_BY_SKIN`, from Logitech's live
+catalogue, section 131. `MODELS_WITHOUT_A_SKIN` is therefore **empty**, and it is kept rather than
+deleted so that the next model without a number has somewhere to go. This paragraph described it as
+holding those eight until 29 August 2026, which is a document describing a data structure that had
+been emptied.
 
 ## What is verified, field by field, and how
 
@@ -177,7 +187,11 @@ Three things a user interface cannot do without it.
 a guess about a model number, and it is the same answer the firmware gives.
 
 **Refuse an edit that the hardware cannot carry.** `maxDevices` is the host software's own limit, and
-the one sample at that limit is the 700, so a sixth device on a 700 is the last one it will take.
+**no sample in the corpus reaches any stated maximum**, the 700 included at 6 of 8. This paragraph said
+the 700 was at its limit and that a sixth device was the last it would take, which is the circular
+claim the row above already retires: the stated figure had been set from that config's own device
+count, so it bounded the maximum below and forbade no seventh. A writer refusing a seventh device on a
+700 would be refusing on our own arithmetic.
 
 ## What would improve it
 

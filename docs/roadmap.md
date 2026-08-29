@@ -99,7 +99,13 @@ So the container claims are validated across **five** architectures and the USB 
 which also brought the first arch 8 firmware: sections 113 to 115. **Arch 10 parses and nothing reads
 it**, and section 117 turned that from an absent derivation into a result: arch 10's 23 slots are not
 the base twenty with three inserted, because five readers are satisfied by none of the 1330 possible
-placements. Every codec reader stays gated, and the thing not to do is add a mapping to open them.
+placements. Every codec reader stayed gated at that point. **The mapping was adopted on 26 August 2026, on
+Danny's call, and this paragraph told a reader not to add one until 29 August**: `SLOT_MAPS` in
+`packages/codec/src/gspm.ts` is a table per architecture now, section 184, the standing figures are
+fifteen base slots present and five absent, and the byte accounting reaches 99.3% and 97.2% on the two
+890 configs. The live account is further down this document under decision 11's neighbourhood; what
+is preserved here is why the mapping had to be stated rather than derived, which is that none of the
+1330 possible placements satisfies five readers at once.
 That section also corrected the container's base recovery, which had been circular since the first
 day and was wrong on one of the two 890 configs. **Arch 8 has firmware and is still a control**, and what the
 images bought was three counterexamples: the skin rule, `GET_VERSION` field 6's fourth value, and the
@@ -210,8 +216,13 @@ image is a second sample rather than a stand in. Other models are iterated on la
    encoders are written and sit behind a flag that is off in release builds. The `WRITE_FLASH` data
    path was read on 25 August 2026, section 175, so the packets are known and `writeFlash` sends
    them, behind the flag and behind a second named door for the first write. What is still unsettled
-   is one thing about the medium rather than two: whether the firmware erases before it programs,
-   which is moot for a caller that erases first. Pacing was answered by reading the same day.
+   is **the silicon half of pacing**: whether the USB peripheral can accept a second report before
+   the first is serviced, which is the endpoint's buffer descriptor and its ownership bit, and which
+   nothing here has read. The **firmware** half was answered by reading the same day, and the two
+   halves must not be collapsed, which is what `reference/superseded.md` records and what this
+   paragraph did by saying "one thing rather than two"<!--superseded--> until 29 August 2026. Erase
+   before program is closed on both bench architectures since sections 186 and 191, and it was moot
+   anyway for a caller that erases first.
 9. **Logitech's own client is read alongside the firmware, not as a fallback.** *Taken 9 August 2026
    as a fallback, and reordered by Danny on 28 August 2026.* Before deriving anything about how a
    remote is driven, what a packet looks like or which call to make, **look in their code and in the
@@ -307,7 +318,9 @@ image is a second sample rather than a stand in. Other models are iterated on la
    already holds, and the nine families are nine names rather than nine encoders.
 
    **What is genuinely unpriced is everything after the frame.** A block repeats the frame and then goes
-   quiet, and that tail is 151 distinct shapes across the corpus with no rule behind it, so it is copied
+   quiet, and that tail is 140 distinct shapes across the corpus, with a per family rule for 31<!--fact:protocol_tails--> of the
+   rhythm table's 38<!--fact:protocol_entries--> entries since section 171 and none for the rest, so it is emitted where there is a
+   rule and copied
    from a record of the same appliance rather than computed. That is a smaller job and a different one:
    it needs a record to copy from, which means the catalogue import wants a configuration beside it
    rather than standing alone. **The cheap route** still reads base slot 5 out of a compiled config and
@@ -373,7 +386,7 @@ image is a second sample rather than a stand in. Other models are iterated on la
    **Afterwards it is per arrival.** Anything new in the lab gets its row in the session that puts
    it there, the same way a confirmed fact gets its four places.
 
-13. **`docs/findings.md` stays one file.** Splitting it is the obvious idea at 14957 lines and it was
+13. **`docs/findings.md` stays one file.** Splitting it is the obvious idea at 27175 lines and it was
    measured and rejected on 8 August 2026, so do not re-derive this. It **costs no tokens**, because
    it is never loaded whole, only grepped and read in ranges; the per-session cost was `CLAUDE.md`
    and that has been cut. **No cutting line is better than another**: 140 references run between
@@ -381,7 +394,7 @@ image is a second sample rather than a stand in. Other models are iterated on la
    so the correction chains that give the document its value do not survive either. And it is **the
    one document that has never drifted**, because every section in it carries a regression test,
    where the eleven contradictions the audit found were all in summaries. What would reopen it is
-   size alone, at roughly 5700 bytes a section: if it outgrows rendering, split by era, keep section
+   size alone, at roughly 8060 bytes a section over 209 sections: if it outgrows rendering, split by era, keep section
    numbers global, and keep the index at `docs/findings.md` so the 159 references that name that
    path stay correct.
 
@@ -1047,7 +1060,7 @@ which is what decision 4 defers until the API stops moving.
   details from the config's own XML header, **and one with no `META.md` either**. That second case
   used to be skipped, which meant the eleven config kkong42 drop was invisible while the summary
   line said nothing was missing: the one dump the tool exists to report was the one it could not
-  see. The corpus now reports 9 dumps over 5 architectures, with two sets flagged as undescribed.
+  see. The corpus now reports 10 dumps over 5 architectures, with one set flagged as undescribed.
   The undescribed marker is a stated convention, `dumps/META-template.md`, because a looser match
   reports the best documented dump in the corpus as undescribed.
 
@@ -1545,7 +1558,7 @@ else's remote, which is the thing this step is trying to arrange. What is verifi
 produces a correct report for every sample in the corpus, spanning four architectures, and that it
 still produces the shape when the cookie is rewritten to a magic no family claims.
 
-### Step 9: excavate the lab. Survey done, digging started, first square closed
+### Step 9: excavate the lab. Survey done, seven squares dug
 
 **Decision 12 is the argument; this is the job.** The lab holds 12506 files in 2.3 GB, measured on
 28 August 2026, and the knowledge in it is a superset of the knowledge in this repository by an
@@ -1587,7 +1600,9 @@ inspiration: their interface is a labelled view of the config format, so an inve
 settings is a semantic key for bytes already read and not yet named.
 
 **The deliverable is a register in this repository**, `reference/lab-register.md`, one row per
-artefact: what it is, where it came from, what is inside, and a status. It does not exist yet.
+artefact: what it is, where it came from, what is inside, and a status. **It exists**, 44 rows, with
+`TheLabRegisterCoversTheSiteAtArtefactLevel` asserting that every artefact in the lab has one. This
+sentence said it did not exist for as long as the paragraph eleven lines below said it did.
 `reference/checksums.md` is the model for the tone and `tools/corpus.py` for the idea, since it
 already reports which dumps have no description recorded. The register covers the whole site, not
 the binaries, and the catalogue pages beside it hold the substance.
@@ -1614,7 +1629,9 @@ and firmware update are all local and work today, and the device database, the i
 client's HID layer, extracted its seven per architecture constant tables, and found that all of them
 had been extracted on 9 August and that `docs/host-client.md` is built on them. The register said so,
 on its own row, and was not read. So the excavation's own instrument works and the discipline of using
-it does not yet, which is the fourth time this project has re-derived something the lab already held.
+it does not yet, which is the **fifth** time this project has re-derived something the lab already
+held: decision 12 was itself taken after the fourth, and section 209 later made a sixth. This said
+fourth, which made the next paragraph's "a sixth time" skip a number.
 The register's rows now point at the extraction from both directions, and what the afternoon did buy
 is worth having: the ledger of client sourced numbers had **no executable check at all** and has one
 now, and three of its rows moved, two arch 12 regions explained from internal pages already in the lab

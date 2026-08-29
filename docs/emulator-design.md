@@ -1,6 +1,10 @@
 # Design: a PIC18 emulator harness
 
-**Status: design only, not built.** This is the next substantial piece of work and the one
+**Status: design only, not built, and deferred by decision 5 in `docs/roadmap.md`.** Hardware in the
+loop came first, on the argument that round trip equality, read back and diff, cross learning and live
+RAM polling do most of what this was wanted for at a fraction of the build. This document said it was
+"the next substantial piece of work"<!--superseded--> until 29 August 2026, which was true when it was
+written and contradicted a numbered decision afterwards. What follows is the design and the one
 the rest of the plan leans on. Written down first so it can be argued with before anyone
 spends a week on it.
 
@@ -15,7 +19,7 @@ bytes get read, in order, for a specific action. That converts an inference into
 measurement.
 
 **There is no way to check a generated config short of flashing it.** These remotes cannot
-be replaced and there is no recovery server. So the only current test of "did I build a
+be replaced. So the only current test of "did I build a
 valid config" is an experiment on irreplaceable hardware. An emulator makes it an
 automated test.
 

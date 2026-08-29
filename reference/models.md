@@ -114,7 +114,7 @@ ambiguous selector was the right call for a reason nobody had written down.
 
 ### Skin numbers
 
-Forty six entries. The five this project has measured independently all agree exactly, which is
+Forty six entries. The six this project has measured independently all agree exactly, which is
 the calibration: they were derived from firmware literals and from live remotes, and the table
 was not consulted to produce any of them.
 

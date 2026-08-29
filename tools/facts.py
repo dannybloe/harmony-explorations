@@ -445,6 +445,40 @@ def parseable_facts():
     }
 
 
+def protocol_facts():
+    """The shape of the infrared rhythm table, read out of the generated source.
+
+    **Every one of these had drifted somewhere on 29 August 2026**, which is why they are facts now
+    rather than numbers people retype. The tail count was 24 in `findings.md` and is 31; three
+    documents and the generator template said three biphase families where there are four; and
+    `status.md` called 38 entries 38 families, where one family appears at two carrier frequencies.
+    None of them is a corpus total, so none was covered by anything here.
+
+    Computed from `packages/codec/src/protocols.ts`, which is generated, so these track the
+    generator rather than a hand written list. That is the point: a `--write` of the table moves
+    them and `make facts` then names every document that has not kept up.
+    """
+    path = os.path.join(ROOT, 'packages', 'codec', 'src', 'protocols.ts')
+    try:
+        with open(path, encoding='utf-8') as fh:
+            body = fh.read()
+    except OSError:
+        return {}
+    try:
+        table = body[body.index('export const PROTOCOLS'):]
+    except ValueError:
+        return {}
+    rows = re.split(r'\n  \{', table)[1:]
+    families = [m.group(1) for m in
+                (re.search(r"family:\s*'([^']+)'", row) for row in rows) if m]
+    return {
+        'protocol_entries': str(len(rows)),
+        'protocol_families': str(len(set(families))),
+        'protocol_tails': str(sum(1 for row in rows if re.search(r'\btail:', row))),
+        'protocol_biphase': str(sum(1 for row in rows if re.search(r'\bbiphase:', row))),
+    }
+
+
 def user_config_facts():
     """The totals `docs/config-format.md` quotes over `lab.USER_CONFIGS`, the fifteen user configs.
 
@@ -651,6 +685,12 @@ def main():
     facts.update(device_facts())
     facts.update(parseable_facts())
     facts.update(user_config_facts())
+    # Source derived rather than corpus derived, so it would happily run without a lab. It is added
+    # only when the lab facts are present, because the numeric check is all or nothing: with a
+    # partial dictionary every lab sourced marker reports "no such fact" and the lab-less run stops
+    # skipping cleanly, which `make test-nolab` exists to prevent.
+    if facts:
+        facts.update(protocol_facts())
 
     if '--list' in sys.argv[1:]:
         for name in sorted(facts):

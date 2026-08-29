@@ -77,8 +77,12 @@ always have been:
 
 * Go through `packages/usb`, never a one off script that opens the device itself. The refusals live
   there.
-* **Cap an internal memory read at one chunk.** A transfer of this region that ends in a one byte
-  final chunk restarts the remote. `readInternalMemory` refuses more than 62 bytes for that reason.
+* **Never ask for an odd count on an internal memory read.** It hangs the remote: the fetch loop
+  reads a word, subtracts two and exits on zero, so an odd count runs away. `readInternalMemory`
+  refuses odd counts and nothing else, which is the same rule stated sixteen lines below.
+  **There is no length cap and this said there was one**, "refuses more than 62 bytes",<!--superseded--> until
+  29 August 2026: 124 bytes is two chunks and reads fine, and 65 and 127 hang despite being over a
+  chunk in a different way. Sections 94 and 96.
 * Health check between provocations: read something with a known answer, usually a config window
   against the lab dump, and stop at the first failure to recover.
 * One remote at a time, and identify which one before trusting any per unit number. Two Harmony Ones

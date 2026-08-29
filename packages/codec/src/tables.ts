@@ -237,6 +237,50 @@ export function parameterGroups(c: Container): ParameterGroup[] | undefined {
   return out;
 }
 
+/**
+ * Architecture to group index to the length that architecture's firmware demands.
+ *
+ * Read off the call sites of the guard routine, `0x0F8F0` on the Harmony 700 and `0x23262` on the
+ * Harmony One, so these are what the code compares against rather than what the corpus happens to
+ * carry. A group absent from a row has no call site on the image that was read, which is not a
+ * length of zero. No image exists for arch 8 or arch 9, so they have no row at all.
+ *
+ * **Ported from `src/harmony/gspm.py` on 29 August 2026, and the gap it closes is the point.** The
+ * table and its check lived only in Python, while TypeScript owns the codec and the whole write
+ * path, so the one rail whose failure is **silent** was checked exclusively in the language that
+ * never writes. `CLAUDE.md` claimed the port was complete at the time. This is the same table and
+ * not a second derivation: `TheTwoParameterGroupTablesAgree` compares them entry for entry, so the
+ * two copies cannot drift the way the opcode tables once did.
+ */
+export const PARAMETER_GROUP_COUNTS: ReadonlyMap<number, ReadonlyMap<number, number>> = new Map([
+  [14, new Map([[0, 1], [1, 4], [2, 1], [3, 4], [5, 14], [6, 14], [7, 1]])],
+  // Group 6 was missing on the Python side until section 105: the site that reads groups 5 and 6 is
+  // one routine with two arms, and the scan had taken the arm that falls through rather than the one
+  // behind a `BRA`. Both demand sixteen.
+  [12, new Map([[0, 1], [1, 6], [4, 6], [5, 16], [6, 16], [7, 1], [9, 6], [10, 8]])],
+]);
+
+/**
+ * Whether every group the firmware knows about is the length it demands.
+ *
+ * `undefined` when no firmware for this architecture has been read, which is arch 8 and arch 9, and
+ * when the groups cannot be read at all. **A writer that gets this wrong is not refused by the
+ * remote**: the subsystem quietly uses its compiled in defaults, so the config runs and one
+ * subsystem ignores it. That is why this is a rail rather than a curiosity, and why it belongs in
+ * front of a write rather than in a reader's report.
+ */
+export function parameterGroupLengthsMatch(c: Container): boolean | undefined {
+  if (c.architecture === undefined) return undefined;
+  const wanted = PARAMETER_GROUP_COUNTS.get(c.architecture);
+  const groups = parameterGroups(c);
+  if (wanted === undefined || groups === undefined) return undefined;
+  for (const [index, length] of wanted) {
+    const group = groups[index];
+    if (group === undefined || group.values.length !== length) return false;
+  }
+  return true;
+}
+
 /** Which group carries the display light band's continuation, and where in it the two readers look. */
 export const LIGHT_BAND_GROUP = 9;
 /** Band 3's pair of device levels, at `4 * band` past the cursor, which is past the declared entries. */

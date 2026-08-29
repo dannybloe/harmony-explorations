@@ -76,8 +76,18 @@ test('the 525 reads at 0x820000 and its container counts from 0x020000', () => {
   assert.equal(profileFor(H525).architecture, 9);
   assert.equal(profileFor(H525).configBase, 0x820000);
   assert.equal(profileFor(H525).containerBase, 0x020000);
-  // Not the 4 MiB ceiling the other two share: the 525's flash is 512 KiB.
+  // Not the 4 MiB ceiling: the 525's flash is 512 KiB.
   assert.equal(profileFor(H525).configEnd, 0x880000);
+  // **The three ceilings are three different numbers and this comment said two of them matched.**
+  // The Harmony One's part really is 4 MiB, so `0x400000` is right there. The arch 14 part is
+  // 2 MiB: the firmware refuses every flash address at or above `0x200000`, section 88, agreed by
+  // the validator's bound, the `FLASH` capacity byte, the part number and the bench remote. This
+  // entry carried `0x400000` until 29 August 2026, inherited from concordance's refuted 3904 KiB,
+  // which made the plausibility check below about twice as loose as it should be on a Harmony 600.
+  assert.equal(profileFor(ONE).configEnd, 0x400000);
+  assert.equal(profileFor(H600).configEnd, 0x200000);
+  assert.equal(profileFor(H600).configEnd - profileFor(H600).configBase, 1856 * 1024,
+    'the region the arch 14 firmware permits, not concordance 3904 KiB');
   // No entry is unverified any more, because a remote of every model in the table has now been
   // connected here. The field stays, because the next architecture will need it.
   for (const profile of PROFILES) assert.equal(profile.unverified, undefined, profile.model);

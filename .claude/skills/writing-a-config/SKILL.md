@@ -8,7 +8,8 @@ description: The rails a config writer must respect, and why each one exists. Us
 **Every rail here is a way to produce a configuration the remote accepts and mishandles.** That is
 the hazard class this skill exists for: not a crash, not a refused file, but a config that passes
 both checksums, renders identically, closes every count this project can check, and is wrong. One of
-them, the oversized sequence, killed a Harmony One three times out of three.
+them, the oversized sequence, hung a Harmony One three times out of three, each needing a battery
+pull.
 
 Two things frame the rest. **Version 1 of the application is read only** and every write path sits
 behind `HARMONY_ENABLE_WRITES=1`, so reaching these rails is deliberate. And **nothing here has ever
@@ -36,11 +37,16 @@ produce a config the remote accepts and mishandles.
   thirteen and not seven**, section 138: variables 7 to 12 state the identical value and maximum in every
   container of their architecture and base slot 0 names none of them, index 13 being where both stop. So
   the rail is to reuse none of 0 to 12, and on arch 9 (Harmony 525) their values differ from the other
-  three architectures, so a carried over config must keep each architecture's own. **It is eight
-  values and not seven**, which building the rail found rather than reading it: six maxima are constants
-  and the year's is that year plus one, so stamping the year without its maximum leaves a config
-  declaring a value outside a variable's own range. `clockStateEdits` in `packages/codec/src/edit.ts`,
-  and it refuses a base slot 13 whose other six maxima are not the clock's.
+  three architectures, so a carried over config must keep each architecture's own. **It is eight values and
+  sometimes nine, not seven**, which building the rail found rather than reading it. **Five** maxima are
+  constants, `59, 59, 23, 6, 11`. Two move with their value and both have to be stamped: the year's is
+  that year plus one, and the day of the month's is 30 in every container here because none was built on
+  a 31st, so a save on a 31st writes a day of 31 into a variable whose stated range stops at 30. Either
+  one left unstamped is a config declaring a value outside its own variable's range. This page said
+  "six maxima are constants"<!--superseded--> until 29 August 2026, having found the year's and missed
+  the day's, and `packages/codec/src/sections.ts` carries the day half with the note that it cost
+  nothing but asking for the 31st. `clockStateEdits` in `packages/codec/src/edit.ts`, and it refuses a
+  base slot 13 whose other maxima are not the clock's.
 * **Base slot 3's timestamp is stamped at write time, not copied**, section 111: an arch 12 remote's
   clock holds this value at every boot, so a stale timestamp is a wrong clock by exactly its staleness.
   The rail holds on the other architectures too without needing their measurement, because stamping the
@@ -93,7 +99,8 @@ produce a config the remote accepts and mishandles.
 * **A frame can be written and its tail cannot simply be copied**, section 152. Five durations off a
   record rebuild its frame exactly, and 52 of 58 device groups use one set of timings for every code,
   so a code stated as a bare number elsewhere can be written using a sibling code's timings. What
-  follows the frame does **not** follow from the bits: 151 distinct shapes across the corpus, no rule
+  follows the frame does **not** follow from the bits: 140 distinct shapes across the corpus, and a rule
+  for 31<!--fact:protocol_tails--> of the rhythm table's 38<!--fact:protocol_entries--> entries but no general rule
   behind them, and a constant total block duration explains only 31 of 41 classes. **And 226 records
   hold a second, different code in the tail**, so copying a sibling's tail would emit the sibling's
   second command. The second code is systematic rather than authored, a complement, a near variant or a
@@ -144,7 +151,7 @@ produce a config the remote accepts and mishandles.
   deliberately not a finding, by Danny's call: the notes sit in the lab beside the config,
   `../lab/reads/20260823T1408Z-onres-sequence-NOTES.md`, so a session that finds no section for it must not
   conclude it is unread. A 25 step sequence, their maximum, expands to roughly 55 three byte instructions
-  in one action list, and heavy tapping of the touch panel while it runs killed a Harmony One three times
+  in one action list, and heavy tapping of the touch panel while it runs hung a Harmony One three times
   out of three with the batteries out each time, against five gentle or untouched runs that all completed.
   The mechanism is open and two readings are dead. **This is a new hazard class**: a config the remote
   accepts, whose checksums verify, which this project accounts for to the byte, and which writes nowhere it
@@ -152,6 +159,18 @@ produce a config the remote accepts and mishandles.
   the expanded instruction count and not by their item count, which permits this one. The pause itself is
   opcode `0x7C` inline in tenths of a second in the low byte, so 25.5 seconds is the ceiling the format can
   express and their 20 second limit sits just under it.
+
+  **That refusal is not implemented anywhere, and this rail is the only one here with nothing behind
+  it.** Written down on 29 August 2026 rather than left to be discovered: there is no bound in
+  `packages/codec`, no test, and no section in `docs/findings.md`, because the measurement was
+  deliberately kept out of the findings. Every other rail on this page traces to a firmware reading
+  with an assertion behind it; this one traces to a lab note. So the highest severity way to build a
+  config that harms a remote is invisible to `make facts`, `make test` and every other check this
+  repository has, and a session that greps for a refusal will find none and may conclude there is
+  nothing to refuse. **Nothing composed here may be written to a remote until this has a number and a
+  refusal**, and the number is the open part: 55 expanded instructions hung one and the largest clean
+  run is unmeasured, so the bound has to come from a run that establishes a ceiling rather than from
+  the one figure that failed.
 * **A same length edit is not a small write, and the cheapest one costs two erase blocks**, section
   187. `edit.ts` permits a same length edit and refuses a length change, which is the right rule for
   the **container** and says nothing about the **medium**: flash only clears bits, so changing one

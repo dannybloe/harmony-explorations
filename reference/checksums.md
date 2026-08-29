@@ -149,9 +149,14 @@ architecture would be.
 differs alongside them, which is what makes the pair a controlled sample rather than two files:
 <https://github.com/trelowney/harmony-decompiler/issues/9>.
 
-Note the 600 firmware file listed under derived binaries is **truncated**: the real image is
-70336 bytes and concordance returns only the first 65536. Use the 700 image for arch 14 work,
-since it is complete.
+Note the **older** 600 firmware file listed under derived binaries is truncated: the real image is
+70336 bytes and concordance returns only the first 65536.
+
+**Use `600-0.2-code-base0x9000-COMPLETE.bin` for arch 14 work on the bench remote**, which is the
+complete 70336 byte image read off the device and verified by its own header checksum, listed above.
+This paragraph said to use the 700 image instead, which was right while the complete 600 image did not
+exist and contradicted the entry sixty lines above it afterwards. The 700 image stays the reference
+for anything about the 700 itself and as a second arch 14 sample.
 
 ## Contributed by kkong42, 10 August 2026
 

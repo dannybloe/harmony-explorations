@@ -61,8 +61,8 @@ That is the checklist. Below it, behind a gate:
 
 | phase | what it gets us | status |
 |---|---|---|
-| 8 | the write path, on the spare Harmony One | needs a decision first |
-| 9 | the appliance responds | needs a decision first |
+| 8 | the write path, on the spare Harmony One | **gate opened 25 August 2026**, rehearsal first |
+| 9 | the appliance responds | **gate opened 25 August 2026**, after phase 8 |
 
 ## What this deliberately does not need
 
@@ -591,11 +591,20 @@ architectures, clean room from the firmware, with concordance's length map turni
 corroboration afterwards. An announce, a run of `0x4A` data packets that are answered by nothing, and
 `0xF1 0x30` acknowledged once with `0xF0 0x30` from state 3.
 
-**`writeFlash` still refuses, and the reason moved.** Two things about the medium are open and either
-decides whether a write lands rather than corrupts: whether the firmware erases before it programs,
-and whether a host must pace its data packets given one 63 byte staging buffer and no per packet
-reply. Flash only clears bits, so programming over unerased content silently yields the AND of old and
-new.
+**`writeFlash` sends now, behind the flag, and one and a half things about the medium remain open.**
+This paragraph said the method still refuses and named two open questions, both of which the checklist
+directly below it already ticks, so the document argued against itself.
+
+What is genuinely left is the **silicon half of pacing**: whether the USB peripheral can accept a
+second report before the first is serviced, which is the endpoint's buffer descriptor and its
+ownership bit, and which nothing here has read. The firmware half is derived and blind confirmed, the
+dispatcher drains the staging buffer in the same service call. **Do not merge the two halves**, which
+`reference/superseded.md` exists to prevent.
+
+Erase before program is closed on both bench architectures: section 186 read the Harmony 600's SPI
+path and section 191 the Harmony One's resident flash library, where erase and program are separate
+gates. Flash only clears bits, so programming over unerased content would silently yield the AND of
+old and new, which is why the question mattered.
 
 **So the rehearsal shrinks to one erase block**, which is what section 175 recommends and what the
 first box below now asks for. A Harmony One config is about 1.6 MB and 26 blocks, and the count is per config; one block of it, erased and
@@ -633,8 +642,11 @@ M4, and behind the gate above. The rails are written and off, `packages/usb/src/
       `node packages/usb/bin/rehearse-block.ts --dump <image> --block 0x...`. It reads the block,
       compares it with the dump and prints the packet plan, and it is what turns
       `originalDumpVerified` from a caller's word into a measurement for the range being written
-- [ ] `INTENDEDVERSION` compared against the connected remote's protocol, skin, board and flash id, and
-      refused on any mismatch
+- [ ] `INTENDEDVERSION` compared against the connected remote over all **six** fields, protocol,
+      skin, flash and board plus `SOFTWARETYPE` and `ARCHITECTURE`, and refused on any mismatch.
+      An absent or empty field matches anything, which is how a file offers a fallback, so an
+      empty field is not a match to rely on. Four fields was the pre-section-87 reading and is
+      dead; it stood here until 29 August 2026
 - [ ] `ERASE_FLASH` scoped: a block aligned address and a whole block inside the config region, with the
       ceiling at `0x3D0000` because the stored application firmware sits inside the nominally writable
       region

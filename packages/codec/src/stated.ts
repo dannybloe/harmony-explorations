@@ -13,7 +13,7 @@
  * `pulsesOfFrame` is still the only thing that turns bits into pulses.
  *
  * **Where it stops is where the evidence stops.** A record holds the frame several times over with gaps
- * between the copies, and none of that follows from the bits, 151 distinct shapes across the corpus. So
+ * between the copies, and none of that follows from the bits, 140 distinct shapes across the corpus. So
  * this returns the frame and a caller that wants a whole block still has to decide the rest.
  */
 import { pulsesOfBiphaseFrame, pulsesOfBlock, pulsesOfFrame, pulsesOfLongToggle, pulsesOfQuad,
@@ -249,11 +249,16 @@ export function closingSpace(
 /**
  * The frame a stated code sends, or `undefined` where nothing here knows that family.
  *
- * `undefined` is the answer to keep rather than a fallback, and there is a real population behind it: of
- * the codes Logitech's own analyser named across this corpus, the biphase ones are not in this table at
- * all, because our own decoder cannot produce their number and so no durations were ever derived for
- * them. A guessed rhythm for `Microsoft 30 Bit` would be a command that does nothing, presented as one
- * that works.
+ * `undefined` is the answer to keep rather than a fallback: a guessed rhythm is a command that does
+ * nothing, presented as one that works, so a family this table does not hold is refused rather than
+ * approximated.
+ *
+ * **The biphase families are in the table and this said they were not**, until 29 August 2026. Four of
+ * them are, `Microsoft 30 Bit`, `Kreatel IP 22 Bit`, `Magnavox 13 Bit` and `Philips RC5 13 Bit Toggle`,
+ * each carrying a `biphase` shape and each reproducing its own records exactly; `biphaseOf` and the
+ * encoder twenty lines below emit them. The dead paragraph named `Microsoft 30 Bit` as the example of
+ * what could not be emitted, which is one of the four. It was also attached to the wrong function,
+ * describing `pulsesOfStatedCode` from a docstring on the biphase accessor.
  */
 /** The entry's biphase shape as the encoder's own type, or `undefined` on a pulse timing family. */
 export function biphaseOf(entry: StatedProtocol): BiphaseTimings | undefined {

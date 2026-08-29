@@ -180,7 +180,9 @@ test('arch 9 puts its flash a megabyte up, and the two rules disagree everywhere
   assert.equal(validateRegionByte(0x80, 9), 'config-flash');
   assert.equal(validateRegionByte(0x87, 9), 'config-flash');
   // Internal program memory is at plain low addresses on a PIC18LF4550, with no 0xFE window. It is
-  // still reported as internal, which is what keeps the one chunk cap over it.
+  // still reported as internal, which is what keeps the **odd count** refusal over it. Called a one
+  // chunk cap here until 29 August 2026, which was the bound tried before the mechanism was read:
+  // 124 bytes is two chunks and is fine, and the source beside this was corrected and its test was not.
   assert.equal(validateRegionByte(0x00, 9), 'internal-program-memory');
   // And 0xFE is not a window here at all, so the arch 12 route into program memory is refused.
   assert.throws(() => validateRegionByte(0xfe, 9), ProtocolError);

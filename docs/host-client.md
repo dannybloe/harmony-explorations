@@ -607,12 +607,28 @@ reads over USB. For every chip it lists against arch 12 the layout is `16K, 8K, 
 uniform 64 KiB to 4 MiB, so **an erase anywhere in the arch 12 config region takes 64 KiB with
 it**, and the fine boot blocks are all below `0x010000` and outside anything the rails permit.
 
-**The 64 KiB figure has a firmware reason since section 192, so it is no longer held on the client's
-word.** Before every flash access the arch 12 firmware writes the request's top byte, biased by three,
-to a register at external `0x020025`, and then replaces that top byte with a fixed `0x13`. Sixteen bits
-of offset are left, so the window is 64 KiB by construction and the block size follows from the
-addressing rather than from a chip table. The client's table remains the source for the **fine** boot
-blocks and for the alignment rule, neither of which the firmware states.
+**The 64 KiB figure has a firmware reason since section 192, and that reason establishes less than
+this paragraph claimed.** Before every flash access the arch 12 firmware writes the request's top
+byte, biased by three, to a register at external `0x020025`, and then replaces that top byte with a
+fixed `0x13`. Sixteen bits of offset are left, so the **addressing window** is 64 KiB by
+construction.
+
+**Corrected on 29 August 2026.** This went on to say the block size therefore "follows from the
+addressing rather than from a chip table", and so was "no longer held on the client's word". It does
+not follow: a 64 KiB window bounds what one command can reach and says nothing about how much the
+chip erases at once. The refutation is in this document already, under "Flash block geometry" below,
+where the bottom 64 KiB is stated to erase in 8 KiB blocks **under that same window**. So a window
+and a sector are different quantities and the firmware only gives the first.
+
+`ERASE_BLOCK_SIZE` is therefore still **client sourced and unconfirmed**, exactly as the paragraph
+twelve lines above this one says, and the two statements contradicted each other until this
+correction. The client's table remains the source for the block size, for the **fine** boot blocks
+and for the alignment rule, none of which the firmware states.
+
+**What would confirm it costs no write.** The client picks its table from the chip's JEDEC
+manufacturer and device id, which it reads over USB, so reading that id off the connected unit and
+matching it to the table's row is a read and settles which row applies. Confirming the *erase* span
+directly does mean erasing something, which is why it has waited.
 Two consequences the rails now enforce:
 
 * an erase address must be a **block boundary**. The client walks its table from zero and starts

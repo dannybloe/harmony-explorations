@@ -206,7 +206,7 @@ export const MICROCHIP_BOOTLOADER_PRODUCT = 0x000b;
  *
  * A Harmony One or Harmony 600 held in its bootloader by a key at power on enumerates as
  * `04D8:000B` with no manufacturer, product or serial string at all, where a booted one is
- * `046D:C121` and calls itself `Harmony Remote 4-3.4.0`. Both bootloaders carry those descriptors
+ * `046D:C121` and calls itself `Harmony Remote 0-3.4.0`. Both bootloaders carry those descriptors
  * inside their own 4 KiB, so the identity comes from the recovery code rather than from the
  * application. That is the only signal a host gets, since the bootloader writes thirteen ports in
  * total and nothing in it drives the display.

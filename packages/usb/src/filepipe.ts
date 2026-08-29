@@ -2,9 +2,15 @@
  * The **file protocol**, which is how the file based family is addressed. Read paths only.
  *
  * `docs/findings.md` section 198 is the derivation and `docs/usb-protocol.md` section 6 the
- * specification. In one paragraph: these remotes have no config address. They expose a small
- * filesystem, and a host opens a path, gets a handle, and reads through it. So none of
- * `protocol.ts` applies, which is why this file exists rather than a branch in there.
+ * specification. In one paragraph: these remotes address their storage by **name** rather than by
+ * address over USB. They expose a small filesystem, and a host opens a path, gets a handle, and reads
+ * through it. So none of `protocol.ts` applies, which is why this file exists rather than a branch in
+ * there.
+ *
+ * **The config does have an address and this file said it does not**, section 199. The remote's own
+ * file table gives each name a medium, an offset and a size, and `/cfg/usercfg` is external flash
+ * `0x020000` for 256 KiB on a Harmony 350. It is the **host** that has no address, because this
+ * protocol offers no way to ask for one, which is a different claim and the one to keep.
  *
  * **Two sources and they agree.** Logitech's own client states the packets, per skin, in the
  * templates section 197 found; and the Harmony 300 and 350 firmware, which is the only firmware
@@ -384,8 +390,15 @@ export async function readOpenFile(
 /**
  * A bare ping: does this remote answer at all.
  *
- * Four bytes, no parameters. Their own client sends one before every file operation, and a Harmony
- * Touch refuses an open without it, so this is part of a session rather than a diagnostic.
+ * Four bytes, no parameters. Their own client sends one before every file operation, so this is kept
+ * as part of a session rather than a diagnostic.
+ *
+ * **It is not what makes an open succeed, and this said a Harmony Touch refuses an open without it.**
+ * Measured and refuted before the framing was fixed, section 200: a bare ping draws no reply and the
+ * open after it draws none either. What was actually missing was the string parameter's encoding,
+ * `0x80` then the characters then a NUL, read out of Logitech's own encoder. The ping stays because
+ * their client sends it and matching their session shape costs nothing; claiming the remote demands
+ * it is a hardware fact this project measured the other way.
  */
 export async function pingFileRemote(transport: Transport): Promise<FileReply> {
   return exchange(transport, FILE_PING, []);
@@ -477,7 +490,7 @@ export function requestedPath(report: Uint8Array): string | undefined {
 }
 
 /**
- * A transport for a remote of this family, refusing everything that is not one of the three reads.
+ * A transport for a remote of this family, refusing everything that is not one of the four reads.
  *
  * Separate from `guardMutations` on purpose. That one keys on the high nibble of byte 0, which is
  * this protocol's fixed service id, so it would classify every packet here as one command. Two
@@ -497,9 +510,9 @@ export function guardFileProtocol(inner: Transport): Transport {
       }
       if (!FILE_READ_ONLY_COMMANDS.has(command)) {
         throw new TransportError(
-          `refusing file protocol command 0x${command.toString(16)}: only open, read and close are ` +
-            'implemented, and the rest of this family\'s commands write. Nothing here has ever ' +
-            'written to a remote.',
+          `refusing file protocol command 0x${command.toString(16)}: only ping, open, read and ` +
+            'close are implemented, and the rest of this family\'s commands write. Nothing here has ' +
+            'ever written to a remote.',
         );
       }
       if (command === FILE_OPEN && !opensForReading(report)) {

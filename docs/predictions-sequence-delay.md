@@ -74,4 +74,28 @@ to be stored by whoever authors it.
 
 ## Scored
 
-To be filled in after the file is read, with nothing above this line changed.
+**Measured on 23 August 2026, and scored here on 29 August 2026**, which is six days later than it
+should have been: the measurement had landed in the `writing-a-config` skill and in `CLAUDE.md`'s rails
+table while this document still read as an open prediction. The whole value of a predictions document
+is its record of which predictions were wrong, so an unscored one is the one state that makes it
+worthless.
+
+**The headline prediction is refuted. It is H1, not H2.**
+
+| # | prediction | outcome |
+|---|---|---|
+| headline | H2: a sequence compiles away into lists and timers, and the action list gains no new opcode | **wrong.** It is H1: the pause is an opcode, `0x7C`, inline in the action list |
+| the unit | seconds, on the strength of Logitech's own interface offering whole seconds | **wrong.** Tenths of a second, in the low byte, so 25.5 seconds is the ceiling the format can express and their stated 20 second limit sits just under it |
+| 6 | a sequence on a screen button is one action list, referenced rather than copied | not separately measured; the delay reading did not turn on it |
+| 7 | no new section and no new base slot | **right.** A sequence is built out of what is already there |
+
+**What the run found instead is worth more than the arithmetic was**, and it is a hazard rather than a
+format fact: a 25 item sequence at Logitech's own stated maximum expands to roughly 55 three byte
+instructions, and heavy tapping of the touch panel while it runs hung a Harmony One three times out of
+three, batteries out each time, against five runs that completed. Reproducible rather than variance,
+and the mechanism is open. So **their stated maximum is not a safe bound**, and the rail a writer needs
+is bounded by the expanded instruction count rather than by their item count. That rail is stated in
+the `writing-a-config` skill and is **not implemented anywhere**, which is recorded there.
+
+**On "what would make this interesting" above**: H2 is refuted, so the question it raises does not
+arise. A sequence's delays are in the config, in the action list, and a reader can recover them.

@@ -35,13 +35,15 @@ can turn one into a brick, so the first thing this project ever writes to a remo
 
 ## Where we stand
 
-Four remotes are on the bench, a Harmony One, a second One kept as a spare, a Harmony 600 and a Harmony
-525, plus configuration files that other owners have sent in.
+Seven remotes are on the bench: a Harmony One, a second One kept as a spare, a Harmony 600, a Harmony
+525, and a Harmony Touch, a Harmony 350 and a Harmony 300 added later, plus configuration files that
+other owners have sent in. The work so far is about the first four; the other three speak a different
+protocol and are only partly reachable.
 
 | | |
 |---|---|
 | Read the whole configuration off a remote | **Works.** What comes off matches a backup of that unit byte for byte |
-| Work out what is in it | **Done** for every configuration file in the collection, to the last byte |
+| Work out what is in it | **Done** to the last byte for the four remote families the tools cover, and nearly so for the fifth |
 | List your devices and activities, with their names | **Works.** The names are recovered from the pictures the remote draws on its own screen, because that is the only place it keeps them |
 | Take a configuration apart and rebuild it identically | **Works.** This is the test that has to pass before it is safe to change anything |
 | Change a configuration on the computer | **Works.** Small edits, bigger ones that move everything after them, and adding a whole device from Logitech's catalogue, whose infrared comes out byte for byte what Logitech's own service would have written |

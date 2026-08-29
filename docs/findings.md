@@ -21814,10 +21814,14 @@ Manchester, section 153, so no durations were ever derived for them and `pulsesO
 nothing for that family. A guessed rhythm there would be a command that does nothing, presented as one
 that works. A further 115 codes their own analyser declined to name at all.
 
-**Where this stops.** A record holds the frame several times over with gaps between the copies and a
-closing silence, and none of that follows from the bits: 151 distinct shapes across the corpus, section
-152. So the table and the encoder produce the **frame** and a caller still has to decide the rest of the
-block, which is the same boundary `pulsesOfFrame` already had.
+**Where this stopped, and it has moved twice since.** A record holds the frame several times over with
+gaps between the copies and a closing silence, and none of that follows from the bits. The figure here
+was 151 distinct shapes<!--superseded--> and section 152 was cited for it, which that section does not
+state; it is **140** since section 164, which took a reading away from 45 records by merging adjacent
+durations of one kind. And the second half is no longer true either: section 171 gave 31 of the table's
+38 entries a per family `tail`, so the encoder produces whole blocks for those and the caller decides
+the rest only for the seven that have no rule. Both corrections are recorded here rather than in the
+later sections alone, because this is the paragraph that states the boundary.
 
 `packages/codec/src/protocols.ts` is the generated table, `src/stated.ts` the lookup and the encoder,
 `bin/protocols.ts` the measurement, `make protocols` prints it and `--write` regenerates it, and
@@ -21948,15 +21952,20 @@ so nothing already in the lab could have shown this.
 **The notation is `G:<family>:(<A>)(<B>)(<C>):<n>`, and slots A and B both hold content.** A slot holds
 a sequence of items joined by `_`; an item is a **value**, written as a single digit prefix and
 hexadecimal digits, or one of three **words**. Slot C is empty in all 2921 codes and the trailing number
-is 3 in all 2921. Six item sequences occur and there is no seventh:
+is 3 in all 2921. Six item sequences occur and there is no seventh. **Two rows were corrected on
+29 August 2026**, having been left at their pre-quaternary values while the sentence above already
+said 2921: the rows summed to 2859, and 62 of the missing codes plus seven miscounted ones are the
+Galaxis family moving from two stated values to three once `Quad` was read as the base of its digits
+rather than as a count of frames. `packages/codec/src/stated.ts` carried the corrected table and
+nothing compared the two, which is the same shape as any other pair of copies here:
 
 | distinct codes | slot A | slot B | families like |
 |---|---|---|---|
 | 1026 | a value | `Repeat` | Toshiba 32 Bit |
 | 936 | empty | a value | Sony 12 Bit |
-| 519 | empty | two values | Sharp 15 Bit, Samsung 38 Bit |
+| 512 | empty | two values | Sharp 15 Bit, Samsung 38 Bit |
 | 293 | `Start` | a value | JVC 16 Bit |
-| 50 | empty | three values | Philips Hurd 16 Bit LongToggle |
+| 119 | empty | three values | Philips Hurd 16 Bit LongToggle |
 | 28 | empty | `Start`, two values, `Trailer` | MitsubishiO1 Dual 8 16 Bit |
 | 7 | a value | a value | Pioneer 32 Bit 2 |
 
@@ -22953,7 +22962,7 @@ correlation in one line where two histograms hide it.
 ## 171. A block's tail is copies, literals and pads sharing one value, measured per family
 
 25 August 2026. Section 152 established that nothing after the frame follows from the bits and left
-the tail as 151 shapes across the corpus with no rule behind them. Per family there is a rule, and it
+the tail as 151 shapes across the corpus with no rule behind them.<!--superseded--> Per family there is a rule, and it
 is small: a record's first block is the frame in one or more copies, **literal words** between and
 after them, and **pad spaces** that within one record all take a single value, plus a constant per
 position extra, solved from a **constant total block duration**. The block's final space is stored one
@@ -22966,7 +22975,7 @@ value, so padding each copy to a period and sharing one pad value are indistingu
 carries only the second. Sony's total is 135001, which is three copies at its published 45000
 microsecond frame period plus the final microsecond: the third route to that number.
 
-**Twenty four of the table's 38 entries now carry a `tail`**, and the counts are per entry as
+**31<!--fact:protocol_tails--> of the table's 38<!--fact:protocol_entries--> entries carry a `tail`**, and the counts are per entry as
 `tailExact`, whole first blocks rebuilt from the entry plus each record's own value and compared word
 for word: Toshiba 32 Bit 622 of 622 with its ditto repeat as a literal run and total 215736 constant
 across all 622; JVC 16 Bit 108 of 108; Sharp 48 Bit 2 345 of 345 with no pad at all; the biphase

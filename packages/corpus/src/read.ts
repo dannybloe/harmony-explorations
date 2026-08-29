@@ -60,7 +60,18 @@ export interface RemoteProfile {
 
 export const PROFILES: readonly RemoteProfile[] = [
   { productId: 0xc121, model: 'Harmony One', architecture: 12, configBase: 0x040000, configEnd: 0x400000 },
-  { productId: 0xc122, model: 'Harmony 600 or 700', architecture: 14, configBase: 0x030000, configEnd: 0x400000 },
+  // **`configEnd` was `0x400000` here until 29 August 2026 and the part is 2 MiB.** It came from
+  // concordance's 3904 KiB, which section 88 refuted: the arch 14 firmware refuses every flash
+  // address at or above `0x200000`, and four routes agree on the size, the validator's own bound,
+  // the `FLASH` field's capacity byte, the part number, and the bench remote. The bound is the
+  // architecture's rather than the bench unit's, so it covers a Harmony 700 as well.
+  //
+  // This value does one job, the plausibility check on a container's declared length below, so the
+  // wrong number made that check about twice as loose as it should be on a Harmony 600: a header
+  // declaring a length between the real ceiling and the imagined one passed, and the read then
+  // walked into addresses the remote refuses. A clean "that length is impossible" became a
+  // confusing failure partway through a read.
+  { productId: 0xc122, model: 'Harmony 600 or 700', architecture: 14, configBase: 0x030000, configEnd: 0x200000 },
   // **The 525's read base is `0x820000`, and this entry said `0x020000` until a remote was
   // connected on 8 August 2026.** Both numbers are real and they are not the same number: the
   // container's own pointers are `0x02xxxx`, which is the base its `end_addr` recovers and what

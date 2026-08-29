@@ -595,8 +595,11 @@ have it zero.
 and the byte is **zero for every address**, over 1696 of them spanning six general purpose banks and
 the special function register page. The calibration is the same sweep on a 600 and a One, which
 return live data in the same banks, and the giveaway is that the 525 reports `PORTC` as zero while
-it is driving USB. Arch 9's `READ_MISC` body is not located in `h525_code` yet, so what it does
-instead is open. `docs/findings.md` section 90.
+it is driving USB. **Arch 9's `READ_MISC` executor is located and read**, section 137: only selector
+`0x01` has a body and every other selector emits two bytes the firmware has just cleared, which is why
+the sweep returns zeros. Selector 1 does answer, and this project read it as zero for a year because
+the reply carries its value in the byte after the one the decoder took. This paragraph said the body
+was not located and the behaviour was open. `docs/findings.md` sections 90 and 137.
 
 **It is selector `0x07` here, not `0x06`.** libconcord's header names `MISC_RAM` as `0x06`, and
 `0x06` on arch 14 is a different accessor that goes through `0x1AB8A`. Whether the upstream
@@ -1613,8 +1616,13 @@ message shapes, is in `packages/usb/test/hardware.test.ts`.
   FRL`, none of which is placed. *Fields 8 and 9 were on this line until they were placed: field 9
   versions the image at `0xFF` `+0x0000` and field 8 the one at `0xFF` `+0xE000`, both `0x00` when
   the image is absent, with the 600 as the negative case for each.*
-* **Why a one byte final chunk on the internal memory path restarts a remote, and why offset zero is
-  exempt.** Narrowed to that by experiment, capped rather than understood.
+* ~~Why a one byte final chunk on the internal memory path restarts a remote, and why offset zero is
+  exempt.~~ **Both halves are answered and this entry outlived them**, until 29 August 2026. Sections
+  94 and 96 read the mechanism: the fetch loop reads a word, subtracts two and exits on zero, so any
+  **odd** count runs away and the final chunk's shape is not the variable. Offset zero is not exempt
+  either; the byte that made it look so is one byte of flash `0x8C7` further on that happens to be
+  even. `packages/usb` refuses odd counts, which this document already says a hundred lines above,
+  and nothing was ever "capped".
 * ~~Another route to `MCU_ID`.~~ **Closed as unreachable rather than answered.** The internal window
   is two 64 KiB pages and a PIC18 keeps its device id at `0x3FFFFE`, outside both, so there is no
   route through this command set. The arch 12 part number stays inferred. `docs/findings.md`
@@ -1700,8 +1708,11 @@ implements none of it.
 
 ## 6. A second protocol for the file based family, from Logitech's own specification
 
-**Client sourced and unconfirmed on hardware**, decision 2, so this section states what Logitech's
-host sends and never what a remote does. It is here rather than only in `docs/host-client.md` because
+**Client sourced in origin and confirmed on hardware since sections 200 and 201**, so this section
+states what Logitech's host sends and, where it says so explicitly, what a remote did. The header said
+"unconfirmed on hardware ... never what a remote does"<!--superseded--> until 29 August 2026 while the
+body already cited a hardware measurement, because the hardware sentences were added and the frame was
+left. It is here rather than only in `docs/host-client.md` because
 it is a protocol description of the same kind as the rest of this document, and section 198 is the
 argument for it.
 
@@ -1792,10 +1803,12 @@ shape across both and **the algorithm is a field rather than a constant.**
 ### What this means for `packages/usb`
 
 `openHarmony` refuses the five file based product ids, section 193, and the reason recorded there was
-that there is no protocol here to reach them with. That reason no longer holds. What has not changed:
-nothing below has been sent to any remote, no implementation exists, and the family's own write
-commands (`0x03`, `0x05` and both device controls) are writes in this project's sense and belong
-behind `WRITES_ENABLED` if they are ever built. The identity read is `0x01` then `0x04` then `0x07`
+that there is no protocol here to reach them with. That reason no longer holds, and neither does the
+sentence that followed it here: **an implementation exists and it has read a remote**,
+`packages/usb/src/filepipe.ts`, sections 200 and 201. What has not changed is that the family's own
+write commands (`0x03`, `0x05` and both device controls) are writes in this project's sense and belong
+behind `WRITES_ENABLED` if they are ever built, and that `openHarmony` still refuses these product ids
+because the **config** path does not reach them. The identity read is a ping, `0x01`, `0x04` and `0x07`
 and changes nothing.
 
 ## Corroboration used, after the fact

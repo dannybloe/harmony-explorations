@@ -42,7 +42,12 @@ export const ESCAPE = 0xe0;
  * way, so a command nobody has classified is refused rather than sent.
  *
  * `START_IRCAP` and `STOP_IRCAP` are deliberately absent: `0x70` changes a remote's state rather
- * than reporting it, which is why it already sits behind the write flag.
+ * than reporting it, so this list refuses it. **That refusal is this allow list and not the write
+ * flag**, which is what the sentence here used to claim: no method on `HarmonyRemote` sends `0x70`,
+ * no rail in `rails.ts` mentions it, and `HARMONY_ENABLE_WRITES=1` would not enable it, because
+ * there is nothing to enable. Worth stating exactly, since whoever implements infrared learning will
+ * come looking for a flag to lift and there is none; what they have to add is the command, its
+ * classification and a rail.
  */
 export const READ_ONLY_COMMANDS: ReadonlySet<number> = new Set([
   GET_VERSION,

@@ -41,7 +41,7 @@ afterwards and in the ordinary way.
 one that has been given the brief cannot be made blind again.
 
 What Codex shares with this repository today, measured rather than assumed: a publication hook in
-`.codex/hooks.json`, which runs the same gate `.claude/settings.json` does, and seven skill documents
+`.codex/hooks.json`, which runs the same gate `.claude/settings.json` does, and ten skill documents
 symlinked into `.agents/skills/` from `.claude/skills/`. **No project brief**, per the withhold table
 below. The skills are the part that needs handling, and residual 3 says how.
 
@@ -53,7 +53,7 @@ question we cannot answer ourselves is where an independent reading is worth mos
 | # | question | status here |
 |---|---|---|
 | 1 | the transfer sequence: which command, what a data packet holds, what answers each step, how a length is stated, whether a whole erase block fits in one transfer | **settled**, and this is the part that checks section 175 |
-| 2 | does programming erase first, or is the old content marked invalid and written over | **open.** No architecture's external write path has been followed to the medium. A hypothesis from Logitech's own client exists and is withheld |
+| 2 | does programming erase first, or is the old content marked invalid and written over | **closed on both bench architectures since 29 August 2026**, and this row said open. Section 186 read the Harmony 600's SPI path and section 191 the Harmony One's resident flash library, where erase and program are separate gates; there is a passing test for the arch 14 half. Still worth an independent reading, but as a check rather than as the open question it was billed as. The hypothesis from Logitech's own client stays withheld |
 | 3 | must the host pace its packets | **half settled, and the halves must not be merged.** The firmware asks for no pacing, derived. Whether the USB peripheral can accept a second report before the first is serviced is unread: that is the endpoint's buffer descriptor and its ownership bit |
 | 4 | the write protect interlock: which bit, its polarity, its resting state, what sets and clears it | settled, and **the highest value target, because we have got it wrong twice.** Both wrong versions are kept in `reference/superseded.md` |
 
@@ -90,6 +90,7 @@ mattered: five documents came **off** an earlier draft of it and nine paths went
 | `docs/review-before-first-write.md` | this document, which states which questions are open |
 | `packages/usb/` | all of it, the protocol, the rails, the write builder, the scripts and the tests |
 | `tests/`, `packages/bench/test/` | the regression tests pin the claims |
+| `.claude/skills/recovering-a-remote/SKILL.md`, `.agents/skills/recovering-a-remote` | **added 29 August 2026 and the reason is question 4.** It states the classifying routine, its three callers, what each top byte selects, the ceiling per architecture and the polarity in the words "it rests at refuse", which is the whole of the highest value question in this review. It is reachable both as a skill Codex discovers on its own and as a tracked file |
 | `tools/ghidra/seed_code.txt`, `tools/ghidra/seed_funcs.txt` | machine generated branch target seeds |
 | the `concordance` checkout | `specs/protocol.txt` documents the protocol independently |
 
@@ -109,9 +110,11 @@ both known before handover:
 2. `docs/memory-map-one.md` says that a stored copy of the firmware sits inside the nominally
    writable region and that our own ceiling protects it. That is a fact about the memory map and
    about a rail of ours, not about the firmware's interlock, and it does not answer question 4.
-3. **The shared skills point at withheld documents, and this one is live rather than moot.** All
-   seven were checked and none states any part of the write path, which is the good half. But **six
-   of the seven name a document on the withhold list and tell the reader to open it**, and
+3. **The shared skills point at withheld documents, and this one is live rather than moot.** There
+   are **ten** now rather than seven, and one of the three added since states an answer outright:
+   see the correction below this list. Nine of the ten are clean of any write path marker, which is
+   the good half. But **six of them name a document on the withhold list and tell the reader to open
+   it**, and
    `probe-remote` names `docs/usb-protocol.md` and `packages/usb/src/rails.ts`, which are the two
    worst leaks for this exercise. Codex discovers skills on its own, so this is a path into a
    withheld file that nobody would have to choose to take. The brief therefore carries an explicit
@@ -120,6 +123,27 @@ both known before handover:
    plugged in. Worth stating plainly because it cuts against this project's usual reading: a document
    inside the repository is normally exactly where the rules live, and here six of them would walk a
    blind reviewer into the answer.
+
+**Correction, 29 August 2026: a fourth residual arrived and it was an answer rather than a pointer.**
+On 28 August a restructuring of `CLAUDE.md` moved the recovery material into a new skill,
+`recovering-a-remote`, which states the write protect interlock in full: the classifying routine, its
+three callers, what each top byte selects, the ceiling per architecture, and the polarity. That is
+question 4 entire, and question 4 is the one this brief calls its highest value target. The skill is
+now on the withhold list above.
+
+**The instructive part is not the leak, it is that no check could see it.** The list is enforced by
+`TheWriteReviewWithholdListIsComplete`, and its sweep skipped every directory whose name begins with
+a dot, so `.claude/` and `.agents/` were outside it by construction. Residual 3 names those very
+directories as the live risk, which means the document identified the hazard and the test walked past
+it. Two changes followed: the sweep now enters dot directories, and it carries markers for the
+interlock as well as for the transfer, since a list checked only for question 1's words cannot
+protect question 4.
+
+**And it says something about the restructuring rule rather than about this file.** Moving text out
+of an always loaded brief into a skill changes who can reach it: a skill is discovered by an agent on
+its own, so text that was previously read only by whoever opened `CLAUDE.md` becomes text a reviewer
+may meet without choosing to. Any future move of write path material has to ask that question before
+it asks about size.
 
 ## Orientation, and the control that it is insufficient
 

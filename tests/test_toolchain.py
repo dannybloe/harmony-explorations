@@ -767,6 +767,53 @@ class TheTwoFlashBaseAnchorsTakeTheSameInputs(unittest.TestCase):
         self.assertEqual(arguments, ['blob', 'addresses'])
 
 
+class TheTwoParameterGroupTablesAgree(unittest.TestCase):
+    """Base slot 15's demanded group lengths now exist in both languages, so they are compared.
+
+    This table lived only in `src/harmony/gspm.py` until 29 August 2026, while TypeScript owns the
+    codec and the whole write path. That put the one rail whose failure is **silent**, a group whose
+    length differs being replaced by compiled in defaults with no error anywhere, under a check that
+    ran only in the language that never writes. An audit found it while `CLAUDE.md` was claiming the
+    port was complete.
+
+    Porting it creates the state this repository's oldest rule is about: one derivation, two copies.
+    The rule does not forbid that outright, it forbids the copies drifting, and the opcode tables are
+    the reason anybody knows the difference. So the copies are compared entry for entry, statically,
+    which runs in a fresh clone with nothing installed.
+    """
+
+    def _source(self, relative):
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', relative)
+        with open(path, encoding='utf-8') as fh:
+            return fh.read()
+
+    def _typescript_table(self):
+        body = self._source('packages/codec/src/tables.ts')
+        start = body.index('export const PARAMETER_GROUP_COUNTS')
+        stop = body.index(']);', start)
+        table = {}
+        for arch, entries in re.findall(r'\[(\d+),\s*new Map\(\[(.*?)\]\)\]', body[start:stop], re.S):
+            table[int(arch)] = {int(k): int(v)
+                                for k, v in re.findall(r'\[(\d+),\s*(\d+)\]', entries)}
+        return table
+
+    def test_the_two_tables_are_the_same_table(self):
+        from harmony import gspm
+        self.assertEqual(self._typescript_table(), gspm.PARAMETER_GROUP_COUNTS)
+
+    def test_the_comparison_can_fail(self):
+        """The control: a parse that returns nothing would make the test above vacuous."""
+        table = self._typescript_table()
+        self.assertEqual(sorted(table), [12, 14], 'both architectures parsed out of the TypeScript')
+        self.assertEqual(sum(len(v) for v in table.values()), 15,
+                         'fifteen demanded lengths, seven for arch 14 and eight for arch 12')
+
+    def test_the_check_exists_on_the_side_that_writes(self):
+        """The reason for the port. A table with no checker beside it closes nothing."""
+        body = self._source('packages/codec/src/tables.ts')
+        self.assertIn('export function parameterGroupLengthsMatch', body)
+
+
 class TheCorpusWidePopulationsAgree(unittest.TestCase):
     """Four lists in `packages/codec/test` name the containers a corpus wide claim is made over.
 
@@ -1287,12 +1334,23 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
 
     def test_the_query_accepts_the_three_spellings_a_session_actually_has(self):
         """Absolute, through `../lab`, and already lab relative all normalise to one path, because a
-        check nobody can paste into is a check nobody runs."""
+        check nobody can paste into is a check nobody runs.
+
+        **The absolute spelling is built from this machine's own lab root rather than written out.**
+        It used to be a fabricated absolute literal under a home directory, which
+        `bin/check-publishable.py` refuses on sight and rightly: that rule cannot tell a placeholder
+        from a real person's
+        directory layout, and a rule that has to make that judgement is a rule with an exemption
+        list. Deriving the path also makes the test stronger, since it now exercises the spelling a
+        session would actually paste on the machine it is running on.
+        """
         module = self.module()
         expected = 'software/classic/res'
-        for spelling in ('software/classic/res',
-                         '../lab/software/classic/res',
-                         '/Users/someone/projects/harmony/lab/software/classic/res/'):
+        spellings = ['software/classic/res', '../lab/software/classic/res']
+        import lab
+        if lab.LAB and os.path.isdir(lab.LAB):
+            spellings.append(os.path.join(os.path.abspath(lab.LAB), expected) + os.sep)
+        for spelling in spellings:
             with self.subTest(spelling=spelling):
                 self.assertEqual(module['normalise'](spelling), expected)
 
@@ -1319,6 +1377,13 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
     DOC = os.path.join(ROOT, 'docs', 'review-before-first-write.md')
 
     # Unambiguous only: each of these names the write path and nothing else.
+    #
+    # **The interlock markers were added on 29 August 2026 and the reason is worth keeping.** The
+    # list above them is question 1's vocabulary, the transfer. Question 4 is the write protect
+    # interlock and it is the question this review calls its highest value target, because two
+    # earlier readings of it here were wrong. A sweep that carries only question 1's words reports a
+    # clean list while a file states question 4's answer in full, which is exactly what happened:
+    # `recovering-a-remote` was created on 28 August and stated the interlock outright.
     MARKERS = (
         'WRITE_FLASH_DATA',
         '0xF1 0x30',
@@ -1327,6 +1392,8 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         'assertFlashWriteAllowed',
         'assertFirstWriteAllowed',
         'rehearse-block',
+        'interlock',
+        '0x1A4',
     )
 
     # The may read set is held to a stricter bar, since it is what actually gets handed over.
@@ -1356,8 +1423,17 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         return found
 
     def _swept_files(self):
+        """Every file a reviewer could open, **dot directories included**.
+
+        This skipped anything beginning with a dot until 29 August 2026, which put `.claude/skills/`
+        and `.agents/skills/` outside the sweep by construction. Those are the two directories
+        residual leak 3 in the document names as the live risk, so the check walked past the hazard
+        its own document had identified, and a skill created on 28 August stated the answer to
+        question 4 for a day with every test passing. `.git` and the package manager's store stay
+        out through `SKIP_DIRS`, which names them rather than matching on a leading dot.
+        """
         for base, dirs, names in os.walk(ROOT):
-            dirs[:] = [d for d in dirs if d not in self.SKIP_DIRS and not d.startswith('.')]
+            dirs[:] = [d for d in dirs if d not in self.SKIP_DIRS]
             for name in names:
                 if name.endswith(self.SWEPT_SUFFIXES):
                     yield os.path.relpath(os.path.join(base, name), ROOT)
@@ -1379,8 +1455,12 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         self.assertEqual(len(may), 13, 'the may read list should resolve to 13 paths, got %s'
                          % sorted(may))
         # The AGENTS.md row remains reserved, but the file is deliberately absent. Its place in the
-        # resolved population is taken by the Codex config named in that row, so the count stays 17.
-        self.assertEqual(len(must), 17, 'the withhold list should resolve to 17 paths, got %s'
+        # resolved population is taken by the Codex config named in that row.
+        #
+        # 19 since 29 August 2026: the `recovering-a-remote` skill went on the list, as both its
+        # real path and the `.agents/` symlink a second agent discovers it through. It states the
+        # interlock, which is question 4.
+        self.assertEqual(len(must), 19, 'the withhold list should resolve to 19 paths, got %s'
                          % sorted(must))
 
     def test_every_may_read_path_is_clean_of_the_write_path(self):
@@ -1427,9 +1507,11 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         withhold list is worth another look, so the churn is the point rather than the cost.
         """
         stating = sorted(p for p in self._swept_files() if self._markers_in(p, self.MARKERS))
-        # Back to 20 since 28 August 2026, when the duplicate AGENTS.md was removed and Codex was
-        # pointed at CLAUDE.md instead.
-        self.assertEqual(len(stating), 20,
+        # 24 since 29 August 2026, and the jump is two changes at once rather than four new leaks:
+        # the sweep now enters dot directories, which admitted the recovery skill, and `MARKERS`
+        # gained the interlock's vocabulary, which admitted three files that state question 4
+        # without stating the transfer. Every one of the 24 is covered by the withhold list.
+        self.assertEqual(len(stating), 24,
                          'the number of files stating the write path moved, so re-read the withhold '
                          'list before restamping this: %s' % stating)
 

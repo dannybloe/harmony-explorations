@@ -143,7 +143,7 @@ designing around its absence.
    designer is active in harmony-decompiler discussion #1 and is a privileged source, held in
    reserve for when we are genuinely stuck.
 8. **Version 1 of the application is read only.** Write code exists behind a flag that is off.
-9. **`docs/findings.md` stays one file.** Splitting it is the obvious idea at 15000 lines and it was
+9. **`docs/findings.md` stays one file.** Splitting it is the obvious idea at 27000 lines and it was
    measured and rejected on 8 August 2026, so do not re-derive it. It costs no tokens, since it is
    never loaded whole, only grepped and read in ranges. The measurement, the two candidate cutting
    lines and the one condition that would reopen it are decision 13 in `docs/roadmap.md`.
@@ -297,8 +297,11 @@ catalogue and sent half a command on the families that fill both. **The notation
 2921 distinct codes and 33 of 33 families, since the one family that was refused turned out to state its
 digits in **base 4**: `Quad` in a family name is the base of its digits and not a count of its frames, and
 the same width check that refused all 69 of its codes accepts all 69 once the base is right.
-**Eighteen families have a rhythm measured off Logitech's own compiler**, sections 160 to 163, and that route is
-open now: `DeviceManager/UpdateMultiple` takes an operation bag and puts a catalogue appliance on an
+**Thirty five of the table's 37 families have a rhythm measured off Logitech's own compiler**, sections
+160 to 171, of which six are measured off **both** that route and the corpus and three off the corpus
+alone. This said "eighteen ... sections 160 to 163"<!--superseded--> until 29 August 2026, which was the
+count when that paragraph was written and roughly half of what sections 165 to 171 left it at; the
+"three of them agree" below is the same figure and is six now. The route is open: `DeviceManager/UpdateMultiple` takes an operation bag and puts a catalogue appliance on an
 account, so their service will compile a configuration containing any family we ask for and the
 durations in it are the ones their generator emits. Fifteen appliances, 1143 records, and every family
 reproduces its own durations on every one of its records. Three of them agree to the microsecond with
@@ -568,15 +571,26 @@ document:
   architecture (One `0x040000`, 600/700 `0x030000`) and a write outside it is refused by the
   library, not by the user interface.
 * **The spare Harmony One is the only write target**, until a write has been demonstrated repeatable
-  on it. Four remotes are on the bench: a programmed Harmony One, a Harmony 600, the spare Harmony
-  One, and a Harmony 525. **Arch 14 (Harmony 600) has no write target at all** and writing to it
+  on it. **Seven remotes are on the bench**: a programmed Harmony One, a Harmony 600, the spare Harmony
+  One, a Harmony 525, and since 27 August 2026 a Harmony Touch, a Harmony 350 and a Harmony 300.
+  This said four until 29 August 2026, twelve lines above an architecture table that dates the other
+  three. None of the three changes the write argument, since none is arch 12 (Harmony One) and
+  `openHarmony` refuses all three, which is why the stale count survived. **Arch 14 (Harmony 600) has no write target at all** and writing to it
   stays blocked until a second arch 14 remote exists; **arch 9 (Harmony 525) has none either.**
   Reading arch 14 is unaffected. The spare is no longer blank, so anything wanting a virgin arch 12
   remote wants its lab dump rather than the unit.
 * No write proceeds without a verified original dump of that exact unit in the lab, and without the
-  config's `INTENDEDVERSION` matching the connected remote's protocol, skin, board and flash id.
+  config's `INTENDEDVERSION` matching the connected remote. **The comparison is over six fields and
+  not four**, section 87: protocol, skin, flash and board plus `SOFTWARETYPE` and `ARCHITECTURE`,
+  and an absent or empty field matches anything. This said four until 29 August 2026, which is two
+  fields short of a gate that is supposed to refuse a config built for a different remote, and the
+  four field wording was already dead in `reference/superseded.md` at the time.
 * Every write is followed by a `READ_FLASH` of the same range and a byte comparison. A mismatch is
-  a failure, not a warning.
+  a failure, not a warning. **This one is a caller's obligation and not a library refusal**, unlike
+  every other bullet here: `writeFlash` deliberately does not verify itself, because it would be
+  checking with the assumptions it wrote with, so the compare belongs to whoever owns the erase.
+  Today that is `rehearse-block.ts` alone, so a second write caller gets no verification and
+  nothing refuses it.
 * **Entering safe mode on arch 9 (Harmony 525) destroys the application firmware** and a power cycle
   does not leave it, so it must never be entered as an experiment. Arch 12 (Harmony One) copies
   nothing and does not have this problem. **Check what a file actually holds before trusting its
@@ -597,9 +611,13 @@ document:
   profile does not add a write target and must not.
 
 **Read only is not the same as harmless, and the two hazards are enforced in code.** An internal
-program memory read whose transfer ends in a one byte chunk never terminates and hangs the remote, so
-`packages/usb` refuses an odd count everywhere; `HARMONY_ODD_READ_EXPERIMENT` is the named door in
-`rails.ts` rather than a source edit. And a Harmony One occasionally strands after sitting idle on
+program memory read of an **odd count** never terminates and hangs the remote, so `packages/usb`
+refuses an odd count everywhere; `HARMONY_ODD_READ_EXPERIMENT` is the named door in `rails.ts`
+rather than a source edit. **The cause is the count's parity and not the shape of the final chunk**,
+which is what this said until 29 August 2026: the fetch loop reads a word, subtracts two and exits
+on zero, so it runs away whenever the count is odd, and 65 and 127 hang exactly as 63 does. The
+rail was always right and the reason was the dead one, which matters because the reason is what a
+session reasons from when it asks whether some other read shape is safe. Section 94. And a Harmony One occasionally strands after sitting idle on
 USB, which a battery pull clears and which nothing here explains.
 
 **`probe-remote` holds the measurements behind both**, and `recovering-a-remote` holds what a restore
@@ -732,6 +750,15 @@ docs/review-before-first-write.md
                                 TheWriteReviewWithholdListIsComplete, so a new document quoting the
                                 transfer fails a test rather than quietly widening what a reviewer
                                 may see
+docs/predictions-number-sender.md
+                                predictions written down before base slot 16 was read, then scored
+docs/predictions-sequence-delay.md
+                                the same for how a sequence states its delays. **Scored on
+                                29 August 2026 and its headline prediction was wrong**: the pause is
+                                an opcode inline in the action list rather than something that
+                                compiles away, and the unit is tenths of a second. Neither document
+                                was named in this map until then, which is how one of them sat
+                                unscored for six days after the measurement
 docs/plan.md                    the earlier proposal, superseded, kept for its arguments
 docs/emulator-design.md         design for the emulator harness, deferred, not built
 src/harmony/                    the research library, see below
@@ -768,9 +795,12 @@ bin/setup-ghidra.sh             build or refresh the Ghidra project
 pyrightconfig.json              what pyright checks and, at length, what it deliberately does not
 .agents/skills/                 the project skills, as relative symlinks into .claude/skills/, so a
                                 second agent runs the same rituals rather than a copy of them. All
-                                ten are there and the two language server directories deliberately
-                                are not, since those are Claude Code's own plugin mechanism and point
-                                into node_modules
+                                ten skills are there. `py-lsp` and `ts-lsp` are there too, as real
+                                tracked directories rather than symlinks, which this said they
+                                deliberately were not until 29 August 2026. They are a hand
+                                maintained second copy of files that point into node_modules, so
+                                they are the shape this repository refuses everywhere else and the
+                                reason given for excluding them was sound
 .codex/hooks.json               the publication check, wired into Codex's pre-tool hook. The git hook
                                 cannot see a tool call, so this is the same guard at the other end
 samples/                        empty by policy
@@ -850,8 +880,16 @@ language server gave them default options. Fixed on 12 August 2026, and it typec
 nothing was hiding in there. When adding a directory of TypeScript, add it to the project in the same
 commit.
 
-**The codec port is complete**, and base slot 16 was the last gap. Every reader
-`src/harmony/gspm.py` has now exists in `packages/codec` too. The number sender was left out on the
+**The codec port is complete**, and base slot 16 was the last **reader** gap. Every reader
+`src/harmony/gspm.py` has now exists in `packages/codec` too. **A reader was the wrong unit to count
+in, which an audit found on 29 August 2026**: this said the port was complete while base slot 15's
+demanded group lengths and the check over them existed only in Python. That is not a reader, it is a
+**rail**, and it is the one whose failure is silent, since a group of the wrong length is replaced by
+compiled in defaults with no error anywhere. So the only checker for it sat in the language that
+never writes, while TypeScript owns the codec and the whole write path. It is ported now,
+`parameterGroupLengthsMatch` in `packages/codec/src/tables.ts`, and the two copies of the table are
+compared entry for entry by `TheTwoParameterGroupTablesAgree` so they cannot drift. When judging this
+claim again, count the rails and not the readers. The number sender was left out on the
 grounds that its count is zero in every config, which was true of every config that had been
 **found**; section 154 made one, so it is ported, claimed by the accounting, rebuilt by the emitter
 and compared between the two implementations by a golden vector. **The reverse is deliberately not
@@ -890,7 +928,7 @@ alone, and both turned out to be inside the range that gates opening one.
 are **two** such families rather than one. The **tunnelled** family is the second and is the further
 below; the **file based**
 family keeps its config in a named file rather than at a flash address, so **no read path here reaches
-one**: no address over USB, no RAM, no config. This used to end "no address, no firmware, no RAM"<!--superseded-->
+one**: no way to ask for an address over USB, no RAM, no config. **The config does have an address**, section 199: the remote's own file table gives `/cfg/usercfg` external flash `0x020000` for 256 KiB on a Harmony 350, so it is the host that lacks it rather than the storage. This used to end "no address, no firmware, no RAM"<!--superseded-->
 and the firmware third is now false, section 196: Logitech's own update service serves the Harmony 300
 and Harmony 350 firmware to an anonymous request, it is an ordinary PIC18 image at `0x9000`, and it
 reads with no new code. So the claim is about the **protocol** and has to say so; the storage being
@@ -902,7 +940,7 @@ service `0xFF`, nine commands, open a path and get a handle, and a big endian si
 split is exact and disjoint, nineteen skins in the file family against four in the one this project
 reads, and those four are architectures 12 (Harmony One), 14 (Harmony 600 and 700) and 9 (Harmony
 510, being the Harmony 525's architecture) plus one skin declaring none. **Reading a Harmony Touch's
-identity is three commands and none of them writes**, open `/sys/sysinfo` for reading, read, close,
+identity is four commands and none of them writes**, ping, open `/sys/sysinfo` for reading, read, close,
 and it returns the same seven identity fields the version block carries. So `openHarmony`'s refusal is
 now a choice about what has been built rather than a statement that nothing could be, and **that is
 the honest wording to keep**: nothing here has sent one of these packets, no implementation exists, and
@@ -1189,7 +1227,7 @@ apart.
 **The table starts at `0x0B`, and an item is `{ u8 spare; u24 address }`.** Not a `u32` pointer
 table at `0x0C`, which is what both parsers had, one slot short, with the last section's address
 dismissed as padding. Corrected in `docs/findings.md` section 20; the closure is that
-`0x0B + 4 * N` hits the marker offset exactly on sixteen samples where the old reading needed an
+`0x0B + 4 * N` hits the marker offset exactly on seventeen samples where the old reading needed an
 unexplained `- 3`. Read three byte addresses and check `spare`, because a nonzero `spare` read as
 part of a `u32` adds `0x1000000` silently.
 
@@ -1211,6 +1249,10 @@ the guidance was too long to keep in this file:
 
 * **`trace-section`**, the method for labelling a config section by finding the firmware code
   that consumes its pointer, with the pitfalls that have already cost time here.
+* **`draw-remote`**, how a model's front face is traced from Logitech's own documentation into
+  `packages/silhouettes`, carrying the objection Danny overruled on 21 August 2026 and the
+  measurement that outweighed it. It had no entry here while this list claimed to name ten, which is
+  a partial list wearing a complete one's label.
 * **`finding`**, the verification gate plus the four places a confirmed fact must land, the
   convention for correcting an earlier claim in place, and since 29 August 2026 the three rules
   about the shape of an assertion that used to sit under "Verification standard" here.
@@ -1233,7 +1275,8 @@ the guidance was too long to keep in this file:
 * **`writing-a-config`**, every rail a config writer must respect and the evidence behind each,
   which is what the table under "Rails a writer will have to respect" points at. Invoke it before
   changing any byte of a container, not after: each rail is a way to produce a file the remote
-  accepts and mishandles, and one of them killed a Harmony One three times out of three.
+  accepts and mishandles, and one of them hung a Harmony One three times out of three, each time
+needing the batteries out.
 * **`recovering-a-remote`**, what a restore consists of per architecture: safe mode, the
   bootloader, the flash programmer, the EEPROM latch and the write protect interlock. Invoke it
   before planning a write and before entering safe mode on any model, since on a Harmony 525 that is
@@ -1559,8 +1602,8 @@ the place a tool reads a slot's meaning from.
 
 **Every one of these is a way to produce a config the remote accepts and mishandles**, which is a
 hazard class of its own: the file passes both checksums, renders identically, closes every count this
-project can check, and is wrong. One of them, an oversized sequence, killed a Harmony One three times
-out of three.
+project can check, and is wrong. One of them, an oversized sequence, hung a Harmony One three times out of
+three, each time needing the batteries pulled to recover it.
 
 **Before changing any byte of a container, invoke the `writing-a-config` skill.** It holds the
 evidence, the counts and the corrections for each row below, which moved out of this file on 29
@@ -1571,9 +1614,10 @@ file.
 
 | the rail | what a writer must do |
 |---|---|
-| base slot 13's first seven records are the clock | stamp them, and reuse none of variables 0 to 12: the firmware owns thirteen, not seven. Eight values, since the year's maximum moves with it. Arch 9 (Harmony 525) keeps its own |
+| base slot 13's first seven records are the clock | stamp them, and reuse none of variables 0 to 12: the firmware owns thirteen, not seven. Eight values and nine on a 31st, since the year's maximum always moves with it and the day of the month's moves too. Arch 9 (Harmony 525) keeps its own |
 | base slot 3's timestamp is stamped at write time | never copied. The one field where a round trip and a save differ |
 | `end_addr` is restamped when anything changes length | the only header field that moves with a section's growth |
+| a read can insert bytes without losing any | a config that parses is not a config that arrived. Every read of an arch 10 (Harmony 890) remote here came back with surplus chunks, and neither the trailer checksum nor the end marker catches a duplicated run of zeroes on its own |
 | parsing is not validating | a container can pass both checksums, render pixel identical, close its counts, and address every infrared command wrongly. This is why `edit.ts` refuses a length change |
 | the trailer checksum is weak | a `u16` XOR of little endian words. Blind to two transposed words, and two edits at the same word parity cancel exactly |
 | base slot 15's group lengths are demanded | a group whose length differs is silently replaced by compiled in defaults. A group index is **not** portable between architectures |
@@ -1581,7 +1625,7 @@ file.
 | a timer fires one instruction, not a list | and its duration is clamped to sixteen bits with no error |
 | infrared duration blocks are shared | check who else names a block before editing it in place |
 | a record's three block pointers are once, held and tail | slot 1 repeats for as long as the key is down, so its trailing gap **is** the repeat rate. A duration word caps at 32767 us |
-| a frame can be written, its tail cannot be copied | 151 distinct tail shapes with no rule behind them, and 226 records hold a second, different code in the tail |
+| a frame can be written, and its tail is emitted for the families that have a rule and copied otherwise | 140 distinct tail shapes, a rule for 31<!--fact:protocol_tails--> of the rhythm table's 38<!--fact:protocol_entries--> entries and none for the rest, and 226 records hold a second, different code in the tail |
 | a record's carrier period is truncated, not rounded | `floor(1e9 / f)` nanoseconds, per record rather than per device |
 | a picture's position is implied by everything before it | inserting or resizing one moves every later address |
 | every mode page's tagged list has a second copy | nothing reads it and an editor must still change both. Its position is implied, not stated |
@@ -1597,7 +1641,7 @@ file.
 
 ## Open
 
-**Moved to `docs/status.md` on 29 August 2026**, under "What is still open". Fourteen questions
+**Moved to `docs/status.md` on 29 August 2026**, under "What is still open". Twelve open questions
 with the argument for each. They are reference rather than instruction, so they are read when a
 session needs them rather than carried into every one.
 ## Next

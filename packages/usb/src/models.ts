@@ -95,7 +95,7 @@ export interface Model {
 /**
  * Skin number to model. The key is what a remote reports, so this is the lookup a session makes.
  *
- * Bold entries in `reference/models.md` are the five confirmed independently: 15, 22, 54, 66, 71 and
+ * Bold entries in `reference/models.md` are the six confirmed independently: 15, 22, 54, 66, 71 and
  * 72. The rest are the client's table, which those five calibrate.
  */
 export const MODELS_BY_SKIN: Readonly<Record<number, Model>> = {

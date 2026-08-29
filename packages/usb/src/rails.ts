@@ -42,8 +42,9 @@ export const CONFIG_REGION_BASE: Readonly<Record<number, number>> = {
 /**
  * Architectures that have a write target at all.
  *
- * Four remotes are on the bench: a programmed Harmony One, a Harmony 600, a spare Harmony One,
- * and a Harmony 525, which is arch 9 and has no write target either. The spare is the only unit
+ * Seven remotes are on the bench: a programmed Harmony One, a Harmony 600, a spare Harmony One,
+ * a Harmony 525, which is arch 9 and has no write target either, and since 27 August 2026 a Harmony
+ * Touch, a Harmony 350 and a Harmony 300, none of which this library can even open. The spare is the only unit
  * anything may be written to, and it is arch 12. It is no longer unprogrammed: Logitech's own
  * software synced a config to it on 7 August 2026, section 58, and its original contents are
  * verified in the lab. **So arch 14 has no write target**, and writing to it stays refused until a second
@@ -88,7 +89,16 @@ export const WRITABLE_CEILING: Readonly<Record<number, number>> = {
  * with it. The boot block area below `0x010000` is finer, 16K then 8K, 8K, 32K, and it is outside
  * the config region and therefore outside anything this module permits.
  *
- * Same provenance and same direction as `WRITABLE_CEILING`: it only ever refuses more.
+ * **Provenance is not the same as `WRITABLE_CEILING`'s, and this said it was.** That one was adopted
+ * from the client and then **measured on two Harmony Ones**, section 88. This one is still the
+ * client's word alone: `docs/host-client.md` says so, and the firmware argument sometimes offered
+ * for it establishes a 64 KiB **addressing window** rather than the chip's erase sector, which are
+ * different quantities. The direction is still safe, since a rail built on a block size only ever
+ * refuses more addresses than a smaller true block would require. What it does **not** protect is
+ * `rehearse-block.ts`, which reads back and restores exactly one block: if the true block were
+ * larger the erase would reach past what it rewrites. No evidence suggests it is, since both of the
+ * client table's readings give uniform 64 KiB above the boot area, and the cheap confirmation is a
+ * read of the chip's JEDEC id rather than an erase.
  */
 export const ERASE_BLOCK_SIZE: Readonly<Record<number, number>> = {
   12: 0x10000,
@@ -118,7 +128,15 @@ export interface WritePermission {
   readonly configLength: number;
   /** A verified original dump of this exact unit exists in the lab. */
   readonly originalDumpVerified: boolean;
-  /** The config's INTENDEDVERSION matches the remote's protocol, skin, board and flash id. */
+  /**
+   * The config's `INTENDEDVERSION` matches the connected remote over all **six** compared fields:
+   * protocol, skin, flash, board, `SOFTWARETYPE` and `ARCHITECTURE`. Section 87.
+   *
+   * **This said four fields until 29 August 2026**, which matters more here than in a document: a
+   * caller reading it would check four, assert this flag on a four field match, and the rail would
+   * pass a config built for a different remote. `SOFTWARETYPE` is the field separating a remote
+   * running normally from one in safe mode. An absent or empty field matches anything.
+   */
   readonly intendedVersionMatches: boolean;
   /** The unit is the spare remote. Nothing else is ever a write target. */
   readonly targetIsTheSpareRemote: boolean;

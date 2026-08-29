@@ -73,8 +73,16 @@ Both architectures reserve a 128 KiB firmware area in external flash and put it 
 | internal memory holds | bootloader and three support images | bootloader, safe mode and the application |
 | container format | `0x1600`, 22 pointer slots | `0x1400`, 20 pointer slots |
 
-On both, the user config region runs to exactly `0x400000`: `0x040000` plus the 3840 KiB concordance
-reports for the One, and `0x030000` plus the 3904 KiB it reports for the 600.
+The user config region does **not** end in the same place on both, and this paragraph said it did
+until 29 August 2026. On architecture 12 it runs to `0x400000`, which is `0x040000` plus the 3840 KiB
+concordance reports. On architecture 14 it ends at `0x200000`: the firmware refuses every flash
+address at or above that, four independent routes agree on a 2 MiB part, and `docs/memory-map-600.md`
+has said so since section 88.
+
+**The dead reading was `0x030000` plus concordance's 3904 KiB, landing on `0x400000`.** That figure
+needs a 4 MiB part, so most of the region it describes is not addressable at all, and this document
+is the one a reader opens first to find out where a config lives. The One's own figure is unaffected
+and still measured.
 
 The practical consequence is the one `CLAUDE.md` records as a safety rail. A file named `*-safe.bin`
 holds the safe mode region on architecture 12 and the **application** on architecture 14, so a

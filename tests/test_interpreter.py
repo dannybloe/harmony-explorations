@@ -1286,7 +1286,7 @@ class TestTheParameterBlock(unittest.TestCase):
                 self.assertEqual(slack, 12 if c.architecture == 12 else 0)
 
     def test_every_group_is_the_length_its_firmware_demands(self):
-        """The closure: fourteen literals off two images, against every container that has a firmware
+        """The closure: fifteen literals off two images, against every container that has a firmware
         reading of the guard, which is arch 12 (Harmony One) and arch 14 (Harmony 600 and 700)."""
         from harmony import gspm
         lab.require(*self.CONTAINERS)

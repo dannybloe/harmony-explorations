@@ -72,10 +72,19 @@ const MAX_TRANSFER = 0x8000;
  * against its own dump, match byte for byte, and erase the unit whose configuration is this
  * project's most used sample.
  *
- * The allow-list is what makes the compare identify the **unit** rather than merely agree with a
- * file. A configuration is unit specific, so a block that matches the spare's own dump is the
- * spare's block; refusing every other dump is what turns that into an identification. Naming a
- * programmed unit's dump is now a refusal rather than a match.
+ * The allow-list narrows which dumps may be named, and that is worth having: naming a programmed
+ * unit's dump is a refusal rather than a match, so the obvious operator slip above is caught.
+ *
+ * **It does not identify the unit, and this docstring said it did until 29 August 2026.** The
+ * review of 27 August recorded the correct reading and the script was never swept: the allow list
+ * proves **content**, not identity, so another Harmony One whose selected block happened to match
+ * the spare's dump would pass as the spare. That no two present lab dumps share a block is a
+ * control for today and not a proof, and it is the kind of control that stops holding the moment
+ * another unit is dumped. `docs/findings.md` section 188.
+ *
+ * So `targetIsTheSpareRemote` remains a caller assertion the library cannot check, which is what
+ * the review says and what this script must not contradict: the operator is the one identifying
+ * the unit, and the allow list only stops one specific way of getting it wrong.
  *
  * A serial check would be stronger and is deliberately not built: it would mean carrying a unit
  * identifier through the enumeration path that the probe reads, and the reason that path has no

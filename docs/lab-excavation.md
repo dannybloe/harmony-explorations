@@ -1,7 +1,10 @@
 # Excavating the lab: what we are looking for, how it gets logged, and how the digging runs
 
 The plan for step 9 in `docs/roadmap.md`, which is the step, and decision 12, which is the argument.
-This document is the method. It exists because the same failure has now happened four times: a
+This document is the method. It exists because the same failure has now happened **six** times, most
+recently section 209, where the check was run correctly on the square the dig started in and the dig
+then wandered into one it had not checked. This opening said four until 29 August 2026, while the
+"where the digging stands" section below already said six: a
 session works something out that the lab already answered, most recently section 197, where
 Logitech's own per model protocol specification had been mirrored **and read** for nineteen days
 without a single fact crossing into this repository.
@@ -127,8 +130,13 @@ Two layers, because they do different jobs.
 2026 and both alternatives were rejected by measurement: one row per file is 12506 rows and
 unfinishable, and one row per top level directory is nine rows, which is what step 9 shipped first and
 it is useless, since section 197's own square was already named in it. An artefact is one mirrored
-client, one firmware package, one contributor's dump, one capture session, one manual. A few hundred
-rows.
+client, one firmware package, one contributor's dump, one capture session, one manual.
+
+**The estimate written here was "a few hundred rows" and the survey came in at 44**, which is out by
+about a factor of five and is corrected rather than quietly dropped: the number was the argument for
+choosing the artefact as the unit, so being wrong about it says the unit is coarser than it looked and
+makes the remaining work smaller than this document implied. The register is complete by test, so it
+is not going to grow into the old estimate.
 
 | column | what goes in it |
 |---|---|

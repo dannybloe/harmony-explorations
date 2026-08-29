@@ -153,23 +153,44 @@ class TestArch14Map(unittest.TestCase):
         self.assertTrue(app.has_magic, 'the application starts at +0x9000')
         self.assertEqual(app.version, '0.2')
 
-    def test_the_config_region_reaches_exactly_four_megabytes(self):
-        """The 3904 KiB the map quotes is derived, not a figure concordance reports.
+    def test_the_config_region_stops_two_megabytes_short_of_concordances_figure(self):
+        """Renamed on 29 August 2026, because the old title was a claim the firmware had refuted.
 
-        It is 4 MiB above concordance's own `config_base`.
+        It was `test_the_config_region_reaches_exactly_four_megabytes`, and section 88 established
+        that the arch 14 part is 2 MiB: the firmware refuses every flash address at or above
+        `0x200000`, agreed by the validator's bound, the `FLASH` capacity byte, the part number and
+        the bench remote. A test's title is a claim, per the `finding` skill, so a body that no
+        longer supports its own title is a renaming rather than a deletion.
 
-        **The whole body used to be `assertEqual(0x030000 + 3904 * 1024, 0x400000)`**, arithmetic over
-        its own literals, with a docstring crediting concordance for the 3904. Measured on 13 August:
-        concordance's table carries `flash_size 0` for this architecture, so the figure is not in the
-        source the docstring names and cannot be. What is there is `config_base`, and the KiB number is
-        derived from it, which is what this asserts.
+        What stays true and is worth pinning is where concordance's 3904 KiB comes from: it is not a
+        figure concordance reports, since its table carries `flash_size 0` for this architecture. It
+        is derived by assuming the region reaches `0x400000`, which is the assumption that was wrong.
+        So this asserts the derivation **and** that the documents state the refutation rather than
+        the dead figure, which is what would fail if somebody restored `0x400000`.
         """
         base = _concordance_config_base(14)
         if base is None:
             self.skipTest('no concordance checkout beside this one')
         self.assertEqual(base, 0x030000, "concordance's own config_base")
-        self.assertEqual((0x400000 - base) // 1024, 3904, 'which is the KiB figure the map quotes')
-        self.assertIn('3904 KiB', _doc('memory-map-600.md'))
+        self.assertEqual((0x400000 - base) // 1024, 3904,
+                         'the 3904 KiB figure is what a 4 MiB top would imply, and that is its only source')
+        self.assertEqual((0x200000 - base) // 1024, 1856, 'the region the firmware actually permits')
+
+        # The shared map is the document a reader opens first, and it endorsed the dead figure for
+        # both architectures until this correction. Assert the live claim rather than the absence of
+        # the dead one, so a reworded restatement fails too.
+        shared = _doc('memory-map.md')
+        self.assertIn('0x200000', shared, 'the shared map states the arch 14 ceiling')
+        six = _doc('memory-map-600.md')
+        self.assertIn('3904 KiB is wrong', six, 'the 600 map still carries the refutation')
+        self.assertIn('0x030000` to `0x200000', six, 'and the measured region')
+
+        # The 700's map may guess, but not from the refuted number. Assert the live claim rather
+        # than the absence of the dead phrase: this document records its own correction in place, so
+        # the dead words are present on purpose and an absence test fires on the correction itself.
+        seven = _doc('memory-map-700.md')
+        self.assertIn("the architecture's own bound, `0x030000` to\n`0x200000`", seven,
+                      'the 700 guess rests on the architecture bound, not on concordance')
 
     def test_the_config_sample_sits_at_the_documented_base(self):
         c = gspm.parse(ezfile.decode_payload(lab.load('h600_config')).payload)

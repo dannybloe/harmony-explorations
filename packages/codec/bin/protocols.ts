@@ -5,7 +5,7 @@
  * protocol name and a number, `G:Sony 12 Bit:()(0x910)():3`, and never the rhythm: the raw field was null
  * on all 419 commands ever fetched from it. A config holds the rhythm. `pulsesOfFrame` already turns a
  * number into one **given five durations**, and section 152 measured that those durations can be read off
- * any other code of the same appliance, exactly, on 3547 of 3547 records. So a config that already drives
+ * any other code of the same appliance, exactly, on 3502 of 3502 records. So a config that already drives
  * the appliance can gain a code, and a document starting from nothing cannot, because there is no sibling
  * to read the durations from. This asks whether the durations belong to the **family** instead.
  *
@@ -1636,7 +1636,7 @@ export interface StatedProtocol {
    *
    * Section 162. There is no lead in pair, no constant half and no two carried lengths, so none of the
    * fields above apply: what there is instead is one half cell, a fixed prelude the family always sends,
-   * and which half of the cell means a set bit. Three families here are of this kind and each reproduces
+   * and which half of the cell means a set bit. Four families here are of this kind and each reproduces
    * every one of its records byte for byte.
    */
   readonly biphase?: {
@@ -1713,7 +1713,7 @@ export interface StatedProtocol {
    * holds a single record of**: the corpus cannot supply it and no amount of reading it will.
    *
    * A documented entry has \`codes: 0\` because it was measured over none, which is the honest number
-   * and not a placeholder. What it has instead is \`namedBack\`.
+   * and not a placeholder. What it has instead is \`readBack\`.
    */
   readonly source: 'corpus' | 'compiled' | 'both' | 'documented';
   /**
@@ -1744,14 +1744,14 @@ export interface StatedProtocol {
  *
  * **Why these are here and not in the measurement.** `make analyze` asked Logitech's analyser to name
  * every code in this corpus, and the families it came back with are eight, of which the table above
- * covers the five that our own frame decoder can read. The catalogue uses 32. So the missing families
+ * covers the five that our own frame decoder can read. The catalogue uses 33. So the missing families
  * are missing by construction: no configuration here drives an appliance that uses them, and reading
  * more of the corpus cannot change that.
  *
  * **Each one is third party documentation, marked as such per entry**, on the same footing as anything
  * believed on Logitech's client's word alone. What promotes a seed from a guess to an entry worth
  * shipping is `bin/emitcheck.ts`: it builds a real catalogue code with these durations and asks their
- * own analyser what it just received. `namedBack` is that count and it is filled in by hand from a run,
+ * own analyser what it just received. `readBack` is that count and it is filled in by hand from a run,
  * so the number sits in the diff where somebody can see it.
  *
  * `header: [0, 0]` means the protocol opens on its first bit, which the Sharp scheme does.

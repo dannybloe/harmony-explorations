@@ -188,7 +188,7 @@ CLOCK_EPOCH = datetime.date(2000, 1, 1)
 # real section at slot 18, so it carries 22 and the two trailing NULLs land at 20 and 21.
 #
 # The evidence is in `docs/findings.md`: the six pointer array slots and the distinctive one
-# byte section both land where this mapping predicts, in all nine config samples.
+# byte section both land where this mapping predicts, in all fifteen config samples.
 #
 # Worth having because the project decodes arch 14, where every config read passes through one
 # SPI primitive, while the popular remote is the arch 12 Harmony One. A section labelled on one
@@ -203,16 +203,17 @@ INSERTED_SLOTS: Dict[int, Tuple[int, ...]] = {
 
 BASE_SLOT_COUNT = 20
 
-# Arch 10 (Harmony 890 and 895) cannot be described as insertions, because three base slots are
-# **absent**: 0, 2 and 8. So the mapping is stated as a table, base slot to raw slot, with None where
-# the architecture does not have that slot. `docs/findings.md` section 183.
+# Arch 10 (Harmony 890 and 895) cannot be described as insertions, so the mapping is stated as a
+# table. `docs/findings.md` sections 183 and 184.
 #
-# Thirteen of the seventeen present slots are placed by their own contents and four by order between
-# placed neighbours. The decisive one is base slot 10: consecutive entries of its table sit
-# 1 + 3 * count apart, and exactly one arch 10 slot reproduces arch 8's signature of four breaks
-# where every other array scores near zero.
+# **The section 183 reading sat here above this one until 29 August 2026**, saying three slots are
+# absent, that thirteen of seventeen are placed by content and four by order, and that 4, 6, 13 and
+# 14 "are the risk". Section 184 replaced all of it and the older block was never removed, so this
+# file stated two readings of one mapping back to back with the dead one first. The decisive
+# measurement it carried is kept: consecutive entries of base slot 10's table sit 1 + 3 * count
+# apart, and exactly one arch 10 slot reproduces arch 8's signature of four breaks where every other
+# array scores near zero.
 #
-# The four placed by order rather than by content are 4, 6, 13 and 14, and they are the risk.
 # Where each base slot sits on arch 10 (Harmony 890 and 895), or None where the architecture does not
 # have that slot at all. Index is the base slot. Sections 183 and 184.
 #
@@ -1234,7 +1235,7 @@ class Container:
         Six sections per architecture are arrays of this shape, and they are recognised rather
         than tabulated: the count is a `u8` or a `u16` and is accepted only when
         `width + 3 * count` accounts for the section exactly. That test is strict enough to
-        pick out the same six slots in all nine config samples and no others.
+        pick out the same six slots in all fifteen config samples and no others.
 
         Three bytes rather than four because 24 bits covers the whole config region with room
         to spare, and Logitech evidently cared: slot 10 of the Harmony 700 config holds 8037

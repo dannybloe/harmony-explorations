@@ -18,7 +18,7 @@
  * encoder" until 23 August 2026, on the reasoning that going the other way needs the protocol because
  * the timings, the header, the repeat and the trailing gap are protocol facts the bits do not carry.
  * Half of that is measured and wrong, section 152: a record states its own timings, so the frame comes
- * back from five durations read off the record itself, exactly, on every one of the 3547 records in
+ * back from five durations read off the record itself, exactly, on every one of the 3502 records in
  * the corpus that read as a frame. What the bits genuinely do not carry is everything **after** the
  * frame, the closing mark and the silence, and that stays undecided rather than being guessed at, so
  * `pulsesOfFrame` returns the frame and stops there.
@@ -240,7 +240,8 @@ export function irFrame(
  * Every convention under which a record's first block reads as a frame.
  *
  * **Usually one, sometimes both, often none**, and this said "which is one or none here" while the
- * test two files over asserted 3547 one, 148 both and 935 none. The 148 are the point of returning a
+ * test two files over asserts 3502 one, 0 both and 1128 none since section 163, which emptied the both
+ * column. The list return type is kept for the shape rather than for a live population: a
  * list rather than a value: a record that decodes under both conventions is a warning, and `irFrame`
  * refuses it for exactly that reason. A summary of a closure that contradicts the test proving it, in
  * the direction of over-claiming, is the shape this repository keeps finding in its own prose.
@@ -393,9 +394,12 @@ const FRAME_BOUNDARY_FACTOR = 4;
  * paper over, so the merge is the caller's and stays visible at the call site.
  *
  * `factor` exists so that a test can vary it, which is the only thing that makes the claim about
- * `FRAME_BOUNDARY_FACTOR` checkable: that 4 and 6 cut every record here identically and 9 does not is
- * the evidence that the value sits inside a gap rather than being chosen, and that cannot be asserted
- * against a constant nothing can move.
+ * `FRAME_BOUNDARY_FACTOR` checkable. **The claim is that the value sits inside a gap, not that 4 and 6
+ * agree**: they cut 72 of 2777 records differently, as the docstring forty lines above this one has
+ * said since that reading was corrected, while 9 cuts far more and differently in kind. This paragraph
+ * restated the refuted "4 and 6 cut every record identically" until 29 August 2026, so the file argued
+ * for its own constant using the reading it had already thrown out. A constant nothing can move cannot
+ * be asserted either way, which is why the parameter exists.
  */
 export function frameSegments(train: readonly Pulse[], keepBoundary: boolean,
                               factor = FRAME_BOUNDARY_FACTOR): Pulse[][] {
@@ -616,7 +620,7 @@ export function timingsOfFrame(
  *
  * **The frame and nothing after it.** A record's block holds the frame one, three, seven, eleven or
  * thirty times over, with a gap between the copies and a closing silence at the end, and none of that
- * follows from the bits: it is 151 distinct shapes across the corpus. So this stops where the evidence
+ * follows from the bits: it is 140 distinct shapes across the corpus. So this stops where the evidence
  * does, and a caller that wants a whole block copies the rest from a record that already has one.
  *
  * Refuses a pulse width frame with no closing space rather than falling back on `flat`, because that

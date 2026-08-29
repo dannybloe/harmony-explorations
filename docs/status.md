@@ -21,13 +21,16 @@ section. For the format as a specification, [config-format.md](config-format.md)
 The work targets three architectures. **Seven remotes are on the bench**, and this list is the
 hardware, not the model families: two Harmony Ones, a Harmony 600, a Harmony 525, and since 27 August
 2026 a Harmony Touch, a Harmony 350 and a Harmony 300. The last three are the file based family and
-are **not targets**: nothing here speaks their protocol, and `openHarmony` refuses them by product id
+are **not targets** for the config work: `openHarmony` refuses them by product id
 rather than by accident, section 193. What they have bought so far is the reading of the descriptor
 field that names a model, section 195, the route to their firmware, section 196, and their whole
-protocol as Logitech specifies it, section 198, which is a specification and not an implementation.
-The one thing in that specification worth knowing here is that **reading a Harmony Touch's identity is
-three commands and none of them writes**, so the refusal is now about what has been built rather than
-about what is reachable. Other models
+protocol as Logitech specifies it, section 198. **There is an implementation now and it has read a
+remote**, sections 200 and 201: `packages/usb/src/filepipe.ts`, and a Harmony Touch's `/sys/sysinfo`
+opened, read and closed on the bench, 234 bytes in fourteen fields including the architecture the
+remote states for itself. This paragraph called it a specification and not an implementation until
+29 August 2026. Reading that identity is four commands, ping, open, read and close, and none of them
+writes, so `openHarmony`'s refusal is about what has been built for the **config** path rather than
+about what is reachable at all. Other models
 appear throughout this page as firmware images or contributed configurations, and the Harmony 700 is
 the one that gets mistaken for hardware, because it is the best mapped arch 14 image and is quoted
 constantly. There has never been a Harmony 700 here.
@@ -40,13 +43,19 @@ constantly. There has never been a Harmony 700 here.
   firmware are in the lab, and its class 5 infrared, which was the last big gap in the byte
   accounting, is read. It has no write target and will not get one.
 
-**Firmware is held for four architectures**, 8, 9, 12 and 14, **plus one image whose architecture is
-not established**: Logitech's own software update service serves the Harmony 300 and Harmony 350
+**Firmware is held for four architectures**, 8, 9, 12 and 14, **plus a fifth, architecture 16**: Logitech's own software update service serves the Harmony 300 and Harmony 350
 image to an anonymous request, section 196. It is the first firmware here to come from the vendor
 rather than from hardware, a contributor or a repair site, and it is an ordinary PIC18 image at the
-same load address as arch 14's, but a load address is not an architecture number and nothing has
-measured that generation's. It is a source, not a target: no config of it has been read and no
-protocol here reaches one.
+same load address as arch 14's.
+
+**This said the architecture was not established and that no config of it had been read**, until
+29 August 2026, twenty lines above the paragraph in this same document that says a Harmony 350
+brought architecture 16 with it. Both halves were already false when written: section 194 read a
+Harmony 350's configuration through concordance and it passed all fifteen framing checks, with slot 1
+stating architecture 16 and the remote itself reporting the same over USB, which is two routes with
+nothing in common. The load address argument was sound and it was answering a question that had been
+closed by other means. What remains true is that **this library cannot open one**: the file based
+protocol reaches its storage by name and no read path here goes through it.
 
 Established: the MCU family, firmware load addresses, flash layouts, the firmware image
 header and its checksum, the config container, the keypad scanner, and the complete
@@ -73,7 +82,8 @@ sample. Among the recent ones is **the timer table**, which is where a backlight
 power off live: a record says how long to wait and which single instruction to run afterwards, and
 the set of records a config's action lists start is exactly the set it declares. Next to it is
 **the parameter block**, whose every group has a length the firmware demands and silently ignores
-the group if it differs: fourteen such lengths read off two images, holding in every container of
+the group if it differs: fifteen such lengths read off two images, seven for arch 14 and eight for
+arch 12, holding in every container of
 the two architectures those images belong to, and asserted on no other. Then **the touch screen hit map**, which only the Harmony One
 carries, because it is the only remote here with a touch panel: per screen page a list of
 rectangles, each reporting a key code, and the firmware answers a touch with the first rectangle
@@ -377,11 +387,13 @@ implies a stored 263, which the code's arithmetic turns into exactly 26.25 us.
 **A code stated as a name and a number becomes pulses**, sections 152 to 169, which is what an
 importer of Logitech's still-answering device database needs: their catalogue serves no pulse data,
 only a protocol family and a frame value. The rhythm table in `packages/codec/src/protocols.ts`
-holds 38 families, each entry saying which route measured it, most off configurations Logitech's own
+holds 38<!--fact:protocol_entries--> entries over 37<!--fact:protocol_families--> distinct families, since one family appears at two carrier frequencies, and
+covers 32 of the catalogue's 33. Each entry says which route measured it, most off configurations
+Logitech's own
 compiler was asked to produce for appliances chosen here. Their analyser turned out to be a decoder
 of their own database rather than of infrared, accepting rhythms their compiler never emits, so it
 was retired as evidence and kept as a second opinion. Biphase codes, where the bit is which half of
-a cell carries, get their own reader and three families reproduce every record byte for byte.
+a cell carries, get their own reader and four families reproduce every record byte for byte.
 
 **A favourite channel is not a key binding**, sections 154 and 156: it lands in four sections at
 once, and a channel with a leading zero is spelled out digit by digit instead of going through the
@@ -409,20 +421,21 @@ for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
 and `READ_FLASH` run from our own host code on both bench architectures, a config read matches each
-unit's lab dump byte for byte, and all four remotes are fully read and verified against their
-backups: user config, application firmware, safe mode, and the internal pages where the architecture
+unit's lab dump byte for byte, and the four remotes this library can open are fully read and verified
+against their backups: user config, application firmware, safe mode, and the internal pages where the architecture
 serves them, no differences. What is
 verified is that each backup is faithful; **restoring from one has never been tried.**
 
-Byte accounting, `make coverage`, zero overlaps everywhere:
-
-| arch 8 | arch 9 | arch 12 | arch 14 |
-|---|---|---|---|
-| 100.0%<!--fact:coverage_arch8_config_a--> | 100.0%<!--fact:coverage_h525_config--> | 100.0%<!--fact:coverage_one_config--> | 100.0%<!--fact:coverage_h600_config--> |
+Byte accounting is under "What reads" above, with the figures each architecture started from. **A
+second copy of that table stood here from 29 August 2026 until later the same day**, brought in with
+the text moved out of `CLAUDE.md`, and it is worth recording rather than quietly removing: the move
+was justified as ending a two copies state and it created one in the destination. `make facts` could
+not see it, because both copies carried markers and both were correct, which is exactly the state
+this project's oldest rule is about. Two right copies are what precede two diverging ones.
 
 ## What is still open
 
-*Moved out of `CLAUDE.md` on 29 August 2026. Fourteen questions with the argument for each, read when a session needs them rather than carried into every one.*
+*Moved out of `CLAUDE.md` on 29 August 2026. Fourteen entries, of which **twelve are open**: two are struck through and answered, and they stay because a question that turned out to have an answer is worth as much as one that did not. Read when a session needs them rather than carried into every one.*
 
 * **`GET_VERSION` field 6**, a compiled in `0x0C` with no reading, and **field 9's accessor**, a
   table read at program `0x020024` whose byte is `0xDE` while the remote reports `0x16`. The other
@@ -561,7 +574,7 @@ Byte accounting, `make coverage`, zero overlaps everywhere:
   section 123: the 525 implements infrared learning, so pointing the original equipment's own remote
   at it and matching the capture against the class 5 records section 82 read names the command, and
   the config already binds a scan code to it. `0x70` is still a command that changes a remote's
-  state rather than reading it, so it sits behind the write flag, and nothing here has sent one. Neither of Logitech's own applications has
+  state rather than reading it, so `READ_ONLY_COMMANDS` refuses it and nothing here has sent one. **The refusal is that allow list and not the write flag**, which this said until 29 August 2026: no method sends `0x70`, no rail mentions it, and `HARMONY_ENABLE_WRITES=1` would enable nothing, so whoever implements learning has to add the command, its classification and a rail rather than lift a switch. Neither of Logitech's own applications has
   it either, checked on 9 August 2026: a host names buttons and the firmware resolves the name to
   hardware, so no host ever held the map. `docs/host-client.md`.
   **Arch 9 sits below both and needs no census**, section 89: the 525 senses on a single line like
@@ -612,7 +625,15 @@ Byte accounting, `make coverage`, zero overlaps everywhere:
 
 ## What moved most recently
 
-*Moved out of `CLAUDE.md` on 29 August 2026, where it was a rolling account of the newest findings. Every claim in it is in `docs/findings.md` with a section number and a regression test.*
+*Moved out of `CLAUDE.md` on 29 August 2026, where it was a rolling account of the newest findings.
+Every claim in it is in `docs/findings.md` with a section number and a regression test.*
+
+*It restates several findings that "Headline findings" above also covers, deliberately, because a
+rolling account is ordered by when something was learned and that section is ordered by subject. The
+figures common to both carry `fact:` markers, so `make facts` moves every copy together and they
+cannot drift apart; what a reader should not expect is two independent statements of one measurement.
+Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
+accounting table** here, which was a real duplicate with nothing added and has been removed.*
 
 **The screen's text reads back**, section 112, which is what the application needed before it could
 show a config's activities: their names are drawn by a mode page's screen program and nothing else

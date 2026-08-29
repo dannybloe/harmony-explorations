@@ -102,7 +102,7 @@ export interface StatedProtocol {
    *
    * Section 162. There is no lead in pair, no constant half and no two carried lengths, so none of the
    * fields above apply: what there is instead is one half cell, a fixed prelude the family always sends,
-   * and which half of the cell means a set bit. Three families here are of this kind and each reproduces
+   * and which half of the cell means a set bit. Four families here are of this kind and each reproduces
    * every one of its records byte for byte.
    */
   readonly biphase?: {
@@ -179,7 +179,7 @@ export interface StatedProtocol {
    * holds a single record of**: the corpus cannot supply it and no amount of reading it will.
    *
    * A documented entry has `codes: 0` because it was measured over none, which is the honest number
-   * and not a placeholder. What it has instead is `namedBack`.
+   * and not a placeholder. What it has instead is `readBack`.
    */
   readonly source: 'corpus' | 'compiled' | 'both' | 'documented';
   /**

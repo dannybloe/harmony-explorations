@@ -49,8 +49,16 @@ The safe mode config is the one row here that is better evidenced on the 700 tha
 the other way round.
 
 The size of the config region is unknown, because that number comes from `concordance -i` and no 700
-has been connected. On the One it is 3840 KiB and on the 600 3904 KiB, both landing exactly on
-`0x400000`, so 3904 KiB is the obvious guess and it is a guess.
+has been connected. **The best available answer is the architecture's own bound, `0x030000` to
+`0x200000`**, since the firmware refuses every flash address at or above `0x200000` and that refusal
+is a property of the architecture rather than of the bench unit, so it holds for a 700 as much as for
+the 600. That gives 1856 KiB.
+
+**Corrected on 29 August 2026.** This offered a different guess: that the One is 3840 KiB and the
+600 3904 KiB, "both landing exactly on `0x400000`", so 3904 KiB was the obvious guess. The 600 half
+of that was refuted by section 88 and the refutation is in `docs/memory-map-600.md`, so the analogy
+was resting on the one number this project had already thrown out. A guess is fine here; a guess
+built on a corrected figure is a way of putting a dead number back into circulation.
 
 ## The pair of configs
 
@@ -75,6 +83,7 @@ In roughly this order, all read only:
    versions would separate hypotheses that the 600 and the One cannot, since on both of those the
    two versions agree.
 3. **External `0x020000`**, confirming the safe mode config on a device rather than in a package.
-4. **The config region size**, from `concordance -i`, which either lands on `0x400000` like the other
-   two or does not.
+4. **The config region size**, from `concordance -i`, which either agrees with the architecture's
+   own `0x200000` bound or does not. It will not be `0x400000`: that was this document's guess until
+   29 August 2026, carried over from a Harmony 600 figure section 88 had already refuted.
 5. **The USB product id and the descriptor block**, neither of which is recorded here for the 700.
