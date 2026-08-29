@@ -233,6 +233,13 @@ export const IMAGES: Readonly<Record<string, string>> = {
   myharmony_sync_model: 'RemoteSyncUserControlModel.cs',
   myharmony_update_manager: 'RemoteUpdateManager.cs',
   myharmony_ds_controller: 'DSController.cs',
+  // Not an image and not a config: the wire log of Logitech's own classic client reading a Harmony
+  // One, captured on 7 August 2026 by running the client rebuilt from its own decompiled source
+  // against a local stand-in for its discontinued server. 69572 lines, of which 69344 are packets.
+  // It is the only capture here of a remote being driven by an implementation that is not ours, so
+  // it is the one place our command encoder can be checked against an independent one rather than
+  // against itself. `software/classic/reports/run.log`, section 210.
+  classic_read_capture: 'run.log',
 };
 
 const cache = new Map<string, string[]>();

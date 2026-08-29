@@ -1448,7 +1448,13 @@ HARMONY_ENABLE_WRITES=1 node packages/usb/bin/end-session-experiment.ts
                        THE ONLY SCRIPT HERE THAT SENDS A COMMAND WHICH IS NOT A READ, one
                        `0xE0 0x01`, which zeroes one variable and touches no storage. Refuses
                        to start without the flag. Unrun; section 99 holds its prediction and
-                       names the control that comes first.
+                       names the control that comes first. **Logitech's own client sends exactly
+                       those two bytes as the first command of every session**, before it even
+                       identifies the remote, and then reads four megabytes off a Harmony One
+                       successfully, section 210. That is one observation on one unit and a
+                       command's effect depends on the state it arrives in, so it does not make
+                       the experiment safe; what it changes is that this is the vendor's opening
+                       move rather than a command nobody has been seen to use.
 ```
 
 `pic18_trace.py` is the highest-value one: the entire IR chain came out of pointing it at three

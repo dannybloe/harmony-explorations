@@ -1811,6 +1811,70 @@ behind `WRITES_ENABLED` if they are ever built, and that `openHarmony` still ref
 because the **config** path does not reach them. The identity read is a ping, `0x01`, `0x04` and `0x07`
 and changes nothing.
 
+## 7. Measured against Logitech's own client, on the wire
+
+Everything in sections 1 to 5 was derived from the firmware and then checked against this project's
+own implementation. This section is different in kind: it is a packet log of **Logitech's classic
+client** reading a Harmony One end to end, so the bytes were produced by an implementation that has
+never seen ours. `docs/findings.md` section 210 is the argument and
+`packages/usb/test/classic-capture.test.ts` is the check.
+
+The capture is a lab fixture, not a device, so nothing here needs hardware.
+
+### The whole read is three commands
+
+| command | times | note |
+|---|---|---|
+| `0xE0` with sub-command `0x01` | 1 | the **first** command of the session, before the version read |
+| `GET_VERSION` | 1 | |
+| `READ_FLASH` | 1310 | each acknowledged once by `0xF0 0x50` |
+
+Nothing else is sent. `READ_ONLY_COMMANDS` holds exactly these three, chosen by reading the
+firmware, and the vendor uses precisely them to read a remote.
+
+### Every request is byte identical to what this project builds
+
+1312 of 1312, with the address as three bytes most significant first and the count as two. The
+requests exercise length nibbles 0, 1 and 5 only, so they confirm the linear part of the mapping.
+
+### The replies confirm the non-linear part, arithmetically
+
+For each of the 1310 flash reads, the reply chunks' length nibbles decoded through
+`payloadLengthForNibble`, less one sequence byte each, sum to exactly the byte count requested.
+1310 of 1310. A linear reading of the nibble would account for 500 bytes of a 3100 byte read, so
+this is a real constraint rather than a restatement.
+
+| nibble | payload bytes | times seen |
+|---|---|---|
+| `0xA` | 63 | 65402 |
+| `0x8` | 15 | 5 |
+| `0x9` | 31 | 3 |
+| `0x5` | 5 | 1 |
+
+The short nibbles occur only as the tail of a transfer that is not a whole number of full chunks.
+
+### What it reads on a Harmony One
+
+| extent | bytes | reads |
+|---|---|---|
+| `0xFF` `+0xF400`, the identity block | 48 | 1 |
+| `0x002000` to `0x020000` | 122880 | 40 |
+| `0x040000` to `0x400000` | 3932160 | 1269 |
+
+The application firmware between `0x020000` and `0x040000` is never requested. The two config
+extents sum to the byte total the client itself reported.
+
+**Sixteen regions is the client's own loop bound, not the remote's.** Its log warns that fourteen
+regions could not be read, and no command is sent for any of them: it looks the region up in a table
+keyed on architecture and index, and this build has entries only for architecture 12, regions 3 and
+4, which are the second and third extents above. The remote is never asked.
+
+### Its transfer unit is 3100 bytes
+
+1307 of the 1310 reads, the rest being the identity block and one short tail per extent. 3100 is 50
+times the 62 data bytes a full chunk carries, so a transfer is sized in whole packets. This project
+uses 16384 and works, so the figure is a choice rather than a limit.
+
 ## Corroboration used, after the fact
 
 * `USB_PACKET_LENGTH 64` in libconcord's hidapi backend agrees with the 64 byte reports.

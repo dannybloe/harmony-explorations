@@ -391,6 +391,21 @@ the preview stream is frozen at a February 2019 build across the whole family wh
 moved to August 2025. That is the shape a "keep the old behaviour" firmware would have and it is not a
 demonstration that this one is.
 
+## Logitech's classic client reading a Harmony One, captured 7 August 2026
+
+Not a binary and not a config: the packet log of the classic client, rebuilt from its own decompiled
+source, reading a Harmony One over USB against a local stand-in for its discontinued server. It stays
+in the lab because it carries that unit's identity block in the clear, so this is the checksum.
+Section 210, and `packages/usb/test/classic-capture.test.ts` reads it as the fixture
+`classic_read_capture`.
+
+| File | SHA-256 | What |
+|---|---|---|
+| `run.log` | `735b193d12cba3a4aeef24983b7627c499c984bf891f4de4541a5f68a2823d7a` | 11770605 bytes, 69572 lines, of which 69344 are packets in both directions |
+| `requests.jsonl` | `bcf06c149c82adf1ee5b178658382fc3833215aa8167378dc52147853a289aa3` | the client's 48 HTTP calls to the stand-in, four distinct paths |
+| `localserver.log` | `62e2b75d9d09e5f580e83f72ee6d1e422706e3daf90657133185e0bd8b073880` | the stand-in's own view, ending in the client's report of a completed read |
+| `repack.txt` | `f59b5753a8f76a700f25a546c3ab3e2b4768907e49a2efc2abf3e3944ca04496` | the rebuild receipt: 827 of 829 classes compiled from recovered source |
+
 ## Load addresses
 
 Required. Without these a disassembler produces plausible-looking garbage rather than

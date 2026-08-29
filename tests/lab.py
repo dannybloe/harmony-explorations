@@ -259,6 +259,11 @@ IMAGES = {
     'myharmony_sync_model': 'RemoteSyncUserControlModel.cs',
     'myharmony_update_manager': 'RemoteUpdateManager.cs',
     'myharmony_ds_controller': 'DSController.cs',
+    # Not an image and not a config: the wire log of Logitech's own classic client reading a Harmony
+    # One, captured 7 August 2026 by running the client rebuilt from its own decompiled source against
+    # a local stand-in for its discontinued server. Read by the TypeScript side, where the command
+    # encoder lives; named here so the two tables agree. `software/classic/reports/run.log`.
+    'classic_read_capture': 'run.log',
 }
 
 _cache = {}

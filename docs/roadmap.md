@@ -1569,7 +1569,7 @@ The grid, with the two squares that matter marked. File counts are what to plan 
 
 | square | size | files | what is known about it |
 |---|---|---|---|
-| `software/classic/` | 700M | 4809 | the 7.x generation's own software, and the square where most of the want list still points. Sections 204 to 209 worked it: `PROTOCOL-CONSTANTS.md` and `SERVER-DEPENDENCY.md` are mined, `LEARN-IR.md` is catalogued, and `src/` and `res/` are surveyed with the HID command layer and three resource files mined. `reports/` and `tools/` have never been opened. This row said one file had been read and the other 4808 were unexamined |
+| `software/classic/` | 700M | 4809 | the 7.x generation's own software, and the square where most of the want list still points. Sections 204 to 209 worked it: `PROTOCOL-CONSTANTS.md` and `SERVER-DEPENDENCY.md` are mined, `LEARN-IR.md` is catalogued, and `src/` and `res/` are surveyed with the HID command layer and three resource files mined. `reports/` is mined as section 210 and `tools/` has never been opened. This row said one file had been read and the other 4808 were unexamined |
 | `work/myharmony/` | 234M | 3458 | the service client and its captured replies, plus what looks like a decompiled web application source tree that nothing here has ever opened |
 | `software/harmony-remote-software-8.0/` | 7.8M | 1018 | unexamined |
 | `software/MyHarmony/` | 183M | 317 | the Silverlight client. Section 132 concluded it holds no protocol; that conclusion predates knowing the recovery tool is reached from it |
@@ -1636,6 +1636,19 @@ The register's rows now point at the extraction from both directions, and what t
 is worth having: the ledger of client sourced numbers had **no executable check at all** and has one
 now, and three of its rows moved, two arch 12 regions explained from internal pages already in the lab
 and the arch 14 logging region corroborated by every arch 14 safe mode container in the corpus.
+
+**The `reports/` square, dug on 29 August 2026, and it is the excavation's best return so far.**
+Section 210. It was catalogued as "run logs from the application" and the files turn out to be
+**ours**: the 7 August session decompiled the classic client, rebuilt 827 of its 829 classes from the
+recovered source, and **ran it against a Harmony One** with a local stand-in for the dead server. So
+the site holds a working copy of Logitech's own executor, which nothing had recorded. What it left
+behind is 69344 packets of that client reading a remote, and that is the first thing this project has
+ever had to check its own USB code against something other than itself: our encoder reproduces all
+1312 of its requests byte for byte, and its replies confirm the non-linear length nibble
+arithmetically, 1310 reads out of 1310. Two other things fall out. Reading a remote takes exactly the
+three commands our allow list holds, and **the client's first command of every session is the
+`0xE0 0x01` that `end-session-experiment.ts` has never dared send**. The `fh-failures` tag loses its
+only candidate, since the failures in these logs are our own.
 
 **Two more squares on 29 August 2026, and the second is the same warning a sixth time.** Section 208
 is the good one: a third resource file in the same client, the **teaching pictures**, keys its drawings

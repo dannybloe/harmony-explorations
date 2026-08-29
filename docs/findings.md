@@ -27173,3 +27173,126 @@ A catalogue can only be incomplete, per the rule in `docs/lab-excavation.md`, an
 what a status of `mined` on a directory risks: it is a claim about a whole subtree made from having
 mined part of it. The register's own schema says `mined` means "everything the want list asks of it
 has been extracted", so the honest granularity is the directory somebody actually read.
+
+## 210. Logitech's client reading a Harmony One, captured on the wire, and the first check of our encoder against something that is not us
+
+*29 August 2026. `software/classic/reports/`, the excavation square that carried the `fh-failures`
+tag and the status `unseen`.*
+
+The register's row for this square said "run logs from the application", 30 files, and named one of
+them as the evidence behind a sentence in `SERVER-DEPENDENCY.md`. That description is not wrong and
+it is not what is in there. The files are **ours**, not Logitech's, and they are the output of the
+7 August 2026 session that decompiled the classic client: nine decompiler logs, thirteen empty ones,
+a compiler log and a repack receipt, and then three files from actually running the result.
+
+**The client was rebuilt from its own decompiled source and it runs.** The repack receipt is the
+claim: 827 of its 829 classes were compiled from recovered source and two came from the original
+bytecode. Nothing in this repository recorded that such an instrument exists, which matters because
+it means Logitech's own executor can be pointed at a remote and watched.
+
+### What was watched
+
+Two runs, and the second is a control. `run-control.log` is the client started with nothing attached:
+it times out ten times looking for a device and finds none, which is what makes the other run's
+device dependent lines attributable. The real run has a Harmony One attached, a local stand-in
+answering the discontinued server on `localhost`, and it ends with the client reporting a completed
+read of 4055040 bytes filed under its own name for that unit.
+
+`run.log` is 69572 lines, of which 69344 are the HID layer logging **every packet in both
+directions**. That is the only capture this project has of a remote being driven by an
+implementation that is not ours.
+
+The accounting closes exactly, which is the first reason to trust the file: 1312 requests, 65411
+reply chunks, 1310 acknowledgements, one version reply and 1310 buffer clears sum to 69344.
+
+### Our encoder reproduces all 1312 of its requests, byte for byte
+
+Every check of `packages/usb/src/protocol.ts` before today compared this project against itself. A
+request was built and read back by the same module, so a swapped address byte or a wrong length
+nibble would have agreed with itself perfectly. This is the first external comparison, and it is
+exact: 1312 of 1312, with the address as three bytes most significant first and the count as two.
+
+Reversing the address byte order in `address24` breaks it, which is the control.
+
+### The length nibble is confirmed arithmetically, and this is the stronger half
+
+`payloadLengthForNibble` is deliberately not linear: nibble 8 means 15 payload bytes, 9 means 31, A
+means 63, and the module's own comment says that getting it wrong produces no error. Until now
+nothing outside the firmware could confirm it.
+
+The capture confirms it by arithmetic. For each of the 1310 flash reads, decoding every reply chunk's
+nibble through our table and subtracting the one sequence byte has to sum to exactly the count the
+client asked for. It does, 1310 times out of 1310. Under a linear reading of the nibble a 3100 byte
+read would account for 500 bytes, so the sums would miss by a factor of six. Making nibble 9 linear
+breaks the test, which is the control.
+
+The nibbles the capture exercises are A 65402 times, 8 five times, 9 three times and 5 once. The
+short ones appear only as the tail of a transfer that is not a whole number of full chunks, which is
+why they are rare and why they are the ones worth having pinned.
+
+### Reading a remote is three commands, and the vendor agrees
+
+The entire session is `0xE0 0x01` once, `GET_VERSION` once, and `READ_FLASH` 1310 times. Nothing
+else is sent at all. `READ_ONLY_COMMANDS` in `packages/usb/src/protocol.ts` holds exactly three
+commands, and that set was chosen by reading the firmware; the vendor's own client uses precisely
+those three to read a remote end to end.
+
+**Its first command is the escape this project has never sent.** `packages/usb/bin/end-session-experiment.ts`
+is described in `CLAUDE.md` as the only script here that sends a command which is not a read, it is
+gated behind `HARMONY_ENABLE_WRITES=1`, and it is unrun. Logitech's client sends those two bytes as
+its opening move, before it even identifies the remote, and then reads four megabytes off it
+successfully. That does not make the experiment safe by itself, because a command's effect depends on
+the state it arrives in, and this is one observation on one unit. It does move it from a command
+nobody here has ever seen used to a command the vendor uses to start every session.
+
+### What it reads, and what it steps over
+
+Three extents, in this order:
+
+| extent | bytes | reads | what it is |
+|---|---|---|---|
+| `0xFF` `+0xF400` | 48 | 1 | the unit's identity block |
+| `0x002000` to `0x020000` | 122880 | 40 | the safe mode container and the slack above it |
+| `0x040000` to `0x400000` | 3932160 | 1269 | the user config region, whole |
+
+The second and third sum to 4055040, which is the figure the client reported, so the identity read is
+not counted as part of the config.
+
+Three things follow. The identity read asks for **48** bytes where `docs/memory-map-one.md` gives the
+block as 64 with its fourth field erased, so the vendor's own request is an independent reading of
+the same boundary. The user config region ending at `0x400000` is the vendor's statement of the bound
+that `packages/corpus/src/read.ts` carries for this architecture, which had rested on concordance's
+figure and our own measurement. And **the application firmware is stepped over**: the gap from
+`0x020000` to `0x040000` is never requested.
+
+### Sixteen regions is a property of the client, not of the remote
+
+The log warns that fourteen of sixteen regions "could not be read", which reads like the remote
+refusing. It is not. The exception text names an architecture and a region, and no command is sent
+for those fourteen: the whole capture is accounted for by the three extents above. The client carries
+a table keyed on the architecture and the region index, and this build has entries only for
+architecture 12, regions 3 and 4, at `0x002000` for 122880 bytes and `0x040000` for `0x3C0000`.
+Everything else throws before a packet is built.
+
+So "16 regions" is a loop bound in an executor, and the two that exist are the two extents above.
+Worth recording precisely because the natural misreading gives the remote a region model it has not
+been shown to have.
+
+### The transfer unit is 3100 bytes, which is fifty whole chunks
+
+1307 of the 1310 reads ask for 3100 bytes and the other three are the identity block and one short
+tail per extent. 3100 is 50 times the 62 data bytes a full reply chunk carries, so the vendor sizes a
+transfer in whole packets rather than in round numbers. This project uses 16384 and works, so the
+figure is not a constraint; it is what an implementation that had to be reliable in 2009 chose.
+
+### What this square does not answer
+
+The `fh-failures` tag it carries, "what went wrong in practice", is **not** answered here. The
+failures in these logs are ours: a missing server, an unresolvable host, a toolkit that will not
+start under a modern window server. Nothing in them is a user's account of a remote misbehaving. The
+tag should move rather than close.
+
+`requests.jsonl` is 48 entries and is the client's traffic to the stand-in, not to Logitech: four
+distinct paths under `EasyZapper`, plus our own instrumentation posting the client bridge's replies
+back. It corroborates `SERVER-DEPENDENCY.md` on which calls the client makes at startup and adds no
+protocol.

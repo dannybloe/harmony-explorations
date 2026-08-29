@@ -99,7 +99,7 @@ their fields is a semantic key for the format as well as a specification of the 
 | `fh-wizard` | add a device, add an activity, the guided setup and the order of its questions. Listed as unread in `docs/host-client.md` |
 | `fh-settings` | every setting and its type, per device, per activity and per remote: power on delay, inter key delay, input method, repeat rate. Most of these are bytes already read without a name |
 | `fh-limits` | name lengths, allowed characters, maximum devices, maximum activities, the sequence step cap. What an interface needs before it can refuse anything |
-| `fh-failures` | what their client says when a sync goes wrong, which is what the application has to handle rather than crash on |
+| `fh-failures` | what their client says when a sync goes wrong, which is what the application has to handle rather than crash on. **No artefact on the site carries this tag now**, since 29 August 2026: `software/classic/reports/` was the only one and section 210 found its failures are ours, a missing server and a toolkit that will not start, rather than a user's account of a remote. The tag stays on the want list because the want is real; what it has lost is its one candidate |
 
 ### Deliberately not on the list
 
