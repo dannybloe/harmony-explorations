@@ -28544,6 +28544,34 @@ Nothing here changes what a good read has to satisfy. Every window is still chec
 the whole file by the end marker and by the trailer checksum, and a retried read is not a degraded
 one.
 
+### The fix exercised on hardware, because a clean read exercises none of it
+
+Asked for by Danny, and the objection was right: the read that followed the fix needed no retry, so
+it demonstrated nothing about the new code. **A stall had to be forced through the production path.**
+
+The first attempt failed for a reason worth keeping: a timer callback that busy waits **never fires
+during a read**. `node-hid`'s `readTimeout` blocks synchronously, so the read loop yields only to
+microtasks and the event loop never reaches the timer phase. The whole transfer is effectively one
+synchronous run. So whatever stalls a read in the wild is something that can interrupt a synchronous
+loop, which is a garbage collection or the operating system, and not other work this process
+scheduled.
+
+The stall therefore went inside the loop as a **temporary control**, reversed immediately after the
+run and the reversal checked against the committed file. Two stalls of 200 ms, and the result is the
+whole mechanism working:
+
+* window `0x040010` failed, was asked for again, failed again, and succeeded on the third attempt,
+  which is exactly the budget of two retries
+* the read completed, 1665900 bytes, byte identical to the dump taken before the first write
+* the retry count came back as 2 and was printed as it happened
+
+**The drain is demonstrated by the second stall rather than asserted.** It fired 3000 bytes into
+attempt two, which means attempt two was reading its own answer normally that far in. Without the
+drain, attempt two would have failed immediately on the leftovers of attempt one and never reached
+the stall at all.
+
+A clean read afterwards, with the control reversed, needed no retry and matches the same dump.
+
 ### What this does not explain, and one thing it puts a name to
 
 It does not say **what** stalled this process for a fifth of a second in the middle of a read. A
