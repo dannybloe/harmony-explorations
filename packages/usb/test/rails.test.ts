@@ -37,6 +37,7 @@ import {
   assertSessionEndAllowed,
   address24,
   encodeRequest,
+  encodeVersionBlock,
   eraseBoundsFor,
   guardMutations,
   readFlashRequest,
@@ -46,14 +47,75 @@ import type { Transport } from '../src/index.ts';
 // Deep import on purpose: this is the hatch the barrel deliberately does not offer, section 224.
 import { authoriseReport } from '../src/authorise.ts';
 
-/** Everything a caller could possibly have in order, on the architecture that has a target. */
+/**
+ * A version block the spare Harmony One would send, from the values `concordance -i` reads off both
+ * bench Harmony Ones and `one_config`'s wrapper states: firmware 3.4, board 0.5, flash `1F:C8`,
+ * architecture 12, software type 0 for the application, skin 54.
+ */
+const ONE_BLOCK = encodeVersionBlock({
+  firmware: 0x34,
+  hardware: 0x05,
+  flash: [0x1f, 0xc8],
+  architecture: 12,
+  softwareType: 0,
+  skin: 54,
+  platform: 0x0c,
+});
+
+/** What a Harmony One's own config states, verbatim, so `IDEAL` compares rather than claims. */
+const ONE_STATED = {
+  PROTOCOL: '12',
+  SKIN: '54',
+  FLASH: '0x1F:0xC8',
+  BOARD: '0.5.0',
+  SOFTWARETYPE: '0',
+} as const;
+
+/**
+ * Everything a caller could possibly have in order, on the architecture that has a target.
+ *
+ * **The version fields are inputs and not a boolean since section 225.** This carried
+ * `intendedVersionMatches: true`, which is what every caller of the rails passed and what made the
+ * compatibility gate a comment: the config and the remote here now genuinely agree on five fields
+ * and the rail is the thing that finds that out.
+ */
 const IDEAL = {
   architecture: 12,
   configLength: 0x1000,
   originalDumpVerified: true,
-  intendedVersionMatches: true,
+  intendedVersion: ONE_STATED,
+  versionBlock: ONE_BLOCK,
   targetIsTheSpareRemote: true,
 } as const;
+
+/**
+ * `IDEAL` as source for the subprocess tests, since a `Uint8Array` does not survive
+ * `JSON.stringify`: it becomes an object with numeric keys, which every rail would then read as an
+ * unreadable version block, and the tests would pass for the wrong reason.
+ */
+const IDEAL_SOURCE = `const IDEAL = {
+  ...${JSON.stringify({
+    architecture: IDEAL.architecture,
+    configLength: IDEAL.configLength,
+    originalDumpVerified: IDEAL.originalDumpVerified,
+    intendedVersion: IDEAL.intendedVersion,
+    targetIsTheSpareRemote: IDEAL.targetIsTheSpareRemote,
+  })},
+  versionBlock: rails.encodeVersionBlock(${JSON.stringify({
+    firmware: 0x34,
+    hardware: 0x05,
+    flash: [0x1f, 0xc8],
+    architecture: 12,
+    softwareType: 0,
+    skin: 54,
+    platform: 0x0c,
+  })}),
+};`;
+
+/** A block for an architecture whose tables are being exercised, with nothing else stated. */
+function blockFor(architecture: number): Uint8Array {
+  return encodeVersionBlock({ architecture });
+}
 
 test('the package offers no way to build a request that changes a remote', async () => {
   // **The bypass this closes, measured on 13 August 2026.** `rails.ts` opens by saying a rail here is
@@ -157,7 +219,7 @@ test('the writable range needs both a region and a ceiling, and a hole in either
   // Arch 12 (Harmony One) is the only architecture with both, and it is also the only one in
   // `ARCHITECTURES_WITH_A_WRITE_TARGET`, which is not a coincidence: the tables are what a write
   // target means.
-  assert.deepEqual(writableRange({ ...IDEAL, architecture: 12 }), {
+  assert.deepEqual(writableRange({ ...IDEAL, architecture: 12, versionBlock: blockFor(12) }), {
     start: 0x040000,
     end: 0x041000,
   });
@@ -167,9 +229,9 @@ test('the writable range needs both a region and a ceiling, and a hole in either
   // with a hole refuses, and arch 14 (Harmony 600 and 700) has a config region and no ceiling, so
   // the old answer was an unbounded write range for an architecture nothing has measured a ceiling
   // for. It has no write target either, so nothing could reach it; adding one would have.
-  assert.throws(() => writableRange({ ...IDEAL, architecture: 14 }), RailError);
+  assert.throws(() => writableRange({ ...IDEAL, architecture: 14, versionBlock: blockFor(14) }), RailError);
   // And arch 9 (Harmony 525) has neither, so it refuses on the first of the two.
-  assert.throws(() => writableRange({ ...IDEAL, architecture: 9 }), RailError);
+  assert.throws(() => writableRange({ ...IDEAL, architecture: 9, versionBlock: blockFor(9) }), RailError);
 });
 
 test('the two rails read the same table hole the same way', () => {
@@ -178,7 +240,7 @@ test('the two rails read the same table hole the same way', () => {
   for (const architecture of [8, 9, 10, 12, 14]) {
     const write = (() => {
       try {
-        writableRange({ ...IDEAL, architecture });
+        writableRange({ ...IDEAL, architecture, versionBlock: blockFor(architecture) });
         return 'allowed';
       } catch {
         return 'refused';
@@ -234,7 +296,7 @@ function withWritesEnabled(script: string): string {
 
 test('with writing enabled, the remaining conditions still each refuse on their own', () => {
   const output = withWritesEnabled(`
-    const IDEAL = ${JSON.stringify(IDEAL)};
+    ${IDEAL_SOURCE}
     const base = 0x040000;
     const refusals = [];
     const check = (name, permission, address, count) => {
@@ -251,7 +313,13 @@ test('with writing enabled, the remaining conditions still each refuse on their 
     check('flag on and everything in order', IDEAL, base, 16);
     check('not the spare remote', {...IDEAL, targetIsTheSpareRemote: false}, base, 16);
     check('no verified dump', {...IDEAL, originalDumpVerified: false}, base, 16);
-    check('intended version mismatch', {...IDEAL, intendedVersionMatches: false}, base, 16);
+    // **Now a real comparison rather than a boolean**, section 225: the config claims skin 99 and
+    // the remote reports 54, so the rail is the thing that notices. The row below it is the second
+    // half of the same gate, two readings of one remote disagreeing about its architecture.
+    check('intended version mismatch', {...IDEAL, intendedVersion: {...IDEAL.intendedVersion, SKIN: '99'}}, base, 16);
+    check('a version field nobody can compare', {...IDEAL, intendedVersion: {...IDEAL.intendedVersion, CLIENTSOFTWARE: '2.7'}}, base, 16);
+    check('a version block for another architecture', {...IDEAL, versionBlock: rails.encodeVersionBlock({architecture: 14})}, base, 16);
+    check('a version block too short to be an identity', {...IDEAL, versionBlock: new Uint8Array(4)}, base, 16);
     check('architecture 14', {...IDEAL, architecture: 14}, 0x030000, 16);
     check('one byte below the region', IDEAL, base - 1, 16);
     check('running one byte past the end', IDEAL, base + IDEAL.configLength - 15, 16);
@@ -265,6 +333,9 @@ test('with writing enabled, the remaining conditions still each refuse on their 
     'not the spare remote: refused by RailError',
     'no verified dump: refused by RailError',
     'intended version mismatch: refused by RailError',
+    'a version field nobody can compare: refused by RailError',
+    'a version block for another architecture: refused by RailError',
+    'a version block too short to be an identity: refused by RailError',
     'architecture 14: refused by RailError',
     'one byte below the region: refused by RailError',
     'running one byte past the end: refused by RailError',
@@ -282,7 +353,7 @@ test('with writing enabled, a RAM write still refuses an SFR address and a wrong
   // The rail also had no architecture check at all, so `targetIsTheSpareRemote` alone reached
   // `WRITE_MISC` on a Harmony 600 or a Harmony 525, whose selector 7 executors nobody has read.
   const output = withWritesEnabled(`
-    const IDEAL = ${JSON.stringify(IDEAL)};
+    ${IDEAL_SOURCE}
     const out = [];
     const check = (name, permission, address) => {
       try {
@@ -331,7 +402,7 @@ test('with writing enabled, an erase must name a whole block inside the writable
   // own client starts erasing at the first block boundary at or after the address, which means an
   // unaligned caller gets neither the erase it asked for nor an error.
   const output = withWritesEnabled(`
-    const IDEAL = ${JSON.stringify(IDEAL)};
+    ${IDEAL_SOURCE}
     const results = [];
     const cases = [
       ['the first block of the region', 0x040000],

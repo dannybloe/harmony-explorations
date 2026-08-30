@@ -83,7 +83,8 @@ remote before writing anything.
 the file was built for, over six fields: protocol, skin, flash, board, `SOFTWARETYPE` and
 `ARCHITECTURE`. This is what a write must match, and an absent or empty field matches anything,
 which is how a file offers a fallback rather than a quirk. Section 87. This entry named four of the
-six until 29 August 2026.
+six until 29 August 2026. `PROTOCOL` carries the **architecture** rather than a protocol version,
+and a config read off a remote has no header and therefore states none of the six. Section 225.
 
 ## Inside a config: the container
 

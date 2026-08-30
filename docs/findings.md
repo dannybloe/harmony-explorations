@@ -52,11 +52,16 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Fifty nine have been found and corrected so far. **The newest is in section 224**, and it is the same
-rails bypass for the third time: a report reaching a remote's flash with no rail behind it, closed twice
-before, both times by hiding the thing that built the report and never the thing that permitted it. The
-one before it is in section 221, and it is a document quoting one row of a table as the whole table,
-twice, five weeks apart, from two different rows. **The six newest are in section 139, and every one
+Sixty two have been found and corrected so far. **The three newest are in section 225**, and all three
+are about the compatibility gate: the third component of a remote's hardware version was listed as
+something concordance prints and we cannot place, and it is not in the version block at all;
+`BOARD` was said to be normalised on the file's side only, where a two component reading against a
+three component statement needs both sides normalised; and the rule that a list of versions is a
+disjunction was attributed to `INTENDEDVERSION`, which is a single entry in all ten wrappers, when it
+belongs to the `USERMESSAGES` chain beside it. The one before those is in section 224, and it is the
+same rails bypass for the third time: a report reaching a remote's flash with no rail behind it, closed
+twice before, both times by hiding the thing that built the report and never the thing that permitted
+it. **The six newest are in section 139, and every one
 of them is a reader in shipped code that answered plausibly where it should have refused**, found by
 reviewing the source against the question "what can this test fail on" rather than by a new sample.
 One of them is a rail: the barrel of `packages/usb` exported the four request builders that change a
@@ -28683,3 +28688,139 @@ that the dump is verified, that the version matches and that the target is the s
 this close the class: the lesson is that a rail on an object's **surface** needs an assertion over that
 surface, and the only two things enumerated that way today are this transport and the file protocol's
 allow list.
+
+## 225. The compatibility gate, performed at last, and what each of its six fields means
+
+`WritePermission` in `packages/usb/src/rails.ts` had a field called `intendedVersionMatches`, a
+boolean, documented as "the config's `INTENDEDVERSION` matches the connected remote over all six
+compared fields". Every caller passed `true`. So the rail whose one job is refusing a configuration
+built for a different remote was a comment, and `docs/adding-a-device.md` phase 8 had that box
+unticked since 25 August 2026 with nothing to tick it with.
+
+It takes the two **inputs** now, what the config states and the version block the remote sent, and
+performs the comparison itself. That is the shape a caller cannot get wrong by being optimistic, and
+it is the same correction as section 224's one day earlier: a rail that asks a caller a question is a
+rail the caller answers.
+
+### The mapping, which is the part that had to be derived
+
+The two sides state the same quantities in different notations, and getting one wrong is the failure
+mode with teeth, since it produces a gate that passes.
+
+| field | the config states | the remote reports | reading |
+|---|---|---|---|
+| `PROTOCOL` | `12` | field 4's high nibble | decimal, and it is the **architecture** |
+| `SKIN` | `54` | field 5 | decimal |
+| `FLASH` | `0x1F:0xC8` | fields 3 and 2 | manufacturer and device, hex per half |
+| `BOARD` | `0.5.0` | field 1's two nibbles, `0.5` | three components against two |
+| `SOFTWARETYPE` | `0` | field 4's low nibble | decimal |
+| `ARCHITECTURE` | never stated | field 4's high nibble | decimal, unexercised |
+
+**`PROTOCOL` carries the architecture**, which is the one that could have gone wrong quietly. This
+project has a field it called "protocol" for weeks and section 116 renamed to `platform`, field 6,
+and that field is `0x0C` on **both** arch 12 (Harmony One) and arch 14 (Harmony 600 and 700). So
+reading `PROTOCOL` as field 6 would accept a Harmony 600's configuration for a Harmony One, which is
+precisely the write the rail exists to refuse. The corpus settles it: six wrappers state 12, 14, 9 and
+8, one value per architecture, and no pair of architectures shares one.
+
+The corroboration is `concordance -i`, whose own output on all three bench units prints `Protocol`
+and `Architecture` as the **same number**, 12, 12 and 14, and prints skin, hardware version, flash id
+and firmware type identical to what those units' configurations state. That is a second
+implementation reading the same remotes, so the mapping does not rest on our reading of either side.
+
+**`BOARD`'s third component is not in the version block, and that is not a gap in our reading.**
+`docs/usb-protocol.md` has carried "the third component of the hardware version" as one of three
+things concordance prints and we cannot place, since section 59. It is not there to place:
+concordance's own `GET_VERSION` sets `hw_ver_micro = 0` outright, with the comment that "usbnet
+remotes have a non-zero micro version". So for every model this library speaks to the third component
+is zero by construction, both sides normalise to three components with a zero fill, and `0.5` and
+`0.5.0` are the same board. One open item closed by reading four lines of a neighbour rather than by
+another firmware afternoon.
+
+**A field the comparison does not know is a refusal.** That is the rule this repository has now
+relearned three times from a missing table entry read as permission, `WRITABLE_CEILING`'s hole and the
+band table's, and it applies here with a twist: `SOFTWARE` and `CLIENTSOFTWARE` are real elements in
+these wrappers, so an unknown name is a thing that genuinely turns up rather than a hypothetical.
+Skipping one would report a match having compared less than it appeared to.
+
+### What the wrapper actually looks like, which is not what section 87 implied
+
+Section 87 attributed three rules to `INTENDEDVERSION`: an absent field matches anything, a list of
+versions is a disjunction, and `BOARD` is normalised. Reading the headers themselves shows those are
+rules of a **generic version matcher** that the wrapper uses in two places, and only one of them is
+the compatibility gate.
+
+`<INTENDEDVERSION>` is a **single** entry, in all ten wrappers, with no list around it. Beside it sits
+`<USERMESSAGES>`, a list of `<USERMESSAGE>` each carrying its own `<VERSIONS>` disjunction and a
+`<TYPE>`, evaluated in order. On a Harmony One's configuration that chain is three long: an entry
+matching this exact remote with `TYPE` `DoNothing` and `ABORTPROCESSING`, then a catch-all entry with
+an **empty** `<VERSION>` carrying `TYPE` `Warning` and the text "This configuration file is not
+compatible with your Harmony Remote", then a catch-all `Abort`. So the message harmony-decompiler
+reports is not the remote's; it is the host software's, and the empty entry is how it is attached to
+every remote the entries above did not catch.
+
+The matcher's other keys are worth recording because they are not about the remote at all. Three arch
+8 configurations carry seven `<VERSION>` entries keyed `CLIENTSOFTWARE`, 2.3 to 2.9, warning that the
+**PC software** is out of date, and nine keyed `SOFTWARE`, 0.1 to 0.9. `docs/config-format.md` now
+carries the structure; the disjunction rule moves off `INTENDEDVERSION`, where nothing needs it, onto
+the chain, where every entry uses it.
+
+### The case the write path actually meets: there is no wrapper
+
+**A configuration read off a remote states none of the six fields**, because the wrapper is XML the
+host software puts in front of the payload and the remote stores the payload. Measured over the
+corpus: ten containers carry a wrapper stating five fields each, and the three that were read over
+USB by this project carry no header at all, so `parseEzhex` returns an empty statement for them.
+
+That is why `rehearse-block.ts` compares nothing, and the script now **prints** that rather than
+leaving it to be assumed: zero of six fields stated. It is the honest reading of the input and not a
+pass, and what stands in for it there is much stronger anyway, the bytes about to be written having
+been compared with the bytes on the device. The gate starts doing work at the write that installs a
+configuration **we** produced, and that path composes the codec and the USB layer, which is
+`packages/corpus`.
+
+### The tests, and the control
+
+`packages/usb/test/compatible.test.ts` is the comparison on literals, no lab and no hardware. Its
+sharpest case is the Harmony 525's, whose whole version reply `27 30 25 12 ff 90 16 09` is recorded
+verbatim in `docs/usb-protocol.md`, so one side is a captured reply and the other is a file header
+with nothing assembled in between. The calibration case is that block against a Harmony One's
+configuration: four of the five stated fields must disagree and `SOFTWARETYPE` must agree, since every
+configuration in the corpus declares 0 and every bench remote was running its application. Both
+directions score the same four.
+
+`packages/corpus/test/compatibility.test.ts` is the corpus half: ten wrappers, five fields each, fifty
+comparisons, none disagreeing, with four of the ten against a remote whose values were read off
+hardware and the other six labelled as not independent. Its control is the one that gives it meaning:
+every wrapper against every other architecture's remote, forty combinations, of which exactly eight
+may match and 32 must refuse.
+
+The control on the whole thing: making the comparison return compatible unconditionally fails seven
+tests across the three files, and the reversal was compared byte for byte against a copy taken first.
+
+**One defect was found by these tests rather than by reading.** The flash id was compared with a
+general "decimal unless `0x` prefixed" reader, so the bare form a remote reports, `1F:C8`, came out as
+1 and 0. `1F` is the harmless case because it fails loudly; `10` is the one with teeth, reading as ten
+against the remote's sixteen, which is a plausible number and a different chip. A JEDEC pair is hex
+whatever the writer prefixed, so both halves are parsed as hex and a malformed half never matches.
+
+### Two smaller things found on the way
+
+`encodeVersionBlock` exists now, beside `readVersion`, because a version block became a rail input and
+every test and bench fake would otherwise have encoded field 4's two nibbles and the flash pair's
+order itself. A field's encoder belongs beside its decoder, once. It is not for sending: nothing in
+this protocol has a host write a version block.
+
+And a discrepancy worth recording so nobody re-derives it: `concordance -i` calls the Harmony 600's
+external flash "4 MiB" where the part is an EON F16-100HIP, 16 Mbit, which is 2 MiB, and this
+document's source list says 2 MiB. Ours is right, theirs is a label rather than a reading, and it
+changes nothing here because no rail uses the printed size.
+
+### What is still asserted, after this
+
+Two of the three world facts. `originalDumpVerified` is now passed as the measurement the rehearsal
+already performed rather than as a literal `true`, which is a smaller improvement than it sounds and
+is the honest ceiling for that field: the library cannot know where a caller's bytes came from.
+`targetIsTheSpareRemote` stays a caller assertion by a decision that is recorded and deliberate,
+section 188, since identifying a unit would mean carrying a serial through the enumeration path that
+`@harmony/probe` reads, and the reason that path has no serial is worth more.

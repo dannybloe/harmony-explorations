@@ -411,7 +411,10 @@ class ATypeScriptSampleLoopStatesItsPopulation(unittest.TestCase):
         # backed test here whose fixture is a captured log rather than a file off a device.
         # 50 since `packages/usb/test/rehearsal.test.ts`, the job 3 review of 30 August 2026, which
         # loads no sample at all: it tests the rehearsal's arithmetic with no lab and no device.
-        self.assertEqual(scanned, 50, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
+        # 52 since the compatibility gate, section 225: `packages/usb/test/compatible.test.ts` is
+        # literals only and `packages/corpus/test/compatibility.test.ts` is the corpus half, which
+        # needs both languages' halves of the config format and so cannot live beside the first.
+        self.assertEqual(scanned, 52, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
         self.assertEqual(
             {name: len(lines) for name, lines in counted.items()},
             TYPESCRIPT_LOOPS_ALLOWED_TO_SKIP_A_SAMPLE,
@@ -529,7 +532,9 @@ class ABoundOnACorpusTotalIsExact(unittest.TestCase):
         found, scanned = self._bounds()
         # 48 since `packages/usb/test/classic-capture.test.ts`, section 210.
         # 50 since `packages/usb/test/rehearsal.test.ts`, the job 3 review of 30 August 2026.
-        self.assertEqual(len(scanned), 50, 'TypeScript test files, which moves when one is added')
+        # 52 since the compatibility gate, section 225: one test file per package, since the corpus
+        # half needs the codec and `packages/usb` deliberately does not depend on it.
+        self.assertEqual(len(scanned), 52, 'TypeScript test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):

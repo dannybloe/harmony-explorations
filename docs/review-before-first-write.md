@@ -591,6 +591,10 @@ method once. The fix moves the permission behind a module boundary and adds an a
 enumerates the guarded transport's whole surface, with the control that restoring the method fails
 exactly that test.
 
-**What is still open after job 2** is what section 188 already said and this did not touch: the three
-world facts in a `WritePermission` are caller assertions the library cannot check, and
-`rehearse-block.ts` hardcodes two of them.
+**What is still open after job 2** is what section 188 already said: the three world facts in a
+`WritePermission` are caller assertions the library cannot check, and `rehearse-block.ts` hardcodes
+two of them. **One of the three stopped being an assertion the same day**, section 225: the version
+comparison is performed by the rail out of two inputs rather than asked of the caller, which is job
+2's own finding applied to the next field along. `originalDumpVerified` now carries the measurement
+the rehearsal already made instead of a literal, and `targetIsTheSpareRemote` stays an assertion by
+the deliberate decision not to carry a serial through the enumeration path.

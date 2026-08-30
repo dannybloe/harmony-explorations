@@ -30,9 +30,12 @@
  * with the dump byte for byte, and a single difference is a refusal. So the claim is not "a dump of
  * this unit exists somewhere" but "the bytes I am about to write are the bytes that are there".
  *
- * That is also what makes the version question moot rather than skipped. The configuration being
- * written is the unit's own, so `INTENDEDVERSION` cannot disagree with the remote: the bytes
- * carrying it are unchanged, and for this range that has been measured rather than assumed.
+ * The version question is **stated rather than skipped**, since section 225 turned it from a boolean
+ * into a comparison the rail performs. It has nothing to compare here, and that is a property of the
+ * input: a container read off a remote carries no XML wrapper, so it states none of the six fields
+ * and an absent field matches anything. The script prints how many were compared, so a dry run says
+ * zero out loud instead of reading as a pass. What stands in for it is stronger anyway: the bytes
+ * about to be written have been compared with the ones on the device.
  *
  * ## The risk, stated plainly
  *
@@ -48,6 +51,8 @@ import { imagePath } from '@harmony/lab';
 import {
   ERASE_BLOCK_SIZE,
   HarmonyRemote,
+  compareIntendedVersion,
+  type StatedVersion,
   RailError,
   RemoteError,
   WRITABLE_CEILING,
@@ -243,6 +248,24 @@ async function main(): Promise<void> {
     }
     const intended = dump.subarray(offset, offset + blockSize);
 
+    /**
+     * What the configuration being written states about the remote it is for: nothing, here.
+     *
+     * A container read off a remote has no XML wrapper, so there are no six fields to compare, and
+     * `compareIntendedVersion` reports that as `compared: 0` rather than as a match. Parsing a
+     * wrapper is `packages/codec`'s job and this package deliberately does not depend on it, so the
+     * gate's first real use is the write that installs a config **we** produced, which composes both
+     * packages in `packages/corpus`. Printed either way, so a dry run shows what the gate did rather
+     * than leaving the operator to assume it did something. Section 225.
+     */
+    const statedVersion: StatedVersion = {};
+    const comparison = compareIntendedVersion(statedVersion, identity);
+    process.stdout.write(`compatibility: ${comparison.compared} of `
+      + `${comparison.fields.length} fields stated by the config`
+      + (comparison.compared === 0
+        ? ', so there is nothing to compare: a container read off a remote carries no wrapper\n'
+        : `, ${comparison.mismatched.length} disagreeing\n`));
+
     /** One erase block, read in transfers the announce's count field can state. */
     const readBlock = async (address: number): Promise<Uint8Array> => {
       const out = new Uint8Array(blockSize);
@@ -259,6 +282,10 @@ async function main(): Promise<void> {
       + `0x${(block + blockSize).toString(16)} off the remote\n`);
     const live = await readBlock(block);
     const differs = firstDifference(live, intended);
+    // Carried as the measurement rather than restated as `true` below. The refusal on the next line
+    // makes the two equivalent today, and a literal in the permission is a claim that stops being
+    // checked the moment somebody moves the compare.
+    const dumpMatchesTheDevice = differs === undefined;
     if (differs !== undefined) {
       throw new Refusal(`the remote and ${dumpName} differ at 0x${(block + differs).toString(16)}: `
         + `0x${live[differs]!.toString(16)} on the device, 0x${intended[differs]!.toString(16)} in `
@@ -308,9 +335,16 @@ async function main(): Promise<void> {
       architecture,
       configLength: dump.length,
       // Measured above, for exactly this range, rather than asserted.
-      originalDumpVerified: true,
-      // The unit's own configuration, unchanged, so the version bytes are the ones already there.
-      intendedVersionMatches: true,
+      originalDumpVerified: dumpMatchesTheDevice,
+      // **The compatibility gate's inputs, section 225, and here it has nothing to compare.** A
+      // container read off a remote carries no XML wrapper, so it states none of the six fields, and
+      // the format's own rule is that an absent field matches anything. That is the truth about this
+      // input rather than a pass, which is why the line above this printed how many fields were
+      // compared: for the rehearsal it is zero, and what stands in for it is far stronger, the block
+      // on the device having been compared with the dump byte for byte. A config **we** produced
+      // will carry a wrapper and this is where the gate starts doing work.
+      intendedVersion: statedVersion,
+      versionBlock: versionBytes,
       // Earned by two checks together, not asserted: `--dump` is restricted to the spare's own
       // dumps, and the block on the device matched that dump byte for byte. A configuration is
       // unit specific, so those two together say which unit is on the cable, which enumeration

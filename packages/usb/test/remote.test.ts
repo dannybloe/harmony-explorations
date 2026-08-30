@@ -21,6 +21,7 @@ import {
   SOFTWARE_TYPE_SAFE_MODE,
   architectureFromVersion,
   decodeReply,
+  encodeVersionBlock,
   FILE_BASED_PRODUCTS,
   HARMONY_PRODUCT_FIRST,
   HARMONY_PRODUCT_LAST,
@@ -285,7 +286,11 @@ test('every write method refuses before it touches the transport', async () => {
     architecture: 12,
     configLength: 0x1000,
     originalDumpVerified: true,
-    intendedVersionMatches: true,
+    // The compatibility gate's two inputs rather than a boolean about them, section 225. A block
+    // stating arch 12 and a config claiming nothing, so this permission is as good as one gets and
+    // the flag is still what refuses.
+    intendedVersion: {},
+    versionBlock: encodeVersionBlock({ architecture: 12 }),
     targetIsTheSpareRemote: true,
   };
   await assert.rejects(() => remote.writeFlash(permission, 0x040000, new Uint8Array(4)));
@@ -313,7 +318,8 @@ test('an erase request reaches the device on no path at all with writes disabled
           architecture: 12,
           configLength: 0x1000,
           originalDumpVerified: true,
-          intendedVersionMatches: true,
+          intendedVersion: {},
+          versionBlock: encodeVersionBlock({ architecture: 12 }),
           targetIsTheSpareRemote: true,
         },
         0x020000,

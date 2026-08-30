@@ -1223,8 +1223,9 @@ The candidate was the right one and the objection was the right objection. What 
 a better comparison of values but the address the accessor builds, `0x001007`, which cannot be the
 application on either architecture.
 
-Concordance prints three things this block could plausibly carry that are still unplaced: firmware
-type, the third component of the hardware version, and `IRL, ORL, FRL`.
+Concordance prints three things this block could plausibly carry, of which **two** are still
+unplaced: firmware type and `IRL, ORL, FRL`. The third component of the hardware version is not
+unplaced but absent, section 225: concordance sets it to zero itself and says why.
 
 ### Internal memory: `0xFE` and `0xFF` are two pages, not one selector and a dud
 
@@ -1633,8 +1634,10 @@ message shapes, is in `packages/usb/test/hardware.test.ts`.
 * **Why the One drops that first command**, per the section above. Capped rather than understood,
   which is the same shape as the internal-read restart below.
 * **What fields 7, 10 and 11 are versions of**, given that they repeat field 0 on both remotes.
-  Concordance prints firmware type, the third component of the hardware version, and `IRL, ORL,
-  FRL`, none of which is placed. *Fields 8 and 9 were on this line until they were placed: field 9
+  Concordance prints firmware type and `IRL, ORL, FRL`, neither of which is placed. *The third
+  component of the hardware version was on that list and is off it since section 225: it is not in
+  the block at all. concordance sets it to zero outright, with a comment saying only the later
+  network connected remotes carry a non-zero one, so there was nothing to place.* *Fields 8 and 9 were on this line until they were placed: field 9
   versions the image at `0xFF` `+0x0000` and field 8 the one at `0xFF` `+0xE000`, both `0x00` when
   the image is absent, with the 600 as the negative case for each.*
 * ~~Why a one byte final chunk on the internal memory path restarts a remote, and why offset zero is

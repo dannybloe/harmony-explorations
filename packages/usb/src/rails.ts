@@ -14,7 +14,9 @@
  * the answer is no unless every condition is met.
  */
 
-import { ESCAPE_END_SESSION, ESCAPE_SUB_COMMANDS } from './protocol.ts';
+import { ESCAPE_END_SESSION, ESCAPE_SUB_COMMANDS, readVersion } from './protocol.ts';
+import { compareIntendedVersion } from './compatible.ts';
+import type { Compatibility, StatedVersion } from './compatible.ts';
 
 export class RailError extends Error {}
 
@@ -133,8 +135,15 @@ export const WRITES_ENABLED: boolean = process.env['HARMONY_ENABLE_WRITES'] === 
  * Everything that has to be true before a write is even considered.
  *
  * Deliberately not defaulted. A caller that has not thought about whether there is a verified
- * dump of this exact unit cannot construct one of these by accident, and the two booleans are
- * facts about the world that no code here can check for itself.
+ * dump of this exact unit cannot construct one of these by accident, and the booleans that remain
+ * are facts about the world that no code here can check for itself.
+ *
+ * **One of them stopped being a boolean on 30 August 2026**, section 225. `intendedVersionMatches`
+ * asked the caller whether the config's `INTENDEDVERSION` matches the connected remote, over six
+ * fields, and the answer every caller gave was `true`. So the rail whose whole job is refusing a
+ * config built for a different remote was a comment. It takes the two **inputs** now, what the
+ * config states and what the remote reported, and performs the comparison itself, which is the only
+ * shape a caller cannot get wrong by being optimistic.
  */
 export interface WritePermission {
   /** The architecture of the connected remote, as the remote itself reports it. */
@@ -144,15 +153,29 @@ export interface WritePermission {
   /** A verified original dump of this exact unit exists in the lab. */
   readonly originalDumpVerified: boolean;
   /**
-   * The config's `INTENDEDVERSION` matches the connected remote over all **six** compared fields:
-   * protocol, skin, flash, board, `SOFTWARETYPE` and `ARCHITECTURE`. Section 87.
+   * What the config's wrapper states about the remote it was built for, exactly as it states it.
    *
-   * **This said four fields until 29 August 2026**, which matters more here than in a document: a
-   * caller reading it would check four, assert this flag on a four field match, and the rail would
-   * pass a config built for a different remote. `SOFTWARETYPE` is the field separating a remote
-   * running normally from one in safe mode. An absent or empty field matches anything.
+   * The six fields are protocol, skin, flash, board, `SOFTWARETYPE` and `ARCHITECTURE`, section 87,
+   * and `compareIntendedVersion` is what compares them. An absent or empty field matches anything,
+   * per the format's own rule, so `{}` is legal and means the config claimed nothing: a container
+   * read off a remote has no wrapper and therefore no claim. A field this library cannot compare is
+   * a refusal rather than something skipped.
+   *
+   * **This was a boolean until 30 August 2026** and the note attached to it was about the six
+   * fields being four in an earlier reading. That was the right worry about the wrong thing: the
+   * risk was never that a caller would compare the wrong number of fields, it was that no caller
+   * compared any of them. Section 225.
    */
-  readonly intendedVersionMatches: boolean;
+  readonly intendedVersion: StatedVersion;
+  /**
+   * The remote's own `GET_VERSION` reply, as it came off the wire.
+   *
+   * Both halves of the compatibility check come from here: the fields the config is compared
+   * against, and the architecture, which is cross checked against `architecture` above rather than
+   * taken on the caller's word. A caller that read a version block from one remote and an
+   * architecture from somewhere else is refused.
+   */
+  readonly versionBlock: Uint8Array;
   /** The unit is the spare remote. Nothing else is ever a write target. */
   readonly targetIsTheSpareRemote: boolean;
 }
@@ -174,9 +197,57 @@ function assertPermissionIsUsable(p: WritePermission): void {
   if (!p.originalDumpVerified) {
     throw new RailError('no verified original dump of this unit: refusing to write');
   }
-  if (!p.intendedVersionMatches) {
-    throw new RailError("the config's INTENDEDVERSION does not match the connected remote");
+  assertConfigIsForThisRemote(p);
+}
+
+/**
+ * Throws unless the config was built for the remote that sent this version block.
+ *
+ * Split out from `assertPermissionIsUsable` because it is the one condition in there with a
+ * derivation behind it rather than a boolean to read, and because a caller wanting to show the
+ * comparison before deciding anything needs it on its own. `compareIntendedVersion` is where the
+ * per field mapping lives and section 225 is the evidence for it.
+ *
+ * Two refusals, and the second is the cheap one worth having: a version block that is not an
+ * identity at all, and an architecture that disagrees with the number the caller passed.
+ */
+export function assertConfigIsForThisRemote(
+  p: Pick<WritePermission, 'architecture' | 'intendedVersion' | 'versionBlock'>,
+): Compatibility {
+  let reading;
+  try {
+    reading = readVersion(p.versionBlock);
+  } catch (error: unknown) {
+    throw new RailError(
+      `the remote's version block is not an identity, so nothing can be compared against it: ${
+        error instanceof Error ? error.message : String(error)}`,
+    );
   }
+  if (reading.architecture !== p.architecture) {
+    throw new RailError(
+      `the version block says architecture ${reading.architecture} and the permission says ` +
+        `${p.architecture}: refusing to write on two readings of the same remote that disagree`,
+    );
+  }
+  let comparison;
+  try {
+    comparison = compareIntendedVersion(p.intendedVersion, reading);
+  } catch (error: unknown) {
+    throw new RailError(
+      `the config states a version field this library cannot compare, so a match would mean ` +
+        `nothing: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+  if (!comparison.compatible) {
+    const detail = comparison.fields
+      .filter((f) => f.verdict === 'mismatch')
+      .map((f) => `${f.field}: config says ${f.stated}, remote says ${f.reported}`)
+      .join('; ');
+    throw new RailError(
+      `the config's INTENDEDVERSION does not match the connected remote (${detail})`,
+    );
+  }
+  return comparison;
 }
 
 /** The half-open range a write may touch, for the architecture in `p`. */

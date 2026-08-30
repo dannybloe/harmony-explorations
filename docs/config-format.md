@@ -256,10 +256,54 @@ Both splits are computed and compared, `src/harmony/ezfile.py` and `packages/cod
 and they agree on all fifteen config samples. `docs/findings.md` section 87.
 
 `INTENDEDVERSION` is compared field by field, and **an absent or empty field matches anything**, so
-an entry with no fields at all matches every remote. `BOARD` is normalised on the file's side
-before comparison: `0.5` becomes `0.5.0`. `SOFTWARETYPE` says which firmware personality the file
-is for, 0 for the application, 4 for safe mode, 3 boot and 1 test; every config in the corpus
-declares 0.
+an entry with no fields at all matches every remote. `SOFTWARETYPE` says which firmware personality
+the file is for, 0 for the application, 4 for safe mode, 3 boot and 1 test; every config in the
+corpus declares 0.
+
+**The comparison is implemented and tested since section 225**, `compareIntendedVersion` in
+`packages/usb/src/compatible.ts`, and the mapping to what a remote reports is this. Each field is a
+number, so the notations differ and only the value is compared:
+
+| field | the file states | the remote's version block | how |
+|---|---|---|---|
+| `PROTOCOL` | `12` | field 4's high nibble | decimal, and it is the **architecture**, not the platform byte |
+| `SKIN` | `54` | field 5 | decimal |
+| `FLASH` | `0x1F:0xC8` | fields 3 and 2, manufacturer first | **hex per half**, prefix optional |
+| `BOARD` | `0.5.0` | field 1's two nibbles, `0.5` | both sides zero filled to three components |
+| `SOFTWARETYPE` | `0` | field 4's low nibble | decimal |
+| `ARCHITECTURE` | absent in every sample | field 4's high nibble | decimal, and therefore unexercised |
+
+Three rules the implementation follows and a reader must too. **`PROTOCOL` is the architecture**: the
+byte this project once called the protocol is field 6, `platform`, and it is `0x0C` on both arch 12
+and arch 14, so reading `PROTOCOL` as that byte accepts an arch 14 config for an arch 12 remote.
+**`BOARD`'s third component is not in the version block at all**, and concordance sets it to zero
+outright for this whole family, so a two component reading against a three component statement is a
+match rather than a gap. And **a field the comparison does not know is a refusal**, not something
+skipped, which matters because `SOFTWARE` and `CLIENTSOFTWARE` are real elements of these headers.
+
+**A config read off a remote states none of the six**, because the header is host side and the remote
+stores the payload. Ten containers in the corpus carry a header stating five fields each; the three
+read over USB carry no header at all, so their statement is empty and, per the rule above, matches
+anything. That is the truth about such a container and not a compatibility check that passed.
+
+Beside `INTENDEDVERSION` sits `USERMESSAGES`, which is a different mechanism and is the **host
+software's**, not the remote's:
+
+```
+<USERMESSAGES>     a list of <USERMESSAGE>, evaluated in order, first match wins
+  <VERSIONS>       a disjunction of <VERSION> entries: any one matching is a match
+    <VERSION>      the same matcher, keyed on the six fields above, or on CLIENTSOFTWARE,
+                   or on SOFTWARE, or empty, which matches every remote
+  <TYPE>           DoNothing, Warning or Abort
+  <TEXT>           what to show
+  <ABORTPROCESSING>
+```
+
+Every config here ends that chain with an empty `Warning` carrying "This configuration file is not
+compatible with your Harmony Remote" and an empty `Abort`, which is where that message comes from.
+Three arch 8 configs also carry seven entries keyed `CLIENTSOFTWARE` 2.3 to 2.9 warning that the PC
+software is out of date, and nine keyed `SOFTWARE` 0.1 to 0.9. **The disjunction rule belongs to this
+chain and not to `INTENDEDVERSION`**, which is a single entry in all ten headers.
 
 The consequence of a mismatch is **reported, not verified here**: harmony-decompiler states that a
 remote refuses a mismatched config with "This configuration file is not compatible with your

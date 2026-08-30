@@ -659,6 +659,46 @@ export function readVersion(fields: Uint8Array): VersionReading {
   };
 }
 
+/**
+ * The inverse of `readVersion`: a version block stating these six values.
+ *
+ * **Written because the alternative was a second copy of the layout.** The compatibility gate,
+ * section 225, made a version block an input to a write rail, so tests and the bench need to build
+ * one, and every place that built its own would be encoding field 4's two nibbles and fields 3 and
+ * 2 in flash order again. A field's encoder belongs beside its decoder, once, which is this
+ * repository's oldest rule and the reason `clockRecordFields` sits beside `clockRecord`.
+ *
+ * `VERSION_FIELD_COUNT_MIN` bytes and no more, because the fields above it name images inside a
+ * remote and nothing here knows what to put in them. A real reply is twelve bytes on arch 12
+ * (Harmony One) and arch 14 (Harmony 600) and seven on arch 9 (Harmony 525), so this is the shape of
+ * the shortest real one.
+ *
+ * Not for sending to a remote: nothing in this protocol has a host write a version block. It exists
+ * so that a reading can be turned back into the bytes that produced it and checked.
+ */
+export function encodeVersionBlock(v: {
+  readonly firmware?: number;
+  readonly hardware?: number;
+  readonly flash?: readonly [number, number];
+  readonly architecture: number;
+  readonly softwareType?: number;
+  readonly skin?: number;
+  readonly platform?: number;
+}): Uint8Array {
+  const [manufacturer, device] = v.flash ?? [0, 0];
+  const fields = new Uint8Array(VERSION_FIELD_COUNT_MIN);
+  fields[0] = v.firmware ?? 0;
+  fields[1] = v.hardware ?? 0;
+  // Fields 3 and 2, manufacturer first as `readVersion` reads them, so the pair is stored in the
+  // order the remote sends rather than the order it is printed.
+  fields[2] = device;
+  fields[3] = manufacturer;
+  fields[VERSION_FIELD_ARCH_AND_TYPE] = ((v.architecture & 0x0f) << 4) | ((v.softwareType ?? 0) & 0x0f);
+  fields[5] = v.skin ?? 0;
+  fields[6] = v.platform ?? 0;
+  return fields;
+}
+
 export type Reply =
   | { kind: 'ack'; command: number; commandName: string | undefined }
   | {

@@ -669,11 +669,19 @@ M4, and behind the gate above. The rails are written and off, `packages/usb/src/
       has an expected answer now, and the run gave it: **both neighbours are byte identical before and
       after the erase**, so the block size is measured rather than believed, section 222. This is the
       first thing anywhere to measure it
-- [ ] `INTENDEDVERSION` compared against the connected remote over all **six** fields, protocol,
+- [x] `INTENDEDVERSION` compared against the connected remote over all **six** fields, protocol,
       skin, flash and board plus `SOFTWARETYPE` and `ARCHITECTURE`, and refused on any mismatch.
       An absent or empty field matches anything, which is how a file offers a fallback, so an
       empty field is not a match to rely on. Four fields was the pre-section-87 reading and is
-      dead; it stood here until 29 August 2026
+      dead; it stood here until 29 August 2026.
+      **Done on 30 August 2026, section 225**, and the box was unticked because the rail asked the
+      caller a question instead of comparing: `compareIntendedVersion` performs it, the per field
+      mapping to a remote's version block is derived and tested, and the rail takes the two inputs
+      rather than a boolean about them. Fifty comparisons over the corpus with none disagreeing, and
+      a control of forty config-and-remote combinations of which 32 must refuse. **What it cannot do
+      for the first changing write is the interesting half**: a config read off a remote carries no
+      header, so it states none of the six, and the gate has something to compare only once a config
+      **we** produced is being written
 - [x] `ERASE_FLASH` scoped: a block aligned address and a whole block inside the config region, with the
       ceiling at `0x3D0000` because the stored application firmware sits inside the nominally writable
       region. Exercised on 30 August 2026 rather than only written

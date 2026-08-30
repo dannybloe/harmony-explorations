@@ -637,6 +637,25 @@ cannot drift apart; what a reader should not expect is two independent statement
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
 
+**The compatibility gate is performed rather than asserted**, section 225, which is the one write
+rail with a specific job: refusing a configuration built for a different remote. It took a boolean and
+every caller passed true, so the check with the most to say was the caller's opinion. It takes the two
+inputs now, what the configuration states and the version block the remote sent, and the rail compares
+them, over a mapping that had to be derived: `PROTOCOL` carries the **architecture**, and the byte this
+project once called the protocol is `platform`, which is the same on arch 12 (Harmony One) and arch 14
+(Harmony 600 and 700), so reading it as that would have accepted a Harmony 600's configuration for a
+Harmony One. Fifty comparisons over the corpus, none disagreeing, against four remotes whose values
+concordance read independently, with a control of forty configuration and remote combinations of which
+32 must refuse. **What it says about the first changing write is the useful half**: a configuration read
+off a remote carries no header, so it states none of the six fields, and the gate has something to
+compare only once a configuration we produced is being written.
+
+**And the rails had a third bypass of one class**, section 224, found by performing job 2 of the write
+review: the guard on the transport was right and the **permission** was public, a method on the very
+object `openHarmony` hands back, so two lines erased firmware with writing disabled. Three fixes in a
+row asserted a predicate over exported names and twice what reached the device was not an exported
+name, so the assertion now enumerates the object's whole surface instead.
+
 **And the layer that names a command is read**, section 220. A configuration addresses infrared codes
 by number and says nowhere which one is volume up; the platform holds that separately, as a map of
 named commands per device and per activity. Two things came out of it. The vendor's schema says a

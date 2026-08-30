@@ -10,6 +10,8 @@
  */
 export * from './protocol.ts';
 export * from './rails.ts';
+// The compatibility gate: read only, and the rail above performs it rather than asking.
+export * from './compatible.ts';
 export * from './transport.ts';
 export * from './remote.ts';
 export * from './models.ts';

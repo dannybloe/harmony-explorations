@@ -636,6 +636,14 @@ document:
   and an absent or empty field matches anything. This said four until 29 August 2026, which is two
   fields short of a gate that is supposed to refuse a config built for a different remote, and the
   four field wording was already dead in `reference/superseded.md` at the time.
+  **And nothing performed the comparison until section 225**, 30 August 2026: the rail took a boolean
+  and every caller passed true, which is section 224's lesson at one day's remove, a rail that asks a
+  caller a question being a rail the caller answers. It takes the config's statement and the remote's
+  version block now and compares them itself, over the mapping derived in that section. `PROTOCOL`
+  carries the **architecture**, which is the reading that mattered, since the byte this project once
+  called the protocol is `platform` and is the same on arch 12 (Harmony One) and arch 14 (Harmony 600
+  and 700). **A config read off a remote states none of the six**, having no header, so the gate has
+  something to compare only for a config that arrived as a file or that we built.
 * Every write is followed by a `READ_FLASH` of the same range and a byte comparison. A mismatch is
   a failure, not a warning. **This one is a caller's obligation and not a library refusal**, unlike
   every other bullet here: `writeFlash` deliberately does not verify itself, because it would be
