@@ -28025,3 +28025,103 @@ about. The register's own test cannot see it, because a row with a blank note is
 
 So the pass filled notes as well as moving statuses, and the rule now lives in `docs/lab-excavation.md`
 beside the status definitions rather than in this section alone.
+
+## 218. The platform's own data model, recovered from the client's generated proxy and checked against live replies
+
+The vendor's service is the other half of a Harmony. A config says what a remote does; the platform
+says what an account **holds**, and every name in this project's readers, device, activity, mode, role,
+was inferred from bytes rather than read off a schema. This section recovers the schema.
+
+`reference/myharmony-model.json` is the model and `docs/myharmony-model.md` is the reading of it.
+Danny decided on 30 August 2026 that this knowledge moves into this repository whole, rather than
+staying in the lab as a note, so that the readers and FreeHarmony can both use it; decision 14 in
+`docs/roadmap.md` records the decision and its licence reasoning.
+
+### Where it comes from
+
+MyHarmony's client carries a **generated service proxy**: the client side stubs a tool emitted from
+the service's own contract. A data contract in it is not the client's design. It is the wire schema
+the **server** declared, which is why every type states the server side namespace it came from,
+`http://schemas.datacontract.org/2004/07/Logitech.Harmony.Services.DataContract.<area>`. So reading
+the proxy is reading the platform's schema through a client, not reverse engineering a client's
+internal model.
+
+The extractor parses `[DataContract]`, `[DataMember]`, `[EnumMember]` and inheritance out of the
+decompiled sources and decides attribute against reference by whether a field's type is a scalar. It
+lives in the lab, at `work/myharmony/model/`, because it reads Logitech's decompiled code; only its
+output crosses.
+
+| | |
+|---|---|
+| types | 1352 |
+| of which service contracts | 470 |
+| references between them | 366 |
+| enum values | 1291 |
+| areas | 28 |
+
+**Areas count only the 426 contracts that declare a namespace.** The remaining 44 declare none and
+belong to no area, which is stated in the document because a reader summing the column otherwise
+finds 426 against a stated 470.
+
+### The closure: the schema against replies the service actually sent
+
+A schema read out of a client is a claim about a server, so it is checked against what the server
+sent. The captures are this project's own, from five accounts over three weeks, and they were made
+for other reasons entirely, which is what makes them an independent check rather than a restatement.
+
+| entity | fields in the schema | of those, present in a live reply | fields the reply carried that the schema does not |
+|---|---|---|---|
+| Account | 21 | 21 | none |
+| Activity | 25 | 25 | 1 |
+| Device | 32 | 32 | 10 |
+| Remote | 32 | 32 | 3 |
+| Product | 26 | 25 | 1 |
+
+**Nothing in the schema is missing from live data**, on four of the five entities exactly and on the
+fifth at 25 of 26. That is the direction that matters for trusting the model.
+
+**The other direction is a finding in itself: the service is ahead of this client build.** It returns
+fields the compiled proxy has never heard of, ten of them on a device alone, so the model is a
+**floor** and not a ceiling. The ten include `DefaultInterKeyDelay`, `DefaultInterDeviceDelay` and
+`DefaultPressMinRepeats`, which is the subject of `docs/predictions-sequence-delay.md` under the
+platform's own names, and which no amount of reading this client would have produced.
+
+### What it is worth to work already in flight
+
+* `IrProtocol` carries **two** segment collections, `CodeSegments` and `IRSegments`. Section 159
+  established that a code states its frames in two slots, which reading one slot refused every Toshiba
+  code in the catalogue for. Here is the same structure named by its author.
+* `IsInterKeyDelayOptimized` is in the schema, so the delay between two presses is something the
+  platform **tunes** rather than a constant, which is a different question from the one
+  `docs/predictions-sequence-delay.md` scored.
+* `GlobalRemoteSkinId` sits beside `SkinId` on a remote, so the trap the `myharmony-service` skill
+  documents, where sixteen records of six models all read as skin 22, is two genuine fields being
+  confused and not one field being misread.
+* `DefaultChannel`, `DefaultStation` and `DefaultStationName` sit on an activity, beside the favourite
+  channel work of sections 154 and 156.
+* `DeviceCategory` has **six** values, `Any`, `AudioVideoReceiver`, `SetTopBox`, `Television`,
+  `BluRayDvdPlayer` and `CompansionBox`, where section 216 found 95 category names in the hub
+  generation's icon set. Both are true of their own era, and the six are what an account of the
+  generation this project reads can hold. The vendor's spelling of the sixth is theirs.
+
+### The rail on publishing it
+
+The model is a **schema**: type names, field names, enum values and the references between them. It
+carries no reply, no account and no identifier, which is what makes it publishable where the captures
+it was checked against are not. `TheModelCarriesSchemaAndNoInstances` in
+`tests/test_myharmony_model.py` asserts that, rather than leaving it to a code review: no text shaped
+like a GUID or an address anywhere in the file, and no key on an entity beyond the eight the shape
+uses. A regeneration that started carrying sample values fails there.
+
+The rest of that file is the two copies check. A document restating a data file is the state this
+project's oldest rule warns about, and it is allowed here for the same reason `docs/config-format.md`
+restates bytes: one copy is for a tool and one is for a person. Fourteen controls were run and all
+fourteen bite: a field renamed, retyped, dropped or marked singular, an area count off by one, an area
+row dropped, an enum value dropped or reordered, a stated total moved, the note about the 44 reworded,
+a count that no longer recomputes, and four shapes of identifying data added to the model.
+
+### What this does not do
+
+It is not the configuration compiler and does not become one. The platform's schema says what an
+account holds; how a container is built from that is what `SERVER-DEPENDENCY.md` records as having
+been server side, and section 214 is where that stands.

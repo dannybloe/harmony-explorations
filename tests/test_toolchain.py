@@ -213,7 +213,7 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         files = self._test_files()
         # The population, so a glob that stops matching fails here rather than passing quietly.
         # Exact, since a test file is added deliberately and rarely, unlike a test function.
-        self.assertEqual(len(files), 28, 'the Python test files')
+        self.assertEqual(len(files), 29, 'the Python test files')
         with_block = 0
         for path in files:
             with open(path, encoding='utf-8') as handle:
@@ -230,7 +230,7 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
                              % (os.path.basename(path), at[0] + 1, len(hidden), ', '.join(hidden)))
         # And the check has teeth only if most files actually carry a block. Exact: 23 of the 25 do,
         # and the two that do not are named in the comment above rather than left to a tolerance.
-        self.assertEqual(with_block, 26,
+        self.assertEqual(with_block, 27,
                          'files carrying a __main__ block, of %d' % len(files))
 
 
@@ -631,7 +631,7 @@ class APythonBoundOnACorpusTotalIsExact(unittest.TestCase):
 
     def test_the_pattern_still_matches_a_known_bound(self):
         found, scanned = self._bounds()
-        self.assertEqual(len(scanned), 28, 'Python test files, which moves when one is added')
+        self.assertEqual(len(scanned), 29, 'Python test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):

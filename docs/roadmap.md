@@ -397,6 +397,19 @@ image is a second sample rather than a stand in. Other models are iterated on la
    size alone, at roughly 8060 bytes a section over 209 sections: if it outgrows rendering, split by era, keep section
    numbers global, and keep the index at `docs/findings.md` so the 159 references that name that
    path stay correct.
+14. **The vendor's data model moves into this repository whole.** *Taken by Danny on 30 August 2026,
+   overruling a narrower reading of decision 9 that this assistant had raised.* The platform's schema,
+   what an account holds and what every field is called, is recovered in `reference/myharmony-model.json`
+   with `docs/myharmony-model.md` as its reading, and **it is to be consulted before naming a field or
+   designing anything about devices, activities or remotes**, in this repository and in FreeHarmony
+   both. The concern raised was decision 9's boundary, that Logitech's code stays in the lab. It does:
+   what crosses is a **schema**, names of types and fields and the references between them, which is
+   the same class of thing as a command byte or a length nibble, and decision 1 already records that
+   such facts are not copyrightable expression. No source, no comment and no structure of theirs
+   travels, the extractor stays in the lab, and `TheModelCarriesSchemaAndNoInstances` asserts that no
+   instance, account or identifier came with it. The argument for moving it rather than citing it from
+   the lab is decision 12's, in one sentence: a fact recorded only in the lab is invisible to every
+   check this project has, and this one is too useful to leave there. Section 218.
 
 Scope is the Harmony One (arch 12) and the Harmony 600 (arch 14), the remotes on the bench, with
 the 700 2.8 image as the arch 14 reference. **Arch 9 is a target**: the Harmony 525 arrived on 8

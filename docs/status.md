@@ -416,7 +416,7 @@ finding.
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 217 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 218 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -634,6 +634,19 @@ figures common to both carry `fact:` markers, so `make facts` moves every copy t
 cannot drift apart; what a reader should not expect is two independent statements of one measurement.
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
+
+**The vendor platform's own data model is in this repository**, section 218 and decision 14, which is
+the first time this project has had the schema behind the bytes rather than names inferred from them.
+1352 types, of which 470 are the service's contracts, with 366 references between them and 1291 enum
+values. It is recovered from the client's **generated service proxy**, so the contracts in it are the
+schema the server declared rather than a client's internal model, and it is checked against replies the
+live service actually sent: on Account, Activity, Device and Remote every field in the schema appears in
+a live reply, 21 of 21, 25 of 25 and 32 of 32 twice. The check also runs the other way and that is a
+finding of its own, **the service is ahead of the client build**, returning ten fields on a device that
+the proxy has never heard of, three of which name the delays `docs/predictions-sequence-delay.md`
+predicted from a config. `docs/myharmony-model.md` is the reading and it is to be consulted before
+naming a field. What crossed is schema only, asserted rather than assumed, so no reply, account or
+identifier came with it.
 
 **The screen's text reads back**, section 112, which is what the application needed before it could
 show a config's activities: their names are drawn by a mode page's screen program and nothing else

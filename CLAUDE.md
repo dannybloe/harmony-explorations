@@ -761,6 +761,12 @@ docs/glossary.md                the vocabulary: which terms are Logitech's, whic
 docs/usb-protocol.md            the USB protocol spec, step 3, transport done, commands open
 docs/host-client.md             Logitech's own client as a source: the rule, and the ledger of
                                 what is believed on its word alone, all of it unconfirmed
+docs/myharmony-model.md         the vendor platform's own data model: what an account holds, every
+                                field name, and the vocabularies. **Consult it before naming a field
+                                or designing anything about devices, activities or remotes**, here
+                                and in FreeHarmony. reference/myharmony-model.json is the data and
+                                this is the reading; decision 14 in docs/roadmap.md is why it is
+                                here rather than in the lab, and section 218 is the evidence
 docs/memory-map.md              memory maps: the addressing rules and the architecture comparison
 docs/memory-map-one.md          where everything lives on a Harmony One, derived, one page
 docs/memory-map-600.md          the same for the Harmony 600
@@ -823,6 +829,10 @@ reference/silhouettes/          the front face of a model, one SVG per model, **
 reference/button-maps.md        which button a scan code is, per model, measured through the account
                                 that generated the calibration configs. Partial and honest about it:
                                 the scans two buttons share are listed as sets, not assigned
+reference/myharmony-model.json  the vendor platform's schema as data, for a tool to read: 1352
+                                types, 470 service contracts, 366 references, 1291 enum values.
+                                Schema only and asserted to be, so no reply, account or identifier
+                                is in it
 reference/lab-register.md       the lab, artefact by artefact: what each thing is, how deep anybody
                                 has been, and which of the excavation's seventeen want list tags it
                                 might answer. **A catalogue and not a set of claims**, so it carries
