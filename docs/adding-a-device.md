@@ -641,7 +641,17 @@ M4, and behind the gate above. The rails are written and off, `packages/usb/src/
 - [ ] the dry run first, which needs no flag and writes nothing:
       `node packages/usb/bin/rehearse-block.ts --dump <image> --block 0x...`. It reads the block,
       compares it with the dump and prints the packet plan, and it is what turns
-      `originalDumpVerified` from a caller's word into a measurement for the range being written
+      `originalDumpVerified` from a caller's word into a measurement for the range being written.
+      It also prints the **flash id**, which is the pair Logitech's client picks its erase block
+      table from, so the dry run produces the number the box below is about
+- [ ] **the erase stays inside the block it was told to erase, measured rather than assumed.**
+      `ERASE_FLASH` carries no count, so the chip decides how much goes, and the 64 KiB figure the
+      rails are built on is the client's word and has never been confirmed on this part. Until 30
+      August 2026 the rehearsal read back only the block it wrote, so a larger sector would have
+      destroyed a neighbouring block of the configuration and the run would have reported success.
+      The script now reads the block either side before the erase and again after it and refuses if
+      either moved, and refuses to erase at all where no neighbour can be read. **This box is ticked
+      by the first `--commit` run**, not by the code existing
 - [ ] `INTENDEDVERSION` compared against the connected remote over all **six** fields, protocol,
       skin, flash and board plus `SOFTWARETYPE` and `ARCHITECTURE`, and refused on any mismatch.
       An absent or empty field matches anything, which is how a file offers a fallback, so an

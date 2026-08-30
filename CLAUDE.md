@@ -1547,7 +1547,11 @@ node packages/usb/bin/rehearse-block.ts --dump <image> --block 0x040000 [--commi
                        measurement for the range about to be written. `--commit` needs
                        HARMONY_ENABLE_WRITES=1 **and** HARMONY_FIRST_WRITE=1, erases the block, writes
                        the dump's own bytes back, and reads them back to compare, so a success changes
-                       nothing on the remote. Unrun. Section 175
+                       nothing on the remote. It also reads the block **either side** before the erase
+                       and again after it, because `ERASE_FLASH` carries no count and the 64 KiB block
+                       size is Logitech's client's word: without that, a larger sector would destroy a
+                       neighbouring block and the run would report success. Unrun. Sections 175 and
+                       the job 3 review in docs/review-before-first-write.md
 HARMONY_ENABLE_WRITES=1 node packages/usb/bin/end-session-experiment.ts
                        THE ONLY SCRIPT HERE THAT SENDS A COMMAND WHICH IS NOT A READ, one
                        `0xE0 0x01`, which zeroes one variable and touches no storage. Refuses

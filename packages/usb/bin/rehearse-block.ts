@@ -49,15 +49,25 @@ import {
   ERASE_BLOCK_SIZE,
   HarmonyRemote,
   RailError,
+  RemoteError,
   WRITABLE_CEILING,
   architectureFromVersion,
   listHarmony,
   openHarmony,
+  readVersion,
 } from '../src/index.ts';
 import { CONFIG_REGION_BASE, assertFirstWriteAllowed } from '../src/rails.ts';
+import { NOMINAL_FLASH_SIZE, failureLine, neighbourBlocks } from '../src/rehearsal.ts';
 import { writeChunkLengths } from '../src/writes.ts';
 
-/** A single transfer's ceiling: the announce carries a 16 bit count, so 65535 is the hard limit. */
+/**
+ * A single transfer's size.
+ *
+ * The announce carries a 16 bit count, so 65535 is the hard limit; half of it is used because an
+ * erase block is 64 KiB and two equal halves split it exactly, where 65535 would leave a transfer
+ * of one byte behind. The constant is the choice and the comment used to state only the limit,
+ * which reads as if the limit produced the number.
+ */
 const MAX_TRANSFER = 0x8000;
 
 /**
@@ -133,8 +143,25 @@ function firstDifference(a: Uint8Array, b: Uint8Array): number | undefined {
   for (let i = 0; i < a.length; i += 1) if (a[i] !== b[i]) return i;
   return undefined;
 }
+/**
+ * True from the moment the erase is sent until the block has been written and verified.
+ *
+ * Module scope because two things outside `main` need it and both are about the same question: the
+ * failure handler, which decides whether to tell the operator not to unplug, and the interrupt
+ * handler, which is the only place that can say it at all when somebody presses Ctrl-C.
+ */
+let pastTheErase = false;
 
 async function main(): Promise<void> {
+  process.on('SIGINT', () => {
+    // Node's default handling of SIGINT terminates the process without unwinding, so neither the
+    // `finally` below nor the failure handler at the bottom of this file would run. An operator who
+    // gets impatient during the thousand or so reports a write takes is exactly the person who most
+    // needs the sentence about not unplugging, and until this existed they got nothing at all.
+    process.stderr.write(`\n${failureLine('interrupted', pastTheErase)}\n`);
+    process.exit(130);
+  });
+
   const dumpName = argument('dump')
     ?? fail("--dump names the lab image holding this unit's config");
   const blockText = argument('block') ?? fail('--block is the 64 KiB aligned flash address');
@@ -172,34 +199,55 @@ async function main(): Promise<void> {
       : { productId: found.productId, path: found.path },
   ));
   try {
-    const version = await remote.getVersion();
-    const architecture = architectureFromVersion(version);
-    if (architecture === undefined) fail('the remote did not say which architecture it is');
+    // Every refusal from here down is thrown rather than `fail`ed, because `fail` calls
+    // `process.exit` and skips the `finally` that closes the device. Five of them called `fail`
+    // anyway, in the file whose own docstring for `Refusal` says why they must not.
+    const versionBytes = await remote.getVersion();
+    const architecture = architectureFromVersion(versionBytes);
+    if (architecture === undefined) {
+      throw new Refusal('the remote did not say which architecture it is');
+    }
+    // The flash id is printed because it is the cheap confirmation `rails.ts` asks for and nobody
+    // has performed: Logitech's client picks its erase block table from the chip's JEDEC
+    // manufacturer and device id, so this pair is what says which row applies to this unit. It says
+    // nothing about which unit it is, being a property of the part rather than of the remote.
+    const identity = readVersion(versionBytes);
+    process.stdout.write(`firmware ${identity.firmware}, flash id ${identity.flash}, `
+      + `architecture ${architecture}, skin ${identity.skin}\n`);
     const base = CONFIG_REGION_BASE[architecture];
     const blockSize = ERASE_BLOCK_SIZE[architecture];
     const ceiling = WRITABLE_CEILING[architecture];
     if (base === undefined || blockSize === undefined || ceiling === undefined) {
-      fail(`architecture ${architecture} has no write target, so there is nothing to rehearse`);
+      throw new Refusal(
+        `architecture ${architecture} has no write target, so there is nothing to rehearse`,
+      );
     }
-    if (block % blockSize !== 0) fail(`0x${block.toString(16)} is not on a block boundary`);
-    if (block < base) fail(`0x${block.toString(16)} is below the config region`);
+    if (block % blockSize !== 0) {
+      throw new Refusal(`0x${block.toString(16)} is not on a block boundary`);
+    }
+    if (block < base) throw new Refusal(`0x${block.toString(16)} is below the config region`);
     const offset = block - base;
     if (offset + blockSize > dump.length) {
-      fail(`the block runs past the end of ${dumpName}, which is ${dump.length} bytes: pick a `
-        + 'block the dump covers, since its bytes are what would be written back');
+      throw new Refusal(`the block runs past the end of ${dumpName}, which is ${dump.length} `
+        + 'bytes: pick a block the dump covers, since its bytes are what would be written back');
     }
     const intended = dump.subarray(offset, offset + blockSize);
 
-    // Read the block in transfers the count field can state, and compare with the dump. This is the
-    // verification the rails cannot perform, and it happens before anything is sent that changes
-    // the device.
+    /** One erase block, read in transfers the announce's count field can state. */
+    const readBlock = async (address: number): Promise<Uint8Array> => {
+      const out = new Uint8Array(blockSize);
+      for (let done = 0; done < blockSize; done += MAX_TRANSFER) {
+        const length = Math.min(MAX_TRANSFER, blockSize - done);
+        out.set(await remote.readFlash(address + done, length), done);
+      }
+      return out;
+    };
+
+    // Read the block and compare with the dump. This is the verification the rails cannot perform,
+    // and it happens before anything is sent that changes the device.
     process.stdout.write(`reading 0x${block.toString(16)} to `
       + `0x${(block + blockSize).toString(16)} off the remote\n`);
-    const live = new Uint8Array(blockSize);
-    for (let done = 0; done < blockSize; done += MAX_TRANSFER) {
-      const length = Math.min(MAX_TRANSFER, blockSize - done);
-      live.set(await remote.readFlash(block + done, length), done);
-    }
+    const live = await readBlock(block);
     const differs = firstDifference(live, intended);
     if (differs !== undefined) {
       throw new Refusal(`the remote and ${dumpName} differ at 0x${(block + differs).toString(16)}: `
@@ -210,15 +258,28 @@ async function main(): Promise<void> {
     process.stdout.write(`the block matches ${dumpName} byte for byte, so writing it back is a `
       + 'write that changes nothing\n');
 
+    // The blocks either side, which are what measure the erase span rather than assuming it. See
+    // `neighbourBlocks`: the size of an erase is the flash chip's business and this project has it
+    // on Logitech's client's word alone.
+    const flashSize = NOMINAL_FLASH_SIZE[architecture];
+    const neighbours = flashSize === undefined
+      ? []
+      : neighbourBlocks(block, blockSize, flashSize);
+    const named = neighbours.map((n) => `0x${n.toString(16)}`).join(' and ');
+    process.stdout.write(neighbours.length === 2
+      ? `the erase span will be checked against the neighbouring blocks ${named}\n`
+      : `only ${neighbours.length} neighbouring block(s) can be checked${named ? `, ${named}` : ''}: `
+        + 'a block at the edge of the chip has one side that cannot be compared\n');
+
     // What a commit would send, printed either way.
     const transfers: { address: number; length: number }[] = [];
     for (let done = 0; done < blockSize; done += MAX_TRANSFER) {
       transfers.push({ address: block + done, length: Math.min(MAX_TRANSFER, blockSize - done) });
     }
     const packets = transfers.reduce((n, t) => n + writeChunkLengths(t.length).length + 2, 0);
-    process.stdout.write(`plan: erase 0x${blockSize.toString(16)} bytes at `
-      + `0x${block.toString(16)}, then ${transfers.length} transfer(s) of `
-      + `${transfers.map((t) => t.length).join(' and ')} bytes, ${packets} reports in total, `
+    process.stdout.write(`plan: read the neighbours, erase 0x${blockSize.toString(16)} bytes at `
+      + `0x${block.toString(16)}, check the neighbours again, then ${transfers.length} transfer(s) `
+      + `of ${transfers.map((t) => t.length).join(' and ')} bytes, ${packets} reports in total, `
       + 'then read the range back and compare\n');
 
     if (!commit) {
@@ -228,6 +289,11 @@ async function main(): Promise<void> {
     }
 
     assertFirstWriteAllowed();
+    if (neighbours.length === 0) {
+      throw new Refusal('no neighbouring block can be read, so nothing would measure how far the '
+        + 'erase reached, and how far it reaches is the one thing about it this project has never '
+        + 'confirmed. Refusing to erase.');
+    }
     const permission = {
       architecture,
       configLength: dump.length,
@@ -242,20 +308,50 @@ async function main(): Promise<void> {
       targetIsTheSpareRemote: true,
     };
 
-    process.stdout.write(`erasing 0x${block.toString(16)}\n`);
-    await remote.eraseFlash(permission, block);
-    const erased = new Uint8Array(blockSize);
-    for (let done = 0; done < blockSize; done += MAX_TRANSFER) {
-      const length = Math.min(MAX_TRANSFER, blockSize - done);
-      erased.set(await remote.readFlash(block + done, length), done);
+    const before = new Map<number, Uint8Array>();
+    for (const neighbour of neighbours) {
+      process.stdout.write(`reading neighbour 0x${neighbour.toString(16)} as a baseline\n`);
+      before.set(neighbour, await readBlock(neighbour));
     }
+
+    process.stdout.write(`erasing 0x${block.toString(16)}\n`);
+    // Set before the command goes out, not after it comes back: an erase that fails halfway is
+    // still an erase that happened, and this flag decides what the operator is told.
+    pastTheErase = true;
+    await remote.eraseFlash(permission, block);
+    const erased = await readBlock(block);
     const notErased = erased.findIndex((b) => b !== 0xff);
     if (notErased >= 0) {
       throw new Refusal(`the erase left 0x${erased[notErased]!.toString(16)} at `
-        + `0x${(block + notErased).toString(16)}, so it did not take. The block is now in an `
-        + 'unknown state: rerun to erase and write it again before unplugging.');
+        + `0x${(block + notErased).toString(16)}, so it did not take. The block is in an unknown `
+        + 'state.');
     }
     process.stdout.write('erased, and the block reads back as all ones\n');
+
+    for (const neighbour of neighbours) {
+      const was = before.get(neighbour);
+      if (was === undefined) {
+        throw new Refusal(`no baseline for 0x${neighbour.toString(16)}, which is a bug here`);
+      }
+      const moved = firstDifference(await readBlock(neighbour), was);
+      if (moved !== undefined) {
+        const at = neighbour + moved;
+        const covered = neighbour >= base && neighbour - base + blockSize <= dump.length;
+        throw new Refusal(`the erase changed 0x${at.toString(16)}, which is in the neighbouring `
+          + `block 0x${neighbour.toString(16)} and outside the block it was told to erase. So the `
+          + `erase sector on this chip is larger than the 0x${blockSize.toString(16)} bytes this `
+          + "project has assumed, which was Logitech's client's word and has never been measured. "
+          + (covered
+            ? `${dumpName} covers that block, so its content is recoverable, but not by this `
+              + 'script: it restores one block and this needs a plan for two.'
+            : 'The lab dump does not cover that block, so what was there is not recoverable from '
+              + 'it. Stop and read docs/adding-a-device.md phase 8 before touching this unit '
+              + 'again.'));
+      }
+    }
+    if (neighbours.length === 2) {
+      process.stdout.write('the erase stayed inside its own block, measured on both sides\n');
+    }
 
     for (const transfer of transfers) {
       const from = transfer.address - block;
@@ -265,29 +361,53 @@ async function main(): Promise<void> {
         intended.subarray(from, from + transfer.length));
     }
 
-    const back = new Uint8Array(blockSize);
-    for (let done = 0; done < blockSize; done += MAX_TRANSFER) {
-      const length = Math.min(MAX_TRANSFER, blockSize - done);
-      back.set(await remote.readFlash(block + done, length), done);
-    }
+    const back = await readBlock(block);
     const wrong = firstDifference(back, intended);
     if (wrong !== undefined) {
       throw new Refusal(`the read back differs at 0x${(block + wrong).toString(16)}: `
         + `0x${back[wrong]!.toString(16)} on the device, 0x${intended[wrong]!.toString(16)} `
-        + 'intended. The write did not land. Do not unplug: rerun, which erases and writes again.');
+        + 'intended. The write did not land.');
     }
+
+    // Only the block above, and only after the write: a write's address is announced and the
+    // remote advances its own pointer from there, so the sole direction it could run past its
+    // range is upwards. The erase is the operation with no count at all and it is checked on both
+    // sides above.
+    const above = neighbours.find((n) => n > block);
+    const wasAbove = above === undefined ? undefined : before.get(above);
+    if (above !== undefined && wasAbove !== undefined) {
+      const spilled = firstDifference(await readBlock(above), wasAbove);
+      if (spilled !== undefined) {
+        throw new Refusal(`the write changed 0x${(above + spilled).toString(16)}, past the end of `
+          + 'the range it announced. The block it was asked to write is correct, and something '
+          + 'above it is not.');
+      }
+    }
+
+    pastTheErase = false;
     process.stdout.write('the block reads back byte for byte identical to the dump. '
       + 'The configuration is unchanged and a write has been performed and verified.\n');
   } finally {
-    await remote.close();
+    // A failure to close must not replace the message above it. The operator is being told whether
+    // the remote is mid write, and losing that sentence to "the device did not close" is the one
+    // substitution here that costs something.
+    try {
+      await remote.close();
+    } catch (error: unknown) {
+      process.stderr.write(`(the device did not close cleanly: ${String(error)})\n`);
+    }
   }
 }
 
 main().catch((error: unknown) => {
   // A rail refusal is the expected outcome of running this without its doors, and a `Refusal` is
-  // this script's own check saying no. Both report as one line rather than a stack: the message is
-  // the whole content, and for the post-write ones it tells the operator what to do next.
-  if (error instanceof RailError) fail(`refused: ${error.message}`);
-  if (error instanceof Refusal) fail(error.message);
+  // this script's own check saying no. `RemoteError` is the third and was missing: it is what
+  // `writeFlash` throws when a write is never acknowledged, whose own text says what reached the
+  // device is unknown, so the one class that arrives with the block in an unknown state was the one
+  // class printed as an unhandled rejection with a stack. All three report as one line, and
+  // `failureLine` adds what to do next when the erase has already gone out.
+  if (error instanceof RailError) fail(failureLine(`refused: ${error.message}`, pastTheErase));
+  if (error instanceof Refusal) fail(failureLine(error.message, pastTheErase));
+  if (error instanceof RemoteError) fail(failureLine(`the remote: ${error.message}`, pastTheErase));
   throw error;
 });

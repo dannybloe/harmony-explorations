@@ -409,7 +409,9 @@ class ATypeScriptSampleLoopStatesItsPopulation(unittest.TestCase):
         counted, scanned = self._offenders()
         # 48 since `packages/usb/test/classic-capture.test.ts`, section 210, the first fixture
         # backed test here whose fixture is a captured log rather than a file off a device.
-        self.assertEqual(scanned, 49, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
+        # 50 since `packages/usb/test/rehearsal.test.ts`, the job 3 review of 30 August 2026, which
+        # loads no sample at all: it tests the rehearsal's arithmetic with no lab and no device.
+        self.assertEqual(scanned, 50, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
         self.assertEqual(
             {name: len(lines) for name, lines in counted.items()},
             TYPESCRIPT_LOOPS_ALLOWED_TO_SKIP_A_SAMPLE,
@@ -526,7 +528,8 @@ class ABoundOnACorpusTotalIsExact(unittest.TestCase):
     def test_the_pattern_still_matches_a_known_bound(self):
         found, scanned = self._bounds()
         # 48 since `packages/usb/test/classic-capture.test.ts`, section 210.
-        self.assertEqual(len(scanned), 49, 'TypeScript test files, which moves when one is added')
+        # 50 since `packages/usb/test/rehearsal.test.ts`, the job 3 review of 30 August 2026.
+        self.assertEqual(len(scanned), 50, 'TypeScript test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):
@@ -1525,7 +1528,13 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # write transfer from their client, so it states the shape a blind reviewer is meant to derive
         # unaided. `tests/` is already withheld whole, so this is the sweep working rather than a leak,
         # and the list was re-read against all 25 before this number moved.
-        self.assertEqual(len(stating), 25,
+        #
+        # 27 since the job 3 review of 30 August 2026, which added `packages/usb/src/rehearsal.ts`
+        # and `packages/usb/test/rehearsal.test.ts`. Both state the transfer only by naming what an
+        # erase does not carry, and both are inside `packages/usb/`, which the withhold list already
+        # covers whole, so nothing widens: this is the sweep noticing two new files in a withheld
+        # directory. The list was re-read against all 27 before this number moved.
+        self.assertEqual(len(stating), 27,
                          'the number of files stating the write path moved, so re-read the withhold '
                          'list before restamping this: %s' % stating)
 

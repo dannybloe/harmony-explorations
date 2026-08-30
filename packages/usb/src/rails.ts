@@ -94,11 +94,15 @@ export const WRITABLE_CEILING: Readonly<Record<number, number>> = {
  * client's word alone: `docs/host-client.md` says so, and the firmware argument sometimes offered
  * for it establishes a 64 KiB **addressing window** rather than the chip's erase sector, which are
  * different quantities. The direction is still safe, since a rail built on a block size only ever
- * refuses more addresses than a smaller true block would require. What it does **not** protect is
+ * refuses more addresses than a smaller true block would require. What it did **not** protect was
  * `rehearse-block.ts`, which reads back and restores exactly one block: if the true block were
- * larger the erase would reach past what it rewrites. No evidence suggests it is, since both of the
- * client table's readings give uniform 64 KiB above the boot area, and the cheap confirmation is a
- * read of the chip's JEDEC id rather than an erase.
+ * larger the erase would reach past what it rewrites, and a run that only ever looked at the block
+ * it wrote would report success. **That script measures it now**, since 30 August 2026: it reads
+ * the block either side before the erase and again after it and refuses if either moved, so the
+ * first run ever performed turns this constant from the client's word into a measurement on the
+ * unit in front of it. No evidence suggests it is larger, since both of the client table's readings
+ * give uniform 64 KiB above the boot area, and the other cheap confirmation is a read of the chip's
+ * JEDEC id rather than an erase, which that script now prints.
  */
 export const ERASE_BLOCK_SIZE: Readonly<Record<number, number>> = {
   12: 0x10000,

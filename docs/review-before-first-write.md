@@ -398,7 +398,9 @@ are corrected in place there and the hash above moved accordingly.
 
 So the exercise did what it was for. It did not overturn the derivation, and it was not a rubber stamp:
 it closed one open question, moved another, added a hazard, and caught a summary that had gone wrong.
-Jobs 2 to 4 have not been run.
+Job 4 answered itself from the firmware and job 3 was performed here, both below. **Job 2 has not
+been run.** This said jobs 2 to 4 had not been, which was written when it was true and stayed after
+the section below it recorded job 4.
 
 ## Job 4 answered itself from the firmware, on 27 August 2026
 
@@ -475,3 +477,81 @@ port at all, and both carried a passing test. This is the document that has neve
 section in it carries a regression test, and the mechanism that failed was not the absence of a test
 but two tests whose bodies could not see each other's claim. Nobody noticed until a question forced the
 two together.
+
+## Job 3 was performed here, on 30 August 2026
+
+**Not by a second reader**, which is the honest label to put on it: the brief says job 3 wants the
+rails in front of it and needs no independence, so doing it here costs nothing structural, and it is
+still one reader looking at code written by the same project. It found enough to be worth doing and
+that is not an argument that a second reader would find nothing.
+
+The question was the brief's: find a path where `bin/rehearse-block.ts --commit` leaves the remote
+worse than it found it. Nothing was run on hardware and no remote was attached.
+
+**One hazard with teeth, and it was already written down.** `ERASE_BLOCK_SIZE` in
+`packages/usb/src/rails.ts` carries a docstring naming `rehearse-block.ts` as the thing it does not
+protect: `ERASE_FLASH` takes an address and no count, so the chip decides how much goes, the 64 KiB
+figure is Logitech's client's word rather than a measurement, and a script that reads back and
+restores exactly one block would not notice a larger sector. The script did exactly that. It read the
+named block, erased, checked that block reads as all ones, wrote that block back, and compared that
+block, so an erase reaching into the neighbour would have destroyed a second block of the
+configuration and reported success. That is the whole failure the job asked for, sitting behind a
+constant this project has never confirmed on the chip in front of it.
+
+**The fix measures it instead**, and needs no lab, no client table and no extra write. The script
+reads the block either side before the erase and again after it, and refuses if either moved. Both
+sides, because a larger sector contains the named block in whichever half. A neighbour that would run
+off the chip is dropped rather than clamped, since half a block compared with half a block reports
+success having looked at less than it claims, and with **no** neighbour readable the erase is refused
+outright: nothing would then measure the span, and the span is the thing in doubt. The arithmetic and
+the wording sit in `packages/usb/src/rehearsal.ts` with a test each, since the script itself cannot be
+tested without an irreplaceable remote. The flash id is printed too, which is the other confirmation
+that docstring asks for and which nobody has performed: the client picks its block table from the
+chip's JEDEC ids, so a dry run now produces the number that decides which row applies.
+
+**Three ways the script could have failed to say what it knew**, all at the moment the block is
+incomplete and the operator is deciding whether to unplug.
+
+* `HarmonyRemote.writeFlash` throws `RemoteError` when a write is never acknowledged, and its own
+  text says what reached the device is unknown. The script's handler translated a rail refusal and
+  its own `Refusal` and rethrew everything else, so the one class that arrives with the block in an
+  unknown state was the one printed as an unhandled rejection with a stack.
+* The `finally` closed the device without catching, so a close that failed, which is exactly what a
+  remote that has stopped answering would do, replaced that message with its own.
+* Ctrl-C between the erase and the verified read back printed nothing at all. Node's default handling
+  of SIGINT terminates without unwinding, so neither the `finally` nor the handler ran, and the
+  thousand reports a write takes are long enough that an operator pressing it is a realistic path
+  rather than a contrived one.
+
+All three now go through one function that appends what to do next, and it appends it only after the
+erase has gone out: telling somebody not to unplug when nothing is at risk is what teaches them to
+ignore the sentence when it is true.
+
+**One rule the file stated and broke.** Its own docstring for `Refusal` says `fail` calls
+`process.exit` and skips the `finally` that closes the device, so a refusal raised after the remote
+is open must be thrown. Five of them called `fail` anyway, all pre-write, so the cost was an unclosed
+handle on an exiting process rather than anything reaching flash. It is the shape this repository
+records as an unreachable guard reading as protection, one level up: a rule with a reason, in the
+file it governs, not followed there.
+
+**What was checked and found sound**, since a review that only lists what it disliked is not a
+report:
+
+* **The erase and the write cannot disagree about the range.** They bound differently, the erase
+  against the region ceiling and the write against the end of the configuration, so a rail refusing
+  the write after a successful erase would open the window the job is about. It cannot happen here:
+  the script refuses a block the dump does not cover before it sends anything, which makes the
+  write's bound the tighter of the two, and `writableRange` refuses a configuration length past the
+  ceiling for both.
+* **The guarded transport authorises one exact report at a time**, so the several hundred reports of
+  a transfer cannot ride on one permission, and the rail is asked before each.
+* **The dump allow list and the enumeration refusal behave as documented**, including refusing when
+  more than one remote is attached rather than offering to pick.
+* **The argument parsing has no path to a wrong address**: a missing or malformed `--block` is a
+  refusal, and every value that survives it is checked for block alignment and for being inside the
+  region.
+
+**What this does not do.** It is a reading of the script and the two modules under it, so it says
+nothing about whether the derived protocol is right, which is job 1's subject and was answered on 27
+August. And the erase span is now **measurable** rather than measured: what confirms it is the first
+run with `--commit`, which is the run the checklist gates.
