@@ -94,7 +94,9 @@ read it back). Both refuse without credentials and are **never in `make all`**.
   argument for it, with the refusal list unchanged and still running first. `ActivityList` and
   `FunctionList` answer; `ProtocolList`, `DeviceList` and `CapabilityList` return a bare **502** on
   both accounts, which is the service being broken rather than the request being wrong, and the two
-  that answer are the control that says so.
+  that answer are the control that says so. **`FunctionList` is the one worth knowing**, section 220:
+  it is the layer that names a device's commands, which no configuration holds, one map per appliance
+  and one per activity.
 * Some requests need a WCF contract marker, `__type: 'SomeRequest:#Namespace'`, or the formatter
   binds only the base class and reports a missing field that is plainly in the payload. Read the
   shape off a client's own call site rather than guessing, which is how `migrate.py` got its payload.

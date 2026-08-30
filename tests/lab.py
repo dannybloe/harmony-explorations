@@ -413,6 +413,17 @@ ASCII_FONTS = 'h525_safemode_ahcm'
 #: four and the walk order is the file system's business rather than ours. One directory, named.
 SERVICE_RESPONSES = ('work', 'myharmony', 'responses')
 
+#: The second account's captures, which sit in their own directory rather than in the one above.
+#:
+#: The probe derives the directory from the account selector precisely so one account's replies
+#: cannot be written over another's, so a reply from the second account is reached by naming the
+#: account and not by hoping a suffixed filename was used. Section 220 is the first test to need it.
+SERVICE_RESPONSES_ACCOUNT2 = ('work', 'myharmony', 'responses-account2')
+
+#: Which directory each account selector's replies land in, so a caller says `account=2` rather
+#: than knowing the layout.
+SERVICE_RESPONSE_DIRS = {1: SERVICE_RESPONSES, 2: SERVICE_RESPONSES_ACCOUNT2}
+
 #: Logitech's own per skin protocol templates, inside the mirrored desktop client. Section 197.
 #:
 #: **Addressed by path for the same measured reason as the replies above**, and more sharply:
@@ -488,36 +499,36 @@ def path(name):
     return _find(IMAGES[name])
 
 
-def response_path(filename):
+def response_path(filename, account=1):
     """Absolute path to a captured service reply, or None when the lab has not got it."""
     if not LAB:
         return None
-    p = os.path.join(LAB, *SERVICE_RESPONSES, filename)
+    p = os.path.join(LAB, *SERVICE_RESPONSE_DIRS[account], filename)
     return p if os.path.isfile(p) else None
 
 
-def response(filename):
+def response(filename, account=1):
     """One captured service reply, parsed, or raise SkipTest when the lab has not got it.
 
     The replies carry a byte order mark, which `json.loads` refuses by name, so the encoding is
     stated here once rather than in every caller.
     """
-    p = response_path(filename)
+    p = response_path(filename, account)
     if not p:
         raise unittest.SkipTest(
-            'no %s captured; set HARMONY_LAB (searched: %s)'
-            % (filename, LAB or 'nothing, HARMONY_LAB unset'))
+            'no %s captured for account %d; set HARMONY_LAB (searched: %s)'
+            % (filename, account, LAB or 'nothing, HARMONY_LAB unset'))
     with open(p, encoding='utf-8-sig') as fh:
         return json.load(fh)
 
 
-def require_responses(*filenames):
+def require_responses(*filenames, account=1):
     """Skip the whole test unless every named reply is present, per `require`'s own argument."""
-    missing = [f for f in filenames if not response_path(f)]
+    missing = [f for f in filenames if not response_path(f, account)]
     if missing:
         raise unittest.SkipTest(
-            'no %s captured; set HARMONY_LAB (searched: %s)'
-            % (', '.join(missing), LAB or 'nothing, HARMONY_LAB unset'))
+            'no %s captured for account %d; set HARMONY_LAB (searched: %s)'
+            % (', '.join(missing), account, LAB or 'nothing, HARMONY_LAB unset'))
 
 
 def load(name):

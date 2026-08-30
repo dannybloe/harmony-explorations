@@ -333,6 +333,69 @@ now measured rather than unknown.
 scoped addresses are `.../json/Account/<account>/<Name>` and they want a **GET**. Every other call on
 this platform is a POST of a JSON body, and a POST to these answers 405.
 
+## What a device's commands are called
+
+A configuration addresses infrared codes **by number**. Nothing in it says which code is volume up.
+The platform holds that layer separately, as a **function map**: one per appliance and one per
+activity, each a set of named groups of functions, where a function carries a command name, a label
+for a person to read, and an identifier.
+
+Both kinds of map are the same shape in the schema, `DeviceFunctionMap` and `ActivityFunctionMap`
+extending one `AbstractFunctionMap` that holds the groups. That is the operating concept in
+`docs/how-a-harmony-works.md` stated by the vendor: a device's map and an activity's map are two maps
+of the same keypad. A device map names the default mode, an activity map names its own activity.
+
+### The canonical groups, and the catch all beside them
+
+**A function in a named group states no transport; a function in `Miscellaneous` states infrared.**
+That split has no exceptions over 1191 functions on two accounts. So the named groups are the
+platform's canonical button vocabulary, independent of how a command reaches the appliance, and
+`Miscellaneous` is where an appliance's own commands live, which exist only as a concrete infrared
+code. `TransportType` has nine values including HDMI, three flavours of Bluetooth and two of network,
+so the transport independence is real and not an artefact of an era that only had infrared.
+
+| group | command names |
+|---|---|
+| `Channel` | `ChannelDown`, `ChannelPrev`, `ChannelUp`, `Prev`, `Previous` |
+| `ColoredButtons` | `Blue`, `Green`, `Red`, `Yellow` |
+| `DisplayMode` | `Aspect`, `Display` |
+| `GameType2` | `Circle`, `Cross`, `Square`, `Triangle` |
+| `GameType3` | `Enter`, `Home`, `OK`, `Ok`, `Select` |
+| `GoogleTVNavigation` | `Netflix`, `Settings` |
+| `MediaCenter` | `MyMusic`, `MyPictures`, `MyTv`, `MyVideos` |
+| `NavigationBasic` | `DirectionDown`, `DirectionLeft`, `DirectionRight`, `DirectionUp`, `Enter`, `OK`, `Ok`, `Select` |
+| `NavigationDSTB` | `Favorite`, `List`, `Live`, `RecordedTV`, `Search` |
+| `NavigationDVD` | `Angle`, `Audio`, `Back`, `Menu`, `PopUpMenu`, `Return`, `Subtitle`, `TopMenu` |
+| `NavigationExtended` | `Cancel`, `Clear`, `Exit`, `Guide`, `Info`, `Options`, `PS`, `PageDown`, `PageUp`, `StepBack`, `StepForward`, `TopMenu` |
+| `NumericBasic` | `#`, `*`, `-`, `.`, `0`, `1`, `2`, `3`, `4`, `5`, `6`, `7`, `8`, `9`, `Clear`, `Enter` |
+| `NumericExtended` | `+10` |
+| `PictureAdjustment` | `PictureMode` |
+| `PictureInPicture` | `PIP` |
+| `Power` | `PowerOff`, `PowerOn`, `PowerToggle` |
+| `RadioTuner` | `PresetNext`, `PresetPrev`, `TuneDown`, `TuneUp` |
+| `Setup` | `Setup`, `Sleep` |
+| `SoundModes` | `Effect`, `SoundMode` |
+| `Teletext` | `Teletext` |
+| `TransportBasic` | `Eject`, `FastForward`, `Pause`, `Play`, `QuickStop`, `Rewind`, `Stop`, `iPodFastForward`, `iPodPause`, `iPodPlay`, `iPodRewind`, `iPodStop` |
+| `TransportExtended` | `Next`, `NextTrack`, `Prev`, `PreviousTrack`, `SkipBack`, `SkipBackward`, `SkipForward` |
+| `TransportRecording` | `Record` |
+| `Volume` | `Mute`, `VolumeDown`, `VolumeUp` |
+
+**This vocabulary is not an enumeration and must not be treated as one.** It carries `OK` beside
+`Ok`, `Prev` beside `Previous`, `SkipBack` beside `SkipBackward`, and a set of `iPod` prefixed
+transport commands, so it is the union of what manufacturers' own command sets are called, bucketed
+into groups, rather than a closed list somebody curated. Ten command names sit in more than one
+group, so a group is not a function of a name either.
+
+Two accounts and 14 appliances give 105 canonical command names and 301 device specific ones. The
+device specific names are Logitech's own database content for particular appliances and stay in the
+lab; the groups and the canonical names above are vocabulary.
+
+**The two sets overlap on eight names**, `+10`, `Home`, `Options`, `PS`, `PresetNext`, `PresetPrev`,
+`Select` and `Stop`. So the platform files the same command name in a named group for one appliance
+and in the catch all for another, and being device specific is a property of an appliance's entry
+rather than of a name.
+
 ## What bears on work already in flight
 
 * **`DefaultInterKeyDelay`, `DefaultInterDeviceDelay` and `DefaultPressMinRepeats`** appear on a device

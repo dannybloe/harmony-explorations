@@ -28216,3 +28216,89 @@ function map per device, each a set of named function groups holding a command n
 function identifier. That is the vendor's own naming and grouping of what a device can be told to do,
 which is the same subject as the commands page FreeHarmony will need. It carries account and device
 identifiers, so it stays in the lab.
+
+## 220. What a device's commands are called, and the split that says which are canonical
+
+A configuration addresses infrared codes **by number**. `devices()` reports a group and a code count,
+and nothing in the container says which code is volume up. That naming layer lives on the platform,
+and `UserAccountDirector/FunctionList` is where it is, which section 219 found by accident while
+establishing that a neighbouring endpoint is broken.
+
+Fetched on 30 August 2026 for two accounts. It returns one map per appliance and one per activity,
+each a set of named groups of functions, where a function carries a command name, a label for a
+person to read, an identifier and a transport.
+
+| | account 1 | account 2 |
+|---|---|---|
+| device function maps | 4 | 10 |
+| activity function maps | 2 | 7 |
+| functions | 343 | 848 |
+
+### The schema states the operating concept
+
+`DeviceFunctionMap` and `ActivityFunctionMap` both extend one `AbstractFunctionMap`, which holds the
+groups and the mode name; each subclass adds only the identifier of the thing it belongs to, a device
+or an activity. So the two maps are the same shape and differ only in what they hang off.
+
+That is `docs/how-a-harmony-works.md`'s central sentence, that a device's map and an activity's map
+are two maps of the same keypad authored separately, in the vendor's own schema. It arrived by a route
+with nothing in common with the one that produced it here, which was a measurement over fifteen
+configurations. **A device map's mode is always `Functions.Default`** and an activity map's names its
+own activity, `Functions.UserConfigurator.<activity>`, on all 23 maps.
+
+### A named group states no transport, `Miscellaneous` states infrared
+
+The finding, and it is an exact partition over **1191 functions on two accounts with no exception**:
+
+| | transport `None` | transport `Infrared` |
+|---|---|---|
+| a named group, account 1 | 248 | 0 |
+| `Miscellaneous`, account 1 | 0 | 95 |
+| a named group, account 2 | 595 | 0 |
+| `Miscellaneous`, account 2 | 0 | 253 |
+
+The reading is that the named groups are the platform's **canonical button vocabulary**, held
+independently of how a command reaches an appliance, and `Miscellaneous` is where an appliance's own
+commands sit, which exist only as a concrete infrared code. `TransportType` is a nine value
+enumeration in the schema, carrying HDMI, three flavours of Bluetooth and two of network alongside
+infrared, so transport independence is a real property of the platform rather than an artefact of a
+generation that only had one transport.
+
+**The control matters here**, because a partition is also satisfied by a reply where one side is
+empty: both transports occur, 843 against 348 across the two accounts.
+
+24 named groups, 105 canonical command names, 301 device specific ones. The canonical vocabulary is
+published in `docs/myharmony-model.md`; the device specific names are Logitech's own database content
+for particular appliances and stay in the lab.
+
+**It is not an enumeration**, which matters for anything that would treat it as one: it carries `OK`
+beside `Ok`, `Prev` beside `Previous`, `SkipBack` beside `SkipBackward` and a set of `iPod` prefixed
+transport commands. Ten command names sit in more than one group, so a group is not a function of a
+name.
+
+**And the two sets overlap on eight names**, `+10`, `Home`, `Options`, `PS`, `PresetNext`,
+`PresetPrev`, `Select` and `Stop`, so being device specific is a property of one appliance's entry and
+not of a name. That was found by the publication rail's first version, which searched the whole
+document for every device specific name and tripped on four that are also canonical. The rail is
+scoped to the published table now, since a command name can also be an ordinary word: it refused
+`Status`, which is in that document as a field of `IrProtocol`.
+
+### The service is ahead of the schema here too
+
+Section 218 measured that on Account, Activity, Device, Remote and Product. It holds on
+`FunctionAction` as well: the compiled proxy declares five fields, `CommandName`, `DeviceId`,
+`FunctionId`, `Label` and `TransportType`, and every one of the 1191 live functions carries all five
+plus a sixth the schema has never heard of, `Name`. So the model stays a floor.
+
+### What this does not yet close
+
+**The function counts and a configuration's code counts do not match, and this is not yet a closure.**
+The newest configuration the lab holds for either account was compiled on 24 August and the accounts
+have changed since, so the two artefacts describe different moments. On the four appliances that
+appear in both, the configuration holds more codes than the platform lists functions, by 10 to 21
+each. That is the expected direction, since an activity can bind a code the device map does not
+expose, but it is an observation and not a measurement until both sides come from one moment.
+
+`tests/lab.py` gained a second account's response directory for this, since the probe files each
+account's replies separately by design and a suffixed filename in one directory would have been a
+copy of evidence rather than a reference to it.

@@ -416,7 +416,7 @@ finding.
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 219 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 220 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -634,6 +634,16 @@ figures common to both carry `fact:` markers, so `make facts` moves every copy t
 cannot drift apart; what a reader should not expect is two independent statements of one measurement.
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
+
+**And the layer that names a command is read**, section 220. A configuration addresses infrared codes
+by number and says nowhere which one is volume up; the platform holds that separately, as a map of
+named commands per appliance and per activity. Two things came out of it. The vendor's schema says a
+device's map and an activity's map are the same shape differing only in what they hang off, which is
+this project's own operating concept arriving by a route with nothing in common with the fifteen
+configuration measurement that produced it. And the platform separates a **canonical** button
+vocabulary, 24 groups and 105 command names held independently of how a command reaches the appliance,
+from an appliance's own commands, which exist only as an infrared code. That split holds over 1191
+commands on two accounts with no exception, and the canonical half is published as vocabulary.
 
 **And what it can be asked is in there too**, section 219: 298 operations over 19 service interfaces,
 each with its parameters and the type of its answer, which is what an importer is a sequence of. Three
