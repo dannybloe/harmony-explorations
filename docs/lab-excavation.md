@@ -161,6 +161,19 @@ The five statuses, and the distinction that matters is the last two:
 * `surveyed`: somebody has looked at the shape of it, listed it, and can say what kind of thing it is.
 * `read`: somebody has read enough to say what is inside.
 * `catalogued`: its contents are written up in a document in this repository.
+
+  **Two things promote a row to this, and they are written down because a status pass on 30 August
+  2026 moved fourteen rows at once and a judgement call per row is not repeatable.** Either the row
+  cites a section here that writes up what the artefact holds, which is what `read` plus a citation
+  already means; or the row carries **no want list tag** and its note says why nothing is wanted, which
+  is a finished answer and should stop being counted as outstanding work. A Python virtual environment
+  and a directory of build products are the clearest cases: leaving them at `surveyed` forever makes
+  the progress count read as a backlog when it is a result.
+
+  **An empty note is the state to hunt for, not an artefact with nothing in it.** Section 214 asserted
+  that nothing recorded why an abandoned effort stopped, and the record was in a file whose row was
+  `read` with a blank note, so the register offered no hint either way. From outside, "nothing is in
+  it" and "nobody wrote down what is in it" are the same row. Fill the note or the status is a guess.
 * `mined`: everything in it that this project wants has been extracted. Rare, and it is a claim about
   a want list that can change, so a `mined` row names the date it was mined.
 

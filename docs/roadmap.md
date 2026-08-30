@@ -1625,12 +1625,16 @@ actually outstanding, and as at 30 August 2026 it is this:
 * **Nothing is unopened.** The last artefact at `unseen` was dug on 30 August 2026, section 216, and
   like the two before it, it held our own work rather than Logitech's. So the phrase "the rows at status
   `unseen`" now names an empty set, down from five in two days.
-* **Thirteen rows carry a want list tag and are not written up here**, at `surveyed` or `read`. Some of
-  those are understated rather than undug: `software/MyHarmony` is at `read` while section 132 is a
-  write up of it, so a pass that only corrected statuses would move several without opening anything.
-* **Six rows carry no tag at all** and are genuinely finished: our own scripts, a Python virtual
-  environment, a build directory the register itself calls derived, and three notes.
-* **Two of the seventeen targets are closed**, `intermediate` and `packages`. **Three cannot be closed
+* **That pass was done on 30 August 2026**, section 217, and it moved fourteen rows without opening
+  anything: 36 of the 44 are written up here now, against 22 two days earlier. The rule it applied is
+  in `docs/lab-excavation.md` beside the status definitions, so the next one is repeatable.
+* **Eight rows are genuinely outstanding**, and they are the reading work this step has left: the
+  Silverlight packages at 170 MB, MyHarmony's decompiled source where one flow of 2643 files has been
+  read, the classic client's `src` and `res`, the 8.0 generation, our own read session notes, the draft
+  material, and the classic client's parent row whose children carry the detail.
+* **Three of the seventeen targets are closed**, `intermediate`, `packages` and `scan-codes`, the last
+  of them by the status pass, and it closed because its one artefact was already written up rather than
+  because anything new was found. A tag can close that way, which is a result and not a gap. **Three cannot be closed
   from this site**: `compiler`, because the configuration compiler was server side and is gone;
   `fh-failures`, which no artefact carries; and `fh-limits`, which section 207 judged unlikely here
   because this client is an executor whose interface never named a device.

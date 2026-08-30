@@ -27707,12 +27707,27 @@ or menus, those having been server side pages in an embedded browser. Its five s
 this machine, and it stops at step 4 exactly where the same note said the wall was, needing a device
 model and an encoder "built from nothing".
 
-**Nothing anywhere recorded that it stopped, or why**, which is why this section first read the repack
-as purpose built. Section 204 crossed the note's central claim, and `CLAUDE.md` carries it, so the
-**finding** travelled and the **attempt** did not: that an application was rebuilt, modified, run
-against a local stand in for the dead service, and given up on, was in the lab and in nobody's head
-here. That is decision 12's failure mode in its plainest form, and unlike the nine re-derivations it
-cost nothing except a wrong reading of what these files are for.
+**This section said nothing anywhere recorded that it stopped, and that was wrong**<!--superseded-->,
+corrected the same day. It is recorded, on 7 August 2026, in `software/classic/README.md`, under a
+heading carrying that date: the original goal is stated and then "that is no longer the goal, for two
+reasons found by building it". The reasons are the ones Danny gave from memory three weeks later. The
+server held the entire interface, the device database and the configuration compiler, so what is left
+after removing it "is a program that can talk to a remote and has nothing to say"; and reading a config
+off a remote already existed next door and was done better there, bounded by the container's own end
+rather than reading a whole region blind. It even names what the thing became instead, **a reference
+implementation and a cross-check oracle**, which is exactly the use sections 214 and 215 put it to
+three weeks later, in ignorance of the sentence.
+
+**The narrower claim is the true one**: nothing in **this repository** recorded it. Section 204 crossed
+the note's central claim and `CLAUDE.md` carries it, so the **finding** travelled and the **attempt**
+did not, which is still decision 12's failure mode. The wider wording was a second instance of the same
+thing inside the paragraph reporting the first: an assertion that no record existed, made without
+opening the one file that held it.
+
+**The register is why, and it is the sharpest argument for the status pass in section 217.** That
+file's row read `read` with **no note at all**. An empty note is not "there is nothing in it", it is
+"nobody wrote down what is in it", and from outside the two are identical. The row carries its contents
+now.
 
 With that said, section 210 recorded this square as "a repack receipt saying 827 of the client's 829
 classes rebuilt". That undersold it by the part that matters: what the repack contains is **an
@@ -27964,3 +27979,49 @@ something Logitech never had, not reproducing something it did. And their list i
 borrow from, being brand heavy, ageing badly, and carrying no category for an amplifier that is not an
 AV receiver, no tuner, no projector and no tape machine, all of which the infrared database this
 project already reads holds commands for.
+
+## 217. A status pass over the register, and the blank row that had already cost a wrong claim
+
+Sixteen of the register's 44 rows sat at `read` or `surveyed` while the thing they described was
+written up here, so the excavation's progress count read as a backlog where much of it was a result.
+This is that pass. It opened nothing: every move is from evidence already in the row.
+
+**The rule, written down because a judgement call per row is not repeatable.** A row becomes
+`catalogued` when either it cites a section here that writes up what the artefact holds, or it carries
+**no want list tag** and its note says why nothing is wanted. The second half is the one worth stating:
+a Python virtual environment and a directory of build products are finished, and leaving them at
+`surveyed` forever counts a result as outstanding work.
+
+| | before | after |
+|---|---|---|
+| written up here | 22 at the start of 29 August | **36** |
+| `unseen` | 5 | 0 |
+| `read` or `surveyed` | 22 | 8 |
+| want list tags closed | 2 | 3 |
+
+**One tag closed, `scan-codes`**, its single artefact being the forum photographs that section 144's
+circuit board survey already used. That closure is honest and dull, and worth saying plainly: a tag
+closes when every artefact carrying it has been written up, which can happen because nothing new was
+found rather than because the question was answered. `scan-codes` is still open as a **question**;
+what closed is the site's ability to answer it. `models` moved to 5 of 6 and did not close.
+
+**Eight rows are genuinely outstanding** and they are the reading work step 9 has left: the Silverlight
+packages at 170 MB, MyHarmony's decompiled source where one flow of 2643 files has been read, the
+classic client's `src` and `res`, the 8.0 generation, our own read session notes, the draft material,
+and the classic client's parent row whose children carry the detail.
+
+### The blank row, which is the argument for the whole pass
+
+`software/classic/README.md` sat at `read` with **no note at all**. Section 214 then asserted, in this
+document, that nothing recorded why the server free attempt had been abandoned. It is recorded, in that
+file, on the day it happened, with both reasons and with what the thing became instead: "a reference
+implementation and a cross-check oracle", which is precisely the use sections 214 and 215 put it to
+three weeks later without knowing the sentence existed. The correction is in section 214.
+
+**From outside, an empty note and an artefact with nothing in it are the same row.** That is the defect
+this pass exists to remove, and it is a different failure from the nine re-derivations: those were
+squares somebody skipped, and this was a square somebody opened, read, and then wrote nothing down
+about. The register's own test cannot see it, because a row with a blank note is still a row.
+
+So the pass filled notes as well as moving statuses, and the rule now lives in `docs/lab-excavation.md`
+beside the status definitions rather than in this section alone.
