@@ -85,7 +85,16 @@ read it back). Both refuse without credentials and are **never in `make all`**.
   `UserAccountDirectorPlatform/UserAccountDirector.svc/json/`,
   `SyncPlatform/CompileManager.svc/json/`, `AggregationPlatform/AggregationManager.svc/json/`.
 * The catalogue advertises **308 operations over 50 services** (section 132); the machine readable
-  list is `responses/Discovery_GetJsonOperations.json`.
+  list is `responses/Discovery_GetJsonOperations.json`. **It is not the whole surface**, section 219:
+  MyHarmony's own proxy declares 298 operations over 19 interfaces, with parameters and reply types,
+  in `reference/myharmony-operations.json` in the repository, and on the eleven services both describe
+  each names operations the other does not. Look in both before concluding a call does not exist.
+* **The account scoped addresses want a GET**, and that is the exception to the rule above:
+  `.../json/Account/<accountId>/<Name>` answers **405** to a POST. `probe.call` takes a `method`
+  argument for it, with the refusal list unchanged and still running first. `ActivityList` and
+  `FunctionList` answer; `ProtocolList`, `DeviceList` and `CapabilityList` return a bare **502** on
+  both accounts, which is the service being broken rather than the request being wrong, and the two
+  that answer are the control that says so.
 * Some requests need a WCF contract marker, `__type: 'SomeRequest:#Namespace'`, or the formatter
   binds only the base class and reports a missing field that is plainly in the payload. Read the
   shape off a client's own call site rather than guessing, which is how `migrate.py` got its payload.

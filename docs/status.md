@@ -416,7 +416,7 @@ finding.
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 218 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 219 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
@@ -634,6 +634,15 @@ figures common to both carry `fact:` markers, so `make facts` moves every copy t
 cannot drift apart; what a reader should not expect is two independent statements of one measurement.
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
+
+**And what it can be asked is in there too**, section 219: 298 operations over 19 service interfaces,
+each with its parameters and the type of its answer, which is what an importer is a sequence of. Three
+sources describe that surface and none contains another, Logitech's two clients and the live service's
+own listing, so the platform is bigger than any single count of it. The sharpest thing it bought is a
+negative: exactly one operation can hand back the vendor's own infrared protocol definition, the thing
+sections 159 to 171 measured the hard way, and that operation is **broken on the live service**,
+reproducibly on two accounts, while two neighbours on the same address answer normally. So that avenue
+is closed rather than unexplored.
 
 **The vendor platform's own data model is in this repository**, section 218 and decision 14, which is
 the first time this project has had the schema behind the bytes rather than names inferred from them.

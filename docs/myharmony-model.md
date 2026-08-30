@@ -255,6 +255,84 @@ so belong to no area. They are counted in the 470 and appear in no row below.
 | `AmazonS3` | 1 |
 | `RF` | 1 |
 
+## What can be asked of it
+
+The entity half above says what the platform **holds**. This says what it can be **asked**, which is
+the other thing a schema is good for and the part an importer needs. `reference/myharmony-operations.json`
+is the data.
+
+The proxy declares each operation twice, once as the request carrying the wire action and its typed
+parameters and once as the reply, and joining the two gives 298 operations over 19 service interfaces
+with a reply type resolved for every one of them.
+
+| service interface | operations |
+|---|---|
+| `UserAccountDirector.IUserAccountDirector` | 63 |
+| `UserButtonMappingManager.IUserButtonMappingManager` | 36 |
+| `DeviceManager.IDeviceManager` | 33 |
+| `AccountManager.IAccountManager` | 32 |
+| `SecurityDirector.ISecurity` | 21 |
+| `ActivityManager.IActivityManager` | 20 |
+| `RemoteManager.IRemoteManager` | 18 |
+| `AmazonS3ImageManager.AmazonS3` | 16 |
+| `ProductManager.IProductManager` | 10 |
+| `SecurityDirector.ILinkSecurity` | 9 |
+| `CompileManager.ICompileManager` | 8 |
+| `UserFeatureManager.IUserFeatureManager` | 8 |
+| `DiscoveryService.IDiscovery` | 5 |
+| `GlobalDeviceManager.IGlobalDeviceManager` | 5 |
+| `Authentication.AuthenticationService` | 4 |
+| `DeletionManager.IDeletionManager` | 4 |
+| `InfraredAnalysisManager.IInfraredAnalysisManager` | 3 |
+| `RomDataService.IRomDataLibrary` | 2 |
+| `HelpContent.IHelpContentService` | 1 |
+
+**Three clients and one service, and the three do not agree**, which is the reason to keep them apart
+rather than quote one number. Harmony Desktop's web application declares 78 operations over 14
+services; this proxy declares 298 over 19; and the live service's own Discovery listing advertises 308
+over 50.
+
+Eleven services appear in both this proxy and the Discovery listing. The proxy names operations the
+listing does not on **all eleven**, the listing returns the favour on **seven**, and on those seven
+each source is missing something the other has. So neither is a superset of the other, the platform is
+larger than any single count of it, and the four remaining services are the only ones where one source
+covers the other. The largest disagreement is `UserAccountDirector`, 49 advertised against 63 declared
+with 26 in common.
+
+**That paragraph first said "on every one of those eleven"**, generalised from a sample of three
+services, and the test written for it refuted it within a minute on four.
+
+Seven services the proxy declares are absent from the Discovery listing altogether, and they are the
+ones a client reaches at a fixed address rather than by discovery: `Discovery` itself, both security
+interfaces, products, help content, the ROM data library, the Amazon image service and ASP.NET's own
+authentication service.
+
+### Which operation can hand back which entity
+
+Computed through inheritance, because a reply typed as a base class reaches everything below it.
+Reading the reply type literally is wrong in exactly the case that matters: it says nothing returns an
+`IrProtocol`, when `GetProtocolList` returns a list of that type's base class. 233 of the model's types
+are reachable that way.
+
+| entity | operations that can return one |
+|---|---|
+| Activity | 16 |
+| Account | 9 |
+| Device | 7 |
+| Remote | 7 |
+| `IrProtocol` | **1** |
+
+**That one operation is broken on the live service.** `UserAccountDirector/ProtocolList` is advertised,
+answers a POST with 405 and a GET with a bare gateway error, reproducibly, on two accounts. Two
+neighbours on the same account scoped address answer normally, `ActivityList` and `FunctionList`, so
+the address form and the verb are right and the failure belongs to those endpoints: `DeviceList` and
+`CapabilityList` fail the same way. So `IrProtocol` stays schema without instances, and the reason is
+now measured rather than unknown.
+
+**The verb is worth writing down**, because it is not the one everything else here uses: the account
+scoped addresses are `.../json/Account/<account>/<Name>` and they want a **GET**. Every other call on
+this platform is a POST of a JSON body, and a POST to these answers 405.
+
 ## What bears on work already in flight
 
 * **`DefaultInterKeyDelay`, `DefaultInterDeviceDelay` and `DefaultPressMinRepeats`** appear on a device

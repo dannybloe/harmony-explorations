@@ -829,6 +829,10 @@ reference/silhouettes/          the front face of a model, one SVG per model, **
 reference/button-maps.md        which button a scan code is, per model, measured through the account
                                 that generated the calibration configs. Partial and honest about it:
                                 the scans two buttons share are listed as sets, not assigned
+reference/myharmony-operations.json
+                                the other half: every operation that platform declares, 298 over 19
+                                services, with parameters, reply types, and which entity each one
+                                can hand back. Section 219
 reference/myharmony-model.json  the vendor platform's schema as data, for a tool to read: 1352
                                 types, 470 service contracts, 366 references, 1291 enum values.
                                 Schema only and asserted to be, so no reply, account or identifier

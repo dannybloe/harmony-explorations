@@ -1,0 +1,5450 @@
+{
+ "counts": {
+  "entitiesReachable": 233,
+  "operations": 298,
+  "operationsWithNoReplyType": 0,
+  "services": 19
+ },
+ "reachableEntities": {
+  "AbstractActivityAction": [
+   "ActivityManager/GetActivities",
+   "ActivityManager/GetActivitiesByAcountIdAndActivityIds",
+   "ActivityManager/GetValidActivities",
+   "ActivityManager/SimpleGetActivities",
+   "UserAccountDirector/GetActivities",
+   "UserAccountDirector/SimpleGetActivities"
+  ],
+  "AbstractActivityRole": [
+   "ActivityManager/GetActivities",
+   "ActivityManager/GetActivitiesByAcountIdAndActivityIds",
+   "ActivityManager/GetValidActivities",
+   "ActivityManager/SimpleGetActivities",
+   "UserAccountDirector/GetActivities",
+   "UserAccountDirector/SimpleGetActivities"
+  ],
+  "AbstractButton": [
+   "UserButtonMappingManager/GetRootDeviceModeButtonMap"
+  ],
+  "AbstractButtonAction": [
+   "UserButtonMappingManager/GetRemoteCanvas",
+   "UserButtonMappingManager/GetRemoteEmulatorButtons",
+   "UserButtonMappingManager/SaveSequence"
+  ],
+  "AbstractButtonMap": [
+   "UserAccountDirector/GetButtonMaps",
+   "UserAccountDirector/GetMaps",
+   "UserAccountDirector/PutMaps",
+   "UserButtonMappingManager/CreateButtonMaps",
+   "UserButtonMappingManager/GetButtonMaps",
+   "UserButtonMappingManager/GetDefaultButtonMaps",
+   "UserButtonMappingManager/GetRootButtonMapForSurface"
+  ],
+  "AbstractFunctionMap": [
+   "UserAccountDirector/GetFunctions",
+   "UserAccountDirector/GetMaps",
+   "UserAccountDirector/PutMaps"
+  ],
+  "AbstractProperty": [
+   "DeviceManager/GetDeviceTypeProperties"
+  ],
+  "AbstractProtocol": [
+   "UserAccountDirector/GetProtocolList"
+  ],
+  "AbstractRemoteButton": [
+   "UserAccountDirector/GetButtonMaps",
+   "UserButtonMappingManager/CreateButtonMaps",
+   "UserButtonMappingManager/GetButtonMaps",
+   "UserButtonMappingManager/GetDefaultButtonMaps",
+   "UserButtonMappingManager/GetRemoteCanvas",
+   "UserButtonMappingManager/GetRemoteEmulatorButtons",
+   "UserButtonMappingManager/GetRootButtonMapForSurface"
+  ],
+  "AccessControlPolicy": [
+   "AmazonS3ImageManager/GetBucketAccessControlPolicy",
+   "AmazonS3ImageManager/GetObjectAccessControlPolicy"
+  ],
+  "AccessInternetActivityRole": [
+   "ActivityManager/GetActivities",
+   "ActivityManager/GetActivitiesByAcountIdAndActivityIds",
+   "ActivityManager/GetValidActivities",
+   "ActivityManager/SimpleGetActivities",
+   "UserAccountDirector/GetActivities",
+   "UserAccountDirector/SimpleGetActivities"
+  ],
+  "Account": [
+   "AccountManager/CreateNewAccountInHousehold",
+   "AccountManager/CreateNewAccountInMyHousehold",
+   "AccountManager/GetHousehold",
+   "AccountManager/GetMyAccount",
+   "AccountManager/GetMyHousehold",
+   "SecurityDirector/CreateUserAccount",
+   "SecurityDirector/SignUp",
+   "UserAccountDirector/CloneAccount",
+   "UserAccountDirector/SecureSearchUser"
+  ],
+  "AccountCapability": [
+   "UserAccountDirector/GetHouseholdCapabilities"
+  ],
+  "AccountId": [
+   "AccountManager/CreateNewAccountInHousehold",
+   "AccountManager/CreateNewAccountInMyHousehold",
+   "AccountManager/GetMyAccount",
+   "AccountManager/GetRemoteContext",
+   "ActivityManager/GetActivities",
+   "ActivityManager/GetActivitiesByAcountIdAndActivityIds",
+   "ActivityManager/GetValidActivities",
+   "ActivityManager/SimpleGetActivities",
+   "UserAccountDirector/CloneAccount",
+   "UserAccountDirector/GetActivities",
+   "UserAccountDirector/MigrateDevicesAndActivities",
+   "UserAccountDirector/SimpleGetActivities",
+   "UserButtonMappingManager/GetActivityUserModeMappingByAccountId",
+   "UserButtonMappingManager/GetUserModeMappings",
+   "UserButtonMappingManager/SaveUserModeMappings",
+   "UserButtonMappingManager/UpdateUserModeMapping"
+  ],
+  "AccountMigrationStatus": [
+   "UserAccountDirector/MigrateEasyZapperAccount"
+  ],
+  "AccountProperties": [
+   "AccountManager/CreateNewAccountInHousehold",
+   "AccountManager/CreateNewAccountInMyHousehold",
+   "AccountManager/GetMyAccount"
+  ],
+  "Activity": [
+   "AccountManager/CreateNewAccountInHousehold",
+   "AccountManager/CreateNewAccountInMyHousehold",
+   "AccountManager/GetMyAccount",
+   "ActivityManager/GetActivities",
+   "ActivityManager/GetActivitiesByAcountIdAndActivityIds",
+   "ActivityManager/GetValidActivities",
+   "ActivityManager/RestGetActivities",
+   "ActivityManager/RestPutActivities",
+   "ActivityManager/SimpleGetActivities",
+   "UserAccountDirector/CloneAccount",
+   "UserAccountDirector/GetActivities",
+   "UserAccountDirector/RestGetActivities",
+   "UserAccountDirector/RestPutActivities",
+   "UserAccountDirector/SimpleGetActivities",
+   "UserAccountDirector/SimpleRestGetActivities",
+   "UserAccountDirector/SimpleRestSaveActivities"
+  ],
+  "ActivityButtonMap": [
+   "UserAccountDirector/GetButtonMaps",
+   "UserAccountDirector/GetMaps",
+   "UserAccountDirector/PutMaps",
+   "UserButtonMappingManager/CreateButtonMaps",
+   "UserButtonMappingManager/GetButtonMaps",
+   "UserButtonMappingManager/GetDefaultButtonMaps",
+   "UserButtonMappingManager/GetRootButtonMapForSurface"
+  ],
+  "ActivityChangeResponse": [
+   "UserButtonMappingManager/OnActivityChanged"
+  ],
+  "ActivityDescription": [
+   "UserAccountDirector/MigrateEasyZapperAccount"
+  ],
+  "ActivityFunctionMap": [
+   "UserAccountDirector/GetFunctions",
+   "UserAccountDirector/GetMaps",
+   "UserAccountDirector/PutMaps"
+  ],
+  "ActivityGroup": [
+   "ActivityManager/GetActivities",
+   "ActivityManager/GetActivitiesByAcountIdAndActivityIds",
+   "ActivityManager/GetValidActivities",
+   "ActivityManager/SimpleGetActivities",
+   "UserAccountDirector/GetActivities",
+   "UserAccountDirector/SimpleGetActivities"
+  ],
+  "ActivityId": [
+   "ActivityManager/GetActivities",
+   "ActivityManager/GetActivitiesByAcountIdAndActivityIds",
+   "ActivityManager/GetValidActivities",
+   "ActivityManager/SimpleGetActivities",
+   "DeviceManager/GetDevice",
+   "DeviceManager/GetDevices",
+   "DeviceManager/GetDevicesInAccount",
+   "DeviceManager/GetMyDevices",
+   "UserAccountDirector/GetActivities",
+   "UserAccountDirector/SimpleGetActivities",
+   "UserButtonMappingManager/GetActivityUserModeMappingByAccountId"
+  ],
+  "ActivityList": [
+   "ActivityManager/RestGetActivities",
+   "ActivityManager/RestPutActivities",
+   "UserAccountDirector/RefineActivity",
+   "UserAccountDirector/RestGetActivities",
+   "UserAccountDirector/RestPutActivities",
+   "UserAccountDirector/SimpleRestGetActivities",
+   "UserAccountDirector/SimpleRestSaveActivities"
+  ],
+  "ActivityState": [
+   "ActivityManager/GetActivities",
+   "ActivityManager/GetActivitiesByAcountIdAndActivityIds",
+   "ActivityManager/GetValidActivities",
+   "ActivityManager/SimpleGetActivities",
+   "UserAccountDirector/GetActivities",
+   "UserAccountDirector/SimpleGetActivities"
+  ],
+  "ActivityType": [
+   "ActivityManager/GetActivities",
+   "ActivityManager/GetActivitiesByAcountIdAndActivityIds",
+   "ActivityManager/GetRecommendedActivities",
+   "ActivityManager/GetRecommendedActivitiesFromDevices",
+   "ActivityManager/GetValidActivities",
+   "ActivityManager/SimpleGetActivities",
+   "UserAccountDirector/GetActivities",
+   "UserAccountDirector/GetRecommendedActivities",
+   "UserAccountDirector/SimpleGetActivities",
+   "UserButtonMappingManager/GetNamedActivityTypes"
+  ],
+  "AdminConfig": [
+   "UserAccountDirector/GetAdminConfig",
+   "UserAccountDirector/UpdateAdminConfig"
+  ],
+  "AnalyzeInfraredResult": [
+   "InfraredAnalysisManager/AnalyzeInfrared"
+  ],
+  "AutoDetectedDevice": [
+   "DeviceManager/GetDevice",
+   "DeviceManager/GetDevices",
+   "DeviceManager/GetDevicesInAccount",
+   "DeviceManager/GetMyDevices"
+  ],
+  "BluetoothProtocol": [
+   "UserAccountDirector/GetProtocolList"
+  ],
+  "BucketLoggingStatus": [
+   "AmazonS3ImageManager/GetBucketLoggingStatus"
+  ],
+  "BuildInfo": [
+   "AccountManager/BuildInfo",
+   "ActivityManager/BuildInfo",
+   "CompileManager/BuildInfo",
+   "DeletionManager/BuildInfo",
+   "DeviceManager/BuildInfo",
+   "GlobalDeviceManager/BuildInfo",
+   "InfraredAnalysisManager/BuildInfo",
+   "ProductManager/BuildInfo",
+   "RemoteManager/BuildInfo",
+   "SecurityDirector/BuildInfo",
+   "UserAccountDirector/BuildInfo",
+   "UserButtonMappingManager/BuildInfo",
+   "UserFeatureManager/BuildInfo"
+  ],
+  "ButtonActivityAction": [
+   "UserButtonMappingManager/GetRemoteCanvas",
+   "UserButtonMappingManager/GetRemoteEmulatorButtons",
+   "UserButtonMappingManager/SaveSequence"
+  ],
+  "ButtonChannelAction": [
+   "UserButtonMappingManager/GetRemoteCanvas",
+   "UserButtonMappingManager/GetRemoteEmulatorButtons",
+   "UserButtonMappingManager/SaveSequence"
+  ],
+  "ButtonClientAction": [
+   "UserButtonMappingManager/GetRemoteCanvas",
+   "UserButtonMappingManager/GetRemoteEmulatorButtons",
+   "UserButtonMappingManager/SaveSequence"
+  ],
+  "ButtonCommandAction": [
+   "UserButtonMappingManager/GetRemoteCanvas",
+   "UserButtonMappingManager/GetRemoteEmulatorButtons",
+   "UserButtonMappingManager/SaveSequence"
+  ],
+  "ButtonDefinition": [
+   "ProductManager/GetProductButtonList"
+  ],
+  "ButtonDelayAction": [
+   "UserButtonMappingManager/GetRemoteCanvas",
+   "UserButtonMappingManager/GetRemoteEmulatorButtons",
+   "UserButtonMappingManager/SaveSequence"
+  ],
+  "ButtonHomeControlAction": [
+   "UserButtonMappingManager/GetRemoteCanvas",
+   "UserButtonMappingManager/GetRemoteEmulatorButtons",
+   "UserButtonMappingManager/SaveSequence"
+  ],
+  "ButtonMap": [
+   "UserButtonMappingManager/GetRootDeviceModeButtonMap"
+  ],
+  "ButtonMapId": [
+   "UserAccountDirector/GetButtonMaps",
+   "UserButtonMappingManager/CreateButtonMaps",
+   "UserButtonMappingManager/GetButtonMaps",
+   "UserButtonMappingManager/GetDefaultButtonMaps",
+   "UserButtonMappingManager/GetRootButtonMapForSurface",
+   "UserButtonMappingManager/GetRootDeviceModeButtonMap"
+  ],
+  "ButtonMapType": [
+   "UserButtonMappingManager/GetRootDeviceModeButtonMap"
+  ],
+  "ButtonProgramAction": [
+   "UserButtonMappingManager/GetRemoteCanvas",
+   "UserButtonMappingManager/GetRemoteEmulatorButtons",
+   "UserButtonMappingManager/SaveSequence"
+  ],
+  "ButtonSequenceAction": [
+   "UserButtonMappingManager/GetRemoteCanvas",
+   "UserButtonMappingManager/GetRemoteEmulatorButtons",
+   "UserButtonMappingManager/SaveSequence"
+  ],
+  "ButtonState": [
+   "UserButtonMappingManager/GetRemoteCanvas",
+   "UserButtonMappingManager/GetRemoteEmulatorButtons"
+  ],
+  "ChannelActivityAction": [
+   "ActivityManager/GetActivities",
+   "ActivityManager/GetActivitiesByAcountIdAndActivityIds",
+   "ActivityManager/GetValidActivities",
+   "ActivityManager/SimpleGetActivities",
+   "UserAccountDirector/GetActivities",
+   "UserAccountDirector/SimpleGetActivities"
+  ],
+  "ChannelChangingActivityRole": [
+   "ActivityManager/GetActivities",
+   "ActivityManager/GetActivitiesByAcountIdAndActivityIds",
+   "ActivityManager/GetValidActivities",
+   "ActivityManager/SimpleGetActivities",
+   "UserAccountDirector/GetActivities",
+   "UserAccountDirector/SimpleGetActivities"
+  ],
+  "ChannelTuningFeature": [
+   "DeviceManager/GetDeviceChannelTuningFeature",
+   "DeviceManager/GetGlobalDevices",
+   "GlobalDeviceManager/GetGlobalDevices"
+  ],
+  "ChannelTuningFeature1": [
+   "UserFeatureManager/CopyFeaturesFromGlobalDevice"
+  ],
+  "CloneAccountResponse": [
+   "UserAccountDirector/CloneAccount"
+  ],
+  "Command": [
+   "DeviceManager/GetGlobalLanguageCommands"
+  ],
+  "CommandActivityAction": [
+   "ActivityManager/GetActivities",
+   "ActivityManager/GetActivitiesByAcountIdAndActivityIds",
+   "ActivityManager/GetValidActivities",
+   "ActivityManager/SimpleGetActivities",
+   "UserAccountDirector/GetActivities",
+   "UserAccountDirector/SimpleGetActivities"
+  ],
+  "CommandId": [
+   "DeviceManager/GetGlobalLanguageCommands"
+  ],
+  "CommandToLearn": [
+   "DeviceManager/GetAllTeachingCommands",
+   "DeviceManager/GetAllTeachingCommandsForGivenDeviceInformation",
+   "DeviceManager/GetAllTeachingCommandsForGivenPowerAndInputTypes"
+  ],
+  "CompileRequest": [
+   "CompileManager/GetRestCommandList",
+   "CompileManager/StartCompile",
+   "CompileManager/StartCompileWithLocale",
+   "CompileManager/StartCompileWithLocaleAndSettings"
+  ],
+  "CompilerArchitecture": [
+   "ProductManager/GetAllProducts",
+   "ProductManager/GetProduct",
+   "ProductManager/GetProductByProductId"
+  ],
+  "ControlsAppActivityRole": [
+   "ActivityManager/GetActivities",
+   "ActivityManager/GetActivitiesByAcountIdAndActivityIds",
+   "ActivityManager/GetValidActivities",
+   "ActivityManager/SimpleGetActivities",
+   "UserAccountDirector/GetActivities",
+   "UserAccountDirector/SimpleGetActivities"
+  ],
+  "ControlsAppleTVActivityRole": [
+   "ActivityManager/GetActivities",
+   "ActivityManager/GetActivitiesByAcountIdAndActivityIds",
+   "ActivityManager/GetValidActivities",
+   "ActivityManager/SimpleGetActivities",
+   "UserAccountDirector/GetActivities",
+   "UserAccountDirector/SimpleGetActivities"
+  ],
+  "ControlsComputerActivityRole": [
+   "ActivityManager/GetActivities",
+   "ActivityManager/GetActivitiesByAcountIdAndActivityIds",
+   "ActivityManager/GetValidActivities",
+   "ActivityManager/SimpleGetActivities",
+   "UserAccountDirector/GetActivities",
+   "UserAccountDirector/SimpleGetActivities"
+  ],
+  "ControlsMediaPlayerActivityRole": [
+   "ActivityManager/GetActivities",
+   "ActivityManager/GetActivitiesByAcountIdAndActivityIds",
+   "ActivityManager/GetValidActivities",
+   "ActivityManager/SimpleGetActivities",
+   "UserAccountDirector/GetActivities",
+   "UserAccountDirector/SimpleGetActivities"
+  ],
+  "ControlsNetflixActivityRole": [
+   "ActivityManager/GetActivities",
+   "ActivityManager/GetActivitiesByAcountIdAndActivityIds",
+   "ActivityManager/GetValidActivities",
+   "ActivityManager/SimpleGetActivities",
+   "UserAccountDirector/GetActivities",
+   "UserAccountDirector/SimpleGetActivities"
+  ],
+  "ControlsRokuActivityRole": [
+   "ActivityManager/GetActivities",
+   "ActivityManager/GetActivitiesByAcountIdAndActivityIds",
+   "ActivityManager/GetValidActivities",
+   "ActivityManager/SimpleGetActivities",
+   "UserAccountDirector/GetActivities",
+   "UserAccountDirector/SimpleGetActivities"
+  ],
+  "ControlsSonosActivityRole": [
+   "ActivityManager/GetActivities",
+   "ActivityManager/GetActivitiesByAcountIdAndActivityIds",
+   "ActivityManager/GetValidActivities",
+   "ActivityManager/SimpleGetActivities",
+   "UserAccountDirector/GetActivities",
+   "UserAccountDirector/SimpleGetActivities"
+  ],
+  "ControlsSpeakerActivityRole": [
+   "ActivityManager/GetActivities",
+   "ActivityManager/GetActivitiesByAcountIdAndActivityIds",
+   "ActivityManager/GetValidActivities",
+   "ActivityManager/SimpleGetActivities",
+   "UserAccountDirector/GetActivities",
+   "UserAccountDirector/SimpleGetActivities"
+  ],
+  "ControlsVideoCallActivityRole": [
+   "ActivityManager/GetActivities",
+   "ActivityManager/GetActivitiesByAcountIdAndActivityIds",
+   "ActivityManager/GetValidActivities",
+   "ActivityManager/SimpleGetActivities",
+   "UserAccountDirector/GetActivities",
+   "UserAccountDirector/SimpleGetActivities"
+  ],
+  "CopyObjectResponse": [
+   "AmazonS3ImageManager/CopyObject"
+  ],
+  "Country": [
+   "DeviceManager/GetGlobalDevices",
+   "GlobalDeviceManager/GetGlobalDevices"
+  ],
+  "CountryType": [
+   "DeviceManager/GetKeyboardLocales"
+  ],
+  "CreateAccountResponse": [
+   "SecurityDirector/CreateUserAccount",
+   "SecurityDirector/SignUp"
+  ],
+  "CreateAccountResult": [
+   "SecurityDirector/CreateUserAccount",
+   "SecurityDirector/SignUp"
+  ],
+  "CreateBucketResponse": [
+   "AmazonS3ImageManager/CreateBucket"
+  ],
+  "CustomerSupportPolicy": [
+   "ProductManager/GetCustomerSupportPolicyByCustomerSupportDetail",
+   "ProductManager/GetCustomerSupportPolicyForMemberWeb",
+   "UserAccountDirector/GetCustomerSupportPolicyByAccountId",
+   "UserAccountDirector/GetCustomerSupportPolicyForAccountIds",
+   "UserAccountDirector/GetUnifiedSupportPolicyForAccountId"
+  ],
+  "DelayActivityAction": [
+   "ActivityManager/GetActivities",
+   "ActivityManager/GetActivitiesByAcountIdAndActivityIds",
+   "ActivityManager/GetValidActivities",
+   "ActivityManager/SimpleGetActivities",
+   "UserAccountDirector/GetActivities",
+   "UserAccountDirector/SimpleGetActivities"
+  ],
+  "DetectLanguageForMultiCodeDeviceResult": [
+   "DeviceManager/DetectLanguageForMultiCodeDevice"
+  ],
+  "DetectLanguageResult": [
+   "DeviceManager/DetectLanguage",
+   "DeviceManager/DetectLanguageForConnectedRemote"
+  ],
+  "Device": [
+   "AccountManager/CreateNewAccountInHousehold",
+   "AccountManager/CreateNewAccountInMyHousehold",
+   "AccountManager/GetMyAccount",
+   "DeviceManager/GetDevice",
+   "DeviceManager/GetDevices",
+   "DeviceManager/GetDevicesInAccount",
+   "DeviceManager/GetMyDevices"
+  ],
+  "DeviceButtonMap": [
+   "UserAccountDirector/GetButtonMaps",
+   "UserAccountDirector/GetMaps",
+   "UserAccountDirector/PutMaps",
+   "UserButtonMappingManager/CreateButtonMaps",
+   "UserButtonMappingManager/GetButtonMaps",
+   "UserButtonMappingManager/GetDefaultButtonMaps",
+   "UserButtonMappingManager/GetRootButtonMapForSurface"
+  ],
+  "DeviceCategory": [
+   "DeviceManager/GetDevice",
+   "DeviceManager/GetDevices",
+   "DeviceManager/GetDevicesInAccount",
+   "DeviceManager/GetMyDevices"
+  ],
+  "DeviceDescription": [
+   "UserAccountDirector/MigrateEasyZapperAccount"
+  ],
+  "DeviceFeature": [
+   "UserFeatureManager/CopyFeaturesFromGlobalDevice"
+  ],
+  "DeviceFunctionMap": [
+   "UserAccountDirector/GetFunctions",
+   "UserAccountDirector/GetMaps",
+   "UserAccountDirector/PutMaps"
+  ],
+  "DeviceId": [
+   "ActivityManager/ResolvePrimaryDeviceForActivity",
+   "DeviceManager/GetDevice",
+   "DeviceManager/GetDeviceChannelTuningFeature",
+   "DeviceManager/GetDevices",
+   "DeviceManager/GetDevicesInAccount",
+   "DeviceManager/GetMyDevices",
+   "UserButtonMappingManager/GetRootDeviceModeButtonMap",
+   "UserButtonMappingManager/GetUserModeMappings",
+   "UserButtonMappingManager/SaveUserModeMappings",
+   "UserButtonMappingManager/UpdateUserModeMapping",
+   "UserFeatureManager/CopyFeaturesFromGlobalDevice"
+  ],
+  "DeviceList": [
+   "UserAccountDirector/GetDeviceList",
+   "UserAccountDirector/PutDevicesAndFeatures",
+   "UserAccountDirector/SimpleRestGetDeviceList",
+   "UserAccountDirector/SimpleRestSaveDeviceAndFeatures"
+  ],
+  "DeviceModeType": [
+   "UserButtonMappingManager/GetActivityUserModeMappingByAccountId",
+   "UserButtonMappingManager/GetUserModeMappings",
+   "UserButtonMappingManager/SaveUserModeMappings",
+   "UserButtonMappingManager/UpdateUserModeMapping"
+  ],
+  "DeviceSearchResponse": [
+   "DeviceManager/SearchIPScanDevices",
+   "DeviceManager/SearchMultipleGlobalDevices"
+  ],
+  "DeviceType": [
+   "ActivityManager/ResolvePrimaryDeviceForActivity"
+  ],
+  "DeviceWithCapabilities": [
+   "ActivityManager/ResolvePrimaryDeviceForActivity"
+  ],
+  "DeviceWithFeatures": [
+   "UserAccountDirector/GetDeviceList",
+   "UserAccountDirector/PutDevicesAndFeatures",
+   "UserAccountDirector/SimpleRestGetDeviceList",
+   "UserAccountDirector/SimpleRestSaveDeviceAndFeatures"
+  ],
+  "Display": [
+   "ProductManager/GetAllProducts",
+   "ProductManager/GetProduct",
+   "ProductManager/GetProductByProductId"
+  ],
+  "DisplayActivityRole": [
+   "ActivityManager/GetActivities",
+   "ActivityManager/GetActivitiesByAcountIdAndActivityIds",
+   "ActivityManager/GetValidActivities",
+   "ActivityManager/SimpleGetActivities",
+   "UserAccountDirector/GetActivities",
+   "UserAccountDirector/SimpleGetActivities"
+  ],
+  "Dongle": [
+   "RemoteManager/GetDongles",
+   "RemoteManager/GetDonglesByRFID",
+   "RemoteManager/GetRemote"
+  ],
+  "EasyZapperAccountDetailsResponse": [
+   "UserAccountDirector/GetEasyZapperAccountDetails"
+  ],
+  "EmailPreference": [
+   "AccountManager/GetEmailPreferences"
+  ],
+  "EmailPreferenceResponse": [
+   "AccountManager/GetEmailPreferences"
+  ],
+  "EnumProperty": [
+   "DeviceManager/GetDeviceTypeProperties"
+  ],
+  "FailedAnalyzeInfraredResult": [
+   "InfraredAnalysisManager/AnalyzeInfrared"
+  ],
+  "FeatureState": [
+   "UserFeatureManager/CopyFeaturesFromGlobalDevice"
+  ],
+  "FunctionGroupType": [
+   "UserButtonMappingManager/GetRemoteCanvas",
+   "UserButtonMappingManager/GetRemoteEmulatorButtons"
+  ],
+  "FunctionId": [
+   "DeviceManager/GetGlobalLanguageCommands"
+  ],
+  "FunctionList": [
+   "UserAccountDirector/GetFunctions"
+  ],
+  "GeneralADUserDetails": [
+   "SecurityDirector/GetADLDSUserDetails"
+  ],
+  "GeneralUserResponse": [
+   "SecurityDirector/ValidateEmailOrAccount"
+  ],
+  "GestureRemoteButton": [
+   "UserAccountDirector/GetButtonMaps",
+   "UserButtonMappingManager/CreateButtonMaps",
+   "UserButtonMappingManager/GetButtonMaps",
+   "UserButtonMappingManager/GetDefaultButtonMaps",
+   "UserButtonMappingManager/GetRemoteCanvas",
+   "UserButtonMappingManager/GetRemoteEmulatorButtons",
+   "UserButtonMappingManager/GetRootButtonMapForSurface"
+  ],
+  "GetActivityRolesResponse": [
+   "UserAccountDirector/GetActivityRoles"
+  ],
+  "GetActivityTypeRolesResponse": [
+   "UserAccountDirector/GetActivityTypeRoles"
+  ],
+  "GetActivityTypesAndRolesResponse": [
+   "UserAccountDirector/GetActivityTypesAndRoles"
+  ],
+  "GetAllTeachingCommandsResult": [
+   "DeviceManager/GetAllTeachingCommands",
+   "DeviceManager/GetAllTeachingCommandsForGivenDeviceInformation",
+   "DeviceManager/GetAllTeachingCommandsForGivenPowerAndInputTypes"
+  ],
+  "GetAllTeachingCommandsStatus": [
+   "DeviceManager/GetAllTeachingCommands",
+   "DeviceManager/GetAllTeachingCommandsForGivenDeviceInformation",
+   "DeviceManager/GetAllTeachingCommandsForGivenPowerAndInputTypes"
+  ],
+  "GetHubCloudTokenResponse": [
+   "UserAccountDirector/GetHubCloudToken"
+  ],
+  "GetObjectExtendedResponse": [
+   "AmazonS3ImageManager/GetObjectExtended"
+  ],
+  "GetObjectResult": [
+   "AmazonS3ImageManager/GetObject"
+  ],
+  "GetPasswordQuestionResult": [
+   "AccountManager/GetPasswordQuestion"
+  ],
+  "GetPasswordQuestionResultStatus": [
+   "AccountManager/GetPasswordQuestion"
+  ],
+  "GetRecommendedActivitiesResponse": [
+   "UserAccountDirector/GetRecommendedActivities"
+  ],
+  "GetSyncStatusResult": [
+   "RemoteManager/GetSyncStatus"
+  ],
+  "GlobalDevice": [
+   "DeviceManager/GetGlobalDevices",
+   "GlobalDeviceManager/GetGlobalDevices"
+  ],
+  "GlobalDeviceGlobalLanguage": [
+   "DeviceManager/GetGlobalDevices",
+   "GlobalDeviceManager/GetGlobalDevices"
+  ],
+  "GlobalDeviceVersionId": [
+   "DeviceManager/GetDevice",
+   "DeviceManager/GetDevices",
+   "DeviceManager/GetDevicesInAccount",
+   "DeviceManager/GetGlobalDevices",
+   "DeviceManager/GetMyDevices",
+   "GlobalDeviceManager/GetGlobalDevices",
+   "UserFeatureManager/CopyFeaturesFromGlobalDevice"
+  ],
+  "GlobalDevicesSearchResult": [
+   "DeviceManager/SearchGlobalDevices",
+   "DeviceManager/SearchGlobalDevicesByClassification",
+   "DeviceManager/SearchGlobalDevicesByClassificationAndSearchType",
+   "DeviceManager/SearchGlobalDevicesByEdid",
+   "DeviceManager/SearchGlobalDevicesWithFilterMaxResults",
+   "DeviceManager/SearchIPScanDevices",
+   "DeviceManager/SearchMultipleGlobalDevices"
+  ],
+  "GlobalDevicesSearchStatus": [
+   "DeviceManager/SearchGlobalDevices",
+   "DeviceManager/SearchGlobalDevicesByClassification",
+   "DeviceManager/SearchGlobalDevicesByClassificationAndSearchType",
+   "DeviceManager/SearchGlobalDevicesByEdid",
+   "DeviceManager/SearchGlobalDevicesWithFilterMaxResults"
+  ],
+  "GlobalLanguageVersionId": [
+   "DeviceManager/DetectLanguage",
+   "DeviceManager/DetectLanguageForConnectedRemote",
+   "DeviceManager/DetectLanguageForMultiCodeDevice",
+   "DeviceManager/GetDevice",
+   "DeviceManager/GetDevices",
+   "DeviceManager/GetDevicesInAccount",
+   "DeviceManager/GetMyDevices"
+  ],
+  "GlobalRemote": [
+   "RemoteManager/GetGlobalRemote",
+   "UserAccountDirector/GetGlobalRemote"
+  ],
+  "Grant": [
+   "ActivityManager/GetImageStoreInfo",
+   "UserButtonMappingManager/GetImageStoreInfo"
+  ],
+  "GtvAuthenticationResponse": [
+   "SecurityDirector/GtvCreateAccount",
+   "SecurityDirector/GtvFindOrCreateAccount"
+  ],
+  "HandshakeResponse": [
+   "AccountManager/SecureControllerHandshake"
+  ],
+  "HardButton": [
+   "UserButtonMappingManager/GetRootDeviceModeButtonMap"
+  ],
+  "HardRemoteButton": [
+   "UserAccountDirector/GetButtonMaps",
+   "UserButtonMappingManager/CreateButtonMaps",
+   "UserButtonMappingManager/GetButtonMaps",
+   "UserButtonMappingManager/GetDefaultButtonMaps",
+   "UserButtonMappingManager/GetRemoteCanvas",
+   "UserButtonMappingManager/GetRemoteEmulatorButtons",
+   "UserButtonMappingManager/GetRootButtonMapForSurface"
+  ],
+  "HarmonyProduct": [
+   "ProductManager/GetHarmonyProducts"
+  ],
+  "HelpDocument": [
+   "HelpContent/GetHelpDocument"
+  ],
+  "HidProtocol": [
+   "UserAccountDirector/GetProtocolList"
+  ],
+  "Household": [
+   "AccountManager/GetHousehold",
+   "AccountManager/GetMyHousehold"
+  ],
+  "HouseholdId": [
+   "AccountManager/CreateNewAccountInHousehold",
+   "AccountManager/CreateNewAccountInMyHousehold",
+   "AccountManager/GetHousehold",
+   "AccountManager/GetMyAccount",
+   "AccountManager/GetMyHousehold",
+   "AccountManager/GetRemoteContext",
+   "UserAccountDirector/CloneAccount",
+   "UserAccountDirector/MigrateDevicesAndActivities"
+  ],
+  "HouseholdProduct": [
+   "UserAccountDirector/SimpleRestGetHouseholdProducts"
+  ],
+  "HouseholdSupportPolicy": [
+   "UserAccountDirector/GetCustomerSupportPolicyForAccountIds"
+  ],
+  "Icon": [
+   "DeviceManager/GetDevice",
+   "DeviceManager/GetDevices",
+   "DeviceManager/GetDevicesInAccount",
+   "DeviceManager/GetMyDevices"
+  ],
+  "ImageStoreInfo": [
+   "ActivityManager/GetImageStoreInfo",
+   "UserButtonMappingManager/GetImageStoreInfo"
+  ],
+  "InputFeature": [
+   "UserFeatureManager/CopyFeaturesFromGlobalDevice"
+  ],
+  "InputType": [
+   "GlobalDeviceManager/GetDeviceInputType"
+  ],
+  "InternalStateFeature": [
+   "UserFeatureManager/CopyFeaturesFromGlobalDevice"
+  ],
+  "IrProtocol": [
+   "UserAccountDirector/GetProtocolList"
+  ],
+  "Keyboard": [
+   "ProductManager/GetAllProducts",
+   "ProductManager/GetProduct",
+   "ProductManager/GetProductByProductId"
+  ],
+  "KeyboardButton": [
+   "UserAccountDirector/GetButtonMaps",
+   "UserButtonMappingManager/CreateButtonMaps",
+   "UserButtonMappingManager/GetButtonMaps",
+   "UserButtonMappingManager/GetDefaultButtonMaps",
+   "UserButtonMappingManager/GetRemoteCanvas",
+   "UserButtonMappingManager/GetRemoteEmulatorButtons",
+   "UserButtonMappingManager/GetRootButtonMapForSurface"
+  ],
+  "KeyboardLayoutType": [
+   "RemoteManager/GetRemote"
+  ],
+  "KeyboardLocale": [
+   "DeviceManager/GetKeyboardLocales"
+  ],
+  "KeyboardTextEntryActivityRole": [
+   "ActivityManager/GetActivities",
+   "ActivityManager/GetActivitiesByAcountIdAndActivityIds",
+   "ActivityManager/GetValidActivities",
+   "ActivityManager/SimpleGetActivities",
+   "UserAccountDirector/GetActivities",
+   "UserAccountDirector/SimpleGetActivities"
+  ],
+  "LinkHandshakeResponse": [
+   "SecurityDirector/Handshake"
+  ],
+  "ListAllMyBucketsResult": [
+   "AmazonS3ImageManager/ListAllMyBuckets"
+  ],
+  "ListBucketResult": [
+   "AmazonS3ImageManager/ListBucket"
+  ],
+  "Locale": [
+   "AccountManager/GetRemoteContext"
+  ],
+  "LoginResponse": [
+   "SecurityDirector/AuthorizeOnHousehold",
+   "SecurityDirector/InitiateLogin",
+   "SecurityDirector/Login",
+   "SecurityDirector/LoginForHubSetup",
+   "SecurityDirector/LoginUser",
+   "SecurityDirector/LoginWithEmailToken",
+   "SecurityDirector/SignIn",
+   "SecurityDirector/SignIn2"
+  ],
+  "Manufacturer": [
+   "ProductManager/GetAllProducts",
+   "ProductManager/GetProduct",
+   "ProductManager/GetProductByProductId"
+  ],
+  "MapList": [
+   "UserAccountDirector/GetMaps",
+   "UserAccountDirector/PutMaps"
+  ],
+  "MigrateEasyZapperAccountResponse": [
+   "UserAccountDirector/MigrateEasyZapperAccount"
+  ],
+  "MigrateHarmonyPlatformDevicesAndActivitiesResponse": [
+   "UserAccountDirector/MigrateDevicesAndActivities"
+  ],
+  "NotifySyncStatusResult": [
+   "RemoteManager/NotifySyncStatus"
+  ],
+  "OperationData": [
+   "RomDataService/RequestOperationData"
+  ],
+  "OutputFeature": [
+   "UserFeatureManager/CopyFeaturesFromGlobalDevice"
+  ],
+  "PassThroughActivityRole": [
+   "ActivityManager/GetActivities",
+   "ActivityManager/GetActivitiesByAcountIdAndActivityIds",
+   "ActivityManager/GetValidActivities",
+   "ActivityManager/SimpleGetActivities",
+   "UserAccountDirector/GetActivities",
+   "UserAccountDirector/SimpleGetActivities"
+  ],
+  "PlayGameActivityRole": [
+   "ActivityManager/GetActivities",
+   "ActivityManager/GetActivitiesByAcountIdAndActivityIds",
+   "ActivityManager/GetValidActivities",
+   "ActivityManager/SimpleGetActivities",
+   "UserAccountDirector/GetActivities",
+   "UserAccountDirector/SimpleGetActivities"
+  ],
+  "PlayMediaActivityRole": [
+   "ActivityManager/GetActivities",
+   "ActivityManager/GetActivitiesByAcountIdAndActivityIds",
+   "ActivityManager/GetValidActivities",
+   "ActivityManager/SimpleGetActivities",
+   "UserAccountDirector/GetActivities",
+   "UserAccountDirector/SimpleGetActivities"
+  ],
+  "PlayMovieActivityRole": [
+   "ActivityManager/GetActivities",
+   "ActivityManager/GetActivitiesByAcountIdAndActivityIds",
+   "ActivityManager/GetValidActivities",
+   "ActivityManager/SimpleGetActivities",
+   "UserAccountDirector/GetActivities",
+   "UserAccountDirector/SimpleGetActivities"
+  ],
+  "PowerFeature": [
+   "UserFeatureManager/CopyFeaturesFromGlobalDevice"
+  ],
+  "PowerInputActivityRole": [
+   "ActivityManager/GetActivities",
+   "ActivityManager/GetActivitiesByAcountIdAndActivityIds",
+   "ActivityManager/GetValidActivities",
+   "ActivityManager/SimpleGetActivities",
+   "UserAccountDirector/GetActivities",
+   "UserAccountDirector/SimpleGetActivities"
+  ],
+  "PrioritizedDeviceCapability": [
+   "ActivityManager/ResolvePrimaryDeviceForActivity",
+   "DeviceManager/GetDevice",
+   "DeviceManager/GetDevices",
+   "DeviceManager/GetDevicesInAccount",
+   "DeviceManager/GetGlobalDevices",
+   "DeviceManager/GetMyDevices",
+   "GlobalDeviceManager/GetGlobalDevices"
+  ],
+  "Product": [
+   "ProductManager/GetAllProducts",
+   "ProductManager/GetProduct",
+   "ProductManager/GetProductByProductId",
+   "UserAccountDirector/GetProductCapabilities",
+   "UserAccountDirector/SimpleRestGetHouseholdProducts"
+  ],
+  "Product2": [
+   "UserAccountDirector/GetProductCapabilities2"
+  ],
+  "ProductButtonList": [
+   "ProductManager/GetProductButtonList"
+  ],
+  "ProductCapabilitiesResponse": [
+   "UserAccountDirector/GetProductCapabilities"
+  ],
+  "ProductCapabilitiesResponse2": [
+   "UserAccountDirector/GetProductCapabilities2"
+  ],
+  "ProductCapability": [
+   "ProductManager/GetAllProducts",
+   "ProductManager/GetProduct",
+   "ProductManager/GetProductByProductId"
+  ],
+  "ProductSetting": [
+   "ProductManager/GetAllProducts",
+   "ProductManager/GetProduct",
+   "ProductManager/GetProductByProductId"
+  ],
+  "ProtocolList": [
+   "UserAccountDirector/GetProtocolList"
+  ],
+  "ProvisionHubResponse": [
+   "UserAccountDirector/ProvisionHub"
+  ],
+  "PublicDeviceSearchMatch": [
+   "DeviceManager/SearchGlobalDevices",
+   "DeviceManager/SearchGlobalDevicesByClassification",
+   "DeviceManager/SearchGlobalDevicesByClassificationAndSearchType",
+   "DeviceManager/SearchGlobalDevicesByEdid",
+   "DeviceManager/SearchGlobalDevicesWithFilterMaxResults"
+  ],
+  "PublicGlobalDeviceId": [
+   "DeviceManager/GetDevice",
+   "DeviceManager/GetDevices",
+   "DeviceManager/GetDevicesInAccount",
+   "DeviceManager/GetMyDevices"
+  ],
+  "PutObjectInlineResponse": [
+   "AmazonS3ImageManager/PutObjectInline"
+  ],
+  "PutObjectResponse": [
+   "AmazonS3ImageManager/PutObject"
+  ],
+  "QuestionVerifyDeviceResult": [
+   "DeviceManager/ValidateDevice"
+  ],
+  "RefineActivityResponse": [
+   "UserAccountDirector/RefineActivity"
+  ],
+  "RegenerateButtonMapsResponse": [
+   "UserButtonMappingManager/RegenerateButtonMaps",
+   "UserButtonMappingManager/RegenerateDeviceButtonMaps"
+  ],
+  "Region": [
+   "ProductManager/GetAllProducts",
+   "ProductManager/GetProduct",
+   "ProductManager/GetProductByProductId"
+  ],
+  "Remote": [
+   "AccountManager/CreateNewAccountInHousehold",
+   "AccountManager/CreateNewAccountInMyHousehold",
+   "AccountManager/GetHousehold",
+   "AccountManager/GetMyAccount",
+   "AccountManager/GetMyHousehold",
+   "RemoteManager/GetRemote",
+   "UserButtonMappingManager/GetRootDeviceModeButtonMap"
+  ],
+  "RemoteContext": [
+   "AccountManager/GetRemoteContext"
+  ],
+  "RemoteId": [
+   "RemoteManager/AddRemoteByMode",
+   "RemoteManager/GetRemote",
+   "UserAccountDirector/AddRemote",
+   "UserAccountDirector/AddRemoteByCertificate",
+   "UserAccountDirector/AddRemoteToAccount",
+   "UserAccountDirector/GetButtonMaps",
+   "UserButtonMappingManager/CreateButtonMaps",
+   "UserButtonMappingManager/GetButtonMaps",
+   "UserButtonMappingManager/GetDefaultButtonMaps",
+   "UserButtonMappingManager/GetRootButtonMapForSurface"
+  ],
+  "RemoteProperties": [
+   "RemoteManager/GetRemote"
+  ],
+  "RemoteSetting": [
+   "RemoteManager/GetRemoteSettings",
+   "UserAccountDirector/GetRemoteSettings",
+   "UserAccountDirector/GetSettings",
+   "UserAccountDirector/PutSettings"
+  ],
+  "RemoteSettings": [
+   "RemoteManager/GetRemoteSettings",
+   "UserAccountDirector/GetRemoteSettings",
+   "UserAccountDirector/GetSettings",
+   "UserAccountDirector/PutSettings"
+  ],
+  "RemoveAccountFromHouseholdResult": [
+   "AccountManager/RemoveAccountFromHousehold"
+  ],
+  "RfProtocol": [
+   "UserAccountDirector/GetProtocolList"
+  ],
+  "RomOutput": [
+   "RomDataService/RequestRomData"
+  ],
+  "Room": [
+   "AccountManager/GetHousehold",
+   "AccountManager/GetMyHousehold"
+  ],
+  "RootButtonMap": [
+   "UserAccountDirector/GetButtonMaps",
+   "UserAccountDirector/GetMaps",
+   "UserAccountDirector/PutMaps",
+   "UserButtonMappingManager/CreateButtonMaps",
+   "UserButtonMappingManager/GetButtonMaps",
+   "UserButtonMappingManager/GetDefaultButtonMaps",
+   "UserButtonMappingManager/GetRootButtonMapForSurface"
+  ],
+  "RunLogitechGoogleTVActivityRole": [
+   "ActivityManager/GetActivities",
+   "ActivityManager/GetActivitiesByAcountIdAndActivityIds",
+   "ActivityManager/GetValidActivities",
+   "ActivityManager/SimpleGetActivities",
+   "UserAccountDirector/GetActivities",
+   "UserAccountDirector/SimpleGetActivities"
+  ],
+  "RuntimeCommand": [
+   "DeviceManager/GetGlobalLanguageCommands"
+  ],
+  "SavePairingResult": [
+   "RemoteManager/SavePairings"
+  ],
+  "SaveRemotePropertiesResult": [
+   "RemoteManager/SaveRemoteProperties"
+  ],
+  "SaveRemoteSettingsResult": [
+   "RemoteManager/SaveRemoteSettings",
+   "UserAccountDirector/SaveRemoteSettings"
+  ],
+  "SearchResult": [
+   "UserAccountDirector/SecureSearchUser"
+  ],
+  "Sequence": [
+   "UserAccountDirector/GetButtonMaps",
+   "UserButtonMappingManager/CreateButtonMaps",
+   "UserButtonMappingManager/GetButtonMaps",
+   "UserButtonMappingManager/GetDefaultButtonMaps",
+   "UserButtonMappingManager/GetRootButtonMapForSurface",
+   "UserButtonMappingManager/SaveSequence"
+  ],
+  "ServiceDescription": [
+   "DiscoveryService/GetAllServices",
+   "DiscoveryService/GetBinaryOperations",
+   "DiscoveryService/GetJson2Uris",
+   "DiscoveryService/GetJsonOperations",
+   "DiscoveryService/GetSoapServices"
+  ],
+  "Services": [
+   "DiscoveryService/GetAllServices"
+  ],
+  "SetBucketAccessControlPolicyResponse": [
+   "AmazonS3ImageManager/SetBucketAccessControlPolicy"
+  ],
+  "SetObjectAccessControlPolicyResponse": [
+   "AmazonS3ImageManager/SetObjectAccessControlPolicy"
+  ],
+  "SetupSession": [
+   "AccountManager/CreateNewAccountInHousehold",
+   "AccountManager/CreateNewAccountInMyHousehold",
+   "AccountManager/GetMyAccount",
+   "AccountManager/GetRemoteContext"
+  ],
+  "SilentActivityRole": [
+   "ActivityManager/GetActivities",
+   "ActivityManager/GetActivitiesByAcountIdAndActivityIds",
+   "ActivityManager/GetValidActivities",
+   "ActivityManager/SimpleGetActivities",
+   "UserAccountDirector/GetActivities",
+   "UserAccountDirector/SimpleGetActivities"
+  ],
+  "SlideOutKeypadButton": [
+   "UserAccountDirector/GetButtonMaps",
+   "UserButtonMappingManager/CreateButtonMaps",
+   "UserButtonMappingManager/GetButtonMaps",
+   "UserButtonMappingManager/GetDefaultButtonMaps",
+   "UserButtonMappingManager/GetRemoteCanvas",
+   "UserButtonMappingManager/GetRemoteEmulatorButtons",
+   "UserButtonMappingManager/GetRootButtonMapForSurface"
+  ],
+  "SmartTVActivityRole": [
+   "ActivityManager/GetActivities",
+   "ActivityManager/GetActivitiesByAcountIdAndActivityIds",
+   "ActivityManager/GetValidActivities",
+   "ActivityManager/SimpleGetActivities",
+   "UserAccountDirector/GetActivities",
+   "UserAccountDirector/SimpleGetActivities"
+  ],
+  "SoftRemoteButton": [
+   "UserAccountDirector/GetButtonMaps",
+   "UserButtonMappingManager/CreateButtonMaps",
+   "UserButtonMappingManager/GetButtonMaps",
+   "UserButtonMappingManager/GetDefaultButtonMaps",
+   "UserButtonMappingManager/GetRemoteCanvas",
+   "UserButtonMappingManager/GetRemoteEmulatorButtons",
+   "UserButtonMappingManager/GetRootButtonMapForSurface"
+  ],
+  "Status": [
+   "AmazonS3ImageManager/DeleteBucket",
+   "AmazonS3ImageManager/DeleteObject",
+   "UserAccountDirector/CloneAccount",
+   "UserAccountDirector/MigrateDevicesAndActivities"
+  ],
+  "StorageClass": [
+   "ActivityManager/GetImageStoreInfo",
+   "UserButtonMappingManager/GetImageStoreInfo"
+  ],
+  "SuccessAnalyzeInfraredResult": [
+   "InfraredAnalysisManager/AnalyzeInfrared"
+  ],
+  "SuccessVerifyDeviceResult": [
+   "DeviceManager/ValidateDevice"
+  ],
+  "Surface": [
+   "AccountManager/CreateNewAccountInHousehold",
+   "AccountManager/CreateNewAccountInMyHousehold",
+   "AccountManager/GetMyAccount",
+   "RemoteManager/GetRemote"
+  ],
+  "SurfaceId": [
+   "UserAccountDirector/GetButtonMaps",
+   "UserButtonMappingManager/CreateButtonMaps",
+   "UserButtonMappingManager/GetButtonMaps",
+   "UserButtonMappingManager/GetDefaultButtonMaps",
+   "UserButtonMappingManager/GetRootButtonMapForSurface"
+  ],
+  "TransportType": [
+   "ActivityManager/ResolvePrimaryDeviceForActivity",
+   "DeviceManager/GetGlobalLanguageCommands"
+  ],
+  "UnifiedSupportPolicy": [
+   "UserAccountDirector/GetUnifiedSupportPolicyForAccountId"
+  ],
+  "UnitDescription": [
+   "UserAccountDirector/GetEasyZapperAccountDetails",
+   "UserAccountDirector/MigrateEasyZapperAccount"
+  ],
+  "UpdateCommandResult": [
+   "UserAccountDirector/UpdateCommand",
+   "UserAccountDirector/UpdateDeviceCommands"
+  ],
+  "UpdateLanguageOperation": [
+   "DeviceManager/DetectLanguage",
+   "DeviceManager/DetectLanguageForConnectedRemote"
+  ],
+  "UpdateStatus": [
+   "UserButtonMappingManager/DeleteSequence"
+  ],
+  "UpgradeConfigResponse": [
+   "UserAccountDirector/UpgradeConfig"
+  ],
+  "UsbHidProtocol": [
+   "UserAccountDirector/GetProtocolList"
+  ],
+  "UserActivityModeMappingInfo": [
+   "UserButtonMappingManager/GetActivityUserModeMappingByAccountId"
+  ],
+  "UserAuthTokenResponse": [
+   "SecurityDirector/GetAuthenticatedUserAuthToken",
+   "SecurityDirector/GetUserAuthToken"
+  ],
+  "UserFeatureList": [
+   "UserFeatureManager/GetAccountUserFeatures"
+  ],
+  "UserHubCapabilities": [
+   "UserAccountDirector/GetCapabilities",
+   "UserAccountDirector/PutCapabilities"
+  ],
+  "UserHubCapability": [
+   "UserAccountDirector/GetCapabilities",
+   "UserAccountDirector/GetHouseholdCapabilities",
+   "UserAccountDirector/PutCapabilities"
+  ],
+  "UserInfoResult": [
+   "SecurityDirector/GetUserInfo"
+  ],
+  "UserModeMappingInfo": [
+   "UserButtonMappingManager/GetUserModeMappings",
+   "UserButtonMappingManager/SaveUserModeMappings",
+   "UserButtonMappingManager/UpdateUserModeMapping"
+  ],
+  "VendorSerial": [
+   "ProductManager/GetCustomerSupportPolicyByCustomerSupportDetail",
+   "ProductManager/GetCustomerSupportPolicyForMemberWeb",
+   "UserAccountDirector/GetCustomerSupportPolicyByAccountId"
+  ],
+  "VerifyDeviceResult": [
+   "DeviceManager/ValidateDevice"
+  ],
+  "VoiceRemoteButton": [
+   "UserAccountDirector/GetButtonMaps",
+   "UserButtonMappingManager/CreateButtonMaps",
+   "UserButtonMappingManager/GetButtonMaps",
+   "UserButtonMappingManager/GetDefaultButtonMaps",
+   "UserButtonMappingManager/GetRemoteCanvas",
+   "UserButtonMappingManager/GetRemoteEmulatorButtons",
+   "UserButtonMappingManager/GetRootButtonMapForSurface"
+  ],
+  "VolumeActivityRole": [
+   "ActivityManager/GetActivities",
+   "ActivityManager/GetActivitiesByAcountIdAndActivityIds",
+   "ActivityManager/GetValidActivities",
+   "ActivityManager/SimpleGetActivities",
+   "UserAccountDirector/GetActivities",
+   "UserAccountDirector/SimpleGetActivities"
+  ]
+ },
+ "recovered": "2026-08-30",
+ "services": [
+  {
+   "assembly": "Web.Data.HarmonyPlatform",
+   "configurationName": "AccountManager.IAccountManager",
+   "interface": "IAccountManager",
+   "namespace": "Logitech.Harmony.Web.Data.HarmonyPlatform.AccountManager",
+   "operations": [
+    {
+     "action": "http://tempuri.org/IAccountManager/AddSetupRating",
+     "name": "AddSetupRating",
+     "parameters": [
+      {
+       "name": "rating",
+       "type": "byte"
+      },
+      {
+       "name": "comment",
+       "type": "string"
+      },
+      {
+       "name": "commentCategory",
+       "type": "SetupRatingCommentCategoryType"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IPlatformService/BuildInfo",
+     "name": "BuildInfo",
+     "parameters": [],
+     "returns": "BuildInfo"
+    },
+    {
+     "action": "http://tempuri.org/IAccountManager/ChangeClaims",
+     "name": "ChangeClaims",
+     "parameters": [
+      {
+       "name": "request",
+       "type": "ChangeClaimRequest"
+      },
+      {
+       "name": "email",
+       "type": "string"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IAccountManager/CheckEmailAvailability",
+     "name": "CheckEmailAvailability",
+     "parameters": [
+      {
+       "name": "email",
+       "type": "string"
+      }
+     ],
+     "returns": "bool"
+    },
+    {
+     "action": "http://tempuri.org/IAccountManager/CreateNewAccountInHousehold",
+     "name": "CreateNewAccountInHousehold",
+     "parameters": [
+      {
+       "name": "contactMe",
+       "type": "bool"
+      }
+     ],
+     "returns": "Account"
+    },
+    {
+     "action": "http://tempuri.org/IAccountManager/CreateNewAccountInMyHousehold",
+     "name": "CreateNewAccountInMyHousehold",
+     "parameters": [],
+     "returns": "Account"
+    },
+    {
+     "action": "http://tempuri.org/IAccountManager/GetEmailPreferences",
+     "name": "GetEmailPreferences",
+     "parameters": [
+      {
+       "name": "token",
+       "type": "string"
+      }
+     ],
+     "returns": "EmailPreferenceResponse"
+    },
+    {
+     "action": "http://tempuri.org/IAccountManager/GetExternalAccountData",
+     "name": "GetExternalAccountData",
+     "parameters": [
+      {
+       "name": "source",
+       "type": "string"
+      },
+      {
+       "name": "accountKey",
+       "type": "string"
+      }
+     ],
+     "returns": "string"
+    },
+    {
+     "action": "http://tempuri.org/IAccountManager/GetHousehold",
+     "name": "GetHousehold",
+     "parameters": [
+      {
+       "name": "accountHouseholdRequest",
+       "type": "AccountHouseholdRequest"
+      }
+     ],
+     "returns": "Household"
+    },
+    {
+     "action": "http://tempuri.org/IAccountManager/GetMyAccount",
+     "name": "GetMyAccount",
+     "parameters": [],
+     "returns": "Account"
+    },
+    {
+     "action": "http://tempuri.org/IAccountManager/GetMyHousehold",
+     "name": "GetMyHousehold",
+     "parameters": [],
+     "returns": "Household"
+    },
+    {
+     "action": "http://tempuri.org/IAccountManager/GetPasswordQuestion",
+     "name": "GetPasswordQuestion",
+     "parameters": [
+      {
+       "name": "email",
+       "type": "string"
+      }
+     ],
+     "returns": "GetPasswordQuestionResult"
+    },
+    {
+     "action": "http://tempuri.org/IAccountManager/GetRemoteContext",
+     "name": "GetRemoteContext",
+     "parameters": [
+      {
+       "name": "remoteId",
+       "type": "string"
+      }
+     ],
+     "returns": "RemoteContext"
+    },
+    {
+     "action": "http://tempuri.org/IAccountManager/Impersonate",
+     "name": "Impersonate",
+     "parameters": [
+      {
+       "name": "token",
+       "type": "string"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IPlatformService/Ping",
+     "name": "Ping",
+     "parameters": [],
+     "returns": "System.DateTime"
+    },
+    {
+     "action": "http://tempuri.org/IAccountManager/PutExternalAccountData",
+     "name": "PutExternalAccountData",
+     "parameters": [
+      {
+       "name": "source",
+       "type": "string"
+      },
+      {
+       "name": "accountKey",
+       "type": "string"
+      },
+      {
+       "name": "data",
+       "type": "string"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IAccountManager/RemoveAccountFromHousehold",
+     "name": "RemoveAccountFromHousehold",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      }
+     ],
+     "returns": "RemoveAccountFromHouseholdResult"
+    },
+    {
+     "action": "http://tempuri.org/IAccountManager/SaveEmailPreferences",
+     "name": "SaveEmailPreferences",
+     "parameters": [
+      {
+       "name": "emailPreferences",
+       "type": "ObservableCollection<EmailPreference>"
+      },
+      {
+       "name": "token",
+       "type": "string"
+      }
+     ],
+     "returns": "bool"
+    },
+    {
+     "action": "http://tempuri.org/IAccountManager/SecureControllerCreateAccount",
+     "name": "SecureControllerCreateAccount",
+     "parameters": [
+      {
+       "name": "serialNumber",
+       "type": "string"
+      },
+      {
+       "name": "password",
+       "type": "string"
+      },
+      {
+       "name": "challenge",
+       "type": "byte[]"
+      },
+      {
+       "name": "sno",
+       "type": "string"
+      }
+     ],
+     "returns": "string"
+    },
+    {
+     "action": "http://tempuri.org/IAccountManager/SecureControllerHandshake",
+     "name": "SecureControllerHandshake",
+     "parameters": [
+      {
+       "name": "nonce",
+       "type": "long"
+      }
+     ],
+     "returns": "HandshakeResponse"
+    },
+    {
+     "action": "http://tempuri.org/IAccountManager/SecureControllerLogin",
+     "name": "SecureControllerLogin",
+     "parameters": [
+      {
+       "name": "userName",
+       "type": "string"
+      },
+      {
+       "name": "password",
+       "type": "string"
+      },
+      {
+       "name": "challenge",
+       "type": "byte[]"
+      }
+     ],
+     "returns": "bool"
+    },
+    {
+     "action": "http://tempuri.org/IAccountManager/SecureRenameUser",
+     "name": "SecureRenameUser",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "long"
+      },
+      {
+       "name": "accountDetails",
+       "type": "CreateAccountRequest"
+      },
+      {
+       "name": "challenge",
+       "type": "byte[]"
+      },
+      {
+       "name": "socialIdentity",
+       "type": "SocialIdentity"
+      }
+     ],
+     "returns": "int"
+    },
+    {
+     "action": "http://tempuri.org/IAccountManager/SecureUpdateAccountProperties",
+     "name": "SecureUpdateAccountProperties",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      },
+      {
+       "name": "accountProperties",
+       "type": "AccountProperties"
+      },
+      {
+       "name": "challenge",
+       "type": "byte[]"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IAccountManager/StartSetupSession",
+     "name": "StartSetupSession",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "string"
+      },
+      {
+       "name": "client",
+       "type": "string"
+      },
+      {
+       "name": "type",
+       "type": "string"
+      }
+     ],
+     "returns": "bool"
+    },
+    {
+     "action": "http://tempuri.org/IAccountManager/UpdateAccountProperties",
+     "name": "UpdateAccountProperties",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      },
+      {
+       "name": "accountProperties",
+       "type": "AccountProperties"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IAccountManager/UpdateMyAccountProperties",
+     "name": "UpdateMyAccountProperties",
+     "parameters": [
+      {
+       "name": "accountProperties",
+       "type": "AccountProperties"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IAccountManager/UpdateMyHousehold",
+     "name": "UpdateMyHousehold",
+     "parameters": [
+      {
+       "name": "household",
+       "type": "Household"
+      }
+     ],
+     "returns": "bool"
+    },
+    {
+     "action": "http://tempuri.org/IAccountManager/UpdatePasswordByOldPassword",
+     "name": "UpdatePasswordByOldPassword",
+     "parameters": [
+      {
+       "name": "email",
+       "type": "string"
+      },
+      {
+       "name": "oldPassword",
+       "type": "string"
+      },
+      {
+       "name": "newPassword",
+       "type": "string"
+      },
+      {
+       "name": "socialIdentity",
+       "type": "SocialIdentity"
+      }
+     ],
+     "returns": "bool"
+    },
+    {
+     "action": "http://tempuri.org/IAccountManager/UpdatePasswordByPasswordAnswer",
+     "name": "UpdatePasswordByPasswordAnswer",
+     "parameters": [
+      {
+       "name": "email",
+       "type": "string"
+      },
+      {
+       "name": "password",
+       "type": "string"
+      },
+      {
+       "name": "passwordAnswer",
+       "type": "string"
+      }
+     ],
+     "returns": "bool"
+    },
+    {
+     "action": "http://tempuri.org/IAccountManager/UpdatePasswordQuestionAndAnswer",
+     "name": "UpdatePasswordQuestionAndAnswer",
+     "parameters": [
+      {
+       "name": "password",
+       "type": "string"
+      },
+      {
+       "name": "newPasswordQuestion",
+       "type": "string"
+      },
+      {
+       "name": "newPasswordAnswer",
+       "type": "string"
+      }
+     ],
+     "returns": "bool"
+    },
+    {
+     "action": "http://tempuri.org/IAccountManager/UpdateUser",
+     "name": "UpdateUser",
+     "parameters": [
+      {
+       "name": "data",
+       "type": "byte[]"
+      }
+     ],
+     "returns": "bool"
+    },
+    {
+     "action": "http://tempuri.org/IAccountManager/UpdateUserProperties",
+     "name": "UpdateUserProperties",
+     "parameters": [
+      {
+       "name": "request",
+       "type": "UpdateUserPropertiesRequest"
+      }
+     ],
+     "returns": "void"
+    }
+   ]
+  },
+  {
+   "assembly": "Web.Data.HarmonyPlatform",
+   "configurationName": "ActivityManager.IActivityManager",
+   "interface": "IActivityManager",
+   "namespace": "Logitech.Harmony.Web.Data.HarmonyPlatform.ActivityManager",
+   "operations": [
+    {
+     "action": "http://tempuri.org/IPlatformService/BuildInfo",
+     "name": "BuildInfo",
+     "parameters": [],
+     "returns": "BuildInfo"
+    },
+    {
+     "action": "http://tempuri.org/IActivityManager/DeleteActivities",
+     "name": "DeleteActivities",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      },
+      {
+       "name": "activityIds",
+       "type": "ObservableCollection<ActivityId>"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IActivityManager/GetActivities",
+     "name": "GetActivities",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      },
+      {
+       "name": "devicesInAccount",
+       "type": "ObservableCollection<DeviceId>"
+      }
+     ],
+     "returns": "ObservableCollection<Activity>"
+    },
+    {
+     "action": "http://tempuri.org/IActivityManager/GetActivitiesByAcountIdAndActivityIds",
+     "name": "GetActivitiesByAcountIdAndActivityIds",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      },
+      {
+       "name": "activityIds",
+       "type": "ObservableCollection<ActivityId>"
+      }
+     ],
+     "returns": "ObservableCollection<Activity>"
+    },
+    {
+     "action": "http://tempuri.org/IActivityManager/GetActivityRoles",
+     "name": "GetActivityRoles",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      },
+      {
+       "name": "activityTypes",
+       "type": "ObservableCollection<ActivityType>"
+      },
+      {
+       "name": "devicesWithCapabilities",
+       "type": "ObservableCollection<DeviceWithCapabilities>"
+      }
+     ],
+     "returns": "Dictionary<ActivityType, RoleToDeviceMapping>"
+    },
+    {
+     "action": "http://tempuri.org/IActivityManager/GetActivityRolesByDevicesAndProductCapabilities",
+     "name": "GetActivityRolesByDevicesAndProductCapabilities",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      },
+      {
+       "name": "activityTypes",
+       "type": "ObservableCollection<ActivityType>"
+      },
+      {
+       "name": "devicesWithCapabilities",
+       "type": "ObservableCollection<DeviceWithCapabilities>"
+      },
+      {
+       "name": "productCapabilities",
+       "type": "ObservableCollection<ProductCapability>"
+      }
+     ],
+     "returns": "Dictionary<ActivityType, RoleToDeviceMapping>"
+    },
+    {
+     "action": "http://tempuri.org/IActivityManager/GetActivityTypesAndRoles",
+     "name": "GetActivityTypesAndRoles",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      }
+     ],
+     "returns": "Dictionary<ActivityType, ObservableCollection<AbstractActivityRole>>"
+    },
+    {
+     "action": "http://tempuri.org/IActivityManager/GetActivityTypesAndRolesByProductCapabilities",
+     "name": "GetActivityTypesAndRolesByProductCapabilities",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      },
+      {
+       "name": "productCapabilities",
+       "type": "ObservableCollection<ProductCapability>"
+      }
+     ],
+     "returns": "Dictionary<ActivityType, ObservableCollection<AbstractActivityRole>>"
+    },
+    {
+     "action": "http://tempuri.org/IActivityManager/GetImageStoreInfo",
+     "name": "GetImageStoreInfo",
+     "parameters": [],
+     "returns": "ImageStoreInfo"
+    },
+    {
+     "action": "http://tempuri.org/IActivityManager/GetRecommendedActivities",
+     "name": "GetRecommendedActivities",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      },
+      {
+       "name": "devicesWithCapabilities",
+       "type": "ObservableCollection<DeviceWithCapabilities>"
+      },
+      {
+       "name": "productCapabilities",
+       "type": "ObservableCollection<ProductCapability>"
+      }
+     ],
+     "returns": "ObservableCollection<ActivityType>"
+    },
+    {
+     "action": "http://tempuri.org/IActivityManager/GetRecommendedActivitiesFromDevices",
+     "name": "GetRecommendedActivitiesFromDevices",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      },
+      {
+       "name": "devicesWithCapabilities",
+       "type": "ObservableCollection<DeviceWithCapabilities>"
+      }
+     ],
+     "returns": "ObservableCollection<ActivityType>"
+    },
+    {
+     "action": "http://tempuri.org/IActivityManager/GetValidActivities",
+     "name": "GetValidActivities",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      }
+     ],
+     "returns": "ObservableCollection<Activity>"
+    },
+    {
+     "action": "http://tempuri.org/IActivityManager/OnDeviceDeleted",
+     "name": "OnDeviceDeleted",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      },
+      {
+       "name": "deviceIds",
+       "type": "ObservableCollection<DeviceId>"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IPlatformService/Ping",
+     "name": "Ping",
+     "parameters": [],
+     "returns": "System.DateTime"
+    },
+    {
+     "action": "http://tempuri.org/IActivityManager/ResetActivitiesToDefault",
+     "name": "ResetActivitiesToDefault",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IActivityManager/ResolvePrimaryDeviceForActivity",
+     "name": "ResolvePrimaryDeviceForActivity",
+     "parameters": [
+      {
+       "name": "devicesWithCapabilities",
+       "type": "ObservableCollection<DeviceWithCapabilities>"
+      }
+     ],
+     "returns": "DeviceWithCapabilities"
+    },
+    {
+     "action": "http://tempuri.org/IActivityManager/RestGetActivities",
+     "name": "RestGetActivities",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "string"
+      }
+     ],
+     "returns": "ActivityList"
+    },
+    {
+     "action": "http://tempuri.org/IActivityManager/RestPutActivities",
+     "name": "RestPutActivities",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "string"
+      },
+      {
+       "name": "activityList",
+       "type": "ActivityList"
+      }
+     ],
+     "returns": "ActivityList"
+    },
+    {
+     "action": "http://tempuri.org/IActivityManager/SaveActivities",
+     "name": "SaveActivities",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      },
+      {
+       "name": "activities",
+       "type": "ObservableCollection<Activity>"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IActivityManager/SimpleGetActivities",
+     "name": "SimpleGetActivities",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      }
+     ],
+     "returns": "ObservableCollection<Activity>"
+    }
+   ]
+  },
+  {
+   "assembly": "Web.Data.HarmonyPlatform",
+   "configurationName": "AmazonS3ImageManager.AmazonS3",
+   "interface": "AmazonS3",
+   "namespace": "Logitech.Harmony.Web.Data.HarmonyPlatform.AmazonS3ImageManager",
+   "operations": [
+    {
+     "action": "",
+     "name": "CopyObject",
+     "parameters": [
+      {
+       "name": "request",
+       "type": "CopyObjectRequest"
+      }
+     ],
+     "returns": "CopyObjectResponse"
+    },
+    {
+     "action": "",
+     "name": "CreateBucket",
+     "parameters": [
+      {
+       "name": "request",
+       "type": "CreateBucketRequest"
+      }
+     ],
+     "returns": "CreateBucketResponse"
+    },
+    {
+     "action": "",
+     "name": "DeleteBucket",
+     "parameters": [
+      {
+       "name": "Bucket",
+       "type": "string"
+      },
+      {
+       "name": "AWSAccessKeyId",
+       "type": "string"
+      },
+      {
+       "name": "Timestamp",
+       "type": "System.DateTime"
+      },
+      {
+       "name": "Signature",
+       "type": "string"
+      },
+      {
+       "name": "Credential",
+       "type": "string"
+      }
+     ],
+     "returns": "Status"
+    },
+    {
+     "action": "",
+     "name": "DeleteObject",
+     "parameters": [
+      {
+       "name": "Bucket",
+       "type": "string"
+      },
+      {
+       "name": "Key",
+       "type": "string"
+      },
+      {
+       "name": "AWSAccessKeyId",
+       "type": "string"
+      },
+      {
+       "name": "Timestamp",
+       "type": "System.DateTime"
+      },
+      {
+       "name": "Signature",
+       "type": "string"
+      },
+      {
+       "name": "Credential",
+       "type": "string"
+      }
+     ],
+     "returns": "Status"
+    },
+    {
+     "action": "",
+     "name": "GetBucketAccessControlPolicy",
+     "parameters": [
+      {
+       "name": "Bucket",
+       "type": "string"
+      },
+      {
+       "name": "AWSAccessKeyId",
+       "type": "string"
+      },
+      {
+       "name": "Timestamp",
+       "type": "System.DateTime"
+      },
+      {
+       "name": "Signature",
+       "type": "string"
+      },
+      {
+       "name": "Credential",
+       "type": "string"
+      }
+     ],
+     "returns": "AccessControlPolicy"
+    },
+    {
+     "action": "",
+     "name": "GetBucketLoggingStatus",
+     "parameters": [
+      {
+       "name": "Bucket",
+       "type": "string"
+      },
+      {
+       "name": "AWSAccessKeyId",
+       "type": "string"
+      },
+      {
+       "name": "Timestamp",
+       "type": "System.DateTime"
+      },
+      {
+       "name": "Signature",
+       "type": "string"
+      },
+      {
+       "name": "Credential",
+       "type": "string"
+      }
+     ],
+     "returns": "BucketLoggingStatus"
+    },
+    {
+     "action": "",
+     "name": "GetObject",
+     "parameters": [
+      {
+       "name": "Bucket",
+       "type": "string"
+      },
+      {
+       "name": "Key",
+       "type": "string"
+      },
+      {
+       "name": "GetMetadata",
+       "type": "bool"
+      },
+      {
+       "name": "GetData",
+       "type": "bool"
+      },
+      {
+       "name": "InlineData",
+       "type": "bool"
+      },
+      {
+       "name": "AWSAccessKeyId",
+       "type": "string"
+      },
+      {
+       "name": "Timestamp",
+       "type": "System.DateTime"
+      },
+      {
+       "name": "Signature",
+       "type": "string"
+      },
+      {
+       "name": "Credential",
+       "type": "string"
+      }
+     ],
+     "returns": "GetObjectResult"
+    },
+    {
+     "action": "",
+     "name": "GetObjectAccessControlPolicy",
+     "parameters": [
+      {
+       "name": "Bucket",
+       "type": "string"
+      },
+      {
+       "name": "Key",
+       "type": "string"
+      },
+      {
+       "name": "AWSAccessKeyId",
+       "type": "string"
+      },
+      {
+       "name": "Timestamp",
+       "type": "System.DateTime"
+      },
+      {
+       "name": "Signature",
+       "type": "string"
+      },
+      {
+       "name": "Credential",
+       "type": "string"
+      }
+     ],
+     "returns": "AccessControlPolicy"
+    },
+    {
+     "action": "",
+     "name": "GetObjectExtended",
+     "parameters": [
+      {
+       "name": "request",
+       "type": "GetObjectExtendedRequest"
+      }
+     ],
+     "returns": "GetObjectExtendedResponse"
+    },
+    {
+     "action": "",
+     "name": "ListAllMyBuckets",
+     "parameters": [
+      {
+       "name": "AWSAccessKeyId",
+       "type": "string"
+      },
+      {
+       "name": "Timestamp",
+       "type": "System.DateTime"
+      },
+      {
+       "name": "Signature",
+       "type": "string"
+      }
+     ],
+     "returns": "ListAllMyBucketsResult"
+    },
+    {
+     "action": "",
+     "name": "ListBucket",
+     "parameters": [
+      {
+       "name": "Bucket",
+       "type": "string"
+      },
+      {
+       "name": "Prefix",
+       "type": "string"
+      },
+      {
+       "name": "Marker",
+       "type": "string"
+      },
+      {
+       "name": "MaxKeys",
+       "type": "int"
+      },
+      {
+       "name": "Delimiter",
+       "type": "string"
+      },
+      {
+       "name": "AWSAccessKeyId",
+       "type": "string"
+      },
+      {
+       "name": "Timestamp",
+       "type": "System.DateTime"
+      },
+      {
+       "name": "Signature",
+       "type": "string"
+      },
+      {
+       "name": "Credential",
+       "type": "string"
+      }
+     ],
+     "returns": "ListBucketResult"
+    },
+    {
+     "action": "",
+     "name": "PutObject",
+     "parameters": [
+      {
+       "name": "request",
+       "type": "PutObjectRequest"
+      }
+     ],
+     "returns": "PutObjectResponse"
+    },
+    {
+     "action": "",
+     "name": "PutObjectInline",
+     "parameters": [
+      {
+       "name": "request",
+       "type": "PutObjectInlineRequest"
+      }
+     ],
+     "returns": "PutObjectInlineResponse"
+    },
+    {
+     "action": "",
+     "name": "SetBucketAccessControlPolicy",
+     "parameters": [
+      {
+       "name": "request",
+       "type": "SetBucketAccessControlPolicyRequest"
+      }
+     ],
+     "returns": "SetBucketAccessControlPolicyResponse"
+    },
+    {
+     "action": "",
+     "name": "SetBucketLoggingStatus",
+     "parameters": [
+      {
+       "name": "Bucket",
+       "type": "string"
+      },
+      {
+       "name": "AWSAccessKeyId",
+       "type": "string"
+      },
+      {
+       "name": "Timestamp",
+       "type": "System.DateTime"
+      },
+      {
+       "name": "Signature",
+       "type": "string"
+      },
+      {
+       "name": "Credential",
+       "type": "string"
+      },
+      {
+       "name": "BucketLoggingStatus",
+       "type": "BucketLoggingStatus"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "",
+     "name": "SetObjectAccessControlPolicy",
+     "parameters": [
+      {
+       "name": "request",
+       "type": "SetObjectAccessControlPolicyRequest"
+      }
+     ],
+     "returns": "SetObjectAccessControlPolicyResponse"
+    }
+   ]
+  },
+  {
+   "assembly": "Web.Data.HarmonyPlatform",
+   "configurationName": "Authentication.AuthenticationService",
+   "interface": "AuthenticationService",
+   "namespace": "Logitech.Harmony.Web.Data.HarmonyPlatform.Authentication",
+   "operations": [
+    {
+     "action": "http://asp.net/ApplicationServices/v200/AuthenticationService/IsLoggedIn",
+     "name": "IsLoggedIn",
+     "parameters": [],
+     "returns": "bool"
+    },
+    {
+     "action": "http://asp.net/ApplicationServices/v200/AuthenticationService/Login",
+     "name": "Login",
+     "parameters": [
+      {
+       "name": "username",
+       "type": "string"
+      },
+      {
+       "name": "password",
+       "type": "string"
+      },
+      {
+       "name": "customCredential",
+       "type": "string"
+      },
+      {
+       "name": "isPersistent",
+       "type": "bool"
+      }
+     ],
+     "returns": "bool"
+    },
+    {
+     "action": "http://asp.net/ApplicationServices/v200/AuthenticationService/Logout",
+     "name": "Logout",
+     "parameters": [],
+     "returns": "void"
+    },
+    {
+     "action": "http://asp.net/ApplicationServices/v200/AuthenticationService/ValidateUser",
+     "name": "ValidateUser",
+     "parameters": [
+      {
+       "name": "username",
+       "type": "string"
+      },
+      {
+       "name": "password",
+       "type": "string"
+      },
+      {
+       "name": "customCredential",
+       "type": "string"
+      }
+     ],
+     "returns": "bool"
+    }
+   ]
+  },
+  {
+   "assembly": "Web.Data.HarmonyPlatform",
+   "configurationName": "CompileManager.ICompileManager",
+   "interface": "ICompileManager",
+   "namespace": "Logitech.Harmony.Web.Data.HarmonyPlatform.CompileManager",
+   "operations": [
+    {
+     "action": "http://tempuri.org/IPlatformService/BuildInfo",
+     "name": "BuildInfo",
+     "parameters": [],
+     "returns": "BuildInfo"
+    },
+    {
+     "action": "http://tempuri.org/ICompileManager/GetRestCommandList",
+     "name": "GetRestCommandList",
+     "parameters": [
+      {
+       "name": "remoteId",
+       "type": "string"
+      }
+     ],
+     "returns": "CompileRequest"
+    },
+    {
+     "action": "http://tempuri.org/ICompileManager/IsRemoteSyncRequired",
+     "name": "IsRemoteSyncRequired",
+     "parameters": [
+      {
+       "name": "remoteId",
+       "type": "RemoteId"
+      }
+     ],
+     "returns": "bool"
+    },
+    {
+     "action": "http://tempuri.org/ICompileManager/IsUserConfigChanged",
+     "name": "IsUserConfigChanged",
+     "parameters": [
+      {
+       "name": "remoteId",
+       "type": "RemoteId"
+      }
+     ],
+     "returns": "bool"
+    },
+    {
+     "action": "http://tempuri.org/IPlatformService/Ping",
+     "name": "Ping",
+     "parameters": [],
+     "returns": "System.DateTime"
+    },
+    {
+     "action": "http://tempuri.org/ICompileManager/StartCompile",
+     "name": "StartCompile",
+     "parameters": [
+      {
+       "name": "remoteId",
+       "type": "RemoteId"
+      }
+     ],
+     "returns": "CompileRequest"
+    },
+    {
+     "action": "http://tempuri.org/ICompileManager/StartCompileWithLocale",
+     "name": "StartCompileWithLocale",
+     "parameters": [
+      {
+       "name": "remoteId",
+       "type": "RemoteId"
+      },
+      {
+       "name": "localeId",
+       "type": "string"
+      }
+     ],
+     "returns": "CompileRequest"
+    },
+    {
+     "action": "http://tempuri.org/ICompileManager/StartCompileWithLocaleAndSettings",
+     "name": "StartCompileWithLocaleAndSettings",
+     "parameters": [
+      {
+       "name": "remoteId",
+       "type": "RemoteId"
+      },
+      {
+       "name": "localeId",
+       "type": "string"
+      },
+      {
+       "name": "remoteSettings",
+       "type": "RemoteSettings"
+      }
+     ],
+     "returns": "CompileRequest"
+    }
+   ]
+  },
+  {
+   "assembly": "Web.Data.HarmonyPlatform",
+   "configurationName": "DeletionManager.IDeletionManager",
+   "interface": "IDeletionManager",
+   "namespace": "Logitech.Harmony.Web.Data.HarmonyPlatform.DeletionManager",
+   "operations": [
+    {
+     "action": "http://tempuri.org/IPlatformService/BuildInfo",
+     "name": "BuildInfo",
+     "parameters": [],
+     "returns": "BuildInfo"
+    },
+    {
+     "action": "http://tempuri.org/IDeletionManager/DeleteActivities",
+     "name": "DeleteActivities",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      },
+      {
+       "name": "activityIds",
+       "type": "ObservableCollection<ActivityId>"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IDeletionManager/DeleteDevices",
+     "name": "DeleteDevices",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      },
+      {
+       "name": "deviceIds",
+       "type": "ObservableCollection<DeviceId>"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IPlatformService/Ping",
+     "name": "Ping",
+     "parameters": [],
+     "returns": "System.DateTime"
+    }
+   ]
+  },
+  {
+   "assembly": "Web.Data.HarmonyPlatform",
+   "configurationName": "DeviceManager.IDeviceManager",
+   "interface": "IDeviceManager",
+   "namespace": "Logitech.Harmony.Web.Data.HarmonyPlatform.DeviceManager",
+   "operations": [
+    {
+     "action": "http://tempuri.org/IDeviceManager/AddDeviceIdsInTokenForMHAssist",
+     "name": "AddDeviceIdsInTokenForMHAssist",
+     "parameters": [
+      {
+       "name": "accountIds",
+       "type": "ObservableCollection<AccountId>"
+      }
+     ],
+     "returns": "bool"
+    },
+    {
+     "action": "http://tempuri.org/IPlatformService/BuildInfo",
+     "name": "BuildInfo",
+     "parameters": [],
+     "returns": "BuildInfo"
+    },
+    {
+     "action": "http://tempuri.org/IDeviceManager/DetectLanguage",
+     "name": "DetectLanguage",
+     "parameters": [
+      {
+       "name": "deviceType",
+       "type": "DeviceType"
+      },
+      {
+       "name": "maxNewCommands",
+       "type": "int"
+      },
+      {
+       "name": "learnedCommands",
+       "type": "ObservableCollection<LearnedCommand>"
+      }
+     ],
+     "returns": "DetectLanguageResult"
+    },
+    {
+     "action": "http://tempuri.org/IDeviceManager/DetectLanguageForConnectedRemote",
+     "name": "DetectLanguageForConnectedRemote",
+     "parameters": [
+      {
+       "name": "deviceType",
+       "type": "DeviceType"
+      },
+      {
+       "name": "maxNewCommands",
+       "type": "int"
+      },
+      {
+       "name": "learnedCommands",
+       "type": "ObservableCollection<LearnedCommand>"
+      }
+     ],
+     "returns": "DetectLanguageResult"
+    },
+    {
+     "action": "http://tempuri.org/IDeviceManager/DetectLanguageForMultiCodeDevice",
+     "name": "DetectLanguageForMultiCodeDevice",
+     "parameters": [
+      {
+       "name": "publicGlobalDeviceId",
+       "type": "PublicGlobalDeviceId"
+      },
+      {
+       "name": "maxNewCommands",
+       "type": "int"
+      },
+      {
+       "name": "learnedCommands",
+       "type": "ObservableCollection<LearnedCommand>"
+      }
+     ],
+     "returns": "DetectLanguageForMultiCodeDeviceResult"
+    },
+    {
+     "action": "http://tempuri.org/IDeviceManager/GetAllTeachingCommands",
+     "name": "GetAllTeachingCommands",
+     "parameters": [
+      {
+       "name": "deviceType",
+       "type": "DeviceType"
+      }
+     ],
+     "returns": "GetAllTeachingCommandsResult"
+    },
+    {
+     "action": "http://tempuri.org/IDeviceManager/GetAllTeachingCommandsForGivenDeviceInformation",
+     "name": "GetAllTeachingCommandsForGivenDeviceInformation",
+     "parameters": [
+      {
+       "name": "deviceInformation",
+       "type": "DeviceInformation"
+      }
+     ],
+     "returns": "GetAllTeachingCommandsResult"
+    },
+    {
+     "action": "http://tempuri.org/IDeviceManager/GetAllTeachingCommandsForGivenPowerAndInputTypes",
+     "name": "GetAllTeachingCommandsForGivenPowerAndInputTypes",
+     "parameters": [
+      {
+       "name": "deviceType",
+       "type": "DeviceType"
+      },
+      {
+       "name": "powerButtonType",
+       "type": "PowerButtonType"
+      },
+      {
+       "name": "inputSwitchingType",
+       "type": "InputSwitchingType"
+      }
+     ],
+     "returns": "GetAllTeachingCommandsResult"
+    },
+    {
+     "action": "http://tempuri.org/IDeviceManager/GetCommands",
+     "name": "GetCommands",
+     "parameters": [
+      {
+       "name": "deviceIds",
+       "type": "ObservableCollection<DeviceId>"
+      }
+     ],
+     "returns": "Dictionary<DeviceId, ObservableCollection<Command>>"
+    },
+    {
+     "action": "http://tempuri.org/IDeviceManager/GetCommandsToLearnForConnectedRemote",
+     "name": "GetCommandsToLearnForConnectedRemote",
+     "parameters": [
+      {
+       "name": "deviceType",
+       "type": "DeviceType"
+      }
+     ],
+     "returns": "ObservableCollection<string>"
+    },
+    {
+     "action": "http://tempuri.org/IDeviceManager/GetDevice",
+     "name": "GetDevice",
+     "parameters": [
+      {
+       "name": "deviceId",
+       "type": "DeviceId"
+      }
+     ],
+     "returns": "Device"
+    },
+    {
+     "action": "http://tempuri.org/IDeviceManager/GetDeviceChannelTuningFeature",
+     "name": "GetDeviceChannelTuningFeature",
+     "parameters": [
+      {
+       "name": "deviceId",
+       "type": "DeviceId"
+      }
+     ],
+     "returns": "ChannelTuningFeature"
+    },
+    {
+     "action": "http://tempuri.org/IDeviceManager/GetDeviceTypeProperties",
+     "name": "GetDeviceTypeProperties",
+     "parameters": [
+      {
+       "name": "deviceType",
+       "type": "DeviceType"
+      }
+     ],
+     "returns": "ObservableCollection<AbstractProperty>"
+    },
+    {
+     "action": "http://tempuri.org/IDeviceManager/GetDevices",
+     "name": "GetDevices",
+     "parameters": [
+      {
+       "name": "deviceIds",
+       "type": "ObservableCollection<DeviceId>"
+      }
+     ],
+     "returns": "ObservableCollection<Device>"
+    },
+    {
+     "action": "http://tempuri.org/IDeviceManager/GetDevicesInAccount",
+     "name": "GetDevicesInAccount",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      }
+     ],
+     "returns": "ObservableCollection<Device>"
+    },
+    {
+     "action": "http://tempuri.org/IDeviceManager/GetGlobalDevices",
+     "name": "GetGlobalDevices",
+     "parameters": [
+      {
+       "name": "globalDeviceIds",
+       "type": "ObservableCollection<long>"
+      }
+     ],
+     "returns": "ObservableCollection<GlobalDevice>"
+    },
+    {
+     "action": "http://tempuri.org/IDeviceManager/GetGlobalLanguageCommands",
+     "name": "GetGlobalLanguageCommands",
+     "parameters": [
+      {
+       "name": "globalLanguageVersionId",
+       "type": "GlobalLanguageVersionId"
+      }
+     ],
+     "returns": "ObservableCollection<Command>"
+    },
+    {
+     "action": "http://tempuri.org/IDeviceManager/GetKeyboardLocales",
+     "name": "GetKeyboardLocales",
+     "parameters": [
+      {
+       "name": "deviceId",
+       "type": "DeviceId"
+      }
+     ],
+     "returns": "ObservableCollection<KeyboardLocale>"
+    },
+    {
+     "action": "http://tempuri.org/IDeviceManager/GetMyDevices",
+     "name": "GetMyDevices",
+     "parameters": [],
+     "returns": "ObservableCollection<Device>"
+    },
+    {
+     "action": "http://tempuri.org/IPlatformService/Ping",
+     "name": "Ping",
+     "parameters": [],
+     "returns": "System.DateTime"
+    },
+    {
+     "action": "http://tempuri.org/IDeviceManager/SearchGlobalDevices",
+     "name": "SearchGlobalDevices",
+     "parameters": [
+      {
+       "name": "manufacturer",
+       "type": "string"
+      },
+      {
+       "name": "modelNumber",
+       "type": "string"
+      },
+      {
+       "name": "deviceType",
+       "type": "DeviceType"
+      },
+      {
+       "name": "searchType",
+       "type": "GlobalDeviceSearchType"
+      },
+      {
+       "name": "maxResults",
+       "type": "int"
+      }
+     ],
+     "returns": "GlobalDevicesSearchResult"
+    },
+    {
+     "action": "http://tempuri.org/IDeviceManager/SearchGlobalDevicesByClassification",
+     "name": "SearchGlobalDevicesByClassification",
+     "parameters": [
+      {
+       "name": "manufacturer",
+       "type": "string"
+      },
+      {
+       "name": "modelNumber",
+       "type": "string"
+      },
+      {
+       "name": "deviceClassification",
+       "type": "DeviceCategory"
+      },
+      {
+       "name": "maxResults",
+       "type": "int"
+      }
+     ],
+     "returns": "GlobalDevicesSearchResult"
+    },
+    {
+     "action": "http://tempuri.org/IDeviceManager/SearchGlobalDevicesByClassificationAndSearchType",
+     "name": "SearchGlobalDevicesByClassificationAndSearchType",
+     "parameters": [
+      {
+       "name": "manufacturer",
+       "type": "string"
+      },
+      {
+       "name": "modelNumber",
+       "type": "string"
+      },
+      {
+       "name": "deviceClassification",
+       "type": "DeviceCategory"
+      },
+      {
+       "name": "searchType",
+       "type": "GlobalDeviceSearchType"
+      },
+      {
+       "name": "maxResults",
+       "type": "int"
+      }
+     ],
+     "returns": "GlobalDevicesSearchResult"
+    },
+    {
+     "action": "http://tempuri.org/IDeviceManager/SearchGlobalDevicesByEdid",
+     "name": "SearchGlobalDevicesByEdid",
+     "parameters": [
+      {
+       "name": "edid",
+       "type": "string"
+      }
+     ],
+     "returns": "GlobalDevicesSearchResult"
+    },
+    {
+     "action": "http://tempuri.org/IDeviceManager/SearchGlobalDevicesWithFilterMaxResults",
+     "name": "SearchGlobalDevicesWithFilterMaxResults",
+     "parameters": [
+      {
+       "name": "manufacturer",
+       "type": "string"
+      },
+      {
+       "name": "modelNumber",
+       "type": "string"
+      },
+      {
+       "name": "deviceType",
+       "type": "DeviceType"
+      },
+      {
+       "name": "searchType",
+       "type": "GlobalDeviceSearchType"
+      },
+      {
+       "name": "maxNetricsResults",
+       "type": "int"
+      },
+      {
+       "name": "maxFilterResults",
+       "type": "int"
+      }
+     ],
+     "returns": "GlobalDevicesSearchResult"
+    },
+    {
+     "action": "http://tempuri.org/IDeviceManager/SearchIPScanDevices",
+     "name": "SearchIPScanDevices",
+     "parameters": [
+      {
+       "name": "deviceSearchRequest",
+       "type": "ObservableCollection<IPScanDeviceSearchRequest>"
+      }
+     ],
+     "returns": "ObservableCollection<DeviceSearchResponse>"
+    },
+    {
+     "action": "http://tempuri.org/IDeviceManager/SearchManufacturers",
+     "name": "SearchManufacturers",
+     "parameters": [
+      {
+       "name": "manufacturer",
+       "type": "string"
+      },
+      {
+       "name": "maxResults",
+       "type": "int"
+      }
+     ],
+     "returns": "ObservableCollection<string>"
+    },
+    {
+     "action": "http://tempuri.org/IDeviceManager/SearchMultipleGlobalDevices",
+     "name": "SearchMultipleGlobalDevices",
+     "parameters": [
+      {
+       "name": "deviceSearchRequest",
+       "type": "ObservableCollection<DeviceSearchRequest>"
+      }
+     ],
+     "returns": "ObservableCollection<DeviceSearchResponse>"
+    },
+    {
+     "action": "http://tempuri.org/IDeviceManager/UpdateMultiple",
+     "name": "UpdateMultiple",
+     "parameters": [
+      {
+       "name": "operation",
+       "type": "Operation"
+      }
+     ],
+     "returns": "Dictionary<object, AbstractId>"
+    },
+    {
+     "action": "http://tempuri.org/IDeviceManager/UpdateMyData",
+     "name": "UpdateMyData",
+     "parameters": [
+      {
+       "name": "operation",
+       "type": "Operation"
+      }
+     ],
+     "returns": "Dictionary<object, AbstractId>"
+    },
+    {
+     "action": "http://tempuri.org/IDeviceManager/UpdateMyDataRetrievingDevices",
+     "name": "UpdateMyDataRetrievingDevices",
+     "parameters": [
+      {
+       "name": "operation",
+       "type": "Operation"
+      }
+     ],
+     "returns": "Dictionary<object, Device>"
+    },
+    {
+     "action": "http://tempuri.org/IDeviceManager/UpdateMyDataRetrievingDevicesByAccountId",
+     "name": "UpdateMyDataRetrievingDevicesByAccountId",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      },
+      {
+       "name": "operation",
+       "type": "Operation"
+      }
+     ],
+     "returns": "Dictionary<object, Device>"
+    },
+    {
+     "action": "http://tempuri.org/IDeviceManager/ValidateDevice",
+     "name": "ValidateDevice",
+     "parameters": [
+      {
+       "name": "manufacturer",
+       "type": "string"
+      },
+      {
+       "name": "modelNumber",
+       "type": "string"
+      },
+      {
+       "name": "deviceId",
+       "type": "PublicGlobalDeviceId"
+      },
+      {
+       "name": "answeredQuestions",
+       "type": "ObservableCollection<Answer>"
+      },
+      {
+       "name": "maxResults",
+       "type": "int"
+      }
+     ],
+     "returns": "VerifyDeviceResult"
+    }
+   ]
+  },
+  {
+   "assembly": "Web.Data.HarmonyPlatform",
+   "configurationName": "DiscoveryService.IDiscovery",
+   "interface": "IDiscovery",
+   "namespace": "Logitech.Harmony.Web.Data.HarmonyPlatform.DiscoveryService",
+   "operations": [
+    {
+     "action": "http://tempuri.org/IDiscovery/GetAllServices",
+     "name": "GetAllServices",
+     "parameters": [
+      {
+       "name": "clientTypeId",
+       "type": "string"
+      },
+      {
+       "name": "clientId",
+       "type": "string"
+      }
+     ],
+     "returns": "Services"
+    },
+    {
+     "action": "http://tempuri.org/IDiscovery/GetBinaryOperations",
+     "name": "GetBinaryOperations",
+     "parameters": [
+      {
+       "name": "clientTypeId",
+       "type": "string"
+      },
+      {
+       "name": "clientId",
+       "type": "string"
+      }
+     ],
+     "returns": "ObservableCollection<ServiceDescription>"
+    },
+    {
+     "action": "http://tempuri.org/IDiscovery/GetJson2Uris",
+     "name": "GetJson2Uris",
+     "parameters": [
+      {
+       "name": "clientTypeId",
+       "type": "string"
+      },
+      {
+       "name": "clientId",
+       "type": "string"
+      }
+     ],
+     "returns": "ObservableCollection<ServiceDescription>"
+    },
+    {
+     "action": "http://tempuri.org/IDiscovery/GetJsonOperations",
+     "name": "GetJsonOperations",
+     "parameters": [
+      {
+       "name": "clientTypeId",
+       "type": "string"
+      },
+      {
+       "name": "clientId",
+       "type": "string"
+      }
+     ],
+     "returns": "ObservableCollection<ServiceDescription>"
+    },
+    {
+     "action": "http://tempuri.org/IDiscovery/GetSoapServices",
+     "name": "GetSoapServices",
+     "parameters": [
+      {
+       "name": "clientTypeId",
+       "type": "string"
+      },
+      {
+       "name": "clientId",
+       "type": "string"
+      }
+     ],
+     "returns": "ObservableCollection<ServiceDescription>"
+    }
+   ]
+  },
+  {
+   "assembly": "Web.Data.HarmonyPlatform",
+   "configurationName": "GlobalDeviceManager.IGlobalDeviceManager",
+   "interface": "IGlobalDeviceManager",
+   "namespace": "Logitech.Harmony.Web.Data.HarmonyPlatform.GlobalDeviceManager",
+   "operations": [
+    {
+     "action": "http://tempuri.org/IPlatformService/BuildInfo",
+     "name": "BuildInfo",
+     "parameters": [],
+     "returns": "BuildInfo"
+    },
+    {
+     "action": "http://tempuri.org/IGlobalDeviceManager/GetDeviceInputType",
+     "name": "GetDeviceInputType",
+     "parameters": [
+      {
+       "name": "deviceId",
+       "type": "DeviceId"
+      },
+      {
+       "name": "countryType",
+       "type": "CountryType"
+      }
+     ],
+     "returns": "InputType"
+    },
+    {
+     "action": "http://tempuri.org/IGlobalDeviceManager/GetGlobalDevices",
+     "name": "GetGlobalDevices",
+     "parameters": [
+      {
+       "name": "deviceVersionIds",
+       "type": "ObservableCollection<GlobalDeviceVersionId>"
+      }
+     ],
+     "returns": "ObservableCollection<GlobalDevice>"
+    },
+    {
+     "action": "http://tempuri.org/IGlobalDeviceManager/GetInputInfo",
+     "name": "GetInputInfo",
+     "parameters": [
+      {
+       "name": "versionIds",
+       "type": "ObservableCollection<GlobalDeviceVersionId>"
+      }
+     ],
+     "returns": "Dictionary<GlobalDeviceVersionId, InputInformation>"
+    },
+    {
+     "action": "http://tempuri.org/IPlatformService/Ping",
+     "name": "Ping",
+     "parameters": [],
+     "returns": "System.DateTime"
+    }
+   ]
+  },
+  {
+   "assembly": "Web.Data.HarmonyPlatform",
+   "configurationName": "HelpContent.IHelpContentService",
+   "interface": "IHelpContentService",
+   "namespace": "Logitech.Harmony.Web.Data.HarmonyPlatform.HelpContent",
+   "operations": [
+    {
+     "action": "http://tempuri.org/IHelpContentService/GetHelpDocument",
+     "name": "GetHelpDocument",
+     "parameters": [
+      {
+       "name": "locale",
+       "type": "string"
+      },
+      {
+       "name": "documentId",
+       "type": "string"
+      }
+     ],
+     "returns": "HelpDocument"
+    }
+   ]
+  },
+  {
+   "assembly": "Web.Data.HarmonyPlatform",
+   "configurationName": "InfraredAnalysisManager.IInfraredAnalysisManager",
+   "interface": "IInfraredAnalysisManager",
+   "namespace": "Logitech.Harmony.Web.Data.HarmonyPlatform.InfraredAnalysisManager",
+   "operations": [
+    {
+     "action": "http://tempuri.org/IInfraredAnalysisManager/AnalyzeInfrared",
+     "name": "AnalyzeInfrared",
+     "parameters": [
+      {
+       "name": "deviceId",
+       "type": "DeviceId"
+      },
+      {
+       "name": "rawSequence",
+       "type": "string"
+      }
+     ],
+     "returns": "AnalyzeInfraredResult"
+    },
+    {
+     "action": "http://tempuri.org/IPlatformService/BuildInfo",
+     "name": "BuildInfo",
+     "parameters": [],
+     "returns": "BuildInfo"
+    },
+    {
+     "action": "http://tempuri.org/IPlatformService/Ping",
+     "name": "Ping",
+     "parameters": [],
+     "returns": "System.DateTime"
+    }
+   ]
+  },
+  {
+   "assembly": "Web.Data.HarmonyPlatform",
+   "configurationName": "ProductManager.IProductManager",
+   "interface": "IProductManager",
+   "namespace": "Logitech.Harmony.Web.Data.HarmonyPlatform.ProductManager",
+   "operations": [
+    {
+     "action": "http://tempuri.org/IPlatformService/BuildInfo",
+     "name": "BuildInfo",
+     "parameters": [],
+     "returns": "BuildInfo"
+    },
+    {
+     "action": "http://tempuri.org/IProductManager/GetAllProducts",
+     "name": "GetAllProducts",
+     "parameters": [],
+     "returns": "ObservableCollection<Product>"
+    },
+    {
+     "action": "http://tempuri.org/IProductManager/GetCustomerSupportPolicyByCustomerSupportDetail",
+     "name": "GetCustomerSupportPolicyByCustomerSupportDetail",
+     "parameters": [
+      {
+       "name": "customerSuppportDetail",
+       "type": "CustomerSupportDetail"
+      }
+     ],
+     "returns": "CustomerSupportPolicy"
+    },
+    {
+     "action": "http://tempuri.org/IProductManager/GetCustomerSupportPolicyForMemberWeb",
+     "name": "GetCustomerSupportPolicyForMemberWeb",
+     "parameters": [
+      {
+       "name": "firstSyncDate",
+       "type": "System.DateTime"
+      },
+      {
+       "name": "skinId",
+       "type": "int"
+      },
+      {
+       "name": "countryId",
+       "type": "int"
+      }
+     ],
+     "returns": "CustomerSupportPolicy"
+    },
+    {
+     "action": "http://tempuri.org/IProductManager/GetHarmonyProducts",
+     "name": "GetHarmonyProducts",
+     "parameters": [],
+     "returns": "ObservableCollection<HarmonyProduct>"
+    },
+    {
+     "action": "http://tempuri.org/IProductManager/GetProduct",
+     "name": "GetProduct",
+     "parameters": [
+      {
+       "name": "skinId",
+       "type": "int"
+      }
+     ],
+     "returns": "Product"
+    },
+    {
+     "action": "http://tempuri.org/IProductManager/GetProductButtonList",
+     "name": "GetProductButtonList",
+     "parameters": [
+      {
+       "name": "skinId",
+       "type": "int"
+      }
+     ],
+     "returns": "ProductButtonList"
+    },
+    {
+     "action": "http://tempuri.org/IProductManager/GetProductByProductId",
+     "name": "GetProductByProductId",
+     "parameters": [
+      {
+       "name": "productId",
+       "type": "long?"
+      }
+     ],
+     "returns": "Product"
+    },
+    {
+     "action": "http://tempuri.org/IPlatformService/Ping",
+     "name": "Ping",
+     "parameters": [],
+     "returns": "System.DateTime"
+    },
+    {
+     "action": "http://tempuri.org/IProductManager/ValidateCertificate",
+     "name": "ValidateCertificate",
+     "parameters": [
+      {
+       "name": "certificateString",
+       "type": "string"
+      }
+     ],
+     "returns": "bool"
+    }
+   ]
+  },
+  {
+   "assembly": "Web.Data.HarmonyPlatform",
+   "configurationName": "RemoteManager.IRemoteManager",
+   "interface": "IRemoteManager",
+   "namespace": "Logitech.Harmony.Web.Data.HarmonyPlatform.RemoteManager",
+   "operations": [
+    {
+     "action": "http://tempuri.org/IRemoteManager/AcceptLicenseAgreement",
+     "name": "AcceptLicenseAgreement",
+     "parameters": [
+      {
+       "name": "remoteId",
+       "type": "RemoteId"
+      },
+      {
+       "name": "agree",
+       "type": "bool"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IRemoteManager/AddRemoteByMode",
+     "name": "AddRemoteByMode",
+     "parameters": [
+      {
+       "name": "remoteInfo",
+       "type": "RemoteInfo"
+      }
+     ],
+     "returns": "RemoteId"
+    },
+    {
+     "action": "http://tempuri.org/IPlatformService/BuildInfo",
+     "name": "BuildInfo",
+     "parameters": [],
+     "returns": "BuildInfo"
+    },
+    {
+     "action": "http://tempuri.org/IRemoteManager/GetDongles",
+     "name": "GetDongles",
+     "parameters": [
+      {
+       "name": "dongleIds",
+       "type": "ObservableCollection<long>"
+      }
+     ],
+     "returns": "ObservableCollection<Dongle>"
+    },
+    {
+     "action": "http://tempuri.org/IRemoteManager/GetDonglesByRFID",
+     "name": "GetDonglesByRFID",
+     "parameters": [
+      {
+       "name": "RFIDs",
+       "type": "ObservableCollection<long>"
+      }
+     ],
+     "returns": "ObservableCollection<Dongle>"
+    },
+    {
+     "action": "http://tempuri.org/IRemoteManager/GetGlobalRemote",
+     "name": "GetGlobalRemote",
+     "parameters": [
+      {
+       "name": "serialNumber",
+       "type": "string"
+      }
+     ],
+     "returns": "GlobalRemote"
+    },
+    {
+     "action": "http://tempuri.org/IRemoteManager/GetRemote",
+     "name": "GetRemote",
+     "parameters": [
+      {
+       "name": "remoteId",
+       "type": "RemoteId"
+      }
+     ],
+     "returns": "Remote"
+    },
+    {
+     "action": "http://tempuri.org/IRemoteManager/GetRemoteSettings",
+     "name": "GetRemoteSettings",
+     "parameters": [
+      {
+       "name": "remoteId",
+       "type": "RemoteId"
+      }
+     ],
+     "returns": "RemoteSettings"
+    },
+    {
+     "action": "http://tempuri.org/IRemoteManager/GetSyncStatus",
+     "name": "GetSyncStatus",
+     "parameters": [
+      {
+       "name": "remoteId",
+       "type": "RemoteId"
+      }
+     ],
+     "returns": "GetSyncStatusResult"
+    },
+    {
+     "action": "http://tempuri.org/IRemoteManager/NotifySyncStatus",
+     "name": "NotifySyncStatus",
+     "parameters": [
+      {
+       "name": "remoteId",
+       "type": "RemoteId"
+      },
+      {
+       "name": "syncStatus",
+       "type": "SyncStatus"
+      }
+     ],
+     "returns": "NotifySyncStatusResult"
+    },
+    {
+     "action": "http://tempuri.org/IPlatformService/Ping",
+     "name": "Ping",
+     "parameters": [],
+     "returns": "System.DateTime"
+    },
+    {
+     "action": "http://tempuri.org/IRemoteManager/RegisterSuccessfulCompile",
+     "name": "RegisterSuccessfulCompile",
+     "parameters": [
+      {
+       "name": "remoteId",
+       "type": "RemoteId"
+      },
+      {
+       "name": "lastSyncDate",
+       "type": "System.DateTime"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IRemoteManager/RegisterSuccessfulSync",
+     "name": "RegisterSuccessfulSync",
+     "parameters": [
+      {
+       "name": "remoteId",
+       "type": "string"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IRemoteManager/SaveDongles",
+     "name": "SaveDongles",
+     "parameters": [
+      {
+       "name": "dongles",
+       "type": "ObservableCollection<Dongle>"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IRemoteManager/SavePairings",
+     "name": "SavePairings",
+     "parameters": [
+      {
+       "name": "hubId",
+       "type": "RemoteId"
+      },
+      {
+       "name": "pairingInfoList",
+       "type": "ObservableCollection<PairingInfo>"
+      }
+     ],
+     "returns": "SavePairingResult"
+    },
+    {
+     "action": "http://tempuri.org/IRemoteManager/SaveRemoteProperties",
+     "name": "SaveRemoteProperties",
+     "parameters": [
+      {
+       "name": "remoteId",
+       "type": "RemoteId"
+      },
+      {
+       "name": "remoteProperties",
+       "type": "RemoteProperties"
+      }
+     ],
+     "returns": "SaveRemotePropertiesResult"
+    },
+    {
+     "action": "http://tempuri.org/IRemoteManager/SaveRemoteSettings",
+     "name": "SaveRemoteSettings",
+     "parameters": [
+      {
+       "name": "remoteId",
+       "type": "RemoteId"
+      },
+      {
+       "name": "remoteSettings",
+       "type": "ObservableCollection<RemoteSetting>"
+      }
+     ],
+     "returns": "SaveRemoteSettingsResult"
+    },
+    {
+     "action": "http://tempuri.org/IRemoteManager/SetRemoteSyncRequired",
+     "name": "SetRemoteSyncRequired",
+     "parameters": [
+      {
+       "name": "remoteId",
+       "type": "RemoteId"
+      },
+      {
+       "name": "isRemoteSyncRequired",
+       "type": "bool"
+      }
+     ],
+     "returns": "int"
+    }
+   ]
+  },
+  {
+   "assembly": "Web.Driver",
+   "configurationName": "RomDataService.IRomDataLibrary",
+   "interface": "IRomDataLibrary",
+   "namespace": "Logitech.Harmony.Web.Driver.RomDataService",
+   "operations": [
+    {
+     "action": "http://www.logitech.com/harmony/services/romdata/IRomDataLibrary/RequestOperationData",
+     "name": "RequestOperationData",
+     "parameters": [
+      {
+       "name": "input",
+       "type": "RequestOperationData"
+      }
+     ],
+     "returns": "OperationData"
+    },
+    {
+     "action": "http://www.logitech.com/harmony/services/romdata/IRomDataLibrary/RequestRomData",
+     "name": "RequestRomData",
+     "parameters": [
+      {
+       "name": "input",
+       "type": "RequestRomData"
+      }
+     ],
+     "returns": "RomOutput"
+    }
+   ]
+  },
+  {
+   "assembly": "Web.Data.HarmonyPlatform",
+   "configurationName": "SecurityDirector.ILinkSecurity",
+   "interface": "ILinkSecurity",
+   "namespace": "Logitech.Harmony.Web.Data.HarmonyPlatform.SecurityDirector",
+   "operations": [
+    {
+     "action": "http://tempuri.org/IPlatformService/BuildInfo",
+     "name": "BuildInfo",
+     "parameters": [],
+     "returns": "BuildInfo"
+    },
+    {
+     "action": "http://tempuri.org/ILinkSecurity/GtvAuthenticateAndLogin",
+     "name": "GtvAuthenticateAndLogin",
+     "parameters": [
+      {
+       "name": "challenge",
+       "type": "string"
+      },
+      {
+       "name": "unitCertificate",
+       "type": "string"
+      },
+      {
+       "name": "packageCertificate",
+       "type": "GtvPackageCertificate"
+      },
+      {
+       "name": "userId",
+       "type": "string"
+      },
+      {
+       "name": "anonymizedEmail",
+       "type": "string"
+      }
+     ],
+     "returns": "string"
+    },
+    {
+     "action": "http://tempuri.org/ILinkSecurity/GtvCreateAccount",
+     "name": "GtvCreateAccount",
+     "parameters": [
+      {
+       "name": "challenge",
+       "type": "string"
+      },
+      {
+       "name": "unitCertificate",
+       "type": "string"
+      },
+      {
+       "name": "packageCertificate",
+       "type": "GtvPackageCertificate"
+      },
+      {
+       "name": "anonymizedEmail",
+       "type": "string"
+      }
+     ],
+     "returns": "GtvAuthenticationResponse"
+    },
+    {
+     "action": "http://tempuri.org/ILinkSecurity/GtvFindOrCreateAccount",
+     "name": "GtvFindOrCreateAccount",
+     "parameters": [
+      {
+       "name": "challenge",
+       "type": "string"
+      },
+      {
+       "name": "unitCertificate",
+       "type": "string"
+      },
+      {
+       "name": "packageCertificate",
+       "type": "GtvPackageCertificate"
+      },
+      {
+       "name": "anonymizedEmail",
+       "type": "string"
+      }
+     ],
+     "returns": "GtvAuthenticationResponse"
+    },
+    {
+     "action": "http://tempuri.org/ILinkSecurity/GtvLogin",
+     "name": "GtvLogin",
+     "parameters": [
+      {
+       "name": "challenge2",
+       "type": "string"
+      },
+      {
+       "name": "userId",
+       "type": "string"
+      }
+     ],
+     "returns": "bool"
+    },
+    {
+     "action": "http://tempuri.org/ILinkSecurity/Handshake",
+     "name": "Handshake",
+     "parameters": [
+      {
+       "name": "nonce",
+       "type": "long"
+      }
+     ],
+     "returns": "LinkHandshakeResponse"
+    },
+    {
+     "action": "http://tempuri.org/ILinkSecurity/Login",
+     "name": "Login",
+     "parameters": [
+      {
+       "name": "challenge",
+       "type": "string"
+      },
+      {
+       "name": "hubCertificate",
+       "type": "string"
+      },
+      {
+       "name": "authToken",
+       "type": "string"
+      },
+      {
+       "name": "controllerAccountId",
+       "type": "string"
+      },
+      {
+       "name": "controllerCertificate",
+       "type": "string"
+      },
+      {
+       "name": "signature",
+       "type": "string"
+      }
+     ],
+     "returns": "LoginResponse"
+    },
+    {
+     "action": "http://tempuri.org/ILinkSecurity/LoginWithUserAuthToken",
+     "name": "LoginWithUserAuthToken",
+     "parameters": [
+      {
+       "name": "challenge",
+       "type": "string"
+      },
+      {
+       "name": "serialNumber",
+       "type": "string"
+      },
+      {
+       "name": "email",
+       "type": "string"
+      },
+      {
+       "name": "userAuthToken",
+       "type": "string"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IPlatformService/Ping",
+     "name": "Ping",
+     "parameters": [],
+     "returns": "System.DateTime"
+    }
+   ]
+  },
+  {
+   "assembly": "Web.Data.HarmonyPlatform",
+   "configurationName": "SecurityDirector.ISecurity",
+   "interface": "ISecurity",
+   "namespace": "Logitech.Harmony.Web.Data.HarmonyPlatform.SecurityDirector",
+   "operations": [
+    {
+     "action": "http://tempuri.org/ISecurity/AuthorizeOnHousehold",
+     "name": "AuthorizeOnHousehold",
+     "parameters": [
+      {
+       "name": "householdRequest",
+       "type": "HouseholdRequest"
+      }
+     ],
+     "returns": "LoginResponse"
+    },
+    {
+     "action": "http://tempuri.org/IPlatformService/BuildInfo",
+     "name": "BuildInfo",
+     "parameters": [],
+     "returns": "BuildInfo"
+    },
+    {
+     "action": "http://tempuri.org/ISecurity/CreateUserAccount",
+     "name": "CreateUserAccount",
+     "parameters": [
+      {
+       "name": "request",
+       "type": "CreateAccountRequest"
+      }
+     ],
+     "returns": "CreateAccountResponse"
+    },
+    {
+     "action": "http://tempuri.org/ISecurity/GetADLDSUserDetails",
+     "name": "GetADLDSUserDetails",
+     "parameters": [
+      {
+       "name": "userDetails",
+       "type": "GeneralUserRequest"
+      }
+     ],
+     "returns": "GeneralADUserDetails"
+    },
+    {
+     "action": "http://tempuri.org/ISecurity/GetAuthenticatedUserAuthToken",
+     "name": "GetAuthenticatedUserAuthToken",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "long"
+      }
+     ],
+     "returns": "UserAuthTokenResponse"
+    },
+    {
+     "action": "http://tempuri.org/ISecurity/GetUserAuthToken",
+     "name": "GetUserAuthToken",
+     "parameters": [
+      {
+       "name": "email",
+       "type": "string"
+      },
+      {
+       "name": "password",
+       "type": "string"
+      }
+     ],
+     "returns": "UserAuthTokenResponse"
+    },
+    {
+     "action": "http://tempuri.org/ISecurity/GetUserInfo",
+     "name": "GetUserInfo",
+     "parameters": [
+      {
+       "name": "request",
+       "type": "UserInfoRequest"
+      }
+     ],
+     "returns": "UserInfoResult"
+    },
+    {
+     "action": "http://tempuri.org/ISecurity/Impersonate",
+     "name": "Impersonate",
+     "parameters": [
+      {
+       "name": "token",
+       "type": "string"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/ISecurity/InitiateLogin",
+     "name": "InitiateLogin",
+     "parameters": [
+      {
+       "name": "email",
+       "type": "string"
+      },
+      {
+       "name": "token",
+       "type": "string"
+      }
+     ],
+     "returns": "LoginResponse"
+    },
+    {
+     "action": "http://tempuri.org/ISecurity/IsLoggedIn",
+     "name": "IsLoggedIn",
+     "parameters": [],
+     "returns": "bool"
+    },
+    {
+     "action": "http://tempuri.org/ISecurity/LoginForHubSetup",
+     "name": "LoginForHubSetup",
+     "parameters": [
+      {
+       "name": "authToken",
+       "type": "string"
+      }
+     ],
+     "returns": "LoginResponse"
+    },
+    {
+     "action": "http://tempuri.org/ISecurity/LoginUser",
+     "name": "LoginUser",
+     "parameters": [
+      {
+       "name": "email",
+       "type": "string"
+      },
+      {
+       "name": "password",
+       "type": "string"
+      },
+      {
+       "name": "customCredential",
+       "type": "string"
+      },
+      {
+       "name": "isPresistent",
+       "type": "bool"
+      }
+     ],
+     "returns": "LoginResponse"
+    },
+    {
+     "action": "http://tempuri.org/ISecurity/LoginWithEmailToken",
+     "name": "LoginWithEmailToken",
+     "parameters": [
+      {
+       "name": "authToken",
+       "type": "string"
+      }
+     ],
+     "returns": "LoginResponse"
+    },
+    {
+     "action": "http://tempuri.org/ISecurity/LogoutUser",
+     "name": "LogoutUser",
+     "parameters": [],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IPlatformService/Ping",
+     "name": "Ping",
+     "parameters": [],
+     "returns": "System.DateTime"
+    },
+    {
+     "action": "http://tempuri.org/ISecurity/ResetPassword",
+     "name": "ResetPassword",
+     "parameters": [
+      {
+       "name": "token",
+       "type": "string"
+      },
+      {
+       "name": "password",
+       "type": "string"
+      }
+     ],
+     "returns": "int"
+    },
+    {
+     "action": "http://tempuri.org/ISecurity/SendPasswordResetMail",
+     "name": "SendPasswordResetMail",
+     "parameters": [
+      {
+       "name": "destination",
+       "type": "string"
+      },
+      {
+       "name": "documentUri",
+       "type": "string"
+      },
+      {
+       "name": "assetsUriBase",
+       "type": "string"
+      },
+      {
+       "name": "resetPageUri",
+       "type": "string"
+      }
+     ],
+     "returns": "int"
+    },
+    {
+     "action": "http://tempuri.org/ISecurity/SignIn",
+     "name": "SignIn",
+     "parameters": [
+      {
+       "name": "signInRequest",
+       "type": "SignInRequest"
+      }
+     ],
+     "returns": "LoginResponse"
+    },
+    {
+     "action": "http://tempuri.org/ISecurity/SignIn2",
+     "name": "SignIn2",
+     "parameters": [
+      {
+       "name": "signInRequest",
+       "type": "SignIn2Request"
+      }
+     ],
+     "returns": "LoginResponse"
+    },
+    {
+     "action": "http://tempuri.org/ISecurity/SignUp",
+     "name": "SignUp",
+     "parameters": [
+      {
+       "name": "signUpRequest",
+       "type": "SignUpRequest"
+      }
+     ],
+     "returns": "CreateAccountResponse"
+    },
+    {
+     "action": "http://tempuri.org/ISecurity/ValidateEmailOrAccount",
+     "name": "ValidateEmailOrAccount",
+     "parameters": [
+      {
+       "name": "userDetails",
+       "type": "GeneralUserRequest"
+      }
+     ],
+     "returns": "GeneralUserResponse"
+    }
+   ]
+  },
+  {
+   "assembly": "Web.Data.HarmonyPlatform",
+   "configurationName": "UserAccountDirector.IUserAccountDirector",
+   "interface": "IUserAccountDirector",
+   "namespace": "Logitech.Harmony.Web.Data.HarmonyPlatform.UserAccountDirector",
+   "operations": [
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/AddRemote",
+     "name": "AddRemote",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      },
+      {
+       "name": "usbVid",
+       "type": "string"
+      },
+      {
+       "name": "usbPid",
+       "type": "string"
+      },
+      {
+       "name": "remoteSkin",
+       "type": "int"
+      },
+      {
+       "name": "serialNumber",
+       "type": "string"
+      }
+     ],
+     "returns": "RemoteId"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/AddRemoteByCertificate",
+     "name": "AddRemoteByCertificate",
+     "parameters": [
+      {
+       "name": "remoteInfo",
+       "type": "RemoteInfo"
+      },
+      {
+       "name": "unitCertificate",
+       "type": "string"
+      },
+      {
+       "name": "pairingInfoList",
+       "type": "ObservableCollection<PairingInfo>"
+      },
+      {
+       "name": "clientInfo",
+       "type": "ClientInfo"
+      }
+     ],
+     "returns": "RemoteId"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/AddRemoteToAccount",
+     "name": "AddRemoteToAccount",
+     "parameters": [
+      {
+       "name": "remoteInfo",
+       "type": "RemoteInfo"
+      }
+     ],
+     "returns": "RemoteId"
+    },
+    {
+     "action": "http://tempuri.org/IPlatformService/BuildInfo",
+     "name": "BuildInfo",
+     "parameters": [],
+     "returns": "BuildInfo"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/CloneAccount",
+     "name": "CloneAccount",
+     "parameters": [
+      {
+       "name": "cloneAccountDTO",
+       "type": "CloneAccountDTO"
+      }
+     ],
+     "returns": "CloneAccountResponse"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/Get321Settings",
+     "name": "Get321Settings",
+     "parameters": [],
+     "returns": "Dictionary<string, RolloutSettings>"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/GetAccountsProducts",
+     "name": "GetAccountsProducts",
+     "parameters": [
+      {
+       "name": "accountIds",
+       "type": "ObservableCollection<AccountId>"
+      }
+     ],
+     "returns": "Dictionary<RemoteId, ProductInfo>"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/GetActivities",
+     "name": "GetActivities",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      },
+      {
+       "name": "devicesInAccount",
+       "type": "ObservableCollection<DeviceId>"
+      }
+     ],
+     "returns": "ObservableCollection<Activity>"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/GetActivityRoles",
+     "name": "GetActivityRoles",
+     "parameters": [
+      {
+       "name": "request",
+       "type": "GetActivityRolesRequest"
+      }
+     ],
+     "returns": "GetActivityRolesResponse"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/GetActivityTypeRoles",
+     "name": "GetActivityTypeRoles",
+     "parameters": [
+      {
+       "name": "request",
+       "type": "GetActivityTypeRolesRequest"
+      }
+     ],
+     "returns": "GetActivityTypeRolesResponse"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/GetActivityTypesAndRoles",
+     "name": "GetActivityTypesAndRoles",
+     "parameters": [
+      {
+       "name": "request",
+       "type": "GetActivityTypesAndRolesRequest"
+      }
+     ],
+     "returns": "GetActivityTypesAndRolesResponse"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/GetAdminConfig",
+     "name": "GetAdminConfig",
+     "parameters": [],
+     "returns": "AdminConfig"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/GetButtonMaps",
+     "name": "GetButtonMaps",
+     "parameters": [
+      {
+       "name": "deviceIds",
+       "type": "ObservableCollection<AbstractId>"
+      },
+      {
+       "name": "activityIds",
+       "type": "ObservableCollection<AbstractId>"
+      },
+      {
+       "name": "remoteId",
+       "type": "RemoteId"
+      },
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      },
+      {
+       "name": "surfaceId",
+       "type": "SurfaceId"
+      }
+     ],
+     "returns": "ObservableCollection<AbstractButtonMap>"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/GetCapabilities",
+     "name": "GetCapabilities",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "string"
+      },
+      {
+       "name": "excludeProductCapabilities",
+       "type": "string"
+      }
+     ],
+     "returns": "UserHubCapabilities"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/GetCustomerSupportPolicyByAccountId",
+     "name": "GetCustomerSupportPolicyByAccountId",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      }
+     ],
+     "returns": "CustomerSupportPolicy"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/GetCustomerSupportPolicyForAccountIds",
+     "name": "GetCustomerSupportPolicyForAccountIds",
+     "parameters": [
+      {
+       "name": "accountIds",
+       "type": "ObservableCollection<AccountId>"
+      }
+     ],
+     "returns": "HouseholdSupportPolicy"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/GetDeviceList",
+     "name": "GetDeviceList",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "string"
+      }
+     ],
+     "returns": "DeviceList"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/GetEasyZapperAccountDetails",
+     "name": "GetEasyZapperAccountDetails",
+     "parameters": [
+      {
+       "name": "request",
+       "type": "GetEasyZapperAccountDetailsRequest"
+      }
+     ],
+     "returns": "EasyZapperAccountDetailsResponse"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/GetFunctions",
+     "name": "GetFunctions",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "string"
+      }
+     ],
+     "returns": "FunctionList"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/GetGlobalRemote",
+     "name": "GetGlobalRemote",
+     "parameters": [
+      {
+       "name": "serialNumber",
+       "type": "string"
+      }
+     ],
+     "returns": "GlobalRemote"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/GetHouseholdCapabilities",
+     "name": "GetHouseholdCapabilities",
+     "parameters": [
+      {
+       "name": "accountIds",
+       "type": "ObservableCollection<string>"
+      },
+      {
+       "name": "excludeProductCapabilities",
+       "type": "string"
+      }
+     ],
+     "returns": "ObservableCollection<AccountCapability>"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/GetHouseholdProducts",
+     "name": "GetHouseholdProducts",
+     "parameters": [
+      {
+       "name": "accountIds",
+       "type": "ObservableCollection<AccountId>"
+      }
+     ],
+     "returns": "Dictionary<long, Product>"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/GetHubCloudToken",
+     "name": "GetHubCloudToken",
+     "parameters": [
+      {
+       "name": "unitCertificate",
+       "type": "string"
+      }
+     ],
+     "returns": "GetHubCloudTokenResponse"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/GetMaps",
+     "name": "GetMaps",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "string"
+      },
+      {
+       "name": "rfSurfaceId",
+       "type": "string"
+      },
+      {
+       "name": "excludeFunctionMaps",
+       "type": "string"
+      }
+     ],
+     "returns": "MapList"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/GetProductCapabilities",
+     "name": "GetProductCapabilities",
+     "parameters": [
+      {
+       "name": "request",
+       "type": "ProductCapabilitiesRequest"
+      }
+     ],
+     "returns": "ProductCapabilitiesResponse"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/GetProductCapabilities2",
+     "name": "GetProductCapabilities2",
+     "parameters": [
+      {
+       "name": "request",
+       "type": "ProductCapabilitiesRequest"
+      }
+     ],
+     "returns": "ProductCapabilitiesResponse2"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/GetProtocolList",
+     "name": "GetProtocolList",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "string"
+      }
+     ],
+     "returns": "ProtocolList"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/GetRecommendedActivities",
+     "name": "GetRecommendedActivities",
+     "parameters": [
+      {
+       "name": "request",
+       "type": "GetRecommendedActivitiesRequest"
+      }
+     ],
+     "returns": "GetRecommendedActivitiesResponse"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/GetRemoteSettings",
+     "name": "GetRemoteSettings",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      },
+      {
+       "name": "remoteId",
+       "type": "RemoteId"
+      }
+     ],
+     "returns": "RemoteSettings"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/GetSettings",
+     "name": "GetSettings",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "string"
+      },
+      {
+       "name": "remoteId",
+       "type": "string"
+      }
+     ],
+     "returns": "RemoteSettings"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/GetSmartTVMenuNames",
+     "name": "GetSmartTVMenuNames",
+     "parameters": [],
+     "returns": "Dictionary<string, ObservableCollection<string>>"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/GetUnifiedSupportPolicyForAccountId",
+     "name": "GetUnifiedSupportPolicyForAccountId",
+     "parameters": [
+      {
+       "name": "accountIds",
+       "type": "ObservableCollection<AccountId>"
+      }
+     ],
+     "returns": "UnifiedSupportPolicy"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/MigrateDevicesAndActivities",
+     "name": "MigrateDevicesAndActivities",
+     "parameters": [
+      {
+       "name": "request",
+       "type": "MigrateHarmonyPlatformDevicesAndActivitiesRequest"
+      }
+     ],
+     "returns": "MigrateHarmonyPlatformDevicesAndActivitiesResponse"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/MigrateEasyZapperAccount",
+     "name": "MigrateEasyZapperAccount",
+     "parameters": [
+      {
+       "name": "request",
+       "type": "MigrateEasyZapperAccountRequest"
+      }
+     ],
+     "returns": "MigrateEasyZapperAccountResponse"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/OnTextingDeviceChanged",
+     "name": "OnTextingDeviceChanged",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      },
+      {
+       "name": "transportTypeOperations",
+       "type": "ObservableCollection<TransportTypeOperation>"
+      }
+     ],
+     "returns": "Dictionary<object, AbstractId>"
+    },
+    {
+     "action": "http://tempuri.org/IPlatformService/Ping",
+     "name": "Ping",
+     "parameters": [],
+     "returns": "System.DateTime"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/PowerOnCommandList",
+     "name": "PowerOnCommandList",
+     "parameters": [],
+     "returns": "string"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/ProvisionHub",
+     "name": "ProvisionHub",
+     "parameters": [
+      {
+       "name": "remoteInfo",
+       "type": "RemoteInfo"
+      },
+      {
+       "name": "unitCertificate",
+       "type": "string"
+      },
+      {
+       "name": "pairingInfoList",
+       "type": "ObservableCollection<PairingInfo>"
+      },
+      {
+       "name": "clientInfo",
+       "type": "ClientInfo"
+      }
+     ],
+     "returns": "ProvisionHubResponse"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/PutCapabilities",
+     "name": "PutCapabilities",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "string"
+      },
+      {
+       "name": "userHubCapabilities",
+       "type": "UserHubCapabilities"
+      }
+     ],
+     "returns": "UserHubCapabilities"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/PutDevicesAndFeatures",
+     "name": "PutDevicesAndFeatures",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "string"
+      },
+      {
+       "name": "deviceList",
+       "type": "DeviceList"
+      },
+      {
+       "name": "apiVersion",
+       "type": "int"
+      }
+     ],
+     "returns": "DeviceList"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/PutMaps",
+     "name": "PutMaps",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "string"
+      },
+      {
+       "name": "mapList",
+       "type": "MapList"
+      },
+      {
+       "name": "apiVersion",
+       "type": "int"
+      }
+     ],
+     "returns": "MapList"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/PutSettings",
+     "name": "PutSettings",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "string"
+      },
+      {
+       "name": "remoteId",
+       "type": "string"
+      },
+      {
+       "name": "settings",
+       "type": "RemoteSettings"
+      },
+      {
+       "name": "apiVersion",
+       "type": "int"
+      }
+     ],
+     "returns": "RemoteSettings"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/RefineActivity",
+     "name": "RefineActivity",
+     "parameters": [
+      {
+       "name": "data",
+       "type": "byte[]"
+      }
+     ],
+     "returns": "RefineActivityResponse"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/RegisterSuccessfulSync",
+     "name": "RegisterSuccessfulSync",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "string"
+      },
+      {
+       "name": "remoteId",
+       "type": "string"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/ReplaceUserDevice",
+     "name": "ReplaceUserDevice",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "string"
+      },
+      {
+       "name": "existingDeviceId",
+       "type": "string"
+      },
+      {
+       "name": "replacementDeviceId",
+       "type": "string"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/RestGetActivities",
+     "name": "RestGetActivities",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "string"
+      }
+     ],
+     "returns": "ActivityList"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/RestPutActivities",
+     "name": "RestPutActivities",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "string"
+      },
+      {
+       "name": "activityList",
+       "type": "ActivityList"
+      },
+      {
+       "name": "apiVersion",
+       "type": "int"
+      }
+     ],
+     "returns": "ActivityList"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/Save321Settings",
+     "name": "Save321Settings",
+     "parameters": [
+      {
+       "name": "saveSettings",
+       "type": "ObservableCollection<RolloutSettings>"
+      }
+     ],
+     "returns": "bool"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/SaveActivities",
+     "name": "SaveActivities",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      },
+      {
+       "name": "activities",
+       "type": "ObservableCollection<Activity>"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/SaveRemoteSettings",
+     "name": "SaveRemoteSettings",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      },
+      {
+       "name": "remoteId",
+       "type": "RemoteId"
+      },
+      {
+       "name": "remoteSettings",
+       "type": "ObservableCollection<RemoteSetting>"
+      }
+     ],
+     "returns": "SaveRemoteSettingsResult"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/SecureSearchUser",
+     "name": "SecureSearchUser",
+     "parameters": [
+      {
+       "name": "serialNumber",
+       "type": "string"
+      },
+      {
+       "name": "email",
+       "type": "string"
+      },
+      {
+       "name": "challenge",
+       "type": "byte[]"
+      }
+     ],
+     "returns": "SearchResult"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/SimpleGetActivities",
+     "name": "SimpleGetActivities",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      }
+     ],
+     "returns": "ObservableCollection<Activity>"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/SimpleRestGetActivities",
+     "name": "SimpleRestGetActivities",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "string"
+      }
+     ],
+     "returns": "ActivityList"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/SimpleRestGetDeviceList",
+     "name": "SimpleRestGetDeviceList",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "string"
+      }
+     ],
+     "returns": "DeviceList"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/SimpleRestGetHouseholdProducts",
+     "name": "SimpleRestGetHouseholdProducts",
+     "parameters": [
+      {
+       "name": "accountIds",
+       "type": "ObservableCollection<long>"
+      }
+     ],
+     "returns": "ObservableCollection<HouseholdProduct>"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/SimpleRestSaveActivities",
+     "name": "SimpleRestSaveActivities",
+     "parameters": [
+      {
+       "name": "saveRequest",
+       "type": "SimpleRestSaveActivityRequest"
+      }
+     ],
+     "returns": "ActivityList"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/SimpleRestSaveDeviceAndFeatures",
+     "name": "SimpleRestSaveDeviceAndFeatures",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "string"
+      },
+      {
+       "name": "saveRequest",
+       "type": "SaveDeviceWithFeatureRequest"
+      }
+     ],
+     "returns": "DeviceList"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/SubmitUserDataLogs",
+     "name": "SubmitUserDataLogs",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      },
+      {
+       "name": "clientUserDataLogs",
+       "type": "ObservableCollection<ClientUserDataLog>"
+      },
+      {
+       "name": "userEmail",
+       "type": "string"
+      },
+      {
+       "name": "logType",
+       "type": "int"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/UpdateAdminConfig",
+     "name": "UpdateAdminConfig",
+     "parameters": [
+      {
+       "name": "adminConfig",
+       "type": "AdminConfig"
+      }
+     ],
+     "returns": "AdminConfig"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/UpdateCommand",
+     "name": "UpdateCommand",
+     "parameters": [
+      {
+       "name": "commandName",
+       "type": "string"
+      },
+      {
+       "name": "deviceId",
+       "type": "long"
+      },
+      {
+       "name": "rawSequence",
+       "type": "string"
+      }
+     ],
+     "returns": "UpdateCommandResult"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/UpdateDeviceCommands",
+     "name": "UpdateDeviceCommands",
+     "parameters": [
+      {
+       "name": "operation",
+       "type": "Operation"
+      }
+     ],
+     "returns": "UpdateCommandResult"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/UpdateDevices",
+     "name": "UpdateDevices",
+     "parameters": [
+      {
+       "name": "operation",
+       "type": "Operation"
+      }
+     ],
+     "returns": "Dictionary<object, AbstractId>"
+    },
+    {
+     "action": "http://tempuri.org/IUserAccountDirector/UpgradeConfig",
+     "name": "UpgradeConfig",
+     "parameters": [
+      {
+       "name": "request",
+       "type": "UpgradeConfigRequest"
+      }
+     ],
+     "returns": "UpgradeConfigResponse"
+    }
+   ]
+  },
+  {
+   "assembly": "Web.Data.HarmonyPlatform",
+   "configurationName": "UserButtonMappingManager.IUserButtonMappingManager",
+   "interface": "IUserButtonMappingManager",
+   "namespace": "Logitech.Harmony.Web.Data.HarmonyPlatform.UserButtonMappingManager",
+   "operations": [
+    {
+     "action": "http://tempuri.org/IPlatformService/BuildInfo",
+     "name": "BuildInfo",
+     "parameters": [],
+     "returns": "BuildInfo"
+    },
+    {
+     "action": "http://tempuri.org/IUserButtonMappingManager/CreateButtonMaps",
+     "name": "CreateButtonMaps",
+     "parameters": [
+      {
+       "name": "deviceIds",
+       "type": "ObservableCollection<AbstractId>"
+      },
+      {
+       "name": "activityIds",
+       "type": "ObservableCollection<AbstractId>"
+      },
+      {
+       "name": "remoteSkinId",
+       "type": "long"
+      },
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      },
+      {
+       "name": "surfaceId",
+       "type": "long"
+      }
+     ],
+     "returns": "ObservableCollection<AbstractButtonMap>"
+    },
+    {
+     "action": "http://tempuri.org/IUserButtonMappingManager/DeleteButtonMaps",
+     "name": "DeleteButtonMaps",
+     "parameters": [
+      {
+       "name": "deviceIds",
+       "type": "ObservableCollection<AbstractId>"
+      },
+      {
+       "name": "activityIds",
+       "type": "ObservableCollection<AbstractId>"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IUserButtonMappingManager/DeleteDeviceModeButtonMaps",
+     "name": "DeleteDeviceModeButtonMaps",
+     "parameters": [
+      {
+       "name": "deviceIds",
+       "type": "ObservableCollection<DeviceId>"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IUserButtonMappingManager/DeleteSequence",
+     "name": "DeleteSequence",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      },
+      {
+       "name": "buttonMapId",
+       "type": "ButtonMapId"
+      },
+      {
+       "name": "sequenceId",
+       "type": "long"
+      }
+     ],
+     "returns": "UpdateStatus"
+    },
+    {
+     "action": "http://tempuri.org/IUserButtonMappingManager/DeleteTaughtCommandButtonMaps",
+     "name": "DeleteTaughtCommandButtonMaps",
+     "parameters": [
+      {
+       "name": "deviceIds",
+       "type": "ObservableCollection<AbstractId>"
+      },
+      {
+       "name": "activityIds",
+       "type": "ObservableCollection<AbstractId>"
+      },
+      {
+       "name": "taughtCommandNames",
+       "type": "ObservableCollection<string>"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IUserButtonMappingManager/DeleteTaughtDeviceModeCommandButtonMaps",
+     "name": "DeleteTaughtDeviceModeCommandButtonMaps",
+     "parameters": [
+      {
+       "name": "deviceIds",
+       "type": "ObservableCollection<DeviceId>"
+      },
+      {
+       "name": "taughtCommandIds",
+       "type": "ObservableCollection<long>"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IUserButtonMappingManager/DeleteUserModeMapping",
+     "name": "DeleteUserModeMapping",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      },
+      {
+       "name": "deviceIds",
+       "type": "ObservableCollection<DeviceId>"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IUserButtonMappingManager/GetActivityUserModeMappingByAccountId",
+     "name": "GetActivityUserModeMappingByAccountId",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      }
+     ],
+     "returns": "ObservableCollection<UserActivityModeMappingInfo>"
+    },
+    {
+     "action": "http://tempuri.org/IUserButtonMappingManager/GetButtonMaps",
+     "name": "GetButtonMaps",
+     "parameters": [
+      {
+       "name": "deviceIds",
+       "type": "ObservableCollection<AbstractId>"
+      },
+      {
+       "name": "activityIds",
+       "type": "ObservableCollection<AbstractId>"
+      },
+      {
+       "name": "remoteSkinId",
+       "type": "long"
+      },
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      },
+      {
+       "name": "surfaceId",
+       "type": "long"
+      }
+     ],
+     "returns": "ObservableCollection<AbstractButtonMap>"
+    },
+    {
+     "action": "http://tempuri.org/IUserButtonMappingManager/GetDefaultButtonMaps",
+     "name": "GetDefaultButtonMaps",
+     "parameters": [
+      {
+       "name": "deviceIds",
+       "type": "ObservableCollection<DeviceId>"
+      },
+      {
+       "name": "activityIds",
+       "type": "ObservableCollection<ActivityId>"
+      },
+      {
+       "name": "remoteSkinId",
+       "type": "long"
+      },
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      }
+     ],
+     "returns": "ObservableCollection<AbstractButtonMap>"
+    },
+    {
+     "action": "http://tempuri.org/IUserButtonMappingManager/GetDeviceModeButtonMaps",
+     "name": "GetDeviceModeButtonMaps",
+     "parameters": [
+      {
+       "name": "deviceIds",
+       "type": "ObservableCollection<DeviceId>"
+      }
+     ],
+     "returns": "Dictionary<DeviceId, ButtonMap>"
+    },
+    {
+     "action": "http://tempuri.org/IUserButtonMappingManager/GetImageStoreInfo",
+     "name": "GetImageStoreInfo",
+     "parameters": [],
+     "returns": "ImageStoreInfo"
+    },
+    {
+     "action": "http://tempuri.org/IUserButtonMappingManager/GetNamedActivityTypes",
+     "name": "GetNamedActivityTypes",
+     "parameters": [
+      {
+       "name": "remoteSkinId",
+       "type": "long"
+      }
+     ],
+     "returns": "ObservableCollection<ActivityType>"
+    },
+    {
+     "action": "http://tempuri.org/IUserButtonMappingManager/GetRemoteCanvas",
+     "name": "GetRemoteCanvas",
+     "parameters": [
+      {
+       "name": "remoteSkinId",
+       "type": "long"
+      }
+     ],
+     "returns": "ObservableCollection<AbstractRemoteButton>"
+    },
+    {
+     "action": "http://tempuri.org/IUserButtonMappingManager/GetRemoteEmulatorButtons",
+     "name": "GetRemoteEmulatorButtons",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "string"
+      },
+      {
+       "name": "remoteSkinId",
+       "type": "string"
+      }
+     ],
+     "returns": "ObservableCollection<AbstractRemoteButton>"
+    },
+    {
+     "action": "http://tempuri.org/IUserButtonMappingManager/GetRootButtonMapForSurface",
+     "name": "GetRootButtonMapForSurface",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      },
+      {
+       "name": "remoteSkinId",
+       "type": "long"
+      },
+      {
+       "name": "surfaceId",
+       "type": "SurfaceId"
+      }
+     ],
+     "returns": "AbstractButtonMap"
+    },
+    {
+     "action": "http://tempuri.org/IUserButtonMappingManager/GetRootDeviceModeButtonMap",
+     "name": "GetRootDeviceModeButtonMap",
+     "parameters": [
+      {
+       "name": "remoteId",
+       "type": "RemoteId"
+      }
+     ],
+     "returns": "ButtonMap"
+    },
+    {
+     "action": "http://tempuri.org/IUserButtonMappingManager/GetUserModeMappings",
+     "name": "GetUserModeMappings",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "long"
+      }
+     ],
+     "returns": "ObservableCollection<UserModeMappingInfo>"
+    },
+    {
+     "action": "http://tempuri.org/IUserButtonMappingManager/OnActivityChanged",
+     "name": "OnActivityChanged",
+     "parameters": [
+      {
+       "name": "request",
+       "type": "ActivityChangeRequest"
+      }
+     ],
+     "returns": "ActivityChangeResponse"
+    },
+    {
+     "action": "http://tempuri.org/IUserButtonMappingManager/OnActivityDeleted",
+     "name": "OnActivityDeleted",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      },
+      {
+       "name": "activityIds",
+       "type": "ObservableCollection<ActivityId>"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IUserButtonMappingManager/OnDeviceDeleted",
+     "name": "OnDeviceDeleted",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      },
+      {
+       "name": "deviceIds",
+       "type": "ObservableCollection<DeviceId>"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IPlatformService/Ping",
+     "name": "Ping",
+     "parameters": [],
+     "returns": "System.DateTime"
+    },
+    {
+     "action": "http://tempuri.org/IUserButtonMappingManager/RegenerateButtonMaps",
+     "name": "RegenerateButtonMaps",
+     "parameters": [
+      {
+       "name": "request",
+       "type": "RegenerateButtonMapsRequest"
+      }
+     ],
+     "returns": "RegenerateButtonMapsResponse"
+    },
+    {
+     "action": "http://tempuri.org/IUserButtonMappingManager/RegenerateDeviceButtonMaps",
+     "name": "RegenerateDeviceButtonMaps",
+     "parameters": [
+      {
+       "name": "request",
+       "type": "RegenerateButtonMapsRequest"
+      }
+     ],
+     "returns": "RegenerateButtonMapsResponse"
+    },
+    {
+     "action": "http://tempuri.org/IUserButtonMappingManager/ResetToDefaultDeviceModeButtonMaps",
+     "name": "ResetToDefaultDeviceModeButtonMaps",
+     "parameters": [
+      {
+       "name": "buttonMapIds",
+       "type": "ObservableCollection<ButtonMapId>"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IUserButtonMappingManager/ResetUserModeMappings",
+     "name": "ResetUserModeMappings",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "long"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IUserButtonMappingManager/RestoreToDefaultButtonMaps",
+     "name": "RestoreToDefaultButtonMaps",
+     "parameters": [
+      {
+       "name": "buttonMapIds",
+       "type": "ObservableCollection<AbstractId>"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IUserButtonMappingManager/RestoreToDefaultButtonMapsByActivityAndDeviceIds",
+     "name": "RestoreToDefaultButtonMapsByActivityAndDeviceIds",
+     "parameters": [
+      {
+       "name": "deviceIds",
+       "type": "ObservableCollection<AbstractId>"
+      },
+      {
+       "name": "activityIds",
+       "type": "ObservableCollection<AbstractId>"
+      },
+      {
+       "name": "remoteSkinId",
+       "type": "long"
+      },
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IUserButtonMappingManager/SaveButtonMaps",
+     "name": "SaveButtonMaps",
+     "parameters": [
+      {
+       "name": "buttonMaps",
+       "type": "ObservableCollection<AbstractButtonMap>"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IUserButtonMappingManager/SaveSequence",
+     "name": "SaveSequence",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      },
+      {
+       "name": "buttonMapId",
+       "type": "ButtonMapId"
+      },
+      {
+       "name": "sequence",
+       "type": "Sequence"
+      }
+     ],
+     "returns": "Sequence"
+    },
+    {
+     "action": "http://tempuri.org/IUserButtonMappingManager/SaveUserActivityModeMappings",
+     "name": "SaveUserActivityModeMappings",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      },
+      {
+       "name": "modeMapInfos",
+       "type": "ObservableCollection<UserActivityModeMappingInfo>"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IUserButtonMappingManager/SaveUserModeMappings",
+     "name": "SaveUserModeMappings",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      },
+      {
+       "name": "modeMapInfos",
+       "type": "ObservableCollection<UserModeMappingInfo>"
+      }
+     ],
+     "returns": "ObservableCollection<UserModeMappingInfo>"
+    },
+    {
+     "action": "http://tempuri.org/IUserButtonMappingManager/UpdateButtonMappingOnDeviceReplaced",
+     "name": "UpdateButtonMappingOnDeviceReplaced",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "long"
+      },
+      {
+       "name": "existingDeviceId",
+       "type": "long"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IUserButtonMappingManager/UpdateDeviceModeButtonMaps",
+     "name": "UpdateDeviceModeButtonMaps",
+     "parameters": [
+      {
+       "name": "buttonMaps",
+       "type": "ObservableCollection<ButtonMap>"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IUserButtonMappingManager/UpdateUserModeMapping",
+     "name": "UpdateUserModeMapping",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "AccountId"
+      },
+      {
+       "name": "buttonMapTypes",
+       "type": "DeviceId>"
+      },
+      {
+       "name": "deleteModeMapping",
+       "type": "bool"
+      }
+     ],
+     "returns": "ObservableCollection<UserModeMappingInfo>"
+    }
+   ]
+  },
+  {
+   "assembly": "Web.Data.HarmonyPlatform",
+   "configurationName": "UserFeatureManager.IUserFeatureManager",
+   "interface": "IUserFeatureManager",
+   "namespace": "Logitech.Harmony.Web.Data.HarmonyPlatform.UserFeatureManager",
+   "operations": [
+    {
+     "action": "http://tempuri.org/IPlatformService/BuildInfo",
+     "name": "BuildInfo",
+     "parameters": [],
+     "returns": "BuildInfo"
+    },
+    {
+     "action": "http://tempuri.org/IUserFeatureManager/CopyFeaturesFromGlobalDevice",
+     "name": "CopyFeaturesFromGlobalDevice",
+     "parameters": [
+      {
+       "name": "deviceId",
+       "type": "DeviceId"
+      },
+      {
+       "name": "globalDeviceVersionId",
+       "type": "GlobalDeviceVersionId"
+      }
+     ],
+     "returns": "ObservableCollection<DeviceFeature>"
+    },
+    {
+     "action": "http://tempuri.org/IUserFeatureManager/DeleteUserFeatures",
+     "name": "DeleteUserFeatures",
+     "parameters": [
+      {
+       "name": "deviceFeatures",
+       "type": "ObservableCollection<DeviceFeature>"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IUserFeatureManager/GetAccountUserFeatures",
+     "name": "GetAccountUserFeatures",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "string"
+      },
+      {
+       "name": "deviceIds",
+       "type": "string"
+      }
+     ],
+     "returns": "UserFeatureList"
+    },
+    {
+     "action": "http://tempuri.org/IUserFeatureManager/GetUserFeatures",
+     "name": "GetUserFeatures",
+     "parameters": [
+      {
+       "name": "deviceIds",
+       "type": "ObservableCollection<DeviceId>"
+      }
+     ],
+     "returns": "Dictionary<DeviceId, ObservableCollection<DeviceFeature>>"
+    },
+    {
+     "action": "http://tempuri.org/IPlatformService/Ping",
+     "name": "Ping",
+     "parameters": [],
+     "returns": "System.DateTime"
+    },
+    {
+     "action": "http://tempuri.org/IUserFeatureManager/SaveAccountUserFeatures",
+     "name": "SaveAccountUserFeatures",
+     "parameters": [
+      {
+       "name": "accountId",
+       "type": "string"
+      },
+      {
+       "name": "userFeatureList",
+       "type": "UserFeatureList"
+      }
+     ],
+     "returns": "void"
+    },
+    {
+     "action": "http://tempuri.org/IUserFeatureManager/SaveUserFeatures",
+     "name": "SaveUserFeatures",
+     "parameters": [
+      {
+       "name": "deviceFeatures",
+       "type": "ObservableCollection<DeviceFeature>"
+      }
+     ],
+     "returns": "void"
+    }
+   ]
+  }
+ ],
+ "what": "Every operation MyHarmony's generated service proxy declares, with its parameters and its reply type, plus which entity each operation can hand back. docs/myharmony-model.md is the reading; reference/myharmony-model.json is the entity half."
+}

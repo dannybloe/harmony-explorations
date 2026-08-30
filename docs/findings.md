@@ -28125,3 +28125,94 @@ a count that no longer recomputes, and four shapes of identifying data added to 
 It is not the configuration compiler and does not become one. The platform's schema says what an
 account holds; how a container is built from that is what `SERVER-DEPENDENCY.md` records as having
 been server side, and section 214 is where that stands.
+
+## 219. What the platform can be asked, three sources that disagree, and the one route to an infrared protocol is broken
+
+Section 218 recovered what the platform **holds**. This is what it can be **asked**: 298 operations
+over 19 service interfaces, each with its parameters and its reply type, in
+`reference/myharmony-operations.json`. It matters because an importer is a sequence of calls, and
+because the reply types say which of the 1352 modelled types are actually reachable.
+
+The proxy declares every operation twice, as a `Begin` carrying the wire action and its typed
+parameters and as an `End` whose return type is the reply, so the two are joined on the operation
+name. **A reply type resolved for all 298**, which is the closure on the join: a request with no
+answer would mean the pairing failed somewhere.
+
+Two things the extractor had to be told, both found by a count coming out wrong rather than by
+reading. Three of the nineteen interfaces state a namespace before the configuration name, and
+demanding the name first found sixteen services rather than nineteen, silently dropping the whole ROM
+data library. And the Amazon image service puts two further attributes between the operation contract
+and the method it describes, so requiring them adjacent found none of its sixteen operations.
+
+### Three clients, one service, and no source contains another
+
+| source | services | operations |
+|---|---|---|
+| Harmony Desktop's web application, section 132 | 14 | 78 |
+| MyHarmony's generated proxy, here | 19 | 298 |
+| the live service's own Discovery listing, section 132 | 50 | 308 |
+
+These are three surfaces and not three measurements of one, which is why they are kept apart rather
+than reconciled. Eleven services appear in both the proxy and the Discovery listing, and the overlap
+is partial in both directions: **the proxy names operations the listing does not on all eleven, and
+the listing returns the favour on seven**. The largest disagreement is `UserAccountDirector`, 49
+advertised against 63 declared with 26 in common.
+
+**That claim was first written as both directions on all eleven**, generalised from looking at three
+services, and the test written for it refuted it on four within a minute:
+`UserButtonMappingManager`, `DeletionManager`, `GlobalDeviceManager` and `UserFeatureManager` are
+covered entirely by the proxy. The corrected form is in `docs/myharmony-model.md`, and the test states
+the count rather than "most" so the overclaim cannot come back.
+
+Seven services the proxy declares are absent from the listing altogether, and they have a common
+character: they are the ones reached at a fixed address rather than by discovery, `Discovery` itself,
+both security interfaces, products, help content, the ROM data library, the Amazon image service and
+ASP.NET's own authentication service.
+
+### Which operation can hand back which entity, and the inheritance that has to be followed
+
+233 of the model's types are reachable as a reply. Computing that needs inheritance: a reply typed as a
+base class reaches everything below it, and a wrapper reply carries the interesting type in a field.
+
+**Reading the reply types literally is wrong in exactly the case that matters.** It says nothing
+returns an `IrProtocol`, the type carrying a carrier frequency, header, payload and trailer segments,
+a hold delay and minimum repeat counts, which is the vendor's own statement of what sections 159 to
+171 measured the hard way. In fact one operation reaches it, `UserAccountDirector/GetProtocolList`,
+whose reply is a `ProtocolList` holding a list of `AbstractProtocol`, of which `IrProtocol` is a
+subclass.
+
+| entity | operations that can return one |
+|---|---|
+| Activity | 16 |
+| Account | 9 |
+| Device | 7 |
+| Remote | 7 |
+| `IrProtocol` | 1 |
+
+### That one operation is broken on the live service, and the control is what says so
+
+The advertised address is account scoped, `.../json/Account/<account>/ProtocolList`, which the
+Discovery listing gives and the proxy does not: **neither source alone would have got there**, since
+the proxy names the operation and the listing names the address.
+
+It answers a POST with 405 and a GET with a bare gateway error page, reproducibly, on both accounts.
+The control is the part that makes this a measurement of the endpoint rather than of our request:
+**two neighbours on the same address form answer normally**, `ActivityList` with seven activities and
+`FunctionList` with seventeen device function maps, so the address form, the verb and the session are
+all right. `DeviceList` and `CapabilityList` fail identically to `ProtocolList`.
+
+So `IrProtocol` stays schema without instances, and the reason is now measured rather than unknown.
+The rhythm table in `packages/codec/src/protocols.ts` stands on its own two routes, the corpus and
+Logitech's own compiler, and this would have been a third.
+
+**The verb is the reusable part.** Every other call on this platform is a POST of a JSON body; the
+account scoped addresses want a **GET** and answer 405 to a POST. `probe.call` in the lab took a
+`method` argument for this, with the refusal list unchanged and still running first.
+
+### What `FunctionList` turned out to hold, since it answered
+
+Not pursued here, and recorded because it is the next thing worth opening: it returns a device
+function map per device, each a set of named function groups holding a command name, a label and a
+function identifier. That is the vendor's own naming and grouping of what a device can be told to do,
+which is the same subject as the commands page FreeHarmony will need. It carries account and device
+identifiers, so it stays in the lab.
