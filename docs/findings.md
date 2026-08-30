@@ -28456,7 +28456,7 @@ identical to the read taken before the write, same SHA-256. That is the check wo
 the block level compare cannot see damage anywhere else, and an erase with no count is exactly the
 command that could cause some.
 
-### The read that failed twice before it worked, recorded because it is not explained
+### The read that failed twice before it worked, explained the same day by section 223
 
 The verification read failed on its first two attempts, both about a third of the way in, with the
 reader's chunk sequence check refusing: `expected 0xbf, got 0x14`. The third attempt read all
@@ -28468,10 +28468,12 @@ first: the third attempt began by answering a `GET_VERSION` with a flash data re
 same pipe. A targeted read of the region the failures stopped in returns the right bytes. And the
 same whole config read succeeded on the first attempt an hour earlier, before the write.
 
-So this is either the intermittent USB fault this project has recorded before on this machine, or
-something the write session left in the remote's USB state, and nothing here distinguishes them. It
-is recorded rather than explained, and the practical consequence is that a verification read may need
-retrying, which is a poor property for the step whose whole job is to say whether a write landed.
+This paragraph said the cause was either the intermittent USB fault recorded before or something the
+write session left in the remote's USB state, with nothing to distinguish them. **Neither**, section
+223: five chunks were dropped by the host's own USB library, which discards the oldest of an overfull
+input queue in silence, and the write had nothing to do with it. Reproduced on demand with a
+predicted loss count, drained and retried in code, and the practical consequence is now a retry that
+says so rather than a read that fails.
 
 ### What it does not establish
 
@@ -28479,3 +28481,79 @@ It is one write, of 64 KiB, to one unit, of bytes that were already there. It sa
 write that changes a configuration, which is where the reader questions start, and nothing about the
 other 25 blocks of this configuration. The restore route is still unexercised: this run never needed
 it, which is the point of choosing it, and so it also never tested it.
+
+## 223. Why the verification read failed, which is the host and not the remote
+
+Section 222 recorded a read that failed twice before it worked and said the cause was unknown. It is
+known now, it is on this machine rather than on the remote, and it was reproduced on demand with a
+predicted loss count.
+
+**The sequence gap said how many chunks went missing, and it was a whole number.** A `READ_FLASH`
+answer is a run of reports each carrying a sequence byte that advances by `0x11`, and the reader
+refuses a gap. The failure reported expecting `0xbf` and getting `0x14`, which is `0xbf` plus five
+steps: **five chunks, 310 bytes, gone**. Not corrupted, not reordered, absent. The arithmetic needs
+the modular inverse of 17, which is 241; dividing the gap by 17 gives a fraction and reads as
+"not a whole number of chunks", which is what a first attempt at this concluded.
+
+**Reports are dropped by the host's own USB library, on purpose and in silence.** HIDAPI's macOS
+backend queues incoming reports on a linked list and, when more than thirty are waiting, discards
+the oldest to stop the list growing for a caller that never reads. A `READ_FLASH` of 16 KiB is 264
+reports streamed back as fast as the remote can send them, so anything that holds the consumer up for
+longer than the queue takes to fill loses whatever arrived in the meantime, and the library says
+nothing.
+
+### The prediction, and the measurement that matches it
+
+The rate is measurable: 30 KiB/s over a whole configuration is about 487 reports a second. The queue
+holds 31. So a stall of `t` seconds should lose `487t - 31` chunks, and a stall short enough to fit
+in the queue should lose none. Written down before the runs:
+
+| stall | reports arriving | predicted lost | measured |
+|---|---|---|---|
+| none | | 0 | 0, on 266 chunks |
+| 20 ms | 10 | 0 | 0 |
+| 50 ms | 24 | 0 | 0 |
+| 100 ms | 48 | 18 | **17** |
+| 200 ms | 97 | 66 | **67** |
+
+Both within one, from a queue depth read out of the library's source and a rate measured off a
+different run. `packages/usb/bin/read-burst-probe.ts` is the instrument, and it drives the transport
+directly rather than `readFlash`, so that it leaves the pipe in the state the failure leaves it.
+
+### The second half, which is worse than the drop
+
+**A failed read left the remote streaming, and the next command read the leftovers.** That is why the
+second attempt in section 222 failed too, and why its third began by answering a `GET_VERSION` with a
+flash data reply. It is also visible in this section's own runs: four stalls in a row alternate
+between failing on the stall and failing on the version read that opens the next run.
+
+So the drop cost one read and the dirty pipe cost every read after it, which is the more damaging of
+the two and the cheaper to fix. `readFlash` now drains the rest of a failed answer up to its
+acknowledgement before reporting the failure, bounded by the same idle poll count as a read, and the
+drain cannot itself throw: replacing the real failure with whatever went wrong tidying up is the
+substitution the rehearsal's own `finally` already refuses.
+
+### What is done about the drop itself
+
+A window is asked for again, up to twice, in `readConfig` rather than in `readFlash`. The library
+reports what happened; deciding that asking again is safe requires knowing the request has no side
+effect, and the pipeline is the layer that knows. The count is returned and printed rather than
+absorbed, because a link that needs a retry at every window is a fault to see and not to swallow.
+
+Nothing here changes what a good read has to satisfy. Every window is still checked by the sequence,
+the whole file by the end marker and by the trailer checksum, and a retried read is not a degraded
+one.
+
+### What this does not explain, and one thing it puts a name to
+
+It does not say **what** stalled this process for a fifth of a second in the middle of a read. A
+garbage collection is the obvious candidate and nothing here measured one.
+
+It does explain a hazard that had only been described. `docs/usb-protocol.md` and the reader's own
+comment have said since section 139 that a dropped report is the failure a chunked transfer over HID
+actually has, and that the sequence check is what turns it from silent corruption into an error. That
+was reasoning about a protocol. It is now a measured property of this bench, with a queue depth, a
+rate and a threshold.
+
+**It is not the stranding fault**, which is a remote that stops answering after sitting idle and
+needs its batteries out. That one is untouched and still unexplained.

@@ -1491,6 +1491,13 @@ tools/facts.py         [--write] [--list]   the document checks behind `make fac
 tools/usbdesc.py       <file> <base> [--raw] [--json]
 tools/usbprobe.py      [--json]   reads a CONNECTED remote, enumeration only, needs pyusb
 node packages/usb/bin/list-remotes.ts    the same question over HID, also enumeration only
+node packages/usb/bin/read-burst-probe.ts [--count 16384] [--stall-after N] [--stall-ms MS]
+                       the positive control for a dropped chunk, section 223: read one window report
+                       by report and optionally hold the process up in the middle, which makes the
+                       host's USB library discard the oldest of its own queue. Reach for it before
+                       calling an intermittent read failure unexplained, since the loss count is
+                       predictable from the transfer rate and a queue depth of 31. All reads, and it
+                       deliberately leaves the pipe dirty, so a failing run poisons the next one.
 node packages/usb/bin/read-window.ts --address 0x... [--count 16] [--compare 0x...]
                        read one window of external flash and print it, and optionally read a
                        second and say whether they are identical. For a question about a

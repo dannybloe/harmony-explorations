@@ -160,17 +160,39 @@ export interface ConfigRead {
   readonly versionBlock: Uint8Array;
   readonly bytes: Uint8Array;
   readonly durationMs: number;
+  /**
+   * How many windows had to be asked for again, section 223.
+   *
+   * Reported rather than swallowed: a read that needed retries is still a good read, since every
+   * window is verified by the sequence check and the whole file by the end marker and the trailer
+   * checksum, but a link that needs them constantly is a fault somebody should see. Zero is the
+   * normal value and the one worth noticing when it changes.
+   */
+  readonly retries: number;
 }
 
 export interface ReadOptions {
   /** Bytes per `READ_FLASH`. 16 KiB is what the hardware tests use for the firmware read. */
   readonly chunkBytes?: number;
   readonly onProgress?: (progress: ReadProgress) => void;
+  /** Told about every window that had to be asked for again, so a caller can say so out loud. */
+  readonly onRetry?: (retry: { at: number; attempt: number; error: unknown }) => void;
   /** Injectable so a test does not depend on a clock. */
   readonly now?: () => number;
 }
 
 export const DEFAULT_CHUNK_BYTES = 16384;
+
+/**
+ * How many extra goes one window gets before the read fails, section 223.
+ *
+ * Two rather than one, because the failure it recovers from is a host side queue overflowing while
+ * something else held the process up, and whatever held it up may still be happening on the next
+ * attempt. Not more, because a link dropping three windows in a row is not a hiccup and the read
+ * should say so rather than grind on: every retry costs a whole window twice over, once to be
+ * abandoned and once to be drained.
+ */
+export const MAX_WINDOW_RETRIES = 2;
 
 /**
  * A reply that never came, as opposed to one that came back wrong.
@@ -231,11 +253,33 @@ export async function readConfig(
   bytes.set(head, 0);
   options.onProgress?.({ done: head.length, total: header.length });
 
+  let retries = 0;
   for (let at = head.length; at < header.length; at += chunk) {
     const count = Math.min(chunk, header.length - at);
-    const part = await reader.readFlash(profile.configBase + at, count);
-    if (part.length !== count) {
-      throw new ReadError(`read ${part.length} of ${count} bytes at offset ${at}`);
+    // **A window is retried, because a read is idempotent and the failure it has is transient.**
+    // Section 223: a `READ_FLASH` answer streams back as fast as the remote can send it, and
+    // HIDAPI's macOS backend holds about 31 input reports and then silently discards the oldest, so
+    // a consumer stalled for longer than the queue takes to fill loses a run of chunks. Measured by
+    // stalling on purpose: 100 ms costs 17 chunks and 200 ms costs 67, both within one of what the
+    // measured transfer rate and that queue depth predict.
+    //
+    // The retry is here rather than in `readFlash` deliberately. The library reports what happened;
+    // deciding that asking again is safe needs to know the request has no side effect, and this is
+    // the layer that knows. It is bounded and counted rather than silent, because a link that needs
+    // three goes at every window is a fault to see and not to absorb.
+    let part: Uint8Array | undefined;
+    for (let attempt = 0; attempt <= MAX_WINDOW_RETRIES; attempt += 1) {
+      try {
+        part = await reader.readFlash(profile.configBase + at, count);
+        break;
+      } catch (error: unknown) {
+        if (attempt === MAX_WINDOW_RETRIES) throw error;
+        retries += 1;
+        options.onRetry?.({ at: profile.configBase + at, attempt: attempt + 1, error });
+      }
+    }
+    if (part === undefined || part.length !== count) {
+      throw new ReadError(`read ${part?.length ?? 0} of ${count} bytes at offset ${at}`);
     }
     bytes.set(part, at);
     options.onProgress?.({ done: at + count, total: header.length });
@@ -269,5 +313,5 @@ export async function readConfig(
     );
   }
 
-  return { profile, header, versionBlock, bytes, durationMs: now() - started };
+  return { profile, header, versionBlock, bytes, durationMs: now() - started, retries };
 }

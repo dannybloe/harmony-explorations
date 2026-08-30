@@ -340,6 +340,54 @@ export class HarmonyRemote {
    * path and not the other.
    */
   private async readFlashUnchecked(address: number, count: number): Promise<Uint8Array> {
+    try {
+      return await this.readFlashStream(address, count);
+    } catch (error: unknown) {
+      // **A failed read leaves the remote streaming, and the next command inherits it.** Measured on
+      // 30 August 2026, section 223: every induced failure poisoned the following run, whose
+      // `GET_VERSION` was answered with a flash data reply. So the failure is reported after the pipe
+      // is clean, not before, and the caller gets a session it can use rather than one that fails
+      // next for a reason that has nothing to do with what it asked.
+      //
+      // The drain cannot itself throw: it is cleanup, and replacing the real failure with whatever
+      // went wrong while tidying up is the substitution this file already refuses in the rehearsal's
+      // `finally`.
+      await this.drainFlashRead();
+      throw error;
+    }
+  }
+
+  /**
+   * Read whatever is still queued until the transfer's acknowledgement, or until it goes quiet.
+   *
+   * Bounded by the same idle poll count as a read, so a remote that has stopped talking costs the
+   * same wait as any other silence rather than hanging.
+   */
+  private async drainFlashRead(): Promise<void> {
+    let idle = 0;
+    while (idle < this.idlePolls) {
+      let report: Uint8Array | undefined;
+      try {
+        report = await this.transport.read(this.timeoutMs);
+      } catch {
+        return;
+      }
+      if (report === undefined) {
+        idle += 1;
+        continue;
+      }
+      idle = 0;
+      try {
+        const reply = decodeReply(report);
+        if (reply.kind === 'ack' && reply.command === READ_FLASH) return;
+      } catch {
+        // A report this library cannot decode is still a report that is now out of the pipe, which
+        // is the only thing this loop is for.
+      }
+    }
+  }
+
+  private async readFlashStream(address: number, count: number): Promise<Uint8Array> {
     await this.send(readFlashRequest(address, count));
 
     const out = new Uint8Array(count);

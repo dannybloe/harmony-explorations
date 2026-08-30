@@ -60,13 +60,20 @@ try {
       lastPercent = percent;
       process.stdout.write(`\r  reading ${done} of ${total} bytes (${percent}%)`);
     },
+    // Said out loud rather than absorbed, section 223: a retry is recovery working, and a run full
+    // of them is a fault worth seeing at the moment it happens rather than in a total at the end.
+    onRetry: ({ at, attempt, error }) => {
+      const why = error instanceof Error ? error.message : String(error);
+      process.stdout.write(`\n  retrying 0x${at.toString(16)} (attempt ${attempt}): ${why}\n`);
+    },
   });
   process.stdout.write('\n');
 
   const filed = fileRead(LAB, read, label as string, new Date());
   const rate = Math.round(read.bytes.length / (read.durationMs / 1000) / 1024);
   process.stdout.write(
-    `  ${read.bytes.length} bytes in ${(read.durationMs / 1000).toFixed(1)}s (${rate} KiB/s)\n` +
+    `  ${read.bytes.length} bytes in ${(read.durationMs / 1000).toFixed(1)}s (${rate} KiB/s)` +
+      (read.retries === 0 ? ', no window retried\n' : `, ${read.retries} window(s) retried\n`) +
       `  filed as ${filed.config}\n  in ${filed.directory}\n`,
   );
 } finally {

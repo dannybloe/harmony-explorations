@@ -11,6 +11,7 @@ import assert from 'node:assert/strict';
 
 import {
   ERASE_FLASH,
+  FLASH_CHUNK_DATA,
   FLASH_DATA,
   HarmonyRemote,
   MISC_RAM,
@@ -764,4 +765,56 @@ test('a remote that has already answered does not get the retry', () => {
   return remote.getVersion()
     .then(() => assert.rejects(() => remote.getVersion(), /no reply to command 0x10/))
     .then(() => assert.equal(requests, 2, 'the second call sent one request and did not retry'));
+});
+
+/**
+ * 62 bytes of one value, which is a full chunk's payload for the helper above.
+ *
+ * Section 223's subject is what happens when some chunks never arrive, which on the bench is
+ * HIDAPI's macOS backend discarding the oldest of an overfull input queue, and here is simply
+ * leaving them out of the script.
+ */
+const fullChunk = (fill: number): number[] => new Array<number>(FLASH_CHUNK_DATA).fill(fill);
+
+test('a read that loses chunks fails, and leaves nothing behind for the next command', async () => {
+  // **The half that cost an afternoon on 30 August 2026.** The sequence check already caught the
+  // loss; what it did not do was clear the rest of the answer, so the remote went on streaming and
+  // the next command read those reports instead of its own. Measured three times: every failed read
+  // poisoned the run after it, and one of them answered a GET_VERSION with a flash data reply.
+  //
+  // The script is a transfer that skips two chunks and then carries on to its acknowledgement,
+  // which is what the wire looks like when the queue has dropped some.
+  const { transport, queue } = scriptedRemote([
+    flashChunk(0x01, fullChunk(0xaa)),
+    // 0x12 and 0x23 are missing, so the next one is 0x34.
+    flashChunk(0x34, fullChunk(0xbb)),
+    flashChunk(0x45, fullChunk(0xcc)),
+    FLASH_DONE,
+    // What the next command would be answered with, if anything of the above were left over.
+    report(0x28, 0x34, 0x05),
+  ], 0);
+  const remote = new HarmonyRemote(transport, { timeoutMs: 1, idlePolls: 3, architecture: 12 });
+
+  await assert.rejects(() => remote.readFlash(0x040000, 62 * 4), /out of sequence/,
+    'the loss is reported rather than filled in');
+  assert.equal(queue.length, 1, 'the rest of the answer was drained, up to and including the ack');
+
+  // And the proof that matters: the next command gets its own reply.
+  const version = await remote.getVersion();
+  assert.equal(version[0], 0x34, 'GET_VERSION answered with a version block, not with flash data');
+});
+
+test('the drain stops at the acknowledgement rather than eating the next reply', async () => {
+  // The failure mode on the other side: a drain that reads until silence would swallow whatever the
+  // next command is about to be answered with, and the caller would see a timeout it cannot explain.
+  const { transport, queue } = scriptedRemote([
+    flashChunk(0x01, fullChunk(0xaa)),
+    flashChunk(0x34, fullChunk(0xbb)),
+    FLASH_DONE,
+    report(0x28, 0x34, 0x05),
+    report(0x28, 0x34, 0x05),
+  ], 0);
+  const remote = new HarmonyRemote(transport, { timeoutMs: 1, idlePolls: 3, architecture: 12 });
+  await assert.rejects(() => remote.readFlash(0x040000, 62 * 3), /out of sequence/);
+  assert.equal(queue.length, 2, 'both of the following replies are untouched');
 });

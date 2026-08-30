@@ -16,6 +16,7 @@ import { load, skipUnless } from '@harmony/lab';
 import {
   DEFAULT_CHUNK_BYTES,
   HEADER_PROBE,
+  MAX_WINDOW_RETRIES,
   parseHeader,
   PROFILES,
   profileFor,
@@ -299,3 +300,62 @@ test('what came off the fake remote parses as the same container as the file', s
     fromFile.sections.map((s) => s.address),
   );
 });
+
+/**
+ * A remote whose flash reads are fine except that the window starting at `failAt` refuses the first
+ * `failures` times it is asked for. Which is what a lost chunk looks like from up here: the sequence
+ * check in `readFlash` throws, the same request afterwards is answered normally, and nothing about
+ * the remote's contents has changed. Section 223.
+ */
+function flakyRemote(config: Uint8Array, profile: RemoteProfile, failAt: number, failures: number) {
+  const good = fakeRemote(config, profile);
+  // Its own list rather than the good remote's, because an attempt that throws never reaches that
+  // one and the point of counting is to see the attempts that failed.
+  const asked: Array<{ address: number; count: number }> = [];
+  let left = failures;
+  const reader: ConfigReader = {
+    getVersion: () => good.reader.getVersion(),
+    async readFlash(address, count) {
+      asked.push({ address, count });
+      if (address === failAt && left > 0) {
+        left -= 1;
+        throw new Error('flash chunk out of sequence: expected 0xbf, got 0x14 after 13764 bytes');
+      }
+      return good.reader.readFlash(address, count);
+    },
+  };
+  return { reader, asked };
+}
+
+test('a window that fails once is asked for again, and the read is whole', skipUnless('one_config'),
+  async () => {
+    const config = configOf('one_config');
+    const profile = profileFor(ONE);
+    const failAt = profile.configBase + HEADER_PROBE;
+    const flaky = flakyRemote(config, profile, failAt, 1);
+    const retries: number[] = [];
+    const read = await readConfig(flaky.reader, profile, {
+      onRetry: ({ attempt }) => retries.push(attempt),
+    });
+    // The bytes are the bytes: a retried window is not a degraded one, since every window is checked
+    // by the sequence and the whole file by the end marker and the trailer checksum.
+    assert.deepEqual(read.bytes, config.subarray(0, read.bytes.length));
+    assert.equal(read.retries, 1, 'and the read says it needed one, rather than hiding it');
+    assert.deepEqual(retries, [1], 'the caller was told at the moment it happened');
+    assert.equal(flaky.asked.filter((a) => a.address === failAt).length, 2, 'asked twice, no more');
+  });
+
+test('a window that never answers fails the read rather than being retried forever',
+  skipUnless('one_config'), async () => {
+    const config = configOf('one_config');
+    const profile = profileFor(ONE);
+    const failAt = profile.configBase + HEADER_PROBE;
+    // One more failure than the budget allows, so the last attempt is the one that gives up.
+    const flaky = flakyRemote(config, profile, failAt, MAX_WINDOW_RETRIES + 1);
+    await assert.rejects(
+      () => readConfig(flaky.reader, profile, {}),
+      /out of sequence/,
+      'and the error is the transport failure, not a wrapper that loses what went wrong');
+    assert.equal(flaky.asked.filter((a) => a.address === failAt).length, MAX_WINDOW_RETRIES + 1,
+      'the budget is attempts in total, not retries after an unlimited first go');
+  });
