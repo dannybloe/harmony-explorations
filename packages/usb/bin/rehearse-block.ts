@@ -105,6 +105,16 @@ const SPARE_DUMPS = new Set([
   'one_spare_myharmony',
   'one_spare_before_sync',
   'one_spare_after_sync',
+  // Added 30 August 2026, and **its provenance is weaker than the other three's**, which is worth
+  // writing beside it rather than in a commit message nobody re-reads. Those were read in sessions
+  // whose subject was the spare, either side of a sync. This one was read because the rehearsal
+  // refused: the unit on the cable held a configuration no lab dump matched, so the dry run could
+  // not proceed, and the fresh read is of **whatever was attached**. Danny stated it was the spare.
+  // What was checked mechanically is narrower and is the honest half: it is not the programmed
+  // unit's saved configuration, having six devices and 475 codes where that one has five and 328,
+  // with a different equipment list. That rules out the slip this list exists for and it is not an
+  // identification.
+  'one_spare_20260830',
 ]);
 
 function argument(name: string): string | undefined {

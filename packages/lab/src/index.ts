@@ -170,6 +170,15 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // account holds. Five devices and seven activities against the other three samples' three and two.
   // Out of the corpus wide lists like them. Section 155.
   one_spare_myharmony: 'one-spare-myharmony-config.bin',
+  // A fourth state of that same unit, read on 30 August 2026 **because the write rehearsal refused**:
+  // the remote held a configuration none of the three above matches, six devices and 475 codes
+  // against the newest one's five and 418, so something was added and synced onto it after 23 August
+  // and nothing dumped it afterwards. Named here rather than left as an anonymous read because the
+  // write rehearsal takes its dumps by name and this is the one it would put back. **That script is
+  // deliberately not named here**: `packages/lab` is an instrument a blind reviewer may be handed,
+  // where `packages/usb` is withheld whole, so a comment in this file pointing at the write path
+  // widens what a reviewer sees. `TheWriteReviewWithholdListIsComplete` caught the first wording.
+  one_spare_20260830: '20260830T1430Z-harmony-one-spare-config.bin',
   // Two configs Logitech compiled to a specification we wrote, 13 August 2026: the corpus's only
   // known answer samples. Section 132. Not in the corpus wide lists, on purpose; see tests/lab.py.
   calibration_one: 'calibration-one-spare.bin',

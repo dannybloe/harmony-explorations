@@ -48,7 +48,8 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // since two regions Logitech's own client read off a Harmony One, section 215.
   // This is a **pure text** check on lab.py, so it runs with no lab at all and is what
   // `make test-nolab` caught, four times now, when the count was left behind by a registration.
-  assert.equal(Object.keys(pythonImages()).length, 80, 'every fixture tests/lab.py names');
+  // 81 since `one_spare_20260830`, the fourth state of the spare Harmony One, read on 30 August 2026.
+  assert.equal(Object.keys(pythonImages()).length, 81, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {

@@ -176,7 +176,7 @@ test('the control declares the section and puts nothing in it, and grows by thre
     assert.equal(after?.length, 4);
   });
 
-test('seven containers declare a method for sending a number, 28 declare none, 8 are unread',
+test('eight containers declare a method for sending a number, 28 declare none, 8 are unread',
   skipWithoutLab(), () => {
     // Exact, and split three ways, because each column is a different claim and a total would let any
     // of them go to zero unnoticed. The interesting number is the 2: this section stayed unexercised
@@ -219,8 +219,15 @@ test('seven containers declare a method for sending a number, 28 declare none, 8
     // has no slot mapping at all, so `numberSenders` refuses rather than answering. That is the same
     // rail arch 10 sat behind until section 184, and a container that parses is not a container whose
     // slots are placed.
-    assert.equal(populated + declaredEmpty + unread, 43, 'every container the lab can parse');
-    assert.equal(populated, 7);
+    // 44 since `one_spare_20260830`, 30 August 2026, **and it lands in `populated`**, which a first
+    // restamp of this line guessed wrong and the test caught: it was put in `declaredEmpty` on the
+    // strength of the three earlier states of that same unit, all of which declare none. It carries
+    // a number sender. That fits what is known about the account behind it, since favourite channels
+    // live on the account and every compile of one that has them brings the section along, and it
+    // makes this the first container **read off a remote** to populate base slot 16, where the three
+    // that did it before were files the service compiled and handed over.
+    assert.equal(populated + declaredEmpty + unread, 44, 'every container the lab can parse');
+    assert.equal(populated, 8);
     assert.equal(declaredEmpty, 28);
     // What is left in `unread` is five arch 10 reads plus the two containers found inside arch 8
     // firmware images, which report architecture 0. **The line between the three that answer and the

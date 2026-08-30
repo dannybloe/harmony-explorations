@@ -639,8 +639,15 @@ test('the arch 10 clock record sits one slot later, and reading it is what dated
  * remote with concordance because this project's own transport does not reach it at all. Every one
  * of the framing checks passes on it, which is what these tests are about, and it is the container
  * that showed the format word to be the pointer count. It stays outside every corpus wide total.
+ *
+ * **44 since 30 August 2026**, a fourth state of the spare Harmony One, read because the write
+ * rehearsal refused: the unit holds a configuration none of its three earlier dumps matches. It
+ * joins this population automatically, being a name in `IMAGES` that parses, and it is right that it
+ * does, since the checks below are properties of the parser and this is a container nothing here has
+ * ever parsed. It is **not** in `CONTAINERS`, so no corpus wide total moves: that list is stated
+ * rather than discovered, exactly so a new dump cannot quietly change every accounting figure.
  */
-const PARSEABLE = 43;
+const PARSEABLE = 44;
 
 function parseable(): { name: string; container: Container }[] {
   const out: { name: string; container: Container }[] = [];
@@ -776,7 +783,10 @@ test('the last section ends at the end marker, not at the declared end',
     // the EZHex split, and it is the one this
     // architecture makes least often: every previous arch 10 container here failed it, section 122.
     // 41 since the Harmony 350, section 194.
-    assert.equal(agree, 41);
+    // 42 since `one_spare_20260830`, read on 30 August 2026 because the write rehearsal refused
+    // against all three earlier dumps of that unit: its declared end and its end marker agree, as
+    // every arch 12 container here does.
+    assert.equal(agree, 42);
     // The two that disagree are the claim and they are unchanged, both being damaged reads of one
     // Harmony 890. Asserted by name rather than by count, because a count would let a **different**
     // container fail while one of these silently started passing.
@@ -826,9 +836,11 @@ test('the frame tiles to the next section on every container that has one', skip
   // 32 since the third compiled sample and 34 since the phase 7 pair; the two the sentinel misses
   // are still exactly the two empty frames, which is the claim rather than the total.
   // 35 since the Harmony 350, section 194: its slot 0 frame tiles to the next section too.
-  assert.equal(framed, 35);
+  // 36 and 34 since `one_spare_20260830`, 30 August 2026: it moves both by one and so leaves the
+  // gap alone, which is the claim.
+  assert.equal(framed, 36);
   // 33 since the Harmony 350: its frame is non empty, so the naive arithmetic gets it right too and
   // the gap between the two counts stays at exactly two, which is the claim rather than either total.
-  assert.equal(naive, 33, 'the two the sentinel gets wrong are the two empty frames');
+  assert.equal(naive, 34, 'the two the sentinel gets wrong are the two empty frames');
   assert.equal(framed - naive, 2, 'and the gap is the two empty frames, whatever the totals are');
 });

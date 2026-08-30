@@ -192,6 +192,12 @@ IMAGES = {
     # known answer sample here, since the account behind it can be queried for every name a reader
     # extracts. Five devices and seven activities. Out of the corpus wide lists. Section 155.
     'one_spare_myharmony': 'one-spare-myharmony-config.bin',
+    # A fourth state of that same unit, read on 30 August 2026 because the write rehearsal refused:
+    # the remote held a configuration none of the three above matches, six devices and 475 codes
+    # against the newest one's five and 418, so something was added and synced onto it after 23
+    # August and nothing dumped it afterwards. Named because the rehearsal takes its dumps by name.
+    # Out of the corpus wide lists, like the three above it.
+    'one_spare_20260830': '20260830T1430Z-harmony-one-spare-config.bin',
     # Two configs Logitech compiled to a specification we wrote, 13 August 2026, and the corpus's only
     # **known answer** samples: three devices and two activities chosen by us, on a throwaway account,
     # then compiled by the live service and downloaded without a byte reaching a remote. Section 132.

@@ -61,7 +61,7 @@ That is the checklist. Below it, behind a gate:
 
 | phase | what it gets us | status |
 |---|---|---|
-| 8 | the write path, on the spare Harmony One | **gate opened 25 August 2026**, rehearsal first |
+| 8 | the write path, on the spare Harmony One | **gate opened 25 August 2026**, rehearsal first. The dry run passes, 30 August 2026; nothing has been written |
 | 9 | the appliance responds | **gate opened 25 August 2026**, after phase 8 |
 
 ## What this deliberately does not need
@@ -622,8 +622,12 @@ and the erase question waits for a write that actually changes something.
 
 M4, and behind the gate above. The rails are written and off, `packages/usb/src/rails.ts`.
 
-- [ ] a verified original dump of the spare Harmony One in the lab, byte for byte against the device.
-      This exists and gets re-verified on the day
+- [x] a verified original dump of the spare Harmony One in the lab, byte for byte against the device.
+      **Re-verifying it on the day is what caught it being stale**, 30 August 2026: the three dumps
+      of that unit were all refused by the compare, because it holds a configuration none of them
+      matches, six devices and 475 codes against the newest one's five and 418. Something was added
+      and synced onto it after 23 August and nothing dumped it afterwards. `one_spare_20260830` is
+      the fresh read, 1665900 bytes in 54 seconds, and this box is what it took to tick
 - [ ] **the restore rehearsed before the write, not after it.** Nothing here has ever put a config back
       onto a remote, so the recovery path is a belief and not a measurement. Write the unit's **own**
       dump back first and read it back identical: a write that changes nothing is the cheapest possible
@@ -638,7 +642,12 @@ M4, and behind the gate above. The rails are written and off, `packages/usb/src/
       silicon**: whether the USB peripheral can accept a second report before the firmware has
       serviced the first is the endpoint's buffer descriptor, unread, so the streamed run on the
       block above is still worth watching even though the firmware asks for nothing
-- [ ] the dry run first, which needs no flag and writes nothing:
+- [x] the dry run first, which needs no flag and writes nothing, **run on 30 August 2026 and it
+      passes**: the block on the device matches `one_spare_20260830` byte for byte, both neighbours
+      are readable so the erase span will be checked on both sides, and the plan is one erase and
+      two transfers of 32768 bytes, 1048 reports. The compare is also a control nobody had run: the
+      dump came from a read of the whole configuration and this is a second, independent read of one
+      block of it, and the two agree byte for byte. Command:
       `node packages/usb/bin/rehearse-block.ts --dump <image> --block 0x...`. It reads the block,
       compares it with the dump and prints the packet plan, and it is what turns
       `originalDumpVerified` from a caller's word into a measurement for the range being written.
@@ -650,8 +659,10 @@ M4, and behind the gate above. The rails are written and off, `packages/usb/src/
       August 2026 the rehearsal read back only the block it wrote, so a larger sector would have
       destroyed a neighbouring block of the configuration and the run would have reported success.
       The script now reads the block either side before the erase and again after it and refuses if
-      either moved, and refuses to erase at all where no neighbour can be read. **This box is ticked
-      by the first `--commit` run**, not by the code existing
+      either moved, and refuses to erase at all where no neighbour can be read. The unit's own flash
+      id is **1F:C8**, read on 30 August 2026, which is the pair the client's block table is chosen
+      by and which nothing here has yet looked up in that table: the lab holds it. **This box is
+      ticked by the first `--commit` run**, not by the code existing and not by the lookup
 - [ ] `INTENDEDVERSION` compared against the connected remote over all **six** fields, protocol,
       skin, flash and board plus `SOFTWARETYPE` and `ARCHITECTURE`, and refused on any mismatch.
       An absent or empty field matches anything, which is how a file offers a fallback, so an

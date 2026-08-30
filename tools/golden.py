@@ -55,6 +55,12 @@ CONTAINERS = (
     # And the third state of that unit, section 155: a real five device setup built by MyHarmony from
     # an account we can query. A golden vector is worth most exactly where the answer is known.
     'one_spare_myharmony',
+    # And the fourth state of that unit, read on 30 August 2026 because the write rehearsal refused
+    # against all three above: the remote holds a configuration none of them matches. Its own value
+    # to this comparison is base slot 16, which it populates, making it the first sample **read off a
+    # remote** where the two implementations of that reader are compared at all; the three that
+    # populated it before were files the live service compiled and handed over.
+    'one_spare_20260830',
     # The two configs Logitech compiled to a specification we wrote, section 132. They are out of the
     # corpus wide claim lists, deliberately, and they belong here for the same reason the arch 9 safe
     # mode container does: a golden vector is a cheap check between two implementations and costs the
