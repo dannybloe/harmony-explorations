@@ -80,13 +80,13 @@ def diagram(entities):
     lines = ['erDiagram']
     for name in sorted(drawn):
         lines.append('    %s {' % name)
-        for field in entities[name]['fields']:
+        for field in all_fields(entities, name):
             kind = field['type'] + ('[]' if field['many'] else '')
             lines.append('        %s %s' % (SAFE.sub('_', kind), field['name']))
         lines.append('    }')
     inside = set(drawn)
     for name in sorted(drawn):
-        for field in entities[name]['fields']:
+        for field in all_fields(entities, name):
             if field['type'] not in inside or IDENTIFIER.match(field['name']):
                 continue
             override = MEASURED.get((name, field['name']))
@@ -100,7 +100,14 @@ def diagram(entities):
 
 
 def listing(entities):
-    """Every service contract, by the area its namespace declares, with a field count each."""
+    """Every service contract, by area, with **every field** rather than a count of them.
+
+    This carried a field count per contract until 30 August 2026, which made it an index and not a
+    reference: `AbstractActivityRole | 6 | 0` says a type exists and nothing about what it holds, so
+    a reader who wanted to know what an activity role is had to open the JSON. Danny found the same
+    gap from the other end, asking what `AbstractActivityAction` was, and the honest answer was that
+    nothing here said. The counts are still in the per area summary, which is what an index is for.
+    """
     areas = collections.defaultdict(list)
     without = []
     for name, entity in sorted(entities.items()):
@@ -108,33 +115,69 @@ def listing(entities):
             continue
         (areas[entity['area']] if entity['area'] else without).append(name)
 
+    subclasses = collections.defaultdict(list)
+    for name, entity in sorted(entities.items()):
+        for base in entity.get('extends', []):
+            subclasses[base].append(name)
+
+    fields = sum(len(entities[n]['fields']) for group in list(areas.values()) + [without]
+                 for n in group)
+    values = sum(len(entities[n]['values']) for group in list(areas.values()) + [without]
+                 for n in group)
+    contracts = sum(len(group) for group in list(areas.values()) + [without])
+
     out = ['# MyHarmony: every service contract, by area',
            '',
            '**Generated** by `tools/myharmony_model.py` from `docs/myharmony/model.json`, so it',
-           'is never edited by hand. `docs/myharmony/model.md` is the reading; this is the index.',
+           'is never edited by hand. `docs/myharmony/model.md` is the reading; this is the',
+           'reference, and it is complete: %d contracts, %d fields and %d enum values, every one'
+           % (contracts, fields, values),
+           'of them listed.',
            '',
            'A contract\'s area is the last part of the server side namespace it declares. The %d'
            % len(without),
            'contracts that declare none are listed at the end.',
            '']
+
+    def entry(name):
+        entity = entities[name]
+        lines = ['### `%s`' % name, '']
+        notes = []
+        if entity.get('extends'):
+            notes.append('extends %s' % ', '.join('`%s`' % b for b in entity['extends']))
+        if subclasses.get(name):
+            notes.append('extended by %d: %s'
+                         % (len(subclasses[name]),
+                            ', '.join('`%s`' % s for s in subclasses[name])))
+        if entity['kind'] == 'enum':
+            notes.append('an enumeration of %d values' % len(entity['values']))
+        if not entity['fields'] and not entity['values']:
+            notes.append('no fields of its own')
+        if notes:
+            lines.extend(['. '.join(n[0].upper() + n[1:] for n in notes) + '.', ''])
+        own = {id(f) for f in entity['fields']}
+        every = all_fields(entities, name)
+        if every:
+            lines.extend(['| field | type | from |', '|---|---|---|'])
+            for field in every:
+                owner = 'itself' if id(field) in own else 'inherited'
+                lines.append('| `%s` | `%s%s` | %s |'
+                             % (field['name'], field['type'],
+                                '[]' if field['many'] else '', owner))
+            lines.append('')
+        if entity['values']:
+            lines.extend(['Values: %s.' % ', '.join('`%s`' % v for v in entity['values']), ''])
+        return lines
+
     for area in sorted(areas, key=lambda a: (-len(areas[a]), a)):
         out.append('## `%s`, %d contracts' % (area, len(areas[area])))
         out.append('')
-        out.append('| contract | fields | enum values |')
-        out.append('|---|---|---|')
         for name in areas[area]:
-            entity = entities[name]
-            out.append('| `%s` | %d | %d |'
-                       % (name, len(entity['fields']), len(entity['values'])))
-        out.append('')
+            out.extend(entry(name))
     out.append('## Declaring no area, %d contracts' % len(without))
     out.append('')
-    out.append('| contract | fields | enum values |')
-    out.append('|---|---|---|')
     for name in without:
-        entity = entities[name]
-        out.append('| `%s` | %d | %d |' % (name, len(entity['fields']), len(entity['values'])))
-    out.append('')
+        out.extend(entry(name))
     return '\n'.join(out)
 
 

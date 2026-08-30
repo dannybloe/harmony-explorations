@@ -100,6 +100,23 @@ like.
 So the configuration stores a keypad map **per activity**, and a device's own map is what those maps
 agree on. Both statements are true and only the second is a fact about the product.
 
+**And Logitech's own schema says the same thing outright**, found on 30 August 2026 and the first
+independent source this section has had. Their platform has an abstract button map with exactly
+three subclasses: one keyed by a device, one keyed by an activity, and one keyed by neither. So the
+two maps are two **types** in the vendor's model, sharing a base, distinguished by what they hang
+off. That is the claim this section makes, arrived at from their help pages and from counting
+agreements across fifteen configurations, and now stated by them.
+
+Read it for what it is. It is a schema for a later generation of hardware than the remotes on this
+desk, so it is evidence about **the product's design** and not about what a Harmony One's flash
+contains. What it settles is the thing that cost a screen in FreeHarmony: a device's map and an
+activity's map are different objects, not two views of one. `docs/myharmony/model.md` has the
+detail, and two of its findings bear on this document directly. A button carries **three** actions,
+a press, a long press and a double press, which is the mechanism the section on holding a key
+describes from the byte side. And the button kinds are named per surface, a hard key, a drawn
+button on the screen, a key under the slider, so the screen and the keypad are one map with two
+kinds of button in it rather than two maps.
+
 So the measurement is about the **activity** maps, and that is what it may be used for: it says an
 activity's map reads as the device's map plus that activity's overrides, which is what lets a device map be
 **reconstructed** where a file states none. It says nothing about what an interface should show.
@@ -379,6 +396,14 @@ So the map device mode uses is not identified. Three readings, none of them esta
 **Do not close this by choosing one.** What would settle it is the firmware: the routine that runs when
 the Devices item is pressed, followed to whatever it installs. `.claude/skills/trace-section/SKILL.md`
 is the method.
+
+**A fourth reading arrived on 30 August 2026 and it is not evidence either.** Logitech's schema has
+a third button map subclass, keyed by neither a device nor an activity, which leaves the remote
+itself: a base map belonging to the unit. That is consistent with there being such a thing, and it
+is consistent with the later hardware having one and these remotes not. No capture here holds one,
+and the schema is for a generation this project does not own. **It changes what to look for in the
+firmware, not what to believe.** If the routine behind the Devices item installs a map that came
+from neither of the two places above, this names the thing it found.
 
 ## The rule this document is really for
 

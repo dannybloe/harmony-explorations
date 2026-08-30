@@ -63,6 +63,13 @@ activity uses a key, not which other appliance holds it, not where a change land
 to get right in FreeHarmony, and each attempt answered a question about the activity map on a page about a
 device. `src/shared/buttonmap.ts` there is the derivation and carries the history.
 
+**Logitech's own schema states it, found 30 August 2026**, which is the first source for this claim
+outside our own reading: their platform has one abstract button map with three subclasses, keyed by a
+device, by an activity, and by neither. It also says a button holds **three** actions, a press, a long
+press and a double press, and it names the button kinds per surface. That schema is for a later
+generation of hardware, so it is evidence about the product's design and not about what these remotes
+hold. `docs/myharmony/model.md` and `docs/how-a-harmony-works.md` carry it.
+
 **The screen is the bigger half of device mode.** An old remote has far more buttons than a Harmony, so
 what people build in device mode is pages on the screen, a screenful of commands at a time, for the
 functions the keypad has no room for. Those never belonged on an activity's keypad map, which carries what
@@ -761,12 +768,40 @@ docs/glossary.md                the vocabulary: which terms are Logitech's, whic
 docs/usb-protocol.md            the USB protocol spec, step 3, transport done, commands open
 docs/host-client.md             Logitech's own client as a source: the rule, and the ledger of
                                 what is believed on its word alone, all of it unconfirmed
-docs/myharmony/model.md         the vendor platform's own data model: what an account holds, every
-                                field name, and the vocabularies. **Consult it before naming a field
-                                or designing anything about devices, activities or remotes**, here
-                                and in FreeHarmony. docs/myharmony/model.json is the data and
-                                this is the reading; decision 14 in docs/roadmap.md is why it is
+docs/myharmony/             everything about the vendor platform, one subject in one folder since
+                                30 August 2026. It was split across docs/ and reference/ before that,
+                                which is how half of it went stale without the other half noticing:
+                                the listing named types the reading never explained. Danny decided
+                                the location; the argument for the old split, read it through versus
+                                look one thing up in it, is real and was overruled deliberately
+  model.md                      THE reading: what an account holds, every field name, what an
+                                activity does, and the vocabularies. **Consult it before naming a
+                                field or designing anything about devices, activities or remotes**,
+                                here and in FreeHarmony. Decision 14 in docs/roadmap.md is why it is
                                 here rather than in the lab, and section 218 is the evidence
+  model.json                    the schema as data, for a tool to read: 1352 types, 470 service
+                                contracts, 366 references, 1291 enum values. Schema only and
+                                asserted to be, so no reply, account or identifier is in it
+  operations.json               the other half: every operation the platform declares, 298 over 19
+                                services, with parameters, reply types, and which entity each one
+                                can hand back. Section 219
+  entities.md                   every service contract by area with **every field**, 470 of them,
+                                marked as its own or inherited. Generated. It gave a field count
+                                per contract until 30 August 2026, which made it an index rather
+                                than a reference and is why nothing here could answer "what is
+                                AbstractActivityAction"
+  core-model.mmd                the model drawn: the entities an account actually holds, as a
+                                Mermaid diagram. **Generated** by tools/myharmony_model.py and never
+                                edited by hand. It draws the **measured** cardinality where the
+                                schema cannot state it, one remote per account record, which is
+                                section 218's correction
+  core-model.pdf                the same cluster laid out by graphviz, `make model-diagram`. A build
+                                product, gitignored
+  activity-model.pdf            the second drawing, `make model-activity`: what an activity does,
+                                its roles and its three kinds of action. It exists because the core
+                                diagram names those two types and cannot draw them, neither being a
+                                core entity. Also a build product
+  model.pdf                     model.md typeset, `make model-pdf`. Also a build product
 docs/memory-map.md              memory maps: the addressing rules and the architecture comparison
 docs/memory-map-one.md          where everything lives on a Harmony One, derived, one page
 docs/memory-map-600.md          the same for the Harmony 600
@@ -829,22 +864,6 @@ reference/silhouettes/          the front face of a model, one SVG per model, **
 reference/button-maps.md        which button a scan code is, per model, measured through the account
                                 that generated the calibration configs. Partial and honest about it:
                                 the scans two buttons share are listed as sets, not assigned
-docs/myharmony/operations.json
-                                the other half: every operation that platform declares, 298 over 19
-                                services, with parameters, reply types, and which entity each one
-                                can hand back. Section 219
-docs/myharmony/core-model.mmd
-                                the model drawn: the entities an account actually holds, as a
-                                Mermaid diagram. **Generated** by tools/myharmony_model.py and never
-                                edited by hand. It draws the **measured** cardinality where the
-                                schema cannot state it, one remote per account record, which is
-                                section 218's correction
-docs/myharmony/entities.md every service contract by area with its field count, 470 of them.
-                                Generated by the same tool, the index docs/myharmony/model.md reads
-docs/myharmony/model.json  the vendor platform's schema as data, for a tool to read: 1352
-                                types, 470 service contracts, 366 references, 1291 enum values.
-                                Schema only and asserted to be, so no reply, account or identifier
-                                is in it
 reference/lab-register.md       the lab, artefact by artefact: what each thing is, how deep anybody
                                 has been, and which of the excavation's seventeen want list tags it
                                 might answer. **A catalogue and not a set of claims**, so it carries
