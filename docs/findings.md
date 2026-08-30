@@ -27695,8 +27695,28 @@ a working read out of a connected remote:
 * `RemoteReader` runs the read on its own thread, since a full read is tens of seconds and the call
   arrives on the interface thread. It reads no configuration XML and contacts no server.
 
-Section 210 recorded this square as "a repack receipt saying 827 of the client's 829 classes rebuilt".
-That undersold it by the part that matters: the repack is not a reproduction, it is **an instrument**,
+**Why the repack exists is Danny's account of 30 August 2026, and it corrects the framing below.**
+It was not built as a read out tool. It was an attempt to make Logitech's own application work without
+the discontinued sign in, in the hope of ending up with usable software, and **it was abandoned because
+most of the interface came from the server**. What survives is the salvage. The note that planned it,
+`SERVER-DEPENDENCY.md`, had predicted exactly that before the work started, under "What only the server
+did": the skin's 66 HTML and 81 JavaScript files are, without exception, network error pages in thirteen
+languages plus one blank connecting page, so there is no local screen for devices, activities, buttons
+or menus, those having been server side pages in an embedded browser. Its five step plan has steps 1 to
+3 marked done, the local stand in, the session starting from the remote, and the read out landing on
+this machine, and it stops at step 4 exactly where the same note said the wall was, needing a device
+model and an encoder "built from nothing".
+
+**Nothing anywhere recorded that it stopped, or why**, which is why this section first read the repack
+as purpose built. Section 204 crossed the note's central claim, and `CLAUDE.md` carries it, so the
+**finding** travelled and the **attempt** did not: that an application was rebuilt, modified, run
+against a local stand in for the dead service, and given up on, was in the lab and in nobody's head
+here. That is decision 12's failure mode in its plainest form, and unlike the nine re-derivations it
+cost nothing except a wrong reading of what these files are for.
+
+With that said, section 210 recorded this square as "a repack receipt saying 827 of the client's 829
+classes rebuilt". That undersold it by the part that matters: what the repack contains is **an
+instrument**,
 and `run.log`, the 69344 packet capture that is now the `classic_read_capture` fixture, is its output
 rather than the stock client's. The command encoder under test in
 `packages/usb/test/classic-capture.test.ts` is still entirely Logitech's, since the two added classes
