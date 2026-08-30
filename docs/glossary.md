@@ -127,6 +127,18 @@ what the pointers inside it are relative to. `0x040000` on a Harmony One, `0x030
 **device** (Logitech's concept). One piece of equipment, a television or a receiver. In the file a
 device turns out to be **one group in the infrared database**.
 
+**Say "device", not "appliance"**, asked for by Danny on 30 August 2026 after the second time an
+answer used the wrong word. "Appliance" is nobody's term: it is not Logitech's, it is not in their
+schema, and it is not in the product. It reads as a synonym and is not one, because the sentence it
+usually appears in is also getting the containment wrong.
+
+**And the containment is: you have remotes, a remote has devices.** An account has remotes. It is a
+remote that controls a television and a receiver. "The devices on an account" is wrong as a statement
+about the product, and the mistake matters because it is the shape the whole interface is built on.
+The one place it is right is Logitech's **schema**, which pools devices and remotes in flat lists on
+the account and gives `Remote` no device list at all: `docs/myharmony-model.md` states that
+difference, and it is the exception that has to be named rather than a licence to blur the two.
+
 **activity** (Logitech's concept). One thing you want to do, "watch TV", which switches several
 devices on and sets their inputs. Counted by a single variable inside the config.
 

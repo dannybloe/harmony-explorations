@@ -28197,9 +28197,10 @@ the proxy names the operation and the listing names the address.
 
 It answers a POST with 405 and a GET with a bare gateway error page, reproducibly, on both accounts.
 The control is the part that makes this a measurement of the endpoint rather than of our request:
-**two neighbours on the same address form answer normally**, `ActivityList` with seven activities and
-`FunctionList` with seventeen device function maps, so the address form, the verb and the session are
-all right. `DeviceList` and `CapabilityList` fail identically to `ProtocolList`.
+**two neighbours on the same address form answer normally**, `ActivityList` and `FunctionList`, each
+returning a populated reply, so the address form, the verb and the session are all right. What those
+two returned is not quoted here as a number: they are test accounts and their contents change, which
+section 220 sets out. `DeviceList` and `CapabilityList` fail identically to `ProtocolList`.
 
 So `IrProtocol` stays schema without instances, and the reason is now measured rather than unknown.
 The rhythm table in `packages/codec/src/protocols.ts` stands on its own two routes, the corpus and
@@ -28224,11 +28225,22 @@ and nothing in the container says which code is volume up. That naming layer liv
 and `UserAccountDirector/FunctionList` is where it is, which section 219 found by accident while
 establishing that a neighbouring endpoint is broken.
 
-Fetched on 30 August 2026 for two accounts. It returns one map per appliance and one per activity,
-each a set of named groups of functions, where a function carries a command name, a label for a
-person to read, an identifier and a transport.
+Fetched on 30 August 2026 from the project's two test accounts. It returns one map per device and one
+per activity, each a set of named groups of functions, where a function carries a command name, a
+label for a person to read, an identifier and a transport.
 
-| | account 1 | account 2 |
+**Those accounts are working accounts and their contents change**, which decides what this section may
+claim and how its test is written. Remotes and devices are added and removed on them as experiments
+need, so every number below describes a **capture** and not an account, and the captures are pinned
+under a dated name, `FunctionList_20260830.json`, rather than under the name the probe writes on every
+run. What is claimed about the **platform** is the structural half, the shape of a map and the
+transport split, and those are asserted as holding without exception rather than by counting.
+
+The first version of this section got that wrong. It quoted these counts as facts, and its test
+asserted them against the probe's own output file, so the next probe run on either account would have
+turned a settled finding into a failure and told nobody why.
+
+| in the captures of 30 August 2026 | account 1 | account 2 |
 |---|---|---|
 | device function maps | 4 | 10 |
 | activity function maps | 2 | 7 |
@@ -28248,9 +28260,10 @@ own activity, `Functions.UserConfigurator.<activity>`, on all 23 maps.
 
 ### A named group states no transport, `Miscellaneous` states infrared
 
-The finding, and it is an exact partition over **1191 functions on two accounts with no exception**:
+The finding. It is a claim about the platform, so it is stated as an exact partition holding **with no
+exception**, over the 1191 functions the two captures contain:
 
-| | transport `None` | transport `Infrared` |
+| in the captures of 30 August 2026 | transport `None` | transport `Infrared` |
 |---|---|---|
 | a named group, account 1 | 248 | 0 |
 | `Miscellaneous`, account 1 | 0 | 95 |
@@ -28258,18 +28271,21 @@ The finding, and it is an exact partition over **1191 functions on two accounts 
 | `Miscellaneous`, account 2 | 0 | 253 |
 
 The reading is that the named groups are the platform's **canonical button vocabulary**, held
-independently of how a command reaches an appliance, and `Miscellaneous` is where an appliance's own
+independently of how a command reaches a device, and `Miscellaneous` is where a device's own
 commands sit, which exist only as a concrete infrared code. `TransportType` is a nine value
 enumeration in the schema, carrying HDMI, three flavours of Bluetooth and two of network alongside
 infrared, so transport independence is a real property of the platform rather than an artefact of a
 generation that only had one transport.
 
 **The control matters here**, because a partition is also satisfied by a reply where one side is
-empty: both transports occur, 843 against 348 across the two accounts.
+empty. Both transports occur, and the test states that as a set rather than as a count, since how many
+of each there are is a property of whatever these accounts held that day.
 
-24 named groups, 105 canonical command names, 301 device specific ones. The canonical vocabulary is
-published in `docs/myharmony-model.md`; the device specific names are Logitech's own database content
-for particular appliances and stay in the lab.
+24 named groups, 105 command names in them, 301 device specific ones. **That is a floor and not the
+platform's vocabulary**, since it is the union of what these two test accounts' devices happened to
+use on one day: a group the platform has and no device here used is simply absent. The named half is
+published in `docs/myharmony-model.md` with that sampling stated beside it; the device specific names
+are Logitech's own database content for particular devices and stay in the lab.
 
 **It is not an enumeration**, which matters for anything that would treat it as one: it carries `OK`
 beside `Ok`, `Prev` beside `Previous`, `SkipBack` beside `SkipBackward` and a set of `iPod` prefixed
@@ -28277,7 +28293,7 @@ transport commands. Ten command names sit in more than one group, so a group is 
 name.
 
 **And the two sets overlap on eight names**, `+10`, `Home`, `Options`, `PS`, `PresetNext`,
-`PresetPrev`, `Select` and `Stop`, so being device specific is a property of one appliance's entry and
+`PresetPrev`, `Select` and `Stop`, so being device specific is a property of one device's entry and
 not of a name. That was found by the publication rail's first version, which searched the whole
 document for every device specific name and tripped on four that are also canonical. The rail is
 scoped to the published table now, since a command name can also be an ordinary word: it refused
@@ -28294,7 +28310,7 @@ plus a sixth the schema has never heard of, `Name`. So the model stays a floor.
 
 **The function counts and a configuration's code counts do not match, and this is not yet a closure.**
 The newest configuration the lab holds for either account was compiled on 24 August and the accounts
-have changed since, so the two artefacts describe different moments. On the four appliances that
+have changed since, so the two artefacts describe different moments. On the four devices that
 appear in both, the configuration holds more codes than the platform lists functions, by 10 to 21
 each. That is the expected direction, since an activity can bind a code the device map does not
 expose, but it is an observation and not a measurement until both sides come from one moment.

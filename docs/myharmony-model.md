@@ -24,7 +24,10 @@ Three independent sources, which is what makes this a measurement rather than a 
 * **instances**, in the replies this project has captured from five accounts;
 * and **the live service**, which can be asked about anything the other two do not exercise.
 
-Against the captures, **nothing in the schema is missing from live data**:
+Against the captures, **nothing in the schema is missing from live data**. The captures come from
+this project's own test accounts on dates recorded in `reference/lab-register.md`, and those accounts
+change, so the table is a statement about what was captured. It is evidence that the schema is
+faithful, which is what it is for, and not a description of an account:
 
 | entity | fields in the schema | present in a live reply | extra fields the reply carried |
 |---|---|---|---|
@@ -47,9 +50,20 @@ platform holds, not how a configuration is built from it.
 and **1291 enum values**. The most connected types are identifier wrappers carrying no fields at all,
 so the useful shape is the one below.
 
-**Account is the root.** It holds Devices, Activities, Remotes and Surfaces directly. A **Remote** is a
-physical unit. A **Device** is an appliance on the account, pointing at a catalogue entry. An
-**Activity** is what the product calls an activity, with enter actions, leave actions and roles.
+**Account is the root**, and the shape underneath it is worth stating carefully, because it is not
+the shape the product presents.
+
+In the product, you own **remotes** and a remote controls **devices**, one device being one piece of
+equipment, a television or a receiver, per `docs/glossary.md`. In the **schema**, an account holds a
+flat list of `Remote`, a flat list of `Device`, a flat list of `Activity` and a flat list of
+`Surface`, all four hanging off the account directly. **A `Remote` has no device list at all**: its
+own references are to dongles, surfaces, a keyboard layout and its properties. What ties a device to
+where it is used is the other way round, a `Device` naming the activities it takes part in.
+
+So "the devices on an account" is the schema's phrasing and "the devices on a remote" is the
+product's, and this document uses the schema's only when describing the schema. Both are worth
+knowing, since a reader who assumes the product shape will go looking for a list on `Remote` that
+does not exist.
 
 ### Account
 
@@ -336,23 +350,23 @@ this platform is a POST of a JSON body, and a POST to these answers 405.
 ## What a device's commands are called
 
 A configuration addresses infrared codes **by number**. Nothing in it says which code is volume up.
-The platform holds that layer separately, as a **function map**: one per appliance and one per
-activity, each a set of named groups of functions, where a function carries a command name, a label
-for a person to read, and an identifier.
+The platform holds that layer separately, as a **function map**: one per device and one per activity,
+each a set of named groups of functions, where a function carries a command name, a label for a
+person to read, and an identifier.
 
 Both kinds of map are the same shape in the schema, `DeviceFunctionMap` and `ActivityFunctionMap`
 extending one `AbstractFunctionMap` that holds the groups. That is the operating concept in
 `docs/how-a-harmony-works.md` stated by the vendor: a device's map and an activity's map are two maps
 of the same keypad. A device map names the default mode, an activity map names its own activity.
 
-### The canonical groups, and the catch all beside them
+### A named group against the catch all beside it
 
 **A function in a named group states no transport; a function in `Miscellaneous` states infrared.**
-That split has no exceptions over 1191 functions on two accounts. So the named groups are the
-platform's canonical button vocabulary, independent of how a command reaches the appliance, and
-`Miscellaneous` is where an appliance's own commands live, which exist only as a concrete infrared
-code. `TransportType` has nine values including HDMI, three flavours of Bluetooth and two of network,
-so the transport independence is real and not an artefact of an era that only had infrared.
+No exceptions in the two captures of 30 August 2026, 1191 functions. So the named groups are the
+platform's button vocabulary, held independently of how a command reaches the device, and
+`Miscellaneous` is where a device's own commands live, which exist only as a concrete infrared code.
+`TransportType` has nine values including HDMI, three flavours of Bluetooth and two of network, so
+the transport independence is real and not an artefact of an era that only had infrared.
 
 | group | command names |
 |---|---|
@@ -381,20 +395,25 @@ so the transport independence is real and not an artefact of an era that only ha
 | `TransportRecording` | `Record` |
 | `Volume` | `Mute`, `VolumeDown`, `VolumeUp` |
 
-**This vocabulary is not an enumeration and must not be treated as one.** It carries `OK` beside
-`Ok`, `Prev` beside `Previous`, `SkipBack` beside `SkipBackward`, and a set of `iPod` prefixed
-transport commands, so it is the union of what manufacturers' own command sets are called, bucketed
-into groups, rather than a closed list somebody curated. Ten command names sit in more than one
-group, so a group is not a function of a name either.
+**This table is a sample and it is a floor, not the platform's vocabulary.** It is the union of what
+the devices on **two test accounts** happened to use on **30 August 2026**, so a group the platform
+has and those devices did not use is simply absent from it. Those accounts are working accounts whose
+contents change as experiments need, so nothing here should be read as a statement about what an
+account contains, and every count below is a count of a dated capture.
 
-Two accounts and 14 appliances give 105 canonical command names and 301 device specific ones. The
-device specific names are Logitech's own database content for particular appliances and stay in the
-lab; the groups and the canonical names above are vocabulary.
+**It is also not an enumeration and must not be treated as one.** It carries `OK` beside `Ok`, `Prev`
+beside `Previous`, `SkipBack` beside `SkipBackward`, and a set of `iPod` prefixed transport commands,
+so it is the union of what manufacturers' own command sets are called, bucketed into groups, rather
+than a closed list somebody curated. Ten command names sit in more than one group, so a group is not
+a function of a name either.
 
-**The two sets overlap on eight names**, `+10`, `Home`, `Options`, `PS`, `PresetNext`, `PresetPrev`,
-`Select` and `Stop`. So the platform files the same command name in a named group for one appliance
-and in the catch all for another, and being device specific is a property of an appliance's entry
-rather than of a name.
+Those two captures give 105 command names in named groups and 301 device specific ones. The device
+specific names are Logitech's own database content for particular devices and stay in the lab; the
+groups and the names above are vocabulary.
+
+**The two sets overlap**, on `+10`, `Home`, `Options`, `PS`, `PresetNext`, `PresetPrev`, `Select` and
+`Stop`. So the platform files the same command name in a named group for one device and in the catch
+all for another, and being device specific is a property of a device's entry rather than of a name.
 
 ## What bears on work already in flight
 

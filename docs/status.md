@@ -637,13 +637,15 @@ accounting table** here, which was a real duplicate with nothing added and has b
 
 **And the layer that names a command is read**, section 220. A configuration addresses infrared codes
 by number and says nowhere which one is volume up; the platform holds that separately, as a map of
-named commands per appliance and per activity. Two things came out of it. The vendor's schema says a
+named commands per device and per activity. Two things came out of it. The vendor's schema says a
 device's map and an activity's map are the same shape differing only in what they hang off, which is
 this project's own operating concept arriving by a route with nothing in common with the fifteen
 configuration measurement that produced it. And the platform separates a **canonical** button
-vocabulary, 24 groups and 105 command names held independently of how a command reaches the appliance,
-from an appliance's own commands, which exist only as an infrared code. That split holds over 1191
-commands on two accounts with no exception, and the canonical half is published as vocabulary.
+vocabulary, held independently of how a command reaches the device, from a device's own commands,
+which exist only as an infrared code. That split held with no exception over the 1191 commands captured
+from two test accounts on 30 August 2026, and the named half is published as vocabulary with its
+sampling stated: those are working test accounts whose contents change, so the list is a floor rather
+than the platform's.
 
 **And what it can be asked is in there too**, section 219: 298 operations over 19 service interfaces,
 each with its parameters and the type of its answer, which is what an importer is a sequence of. Three
