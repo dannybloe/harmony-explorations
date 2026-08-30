@@ -1182,7 +1182,7 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
         # named **without** a trailing slash, because this check reads any backticked name
         # containing one as a path relative to the lab root: `system/` is not such a path, and
         # spelling ten of them that way cost ten failures before the spelling was the fix.
-        self.assertEqual(len(named), 64, 'lab paths the register names, as at 29 August 2026')
+        self.assertEqual(len(named), 65, 'lab paths the register names, as at 30 August 2026')
         for path in sorted(named):
             with self.subTest(path=path):
                 if '*' in path:
@@ -1255,15 +1255,15 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
             return module, module['rows'](fh.read())
 
     def test_the_register_parses_into_the_rows_the_document_states(self):
-        """44 artefacts, exact rather than a floor, so a row lost to a formatting change fails.
+        """45 artefacts, exact rather than a floor, so a row lost to a formatting change fails.
 
         The number is here rather than a `fact:` marker because every producer in `tools/facts.py`
         needs a lab and this one needs only the repository. It is also a correction: `CLAUDE.md` said
         58 for a day, which was a count nothing recomputed, and this is what recomputes it.
         """
         module, rows = self.rows()
-        self.assertEqual(len(rows), 44)
-        self.assertEqual(len(dict(rows)), 44, 'a duplicated path would make a query ambiguous')
+        self.assertEqual(len(rows), 45)
+        self.assertEqual(len(dict(rows)), 45, 'a duplicated path would make a query ambiguous')
         self.assertNotIn('unseen', dict(rows), 'the status legend is not an artefact')
 
     def test_a_query_is_answered_by_ancestors_and_by_descendants(self):
