@@ -1558,7 +1558,7 @@ else's remote, which is the thing this step is trying to arrange. What is verifi
 produces a correct report for every sample in the corpus, spanning four architectures, and that it
 still produces the shape when the cookie is rewritten to a magic no family claims.
 
-### Step 9: excavate the lab. Survey done, ten squares dug, one artefact still unopened
+### Step 9: excavate the lab. Register done and tested, one artefact still unopened, reading phase left
 
 **Decision 12 is the argument; this is the job.** The lab holds 12506 files in 2.3 GB, measured on
 28 August 2026, and the knowledge in it is a superset of the knowledge in this repository by an
@@ -1569,13 +1569,13 @@ The grid, with the two squares that matter marked. File counts are what to plan 
 
 | square | size | files | what is known about it |
 |---|---|---|---|
-| `software/classic/` | 700M | 4809 | the 7.x generation's own software, and the square where most of the want list still points. Sections 204 to 209 worked it: `PROTOCOL-CONSTANTS.md` and `SERVER-DEPENDENCY.md` are mined, `LEARN-IR.md` is catalogued, and `src/` and `res/` are surveyed with the HID command layer and three resource files mined. `reports/` is mined as section 210 and `tools/` has never been opened. This row said one file had been read and the other 4808 were unexamined |
+| `software/classic/` | 700M | 4809 | the 7.x generation's own software, and the square where most of the want list still points. Sections 204 to 209 worked it: `PROTOCOL-CONSTANTS.md` and `SERVER-DEPENDENCY.md` are mined, `LEARN-IR.md` is catalogued, and `src/` and `res/` are surveyed with the HID command layer and three resource files mined. `reports/` is mined as section 210, and `tools/` and `dist/` were dug on 29 August 2026 and are **ours rather than Logitech's**, sections 214 and 215: two decompilers and a JDK, and our own abandoned rebuild of their application. **Nothing under this square is unopened now.** This row said one file had been read and the other 4808 were unexamined |
 | `work/myharmony/` | 234M | 3458 | the service client and its captured replies, plus what looks like a decompiled web application source tree that nothing here has ever opened |
 | `software/harmony-remote-software-8.0/` | 7.8M | 1018 | unexamined |
 | `software/MyHarmony/` | 183M | 317 | the Silverlight client. Section 132 concluded it holds no protocol; that conclusion predates knowing the recovery tool is reached from it |
-| `software/LogitechHarmonyRemoteSoftware.app/` | 202M | 208 | unexamined |
+| `software/LogitechHarmonyRemoteSoftware.app/` | 202M | 208 | catalogued 29 August 2026, section 214: the **pristine vendor build**, and the copy to compare it against is our repack rather than the unpacked original, which is what its register row had guessed |
 | `software/desktop-webapp/` | 21M | 370 | **section 197's square**, and the one that proves the point |
-| `reference/logitech-icons/` | 17M | 877 | unexamined |
+| `reference/logitech-icons/` | 17M | 877 | **the last unopened artefact on the site**, as at 30 August 2026 |
 | `Docs/` | 20M | 7 | user manuals, the source `docs/how-a-harmony-works.md` rests on |
 | `dumps/`, `firmware/`, `reads/`, `golden/`, `ghidra/`, `reviews/`, `bin/` | 172M | 258 | the well worked areas, and still to be registered rather than assumed |
 
@@ -1613,11 +1613,31 @@ cleanly where there is no lab, exactly as every other lab backed test does. That
 the mechanism survive the session that builds it, and it is the half that would have caught section
 197 nineteen days earlier.
 
-**The survey pass is done, 28 August 2026**, and `reference/lab-register.md` is the register: 58
+**The survey pass is done, 28 August 2026**, and `reference/lab-register.md` is the register: 44
 artefacts across the eleven squares, each with a status and the want list tags it might answer, and
 `TheLabRegisterCoversTheSiteAtArtefactLevel` is the test, controlled by creating an unregistered
-directory and watching exactly one test name it. What is left of step 9 is the digging: the rows at
-status `unseen`, in tag order rather than in folder order.
+directory and watching exactly one test name it.
+
+**So the stated definition of done is met and has been since the survey**, and saying only that would be
+a declaration by wording rather than by feeling. The digging the paragraph above left behind is what is
+actually outstanding, and as at 30 August 2026 it is this:
+
+* **One artefact has never been opened**, `reference/logitech-icons/`, 877 files tagged for FreeHarmony's
+  screens. That is the whole of what "the rows at status `unseen`" now means, down from five.
+* **Thirteen rows carry a want list tag and are not written up here**, at `surveyed` or `read`. Some of
+  those are understated rather than undug: `software/MyHarmony` is at `read` while section 132 is a
+  write up of it, so a pass that only corrected statuses would move several without opening anything.
+* **Six rows carry no tag at all** and are genuinely finished: our own scripts, a Python virtual
+  environment, a build directory the register itself calls derived, and three notes.
+* **Two of the seventeen targets are closed**, `intermediate` and `packages`. **Three cannot be closed
+  from this site**: `compiler`, because the configuration compiler was server side and is gone;
+  `fh-failures`, which no artefact carries; and `fh-limits`, which section 207 judged unlikely here
+  because this client is an executor whose interface never named a device.
+
+The honest summary is that the excavation is **past its discovery phase and into its reading phase**:
+finding squares nobody has touched is finished bar one, and what remains is reading squares that have
+been surveyed. Those are worth doing in tag order and none of them is urgent, since the two squares that
+carried the highest value tags are both dug.
 
 **The survey paid for itself on its first square**, which is the argument for having done it before
 digging anywhere. `software/classic/SERVER-DEPENDENCY.md` is 278 lines written on 7 August 2026 and
