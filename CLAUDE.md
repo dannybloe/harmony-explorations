@@ -862,7 +862,7 @@ bin/lab-register-hook.py        prints the lab register's rows for a path at the
 pyrightconfig.json              what pyright checks and, at length, what it deliberately does not
 .agents/skills/                 the project skills, as relative symlinks into .claude/skills/, so a
                                 second agent runs the same rituals rather than a copy of them. All
-                                ten skills are there. `py-lsp` and `ts-lsp` are there too, as real
+                                eleven skills are there. `py-lsp` and `ts-lsp` are there too, as real
                                 tracked directories rather than symlinks, which this said they
                                 deliberately were not until 29 August 2026. They are a hand
                                 maintained second copy of files that point into node_modules, so
@@ -1314,11 +1314,16 @@ about the 700 itself, and as a second arch 14 sample.
 
 ## Commands
 
-Ten project skills carry the rituals that are easy to half-perform, and three of them exist because
-the guidance was too long to keep in this file:
+Eleven project skills carry the rituals that are easy to half-perform, and three of them exist
+because the guidance was too long to keep in this file:
 
 * **`trace-section`**, the method for labelling a config section by finding the firmware code
   that consumes its pointer, with the pitfalls that have already cost time here.
+* **`draw-a-diagram`**, the rule that a generated picture is laid out by graphviz and never by a
+  layout engine of ours, with the two failures of 30 August 2026 that produced it: a line drawn
+  through the midpoint between its ends runs through any box that sits between them, and the fix for
+  that reported itself complete while a check still found four crossings. It also holds the port
+  trick, which is what puts a relation line on the attribute that defines it.
 * **`draw-remote`**, how a model's front face is traced from Logitech's own documentation into
   `packages/silhouettes`, carrying the objection Danny overruled on 21 August 2026 and the
   measurement that outweighed it. It had no entry here while this list claimed to name ten, which is
@@ -1402,6 +1407,16 @@ make emitcheck     build a code from a name and a number out of Logitech's catal
 make myharmony-model
                    check the drawn model against docs/myharmony/model.json, the diagram and the
                    entity listing both. MYHARMONY_ARGS=--write regenerates them. No lab, no network
+make model-pdf     docs/myharmony/model.md as a PDF, diagram drawn in, for reading outside a
+                   terminal. Graphviz lays the diagram out, Chrome sets the document. A build
+                   product, gitignored
+make model-diagram the entity diagram alone as a one page PDF beside the .mmd, laid out by
+                   graphviz, which sizes the sheet to the graph so nothing is paged or cut. Every
+                   relation line leaves the **attribute that defines it** rather than the box, which
+                   is what graphviz calls a port. Also a build product. **This needs `dot`**,
+                   `brew install graphviz`, and there is deliberately no fallback layout: the tool
+                   drew its own until 30 August 2026, and a hand written layout engine kept beside a
+                   real one is two copies of the same derivation with the unwatched copy rotting
 make protocols     what rhythm each protocol family uses, measured off the corpus against the family
                    names Logitech's analyser gave it, and the table that turns a code stated as a name
                    and a number into pulses. --write regenerates it. Needs a lab, no network

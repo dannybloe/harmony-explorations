@@ -53,6 +53,27 @@ def model():
         return json.load(handle)
 
 
+def all_fields(entities, name):
+    """Every field an entity actually has, **its own plus everything it inherits**.
+
+    Bases first, so a field reads in the order a reader would expect, and a base's own bases before
+    it. Nothing here deduplicates: no entity in this model redeclares an inherited name, and if one
+    ever does, that is a fact worth seeing rather than hiding.
+
+    **Reading `entity['fields']` alone is the bug this exists to stop**, found on 30 August 2026.
+    `Device` extends `AbstractDevice` and declares 32 fields of its own, and the 17 it inherits
+    include `Name`, `Model` and `Manufacturer`. So every drawing and every table built from the raw
+    list showed a device with no name, and a note in `model.md` said the inter key delay fields were
+    absent from the schema when they were sitting on the base class. Nobody spotted it for five
+    days, because a table of 32 fields looks complete.
+    """
+    out = []
+    for base in entities[name].get('extends', []):
+        if base in entities:
+            out.extend(all_fields(entities, base))
+    return out + entities[name]['fields']
+
+
 def diagram(entities):
     """The core cluster as a Mermaid entity relationship diagram."""
     drawn = [name for name in CORE if name in entities]

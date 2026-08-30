@@ -36,7 +36,7 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets silhouettes all clean protocols emitcheck myharmony-model
+.PHONY: help test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets silhouettes all clean protocols emitcheck myharmony-model model-pdf model-diagram model-activity model-cluster
 
 BENCH_PORT ?= 8731
 
@@ -243,6 +243,30 @@ analyze:
 # and MYHARMONY_ARGS=--write regenerates them. No lab and no network: the model is in the repository.
 myharmony-model:
 	@$(PYTHON) tools/myharmony_model.py $(MYHARMONY_ARGS)
+
+# The same document as a PDF, for reading in something other than a terminal. Draws its own entity
+# diagram, since neither pandoc nor a Mermaid renderer is installed here and adding one would be a
+# dependency decision. Graphviz lays the diagram out and Chrome sets the document; both are system
+# tools rather than npm dependencies. The PDF is a build product and is not committed, being fully
+# derived from two files that are.
+model-pdf:
+	@$(PYTHON) tools/model_pdf.py $(MODEL_PDF_ARGS)
+
+# The entity diagram on its own, beside the .mmd it mirrors. This is the one to open when the
+# question is what the model looks like rather than what it says. Needs `dot`, `brew install
+# graphviz`; graphviz writes the PDF itself and sizes the sheet to the graph, so nothing is paged.
+model-diagram:
+	@$(PYTHON) tools/model_pdf.py --diagram $(MODEL_PDF_ARGS)
+
+# The second drawing: what an activity does. The core diagram names `AbstractActivityAction` and
+# `AbstractActivityRole` in the `Activity` box and cannot draw them, because neither is a core
+# entity; that hole is what prompted the completeness pass of 30 August 2026.
+# CLUSTER names a row of `CLUSTERS` in the tool: core, activity, buttons, catalogue.
+model-activity:
+	@$(PYTHON) tools/model_pdf.py --cluster activity $(MODEL_PDF_ARGS)
+
+model-cluster:
+	@$(PYTHON) tools/model_pdf.py --cluster $(CLUSTER) $(MODEL_PDF_ARGS)
 
 protocols:
 	@node packages/codec/bin/protocols.ts $(PROTOCOLS_ARGS)

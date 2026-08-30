@@ -59,3 +59,13 @@ dist/
 # is also why the pre-commit hook noticed it before this line existed.
 .idea/
 .vscode/
+
+# Build products of `make model-pdf`, fully derived from docs/myharmony/model.md and
+# docs/myharmony/model.json, so there is nothing to gain from committing them.
+docs/myharmony/model.pdf
+docs/myharmony/model.html
+docs/myharmony/core-model.pdf
+docs/myharmony/core-model.html
+docs/myharmony/activity-model.pdf
+docs/myharmony/button-model.pdf
+docs/myharmony/catalogue-model.pdf
