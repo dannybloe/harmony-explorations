@@ -108,10 +108,12 @@ export const WRITABLE_CEILING: Readonly<Record<number, number>> = {
  * it wrote would report success. **That script measures it now**, since 30 August 2026: it reads
  * the block either side before the erase and again after it and refuses if either moved, so the
  * first run ever performed turns this constant from the client's word into a measurement on the
- * unit in front of it. No evidence suggests it is larger, since all three of the client table's arch
- * 12 rows give uniform 64 KiB above the boot area and the bench part's row is one of them, section
- * 221. What is still unmeasured is the chip rather than the table: a row says what Logitech believed
- * a part does.
+ * unit in front of it. **It was measured on 30 August 2026 and it is 64 KiB**, section 222: the
+ * rehearsal erased `0x040000` on the spare Harmony One with the blocks either side read before and
+ * after, and both are byte identical. So this constant is no longer client sourced for arch 12. The
+ * client's table and section 221's row for the part agree with the measurement, which is a closure
+ * between a vendor table and a remote rather than a second opinion about one of them. Every other
+ * architecture in this table, if one is ever added, is back to the client's word.
  */
 export const ERASE_BLOCK_SIZE: Readonly<Record<number, number>> = {
   12: 0x10000,

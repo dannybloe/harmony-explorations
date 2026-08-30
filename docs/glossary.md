@@ -294,7 +294,7 @@ Every confirmed fact in this project has one, because the analysis is AI produce
 such, so a claim that is not executable is only an assertion.
 
 **rail** (our name). A refusal built into the library rather than into an interface, so it cannot
-be bypassed by writing a script. The write rails are why nothing has ever been written to a remote
+be bypassed by writing a script. The write rails are why exactly one write has ever reached a remote
 here.
 
 **fact marker** (our name). An HTML comment written directly after a number in a document, naming

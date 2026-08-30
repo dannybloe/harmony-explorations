@@ -602,7 +602,10 @@ files already here rather than for incoming ones.
 
 ## Never write to a remote
 
-Read paths only, for now. These devices are irreplaceable. Note that patching a concordance
+Read paths only, with **one** exception performed deliberately and once: on 30 August 2026 a 64 KiB
+block of the spare Harmony One's own configuration was erased and written straight back, unchanged
+and verified, section 222. Nothing on a remote has been **changed** by this project. These devices
+are irreplaceable. Note that patching a concordance
 architecture constant to fix the firmware dump also redirects `erase_firmware()` and
 `write_firmware_to_remote(direct=1)`, so a patched build must be treated as read-only.
 
@@ -1550,8 +1553,12 @@ node packages/usb/bin/rehearse-block.ts --dump <image> --block 0x040000 [--commi
                        nothing on the remote. It also reads the block **either side** before the erase
                        and again after it, because `ERASE_FLASH` carries no count and the 64 KiB block
                        size is Logitech's client's word: without that, a larger sector would destroy a
-                       neighbouring block and the run would report success. Unrun. Sections 175 and
-                       the job 3 review in docs/review-before-first-write.md
+                       neighbouring block and the run would report success. **Run with `--commit` on
+                       30 August 2026 and it succeeded**, which is this project's first write: the
+                       erase stayed inside its block on both sides, so the block size is measured now
+                       rather than believed, and the whole configuration reads back identical.
+                       Sections 175, 221 and 222, plus the job 3 review in
+                       docs/review-before-first-write.md
 HARMONY_ENABLE_WRITES=1 node packages/usb/bin/end-session-experiment.ts
                        THE ONLY SCRIPT HERE THAT SENDS A COMMAND WHICH IS NOT A READ, one
                        `0xE0 0x01`, which zeroes one variable and touches no storage. Refuses

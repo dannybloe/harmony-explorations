@@ -12,6 +12,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { require_, skipWithoutLab } from '@harmony/lab';
+
 import { NOMINAL_FLASH_SIZE, failureLine, neighbourBlocks } from '../src/rehearsal.ts';
 
 const ONE = 12;
@@ -71,4 +73,22 @@ test('after the erase a failure says what to do next', () => {
   assert.match(line, /rerun this script with the same arguments/);
   assert.match(line, /restored from the lab dump/,
     'and what the fallback is, since rerunning is not always possible');
+});
+
+test('the first write put the block back unchanged, and the whole configuration with it',
+  skipWithoutLab(), () => {
+  // **Section 222, and it is the only executable form this claim can take.** The write itself was a
+  // hardware event on 30 August 2026 and cannot be rerun by a test: what can be checked is its
+  // evidence, two reads of the spare Harmony One taken either side of it. If they ever stop being
+  // byte identical, either a dump was replaced or the claim was wrong, and both are worth failing on.
+  //
+  // The block level compare the script performs cannot see damage anywhere else, and `ERASE_FLASH`
+  // carries no count, so an erase reaching past its block is exactly the failure a whole file
+  // comparison catches and a range comparison cannot. That is why the evidence is whole
+  // configurations rather than the 64 KiB that was written.
+  const before = require_('one_spare_20260830');
+  const after = require_('one_spare_after_first_write');
+  assert.equal(after.length, before.length, 'the configuration did not change length');
+  assert.equal(before.length, 1665900, 'the spare Harmony One config as read on 30 August 2026');
+  assert.deepEqual(after, before, 'the remote after the first write is the remote before it');
 });

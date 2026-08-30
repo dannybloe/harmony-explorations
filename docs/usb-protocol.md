@@ -1457,7 +1457,8 @@ Three things this changes, none of them about bytes:
   now. That is a different statement from "the files exist", which is all that could be said before.
 * **The 600's recovery file was the wrong file**, see `docs/findings.md` section 23, and only a
   comparison against the device could have shown it.
-* **Restoring is still untested.** Nothing has ever been written to a remote, so every one of these
+* **Restoring is still untested.** The one write this project has performed, section 222, reproduced
+  bytes that were already there and so never needed a restore, so every one of these
   backups is verified as a *copy* and unverified as a *restore*. (This said the flash write data path
   "does not exist", which section 175 read on 25 August 2026 and `packages/usb/src/writes.ts` now
   builds. What has never happened is the sending, and that is the half this bullet is about.) That gap is procedural rather than a gap in the data, and it is why the spare is the

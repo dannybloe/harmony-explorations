@@ -61,6 +61,10 @@ CONTAINERS = (
     # remote** where the two implementations of that reader are compared at all; the three that
     # populated it before were files the live service compiled and handed over.
     'one_spare_20260830',
+    # And the same unit read again after the first write, section 222. Its vector is expected to
+    # duplicate the one above exactly, which is the claim rather than an accident: the write put the
+    # unit's own bytes back, so a differing vector would mean the configuration changed.
+    'one_spare_after_first_write',
     # The two configs Logitech compiled to a specification we wrote, section 132. They are out of the
     # corpus wide claim lists, deliberately, and they belong here for the same reason the arch 9 safe
     # mode container does: a golden vector is a cheap check between two implementations and costs the

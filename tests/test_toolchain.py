@@ -1371,7 +1371,7 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
     """`docs/review-before-first-write.md` makes three claims about which files may be handed to an
     independent reviewer, and all three are the kind this project refuses to leave as prose.
 
-    The review exists because nothing has ever been written to a remote and the derivation a first
+    The review exists because nothing had ever been written to a remote and the derivation a first
     write rests on has been read by one party. Its worth depends entirely on the reviewer not having
     seen our answer, so the two lists in that document are load bearing: a file that states the
     answer and is missing from the withhold list turns an independent derivation into a quotation,

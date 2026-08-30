@@ -10,7 +10,8 @@ agreement. Decided afterwards, all three are worthless.
 
 ## Why
 
-Nothing has ever been written to a Harmony remote by this project. The gate in front of the first
+Nothing had ever been written to a Harmony remote by this project when this was written; one block
+has been now, section 222, on 30 August 2026, and it reproduced bytes already there. The gate in front of the first
 write opened on 25 August 2026, rehearsal first, and the derivation behind it landed the same day,
 section 175. **That derivation has been read by exactly one party, which is us**, and the remotes are
 discontinued and irreplaceable.
@@ -349,7 +350,9 @@ dump name with the programmed unit attached would compare equal and erase the pr
 sample.
 
 **Job 4, the recovery route, and this is the sharpest of the three.** Not a code question. Every
-backup is verified faithful and **restoring from one has never been performed on a Harmony One.** The
+backup is verified faithful and **restoring from one has never been performed on a Harmony One**,
+which the write of 30 August 2026 did not change: it reproduced bytes already on the device, so it
+never needed the route and therefore never tested it. The
 one successful recovery this project has seen was a single EEPROM byte on a Harmony 525, telling a
 bootloader to install an image already resident in external flash. A Harmony One configuration
 restore is an erase and write of 26 blocks into external NOR: different architecture, different

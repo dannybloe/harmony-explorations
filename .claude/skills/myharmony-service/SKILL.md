@@ -279,7 +279,7 @@ comparing them is what would settle it.
   door, and a new kind of write is Danny's decision each time. This rail used to read "account 1:
   reads only", which named the wrong account and has been withdrawn: see the accounts section.
 * The update service is **read only by nature** and stays that way. Fetching an image is a download;
-  installing one on a remote is not this project's business and no remote here has ever been written
+  installing one on a remote is not this project's business and no firmware here has ever been written
   to. Its key is Logitech's, read from the mirrored client at the time of use, never copied into a
   document and never into this repository.
 * The evidence directories are append only in spirit: a rerun that would overwrite a captured reply

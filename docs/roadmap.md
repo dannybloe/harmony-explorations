@@ -16,7 +16,8 @@ can be written yet even with every flag on.
 **The read path now works against both bench remotes**, on both architectures, from this project's
 own host code: 256 bytes of config flash come back byte identical to each unit's lab dump, live RAM
 reads work, and six fields of the version block were predicted before being measured and held.
-Nothing has been written to a remote. Two negative results came out of it: reads of internal program
+Nothing was written to a remote by that session, and nothing at all until 30 August 2026, section
+222. Two negative results came out of it: reads of internal program
 memory restart a remote when the transfer ends in a one byte chunk, and `MCU_ID` is not reachable
 through that window. Section 19 of `docs/findings.md` and section 4 of `docs/usb-protocol.md`.
 
@@ -682,7 +683,7 @@ a technical claim about the product belongs on this side of the fence.
 | 1 | See what is on your remote | M1 and M2, both done. Plus `inventory`, `render`, `activities`, `devices` and `text`, all done |
 | 2 | Keep your remotes in one place | `packages/corpus`, done. The filing policy is a product decision |
 | 3 | Change something, without touching the remote | M3's codec half, done: `edit.ts` with `FIELD_RULES` for same length edits, `relocate.ts` for length changes, section 172 |
-| 4 | Put it back, changing nothing | **M4**, started 25 August 2026: the gate is open and the rehearsal is first. The rails and `ERASE_FLASH` scoping exist, the data packets are derived and `writeFlash` sends them behind two doors, section 175. Nothing has been written to a remote |
+| 4 | Put it back, changing nothing | **M4, and its name is now literal**: on 30 August 2026 one 64 KiB block of the spare Harmony One's own configuration was erased and written back unchanged, verified over the block and over the whole configuration, section 222. The transfer derived in section 175 is confirmed on hardware and the erase block size is measured rather than believed. What is untried is a write that changes something |
 | 5 | Change what your remote does | M4 again, plus **one reading**: which base slot 15 group holds a device's delays, see below |
 | 6 | Add and remove devices and activities | M6. Its former blocker, length changing edits, exists: `relocate.ts`, section 172, exercised by `composeDevice` and `composeDeviceScreen`, section 173 |
 | 7 | Teach it a code from your old remote | **M5**, partly built without being scheduled: a code stated as a name and a number becomes pulses, `stated.ts` over 38 families, sections 157 to 169, and the block spelling is the generator's own, section 174. Capture is read, section 98. Open: a learned code's tail shape and storage class |

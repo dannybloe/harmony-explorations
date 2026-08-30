@@ -47,11 +47,13 @@ protocol and are only partly reachable.
 | List your devices and activities, with their names | **Works.** The names are recovered from the pictures the remote draws on its own screen, because that is the only place it keeps them |
 | Take a configuration apart and rebuild it identically | **Works.** This is the test that has to pass before it is safe to change anything |
 | Change a configuration on the computer | **Works.** Small edits, bigger ones that move everything after them, and adding a whole device from Logitech's catalogue, whose infrared comes out byte for byte what Logitech's own service would have written |
-| Write it back to the remote | **Not yet.** The next big step, and deliberately switched off until the way back from a mistake is proven |
+| Write it back to the remote | **Started.** A remote's own settings have been written back to it unchanged, which proves the mechanism without risking anything. Writing something you actually changed is the next step, and it stays switched off until the way back from a mistake is proven |
 | Learn a code from an old remote | Half built: turning a known code into pulses works and is checked against Logitech's own compiler; capturing one from a real remote is read but not built |
 
-**Nothing has ever been written to any remote here.** Reading is all that has happened, and the code
-refuses to write unless somebody deliberately turns that on.
+**One write has been performed here, and it changed nothing.** On 30 August 2026 a small part of a
+spare remote's own settings was erased and written straight back, unchanged, and the remote afterwards
+was exactly as it started. Everything else that has ever happened here is reading, and the code
+refuses to write at all unless somebody deliberately turns that on.
 
 ## The details, for anyone who wants them
 

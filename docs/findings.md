@@ -33,13 +33,16 @@ Everything below is derived from those files plus the concordance source tree. E
 numeric claim was checked against at least two independent samples where possible.
 
 **Authorship and provenance.** This document was produced by Claude (Anthropic's AI) from
-the source material listed above. No insider information and **no writes to any remote**. It
+the source material listed above. No insider information, and **one write to one remote**, section
+222: a spare Harmony One's own bytes put back unchanged on 30 August 2026, which is the only byte this
+project has ever sent to a remote that was not a read. It
 was pure offline analysis of files until section 19, which now also rests on hardware. The
 programmed Harmony 600 was enumerated read only, and then three read commands were sent to it from
 this project's own host code: GET_VERSION, READ_MISC and READ_FLASH. Section 76 does the same to a
 Harmony 525 and takes its firmware off it, so arch 9 is no longer an architecture reasoned about
-purely from one stranger's config. **Nothing has been written to a
-remote, by any path.** Every other claim in this document is offline analysis, which means it is
+purely from one stranger's config. **Exactly one write has been performed**, section 222, and it
+reproduced bytes already on the device rather than changing anything. Every other claim in this
+document is offline analysis, which means it is
 independently checkable and should be checked. Verification method is shown alongside the conclusions
 rather than just asserted, most importantly the calibration table in section 5 and the
 numeric closure in section 13. The highest-risk item used to be that the SFR map assumed the
@@ -15649,8 +15652,9 @@ Two cautions, because this is a route and not a recipe:
   reach an address the firmware is read as refusing would be guessing, and it is a write we would be
   reaching for anyway.
 
-**This project is not the thing that should perform that write.** It has never written to a remote,
-the rails put arch 9 outside `ARCHITECTURES_WITH_A_WRITE_TARGET`, and a first write should not be the
+**This project is not the thing that should perform that write.** The one write it has performed,
+section 222, was to arch 12 and reproduced bytes already on the device; the rails put arch 9 outside
+`ARCHITECTURES_WITH_A_WRITE_TARGET`, and a first write to an architecture should not be the
 one that installs firmware on an irreplaceable unit. concordance has done this for years and is the
 tool for it. What this section contributes is the part worth having beforehand: the staged image is
 verified against a known good copy, so the operation is a well understood one rather than a blind
@@ -15754,7 +15758,8 @@ and compared to a third copy, so the transfer has nothing to get wrong that a ve
 not catch. What still needs a write is whatever tells the bootloader to copy the upper image back in,
 and the only candidate for that is the `0x200000` state cell above, which is client sourced,
 unconfirmed and unreadable by our own validator. **The rails are unchanged**: arch 9 is not in
-`ARCHITECTURES_WITH_A_WRITE_TARGET`, this project has never written to a remote, and a first write
+`ARCHITECTURES_WITH_A_WRITE_TARGET`, the one write this project has performed was to arch 12 and
+changed nothing, section 222, and a first write here
 should not be the one that installs firmware. The contribution here is that the operation is now
 fully characterised beforehand.
 
@@ -28405,3 +28410,72 @@ decided.
 `tests/test_host_client.py` carries it, re-reading the geometry out of the factory rather than
 transcribing it, walking the blocks to find the one at `0x040000`, and asserting the rail's own
 constant against the answer. Its control is the two rows that differ.
+
+## 222. The first write, and the erase block measured rather than believed
+
+On 30 August 2026 this project wrote to a Harmony remote for the first time. The spare Harmony One,
+one 64 KiB erase block at `0x040000`, containing its own bytes, unchanged. Danny authorised it
+after the dry run passed. `packages/usb/bin/rehearse-block.ts --commit` performed it, behind
+`HARMONY_ENABLE_WRITES=1` and `HARMONY_FIRST_WRITE=1`.
+
+It succeeded, and the configuration on the remote afterwards is what it was before.
+
+**Why a write that changes nothing is the right first one.** Any edit asks two questions at once, did
+the write land and was the edit correct. This asks the first alone, and its correct answer is known
+before it starts: the block must read back equal to the dump it came from. There is no interpretation
+step and no reader to be wrong.
+
+### What it establishes
+
+**The transfer derived in section 175 is right, end to end, on hardware.** An announce carrying a
+24 bit address and a 16 bit count, a run of data packets nothing answers, and a done acknowledged
+once. Two transfers of 32768 bytes, 1048 reports in total. That derivation came out of the firmware
+and had never been sent to a remote.
+
+**The erase takes exactly one 64 KiB block, and this is the first time anything measured it.**
+`ERASE_BLOCK_SIZE` has been client sourced since 9 August 2026, and section 221 narrowed it the day
+before to what Logitech believed about the part the remote names. `ERASE_FLASH` carries no count, so
+the only way to know what it destroyed is to look either side: the blocks at `0x030000` and
+`0x050000` were read before the erase and again after it and are byte identical. So the constant is
+measured now, on this part, and the rail's provenance changes from the client's word to a
+measurement.
+
+**No pacing was needed.** `writeFlash` defaults to no delay between data packets, on the derivation
+in section 175 that the firmware drains its staging buffer in the same service call. Section 175 was
+careful to say that the **silicon** side was unread, the endpoint's buffer descriptor in particular,
+so the derivation covered the firmware and not the peripheral. 1048 reports went out back to back and
+every byte landed, which is an empirical answer to the half that was not derived. One run is not a
+margin: it says the arrangement works, not how close it is to not working.
+
+### The verification, at two levels
+
+The script reads the block back and compares: identical. That is the check it owns.
+
+Then the whole configuration was read off the remote again, 1665900 bytes, and it is byte for byte
+identical to the read taken before the write, same SHA-256. That is the check worth having, because
+the block level compare cannot see damage anywhere else, and an erase with no count is exactly the
+command that could cause some.
+
+### The read that failed twice before it worked, recorded because it is not explained
+
+The verification read failed on its first two attempts, both about a third of the way in, with the
+reader's chunk sequence check refusing: `expected 0xbf, got 0x14`. The third attempt read all
+1665900 bytes cleanly and is the one compared above.
+
+Three things are known about it and none of them is a cause. The second failure is partly an artefact
+of the first, since an aborted read leaves flash data packets queued and the next command reads them
+first: the third attempt began by answering a `GET_VERSION` with a flash data reply, which is that
+same pipe. A targeted read of the region the failures stopped in returns the right bytes. And the
+same whole config read succeeded on the first attempt an hour earlier, before the write.
+
+So this is either the intermittent USB fault this project has recorded before on this machine, or
+something the write session left in the remote's USB state, and nothing here distinguishes them. It
+is recorded rather than explained, and the practical consequence is that a verification read may need
+retrying, which is a poor property for the step whose whole job is to say whether a write landed.
+
+### What it does not establish
+
+It is one write, of 64 KiB, to one unit, of bytes that were already there. It says nothing about a
+write that changes a configuration, which is where the reader questions start, and nothing about the
+other 25 blocks of this configuration. The restore route is still unexercised: this run never needed
+it, which is the point of choosing it, and so it also never tested it.

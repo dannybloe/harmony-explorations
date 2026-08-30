@@ -12,7 +12,8 @@ success does not transfer to another.
 
 Three things frame it.
 
-**Nothing here has ever been written to a remote by this project**, so every route below is a reading
+**One write has been performed here**, section 222, and it put a block of a remote's own bytes back
+unchanged, so no route below has ever been exercised in anger and every one of them is a reading
 of firmware plus, in one case, a recovery somebody performed by hand from the private lab. A route
 that has not been exercised is a prediction.
 
@@ -73,7 +74,8 @@ wrong or is about to.
   restored including two offsets that were erased flash while it was stranded, and its config intact.
   Its screen said the upgrade was complete, which was observed **before** the firmware path that emits
   that message had been found, and looking for what emitted it is what completed the state machine.
-  **This project must still not be what performs the write**: it has never written to a remote, arch 9
+  **This project must still not be what performs the write**: its one write was to arch 12 and changed
+  nothing, section 222, arch 9
   has no write target, and a first write should not install firmware on an irreplaceable unit.
   **Safe mode has a published entry procedure and it is a cold boot key test**, section 118: charge,
   pull the battery, hold Off, insert the battery while still holding, up to 30 seconds. So it involves

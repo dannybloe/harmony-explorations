@@ -419,7 +419,9 @@ and step 3 is done as far as the firmware can take it. **This section is a statu
 summary of what is known**: that is `docs/findings.md`, 220 sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
-**The read path works and nothing has ever been written to a remote.** `GET_VERSION`, `READ_MISC`
+**The read path works, and one write has been performed**, section 222: one 64 KiB block of the
+spare Harmony One's own configuration, erased and put back unchanged on 30 August 2026, verified over
+the block and over the whole configuration. `GET_VERSION`, `READ_MISC`
 and `READ_FLASH` run from our own host code on both bench architectures, a config read matches each
 unit's lab dump byte for byte, and the four remotes this library can open are fully read and verified
 against their backups: user config, application firmware, safe mode, and the internal pages where the architecture

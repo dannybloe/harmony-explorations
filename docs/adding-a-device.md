@@ -61,7 +61,7 @@ That is the checklist. Below it, behind a gate:
 
 | phase | what it gets us | status |
 |---|---|---|
-| 8 | the write path, on the spare Harmony One | **gate opened 25 August 2026**, rehearsal first. The dry run passes, 30 August 2026; nothing has been written |
+| 8 | the write path, on the spare Harmony One | **the rehearsal succeeded, 30 August 2026**, section 222: one block of the unit's own configuration erased and put back unchanged, verified over the block and over the whole file. Eight of its eleven boxes are ticked; the three left are the version comparison, which this run made moot rather than exercised since the bytes were the unit's own, a configuration **we** produced reading back off it, and the standing rule that the flag stays off. What is untried is a write that **changes** something |
 | 9 | the appliance responds | **gate opened 25 August 2026**, after phase 8 |
 
 ## What this deliberately does not need
@@ -628,12 +628,15 @@ M4, and behind the gate above. The rails are written and off, `packages/usb/src/
       matches, six devices and 475 codes against the newest one's five and 418. Something was added
       and synced onto it after 23 August and nothing dumped it afterwards. `one_spare_20260830` is
       the fresh read, 1665900 bytes in 54 seconds, and this box is what it took to tick
-- [ ] **the restore rehearsed before the write, not after it.** Nothing here has ever put a config back
-      onto a remote, so the recovery path is a belief and not a measurement. Write the unit's **own**
+- [x] **the restore rehearsed before the write, not after it**, done on 30 August 2026, section 222.
+      Nothing here had ever put a config back onto a remote, so the recovery path was a belief and not
+      a measurement. Write the unit's **own**
       dump back first and read it back identical: a write that changes nothing is the cheapest possible
       first write, and it is the only one whose correct outcome is known in advance. **One 64 KiB erase
       block of it, not the whole config**, section 175: same exercise end to end, a twenty sixth of the
-      erase cycles, and repeatable if it fails halfway
+      erase cycles, and repeatable if it fails halfway. It went through on the first attempt: the
+      block reads back identical to the dump, and so does the whole configuration, 1665900 bytes with
+      the same digest as the read taken before the write
 - [x] **whether a host must pace its data packets**, answered by reading, section 175: the command
       dispatcher returns whether work is pending and its caller drains the staging buffer in the same
       service call, on all three images, so a packet is programmed before the dispatcher can be
@@ -653,7 +656,7 @@ M4, and behind the gate above. The rails are written and off, `packages/usb/src/
       `originalDumpVerified` from a caller's word into a measurement for the range being written.
       It also prints the **flash id**, which is the pair Logitech's client picks its erase block
       table from, so the dry run produces the number the box below is about
-- [ ] **the erase stays inside the block it was told to erase, measured rather than assumed.**
+- [x] **the erase stays inside the block it was told to erase, measured rather than assumed.**
       `ERASE_FLASH` carries no count, so the chip decides how much goes, and the 64 KiB figure the
       rails are built on is the client's word and has never been confirmed on this part. Until 30
       August 2026 the rehearsal read back only the block it wrote, so a larger sector would have
@@ -663,20 +666,23 @@ M4, and behind the gate above. The rails are written and off, `packages/usb/src/
       id is **1F:C8**, read on 30 August 2026, and it **has** been looked up since, section 221: that
       is Atmel `AT49BV322A` in the client's own constants, whose row is eight 8 KiB blocks and then
       sixty three of 64 KiB, so `0x040000` is a boundary and its block is 64 KiB. The check therefore
-      has an expected answer now. **This box is ticked by the first `--commit` run**, not by the code
-      existing and not by the lookup
+      has an expected answer now, and the run gave it: **both neighbours are byte identical before and
+      after the erase**, so the block size is measured rather than believed, section 222. This is the
+      first thing anywhere to measure it
 - [ ] `INTENDEDVERSION` compared against the connected remote over all **six** fields, protocol,
       skin, flash and board plus `SOFTWARETYPE` and `ARCHITECTURE`, and refused on any mismatch.
       An absent or empty field matches anything, which is how a file offers a fallback, so an
       empty field is not a match to rely on. Four fields was the pre-section-87 reading and is
       dead; it stood here until 29 August 2026
-- [ ] `ERASE_FLASH` scoped: a block aligned address and a whole block inside the config region, with the
+- [x] `ERASE_FLASH` scoped: a block aligned address and a whole block inside the config region, with the
       ceiling at `0x3D0000` because the stored application firmware sits inside the nominally writable
-      region
-- [ ] `WRITE_FLASH` restricted to the config region for the detected architecture, refused by the library
-      and not by the interface
-- [ ] every write followed by a `READ_FLASH` of the same range and a byte comparison, where a mismatch is
-      a failure and not a warning
+      region. Exercised on 30 August 2026 rather than only written
+- [x] `WRITE_FLASH` restricted to the config region for the detected architecture, refused by the library
+      and not by the interface. Exercised on 30 August 2026
+- [x] every write followed by a `READ_FLASH` of the same range and a byte comparison, where a mismatch is
+      a failure and not a warning. Done, and the whole configuration was compared as well, which is the
+      check the range comparison cannot make: an erase carries no count, so damage elsewhere is exactly
+      what it could cause
 - [ ] **check**: a config we produced is on the spare Harmony One and reads back byte identical to what
       we sent
 - [ ] the flag stays off for anything that is not this bench script

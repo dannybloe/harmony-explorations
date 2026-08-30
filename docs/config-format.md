@@ -263,7 +263,7 @@ declares 0.
 
 The consequence of a mismatch is **reported, not verified here**: harmony-decompiler states that a
 remote refuses a mismatched config with "This configuration file is not compatible with your
-Harmony Remote". Nothing has been written to a remote in this project, so treat that as the reason
+Harmony Remote". No configuration has been changed on a remote by this project, so treat that as the reason
 to match the header, not as our own observation.
 
 An `.EZUpgrade` carries its payload hex encoded in `<DATA>` elements instead, 32 bytes each with a

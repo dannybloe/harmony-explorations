@@ -198,6 +198,11 @@ IMAGES = {
     # August and nothing dumped it afterwards. Named because the rehearsal takes its dumps by name.
     # Out of the corpus wide lists, like the three above it.
     'one_spare_20260830': '20260830T1430Z-harmony-one-spare-config.bin',
+    # The same unit read again after the first write this project ever performed, section 222: one
+    # 64 KiB block of its own configuration erased and put back unchanged on 30 August 2026. Byte
+    # identical to one_spare_20260830, which is why it is kept and why it is excluded from the
+    # parseable population.
+    'one_spare_after_first_write': '20260830T1618Z-harmony-one-spare-after-first-write-config.bin',
     # Two configs Logitech compiled to a specification we wrote, 13 August 2026, and the corpus's only
     # **known answer** samples: three devices and two activities chosen by us, on a throwaway account,
     # then compiled by the live service and downloaded without a byte reaching a remote. Section 132.
@@ -349,7 +354,8 @@ def _find(filename):
 # mistaken for**: one copy came out of the programmed Harmony One's firmware image and the other off
 # the spare unit through Logitech's client, so the two agreeing confirms both that our cut was made in
 # the right place and that the embedded config is the same on two units.
-PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_config')
+PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_config',
+                      'one_spare_after_first_write')
 
 CONTAINERS = (
     'h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'h525_config_2', 'one_config',

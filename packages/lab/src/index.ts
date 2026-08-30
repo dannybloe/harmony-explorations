@@ -179,6 +179,13 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // where `packages/usb` is withheld whole, so a comment in this file pointing at the write path
   // widens what a reviewer sees. `TheWriteReviewWithholdListIsComplete` caught the first wording.
   one_spare_20260830: '20260830T1430Z-harmony-one-spare-config.bin',
+  // The same unit read again **after** the first write this project ever performed, section 222: one
+  // 64 KiB block of its own configuration erased and put back unchanged on 30 August 2026. It is byte
+  // identical to `one_spare_20260830` and that identity is the whole point of keeping it, which is
+  // also why it is excluded from the parseable population: counting it would count one configuration
+  // twice. The verification read failed twice before it succeeded, section 222, which is recorded
+  // there and unexplained.
+  one_spare_after_first_write: '20260830T1618Z-harmony-one-spare-after-first-write-config.bin',
   // Two configs Logitech compiled to a specification we wrote, 13 August 2026: the corpus's only
   // known answer samples. Section 132. Not in the corpus wide lists, on purpose; see tests/lab.py.
   calibration_one: 'calibration-one-spare.bin',
@@ -295,7 +302,7 @@ export const IMAGES: Readonly<Record<string, string>> = {
  * golden vectors differ only in where the container sits in its file.
  */
 export const PARSEABLE_EXCLUDED: readonly string[] =
-  ['vendor_region_user_config', 'vendor_region_embedded_config'];
+  ['vendor_region_user_config', 'vendor_region_embedded_config', 'one_spare_after_first_write'];
 
 const cache = new Map<string, string[]>();
 
