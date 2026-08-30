@@ -3,7 +3,10 @@
 **What the platform behind a Harmony remote actually stores**: its entities, their fields, and how they
 refer to each other. Recovered on 30 August 2026 and checked against replies the service itself
 returned. `reference/myharmony-model.json` is the data, this is the reading, and section 218 is the
-argument.
+argument. Two more views are generated from that data by `tools/myharmony_model.py` and never edited
+by hand: `reference/myharmony-core-model.mmd` draws the entities an account holds, and
+`reference/myharmony-entities.md` indexes all 470 service contracts by area. `make myharmony-model`
+checks they still agree with the model.
 
 **Consult this before designing anything about devices, activities or remotes, and before naming a
 field.** It is a labelled view of bytes this project already reads: where `docs/config-format.md` says
@@ -50,20 +53,29 @@ platform holds, not how a configuration is built from it.
 and **1291 enum values**. The most connected types are identifier wrappers carrying no fields at all,
 so the useful shape is the one below.
 
-**Account is the root**, and the shape underneath it is worth stating carefully, because it is not
-the shape the product presents.
+**The root is the household, and an account is one remote's world.** That is the sentence to keep,
+and it took a correction to reach: see below.
 
-In the product, you own **remotes** and a remote controls **devices**, one device being one piece of
-equipment, a television or a receiver, per `docs/glossary.md`. In the **schema**, an account holds a
-flat list of `Remote`, a flat list of `Device`, a flat list of `Activity` and a flat list of
-`Surface`, all four hanging off the account directly. **A `Remote` has no device list at all**: its
-own references are to dongles, surfaces, a keyboard layout and its properties. What ties a device to
-where it is used is the other way round, a `Device` naming the activities it takes part in.
+A `Household` holds `Account` records. **Each account record holds exactly one `Remote`**, plus that
+remote's `Device` records and `Activity` records. So an account is not a person and not a home, it is
+the container for a single remote and everything that remote controls. A `Remote` itself carries only
+what is true of the physical unit, its serial numbers, its skin, its firmware identifiers and its sync
+dates; a `Device` carries a manufacturer, a model, a category and a pointer into the catalogue.
 
-So "the devices on an account" is the schema's phrasing and "the devices on a remote" is the
-product's, and this document uses the schema's only when describing the schema. Both are worth
-knowing, since a reader who assumes the product shape will go looking for a list on `Remote` that
-does not exist.
+Measured over the two test households captured on 30 August 2026: **21 account records, every one
+holding exactly one remote**, with 3 to 10 devices each.
+
+So the product's shape and the schema's are the **same** shape. You own remotes, a remote has devices,
+and "the devices on an account" names exactly the devices of that account's one remote.
+
+**This paragraph said the opposite on 30 August 2026 and it was wrong.** It read the field layout,
+saw `Remotes` and `Devices` as two lists side by side on `Account` and `Remote` carrying no device
+list, and concluded that the schema pools devices at account level<!--superseded--> in a shape the
+product does not present. The field layout is real and the conclusion does not follow: with one remote
+per account the two lists are not siblings competing to own the devices, they are a remote and its
+devices in the only container either of them has. It was caught by Danny asking whether a remote in an
+account is therefore called a device, which the wording invited and which nothing in the schema
+supports.
 
 ### Account
 

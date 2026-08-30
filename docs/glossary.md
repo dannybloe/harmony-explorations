@@ -133,11 +133,15 @@ schema, and it is not in the product. It reads as a synonym and is not one, beca
 usually appears in is also getting the containment wrong.
 
 **And the containment is: you have remotes, a remote has devices.** An account has remotes. It is a
-remote that controls a television and a receiver. "The devices on an account" is wrong as a statement
-about the product, and the mistake matters because it is the shape the whole interface is built on.
-The one place it is right is Logitech's **schema**, which pools devices and remotes in flat lists on
-the account and gives `Remote` no device list at all: `docs/myharmony-model.md` states that
-difference, and it is the exception that has to be named rather than a licence to blur the two.
+remote that controls a television and a receiver, and the mistake matters because that shape is what
+the whole interface is built on.
+
+**Logitech's own model agrees**, which is worth knowing because a first reading of their schema
+suggested otherwise: a household holds account records, and **each account record holds exactly one
+remote** plus that remote's devices and activities. So an account is one remote's world, and "the
+devices on an account" names that one remote's devices rather than a pool shared between remotes.
+Measured over 21 account records in `docs/myharmony-model.md`, which also carries the wrong reading
+this replaced.
 
 **activity** (Logitech's concept). One thing you want to do, "watch TV", which switches several
 devices on and sets their inputs. Counted by a single variable inside the config.

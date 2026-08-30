@@ -36,7 +36,7 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets silhouettes all clean protocols emitcheck
+.PHONY: help test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets silhouettes all clean protocols emitcheck myharmony-model
 
 BENCH_PORT ?= 8731
 
@@ -238,6 +238,12 @@ analyze:
 # analyser gave it, and the generated table that lets a code stated as a name and a number be emitted.
 # Needs a lab because it reads the analyser reports, needs no network. PROTOCOLS_ARGS=--detail, or
 # --write to regenerate packages/codec/src/protocols.ts.
+# The recovered MyHarmony model, drawn. Both outputs are generated from
+# reference/myharmony-model.json and never hand edited, so `myharmony-model` checks they still agree
+# and MYHARMONY_ARGS=--write regenerates them. No lab and no network: the model is in the repository.
+myharmony-model:
+	@$(PYTHON) tools/myharmony_model.py $(MYHARMONY_ARGS)
+
 protocols:
 	@node packages/codec/bin/protocols.ts $(PROTOCOLS_ARGS)
 
@@ -301,7 +307,7 @@ hooks:
 	@git config core.hooksPath .githooks
 	@echo "core.hooksPath set to .githooks; pre-commit checks are live in this clone"
 
-all: lint pyright prose facts test test-nolab test-partial ts audit
+all: lint pyright prose facts myharmony-model test test-nolab test-partial ts audit
 
 clean:
 	@find . -name '__pycache__' -type d -prune -exec rm -rf {} + 2>/dev/null; true

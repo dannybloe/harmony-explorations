@@ -1,0 +1,191 @@
+erDiagram
+    Account {
+        int AccountTypeId
+        Uri AccountUri
+        Activity__ Activities
+        string ConfigVersion
+        DateTime CreateDate
+        Device__ Devices
+        string EmailToken
+        HouseholdId HouseholdId
+        AccountId Id
+        bool IsRemoved
+        byte LastSetupRating
+        double Latitude
+        double Longitude
+        string OriginalProductIdentifier
+        string ProductIdentifier
+        AccountProperties Properties
+        Remote__ Remotes
+        SetupSession SetupSession
+        Surface__ Surfaces
+        string TimeZone
+        string UserTimeZone
+    }
+    AccountProperties {
+        string AnonymizedEmail
+        string ConfigVersion
+        bool ContactMe
+        CountryType CountryType
+        string Email
+        string FirstName
+        bool IsPolicyAccepted
+        string LastName
+        double Latitude
+        double Longitude
+        string RemoteLanguage
+        string TimeZone
+        string UserKey
+        string UserTimeZone
+        string ZipCode
+    }
+    Activity {
+        AccountId AccountId
+        string ActivityDisplayName
+        ActivityGroup ActivityGroup
+        short ActivityOrder
+        string Alternatives
+        string BaseImageUri
+        DateTime DateCreated
+        DateTime DateModified
+        string DefaultChannel
+        string DefaultStation
+        string DefaultStationName
+        AbstractActivityAction__ EnterActions
+        string Icon
+        ActivityId Id
+        string ImageKey
+        bool IsDefault
+        bool IsMultiZone
+        bool IsTuningDefault
+        AbstractActivityAction__ LeaveActions
+        string Name
+        AbstractActivityRole__ Roles
+        string StartScreen
+        ActivityState State
+        string SuggestedDisplay
+        ActivityType Type
+    }
+    ActivityGroup {
+    }
+    Device {
+        ActivityId__ ActivityIds
+        AutoDetectedDevice AutoDetectedDevice
+        string BTAddress
+        int Characterization
+        long ContentProfileKey
+        int ControlPort
+        short CopiedDeviceSource
+        DateTime DeviceAddedDate
+        PrioritizedDeviceCapability__ DeviceCapabilitiesWithPriority
+        DeviceCategory DeviceClassification
+        Uri DeviceProfileUri
+        int DeviceSearchType
+        string DeviceTypeDisplayName
+        int DongleIndex
+        long DongleRFID
+        GlobalDeviceVersionId GlobalDeviceVersionId
+        GlobalLanguageVersionId GlobalLanguageVersionId
+        Icon Icon
+        DeviceId Id
+        bool IsInterKeyDelayOptimized
+        bool IsKeyboardAssociated
+        bool IsMultiCode
+        bool IsScartCableSupported
+        PublicGlobalDeviceId ParentDevice
+        string ParentDeviceManufacturer
+        string ParentDeviceModel
+        int PrivateAddType
+        string RegionalCharset
+        int SetupState
+        int State
+        string SuggestedDisplay
+        int Transport
+    }
+    Dongle {
+        long Id
+        short Index
+        long RFID
+    }
+    Household {
+        Account__ Accounts
+        string DefaultLanguage
+        Uri DefaultUserProfileUri
+        HouseholdId Id
+        string Name
+        Remote__ Remotes
+        Room__ Rooms
+    }
+    Remote {
+        string ComputedProductSerial
+        string DateCreated
+        Dongle__ Dongles
+        DateTime FirstConnectDate
+        string FirstSyncDate
+        long GlobalRemoteId
+        DateTime GlobalRemoteRefurbishedDate
+        short GlobalRemoteRefurbishedStatus
+        int GlobalRemoteSkinId
+        short GlobalRemoteStatus
+        long HubRemoteId
+        RemoteId Id
+        bool IsAcceptLicense
+        bool IsActiveRemote
+        bool IsGlobalRemoteLocked
+        bool IsProSKU
+        bool IsSyncRequired
+        string JabberId
+        KeyboardLayoutType KeyboardLayout
+        string KeyboardLocale
+        string LastProductIdentifier
+        string LastSyncDate
+        long LogitechProductId
+        string LogitechSerial
+        int Mode
+        string OriginalProductIdentifier
+        string RFEquadID
+        string RFID
+        RemoteProperties RemoteProperties
+        string SerialNumber
+        int SkinId
+        Surface__ Surfaces
+    }
+    RemoteProperties {
+        DateTime GlobalRemoteRefurbishedDate
+        short GlobalRemoteRefurbishedStatus
+        bool IsActiveRemote
+        bool IsLocked
+        string KeyboardLocale
+        string RemoteName
+        short Status
+    }
+    Room {
+        RoomId Id
+        string Name
+    }
+    SetupSession {
+        string Client
+        bool IsStale
+        string SetupType
+        long Type
+    }
+    Surface {
+        long EquadId
+        SurfaceId Id
+        long RemoteId
+        long RfSurfaceId
+        int SkinId
+    }
+    Account ||--o{ Activity : Activities
+    Account ||--o{ Device : Devices
+    Account ||--o| AccountProperties : Properties
+    Account ||--|| Remote : "Remotes, exactly one, measured"
+    Account ||--o| SetupSession : SetupSession
+    Account ||--o{ Surface : Surfaces
+    Activity ||--o| ActivityGroup : ActivityGroup
+    Household ||--o{ Account : Accounts
+    Household ||--o{ Remote : Remotes
+    Household ||--o{ Room : Rooms
+    Remote ||--o{ Dongle : Dongles
+    Remote ||--o| RemoteProperties : RemoteProperties
+    Remote ||--o{ Surface : Surfaces

@@ -32,6 +32,7 @@ and leave this table alone.
 
 | phrase | superseded by | what is true instead |
 |---|---|---|
+| `pools devices at account level` | section 218, corrected 30 August 2026 | a household holds account records and each holds exactly one remote, so an account is one remote's world and its devices are that remote's; measured over 21 account records |
 | `another reader will not move it` | section 53 | seven readers moved it, from 26.3% to 98.1% on a Harmony 700 |
 | `still carries no `data-scan` attribute` | the traced drawings, 21 August 2026 | a drawing states a code on the keys `reference/button-maps.md` names and no attribute on the rest |
 | `Drawn rather than traced` | the traced drawings, 21 August 2026 | the geometry is traced from Logitech's own documentation, by Danny's decision, and the lab holds the trace |

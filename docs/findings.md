@@ -28063,6 +28063,35 @@ output crosses.
 belong to no area, which is stated in the document because a reader summing the column otherwise
 finds 426 against a stated 470.
 
+### Correction, 30 August 2026: an account record is one remote's world
+
+Written the same day as the rest of this section, after Danny asked whether a remote in an account is
+therefore called a device. It is not, and the question exposed a wrong reading rather than a wrong
+word.
+
+**What was wrong.** This section and `docs/myharmony-model.md` described `Account` as the root holding
+flat lists of `Remote` and `Device` side by side, noted that `Remote` carries no device list of its
+own, and concluded that the schema **pools devices at account level**<!--superseded--> in a shape the
+product does not present. The field layout is exactly as described. The conclusion does not follow.
+
+**What is true.** A `Household` holds `Account` records, and **each account record holds exactly one
+remote**, plus that remote's devices and activities. So an account is not a person and not a home, it
+is the container for a single remote and everything it controls, which makes the product's shape and
+the schema's the **same** shape: you own remotes, a remote has devices. Measured over the two test
+households captured that day, **21 account records, every one holding exactly one remote**, with 3 to
+10 devices each. `AnAccountRecordIsOneRemotesWorld` asserts it per record rather than as a total,
+since how many records exist is a fact about a test account and how many remotes sit in one is a fact
+about the platform.
+
+**Why it went wrong is the instructive part**, and it is this repository's own recurring shape: the
+reading was taken from the **schema's field layout** without asking an instance. One query answered
+it. The layout genuinely does put two lists side by side, so nothing about the schema alone would have
+corrected it, and the entity model in `reference/myharmony-model.json` is unchanged by this: what
+changed is the sentence describing what it means.
+
+It also produced a **wrong diagram**, which is the part that would have spread: `core-model.mmd` drew
+`Account ||--o{ Remote`, zero or many, with no `Household` at all. Both are corrected.
+
 ### The closure: the schema against replies the service actually sent
 
 A schema read out of a client is a claim about a server, so it is checked against what the server
