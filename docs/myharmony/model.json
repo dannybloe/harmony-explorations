@@ -25677,5 +25677,5 @@
    "via": "VendorId"
   }
  ],
- "what": "The MyHarmony platform data model, recovered from the client generated service proxy and checked against replies the live service returned. docs/myharmony-model.md is the reading; this is the data."
+ "what": "The MyHarmony platform data model, recovered from the client generated service proxy and checked against replies the live service returned. docs/myharmony/model.md is the reading; this is the data."
 }

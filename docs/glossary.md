@@ -140,7 +140,7 @@ the whole interface is built on.
 suggested otherwise: a household holds account records, and **each account record holds exactly one
 remote** plus that remote's devices and activities. So an account is one remote's world, and "the
 devices on an account" names that one remote's devices rather than a pool shared between remotes.
-Measured over 21 account records in `docs/myharmony-model.md`, which also carries the wrong reading
+Measured over 21 account records in `docs/myharmony/model.md`, which also carries the wrong reading
 this replaced.
 
 **activity** (Logitech's concept). One thing you want to do, "watch TV", which switches several

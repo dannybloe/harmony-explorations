@@ -28,8 +28,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lab  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-DOC = ROOT / 'docs' / 'myharmony-model.md'
-MODEL = json.loads((ROOT / 'reference' / 'myharmony-model.json').read_text(encoding='utf-8'))
+DOC = ROOT / 'docs' / 'myharmony' / 'model.md'
+MODEL = json.loads((ROOT / 'docs' / 'myharmony' / 'model.json').read_text(encoding='utf-8'))
 
 #: The dated captures, as (label, filename, account selector).
 #:
@@ -229,7 +229,7 @@ class WhatTheThirtiethOfAugustCapturesHeld(RequireCaptures):
 
 
 class TheDocumentedCommandVocabularyIsWhatTheCapturesHeld(RequireCaptures):
-    """The group table in `docs/myharmony-model.md`, against the captures it was built from.
+    """The group table in `docs/myharmony/model.md`, against the captures it was built from.
 
     **The table is a sample and the document has to say so.** It is the union of the groups two test
     accounts' devices happened to use on one day, so it is a floor on the platform's vocabulary and

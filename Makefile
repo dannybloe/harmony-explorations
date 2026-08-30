@@ -239,7 +239,7 @@ analyze:
 # Needs a lab because it reads the analyser reports, needs no network. PROTOCOLS_ARGS=--detail, or
 # --write to regenerate packages/codec/src/protocols.ts.
 # The recovered MyHarmony model, drawn. Both outputs are generated from
-# reference/myharmony-model.json and never hand edited, so `myharmony-model` checks they still agree
+# docs/myharmony/model.json and never hand edited, so `myharmony-model` checks they still agree
 # and MYHARMONY_ARGS=--write regenerates them. No lab and no network: the model is in the repository.
 myharmony-model:
 	@$(PYTHON) tools/myharmony_model.py $(MYHARMONY_ARGS)

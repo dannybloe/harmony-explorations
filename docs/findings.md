@@ -28032,7 +28032,7 @@ The vendor's service is the other half of a Harmony. A config says what a remote
 says what an account **holds**, and every name in this project's readers, device, activity, mode, role,
 was inferred from bytes rather than read off a schema. This section recovers the schema.
 
-`reference/myharmony-model.json` is the model and `docs/myharmony-model.md` is the reading of it.
+`docs/myharmony/model.json` is the model and `docs/myharmony/model.md` is the reading of it.
 Danny decided on 30 August 2026 that this knowledge moves into this repository whole, rather than
 staying in the lab as a note, so that the readers and FreeHarmony can both use it; decision 14 in
 `docs/roadmap.md` records the decision and its licence reasoning.
@@ -28069,7 +28069,7 @@ Written the same day as the rest of this section, after Danny asked whether a re
 therefore called a device. It is not, and the question exposed a wrong reading rather than a wrong
 word.
 
-**What was wrong.** This section and `docs/myharmony-model.md` described `Account` as the root holding
+**What was wrong.** This section and `docs/myharmony/model.md` described `Account` as the root holding
 flat lists of `Remote` and `Device` side by side, noted that `Remote` carries no device list of its
 own, and concluded that the schema **pools devices at account level**<!--superseded--> in a shape the
 product does not present. The field layout is exactly as described. The conclusion does not follow.
@@ -28086,7 +28086,7 @@ about the platform.
 **Why it went wrong is the instructive part**, and it is this repository's own recurring shape: the
 reading was taken from the **schema's field layout** without asking an instance. One query answered
 it. The layout genuinely does put two lists side by side, so nothing about the schema alone would have
-corrected it, and the entity model in `reference/myharmony-model.json` is unchanged by this: what
+corrected it, and the entity model in `docs/myharmony/model.json` is unchanged by this: what
 changed is the sentence describing what it means.
 
 It also produced a **wrong diagram**, which is the part that would have spread: `core-model.mmd` drew
@@ -28159,7 +28159,7 @@ been server side, and section 214 is where that stands.
 
 Section 218 recovered what the platform **holds**. This is what it can be **asked**: 298 operations
 over 19 service interfaces, each with its parameters and its reply type, in
-`reference/myharmony-operations.json`. It matters because an importer is a sequence of calls, and
+`docs/myharmony/operations.json`. It matters because an importer is a sequence of calls, and
 because the reply types say which of the 1352 modelled types are actually reachable.
 
 The proxy declares every operation twice, as a `Begin` carrying the wire action and its typed
@@ -28190,7 +28190,7 @@ advertised against 63 declared with 26 in common.
 **That claim was first written as both directions on all eleven**, generalised from looking at three
 services, and the test written for it refuted it on four within a minute:
 `UserButtonMappingManager`, `DeletionManager`, `GlobalDeviceManager` and `UserFeatureManager` are
-covered entirely by the proxy. The corrected form is in `docs/myharmony-model.md`, and the test states
+covered entirely by the proxy. The corrected form is in `docs/myharmony/model.md`, and the test states
 the count rather than "most" so the overclaim cannot come back.
 
 Seven services the proxy declares are absent from the listing altogether, and they have a common
@@ -28313,7 +28313,7 @@ of each there are is a property of whatever these accounts held that day.
 24 named groups, 105 command names in them, 301 device specific ones. **That is a floor and not the
 platform's vocabulary**, since it is the union of what these two test accounts' devices happened to
 use on one day: a group the platform has and no device here used is simply absent. The named half is
-published in `docs/myharmony-model.md` with that sampling stated beside it; the device specific names
+published in `docs/myharmony/model.md` with that sampling stated beside it; the device specific names
 are Logitech's own database content for particular devices and stay in the lab.
 
 **It is not an enumeration**, which matters for anything that would treat it as one: it carries `OK`

@@ -1,6 +1,6 @@
 """The MyHarmony data model: the document against the data it reads.
 
-`reference/myharmony-model.json` is the recovered model and `docs/myharmony-model.md` is the
+`docs/myharmony/model.json` is the recovered model and `docs/myharmony/model.md` is the
 reading of it. That is the two copies state this project's oldest rule warns about, and it is
 allowed here for the same reason `docs/config-format.md` restates bytes: one is for a tool and one
 is for a person. What makes it safe is this file, which compares every number and every field name
@@ -17,11 +17,11 @@ import sys
 import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-DOC = ROOT / 'docs' / 'myharmony-model.md'
-DATA = ROOT / 'reference' / 'myharmony-model.json'
+DOC = ROOT / 'docs' / 'myharmony' / 'model.md'
+DATA = ROOT / 'docs' / 'myharmony' / 'model.json'
 
 
-OPERATIONS = ROOT / 'reference' / 'myharmony-operations.json'
+OPERATIONS = ROOT / 'docs' / 'myharmony' / 'operations.json'
 
 
 def model():
@@ -500,17 +500,17 @@ class TheDrawnModelIsGeneratedAndCurrent(unittest.TestCase):
         Section 218's correction. If the override is ever dropped the diagram silently goes back to
         saying an account may hold any number of remotes, which is what nobody noticed for a day.
         """
-        drawn = (ROOT / 'reference' / 'myharmony-core-model.mmd').read_text(encoding='utf-8')
+        drawn = (ROOT / 'docs' / 'myharmony' / 'core-model.mmd').read_text(encoding='utf-8')
         self.assertIn('Account ||--|| Remote', drawn)
         self.assertNotIn('Account ||--o{ Remote', drawn)
 
     def test_the_diagram_starts_at_the_household(self):
-        drawn = (ROOT / 'reference' / 'myharmony-core-model.mmd').read_text(encoding='utf-8')
+        drawn = (ROOT / 'docs' / 'myharmony' / 'core-model.mmd').read_text(encoding='utf-8')
         self.assertIn('Household ||--o{ Account', drawn)
 
     def test_the_listing_covers_every_service_contract(self):
         listed = re.findall(r'^\| `([A-Za-z0-9_]+)` \| \d+ \| \d+ \|$',
-                            (ROOT / 'reference' / 'myharmony-entities.md').read_text(encoding='utf-8'),
+                            (ROOT / 'docs' / 'myharmony' / 'entities.md').read_text(encoding='utf-8'),
                             re.M)
         entities = model()['entities']
         contracts = {n for n, e in entities.items() if e['isServiceContract']}

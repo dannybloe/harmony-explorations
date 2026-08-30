@@ -2,10 +2,10 @@
 
 **What the platform behind a Harmony remote actually stores**: its entities, their fields, and how they
 refer to each other. Recovered on 30 August 2026 and checked against replies the service itself
-returned. `reference/myharmony-model.json` is the data, this is the reading, and section 218 is the
+returned. `docs/myharmony/model.json` is the data, this is the reading, and section 218 is the
 argument. Two more views are generated from that data by `tools/myharmony_model.py` and never edited
-by hand: `reference/myharmony-core-model.mmd` draws the entities an account holds, and
-`reference/myharmony-entities.md` indexes all 470 service contracts by area. `make myharmony-model`
+by hand: `docs/myharmony/core-model.mmd` draws the entities an account holds, and
+`docs/myharmony/entities.md` indexes all 470 service contracts by area. `make myharmony-model`
 checks they still agree with the model.
 
 **Consult this before designing anything about devices, activities or remotes, and before naming a
@@ -284,7 +284,7 @@ so belong to no area. They are counted in the 470 and appear in no row below.
 ## What can be asked of it
 
 The entity half above says what the platform **holds**. This says what it can be **asked**, which is
-the other thing a schema is good for and the part an importer needs. `reference/myharmony-operations.json`
+the other thing a schema is good for and the part an importer needs. `docs/myharmony/operations.json`
 is the data.
 
 The proxy declares each operation twice, once as the request carrying the wire action and its typed

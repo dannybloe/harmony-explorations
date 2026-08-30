@@ -87,7 +87,7 @@ read it back). Both refuse without credentials and are **never in `make all`**.
 * The catalogue advertises **308 operations over 50 services** (section 132); the machine readable
   list is `responses/Discovery_GetJsonOperations.json`. **It is not the whole surface**, section 219:
   MyHarmony's own proxy declares 298 operations over 19 interfaces, with parameters and reply types,
-  in `reference/myharmony-operations.json` in the repository, and on the eleven services both describe
+  in `docs/myharmony/operations.json` in the repository, and on the eleven services both describe
   each names operations the other does not. Look in both before concluding a call does not exist.
 * **The account scoped addresses want a GET**, and that is the exception to the rule above:
   `.../json/Account/<accountId>/<Name>` answers **405** to a POST. `probe.call` takes a `method`

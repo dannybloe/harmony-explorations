@@ -399,8 +399,8 @@ image is a second sample rather than a stand in. Other models are iterated on la
    path stay correct.
 14. **The vendor's data model moves into this repository whole.** *Taken by Danny on 30 August 2026,
    overruling a narrower reading of decision 9 that this assistant had raised.* The platform's schema,
-   what an account holds and what every field is called, is recovered in `reference/myharmony-model.json`
-   with `docs/myharmony-model.md` as its reading, and **it is to be consulted before naming a field or
+   what an account holds and what every field is called, is recovered in `docs/myharmony/model.json`
+   with `docs/myharmony/model.md` as its reading, and **it is to be consulted before naming a field or
    designing anything about devices, activities or remotes**, in this repository and in FreeHarmony
    both. The concern raised was decision 9's boundary, that Logitech's code stays in the lab. It does:
    what crosses is a **schema**, names of types and fields and the references between them, which is

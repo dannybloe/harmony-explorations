@@ -259,7 +259,7 @@ reply type resolved for every one. That does not correct the 78 over 14 above, w
 Desktop's web application and a different client; it adds a third surface. Eleven services are in both
 the proxy and the Discovery listing, and neither contains the other: the proxy adds operations on all
 eleven and the listing adds operations on seven. So "the extraction above is a lower bound" holds and
-is now bounded from a second direction as well. `reference/myharmony-operations.json` is the data.
+is now bounded from a second direction as well. `docs/myharmony/operations.json` is the data.
 
 **`downloadManager` is not in Discovery at all**, which is why the paragraph above calling
 `RemoteConfigurationInJson` the prize needed a correction rather than a confirmation. Its URL is not

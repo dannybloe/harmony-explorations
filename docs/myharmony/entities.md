@@ -1,7 +1,7 @@
 # MyHarmony: every service contract, by area
 
-**Generated** by `tools/myharmony_model.py` from `reference/myharmony-model.json`, so it
-is never edited by hand. `docs/myharmony-model.md` is the reading; this is the index.
+**Generated** by `tools/myharmony_model.py` from `docs/myharmony/model.json`, so it
+is never edited by hand. `docs/myharmony/model.md` is the reading; this is the index.
 
 A contract's area is the last part of the server side namespace it declares. The 44
 contracts that declare none are listed at the end.

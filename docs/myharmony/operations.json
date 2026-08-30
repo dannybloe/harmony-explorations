@@ -5446,5 +5446,5 @@
    ]
   }
  ],
- "what": "Every operation MyHarmony's generated service proxy declares, with its parameters and its reply type, plus which entity each operation can hand back. docs/myharmony-model.md is the reading; reference/myharmony-model.json is the entity half."
+ "what": "Every operation MyHarmony's generated service proxy declares, with its parameters and its reply type, plus which entity each operation can hand back. docs/myharmony/model.md is the reading; docs/myharmony/model.json is the entity half."
 }
