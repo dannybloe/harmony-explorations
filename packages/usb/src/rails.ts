@@ -86,8 +86,16 @@ export const WRITABLE_CEILING: Readonly<Record<number, number>> = {
  * hardware decides how much goes. Logitech's client picks a block table from the flash chip's
  * JEDEC manufacturer and device id, and for every chip it lists against arch 12 the region above
  * `0x010000` is uniform 64 KiB blocks, so an erase anywhere in the config region takes 64 KiB
- * with it. The boot block area below `0x010000` is finer, 16K then 8K, 8K, 32K, and it is outside
- * the config region and therefore outside anything this module permits.
+ * with it. The boot block area below `0x010000` is finer and **its shape is per chip**, section
+ * 221: eight 8 KiB blocks on the part both bench Harmony Ones report, `16K, 8K, 8K, 32K` on one of
+ * the others. Either way it is outside the config region and therefore outside anything this
+ * module permits.
+ *
+ * **The row for the bench part is identified since 30 August 2026**, section 221, which is the
+ * confirmation the paragraph below asks for rather than only proposes: the remotes report `1F:C8`,
+ * that is Atmel `AT49BV322A` in the client's own constants, and walking its table from zero puts
+ * `0x040000` on a boundary in a 64 KiB block. `tests/test_host_client.py` asserts this constant
+ * against that walk.
  *
  * **Provenance is not the same as `WRITABLE_CEILING`'s, and this said it was.** That one was adopted
  * from the client and then **measured on two Harmony Ones**, section 88. This one is still the
@@ -100,9 +108,10 @@ export const WRITABLE_CEILING: Readonly<Record<number, number>> = {
  * it wrote would report success. **That script measures it now**, since 30 August 2026: it reads
  * the block either side before the erase and again after it and refuses if either moved, so the
  * first run ever performed turns this constant from the client's word into a measurement on the
- * unit in front of it. No evidence suggests it is larger, since both of the client table's readings
- * give uniform 64 KiB above the boot area, and the other cheap confirmation is a read of the chip's
- * JEDEC id rather than an erase, which that script now prints.
+ * unit in front of it. No evidence suggests it is larger, since all three of the client table's arch
+ * 12 rows give uniform 64 KiB above the boot area and the bench part's row is one of them, section
+ * 221. What is still unmeasured is the chip rather than the table: a row says what Logitech believed
+ * a part does.
  */
 export const ERASE_BLOCK_SIZE: Readonly<Record<number, number>> = {
   12: 0x10000,

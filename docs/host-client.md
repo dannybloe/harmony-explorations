@@ -611,9 +611,16 @@ the read that would have checked the client's claim was impossible until that wa
 refusal hides exactly what it refuses.
 
 The client picks a flash block table from the chip's JEDEC manufacturer and device id, which it
-reads over USB. For every chip it lists against arch 12 the layout is `16K, 8K, 8K, 32K` and then
-uniform 64 KiB to 4 MiB, so **an erase anywhere in the arch 12 config region takes 64 KiB with
-it**, and the fine boot blocks are all below `0x010000` and outside anything the rails permit.
+reads over USB. Every chip it lists against arch 12 is uniform 64 KiB from `0x010000` to 4 MiB, so
+**an erase anywhere in the arch 12 config region takes 64 KiB with it**, and the fine boot blocks
+are all below `0x010000` and outside anything the rails permit.
+
+**The bottom of flash is per chip and this said it was not**, section 221. It read "for every chip
+it lists against arch 12 the layout is `16K, 8K, 8K, 32K`"<!--superseded--> and then uniform 64 KiB,
+which is one row, `S29AL032D`. Two of the three arch 12 rows begin with eight 8 KiB blocks instead,
+and the part both bench Harmony Ones report is one of those. The word "every" is what turned a row
+into a table. Nothing the rails do changes, since no rail permits an address down there, and the
+half they rest on is the half that survives.
 
 **The 64 KiB figure has a firmware reason since section 192, and that reason establishes less than
 this paragraph claimed.** Before every flash access the arch 12 firmware writes the request's top
@@ -1119,11 +1126,17 @@ command's field is wider than the storage it addresses. Nothing available here d
 
 ### Flash block geometry, which changes an erase rail
 
-The client states the block table for arch 12 as counts and sizes: **eight blocks of 8192 bytes,
+The client states a block table for arch 12 as counts and sizes: **eight blocks of 8192 bytes,
 then sixty three of 65536**. The 64 KiB figure is what this project measured and built its erase
 rail on, and it is right for everything above the first 64 KiB. What is new is that **the bottom
 64 KiB of flash erases in 8 KiB blocks**, and that is exactly where the embedded config at
 `0x002000` lives.
+
+**Which row this is was settled on 30 August 2026**, section 221: it is Atmel `AT49BV322A`,
+manufacturer 31 and device 200, and that is the pair both bench Harmony Ones report in their version
+block, `1F:C8`. So this is not "the arch 12 table", it is the row for the part on the bench, and the
+paragraph above stated a different row as the architecture's. The join was available the whole time,
+since the id is recorded five hundred lines below in this same document.
 
 A rail that requires a 64 KiB aligned address and a whole 64 KiB block inside the region is
 therefore too coarse at the bottom of flash and would refuse a legitimate erase there, which is the

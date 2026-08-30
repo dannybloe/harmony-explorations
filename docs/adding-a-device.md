@@ -660,9 +660,11 @@ M4, and behind the gate above. The rails are written and off, `packages/usb/src/
       destroyed a neighbouring block of the configuration and the run would have reported success.
       The script now reads the block either side before the erase and again after it and refuses if
       either moved, and refuses to erase at all where no neighbour can be read. The unit's own flash
-      id is **1F:C8**, read on 30 August 2026, which is the pair the client's block table is chosen
-      by and which nothing here has yet looked up in that table: the lab holds it. **This box is
-      ticked by the first `--commit` run**, not by the code existing and not by the lookup
+      id is **1F:C8**, read on 30 August 2026, and it **has** been looked up since, section 221: that
+      is Atmel `AT49BV322A` in the client's own constants, whose row is eight 8 KiB blocks and then
+      sixty three of 64 KiB, so `0x040000` is a boundary and its block is 64 KiB. The check therefore
+      has an expected answer now. **This box is ticked by the first `--commit` run**, not by the code
+      existing and not by the lookup
 - [ ] `INTENDEDVERSION` compared against the connected remote over all **six** fields, protocol,
       skin, flash and board plus `SOFTWARETYPE` and `ARCHITECTURE`, and refused on any mismatch.
       An absent or empty field matches anything, which is how a file offers a fallback, so an

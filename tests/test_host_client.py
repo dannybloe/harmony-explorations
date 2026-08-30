@@ -1859,5 +1859,136 @@ class TheClientsRegionTableNamesOneArchitectureAndTwoRegions(unittest.TestCase):
             r'readFlash\(progress, this\.getRegionAddress\(architectureId, regionId\), data\);',
         )
 
+
+#: The JEDEC pair the two bench Harmony Ones report in their version block, manufacturer then
+#: device. Recorded in `docs/host-client.md` since 9 August 2026 and re-read off the spare on
+#: 30 August 2026 by `packages/usb/bin/rehearse-block.ts`, which now prints it for this reason.
+BENCH_ONE_FLASH = (0x1f, 0xc8)
+
+#: Where the write rehearsal erases, and the base of the arch 12 config region.
+REHEARSAL_BLOCK = 0x040000
+
+
+def flash_geometry(source, manufacturer, device):
+    """The block table Logitech's client builds for one JEDEC pair, as a list of (count, size).
+
+    Read out of the factory's nested switch rather than transcribed, which is this file's whole
+    convention: a table read off a screen once is a table nobody can check. Only the part below the
+    physical size marker is returned, which is the flash itself; what follows in every arm is the
+    unused hole and the internal program memory window, neither of which an erase address reaches.
+    """
+    outer = re.search(r'\n\s*case %d: \{' % manufacturer, source)
+    if outer is None:
+        return None
+    rest = source[outer.end():]
+    inner = re.search(r'\n\s*case %d: \{' % device, rest)
+    if inner is None:
+        return None
+    arm = rest[inner.end():]
+    end = arm.find('setPhysicalSerialFlashSize')
+    if end < 0:
+        end = arm.find('break;')
+    arm = arm[:end]
+    out = []
+    for count, size, single in re.findall(
+            r'addMultipleBlocks\((\d+),\s*(\d+)\)|addBlock\((\d+)\)', arm):
+        out.append((int(count), int(size)) if count else (1, int(single)))
+    return out
+
+
+def block_at(geometry, address):
+    """The (start, size) of the block an address falls in, walking the table from zero.
+
+    The same walk `eraseFlash` performs, which is why it is worth reproducing rather than indexing:
+    the client sums block lengths from address zero to find where to start erasing.
+    """
+    at = 0
+    for count, size in geometry:
+        for _ in range(count):
+            if at <= address < at + size:
+                return at, size
+            at += size
+    return None
+
+
+class TheEraseBlockAtTheRehearsalAddressIsSixtyFourKiB(unittest.TestCase):
+    """Section 221: which row of the client's flash table applies to the remote on the bench.
+
+    `ERASE_BLOCK_SIZE` in `packages/usb/src/rails.ts` has been client sourced and unconfirmed since
+    9 August 2026, and that docstring names the confirmation that costs no write: the client picks
+    its block table from the chip's JEDEC manufacturer and device id, which it reads over USB, so
+    reading that id off the unit and matching it to a row settles which row applies. The id is
+    `1F:C8`. This is that match, recomputed from the client's own factory.
+
+    It does not confirm that the chip erases 64 KiB. It confirms that **Logitech believed this
+    part does**, for the part the remote names, which is a strictly narrower and more useful claim
+    than the one the rail carried, and the remaining doubt is now about one row of one table rather
+    than about a whole architecture.
+    """
+
+    def setUp(self):
+        sources = classic_sources()
+        if sources is None:
+            self.skipTest('no decompiled classic client in the lab')
+        factory = [p for p in sources if p.endswith('FlashMemoryFactory.java')]
+        self.assertEqual(len(factory), 1, 'the flash memory factory, exactly once')
+        with io.open(factory[0], encoding='utf-8', errors='replace') as fh:
+            self.source = fh.read()
+
+    def test_the_bench_units_row_is_eight_small_blocks_then_sixty_three_large_ones(self):
+        geometry = flash_geometry(self.source, *BENCH_ONE_FLASH)
+        self.assertEqual(geometry, [(8, 8192), (63, 65536)])
+        # And it is a 4 MiB part, which is the same total the log area validator bounds itself by,
+        # section 47, and the total the ceiling at 0x3D0000 is measured down from, section 88.
+        self.assertEqual(sum(count * size for count, size in geometry), 0x400000)
+
+    def test_the_rehearsal_erases_a_whole_sixty_four_kilobyte_block_on_a_boundary(self):
+        """The claim the write rehearsal rests on, derived by the walk the client itself performs."""
+        geometry = flash_geometry(self.source, *BENCH_ONE_FLASH)
+        start, size = block_at(geometry, REHEARSAL_BLOCK)
+        self.assertEqual(size, 0x10000)
+        self.assertEqual(start, REHEARSAL_BLOCK, 'the address is a block boundary, so the walk '
+                                                 'starts exactly there')
+
+    def test_the_rail_carries_the_number_this_row_states(self):
+        """The ledger's own rule: a client sourced number is asserted against the code that uses it.
+
+        Without this the table could be re-read correctly while `ERASE_BLOCK_SIZE` said something
+        else, which is the two copies state this repository refuses everywhere.
+        """
+        rails = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..',
+                             'packages', 'usb', 'src', 'rails.ts')
+        with io.open(rails, encoding='utf-8') as fh:
+            text = fh.read()
+        table = re.search(r'ERASE_BLOCK_SIZE[^=]*= \{(.*?)\};', text, re.S)
+        self.assertIsNotNone(table, 'no erase block table in rails.ts')
+        self.assertEqual(re.findall(r'(\d+):\s*(0x[0-9a-f]+)', table.group(1)),
+                         [('12', '0x10000')])
+        geometry = flash_geometry(self.source, *BENCH_ONE_FLASH)
+        self.assertEqual(block_at(geometry, REHEARSAL_BLOCK)[1], 0x10000)
+
+    def test_the_fine_layout_is_per_chip_and_ours_is_not_the_one_the_documents_quoted(self):
+        """The correction this dig produced, and the control that the reader tells rows apart.
+
+        `docs/host-client.md` said the arch 12 layout was `16K, 8K, 8K, 32K` then uniform 64 KiB
+        **for every chip the client lists**. Two of the three arch 12 rows begin with eight 8 KiB
+        blocks instead, and the bench part is one of those, so the quoted bottom belongs to a chip
+        neither Harmony One here carries. What survives is the half the rails use: every arch 12 row
+        is uniform 64 KiB above `0x010000`.
+        """
+        amd = flash_geometry(self.source, 1, 249)
+        self.assertEqual(amd, [(1, 16384), (1, 8192), (1, 8192), (1, 32768), (63, 65536)])
+        self.assertNotEqual(amd, flash_geometry(self.source, *BENCH_ONE_FLASH))
+        for pair in ((1, 249), (1, 126), BENCH_ONE_FLASH):
+            geometry = flash_geometry(self.source, *pair)
+            with self.subTest(pair=pair):
+                self.assertEqual(sum(c * s for c, s in geometry), 0x400000)
+                # Everything above the boot area is one size, which is the claim the rail needs and
+                # the only one all three rows agree on.
+                self.assertEqual(geometry[-1], (63, 65536))
+                self.assertEqual(sum(c * s for c, s in geometry[:-1]), 0x010000)
+
+
+
 if __name__ == '__main__':
     unittest.main()

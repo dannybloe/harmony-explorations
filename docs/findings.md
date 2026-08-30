@@ -49,7 +49,7 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Fifty seven have been found and corrected so far. **The six newest are in section 139, and every one
+Fifty eight have been found and corrected so far. **The newest is in section 221**, and it is a document quoting one row of a table as the whole table, twice, five weeks apart, from two different rows. **The six newest are in section 139, and every one
 of them is a reader in shipped code that answered plausibly where it should have refused**, found by
 reviewing the source against the question "what can this test fail on" rather than by a new sample.
 One of them is a rail: the barrel of `packages/usb` exported the four request builders that change a
@@ -28347,3 +28347,61 @@ expose, but it is an observation and not a measurement until both sides come fro
 `tests/lab.py` gained a second account's response directory for this, since the probe files each
 account's replies separately by design and a suffixed filename in one directory would have been a
 copy of evidence rather than a reference to it.
+
+## 221. Which flash part the bench Harmony Ones carry, and the erase block that follows from it
+
+`ERASE_BLOCK_SIZE` in `packages/usb/src/rails.ts` says an erase on arch 12 takes 64 KiB, and it has
+been **client sourced and unconfirmed** since 9 August 2026. That docstring also names the
+confirmation that costs no write: Logitech's own client picks a flash block table from the chip's
+JEDEC manufacturer and device id, which it reads over USB, so reading that pair off the unit and
+matching it to a row settles which row applies. This is that match, on 30 August 2026, prompted by
+the write rehearsal's dry run printing the pair for the first time.
+
+**The remote reports `1F:C8`**, manufacturer then device, on both Harmony Ones here. In the client's
+own constants that is manufacturer 31, Atmel, and device 200, `AT49BV322A`. Its row builds **eight
+blocks of 8192 bytes and then sixty three of 65536**, and the vendor's own assertion beside it puts
+the total at `0x400000`.
+
+Walking that table from address zero, which is what the client's own erase does to find where to
+start, the eight small blocks fill `0x000000` to `0x010000` and the uniform blocks run from there.
+So `0x040000` is the start of the fourth 64 KiB block, and the rehearsal's erase address is a block
+boundary and its block is exactly 64 KiB.
+
+**What this establishes and what it does not.** It does not confirm that the part erases 64 KiB. It
+confirms that Logitech believed **this** part does, for the part the remote names, which is narrower
+and more useful than what the rail carried: the remaining doubt is one row of one table rather than a
+whole architecture. Confirming the span itself still means erasing something, which is the rehearsal's
+own neighbour check, section 220's commit path, and it is now a check with an expected answer rather
+than an open question.
+
+Two agreements come free and neither was arranged. The row totals `0x400000`, which is the bound the
+log area validator enforces from the firmware side, section 47, and the ceiling at `0x3D0000` is
+measured down from that same total, section 88. And the row's tail, a hole and then 128 blocks of
+1024 bytes ending at `0x1000000`, puts the internal program memory window exactly where this project
+reads it through `READ_FLASH` region byte `0xFE`.
+
+### The correction: the fine layout is per chip, and one document quoted two different rows as the one
+
+`docs/host-client.md` stated the arch 12 block layout **twice**, in two digs five weeks apart, and
+neither said the table has more than one row for that architecture. The first, from the classic
+client on 9 August, said "for every chip it lists against arch 12 the layout is `16K, 8K, 8K, 32K`<!--superseded-->
+and then uniform 64 KiB". The second, from the mirrored client, said "eight blocks of 8192 bytes,
+then sixty three of 65536". Both are real rows and neither is the whole story: the first is
+`S29AL032D`, the second is the part the bench remotes actually carry.
+
+The half the rails rest on survives and is now checked rather than asserted: all three arch 12 rows
+are uniform 64 KiB above `0x010000`, and all three total `0x400000`. What was wrong is the bottom,
+which no rail permits and which therefore cost nothing, and the word "every", which is what made a
+row look like a table.
+
+**The pattern is decision 12's, again, and in its sharper form.** Nothing needed digging: the table
+was mined into a lab note on 9 August, the note's contents reached `docs/host-client.md` the same
+day, and the flash id the remote reports is in that same document about five hundred lines further
+down, recorded as an agreement with the client's own skin table. Two halves of one join, in one file,
+for three weeks. What made it happen today was not a better search but the rehearsal printing the
+pair on its way past, which is the argument for a tool stating what it read rather than only what it
+decided.
+
+`tests/test_host_client.py` carries it, re-reading the geometry out of the factory rather than
+transcribing it, walking the blocks to find the one at `0x040000`, and asserting the rail's own
+constant against the answer. Its control is the two rows that differ.
