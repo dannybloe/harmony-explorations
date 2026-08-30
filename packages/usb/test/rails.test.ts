@@ -43,6 +43,8 @@ import {
   writableRange,
 } from '../src/index.ts';
 import type { Transport } from '../src/index.ts';
+// Deep import on purpose: this is the hatch the barrel deliberately does not offer, section 224.
+import { authoriseReport } from '../src/authorise.ts';
 
 /** Everything a caller could possibly have in order, on the architecture that has a target. */
 const IDEAL = {
@@ -94,6 +96,21 @@ test('the package offers no way to build a request that changes a remote', async
     assert.equal(typeof writes[name], 'function', name);
     assert.equal(barrel[name], undefined, `${name} is not in the barrel`);
   }
+
+  // **And the same hole a third time, found on 30 August 2026, section 224.** The guard below refuses
+  // an unauthorised mutating report, and the way to authorise one was a **public method on the very
+  // transport `openHarmony` hands back**, so `t.authoriseReport(r); await t.write(r)` reached the
+  // device with writing disabled and an address outside the region. Hiding a builder and then leaving
+  // the permission itself in the caller's hand is the same mistake at one remove, so the rule now
+  // covers both: the barrel offers no way to send a mutating report **and** no way to permit one.
+  const permits = Object.keys(barrel).filter((name) => /authoris|permit|allowReport/i.test(name));
+  assert.deepEqual(permits, [], 'the barrel offers a way to authorise a report');
+
+  // The control, same shape as the one above: the hatch exists and a deep import reaches it, so this
+  // is a boundary and not a deletion. `remote.ts` uses it on every send.
+  const authorise = (await import('../src/authorise.ts')) as Record<string, unknown>;
+  assert.equal(typeof authorise['authoriseReport'], 'function');
+  assert.equal(barrel['authoriseReport'], undefined);
 });
 
 test('the shipped build has writing disabled', () => {
@@ -528,6 +545,18 @@ test('a mutating report cannot reach a remote without a rail behind it', async (
   };
   const guarded = guardMutations(inner);
 
+  // **The surface of the returned object is the rail, and this is the assertion the barrel check
+  // cannot make.** The bypass of 30 August 2026 was a public `authoriseReport` **method** on this very
+  // object, so it was reachable by every caller of `openHarmony` while every exported name looked
+  // innocent. A name check on the barrel would not have seen it; enumerating what the object offers
+  // does. Three methods, and a fourth is a hole until somebody proves otherwise.
+  const surface = new Set<string>();
+  for (let o: object | null = guarded; o && o !== Object.prototype; o = Object.getPrototypeOf(o)) {
+    for (const name of Object.getOwnPropertyNames(o)) surface.add(name);
+  }
+  assert.deepEqual([...surface].sort(), ['close', 'read', 'write'],
+    'the guarded transport offers something other than the three transport methods');
+
   // **The exact bypass, refused.** An erase outside the config region, with writing disabled.
   await assert.rejects(() => guarded.write(encodeRequest(ERASE_FLASH, address24(0x000000))),
     TransportError, 'a raw erase reached the transport');
@@ -538,12 +567,12 @@ test('a mutating report cannot reach a remote without a rail behind it', async (
   // An authorised report goes through, and the authorisation is single use, so a stray second
   // report cannot ride on the first one's permission.
   const erase = encodeRequest(ERASE_FLASH, address24(0x040000));
-  guarded.authoriseReport(erase);
+  authoriseReport(guarded, erase);
   await guarded.write(erase);
   await assert.rejects(() => guarded.write(erase), TransportError, 'authorisation was reusable');
 
   // And it is for those exact bytes, so an address swapped in after the rail ran is refused.
-  guarded.authoriseReport(encodeRequest(ERASE_FLASH, address24(0x040000)));
+  authoriseReport(guarded, encodeRequest(ERASE_FLASH, address24(0x040000)));
   await assert.rejects(() => guarded.write(encodeRequest(ERASE_FLASH, address24(0x3f0000))),
     TransportError, 'the authorised bytes were not checked');
 

@@ -59,7 +59,8 @@ import {
   writeFlashRequest,
   writeMiscRequest,
 } from './writes.ts';
-import type { GuardedTransport, Transport } from './transport.ts';
+import { authoriseReport } from './authorise.ts';
+import type { Transport } from './transport.ts';
 
 /**
  * Whether a count is one the internal fetch loop can terminate on.
@@ -143,15 +144,19 @@ export class HarmonyRemote {
 
   /** Send one request and wait for the first report that comes back. */
   /**
-   * Send one report, authorising it first if the transport is guarded.
+   * Send one report, authorising it first.
    *
    * Every report this class sends goes through here, which is what makes the guard's rule true:
    * a mutating report reaching a real remote came through a method that asked `rails.ts` first.
-   * A fake transport has no `authoriseReport` and is left alone, so tests keep their raw access.
+   *
+   * **The authorisation is recorded against the transport rather than on it**, section 224. It used
+   * to be a method the transport carried, which meant `openHarmony`'s caller carried it too and
+   * could authorise anything at all; `authorise.ts` holds it now and the barrel does not export that
+   * file. An unguarded transport, which is what the tests use, ignores the record entirely, so they
+   * keep their raw access with no branch here to get wrong.
    */
   private async send(report: Uint8Array): Promise<void> {
-    const guarded = this.transport as Partial<GuardedTransport>;
-    if (typeof guarded.authoriseReport === 'function') guarded.authoriseReport(report);
+    authoriseReport(this.transport, report);
     await this.transport.write(report);
   }
 

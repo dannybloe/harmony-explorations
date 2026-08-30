@@ -7,6 +7,7 @@
  * them reach a device.
  */
 
+import { takeAuthorisation } from './authorise.ts';
 import { READ_ONLY_COMMANDS } from './protocol.ts';
 
 export class TransportError extends Error {}
@@ -40,13 +41,15 @@ export interface Transport {
  * second report cannot ride on the first one's permission, and a report whose bytes were changed
  * after authorisation is refused.
  */
-export interface GuardedTransport extends Transport {
-  /**
-   * Permit exactly this report, once. Called by `HarmonyRemote` after the rail for that operation
-   * has passed, so reaching here at all means a rail said yes.
-   */
-  authoriseReport(report: Uint8Array): void;
-}
+/**
+ * A transport that refuses an unauthorised mutating report.
+ *
+ * **It carries no way to authorise one**, and that is the whole point since section 224: the method
+ * that did was on this object, and `openHarmony` hands this object to its caller, so the guard's
+ * escape hatch was public and two lines went around every rail in the package. Authorising now lives
+ * in `authorise.ts`, which the barrel does not re-export.
+ */
+export type GuardedTransport = Transport;
 
 function sameBytes(a: Uint8Array, b: Uint8Array): boolean {
   if (a.length !== b.length) return false;
@@ -55,16 +58,12 @@ function sameBytes(a: Uint8Array, b: Uint8Array): boolean {
 }
 
 export function guardMutations(inner: Transport): GuardedTransport {
-  let authorised: Uint8Array | undefined;
-  return {
-    authoriseReport(report: Uint8Array): void {
-      // A copy, so a caller mutating its buffer afterwards cannot change what was authorised.
-      authorised = Uint8Array.from(report);
-    },
+  const guarded: Transport = {
     async write(report: Uint8Array): Promise<void> {
       const command = (report[0] ?? 0) & 0xf0;
-      const pending = authorised;
-      authorised = undefined;
+      // Consumed whether or not it is needed, so a permission cannot be left lying about for a
+      // later report, and looked up by identity rather than read off this object.
+      const pending = takeAuthorisation(guarded);
       if (!READ_ONLY_COMMANDS.has(command)) {
         if (pending === undefined || !sameBytes(pending, report)) {
           throw new TransportError(
@@ -83,6 +82,7 @@ export function guardMutations(inner: Transport): GuardedTransport {
       return inner.close();
     },
   };
+  return guarded;
 }
 
 /** Logitech. The product range covers the Harmony models; `tools/usbprobe.py` uses the same. */

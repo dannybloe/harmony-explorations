@@ -558,3 +558,39 @@ report:
 nothing about whether the derived protocol is right, which is job 1's subject and was answered on 27
 August. And the erase span is now **measurable** rather than measured: what confirms it is the first
 run with `--commit`, which is the run the checklist gates.
+
+
+## Job 2 was performed here, on 30 August 2026
+
+**Not by a second reader**, same label as job 3 above and for the same reason: the brief says job 2
+wants the rails in front of it and needs no independence.
+
+The question was the brief's: find an input reaching a flash write outside the config region, or with
+the flag off, or an erase that is not block aligned. **All three at once, in two lines**, and section
+224 is the write up.
+
+```ts
+const t = await openHarmony();
+t.authoriseReport(erase); await t.write(erase);
+```
+
+`erase` is `ERASE_FLASH` at `0x3D0000`, the stored application firmware, and on arch 12 (Harmony One)
+that command carries no count, so the chip decides how much goes. It passed no rail at all.
+
+The brief pointed job 2 at `rails.ts`'s ten named assertions and its two exported helpers, and named
+`assertRamWriteAllowed` and the missing-table-entry class as specific targets. **None of those was
+where it was**: every rail refuses correctly and the missing entry case has been a refusal since
+section 139. What was reachable was the **permission**, not the refusal. That is worth recording
+because the brief's own list would have sent a second reader to the wrong files, and the thing that
+found it was asking what `openHarmony`'s return value offers a caller rather than what the rails
+check.
+
+**It is the third occurrence of one class**, after 13 and 27 August, and each earlier fix asserted a
+predicate over exported names while what reached hardware was a generic encoder once and an object's
+method once. The fix moves the permission behind a module boundary and adds an assertion that
+enumerates the guarded transport's whole surface, with the control that restoring the method fails
+exactly that test.
+
+**What is still open after job 2** is what section 188 already said and this did not touch: the three
+world facts in a `WritePermission` are caller assertions the library cannot check, and
+`rehearse-block.ts` hardcodes two of them.

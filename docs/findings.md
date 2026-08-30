@@ -52,7 +52,11 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Fifty eight have been found and corrected so far. **The newest is in section 221**, and it is a document quoting one row of a table as the whole table, twice, five weeks apart, from two different rows. **The six newest are in section 139, and every one
+Fifty nine have been found and corrected so far. **The newest is in section 224**, and it is the same
+rails bypass for the third time: a report reaching a remote's flash with no rail behind it, closed twice
+before, both times by hiding the thing that built the report and never the thing that permitted it. The
+one before it is in section 221, and it is a document quoting one row of a table as the whole table,
+twice, five weeks apart, from two different rows. **The six newest are in section 139, and every one
 of them is a reader in shipped code that answered plausibly where it should have refused**, found by
 reviewing the source against the question "what can this test fail on" rather than by a new sample.
 One of them is a rail: the barrel of `packages/usb` exported the four request builders that change a
@@ -24867,8 +24871,15 @@ rail said yes. Single use, so a stray second report cannot ride on the first one
 exact, so an address swapped in after the rail ran is refused. All four of `HarmonyRemote`'s send sites
 now go through one private `send`, which is what makes the rule true rather than probable.
 
-A **fake transport is deliberately unguarded**, and `HarmonyRemote` probes for the capability rather
-than requiring it, so nothing in the test suite loses its raw access.
+A **fake transport is deliberately unguarded**, so nothing in the test suite loses its raw access.
+
+> **Corrected on 30 August 2026, section 224.** This said `HarmonyRemote` "probes for the capability
+> rather than requiring it"<!--superseded-->, meaning it duck-typed for an `authoriseReport` **method**
+> on the transport. That is what made the capability public: `openHarmony`'s caller received the
+> transport and the power to permit any report on it, and two lines reached `ERASE_FLASH` at
+> `0x3D0000` with writing disabled. The permission is a `WeakMap` keyed by transport now, in
+> `authorise.ts`, which the barrel does not re-export, and a fake transport simply ignores the record,
+> so the exemption survives with no capability to probe for.
 
 Six behaviours are asserted: the exact bypass refused, a read passing with no authorisation, an
 authorised erase going through, a replay refused, a byte swap refused, and an unclassified command
@@ -28585,3 +28596,90 @@ rate and a threshold.
 
 **It is not the stranding fault**, which is a remote that stops answering after sitting idle and
 needs its batteries out. That one is untouched and still unexplained.
+
+## 224. The same rails bypass a third time, and why a name check could never have caught it
+
+Job 2 of `docs/review-before-first-write.md` was performed here on 30 August 2026: find an input that
+reaches a flash write outside the config region, or with the flag off, or an erase that is not block
+aligned. It found one, in two lines, with writing disabled.
+
+```
+WRITES_ENABLED: false
+ATTACK 1 (raw write):        refused
+ATTACK 2 (self-authorise):   REACHED THE DEVICE
+reports that reached the fake device: 1 0xd3
+```
+
+`0xd3` is `ERASE_FLASH` aimed at `0x3D0000`, which is the stored application firmware and is
+deliberately outside `WRITABLE_CEILING`. On arch 12 (Harmony One) an erase takes an address and no
+count, so that report is 64 KiB gone at whatever address the chip decides, and it passed no rail: not
+`WRITES_ENABLED`, not the architecture check, not the ceiling, not block alignment.
+
+The two lines:
+
+```ts
+const t = await openHarmony();          // the only function that returns a path to hardware
+t.authoriseReport(erase); await t.write(erase);
+```
+
+### Why it existed, which is the interesting half
+
+Section 188 closed the second occurrence of this hole by putting the check on the transport
+`openHarmony` returns: an allow list of the three commands that only read, and a per report, byte
+exact, single use authorisation that `HarmonyRemote` issues after the rail for that operation has
+passed. Every word of that is still true and the guard still works. What was wrong was **where the
+permission lived**: `authoriseReport` was a public method on the guarded transport object, so the
+capability to permit any report at all was handed to `openHarmony`'s caller along with the transport.
+
+The reason it was a method is recorded and is worth keeping, because it was a deliberate choice for a
+good reason that produced the wrong shape. `HarmonyRemote` must work over a **fake** transport, since
+that is what the test suite uses and those tests need raw access. Making the capability a method meant
+`HarmonyRemote` could duck-type for it, `typeof guarded.authoriseReport === 'function'`, and leave a
+fake alone with no branch anywhere else. So the mechanism that made the guard optional for a fake made
+it public for everybody.
+
+### Three occurrences, one class, and each fix addressed the instance
+
+| date | the shape that reached hardware | what the fix hid |
+|---|---|---|
+| 13 August 2026 | `eraseFlashRequest(...)` off the barrel | the four named request builders, into `writes.ts` |
+| 27 August 2026 | `encodeRequest(ERASE_FLASH, address24(a))` | nothing; the guard was added instead |
+| 30 August 2026 | `t.authoriseReport(r); t.write(r)` | the permission itself, into `authorise.ts` |
+
+**The test that exists to catch this could not see any of the last two**, and the reason is the same
+each time: its rule is a predicate over **exported names**, an export ending in `Request` that also
+matches `write|erase|escape`. `encodeRequest` slips through on the name, and `authoriseReport` was
+never an export at all, being a property of an object returned at run time. A name check sees the
+barrel's key list and nothing about what those keys hand back.
+
+### The fix, and the assertion that would have caught it
+
+The permission is a `WeakMap` in `packages/usb/src/authorise.ts`, keyed by the transport it belongs
+to, with `authoriseReport(transport, report)` and `takeAuthorisation(transport)`. The barrel does not
+re-export that file, which is the protection level this package already chose for `writes.ts`: a deep
+import by path reaches it, and somebody writing `import ... from '../src/authorise.ts'` is doing
+something deliberate rather than reaching for what the package offered them.
+
+`GuardedTransport` is now a type alias of `Transport`, because there is nothing extra on it to
+describe. That is the shape of the fix in one line: the guarded transport and a plain transport are
+indistinguishable from outside, so there is no capability to find on it.
+
+Two assertions, and only the second is new in kind:
+
+* the barrel offers no export matching `authoris|permit|allowReport`, which is the old name check
+  extended to permissions as well as builders. Cheap, and it would not have caught this.
+* **the guarded transport's whole surface is enumerated and must be exactly `close`, `read`, `write`**,
+  walking own property names up the prototype chain. This is the one that bites, because it asks what
+  the object offers rather than what the module exports. Control: putting the method back fails
+  exactly that test, and the reversal was checked byte for byte against the copy taken first.
+
+Rerunning the attack after the fix refuses both attempts and zero reports reach the device.
+
+### What this does not fix
+
+The three world facts in a `WritePermission` are still caller assertions the library cannot check,
+that the dump is verified, that the version matches and that the target is the spare, and
+`rehearse-block.ts` still hardcodes two of them. Section 188 said so and it is still open. Nor does
+this close the class: the lesson is that a rail on an object's **surface** needs an assertion over that
+surface, and the only two things enumerated that way today are this transport and the file protocol's
+allow list.
