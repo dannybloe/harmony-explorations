@@ -1558,7 +1558,7 @@ else's remote, which is the thing this step is trying to arrange. What is verifi
 produces a correct report for every sample in the corpus, spanning four architectures, and that it
 still produces the shape when the cookie is rewritten to a magic no family claims.
 
-### Step 9: excavate the lab. Register done and tested, one artefact still unopened, reading phase left
+### Step 9: excavate the lab. Discovery done, nothing unopened, reading phase left
 
 **Decision 12 is the argument; this is the job.** The lab holds 12506 files in 2.3 GB, measured on
 28 August 2026, and the knowledge in it is a superset of the knowledge in this repository by an
@@ -1575,7 +1575,7 @@ The grid, with the two squares that matter marked. File counts are what to plan 
 | `software/MyHarmony/` | 183M | 317 | the Silverlight client. Section 132 concluded it holds no protocol; that conclusion predates knowing the recovery tool is reached from it |
 | `software/LogitechHarmonyRemoteSoftware.app/` | 202M | 208 | catalogued 29 August 2026, section 214: the **pristine vendor build**, and the copy to compare it against is our repack rather than the unpacked original, which is what its register row had guessed |
 | `software/desktop-webapp/` | 21M | 370 | **section 197's square**, and the one that proves the point |
-| `reference/logitech-icons/` | 17M | 877 | **the last unopened artefact on the site**, as at 30 August 2026 |
+| `reference/logitech-icons/` | 20M | 1560 | opened 30 August 2026, section 216, and it was **ours**: an extraction of every graphic resource in Logitech's software. It was a third complete and is finished now, 1554 distinct images. The artwork stays in the lab; the category names crossed |
 | `Docs/` | 20M | 7 | user manuals, the source `docs/how-a-harmony-works.md` rests on |
 | `dumps/`, `firmware/`, `reads/`, `golden/`, `ghidra/`, `reviews/`, `bin/` | 172M | 258 | the well worked areas, and still to be registered rather than assumed |
 
@@ -1622,8 +1622,9 @@ directory and watching exactly one test name it.
 a declaration by wording rather than by feeling. The digging the paragraph above left behind is what is
 actually outstanding, and as at 30 August 2026 it is this:
 
-* **One artefact has never been opened**, `reference/logitech-icons/`, 877 files tagged for FreeHarmony's
-  screens. That is the whole of what "the rows at status `unseen`" now means, down from five.
+* **Nothing is unopened.** The last artefact at `unseen` was dug on 30 August 2026, section 216, and
+  like the two before it, it held our own work rather than Logitech's. So the phrase "the rows at status
+  `unseen`" now names an empty set, down from five in two days.
 * **Thirteen rows carry a want list tag and are not written up here**, at `surveyed` or `read`. Some of
   those are understated rather than undug: `software/MyHarmony` is at `read` while section 132 is a
   write up of it, so a pass that only corrected statuses would move several without opening anything.
@@ -1635,8 +1636,8 @@ actually outstanding, and as at 30 August 2026 it is this:
   because this client is an executor whose interface never named a device.
 
 The honest summary is that the excavation is **past its discovery phase and into its reading phase**:
-finding squares nobody has touched is finished bar one, and what remains is reading squares that have
-been surveyed. Those are worth doing in tag order and none of them is urgent, since the two squares that
+finding squares nobody has touched is **finished**, and what remains is reading squares that have been
+surveyed. Those are worth doing in tag order and none of them is urgent, since the two squares that
 carried the highest value tags are both dug.
 
 **The survey paid for itself on its first square**, which is the argument for having done it before

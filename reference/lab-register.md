@@ -91,7 +91,7 @@ The largest square and the least read. 6758 files, 1.1 GB.
 | path | what it is | files | status | tags | holds |
 |---|---|---|---|---|---|
 | `Docs/` | the vendor's user manuals | 7 | `catalogued` | `fh-screens` `fh-wizard` | `docs/how-a-harmony-works.md` rests on these |
-| `reference/logitech-icons/` | the vendor's device icon set | 877 | `unseen` | `fh-screens` | 17 MB. Their own iconography, which is their expression and cannot be shipped |
+| `reference/logitech-icons/` | **ours**: every graphic resource extracted out of Logitech's software, plus the scripts that did it | 1560 | `mined` 30 August 2026 | `fh-screens` | 20 MB. **Section 216, and the third square running whose row called our own work Logitech's.** The artwork is theirs and still cannot be shipped, which is what the old row said and why it read as vendor material; the collection, the manifest and the scripts are ours. the `all` directory is the complete sweep since 30 August, 1554 distinct images with a manifest naming the archive and entry each came from, and it strictly contains the partial 22 August set. **The finding is that the era this project supports has no category pictures at all**: only the later hub generation has any, 36 of whose 95 names are equipment a Harmony One cannot drive. the repository's own `device-categories` reference is the part that crossed |
 | `reference/forum-images/` | photographs from forums | 37 | `read` | `models` `scan-codes` | section 144's circuit board survey is here |
 | `reference/*.svg` | hand traced remote faces | 3 | `catalogued` | `models` | the traced source the generated SVGs in this repository come from |
 | `ghidra/` | Ghidra projects | 10 | `surveyed` | | embed firmware, so never publishable |

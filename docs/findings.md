@@ -27902,3 +27902,65 @@ is new is that both halves are now enforced rather than remembered, and that add
 exposed **four** counts and one comment that had to move or be excluded, including a comment in
 `golden.test.ts` that said 25 and 9 where the assertions two lines below said 28 and 8. Prose beside a
 number is the thing nothing recomputes, which is the whole reason `make facts` exists.
+
+## 216. The last unopened square was already ours, the extraction in it was a third complete, and the era we support has no category pictures
+
+The excavation's last artefact at status `unseen` was `reference/logitech-icons/`, 877 files, and
+opening it found **our own work**, made on 22 August 2026 with a README explaining itself. That is the
+third square in a row catalogued as Logitech's that turned out to be ours, after `tools/` and `dist/`
+in section 214, and the register row's own words, "their own iconography, which is their expression and
+cannot be shipped", are what made it read as vendor material.
+
+**So the site now has nothing left unopened**, and the register's `unseen` count is zero.
+
+### The extraction was incomplete, and the missing part was almost all of the classic client
+
+The 22 August pass took loose image files and carved PNGs out of Silverlight assemblies. That is the
+right method for the MyHarmony era and the wrong one for the Java era: the classic client keeps its
+artwork **inside its jars**, so 43 loose files were picked up where the jars hold hundreds.
+
+A comprehensive pass on 30 August 2026, `pull-all-graphics.py` in the lab beside the original:
+
+| | 22 August | 30 August |
+|---|---|---|
+| distinct images | 792 | **1554** |
+| from the classic client | 43 | 684 |
+| from MyHarmony | 443 | 559 |
+
+The old set is **fully contained** in the new one, checked by content digest, zero missing. The
+manifest carries one row per occurrence, 4949 of them, each naming the archive and entry it came out
+of, so duplicates are recorded rather than dropped: the same button image appears in four jars and
+counting it four times would overstate what Logitech drew.
+
+**Two bugs in the sweep are worth carrying because both are this project's recurring shapes.** The
+carve was quadratic, a `for` counter reassigned inside its own body so it rescanned from every byte,
+which turned seventeen seconds into a run that had to be killed. And it keyed on **file extensions**,
+which missed MyHarmony's packages entirely, because they sit in its own cache with no extension at all;
+sniffing the first bytes is two comparisons and removes the whole class of mistake. Deciding what a
+thing is from its header rather than its name is the same lesson as the tagged list whose form is
+stated by a byte and the misaligned pointer table, both already in this document.
+
+**The hub icons are the one thing that is not extraction.** They exist only as sprite strips and become
+306 icons by being cut at the offsets the application's stylesheet states. `pull-icons.py` remains the
+only place that derivation lives; the new script files its output rather than repeating it, per the
+oldest rule here.
+
+### The finding, which is about the product rather than the files
+
+**The era this project supports had no category pictures at all.** MyHarmony and the classic 7.x
+software listed equipment as text; what their graphics hold is photographs of remotes, setup
+illustrations and window furniture. Across 1554 distinct images spanning every era of Logitech's
+software there is not one category icon from either.
+
+The only set Logitech ever drew is the **hub** generation's, a later product, and it is a set for a
+product with door locks and thermostats in it: of its 95 names, 36 are smart home equipment a Harmony
+One cannot drive, 26 are audio video equipment, 17 are the same drawings again with an alert badge, and
+16 are "not set up yet" placeholders for an activity rather than equipment at all. So **more of it
+describes equipment this project's remotes cannot drive than equipment they can.**
+
+`reference/device-categories.md` carries the names and the argument. The consequence for FreeHarmony is
+a free hand rather than a gap: an interface here that wants a picture per category is designing
+something Logitech never had, not reproducing something it did. And their list is a poor basis to
+borrow from, being brand heavy, ageing badly, and carrying no category for an amplifier that is not an
+AV receiver, no tuner, no projector and no tape machine, all of which the infrared database this
+project already reads holds commands for.
