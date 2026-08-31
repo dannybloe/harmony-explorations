@@ -87,9 +87,18 @@ section 235: **100 tenths is the ceiling of a single instruction**, since the fi
 consecutive quantities by taking the larger except at 100, so raising a delay past ten seconds is a
 length change and not a byte edit; and seven devices in the lab already sit at that cap.
 
-**Give it a known answer first.** Logitech's service will compile a configuration for the spare
-Harmony One with a delay set deliberately, which says what byte their generator moves before we move
-it ourselves. That is the same shape as every other calibration here and it costs one compile.
+**The known answer is already in hand and it cost no write at all**, section 235. The plan was to have
+Logitech's service compile a configuration with a delay set deliberately and diff it; asking their
+account what the delays **are** turned out to answer the same question. `GetUserFeatures` states a
+power on delay per device in milliseconds, and against the configuration their service compiled for
+the spare Harmony One it agrees with our reading on four of four devices, at exactly a hundred times
+the stored number. Two of those four are tuned away from the catalogue default, and the configuration
+carries the tuned value both times, so the field is identified rather than merely consistent.
+
+So the byte is known before it is written. What is left is the write, and it wants somebody at the
+bench: it is the first change this project will have made to one of these remotes, its effect is
+watched rather than measured, and the read back that verifies it is the caller's obligation rather
+than the library's.
 
 `make lab-check PATH_ARG=<path>` first, per decision 12, because the last nine digs each re-derived
 something the site already held.

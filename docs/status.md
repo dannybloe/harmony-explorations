@@ -689,6 +689,15 @@ is tenths of a second. 75 of the 83 devices in the lab now state a power on dela
 one being the things nothing switches on. This matters because the only remote this project may write
 to is a Harmony One, and changing a delay there is **one byte** with nothing moving around it.
 
+**And Logitech's own account agrees about the numbers**, the same section. Everything else that
+confirms a delay is read out of a configuration, so the check had to come from outside one, and it
+needed no write: their service states a power on delay per device in milliseconds. Against the
+configuration they compiled for the spare Harmony One it agrees on four of four devices at exactly a
+hundred times the stored number, and on two of those the owner has tuned the delay away from the
+catalogue default, with the configuration carrying the tuned value. Their record also states an inter
+device delay, and no instruction in that configuration carries it, so where the Harmony One keeps
+that one stays open on a measurement rather than on nobody having looked.
+
 **Two million of Logitech's own waveforms, against our encoder, and nothing disagrees**,
 sections 230 and 231. The infrared archive carries a rendered waveform for every command in their catalogue,
 produced by somebody else's code from Logitech's own protocol definitions, which makes it an answer key

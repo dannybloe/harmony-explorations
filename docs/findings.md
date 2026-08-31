@@ -30372,6 +30372,52 @@ Three rails come with it.
 the fields the inlining architectures do not have: no identifier, no default, and no inter device
 delay. **Where those architectures keep an inter device delay, if they keep one, is open.**
 
+### Logitech's own account says the same thing, in milliseconds
+
+The calibration above is two configurations against each other, which is strong and is still inside
+the format. The check from outside it turned out to need no write at all, only an operation nobody
+here had called: `UserFeatureManager/GetUserFeatures`. A device's delay is not on the device record,
+which is why `setdelay.py` in the lab cannot reach it; it is on a `PowerFeature` hanging off the
+device, and that manager lives on its own `UserFeaturePlatform` rather than on `HarmonyPlatform`
+where every other one does. Guessing the latter answers **404 with an empty body**, which reads
+exactly like the operation being gone. The path is in the service's own discovery reply, captured in
+the lab since section 132.
+
+Asked for the account that holds the spare Harmony One, it states a `PowerOnDelay` per device **in
+milliseconds**. Against `one_spare_myharmony`, the configuration their service compiled for that
+record, joined on the device's own name:
+
+| what the config carries | what the account says | |
+|---|---|---|
+| 60 | 6000 | the receiver |
+| 50 | 5000 | the television |
+| 15 | 1500 | the set top box |
+| 15 | 1500 | the games console |
+
+Four of four, at exactly a hundred times. The config's fifth device is a media player with no
+`Power` variable, and the account holds five more devices no compile has used.
+
+**Scored against a wrong answer that is really in the data.** `PowerFeature` states both the current
+delay and the default Logitech's catalogue gave the device, and on two of these the owner has tuned
+it away: the television reads 5000 against a default of 10000 and the receiver 6000 against 2000.
+The configuration carries the **current** value both times, so the field is `PowerOnDelay` and not
+`DefaultPowerOnDelay`, and a reader that took the other would be wrong on half of this sample.
+
+That also refines section 234's remark that a config's delays "are the ones Logitech's database gave
+the device rather than something its owner tuned". That was true of the four arch 14 containers,
+where current equals default for all 19 devices, and it is not a general rule: this account has two
+devices where they differ.
+
+### The inter device delay is not one of these instructions, measured
+
+The same reply states an `InterDeviceDelay` per device too, 500 milliseconds on most and 1000 on the
+television, so there is a discriminating value to look for. There is no `0x7C` carrying 10 for the
+television's group anywhere in that configuration, and none carrying 5 for the three devices set to
+500. So where arch 8, 9 and 12 keep the inter device delay is **open**, and now on a negative
+measurement rather than on nobody having looked.
+
 `powerOnInstructions` and `deviceDelays` in `packages/codec/src/inventory.ts`;
 `packages/codec/test/inventory.test.ts`, where two of section 234's tests were rewritten rather than
-removed because this section refuted their titles.
+removed because this section refuted their titles. The service reply is a **dated** capture in the
+lab, since an account is a live thing whose contents change and a test that read whatever is there
+today would be asserting about the future.

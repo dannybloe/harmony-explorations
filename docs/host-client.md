@@ -224,6 +224,18 @@ two are declared by the client rather than advertised, exactly like `RemoteConfi
 `userFeatureManager` has `CopyFeaturesFromGlobalDevice`. So a device can be searched for and its
 commands fetched without going anywhere near a config, a remote or a compile.
 
+**`userFeatureManager` was called on 31 August 2026 and it is where a device's delays are**, which
+is worth a paragraph because the obvious place is wrong twice over. A device's power on delay is not
+on the device record that `GetDevicesInAccount` returns, so the lab's `setdelay.py` cannot reach it;
+it is on a `PowerFeature` hanging off the device, fetched with `GetUserFeatures`. And that manager
+does **not** live on `HarmonyPlatform` where every other one here does: it is
+`UserFeaturePlatform/UserFeatureManager.svc/json/`, read off the service's own discovery reply. A
+guess at the usual platform answers **404 with an empty body**, which is indistinguishable from the
+operation having been withdrawn, so it is the same trap as the update service's missing header. What
+it gives is a per device `PowerOnDelay` and `DefaultPowerOnDelay` in milliseconds, which is the only
+statement of those numbers outside a configuration and is therefore the external check on
+`docs/findings.md` section 235. All reads.
+
 **The transport is JSON over HTTP, not SOAP.** The endpoints are `.svc`, which means WCF and implies an
 envelope to anyone who has met it, and the client uses `json/` and `json2/` path variants and contains
 the string `soap` exactly zero times. That halves what a client would cost: a body and a URL, no WSDL

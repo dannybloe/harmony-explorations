@@ -1833,8 +1833,9 @@ test("Logitech's own button map agrees about which device an identifier is",
     // quoted here: the test finds the shared identifier itself and asks our reader which group that
     // is, then asks the config which group both activities drive. No identifier appears in this
     // file.
-    if (LAB === undefined) return;
-    const path = join(LAB, 'work', 'myharmony', 'responses', 'GET_MapList_skin71.json');
+    // `LAB!` rather than a guard: `skipUnless` cannot pass without a lab, so an `if` here would be
+    // unreachable, and an unreachable guard reads as protection. `stated.test.ts` does the same.
+    const path = join(LAB!, 'work', 'myharmony', 'responses', 'GET_MapList_skin71.json');
     const reply = JSON.parse(readFileSync(path, 'utf8')) as {
       ButtonMaps: { ActivityId?: unknown; Buttons?: { ButtonAction?: { DeviceId?: { Value?: number } } }[] }[];
     };
@@ -1857,4 +1858,62 @@ test("Logitech's own button map agrees about which device an identifier is",
     assert.deepEqual(inBoth, [groups.get(0) === shared[0] ? 0 : 2]);
     assert.equal(groups.get(inBoth[0] as number), shared[0],
       'the group both our activities drive is the device both their activities address');
+  });
+
+test("Logitech's own account states the same delays, in milliseconds", skipUnless('one_spare_myharmony'),
+  () => {
+    // **The external check on the whole reading**, section 235. Everything else that confirms a power
+    // on delay is read out of a configuration; this is Logitech's own database, asked what the same
+    // devices are set to. It answers in **milliseconds** and the configuration carries tenths of a
+    // second, so the two should differ by exactly 100.
+    //
+    // The reply lives in the lab, since it carries an account identity, and is a **dated** capture:
+    // the account is a live thing whose contents change, so a test that read whatever is there today
+    // would be asserting about the future. Nothing here quotes a device: the join is by the name the
+    // configuration itself carries, and the assertions are the factor and the count.
+    const at = (file: string): unknown => JSON.parse(readFileSync(
+      join(LAB!, 'work', 'myharmony', 'responses-account2', file), 'utf8'));
+    const listed = (at('GetDevicesInAccount_20260831.json') as
+      { GetDevicesInAccountResult: { Id: { Value: number }; Name: string }[] })
+      .GetDevicesInAccountResult;
+    const features = at('GetUserFeatures_20260831.json') as
+      { GetUserFeaturesResult: { Key: { Value: number } | number; Value: { PowerOnDelay?: number }[] }[] };
+    const milliseconds = new Map<string, number>();
+    for (const pair of features.GetUserFeaturesResult) {
+      const key = typeof pair.Key === 'number' ? pair.Key : pair.Key.Value;
+      const power = pair.Value.find((one) => one.PowerOnDelay !== undefined);
+      const device = listed.find((one) => one.Id.Value === key);
+      if (power?.PowerOnDelay === undefined || device === undefined) continue;
+      milliseconds.set(device.Name, power.PowerOnDelay);
+    }
+    assert.equal(milliseconds.size, 10, 'ten devices on that account record');
+
+    const c = parse(load('one_spare_myharmony') as Uint8Array);
+    let checked = 0;
+    for (const row of deviceDelays(c)) {
+      const theirs = milliseconds.get(row.name);
+      assert.notEqual(theirs, undefined, `${row.name}: not on the account`);
+      assert.equal(theirs, row.powerOn * 100, row.name);
+      checked += 1;
+    }
+    // Four of the config's five devices; the fifth is a media player nothing switches on.
+    assert.equal(checked, 4);
+  });
+
+test('the config carries the delay the account is set to and not the one it came with',
+  skipUnless('one_spare_myharmony'), () => {
+    // The same capture, scored against the wrong answer, and the wrong answer is really present in
+    // the data rather than invented: `PowerFeature` states both the current delay and the default
+    // Logitech's database gave the device, and on two of these four they differ, because their owner
+    // has tuned them. The configuration takes the **current** one both times. Section 235.
+    const features = JSON.parse(readFileSync(
+      join(LAB!, 'work', 'myharmony', 'responses-account2', 'GetUserFeatures_20260831.json'), 'utf8')) as
+      { GetUserFeaturesResult: { Value: { PowerOnDelay?: number; DefaultPowerOnDelay?: number }[] }[] };
+    let differing = 0;
+    for (const pair of features.GetUserFeaturesResult) {
+      const power = pair.Value.find((one) => one.PowerOnDelay !== undefined);
+      if (power === undefined) continue;
+      if (power.PowerOnDelay !== power.DefaultPowerOnDelay) differing += 1;
+    }
+    assert.equal(differing, 2, 'two of the ten are tuned away from their catalogue default');
   });

@@ -1757,8 +1757,18 @@ devices, and the two agree device for device. `powerOnInstructions` returns the 
 it and the value, since on those architectures changing a delay is a one byte edit.
 
 What the inlining architectures do **not** state is a default, an identifier or an inter device
-delay. Where they keep an inter device delay, if they keep one, is open. They draw none of the 451
-strings either, having no slider.
+delay. Where they keep an inter device delay, if they keep one, is open, and that is a **negative
+measurement** rather than an absence of looking: Logitech's account states one per device, 500
+milliseconds on most and 1000 on one television, and no `0x7C` in that television's configuration
+carries the 10 that would be, nor a 5 for the devices set to 500. They draw none of the 451 strings
+either, having no slider.
+
+**Logitech's own account states the same power on delay, in milliseconds**, which is the check from
+outside the format: `UserFeatureManager/GetUserFeatures` returns a `PowerFeature` per device carrying
+`PowerOnDelay` and `DefaultPowerOnDelay`. Against the configuration their service compiled for that
+account, four of four devices agree at exactly a hundred times the stored number, and on two of them
+the current value differs from the catalogue default, with the configuration taking the current one.
+Section 235.
 
 **Which device an identifier belongs to is stated by the screen and nowhere else.** A device's buttons
 and its infrared group are reached through an ASCII label, `TV_Power_2`; its delays are held under
