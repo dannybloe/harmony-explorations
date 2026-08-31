@@ -153,7 +153,12 @@ export function deviceIds(c: Container): number[] {
  * harmless and one narrowing the field to five bits would break the Harmony 600 calibration sample.
  * Section 139.
  */
-import { STATE_WRITE_BASE } from './actions.ts';
+import {
+  BYTE_REGISTER_FROM_STATE,
+  STATE_BAND,
+  STATE_FROM_BYTE_REGISTER,
+  STATE_WRITE_BASE,
+} from './actions.ts';
 /** Opcode `0x7F`, whose operand indexes base slot 10. Section 34. */
 const ACTION_LIST_INDEX = 0x7f;
 /**
@@ -1496,4 +1501,194 @@ function nearestArea(areas: readonly TouchArea[], one: ScreenString): TouchArea 
     best = area;
   }
   return best;
+}
+
+/**
+ * The four delay properties a device carries, as base slot 0 spells them.
+ *
+ * There are eight variables per device and only these four hold a duration. The other four are
+ * `PowerOnDelayFlagCounter`, `PowerOnDelayFixingTriggered` and their inter device twins, whose
+ * highest values are 5 and 100: a counter and a flag belonging to whatever the remote does when a
+ * delay turns out to be too short. Nothing here reads them.
+ */
+const DELAY_PROPERTIES = [
+  'PowerOnDelay',
+  'DefaultPowerOnDelay',
+  'InterDeviceDelay',
+  'DefaultInterDeviceDelay',
+] as const;
+
+/** A state variable whose name is `<property>_<device identifier>`, split into the two. */
+const DELAY_NAME = new RegExp(`^(${DELAY_PROPERTIES.join('|')})_([0-9]+)$`);
+
+/**
+ * The exact string the page that resets a device's delays draws, in the middle of the screen.
+ *
+ * **English, and that is a real limitation rather than an oversight.** Every container in the
+ * corpus was generated in English, so nothing here can say what the German build draws. A config
+ * whose screen says something else loses the join below and keeps everything else, which is why the
+ * join is a separate function from the delays themselves.
+ */
+const DELAY_DEFAULT_LABEL = 'Set to default';
+
+/** How long a device makes the remote wait, in tenths of a second, and which device it is. */
+export interface DeviceDelays {
+  /** The infrared group, which is what identifies a device everywhere else in this codec. */
+  group: number;
+  /** The device's own label, as `devices` gives it, underscores and all. */
+  name: string;
+  /** Logitech's numeric identifier for the device, which is what the variable names carry. */
+  id: number;
+  /** Tenths of a second between switching the device on and sending it anything. */
+  powerOn: number;
+  /** What the remote's own "set to default" page would put back into `powerOn`. */
+  defaultPowerOn: number;
+  /** Tenths of a second between two codes when the second goes to a different device. */
+  interDevice: number;
+  /** What that page would put back into `interDevice`. */
+  defaultInterDevice: number;
+}
+
+/**
+ * Which of Logitech's device identifiers belongs to each infrared group, read off the screen.
+ *
+ * **Two vocabularies name a device and base slot 0 joins neither to the other.** A device's
+ * buttons and its infrared group are reached through an ASCII **label**, `TV_Power_2`, which is
+ * what `devices` returns. Its delays are held in variables named after a numeric **identifier**,
+ * `PowerOnDelay_<identifier>`, an eight digit number that is Logitech's own key for the device on
+ * the account. The name tree
+ * is flat: level 1 holds both kinds of name side by side and nothing relates them.
+ *
+ * The screen relates them. The remote has a page per device offering to put that device's delays
+ * back to their defaults, and it is the one place where a device's drawn name and its identifier
+ * meet: the page draws the label in its title row, and its action list copies
+ * `DefaultPowerOnDelay_<id>` into `PowerOnDelay_<id>` and the same for the inter device pair. So
+ * the title says which device the user thinks they are looking at and the instructions say which
+ * device the remote will change.
+ *
+ * Two details the corpus forced and neither was guessable:
+ *
+ * 1. **The drawn title is truncated to fit**, `Panasonic Blu-ray Pl..`, so a title ending in two
+ *    dots matches a label it is a prefix of, and only when exactly one label matches.
+ * 2. **An underscore in a label is a space on the screen**, because the underscore is base slot 0's
+ *    own separator: `A/V_Switch` is drawn `A/V Switch`.
+ *
+ * 19 of 19 devices across the four arch 14 containers that carry delay variables, ids distinct, and
+ * three of those devices were chosen by us before the config was compiled. Section 234.
+ */
+export function deviceIdOfGroup(c: Container): Map<number, number> {
+  const out = new Map<number, number>();
+  const lists = c.actionLists();
+  const byIndex = new Map(stateVariables(c).map((one) => [one.index, one]));
+  if (lists === undefined) return out;
+
+  // Every state variable a page's chain writes with `0x1F` sub opcode `0xEE`. The read side,
+  // `0xF0`, names the same device on every page in the corpus and is checked below rather than
+  // matched here, so a page that copied across devices would be dropped instead of believed.
+  const walk = (index: number, seen: Set<number>, taken: Set<number>): void => {
+    const list = lists[index];
+    if (list === undefined || seen.has(index)) return;
+    seen.add(index);
+    for (const instruction of list) {
+      if (instruction.opcode === STATE_BAND) {
+        const sub = instruction.operand >>> 8;
+        if (sub === STATE_FROM_BYTE_REGISTER || sub === BYTE_REGISTER_FROM_STATE) {
+          taken.add(instruction.operand & 0xff);
+        }
+      } else if (instruction.opcode === ACTION_LIST_INDEX) {
+        walk(instruction.operand, seen, taken);
+      }
+    }
+  };
+
+  const drawn = screenStrings(c, characterMap(c));
+  const titles = new Map<string, number>();
+  for (const page of modePages(c)) {
+    const texts = drawn.filter((one) => one.program === page.program);
+    if (!texts.some((one) => one.text.trim() === DELAY_DEFAULT_LABEL)) continue;
+    const top = Math.min(...texts.map((one) => one.y));
+    const title = texts.filter((one) => one.y === top).map((one) => one.text.trim()).join(' ');
+    const touched = new Set<number>();
+    for (const entry of taggedList(c, page.list)?.entries ?? []) {
+      if (entry.opcode === ACTION_LIST_INDEX) walk(entry.operand, new Set(), touched);
+    }
+    const ids = new Set(
+      [...touched].flatMap((one) => {
+        const id = byIndex.get(one)?.deviceId;
+        return id === undefined ? [] : [id];
+      }),
+    );
+    // A page that reaches two devices says nothing, and one that reaches none is some other page
+    // that happens to draw the same words.
+    if (ids.size === 1) titles.set(title, [...ids][0] as number);
+  }
+
+  for (const device of devices(c)) {
+    if (device.name === undefined) continue;
+    const label = device.name.replaceAll('_', ' ');
+    const exact = titles.get(label);
+    if (exact !== undefined) {
+      out.set(device.group, exact);
+      continue;
+    }
+    const cut = [...titles].filter(
+      ([title]) => title.endsWith('..') && label.startsWith(title.slice(0, -2)),
+    );
+    if (cut.length === 1) out.set(device.group, (cut[0] as [string, number])[1]);
+  }
+  return out;
+}
+
+/**
+ * How long each device makes the remote wait, in tenths of a second.
+ *
+ * **This is the answer to a question that was asked the wrong way round for weeks.** The roadmap
+ * carried "which base slot 15 group holds a device's delays" as the last reading before the first<!--superseded-->
+ * write that changes something, and base slot 15 holds no such group: its shape and its values are
+ * per **model**, identical across containers with 0, 1, 3, 4, 6 and 7 devices, and the two
+ * containers that share a device count are the two that share a model. Section 234.
+ *
+ * The delays are ordinary state variables in base slot 13, eight per device, and the value is the
+ * record's `first`, which is both what the generator wrote and what the firmware seeds the running
+ * variable from, section 138.
+ *
+ * **The unit is stated by the config itself**, which is the independent closure: an arch 14 config
+ * draws 451 strings reading `( 0 sec )` through `( 45 sec )`, contiguous in tenths with no gap, one
+ * per position of the slider the remote offers. So a `first` of 80 is eight seconds and not eighty.
+ * The arch 8, 9 and 12 containers draw none of those strings and carry none of these variables.
+ *
+ * A device with no join to a group is left out rather than reported with a guessed name, because
+ * the caller wants a device and half of one is worse than none.
+ */
+export function deviceDelays(c: Container): DeviceDelays[] {
+  const byId = new Map<number, Map<string, number>>();
+  for (const variable of stateVariables(c)) {
+    const match = DELAY_NAME.exec(variable.label);
+    const value = variable.record?.first;
+    if (match === null || value === undefined) continue;
+    const id = Number(match[2]);
+    const acc = byId.get(id) ?? new Map<string, number>();
+    acc.set(match[1] as string, value);
+    byId.set(id, acc);
+  }
+  const groups = deviceIdOfGroup(c);
+  const out: DeviceDelays[] = [];
+  for (const device of devices(c)) {
+    const id = groups.get(device.group);
+    const held = id === undefined ? undefined : byId.get(id);
+    // All four or none: a device missing one of them would give a caller a zero it cannot tell
+    // from a real zero, and a real zero is what most televisions carry.
+    if (device.name === undefined || id === undefined || held === undefined) continue;
+    if (DELAY_PROPERTIES.some((one) => held.get(one) === undefined)) continue;
+    out.push({
+      group: device.group,
+      name: device.name,
+      id,
+      powerOn: held.get('PowerOnDelay') as number,
+      defaultPowerOn: held.get('DefaultPowerOnDelay') as number,
+      interDevice: held.get('InterDeviceDelay') as number,
+      defaultInterDevice: held.get('DefaultInterDeviceDelay') as number,
+    });
+  }
+  return out;
 }

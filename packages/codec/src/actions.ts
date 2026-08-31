@@ -32,6 +32,20 @@ import type { Instruction } from './gspm.ts';
 export const STATE_WRITE_BASE = 0x80;
 
 /**
+ * The band opcode whose sub opcode is the operand's **high** byte, `BANDS_1F` below.
+ *
+ * Exported because `inventory.ts` has to recognise one instruction of this band by sight, and the
+ * alternative was a bare `0x1f` in a second file. The two sub opcodes it needs are the pair below.
+ */
+export const STATE_BAND = 0x1f;
+
+/** Sub opcode `0xF0`: the byte register takes the state variable the operand's low byte names. */
+export const BYTE_REGISTER_FROM_STATE = 0xf0;
+
+/** Sub opcode `0xEE`: the state variable the operand's low byte names takes the byte register. */
+export const STATE_FROM_BYTE_REGISTER = 0xee;
+
+/**
  * How far a reading goes.
  *
  * `placement` means the handler is found and its immediate effect is known: which routine runs,
@@ -305,9 +319,9 @@ const BANDS_1F: readonly Band[] = [
   [0xf3, means('send the accumulator to base slot 14', 39)],
   [0xf2, means('increment the state variable the low byte names', 73)],
   [0xf1, means('decrement the state variable the low byte names', 73)],
-  [0xf0, means('byte register = the state variable the low byte names', 73)],
+  [BYTE_REGISTER_FROM_STATE, means('byte register = the state variable the low byte names', 73)],
   [0xef, means('accumulator = the state variable the low byte names', 73)],
-  [0xee, means('the state variable the low byte names = byte register', 73)],
+  [STATE_FROM_BYTE_REGISTER, means('the state variable the low byte names = byte register', 73)],
   [0xed, means('the state variable the low byte names = accumulator', 73)],
   [0xec, placed('store the low byte and call a helper', 73)],
   [0xeb, means('start the base slot 12 timer the low byte indexes', 43)],
@@ -475,7 +489,7 @@ function band3fC0Arch12(operand: number): Reading {
  */
 const BAND_FLOORS: readonly (readonly [number, readonly Band[]])[] = [
   [0x3f, BANDS_3F],
-  [0x1f, BANDS_1F],
+  [STATE_BAND, BANDS_1F],
   [0x0f, BANDS_0F],
   [ACTION_NOOP_LIMIT, BANDS_07],
 ];

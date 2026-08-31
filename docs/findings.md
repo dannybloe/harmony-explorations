@@ -30093,3 +30093,162 @@ them: 34 of our 35 measured rhythms are reproduced from Logitech's own definitio
 none disagrees, and 29 of 29 measured blocks rebuild from them, and those are the numbers that say the
 archive can be believed. Nothing here makes an archive sourced definition shareable either: decision 11
 stands, and only a definition learned from hardware may go into a community database.
+
+## 234. A device's delays are not in base slot 15, and the screen is what says whose they are
+
+`docs/roadmap.md` carried "which base slot 15 group holds a device's delays" as the last reading<!--superseded-->
+before the first write that changes something, and the premise is wrong: no group holds them. They
+are ordinary state variables in base slot 13, they are stated in tenths of a second, and the device
+each one belongs to is joined to that device's infrared group through a page of the remote's own
+menu. All of it is measured offline against the corpus, with one external check against a reply
+Logitech's service gave us in the lab.
+
+### The refutation, and its two controls
+
+Base slot 15 is the parameter block, section 44. If it held per device numbers, a container with
+seven devices would be a different shape from one with none.
+
+It is not. **The group lengths are one shape per architecture**, over containers holding 0, 1, 3, 4,
+6 and 7 devices: `[1,4,1,4,6,14,14,1,2]` on every arch 14 container, `[1,6,1,1,6,16,16,1,2,6,8]` on
+every arch 12 one, `[1,6,1,1,6,14,14,1,2]` on arch 8 and `[1,1,4,1,1]` on arch 9.
+
+That alone would be satisfied by a fixed shape holding variable numbers, so the second control is the
+**values**. Sixteen containers carry five distinct value sets. Four of the five are shared by
+containers whose device counts differ, the widest by six containers holding 3, 4, 6 and 7 devices;
+the fifth is the two Harmony 700 configs, which are one model and six devices each, so it is silent
+rather than contrary. The Harmony 600 and the Harmony 700 differ in three groups and nowhere else,
+and those three are the display light levels and the two battery curves, which are properties of the
+plastic and not of what is plugged into it.
+
+So base slot 15 is per model. The question was asked the wrong way round for three weeks, and the
+answer to what it was really asking is below.
+
+### Where the delays are
+
+Base slot 0's level 1 names 41 variables on the Harmony 600 config and 60 on the Harmony 700's, and
+**eight of them per device** are named `<property>_<identifier>`:
+
+| property | highest value | what it is |
+|---|---|---|
+| `PowerOnDelay` | 65277 | how long after switching the device on before the remote will send it anything |
+| `DefaultPowerOnDelay` | 254 | what the remote's own menu would put back |
+| `InterDeviceDelay` | 65277 | how long between two codes when the second goes to a different device |
+| `DefaultInterDeviceDelay` | 254 | the same |
+| `PowerOnDelayFlagCounter` | 5 | unread |
+| `PowerOnDelayFixingTriggered` | 100 | unread |
+| `InterDeviceDelayFlagCounter` | 3 | unread |
+| `InterDeviceDelayFixingTriggered` | 100 | unread |
+
+The value is the record's `first`, which is what the generator wrote and what the firmware seeds the
+running variable from, section 138. The last four look like a counter and a flag belonging to
+whatever the remote does when a delay turns out to be too short; nothing here reads them.
+
+**Only arch 14 has any of this.** The other twelve containers of the corpus that drive devices, five
+arch 12 (Harmony One), two arch 9 (Harmony 525) and five arch 8 (Harmony 880 and 885), carry no such
+variable and state no delay for any of their devices. That is a fact about these files rather than
+about those remotes: a Harmony One certainly waits after switching a television on, and where it
+keeps the number is open.
+
+### The unit is a tenth of a second, and the config says so itself
+
+The stored numbers are 0, 15, 35, 50, 75 and 80 for the power on delay and 3 and 5 for the inter
+device one. Nothing about a `u16` says which unit that is, and the two readings anybody would try,
+milliseconds and tenths, differ by a factor of a hundred.
+
+The config settles it without leaving the file. An arch 14 config draws **451 distinct strings**
+reading `( 0 sec )` through `( 45 sec )`, contiguous in tenths of a second with no gap, one per
+position of the slider the remote's own menu offers, and every stored value in every config is one
+of those positions. The arch 8, 9 and 12 containers draw none of them, which is the same population
+split as the variables and was measured separately.
+
+So the Harmony 600's television waits eight seconds and its streaming stick waits none, and the
+Harmony 700's receiver waits seven and a half.
+
+**And Logitech's own service agrees, in its own units.** A `GetDevicesInAccount` reply captured in
+the lab states `InterDeviceDelay` and `DefaultInterDeviceDelay` per device in **milliseconds**: 500
+on most, 1000 on one and 100 on another. Every one of those is exactly a hundred times a number the
+configs carry, 5, 10 and 1. Two routes with nothing in common, one drawn on a screen and one served
+by a web service.
+
+### Which device a delay belongs to
+
+Two vocabularies name a device in one config and base slot 0 joins neither to the other.
+
+A device's buttons and its infrared group are reached through an **ASCII label**, `TV_Power_2`, whose
+prefix is the device's name, section 86. Its delays are held under a **numeric identifier**,
+`PowerOnDelay_<identifier>`, an eight digit number that is Logitech's own key for that device on
+the account. Base slot 0's
+level 1 is flat: it holds both kinds of name side by side and relates them nowhere.
+
+The **screen** relates them. The remote has a page per device offering to put that device's delays
+back to their defaults, and it is the one place where a device's drawn name and its identifier meet:
+
+```
+x=3   y=2    Sony TV
+x=16  y=35   Set to default
+x=15  y=79   Change Delay
+x=49  y=114  Back
+```
+
+and the action list behind `Set to default` is a pair of copies, `0x1F` band `0xF0` reading
+`DefaultPowerOnDelay_<identifier>` into the byte register and band `0xEE` writing it into
+`PowerOnDelay_<identifier>`, then the same for the inter device pair. So the title says which device
+the user thinks they are looking at and the instructions say which device the remote will change.
+
+**19 of 19 devices over the four containers that carry delays.** The identifiers come out distinct in
+every config, so it is a bijection with the groups rather than a mapping that could have collapsed
+two devices onto one.
+
+Two details the corpus forced and neither was guessable. The drawn title is **truncated to fit**,
+`Panasonic Blu-ray Pl..`, so a title ending in two dots matches a label it is a prefix of, and only
+when exactly one label matches; without that rule the calibration config lost one device of three.
+And an **underscore in a label is a space on the screen**, because the underscore is base slot 0's
+own separator, so `A/V_Switch` is drawn `A/V Switch`; without that rule the Harmony 700 lost one of
+six.
+
+### The calibration, scored against the wrong answers
+
+Two orderings would explain the join without reading anything: the identifiers pair with the groups
+in the order base slot 0 lists them, or they pair in ascending numeric order. Scored over the same 19
+devices, the screen route gets 19, first appearance gets **1** and ascending order gets **4**. So no
+arithmetic on the identifiers would have found this and the screen is genuinely carrying it.
+
+Three of the 19 are a known answer. `calibration_h600` is a config Logitech compiled for three
+devices we chose the same day, section 121, and the reader gives each of the three its own identifier
+and its own delays.
+
+### The external check
+
+Everything above is read out of the config, so the join needed a route from outside it. Logitech's
+service was asked for the button maps of the account that generated `calibration_h600`, and its reply
+says which device each button addresses, by the same numeric identifier. Its two activity maps give
+**three** buttons to one shared device and the rest to a device of their own, which is a receiver
+taking the volume in both activities.
+
+Our side of the config, read through the base slot 9 sets the two activities install, gives 3
+bindings to one infrared group in both activities and 36 to a group of its own in each. The group
+that appears in both is the group our screen route pairs with the identifier that appears in both of
+theirs. The bulk counts differ, 44 and 43 against 36, because their map counts buttons whose action
+this config does not turn into a code binding in that set; the shared three, and which device is
+shared, match exactly.
+
+The reply lives in the lab, since it carries an account identity, and the test finds the shared
+identifier itself rather than naming one.
+
+### What a writer has to know
+
+The current and the default are **equal for every device in every config here**, 19 of 19 pairs. That
+says nobody in the corpus has ever moved one of these sliders on the remote, so the delays a config
+carries are the ones Logitech's database gave the device rather than something its owner tuned. It
+also means the two fields could have been swapped without any test noticing, which is why the reader
+tells them apart by name and not by value.
+
+Changing a delay is therefore a **same length edit of one `u16`** in a base slot 13 record, which is
+the cheapest kind of change this format has, and it is one of the few an owner would actually want:
+a television that has got slower with age is a real complaint with a one word fix. What it is not is
+a change to base slot 15, and an editor that wrote there would move a display light level or a
+battery curve instead.
+
+`deviceDelays` and `deviceIdOfGroup` in `packages/codec/src/inventory.ts`;
+`packages/codec/test/inventory.test.ts` carries seven tests, including both controls above and the
+button map closure.

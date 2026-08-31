@@ -356,11 +356,13 @@ for.
       `test/import.test.ts`, and model through the store whole, transitions and all, in
       `test/library.test.ts`, which no store test had ever done with a non empty list
 - [x] the **timings** a device needs before it will listen. `DeviceTiming` exists and all six of its
-      fields are marked unknown in FreeHarmony's `writeback.ts` for a stated reason: which base slot 15
-      group holds them is not read. This goal does not need them, and a device added without them takes
-      the firmware's defaults, so the item is to **say so in the model** rather than to leave a caller
-      guessing. Said, 25 August 2026: `DeviceTiming`'s docstring states that absent means the firmware's
-      defaults and never unknown to the model
+      fields are marked unknown in FreeHarmony's `writeback.ts`. The reason given was that which base
+      slot 15 group holds them is not read, and **section 234 refutes that**: no group does, the section
+      is per model, and the two delays are named state variables in base slot 13 in tenths of a second.
+      So two of the six can be filled in now on arch 14 (Harmony 600 and 700). This goal does not need
+      them, and a device added without them takes the firmware's defaults, so the item is to **say so in
+      the model** rather than to leave a caller guessing. Said, 25 August 2026: `DeviceTiming`'s
+      docstring states that absent means the firmware's defaults and never unknown to the model
 - [x] **an appliance has options, not just commands**, noticed on 24 August 2026 while adding one of
       phase 2's appliances by hand: their client asked whether the television is used with a SCART cable,
       and an account's appliance record carries `IsScartCableSupported` beside four more flags of that

@@ -19,7 +19,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { load, skipUnless, skipWithoutLab, require_ } from '@harmony/lab';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+import { LAB, load, skipUnless, skipWithoutLab, require_ } from '@harmony/lab';
 import {
   ACTION_LIST_INDEX_OPCODE,
   handlerSets,
@@ -54,7 +57,10 @@ import {
   taggedList,
   archSlot,
   deviceCount,
+  deviceDelays,
+  deviceIdOfGroup,
   deviceIds,
+  parameterGroups,
   STATE_WRITE_BASE,
   parse,
   reading,
@@ -1502,3 +1508,204 @@ test('a keypad map that sends a code is an activity\'s, so no config here holds 
   // fifty or more keys, to lists of comparisons, register work and mode entries. That is a menu.
   assert.equal(bindingTheWholeKeypad, 38);
 });
+
+/**
+ * The four containers that carry per device delays, with what each device should read.
+ *
+ * `[sample, [group, tenths of a second before the device answers, tenths between two devices]]`.
+ * The labels are the owners' own and stay out of this file; the group is the infrared group, which
+ * is how a device is identified everywhere else here. Section 234.
+ */
+const DELAYS: readonly [string, readonly (readonly [number, number, number])[]][] = [
+  ['h600_config', [[0, 80, 5], [1, 15, 5], [2, 0, 5], [3, 15, 5]]],
+  ['h700_config', [[0, 0, 5], [1, 50, 5], [2, 15, 5], [3, 15, 3], [4, 15, 5], [5, 75, 5]]],
+  ['h700_config_2', [[0, 0, 5], [1, 50, 5], [2, 15, 5], [3, 15, 3], [4, 15, 5], [5, 75, 5]]],
+  // Logitech compiled this one for three devices we chose the same day, section 121, so its rows
+  // are the calibration: a reader that paired the delays with the wrong device would have to get
+  // three known devices right by luck.
+  ['calibration_h600', [[0, 35, 5], [1, 15, 5], [2, 15, 5]]],
+];
+
+for (const [name, rows] of DELAYS) {
+  test(`${name} states a power on delay for each of its ${rows.length} devices`,
+    skipUnless(name), () => {
+      const c = parse(load(name) as Uint8Array);
+      const read = deviceDelays(c);
+      assert.equal(read.length, rows.length, 'every device joined, none left behind');
+      assert.deepEqual(
+        read.map((one) => [one.group, one.powerOn, one.interDevice]),
+        rows.map((one) => [...one]),
+      );
+      // The identifiers are a bijection with the groups: a join that collapsed two devices onto one
+      // identifier would still pass the row check above if the delays happened to agree.
+      assert.equal(new Set(read.map((one) => one.id)).size, rows.length);
+    });
+}
+
+test('nothing but an arch 14 config carries a device delay at all', skipWithoutLab(), () => {
+  // The counterweight to the four tests above, and it is what makes them a population rather than a
+  // list: every other container in the corpus reads zero, including six with devices in them.
+  const withDelays = DELAYS.map(([name]) => name);
+  let checked = 0;
+  let withDevicesAndNoDelays = 0;
+  for (const [name] of INVENTORY) {
+    if (withDelays.includes(name)) continue;
+    const c = parse(require_(name));
+    assert.deepEqual(deviceDelays(c), [], name);
+    if (devices(c).length > 0) withDevicesAndNoDelays += 1;
+    checked += 1;
+  }
+  assert.equal(checked, 12);
+  assert.equal(withDevicesAndNoDelays, 12, 'all twelve drive devices and state no delay for any');
+});
+
+test('the screen route beats both orderings of the identifiers it could have been',
+  skipWithoutLab(), () => {
+    // The calibration, scored against wrong answers. The two guesses anybody would try are that the
+    // identifiers pair with the groups in the order base slot 0 lists them, and that they pair in
+    // ascending numeric order. Neither is close, which is the point: the screen is carrying the
+    // join and no arithmetic on the identifiers would have found it.
+    let joined = 0;
+    let byAppearance = 0;
+    let byValue = 0;
+    for (const [name] of DELAYS) {
+      const c = parse(require_(name));
+      const appearance = deviceIds(c);
+      const ascending = [...appearance].sort((a, b) => a - b);
+      for (const row of deviceDelays(c)) {
+        joined += 1;
+        if (appearance[row.group] === row.id) byAppearance += 1;
+        if (ascending[row.group] === row.id) byValue += 1;
+      }
+    }
+    assert.equal(joined, 19);
+    assert.equal(byAppearance, 1);
+    assert.equal(byValue, 4);
+  });
+
+test('a device delay is a tenth of a second, which the config draws 451 of', skipWithoutLab(), () => {
+  // The independent closure on the unit, and it needs nothing but the config: the remote offers a
+  // slider, and the label under it is drawn text. 451 of them, `( 0 sec )` through `( 45 sec )`,
+  // contiguous in tenths with no gap, so a stored 80 is eight seconds and not eighty.
+  const written = /^\(\s*([0-9]+(?:\.[0-9])?)\s*sec\s*\)$/;
+  let drawn = 0;
+  let silent = 0;
+  for (const [name] of INVENTORY) {
+    const c = parse(require_(name));
+    const tenths = new Set<number>();
+    for (const one of screenStrings(c, characterMap(c))) {
+      const match = written.exec(one.text.trim());
+      if (match !== null) tenths.add(Math.round(Number(match[1]) * 10));
+    }
+    if (deviceDelays(c).length === 0) {
+      assert.equal(tenths.size, 0, `${name}: no delays and yet a delay slider`);
+      silent += 1;
+      continue;
+    }
+    const sorted = [...tenths].sort((a, b) => a - b);
+    assert.equal(sorted.length, 451, name);
+    assert.equal(sorted[0], 0, name);
+    assert.equal(sorted[sorted.length - 1], 450, name);
+    assert.deepEqual(sorted.filter((one, at) => at > 0 && one !== (sorted[at - 1] as number) + 1),
+      [], `${name}: the ladder has a gap`);
+    // And every device's stored value is one of the positions the slider offers.
+    for (const row of deviceDelays(c)) assert.ok(tenths.has(row.powerOn), `${name} ${row.group}`);
+    drawn += 1;
+  }
+  assert.equal(drawn, 3, 'the three arch 14 configs of INVENTORY');
+  assert.equal(silent, 12);
+});
+
+test('base slot 15 is per model and states nothing about a device', skipWithoutLab(), () => {
+  // **The refutation.** `docs/roadmap.md` carried "which base slot 15 group holds a device's delays"<!--superseded-->
+  // as the last reading before the first write that changes something, and the answer is that no
+  // group does. Two controls make that a measurement rather than an absence: the group lengths are
+  // identical within an architecture across containers holding 0 to 7 devices, and the values are
+  // identical across containers of one **model** that hold different numbers of devices.
+  const shapes = new Map<number, Set<string>>();
+  const values = new Map<string, Set<number>>();
+  let checked = 0;
+  for (const [name] of [...INVENTORY, ...DELAYS.slice(3)]) {
+    const c = parse(require_(name));
+    const groups = parameterGroups(c);
+    if (groups === undefined) continue;
+    const arch = c.architecture as number;
+    (shapes.get(arch) ?? shapes.set(arch, new Set()).get(arch) as Set<string>)
+      .add(groups.map((one) => one.values.length).join(','));
+    const key = groups.map((one) => one.values.join(',')).join('|');
+    (values.get(key) ?? values.set(key, new Set()).get(key) as Set<number>)
+      .add(devices(c).length);
+    checked += 1;
+  }
+  assert.equal(checked, 16);
+  // One shape per architecture, over device counts that differ by seven.
+  assert.deepEqual(
+    [...shapes].map(([arch, set]) => [arch, set.size])
+      .sort((a, b) => (a[0] as number) - (b[0] as number)),
+    [[8, 1], [9, 1], [12, 1], [14, 1]]);
+  // And the values are not counting devices either. Sixteen containers carry five distinct value
+  // sets, four of which are shared by containers holding **different** numbers of devices, the
+  // widest by six containers holding 3, 4, 6 and 7. The fifth is the two Harmony 700 configs, which
+  // are one model and both hold six devices, so it is silent rather than contrary.
+  const spans = [...values.values()].map((one) => [...one].sort((a, b) => a - b));
+  assert.equal(spans.length, 5);
+  assert.equal(spans.filter((one) => one.length > 1).length, 4);
+  assert.deepEqual(
+    spans.sort((a, b) => b.length - a.length || a.join().localeCompare(b.join())),
+    [[3, 4, 6, 7], [1, 4], [1, 5], [3, 4], [6]]);
+});
+
+test("a device's delay equals its default in every config here", skipWithoutLab(), () => {
+  // Nobody in the corpus has ever moved one of these sliders on the remote. That matters twice: it
+  // is why the two fields could be swapped without any test noticing, so this states which is which
+  // from the name rather than from the value; and it says the delays a config carries are the ones
+  // Logitech's own database gave the device, not something its owner tuned.
+  let pairs = 0;
+  for (const [name] of DELAYS) {
+    for (const row of deviceDelays(parse(require_(name)))) {
+      assert.equal(row.powerOn, row.defaultPowerOn, `${name} ${row.group}`);
+      assert.equal(row.interDevice, row.defaultInterDevice, `${name} ${row.group}`);
+      pairs += 1;
+    }
+  }
+  assert.equal(pairs, 19);
+});
+
+test("Logitech's own button map agrees about which device an identifier is",
+  skipUnless('calibration_h600'), () => {
+    // **The external closure, and it is the only one available**: the join above is read off the
+    // screen, so a second route has to come from outside the config. Logitech's service was asked
+    // for the button maps of the account that generated this config, and its reply says which
+    // device each button addresses, by the same numeric identifier. Both of its activities give
+    // three buttons to one shared device, which is the receiver taking the volume, and the rest to
+    // a device of their own.
+    //
+    // The reply lives in the lab, since it carries an account identity, and nothing about it is
+    // quoted here: the test finds the shared identifier itself and asks our reader which group that
+    // is, then asks the config which group both activities drive. No identifier appears in this
+    // file.
+    if (LAB === undefined) return;
+    const path = join(LAB, 'work', 'myharmony', 'responses', 'GET_MapList_skin71.json');
+    const reply = JSON.parse(readFileSync(path, 'utf8')) as {
+      ButtonMaps: { ActivityId?: unknown; Buttons?: { ButtonAction?: { DeviceId?: { Value?: number } } }[] }[];
+    };
+    const perActivity = reply.ButtonMaps
+      .filter((one) => one.ActivityId !== undefined)
+      .map((one) => new Set((one.Buttons ?? []).flatMap((button) => {
+        const id = button.ButtonAction?.DeviceId?.Value;
+        return typeof id === 'number' ? [id] : [];
+      })));
+    assert.equal(perActivity.length, 2, 'two activities on that account');
+    const shared = [...perActivity[0] as Set<number>]
+      .filter((one) => (perActivity[1] as Set<number>).has(one));
+    assert.equal(shared.length, 1, 'exactly one device is in both activities');
+
+    const c = parse(load('calibration_h600') as Uint8Array);
+    const groups = deviceIdOfGroup(c);
+    const ours = activities(c).map((one) => one.devices);
+    assert.equal(ours.length, 2);
+    const inBoth = (ours[0] as number[]).filter((one) => (ours[1] as number[]).includes(one));
+    assert.deepEqual(inBoth, [groups.get(0) === shared[0] ? 0 : 2]);
+    assert.equal(groups.get(inBoth[0] as number), shared[0],
+      'the group both our activities drive is the device both their activities address');
+  });

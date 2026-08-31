@@ -1487,6 +1487,16 @@ The thirteen two bit fields are channels of the I2C device at address 0x60, and 
 is is not established**: thirteen channels of three states, two eight bit level registers, an enable
 pin and no readback, `findings.md` section 106.
 
+**Nothing here is per device**, which is worth stating because the plan asked for it the other way
+round. The group lengths are one shape per architecture over containers holding 0 to 7 devices, and
+the **values** are shared across containers with different device counts: sixteen containers carry
+five distinct value sets, four of them shared by containers whose device counts differ, the widest by
+six containers holding 3, 4, 6 and 7 devices. The fifth set is the two Harmony 700 configs, one model
+and six devices each, so it is silent rather than contrary. What the values track is the **model**:
+the Harmony 600 and the Harmony 700 disagree about their display light levels and their battery
+curves and about nothing else. A device's own numbers are state variables in base slot 13.
+[findings.md](findings.md) section 234.
+
 Read with `gspm.parameter_groups`. [findings.md](findings.md) sections 44, 103 and 105.
 
 ### Base slot 12: the timer table
@@ -1723,6 +1733,40 @@ every instruction has a reading, and every one of the 439 that name a base slot 
 names one that exists. A record either carries no transitions or covers every value of the variable
 the same number of times, so `count` is a multiple of `max + 1`: once per value in 83 records, twice
 in two and four times in one. [findings.md](findings.md) section 86.
+
+**Variables 13 and up are the config's own, and eight per device are that device's delays.** On arch
+14 (Harmony 600 and 700) each device carries `PowerOnDelay`, `DefaultPowerOnDelay`,
+`InterDeviceDelay`, `DefaultInterDeviceDelay` and four more, each named `<property>_<identifier>` in
+base slot 0. The value is the record's `first`, and **the unit is a tenth of a second**: the config
+draws 451 strings reading `( 0 sec )` through `( 45 sec )`, contiguous in tenths with no gap, one per
+position of the slider the remote's own menu offers, and every stored value is one of them. Logitech's
+service states the same inter device field in milliseconds, at exactly 100 times the stored number.
+
+The power on delay is how long the remote waits after switching a device on before it will send that
+device anything; the inter device delay is how long it waits between two codes going to different
+devices. The other four, `PowerOnDelayFlagCounter`, `PowerOnDelayFixingTriggered` and their inter
+device twins, have maxima of 5 and 100 and are unread.
+
+**Only arch 14 carries them.** The twelve other containers of the corpus that drive devices state no
+delay for any of them, and draw none of the 451 strings.
+
+**Which device an identifier belongs to is stated by the screen and nowhere else.** A device's buttons
+and its infrared group are reached through an ASCII label, `TV_Power_2`; its delays are held under
+Logitech's numeric device identifier. Base slot 0's level 1 holds both kinds of name side by side and
+relates neither to the other. The join is the mode page that offers to put one device's delays back to
+their defaults: it draws the label in its title row and its action list copies
+`DefaultPowerOnDelay_<identifier>` into `PowerOnDelay_<identifier>`. 19 of 19 devices over the four
+containers that carry delays, against 1 and 4 of 19 for the two orderings of the identifiers anybody
+would guess. Two details it needs: a drawn title is truncated to fit, `Panasonic Blu-ray Pl..`, so it
+matches a label it is a prefix of when exactly one label matches; and an underscore in a label is a
+space on the screen, because the underscore is base slot 0's own separator.
+
+**Unconfirmed: the page's text is English.** Every container here was generated in English, so nothing
+says what a German build draws. A config whose screen says something else loses the join and keeps
+every delay.
+
+`deviceDelays` and `deviceIdOfGroup` in `packages/codec/src/inventory.ts`.
+[findings.md](findings.md) section 234.
 
 Read with `gspm.state_table`, `gspm.state_records` and `gspm.state_index`; `stateTable` and
 `stateRecords` in `packages/codec`.

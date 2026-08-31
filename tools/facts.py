@@ -449,6 +449,19 @@ def parseable_facts():
     }
 
 
+def findings_facts():
+    """How many sections `docs/findings.md` holds, because two documents quote it and neither counts.
+
+    `docs/status.md` said 220 while the file held 234, having drifted through fourteen findings, and
+    it is exactly the shape this tool exists for: a number restated in prose with nothing recomputing
+    it. Source derived, so it needs no lab.
+    """
+    path = os.path.join(ROOT, 'docs', 'findings.md')
+    with open(path, encoding='utf-8') as fh:
+        headings = re.findall(r'(?m)^## ([0-9]+)\.', fh.read())
+    return {'findings_sections': str(len(headings))}
+
+
 def protocol_facts():
     """The shape of the infrared rhythm table, read out of the generated source.
 
@@ -716,6 +729,7 @@ def main():
     # skipping cleanly, which `make test-nolab` exists to prevent.
     if facts:
         facts.update(protocol_facts())
+        facts.update(findings_facts())
 
     if '--list' in sys.argv[1:]:
         for name in sorted(facts):

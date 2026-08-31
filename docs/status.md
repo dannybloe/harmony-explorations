@@ -439,7 +439,7 @@ finding.
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 220 sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 234<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -659,6 +659,25 @@ figures common to both carry `fact:` markers, so `make facts` moves every copy t
 cannot drift apart; what a reader should not expect is two independent statements of one measurement.
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
+
+**A device's delays were not where the plan said, and the screen is what says whose they are**,
+section 234. The plan of record carried "which base slot 15 group holds a device's delays" as the<!--superseded-->
+last reading before the first write that changes something, and no group does: that section's shape
+is one per architecture over containers holding 0 to 7 devices, and its values are shared across
+containers whose device counts differ, so it tracks the **model**. The delays are ordinary state
+variables in base slot 13, eight per device, and the unit is a **tenth of a second**, which the
+config states itself by drawing 451 labels from `( 0 sec )` to `( 45 sec )`, contiguous, one per
+position of the slider the remote's own menu offers. Logitech's service states the same inter device
+field in milliseconds at exactly a hundred times the stored number.
+
+Which device a delay belongs to needed a route of its own, because two vocabularies name a device in
+one config and base slot 0 relates neither to the other: buttons and infrared groups go by an ASCII
+label and delays go by Logitech's numeric device identifier. The **screen** relates them, on the page
+that offers to put one device's delays back to their defaults: it draws the label in its title row and
+its instructions copy that device's defaults into its current values. 19 of 19 devices over the four
+containers that have delays, against 1 and 4 of 19 for the two orderings of the identifiers anybody
+would guess, and Logitech's own button maps for the calibration account agree about which device is
+which. So changing a delay is a same length edit of one `u16`, the cheapest change this format has.
 
 **Two million of Logitech's own waveforms, against our encoder, and nothing disagrees**,
 sections 230 and 231. The infrared archive carries a rendered waveform for every command in their catalogue,

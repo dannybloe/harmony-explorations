@@ -52,28 +52,30 @@ a reading or a doubt about the hardware.
 Written as its own heading because a resuming session should not have to reconstruct it from the
 milestone tables below.
 
-**The rehearsal is done and the rails are closed, so what is left before the first write that changes
-something is one reading: which base slot 15 group holds a device's own delays.** Phase 8 in
+**The reading this heading carried is done, section 234, and it refuted its own premise.** It asked
+which base slot 15 group holds a device's own delays, and no group does: that section is per **model**,<!--superseded-->
+one shape per architecture over containers holding 0 to 7 devices, and its values are shared across
+containers whose device counts differ. A device's power on delay and its inter device delay are
+ordinary state variables in base slot 13, in tenths of a second, and which device each belongs to is
+stated by a page of the remote's own menu. So changing one is a same length edit of one `u16`, the
+cheapest change this format has, rather than an edit to a section whose wrong length is silently
+ignored.
+
+**Two of the three fields FreeHarmony's disabled Settings button waits on are therefore read**, and the
+third, how many repeats a code needs, is not a state variable at all: it is a property of the infrared
+record, base slot 5, and it is open.
+
+So what is left before the first write that changes something is the write itself. Phase 8 in
 `docs/adding-a-device.md` is at ten of its twelve boxes, and neither of the two remaining is a rail. The
-write path itself is measured on hardware, section 222; the compatibility gate is performed rather than
+write path is measured on hardware, section 222; the compatibility gate is performed rather than
 asserted, section 225; and the unit on the cable is identified off the unit, section 226, exercised on
-the spare Harmony One with both of its refusals shown to bite.
+the spare Harmony One with both of its refusals shown to bite. **The obvious first change is a delay**,
+because it is one `u16` in a record whose neighbours do not move, its effect is visible without any
+equipment beyond the device itself, and both calibration configurations can be recompiled by Logitech's
+service with a delay set deliberately, which gives the change a known answer before it is written.
 
-The reading is step 5's, and the detail is under "Step 5 has one open reading" further down: how long a
-television takes after being switched on before it will listen, how long to leave between two commands,
-and how many repeats a code needs. FreeHarmony has a Settings button drawn and disabled waiting on it.
-
-**Do not guess it**, and that is the whole reason this is a reading rather than a change: section 44
-measured what a wrong length costs, since the firmware silently replaces a group whose length it does not
-expect with its own compiled in defaults. So a wrong guess ships a configuration that passes every check
-this project can make, looks accepted by the remote, and does nothing.
-
-Two pieces of evidence are already in the lab and neither needs a remote attached: the ten workflow
-manifests `docs/host-client.md` inventories, which state what Logitech's own software asked per device,
-and the two calibration configurations their service compiled to our specification, which could be
-compiled again with a delay set deliberately and the difference read off. `make lab-check
-PATH_ARG=<path>` first, per decision 12, because the last nine digs each re-derived something the site
-already held.
+`make lab-check PATH_ARG=<path>` first, per decision 12, because the last nine digs each re-derived
+something the site already held.
 
 **Queued behind it, from decision 15**, in the order they should be done, and none of them needs a
 remote:
@@ -870,7 +872,7 @@ a technical claim about the product belongs on this side of the fence.
 | 2 | Keep your remotes in one place | `packages/corpus`, done. The filing policy is a product decision |
 | 3 | Change something, without touching the remote | M3's codec half, done: `edit.ts` with `FIELD_RULES` for same length edits, `relocate.ts` for length changes, section 172 |
 | 4 | Put it back, changing nothing | **M4, and its name is now literal**: on 30 August 2026 one 64 KiB block of the spare Harmony One's own configuration was erased and written back unchanged, verified over the block and over the whole configuration, section 222. The transfer derived in section 175 is confirmed on hardware and the erase block size is measured rather than believed. What is untried is a write that changes something |
-| 5 | Change what your remote does | M4 again, plus **one reading**: which base slot 15 group holds a device's delays, see below |
+| 5 | Change what your remote does | M4 again. Its one reading is **done**, section 234: a device's delays are state variables in base slot 13, in tenths of a second, and not in base slot 15 at all. What stays open is how many repeats a code needs |
 | 6 | Add and remove devices and activities | M6. Its former blocker, length changing edits, exists: `relocate.ts`, section 172, exercised by `composeDevice` and `composeDeviceScreen`, section 173 |
 | 7 | Teach it a code from your old remote | **M5**, partly built without being scheduled: a code stated as a name and a number becomes pulses, `stated.ts` over 38 families, sections 157 to 169, and the block spelling is the generator's own, section 174. Capture is read, section 98. Open: a learned code's tail shape and storage class |
 | 8 | An application you can install | no M. Decision 4's published packages are its only demand on this repository |
@@ -879,20 +881,22 @@ Two things the product plan states that this document used to imply and never sa
 **inspector**, since writing is decision 8 and only the Harmony One has a write target, and **the shell
 has never actually been chosen**, which is also the input decision 4 waits on.
 
-**Step 5 has one open reading and it has a button drawn on it already.** FreeHarmony's device page carries
-a Settings button, disabled, on 22 August 2026, and what it is disabled for is **which base slot 15 group
-holds a device's own delays**: how long a television takes after being switched on before it will listen,
-how long to leave between two commands, and how many repeats a code needs. Section 150 closed the per unit
-half of that question, there is no per unit state at all, and it read base slot 15's **identified** groups,
-which are the remote's own display and battery settings rather than anything per device. So a group holding
-per device timings is believed on Logitech's own setup questions and nothing else, and `writeback.ts` in
-FreeHarmony marks all three fields `unknown` for exactly that reason. **Guessing is worse than waiting
-here**, because section 44 measured what a wrong length costs: the firmware replaces a group whose length
-it does not expect with its own compiled in defaults, silently, so a wrong guess ships a configuration that
-looks accepted and does nothing. The cheapest evidence is the ten workflow manifests
-`docs/host-client.md` now inventories, which state what the old software asked per device, beside the two
-calibration configs, which were compiled to our own specification and could be compiled again with a delay
-set deliberately.
+**Step 5's reading is done and it had the wrong subject.** FreeHarmony's device page carries a Settings
+button, disabled since 22 August 2026, waiting on three numbers: how long a television takes after being
+switched on before it will listen, how long to leave between two commands, and how many repeats a code
+needs. This paragraph said all three were **which base slot 15 group holds a device's own<!--superseded-->
+delays**, and section 234 refutes that: base slot 15 is per **model**, one shape per
+architecture over containers holding 0 to 7 devices and its values shared across containers whose device
+counts differ, so no group in it holds anything per device. The first two numbers are named state
+variables in base slot 13, in tenths of a second, joined to a device through a page of the remote's own
+menu; the third is a property of an infrared record in base slot 5 and stays open. `writeback.ts` in
+FreeHarmony marks all three `unknown` and two of them can be filled in now.
+
+The old wording's reasoning was sound and its premise was not, which is worth keeping rather than
+deleting: section 150 closed the per unit half of the question and section 44 measured what a wrong
+group length costs, the firmware silently replacing it with its own compiled in defaults. That is why
+the answer was not guessed. What nobody checked was whether the section varied with the number of
+devices at all, which is two lines of measurement and was the first thing section 234 ran.
 
 **M0 Infrastructure. Done. Here.** Corpus widened to four architectures, container generalised
 across all of them, the workspace standing with the codec ported and proven equal by golden vectors,
