@@ -36,7 +36,7 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets silhouettes all clean protocols emitcheck myharmony-model model-pdf model-diagram model-activity model-cluster
+.PHONY: help test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets silhouettes all clean protocols catalogue emitcheck myharmony-model model-pdf model-diagram model-activity model-cluster
 
 BENCH_PORT ?= 8731
 
@@ -66,6 +66,7 @@ help:
 	@echo "silhouettes  regenerate the remote face drawings; SILHOUETTE_ARGS=--preview"
 	@echo "page         drive the bench page in Chrome, which is what checks the page itself"
 	@echo "activities   which activity each key starts, and which label is its name"
+	@echo "catalogue    what Logitech's device catalogue says about our own configs' devices"
 	@echo "devices      which devices a config drives, and what each one is called"
 	@echo "alphabets    regenerate the glyph shape table; ALPHABETS_ARGS=--write"
 	@echo "facts        check the numbers and the dead claims in the documents; facts-write fixes numbers"
@@ -270,6 +271,15 @@ model-cluster:
 
 protocols:
 	@node packages/codec/bin/protocols.ts $(PROTOCOLS_ARGS)
+
+# What Logitech's device catalogue says about the devices our own configurations drive, section 229:
+# identify every corpus device group from the numbers it sends, then name every button send out of that
+# device's own codeset. Also compares the archive's command names against `reference/button-maps.md`,
+# which names keys rather than commands, so the output there is a taxonomy of differences. Needs the
+# archive checkout and the lab, no network. Not in `make all`: it is a thirty second full pass over
+# 54118 files, and the claims it produced are pinned by `packages/codec/test/catalogue.test.ts`.
+catalogue:
+	@node packages/codec/bin/catalogue.ts $(CATALOGUE_ARGS)
 
 # Build a code from a protocol name and a number out of Logitech's catalogue and ask their own analyser to
 # read it back, which is the closed loop the infrared side of this project wanted: `analyze` sends a

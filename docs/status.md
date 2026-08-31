@@ -384,6 +384,16 @@ delays and a per-half-cycle enable mask. The config supplies a 16-bit carrier pe
 8-bit duty value, scaled by `value * 4 / 10` into instruction cycles. Cross-checked: 38 kHz
 implies a stored 263, which the code's arithmetic turns into exactly 26.25 us.
 
+**Logitech's device catalogue reads locally and it names every command**, section 229. A configuration
+numbers its infrared codes and names none of them, so which of a device's ninety codes is volume up came
+only from Logitech's button map service through two test accounts. The archived catalogue, 7889
+manufacturers and 276236 devices, states a name beside every code: a device group is identified by the
+numbers its own records decode to, 36 of 38 groups in this corpus and 31 of them on every number they
+send, and 537 of 598 button bindings then get a name, all of them on the two calibration configurations.
+It was tested before it was believed, and the closure is that the labels agree: `Roku`, `VCR` and `Denon`
+are the config owner's own words, invisible to the archive, and they land on a Roku box, a Panasonic
+video recorder and a Denon receiver.
+
 **A code stated as a name and a number becomes pulses**, sections 152 to 169, which is what an
 importer of Logitech's still-answering device database needs: their catalogue serves no pulse data,
 only a protocol family and a frame value. The rhythm table in `packages/codec/src/protocols.ts`

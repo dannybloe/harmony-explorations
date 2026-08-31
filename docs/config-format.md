@@ -1944,6 +1944,17 @@ definitions and null on 645, and where it is stated for a family we measured it 
 one for the other two, so a default would be a fit to this corpus rather than a derivation. A family
 whose count is unstated therefore keeps no block and stays buildable rather than writable.
 
+**A configuration numbers its codes and names none of them, and the name is available elsewhere**,
+section 229. Nothing in base slot 5 says which of a device's ninety codes is volume up; the record
+carries durations and the action list carries an index. Logitech's device catalogue, archived, states a
+name beside every code, and a device group is identified in it by the **numbers its records decode to**,
+which works because 104938 distinct numbers cover 2067863 commands. Over this corpus 36 of 38 device
+groups identify, 31 of them on every number they send, and 537 of 598 button bindings get a command
+name; on the two calibration configurations every binding does, 70 of 70 and 78 of 78. The name must be
+taken from the identified device's **own** codeset and never from the catalogue at large, since a number
+alone is held by several manufacturers. `packages/codec/src/catalogue.ts` is the reader and it is
+Logitech's data, so decision 11 forbids sharing anything derived from it.
+
 Two things a derived block does not claim. Its long gaps are chunked greedily into stored words of at
 most 32767 microseconds, where Logitech's compiler chunks inconsistently, so it matches on the wire and
 not necessarily word for word; and a family whose codes all carry the same number of set bits cannot show

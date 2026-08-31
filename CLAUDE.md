@@ -279,6 +279,19 @@ codes and every one belongs to the 37 we already have. And **an archive sourced 
 shared**, because decision 11's rule is that only a definition learned from hardware may be, so without
 that the archive contaminates the shareable pool.
 
+**Its device half is read too, section 229, and what it buys is the naming layer.** A configuration
+numbers its infrared codes and names none of them, so which of a device's ninety codes is volume up was
+known only from Logitech's button map service through two test accounts. The archive names every command
+locally: **a device group is identified by the numbers its records decode to**, 36 of 38 groups in this
+corpus, 31 of them on every number they send, and 537 of 598 button bindings then get a command name,
+every one of them on the two calibration configurations. Two things to carry rather than re-derive. The
+name must come from the **identified device's own codeset** and never from the catalogue at large, since a
+number alone is held by several manufacturers. And **the identification's margin is part of its answer**,
+because Logitech's catalogue holds ranges of near identical codesets, so a device matching 108 of 108
+often has a runner up at 105 and the honest answer is a model range. `make catalogue` is the measurement,
+`packages/codec/src/catalogue.ts` the reader, and every reader in it is lazy except the code index,
+because the catalogue is 2.2 GB.
+
 **A community device database is a direction now, decision 11 in `docs/roadmap.md`, and almost all of
 it is still undecided**: its shape, its licence, where it lives, how an upload is reviewed. That is
 deliberate and it gets worked out when FreeHarmony needs it.
@@ -1510,6 +1523,10 @@ make model-diagram the entity diagram alone as a one page PDF beside the .mmd, l
                    `brew install graphviz`, and there is deliberately no fallback layout: the tool
                    drew its own until 30 August 2026, and a hand written layout engine kept beside a
                    real one is two copies of the same derivation with the unwatched copy rotting
+make catalogue     what Logitech's device catalogue says about the devices our own configs drive:
+                   which device each group is, and the command name behind every button. Needs the
+                   archive checkout and the lab, no network, and deliberately not in `make all`, since
+                   it is a ten second full pass over 54118 files. CATALOGUE_ARGS=--detail
 make protocols     what rhythm each protocol family uses, measured off the corpus against the family
                    names Logitech's analyser gave it, and the table that turns a code stated as a name
                    and a number into pulses. --write regenerates it. Needs a lab, no network

@@ -29323,3 +29323,129 @@ alternate two frames, the shape our own records showed first for seven families.
 
 A stated row's block carries no `tailExact` and no `heldExact`, because those count records that rebuilt
 from it and there are none. `source` is still what tells a caller the difference.
+
+## 229. Logitech's device catalogue as a local source, and every button gets a name
+
+**31 August 2026.** Sections 227 and 228 read the protocol half of the Harmony infrared archive, the
+timings and the block shapes. This reads the other half, the devices, and it closes a gap that has
+nothing to do with pulses: **a configuration numbers its infrared codes and names none of them.** Which
+of a device's ninety codes is volume up was known only from Logitech's button map service through two
+test accounts, about 1200 commands, recorded as a floor because nobody could say what was missing.
+
+The archive holds **7889 manufacturers and 276236 devices**, 257720 of them with codes, in **54118
+codesets** carrying 2067863 commands between them. Every command has a name beside its code, and the
+code is written **character for character as Logitech's live service writes it**,
+`G:Toshiba 32 Bit:(0x20DF9E61)(Repeat)():3`, so `statedCode` parses it with no adapter at all. That is
+what makes the archive a drop in for the live device fetch rather than a second format to support.
+
+### What was tested before it was believed
+
+The same discipline as the protocol half: take the devices our own corpus already holds, identify each
+one in the catalogue **from the numbers it sends**, and check the codes agree.
+
+**A device group is identified by its numbers, and that works because a number is specific**: 104938
+distinct numbers over those 2067863 commands. A configuration's device group is a set of records; decode
+each to a number; ask which codeset holds the most of them. Over the whole corpus, **36 of 38 device
+groups are identified and 31 of them match on every number they send**, several at 108 of 108, 100 of
+100 and 97 of 97.
+
+**The margin is part of the answer and the reader returns it.** Logitech's catalogue holds ranges of
+near identical codesets, one per model of a range, so a television matching 108 of 108 has a runner up
+at 105: the honest answer is a model **range** rather than a model. A caller reading only the winner
+would report a precision the data does not have, which is why `identifyCodeset` hands back `runnerUp`
+beside `hits` rather than filtering.
+
+**The strongest single check is the two calibration configurations**, because those were compiled by
+Logitech for an account whose three appliances we know: 482 decoded codes across the three devices, and
+**481 are in the codeset the identification picked**. The three codesets are the same three in both
+configurations, in a different group order, which is worth having pinned on its own: a group index is
+per configuration and not a property of a device.
+
+**The one code that is not there is the odd one out on its own terms too.** Record 4 of the receiver's
+group is a 14 bit code at 37 kHz where its other 91 are 48 bit codes at 38 kHz, so it is not of that
+appliance's protocol at all. Whether it was learned from a handset or belongs to a second protocol the
+model accepts is not established here. What is established is that the archive's codeset for that
+receiver holds the 91 and not this one, which is the answer that would worry me if it had come out the
+other way round.
+
+**And the labels close it independently.** A configuration's device label is the user's own words and
+nothing in the archive has ever seen it. `Roku` identifies a Roku streaming box; `VCR` identifies a
+Panasonic video recorder; `Denon` identifies a Denon receiver; `Game_Console_(With_DVD)` identifies a
+games console. So a match found purely by arithmetic over code numbers lands on a device whose
+manufacturer and kind the config's owner had typed by hand.
+
+### Every button gets a name
+
+Naming is done out of **the button's own device's codeset**, never out of the whole catalogue, and that
+distinction is the difference between an answer and a shortlist: a code number alone is held by several
+manufacturers, so a global lookup returns a handful of candidate names and the device is what settles it.
+Looked up globally, one of these numbers comes back as `Return/PowerToggle/Back`; looked up in the
+identified codeset it comes back as one name.
+
+Over the whole corpus, **537 of 598 button sends get a command name**. On the two calibration
+configurations it is **70 of 70 and 78 of 78**, and the names read correctly by eye: the receiver's keys
+are `VolumeUp`, `VolumeDown` and `Mute`, the television's are `ChannelUp`, `DirectionUp`, `Exit`, `Home`
+and the digits, and the Blu-ray player's colour keys are `Red`, `Yellow` and `Blue`.
+
+### The archive names commands where our button map names keys
+
+`reference/button-maps.md` says which **physical key** a scan code is, read out of Logitech's button map
+service through the account that generated these very configurations, section 133. The archive says
+which **command** a code is. Those answer different questions, so an agreement rate would be the wrong
+measurement, and running it anyway is instructive: 31 and 39 pairs are identical and 20 distinct pairs
+differ, every one of them in one of three ways.
+
+| kind | count | examples |
+|---|---|---|
+| a digit key against its digit command | 10 | `Number4` sends `4` |
+| a synonym for the same function | 6 | `VolumeMute`/`Mute`, `Menu`/`Home`, `PrevChannel`/`ChannelPrev`, `Select`/`OK`, `Info`/`Display`, `NumberPlus`/`*` |
+| the configuration binding a key to a command of another function | 4 | `Guide` sends the Blu-ray player's `OK`; `ChannelUp` and `ChannelDown` send its `SkipForward` and `SkipBack`; `PrevChannel` sends its `*` |
+
+The third row is not noise, it is what an activity map is **for**: a key's label is the remote's and the
+command it sends is the activity's choice. So the two tables are complementary and a writer wants both,
+which is the reason to state this rather than to quietly pick one.
+
+### The device type is a number, and reading it as our enum's index is the trap
+
+A device states a numeric `deviceType`, and the catalogue uses **49 distinct values**. Four are named
+here. Three are Logitech's own words, from a captured live reply that pairs the number with a display
+name: **1 Television, 4 DVD, 5 StereoReceiver**. The fourth, **2 VCR**, is corroborated rather than
+stated: the one corpus device group whose owner labelled it `VCR` identifies a device the archive types
+2, and the archive's own README says 2 is a VCR. That README is a third party's text, so on its own it is
+a hypothesis; here it is a hypothesis our own corpus agrees with.
+
+**The other 45 values are deliberately unnamed.** Guessing them from the models that carry them is the
+kind of fit this project refuses; what would settle them is one captured reply per type, which is cheap
+whenever it is wanted.
+
+**The trap, and it has a control in the test.** `docs/myharmony/model.json` holds a `DeviceType` enum of
+61 values, and reading the wire number as an index into it is the obvious mistake. It is wrong: index 1
+there is `Default`, index 4 is `CableBox` and index 5 is `CDJukebox`, because a WCF enum is serialised in
+alphabetical order. So the two orderings are unrelated and neither can be derived from the other.
+
+### What the reader is, and what it deliberately does not do
+
+`packages/codec/src/catalogue.ts`, with `packages/codec/src/archive.ts` beside it reading the protocol
+half of the same checkout. Every reader is lazy except the code index: the manufacturers come from one
+`index.json`, a manufacturer's models from its own, a device from its own file, and a codeset's commands
+from its own. That matters because the catalogue is 2.2 GB, and a reader that loads it whole is a reader
+an application cannot use.
+
+**`codeIndex` is the one full pass**, about ten seconds over 54118 files, and it says so. It matches the
+keycode field as text rather than parsing the JSON, deliberately: parsing would materialise the rendered
+waveforms, which are about 95% of those bytes and which nothing in an importer wants, since a frame is
+built from the rhythm table rather than replayed from a rendering. `catalogueCommands` leaves the
+rendering out of its result for the same reason unless it is asked for.
+
+**A codeset is a code table and not a device's property**, which the sharing shows: 257720 devices use
+54118 codesets, one of which serves 3911 devices, and 35175 serve exactly one. So an importer that
+cached per device would cache the same table thousands of times.
+
+Two rules carry over unchanged. **Decision 15**: names and codes cross into this repository through our
+own reader, never the archive's JSON and never its 13.29 million renderings. **Decision 11**: a device
+definition taken from here is Logitech's data, so it may never be shared through a community device
+database, whatever else is done with it.
+
+`make catalogue` is the measurement and `packages/codec/test/catalogue.test.ts` pins its answers. The
+tests name each codeset rather than searching for it, so they run in a tenth of a second and a codeset
+that stops holding a device's codes fails by name.

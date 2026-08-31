@@ -107,11 +107,21 @@ remote:
    The second number this step was meant to produce is **not** done: nobody has yet built a waveform
    with our encoder and compared it against the archive's own rendering of the same command, which is
    the check that scales to millions rather than 35.
-3. **Read the device catalogue as a local device source.** This is the one that changes the product:
-   the importer scoped as a large job is mostly a reader, and the naming layer arrives with it, so
-   which code is volume up stops being something only two test accounts could tell us. Measure it
-   against what we hold rather than trusting it, on devices that appear both in the archive and in a
-   configuration in the corpus.
+3. ~~**Read the device catalogue as a local device source.**~~ **Done, 31 August 2026, section 229.**
+   7889 manufacturers and 276236 devices read lazily, and the naming layer arrived with it: a device
+   group is identified by the numbers its records decode to, 36 of 38 groups in this corpus and 31 of
+   them on every number they send, and 537 of 598 button bindings then get a command name, every one of
+   them on the two calibration configurations. It was measured against what we hold rather than
+   trusted: 481 of 482 codes across the three appliances of the calibration account are in the codeset
+   the identification picked, and the one that is not is a 14 bit code at 37 kHz among 91 that are 48
+   bit at 38 kHz. The configuration's own labels close it independently, since `Roku`, `VCR` and `Denon`
+   are the user's own words and land on a Roku box, a Panasonic video recorder and a Denon receiver.
+   **What is left is per value rather than structural**: 45 of the 49 numeric device types are unnamed,
+   and one captured live reply per type would name them.
+4. **Compare our built waveforms against the archive's own renderings.** The check that scales to
+   millions rather than to the 35 families a calibration can reach: 13.29 million Pronto renderings of
+   the same commands our encoder builds, with two conditions its author states, the toggle bit rendered
+   at zero and, for 4.81% of commands, the first non-empty group being framing rather than payload.
 
 **And section 192 answered the question standing in front of every write rail**, which is what a host's
 flash address actually means. It is not an address: one routine classifies it, a top byte of `0xFE` or

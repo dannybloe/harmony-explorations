@@ -45,3 +45,9 @@ export * from './edit.ts';
 export * from './growth.ts';
 export * from './relocate.ts';
 export * from './compose.ts';
+// **The infrared archive's two readers**, added 31 August 2026 for the reason the `protocols.ts`
+// comment above records: FreeHarmony is what consumes a device catalogue, and a barrel that does not
+// offer a reader is part of why a second one gets written. `archive.ts` reads Logitech's protocol
+// definitions and `catalogue.ts` their device catalogue, out of the same public checkout.
+export * from './archive.ts';
+export * from './catalogue.ts';

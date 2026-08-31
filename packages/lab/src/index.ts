@@ -556,3 +556,22 @@ export function skipWithoutIrArchive(): { skip: string | false } {
       + 'logitech-harmony-ir-archive alongside the repository',
   };
 }
+
+/**
+ * Both skip reasons at once, so a test needing the lab **and** the archive skips when either is absent.
+ *
+ * **Spreading the option objects does not work, and this exists because that was tried.**
+ * `{ ...skipWithoutIrArchive(), ...skipUnless('x') }` keeps the second object's `skip`, so such a test
+ * runs its body with no archive whenever the lab is present. Measured on 31 August 2026 by pointing
+ * `HARMONY_IR_ARCHIVE` at a directory that does not exist: three tests failed where they should have
+ * skipped. That is the control `make test-nolab` performs for the lab and cannot perform for the
+ * archive, so the guard has to be right by construction rather than by a check nobody runs.
+ *
+ * It lives here rather than in the one test file that first needed it, because a second copy of a guard
+ * is the state this repository's oldest rule forbids and the next file to need two reasons would write
+ * one.
+ */
+export function needing(...options: readonly { skip: string | false }[]): { skip: string | false } {
+  const reason = options.map((one) => one.skip).find((one) => one !== false);
+  return { skip: reason ?? false };
+}
