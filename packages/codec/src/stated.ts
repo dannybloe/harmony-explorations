@@ -238,12 +238,19 @@ export function statedCode(
   // every extra value accepted 39 `Samsung 16 and 20 Bit` codes the name's rule had been refusing, and
   // every one of them disagreed with Logitech's own rendering. A code stating more values than its
   // definition has fields is a shape nobody has read, so it stays a refusal.
-  const stateds = options.widths !== undefined
-    && (options.widths.length === 1 || options.widths.length === values.length)
+  const stateds = options.widths !== undefined && values.length % options.widths.length === 0
     ? options.widths : undefined;
   if (stateds === undefined && widths.length !== 1 && widths.length !== values.length) return undefined;
+  // **The widths repeat where a code states a whole multiple of them**, section 232, which is one rule
+  // covering two measured cases. `Philips 13 Bit` states one field and codes that state its value three
+  // times, and there repeating is the same as taking the only width. `Galaxis 16 Bit Quad Toggle` states
+  // three fields and 31 of its codes write out **three repetitions**, nine values, and there repeating
+  // is the only reading that gives each value its own field's width: taking the last field for the
+  // extras made all nine 14 bits and put 48 spurious intervals on the wire. A count that is not a whole
+  // multiple stays a refusal, which is what keeps `Samsung 16 and 20 Bit`'s 39 two-width three-value
+  // codes out, every one of which disagreed with Logitech's own rendering.
   const width = (at: number): number => {
-    if (stateds !== undefined) return stateds.length === 1 ? stateds[0]! : stateds[at]!;
+    if (stateds !== undefined) return stateds[at % stateds.length]!;
     return widths.length === 1 ? widths[0]! : widths[at]!;
   };
   let seen = 0;
@@ -455,6 +462,9 @@ export function blockOfStatedCode(
     ...(t === undefined ? {} : { timings: t }),
     ...(b === undefined ? {} : { biphase: b }),
     ...(c === undefined ? {} : { cells: c }),
+    // **The other rhythms this family sends**, section 232, for a block whose copies are not all one
+    // shape. Absent on every row but the four whose repetition mixes cell widths.
+    ...(entry.also === undefined ? {} : { also: entry.also }),
   };
   // Every stated frame goes in, because a tail item may name the code's second one, section 171
   // stage two; a tail asking for a frame the code does not state is a refusal inside the encoder.

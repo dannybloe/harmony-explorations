@@ -29307,7 +29307,7 @@ Logitech states for 39 families and nowhere else.
 ### What the table gained
 
 A block shape is derivable for **382 of the 684 definitions**. Of the 424 stated table rows, 349 have a
-derivable shape and **18<!--fact:protocol_tails_stated--> of those also state their repeat count**, so 16 rows gained a `tail` and a
+derivable shape and **22<!--fact:protocol_tails_stated--> of those also state their repeat count**, so 16 rows gained a `tail` and a
 `held` and the other 408 keep a frame and nothing after it. The refusals, over all 684:
 
 **382 is 375 since section 230**, which added two refusals of its own the next day: three families whose
@@ -29799,3 +29799,143 @@ Of the 29,968 the keycode reader declines, 16,476 carry a segment word outside t
 reader accepts, `Start` on 15,146 codes, `Finish` on 10,442, `Trailer` on 5581 and `Divider` on 5121,
 and the remaining 14,636 fail on a width. A word outside the set is a refusal rather than a guess, so
 each is a reading to do.
+
+## 232. A repetition can send several rhythms, and 84694 commands were refused for it
+
+**31 August 2026.** An infrared command is a lamp blinking in a precise rhythm, and this project
+assumed one rhythm per protocol family. On 44 of Logitech's 684 families that is false: one press
+sends two or three segments **with different cells**. `Classe 16 Bit Toggle` is the clearest case and
+it is RC6's shape: a lead in, then four mode bits at a 442 microsecond half cell, then **one** bit at
+880, then sixteen data bits back at 442. A block holding one rhythm can carry a third of that command,
+so the derivation refused the whole family, and that refusal was **the largest single obstacle between
+Logitech's catalogue and a writable command**: 84694 commands, of which `Philips Hurd 16 Bit
+LongToggle` alone was 56991 and `Galaxis 16 Bit Quad Toggle` another 21398.
+
+**The result, over Logitech's own 2.07 million renderings:**
+
+| | compared | agreeing |
+|---|---|---|
+| first transmission | 1,950,619 | 1,950,618 |
+| held repetition | 1,135,941 | 1,135,941 |
+
+**446 families, up from 428, and one command outstanding.** The compared population grew by 27,490
+first transmissions. `make prontocheck` is the run.
+
+**The controls did not move.** The 34 of 35 rhythm calibration against Logitech's definitions and the
+29 of 29 block calibration both pass unaltered, and `make golden` matches 47 of 47, so none of this was
+bought by moving what our own measurements say.
+
+### The reading, which is four rules and not one
+
+**A copy names which rhythm it goes out in.** `FrameShape.also` holds the family's other rhythms and a
+block's copy item carries `shape`, an index into it offset by one. A copy naming a rhythm the shape does
+not hold **throws** rather than falling back on the first, which is the right way round: falling back
+would send one segment in another segment's rhythm and produce a waveform that looks perfectly well
+formed. 481 of the 504 derivable blocks are all one shape, 14 send two and 9 send three.
+
+**A segment's rhythm is read by the same reader as the family's, on a synthetic one segment
+definition.** That reader is 180 lines of corrections and this repository's oldest rule is that two
+copies of a derivation are two copies until one of them moves. Three things are blanked on the
+synthetic copy and each matters: no code segments, so no lead in is folded in from a `KeyCodeStart`
+group, which belongs to the family's first copy and not to its third segment; no keycode fields, so the
+width comes from the code; and the segment renamed to the family, since that is how the reader finds
+the frame.
+
+**The lead in is part of a rhythm's identity for the two shapes that have no bare form.** A pulse
+timing copy can be emitted bare, by zeroing its header, and a segment differing only in its lead
+already took that route since section 230: its header goes out as literal words in front of a bare
+copy. A biphase or cell table copy has no bare form, so a lead of its own has to be a rhythm of its
+own or the frame's lead is sent again in front of every copy of it.
+
+**A digit's width is per segment and not per family.** `Motorola 16 Bit Quad Toggle` states eight base
+four digits, then **one** plain bit, then seven more base four digits, so multiplying every field by the
+frame segment's two put an extra cell in the middle of all 679 of its commands.
+
+### The value pairing, which is where the two real corrections are
+
+A cycle position has to know **which of the code's values** it carries, and counting payloads is not
+enough. The rule: the k-th time a group names a segment, it takes the k-th field of that group with
+that segment. It is a strict generalisation rather than a second rule, since where every field names
+segment `"0"` the list for `"0"` is 0, 1, 2 and taking the k-th is exactly the payload counter.
+
+**A field's order is by `sequence` and then by `token`, and `token` alone is ambiguous on 103 of the
+681 definitions that state fields.** `Cisco 16 Bit Hex` states four fields whose tokens are 0, 1, 0, 1,
+and what separates the pairs is that two belong to the start block and two to the repeat cycle.
+Ordering by token alone left those to whatever order the JSON object happened to hold, which
+`archive.ts`'s own docstring says must not be relied on, and it put the repeat cycle's value in the
+start block on every one of that family's 720 commands. `sequence` plus `token` is unique on all 681,
+which is what makes the order total rather than a tidier guess. `orderedFields` is the one place it is
+computed, and `frameWidths` and `fieldAt` both go through it.
+
+**Every position asked for needs a field of its own, and that guard is load bearing.** A dual family's
+code states two values and gives both the position digit `0`, so its cycle names segment `"0"` twice
+where only one field does. Pairing both with that one field sent the first value twice and the second
+never, on 8 `MemorexV2 32 Bit Dual` commands and 48 `Daewoo 16 Bit` ones. Where the pairing cannot
+answer, the payload counter is still the reading.
+
+**The widths repeat where a code states a whole multiple of them.** One rule covering two measured
+cases: `Philips 13 Bit` states one field and codes that state its value three times, where repeating is
+the same as taking the only width, and 31 `Galaxis 16 Bit Quad Toggle` codes write out **three
+repetitions**, nine values over three fields, where taking the last field for the extras made all nine
+14 bits and put 48 spurious intervals on the wire. A count that is not a whole multiple stays a
+refusal, which is what keeps `Samsung 16 and 20 Bit`'s 39 two-width three-value codes out, every one of
+which disagreed with Logitech's own rendering.
+
+**A code may state fewer values than the definition has fields.** `Revox 11 Bit 2` declares two fields
+and 73 of its codes state one value, naming the second segment, so a copy clamped at the field count
+asked for a frame the code does not hold and the emitter threw. The ceiling on a frame index is the
+supplied keycode's own payload count, and only where no keycode is supplied does the field count stand
+in for it. Section 230's `Revox 11 Bit` is the opposite direction, a code stating **more** values than
+fields, which is why the field count cannot simply replace the maximum.
+
+### Two corrections of ours, and one of them is in a docstring
+
+**A segment's own width sits inside `Payload` and this reader had it at the top level**, where it is set
+on none of the 884 segments in the archive. That is why `keycodeFields`' docstring said `NumberOfBits`
+was null on every definition read here: the field is set on all 884 and was being read from the wrong
+place. It matters because a secondary segment has no keycode field of its own, so this is the only
+place its width is stated.
+
+**The comparison test built its own waveform and had drifted twice.** `test/pronto.test.ts` composed
+the seven readings itself, and by the time the cell tables landed it built a shape of two fields where
+there are three, so every cell table family threw in the test while `make prontocheck` compared them
+happily. `waveformOfArchiveCommand` in `archive.ts` is the one composition now and both call it; the
+test's bounded slice went from 10532 commands over 46 families to 10819 over 52 the moment it stopped
+carrying its own copy. **A second copy of a derivation is the state this repository's oldest rule
+forbids, and a test is not exempt from it.**
+
+**The generator dropped `shape` and that is the third instance of one omission.** `blockOut` writes a
+copy item field by field and did not write the new one, so four rows stated a block whose copies all
+read as the family's first rhythm. `carriedFirst` did exactly this in section 230 and the note recording
+it is in `reference/superseded.md`. Adding a field to `BlockTailItem` means adding it to the generator
+in the same commit, and `archive.test.ts` now asserts the pair: which rhythms each row's block names,
+against how many the row holds.
+
+### What is left
+
+**One command of 1,950,619.** `Galaxis 16 Bit Quad Toggle`'s `2x02121031` writes eight base four digits
+where its field states seven, and Logitech's renderer emits eight. Taking the code's own width where it
+exceeds the field's was measured and **costs a different single command**, `Game Elements 15 Bit`, whose
+masking section 230 established. Two candidate rules each costing exactly one command is a coin flip
+with no evidence, so the measured rule stays and this is a named remainder rather than a fitted rule.
+
+**85 definitions still state no readable rhythm**, 35 of them sending one interval per bit. Of the
+blocks, 55 carry a release block our table has no slot for, 16 pad a cycle whose shared period is not
+one number, 15 state no repeat cycle, and **9 name a segment whose shape our reader cannot read at
+all**, which is what is left of the refusal this section removed.
+
+**124,000 commands are not compared**: 80,645 where no block is derivable, 24,713 where the keycode
+reader declines the code, 11,522 where no rhythm is derivable, 240 the archive renders no waveform for
+and 124 whose Pronto string our own reader refuses. The keycode declines are now the biggest reachable
+group and 16,476 of them name a segment word outside our closed set of three, `Start` on 15,146,
+`Finish` on 10,442, `Trailer` on 5581 and `Divider` on 5121.
+
+### What the table holds now
+
+600 rows still, since these are families it already had: 37 measured and 563 stated. **22 stated rows
+carry a whole block**, up from 18, and **four carry the other rhythms of their repetition**:
+`Kathrein 16 Bit Quad Toggle`, `Motorola 16 Bit Quad Toggle` and `Pace 18 Bit Quad Toggle` with two
+each and `Zenith 11 Bit Quad` with one. Those four are written in the emitter's own spelling rather
+than the table's older flat one, deliberately: the row's own fields are one shape spelled out and the
+extras are handed to the emitter as they stand, so `shapeOf` in `stated.ts` is the single place the two
+are joined. Two spellings in one row is the cost of not migrating 600 rows.

@@ -84,12 +84,14 @@ const setup = (family: string): Ready | null => {
  */
 const blocksFor = (
   one: Ready, code: StatedCode,
-): { tail: BlockTail; held: BlockTail } | undefined => {
+): { tail: BlockTail; held: BlockTail; also: readonly FrameShape[] } | undefined => {
   const keyCode = keyCodeOfStatedCode(one.protocol, code);
   if (keyCode === undefined) return undefined;
   const built = blockOfDefinition(one.protocol, 1, { storedForm: false, keyCode });
   if ('refusal' in built) return undefined;
-  return { tail: built.tail, held: built.held };
+  // **The block's other rhythms travel with it**, section 232: a copy naming one of them throws in the
+  // emitter without it rather than falling back on the frame's, which is the right way round.
+  return { tail: built.tail, held: built.held, also: built.also };
 };
 
 let commands = 0;
@@ -133,8 +135,9 @@ outer: for (const bucket of buckets) {
       const frames = withToggleCleared(one.protocol, withStatedWidths(one.protocol, code.frames));
       let ours: number[]; let oursHeld: number[];
       try {
-        ours = prontoPairs(prontoUnits(pulsesOfBlock(one.shape, frames, blocks.tail), pronto.unitUs));
-        oursHeld = prontoPairs(prontoUnits(pulsesOfBlock(one.shape, frames, blocks.held), pronto.unitUs));
+        const shape: FrameShape = { ...one.shape, also: blocks.also };
+        ours = prontoPairs(prontoUnits(pulsesOfBlock(shape, frames, blocks.tail), pronto.unitUs));
+        oursHeld = prontoPairs(prontoUnits(pulsesOfBlock(shape, frames, blocks.held), pronto.unitUs));
       } catch (e) {
         bump(skipped, `our encoder threw: ${String(e).slice(0, 60)}`);
         continue;

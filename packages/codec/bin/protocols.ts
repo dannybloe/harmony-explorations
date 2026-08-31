@@ -1710,7 +1710,7 @@ const GENERATED = `/**
  * cares about. An entry with a spread of 0.02 will be accepted by the equipment and will not be byte
  * identical to a config Logitech built.
  */
-import type { FrameCarrier } from './irframe.ts';
+import type { FrameCarrier, FrameShape } from './irframe.ts';
 
 export interface StatedProtocol {
   /** Logitech's own name for it, as their analyser and their catalogue spell it. */
@@ -1767,7 +1767,12 @@ export interface StatedProtocol {
    * times a repetition is sent, since that half is stated on 39 of their 684 definitions.
    */
   readonly tail?: {
-    readonly items: readonly ({ readonly copy: 'full' | 'bare'; readonly at?: number }
+    readonly items: readonly ({
+      readonly copy: 'full' | 'bare';
+      readonly at?: number;
+      /** Which of the family's rhythms this copy goes out in, indexing \`also\` offset by one. */
+      readonly shape?: number;
+    }
       | { readonly words: readonly number[] }
       | { readonly pad: number })[];
     readonly total?: number;
@@ -1782,7 +1787,12 @@ export interface StatedProtocol {
    * this was measured over, and Toshiba's is its ditto frame alone with no copy in it.
    */
   readonly held?: {
-    readonly items: readonly ({ readonly copy: 'full' | 'bare'; readonly at?: number }
+    readonly items: readonly ({
+      readonly copy: 'full' | 'bare';
+      readonly at?: number;
+      /** Which of the family's rhythms this copy goes out in, indexing \`also\` offset by one. */
+      readonly shape?: number;
+    }
       | { readonly words: readonly number[] }
       | { readonly pad: number })[];
     readonly total?: number;
@@ -1875,6 +1885,25 @@ export interface StatedProtocol {
     readonly cells: readonly (readonly number[])[];
     readonly bits: number;
   };
+  /**
+   * The **other** rhythms this family sends, where one repetition is not all one shape.
+   *
+   * Section 232. \`Classe 16 Bit Toggle\` sends four mode bits at a 442 microsecond half cell, then one
+   * bit at 880, then sixteen data bits at 442, so three of Logitech's own segments with three different
+   * cells go out back to back. A copy item's \`shape\` indexes this list, offset by one because index 0
+   * is the row's own shape above.
+   *
+   * **Written in the emitter's own spelling and not in the row's**, deliberately: the fields above are
+   * this table's older flat spelling of one shape, and the extras are handed to \`pulsesOfBlock\` as they
+   * stand. Two spellings in one row is the cost of not migrating 600 rows, and \`shapeOf\` in
+   * \`stated.ts\` is the single place that joins them.
+   *
+   * **A row carrying a block whose copies name a shape must carry that shape.** That is asserted rather
+   * than assumed, because the same omission has already shipped once: \`carriedFirst\` was live in the
+   * reader and missing from this generator's template for one run, and seven rows then described a
+   * rhythm correctly and emitted the wrong wire.
+   */
+  readonly also?: readonly FrameShape[];
   /** How many corpus codes the entry was measured over, and how many it reproduces exactly. */
   readonly codes: number;
   readonly exact: number;
@@ -1984,8 +2013,13 @@ if (write) {
   const out = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'protocols.ts');
   const blockOut = (block: BlockTail): string => `{ items: [${block.items.map((item) => {
     if ('copy' in item) {
-      return item.at === undefined ? `{ copy: '${item.copy}' }`
-        : `{ copy: '${item.copy}', at: ${item.at} }`;
+      // **Every field of the item, named one by one, and that is a trap this has fallen into twice.**
+      // `shape` was live in the emitter and missing here for one run, section 232, which is exactly what
+      // `carriedFirst` did in section 230: a row then states a block whose copies all read as the
+      // family's first rhythm and emits one segment's rhythm for three. Adding a field to
+      // `BlockTailItem` means adding it here in the same commit.
+      return `{ copy: '${item.copy}'${item.at === undefined ? '' : `, at: ${item.at}`}`
+        + `${item.shape === undefined ? '' : `, shape: ${item.shape}`} }`;
     }
     if ('words' in item) return `{ words: [${item.words.join(', ')}] }`;
     return `{ pad: ${item.pad} }`;
@@ -2072,7 +2106,12 @@ if (write) {
     const head = `  { family: '${e.family.replace(/'/g, "\\'")}', periodNs: ${e.periodNs}, `;
     const blocks = block === undefined ? ''
       : ` tail: ${blockOut(block.tail)}, held: ${blockOut(block.held)},`;
-    const tail = `${blocks} codes: 0, exact: 0, spread: 0, source: 'stated' },`;
+    // **The other rhythms, written where the block that names them is written.** Omitting them is the
+    // `carriedFirst` omission again: a copy naming shape 1 throws in the emitter without it, which is
+    // the right way round, but a row with a block and no shapes is a row nobody can use.
+    const also = block === undefined || block.also.length === 0 ? ''
+      : ` also: ${JSON.stringify(block.also)},`;
+    const tail = `${blocks}${also} codes: 0, exact: 0, spread: 0, source: 'stated' },`;
     const b = e.biphase;
     if (b !== undefined) {
       const lead = b.lead.map((one) => `{ mark: ${one.mark}, us: ${one.us} }`).join(', ');

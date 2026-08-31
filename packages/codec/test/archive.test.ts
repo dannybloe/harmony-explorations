@@ -500,18 +500,18 @@ test('the repeat count is stated for five of the blocks we measured, and right o
   }
 });
 
-test('eighteen stated families carry a whole block, and the other five hundred and forty five a frame',
+test('twenty two stated families carry a whole block, and the other five hundred and forty one a frame',
   () => {
-  // The table's own claim, checked without a checkout, since the table is committed. 18 is small and it
+  // The table's own claim, checked without a checkout, since the table is committed. 22 is small and it
   // is the honest number: a stated row gets a block only where the definition states its repeat count,
-  // and the other 545 stay buildable rather than writable. Some of the 545 are refused for a reason of
+  // and the other 541 stay buildable rather than writable. Some of the 541 are refused for a reason of
   // their own even so, having a release block our table states no slot for.
   const stated = PROTOCOLS.filter((one) => one.source === 'stated');
   // 563 now: 424 until section 231 read the cell table families, whose bit is which of four or sixteen
   // whole cell shapes goes on the wire rather than which of two lengths.
   assert.equal(stated.length, 563);
   const withBlock = stated.filter((one) => one.tail !== undefined);
-  assert.equal(withBlock.length, 18);
+  assert.equal(withBlock.length, 22);
   // A block and a held block go together: one without the other would be a record half writable.
   for (const row of withBlock) assert.notEqual(row.held, undefined, row.family);
   // And nothing measured claims to have rebuilt a derived block, since there is no record to rebuild.
@@ -519,15 +519,42 @@ test('eighteen stated families carry a whole block, and the other five hundred a
   assert.deepEqual(withBlock.map((one) => one.family), [
     'Apex 24 and 16 Bit', 'Auvio 32 Bit', 'Cambridge Audio 32 Bit', 'Canton 32 Bit', 'DLO 32 Bit',
     'Entone 24 Bit', 'Entone 56 Bit', 'EntoneV1 24 Bit', 'Galaxis 16 Bit Quad', 'Idylis 24 Bit',
-    'LG 32 Bit', 'MotorolaO1 16 Bit Hex', 'Naxoo 32 Bit', 'Pace 4 and 20 Bit', 'Samsung 42 Bit',
-    'Samsung 42 Bit 2', 'SamsungO1 32 Bit', 'Toshiba HF 32 Bit',
+    'Kathrein 16 Bit Quad Toggle', 'LG 32 Bit', 'Motorola 16 Bit Quad Toggle', 'MotorolaO1 16 Bit Hex',
+    'Naxoo 32 Bit', 'Pace 18 Bit Quad Toggle', 'Pace 4 and 20 Bit', 'Samsung 42 Bit', 'Samsung 42 Bit 2',
+    'SamsungO1 32 Bit', 'Toshiba HF 32 Bit', 'Zenith 11 Bit Quad',
   ]);
-  // The two the cell reading added, and they are two different bases: a cell of four shapes and a cell
-  // of sixteen. Worth naming, because a block over a cell table is the derivation that had no sample at
-  // all before section 231.
+  // **Four of them send more than one rhythm in a repetition, and the row carries the others**,
+  // section 232. This is the assertion that shipped too late once: `carriedFirst` was live in the reader
+  // and missing from the generator's template for a run, so a row described a rhythm correctly and
+  // emitted the wrong wire. A block whose copies name a shape the row does not hold throws in the
+  // emitter, which is the right way round, and is a row nobody can use.
+  const alsoRows = stated.filter((one) => one.also !== undefined);
+  assert.deepEqual(alsoRows.map((one) => [one.family, one.also!.length] as const), [
+    ['Kathrein 16 Bit Quad Toggle', 2], ['Motorola 16 Bit Quad Toggle', 2],
+    ['Pace 18 Bit Quad Toggle', 2], ['Zenith 11 Bit Quad', 1],
+  ]);
+  // Which rhythms each row's block actually names, exactly, against how many the row holds. A row naming
+  // a rhythm it does not hold is the omission this exists for, and the pair is asserted rather than a
+  // bound on the index, so a row gaining or losing a shape shows up here.
+  const naming = PROTOCOLS.map((row) => {
+    const named = [...new Set([...(row.tail?.items ?? []), ...(row.held?.items ?? [])]
+      .flatMap((item) => ('copy' in item && item.shape !== undefined ? [item.shape] : [])))].sort();
+    return [row.family, named, (row.also ?? []).length] as const;
+  }).filter(([, named]) => named.length > 0);
+  assert.deepEqual(naming, [
+    ['Kathrein 16 Bit Quad Toggle', [1, 2], 2],
+    ['Motorola 16 Bit Quad Toggle', [1, 2], 2],
+    ['Pace 18 Bit Quad Toggle', [1, 2], 2],
+    ['Zenith 11 Bit Quad', [1], 1],
+  ]);
+  // The cell table families with a block, named with their base. Worth naming, because a block over a
+  // cell table is the derivation that had no sample at all before section 231, and the four base four
+  // ones with a rhythm each in three segments are what section 232 added.
   assert.deepEqual(withBlock.filter((one) => one.cells !== undefined)
     .map((one) => [one.family, one.cells!.cells.length] as const),
-    [['Galaxis 16 Bit Quad', 4], ['MotorolaO1 16 Bit Hex', 16]]);
+    [['Galaxis 16 Bit Quad', 4], ['Kathrein 16 Bit Quad Toggle', 4],
+     ['Motorola 16 Bit Quad Toggle', 4], ['MotorolaO1 16 Bit Hex', 16],
+     ['Pace 18 Bit Quad Toggle', 4], ['Zenith 11 Bit Quad', 4]]);
 });
 
 test('every definition derives a block or says why not', { ...skipWithoutIrArchive() }, () => {
@@ -541,10 +568,20 @@ test('every definition derives a block or says why not', { ...skipWithoutIrArchi
     if ('refusal' in built) refusals.set(built.refusal, (refusals.get(built.refusal) ?? 0) + 1);
     else derived += 1;
   }
-  // 486, from 382 before the cell tables were read, section 231. Every refusal bucket grew with it,
-  // which is the honest shape of that gain: a family that could not state its rhythm was counted once
-  // and now reaches the block derivation and is counted for whatever that refuses.
-  assert.equal(derived, 486);
+  // 504, from 382 before the cell tables and 486 before a repetition was allowed several rhythms,
+  // sections 231 and 232.
+  assert.equal(derived, 504);
+  // **How many rhythms one repetition sends**, section 232, which is the number that used to be one by
+  // assumption: 481 blocks are all one shape, 14 send two and 9 send three. Asserted rather than
+  // counted in aggregate, because a block of several shapes is the case a `shape`-free reader emits a
+  // third of.
+  const perBlock = new Map<number, number>();
+  for (const protocol of archiveProtocols(IR_ARCHIVE!)) {
+    const built = blockOfDefinition(protocol, protocol.pressMinimumRepeats ?? 3);
+    if ('refusal' in built) continue;
+    perBlock.set(built.also.length, (perBlock.get(built.also.length) ?? 0) + 1);
+  }
+  assert.deepEqual([...perBlock].sort((a, b) => a[0] - b[0]), [[0, 481], [1, 14], [2, 9]]);
   assert.deepEqual([...refusals.entries()].sort((a, b) => b[1] - a[1]), [
     // The rhythm's own refusals, counted there: one interval per bit, the header shape and the rest. A
     // block cannot be read out of a frame that could not be. 225 until the cell tables read.
@@ -552,13 +589,13 @@ test('every definition derives a block or says why not', { ...skipWithoutIrArchi
     // A third block, sent on release. Our table has `tail` and `held` and nothing for it, so a family
     // with one would be emitted incomplete rather than approximately.
     ['a release block, which our table has no slot for', 55],
-    // A cycle whose second frame states different **cells**, not merely a different gap: our table holds
-    // one rhythm per family, so two would need two rows and a code that knew which. This is the biggest
-    // single reason a catalogue command cannot be written today, 84694 of them, and the two families at
-    // the head of it are `Philips Hurd 16 Bit LongToggle` and `Galaxis 16 Bit Quad Toggle`.
-    ['a cycle names an infrared segment stating a different rhythm', 29],
+    ['a padded cycle of several frames whose shared period is not one number', 16],
     ['the definition states no repeat cycle', 15],
-    ['a padded cycle of several frames whose shared period is not one number', 14],
+    // **This was 29 and read "a different rhythm" until section 232**, when a block gained the ability
+    // to send several: what is left is a segment whose shape our reader cannot read at all, which is a
+    // coercion refused rather than a rhythm assumed. It was the biggest single reason a catalogue
+    // command could not be written, 84694 of them.
+    ['a cycle names an infrared segment stating no readable rhythm', 9],
   ]);
   // **One refusal fires for nothing in this archive and is kept as a guard**, which is why it is absent
   // from the map above rather than carrying a zero. A copy that states its constant half last, has a

@@ -61,9 +61,10 @@ test('the table states six hundred entries, of which thirty seven are measured',
     // A block and a held block go together: a record needs both pointers, so half of one is no use.
     assert.equal(one.tail === undefined, one.held === undefined, one.family);
   }
-  // 18 of the 563 carry a whole block, being the ones whose definition also states how many times a
-  // repetition is sent, and the other 545 carry a frame and nothing after it.
-  assert.equal(STATED.filter((one) => one.tail !== undefined).length, 18);
+  // 22 of the 563 carry a whole block, being the ones whose definition also states how many times a
+  // repetition is sent, and the other 541 carry a frame and nothing after it. 18 until section 232 let
+  // one repetition send several rhythms, which four of the four new ones need.
+  assert.equal(STATED.filter((one) => one.tail !== undefined).length, 22);
   // **Three shapes convert, and every row has exactly one of them.** 97 are biphase, where the bit is
   // which half of the cell carries the carrier; 327 state the five durations; and 139 are a cell table,
   // where a digit picks one of four or sixteen whole cell shapes, section 231. The sum is the row count,
@@ -554,11 +555,11 @@ test('twenty nine measured entries state their whole block, and the counts are p
                    ['Kreatel IP 22 Bit', 'Galaxis 16 Bit Quad Toggle',
                     'Philips Hurd 16 Bit LongToggle', 'MitsubishiO1 Dual 8 16 Bit', 'Samsung 38 Bit',
                     'Roku 32 Bit 1', 'Panasonic 16 Bit', 'Sharp 48 Bit']);
-  // **18 stated entries carry a derived block since section 228 and the rest carry none**, which is why
+  // **22 stated entries carry a derived block since section 228 and the rest carry none**, which is why
   // this list is scoped to the measured rows: mixing the two would put a block nobody measured into a
   // table of rebuild counts, and there is no record to have rebuilt. It was 16 until section 231 read
-  // the cell table families, two of which state a repeat count.
-  assert.equal(STATED.filter((one) => one.tail !== undefined).length, 18);
+  // the cell table families and 18 until section 232 let one repetition send several rhythms.
+  assert.equal(STATED.filter((one) => one.tail !== undefined).length, 22);
   assert.deepEqual([...tailed].sort((a, b) => a[0].localeCompare(b[0]) || (a[2] - b[2])), [
     ['JerroldO1 16 Bit', 47, 47],
     ['JVC 16 Bit', 108, 108],
@@ -600,12 +601,14 @@ test('twenty nine measured entries state their whole block, and the counts are p
   assert.deepEqual(alternating(MEASURED), ['MemorexV2 32 Bit Dual', 'Pioneer 32 Bit 2',
     'Pioneer 32 Bit Dual', 'PioneerO1 32 Bit Dual', 'Samsung 16 and 20 Bit', 'Sharp 15 Bit',
     'Sharp 15 Bit 2']);
-  // **And six of the derived blocks are the same shape**, which is worth asserting rather than
+  // **And ten of the derived blocks are the same shape**, which is worth asserting rather than
   // excluding: the alternation was measured off our own records first and Logitech's definitions state
-  // it independently, in their `KeyCode` field, for six families this corpus holds no record of. Five
-  // until section 231, whose cell table reading added the sixth.
+  // it independently, in their `KeyCode` field, for ten families this corpus holds no record of. Five
+  // until section 231, whose cell table reading added the sixth, and four more from section 232, where a
+  // repetition may send several rhythms and those four alternate across three segments rather than two.
   assert.deepEqual(alternating(STATED), ['Apex 24 and 16 Bit', 'Entone 24 Bit', 'Entone 56 Bit',
-    'EntoneV1 24 Bit', 'MotorolaO1 16 Bit Hex', 'Pace 4 and 20 Bit']);
+    'EntoneV1 24 Bit', 'Kathrein 16 Bit Quad Toggle', 'Motorola 16 Bit Quad Toggle',
+    'MotorolaO1 16 Bit Hex', 'Pace 18 Bit Quad Toggle', 'Pace 4 and 20 Bit', 'Zenith 11 Bit Quad']);
 
   // **The Sharp 15 families pad each copy to a constant period, not the block to a total**: their
   // two alternating frames differ in duration, so the gaps differ within one record, which is the

@@ -156,18 +156,31 @@ remote:
    shape**: a press cycle naming two infrared segments with **different** rhythms, where our table holds
    one rhythm per family. `Philips Hurd 16 Bit LongToggle` alone is 56,991 of those. That is now the
    single biggest thing between Logitech's catalogue and a writable command.
-6. **Read a press cycle whose two segments state different rhythms.** 84,694 commands of 29 families,
-   the largest remaining refusal by an order of magnitude, and it is a **table shape** question rather
-   than a reading: a row holds one rhythm, and these families need two plus a block that says which
-   segment each copy uses. `Philips Hurd 16 Bit LongToggle` is 56,991 of the commands and
-   `Galaxis 16 Bit Quad Toggle` another 21,398, so two families are three quarters of it. The
-   calibration is already built and costs nothing, `make prontocheck` scoring any new reading against
-   Logitech's own renderings.
+6. ~~**Read a press cycle whose two segments state different rhythms.**~~ **Done, 31 August 2026,
+   section 232.** A family can send several rhythms inside one press and 44 of Logitech's 684 definitions
+   do: `Classe 16 Bit Toggle` sends four mode bits at a 442 microsecond half cell, one bit at 880 and
+   sixteen data bits back at 442, which is RC6's shape. A copy of a block now names which rhythm it goes
+   out in, and a copy naming one the shape does not hold **throws** rather than falling back on the
+   first, which would send a segment in another segment's rhythm and look well formed.
+   **1,950,618 of 1,950,619 first transmissions agree and all 1,135,941 held repetitions**, over 446
+   families, up from 428. The rhythm and block calibrations both pass unaltered, so none of it was bought
+   by moving our own measurements.
+   **Four defects of ours came out of it and three were silent.** Their field order is `sequence` then
+   `token`, and reading it by token alone is ambiguous on 103 of their definitions and put a repeat
+   cycle's value in the start block on 720 commands. A segment's own width sits inside their `Payload`
+   and this reader had it one level up, which is why a docstring here claimed the field was always null.
+   The comparison **test** composed its own waveform instead of calling the library's and had drifted two
+   readings behind. And the generator dropped the new field, exactly as it dropped `carriedFirst` the day
+   before, which is now asserted per row rather than hoped for.
+   One command is outstanding, and its two candidate width rules each cost a different single command, so
+   it stays a named remainder rather than a fitted rule.
 7. **Accept the segment words a keycode may name.** 16,476 commands are declined because their keycode
    names a word outside the closed set our reader takes: `Start` on 15,146, `Finish` on 10,442,
    `Trailer` on 5581, `Divider` on 5121, and seven rarer ones. Each is a small reading and a word
    outside the set is deliberately a refusal rather than a guess. A further 14,636 are declined on a
-   width, which is a separate question and unexamined.
+   width, which is a separate question and unexamined. **This is now the biggest reachable group**, the
+   block refusals past it being a release block our table has no slot for (55 families) and a padded
+   cycle whose shared period is not one number (16).
 
 **And section 192 answered the question standing in front of every write rail**, which is what a host's
 flash address actually means. It is not an address: one routine classifies it, a top byte of `0xFE` or
@@ -442,8 +455,8 @@ image is a second sample rather than a stand in. Other models are iterated on la
 
    **What is genuinely unpriced is everything after the frame.** A block repeats the frame and then goes
    quiet, and that tail is 140 distinct shapes across the corpus, with a per family rule for 29<!--fact:protocol_tails--> of the
-   rhythm table's 37<!--fact:protocol_measured--> measured entries since section 171, plus 18<!--fact:protocol_tails_stated--> derived from Logitech's own
-   statement of it since section 228, and none for the remaining 545, so it is emitted where there is a
+   rhythm table's 37<!--fact:protocol_measured--> measured entries since section 171, plus 22<!--fact:protocol_tails_stated--> derived from Logitech's own
+   statement of it since section 228, and none for the remaining 541, so it is emitted where there is a
    rule and copied
    from a record of the same appliance rather than computed. That is a smaller job and a different one:
    it needs a record to copy from, which means the catalogue import wants a configuration beside it

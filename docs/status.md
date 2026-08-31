@@ -401,8 +401,8 @@ holds 600<!--fact:protocol_entries--> entries over 600<!--fact:protocol_families
 **37<!--fact:protocol_measured--> were measured here and 563<!--fact:protocol_stated--> are Logitech's own definitions converted**, sections 227 and 231.
 The measured ones cover 32 of the 33 families this corpus holds a record of; the stated ones are
 families no configuration here has ever carried, so `codes: 0` on such a row is the honest number and
-`source` is what tells the two apart. 18 of the stated rows carry a whole block derived
-from Logitech's own statement of it, section 228, and the other 545 carry a frame and nothing after it,
+`source` is what tells the two apart. 22 of the stated rows carry a whole block derived
+from Logitech's own statement of it, section 228, and the other 541 carry a frame and nothing after it,
 so a code of those families can be built and not yet written. It said "A stated row carries no measured
 block either, so a code of that family can be built and not yet written"<!--superseded--> for one day.
 What holds the 408 back is not the shape, which their definitions state and which reproduces all 29
@@ -700,10 +700,24 @@ converter now answers for **599 of Logitech's 684** families. **Every command th
 families, up from 368. The controls did not move: the 34 of 35 rhythm calibration and the 29 of 29
 block calibration both pass unaltered.
 
-**What stands between the catalogue and a writable command is now one shape**, 84,694 commands of 29
-families whose press cycle names two infrared segments with **different** rhythms, where a table row
-holds one. Two families are three quarters of it. `make prontocheck` is the run, about forty seconds,
-and it needs the public archive checkout and no network.
+**And that shape is read too, section 232.** 84,694 commands of 29 families whose press cycle names two
+infrared segments with **different** rhythms were refused because a table row held one rhythm: a family
+can send several inside one press, and `Classe 16 Bit Toggle` sends four mode bits at a 442 microsecond
+half cell, one bit at 880 and sixteen data bits back at 442. That is RC6's shape. **1,950,618 of
+1,950,619 first transmissions agree and all 1,135,941 held repetitions**, over 446 families, with one
+command outstanding whose two candidate rules each cost a different single command.
+
+Four defects of ours came out of it, three of them silent. Logitech's own field order is `sequence` then
+`token` and reading it by token alone is ambiguous on 103 of their definitions, which put a repeat
+cycle's value in the start block on 720 commands of one family. A segment's own width sits inside their
+`Payload` and this reader had it one level up, so a docstring here said the field was always null. The
+comparison **test** built its own waveform rather than calling the library's, and had drifted two
+readings behind, which is the two-copies state this project's oldest rule forbids. And the table
+generator dropped the new field, exactly as it dropped `carriedFirst` the day before.
+
+`make prontocheck` is the run, about forty seconds, and it needs the public archive checkout and no
+network. What is left is the keycode reader's closed set of segment words: 16,476 commands name a fourth,
+`Start` on 15,146 and `Finish` on 10,442 among them.
 
 **And which remote is on the cable is read off the remote**, section 226, which was the last of the
 three things the write rails took a caller's word for. Two Harmony Ones enumerate identically, so the

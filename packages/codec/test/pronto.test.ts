@@ -18,8 +18,8 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { IR_ARCHIVE, skipWithoutIrArchive } from '@harmony/lab';
 import {
-  archiveProtocols, blockOfDefinition, frameWidths, keyCodeOfStatedCode, rhythmOfDefinition,
-  withStatedWidths, withToggleCleared,
+  archiveProtocols, bitsPerDigit, blockOfDefinition, frameWidths, keyCodeOfStatedCode,
+  rhythmOfDefinition, waveformOfArchiveCommand, withStatedWidths, withToggleCleared,
 } from '../src/archive.ts';
 import { pulsesOfBlock } from '../src/irframe.ts';
 import {
@@ -98,22 +98,18 @@ function compare(
 ): { ours: number[]; theirs: number[]; oursHeld: number[]; theirsHeld: number[] } | undefined {
   const protocol = byName.get(protocolName);
   if (protocol === undefined) return undefined;
-  const rhythm = rhythmOfDefinition(protocol);
-  if ('refusal' in rhythm) return undefined;
-  const code = statedCode(keycode);
-  if (code === undefined) return undefined;
-  const keyCode = keyCodeOfStatedCode(protocol, code);
-  if (keyCode === undefined) return undefined;
-  const built = blockOfDefinition(protocol, 1, { storedForm: false, keyCode });
-  if ('refusal' in built) return undefined;
   const read = readPronto(pronto);
   if (read === undefined) return undefined;
-  const frames = withToggleCleared(protocol, withStatedWidths(protocol, code.frames));
-  const shape = { timings: rhythm.timings, biphase: rhythm.biphase };
+  // **Through the library's own composition and not a copy of it**, section 232. This function used to
+  // do the seven steps itself and fell two readings behind: it built a shape of two fields where there
+  // are three, so every cell table family threw here while `make prontocheck` compared them happily,
+  // and the same copy had drifted silently once before.
+  const built = waveformOfArchiveCommand(protocol, keycode, { storedForm: false });
+  if ('refusal' in built) return undefined;
   return {
-    ours: prontoPairs(prontoUnits(pulsesOfBlock(shape, frames, built.tail), read.unitUs)),
+    ours: prontoPairs(prontoUnits(built.once, read.unitUs)),
     theirs: [...read.once],
-    oursHeld: prontoPairs(prontoUnits(pulsesOfBlock(shape, frames, built.held), read.unitUs)),
+    oursHeld: prontoPairs(prontoUnits(built.held, read.unitUs)),
     theirsHeld: [...read.repeat],
   };
 }
@@ -156,12 +152,14 @@ test('our waveforms reproduce Logitech\'s own renderings over a slice of the cat
       }
     }
     // Exact, per the house rule, and the slice has to be big enough to be a check: a few thousand
-    // commands over dozens of families, both sections, with nothing outstanding in it.
-    assert.equal(compared, 10532);
-    assert.equal(agreed, 10532);
-    assert.equal(heldCompared, 6433);
-    assert.equal(heldAgreed, 6433);
-    assert.equal(families.size, 46);
+    // commands over dozens of families, both sections, with nothing outstanding in it. The counts rose
+    // from 10532 over 46 families when this stopped building the waveform itself and called the
+    // library's own composition, section 232, since its own copy was two readings behind.
+    assert.equal(compared, 10819);
+    assert.equal(agreed, 10819);
+    assert.equal(heldCompared, 6620);
+    assert.equal(heldAgreed, 6620);
+    assert.equal(families.size, 52);
   });
 
 test('clearing the toggle bit is what makes a toggle family agree, and it is checked on one',
@@ -288,6 +286,89 @@ test('the cell\'s own order is what makes six of seven families agree, and strip
       ));
       assert.notDeepEqual(wrong, both!.theirs, `${family} disagrees without the cell's own order`);
     }
+  });
+
+test('a repetition can send several rhythms, and one of them alone emits a fraction of the command',
+  { ...skipWithoutIrArchive() }, () => {
+    // **The capability that replaced the largest refusal there was**, section 232: 84694 commands over 29
+    // families whose press cycle names two infrared segments stating different rhythms. `Classe 16 Bit
+    // Toggle` is RC6's shape and the clearest case: four mode bits at a 442 microsecond half cell, then
+    // **one** bit at 880, then sixteen data bits back at 442. Our table held one rhythm per family, so a
+    // block of it could only carry a third of the command.
+    const root = IR_ARCHIVE!;
+    const byName = new Map(archiveProtocols(root).map((one) => [one.name, one]));
+    // Named as a set rather than counted, and it is the number of **rhythms** rather than of segments: a
+    // dual family states two frames of one shape and that is still one rhythm. A family appearing here
+    // means a definition took this shape; one dropping out means the reader stopped seeing it.
+    const several = [...byName.values()].map((one) => {
+      const built = blockOfDefinition(one, one.pressMinimumRepeats ?? 3);
+      return 'refusal' in built ? null : [one.name, built.also.length + 1] as const;
+    }).filter((one): one is readonly [string, number] => one !== null && one[1] > 1);
+    assert.equal(several.length, 23);
+    assert.equal(several.filter(([, n]) => n === 3).length, 9);
+    assert.equal(several.filter(([, n]) => n === 2).length, 14);
+
+    // One command of each, found in the archive rather than written down here: a Pronto string is one of
+    // the renderings decision 15 keeps out of this repository.
+    const wanted = new Set(several.map(([name]) => name));
+    const found = new Map<string, { keycode: string; pronto: string }>();
+    outer: for (const bucket of readdirSync(join(root, 'codesets')).sort()) {
+      for (const file of readdirSync(join(root, 'codesets', bucket)).sort()) {
+        const parsed = JSON.parse(readFileSync(join(root, 'codesets', bucket, file), 'utf8')) as {
+          commands?: { keycode: string; protocol: string; pronto?: string }[];
+        };
+        for (const command of parsed.commands ?? []) {
+          if (!wanted.has(command.protocol) || command.pronto === undefined) continue;
+          if (found.has(command.protocol)) continue;
+          found.set(command.protocol, { keycode: command.keycode, pronto: command.pronto });
+          if (found.size === wanted.size) break outer;
+        }
+      }
+    }
+    // All 23 have commands in the catalogue, asserted rather than assumed: a shrinking set here is the
+    // comparison quietly covering less.
+    assert.equal(found.size, 23);
+
+    let checked = 0;
+    for (const [family, command] of found) {
+      const both = compare(byName, family, command.keycode, command.pronto);
+      // Some of the 13 are declined by the keycode reader for a reason of their own, a segment word
+      // outside its closed set among them, and those are counted rather than asserted over.
+      if (both === undefined) continue;
+      checked += 1;
+      assert.deepEqual(both.ours, both.theirs, `${family} first transmission`);
+      if (both.theirsHeld.length > 0) {
+        assert.deepEqual(both.oursHeld, both.theirsHeld, `${family} held repetition`);
+      }
+      // **The control, and it has to bite on every one of them.** With the other rhythms dropped, a copy
+      // naming one of them throws, which is the emitter refusing rather than falling back on the frame's
+      // shape and sending a segment in the wrong rhythm. Where a family's copies all name shape 0 the
+      // block is unaffected, so this asserts on the ones that name another.
+      const protocol = byName.get(family)!;
+      const rhythm = rhythmOfDefinition(protocol);
+      assert.ok(!('refusal' in rhythm));
+      const widths = frameWidths(protocol);
+      const code = statedCode(command.keycode, widths === undefined
+        ? { bitsPerDigit: bitsPerDigit(protocol) }
+        : { widths, bitsPerDigit: bitsPerDigit(protocol) });
+      const keyCode = code === undefined ? undefined : keyCodeOfStatedCode(protocol, code);
+      if (code === undefined || keyCode === undefined) continue;
+      const built = blockOfDefinition(protocol, 1, { storedForm: false, keyCode });
+      assert.ok(!('refusal' in built));
+      const names = [...built.tail.items, ...built.held.items]
+        .some((item) => 'copy' in item && (item.shape ?? 0) > 0);
+      if (!names) continue;
+      const frames = withToggleCleared(protocol, withStatedWidths(protocol, code.frames));
+      const shape = { ...rhythm.timings === undefined ? {} : { timings: rhythm.timings },
+                      ...rhythm.biphase === undefined ? {} : { biphase: rhythm.biphase },
+                      ...rhythm.cells === undefined ? {} : { cells: rhythm.cells } };
+      assert.throws(() => pulsesOfBlock(shape, frames, built.tail),
+                    /states no rhythm/, `${family} needs its other rhythms`);
+    }
+    // Exact, so a family falling out of the comparison shows up here rather than passing quietly. One of
+    // the 23 is declined by the keycode reader, `Imon Multi2 Bit Hex`, whose codes name a segment word
+    // outside the closed set of three: that is a reading still to do and not a defect here.
+    assert.equal(checked, 22);
   });
 
 test('the three conditions the comparison honours each change the answer',

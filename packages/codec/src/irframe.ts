@@ -746,7 +746,20 @@ export type BlockTailItem =
    * second frame after its first, section 171 stage two, and the index is what makes that
    * replayable for any code of the family.
    */
-  | { readonly copy: 'full' | 'bare'; readonly at?: number }
+  | {
+    readonly copy: 'full' | 'bare';
+    readonly at?: number;
+    /**
+     * Which of the family's rhythms this copy goes out in, defaulting to the first.
+     *
+     * **A family can send more than one rhythm inside one repetition**, section 232, which is what the
+     * toggle families do: `Classe 16 Bit Toggle` sends four mode bits at a 442 microsecond half cell,
+     * then **one** bit at 880, then sixteen data bits back at 442, and the three are three segments of
+     * Logitech's own definition with three different cells. Index 0 is the shape itself and a later
+     * index is `FrameShape.also[index - 1]`.
+     */
+    readonly shape?: number;
+  }
   /** Literal words, signed microseconds: positive is a mark, negative a space. Value independent,
    * which the measurement establishes by demanding them identical across records of different
    * values, and which is the safety rail: section 152's second-code tails must never be replayed
@@ -842,16 +855,28 @@ export function pulsesOfCellFrame(t: CellTimings, bits: number, value: bigint): 
 }
 
 /**
- * The rhythm a family sends a frame in: one of the two kinds, never both.
+ * The rhythm a family sends a frame in: one of the three kinds, never two.
  *
- * Both fields are optional and both accept an explicit `undefined`, which is not laxness: the reader
- * that produces one of these answers for whichever kind the family has and `undefined` for the other,
- * so a caller passing both through is the normal case rather than a mistake.
+ * All three fields are optional and all three accept an explicit `undefined`, which is not laxness: the
+ * reader that produces one of these answers for whichever kind the family has and `undefined` for the
+ * others, so a caller passing all three through is the normal case rather than a mistake.
  */
 export interface FrameShape {
   readonly timings?: FrameTimings | undefined;
   readonly biphase?: BiphaseTimings | undefined;
   readonly cells?: CellTimings | undefined;
+  /**
+   * The **other** rhythms this family sends, for a block whose copies are not all one shape.
+   *
+   * Section 232. One repetition of `Classe 16 Bit Toggle` is four mode bits at a 442 microsecond half
+   * cell, one bit at 880 and sixteen data bits at 442, so three of Logitech's segments with three
+   * different cells go out back to back and a block naming one shape can only send a third of it. A
+   * copy item's `shape` indexes this list, offset by one because index 0 is this shape.
+   *
+   * Deliberately a list on the shape rather than a list of shapes in the signature: every existing
+   * caller has one rhythm, and a family with several is the exception rather than the general case.
+   */
+  readonly also?: readonly FrameShape[] | undefined;
 }
 
 /**
@@ -863,12 +888,18 @@ export interface FrameShape {
  * family has never stored.
  */
 export function pulsesOfBlock(
-  shape: FrameShape,
+  outer: FrameShape,
   frames: readonly { readonly bits: number; readonly value: bigint }[], tail: BlockTail,
 ): Pulse[] {
-  const copy = (kind: 'full' | 'bare', at: number): Pulse[] => {
+  const copy = (kind: 'full' | 'bare', at: number, which = 0): Pulse[] => {
     const frame = frames[at];
     if (frame === undefined) throw new Error(`the code states no frame ${at}`);
+    // **Which of the family's rhythms this copy goes out in**, section 232. Index 0 is the shape passed
+    // in and a later index is one of its `also` entries, so a block that names none behaves exactly as
+    // before. An index the shape does not hold throws rather than falling back on the first, because
+    // falling back would send a segment in another segment's rhythm and look well formed.
+    const shape = which === 0 ? outer : (outer.also ?? [])[which - 1];
+    if (shape === undefined) throw new Error(`the family states no rhythm ${which}`);
     // A cell table copy: the lead in, then one cell per symbol. A bare copy drops the lead in, which is
     // the same convention the two cell shape uses for its header.
     if (shape.cells !== undefined) {
@@ -892,7 +923,9 @@ export function pulsesOfBlock(
     return pulsesOfFrame(timings, frame.bits, frame.value);
   };
   const fixed = tail.items.reduce((n, item) => {
-    if ('copy' in item) return n + copy(item.copy, item.at ?? 0).reduce((s, p) => s + p.us, 0);
+    if ('copy' in item) {
+      return n + copy(item.copy, item.at ?? 0, item.shape ?? 0).reduce((s, p) => s + p.us, 0);
+    }
     if ('words' in item) return n + item.words.reduce((s, w) => s + Math.abs(w), 0);
     return n + item.pad;
   }, 0);
@@ -915,7 +948,7 @@ export function pulsesOfBlock(
   let pending = 0;
   for (const item of tail.items) {
     if ('copy' in item) {
-      const pulses = copy(item.copy, item.at ?? 0);
+      const pulses = copy(item.copy, item.at ?? 0, item.shape ?? 0);
       out.push(...pulses);
       sinceCopy = pending + pulses.reduce((n, one) => n + one.us, 0);
       pending = 0;

@@ -354,18 +354,27 @@ archive, since a regeneration elsewhere would silently restore the analyser's na
 section 231: 563 of Logitech's own definitions are entries marked `source: 'stated'`, for families no
 configuration here holds a record of. **The distinction is load bearing and is one field.** A stated row
 has `codes: 0`, `exact: 0` and `spread: 0`, which are the honest numbers, and no `tailExact`, since that
-counts the records that rebuilt from it and there are none. **18 of the 563 carry a whole block and 545
-do not**, section 228, so a code of those 545 can be **built and not written** and `blockOfStatedCode`
+counts the records that rebuilt from it and there are none. **22 of the 563 carry a whole block and 541
+do not**, section 228, so a code of those 541 can be **built and not written** and `blockOfStatedCode`
 refuses it.
 **139 of the rows are a sixth shape, a cell table**, section 231: 142 of their families spell a bit as a
 whole cell rather than as one of two lengths, a value being read a digit at a time with each digit
 picking one cell out of four or out of sixteen. Base four and base sixteen are **one** shape and reading
 them was one job rather than two. **Which base a family uses comes from its definition and never from
-its name**, the cell count, and a field width is then in digits and has to be multiplied out.
+its name**, the cell count, and a field width is then in digits and has to be multiplied out, **per
+segment** rather than per family.
+**A family can send several rhythms inside one press**, section 232, and 44 of theirs do: `Classe 16 Bit
+Toggle` sends four mode bits at a 442 microsecond half cell, one bit at 880 and sixteen data bits back at
+442, which is RC6's shape. A block's copy names which rhythm it goes out in and a copy naming one the
+shape does not hold **throws** rather than falling back on the first, which would send a segment in
+another's rhythm and look well formed. Refusing those families had cost 84694 catalogue commands. Two
+rules of Logitech's own came out of it and both are easy to get wrong: their **field order is `sequence`
+then `token`**, token alone being ambiguous on 103 definitions, and a **segment states its own width
+inside `Payload`**, which is the only place a secondary segment's width is stated.
 This said a stated row carries no block at all<!--superseded--> for one day: Logitech's own `KeyCode`
 field states a block's shape whole, and reading it reproduces all 29 blocks measured off their compiler
 to the microsecond. What their definitions do not state, on 645 of 684, is **how many times a repetition
-is sent**, and that is the whole reason 545 stay unwritable. It is stated for 39 families, right on all
+is sent**, and that is the whole reason 541 stay unwritable. It is stated for 39 families, right on all
 five of ours that have it, and **not defaulted**, because three would fit 22 of our 24 unstated families
 and fitting the corpus is what put three wrong names in this table to begin with. Any count of what
 reproduces a corpus record filters on `source`, and the calibration deliberately excludes stated rows,
@@ -1540,7 +1549,7 @@ make protocols     what rhythm each protocol family uses, measured off the corpu
                    names Logitech's analyser gave it, and the table that turns a code stated as a name
                    and a number into pulses. --write regenerates it. Needs a lab, no network
 make prontocheck   our own waveforms against the ones Logitech's renderer produced for every command in
-                   their catalogue, both sections of a Pronto string, sections 230 and 231. Two million commands
+                   their catalogue, both sections of a Pronto string, sections 230 to 232. Two million commands
                    in about forty seconds, needs the public archive checkout and no network and no lab,
                    and it is the strongest check the infrared encoder gets: everything else that judges
                    it is 3017 corpus codes or 35 measured families. PRONTOCHECK_ARGS=--codesets 400 for
@@ -1861,7 +1870,7 @@ file.
 | a timer fires one instruction, not a list | and its duration is clamped to sixteen bits with no error |
 | infrared duration blocks are shared | check who else names a block before editing it in place |
 | a record's three block pointers are once, held and tail | slot 1 repeats for as long as the key is down, so its trailing gap **is** the repeat rate. A duration word caps at 32767 us |
-| a frame can be written, and its tail is emitted for the families that have a rule and copied otherwise | 140 distinct tail shapes, a rule for 29<!--fact:protocol_tails--> of the rhythm table's 37<!--fact:protocol_measured--> measured entries plus 18<!--fact:protocol_tails_stated--> derived from Logitech's own statement, and none for the rest. 226 records hold a second, different code in the tail |
+| a frame can be written, and its tail is emitted for the families that have a rule and copied otherwise | 140 distinct tail shapes, a rule for 29<!--fact:protocol_tails--> of the rhythm table's 37<!--fact:protocol_measured--> measured entries plus 22<!--fact:protocol_tails_stated--> derived from Logitech's own statement, and none for the rest. 226 records hold a second, different code in the tail |
 | a record's carrier period is truncated, not rounded | `floor(1e9 / f)` nanoseconds, per record rather than per device |
 | a picture's position is implied by everything before it | inserting or resizing one moves every later address |
 | every mode page's tagged list has a second copy | nothing reads it and an editor must still change both. Its position is implied, not stated |

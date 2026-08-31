@@ -35,7 +35,7 @@
  * cares about. An entry with a spread of 0.02 will be accepted by the equipment and will not be byte
  * identical to a config Logitech built.
  */
-import type { FrameCarrier } from './irframe.ts';
+import type { FrameCarrier, FrameShape } from './irframe.ts';
 
 export interface StatedProtocol {
   /** Logitech's own name for it, as their analyser and their catalogue spell it. */
@@ -92,7 +92,12 @@ export interface StatedProtocol {
    * times a repetition is sent, since that half is stated on 39 of their 684 definitions.
    */
   readonly tail?: {
-    readonly items: readonly ({ readonly copy: 'full' | 'bare'; readonly at?: number }
+    readonly items: readonly ({
+      readonly copy: 'full' | 'bare';
+      readonly at?: number;
+      /** Which of the family's rhythms this copy goes out in, indexing `also` offset by one. */
+      readonly shape?: number;
+    }
       | { readonly words: readonly number[] }
       | { readonly pad: number })[];
     readonly total?: number;
@@ -107,7 +112,12 @@ export interface StatedProtocol {
    * this was measured over, and Toshiba's is its ditto frame alone with no copy in it.
    */
   readonly held?: {
-    readonly items: readonly ({ readonly copy: 'full' | 'bare'; readonly at?: number }
+    readonly items: readonly ({
+      readonly copy: 'full' | 'bare';
+      readonly at?: number;
+      /** Which of the family's rhythms this copy goes out in, indexing `also` offset by one. */
+      readonly shape?: number;
+    }
       | { readonly words: readonly number[] }
       | { readonly pad: number })[];
     readonly total?: number;
@@ -200,6 +210,25 @@ export interface StatedProtocol {
     readonly cells: readonly (readonly number[])[];
     readonly bits: number;
   };
+  /**
+   * The **other** rhythms this family sends, where one repetition is not all one shape.
+   *
+   * Section 232. `Classe 16 Bit Toggle` sends four mode bits at a 442 microsecond half cell, then one
+   * bit at 880, then sixteen data bits at 442, so three of Logitech's own segments with three different
+   * cells go out back to back. A copy item's `shape` indexes this list, offset by one because index 0
+   * is the row's own shape above.
+   *
+   * **Written in the emitter's own spelling and not in the row's**, deliberately: the fields above are
+   * this table's older flat spelling of one shape, and the extras are handed to `pulsesOfBlock` as they
+   * stand. Two spellings in one row is the cost of not migrating 600 rows, and `shapeOf` in
+   * `stated.ts` is the single place that joins them.
+   *
+   * **A row carrying a block whose copies name a shape must carry that shape.** That is asserted rather
+   * than assumed, because the same omission has already shipped once: `carriedFirst` was live in the
+   * reader and missing from this generator's template for one run, and seven rows then described a
+   * rhythm correctly and emitted the wrong wire.
+   */
+  readonly also?: readonly FrameShape[];
   /** How many corpus codes the entry was measured over, and how many it reproduces exactly. */
   readonly codes: number;
   readonly exact: number;
@@ -279,7 +308,7 @@ export const PROTOCOLS: readonly StatedProtocol[] = [
   { family: 'Sharp 48 Bit', periodNs: 26455, header: [3367, 1720], flat: 410, oneMark: 409, zero: 434, one: 1304, carries: 'space', codes: 1, exact: 1, spread: 0, source: 'compiled' },
   // **Stated by Logitech and measured by nobody**, converted out of their own protocol
   // definitions in the infrared archive, sections 227 and 228. `codes: 0` is the honest
-  // count: this corpus holds no record of any of these families. 18 of them carry a
+  // count: this corpus holds no record of any of these families. 22 of them carry a
   // whole block, being the ones whose definition states how many times a repetition is sent;
   // the rest carry a frame and no `tail`, so `blockOfStatedCode` refuses them. The count is
   // never guessed: see blockOfDefinition in src/archive.ts.
@@ -513,7 +542,7 @@ export const PROTOCOLS: readonly StatedProtocol[] = [
   { family: 'JVC 9 Bit', periodNs: 23255, header: [300, 1850], flat: 300, zero: 800, one: 1850, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'JVCO1 16 Bit', periodNs: 26385, header: [0, 0], flat: 527, zero: 528, one: 1583, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'JVCV1 48 Bit', periodNs: 26315, header: [4000, 2000], flat: 505, zero: 500, one: 1505, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
-  { family: 'Kathrein 16 Bit Quad Toggle', periodNs: 27501, cells: { lead: [413, -275], cells: [[165, -275], [165, -440], [165, -605], [165, -770]], bits: 2 }, codes: 0, exact: 0, spread: 0, source: 'stated' },
+  { family: 'Kathrein 16 Bit Quad Toggle', periodNs: 27501, cells: { lead: [413, -275], cells: [[165, -275], [165, -440], [165, -605], [165, -770]], bits: 2 }, tail: { items: [{ copy: 'full' }, { copy: 'full', at: 1, shape: 1 }, { copy: 'full', at: 2, shape: 2 }, { words: [165, -90345] }] }, held: { items: [{ copy: 'full' }, { copy: 'full', at: 1, shape: 1 }, { copy: 'full', at: 2, shape: 2 }, { words: [165, -90345] }] }, also: [{"timings":{"header":[0,0],"flat":165,"zero":275,"one":605,"carries":"space"}},{"cells":{"lead":[],"cells":[[165,-275],[165,-440],[165,-605],[165,-770]],"bits":2}}], codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Keene Electronics 9 Bit', periodNs: 31152, header: [2054, 1027], flat: 1027, zero: 1027, one: 2054, carries: 'mark', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Kenwood HF 32 Bit', periodNs: 2197, header: [9000, 4500], flat: 562, zero: 562, one: 1685, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Kimex 12 Bit', periodNs: 26315, header: [0, 0], flat: 400, oneMark: 1230, zero: 1280, one: 440, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
@@ -587,7 +616,7 @@ export const PROTOCOLS: readonly StatedProtocol[] = [
   { family: 'Motorola 16 Bit', periodNs: 25974, header: [4996, 2990], flat: 1000, zero: 1000, one: 3000, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Motorola 16 Bit 2', periodNs: 26666, cells: { lead: [417, -277], cells: [[154, -287], [154, -449], [154, -619], [154, -784]], bits: 2 }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Motorola 16 Bit Hex', periodNs: 26055, cells: { lead: [], cells: [[202, -772], [202, -912], [202, -1052], [202, -1192], [202, -1332], [202, -1472], [202, -1612], [202, -1752], [202, -1892], [202, -2032], [202, -2172], [202, -2312], [202, -2452], [202, -2592], [202, -2732], [202, -2872]], bits: 4 }, codes: 0, exact: 0, spread: 0, source: 'stated' },
-  { family: 'Motorola 16 Bit Quad Toggle', periodNs: 26666, cells: { lead: [417, -277], cells: [[158, -287], [158, -453], [158, -620], [158, -786]], bits: 2 }, codes: 0, exact: 0, spread: 0, source: 'stated' },
+  { family: 'Motorola 16 Bit Quad Toggle', periodNs: 26666, cells: { lead: [417, -277], cells: [[158, -287], [158, -453], [158, -620], [158, -786]], bits: 2 }, tail: { items: [{ copy: 'full' }, { copy: 'full', at: 1, shape: 1 }, { copy: 'full', at: 2, shape: 2 }, { words: [158, -16501] }] }, held: { items: [{ copy: 'full' }, { copy: 'full', at: 1, shape: 1 }, { copy: 'full', at: 2, shape: 2 }, { words: [158, -16501] }] }, also: [{"timings":{"header":[0,0],"flat":158,"zero":287,"one":620,"carries":"space"}},{"cells":{"lead":[],"cells":[[158,-287],[158,-453],[158,-620],[158,-786]],"bits":2}}], codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Motorola 31 Bit', periodNs: 25371, header: [464, 344], flat: 213, oneMark: 464, zero: 596, one: 344, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Motorola 9 Bit Quad', periodNs: 26474, cells: { lead: [5996], cells: [[-1210, 595], [-1210, 1180], [-608, 595], [-608, 1180]], bits: 2 }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Motorola HF 32 Bit', periodNs: 17730, biphase: { mark: 318, space: 325, lead: [{ mark: true, us: 2572 }, { mark: false, us: 1892 }, { mark: true, us: 635 }], setIsMark: false }, codes: 0, exact: 0, spread: 0, source: 'stated' },
@@ -617,7 +646,7 @@ export const PROTOCOLS: readonly StatedProtocol[] = [
   { family: 'ORtek 26 Bit', periodNs: 26315, biphase: { mark: 500, space: 500, lead: [{ mark: true, us: 2000 }, { mark: false, us: 500 }], setIsMark: true }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'ORtek Mouse 16 Bit', periodNs: 26315, biphase: { mark: 500, space: 500, lead: [{ mark: true, us: 2000 }, { mark: false, us: 500 }], setIsMark: true }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Pace 16 Bit Quad', periodNs: 27777, cells: { lead: [415, -275], cells: [[160, -275], [160, -445], [160, -610], [160, -775]], bits: 2 }, codes: 0, exact: 0, spread: 0, source: 'stated' },
-  { family: 'Pace 18 Bit Quad Toggle', periodNs: 27777, cells: { lead: [415, -275], cells: [[160, -275], [160, -445], [160, -610], [160, -775]], bits: 2 }, codes: 0, exact: 0, spread: 0, source: 'stated' },
+  { family: 'Pace 18 Bit Quad Toggle', periodNs: 27777, cells: { lead: [415, -275], cells: [[160, -275], [160, -445], [160, -610], [160, -775]], bits: 2 }, tail: { items: [{ copy: 'full' }, { copy: 'full', at: 1, shape: 1 }, { copy: 'full', at: 2, shape: 2 }, { words: [160, -88251] }] }, held: { items: [{ copy: 'full' }, { copy: 'full', at: 1, shape: 1 }, { copy: 'full', at: 2, shape: 2 }, { words: [160, -88251] }] }, also: [{"timings":{"header":[0,0],"flat":160,"zero":275,"one":610,"carries":"space"}},{"cells":{"lead":[],"cells":[[160,-275],[160,-445],[160,-610],[160,-775]],"bits":2}}], codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Pace 4 and 20 Bit', periodNs: 28089, biphase: { mark: 433, space: 458, lead: [], setIsMark: false }, tail: { items: [{ words: [2679, -876] }, { copy: 'full' }, { words: [-909, 879] }, { copy: 'full', at: 1 }, { words: [-123112] }] }, held: { items: [{ words: [2679, -876] }, { copy: 'full' }, { words: [-909, 879] }, { copy: 'full', at: 1 }, { words: [-123112] }] }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Pace 4 and 20 Bit Full', periodNs: 28089, biphase: { mark: 433, space: 458, lead: [], setIsMark: false }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'PaceO1 16 Bit Quad', periodNs: 27777, cells: { lead: [416, -277], cells: [[160, -277], [160, -444], [160, -611], [160, -777]], bits: 2 }, codes: 0, exact: 0, spread: 0, source: 'stated' },
@@ -678,9 +707,9 @@ export const PROTOCOLS: readonly StatedProtocol[] = [
   { family: 'QE Pulse 100K Old', periodNs: 10000, cells: { lead: [5000, -2500], cells: [[10, -2500], [20, -2500], [30, -2500], [40, -2500], [50, -2500], [60, -2500], [70, -2500], [80, -2500], [90, -2500], [100, -2500], [150, -2500], [200, -2500], [250, -2500], [300, -2500], [350, -2500], [400, -2500]], bits: 4 }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'QE Pulse Test 1', periodNs: 10000, cells: { lead: [2500, -500], cells: [[10, -500], [20, -500], [30, -500], [40, -500], [50, -500], [60, -500], [70, -500], [80, -500], [90, -500], [100, -500], [110, -500], [120, -500], [130, -500], [140, -500], [150, -500], [160, -500]], bits: 4 }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'QE Pulse Test 2', periodNs: 10000, cells: { lead: [2500, -500], cells: [[170, -500], [180, -500], [190, -500], [200, -500], [210, -500], [220, -500], [230, -500], [240, -500], [250, -500], [260, -500], [270, -500], [280, -500], [290, -500], [300, -500], [310, -500], [320, -500]], bits: 4 }, codes: 0, exact: 0, spread: 0, source: 'stated' },
-  { family: 'QE Space 100K Old', periodNs: 10000, cells: { lead: [5000, 0], cells: [[-10, 2500], [-20, 2500], [-30, 2500], [-40, 2500], [-50, 2500], [-60, 2500], [-70, 2500], [-80, 2500], [-90, 2500], [-100, 2500], [-150, 2500], [-200, 2500], [-250, 2500], [-300, 2500], [-350, 2500], [-400, 2500]], bits: 4 }, codes: 0, exact: 0, spread: 0, source: 'stated' },
-  { family: 'QE Space Test 1', periodNs: 10000, cells: { lead: [2500, 0], cells: [[-10, 500], [-20, 500], [-30, 500], [-40, 500], [-50, 500], [-60, 500], [-70, 500], [-80, 500], [-90, 500], [-100, 500], [-110, 500], [-120, 500], [-130, 500], [-140, 500], [-150, 500], [-160, 500]], bits: 4 }, codes: 0, exact: 0, spread: 0, source: 'stated' },
-  { family: 'QE Space Test 2', periodNs: 10000, cells: { lead: [2500, 0], cells: [[-170, 500], [-180, 500], [-190, 500], [-200, 500], [-210, 500], [-220, 500], [-230, 500], [-240, 500], [-250, 500], [-260, 500], [-270, 500], [-280, 500], [-290, 500], [-300, 500], [-310, 500], [-320, 500]], bits: 4 }, codes: 0, exact: 0, spread: 0, source: 'stated' },
+  { family: 'QE Space 100K Old', periodNs: 10000, cells: { lead: [5000], cells: [[-10, 2500], [-20, 2500], [-30, 2500], [-40, 2500], [-50, 2500], [-60, 2500], [-70, 2500], [-80, 2500], [-90, 2500], [-100, 2500], [-150, 2500], [-200, 2500], [-250, 2500], [-300, 2500], [-350, 2500], [-400, 2500]], bits: 4 }, codes: 0, exact: 0, spread: 0, source: 'stated' },
+  { family: 'QE Space Test 1', periodNs: 10000, cells: { lead: [2500], cells: [[-10, 500], [-20, 500], [-30, 500], [-40, 500], [-50, 500], [-60, 500], [-70, 500], [-80, 500], [-90, 500], [-100, 500], [-110, 500], [-120, 500], [-130, 500], [-140, 500], [-150, 500], [-160, 500]], bits: 4 }, codes: 0, exact: 0, spread: 0, source: 'stated' },
+  { family: 'QE Space Test 2', periodNs: 10000, cells: { lead: [2500], cells: [[-170, 500], [-180, 500], [-190, 500], [-200, 500], [-210, 500], [-220, 500], [-230, 500], [-240, 500], [-250, 500], [-260, 500], [-270, 500], [-280, 500], [-290, 500], [-300, 500], [-310, 500], [-320, 500]], bits: 4 }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'QE Time Delay A 20K', periodNs: 50000, cells: { lead: [5000, -2500], cells: [[50, -20], [100, -30], [150, -40], [200, -50], [250, -60], [300, -70], [350, -80], [400, -90], [450, -100], [500, -110], [550, -120], [600, -130], [650, -140], [700, -150], [750, -160], [5000, -2500]], bits: 4 }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'QE Time Delay A 25K', periodNs: 40000, cells: { lead: [5000, -2500], cells: [[40, -20], [80, -30], [120, -40], [160, -50], [200, -60], [240, -70], [280, -80], [320, -90], [360, -100], [400, -110], [440, -120], [480, -130], [520, -140], [560, -150], [600, -160], [5000, -2500]], bits: 4 }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'QE Time Delay A 30K', periodNs: 33333, cells: { lead: [5000, -2500], cells: [[33, -20], [66, -30], [99, -40], [132, -50], [165, -60], [198, -70], [231, -80], [264, -90], [297, -100], [330, -110], [363, -120], [396, -130], [429, -140], [462, -150], [495, -160], [5000, -2500]], bits: 4 }, codes: 0, exact: 0, spread: 0, source: 'stated' },
@@ -845,5 +874,5 @@ export const PROTOCOLS: readonly StatedProtocol[] = [
   { family: 'ZeeVee 16 Bit', periodNs: 27027, header: [3242, 648], flat: 648, zero: 648, one: 1296, carries: 'mark', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Zenega 14 Bit', periodNs: 17802, biphase: { mark: 840, space: 855, lead: [{ mark: true, us: 828 }], setIsMark: true }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'ZenegaV1 14 Bit Toggle', periodNs: 17582, biphase: { mark: 844, space: 844, lead: [{ mark: true, us: 844 }], setIsMark: false }, codes: 0, exact: 0, spread: 0, source: 'stated' },
-  { family: 'Zenith 11 Bit Quad', periodNs: 25000, cells: { lead: [], cells: [[484, -512, 484, -4096], [484, -5092], [99999], [40096]], bits: 2 }, codes: 0, exact: 0, spread: 0, source: 'stated' },
+  { family: 'Zenith 11 Bit Quad', periodNs: 25000, cells: { lead: [], cells: [[484, -512, 484, -4096], [484, -5092], [99999], [40096]], bits: 2 }, tail: { items: [{ copy: 'full' }, { words: [-116804] }, { copy: 'full', at: 1, shape: 1 }, { words: [-116804] }, { copy: 'full', at: 1, shape: 1 }, { words: [-116804] }, { copy: 'full', at: 1, shape: 1 }, { words: [-116805] }] }, held: { items: [{ copy: 'full', at: 1, shape: 1 }, { words: [-116805] }] }, also: [{"cells":{"lead":[],"cells":[[484,-512,484,-4096],[484,-5092],[472,-636,315,-4101],[40096]],"bits":2}}], codes: 0, exact: 0, spread: 0, source: 'stated' },
 ];

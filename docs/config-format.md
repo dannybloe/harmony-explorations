@@ -1938,8 +1938,8 @@ configuration in this corpus holds a record of. Such a row carries `codes: 0`, `
 `heldExact`, since those count the records that rebuilt from the row and there are none. Anything
 counting what reproduces a corpus record must exclude these rows; `source` is the field to filter on.
 
-**18<!--fact:protocol_tails_stated--> of those 563<!--fact:protocol_stated--> carry a `tail` and a `held` as well, derived rather than measured**, section 228, and
-the other 545 carry a frame and nothing after it, so `blockOfStatedCode` refuses those. A block is one
+**22<!--fact:protocol_tails_stated--> of those 563<!--fact:protocol_stated--> carry a `tail` and a `held` as well, derived rather than measured**, section 228, and
+the other 541 carry a frame and nothing after it, so `blockOfStatedCode` refuses those. A block is one
 repetition's shape plus how many repetitions go out. Logitech's `KeyCode` field states the shape whole,
 and the derivation of it reproduces all 29 blocks measured off their own compiler to the microsecond,
 which is why a derived one is believed. The count is `pressMinimumRepeats`, stated on 39 of their 684
@@ -2023,6 +2023,39 @@ merge its two neighbours in any renderer that floors a duration at one unit.
 
 139 of these are stated rows in the table. The 140th, `Galaxis 16 Bit Quad Toggle`, stays a measured row
 under the `quad` shape, which is the same idea read off a stored train instead of off a definition.
+
+#### A repetition can send several rhythms, and a copy names which
+
+Section 232. **One family can send more than one rhythm inside one press**, and 44 of Logitech's 684
+definitions do: `Classe 16 Bit Toggle` sends a lead in, four mode bits at a 442 microsecond half cell,
+**one** bit at 880 and sixteen data bits back at 442, as three segments with three different cells. This
+is RC6's shape. Our table held one rhythm per family, so a block of such a family carried a third of the
+command and the derivation refused all of them, at a cost of 84694 catalogue commands.
+
+`also` on a table row holds the family's other rhythms, in the emitter's own `FrameShape` spelling
+rather than the row's older flat one, and a block's copy item carries `shape`, an index into that list
+offset by one because index 0 is the row itself. **A copy naming a rhythm the row does not hold throws
+rather than falling back on the first**, which is the direction that matters: a fallback would send one
+segment in another's rhythm and produce a waveform that looks well formed. 481 of the 504 derivable
+blocks are one shape, 14 send two and 9 send three; four table rows carry `also`.
+
+**A lead in is part of a rhythm's identity for the two shapes that have no bare form.** A pulse timing
+copy can be emitted bare, by zeroing its header, so a segment differing only in its lead still takes the
+older route of literal words in front of a bare copy. A biphase or cell table copy has no bare form, so
+its own lead has to be its own rhythm.
+
+**A digit's width is per segment.** `Motorola 16 Bit Quad Toggle` states eight base four digits, one
+plain bit, then seven more base four digits, so one multiplier for the family is wrong for two of its
+three segments.
+
+**Which of the code's values a copy carries** is the k-th field of that group with that segment, for the
+k-th time the group names it, which reduces to counting payloads where every field names one segment.
+The field order is `sequence` then `token`, and `token` alone is ambiguous on 103 of the 681 definitions
+that state fields. Three guards are load bearing and each was measured: a position asked for needs a
+field of its own, or the payload counter is used instead; the widths repeat where a code states a whole
+multiple of them and a count that is not a whole multiple stays a refusal; and the ceiling on a frame
+index is the code's own value count, since a code may state fewer values than the definition has
+fields.
 
 | the number | what it is |
 |---|---|
