@@ -51,3 +51,6 @@ export * from './compose.ts';
 // definitions and `catalogue.ts` their device catalogue, out of the same public checkout.
 export * from './archive.ts';
 export * from './catalogue.ts';
+// Pronto Hex, which is not the archive's format but is how the comparison against it is made, and is
+// the interchange spelling anybody importing or exporting one command will reach for.
+export * from './pronto.ts';

@@ -347,16 +347,18 @@ archive, so the rhythm is looked up rather than named. What makes that believabl
 disagrees**, by two routes with nothing in common. The generator refuses to write the table without the
 archive, since a regeneration elsewhere would silently restore the analyser's names.
 
-**And the table answers for 461 families now rather than 37**, the same section's second pass: 424 of
+**And the table answers for 458 families now rather than 37**, the same section's second pass: 421 of
 Logitech's own definitions are entries marked `source: 'stated'`, for families no configuration here
 holds a record of. **The distinction is load bearing and is one field.** A stated row has `codes: 0`,
 `exact: 0` and `spread: 0`, which are the honest numbers, and no `tailExact`, since that counts the
-records that rebuilt from it and there are none. **16 of the 424 carry a whole block and 408 do not**,
-section 228, so a code of those 408 can be **built and not written** and `blockOfStatedCode` refuses it.
+records that rebuilt from it and there are none. **16 of the 421 carry a whole block and 405 do not**,
+section 228, so a code of those 405 can be **built and not written** and `blockOfStatedCode` refuses it.
+The counts were 461, 424 and 408 for a day and this file said so; three rows were withdrawn by section
+230, their rhythm being one the table's shape states **wrongly** rather than one it cannot state.
 This said a stated row carries no block at all<!--superseded--> for one day: Logitech's own `KeyCode`
 field states a block's shape whole, and reading it reproduces all 29 blocks measured off their compiler
 to the microsecond. What their definitions do not state, on 645 of 684, is **how many times a repetition
-is sent**, and that is the whole reason 408 stay unwritable. It is stated for 39 families, right on all
+is sent**, and that is the whole reason 405 stay unwritable. It is stated for 39 families, right on all
 five of ours that have it, and **not defaulted**, because three would fit 22 of our 24 unstated families
 and fitting the corpus is what put three wrong names in this table to begin with. Any count of what
 reproduces a corpus record filters on `source`, and the calibration deliberately excludes stated rows,
@@ -1530,6 +1532,13 @@ make catalogue     what Logitech's device catalogue says about the devices our o
 make protocols     what rhythm each protocol family uses, measured off the corpus against the family
                    names Logitech's analyser gave it, and the table that turns a code stated as a name
                    and a number into pulses. --write regenerates it. Needs a lab, no network
+make prontocheck   our own waveforms against the ones Logitech's renderer produced for every command in
+                   their catalogue, both sections of a Pronto string, section 230. Two million commands
+                   in about forty seconds, needs the public archive checkout and no network and no lab,
+                   and it is the strongest check the infrared encoder gets: everything else that judges
+                   it is 3017 corpus codes or 35 measured families. PRONTOCHECK_ARGS=--codesets 400 for
+                   a sample, --only '<family>' --detail to see one family's disagreements in full. Not
+                   in `make all`, since a fresh clone has no archive
 make analyze       ask Logitech's own analyser what a code in the corpus is and compare it with ours,
                    which is the only second opinion available on `irframe.ts` for a code no calibration
                    account generated. Needs HARMONY_LOGITECH_EMAIL and HARMONY_LOGITECH_PASSWORD and

@@ -84,6 +84,18 @@ export interface StatedCode {
   readonly words: readonly StatedWord[];
   /** The first value's width, which is what a code stating one value means by its width. */
   readonly bits: number;
+  /**
+   * The same items split back into the three slots the code writes them in, always three arrays and any
+   * of them possibly empty.
+   *
+   * **`items` deliberately loses the boundary and this deliberately keeps it**, because the two answer
+   * different questions. An encoder building one transmission wants the flat order, which is the order
+   * the frames go out in. A **repeat** wants the boundary: the second slot is the group a remote sends
+   * again for as long as the key is held, and section 230 measured a family where it names a different
+   * segment from the one the protocol's own default names, so a held block derived from the definition
+   * alone sends the wrong lead in.
+   */
+  readonly groups: readonly (readonly StatedItem[])[];
 }
 
 /** The words seen, as a closed set, so a fourth one is a refusal rather than a guess. */
@@ -151,35 +163,39 @@ export function statedCode(keyCode: string): StatedCode | undefined {
   // **The base the digits are written in, out of the family's own name**, like the widths. Two bits a
   // digit where the name says `Quad`, four everywhere else.
   const base = /\bQuad\b/i.test(family) ? 4 : 16;
-  // Read in slot order and keep it, since the order is the order the frames go out in.
-  const raw: ({ value: bigint; index: number } | StatedWord)[] = [];
-  for (const slot of [parsed[2]!, parsed[3]!, parsed[4]!]) {
+  // Read in slot order and keep it, since the order is the order the frames go out in. `at` records
+  // which slot each item came from, which is all `groups` needs to put the boundary back.
+  const raw: ({ value: bigint; index: number; at: number } | { word: StatedWord; at: number })[] = [];
+  for (const [at, slot] of [parsed[2]!, parsed[3]!, parsed[4]!].entries()) {
     if (slot.trim() === '') continue;
     for (const part of slot.trim().split('_')) {
-      if (WORDS.has(part)) { raw.push(part as StatedWord); continue; }
+      if (WORDS.has(part)) { raw.push({ word: part as StatedWord, at }); continue; }
       const value = /^(\d)x([0-9A-Fa-f]+)$/.exec(part);
       if (value === null) return undefined;
       const digits = value[2]!;
       // A quaternary family's digits are 0 to 3 and nothing else, so a digit outside that is a refusal
       // rather than a value read in whichever base happens to accept it.
       if (base === 4 && !/^[0-3]+$/.test(digits)) return undefined;
-      raw.push({ value: valueOf(digits, base), index: Number(value[1]) });
+      raw.push({ value: valueOf(digits, base), index: Number(value[1]), at });
     }
   }
-  const values = raw.filter((one): one is { value: bigint; index: number } => typeof one !== 'string');
+  const values = raw.filter((one): one is { value: bigint; index: number; at: number } =>
+    !('word' in one));
   if (values.length === 0) return undefined;
   if (widths.length !== 1 && widths.length !== values.length) return undefined;
   const width = (at: number): number => widths.length === 1 ? widths[0]! : widths[at]!;
   let seen = 0;
-  const items: StatedItem[] = raw.map((one) => typeof one === 'string'
-    ? { kind: 'word' as const, word: one }
+  const items: StatedItem[] = raw.map((one) => 'word' in one
+    ? { kind: 'word' as const, word: one.word }
     : { kind: 'frame' as const, frame: { value: one.value, bits: width(seen++), index: one.index } });
+  const groups: StatedItem[][] = [[], [], []];
+  for (const [at, one] of raw.entries()) groups[one.at]!.push(items[at]!);
   const frames = items.flatMap((one) => one.kind === 'frame' ? [one.frame] : []);
   // The check that makes the width pairing a reading rather than a convention. A wrong pairing puts a
   // number in a frame too narrow to hold it, and that is visible; a value read in the wrong base is too.
   if (frames.some((one) => one.value >= 1n << BigInt(one.bits))) return undefined;
   const words = items.flatMap((one) => one.kind === 'word' ? [one.word] : []);
-  return { family, items, frames, words, bits: frames[0]!.bits };
+  return { family, items, frames, words, bits: frames[0]!.bits, groups };
 }
 
 /**

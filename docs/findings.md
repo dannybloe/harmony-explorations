@@ -29121,6 +29121,12 @@ reads, and that no configuration here holds a record of, is now a row with `sour
 `codes: 0`. The table went from 37 entries to **461**, which is the difference between answering for 37
 of Logitech's families and answering for 461 of their 684.
 
+**424 and 461 are the counts of the day and they are 421 and 458 now**, section 230: three of these rows
+were withdrawn on 31 August 2026, their rhythm being one this table's shape states **wrongly** rather
+than one it cannot state, which is a worse failure than a refusal and was found by comparing against
+Logitech's own renderings. The counts below are left as they were measured, and the live figures carry a
+`fact:` marker in `docs/status.md` and `docs/config-format.md`.
+
 Three things about those rows are deliberate:
 
 * **`codes: 0`, `exact: 0` and `spread: 0` are the honest numbers in all three places**, not one flag
@@ -29130,7 +29136,7 @@ Three things about those rows are deliberate:
   nobody here had read, and reading it reproduces all 29 blocks measured off their compiler to the
   microsecond. 16 of these 424 rows carry a whole block as a result. What their definitions do not state,
   on 645 of 684, is how many times a repetition is sent, so the other 408 stay buildable rather than
-  writable. The reason given here, that what follows a frame does not follow from the bits, was true and
+  writable. 424 and 408 are 421 and 405 since section 230. The reason given here, that what follows a frame does not follow from the bits, was true and
   was the wrong reason: it does not follow from the bits and it did not have to.
 * **Every claim in `stated.test.ts` about the corpus is now scoped to the measured 37**, through one
   `MEASURED` filter, and the calibration in `archive.test.ts` excludes the stated rows for the opposite
@@ -29304,6 +29310,11 @@ A block shape is derivable for **382 of the 684 definitions**. Of the 424 stated
 derivable shape and **16<!--fact:protocol_tails_stated--> of those also state their repeat count**, so 16 rows gained a `tail` and a
 `held` and the other 408 keep a frame and nothing after it. The refusals, over all 684:
 
+**382 is 375 since section 230**, which added two refusals of its own the next day: three families whose
+constant half is not constant, where this reading was emitting a wrong waveform rather than refusing,
+and four whose copy would follow a mark. The table below is the census as it stood; the current one is
+asserted in `packages/codec/test/archive.test.ts`.
+
 | count | why no block |
 |---|---|
 | 225 | the rhythm itself could not be read, which is section 227's own census: base four, base sixteen, one interval per bit and the rest |
@@ -29449,3 +29460,156 @@ database, whatever else is done with it.
 `make catalogue` is the measurement and `packages/codec/test/catalogue.test.ts` pins its answers. The
 tests name each codeset rather than searching for it, so they run in a tenth of a second and a codeset
 that stops holding a device's codes fails by name.
+
+## 230. Two million of Logitech's own renderings, against our encoder, and five defects it found
+
+**31 August 2026.** The infrared archive carries a rendered waveform for every command in Logitech's
+catalogue: 13,293,293 of them across the devices, 2,067,863 across the distinct command sets those
+devices share. Each one was produced by somebody else's code from Logitech's own protocol definition,
+which makes it an answer key nobody here had a hand in, and nothing else that judges our infrared
+encoder is remotely that size. The corpus holds 3017 codes. The rhythms measured off Logitech's own
+compiler cover 35 families. A calibration account generated a few hundred commands. This is two
+million, over 368 families.
+
+**The result: 1,893,157 of 1,893,247 first transmissions agree exactly, and 1,111,882 of 1,111,886
+held repetitions.** 99.995% and 99.9996%, with agreement meaning every interval identical, not close.
+`make prontocheck` is the run, about forty seconds, and `packages/codec/test/pronto.test.ts` walks a
+bounded slice of it, 10,532 commands over 46 families with nothing outstanding.
+
+**What it does not test, said first.** Both sides read the same definition, so a wrong duration in
+Logitech's own data is a wrong duration in both waveforms and this comparison cannot see it. What it
+tests is us: which slot a frame comes from, mark and space order, how wide a value is, where a lead in
+belongs, which segment a repeat sends, how a pad is solved. Every one of those has been wrong here at
+least once, and five of them were wrong when this run started.
+
+### Pronto Hex, and why the comparison happens in its units
+
+An infrared command is a lamp blinking in a precise rhythm. Pronto Hex is the interchange spelling of
+that rhythm: four digit hexadecimal words, the first four a header and the rest alternating a mark and
+a space. `packages/codec/src/pronto.ts` reads and writes it, and it is a library module rather than a
+comparison tool because a product that imports or exports one command will want it.
+
+**A duration is a count of carrier cycles and not a number of microseconds**, which is the one thing a
+reader has to get right. The second header word is `round(1e6 / (hz * 0.241246))` and every later word
+is a multiple of that clock. So the comparison is made **in Pronto units**: converting their words to
+microseconds first would add a rounding of ours on top of theirs and turn exact agreement into near
+agreement. One consequence to keep: agreement here is agreement to within half a unit, which is about
+13 microseconds at 38 kHz, so a difference smaller than that is invisible to this check.
+
+**No Pronto word is ever zero, and that is a floor rather than rounding.** A word states a count of
+cycles and a count of zero states no interval, which would silently merge the two neighbours around it.
+`Nokia 11 Bit` carries a 20 microsecond mark at a 15.3 kHz carrier, where one unit is 65 microseconds,
+and Logitech's renderer writes 1 for it on all 149 of its commands. Ours wrote 0 until this was found.
+The same floor is why a section ending on a mark is padded to whole pairs with **one** unit and not
+with zero.
+
+### Three conditions the comparison honours
+
+Two are the archive's own, stated in its README, and one is ours.
+
+**The toggle bit is rendered at zero.** A handful of families, RC5 and its relatives, put one bit in the
+command that has nothing to do with which button was pressed: it flips on every press so an appliance
+can tell a second press from a held one. It is state, not identity, so a rendering has to pick a value
+and the archive picks zero on all of them. `withToggleCleared` in `packages/codec/src/archive.ts` does
+that, and **the position is counted from the top of the field**, which their own IRP string is the check
+on: `Thomson 12 Bit Toggle` states `toggleBit` 4 over 12 bits and writes `Code0A:4, T:1, Code0B:7`, so
+the toggle is the fifth bit sent and the fields either side are 4 and 7 wide. Honouring it took 429
+disagreements off the list. A writer must not use it: a real transmission alternates the bit.
+
+**The first non-empty group may be framing rather than payload**, for 4.81% of commands. That needed no
+work here, because section 159 had already read a code's two slots as a grammar and section 228 reads a
+block's cycles out of the definition's own `KeyCode`.
+
+**And the stored form is not the signal.** Logitech's compiler adds one microsecond to a block's last
+duration when it writes a configuration; their renderer does not when it produces a waveform. That is
+what `storedForm: false` turns off, and separating the two is what this exercise contributed back to
+section 228: before it, every padded family disagreed on its last word and nothing else, 96.10% against
+99.38%, and it read as our arithmetic being wrong.
+
+### The five defects
+
+**One. A frame's width comes from the definition and not from the family's name.** `statedCode` takes a
+frame's width from the name, which is where Logitech put it and which is right for 179 of the 202
+families whose codes state several values: `Akai 32 Bit` sends two frames of 32 bits each. On the other
+**23** the name states the **total**. `Daewoo 16 Bit` sends two frames of **eight**, and reading both as
+16 sends twice the bits, on every one of its 9492 commands. `frameWidths` reads the width per field out
+of `keycodeFields`, ordered by their own `token`, which settles it. 99.15% to 99.94%.
+
+**Two. A second segment states its own header, and it need not be the frame's.** Three cases occur and
+one rule covers them: the second frame of `Samsung 16 and 20 Bit` has no header at all and opens
+straight on a bit cell, `BelCanto 16 Bit`'s has 525 and 4200 where the frame's is 8400 and 4200, and
+`Sharp 15 Bit`'s cycle names the same segment twice so there is nothing to differ. Emitting the
+segment's own header as literal words and marking the copy `bare` is the fix.
+
+**Three. A command's keycode states its own cycles, and they may not be the family's default.** This is
+the correction with the sharpest edge, because the definition's `KeyCode` had only just been read and
+looked authoritative. It is the family's **default**. `RCAV1 24 Bit 2` defaults to repeating its second
+segment, whose lead in is 4000 microseconds; every one of its 815 commands writes
+`(0xE301CF)(0xE301CF)()`, both groups naming segment **0**, whose lead in is 19800, and Logitech's own
+renderer sends the 19800 in the repeat. So a held block derived from the definition alone is the wrong
+block for every code of that family. `keyCodeOfStatedCode` builds the cycles from the command, through
+`segmentRefs`, which is the join between the short ids a keycode names and the full names a definition
+uses. `StatedCode.groups` exists for it: `items` deliberately loses the slot boundary because an encoder
+building one transmission wants the flat order, and a repeat needs the boundary.
+
+**Four. How many frames a code sends is the greater of what the definition names and what the cycles
+ask for.** Taking it from `keycodeFields` alone is the failure that is hardest to see from the outside,
+because the waveform it produces is well formed, decodes cleanly, and carries the wrong number. `Revox
+11 Bit` declares **one** field and every one of its codes states **two** values, so a copy index clamped
+at zero sent the first value twice and the second never. 79 commands over six families: `Revox 11 Bit`,
+`Magnavox 13 Bit`, `Pioneer 32 Bit`, `Mitsubishi 16 Bit 2`, `Toshiba 32 Bit` and `Sony 15 Bit`, and it
+is the defect that took the held repetitions from 99.997% to 99.9996%.
+
+**Five, and it is two refusals rather than a fix.** Our table models a family whose cell states its
+**constant half last** by a shift: the emitter writes a pair as (flat, carried), the flat that opens the
+train is absorbed by the header, and every later one lands between the same two carried halves. 29 such
+families reproduce Logitech's renderings exactly on that arrangement, so the shift is sound. It has two
+edges and this comparison found both.
+
+* Where the mark **rides with its own bit**, there is no equivalence: the shift attaches each cell's
+  mark to the **previous** bit, so a set bit's longer mark goes out one position early. `Antique 12
+  Bit`, `GPX 8 Bit` and `Goelst 12 Bit` are the case and all 153 of their commands disagreed, on that
+  bit and nowhere else. `rhythmOfDefinition` refuses them now, and the three rows left the table.
+* Where a **mark comes immediately before the copy**, the leading flat merges into it and the signal is
+  wrong by the length of the flat half. `Bell 16 Bit` and `Panasonic 31 Bit` both open on a lead in
+  whose last atom is a mark and both close each copy on a mark, and all 905 of their commands disagreed
+  on that one interval. `blockOfDefinition` refuses the block now; both keep their rhythm row, since the
+  rhythm is right and only the block cannot be expressed.
+
+Refused rather than approximated, per the standing rule that a code which would be wrong is not emitted.
+The capability that would replace both refusals is one thing: a frame emitter that can put the carried
+half first. That is a change to `pulsesOfFrame` and it is not made here, because every measured row in
+the table would emit differently and the corpus is what those rows were measured against.
+
+### What is left, and it is named
+
+90 first transmissions and 4 held repetitions, over eight families.
+
+**79 of the 90 are one class: a block that pads two different frames wants a pad each.** `Roku 32 Bit 1`
+pads its start block's value and its repetition's, and the two carry a different number of set bits, so
+one shared pad splits the difference and both are wrong. 52 of its 918 commands; the other 866 agree
+because their two values happen to run the same length. `Daewoo 40 Bit` is the same shape and fails on
+all 27. **Both ways of demanding a pad per copy were tried on the whole archive and both cost more than
+they bought.** Keying on the number of pads loses 9488 commands a shared pad reproduces exactly, since a
+block padding the **same** frame twice is served correctly by one. Keying on the frames and preferring
+the per copy rule loses the same 9488 in the emitter instead: `copyPeriod` divides one pad over the
+copies too, so it refuses a period that does not come out whole. The fix is a genuine pad per copy in
+`pulsesOfBlock`, and until then a shared pad is the better of the two by 9436 commands.
+
+The remaining 11 are singletons: 3 `Quad 5 Bit`, 2 `Toshiba 32 Bit`, 2 `Sony 15 Bit`, 2 `Philips 13
+Bit`, 1 `Streamzap 14 Bit`, 1 `Game Elements 15 Bit`. The archive's README records 61 keycodes Logitech's
+own database has corrupted, which is the same order of magnitude, and nothing here has established that
+these are those.
+
+**174,616 commands are not compared and the reasons are counted, not lumped**: 72,060 where no block is
+derivable, 68,271 where our keycode reader declines the code, 33,921 where no rhythm is derivable, 240
+that the archive renders no waveform for, and 124 whose Pronto string our own reader refuses. The three
+largest are the shapes section 227 and section 228 already name as unread, chiefly the 75 base four
+families, the 67 base sixteen ones and the 35 that send one interval per bit.
+
+### What moved in the table
+
+Three stated rows were withdrawn, so it holds 458 entries rather than 461, and 421 of those are stated.
+Nothing measured changed: the 34 of 35 rhythm calibration and the 29 of 29 block calibration both still
+pass, unaltered, which is the control that says these five fixes did not buy their agreement by moving
+what our own measurements say.

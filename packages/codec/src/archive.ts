@@ -35,6 +35,7 @@ import { join } from 'node:path';
 import type {
   BiphaseTimings, BlockTail, BlockTailItem, FrameCarrier, FrameTimings, Pulse,
 } from './irframe.ts';
+import type { StatedCode, StatedItem } from './stated.ts';
 
 /**
  * The archive schema this converter was written against.
@@ -84,15 +85,18 @@ interface Definition {
    * `SegmentType` says which list a name is in, 1 an infrared segment carrying a payload and 0 a code
    * segment of literal durations.
    */
-  readonly KeyCode: {
-    readonly Start: readonly SegmentRef[] | null;
-    readonly Repeat: readonly SegmentRef[] | null;
-    readonly Finish: readonly SegmentRef[] | null;
-  } | null;
+  readonly KeyCode: ArchiveKeyCode | null;
+}
+
+/** The three cycles of a transmission: what precedes it, what repeats, and what a release sends. */
+export interface ArchiveKeyCode {
+  readonly Start: readonly SegmentRef[] | null;
+  readonly Repeat: readonly SegmentRef[] | null;
+  readonly Finish: readonly SegmentRef[] | null;
 }
 
 /** One entry of a `KeyCode` list: a segment by name, and which of the two lists to find it in. */
-interface SegmentRef {
+export interface SegmentRef {
   readonly SegmentName: string | null;
   readonly SegmentType: number;
 }
@@ -113,6 +117,8 @@ export interface ArchiveProtocol {
     readonly segment: string;
     readonly sequence: string;
     readonly toggleBit: number | null;
+    /** Their own ordering key. Object key order is not the field order and must not be relied on. */
+    readonly token: number;
   }>> | null;
   readonly logitechProtocolId: number | null;
   /** Their own name for the standard the family is a case of, `NEC1`, `Denon-K`, `SharpDVD`. */
@@ -193,7 +199,8 @@ export type ConversionRefusal =
   | 'the header is not one mark and one space'
   | 'the header has no space and the cell supplies none'
   | 'biphase, and its two cells disagree about their half cell lengths'
-  | 'neither half of the cell is constant';
+  | 'neither half of the cell is constant'
+  | 'the mark rides with the bit and the cell states it last';
 
 /**
  * The rhythm a definition states, in the terms our own table and emitter use.
@@ -371,6 +378,21 @@ export function rhythmOfDefinition(
     one = on.space;
   }
   if (zero === one) return { refusal: 'neither half of the cell is constant' };
+  // **A cell stating its constant half last is modelled by a shift, and the shift only works while that
+  // half really is constant.** Our table emits a pair as (flat, carried); a family stating (carried,
+  // flat) comes out right anyway, because the flat that opens our train is absorbed by the header and
+  // every later one lands between the same two carried halves, which is why 29 such families reproduce
+  // Logitech's own renderings exactly. Where the mark rides with its own bit there is no such
+  // equivalence: the shift attaches each cell's mark to the **previous** bit, so a set bit's longer mark
+  // is sent one position early.
+  //
+  // Measured rather than reasoned, section 230: this refuses `Antique 12 Bit`, `GPX 8 Bit` and
+  // `Goelst 12 Bit`, and those three are exactly the families whose waveforms disagreed with Logitech's
+  // renderings on 153 of 153 commands, on the bit their mark rides with and nowhere else. The
+  // capability that would replace the refusal is a frame emitter that can put the carried half first.
+  if (oneMark !== undefined && !off.markFirst) {
+    return { refusal: 'the mark rides with the bit and the cell states it last' };
+  }
 
   // A header of no atoms is [0, 0], which is a real shape rather than a sentinel: the Sharp scheme
   // opens on its first bit cell.
@@ -499,6 +521,117 @@ export function familiesOfRhythm(
   return narrowed.length === 0 ? all : narrowed;
 }
 
+/**
+ * The width of each frame a code of this family states, as the definition states them.
+ *
+ * **The family's own name is not enough and section 230 measured where it fails.** `statedCode` takes a
+ * frame's width from the name, which is where Logitech put it and which is right for 179 of the 202
+ * families whose codes state several values: `Akai 32 Bit` states two values of 32 bits each. On the
+ * other **23** the name states the **total**: `Daewoo 16 Bit` sends two frames of 8 bits, and reading
+ * both as 16 sends twice the bits, which is what comparing against Logitech's own renderings showed on
+ * every one of its 9492 commands.
+ *
+ * The definition settles it: `keycodeFields` states a width per field, and the fields are ordered by
+ * their own `token`. Returns undefined where the definition states no fields, in which case the name's
+ * width is all there is.
+ */
+export function frameWidths(protocol: ArchiveProtocol): number[] | undefined {
+  const fields = Object.values(protocol.keycodeFields ?? {});
+  if (fields.length === 0) return undefined;
+  return [...fields].sort((a, b) => a.token - b.token).map((one) => one.bits);
+}
+
+/**
+ * Every segment a definition holds, under the short id a keycode names it by.
+ *
+ * A keycode names its segments by an id and the definition names them by a full name, so this is the
+ * join between the two. The rule is Logitech's and is read off their own names: a segment called
+ * exactly the family's name is `"0"`, one whose name holds `KeyCode` is the text after that word, and
+ * anything else is the text after the family's name and a space, which is how `RCAV1 24 Bit 2 1`
+ * becomes `"1"`.
+ */
+export function segmentRefs(protocol: ArchiveProtocol): Map<string, SegmentRef> {
+  const out = new Map<string, SegmentRef>();
+  const add = (name: string | null, type: 0 | 1): void => {
+    if (name === null) return;
+    let id: string;
+    if (name === protocol.name) id = '0';
+    else if (name.includes('KeyCode')) id = name.slice(name.indexOf('KeyCode') + 'KeyCode'.length).trim();
+    else if (name.startsWith(`${protocol.name} `)) id = name.slice(protocol.name.length + 1).trim();
+    else id = name;
+    if (!out.has(id)) out.set(id, { SegmentName: name, SegmentType: type });
+  };
+  for (const one of protocol.definition.IRSegments ?? []) add(one.Name, 1);
+  for (const one of protocol.definition.CodeSegments ?? []) add(one.Name, 0);
+  return out;
+}
+
+/**
+ * The three cycles **one command** states, in the shape the definition states its own default in.
+ *
+ * **A definition's `KeyCode` is the family's default and a command may name other segments**, which is
+ * section 230's correction and which nothing here read for a while. `RCAV1 24 Bit 2` defaults to
+ * repeating its second segment, whose lead in is 4000 microseconds; every command of it in Logitech's
+ * catalogue writes `(0xE301CF)(0xE301CF)()`, both groups naming segment 0, whose lead in is 19800, and
+ * Logitech's own renderer sends the 19800 in the repeat. So a held block built from the definition alone
+ * is the family's default rather than that command's, and for this family they differ on every code.
+ *
+ * Returns undefined where a group names an id the definition does not hold, which is a refusal rather
+ * than a guess.
+ */
+export function keyCodeOfStatedCode(
+  protocol: ArchiveProtocol, code: StatedCode,
+): ArchiveKeyCode | undefined {
+  const refs = segmentRefs(protocol);
+  const group = (items: readonly StatedItem[]): SegmentRef[] | undefined => {
+    const out: SegmentRef[] = [];
+    for (const one of items) {
+      const ref = refs.get(one.kind === 'frame' ? String(one.frame.index) : one.word);
+      if (ref === undefined) return undefined;
+      out.push(ref);
+    }
+    return out;
+  };
+  const [start, repeat, finish] = [
+    group(code.groups[0] ?? []), group(code.groups[1] ?? []), group(code.groups[2] ?? []),
+  ];
+  if (start === undefined || repeat === undefined || finish === undefined) return undefined;
+  return { Start: start, Repeat: repeat, Finish: finish };
+}
+
+/**
+ * The same frames with every toggle bit cleared.
+ *
+ * **What a toggle bit is.** A handful of protocol families, RC5 and its relatives, put one bit in the
+ * command that has nothing to do with which button was pressed: it flips on every press, so an appliance
+ * can tell a second press from the same press held down. The value is state, not identity.
+ *
+ * So a **rendering** of a command has to pick one, and the archive picks zero on all 13.29 million of
+ * them, which its own README states. That is a condition on the comparison rather than a fact about the
+ * command, and honouring it took 429 disagreements off the list: 369 `Thomson 12 Bit Toggle`, 52
+ * `Videocrypt 11 Bit Toggle` and 8 `Philips RC5 13 Bit Toggle`. Section 230.
+ *
+ * **The position is counted from the top of the field**, which their own IRP string is the check on:
+ * `Thomson 12 Bit Toggle` states `toggleBit` 4 over 12 bits and writes `Code0A:4, T:1, Code0B:7`, so the
+ * toggle is the fifth bit sent and the fields either side of it are 4 and 7 wide.
+ *
+ * **A writer must not use this.** A real transmission alternates the bit, which is what
+ * `pressMinimumRepeats` repetitions of a held key need; clearing it is for reproducing a rendering.
+ */
+export function withToggleCleared(
+  protocol: ArchiveProtocol,
+  frames: readonly { readonly bits: number; readonly value: bigint }[],
+): readonly { readonly bits: number; readonly value: bigint }[] {
+  const fields = Object.values(protocol.keycodeFields ?? {}).sort((a, b) => a.token - b.token);
+  if (fields.length !== frames.length) return frames;
+  return frames.map((frame, at) => {
+    const toggle = fields[at]!.toggleBit;
+    if (toggle === null || toggle < 0 || toggle >= frame.bits) return frame;
+    const mask = 1n << BigInt(frame.bits - 1 - toggle);
+    return { ...frame, value: frame.value & ~mask };
+  });
+}
+
 /** Why a block could not be derived from a definition. Counted rather than thrown, as a refusal is. */
 export type BlockRefusal =
   | 'the rhythm itself could not be read'
@@ -506,7 +639,8 @@ export type BlockRefusal =
   | 'a release block, which our table has no slot for'
   | 'a cycle names a segment the definition does not hold'
   | 'a cycle names an infrared segment stating a different rhythm'
-  | 'a padded cycle of several frames whose shared period is not one number';
+  | 'a padded cycle of several frames whose shared period is not one number'
+  | 'a copy stating its constant half last follows a mark';
 
 /**
  * A block as our table states it, derived from a definition, plus the repeat count it stated.
@@ -538,7 +672,9 @@ export interface ArchiveBlock {
  *
  * * The block's **final duration is one microsecond longer** than the definition states. Measured on
  *   every one of the measured families that can show it, in both places it can land: the last pad where
- *   the block is padded, and the last literal word where it is not.
+ *   the block is padded, and the last literal word where it is not. **It is the stored form's and not
+ *   the signal's**, section 230, which is what `storedForm: false` turns off: Logitech's compiler adds
+ *   it when writing a configuration and their renderer does not when producing a waveform.
  * * A **padded copy** becomes a pad our emitter solves, against a block total where one repetition holds
  *   a single frame and against a per copy period where it holds several. The second branch is the two
  *   `Sharp 15` families, whose two frames differ in duration so one shared pad cannot state both.
@@ -554,10 +690,19 @@ export interface ArchiveBlock {
  */
 export function blockOfDefinition(
   protocol: ArchiveProtocol, repeats: number,
+  options: { readonly storedForm?: boolean; readonly keyCode?: ArchiveKeyCode } = {},
 ): ArchiveBlock | { readonly refusal: BlockRefusal } {
+  // **The one microsecond belongs to the stored form and not to the signal**, section 230. It is what
+  // Logitech's **compiler** writes into a configuration, measured on every block we have off it; their
+  // own **renderer**, which turns the same definition into a waveform, does not add it. Comparing our
+  // blocks against 13 million of those renderings is what separated the two, and before that separation
+  // the difference read as our being wrong by one unit on the last word of every padded family.
+  const storedForm = options.storedForm ?? true;
   const rhythm = rhythmOfDefinition(protocol);
   if ('refusal' in rhythm) return { refusal: 'the rhythm itself could not be read' };
-  const keycode = protocol.definition.KeyCode;
+  // A command's own groups where the caller has them, the family's default otherwise. See
+  // `keyCodeOfStatedCode` for why the two are not the same thing.
+  const keycode = options.keyCode ?? protocol.definition.KeyCode;
   const cycle = keycode?.Repeat ?? [];
   if (cycle.length === 0) return { refusal: 'the definition states no repeat cycle' };
   // A release block is a third block our table states no slot for, so a family that has one would be
@@ -566,7 +711,18 @@ export function blockOfDefinition(
     return { refusal: 'a release block, which our table has no slot for' };
   }
   const start = keycode?.Start ?? [];
-  const frames = Object.keys(protocol.keycodeFields ?? {}).length || 1;
+  // **How many frames the code sends, which is the greater of what the definition names and what the
+  // cycles ask for.** Taking it from `keycodeFields` alone is section 230's last correction: `Revox 11
+  // Bit` declares **one** field and every one of its codes states **two** values, so a copy index
+  // clamped at zero sent the first value twice and the second never. That is 79 commands over six
+  // families, and it is the failure that is hardest to see from the outside, because the waveform is
+  // well formed, decodes cleanly, and carries the wrong number.
+  const frames = Math.max(
+    Object.keys(protocol.keycodeFields ?? {}).length,
+    [keycode?.Start ?? [], keycode?.Repeat ?? [], keycode?.Finish ?? []]
+      .flat().filter((r) => r.SegmentType === 1).length,
+    1,
+  );
   const startPayloads = (keycode?.Start ?? []).filter((r) => r.SegmentType === 1).length;
   const infrared = protocol.definition.IRSegments ?? [];
   const literals = protocol.definition.CodeSegments ?? [];
@@ -599,12 +755,16 @@ export function blockOfDefinition(
   // One emission of a `KeyCode` entry: its items and the duration it nominally runs for, which is what
   // a block total is summed from. A payload emission's own duration is value dependent, so an unpadded
   // one contributes nothing and the block then carries no total, which is right: it has no pad either.
-  interface Emission { items: BlockTailItem[]; nominal: number | undefined; padded: boolean }
+  interface Emission {
+    items: BlockTailItem[];
+    nominal: number | undefined;
+    padded: boolean;
+  }
   let payloads = 0;
   let base = 0;
   /** How many payload copies the whole block has emitted, which is what decides the folded lead. */
   let emitted = 0;
-  const emit = (ref: SegmentRef, first: boolean): Emission | BlockRefusal => {
+  const emit = (ref: SegmentRef, first: boolean, previous?: BlockTailItem): Emission | BlockRefusal => {
     const segment = named(ref);
     if (segment === undefined) return 'a cycle names a segment the definition does not hold';
     if (ref.SegmentType !== 1) {
@@ -647,12 +807,38 @@ export function blockOfDefinition(
     emitted += 1;
     // A folded lead sits inside the first block's first copy; every later copy drops it, and so does
     // every copy of the held block, which is what `JVC 16 Bit`'s measured pair shows.
-    // A second segment carrying no header of its own sends the frame without its lead in, which is our
-    // `bare` copy: the second frame of `Samsung 16 and 20 Bit` opens straight on a bit cell.
-    const headless = segment !== frame && (segment.Header ?? []).length === 0
-      && (frame?.Header ?? []).length > 0;
-    const bare = headless || (rhythm.leadFolded && !(first && emitted === 1));
-    const items: BlockTailItem[] = [{ copy: bare ? 'bare' : 'full', ...(at === 0 ? {} : { at }) }];
+    // **A second segment states its own header, and it need not be the frame's.** Three cases occur and
+    // one rule covers them: the second frame of `Samsung 16 and 20 Bit` has no header at all and opens
+    // straight on a bit cell, `BelCanto 16 Bit`'s has a header of its own, 525 and 4200 where the frame's
+    // is 8400 and 4200, and `Sharp 15 Bit`'s cycle names the same segment twice so there is nothing to
+    // differ. A copy's header comes from the shape, which is one per family, so a header of its own is
+    // emitted as literal words and the copy is `bare`.
+    //
+    // Found by comparing against Logitech's own renderings, section 230: taking the second copy as
+    // `full` sent the frame's 8400 lead in where their renderer sends 525, on every code of the family.
+    const ownHead = (segment.Header ?? []).map((a) => (a.Type === 1 ? a.Value : -a.Value));
+    const frameHead = (frame?.Header ?? []).map((a) => (a.Type === 1 ? a.Value : -a.Value));
+    const ownHeader = segment !== frame && JSON.stringify(ownHead) !== JSON.stringify(frameHead);
+    // **The shift that models a constant half stated last needs a space in front of the copy.** Our
+    // emitter opens a copy on the flat half, and for such a family that half belongs at the **end** of
+    // the previous cell, so it only lands right where nothing carrying a level precedes it: an absorbed
+    // header, or a gap. Where a mark comes immediately before, the two merge into one longer mark and
+    // the signal is wrong by the length of the flat half.
+    //
+    // `Bell 16 Bit` and `Panasonic 31 Bit` are the case, section 230: both open on a lead in whose last
+    // atom is a mark and both close each copy on a mark, so every one of their 905 commands disagreed
+    // with Logitech's own rendering on that one interval. Refused rather than approximated.
+    if (rhythm.cellCarriedFirst && !ownHeader) {
+      const before = previous;
+      if (before !== undefined && 'words' in before) {
+        const last = before.words[before.words.length - 1];
+        if (last !== undefined && last > 0) return 'a copy stating its constant half last follows a mark';
+      }
+    }
+    const bare = ownHeader || (rhythm.leadFolded && !(first && emitted === 1));
+    const items: BlockTailItem[] = [];
+    if (ownHeader && ownHead.length > 0) items.push({ words: ownHead });
+    items.push({ copy: bare ? 'bare' : 'full', ...(at === 0 ? {} : { at }) });
     const words = closing((segment.Trailer ?? []).map((a) => (a.Type === 1 ? a.Value : -a.Value)));
     const stated = segment.TotalLength ?? 0;
     const fixed = biphaseCopy();
@@ -690,7 +876,7 @@ export function blockOfDefinition(
         // copy's header, and emitting them again sends the lead twice.
         if (rhythm.leadFolded && ref.SegmentType === 0
           && ref.SegmentName === `${protocol.name} KeyCodeStart`) continue;
-        const one = emit(ref, first);
+        const one = emit(ref, first, items[items.length - 1]);
         if (typeof one === 'string') return one;
         items.push(...one.items);
         if (one.nominal === undefined) known = false; else nominal += one.nominal;
@@ -706,7 +892,7 @@ export function blockOfDefinition(
     }
     // The one microsecond the compiler adds to a block's last duration, in whichever of the two places
     // that block ends.
-    const last = items[items.length - 1];
+    const last = storedForm ? items[items.length - 1] : undefined;
     if (last !== undefined && 'pad' in last) items[items.length - 1] = { pad: 1 };
     else if (last !== undefined && 'words' in last && last.words.length > 0) {
       const words = [...last.words];
@@ -719,9 +905,23 @@ export function blockOfDefinition(
     if (pads === 0) return { items };
     // A cycle of several frames pads each copy to its own period, since their durations differ; one
     // frame per cycle pads against a single block total.
+    //
+    // **This is where the residue of section 230's comparison lives, and it was measured rather than
+    // left as a remainder.** A block that pads **two different frames** wants a pad each: `Roku 32 Bit
+    // 1` pads its start block's value and its repetition's, and the two carry a different number of set
+    // bits, so one shared pad splits the difference and both are wrong. That is 52 of its 918 commands,
+    // and the other 866 agree because their two values happen to run the same length.
+    //
+    // **Neither way of demanding a pad per copy is an improvement, and both were tried on the whole
+    // archive.** Keying on the number of pads costs 9488 commands that a shared pad reproduces exactly,
+    // since a block padding the **same** frame twice is served correctly by one. Keying on the frames
+    // and preferring the per copy rule costs the same 9488, in the emitter rather than here: `copyPeriod`
+    // divides one pad over the copies too, so it refuses a period that does not come out whole. The fix
+    // is a genuine pad per copy in `pulsesOfBlock`, which is a change to the emitter and not to this
+    // reading, and until then a shared pad is the better of the two by 9436 commands.
     if (cyclePayloads > 1) return { items, copyPeriod: period! };
     if (!known) return 'a padded cycle of several frames whose shared period is not one number';
-    return { items, total: nominal + lead + 1 };
+    return { items, total: nominal + lead + (storedForm ? 1 : 0) };
   };
 
   // The first block is the start block then the cycle as many times as asked; the held block is one

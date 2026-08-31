@@ -735,6 +735,18 @@ export interface BlockTail {
 }
 
 /**
+ * The rhythm a family sends a frame in: one of the two kinds, never both.
+ *
+ * Both fields are optional and both accept an explicit `undefined`, which is not laxness: the reader
+ * that produces one of these answers for whichever kind the family has and `undefined` for the other,
+ * so a caller passing both through is the normal case rather than a mistake.
+ */
+export interface FrameShape {
+  readonly timings?: FrameTimings | undefined;
+  readonly biphase?: BiphaseTimings | undefined;
+}
+
+/**
  * A whole first block: the frame in its copies, the literal tail, and the pads solved.
  *
  * The one arithmetic here is the pad value: `total` minus every fixed word, divided by the number of
@@ -743,7 +755,7 @@ export interface BlockTail {
  * family has never stored.
  */
 export function pulsesOfBlock(
-  shape: { readonly timings?: FrameTimings; readonly biphase?: BiphaseTimings },
+  shape: FrameShape,
   frames: readonly { readonly bits: number; readonly value: bigint }[], tail: BlockTail,
 ): Pulse[] {
   const copy = (kind: 'full' | 'bare', at: number): Pulse[] => {

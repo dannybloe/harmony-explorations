@@ -103,7 +103,7 @@ produce a config the remote accepts and mishandles.
   for 29<!--fact:protocol_tails--> of the rhythm table's 37<!--fact:protocol_measured--> measured entries but no general rule
   behind them, and a constant total block duration explains only 31 of 41 classes. **A further
   16<!--fact:protocol_tails_stated--> entries carry a block derived from Logitech's own statement of it**, section 228, so
-  45 of the table's 461<!--fact:protocol_entries--> entries can emit a whole record and the rest can emit only a frame.
+  45 of the table's 458<!--fact:protocol_entries--> entries can emit a whole record and the rest can emit only a frame.
   A derived block matches on the wire and not necessarily word for word, since their compiler chunks a
   long gap inconsistently, so for a family we measured the measured row is still the one to write. **And 226 records
   hold a second, different code in the tail**, so copying a sibling's tail would emit the sibling's

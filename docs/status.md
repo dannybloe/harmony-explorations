@@ -397,8 +397,8 @@ video recorder and a Denon receiver.
 **A code stated as a name and a number becomes pulses**, sections 152 to 169, which is what an
 importer of Logitech's still-answering device database needs: their catalogue serves no pulse data,
 only a protocol family and a frame value. The rhythm table in `packages/codec/src/protocols.ts`
-holds 461<!--fact:protocol_entries--> entries over 461<!--fact:protocol_families--> distinct families, one entry per family, of which
-**37<!--fact:protocol_measured--> were measured here and 424<!--fact:protocol_stated--> are Logitech's own definitions converted**, section 227.
+holds 458<!--fact:protocol_entries--> entries over 458<!--fact:protocol_families--> distinct families, one entry per family, of which
+**37<!--fact:protocol_measured--> were measured here and 421<!--fact:protocol_stated--> are Logitech's own definitions converted**, section 227.
 The measured ones cover 32 of the 33 families this corpus holds a record of; the stated ones are
 families no configuration here has ever carried, so `codes: 0` on such a row is the honest number and
 `source` is what tells the two apart. 16 of the stated rows carry a whole block derived
@@ -658,6 +658,33 @@ figures common to both carry `fact:` markers, so `make facts` moves every copy t
 cannot drift apart; what a reader should not expect is two independent statements of one measurement.
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
+
+**Two million of Logitech's own waveforms, against our encoder, and it agrees on 99.995% of them**,
+section 230. The infrared archive carries a rendered waveform for every command in their catalogue,
+produced by somebody else's code from Logitech's own protocol definitions, which makes it an answer key
+two million entries long that nobody here had a hand in. **1,893,157 of 1,893,247 first transmissions
+agree exactly, and 1,111,882 of 1,111,886 held repetitions**, agreement meaning every interval identical
+rather than close. Nothing else that judges the infrared encoder is remotely that size: the corpus holds
+3017 codes and the rhythms measured off Logitech's own compiler cover 35 families.
+
+**The return is five defects it found**, which is the point rather than the percentage. A frame's width
+was taken from the family's name, and on 23 families the name states the **total** across the frames
+rather than each, so `Daewoo 16 Bit` went out at twice its bit count on all 9492 of its commands. A
+second segment states its own lead in and it need not be the frame's. A command's keycode states its own
+cycles and they may not be the family's default: every `RCAV1 24 Bit 2` command repeats the segment whose
+lead in is 19800 microseconds where its definition's default repeats the one at 4000. How many frames a
+code sends is the greater of what the definition names and what the cycles ask for, and taking it from the
+definition alone made `Revox 11 Bit` send its first value twice and its second never, which is the
+failure hardest to see from outside because the waveform is well formed and carries the wrong number.
+And a cell that states its constant half **last** is modelled here by a shift that is only valid while
+that half really is constant, so five families are **refused** now rather than emitted wrongly, a code
+that would be wrong not being emitted. `make prontocheck` is the run, about forty seconds, and it needs
+the public archive checkout and no network.
+
+**What is left is 90 first transmissions and it is named**: 79 of them are one class, a block that pads
+two different frames wanting a pad each where our emitter solves one pad per block. Both ways of forcing
+the per copy rule were measured over the whole archive and both cost 9488 commands to buy 52, so the
+shared pad stays and the fix is a change to the frame emitter.
 
 **And which remote is on the cable is read off the remote**, section 226, which was the last of the
 three things the write rails took a caller's word for. Two Harmony Ones enumerate identically, so the

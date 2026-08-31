@@ -117,16 +117,20 @@ test('every protocol definition in the archive reads or says why not', { ...skip
       ['base four, a cell is one of four lengths', 75],
       ['base sixteen, a cell is one of sixteen lengths', 67],
       ['one interval per bit, so equal bits merge on the wire', 35],
-      ['the header is not one mark and one space', 29],
+      ['the header is not one mark and one space', 27],
       ['a cell is not one mark and one space', 12],
+      // **The shift that models a constant half stated last, refused where it cannot be right**, section
+      // 230. Three of these five were read until 31 August 2026 and every one of their 153 commands
+      // disagreed with Logitech's own rendering; the other two were already refused by the header check.
+      ['the mark rides with the bit and the cell states it last', 5],
       ['biphase, and its two cells disagree about their half cell lengths', 3],
       ['no segments', 3],
       ['neither half of the cell is constant', 1],
     ]);
     // 459 read, in the two shapes our table has: 357 frames and 102 biphase. The biphase half was
     // added in section 227's second pass and is what took the reading from 357.
-    assert.equal(read, 459);
-    assert.equal(frames, 357);
+    assert.equal(read, 456);
+    assert.equal(frames, 354);
     assert.equal(biphases, 102);
     assert.equal(read + [...refusals.values()].reduce((n, one) => n + one, 0), 684);
   });
@@ -219,7 +223,7 @@ test('Logitech\'s catalogue names the four rhythms their analyser named wrongly'
 test('a rhythm can be ambiguous in the catalogue, and the width is what narrows it',
   { ...skipWithoutIrArchive() }, () => {
     const catalogue = catalogueByRhythm(IR_ARCHIVE!);
-    assert.equal(catalogue.size, 423);
+    assert.equal(catalogue.size, 420);
     // **17 rhythms are held by more than one family and they must not be collapsed.** Naming one of
     // those by its rhythm is exactly the guess the catalogue lookup replaces, so `familiesOfRhythm`
     // hands back a list and the caller keeps the name it had.
@@ -472,13 +476,15 @@ test('the repeat count is stated for five of the blocks we measured, and right o
   }
 });
 
-test('sixteen stated families carry a whole block, and the other four hundred and eight a frame', () => {
+test('sixteen stated families carry a whole block, and the other four hundred and five a frame', () => {
   // The table's own claim, checked without a checkout, since the table is committed. 16 is small and it
   // is the honest number: a stated row gets a block only where the definition states its repeat count,
   // and the other 408 stay buildable rather than writable. Four of the 408 are refused for a reason of
   // their own even so, having a release block our table states no slot for.
   const stated = PROTOCOLS.filter((one) => one.source === 'stated');
-  assert.equal(stated.length, 424);
+  // 421 and not the 424 of 31 August 2026: three families were withdrawn the same day, their rhythm
+  // being one this table's shape states wrongly rather than one it cannot state, section 230.
+  assert.equal(stated.length, 421);
   const withBlock = stated.filter((one) => one.tail !== undefined);
   assert.equal(withBlock.length, 16);
   // A block and a held block go together: one without the other would be a record half writable.
@@ -503,11 +509,11 @@ test('every definition derives a block or says why not', { ...skipWithoutIrArchi
     if ('refusal' in built) refusals.set(built.refusal, (refusals.get(built.refusal) ?? 0) + 1);
     else derived += 1;
   }
-  assert.equal(derived, 382);
+  assert.equal(derived, 375);
   assert.deepEqual([...refusals.entries()].sort((a, b) => b[1] - a[1]), [
     // The rhythm's own refusals, counted there: base four, base sixteen, one interval per bit and the
     // rest. A block cannot be read out of a frame that could not be.
-    ['the rhythm itself could not be read', 225],
+    ['the rhythm itself could not be read', 228],
     // A third block, sent on release. Our table has `tail` and `held` and nothing for it, so a family
     // with one would be emitted incomplete rather than approximately.
     ['a release block, which our table has no slot for', 40],
@@ -516,6 +522,10 @@ test('every definition derives a block or says why not', { ...skipWithoutIrArchi
     ['a cycle names an infrared segment stating a different rhythm', 16],
     ['the definition states no repeat cycle', 13],
     ['a padded cycle of several frames whose shared period is not one number', 8],
+    // **A copy whose constant half is stated last, emitted after a mark**, which merges the two into one
+    // longer mark. `Bell 16 Bit` and `Panasonic 31 Bit` are two of the four and their 905 commands all
+    // disagreed with Logitech's rendering on that interval before this refused them. Section 230.
+    ['a copy stating its constant half last follows a mark', 4],
   ]);
   assert.equal(derived + [...refusals.values()].reduce((n, one) => n + one, 0), 684);
 });

@@ -36,7 +36,7 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets silhouettes all clean protocols catalogue emitcheck myharmony-model model-pdf model-diagram model-activity model-cluster
+.PHONY: help test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets silhouettes all clean protocols prontocheck catalogue emitcheck myharmony-model model-pdf model-diagram model-activity model-cluster
 
 BENCH_PORT ?= 8731
 
@@ -67,6 +67,7 @@ help:
 	@echo "page         drive the bench page in Chrome, which is what checks the page itself"
 	@echo "activities   which activity each key starts, and which label is its name"
 	@echo "catalogue    what Logitech's device catalogue says about our own configs' devices"
+	@echo "prontocheck  our waveforms against Logitech's own renderings of two million commands"
 	@echo "devices      which devices a config drives, and what each one is called"
 	@echo "alphabets    regenerate the glyph shape table; ALPHABETS_ARGS=--write"
 	@echo "facts        check the numbers and the dead claims in the documents; facts-write fixes numbers"
@@ -271,6 +272,15 @@ model-cluster:
 
 protocols:
 	@node packages/codec/bin/protocols.ts $(PROTOCOLS_ARGS)
+
+# The strongest check our infrared encoder gets, section 230: build the waveform for every command in
+# Logitech's own catalogue and compare it against the one their renderer produced, both sections. Two
+# million commands in about forty seconds, no network and no lab, and it needs the public archive
+# checkout. Not in `make all`, since a fresh clone has no archive and the number is a research one
+# rather than a regression: PRONTOCHECK_ARGS=--codesets 400 for a sample, --only '<family>' --detail
+# for one family's disagreements in full.
+prontocheck:
+	@node packages/codec/bin/prontocheck.ts $(PRONTOCHECK_ARGS)
 
 # What Logitech's device catalogue says about the devices our own configurations drive, section 229:
 # identify every corpus device group from the numbers it sends, then name every button send out of that
