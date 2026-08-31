@@ -23031,7 +23031,7 @@ value, so padding each copy to a period and sharing one pad value are indistingu
 carries only the second. Sony's total is 135001, which is three copies at its published 45000
 microsecond frame period plus the final microsecond: the third route to that number.
 
-**29<!--fact:protocol_tails--> of the table's 37<!--fact:protocol_entries--> entries carry a `tail`**, and the counts are per entry as
+**29<!--fact:protocol_tails--> of the table's 37<!--fact:protocol_measured--> measured entries carry a `tail`**, and the counts are per entry as
 `tailExact`, whole first blocks rebuilt from the entry plus each record's own value and compared word
 for word: Toshiba 32 Bit 622 of 622 with its ditto repeat as a literal run and total 215736 constant
 across all 622; JVC 16 Bit 108 of 108; Sharp 48 Bit 2 345 of 345 with no pad at all; the biphase
@@ -29099,3 +29099,78 @@ analyser's name for the group after this project had already stopped trusting it
 without one would silently restore the analyser's names. No checkout, an environment variable pointing at
 nothing, and a schema version this reader does not know all give the same refusal and a nonzero exit, and
 that was measured with the table compared before and after to confirm it writes nothing.
+
+### The second pass: biphase, and the 424 families the corpus has never seen
+
+Written the same day, once the first pass had shown the converter could be trusted.
+
+**Biphase reads too**, which took the reading from 357 of the 684 definitions to **459**. A biphase
+family states its two cells in opposite orders out of the same two lengths, a clear bit space then mark
+and a set bit mark then space, and that is what the first pass was counting as a malformed pair. The
+polarity is read off which cell opens on a mark and it is genuinely per family: their `Magnavox 13 Bit`
+sends a set bit mark first and their `Philips RC5 13 Bit Toggle`, which their own schema also calls RC5,
+sends it space first. The lead in is the header's atoms exactly as they stand, since our table stores
+intervals rather than a count of cells.
+
+**All four of our measured biphase rows agree with their definitions**, half cells, polarity and lead in
+pulse for pulse, including `Microsoft 30 Bit`'s thirteen interval lead. So the calibration is **34 of 35
+with none disagreeing**, up from 30 of 31, and the one absence is still the dual code family.
+
+**The 424 stated entries are the payload.** Every family the catalogue defines, that this converter
+reads, and that no configuration here holds a record of, is now a row with `source: 'stated'` and
+`codes: 0`. The table went from 37 entries to **461**, which is the difference between answering for 37
+of Logitech's families and answering for 461 of their 684.
+
+Three things about those rows are deliberate:
+
+* **`codes: 0`, `exact: 0` and `spread: 0` are the honest numbers in all three places**, not one flag
+  and two placeholders. Nothing here was measured off anything.
+* **No `tail` and no `held`**, so `blockOfStatedCode` refuses them and only the frame can be built. What
+  follows a frame does not follow from the bits, section 152, and their definition states it in a form
+  this converter does not read. A stated family is a code that can be built and not yet a record that
+  can be written.
+* **Every claim in `stated.test.ts` about the corpus is now scoped to the measured 37**, through one
+  `MEASURED` filter, and the calibration in `archive.test.ts` excludes the stated rows for the opposite
+  reason: a stated row agrees with the catalogue by construction, so counting it as agreement is
+  circular and would grow more convincing the more rows were added.
+
+**Two rules of ours turn out to be common in Logitech's catalogue rather than oddities**, which is worth
+more than the rows themselves.
+
+`Logitech 24 Bit` was for a long time the only family whose set bit is the **shorter** carried half, and
+a comment in the test said so while calling it "exactly the shape of claim this project distrusts: a rule
+no counterexample could reach". Three more turned up as the corpus grew. The catalogue defines **84**
+more. So an emitter must read the polarity off the table per family, and that is no longer an inference
+from four cases out of 37.
+
+The `oneMark` shape, where the mark rides with its own cell's bit so there is no constant half at all,
+was three families out of 37 and was first read as a defect: a reader demanding one flat length refused
+all three and lost 29 catalogue commands. The catalogue defines **52** more of them.
+
+**What is still refused is 225 definitions in eight named buckets**, and naming them is the point, since
+one "could not read" bucket hides which reading to write next:
+
+| definitions | shape |
+|---|---|
+| 75 | base four, a cell is one of four lengths. `Quad` in a family's own name, and our table has a shape for it, but a definition does not state that shape's digit widths or closing gap |
+| 67 | base sixteen, a cell is one of sixteen lengths. `Hex` in the name, and there is no shape here at all |
+| 35 | one interval per bit, so equal bits merge on the wire. `ADA 40 Bit` sends a clear bit as an 833 space and a set bit as an 833 mark, so three set bits are one 2499 mark. No shape here, and a decoder cannot read one off a train without knowing the family |
+| 29 | a header this converter cannot read as a lead in |
+| 12 | a cell that is not one mark and one space |
+| 3 | biphase whose two cells differ slightly in their half cell lengths, 890/917 against 876/904. Our shape has one mark and one space, and no record here needs more |
+| 3 | no segment named for the family |
+| 1 | neither half of the cell varying |
+
+The first three are shapes rather than defects, and each needs its own reading with a calibration to
+score it against. The three biphase ones are the case for **not** inventing a field: a per bit value half
+cell could be added in an afternoon and nothing here could check it.
+
+**One question a stated family raised and the measured ones answered.** Their `3B Technology 27 Bit`
+states a lead in of a 260 mark and a 265 space, and its clear bit cell opens on a 250 space, so a code
+whose first bit is clear emits two spaces in a row. On the wire that is one 515 space and no appliance
+can tell the difference; in a stored record it is either two words or one, and this family has no record
+here to say. All four biphase families that **do** have records behave the same way on one bit value or
+the other, whichever leaves the lead in beside a like half, and each reproduces every record it was
+measured over to the microsecond, 533 records between them. So the stored form keeps the two apart and
+the emitter is already right. It is pinned by a test, because it stops being harmless the moment a block
+is derived from their definitions.

@@ -1927,6 +1927,15 @@ carriers, their definitions stating one carrier each, and the carrier is in the 
 only a rhythm at a frequency. `source` says which route measured the durations, and a row's `spread` is
 now zero throughout, the one entry that had a band having turned out to be three families.
 
+**`source: 'stated'` means Logitech states this rhythm and nobody here has measured it**, section 227.
+424 of the table's 461 entries are of that kind, converted out of their own definitions for families no
+configuration in this corpus holds a record of. Such a row carries `codes: 0`, `exact: 0` and
+`spread: 0`, which are the honest numbers rather than placeholders, and **no `tail` and no `held`**, so
+only the frame can be emitted from it and `blockOfStatedCode` refuses it. What follows a frame is not
+derivable from the bits and their definition states it in a form this converter does not read, so a
+stated family is a code that can be built and not yet a record that can be written. Anything counting
+what reproduces a corpus record must exclude these rows; `source` is the field to filter on.
+
 Two families of shape sit inside those five numbers, and both are measured off a configuration Logitech's
 own compiler produced rather than allowed for in advance, section 160:
 

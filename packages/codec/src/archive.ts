@@ -32,7 +32,7 @@
  */
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import type { FrameCarrier, FrameTimings } from './irframe.ts';
+import type { BiphaseTimings, FrameCarrier, FrameTimings, Pulse } from './irframe.ts';
 
 /**
  * The archive schema this converter was written against.
@@ -163,18 +163,28 @@ export type ConversionRefusal =
   | 'no carrier'
   | 'no segment named for the family'
   | 'no bit encodings'
-  | 'not two bit encodings'
+  | 'base four, a cell is one of four lengths'
+  | 'base sixteen, a cell is one of sixteen lengths'
+  | 'some other number of cells'
+  | 'one interval per bit, so equal bits merge on the wire'
   | 'a cell is not one mark and one space'
   | 'the header is not one mark and one space'
   | 'the header has no space and the cell supplies none'
-  | 'biphase, the bit is which half of the cell carries'
+  | 'biphase, and its two cells disagree about their half cell lengths'
   | 'neither half of the cell is constant';
 
-/** The rhythm a definition states, in the terms our own table and emitter use. */
+/**
+ * The rhythm a definition states, in the terms our own table and emitter use.
+ *
+ * **Exactly one of `timings` and `biphase` is set**, which is our table's own arrangement: a row is a
+ * frame of one cell per bit with one half constant, or it is biphase, where the bit is which half of the
+ * cell carries the carrier, and never both.
+ */
 export interface ArchiveRhythm {
   readonly family: string;
   readonly periodNs: number;
-  readonly timings: FrameTimings;
+  readonly timings?: FrameTimings;
+  readonly biphase?: BiphaseTimings;
   /** The width the family's keycode field states, or undefined where it states none. */
   readonly bits: number | undefined;
   /** The closing mark and inter frame gap the trailer states, microseconds, a space negative. */
@@ -231,12 +241,26 @@ export function rhythmOfDefinition(
   const segment = frameSegment(protocol);
   if (segment === undefined) return { refusal: 'no segment named for the family' };
 
+  // **Each refusal names a shape**, because a single "could not read" bucket hides which reading to
+  // write next. Base four is `Quad` in a family's own name and our table has a shape for it, though a
+  // definition does not state that shape's digit widths or closing gap. Base sixteen is `Hex` and there
+  // is no shape here at all.
   const encodings = segment.Payload?.Encodings ?? [];
   if (encodings.length === 0) return { refusal: 'no bit encodings' };
-  if (encodings.length !== 2) return { refusal: 'not two bit encodings' };
+  if (encodings.length === 4) return { refusal: 'base four, a cell is one of four lengths' };
+  if (encodings.length === 16) return { refusal: 'base sixteen, a cell is one of sixteen lengths' };
+  if (encodings.length !== 2) return { refusal: 'some other number of cells' };
+  // **One atom per cell is not biphase**, it is one interval per bit: `ADA 40 Bit` sends a clear bit as
+  // an 833 space and a set bit as an 833 mark, so three set bits in a row are one 2499 mark on the wire
+  // rather than three cells. Our table has no shape for it and a decoder cannot read one off a train
+  // without knowing the family, since a long interval only divides into a count if the length is known.
+  if (encodings.every((e) => (e.Atoms ?? []).length === 1)) {
+    return { refusal: 'one interval per bit, so equal bits merge on the wire' };
+  }
   const clear = encodings.find((e) => e.BitType === 0);
   const set = encodings.find((e) => e.BitType === 1);
-  if (clear === undefined || set === undefined) return { refusal: 'not two bit encodings' };
+  // Two cells that are not one clear and one set: a shape this reads nothing out of.
+  if (clear === undefined || set === undefined) return { refusal: 'some other number of cells' };
   /** A cell as its mark, its space, and whether the mark came first on the wire. */
   const cell = (e: Encoding): { mark: number; space: number; markFirst: boolean } | undefined => {
     const atoms = e.Atoms ?? [];
@@ -251,12 +275,29 @@ export function rhythmOfDefinition(
   if (off === undefined || on === undefined) {
     return { refusal: 'a cell is not one mark and one space' };
   }
-  // The two cells stating the mark in different halves is not a malformed pair, it is **biphase**:
-  // a clear bit is space then mark and a set bit is mark then space, with the same two lengths. 105 of
-  // the catalogue's families are of this kind and our table has a `biphase` shape for four of them
-  // already, so this is a reading still to be written rather than a family that cannot be expressed.
+  // **The two cells stating the mark in different halves is biphase**, not a malformed pair: one bit
+  // value is space then mark and the other mark then space, out of the same two lengths. 105 of the
+  // catalogue's families are of this kind.
+  //
+  // The polarity is read off which cell opens on a mark, and it is per family rather than a convention:
+  // Logitech's `Magnavox 13 Bit` sends a set bit mark first and their `Philips RC5 13 Bit Toggle`, which
+  // their own schema calls RC5 as well, sends it space first. The lead in is the header's atoms exactly
+  // as they stand, since our table stores intervals rather than a count of cells, and all four of the
+  // biphase rows measured here reproduce theirs pulse for pulse including a thirteen interval one.
   if (off.markFirst !== on.markFirst) {
-    return { refusal: 'biphase, the bit is which half of the cell carries' };
+    if (off.mark !== on.mark || off.space !== on.space) {
+      return { refusal: 'biphase, and its two cells disagree about their half cell lengths' };
+    }
+    const lead: Pulse[] = (segment.Header ?? []).map((a) => ({ mark: a.Type === 1, us: a.Value }));
+    const field = Object.values(protocol.keycodeFields ?? {})[0];
+    return {
+      family: protocol.name,
+      periodNs: periodOfCarrier(protocol.carrierHz),
+      biphase: { mark: on.mark, space: on.space, lead, setIsMark: on.markFirst },
+      bits: field?.bits,
+      trailer: (segment.Trailer ?? []).map((a) => (a.Type === 1 ? a.Value : -a.Value)),
+      framePeriod: undefined,
+    };
   }
 
   // Which half of the cell carries the bit. Both halves varying is the `oneMark` shape of section 170,
@@ -336,16 +377,28 @@ export function rhythmOfDefinition(
 }
 
 /**
- * The key a rhythm is looked up by: the carrier, the header and the four durations.
+ * The key a rhythm is looked up by: the carrier plus every duration the shape states.
  *
  * **Not a tolerance.** A lookup either matches Logitech's stated numbers exactly or does not match,
  * since the point of asking their catalogue is to get their answer rather than a nearby one. 653 of the
  * 684 definitions are distinct on this key alone; the width settles the rest, see `familiesOfRhythm`.
+ *
+ * A biphase key carries its **whole lead in**, which is deliberate and not thoroughness: RC6 and its
+ * relatives differ from each other in the lead and nowhere else, so a key without it would collapse
+ * families that send genuinely different signals.
  */
-export function rhythmKey(periodNs: number, timings: FrameTimings): string {
+export function rhythmKey(
+  periodNs: number, shape: { timings?: FrameTimings; biphase?: BiphaseTimings },
+): string {
+  const b = shape.biphase;
+  if (b !== undefined) {
+    return ['biphase', periodNs, b.mark, b.space, b.firstMark ?? '', b.setIsMark,
+            b.lead.map((one) => (one.mark ? one.us : -one.us)).join('+')].join('/');
+  }
+  const t = shape.timings!;
   return [
-    periodNs, timings.header[0], timings.header[1], timings.flat, timings.zero, timings.one,
-    timings.carries, timings.oneMark ?? '', timings.firstMark ?? '',
+    periodNs, t.header[0], t.header[1], t.flat, t.zero, t.one,
+    t.carries, t.oneMark ?? '', t.firstMark ?? '',
   ].join('/');
 }
 
@@ -367,7 +420,7 @@ export function catalogueByRhythm(root: string): Map<string, CatalogueFamily[]> 
   for (const protocol of archiveProtocols(root)) {
     const read = rhythmOfDefinition(protocol);
     if ('refusal' in read) continue;
-    const at = rhythmKey(read.periodNs, read.timings);
+    const at = rhythmKey(read.periodNs, read);
     out.set(at, [...(out.get(at) ?? []), { family: read.family, bits: read.bits }]);
   }
   return out;
@@ -388,10 +441,10 @@ export function catalogueByRhythm(root: string): Map<string, CatalogueFamily[]> 
 export function familiesOfRhythm(
   catalogue: Map<string, CatalogueFamily[]>,
   periodNs: number,
-  timings: FrameTimings,
+  shape: { timings?: FrameTimings; biphase?: BiphaseTimings },
   bits?: number,
 ): CatalogueFamily[] {
-  const all = catalogue.get(rhythmKey(periodNs, timings)) ?? [];
+  const all = catalogue.get(rhythmKey(periodNs, shape)) ?? [];
   if (all.length < 2 || bits === undefined) return all;
   const narrowed = all.filter((one) => one.bits === bits);
   return narrowed.length === 0 ? all : narrowed;

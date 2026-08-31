@@ -478,8 +478,16 @@ def protocol_facts():
     rows = re.split(r'\n  \{', table)[1:]
     families = [m.group(1) for m in
                 (re.search(r"family:\s*'([^']+)'", row) for row in rows) if m]
+    # **Measured and stated are two populations and the documents mean one or the other**, never the
+    # sum, section 227. A stated entry is Logitech's own definition converted, with `codes: 0`, so a
+    # sentence about what reproduces a corpus record means `protocol_measured` and a sentence about what
+    # the table can emit at all means `protocol_entries`. Both exist because on 31 August 2026 one
+    # marker served both and every sentence using it became ambiguous at once.
+    measured = [row for row in rows if "source: 'stated'" not in row]
     return {
         'protocol_entries': str(len(rows)),
+        'protocol_measured': str(len(measured)),
+        'protocol_stated': str(len(rows) - len(measured)),
         'protocol_families': str(len(set(families))),
         'protocol_tails': str(sum(1 for row in rows if re.search(r'\btail:', row))),
         'protocol_biphase': str(sum(1 for row in rows if re.search(r'\bbiphase:', row))),

@@ -100,7 +100,7 @@ produce a config the remote accepts and mishandles.
   record rebuild its frame exactly, and 52 of 58 device groups use one set of timings for every code,
   so a code stated as a bare number elsewhere can be written using a sibling code's timings. What
   follows the frame does **not** follow from the bits: 140 distinct shapes across the corpus, and a rule
-  for 29<!--fact:protocol_tails--> of the rhythm table's 37<!--fact:protocol_entries--> entries but no general rule
+  for 29<!--fact:protocol_tails--> of the rhythm table's 37<!--fact:protocol_measured--> measured entries but no general rule
   behind them, and a constant total block duration explains only 31 of 41 classes. **And 226 records
   hold a second, different code in the tail**, so copying a sibling's tail would emit the sibling's
   second command. The second code is systematic rather than authored, a complement, a near variant or a

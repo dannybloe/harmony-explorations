@@ -387,11 +387,15 @@ implies a stored 263, which the code's arithmetic turns into exactly 26.25 us.
 **A code stated as a name and a number becomes pulses**, sections 152 to 169, which is what an
 importer of Logitech's still-answering device database needs: their catalogue serves no pulse data,
 only a protocol family and a frame value. The rhythm table in `packages/codec/src/protocols.ts`
-holds 37<!--fact:protocol_entries--> entries over 37<!--fact:protocol_families--> distinct families, one entry per family, and
-covers 32 of the catalogue's 33. It said "since one family appears at two carrier frequencies"<!--superseded-->
-until 31 August 2026, which was true of the table and false about Logitech: those two entries were two
-families their analyser both called `SharpO1 48 Bit`, section 227, and their catalogue states one
-carrier per family. Each entry says which route measured it, most off configurations Logitech's own
+holds 461<!--fact:protocol_entries--> entries over 461<!--fact:protocol_families--> distinct families, one entry per family, of which
+**37<!--fact:protocol_measured--> were measured here and 424<!--fact:protocol_stated--> are Logitech's own definitions converted**, section 227.
+The measured ones cover 32 of the 33 families this corpus holds a record of; the stated ones are
+families no configuration here has ever carried, so `codes: 0` on such a row is the honest number and
+`source` is what tells the two apart. A stated row carries no measured block either, so a code of that
+family can be built and not yet written. It said "since one family appears at two carrier
+frequencies"<!--superseded--> until 31 August 2026, which was true of the table and false about
+Logitech: those two entries were two families their analyser both called `SharpO1 48 Bit`, and their
+catalogue states one carrier per family. Each entry says which route measured it, most off configurations Logitech's own
 compiler was asked to produce for appliances chosen here, and **each family is named by their own
 catalogue**, matched on the rhythm their definition states. Their analyser turned out to be a decoder
 of their own database rather than of infrared, accepting rhythms their compiler never emits, so it

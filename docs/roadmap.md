@@ -86,13 +86,21 @@ remote:
    the microsecond. The table went from 38 entries to 37 and its two route confirmations from 6 to 9,
    and no entry has a duration spread any more. The calibration that makes it believable: 30 of our 31
    frame rhythms are reproduced from their definitions field for field and none disagrees.
-2. **Convert the remaining definitions into the rhythm table**, marked per decision 15, with the two
-   numbers that say what it is worth: how many convert cleanly, and how many of those reproduce the
-   archive's own waveforms exactly. Section 227 built the converter and the calibration; what it reads
-   so far is 357 of the 684, and the refusals are counted by reason. The two biggest are shapes our
-   table already has a form for: 105 biphase families and part of the 142 stating something other than
-   two cells, which includes the base four ones. So this step is extending one reader, not starting
-   one, and its first output is the families the corpus holds no code of at all.
+2. ~~**Convert the remaining definitions into the rhythm table.**~~ **Done, 31 August 2026, section
+   227's second pass.** The converter reads **459 of the 684** definitions, frames and biphase both, and
+   **424 of them are now entries** marked `source: 'stated'` with `codes: 0`, being families no
+   configuration here holds a record of. The table went from 37 entries to 461, so it answers for 461
+   of Logitech's 684 families rather than 37. The calibration rose with it: 34 of our 35 measured
+   rhythms are reproduced from their definitions field for field, none disagreeing.
+   **What is left is a stated row's missing block.** It carries no `tail`, so a code of such a family
+   can be built and not written, and their definition does state a trailer, a total length and a repeat
+   segment. Deriving a block from those has a 35 family calibration available, which is the right size
+   of check, and it is the step that turns 424 buildable families into 424 writable ones. The three
+   shapes still unread are 75 base four, 67 base sixteen and 35 one interval per bit; each needs its
+   own reading and its own calibration, and the base four one is the only shape our table already has.
+   The second number this step was meant to produce is **not** done: nobody has yet built a waveform
+   with our encoder and compared it against the archive's own rendering of the same command, which is
+   the check that scales to millions rather than 35.
 3. **Read the device catalogue as a local device source.** This is the one that changes the product:
    the importer scoped as a large job is mostly a reader, and the naming layer arrives with it, so
    which code is volume up stops being something only two test accounts could tell us. Measure it
@@ -372,7 +380,7 @@ image is a second sample rather than a stand in. Other models are iterated on la
 
    **What is genuinely unpriced is everything after the frame.** A block repeats the frame and then goes
    quiet, and that tail is 140 distinct shapes across the corpus, with a per family rule for 29<!--fact:protocol_tails--> of the
-   rhythm table's 37<!--fact:protocol_entries--> entries since section 171 and none for the rest, so it is emitted where there is a
+   rhythm table's 37<!--fact:protocol_measured--> measured entries since section 171 and none for the rest, so it is emitted where there is a
    rule and copied
    from a record of the same appliance rather than computed. That is a smaller job and a different one:
    it needs a record to copy from, which means the catalogue import wants a configuration beside it

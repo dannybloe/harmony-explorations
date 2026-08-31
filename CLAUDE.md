@@ -330,9 +330,20 @@ and stayed the only source of a **name** for a corpus measured entry, and all th
 wrong: two held another family's durations under a name whose real carrier is 38.2 kHz, and one held
 Toshiba's under Memorex's. The catalogue **states** each family's rhythm, 684 definitions of them in the
 archive, so the rhythm is looked up rather than named. What makes that believable is the calibration:
-**30 of our 31 frame rhythms are reproduced from their own definitions field for field and none
+**34 of our 35 measured rhythms are reproduced from their own definitions field for field and none
 disagrees**, by two routes with nothing in common. The generator refuses to write the table without the
-archive, since a regeneration elsewhere would silently restore the analyser's names. The route is open: `DeviceManager/UpdateMultiple` takes an operation bag and puts a catalogue appliance on an
+archive, since a regeneration elsewhere would silently restore the analyser's names.
+
+**And the table answers for 461 families now rather than 37**, the same section's second pass: 424 of
+Logitech's own definitions are entries marked `source: 'stated'`, for families no configuration here
+holds a record of. **The distinction is load bearing and is one field.** A stated row has `codes: 0`,
+`exact: 0` and `spread: 0`, which are the honest numbers, and carries **no measured block**, so a code
+of that family can be **built and not written**: `blockOfStatedCode` refuses it. Any count of what
+reproduces a corpus record filters on `source`, and the calibration deliberately excludes stated rows,
+since a row generated out of the catalogue agrees with the catalogue by construction. Two rules of ours
+turn out to be common rather than odd, which is worth more than the rows: 84 further families send a set
+bit as the **shorter** carried half, where four cases out of 37 had made that look like an exception, and
+52 further ones have no constant half at all. The route is open: `DeviceManager/UpdateMultiple` takes an operation bag and puts a catalogue appliance on an
 account, so their service will compile a configuration containing any family we ask for and the
 durations in it are the ones their generator emits. Fifteen appliances, 1143 records, and every family
 reproduces its own durations on every one of its records. Three of them agree to the microsecond with
@@ -1810,7 +1821,7 @@ file.
 | a timer fires one instruction, not a list | and its duration is clamped to sixteen bits with no error |
 | infrared duration blocks are shared | check who else names a block before editing it in place |
 | a record's three block pointers are once, held and tail | slot 1 repeats for as long as the key is down, so its trailing gap **is** the repeat rate. A duration word caps at 32767 us |
-| a frame can be written, and its tail is emitted for the families that have a rule and copied otherwise | 140 distinct tail shapes, a rule for 29<!--fact:protocol_tails--> of the rhythm table's 37<!--fact:protocol_entries--> entries and none for the rest, and 226 records hold a second, different code in the tail |
+| a frame can be written, and its tail is emitted for the families that have a rule and copied otherwise | 140 distinct tail shapes, a rule for 29<!--fact:protocol_tails--> of the rhythm table's 37<!--fact:protocol_measured--> measured entries and none for the rest, and 226 records hold a second, different code in the tail |
 | a record's carrier period is truncated, not rounded | `floor(1e9 / f)` nanoseconds, per record rather than per device |
 | a picture's position is implied by everything before it | inserting or resizing one moves every later address |
 | every mode page's tagged list has a second copy | nothing reads it and an editor must still change both. Its position is implied, not stated |

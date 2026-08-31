@@ -26,8 +26,9 @@ import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { imagePath, IR_ARCHIVE, LAB } from '@harmony/lab';
-import { ArchiveError, catalogueByRhythm, familiesOfRhythm,
-         type CatalogueFamily } from '../src/archive.ts';
+import { ArchiveError, archiveProtocols, catalogueByRhythm, familiesOfRhythm,
+         rhythmOfDefinition, type ArchiveRhythm, type CatalogueFamily,
+         type ConversionRefusal } from '../src/archive.ts';
 import { parse, type Container } from '../src/gspm.ts';
 import { payloadOf } from '../src/ezhex.ts';
 import { statedCode } from '../src/stated.ts';
@@ -1509,16 +1510,18 @@ function nameByCatalogue(catalogue: Map<string, CatalogueFamily[]>): {
    * being asked here for the rhythm.
    */
   const named = (m: Measured, heard: string): string | undefined => {
-    if (m.timings === undefined) return undefined;
-    const hits = familiesOfRhythm(catalogue, m.periodNs, m.timings, m.bits);
+    const hits = familiesOfRhythm(catalogue, m.periodNs, m, m.bits);
     if (hits.length === 1) return hits[0]!.family;
     return hits.find((one) => one.family === heard)?.family;
   };
   for (const list of [...byEntry.values()]) {
     const { sets, shape } = representative(list);
-    if (shape.timings === undefined) continue;
+    // A biphase entry is looked up too, since section 227's second pass reads the catalogue's 105
+    // biphase definitions and our four rows agree with theirs pulse for pulse. The quad and long toggle
+    // shapes have no reading of their definitions yet, so those keep whatever name they had.
+    if (shape.timings === undefined && shape.biphase === undefined) continue;
     const was = list[0]!.family;
-    const hits = familiesOfRhythm(catalogue, shape.periodNs, shape.timings, shape.bits);
+    const hits = familiesOfRhythm(catalogue, shape.periodNs, shape, shape.bits);
     if (hits.length === 0) absent.push(was);
     else if (hits.length > 1 && !hits.some((one) => one.family === was)) {
       ambiguous.push({ from: was, among: hits.map((one) => one.family) });
@@ -1856,7 +1859,7 @@ export interface StatedProtocol {
    * A documented entry has \`codes: 0\` because it was measured over none, which is the honest number
    * and not a placeholder. What it has instead is \`readBack\`.
    */
-  readonly source: 'corpus' | 'compiled' | 'both' | 'documented';
+  readonly source: 'corpus' | 'compiled' | 'both' | 'documented' | 'stated';
   /**
    * Catalogue codes emitted with this rhythm that Logitech's own analyser decoded back to the exact
    * number they were built from.
@@ -1994,6 +1997,54 @@ if (write) {
         : ` sections: [${t.sections.join(', ')}], sectionSpace: ${t.sectionSpace}, closing: ${t.closing},`}`
       + tail;
   }).join('\n');
+  /**
+   * The families Logitech states a rhythm for and this corpus holds no record of.
+   *
+   * **`source: 'stated'`, `codes: 0` and `exact: 0` are the honest numbers, not placeholders.** Nothing
+   * here was measured off a remote or off a configuration: it is Logitech's own definition, converted,
+   * and the reason to believe it is the calibration in `test/archive.test.ts`, where 34 of the 35
+   * families we did measure are reproduced from their definitions field for field with none disagreeing.
+   * A caller that needs to know the difference reads `source`.
+   *
+   * **A stated row carries no `tail` and no `held`**, so `blockOfStatedCode` refuses it and only the
+   * frame can be emitted. That is deliberate: what follows a frame does not follow from the bits,
+   * section 152, and their definition states it in a form this converter does not read yet. So a stated
+   * family is a code that can be built and not yet a record that can be written.
+   *
+   * Ordered by family name so the generated file's diff is stable, since the filesystem's order is not.
+   */
+  const measured = new Set(entries.map((e) => e.family));
+  const stated: ArchiveRhythm[] = [];
+  const refused = new Map<ConversionRefusal, number>();
+  for (const one of archiveProtocols(IR_ARCHIVE!)) {
+    const read = rhythmOfDefinition(one);
+    if ('refusal' in read) { refused.set(read.refusal, (refused.get(read.refusal) ?? 0) + 1); continue; }
+    if (measured.has(read.family)) continue;
+    stated.push(read);
+  }
+  stated.sort((a, b) => a.family.localeCompare(b.family));
+  const statedOut = stated.map((e) => {
+    const head = `  { family: '${e.family.replace(/'/g, "\\'")}', periodNs: ${e.periodNs}, `;
+    const tail = ` codes: 0, exact: 0, spread: 0, source: 'stated' },`;
+    const b = e.biphase;
+    if (b !== undefined) {
+      const lead = b.lead.map((one) => `{ mark: ${one.mark}, us: ${one.us} }`).join(', ');
+      return `${head}biphase: { mark: ${b.mark}, space: ${b.space}, `
+        + `lead: [${lead}], setIsMark: ${b.setIsMark} },${tail}`;
+    }
+    const t = e.timings!;
+    return `${head}header: [${t.header[0]}, ${t.header[1]}], flat: ${t.flat}, `
+      + `${t.firstMark === undefined ? '' : `firstMark: ${t.firstMark}, `}`
+      + `${t.oneMark === undefined ? '' : `oneMark: ${t.oneMark}, `}`
+      + `zero: ${t.zero}, one: ${t.one}, carries: '${t.carries}',`
+      + `${e.framePeriod === undefined ? '' : ` framePeriod: ${e.framePeriod},`}${tail}`;
+  }).join('\n');
+  const statedBlock = stated.length === 0 ? '' :
+    `\n  // **Stated by Logitech and measured by nobody**, converted out of their own protocol`
+    + `\n  // definitions in the infrared archive, section 227. \`codes: 0\` is the honest count: this`
+    + `\n  // corpus holds no record of any of these families. No \`tail\`, so only the frame can be`
+    + `\n  // emitted and \`blockOfStatedCode\` refuses them.\n${statedOut}`;
+
   const seedsOut = DOCUMENTED.map((e) =>
     `  { family: '${e.family}', periodNs: ${e.periodNs}, `
     + `header: [${e.header[0]}, ${e.header[1]}], flat: ${e.flat}, zero: ${e.zero}, one: ${e.one}, `
@@ -2006,7 +2057,13 @@ if (write) {
     `\n  // Documented rather than measured, see DOCUMENTED in bin/protocols.ts. \`codes: 0\` is the`
     + `\n  // honest count: the corpus holds no record of these families at all.\n${seedsOut}`;
   writeFileSync(out,
-    `${GENERATED}\nexport const PROTOCOLS: readonly StatedProtocol[] = [\n${rowsOut}${documentedOut}\n];\n`);
+    `${GENERATED}\nexport const PROTOCOLS: readonly StatedProtocol[] = [\n`
+    + `${rowsOut}${documentedOut}${statedBlock}\n];\n`);
+  console.log(`\n${stated.length} stated entries converted out of Logitech's own definitions, `
+    + `${[...refused.values()].reduce((n, one) => n + one, 0)} definitions refused:`);
+  for (const [why, n] of [...refused.entries()].sort((a, b) => b[1] - a[1])) {
+    console.log(`  ${String(n).padStart(4)}  ${why}`);
+  }
   console.log(`\n${entries.length} measured and ${DOCUMENTED.length} documented entries `
     + 'written to src/protocols.ts');
 }

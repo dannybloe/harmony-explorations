@@ -22,16 +22,44 @@ import { LAB, skipWithoutLab } from '@harmony/lab';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-test('the table states thirty seven entries, and what each is worth is its provenance', () => {
+/**
+ * The entries somebody here measured, which is what every claim in this file about the corpus is about.
+ *
+ * **A stated entry must never be counted with them.** Those 424 rows are Logitech's own definitions
+ * converted, section 227, with `codes: 0` because nothing here has a record of them, so folding them
+ * into a measured total would report evidence that does not exist. The one test that compares the two is
+ * `archive.test.ts`, and it excludes stated rows for the opposite reason: a stated row agrees with the
+ * catalogue by construction, so counting it as agreement is circular.
+ */
+const MEASURED = PROTOCOLS.filter((one) => one.source !== 'stated');
+const STATED = PROTOCOLS.filter((one) => one.source === 'stated');
+
+test('the table states four hundred and sixty one entries, of which thirty seven are measured', () => {
   // Exact, per the house rule: a floor would absorb an entry falling out of the generator, and the
   // number moves only when somebody regenerates it, and then it moves in the diff.
-  assert.equal(PROTOCOLS.length, 37);
+  assert.equal(PROTOCOLS.length, 461);
+  assert.equal(MEASURED.length, 37);
+  // **424 families this project has never seen a record of**, converted out of Logitech's own protocol
+  // definitions on 31 August 2026, section 227. They are what makes a device from their catalogue
+  // writable at all: before them the table answered for 37 families out of the 684 they define.
+  assert.equal(STATED.length, 424);
+  // A stated row has no evidence and says so, in all three numbers rather than in one.
+  for (const one of STATED) {
+    assert.deepEqual([one.codes, one.exact, one.spread], [0, 0, 0], one.family);
+    assert.equal(one.tail, undefined, `${one.family} has no measured block`);
+    assert.equal(one.held, undefined, one.family);
+  }
+  // Both shapes convert, which is what the second pass of section 227 added: 97 of the 424 are biphase,
+  // where the bit is which half of the cell carries the carrier.
+  assert.equal(STATED.filter((one) => one.biphase !== undefined).length, 97);
+  assert.equal(STATED.filter((one) => one.header !== undefined).length, 327);
   // **Three provenances, and they are three different strengths of claim.** `corpus` is a record some
   // remote was really carrying, whose family came from Logitech's analyser naming our decoding of it.
   // `compiled` is a record their own compiler produced on request, whose family their own catalogue
   // states, so no decoder of anyone's is involved at either end. `both` is the one to look for: two
   // routes with no shared code landing on the same durations.
   const count = (source: string) => PROTOCOLS.filter((one) => one.source === source).length;
+  assert.equal(count('stated') + MEASURED.length, PROTOCOLS.length);
   // **Three sittings on 24 August 2026 took this from 21 entries to 27**, and the middle one cost a
   // provenance that the third one bought back: `Microsoft 30 Bit` fell from `both` to `corpus` when the
   // first sample's catalogue capture was overwritten and had to be rebuilt without the account's own
@@ -68,7 +96,14 @@ test('the table states thirty seven entries, and what each is worth is its prove
   // durations. They were the same family twice, and Logitech's own definition says which one: their
   // real `SharpO1 48 Bit` is a 38.2 kHz protocol with a 20500 gap, and neither row was that.
   assert.equal(new Set(PROTOCOLS.map((one) => one.family)).size, PROTOCOLS.length);
-  assert.equal(PROTOCOLS.filter((one) => one.family === 'SharpO1 48 Bit').length, 0);
+  // **And the real `SharpO1 48 Bit` is in the table now**, which says it better than its absence did:
+  // one entry, stated by Logitech rather than measured, at the 38.2 kHz their definition gives it and
+  // with the 20500 microsecond closing gap neither of the two rows that wore its name had.
+  const real = PROTOCOLS.filter((one) => one.family === 'SharpO1 48 Bit');
+  assert.equal(real.length, 1);
+  assert.equal(real[0]!.source, 'stated');
+  assert.equal(real[0]!.periodNs, 26178);
+  assert.equal(MEASURED.filter((one) => one.family === 'SharpO1 48 Bit').length, 0);
   // What their analyser called each renamed rhythm is kept, since that is the evidence for section
   // 160's claim that it is not to be trusted for a rhythm, and a claim with no case is not checkable.
   assert.deepEqual(PROTOCOLS.filter((one) => one.heardAs !== undefined)
@@ -108,9 +143,10 @@ test('the table states thirty seven entries, and what each is worth is its prove
   // The band machinery stays, because it is what would show a family whose remotes really do disagree;
   // it is simply doing no work today, and an entry with a spread is now a signal rather than a fact of
   // life.
-  assert.deepEqual(PROTOCOLS.filter((one) => one.spread > 0).map((one) => one.family), []);
-  // So every entry reproduces every code of its own rows to the microsecond, all 37 of them.
-  assert.equal(PROTOCOLS.filter((one) => one.exact === one.codes).length, 37);
+  assert.deepEqual(MEASURED.filter((one) => one.spread > 0).map((one) => one.family), []);
+  // So every measured entry reproduces every code of its own rows to the microsecond, all 37 of them.
+  assert.equal(MEASURED.filter((one) => one.exact === one.codes).length, 37);
+  assert.equal(MEASURED.reduce((n, one) => n + one.codes, 0), 3017);
 
   // **A family whose codes share their first frame with a sibling's is still its own entry**, which is
   // what the generator joining on the whole code bought. `Pioneer 32 Bit 2` and `Pioneer 32 Bit Dual`
@@ -186,18 +222,28 @@ test('the table states thirty seven entries, and what each is worth is its prove
   // the 5480 space and its clear bit the 8310 one, 42 of 42 exact. **`Panasonic 16 Bit` is the fourth**,
   // section 170: it states the complement of a JVC frame the same appliance also carries, and the two
   // records are told apart by the lead in the catalogue's own Start word states for JVC and not for it.
-  const inverted = PROTOCOLS.filter((one) => (one.zero ?? 0) > (one.one ?? 0));
+  const inverted = MEASURED.filter((one) => (one.zero ?? 0) > (one.one ?? 0));
   assert.deepEqual(inverted.map((one) => [one.family, one.zero, one.one]),
                    [['Logitech 24 Bit', 1000, 500], ['RCAV1 LF 24 Bit', 2010, 1010],
                     ['Short 11 Bit 2', 8310, 5480], ['Panasonic 16 Bit', 1575, 527]]);
+  // **And the "rule no counterexample could reach" now has 84 of them**, which is what the stated
+  // entries are worth beyond their own rows: Logitech's catalogue defines 84 further families whose set
+  // bit is the **shorter** carried half. So an emitter must read the polarity off the table for every
+  // family and can never assume the common direction, and that is no longer an inference from four
+  // cases out of 37.
+  assert.equal(STATED.filter((one) => (one.zero ?? 0) > (one.one ?? 0)).length, 84);
 
   // **Three families carry two (mark, space) pairs instead of one flat**, section 170, and the field
   // that says so is `oneMark`, the set cell's own mark. Named as a set: a fourth appearing means a new
   // family took this shape, and one dropping out means a reader stopped seeing the correlation.
-  const twoMark = PROTOCOLS.filter((one) => one.oneMark !== undefined);
+  const twoMark = MEASURED.filter((one) => one.oneMark !== undefined);
   assert.deepEqual(twoMark.map((one) => [one.family, one.flat, one.oneMark]),
                    [['MemorexV2 32 Bit Dual', 560, 594], ['Panasonic 16 Bit', 521, 525],
                     ['Sharp 48 Bit', 410, 409]]);
+  // 52 stated families take the same shape, so the three above are three cases of something common in
+  // Logitech's catalogue rather than three oddities, which is the reverse of how they were first read:
+  // a reader demanding one flat length refused all three and lost 29 catalogue commands.
+  assert.equal(STATED.filter((one) => one.oneMark !== undefined).length, 52);
   // And each is exact on its own records, which for `Sharp 48 Bit` is what the one length rail refused
   // for a day: its two marks are one microsecond apart and still perfectly correlated with the bit.
   for (const one of twoMark) assert.equal(one.exact, one.codes, one.family);
@@ -468,10 +514,13 @@ test('twenty nine entries state their whole block, and the counts are per family
     .map((one) => [one.family, one.tailExact, one.codes] as const);
   // The eight without one are named, because a family in the table with no measured block is a family
   // a writer cannot emit a repeat for, which is worth seeing rather than inferring from a shorter list.
-  assert.deepEqual(PROTOCOLS.filter((one) => one.tail === undefined).map((one) => one.family),
+  assert.deepEqual(MEASURED.filter((one) => one.tail === undefined).map((one) => one.family),
                    ['Kreatel IP 22 Bit', 'Galaxis 16 Bit Quad Toggle',
                     'Philips Hurd 16 Bit LongToggle', 'MitsubishiO1 Dual 8 16 Bit', 'Samsung 38 Bit',
                     'Roku 32 Bit 1', 'Panasonic 16 Bit', 'Sharp 48 Bit']);
+  // Every stated entry is also without one, which is why they are excluded above rather than absorbed:
+  // a list of 432 names would have stopped being a check anybody reads.
+  assert.equal(STATED.filter((one) => one.tail !== undefined).length, 0);
   assert.deepEqual([...tailed].sort((a, b) => a[0].localeCompare(b[0]) || (a[2] - b[2])), [
     ['JerroldO1 16 Bit', 47, 47],
     ['JVC 16 Bit', 108, 108],
