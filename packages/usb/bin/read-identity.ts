@@ -1,11 +1,34 @@
 /**
- * Read a connected remote's version block and print it. Read only, one command.
+ * Read a connected remote's version block and print it, and optionally record which unit it is.
  *
  *   node packages/usb/bin/read-identity.ts
  *   node packages/usb/bin/read-identity.ts --product 0xc121
+ *   node packages/usb/bin/read-identity.ts --product 0xc121 --record one_spare
  *
- * `GET_VERSION` and nothing else, which is one of the three commands on the read only allow list in
+ * `GET_VERSION` by default, which is one of the three commands on the read only allow list in
  * `protocol.ts`, so the guarded transport passes it without any authorisation being issued.
+ *
+ * ## `--record <label>`, which is the other identity a remote has
+ *
+ * The version block says which **model** this is and nothing about which **unit**: two Harmony Ones
+ * report identical blocks, which is the whole reason the write rails could not tell them apart.
+ * Section 226. `--record` adds one `READ_FLASH` of the 64 byte identity block in the remote's own
+ * program memory and writes it to `../lab/units/<label>.txt`, which is what those rails compare a
+ * connected remote against.
+ *
+ * Three things about it are deliberate.
+ *
+ * It **writes the file rather than printing the value**, and prints eight characters of it. That
+ * value identifies a specific piece of somebody's hardware, so it belongs in the private lab and not
+ * in a terminal log that gets pasted into an issue. `read-file.ts` carries the same rule.
+ *
+ * It **refuses a block that does not identify a unit**. The field named the serial is `0xEE` on every
+ * remote read here, so a block can be present, well formed and useless; recording one would give the
+ * rails something to compare that matches every unit.
+ *
+ * And it **refuses to overwrite a different value** without `--force`. A label pointing at the wrong
+ * unit is worse than a label pointing at nothing, since the rail would then permit writes to whatever
+ * was recorded last.
  *
  * **Why this exists.** `readVersion` has been the library's identity reader since 21 August 2026 and
  * had no command line at all: the only way to see what a remote reports was `make probe`, which
@@ -21,7 +44,18 @@
  *
  * Nothing is written and no rail is touched; see `packages/usb/src/rails.ts`.
  */
-import { HarmonyRemote, listHarmony, openHarmony } from '../src/index.ts';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname } from 'node:path';
+
+import { unitIdentity, unitIdentityPath } from '@harmony/lab';
+
+import {
+  HarmonyRemote,
+  identifiesAUnit,
+  listHarmony,
+  openHarmony,
+  unitIdentityText,
+} from '../src/index.ts';
 import { VERSION_FIELD_NAMES, readVersion } from '../src/protocol.ts';
 
 function argument(name: string): string | undefined {
@@ -32,6 +66,12 @@ function argument(name: string): string | undefined {
 function fail(message: string): never {
   process.stderr.write(`${message}\n`);
   process.exit(1);
+}
+
+const record = argument('record');
+const force = process.argv.includes('--force');
+if (record !== undefined && !/^[a-z0-9_]+$/.test(record)) {
+  fail(`--record takes a label of lower case letters, digits and underscores, not ${record}`);
 }
 
 const wanted = argument('product');
@@ -85,6 +125,41 @@ try {
   for (const [index, byte] of fields.entries()) {
     const name = VERSION_FIELD_NAMES[index] ?? 'unidentified';
     process.stdout.write(`  ${String(index).padStart(2)}  0x${byte.toString(16).padStart(2, '0')}  ${name}\n`);
+  }
+
+  if (record !== undefined) {
+    // One more read, of internal program memory rather than the config flash. The count is 64 and
+    // even, which is a rail: an internal read of an odd count never terminates, section 94.
+    const block = await remote.readUnitIdentity();
+    if (!identifiesAUnit(block)) {
+      fail('\nthis remote\'s identity block carries no per unit value: its two GUID fields are '
+        + 'uniform filler, so recording it would give the write rails something that matches every '
+        + 'unit. Refusing. The field named the serial is 0xEE on every remote read here and is not '
+        + 'an identifier.');
+    }
+    const text = unitIdentityText(block);
+    const existing = unitIdentity(record);
+    if (existing !== undefined && existing !== text && !force) {
+      fail(`\n${unitIdentityPath(record)} already records a different unit. Refusing: a label `
+        + 'pointing at the wrong remote is worse than one pointing at nothing, because the rails '
+        + 'would then permit a write to whatever was recorded last. Pass --force if this label '
+        + 'really should move to the remote on the cable.');
+    }
+    const path = unitIdentityPath(record);
+    if (path.startsWith('<no lab>')) fail('\nno lab directory, so there is nowhere to record it');
+    mkdirSync(dirname(path), { recursive: true });
+    const now = new Date().toISOString().slice(0, 10);
+    writeFileSync(path,
+      `# ${record}: product 0x${found.productId.toString(16)}, firmware ${reading.firmware}, `
+      + `skin ${reading.skin}, architecture ${reading.architecture}\n`
+      + `# read ${now} by packages/usb/bin/read-identity.ts --record ${record}\n`
+      + `# the two GUIDs of the identity block at internal page 0xff offset 0xf400, section 226\n`
+      + `${text}\n`);
+    process.stdout.write(`\nunit identity ${text.slice(0, 8)}..., ${existing === text
+      ? 'unchanged' : 'recorded'} in ${path}\n`);
+    // A read back, because a file the rails depend on is worth checking rather than assuming.
+    const back = readFileSync(path, 'utf8');
+    if (!back.includes(text)) fail('the recorded file does not contain what was read');
   }
 } finally {
   remote.close();

@@ -647,8 +647,9 @@ look at how their software does it before working out how it should be done. The
 that the field actually named the serial is `0xEE` on every remote read here, so comparing it matches
 every unit against every other and says yes with confidence. The values live in the private lab and
 FreeHarmony will keep them with the user's own data; the contribution probe still emits none, because
-its report is published by other people. **One read per remote is what is left**, and until it happens
-the rail refuses, which is the correct default.
+its report is published by other people. **Exercised on the spare the same day**: it identifies the
+unit, the rehearsal's dry run matches it against the recorded value, and both refusals were shown to
+bite, a record changed by one character and a record missing altogether. All reads, nothing written.
 
 **The compatibility gate is performed rather than asserted**, section 225, which is the one write
 rail with a specific job: refusing a configuration built for a different remote. It took a boolean and

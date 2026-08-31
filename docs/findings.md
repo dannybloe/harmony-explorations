@@ -28927,11 +28927,31 @@ Both read the identity block now and both refuse when the lab holds no recorded 
 correct default: with no record there is nothing to compare against, and that is exactly when a write
 must not proceed.
 
-### What is left
+### Measured on the spare, the same day
 
-Nothing on the bench has been read yet, so the lab holds no identity for any unit and both scripts
-refuse. That is one read per remote and no write, and until it is done this rail is implemented and
-unexercised on hardware.
+The paragraph here said the rail was implemented and unexercised. It is exercised now, on the spare
+Harmony One, all reads:
+
+* **the block identifies the unit.** `identifiesAUnit` did not refuse, which is the first confirmation
+  on hardware that the two GUID fields are written on this unit and that the route works at all. Its
+  first eight characters are `66c3ad17`, which is as much as belongs in a document
+* **the whole chain runs**: the rehearsal's dry run reads the identity, matches it against the lab
+  record, reports the compatibility gate as zero of six fields stated, compares the block against the
+  dump byte for byte and prints its plan. Nothing was written
+* **it refuses another unit.** One hex digit of the recorded identity changed, and the run refuses
+  before reading anything else. The change was reversed and the file compared against a copy taken
+  first
+* **it refuses no record.** With the file moved away the run refuses and says where to put it, which
+  is the state a fresh bench is in
+
+`read-identity.ts --record <label>` is what wrote the file, and three things about it are deliberate:
+it writes the value rather than printing it, since that value identifies a specific piece of somebody's
+hardware; it refuses a block that cannot identify a unit; and it refuses to overwrite a different value
+without `--force`, because a label pointing at the wrong remote is worse than one pointing at nothing.
+
+**What the first record rests on is Danny's word**, unavoidably: the operator says which unit this is
+once, and every write afterwards is checked against it. That is the same arrangement as Logitech's,
+where a serial is read off the hardware and bound to an account record by whoever is holding the remote.
 
 Of section 188's three world facts, one is now measured, section 225's is performed by the rail, and
 `originalDumpVerified` is the honest ceiling: the library cannot know where a caller's bytes came from,

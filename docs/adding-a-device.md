@@ -61,7 +61,7 @@ That is the checklist. Below it, behind a gate:
 
 | phase | what it gets us | status |
 |---|---|---|
-| 8 | the write path, on the spare Harmony One | **the rehearsal succeeded, 30 August 2026**, section 222: one block of the unit's own configuration erased and put back unchanged, verified over the block and over the whole file. Nine of its twelve boxes are ticked; the version comparison is performed rather than moot since section 225, and the three left are one read to record the spare's own identity in the lab, section 226, a configuration **we** produced reading back off it, and the standing rule that the flag stays off. What is untried is a write that **changes** something |
+| 8 | the write path, on the spare Harmony One | **the rehearsal succeeded, 30 August 2026**, section 222: one block of the unit's own configuration erased and put back unchanged, verified over the block and over the whole file. Ten of its twelve boxes are ticked; the version comparison is performed rather than moot since section 225 and the unit is identified off the unit since section 226, so the two left are a configuration **we** produced reading back off it and the standing rule that the flag stays off. What is untried is a write that **changes** something |
 | 9 | the appliance responds | **gate opened 25 August 2026**, after phase 8 |
 
 ## What this deliberately does not need
@@ -622,12 +622,13 @@ and the erase question waits for a write that actually changes something.
 
 M4, and behind the gate above. The rails are written and off, `packages/usb/src/rails.ts`.
 
-- [ ] **the unit identified by its own identity block**, section 226, rather than by the operator
-      saying so. The rail is written and the route needs no new protocol, one `READ_FLASH` of internal
-      page `0xFF` at `0xF400`, whose two GUIDs are what Logitech's service takes as a serial. **What
-      is left is one read per remote**: the lab holds no recorded identity yet, so both write scripts
-      refuse, which is the correct default. The trap, in case anybody reimplements it: the field named
-      the serial is `0xEE` on every remote read here and identifies nothing
+- [x] **the unit identified by its own identity block**, section 226, rather than by the operator
+      saying so on every run. One `READ_FLASH` of internal page `0xFF` at `0xF400`, whose two GUIDs are
+      what Logitech's service takes as a serial, so no new protocol. **Done on 30 August 2026 on the
+      spare Harmony One**: the block identifies the unit, the rehearsal's dry run matches it against
+      the lab record, and both refusals were exercised, a changed record and a missing one. The trap,
+      in case anybody reimplements it: the field named the serial is `0xEE` on every remote read here
+      and identifies nothing
 - [x] a verified original dump of the spare Harmony One in the lab, byte for byte against the device.
       **Re-verifying it on the day is what caught it being stale**, 30 August 2026: the three dumps
       of that unit were all refused by the compare, because it holds a configuration none of them
