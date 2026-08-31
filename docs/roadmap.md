@@ -47,6 +47,34 @@ bytes and the same state numbers. The restore box in `docs/adding-a-device.md` s
 reason is now a **rehearsal** nobody has run, which is the same shape as M4's own first step rather than
 a reading or a doubt about the hardware.
 
+### The next thing to do, as at 31 August 2026
+
+Written as its own heading because a resuming session should not have to reconstruct it from the
+milestone tables below.
+
+**The rehearsal is done and the rails are closed, so what is left before the first write that changes
+something is one reading: which base slot 15 group holds a device's own delays.** Phase 8 in
+`docs/adding-a-device.md` is at ten of its twelve boxes, and neither of the two remaining is a rail. The
+write path itself is measured on hardware, section 222; the compatibility gate is performed rather than
+asserted, section 225; and the unit on the cable is identified off the unit, section 226, exercised on
+the spare Harmony One with both of its refusals shown to bite.
+
+The reading is step 5's, and the detail is under "Step 5 has one open reading" further down: how long a
+television takes after being switched on before it will listen, how long to leave between two commands,
+and how many repeats a code needs. FreeHarmony has a Settings button drawn and disabled waiting on it.
+
+**Do not guess it**, and that is the whole reason this is a reading rather than a change: section 44
+measured what a wrong length costs, since the firmware silently replaces a group whose length it does not
+expect with its own compiled in defaults. So a wrong guess ships a configuration that passes every check
+this project can make, looks accepted by the remote, and does nothing.
+
+Two pieces of evidence are already in the lab and neither needs a remote attached: the ten workflow
+manifests `docs/host-client.md` inventories, which state what Logitech's own software asked per device,
+and the two calibration configurations their service compiled to our specification, which could be
+compiled again with a delay set deliberately and the difference read off. `make lab-check
+PATH_ARG=<path>` first, per decision 12, because the last nine digs each re-derived something the site
+already held.
+
 **And section 192 answered the question standing in front of every write rail**, which is what a host's
 flash address actually means. It is not an address: one routine classifies it, a top byte of `0xFE` or
 `0xFF` selecting internal program flash and anything below the architecture's ceiling selecting the
