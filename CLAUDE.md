@@ -267,6 +267,18 @@ there is one author, so a change needs nobody's consent. Once anyone else has co
 needs all of theirs. Nothing about this repository moves: `packages/*` stay MIT, and MIT into GPLv3 is
 untroubled in the one direction it has to be.
 
+**Logitech's device database is archived by a third party and it is a source now**, decision 15 in
+`docs/roadmap.md`, checked out as `../logitech-harmony-ir-archive`: 276236 devices and **Logitech's own
+protocol definitions for 685 families, verbatim**, where this project has measured 37. It was tested
+before it was believed, and 33 of 33 comparable families agree with our own measurements off their
+compiler; the three that disagree are ours, being the three fitted to the corpus rather than measured.
+Three things follow. **Durations and names cross into this repository through our own converter**, never
+his JSON and never the 13.3 million rendered waveforms, on decision 1's basis that protocol facts are
+not expression. **An entry taken from it is marked stated and unverified**, since our corpus holds 3017
+codes and every one belongs to the 37 we already have. And **an archive sourced definition may never be
+shared**, because decision 11's rule is that only a definition learned from hardware may be, so without
+that the archive contaminates the shareable pool.
+
 **A community device database is a direction now, decision 11 in `docs/roadmap.md`, and almost all of
 it is still undecided**: its shape, its licence, where it lives, how an upload is reviewed. That is
 deliberate and it gets worked out when FreeHarmony needs it.

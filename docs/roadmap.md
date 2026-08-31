@@ -75,6 +75,27 @@ compiled again with a delay set deliberately and the difference read off. `make 
 PATH_ARG=<path>` first, per decision 12, because the last nine digs each re-derived something the site
 already held.
 
+**Queued behind it, from decision 15**, in the order they should be done, and none of them needs a
+remote:
+
+1. **Fix the three mis-attributed protocol families.** Ours, and the cheapest of the three because the
+   answer is already known. `SharpO1 48 Bit` at 38 kHz carries the durations of Logitech's own
+   `Sharp 48 Bit 2` byte for byte, the other `SharpO1 48 Bit` is `PanasonicV2 48 Bit`, and
+   `MemorexO1 32 Bit` is `Toshiba 32 Bit`. 153 codes under the wrong name. The rhythms are right and
+   the labels are wrong, which is the hazard recorded when attribution was decided by a vote of
+   overlapping numbers. It also kills the rhythm table's own claim that `Sharp 48 Bit 2` and
+   `SharpO1 48 Bit` are two names for one rhythm: Logitech's definitions give them different durations
+   **and** different carriers, 38.0 against 38.2 kHz. Fix the attribution in the join rather than in
+   the generated table, and sweep the dead claim.
+2. **Convert the 685 definitions into the rhythm table**, marked per decision 15, with the two numbers
+   that say what it is worth: how many convert cleanly, and how many of those reproduce the archive's
+   own waveforms exactly.
+3. **Read the device catalogue as a local device source.** This is the one that changes the product:
+   the importer scoped as a large job is mostly a reader, and the naming layer arrives with it, so
+   which code is volume up stops being something only two test accounts could tell us. Measure it
+   against what we hold rather than trusting it, on devices that appear both in the archive and in a
+   configuration in the corpus.
+
 **And section 192 answered the question standing in front of every write rail**, which is what a host's
 flash address actually means. It is not an address: one routine classifies it, a top byte of `0xFE` or
 `0xFF` selecting internal program flash and anything below the architecture's ceiling selecting the
@@ -439,6 +460,50 @@ image is a second sample rather than a stand in. Other models are iterated on la
    instance, account or identifier came with it. The argument for moving it rather than citing it from
    the lab is decision 12's, in one sentence: a fact recorded only in the lab is invisible to every
    check this project has, and this one is too useful to leave there. Section 218.
+
+15. **A third party's archive of Logitech's device database is a source, on the same footing as the
+   live service.** *Taken by Danny on 31 August 2026, after Eric Schewe wrote to say he had archived
+   it and concordance pointed him here.* It is checked out as a sibling,
+   `../logitech-harmony-ir-archive`, and it holds 276236 devices from 7889 manufacturers, 257720 of
+   them with codes, and **Logitech's own protocol definitions for 685 families, verbatim**, down to
+   the internal type marker their software stamps on them. The keycode strings are character for
+   character what `GetGlobalLanguageCommands` returns on the live service.
+
+   **It was tested before it was believed, per decision 7.** We hold measured rhythms for 37 families,
+   35 of them read off Logitech's own compiler by having their service build configurations to our
+   specification, so this project could check the archive rather than admire it. **33 of 33 fully
+   comparable families agree on every field compared**: carrier, lead mark and gap, both bit
+   durations, the unit pulse and the frame length. Two more agree on carrier where our shape is a quad
+   or long toggle form the comparison does not model. The three that disagree are **ours**, and they
+   are exactly the three we fitted to the corpus instead of measuring off the compiler.
+
+   **What crosses into this repository is durations and names in our own schema, through our own
+   converter.** Not his JSON, not his 13.3 million rendered waveforms, and not the 685 definition
+   files. Decision 1 is the basis and it already covers our existing 37: protocol facts are not
+   copyrightable expression. The **selection and arrangement** of a database is a different thing from
+   a duration, so bulk vendoring is refused and is also unnecessary, since the archive is a sibling
+   checkout that anybody can clone.
+
+   **His own position is worth recording**, since it is the reason this needed a decision at all: he
+   releases his conversions and schema under CC0 and says outright that the underlying codes and
+   definitions originate with Logitech and that he makes no representation about their copyright
+   status. So the archive does not launder anything, and our position rests on decision 1 rather than
+   on his licence.
+
+   **Every entry taken from it enters marked, and this is the load bearing part.** Our corpus cannot
+   verify the other 648 families: it holds 3017 infrared codes and every one belongs to the 37 we
+   already have. So a converted entry arrives as **stated by Logitech and unverified**, with its
+   exact and spread counts at zero, beside the 35 we can stand behind, and any family that matters is
+   upgraded to measured later by the route that produced those 35. The check that **is** free is our
+   conversion against his own rendered waveforms, which tests our reading of his format rather than
+   the definition's truth, over millions of commands instead of 37 families.
+
+   **It interacts with decision 11 and the interaction is a refusal.** That decision's hard rule is
+   that only a device definition **learned from hardware** may ever be shared, and nothing out of this
+   archive is. So an archive sourced definition is usable locally and is **never** uploadable to a
+   community database, and its provenance field has to say so from the first version rather than being
+   audited in later. Without this paragraph the archive would quietly contaminate the shareable pool,
+   which is the exact failure decision 11 exists to prevent.
 
 Scope is the Harmony One (arch 12) and the Harmony 600 (arch 14), the remotes on the bench, with
 the 700 2.8 image as the arch 14 reference. **Arch 9 is a target**: the Harmony 525 arrived on 8
