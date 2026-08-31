@@ -512,3 +512,47 @@ export function unitIdentity(label: string): string | undefined {
 export function unitIdentityPath(label: string): string {
   return join(LAB ?? '<no lab>', UNITS_DIRECTORY, `${label}.txt`);
 }
+
+/**
+ * Locating the Harmony infrared archive, which is a **different kind of thing from the lab** and so
+ * gets its own locator rather than a second meaning for `LAB`.
+ *
+ * The lab is private, holds unlicensed firmware and other people's configurations, and never leaves
+ * this machine. The archive is a **public** third party checkout of Logitech's own infrared database,
+ * `github.com/pickysysadmin/logitech-harmony-ir-archive`, which anybody can clone. Both are absent in
+ * a fresh checkout and both make their tests skip, which is the only thing they have in common; the
+ * rules about what may be copied out of each are opposite, so nothing here should read as though one
+ * locator served both.
+ *
+ * Decision 15 in `docs/roadmap.md` is what may cross into this repository from it: durations and
+ * names, through our own converter, and never a file of the archive's own.
+ */
+function defaultIrArchive(): string | undefined {
+  const sibling = normalize(join(REPO_ROOT, '..', 'logitech-harmony-ir-archive'));
+  return existsSync(sibling) ? sibling : undefined;
+}
+
+export const IR_ARCHIVE: string | undefined =
+  process.env['HARMONY_IR_ARCHIVE'] || defaultIrArchive();
+
+/**
+ * A path inside the archive checkout, or undefined when there is no checkout.
+ *
+ * Undefined rather than throwing, matching `imagePath`, so the caller decides between a skip and a
+ * refusal. `bin/protocols.ts` refuses, because the archive is what names a measured rhythm and a
+ * table regenerated without it would silently carry the analyser's names again.
+ */
+export function irArchivePath(...parts: string[]): string | undefined {
+  if (IR_ARCHIVE === undefined) return undefined;
+  const path = join(IR_ARCHIVE, ...parts);
+  return existsSync(path) ? path : undefined;
+}
+
+/** The `node:test` skip option for a test that needs the archive, mirroring `skipWithoutLab`. */
+export function skipWithoutIrArchive(): { skip: string | false } {
+  if (IR_ARCHIVE !== undefined && existsSync(IR_ARCHIVE)) return { skip: false };
+  return {
+    skip: 'no infrared archive; set HARMONY_IR_ARCHIVE or clone '
+      + 'logitech-harmony-ir-archive alongside the repository',
+  };
+}

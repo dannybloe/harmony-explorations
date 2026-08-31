@@ -416,7 +416,9 @@ class ATypeScriptSampleLoopStatesItsPopulation(unittest.TestCase):
         # needs both languages' halves of the config format and so cannot live beside the first.
         # 53 since `packages/usb/test/identity.test.ts`, section 226, which identifies the unit on
         # the cable and works on synthetic blocks because the real values live in the lab.
-        self.assertEqual(scanned, 53, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
+        # 54 since `packages/codec/test/archive.test.ts`, section 227: it reads Logitech's own protocol
+        # definitions out of the infrared archive checkout and skips without one, like a lab test.
+        self.assertEqual(scanned, 54, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
         self.assertEqual(
             {name: len(lines) for name, lines in counted.items()},
             TYPESCRIPT_LOOPS_ALLOWED_TO_SKIP_A_SAMPLE,
@@ -537,7 +539,8 @@ class ABoundOnACorpusTotalIsExact(unittest.TestCase):
         # 52 since the compatibility gate, section 225: one test file per package, since the corpus
         # half needs the codec and `packages/usb` deliberately does not depend on it.
         # 53 since `packages/usb/test/identity.test.ts`, section 226.
-        self.assertEqual(len(scanned), 53, 'TypeScript test files, which moves when one is added')
+        # 54 since `packages/codec/test/archive.test.ts`, section 227.
+        self.assertEqual(len(scanned), 54, 'TypeScript test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):

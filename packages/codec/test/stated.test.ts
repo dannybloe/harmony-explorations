@@ -22,10 +22,10 @@ import { LAB, skipWithoutLab } from '@harmony/lab';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-test('the table states thirty eight entries, and what each is worth is its provenance', () => {
+test('the table states thirty seven entries, and what each is worth is its provenance', () => {
   // Exact, per the house rule: a floor would absorb an entry falling out of the generator, and the
   // number moves only when somebody regenerates it, and then it moves in the diff.
-  assert.equal(PROTOCOLS.length, 38);
+  assert.equal(PROTOCOLS.length, 37);
   // **Three provenances, and they are three different strengths of claim.** `corpus` is a record some
   // remote was really carrying, whose family came from Logitech's analyser naming our decoding of it.
   // `compiled` is a record their own compiler produced on request, whose family their own catalogue
@@ -37,7 +37,14 @@ test('the table states thirty eight entries, and what each is worth is its prove
   // first sample's catalogue capture was overwritten and had to be rebuilt without the account's own
   // appliance names, and it is `both` again because the appliance was put back on the record and
   // compiled a third time. Its rhythm never moved through any of it.
-  assert.deepEqual([count('corpus'), count('compiled'), count('both')], [3, 29, 6]);
+  //
+  // **It was [3, 29, 6] over 38 entries until 31 August 2026**, and naming every rhythm by Logitech's
+  // own catalogue rather than by their analyser moved three entries into `both` and lost two: the two
+  // rows their analyser called `SharpO1 48 Bit` were `Sharp 48 Bit 2` and `PanasonicV2 48 Bit`, both of
+  // which the compiled route had already measured under those names, and one of the two rows called
+  // `MemorexO1 32 Bit` was Toshiba's rhythm. So the count going **down** while the confirmations go up
+  // is the finding rather than a loss.
+  assert.deepEqual([count('corpus'), count('compiled'), count('both')], [2, 26, 9]);
   // Nothing in the table rests on published documentation alone any more. It did for a few hours, and
   // the compiled sample refuted that entry's numbers the same day, so the category is deliberately
   // empty rather than corrected: a rhythm their analyser accepts is not a rhythm their compiler emits.
@@ -46,22 +53,30 @@ test('the table states thirty eight entries, and what each is worth is its prove
   // The three confirmed twice over, named rather than counted, since agreement between two independent
   // routes is the strongest thing this table has and losing one silently is the risk.
   assert.deepEqual(PROTOCOLS.filter((one) => one.source === 'both').map((one) => one.family),
-                   ['Logitech 24 Bit', 'Microsoft 30 Bit', 'Kreatel IP 22 Bit', 'Sony 12 Bit',
-                    'Pioneer 32 Bit', 'Sony 15 Bit']);
+                   ['Toshiba 32 Bit', 'Sharp 48 Bit 2', 'Logitech 24 Bit', 'Microsoft 30 Bit',
+                    'Kreatel IP 22 Bit', 'Sony 12 Bit', 'Pioneer 32 Bit', 'PanasonicV2 48 Bit',
+                    'Sony 15 Bit']);
   // And they agree **exactly**, not within a band, which is what makes it a confirmation.
   for (const one of PROTOCOLS.filter((p) => p.source === 'both')) {
     assert.equal(one.spread, 0, `${one.family} disagrees between the two routes`);
     assert.equal(one.exact, one.codes, one.family);
   }
 
-  // **One rhythm under two names, kept rather than collapsed.** Their catalogue says Sharp 48 Bit 2 and
-  // their analyser says SharpO1 48 Bit, and at 38 kHz the durations are identical to the microsecond.
-  // That is the measurement behind the rule that their two vocabularies are not one.
-  const catalogue = PROTOCOLS.find((one) => one.family === 'Sharp 48 Bit 2');
-  const analyser = PROTOCOLS.find((one) => one.family === 'SharpO1 48 Bit' && one.periodNs === 26315);
-  assert.ok(catalogue !== undefined && analyser !== undefined);
-  assert.deepEqual([catalogue.header, catalogue.flat, catalogue.zero, catalogue.one],
-                   [analyser.header, analyser.flat, analyser.zero, analyser.one]);
+  // **A family is named once, by Logitech's catalogue, with their analyser's name beside it.** This
+  // block asserted the opposite until 31 August 2026: that one rhythm carried two names and the table
+  // kept both, on the evidence that `Sharp 48 Bit 2` and `SharpO1 48 Bit` at 38 kHz held identical
+  // durations. They were the same family twice, and Logitech's own definition says which one: their
+  // real `SharpO1 48 Bit` is a 38.2 kHz protocol with a 20500 gap, and neither row was that.
+  assert.equal(new Set(PROTOCOLS.map((one) => one.family)).size, PROTOCOLS.length);
+  assert.equal(PROTOCOLS.filter((one) => one.family === 'SharpO1 48 Bit').length, 0);
+  // What their analyser called each renamed rhythm is kept, since that is the evidence for section
+  // 160's claim that it is not to be trusted for a rhythm, and a claim with no case is not checkable.
+  assert.deepEqual(PROTOCOLS.filter((one) => one.heardAs !== undefined)
+                     .map((one) => [one.family, one.heardAs]),
+                   [['Toshiba 32 Bit', 'MemorexO1 32 Bit'],
+                    ['Sharp 48 Bit 2', 'SharpO1 48 Bit'],
+                    ['Roku 32 Bit 1', 'MemorexO1 32 Bit'],
+                    ['PanasonicV2 48 Bit', 'SharpO1 48 Bit']]);
 
   // **A `Dual` family is the same rhythm as its sibling**, which is what the catalogue notation already
   // implied by stating two values for one command: the word counts frames, not durations.
@@ -83,15 +98,18 @@ test('the table states thirty eight entries, and what each is worth is its prove
   assert.notDeepEqual(jvc.header, nec.header, 'their lead ins differ, which is the whole point');
   assert.deepEqual([jvc.header, jvc.flat, jvc.zero, jvc.one], [[8400, 4200], 500, 500, 1600]);
 
-  // The loose one is named rather than tolerated: NEC at 38 kHz under Logitech's Memorex label, where
-  // three duration sets appear across the corpus and the commonest reproduces 81 of 108 exactly and all
-  // 108 within two percent. So a code emitted from it is accepted by the equipment and is not byte
-  // identical to what their compiler emitted.
-  const loose = PROTOCOLS.filter((one) => one.spread > 0);
-  assert.deepEqual(loose.map((one) => [one.family, one.spread]), [['MemorexO1 32 Bit', 0.02]]);
-  assert.deepEqual(loose.map((one) => [one.exact, one.codes]), [[81, 108]]);
-  // Every other entry reproduces every code of its own rows to the microsecond. 37 of 38, the exception
-  // being the one loose entry named above.
+  // **No entry is loose any more, and the one that was is why the table is named by the catalogue.** It
+  // was NEC at 38 kHz under Logitech's Memorex label, reproducing 81 of 108 exactly and all 108 within
+  // two percent, and this comment already recorded the reason without drawing the conclusion: "three
+  // duration sets appear across the corpus". They were three families. Two of them are Logitech's
+  // `Toshiba 32 Bit` and `Roku 32 Bit 1`, and the third is the real `MemorexO1 32 Bit`, whose 9000/4500
+  // with 560, 560 and 1690 matches their own definition to the microsecond over its three records.
+  //
+  // The band machinery stays, because it is what would show a family whose remotes really do disagree;
+  // it is simply doing no work today, and an entry with a spread is now a signal rather than a fact of
+  // life.
+  assert.deepEqual(PROTOCOLS.filter((one) => one.spread > 0).map((one) => one.family), []);
+  // So every entry reproduces every code of its own rows to the microsecond, all 37 of them.
   assert.equal(PROTOCOLS.filter((one) => one.exact === one.codes).length, 37);
 
   // **A family whose codes share their first frame with a sibling's is still its own entry**, which is
@@ -298,21 +316,27 @@ test('a stated code becomes a frame, and an unknown family becomes nothing', () 
   assert.equal(framesOfPulses(logitech!, 1)[0]?.value, ~0x800001n & 0xFFFFFFn);
 });
 
-test('a family at two carriers is two entries, and asking without one picks the larger', () => {
-  // The measured reason the carrier is part of the key: SharpO1 48 Bit came out as two duration sets
-  // until it was split this way, after which each half reproduces every one of its codes exactly.
-  const sharp = PROTOCOLS.filter((one) => one.family === 'SharpO1 48 Bit');
-  assert.equal(sharp.length, 2);
-  assert.deepEqual(sharp.map((one) => one.periodNs).sort((a, b) => a - b), [26315, 27472]);
-  assert.deepEqual(sharp.map((one) => one.spread), [0, 0]);
-  // Different durations, which is the point: one entry cannot serve both.
-  assert.notDeepEqual(timingsOf(sharp[0]!), timingsOf(sharp[1]!));
-  // Asked with a carrier it is exact; asked without, it is whichever was measured over more codes, and
-  // that is a documented best guess rather than an answer.
-  assert.equal(statedProtocol('SharpO1 48 Bit', 27472)?.header?.[0], 3480);
-  assert.equal(statedProtocol('SharpO1 48 Bit', 26315)?.header?.[0], 3364);
-  assert.equal(statedProtocol('SharpO1 48 Bit')?.codes, 33);
-  assert.equal(statedProtocol('SharpO1 48 Bit', 12345), undefined);
+test('no family is at two carriers, and a lookup with the wrong one refuses', () => {
+  // **This test asserted the opposite until 31 August 2026, and its premise was a mis-attribution.**
+  // It said a family can arrive at two carriers because SharpO1 48 Bit's codes came out at 36.4 and
+  // 38 kHz in two duration sets. Those were two families, `PanasonicV2 48 Bit` and `Sharp 48 Bit 2`,
+  // named by Logitech's analyser and wrong, and their catalogue states one carrier per family. So the
+  // claim to hold the table to is the reverse one, and it can fail: a generator that mis-attributed a
+  // rhythm again would put one family at two frequencies here.
+  const perFamily = new Map<string, number[]>();
+  for (const one of PROTOCOLS) {
+    perFamily.set(one.family, [...(perFamily.get(one.family) ?? []), one.periodNs]);
+  }
+  assert.deepEqual([...perFamily.values()].filter((carriers) => carriers.length > 1), []);
+
+  // The carrier is still part of the key, because a rhythm is only a rhythm at a frequency and that is
+  // how a family is looked up in Logitech's catalogue. So a lookup with the wrong carrier refuses
+  // rather than answering with the rhythm of a protocol at another frequency.
+  assert.equal(statedProtocol('PanasonicV2 48 Bit', 27472)?.header?.[0], 3480);
+  assert.equal(statedProtocol('Sharp 48 Bit 2', 26315)?.header?.[0], 3364);
+  assert.equal(statedProtocol('Sharp 48 Bit 2', 27472), undefined);
+  assert.equal(statedProtocol('Sharp 48 Bit 2')?.codes, 378);
+  assert.equal(statedProtocol('Sharp 48 Bit 2', 12345), undefined);
 });
 
 test('a catalogue code is a grammar, and reading one slot of it reads half a command', () => {
@@ -432,26 +456,33 @@ test('the table answers for the recorded census, counted rather than printed', s
     ['Saitek 11 Bit']);
 });
 
-test('thirty one entries state their whole block, and the counts are per family', () => {
+test('twenty nine entries state their whole block, and the counts are per family', () => {
   // **Section 171: what follows the frame is measured per family**, as copies of the code's own
   // frames, literal words, and pad spaces solved from a constant total or a constant copy period.
   // Named with both counts, because the families where the whole block does not rebuild are the
   // finding: Logitech 24 Bit's eleven failures are the PS3's long repeat records, Pioneer 32 Bit's
   // ten are corpus records of one command whose copies differ from the compiled shape, and
-  // MemorexO1 32 Bit's shortfall is its own loose duration entry.
+  // MemorexO1 32 Bit had a shortfall of 81 of 108 which was three families under one name, and is 3 of
+  // 3 now that Logitech's catalogue has named each rhythm in it.
   const tailed = PROTOCOLS.filter((one) => one.tail !== undefined)
     .map((one) => [one.family, one.tailExact, one.codes] as const);
+  // The eight without one are named, because a family in the table with no measured block is a family
+  // a writer cannot emit a repeat for, which is worth seeing rather than inferring from a shorter list.
+  assert.deepEqual(PROTOCOLS.filter((one) => one.tail === undefined).map((one) => one.family),
+                   ['Kreatel IP 22 Bit', 'Galaxis 16 Bit Quad Toggle',
+                    'Philips Hurd 16 Bit LongToggle', 'MitsubishiO1 Dual 8 16 Bit', 'Samsung 38 Bit',
+                    'Roku 32 Bit 1', 'Panasonic 16 Bit', 'Sharp 48 Bit']);
   assert.deepEqual([...tailed].sort((a, b) => a[0].localeCompare(b[0]) || (a[2] - b[2])), [
     ['JerroldO1 16 Bit', 47, 47],
     ['JVC 16 Bit', 108, 108],
     ['Logitech 24 Bit', 206, 217],
     ['Magnavox 13 Bit', 105, 105],
     ['Memorex 32 Bit', 8, 8],
-    ['MemorexO1 32 Bit', 81, 108],
+    ['MemorexO1 32 Bit', 3, 3],
     ['MemorexV2 32 Bit', 38, 38],
     ['MemorexV2 32 Bit Dual', 2, 2],
     ['Microsoft 30 Bit', 65, 213],
-    ['PanasonicV2 48 Bit', 4, 4],
+    ['PanasonicV2 48 Bit', 12, 16],
     ['Philips RC5 13 Bit Toggle', 51, 51],
     ['Philips RECS80 11 Bit', 34, 35],
     ['Pioneer 32 Bit', 9, 19],
@@ -463,15 +494,13 @@ test('thirty one entries state their whole block, and the counts are per family'
     ['Samsung 16 and 20 Bit', 36, 46],
     ['Sharp 15 Bit', 95, 95],
     ['Sharp 15 Bit 2', 184, 220],
-    ['Sharp 48 Bit 2', 345, 345],
-    ['SharpO1 48 Bit', 12, 12],
-    ['SharpO1 48 Bit', 33, 33],
+    ['Sharp 48 Bit 2', 378, 378],
     ['Short 11 Bit 2', 42, 42],
     ['Sony 12 Bit', 59, 59],
     ['Sony 15 Bit', 12, 12],
     ['Sony 20 Bit', 14, 14],
     ['Thomson 12 Bit Toggle', 59, 59],
-    ['Toshiba 32 Bit', 622, 622],
+    ['Toshiba 32 Bit', 703, 703],
     ['Videocrypt 11 Bit Toggle', 32, 32],
   ]);
 
@@ -494,12 +523,16 @@ test('thirty one entries state their whole block, and the counts are per family'
 
   // **Padding to a constant total block duration is real and it is per family**, which section 152's
   // corpus wide attempt could not show. Named with the totals, since a total is a measurement.
+  //
+  // `MemorexO1 32 Bit` was in this list at 215736 until 31 August 2026, and that total was Toshiba's:
+  // the entry held Toshiba's records under Logitech's Memorex name. The real MemorexO1 closes with
+  // literal words, 560 and a 35101 space, so the two families differ in their tail shape as well as in
+  // all five of their durations.
   const padded = PROTOCOLS.filter((one) => one.tail?.total !== undefined)
     .map((one) => [one.family, one.tail!.total] as const);
   assert.deepEqual([...padded].sort((a, b) => a[0].localeCompare(b[0])), [
     ['JerroldO1 16 Bit', 199001],
     ['JVC 16 Bit', 147601],
-    ['MemorexO1 32 Bit', 215736],
     ['Philips RECS80 11 Bit', 364501],
     ['Short 11 Bit 2', 410236],
     ['Sony 12 Bit', 135001],
@@ -562,14 +595,14 @@ test('the held block is measured per family, and it is what a held key repeats',
   // all is the command's own property, so the population is stated beside the count.
   const held = PROTOCOLS.filter((one) => one.held !== undefined)
     .map((one) => [one.family, one.heldExact, one.heldOf] as const);
-  assert.equal(held.length, 31, 'families with a measured held block');
-  assert.equal(held.reduce((n, one) => n + one[1]!, 0), 2151, 'held blocks rebuilt word for word');
-  assert.equal(held.reduce((n, one) => n + one[2]!, 0), 2214, 'records carrying one');
+  assert.equal(held.length, 29, 'families with a measured held block');
+  assert.equal(held.reduce((n, one) => n + one[1]!, 0), 2153, 'held blocks rebuilt word for word');
+  assert.equal(held.reduce((n, one) => n + one[2]!, 0), 2200, 'records carrying one');
 
   // Three shapes worth naming, because each is a different sentence about the protocol. Toshiba
   // repeats with its ditto frame alone, no copy of the payload in it at all, 517 of 517.
   const toshiba = PROTOCOLS.find((one) => one.family === 'Toshiba 32 Bit')!;
-  assert.deepEqual([toshiba.heldExact, toshiba.heldOf], [517, 517]);
+  assert.deepEqual([toshiba.heldExact, toshiba.heldOf], [545, 545]);
   assert.ok(toshiba.held!.items.every((item) => !('copy' in item)), 'the ditto holds no copy');
   // JVC repeats one bare copy padded to 45001, the same 45 ms beat its once block's three copies
   // keep, measured independently of it.

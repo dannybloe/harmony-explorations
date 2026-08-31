@@ -1916,6 +1916,17 @@ fetched from it is written using the timings of any code of the same appliance a
 between consecutive copies is byte identical in all 3502, and what follows the last copy is 140 distinct
 shapes across the corpus and is copied rather than computed.
 
+**A family is named by Logitech's catalogue, matched on the rhythm their own definition states**, section
+227, and never by their analyser. Their analyser is a decoder of their database rather than of infrared,
+section 160, and it named all three of the table's analyser named entries wrongly. The lookup key is the
+carrier, the header and the four durations, matched exactly, with the width from their definition's
+keycode field narrowing the 24 rhythms that more than one family holds; 17 rhythms stay ambiguous after
+that and keep whatever name they had, since a guess is worse than an old name. A row records their
+analyser's name in `heardAs` where the two differ. **One entry per family**: no family arrives at two
+carriers, their definitions stating one carrier each, and the carrier is in the key because a rhythm is
+only a rhythm at a frequency. `source` says which route measured the durations, and a row's `spread` is
+now zero throughout, the one entry that had a band having turned out to be three families.
+
 Two families of shape sit inside those five numbers, and both are measured off a configuration Logitech's
 own compiler produced rather than allowed for in advance, section 160:
 

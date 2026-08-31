@@ -21816,6 +21816,12 @@ have a reading of ours carrying the number they returned, and those 177 fall int
 compared pulse for pulse against what the config actually holds. So five of six entries emit every one of
 their codes to the microsecond, and 150 of 177 codes overall.
 
+**Three of those six family names are wrong and every duration in the table is right**, section 227. The
+names came from Logitech's analyser; their catalogue states the rhythm, and looked up in it the first row
+is `Toshiba 32 Bit` plus `Roku 32 Bit 1` plus the real `MemorexO1 32 Bit`, the second is
+`Sharp 48 Bit 2` and the fourth is `PanasonicV2 48 Bit`. The rows are left as measured, since what this
+section measured was durations.
+
 **Two things had to be separated before any of that appeared, and both were found by the measurement
 refusing to be tidy.**
 
@@ -21829,20 +21835,30 @@ code's own header, bits and closing space, computed per code and then found iden
 and it lands on exactly 45000 microseconds, which is the documented frame period of that protocol.
 Nothing here was fitted to 45 ms.
 
-**The carrier is part of the key.** SharpO1 48 Bit's codes arrive at 36.4 and 38 kHz and its durations
-came out as two sets; split by carrier, each half is one set and reproduces every code exactly. The
-entry stores the carrier as the **period in nanoseconds** the record itself carries, 26315 and 27472,
-rather than a frequency, because section 92 measured the field as `floor(1e9 / f)` and a round trip
-through the frequency would not always land back on the byte.
+**The carrier is part of the key**, and **the reason given here was a mis-attribution**, corrected by
+section 227. It said SharpO1 48 Bit's codes arrive at 36.4 and 38 kHz so a family needs splitting by
+carrier. Those were two families, `Sharp 48 Bit 2` and `PanasonicV2 48 Bit`, named by Logitech's
+analyser and named wrongly, and their catalogue states one carrier per family. No family here arrives at
+two. The carrier stays in the key because a rhythm is only a rhythm at a frequency and that is how a
+family is looked up in their catalogue. The entry stores it as the **period in nanoseconds** the record
+itself carries, 26315 and 27472, rather than a frequency, because section 92 measured the field as
+`floor(1e9 / f)` and a round trip through the frequency would not always land back on the byte.
 
-**The one loose entry is named rather than tolerated.** MemorexO1 32 Bit at 38 kHz, which is NEC, carries
-three duration sets across the corpus: 8990/4490/568/552/1662 on five arch 8 configs and two Harmony One
-ones, 9000/4500/562/562/1688 on both Harmony 700 configs, and 9000/4500/560/560/1690 on three records of
-one arch 8 config. The third is nominal NEC exactly. Since one config carries two of the three, the
-variation is **per appliance within a family**, which is section 152's finding seen from the other side.
-The commonest set reproduces 81 of 108 exactly and all 108 within 2%, so a code emitted from the table is
-inside any receiver's tolerance and is not byte identical to what Logitech's compiler emitted. Those are
-two different claims and the table states both, as `exact` and `spread`.
+**The one loose entry is named rather than tolerated**, and **the conclusion drawn from it was wrong
+while the measurement was right**, corrected by section 227. MemorexO1 32 Bit at 38 kHz, which is NEC,
+carries three duration sets across the corpus: 8990/4490/568/552/1662 on five arch 8 configs and two
+Harmony One ones, 9000/4500/562/562/1688 on both Harmony 700 configs, and 9000/4500/560/560/1690 on three
+records of one arch 8 config. The third is nominal NEC exactly.
+
+That was read as variation **per appliance within a family**, section 152 seen from the other side, and
+the commonest set reproducing 81 of 108 exactly with all 108 inside 2% was reported as the entry's worth.
+They are **three families**: Logitech's own definitions state 8990/4490/568/552/1662 for `Toshiba 32 Bit`,
+9000/4500/562/562/1688 for `Roku 32 Bit 1` and 9000/4500/560/560/1690 for the real `MemorexO1 32 Bit`.
+Every duration listed above is unchanged; only the name over each set moved. Two things should have
+raised it at the time. From 568/552 to 562/562 the mark goes **down** while the clear space goes **up**,
+which a recording tolerance cannot do, and this paragraph already said the third set was nominal NEC
+exactly, which is a statement that it is a protocol of its own rather than a drift off another one. The
+table now has no entry with a spread at all.
 
 **What is not in the table and must not be guessed.** 55 of the 232 named codes have no reading of ours
 carrying their number, and they are the biphase ones: 48 `Microsoft 30 Bit`, which is RC6, 4
@@ -21855,15 +21871,18 @@ that works. A further 115 codes their own analyser declined to name at all.
 gaps between the copies and a closing silence, and none of that follows from the bits. The figure here
 was 151 distinct shapes<!--superseded--> and section 152 was cited for it, which that section does not
 state; it is **140** since section 164, which took a reading away from 45 records by merging adjacent
-durations of one kind. And the second half is no longer true either: section 171 gave 31 of the table's
-38 entries a per family `tail`, so the encoder produces whole blocks for those and the caller decides
-the rest only for the seven that have no rule. Both corrections are recorded here rather than in the
+durations of one kind. And the second half is no longer true either: section 171 gave 29 of the table's
+37 entries a per family `tail`, so the encoder produces whole blocks for those and the caller decides
+the rest only for the eight that have no rule. Those two figures were 31 of 38 until section 227 named
+every rhythm by Logitech's catalogue, which merged two entries away and left one new family with no
+measured tail. Both corrections are recorded here rather than in the
 later sections alone, because this is the paragraph that states the boundary.
 
 `packages/codec/src/protocols.ts` is the generated table, `src/stated.ts` the lookup and the encoder,
 `bin/protocols.ts` the measurement, `make protocols` prints it and `--write` regenerates it, and
 `test/stated.test.ts` asserts the counts, the 45 ms closure, the refusal for a family that is not there,
-and that a family at two carriers is two entries.
+and that no family is at two carriers, section 227 having found that the one that appeared to be was
+two families.
 
 ## 158. A code built from a name and a number reads back correctly, on 30 of 30, and a stated code has two frames
 
@@ -23012,7 +23031,7 @@ value, so padding each copy to a period and sharing one pad value are indistingu
 carries only the second. Sony's total is 135001, which is three copies at its published 45000
 microsecond frame period plus the final microsecond: the third route to that number.
 
-**31<!--fact:protocol_tails--> of the table's 38<!--fact:protocol_entries--> entries carry a `tail`**, and the counts are per entry as
+**29<!--fact:protocol_tails--> of the table's 37<!--fact:protocol_entries--> entries carry a `tail`**, and the counts are per entry as
 `tailExact`, whole first blocks rebuilt from the entry plus each record's own value and compared word
 for word: Toshiba 32 Bit 622 of 622 with its ditto repeat as a literal run and total 215736 constant
 across all 622; JVC 16 Bit 108 of 108; Sharp 48 Bit 2 345 of 345 with no pad at all; the biphase
@@ -28956,3 +28975,127 @@ where a serial is read off the hardware and bound to an account record by whoeve
 Of section 188's three world facts, one is now measured, section 225's is performed by the rail, and
 `originalDumpVerified` is the honest ceiling: the library cannot know where a caller's bytes came from,
 so the rehearsal passes the measurement it already made instead of a literal.
+
+## 227. Logitech's own catalogue names a rhythm, and their analyser had named three of them wrongly
+
+**A protocol family's name in the rhythm table used to come from Logitech's analyser, and every entry
+named that way was wrong.** Section 160 retired their analyser as evidence for a **rhythm**, having
+measured it accepting two rhythms their compiler does not emit and naming both correctly, and section
+162 found it wrong about a family outright. What was left unexamined is that it was still the only
+source of a **name** for a corpus measured entry. Three entries were named that way. All three carried
+another family's durations.
+
+The fix is not three renames. It is that Logitech **states** the rhythm of each of their families, so a
+rhythm can be looked up rather than named by a decoder, and `nameByCatalogue` in `bin/protocols.ts` does
+that for every entry the generator produces.
+
+### Where the statement comes from
+
+`../logitech-harmony-ir-archive`, a third party's checkout of Logitech's infrared database, pinned at
+commit `d84df0b`: 684 protocol definitions in Logitech's own `IrProtocol` shape, each stating its carrier
+and its durations in microseconds. Decision 15 in `docs/roadmap.md` governs what may cross into this
+repository from it, which is durations and names through our own converter and never a file of its own.
+`packages/codec/src/archive.ts` is that converter and `packages/codec/test/archive.test.ts` its tests,
+which skip without a checkout exactly as the corpus tests skip without a lab.
+
+### The calibration, which is what makes the naming worth anything
+
+**Of the 31 frame rhythms in our own table, 30 are reproduced from Logitech's definition field for field,
+and none disagrees.** The two measurements have nothing in common: ours came off configurations their
+compiler produced for appliances chosen here and off records real remotes were carrying, theirs was
+fetched from their service and transcribed by somebody else. The one absence is
+`MitsubishiO1 Dual 8 16 Bit`, which sends two codes inside one frame and is not the one cell per bit
+shape this converter reads.
+
+Reading their notation into ours took four conventions, three of which were lessons this project had
+already paid for once:
+
+* **A cell is stated in either order and it matters.** A pulse distance family states `(mark, space)`
+  with the space carrying the bit; a pulse width family such as Sony states `(space, mark)` with the mark
+  carrying it. Our reader takes a train from its first mark and reads `(mark, space)` pairs, so a
+  space first cell shifts everything by one.
+* **A lone opening mark means three different things and the cell says which.** Where the mark carries,
+  the cell's constant space is the header's space: their `header [2400], cell (600, 600 or 1200)` is our
+  `header [2400, 600], flat 600` for `Sony 12 Bit`. Where the space carries and a lead in sits in another
+  slot, the lead in is the header: `JVC 16 Bit`'s 8400 and 4200 are in a **code** segment named
+  `JVC 16 Bit KeyCodeStart`, which is section 159's finding in Logitech's own vocabulary. Where the space
+  carries and there is no lead in at all, the lone mark is the opening burst our table calls `firstMark`,
+  270 against 260 for all fourteen later cells of the Sharp scheme.
+* **The segment named for the family is the frame, not the first one.** `JVC 16 Bit`'s repeat is a
+  separate segment, and reading segment zero gives a lead in carrying no payload. The archive's own
+  README warns about the same trap from the other side, for 4.81% of its commands.
+* **The carrier is the truncated reciprocal.** `floor(1e9 / f)`, section 41. Comparing the other way
+  round reported 30 of 37 families as disagreeing by one nanosecond, which is how this was got backwards
+  once already.
+
+357 of the 684 definitions read as a frame rhythm. The 327 refusals are counted by reason and each names
+a shape still to be written rather than a family that cannot be expressed: 105 are biphase, where the bit
+is which half of the cell carries the carrier and our table already has a shape for four of them, and 142
+state something other than two cells, which includes the base four families.
+
+### The lookup, and what it refuses
+
+The key is the carrier, the header and the four durations, matched **exactly**: the point of asking their
+catalogue is to get their answer rather than a nearby one. 653 of the 684 definitions are distinct on
+that key. Every one of the 24 rhythms held by more than one family is that family at several bit widths,
+`Sony 12`, `15` and `20` among them, so the width from `keycodeFields` narrows it, and 17 rhythms are
+still ambiguous afterwards. Those keep the name they had: a guess is worse than an old name.
+
+**It runs per rhythm and not per entry, and the data is what asked for that.** The group their analyser
+called `MemorexO1 32 Bit` holds three rhythms, and renaming the group whole would have buried the
+smallest of them.
+
+### What moved
+
+| entry | became | codes | corroborated by |
+|---|---|---|---|
+| `MemorexO1 32 Bit` 38.0 kHz, 81 codes | `Toshiba 32 Bit` | 81 | the compiled entry of that name, 622 codes |
+| `MemorexO1 32 Bit` 38.0 kHz, 24 codes | `Roku 32 Bit 1` | 24 | nothing but the rhythm |
+| `MemorexO1 32 Bit` 38.0 kHz, 3 codes | stayed `MemorexO1 32 Bit` | 3 | their analyser and their catalogue agreeing |
+| `SharpO1 48 Bit` 38.0 kHz | `Sharp 48 Bit 2` | 33 | the compiled entry of that name, 345 codes |
+| `SharpO1 48 Bit` 36.4 kHz | `PanasonicV2 48 Bit` | 12 | the compiled entry of that name, 4 codes |
+
+Three of the five are confirmed by a route with nothing in common: the corpus set merged onto an entry
+their **compiler** had produced and their **catalogue** had named, so two independent sources agree on
+both the rhythm and the name. `Roku 32 Bit 1` rests on the rhythm alone and its row says so, `source`
+being `corpus`. The 3 code entry is the case the tie breaker exists for: 9000/4500/560/560/1690 is stated
+for `MemorexO1 32 Bit` and for `PDP 32 Bit` alike, and their analyser said MemorexO1, so two sources
+naming one of two candidates settles it where either alone would not.
+
+**The table went from 38 entries to 37 and its confirmations from 6 to 9**, which is the shape of the
+result: fewer rows, more of them confirmed twice. Every entry is now one rhythm reproducing every one of
+its own codes to the microsecond, and **no entry has a spread at all**, where before one covered its 108
+codes only within 2%. That entry was three families.
+
+### Two claims this kills
+
+**A family does not arrive at two carrier frequencies.** The whole evidence for that was two entries
+their analyser both called `SharpO1 48 Bit`, at 38.0 and 36.4 kHz. Their real `SharpO1 48 Bit` is a
+38.2 kHz protocol with a 20500 microsecond closing gap, and neither entry was that. Logitech states one
+carrier per family. The carrier stays in the key because a rhythm is only a rhythm at a frequency, which
+is a different reason from the one that was recorded.
+
+**One rhythm does not carry two names with no rule for choosing.** `docs/config-format.md` and the
+table's own header said the table kept both `Sharp 48 Bit 2` and `SharpO1 48 Bit` because there was no
+rule about which name a caller would ask with. There is a rule: the catalogue states the rhythm, so the
+rhythm identifies the family. Their two vocabularies do still differ, section 159, which is what the
+`heardAs` field on a row is now for, and it is kept precisely because a claim that their analyser is
+unreliable needs a case somebody can check.
+
+### What should have caught it here, without the archive
+
+Two things, and both were already written down in this document.
+
+The section that measured those three duration sets recorded that from 8990/4490/568/552 to
+9000/4500/562/562 the mark goes **down** while the clear space goes **up**. A recording tolerance moves
+both the same way, so that pair of numbers was already saying two definitions rather than one wobbling.
+
+And the same paragraph said the third set "is nominal NEC exactly", which is a statement that it is a
+protocol in its own right, and then concluded the variation was per appliance within a family. The
+measurement was right, the inference was wrong, and what carried the wrong inference was trusting the
+analyser's name for the group after this project had already stopped trusting it for a rhythm.
+
+**The generator refuses to write the table without the archive**, since a regeneration on a machine
+without one would silently restore the analyser's names. No checkout, an environment variable pointing at
+nothing, and a schema version this reader does not know all give the same refusal and a nonzero exit, and
+that was measured with the table compared before and after to confirm it writes nothing.

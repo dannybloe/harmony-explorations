@@ -25,7 +25,9 @@
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { imagePath, LAB } from '@harmony/lab';
+import { imagePath, IR_ARCHIVE, LAB } from '@harmony/lab';
+import { ArchiveError, catalogueByRhythm, familiesOfRhythm,
+         type CatalogueFamily } from '../src/archive.ts';
 import { parse, type Container } from '../src/gspm.ts';
 import { payloadOf } from '../src/ezhex.ts';
 import { statedCode } from '../src/stated.ts';
@@ -59,6 +61,14 @@ interface Row { config: string; record: string; ours: string; theirs?: string }
 /** One code, with the durations read off its own recorded rhythm. */
 interface Measured {
   family: string;
+  /**
+   * What Logitech's **analyser** called this rhythm, kept when their catalogue named it something else.
+   *
+   * Evidence rather than history: section 160 retired the analyser as evidence for a rhythm, and the
+   * three entries it named here were all wrong, so a row that records both names is a row somebody can
+   * check that claim against.
+   */
+  heardAs?: string;
   /**
    * Which evidence this row came from, because the two are not equally strong.
    *
@@ -234,9 +244,12 @@ function container(name: string): Container | undefined {
 /**
  * The entry a family plus a carrier makes, since the carrier is part of the key.
  *
- * **Measured rather than assumed, and it took SharpO1 48 Bit to show it.** That family's codes arrive at
- * 36.4 and 38 kHz and its durations came in two sets; split by carrier, each half is exactly one set and
- * every code of it is reproduced to the microsecond. So an entry is a family at a frequency.
+ * **The reason for that was a mis-attribution and the key is right anyway.** It read that SharpO1 48 Bit
+ * arrives at 36.4 and 38 kHz with two sets of durations, so a family needed splitting by carrier. The
+ * two halves were two families, `Sharp 48 Bit 2` and `PanasonicV2 48 Bit`, named by Logitech's analyser
+ * and wrong, and their catalogue states one carrier per family. So no family here arrives at two
+ * frequencies. The carrier stays in the key because a rhythm is only a rhythm at a frequency and
+ * `nameByCatalogue` looks one up by both, not because any family needs separating.
  */
 function entryOf(m: Measured): string { return `${m.family}|${m.periodNs}`; }
 
@@ -1047,6 +1060,8 @@ const BANDS = [0, 0.001, 0.002, 0.005, 0.01, 0.02, 0.03, 0.05, 0.1];
 
 interface Entry {
   family: string;
+  /** The analyser's name for it, where the catalogue named it something else. */
+  heardAs?: string;
   periodNs: number;
   timings?: FrameTimings;
   /** Set instead of `timings` where the family is biphase, section 162. */
@@ -1432,18 +1447,141 @@ function blockTailOf(list: readonly Measured[], shape: Measured, slot = 0)
   return { tail, exact, of };
 }
 
-const entries: Entry[] = [];
-for (const [entry, list] of [...byEntry.entries()].sort((a, b) => b[1].length - a[1].length)) {
+/**
+ * The reading that describes an entry: its records grouped by shape, and the commonest group's.
+ *
+ * Commonest rather than first, so one odd appliance cannot decide an entry. Extracted because the
+ * catalogue naming pass below needs the same shape the row is built from, and two copies of that
+ * selection would be two copies of a derivation.
+ */
+function representative(list: Measured[]): { sets: Map<string, Measured[]>; shape: Measured } {
   const sets = new Map<string, Measured[]>();
   for (const m of list) sets.set(key(m), [...(sets.get(key(m)) ?? []), m]);
-  // Commonest rather than first, so one odd appliance cannot decide an entry.
   const best = [...sets.values()].sort((a, b) => b.length - a.length)[0]!;
-  const shape = best[0]!;
+  return { sets, shape: best[0]! };
+}
+
+/**
+ * Name every measured rhythm by Logitech's **catalogue** rather than by their analyser.
+ *
+ * **This is the fix for all three of the analyser named entries, and all three were wrong.** A corpus
+ * measured entry took its family from `row.theirs`, the analyser's answer, and section 160 retired that
+ * as evidence for a rhythm: it names a family correctly for durations their own compiler never emits.
+ * Their **catalogue** states the rhythm outright, so the rhythm can be looked up in it, and the three
+ * came back `Sharp 48 Bit 2`, `PanasonicV2 48 Bit` and `Toshiba 32 Bit`, with no ambiguity and nothing
+ * hardcoded. Two of them then merge with the compiled entry of the same family, which is what turns a
+ * duplicate row into a second route measuring one family.
+ *
+ * **It runs per shape and not per entry, which is what the data asked for.** The group their analyser
+ * called `MemorexO1 32 Bit` holds three rhythms, and one of them, three records of an arch 8
+ * configuration, is Logitech's **real** `MemorexO1 32 Bit` to the microsecond: 9000/4500 with 560, 560
+ * and 1690, where the other 727 records carry Toshiba's 8990/4490 with 568, 552 and 1662. Renaming the
+ * whole group would have buried those three under Toshiba's name and taken its exactness from 622 of 622
+ * to 703 of 730 to do it. So a shape the catalogue names becomes its own entry.
+ *
+ * **A shape the catalogue does not name follows the majority**, which keeps the existing design: an
+ * entry deliberately absorbs a little variation between remotes and states it as `spread`, and the 24
+ * records of the two Harmony 700 configurations that read 562/562/1688 are that, not a fourth family.
+ * The rule is therefore Logitech's statement where they make one and today's behaviour where they do
+ * not, with no threshold of ours anywhere in it.
+ *
+ * A rhythm the catalogue does not hold at all keeps the name it had, because an absence means either
+ * that Logitech states no such family or that its shape is one the converter still refuses, and those
+ * two cannot be told apart. An **ambiguous** rhythm keeps its name too, since a guess is worse than an
+ * old name.
+ */
+function nameByCatalogue(catalogue: Map<string, CatalogueFamily[]>): {
+  readonly renamed: { from: string; to: string; codes: number }[];
+  readonly ambiguous: { from: string; among: string[] }[];
+  readonly absent: string[];
+} {
+  const renamed: { from: string; to: string; codes: number }[] = [];
+  const ambiguous: { from: string; among: string[] }[] = [];
+  const absent: string[] = [];
+  /**
+   * The one family the catalogue gives this shape, or undefined for none and for unbroken ambiguity.
+   *
+   * **The analyser breaks a catalogue tie and nothing else does.** Three records here carry
+   * 9000/4500 with 560, 560 and 1690, which Logitech states for `MemorexO1 32 Bit` and for `PDP 32 Bit`
+   * alike, and their analyser called them MemorexO1. Two sources naming the same family out of two
+   * candidates is this project's ordinary standard for believing an attribution, where either alone is
+   * not: section 160 retired the analyser for the **rhythm**, not for the name, and the catalogue is
+   * being asked here for the rhythm.
+   */
+  const named = (m: Measured, heard: string): string | undefined => {
+    if (m.timings === undefined) return undefined;
+    const hits = familiesOfRhythm(catalogue, m.periodNs, m.timings, m.bits);
+    if (hits.length === 1) return hits[0]!.family;
+    return hits.find((one) => one.family === heard)?.family;
+  };
+  for (const list of [...byEntry.values()]) {
+    const { sets, shape } = representative(list);
+    if (shape.timings === undefined) continue;
+    const was = list[0]!.family;
+    const hits = familiesOfRhythm(catalogue, shape.periodNs, shape.timings, shape.bits);
+    if (hits.length === 0) absent.push(was);
+    else if (hits.length > 1 && !hits.some((one) => one.family === was)) {
+      ambiguous.push({ from: was, among: hits.map((one) => one.family) });
+    }
+    // The majority's name where the catalogue gives one, otherwise the name the entry already had.
+    const majority = named(shape, was) ?? was;
+    for (const set of sets.values()) {
+      const to = named(set[0]!, was) ?? majority;
+      if (to === was) continue;
+      renamed.push({ from: was, to, codes: set.length });
+      for (const m of set) { m.heardAs = m.family; m.family = to; }
+    }
+  }
+  // Re-key, which is what merges a renamed shape onto the entry the compiler already measured, and what
+  // gives a shape named differently from its group an entry of its own.
+  const merged = new Map<string, Measured[]>();
+  for (const list of byEntry.values()) {
+    for (const m of list) merged.set(entryOf(m), [...(merged.get(entryOf(m)) ?? []), m]);
+  }
+  byEntry.clear();
+  for (const [at, list] of merged) byEntry.set(at, list);
+  return { renamed, ambiguous, absent };
+}
+
+/**
+ * The catalogue, or a refusal, and the refusal covers three cases with one message.
+ *
+ * No checkout, a `HARMONY_IR_ARCHIVE` pointing at nothing, and a schema version this reader does not
+ * know all mean the same thing here: the names cannot be checked. The first version of this guard tested
+ * only for `undefined`, so an environment variable pointing at a missing directory gave a stack trace
+ * where it should have given the instruction.
+ */
+function catalogueOrRefuse(): Map<string, CatalogueFamily[]> {
+  try {
+    if (IR_ARCHIVE === undefined) throw new ArchiveError('no checkout found');
+    return catalogueByRhythm(IR_ARCHIVE);
+  } catch (why) {
+    if (!(why instanceof ArchiveError)) throw why;
+    console.error(`no usable infrared archive: ${why.message}.`);
+    console.error('A measured rhythm is named by Logitech\'s own catalogue, so without it this table');
+    console.error('would carry their analyser\'s names, and those were wrong three times out of three.');
+    console.error('Clone logitech-harmony-ir-archive alongside the repository or set HARMONY_IR_ARCHIVE.');
+    process.exit(1);
+  }
+}
+const naming = nameByCatalogue(catalogueOrRefuse());
+console.log(`\nnamed against Logitech's catalogue: ${naming.renamed.length} renamed, `
+  + `${naming.ambiguous.length} ambiguous and left alone, ${naming.absent.length} not in it`);
+for (const one of naming.renamed) {
+  console.log(`  ${one.from} -> ${one.to}  (${one.codes} codes, their analyser's name was the old one)`);
+}
+for (const one of naming.ambiguous) console.log(`  ${one.from} is any of ${one.among.join(', ')}`);
+
+const entries: Entry[] = [];
+for (const [entry, list] of [...byEntry.entries()].sort((a, b) => b[1].length - a[1].length)) {
+  const { sets, shape } = representative(list);
   const band = BANDS.find((b) => list.every((m) => reproduces(m, shape, b)));
   const tailed = blockTailOf(list, shape);
   const held = blockTailOf(list, shape, 1);
   entries.push({
     family: list[0]!.family,
+    ...(list.find((m) => m.heardAs !== undefined) === undefined ? {}
+      : { heardAs: list.find((m) => m.heardAs !== undefined)!.heardAs! }),
     periodNs: list[0]!.periodNs,
     ...(shape.timings === undefined ? {} : { timings: shape.timings }),
     ...(shape.biphase === undefined ? {} : { biphase: shape.biphase }),
@@ -1544,9 +1682,11 @@ const GENERATED = `/**
  * measured that the durations can be copied off any other code of the same **appliance**, which serves a
  * config that already drives it and cannot serve a document starting from nothing.
  *
- * **An entry is a family at a carrier frequency**, which is measured and not tidiness: SharpO1 48 Bit
- * arrives at 36.4 and 38 kHz and its durations came in two sets until they were split that way, after
- * which each half reproduces every one of its codes to the microsecond.
+ * **An entry is a family at a carrier frequency**, because a rhythm is only a rhythm at a frequency and
+ * that is how a family is looked up in Logitech's catalogue. It is **not** because a family arrives at
+ * two of them: that reading came from two entries their analyser both called SharpO1 48 Bit, which are
+ * \`Sharp 48 Bit 2\` at 38 kHz and \`PanasonicV2 48 Bit\` at 36.4 kHz, and Logitech states one carrier
+ * per family.
  *
  * **\`framePeriod\` replaces the closing space rather than tabling it.** On a pulse width protocol the
  * space that closes the last pair pads the frame out to a constant total, so it is shorter by one bit's
@@ -1554,11 +1694,12 @@ const GENERATED = `/**
  * three codes; computing it from the period makes it one. Both Sony families come out at exactly 45000
  * microseconds, which is the published frame period of that protocol and was not fitted to.
  *
- * **One rhythm can carry two names, and the table keeps both rather than choosing.** \`Sharp 48 Bit 2\`
- * and \`SharpO1 48 Bit\` at 38 kHz hold identical durations: the first is what Logitech's **catalogue**
- * calls it and the second what their **analyser** does, and section 159 measured that the two
- * vocabularies are not one. Collapsing them would need a rule about which name a caller will ask with,
- * and there is no such rule, so both are here and a lookup answers whichever it is given.
+ * **A family is named by Logitech's catalogue, and their analyser's name is kept beside it as
+ * \`heardAs\`.** This said the table held both names for one rhythm because there was no rule for which a
+ * caller would ask with. There is a rule: the catalogue **states** the rhythm, so the rhythm identifies
+ * the family, and \`nameByCatalogue\` does that lookup. It moved four groups, of which their analyser had
+ * named three outright wrongly, and the fourth apart from a family it had merged into. Their two
+ * vocabularies still differ, section 159, which is what \`heardAs\` is for.
  *
  * **\`exact\` and \`spread\` are what the entry is worth, and they are two different claims.** \`exact\` is
  * how many of its codes this rhythm reproduces to the microsecond, which is what Logitech's own compiler
@@ -1819,7 +1960,8 @@ if (write) {
     const tailOut = e.tail === undefined ? '' : ` tail: ${blockOut(e.tail)}, tailExact: ${e.tailExact},`;
     const heldOut = e.held === undefined ? ''
       : ` held: ${blockOut(e.held)}, heldExact: ${e.heldExact}, heldOf: ${e.heldOf},`;
-    const tail = `${tailOut}${heldOut} codes: ${e.codes}, exact: ${e.exact}, spread: ${e.band}, source: '${e.source}' },`;
+    const tail = `${tailOut}${heldOut} codes: ${e.codes}, exact: ${e.exact}, spread: ${e.band}, `
+      + `source: '${e.source}'${e.heardAs === undefined ? '' : `, heardAs: '${e.heardAs}'`} },`;
     const head = `  { family: '${e.family}', periodNs: ${e.periodNs}, `;
     const b = e.biphase;
     if (b !== undefined) {

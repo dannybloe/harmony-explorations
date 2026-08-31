@@ -78,18 +78,21 @@ already held.
 **Queued behind it, from decision 15**, in the order they should be done, and none of them needs a
 remote:
 
-1. **Fix the three mis-attributed protocol families.** Ours, and the cheapest of the three because the
-   answer is already known. `SharpO1 48 Bit` at 38 kHz carries the durations of Logitech's own
-   `Sharp 48 Bit 2` byte for byte, the other `SharpO1 48 Bit` is `PanasonicV2 48 Bit`, and
-   `MemorexO1 32 Bit` is `Toshiba 32 Bit`. 153 codes under the wrong name. The rhythms are right and
-   the labels are wrong, which is the hazard recorded when attribution was decided by a vote of
-   overlapping numbers. It also kills the rhythm table's own claim that `Sharp 48 Bit 2` and
-   `SharpO1 48 Bit` are two names for one rhythm: Logitech's definitions give them different durations
-   **and** different carriers, 38.0 against 38.2 kHz. Fix the attribution in the join rather than in
-   the generated table, and sweep the dead claim.
-2. **Convert the 685 definitions into the rhythm table**, marked per decision 15, with the two numbers
-   that say what it is worth: how many convert cleanly, and how many of those reproduce the archive's
-   own waveforms exactly.
+1. ~~**Fix the three mis-attributed protocol families.**~~ **Done, 31 August 2026, section 227**, and
+   the fix turned out to be one rule rather than three renames: a family is named by looking its rhythm
+   up in Logitech's **catalogue**, which states it, rather than by their analyser, which had named all
+   three. It runs per rhythm, so the group they called `MemorexO1 32 Bit` split into `Toshiba 32 Bit`,
+   `Roku 32 Bit 1` and the real `MemorexO1 32 Bit`, whose three records match their own definition to
+   the microsecond. The table went from 38 entries to 37 and its two route confirmations from 6 to 9,
+   and no entry has a duration spread any more. The calibration that makes it believable: 30 of our 31
+   frame rhythms are reproduced from their definitions field for field and none disagrees.
+2. **Convert the remaining definitions into the rhythm table**, marked per decision 15, with the two
+   numbers that say what it is worth: how many convert cleanly, and how many of those reproduce the
+   archive's own waveforms exactly. Section 227 built the converter and the calibration; what it reads
+   so far is 357 of the 684, and the refusals are counted by reason. The two biggest are shapes our
+   table already has a form for: 105 biphase families and part of the 142 stating something other than
+   two cells, which includes the base four ones. So this step is extending one reader, not starting
+   one, and its first output is the families the corpus holds no code of at all.
 3. **Read the device catalogue as a local device source.** This is the one that changes the product:
    the importer scoped as a large job is mostly a reader, and the naming layer arrives with it, so
    which code is volume up stops being something only two test accounts could tell us. Measure it
@@ -368,8 +371,8 @@ image is a second sample rather than a stand in. Other models are iterated on la
    already holds, and the nine families are nine names rather than nine encoders.
 
    **What is genuinely unpriced is everything after the frame.** A block repeats the frame and then goes
-   quiet, and that tail is 140 distinct shapes across the corpus, with a per family rule for 31<!--fact:protocol_tails--> of the
-   rhythm table's 38<!--fact:protocol_entries--> entries since section 171 and none for the rest, so it is emitted where there is a
+   quiet, and that tail is 140 distinct shapes across the corpus, with a per family rule for 29<!--fact:protocol_tails--> of the
+   rhythm table's 37<!--fact:protocol_entries--> entries since section 171 and none for the rest, so it is emitted where there is a
    rule and copied
    from a record of the same appliance rather than computed. That is a smaller job and a different one:
    it needs a record to copy from, which means the catalogue import wants a configuration beside it

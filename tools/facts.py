@@ -453,9 +453,12 @@ def protocol_facts():
     """The shape of the infrared rhythm table, read out of the generated source.
 
     **Every one of these had drifted somewhere on 29 August 2026**, which is why they are facts now
-    rather than numbers people retype. The tail count was 24 in `findings.md` and is 31; three
+    rather than numbers people retype. The tail count was 24 in `findings.md` and is 29; three
     documents and the generator template said three biphase families where there are four; and
-    `status.md` called 38 entries 38 families, where one family appears at two carrier frequencies.
+    `status.md` called 38 entries 38 families on the strength of one family appearing at two
+    carriers<!--superseded-->. That last one was itself wrong, section 227: the two entries were two
+    families their analyser had both named `SharpO1 48 Bit`, so entries and families are now the same
+    number for a better reason than the one this docstring gave.
     None of them is a corpus total, so none was covered by anything here.
 
     Computed from `packages/codec/src/protocols.ts`, which is generated, so these track the

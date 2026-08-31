@@ -317,10 +317,22 @@ catalogue and sent half a command on the families that fill both. **The notation
 digits in **base 4**: `Quad` in a family name is the base of its digits and not a count of its frames, and
 the same width check that refused all 69 of its codes accepts all 69 once the base is right.
 **Thirty five of the table's 37 families have a rhythm measured off Logitech's own compiler**, sections
-160 to 171, of which six are measured off **both** that route and the corpus and three off the corpus
+160 to 171, of which **nine** are measured off **both** that route and the corpus and two off the corpus
 alone. This said "eighteen ... sections 160 to 163"<!--superseded--> until 29 August 2026, which was the
 count when that paragraph was written and roughly half of what sections 165 to 171 left it at; the
-"three of them agree" below is the same figure and is six now. The route is open: `DeviceManager/UpdateMultiple` takes an operation bag and puts a catalogue appliance on an
+"three of them agree" below is the same figure and is nine now, three of them added by section 227
+without a single new measurement, by naming a rhythm out of Logitech's catalogue instead of out of their
+analyser.
+
+**A family is named by their catalogue and never by their analyser**, section 227, which is the rule to
+carry rather than the counts above. The analyser was retired as evidence for a **rhythm** by section 160
+and stayed the only source of a **name** for a corpus measured entry, and all three entries so named were
+wrong: two held another family's durations under a name whose real carrier is 38.2 kHz, and one held
+Toshiba's under Memorex's. The catalogue **states** each family's rhythm, 684 definitions of them in the
+archive, so the rhythm is looked up rather than named. What makes that believable is the calibration:
+**30 of our 31 frame rhythms are reproduced from their own definitions field for field and none
+disagrees**, by two routes with nothing in common. The generator refuses to write the table without the
+archive, since a regeneration elsewhere would silently restore the analyser's names. The route is open: `DeviceManager/UpdateMultiple` takes an operation bag and puts a catalogue appliance on an
 account, so their service will compile a configuration containing any family we ask for and the
 durations in it are the ones their generator emits. Fifteen appliances, 1143 records, and every family
 reproduces its own durations on every one of its records. Three of them agree to the microsecond with
@@ -449,6 +461,10 @@ harmony/
   FreeHarmony/              the application, checked out beside this one on 12 August 2026. Its path
                             dependency is `../harmony-explorations/packages/codec`, so the sibling
                             layout is load bearing rather than a convention
+  logitech-harmony-ir-archive/  a third party's checkout of Logitech's infrared database, public and
+                            cloned rather than vendored, decision 15. `packages/lab` finds it here and
+                            `HARMONY_IR_ARCHIVE` overrides; without it the rhythm table's tests skip
+                            and `make protocols --write` refuses, since it is what names a family
   lab/                      private, never in **this** git. It has a local repository of its
                             own since 24 August 2026, with no remote and a pre-push hook that
                             refuses, because a capture there was overwritten with no history
@@ -935,7 +951,11 @@ The TypeScript workspace, per `docs/roadmap.md` step 4:
                                 writing a container, the byte accounting behind M2, the emitter that
                                 reads it back, same length edits with their refusals, the screen's
                                 text, the renderer, and the infrared frame decoder and encoder
-packages/lab/                   TS: finds the private lab directory, mirrors tests/lab.py
+packages/lab/                   TS: finds the private lab directory, mirrors tests/lab.py. Also
+                                finds the **public** infrared archive checkout, which is a
+                                separate locator on purpose: both make their tests skip when
+                                absent and the rules about what may be copied out of each are
+                                opposite
 packages/usb/                   TS: the command protocol and the write rails, read path measured.
                                 Also the **second** protocol, for the file based family openHarmony
                                 refuses, and the table that turns a reported skin into a model and
@@ -1790,7 +1810,7 @@ file.
 | a timer fires one instruction, not a list | and its duration is clamped to sixteen bits with no error |
 | infrared duration blocks are shared | check who else names a block before editing it in place |
 | a record's three block pointers are once, held and tail | slot 1 repeats for as long as the key is down, so its trailing gap **is** the repeat rate. A duration word caps at 32767 us |
-| a frame can be written, and its tail is emitted for the families that have a rule and copied otherwise | 140 distinct tail shapes, a rule for 31<!--fact:protocol_tails--> of the rhythm table's 38<!--fact:protocol_entries--> entries and none for the rest, and 226 records hold a second, different code in the tail |
+| a frame can be written, and its tail is emitted for the families that have a rule and copied otherwise | 140 distinct tail shapes, a rule for 29<!--fact:protocol_tails--> of the rhythm table's 37<!--fact:protocol_entries--> entries and none for the rest, and 226 records hold a second, different code in the tail |
 | a record's carrier period is truncated, not rounded | `floor(1e9 / f)` nanoseconds, per record rather than per device |
 | a picture's position is implied by everything before it | inserting or resizing one moves every later address |
 | every mode page's tagged list has a second copy | nothing reads it and an editor must still change both. Its position is implied, not stated |
