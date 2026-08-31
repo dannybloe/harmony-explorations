@@ -16,8 +16,9 @@
  * between the copies, and none of that follows from the bits, 140 distinct shapes across the corpus. So
  * this returns the frame and a caller that wants a whole block still has to decide the rest.
  */
-import { pulsesOfBiphaseFrame, pulsesOfBlock, pulsesOfFrame, pulsesOfLongToggle, pulsesOfQuad,
-  type BiphaseTimings, type FrameTimings, type Pulse }
+import { pulsesOfBiphaseFrame, pulsesOfBlock, pulsesOfCellFrame, pulsesOfFrame, pulsesOfLongToggle,
+  pulsesOfQuad,
+  type BiphaseTimings, type CellTimings, type FrameTimings, type Pulse }
   from './irframe.ts';
 import { PROTOCOLS, type StatedProtocol } from './protocols.ts';
 
@@ -122,8 +123,10 @@ function valueOf(digits: string, base: number): bigint {
  * one family in the census whose digits are not hexadecimal, and it is now what confirms the fix rather
  * than what refuses it: see the base below.
  *
- * **`Quad` in a family name is the base of its digits, not a count of its frames**, and reading it as
- * hexadecimal overstated every one of its values. `Galaxis 16 Bit Quad Toggle` is the only family in the
+ * **`Galaxis 16 Bit Quad Toggle` writes its digits in base four**, and reading them as hexadecimal
+ * overstated every one of its values. This was written up as `Quad` in a family name being the base of
+ * its digits<!--superseded-->, which section 231 refutes as a rule about the word: `Quad 5 Bit` names it
+ * and states two symbols and five bits. `Galaxis 16 Bit Quad Toggle` is the only family in the
  * census that names it, and under base 16 its three values need 26, 1 and 26 bits against the 16 the name
  * states, so all 69 of its codes were refused. Under base **4**, two bits a digit, all 69 fit, and their
  * digit counts are 1, 7 and 8, an eight digit value being exactly the 16 bits the name claims. Three
@@ -132,12 +135,20 @@ function valueOf(digits: string, base: number): bigint {
  * error. And `Quad` cannot be a frame count here, because these codes state **three** values, where the
  * four families naming `Dual` state two.
  *
- * **The name is the discriminator and the digit set is only corroboration**, which is measured rather
- * than chosen: six families have codes whose digits all happen to be 0 to 3, and Galaxis is the only one
- * where that holds for every code, so a reader keyed on the digits would have to guess on a `Sony 12 Bit`
- * code that uses no digit above 3. A second family naming `Quad` would have to be measured before this
- * is assumed to be about the word in general; until then the width check is what would catch it, since a
- * quaternary reading of hexadecimal digits refuses on the digit set alone.
+ * **The name is not the discriminator, and the second family naming `Quad` is what settled it**, section
+ * 231. This said the name was the discriminator and the digit set only corroboration, and named the
+ * condition that would reopen it: a second family naming the word, measured. `Quad 5 Bit` is that family
+ * and it is an ordinary two symbol family, five bits, its values plain hexadecimal, so the word carries
+ * the base on one family and nothing at all on the other. Logitech's own definition states the base, as
+ * the number of cells its frame segment holds, and a caller that has the definition passes it in.
+ *
+ * **The safeguard named for exactly this case does not bite**, which is the part worth keeping. The
+ * argument was that a quaternary reading of hexadecimal digits refuses on the digit set alone, so a
+ * wrongly quaternary family would be caught rather than mis-sent. Every digit of every `Quad 5 Bit` code
+ * is 0 to 3, so all twenty passed the digit check, and three of the five whose waveform can be built
+ * came out as a different number with no refusal anywhere. What caught it was Logitech's own rendering.
+ * The digit set stays as corroboration and is not evidence: six families have codes whose digits all
+ * happen to be 0 to 3.
  *
  * A family naming one width and stating two values means the width **across the pair**, which was open
  * here until section 166 read it off the wire: "Samsung 38 Bit" sends one frame of 17 plus 21 bits, the
@@ -145,7 +156,33 @@ function valueOf(digits: string, base: number): bigint {
  * structurally. The per value widths are not in the name; they are stated by the rhythm table entry's
  * `sections`, so this reader keeps `bits` as the name's width on every frame of such a code.
  */
-export function statedCode(keyCode: string): StatedCode | undefined {
+export function statedCode(
+  keyCode: string,
+  options: {
+    /**
+     * The width of each value in **bits**, from the definition rather than the name.
+     *
+     * **The name is not enough and section 231 is where it stops being enough at all.** For an ordinary
+     * family the number before `Bit` is a bit count and is right on 179 of the 202 families that state
+     * several values. For one of the 142 families whose cell carries more than one bit it is worth
+     * nothing: it is the digit count on 66 of them, the bit count on 4, and neither on 72. Every one of
+     * the 142 states its widths in Logitech's own `keycodeFields`, so the definition is the answer and
+     * the name is not a fallback for it. `frameWidths` in `archive.ts` is what supplies these.
+     */
+    readonly widths?: readonly number[];
+    /**
+     * How many bits one digit of this code's values carries, from the definition rather than the name.
+     *
+     * **The name is a guess and it is wrong for one family in two**, section 231. `Quad` in a family
+     * name is the base of its digits on `Galaxis 16 Bit Quad Toggle` and is nothing of the kind on
+     * `Quad 5 Bit`, which states two symbols and five bits and writes its values in hexadecimal: read as
+     * quaternary, three of its five renderable codes send another number entirely. Logitech's own
+     * definition states it, as the number of cells in the frame segment, so a caller holding the
+     * definition passes it and the name's rule is the fallback for a caller holding only a table row.
+     */
+    readonly bitsPerDigit?: number;
+  } = {},
+): StatedCode | undefined {
   const parsed = /^G:([^:]+):\(([^)]*)\)\(([^)]*)\)\(([^)]*)\)/.exec(keyCode);
   if (parsed === null) return undefined;
   const family = parsed[1]!.trim();
@@ -160,9 +197,23 @@ export function statedCode(keyCode: string): StatedCode | undefined {
   const stated = /(?:^|\s)((?:\d+\s*(?:and\s+)?)+)Bit/i.exec(family);
   const widths = [...(stated?.[1] ?? '').matchAll(/\d+/g)].map((one) => Number(one[0]));
   if (widths.length === 0 || widths.some((one) => one === 0)) return undefined;
-  // **The base the digits are written in, out of the family's own name**, like the widths. Two bits a
-  // digit where the name says `Quad`, four everywhere else.
-  const base = /\bQuad\b/i.test(family) ? 4 : 16;
+  // **The base the digits are written in**, which decides nothing but the parse. Two bits a digit is
+  // four symbols and anything else is written in hexadecimal.
+  //
+  // **The definition states it and the family's name only guesses at it**, so the option wins where a
+  // caller has the definition: `Quad` in a name means base four on `Galaxis 16 Bit Quad Toggle` and
+  // means nothing at all on `Quad 5 Bit`, which states two symbols and five bits and writes its values
+  // in hexadecimal. Three of that family's codes came out as another number entirely before this took
+  // the definition's word for it. Section 231.
+  //
+  // **The name's number is a bit count and is never multiplied out**, which is the reading this had
+  // wrong for an afternoon: it multiplied by the digit width, on the ground that a family stating its
+  // base spells its width in digits. Measured over the 142 families whose cells carry more than one
+  // bit, the name is the digit count on 66, the bit count on 4 and **neither** on 72, so it agrees with
+  // each reading less often than it disagrees with both and cannot carry either. It does not have to:
+  // every one of the 142 states its widths in `keycodeFields`, so a caller holding the definition never
+  // needs the name, and `Galaxis 16 Bit Quad Toggle` is one of the four whose name means bits.
+  const base = (options.bitsPerDigit ?? (/\bQuad\b/i.test(family) ? 2 : 1)) === 2 ? 4 : 16;
   // Read in slot order and keep it, since the order is the order the frames go out in. `at` records
   // which slot each item came from, which is all `groups` needs to put the boundary back.
   const raw: ({ value: bigint; index: number; at: number } | { word: StatedWord; at: number })[] = [];
@@ -182,8 +233,19 @@ export function statedCode(keyCode: string): StatedCode | undefined {
   const values = raw.filter((one): one is { value: bigint; index: number; at: number } =>
     !('word' in one));
   if (values.length === 0) return undefined;
-  if (widths.length !== 1 && widths.length !== values.length) return undefined;
-  const width = (at: number): number => widths.length === 1 ? widths[0]! : widths[at]!;
+  // **Stated widths are used where they pair with the values and the name's are used otherwise**, which
+  // is narrower than it first was and the difference was measured: taking the last stated width for
+  // every extra value accepted 39 `Samsung 16 and 20 Bit` codes the name's rule had been refusing, and
+  // every one of them disagreed with Logitech's own rendering. A code stating more values than its
+  // definition has fields is a shape nobody has read, so it stays a refusal.
+  const stateds = options.widths !== undefined
+    && (options.widths.length === 1 || options.widths.length === values.length)
+    ? options.widths : undefined;
+  if (stateds === undefined && widths.length !== 1 && widths.length !== values.length) return undefined;
+  const width = (at: number): number => {
+    if (stateds !== undefined) return stateds.length === 1 ? stateds[0]! : stateds[at]!;
+    return widths.length === 1 ? widths[0]! : widths[at]!;
+  };
   let seen = 0;
   const items: StatedItem[] = raw.map((one) => 'word' in one
     ? { kind: 'word' as const, word: one.word }
@@ -292,11 +354,33 @@ export function biphaseOf(entry: StatedProtocol): BiphaseTimings | undefined {
   };
 }
 
+/**
+ * The entry's cell table as the encoder's own type, or `undefined` on a family whose bit is a length.
+ *
+ * A cell table family sends one of four or sixteen whole cell shapes per digit, section 231, so it has
+ * none of the five durations and none of the biphase fields. The accessor exists for the same reason
+ * `biphaseOf` does: the table's row shape is a published type and the encoder's is not.
+ */
+export function cellsOf(entry: StatedProtocol): CellTimings | undefined {
+  if (entry.cells === undefined) return undefined;
+  return {
+    lead: [...entry.cells.lead],
+    cells: entry.cells.cells.map((one) => [...one]),
+    bits: entry.cells.bits,
+  };
+}
+
 export function pulsesOfStatedCode(
   family: string, bits: number, value: bigint, periodNs?: number,
 ): Pulse[] | undefined {
   const entry = statedProtocol(family, periodNs);
   if (entry === undefined) return undefined;
+  // **A cell table family is emitted by its own encoder too**, section 231: the bit is which of four or
+  // sixteen cell shapes goes out, so neither the five durations nor the biphase half cell applies.
+  const c = cellsOf(entry);
+  if (c !== undefined) {
+    try { return pulsesOfCellFrame(c, bits, value); } catch { return undefined; }
+  }
   // **A biphase family is emitted by its own encoder**, section 162: one half cell, a fixed prelude and
   // which half of the cell means a set bit, with none of the five durations below.
   const b = biphaseOf(entry);
@@ -364,9 +448,14 @@ export function blockOfStatedCode(
   if (block === undefined) return undefined;
   const t = timingsOf(entry);
   const b = biphaseOf(entry);
-  if (t === undefined && b === undefined) return undefined;
+  const c = cellsOf(entry);
+  if (t === undefined && b === undefined && c === undefined) return undefined;
   // `exactOptionalPropertyTypes`, so a field is present or it is not there at all.
-  const shape = { ...(t === undefined ? {} : { timings: t }), ...(b === undefined ? {} : { biphase: b }) };
+  const shape = {
+    ...(t === undefined ? {} : { timings: t }),
+    ...(b === undefined ? {} : { biphase: b }),
+    ...(c === undefined ? {} : { cells: c }),
+  };
   // Every stated frame goes in, because a tail item may name the code's second one, section 171
   // stage two; a tail asking for a frame the code does not state is a refusal inside the encoder.
   try { return pulsesOfBlock(shape, read.frames, block); }

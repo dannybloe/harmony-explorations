@@ -101,12 +101,10 @@ remote:
    for 22 of the 24 unstated families and at one for two, which would be a fit to this corpus. So 16
    stated rows gained a block and the writable count went from 29 families to 45 out of 461 buildable.
    **What stands between 45 and 461 is one integer per family that Logitech's own data does not carry**,
-   which is a want list item for the catalogue rather than a reading to write. The three
-   shapes still unread are 75 base four, 67 base sixteen and 35 one interval per bit; each needs its
-   own reading and its own calibration, and the base four one is the only shape our table already has.
-   The second number this step was meant to produce is **not** done: nobody has yet built a waveform
-   with our encoder and compared it against the archive's own rendering of the same command, which is
-   the check that scales to millions rather than 35.
+   which is a want list item for the catalogue rather than a reading to write. Two of the three shapes
+   this step listed as unread, 75 base four and 67 base sixteen, turned out to be **one** shape and were
+   read in item 5, which is what took the table to 600 entries; 35 one interval per bit remains.
+   The second number this step was meant to produce is item 4, and it is done.
 3. ~~**Read the device catalogue as a local device source.**~~ **Done, 31 August 2026, section 229.**
    7889 manufacturers and 276236 devices read lazily, and the naming layer arrived with it: a device
    group is identified by the numbers its records decode to, 36 of 38 groups in this corpus and 31 of
@@ -135,20 +133,41 @@ remote:
    commands of seven families were being emitted wrongly, refusing beat approximating for the day it
    took to add the spelling, and `FrameTimings.carriedFirst` is that spelling. No measured row sets it,
    the shift being exact for all of them.
-   What is left is **three** commands, all of `Quad 5 Bit`, whose values are written in base four. That
-   is item 5's shape, so it gets a reading there rather than a patch.
-5. **Read the families whose cell is one of four lengths.** The largest block of Logitech's catalogue
-   this converter still refuses: **75 families**, against 67 whose cell is one of sixteen lengths and 35
-   that send one interval per bit. It is the one of the three our table already has a shape for, `quad`,
-   measured on `Galaxis 16 Bit Quad Toggle`, so this is a converter reading rather than a new row shape.
-   The calibration is already built and costs nothing: `make prontocheck` scores any new reading against
-   Logitech's own renderings of every command of every family it unlocks, and the three commands section
-   230 leaves outstanding are of exactly this kind, `Quad 5 Bit` coming out rotated by one bit.
-   **Their declined codes were censused while measuring that**: 51,913 of the 68,271 commands our keycode
-   reader refuses are refused on a width or a base, which is this shape and the base sixteen one, so the
-   two together are worth about a twentieth of the catalogue. The rest name a segment word outside the
-   closed set of three, chiefly `Finish` on 10,442 codes and `Divider` on 5121, and each of those is its
-   own small reading.
+   What was left was **three** commands, all of `Quad 5 Bit`, and item 5 both fixed them and refuted the
+   reason given for them here: the family's values are not written in base four at all, its **name**
+   merely contains the word.
+5. ~~**Read the families whose cell is one of four lengths.**~~ **Done, 31 August 2026, section 231,
+   and it was one shape rather than two.** Base four and base sixteen are the same statement: a family
+   states one **cell** per symbol value, and the number of cells is what says which base it is. So 142
+   families read rather than 75, the table goes from 461 entries to 600, and it now answers for **599 of
+   Logitech's 684** families.
+   **Every command that can be built agrees with Logitech's own rendering**: 1,923,128 of 1,923,128
+   first transmissions and 1,135,097 of 1,135,097 held repetitions, over 428 families, up from 368 and
+   three outstanding. The 34 of 35 rhythm calibration and the 29 of 29 block calibration both pass
+   unaltered, which is the control saying none of this was bought by moving our own measurements.
+   **It killed two readings of ours and one of them was a day old.** `Quad` in a family name is not the
+   base of its digits: it is on `Galaxis 16 Bit Quad Toggle` and it is nothing at all on `Quad 5 Bit`,
+   which is why three commands came out as another number and why the definition states the base now.
+   And a family's **name** carries neither a digit count nor a bit count for these families, 66 against
+   4 with 72 agreeing with neither, so the definition's own field is the only answer; that one was caught
+   by a test on the same afternoon it was written.
+   **What is left is counted rather than lumped.** 85 definitions still state no readable rhythm, 35 of
+   them sending one interval per bit. 144,735 commands are not compared, of which **84,694 are one
+   shape**: a press cycle naming two infrared segments with **different** rhythms, where our table holds
+   one rhythm per family. `Philips Hurd 16 Bit LongToggle` alone is 56,991 of those. That is now the
+   single biggest thing between Logitech's catalogue and a writable command.
+6. **Read a press cycle whose two segments state different rhythms.** 84,694 commands of 29 families,
+   the largest remaining refusal by an order of magnitude, and it is a **table shape** question rather
+   than a reading: a row holds one rhythm, and these families need two plus a block that says which
+   segment each copy uses. `Philips Hurd 16 Bit LongToggle` is 56,991 of the commands and
+   `Galaxis 16 Bit Quad Toggle` another 21,398, so two families are three quarters of it. The
+   calibration is already built and costs nothing, `make prontocheck` scoring any new reading against
+   Logitech's own renderings.
+7. **Accept the segment words a keycode may name.** 16,476 commands are declined because their keycode
+   names a word outside the closed set our reader takes: `Start` on 15,146, `Finish` on 10,442,
+   `Trailer` on 5581, `Divider` on 5121, and seven rarer ones. Each is a small reading and a word
+   outside the set is deliberately a refusal rather than a guess. A further 14,636 are declined on a
+   width, which is a separate question and unexamined.
 
 **And section 192 answered the question standing in front of every write rail**, which is what a host's
 flash address actually means. It is not an address: one routine classifies it, a top byte of `0xFE` or
@@ -423,8 +442,8 @@ image is a second sample rather than a stand in. Other models are iterated on la
 
    **What is genuinely unpriced is everything after the frame.** A block repeats the frame and then goes
    quiet, and that tail is 140 distinct shapes across the corpus, with a per family rule for 29<!--fact:protocol_tails--> of the
-   rhythm table's 37<!--fact:protocol_measured--> measured entries since section 171, plus 16<!--fact:protocol_tails_stated--> derived from Logitech's own
-   statement of it since section 228, and none for the remaining 408, so it is emitted where there is a
+   rhythm table's 37<!--fact:protocol_measured--> measured entries since section 171, plus 18<!--fact:protocol_tails_stated--> derived from Logitech's own
+   statement of it since section 228, and none for the remaining 545, so it is emitted where there is a
    rule and copied
    from a record of the same appliance rather than computed. That is a smaller job and a different one:
    it needs a record to copy from, which means the catalogue import wants a configuration beside it

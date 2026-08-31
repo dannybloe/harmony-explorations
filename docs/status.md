@@ -397,12 +397,12 @@ video recorder and a Denon receiver.
 **A code stated as a name and a number becomes pulses**, sections 152 to 169, which is what an
 importer of Logitech's still-answering device database needs: their catalogue serves no pulse data,
 only a protocol family and a frame value. The rhythm table in `packages/codec/src/protocols.ts`
-holds 461<!--fact:protocol_entries--> entries over 461<!--fact:protocol_families--> distinct families, one entry per family, of which
-**37<!--fact:protocol_measured--> were measured here and 424<!--fact:protocol_stated--> are Logitech's own definitions converted**, section 227.
+holds 600<!--fact:protocol_entries--> entries over 600<!--fact:protocol_families--> distinct families, one entry per family, of which
+**37<!--fact:protocol_measured--> were measured here and 563<!--fact:protocol_stated--> are Logitech's own definitions converted**, sections 227 and 231.
 The measured ones cover 32 of the 33 families this corpus holds a record of; the stated ones are
 families no configuration here has ever carried, so `codes: 0` on such a row is the honest number and
-`source` is what tells the two apart. 16 of the stated rows carry a whole block derived
-from Logitech's own statement of it, section 228, and the other 408 carry a frame and nothing after it,
+`source` is what tells the two apart. 18 of the stated rows carry a whole block derived
+from Logitech's own statement of it, section 228, and the other 545 carry a frame and nothing after it,
 so a code of those families can be built and not yet written. It said "A stated row carries no measured
 block either, so a code of that family can be built and not yet written"<!--superseded--> for one day.
 What holds the 408 back is not the shape, which their definitions state and which reproduces all 29
@@ -659,8 +659,8 @@ cannot drift apart; what a reader should not expect is two independent statement
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
 
-**Two million of Logitech's own waveforms, against our encoder, and three commands disagree**,
-section 230. The infrared archive carries a rendered waveform for every command in their catalogue,
+**Two million of Logitech's own waveforms, against our encoder, and nothing disagrees**,
+sections 230 and 231. The infrared archive carries a rendered waveform for every command in their catalogue,
 produced by somebody else's code from Logitech's own protocol definitions, which makes it an answer key
 two million entries long that nobody here had a hand in. **1,894,306 of 1,894,309 first transmissions
 agree exactly, and 1,112,791 of 1,112,794 held repetitions**, agreement meaning every interval identical
@@ -686,9 +686,24 @@ going out wrong. Those seven were **refused** first, a code that would be wrong 
 the refusal was the right answer for the day it took to teach the frame emitter the other spelling. No
 measured row uses it, the old spelling being exact for all of them.
 
-**What is left is three commands**, all of `Quad 5 Bit`, whose values are written in base four. That is
-the next reading in the plan, and the same check will score it. `make prontocheck` is the run, about
-forty seconds, and it needs the public archive checkout and no network.
+**Nothing is left, and the last three commands were not what section 230 said they were**, section 231.
+Those three were attributed to values written in base four, on the strength of the family's name
+containing the word `Quad`. `Quad 5 Bit` states two symbols and five bits and writes its values in
+hexadecimal, so the base came from the name and the name was wrong.
+
+**The reading that closed it also took the table from 461 families to 600**, which is the bigger half.
+142 of Logitech's families spell a bit as a whole **cell shape** rather than as one of two lengths: a
+value is read a digit at a time and each digit picks a cell, out of four or out of sixteen. Base four
+and base sixteen looked like two problems and are one shape, so 142 read where 75 were planned, and the
+converter now answers for **599 of Logitech's 684** families. **Every command that can be built agrees**:
+1,923,128 of 1,923,128 first transmissions and 1,135,097 of 1,135,097 held repetitions, over 428
+families, up from 368. The controls did not move: the 34 of 35 rhythm calibration and the 29 of 29
+block calibration both pass unaltered.
+
+**What stands between the catalogue and a writable command is now one shape**, 84,694 commands of 29
+families whose press cycle names two infrared segments with **different** rhythms, where a table row
+holds one. Two families are three quarters of it. `make prontocheck` is the run, about forty seconds,
+and it needs the public archive checkout and no network.
 
 **And which remote is on the cable is read off the remote**, section 226, which was the last of the
 three things the write rails took a caller's word for. Two Harmony Ones enumerate identically, so the

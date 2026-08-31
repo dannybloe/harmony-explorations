@@ -29307,7 +29307,7 @@ Logitech states for 39 families and nowhere else.
 ### What the table gained
 
 A block shape is derivable for **382 of the 684 definitions**. Of the 424 stated table rows, 349 have a
-derivable shape and **16<!--fact:protocol_tails_stated--> of those also state their repeat count**, so 16 rows gained a `tail` and a
+derivable shape and **18<!--fact:protocol_tails_stated--> of those also state their repeat count**, so 16 rows gained a `tail` and a
 `held` and the other 408 keep a frame and nothing after it. The refusals, over all 684:
 
 **382 is 375 since section 230**, which added two refusals of its own the next day: three families whose
@@ -29638,10 +29638,13 @@ follows and which are a separate segment that no copy's period counts.
 
 ### What is left, and it is three commands
 
-**`Quad 5 Bit`, three of its five commands.** Its values are written in base four, and its numbers come
-out rotated by one bit against Logitech's rendering. That is the base four shape, which section 227
-already names as unread and which 75 of their families use, so it gets its own reading and its own
-calibration rather than a patch here.
+**`Quad 5 Bit`, three of its five commands.** This said "its values are written in base four, and its<!--superseded-->
+numbers come out rotated by one bit against Logitech's rendering", and **both halves are wrong**,
+corrected the same day by section 231. The family states two symbols and five bits and its values are
+ordinary hexadecimal; nothing is rotated. What put it in this paragraph is that its **name** contains
+the word `Quad`, which section 227 read as the base of a family's digits. The wrong attribution was made
+here without looking at the definition, on the strength of the name, which is the same mistake the name
+rule itself was.
 
 **173,554 commands are not compared and the reasons are counted, not lumped**: 71,152 where no block is
 derivable, 68,271 where our keycode reader declines the code, 33,767 where no rhythm is derivable, 240
@@ -29660,3 +29663,139 @@ Nothing, by the end. Three stated rows were withdrawn and restored the same day,
 with 424 stated, and seven of those now carry `carriedFirst`. Nothing measured changed at any point: the
 34 of 35 rhythm calibration and the 29 of 29 block calibration both pass unaltered, which is the control
 that says these seven fixes did not buy their agreement by moving what our own measurements say.
+
+## 231. The families whose bit is a whole cell shape, and the table answers for 599 of 684
+
+**31 August 2026.** An infrared command is a lamp blinking in a precise rhythm, and until today this
+project could read only one way of spelling a bit: the lamp goes on for a fixed time and the pause
+after it is long or short. Logitech's own catalogue spells it another way on **142 of its 684
+families**: the pause is one of **four** lengths, or one of **sixteen**, so one pause carries two bits
+or four. Those 142 were refused wholesale, in two buckets of 75 and 67, and reading them takes the
+rhythm table from 459 of Logitech's families to **599**, and the number of families whose codes can be
+checked against Logitech's own renderings from 374 to 428.
+
+**The reading is one shape and not two, which is the finding rather than the counts.** Base four and
+base sixteen looked like two problems and are one: a family states a **cell per symbol value**, and the
+number of cells is what says which base it is. `CellTimings` in `packages/codec/src/irframe.ts` is that
+shape, a lead in plus one interval list per symbol, and `pulsesOfCellFrame` emits it by taking the
+value a digit at a time, most significant first, and putting that digit's cell on the wire. Nothing is
+computed from a duration: every cell is taken exactly as the definition writes it, which is why the
+same code path serves four cells and sixteen and would serve any power of two.
+
+**Logitech states the base themselves and the shape does not have to be inferred.** Their
+`EncodingType` field is 2 or 3 on exactly these families, and the cell count says the same thing, so
+`bitsPerDigit` in `packages/codec/src/archive.ts` reads it off the count rather than trusting the
+field. That matters because a **field width is then in digits**: their `keycodeFields` says 5 for a
+family whose values are five base four digits, which is ten bits. Multiplying it out is the difference
+between sending a whole command and sending half of one, and a reader that gets it wrong sends
+something that looks perfectly valid: `Mapletree 11 Bit Quad` emitted 6 cells where 11 belong, on all
+1972 of its commands, before that was found.
+
+### The result: every command that can be built agrees, 1,923,128 of 1,923,128
+
+`make prontocheck` compares our waveform against the archive's rendering for every catalogue command
+that carries one, in Pronto units so no rounding of ours is added to theirs. Both sections:
+
+| | compared | agreeing |
+|---|---|---|
+| first transmission | 1,923,128 | 1,923,128 |
+| held repetition | 1,135,097 | 1,135,097 |
+
+Zero disagreements over **428 families**, where section 230 finished at 1,893,157 of 1,893,247 over 368
+and three commands outstanding. The compared population grew by 29,881 commands and 60 families, and
+the three outstanding ones are the subject of the correction below.
+
+**The control that says this was not bought by moving our own measurements**: the 34 of 35 rhythm
+calibration against Logitech's definitions and the 29 of 29 block calibration both pass unaltered, and
+nothing measured changed. `make golden` matches 47 of 47.
+
+### A correction: `Quad 5 Bit` is not a base four family, and its name says it is
+
+Section 230 left three commands outstanding and attributed them to the base four shape, "its values are
+written in base four, and its numbers come out rotated by one bit against Logitech's rendering". Both
+halves of that are wrong and the second was a guess dressed as a reading.
+
+`Quad 5 Bit` states **two** symbols and five bits. Its values are ordinary hexadecimal. Read as base
+four, its `0x13` becomes 7, so three of its five renderable commands sent a different number entirely,
+and the two that agreed are the two whose two readings coincide, `0x00` and `0x03`. Nothing was rotated.
+
+**The rule this kills is `Quad` in a family name meaning base four.** Section 227 read that word as the
+base on the strength of `Galaxis 16 Bit Quad Toggle`, the only family in the corpus census that names
+it, where the reading is right and closes three ways. It also wrote down the condition that would
+reopen it: a second family naming the word, measured. `Quad 5 Bit` is that family and it settles it
+against the name. Logitech's definition states the base, so `statedCode` takes it from there and the
+name is the fallback only for a caller holding a table row and no definition.
+
+**The safeguard named for exactly this case does not bite, and that is the part worth keeping.** The
+argument in section 227 was that a wrongly quaternary family would refuse on its digit set alone, since
+a base four reading accepts no digit above 3. Every digit of every `Quad 5 Bit` code is 0 to 3, so all
+twenty passed that check, and the three wrong numbers were emitted with no refusal anywhere. What
+caught it was Logitech's own rendering and nothing else could have. The digit set stays as corroboration
+and is not evidence.
+
+**A second reading died the same afternoon and it died to a test.** Reading the cell families made a
+field width a digit count, and it looked as though a family's **name** must be a digit count too, so the
+name's number was multiplied out. That broke `Galaxis 16 Bit Quad Toggle`, whose name means 16 bits and
+whose test asserts the value rather than that something came back. Measured over the 142 cell families,
+the name is the digit count on 66, the bit count on 4 and **neither** on 72, so it agrees with each
+reading less often than it disagrees with both. It does not have to carry either: all 142 state their
+widths in Logitech's own `keycodeFields`, and only 3 definitions in the whole archive state no widths at
+all, none of them a cell family. So the definition is the answer and the name is not a fallback for it.
+
+### What the table holds now
+
+600 rows, of which 37 are measured and 563 stated, and every row has exactly one shape: 327 state the
+five durations, 97 are biphase, and **139 are a cell table**, 73 of four cells and 66 of sixteen. The
+140th cell family is `Galaxis 16 Bit Quad Toggle`, which stays a measured row under the `quad` shape
+read off a stored train in section 169, and the two readings are the same idea from opposite ends.
+
+18 stated rows carry a whole block, up from 16, the two new ones being `Galaxis 16 Bit Quad` with four
+cells and `MotorolaO1 16 Bit Hex` with sixteen. The other 545 carry a frame and no block, because their
+definition does not state how many times a repetition is sent, and `blockOfStatedCode` refuses them
+rather than guessing a count.
+
+**The refusal census, which is the map of what is still unread.** 85 of the 684 definitions state no
+rhythm this converter can read, down from 225:
+
+| refusal | families |
+|---|---|
+| one interval per bit, so equal bits merge on the wire | 35 |
+| the header is not one mark and one space | 29 |
+| a cell is not one mark and one space | 12 |
+| biphase, and its two cells disagree about their half cell lengths | 3 |
+| no segments | 3 |
+| a cell of this base states no intervals | 2 |
+| neither half of the cell is constant | 1 |
+
+One definition needed a rule of its own: `QE Space 100K Old` states its header as a 5000 mark and a
+space of length **0**, which is a mark and nothing after it. A zero length interval is dropped rather
+than emitted, since a Pronto word floors at one and an interval of zero would silently merge its two
+neighbours. Nothing in the archive states one inside a cell.
+
+### What is not compared, and the largest reason is now a single shape
+
+144,735 of the 2,067,863 commands are not compared, and the reasons are counted rather than lumped:
+
+| reason | commands |
+|---|---|
+| no block derivable for this code | 102,881 |
+| our keycode reader declines the code | 29,968 |
+| no rhythm derivable for the family | 11,522 |
+| the archive renders no waveform | 240 |
+| our Pronto reader declines the string | 124 |
+
+**The block bucket grew from 71,152 and that growth is the gain, not a regression.** A family that
+could not state its rhythm was counted once in the rhythm bucket and now reaches the block derivation,
+where it is counted for whatever that refuses: the keycode bucket fell by 38,473 and the block bucket
+rose by 31,729.
+
+**84,694 of the 102,881 are one shape**: a press cycle that names two infrared segments stating
+**different** rhythms. Our table holds one rhythm per family, so such a family needs two rows and a code
+that knows which to use. `Philips Hurd 16 Bit LongToggle` alone is 56,991 of them and
+`Galaxis 16 Bit Quad Toggle` another 21,398. That is the single biggest thing standing between
+Logitech's catalogue and a writable command, and it is one reading rather than a long tail.
+
+Of the 29,968 the keycode reader declines, 16,476 carry a segment word outside the closed set our
+reader accepts, `Start` on 15,146 codes, `Finish` on 10,442, `Trailer` on 5581 and `Divider` on 5121,
+and the remaining 14,636 fail on a width. A word outside the set is a refusal rather than a guess, so
+each is a reading to do.

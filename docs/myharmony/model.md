@@ -470,10 +470,13 @@ which one a reference points at has exactly two values: `IRSegment`, `CodeSegmen
 **A record has three block pointers: once, held and tail.** `ParsedKeyCode` has exactly three
 fields and they are `Finish`, `Repeat`, `Start`. That is the same three, in the vendor's words.
 
-**`Quad` in a family name is the base of its digits, not a count of its frames.** That cost a
-day and was settled by a width check that accepted all 69 codes of the family once the base was
-read as four. The encoding enumeration is `BitEncoding`, `BiphasicEncoding`, `QuadEncoding`, `HexEncoding`, `ByteEncoding`,
-which is base two, base four, base sixteen and base two hundred and fifty six, plus biphase.
+**A family's base comes from `EncodingType` and never from its name.** The enumeration is
+`BitEncoding`, `BiphasicEncoding`, `QuadEncoding`, `HexEncoding`, `ByteEncoding`, which is base two, base
+four, base sixteen and base two hundred and fifty six, plus biphase, and a definition's cell count says
+the same thing. This said `Quad` in a family name was the base of its digits<!--superseded-->, on the
+strength of a width check that accepted all 69 codes of one family once its base was read as four.
+Section 231 refutes it as a rule about the word: `Quad 5 Bit` names it and states two symbols and five
+bits, and reading its values as quaternary sent three of them as another number.
 The reading was right and this is a second source for it.
 
 **A duration is a mark or a space.** `AtomType` is `Space`, `Pulse` and nothing else, and an atom

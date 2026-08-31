@@ -1858,6 +1858,23 @@ export interface StatedProtocol {
     readonly digits: readonly number[];
     readonly gap: readonly number[];
   };
+  /**
+   * A cell table family: the bit is **which of four or sixteen cell shapes** goes on the wire.
+   *
+   * Section 231. Logitech's own \`EncodingType\` 2 and 3 say so and their definition then lists one cell
+   * per symbol value, so a value is read a digit at a time and each digit picks a whole cell rather
+   * than a length. 140 of their families are of this kind, against the one the corpus could see, and
+   * that one, \`Galaxis 16 Bit Quad Toggle\`, is the \`quad\` shape above: the same idea read off a
+   * stored train instead of off a definition, which is why both exist.
+   *
+   * A row has this or one of the shapes above and never two, and \`test/stated.test.ts\` asserts it.
+   * The width comes from the code, so \`bits\` here is one **cell's** width and not the frame's.
+   */
+  readonly cells?: {
+    readonly lead: readonly number[];
+    readonly cells: readonly (readonly number[])[];
+    readonly bits: number;
+  };
   /** How many corpus codes the entry was measured over, and how many it reproduces exactly. */
   readonly codes: number;
   readonly exact: number;
@@ -2061,6 +2078,14 @@ if (write) {
       const lead = b.lead.map((one) => `{ mark: ${one.mark}, us: ${one.us} }`).join(', ');
       return `${head}biphase: { mark: ${b.mark}, space: ${b.space}, `
         + `lead: [${lead}], setIsMark: ${b.setIsMark} },${tail}`;
+    }
+    // A cell table family, whose bit is which of four or sixteen shapes goes out, section 231. It has
+    // none of the five durations, so it is written out whole and the fallback below never sees it.
+    const c = e.cells;
+    if (c !== undefined) {
+      const cellsOut = c.cells.map((one) => `[${one.join(', ')}]`).join(', ');
+      return `${head}cells: { lead: [${c.lead.join(', ')}], cells: [${cellsOut}], `
+        + `bits: ${c.bits} },${tail}`;
     }
     const t = e.timings!;
     return `${head}header: [${t.header[0]}, ${t.header[1]}], flat: ${t.flat}, `

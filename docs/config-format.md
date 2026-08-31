@@ -1932,14 +1932,14 @@ only a rhythm at a frequency. `source` says which route measured the durations, 
 now zero throughout, the one entry that had a band having turned out to be three families.
 
 **`source: 'stated'` means Logitech states this rhythm and nobody here has measured it**, section 227.
-424<!--fact:protocol_stated--> of the table's 461<!--fact:protocol_entries--> entries are of that kind, converted out of their own definitions for families no
+563<!--fact:protocol_stated--> of the table's 600<!--fact:protocol_entries--> entries are of that kind, converted out of their own definitions for families no
 configuration in this corpus holds a record of. Such a row carries `codes: 0`, `exact: 0` and
 `spread: 0`, which are the honest numbers rather than placeholders, and no `tailExact` and no
 `heldExact`, since those count the records that rebuilt from the row and there are none. Anything
 counting what reproduces a corpus record must exclude these rows; `source` is the field to filter on.
 
-**16<!--fact:protocol_tails_stated--> of those 424<!--fact:protocol_stated--> carry a `tail` and a `held` as well, derived rather than measured**, section 228, and
-the other 408 carry a frame and nothing after it, so `blockOfStatedCode` refuses those. A block is one
+**18<!--fact:protocol_tails_stated--> of those 563<!--fact:protocol_stated--> carry a `tail` and a `held` as well, derived rather than measured**, section 228, and
+the other 545 carry a frame and nothing after it, so `blockOfStatedCode` refuses those. A block is one
 repetition's shape plus how many repetitions go out. Logitech's `KeyCode` field states the shape whole,
 and the derivation of it reproduces all 29 blocks measured off their own compiler to the microsecond,
 which is why a derived one is believed. The count is `pressMinimumRepeats`, stated on 39 of their 684
@@ -1990,13 +1990,39 @@ looking for the shape rather than for the name.
 Section 162, and section 163 added the fourth. Four families in the corpus and the compiled sample state a bit by **position** rather than
 by length: there is one half cell, and a set bit is the carrier in one half and silence in the other.
 None of the five durations above applies to a biphase family. **A row of the rhythm table has one of
-five shapes, not one of two**, and this said "one shape or the other and never both"<!--superseded-->
+six shapes, not one of two**, and this said "one shape or the other and never both"<!--superseded-->
 until 29 August 2026, which was true when only the pulse timing and biphase shapes existed. Sections
 166 to 169 added three more: the five durations plus section widths, for a family sending one value in
 sections whose final bits ride in a structural space and in the closing silence; the long toggle shape,
 three regions under the one rule that a set bit is the cell whose first half is silence; and the
 quaternary shape, four space lengths sending two bits per cell. `stated.test.ts` asserts each of the
 three is a shape of its own rather than a patched frame.
+
+#### A cell table code sends one of four or sixteen whole cell shapes per digit
+
+Section 231, and it is the **sixth** row shape. 142 of Logitech's 684 protocol families spell a bit
+this way: a value is read a digit at a time and each digit selects a whole cell, out of four for a base
+four family and sixteen for a base sixteen one. `cells` on a table row is a lead in, one interval list
+per symbol value in value order, and how many bits one cell carries; `pulsesOfCellFrame` emits it most
+significant digit first. Every interval is taken exactly as Logitech's definition writes it and nothing
+is derived from a duration, which is what makes one reader serve both bases and any further power of
+two. A row carrying `cells` carries none of the five durations and no `biphase`, and the shape's own
+consistency is asserted: the cell count is two to the power of the cell width, every cell holds at
+least one interval, and no interval is zero.
+
+**Which base a family uses is stated by the definition and never by its name.** Logitech's
+`EncodingType` is 2 or 3 on exactly these families and the cell count says the same thing, so
+`bitsPerDigit` reads it off the count. A **field width** is then in digits rather than bits, and
+`frameWidths` multiplies it out, because a reader holding the wrong unit sends part of a command with
+nothing to show that it did. A family's name carries neither unit: over the 142 it is the digit count
+on 66, the bit count on 4 and neither on 72.
+
+**A zero length interval in a definition is dropped, not emitted.** One family states its header as a
+mark and a space of length zero, which is a mark and nothing after it, and an interval of zero would
+merge its two neighbours in any renderer that floors a duration at one unit.
+
+139 of these are stated rows in the table. The 140th, `Galaxis 16 Bit Quad Toggle`, stays a measured row
+under the `quad` shape, which is the same idea read off a stored train instead of off a definition.
 
 | the number | what it is |
 |---|---|

@@ -25,7 +25,8 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { IR_ARCHIVE } from '@harmony/lab';
 import {
-  archiveProtocols, blockOfDefinition, frameWidths, keyCodeOfStatedCode, prontoUnits, readPronto,
+  archiveProtocols, bitsPerDigit, blockOfDefinition, frameWidths, keyCodeOfStatedCode, prontoUnits,
+  readPronto,
   prontoPairs, rhythmOfDefinition, statedCode, pulsesOfBlock, withStatedWidths, withToggleCleared,
 } from '../src/index.ts';
 import type { ArchiveProtocol, BlockTail, FrameShape, StatedCode } from '../src/index.ts';
@@ -48,7 +49,12 @@ if (root === undefined) {
 const byName = new Map<string, ArchiveProtocol>(archiveProtocols(root).map((p) => [p.name, p]));
 
 /** What a family needs, worked out once: its shape, its widths, and the segment join. */
-interface Ready { shape: FrameShape; widths: number[] | undefined; protocol: ArchiveProtocol }
+interface Ready {
+  shape: FrameShape;
+  widths: number[] | undefined;
+  perDigit: number;
+  protocol: ArchiveProtocol;
+}
 const ready = new Map<string, Ready | null>();
 const setup = (family: string): Ready | null => {
   const had = ready.get(family);
@@ -59,8 +65,9 @@ const setup = (family: string): Ready | null => {
     const rhythm = rhythmOfDefinition(protocol);
     if (!('refusal' in rhythm)) {
       one = {
-        shape: { timings: rhythm.timings, biphase: rhythm.biphase },
+        shape: { timings: rhythm.timings, biphase: rhythm.biphase, cells: rhythm.cells },
         widths: frameWidths(protocol),
+        perDigit: bitsPerDigit(protocol),
         protocol,
       };
     }
@@ -108,10 +115,15 @@ outer: for (const bucket of buckets) {
       if (cmd.pronto === undefined) { bump(skipped, 'the archive renders no waveform'); continue; }
       const pronto = readPronto(cmd.pronto);
       if (pronto === undefined) { bump(skipped, 'our Pronto reader declines the string'); continue; }
-      const code = statedCode(cmd.keycode);
-      if (code === undefined) { bump(skipped, 'our keycode reader declines the code'); continue; }
       const one = setup(cmd.protocol);
       if (one === null) { bump(skipped, 'no rhythm derivable for the family'); continue; }
+      // The definition's widths go **into** the reader and not over its answer: a base four or base
+      // sixteen code is refused outright against the width its family's name states, so correcting it
+      // afterwards would never see the code. Section 231.
+      const code = statedCode(cmd.keycode, one.widths === undefined
+        ? { bitsPerDigit: one.perDigit }
+        : { widths: one.widths, bitsPerDigit: one.perDigit });
+      if (code === undefined) { bump(skipped, 'our keycode reader declines the code'); continue; }
       const blocks = blocksFor(one, code);
       if (blocks === undefined) { bump(skipped, 'no block derivable for this code'); continue; }
       // **The width comes from the definition and not from the family's name**, which is section 230's

@@ -789,6 +789,59 @@ export interface BlockTail {
 }
 
 /**
+ * A frame whose cell is one of several lengths, rather than one of two.
+ *
+ * **What this is.** An ordinary infrared family sends one bit per cell, so it needs two cells and our
+ * `FrameTimings` names them `zero` and `one`. Logitech's catalogue also holds families that send **two**
+ * bits per cell, out of four lengths, and families that send **four**, out of sixteen. 75 of their
+ * families are base four and 67 base sixteen, which together were the largest block of their catalogue
+ * this project could not emit at all. Section 231.
+ *
+ * **Which base a family uses comes from its definition and never from its name**, the number of cells in
+ * its frame segment. A first version of this said the names say so, `Quad` being base four and `Hex`
+ * base sixteen, and `Quad 5 Bit` refutes it: two symbols, five bits, values in hexadecimal.
+ *
+ * **A cell is a list of intervals and nothing is assumed about its shape**, which is why this is not
+ * `FrameTimings` with more fields. Of the 75 base four families, 33 have a constant half and four
+ * varying ones, 31 have **no** constant half, and 10 state a cell that is not one mark and one space at
+ * all. A reader that demanded a constant half would refuse three fifths of them, and the reason our
+ * two cell shape has `flat` is that a **stored** record needs it, not that infrared does.
+ *
+ * `bits` is how many bits one cell carries, 2 or 4, and the cells are indexed by the symbol value.
+ */
+export interface CellTimings {
+  /** The lead in as it stands, signed microseconds: positive a mark, negative a space. May be empty. */
+  readonly lead: readonly number[];
+  /** One entry per symbol value in value order, each the cell's own intervals in wire order. */
+  readonly cells: readonly (readonly number[])[];
+  /** How many bits one cell carries. `cells.length` is two to this power. */
+  readonly bits: number;
+}
+
+/**
+ * The pulses a cell table frame makes: the lead in, then one cell per symbol, most significant first.
+ *
+ * `bits` is the width of the whole value, so the symbol count is that over the cell's own width. A width
+ * that is not a whole number of cells is a refusal rather than a rounding, because a partial cell is a
+ * frame no family sends.
+ */
+export function pulsesOfCellFrame(t: CellTimings, bits: number, value: bigint): Pulse[] {
+  if (bits % t.bits !== 0) {
+    throw new Error(`${bits} bits is not a whole number of ${t.bits} bit cells`);
+  }
+  const symbols = bits / t.bits;
+  const mask = (1n << BigInt(t.bits)) - 1n;
+  const out: Pulse[] = t.lead.map((w) => ({ mark: w > 0, us: Math.abs(w) }));
+  for (let at = symbols - 1; at >= 0; at -= 1) {
+    const symbol = Number((value >> BigInt(t.bits * at)) & mask);
+    const cell = t.cells[symbol];
+    if (cell === undefined) throw new Error(`the family states no cell for symbol ${symbol}`);
+    out.push(...cell.map((w) => ({ mark: w > 0, us: Math.abs(w) })));
+  }
+  return out;
+}
+
+/**
  * The rhythm a family sends a frame in: one of the two kinds, never both.
  *
  * Both fields are optional and both accept an explicit `undefined`, which is not laxness: the reader
@@ -798,6 +851,7 @@ export interface BlockTail {
 export interface FrameShape {
   readonly timings?: FrameTimings | undefined;
   readonly biphase?: BiphaseTimings | undefined;
+  readonly cells?: CellTimings | undefined;
 }
 
 /**
@@ -815,6 +869,12 @@ export function pulsesOfBlock(
   const copy = (kind: 'full' | 'bare', at: number): Pulse[] => {
     const frame = frames[at];
     if (frame === undefined) throw new Error(`the code states no frame ${at}`);
+    // A cell table copy: the lead in, then one cell per symbol. A bare copy drops the lead in, which is
+    // the same convention the two cell shape uses for its header.
+    if (shape.cells !== undefined) {
+      const t = kind === 'bare' ? { ...shape.cells, lead: [] } : shape.cells;
+      return pulsesOfCellFrame(t, frame.bits, frame.value);
+    }
     // A biphase copy is the frame with its lead, and no family drops the lead on later copies.
     if (shape.timings === undefined) {
       if (shape.biphase === undefined) throw new Error('a block needs a frame shape');

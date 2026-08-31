@@ -33,7 +33,7 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import type {
-  BiphaseTimings, BlockTail, BlockTailItem, FrameCarrier, FrameTimings, Pulse,
+  BiphaseTimings, BlockTail, BlockTailItem, CellTimings, FrameCarrier, FrameTimings, Pulse,
 } from './irframe.ts';
 import type { StatedCode, StatedItem } from './stated.ts';
 
@@ -191,8 +191,8 @@ export type ConversionRefusal =
   | 'no carrier'
   | 'no segment named for the family'
   | 'no bit encodings'
-  | 'base four, a cell is one of four lengths'
-  | 'base sixteen, a cell is one of sixteen lengths'
+  | 'a cell of this base states no intervals'
+  | 'a cell of this base names a symbol outside its own range'
   | 'some other number of cells'
   | 'one interval per bit, so equal bits merge on the wire'
   | 'a cell is not one mark and one space'
@@ -213,6 +213,14 @@ export interface ArchiveRhythm {
   readonly periodNs: number;
   readonly timings?: FrameTimings;
   readonly biphase?: BiphaseTimings;
+  /**
+   * The cell table, where the family sends more than one bit per cell, section 231.
+   *
+   * Set instead of the other two. `CellTimings` in `irframe.ts` carries the argument for its shape; the
+   * short of it is that a cell is a list of intervals and nothing about it is assumed, because three
+   * fifths of the base four families have no constant half for a two cell reading to name.
+   */
+  readonly cells?: CellTimings;
   /** The width the family's keycode field states, or undefined where it states none. */
   readonly bits: number | undefined;
   /** The closing mark and inter frame gap the trailer states, microseconds, a space negative. */
@@ -264,6 +272,71 @@ function frameSegment(protocol: ArchiveProtocol): Segment | undefined {
 }
 
 /**
+ * Read a definition whose cell is one of four or one of sixteen lengths, section 231.
+ *
+ * **Every cell is taken as written and nothing about its shape is required.** That is the whole reading
+ * and it is why it is short: our two cell shape needs a constant half because a stored record states one
+ * per record, and infrared does not, so demanding one here would refuse 31 of the 75 base four families
+ * outright and mis-emit others. A cell is its intervals in order.
+ *
+ * The lead in is the segment's own header atoms as they stand, again without absorption: the shift that
+ * a two cell reading needs, and the corrections that came with it, are about our table's `(mark, space)`
+ * spelling and have no counterpart here.
+ *
+ * The one refusal is a cell with no intervals at all, which one family states and which would emit a
+ * symbol that occupies no time.
+ */
+function cellRhythm(
+  protocol: ArchiveProtocol, segment: Segment, encodings: readonly Encoding[],
+): ArchiveRhythm | { readonly refusal: ConversionRefusal } {
+  const bits = encodings.length === 4 ? 2 : 4;
+  const cells: number[][] = [];
+  for (const one of encodings) {
+    const atoms = one.Atoms ?? [];
+    // A zero length atom is nothing on the wire, so it is dropped rather than emitted: a zero interval
+    // would key and compare like any other and would be floored to one unit by a renderer. Nothing in
+    // the archive states one inside a cell, only in a header, and the drop is here so a future one is
+    // handled the same way rather than sending an inaudible pulse.
+    if (atoms.filter((a) => a.Value !== 0).length === 0) {
+      return { refusal: 'a cell of this base states no intervals' };
+    }
+    // `BitType` is the symbol's own value, so the table is indexed by it rather than by written order.
+    if (one.BitType < 0 || one.BitType >= encodings.length) {
+      return { refusal: 'a cell of this base names a symbol outside its own range' };
+    }
+    cells[one.BitType] = atoms.filter((a) => a.Value !== 0)
+      .map((a) => (a.Type === 1 ? a.Value : -a.Value));
+  }
+  if (cells.length !== encodings.length || cells.some((one) => one === undefined)) {
+    return { refusal: 'a cell of this base names a symbol outside its own range' };
+  }
+  const field = Object.values(protocol.keycodeFields ?? {})[0];
+  return {
+    family: protocol.name,
+    periodNs: periodOfCarrier(protocol.carrierHz),
+    cells: {
+      // **The zero length atoms go**, and one definition has one: `QE Space 100K Old` states its header
+      // as a 5000 mark and a space of length 0, which is a mark and nothing after it. Emitting the zero
+      // puts an interval on the wire that no renderer can express, since a Pronto word floors at one.
+      lead: (segment.Header ?? []).filter((a) => a.Value !== 0)
+        .map((a) => (a.Type === 1 ? a.Value : -a.Value)),
+      cells,
+      bits,
+    },
+    // **In digits and multiplied out to bits here**, because their field states a symbol count for these
+    // families, which their `EncodingType` of 2 or 3 is what says so. Every other reading in this file
+    // deals in bits and a second unit in one field is how a reader ends up sending half a command.
+    bits: field === undefined ? undefined : field.bits * bits,
+    trailer: (segment.Trailer ?? []).filter((a) => a.Value !== 0)
+      .map((a) => (a.Type === 1 ? a.Value : -a.Value)),
+    framePeriod: undefined,
+    // Neither applies: a cell is emitted as written, so nothing is left over and nothing is folded.
+    cellCarriedFirst: false,
+    leadFolded: false,
+  };
+}
+
+/**
  * Read one definition as a pulse distance or pulse width rhythm, or say why it could not be.
  *
  * **This reads the two cell families only**, which is the shape `pulsesOfFrame` emits: a lead in, then
@@ -294,8 +367,13 @@ export function rhythmOfDefinition(
   // is no shape here at all.
   const encodings = segment.Payload?.Encodings ?? [];
   if (encodings.length === 0) return { refusal: 'no bit encodings' };
-  if (encodings.length === 4) return { refusal: 'base four, a cell is one of four lengths' };
-  if (encodings.length === 16) return { refusal: 'base sixteen, a cell is one of sixteen lengths' };
+  // **A family that sends more than one bit per cell is read as a cell table**, section 231: base four
+  // where `Quad` in the name is the base of its digits, base sixteen where `Hex` is. Two refusals stood
+  // here until 31 August 2026 and between them they were the largest block of Logitech's catalogue this
+  // project could not emit, 142 families.
+  if (encodings.length === 4 || encodings.length === 16) {
+    return cellRhythm(protocol, segment, encodings);
+  }
   if (encodings.length !== 2) return { refusal: 'some other number of cells' };
   // **One atom per cell is not biphase**, it is one interval per bit: `ADA 40 Bit` sends a clear bit as
   // an 833 space and a set bit as an 833 mark, so three set bits in a row are one 2499 mark on the wire
@@ -465,8 +543,17 @@ export function rhythmOfDefinition(
  * families that send genuinely different signals.
  */
 export function rhythmKey(
-  periodNs: number, shape: { timings?: FrameTimings; biphase?: BiphaseTimings },
+  periodNs: number,
+  shape: { timings?: FrameTimings; biphase?: BiphaseTimings; cells?: CellTimings },
 ): string {
+  // A cell table family states no durations at all, only whole cells, so its key is its cells,
+  // section 231. The prefix keeps it from ever colliding with a two symbol family's key, the way the
+  // biphase one does.
+  const c = shape.cells;
+  if (c !== undefined) {
+    return ['cells', periodNs, c.bits, c.lead.join('+'),
+            c.cells.map((one) => one.join('+')).join('|')].join('/');
+  }
   const b = shape.biphase;
   if (b !== undefined) {
     return ['biphase', periodNs, b.mark, b.space, b.firstMark ?? '', b.setIsMark,
@@ -518,7 +605,7 @@ export function catalogueByRhythm(root: string): Map<string, CatalogueFamily[]> 
 export function familiesOfRhythm(
   catalogue: Map<string, CatalogueFamily[]>,
   periodNs: number,
-  shape: { timings?: FrameTimings; biphase?: BiphaseTimings },
+  shape: { timings?: FrameTimings; biphase?: BiphaseTimings; cells?: CellTimings },
   bits?: number,
 ): CatalogueFamily[] {
   const all = catalogue.get(rhythmKey(periodNs, shape)) ?? [];
@@ -540,11 +627,36 @@ export function familiesOfRhythm(
  * The definition settles it: `keycodeFields` states a width per field, and the fields are ordered by
  * their own `token`. Returns undefined where the definition states no fields, in which case the name's
  * width is all there is.
+ *
+ * **In bits, always.** Their field states a **digit** count for a family whose cell carries more than one
+ * bit, and this multiplies it out, so a caller never has to know which unit it is holding. Section 231.
  */
 export function frameWidths(protocol: ArchiveProtocol): number[] | undefined {
   const fields = Object.values(protocol.keycodeFields ?? {});
   if (fields.length === 0) return undefined;
-  return [...fields].sort((a, b) => a.token - b.token).map((one) => one.bits);
+  return [...fields].sort((a, b) => a.token - b.token).map((one) => one.bits * bitsPerDigit(protocol));
+}
+
+/**
+ * How many bits one digit of this family's values carries: 1, 2 or 4.
+ *
+ * **A field's width is in digits where a cell carries more than one bit**, and that is Logitech's own
+ * `EncodingType`, 2 or 3 for those families. Read off the cell count instead, which says the same thing
+ * and is already in hand: four cells carry two bits each and sixteen carry four. Section 231.
+ *
+ * The reason this is a function rather than a constant is that a second unit in one field is how a reader
+ * ends up sending half a command, so every width that leaves this file is in bits.
+ *
+ * **It is also the only trustworthy answer to what base a code's digits are written in**, which the
+ * family's own name gets wrong. `Quad 5 Bit` names the word and is an ordinary two symbol family: five
+ * bits, two encodings, its values plain hexadecimal. Read as quaternary its `0x13` becomes 7 and three
+ * of its five renderable codes came out wrong, each with the leading digits of another number. So a
+ * caller passes this into `statedCode` rather than letting the name decide. Section 231.
+ */
+export function bitsPerDigit(protocol: ArchiveProtocol): number {
+  const segment = frameSegment(protocol);
+  const cells = (segment?.Payload?.Encodings ?? []).length;
+  return cells === 16 ? 4 : cells === 4 ? 2 : 1;
 }
 
 /**
@@ -653,9 +765,16 @@ export function withStatedWidths(
   protocol: ArchiveProtocol,
   frames: readonly { readonly bits: number; readonly value: bigint }[],
 ): readonly { readonly bits: number; readonly value: bigint }[] {
+  // **In bits, like everything that leaves this file.** Their field states a digit count where a cell
+  // carries more than one bit, and taking it raw is what made every base four family emit half its
+  // symbols: `Mapletree 11 Bit Quad` sent six cells where Logitech's renderer sends eleven, on all 1972
+  // of its commands. Section 231.
+  const per = bitsPerDigit(protocol);
   return frames.map((frame, at) => {
-    const bits = fieldAt(protocol, at)?.bits;
-    if (bits === undefined || bits === frame.bits) return frame;
+    const stated = fieldAt(protocol, at)?.bits;
+    if (stated === undefined) return frame;
+    const bits = stated * per;
+    if (bits === frame.bits) return frame;
     return { ...frame, bits, value: frame.value & ((1n << BigInt(bits)) - 1n) };
   });
 }

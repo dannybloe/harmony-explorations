@@ -88,6 +88,7 @@ test('every protocol definition in the archive reads or says why not', { ...skip
     let read = 0;
     let frames = 0;
     let biphases = 0;
+    let cells = 0;
     for (const one of all) {
       const rhythm = rhythmOfDefinition(one);
       if ('refusal' in rhythm) {
@@ -95,14 +96,29 @@ test('every protocol definition in the archive reads or says why not', { ...skip
         continue;
       }
       read += 1;
-      if (rhythm.biphase === undefined) frames += 1; else biphases += 1;
+      if (rhythm.cells !== undefined) cells += 1;
+      else if (rhythm.biphase === undefined) frames += 1;
+      else biphases += 1;
       // Whatever is read is read whole: a rhythm with a zero duration in it would emit a train an
       // appliance cannot hear, and would still key and compare like any other.
       assert.ok(rhythm.periodNs > 0, one.name);
       const t = rhythm.timings;
       const b = rhythm.biphase;
-      assert.ok((t === undefined) !== (b === undefined), `${one.name} states one shape, never both`);
-      if (t !== undefined) {
+      const c = rhythm.cells;
+      assert.equal([t, b, c].filter((one) => one !== undefined).length, 1,
+                   `${one.name} states one shape and never two`);
+      if (c !== undefined) {
+        // A cell table is read whole or not at all: one cell per symbol value, every cell holding at
+        // least one interval, and no interval of zero length. A missing cell would send a frame whose
+        // digit has no shape, which throws in the emitter rather than sending something wrong, and a
+        // zero interval would key and compare like any other while being inaudible.
+        assert.equal(c.cells.length, 1 << c.bits, one.name);
+        for (const cell of c.cells) {
+          assert.ok(cell.length > 0, one.name);
+          assert.ok(cell.every((w) => w !== 0), one.name);
+        }
+        assert.ok(c.lead.every((w) => w !== 0), one.name);
+      } else if (t !== undefined) {
         assert.ok(t.flat > 0 && t.zero > 0 && t.one > 0, one.name);
         assert.notEqual(t.zero, t.one, one.name);
       } else {
@@ -110,12 +126,10 @@ test('every protocol definition in the archive reads or says why not', { ...skip
       }
     }
     // **The refusals are named with their counts, because each names a shape still to be read**, and a
-    // total alone would let one bucket grow while another shrank. The biggest two are families our own
-    // table already has a shape for: 105 biphase, where the bit is which half of the cell carries the
-    // carrier, and part of the 142 are the base four families whose cell is one of four lengths.
+    // total alone would let one bucket grow while another shrank. The largest is now the 35 families
+    // that send one interval per bit, where two equal bits merge into one duration on the wire and the
+    // frame cannot be read back out of it.
     assert.deepEqual([...refusals.entries()].sort((a, b) => b[1] - a[1]), [
-      ['base four, a cell is one of four lengths', 75],
-      ['base sixteen, a cell is one of sixteen lengths', 67],
       ['one interval per bit, so equal bits merge on the wire', 35],
       ['the header is not one mark and one space', 29],
       ['a cell is not one mark and one space', 12],
@@ -125,13 +139,20 @@ test('every protocol definition in the archive reads or says why not', { ...skip
       // count above lost are back under the header check they were always failing.
       ['biphase, and its two cells disagree about their half cell lengths', 3],
       ['no segments', 3],
+      // **The two base counts were the largest two buckets here until section 231**, at 75 and 67, and
+      // they are one capability now: a cell table of four or sixteen whole cells rather than one of two
+      // lengths. What is left of them is a definition whose cell of that base states no intervals at
+      // all, which is 2, and one whose symbol is outside the base its own cell count states, which is 0.
+      ['a cell of this base states no intervals', 2],
       ['neither half of the cell is constant', 1],
     ]);
-    // 459 read, in the two shapes our table has: 357 frames and 102 biphase. The biphase half was
-    // added in section 227's second pass and is what took the reading from 357.
-    assert.equal(read, 459);
+    // 599 read, in the three shapes our table has: 357 frames, 102 biphase and 140 cell tables. The
+    // biphase half was added in section 227's second pass and took the reading from 357; the cell tables
+    // were added in section 231 and took it from 459.
+    assert.equal(read, 599);
     assert.equal(frames, 357);
     assert.equal(biphases, 102);
+    assert.equal(cells, 140);
     assert.equal(read + [...refusals.values()].reduce((n, one) => n + one, 0), 684);
   });
 
@@ -223,12 +244,15 @@ test('Logitech\'s catalogue names the four rhythms their analyser named wrongly'
 test('a rhythm can be ambiguous in the catalogue, and the width is what narrows it',
   { ...skipWithoutIrArchive() }, () => {
     const catalogue = catalogueByRhythm(IR_ARCHIVE!);
-    assert.equal(catalogue.size, 423);
-    // **17 rhythms are held by more than one family and they must not be collapsed.** Naming one of
+    assert.equal(catalogue.size, 549);
+    // A cell table family keys on its cells and nothing else, so its key can never collide with a two
+    // symbol family's, section 231. 126 of the keys are of that kind, against 140 such families read.
+    assert.equal([...catalogue.keys()].filter((one) => one.startsWith('cells/')).length, 126);
+    // **31 rhythms are held by more than one family and they must not be collapsed.** Naming one of
     // those by its rhythm is exactly the guess the catalogue lookup replaces, so `familiesOfRhythm`
     // hands back a list and the caller keeps the name it had.
     const shared = [...catalogue.values()].filter((one) => one.length > 1);
-    assert.equal(shared.length, 23);
+    assert.equal(shared.length, 31);
 
     // The width narrows a rhythm the three Sony families share, which is the case that put a width in
     // the lookup at all: `Sony 12 Bit`, `15` and `20` are one rhythm at 40 kHz.
@@ -476,27 +500,34 @@ test('the repeat count is stated for five of the blocks we measured, and right o
   }
 });
 
-test('sixteen stated families carry a whole block, and the other four hundred and eight a frame', () => {
-  // The table's own claim, checked without a checkout, since the table is committed. 16 is small and it
+test('eighteen stated families carry a whole block, and the other five hundred and forty five a frame',
+  () => {
+  // The table's own claim, checked without a checkout, since the table is committed. 18 is small and it
   // is the honest number: a stated row gets a block only where the definition states its repeat count,
-  // and the other 408 stay buildable rather than writable. Four of the 408 are refused for a reason of
+  // and the other 545 stay buildable rather than writable. Some of the 545 are refused for a reason of
   // their own even so, having a release block our table states no slot for.
   const stated = PROTOCOLS.filter((one) => one.source === 'stated');
-  // 424 again: three families were withdrawn for part of 31 August 2026 and then given the spelling
-  // they needed instead, `carriedFirst`, section 230. Every one of them reproduces Logitech's own
-  // renderings exactly now, where before the withdrawal it reproduced none of them.
-  assert.equal(stated.length, 424);
+  // 563 now: 424 until section 231 read the cell table families, whose bit is which of four or sixteen
+  // whole cell shapes goes on the wire rather than which of two lengths.
+  assert.equal(stated.length, 563);
   const withBlock = stated.filter((one) => one.tail !== undefined);
-  assert.equal(withBlock.length, 16);
+  assert.equal(withBlock.length, 18);
   // A block and a held block go together: one without the other would be a record half writable.
   for (const row of withBlock) assert.notEqual(row.held, undefined, row.family);
   // And nothing measured claims to have rebuilt a derived block, since there is no record to rebuild.
   for (const row of withBlock) assert.equal(row.tailExact, undefined, row.family);
   assert.deepEqual(withBlock.map((one) => one.family), [
     'Apex 24 and 16 Bit', 'Auvio 32 Bit', 'Cambridge Audio 32 Bit', 'Canton 32 Bit', 'DLO 32 Bit',
-    'Entone 24 Bit', 'Entone 56 Bit', 'EntoneV1 24 Bit', 'Idylis 24 Bit', 'LG 32 Bit', 'Naxoo 32 Bit',
-    'Pace 4 and 20 Bit', 'Samsung 42 Bit', 'Samsung 42 Bit 2', 'SamsungO1 32 Bit', 'Toshiba HF 32 Bit',
+    'Entone 24 Bit', 'Entone 56 Bit', 'EntoneV1 24 Bit', 'Galaxis 16 Bit Quad', 'Idylis 24 Bit',
+    'LG 32 Bit', 'MotorolaO1 16 Bit Hex', 'Naxoo 32 Bit', 'Pace 4 and 20 Bit', 'Samsung 42 Bit',
+    'Samsung 42 Bit 2', 'SamsungO1 32 Bit', 'Toshiba HF 32 Bit',
   ]);
+  // The two the cell reading added, and they are two different bases: a cell of four shapes and a cell
+  // of sixteen. Worth naming, because a block over a cell table is the derivation that had no sample at
+  // all before section 231.
+  assert.deepEqual(withBlock.filter((one) => one.cells !== undefined)
+    .map((one) => [one.family, one.cells!.cells.length] as const),
+    [['Galaxis 16 Bit Quad', 4], ['MotorolaO1 16 Bit Hex', 16]]);
 });
 
 test('every definition derives a block or says why not', { ...skipWithoutIrArchive() }, () => {
@@ -510,19 +541,24 @@ test('every definition derives a block or says why not', { ...skipWithoutIrArchi
     if ('refusal' in built) refusals.set(built.refusal, (refusals.get(built.refusal) ?? 0) + 1);
     else derived += 1;
   }
-  assert.equal(derived, 382);
+  // 486, from 382 before the cell tables were read, section 231. Every refusal bucket grew with it,
+  // which is the honest shape of that gain: a family that could not state its rhythm was counted once
+  // and now reaches the block derivation and is counted for whatever that refuses.
+  assert.equal(derived, 486);
   assert.deepEqual([...refusals.entries()].sort((a, b) => b[1] - a[1]), [
-    // The rhythm's own refusals, counted there: base four, base sixteen, one interval per bit and the
-    // rest. A block cannot be read out of a frame that could not be.
-    ['the rhythm itself could not be read', 225],
+    // The rhythm's own refusals, counted there: one interval per bit, the header shape and the rest. A
+    // block cannot be read out of a frame that could not be. 225 until the cell tables read.
+    ['the rhythm itself could not be read', 85],
     // A third block, sent on release. Our table has `tail` and `held` and nothing for it, so a family
     // with one would be emitted incomplete rather than approximately.
-    ['a release block, which our table has no slot for', 40],
+    ['a release block, which our table has no slot for', 55],
     // A cycle whose second frame states different **cells**, not merely a different gap: our table holds
-    // one rhythm per family, so two would need two rows and a code that knew which.
-    ['a cycle names an infrared segment stating a different rhythm', 16],
-    ['the definition states no repeat cycle', 13],
-    ['a padded cycle of several frames whose shared period is not one number', 8],
+    // one rhythm per family, so two would need two rows and a code that knew which. This is the biggest
+    // single reason a catalogue command cannot be written today, 84694 of them, and the two families at
+    // the head of it are `Philips Hurd 16 Bit LongToggle` and `Galaxis 16 Bit Quad Toggle`.
+    ['a cycle names an infrared segment stating a different rhythm', 29],
+    ['the definition states no repeat cycle', 15],
+    ['a padded cycle of several frames whose shared period is not one number', 14],
   ]);
   // **One refusal fires for nothing in this archive and is kept as a guard**, which is why it is absent
   // from the map above rather than carrying a zero. A copy that states its constant half last, has a

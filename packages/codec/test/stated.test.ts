@@ -34,10 +34,10 @@ import { join } from 'node:path';
 const MEASURED = PROTOCOLS.filter((one) => one.source !== 'stated');
 const STATED = PROTOCOLS.filter((one) => one.source === 'stated');
 
-test('the table states four hundred and sixty one entries, of which thirty seven are measured', () => {
+test('the table states six hundred entries, of which thirty seven are measured', () => {
   // Exact, per the house rule: a floor would absorb an entry falling out of the generator, and the
   // number moves only when somebody regenerates it, and then it moves in the diff.
-  assert.equal(PROTOCOLS.length, 461);
+  assert.equal(PROTOCOLS.length, 600);
   assert.equal(MEASURED.length, 37);
   // **421 families this project has never seen a record of**, converted out of Logitech's own protocol
   // definitions on 31 August 2026, section 227. They are what makes a device from their catalogue
@@ -46,7 +46,10 @@ test('the table states four hundred and sixty one entries, of which thirty seven
   // 421 for part of one day: section 230 withdrew three families whose rhythm this table's shape states
   // wrongly, and then gave the shape the missing spelling instead, `carriedFirst`, so all three are back
   // and reproduce Logitech's own renderings exactly.
-  assert.equal(STATED.length, 424);
+  //
+  // 424 until section 231, which read the families whose cell is one of four or sixteen whole shapes
+  // rather than one of two lengths. That is 139 more rows and takes the table to 599 of their 684.
+  assert.equal(STATED.length, 563);
   // A stated row has no evidence and says so, in all three numbers rather than in one.
   for (const one of STATED) {
     assert.deepEqual([one.codes, one.exact, one.spread], [0, 0, 0], one.family);
@@ -58,13 +61,27 @@ test('the table states four hundred and sixty one entries, of which thirty seven
     // A block and a held block go together: a record needs both pointers, so half of one is no use.
     assert.equal(one.tail === undefined, one.held === undefined, one.family);
   }
-  // 16 of the 424 carry a whole block, being the ones whose definition also states how many times a
-  // repetition is sent, and the other 408 carry a frame and nothing after it.
-  assert.equal(STATED.filter((one) => one.tail !== undefined).length, 16);
-  // Both shapes convert, which is what the second pass of section 227 added: 97 of the 424 are biphase,
-  // where the bit is which half of the cell carries the carrier.
+  // 18 of the 563 carry a whole block, being the ones whose definition also states how many times a
+  // repetition is sent, and the other 545 carry a frame and nothing after it.
+  assert.equal(STATED.filter((one) => one.tail !== undefined).length, 18);
+  // **Three shapes convert, and every row has exactly one of them.** 97 are biphase, where the bit is
+  // which half of the cell carries the carrier; 327 state the five durations; and 139 are a cell table,
+  // where a digit picks one of four or sixteen whole cell shapes, section 231. The sum is the row count,
+  // which is what makes this a partition rather than three counts.
   assert.equal(STATED.filter((one) => one.biphase !== undefined).length, 97);
   assert.equal(STATED.filter((one) => one.header !== undefined).length, 327);
+  assert.equal(STATED.filter((one) => one.cells !== undefined).length, 139);
+  assert.equal(97 + 327 + 139, STATED.length, 'one shape per row and no row without one');
+  // Two bases and no third, which is Logitech's own `EncodingType` 2 and 3 read off the cell count.
+  assert.equal(STATED.filter((one) => one.cells?.cells.length === 4).length, 73);
+  assert.equal(STATED.filter((one) => one.cells?.cells.length === 16).length, 66);
+  for (const one of STATED) {
+    if (one.cells === undefined) continue;
+    // A cell family states no durations and no biphase half cell: the cell is the whole statement.
+    assert.equal(one.header, undefined, one.family);
+    assert.equal(one.biphase, undefined, one.family);
+    assert.equal(one.cells.cells.length, 1 << one.cells.bits, one.family);
+  }
   // **Three provenances, and they are three different strengths of claim.** `corpus` is a record some
   // remote was really carrying, whose family came from Logitech's analyser naming our decoding of it.
   // `compiled` is a record their own compiler produced on request, whose family their own catalogue
@@ -439,10 +456,13 @@ test('a catalogue code is a grammar, and reading one slot of it reads half a com
   assert.deepEqual(statedCode('G:Sharp 15 Bit:()(0x1BAC_0x1853)():3')?.frames.map((f) => f.index),
                    [0, 0], 'both zero where the two frames are the same width');
 
-  // **`Quad` in a family name is the base of its digits, two bits each.** This code was refused for
-  // weeks, and rightly: read as hexadecimal its first value needs 26 bits against the 16 its name
-  // states, so it would have emitted a command three times too long that looks perfectly valid. Read
-  // in base 4 the eight digits are exactly 16 bits. The value is asserted rather than the fact that
+  // **`Galaxis 16 Bit Quad Toggle` writes its digits in base four, two bits each.** This code was
+  // refused for weeks, and rightly: read as hexadecimal its first value needs 26 bits against the 16
+  // its name states, so it would have emitted a command three times too long that looks perfectly
+  // valid. Read in base 4 the eight digits are exactly 16 bits. The reading was written up as `Quad` in
+  // a family name being the base of its digits<!--superseded-->, and section 231 refutes that as a rule
+  // about the word: `Quad 5 Bit` names it and is an ordinary two symbol family. The base comes from the
+  // definition, and this call has none, so the name is what it falls back on. The value is asserted rather than the fact that
   // something came back, since the whole error was a plausible wrong number.
   const quad = statedCode('G:Galaxis 16 Bit Quad Toggle:()(0x02031000_1x0_2x2123201)():3');
   assert.deepEqual(quad?.frames, [{ value: 0x2340n, bits: 16, index: 0 },
@@ -534,10 +554,11 @@ test('twenty nine measured entries state their whole block, and the counts are p
                    ['Kreatel IP 22 Bit', 'Galaxis 16 Bit Quad Toggle',
                     'Philips Hurd 16 Bit LongToggle', 'MitsubishiO1 Dual 8 16 Bit', 'Samsung 38 Bit',
                     'Roku 32 Bit 1', 'Panasonic 16 Bit', 'Sharp 48 Bit']);
-  // **16 stated entries carry a derived block since section 228 and the rest carry none**, which is why
+  // **18 stated entries carry a derived block since section 228 and the rest carry none**, which is why
   // this list is scoped to the measured rows: mixing the two would put a block nobody measured into a
-  // table of rebuild counts, and there is no record to have rebuilt.
-  assert.equal(STATED.filter((one) => one.tail !== undefined).length, 16);
+  // table of rebuild counts, and there is no record to have rebuilt. It was 16 until section 231 read
+  // the cell table families, two of which state a repeat count.
+  assert.equal(STATED.filter((one) => one.tail !== undefined).length, 18);
   assert.deepEqual([...tailed].sort((a, b) => a[0].localeCompare(b[0]) || (a[2] - b[2])), [
     ['JerroldO1 16 Bit', 47, 47],
     ['JVC 16 Bit', 108, 108],
@@ -579,11 +600,12 @@ test('twenty nine measured entries state their whole block, and the counts are p
   assert.deepEqual(alternating(MEASURED), ['MemorexV2 32 Bit Dual', 'Pioneer 32 Bit 2',
     'Pioneer 32 Bit Dual', 'PioneerO1 32 Bit Dual', 'Samsung 16 and 20 Bit', 'Sharp 15 Bit',
     'Sharp 15 Bit 2']);
-  // **And five of the derived blocks are the same shape**, which is worth asserting rather than
+  // **And six of the derived blocks are the same shape**, which is worth asserting rather than
   // excluding: the alternation was measured off our own records first and Logitech's definitions state
-  // it independently, in their `KeyCode` field, for five families this corpus holds no record of.
+  // it independently, in their `KeyCode` field, for six families this corpus holds no record of. Five
+  // until section 231, whose cell table reading added the sixth.
   assert.deepEqual(alternating(STATED), ['Apex 24 and 16 Bit', 'Entone 24 Bit', 'Entone 56 Bit',
-    'EntoneV1 24 Bit', 'Pace 4 and 20 Bit']);
+    'EntoneV1 24 Bit', 'MotorolaO1 16 Bit Hex', 'Pace 4 and 20 Bit']);
 
   // **The Sharp 15 families pad each copy to a constant period, not the block to a total**: their
   // two alternating frames differ in duration, so the gaps differ within one record, which is the
@@ -619,8 +641,9 @@ test('twenty nine measured entries state their whole block, and the counts are p
   // Sony's three families pad each copy to the published 45 ms frame period, and the block total says
   // the same number a third way: three copies and the one microsecond every family's last space adds.
   assert.equal(3 * 45000 + 1, 135001);
-  // **Six of the derived blocks pad to a total too**, listed separately because a measured total is a
+  // **Seven of the derived blocks pad to a total too**, listed separately because a measured total is a
   // measurement and a derived one is Logitech's statement plus the one microsecond rule, section 228.
+  // Six until section 231 read the cell table families, one of which states a total.
   const statedTotals = STATED.filter((one) => one.tail?.total !== undefined)
     .map((one) => [one.family, one.tail!.total] as const);
   assert.deepEqual([...statedTotals].sort((a, b) => a[0].localeCompare(b[0])), [
@@ -628,6 +651,7 @@ test('twenty nine measured entries state their whole block, and the counts are p
     ['Cambridge Audio 32 Bit', 226366],
     ['Canton 32 Bit', 176951],
     ['DLO 32 Bit', 219051],
+    ['Galaxis 16 Bit Quad', 100001],
     ['Naxoo 32 Bit', 214501],
     ['Toshiba HF 32 Bit', 215736],
   ]);
