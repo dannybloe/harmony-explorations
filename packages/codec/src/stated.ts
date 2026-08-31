@@ -237,6 +237,10 @@ export function timingsOf(entry: StatedProtocol): FrameTimings | undefined {
     ...(entry.firstMark === undefined ? {} : { firstMark: entry.firstMark }),
     // The set cell's own mark, on the families whose mark rides with the bit, section 170.
     ...(entry.oneMark === undefined ? {} : { oneMark: entry.oneMark }),
+    // The cell's own order, on the five families where the other spelling would change the wire,
+    // section 230. Carried through here because a table row that loses it emits a wrong waveform in
+    // silence, which is the whole defect that field exists to fix.
+    ...(entry.carriedFirst === true ? { carriedFirst: true } : {}),
     zero: entry.zero,
     one: entry.one,
     carries: entry.carries,

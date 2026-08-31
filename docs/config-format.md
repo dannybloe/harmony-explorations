@@ -1922,20 +1922,24 @@ section 160, and it named all three of the table's analyser named entries wrongl
 carrier, the header and the four durations, matched exactly, with the width from their definition's
 keycode field narrowing the 24 rhythms that more than one family holds; 17 rhythms stay ambiguous after
 that and keep whatever name they had, since a guess is worse than an old name. A row records their
-analyser's name in `heardAs` where the two differ. **One entry per family**: no family arrives at two
+analyser's name in `heardAs` where the two differ. **`carriedFirst` on a row says the cell states the
+half that carries the bit first**, section 230: seven rows set it, all of them stated, and it is needed
+only where storing the pair the other way round would change the wire, which is why 30 further families
+that state it that way do not set it. No measured row sets it, our corpus decoder reading a stored train
+as (mark, space) pairs by construction. **One entry per family**: no family arrives at two
 carriers, their definitions stating one carrier each, and the carrier is in the key because a rhythm is
 only a rhythm at a frequency. `source` says which route measured the durations, and a row's `spread` is
 now zero throughout, the one entry that had a band having turned out to be three families.
 
 **`source: 'stated'` means Logitech states this rhythm and nobody here has measured it**, section 227.
-421<!--fact:protocol_stated--> of the table's 458<!--fact:protocol_entries--> entries are of that kind, converted out of their own definitions for families no
+424<!--fact:protocol_stated--> of the table's 461<!--fact:protocol_entries--> entries are of that kind, converted out of their own definitions for families no
 configuration in this corpus holds a record of. Such a row carries `codes: 0`, `exact: 0` and
 `spread: 0`, which are the honest numbers rather than placeholders, and no `tailExact` and no
 `heldExact`, since those count the records that rebuilt from the row and there are none. Anything
 counting what reproduces a corpus record must exclude these rows; `source` is the field to filter on.
 
-**16<!--fact:protocol_tails_stated--> of those 421<!--fact:protocol_stated--> carry a `tail` and a `held` as well, derived rather than measured**, section 228, and
-the other 405 carry a frame and nothing after it, so `blockOfStatedCode` refuses those. A block is one
+**16<!--fact:protocol_tails_stated--> of those 424<!--fact:protocol_stated--> carry a `tail` and a `held` as well, derived rather than measured**, section 228, and
+the other 408 carry a frame and nothing after it, so `blockOfStatedCode` refuses those. A block is one
 repetition's shape plus how many repetitions go out. Logitech's `KeyCode` field states the shape whole,
 and the derivation of it reproduces all 29 blocks measured off their own compiler to the microsecond,
 which is why a derived one is believed. The count is `pressMinimumRepeats`, stated on 39 of their 684

@@ -87,21 +87,20 @@ remote:
    and no entry has a duration spread any more. The calibration that makes it believable: 30 of our 31
    frame rhythms are reproduced from their definitions field for field and none disagrees.
 2. ~~**Convert the remaining definitions into the rhythm table.**~~ **Done, 31 August 2026, section
-   227's second pass.** The converter reads **456 of the 684** definitions, frames and biphase both, and
-   **421 of them are now entries** marked `source: 'stated'` with `codes: 0`, being families no
-   configuration here holds a record of. The table went from 37 entries to 458, so it answers for 458
-   of Logitech's 684 families rather than 37. It read 459 and held 461 for a day, until section 230
-   withdrew three families whose rhythm this table's shape states wrongly rather than cannot state. The calibration rose with it: 34 of our 35 measured
+   227's second pass.** The converter reads **459 of the 684** definitions, frames and biphase both, and
+   **424 of them are now entries** marked `source: 'stated'` with `codes: 0`, being families no
+   configuration here holds a record of. The table went from 37 entries to 461, so it answers for 461
+   of Logitech's 684 families rather than 37. The calibration rose with it: 34 of our 35 measured
    rhythms are reproduced from their definitions field for field, none disagreeing.
    **The stated row's missing block was the next step and it is done, section 228**, and it did not turn
-   421 buildable families into 421 writable ones. Their `KeyCode` field states a block's shape whole and
+   424 buildable families into 424 writable ones. Their `KeyCode` field states a block's shape whole and
    the reading of it reproduces all 29 blocks measured off their compiler to the microsecond, so the
    shape is settled. What their definitions do not state, on 645 of 684, is how many times a repetition
    is sent, and a block is the shape plus that count. It is stated on 39 definitions, right on all five
    of ours that have it, and deliberately **not** defaulted, since our own measurement puts it at three
    for 22 of the 24 unstated families and at one for two, which would be a fit to this corpus. So 16
-   stated rows gained a block and the writable count went from 29 families to 45 out of 458 buildable.
-   **What stands between 45 and 458 is one integer per family that Logitech's own data does not carry**,
+   stated rows gained a block and the writable count went from 29 families to 45 out of 461 buildable.
+   **What stands between 45 and 461 is one integer per family that Logitech's own data does not carry**,
    which is a want list item for the catalogue rather than a reading to write. The three
    shapes still unread are 75 base four, 67 base sixteen and 35 one interval per bit; each needs its
    own reading and its own calibration, and the base four one is the only shape our table already has.
@@ -121,22 +120,35 @@ remote:
    and one captured live reply per type would name them.
 4. ~~**Compare our built waveforms against the archive's own renderings.**~~ **Done, 31 August 2026,
    section 230.** The check that scales to millions rather than to the 35 families a calibration can
-   reach, and it is the strongest evidence the infrared encoder has: **1,893,157 of 1,893,247 first
-   transmissions agree exactly, and 1,111,882 of 1,111,886 held repetitions.** Every interval
-   identical, not close, over 368 families and the 2,067,863 commands the distinct command sets hold.
+   reach, and it is the strongest evidence the infrared encoder has: **1,894,306 of 1,894,309 first
+   transmissions agree exactly, and 1,112,791 of 1,112,794 held repetitions.** Every interval
+   identical, not close, over 374 families and the 2,067,863 commands the distinct command sets hold.
    `make prontocheck` is the run and `packages/codec/src/pronto.ts` the reader and writer, which is a
    library module because a product importing or exporting one command wants it.
-   **It found five defects, and that is the return on the exercise**: a frame's width taken from the
-   family's name where 23 families state the total rather than each, a second segment's own header, a
-   command's keycode naming other cycles than its family's default, a frame count taken from the
-   definition where the code states more values, and a cell whose constant half is stated last, which
-   this table models by a shift that is only valid while that half really is constant. The last one is
-   two **refusals** rather than a fix, since the alternative is emitting a waveform that decodes
-   cleanly and carries the wrong number; the capability that would replace them is a frame emitter that
-   can put the carried half first, and that is a change to `pulsesOfFrame` measured against the corpus.
-   What is left is 90 first transmissions, 79 of them one class: a block that pads two different frames
-   wants a pad each, and our emitter solves one pad per block however it is asked. Both ways of forcing
-   the per copy rule were measured on the whole archive and both cost 9488 commands to buy 52.
+   **It found seven defects, and that is the return on the exercise**, not the percentage: a frame's
+   width taken from the family's name where 23 families state the total rather than each, a second
+   segment's own header, a command's keycode naming other cycles than its family's default, a frame
+   count taken from the definition where the code states more values, a cell that states its carried
+   half first, a Pronto section keeping a leading space the format has no room for, and a pad shared
+   across two copies that carry different values.
+   **The fifth was a refusal before it was a capability, and the order was right both times**: 1058
+   commands of seven families were being emitted wrongly, refusing beat approximating for the day it
+   took to add the spelling, and `FrameTimings.carriedFirst` is that spelling. No measured row sets it,
+   the shift being exact for all of them.
+   What is left is **three** commands, all of `Quad 5 Bit`, whose values are written in base four. That
+   is item 5's shape, so it gets a reading there rather than a patch.
+5. **Read the families whose cell is one of four lengths.** The largest block of Logitech's catalogue
+   this converter still refuses: **75 families**, against 67 whose cell is one of sixteen lengths and 35
+   that send one interval per bit. It is the one of the three our table already has a shape for, `quad`,
+   measured on `Galaxis 16 Bit Quad Toggle`, so this is a converter reading rather than a new row shape.
+   The calibration is already built and costs nothing: `make prontocheck` scores any new reading against
+   Logitech's own renderings of every command of every family it unlocks, and the three commands section
+   230 leaves outstanding are of exactly this kind, `Quad 5 Bit` coming out rotated by one bit.
+   **Their declined codes were censused while measuring that**: 51,913 of the 68,271 commands our keycode
+   reader refuses are refused on a width or a base, which is this shape and the base sixteen one, so the
+   two together are worth about a twentieth of the catalogue. The rest name a segment word outside the
+   closed set of three, chiefly `Finish` on 10,442 codes and `Divider` on 5121, and each of those is its
+   own small reading.
 
 **And section 192 answered the question standing in front of every write rail**, which is what a host's
 flash address actually means. It is not an address: one routine classifies it, a top byte of `0xFE` or

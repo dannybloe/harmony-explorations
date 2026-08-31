@@ -64,6 +64,15 @@ export interface StatedProtocol {
    * one length.
    */
   readonly oneMark?: number;
+  /**
+   * The cell states its carried half **first**, so a pair goes out as (carried, constant).
+   *
+   * `FrameTimings.carriedFirst` in `irframe.ts` carries the argument. The short of it: this spelling is
+   * needed only where storing the pair the other way round would change the wire, which is seven of the
+   * 37 families that state it this way, and **no measured row sets it**, our corpus decoder reading a
+   * stored train as (mark, space) pairs by construction. Section 230.
+   */
+  readonly carriedFirst?: boolean;
   readonly zero?: number;
   readonly one?: number;
   readonly carries?: FrameCarrier;
@@ -267,12 +276,13 @@ export const PROTOCOLS: readonly StatedProtocol[] = [
   { family: 'Akai 32 Bit', periodNs: 26315, header: [8850, 4480], flat: 560, zero: 1680, one: 560, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Alphapro 13 Bit', periodNs: 24154, biphase: { mark: 380, space: 400, lead: [{ mark: true, us: 391 }, { mark: false, us: 1585 }], setIsMark: true }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Alpine 48 Bit', periodNs: 26315, header: [3217, 1588], flat: 405, zero: 395, one: 1195, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
-  { family: 'AMC 5 Bit', periodNs: 65410, header: [0, 0], flat: 27, zero: 4235, one: 6365, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
+  { family: 'AMC 5 Bit', periodNs: 65410, header: [0, 0], flat: 27, carriedFirst: true, zero: 4235, one: 6365, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Amcor 72 Bit', periodNs: 26315, header: [985, 4720], flat: 474, oneMark: 1222, zero: 1507, one: 764, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Amino 32 Bit', periodNs: 24390, biphase: { mark: 268, space: 268, lead: [{ mark: true, us: 1870 }, { mark: false, us: 1610 }, { mark: true, us: 800 }], setIsMark: true }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'AMX 24 Bit', periodNs: 24154, header: [3831, 3900], flat: 492, oneMark: 500, zero: 713, one: 1715, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Antex 23 Bit', periodNs: 19607, header: [838, 828], flat: 838, zero: 2556, one: 828, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Anthem 32 Bit', periodNs: 26315, header: [8050, 4030], flat: 605, zero: 605, one: 1815, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
+  { family: 'Antique 12 Bit', periodNs: 26990, header: [409, 0], flat: 409, carriedFirst: true, oneMark: 832, zero: 858, one: 434, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Apex 24 and 16 Bit', periodNs: 26315, header: [3660, 1810], flat: 550, zero: 550, one: 1130, carries: 'space', tail: { items: [{ copy: 'full' }, { copy: 'full', at: 1 }, { words: [550, -52000] }, { words: [3660, -3660, 550, -96701] }] }, held: { items: [{ words: [3660, -3660, 550, -96701] }] }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Apex 32 Bit', periodNs: 26525, header: [8600, 4370], flat: 575, zero: 1145, one: 2950, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Apple 15 Bit', periodNs: 26315, header: [2409, 2400], flat: 1045, oneMark: 700, zero: 697, one: 1360, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
@@ -304,8 +314,8 @@ export const PROTOCOLS: readonly StatedProtocol[] = [
   { family: 'BelCanto 16 Bit', periodNs: 26315, header: [8400, 4200], flat: 525, zero: 525, one: 1575, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Belcanto 25 Bit', periodNs: 26315, header: [6185, 2800], flat: 410, zero: 1000, one: 500, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Bell 10 Bit', periodNs: 17857, header: [0, 0], flat: 375, zero: 2800, one: 4600, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
-  { family: 'Bell 16 Bit', periodNs: 17857, header: [0, 0], flat: 375, zero: 1700, one: 2920, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
-  { family: 'Bell 16 Bit 2', periodNs: 17857, header: [0, 0], flat: 375, zero: 1700, one: 2920, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
+  { family: 'Bell 16 Bit', periodNs: 17857, header: [0, 0], flat: 375, carriedFirst: true, zero: 1700, one: 2920, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
+  { family: 'Bell 16 Bit 2', periodNs: 17857, header: [0, 0], flat: 375, carriedFirst: true, zero: 1700, one: 2920, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'BellV1 10 Bit', periodNs: 17543, header: [0, 0], flat: 400, zero: 2730, one: 4410, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'BellV2 16 Bit', periodNs: 17857, header: [390, 6200], flat: 400, oneMark: 390, zero: 2840, one: 1700, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Beyond Platinum 32 Bit', periodNs: 26315, header: [8000, 4000], flat: 500, zero: 500, one: 1500, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
@@ -407,9 +417,11 @@ export const PROTOCOLS: readonly StatedProtocol[] = [
   { family: 'General InstrumentsV1 12 Bit', periodNs: 26315, header: [5000, 2000], flat: 1000, zero: 3000, one: 1000, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Gilmore 16 Bit', periodNs: 65410, header: [0, 0], flat: 37, zero: 135, one: 205, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'GlobalFires 6 Bit', periodNs: 26595, biphase: { mark: 644, space: 828, lead: [], setIsMark: true }, codes: 0, exact: 0, spread: 0, source: 'stated' },
+  { family: 'Goelst 12 Bit', periodNs: 26315, header: [675, 0], flat: 675, carriedFirst: true, oneMark: 1375, zero: 1445, one: 730, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'GoVideo 32 Bit', periodNs: 26315, header: [4500, 4500], flat: 600, zero: 1650, one: 500, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'GoVideo 32 Bit 2', periodNs: 26315, header: [4500, 4500], flat: 560, zero: 1700, one: 570, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'GoVideoO1 32 Bit', periodNs: 26385, header: [4500, 4500], flat: 560, zero: 560, one: 1690, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
+  { family: 'GPX 8 Bit', periodNs: 26315, header: [17772, 0], flat: 510, carriedFirst: true, oneMark: 1500, zero: 1500, one: 510, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Grundig 10 Bit', periodNs: 28571, biphase: { mark: 520, space: 524, lead: [{ mark: true, us: 520 }, { mark: false, us: 2600 }], setIsMark: false }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Grundig 10 Bit Dual', periodNs: 28571, biphase: { mark: 520, space: 530, lead: [{ mark: true, us: 520 }, { mark: false, us: 2600 }], setIsMark: false }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Grundig 7 Bit', periodNs: 28571, biphase: { mark: 503, space: 515, lead: [{ mark: true, us: 509 }, { mark: false, us: 2544 }], setIsMark: false }, codes: 0, exact: 0, spread: 0, source: 'stated' },
@@ -522,7 +534,7 @@ export const PROTOCOLS: readonly StatedProtocol[] = [
   { family: 'Pace 4 and 20 Bit', periodNs: 28089, biphase: { mark: 433, space: 458, lead: [], setIsMark: false }, tail: { items: [{ words: [2679, -876] }, { copy: 'full' }, { words: [-909, 879] }, { copy: 'full', at: 1 }, { words: [-123112] }] }, held: { items: [{ words: [2679, -876] }, { copy: 'full' }, { words: [-909, 879] }, { copy: 'full', at: 1 }, { words: [-123112] }] }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Pace 4 and 20 Bit Full', periodNs: 28089, biphase: { mark: 433, space: 458, lead: [], setIsMark: false }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Panasonic 10 Bit', periodNs: 22222, header: [0, 0], flat: 800, zero: 2600, one: 6000, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
-  { family: 'Panasonic 31 Bit', periodNs: 27548, header: [0, 0], flat: 870, zero: 887, one: 2644, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
+  { family: 'Panasonic 31 Bit', periodNs: 27548, header: [0, 0], flat: 870, carriedFirst: true, zero: 887, one: 2644, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Panasonic 48 Bit', periodNs: 26315, header: [3460, 1730], flat: 430, zero: 430, one: 1300, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Panasonic 56 Bit', periodNs: 27173, header: [3470, 1740], flat: 435, zero: 435, one: 1305, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'PassLabs 13 Bit Toggle', periodNs: 29411, biphase: { mark: 945, space: 945, lead: [{ mark: true, us: 945 }], setIsMark: false }, codes: 0, exact: 0, spread: 0, source: 'stated' },

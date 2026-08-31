@@ -98,6 +98,14 @@ export function prontoUnits(
     if (last !== undefined && Math.sign(last) === Math.sign(value)) merged[merged.length - 1] = last + value;
     else merged.push(value);
   }
+  // **A section never opens on a space, so a leading one is dropped.** The format's first burst word is
+  // a mark by construction, and silence before a transmission carries nothing a receiver could time
+  // from. It matters for a family whose cell states its carried half first: its repeat group opens on
+  // the first bit's own space, and Logitech's renderer drops it, which their README states as the rule.
+  // One consequence worth knowing rather than hiding: **their repeat section for such a family cannot be
+  // played back correctly**, the first bit having gone with the space. Our block keeps it, and the
+  // comparison is made on their spelling.
+  while (merged.length > 0 && merged[0]! < 0) merged.shift();
   // **No Pronto word is ever zero, and that is not rounding but a floor.** A word states a count of
   // carrier cycles, and a count of zero states no interval at all, which would silently merge the two
   // neighbours around it. So a duration shorter than half a unit still costs one: `Nokia 11 Bit` carries

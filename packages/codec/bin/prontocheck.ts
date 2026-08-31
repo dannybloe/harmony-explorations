@@ -26,7 +26,7 @@ import { join } from 'node:path';
 import { IR_ARCHIVE } from '@harmony/lab';
 import {
   archiveProtocols, blockOfDefinition, frameWidths, keyCodeOfStatedCode, prontoUnits, readPronto,
-  prontoPairs, rhythmOfDefinition, statedCode, pulsesOfBlock, withToggleCleared,
+  prontoPairs, rhythmOfDefinition, statedCode, pulsesOfBlock, withStatedWidths, withToggleCleared,
 } from '../src/index.ts';
 import type { ArchiveProtocol, BlockTail, FrameShape, StatedCode } from '../src/index.ts';
 
@@ -116,12 +116,9 @@ outer: for (const bucket of buckets) {
       if (blocks === undefined) { bump(skipped, 'no block derivable for this code'); continue; }
       // **The width comes from the definition and not from the family's name**, which is section 230's
       // second correction: on 23 families the name states the total across the frames rather than each.
-      const widened = one.widths?.length === code.frames.length
-        ? code.frames.map((f, at) => ({ ...f, bits: one.widths![at]! }))
-        : code.frames;
-      // Their renderings all carry the toggle bit at zero, which their README states. Not a fact about
-      // the command: see `withToggleCleared`.
-      const frames = withToggleCleared(one.protocol, widened);
+      // Their renderings all carry the toggle bit at zero, which their README states, and that is a
+      // condition on the comparison rather than a fact about the command: see `withToggleCleared`.
+      const frames = withToggleCleared(one.protocol, withStatedWidths(one.protocol, code.frames));
       let ours: number[]; let oursHeld: number[];
       try {
         ours = prontoPairs(prontoUnits(pulsesOfBlock(one.shape, frames, blocks.tail), pronto.unitUs));

@@ -19,7 +19,7 @@ import test from 'node:test';
 import { IR_ARCHIVE, skipWithoutIrArchive } from '@harmony/lab';
 import {
   archiveProtocols, blockOfDefinition, frameWidths, keyCodeOfStatedCode, rhythmOfDefinition,
-  withToggleCleared,
+  withStatedWidths, withToggleCleared,
 } from '../src/archive.ts';
 import { pulsesOfBlock } from '../src/irframe.ts';
 import {
@@ -108,11 +108,7 @@ function compare(
   if ('refusal' in built) return undefined;
   const read = readPronto(pronto);
   if (read === undefined) return undefined;
-  const widths = frameWidths(protocol);
-  const widened = widths?.length === code.frames.length
-    ? code.frames.map((one, at) => ({ ...one, bits: widths[at]! }))
-    : code.frames;
-  const frames = withToggleCleared(protocol, widened);
+  const frames = withToggleCleared(protocol, withStatedWidths(protocol, code.frames));
   const shape = { timings: rhythm.timings, biphase: rhythm.biphase };
   return {
     ours: prontoPairs(prontoUnits(pulsesOfBlock(shape, frames, built.tail), read.unitUs)),
@@ -219,6 +215,79 @@ test('clearing the toggle bit is what makes a toggle family agree, and it is che
     // bit rides in the space, and the block is padded out to a constant total, so a longer space is paid
     // for by a shorter gap at the end.
     assert.equal(asStated.filter((v, at) => v !== both!.theirs[at]).length, 2);
+  });
+
+test('the cell\'s own order is what makes six of seven families agree, and stripping it breaks them',
+  { ...skipWithoutIrArchive() }, () => {
+    // **The capability that replaced two refusals**, section 230. Logitech states a cell as (space, mark)
+    // on 37 families where our table stores (mark, space), and for 30 of them the wire is the same
+    // either way. On seven it is not, and this is both halves of that: they agree now, and they disagree
+    // with the flag stripped, which is what the refusals were protecting against.
+    const root = IR_ARCHIVE!;
+    const byName = new Map(archiveProtocols(root).map((one) => [one.name, one]));
+    // Named as a set rather than counted: an eighth appearing means a definition took this shape, and
+    // one dropping out means the reader stopped seeing it.
+    const carried = [...byName.values()].filter((one) => {
+      const rhythm = rhythmOfDefinition(one);
+      return !('refusal' in rhythm) && rhythm.timings?.carriedFirst === true;
+    }).map((one) => one.name);
+    assert.deepEqual([...carried].sort(), [
+      'AMC 5 Bit', 'Antique 12 Bit', 'Bell 16 Bit', 'Bell 16 Bit 2', 'GPX 8 Bit', 'Goelst 12 Bit',
+      'Panasonic 31 Bit',
+    ]);
+
+    // One command of each family that the catalogue actually holds codes for, found rather than written
+    // down: a Pronto string is one of the renderings decision 15 keeps out of this repository.
+    const wanted = new Set(carried);
+    const found = new Map<string, { keycode: string; pronto: string }>();
+    outer: for (const bucket of readdirSync(join(root, 'codesets')).sort()) {
+      for (const file of readdirSync(join(root, 'codesets', bucket)).sort()) {
+        const parsed = JSON.parse(readFileSync(join(root, 'codesets', bucket, file), 'utf8')) as {
+          commands?: { keycode: string; protocol: string; pronto?: string }[];
+        };
+        for (const command of parsed.commands ?? []) {
+          if (!wanted.has(command.protocol) || command.pronto === undefined) continue;
+          if (found.has(command.protocol)) continue;
+          found.set(command.protocol, { keycode: command.keycode, pronto: command.pronto });
+          if (found.size === wanted.size) break outer;
+        }
+      }
+    }
+    // All seven have commands in the catalogue. Asserted rather than assumed, since a shrinking set here
+    // is the comparison quietly covering less.
+    assert.deepEqual([...found.keys()].sort(), [...carried].sort());
+    // **Six of them compare, and the seventh is named with its reason.** Every `Bell 16 Bit 2` code is
+    // written `(Start_0xBBFF)(RepeatStart_0xBBFF)`, and `RepeatStart` is not one of the three segment
+    // words our keycode reader accepts. That closed set is deliberate, a fourth word being a refusal
+    // rather than a guess, so this is a reading still to do and not a defect here.
+    const declined = [...found.keys()].filter((family) => statedCode(found.get(family)!.keycode)
+      === undefined);
+    assert.deepEqual(declined, ['Bell 16 Bit 2']);
+
+    for (const [family, command] of found) {
+      if (declined.includes(family)) continue;
+      const both = compare(byName, family, command.keycode, command.pronto);
+      assert.notEqual(both, undefined, family);
+      assert.deepEqual(both!.ours, both!.theirs, `${family} first transmission`);
+      if (both!.theirsHeld.length > 0) {
+        assert.deepEqual(both!.oursHeld, both!.theirsHeld, `${family} held repetition`);
+      }
+      // **The control, and it has to bite on every one of them.** With the flag stripped the frame goes
+      // out in our table's other spelling, which is the waveform that was being emitted before.
+      const protocol = byName.get(family)!;
+      const rhythm = rhythmOfDefinition(protocol);
+      assert.ok(!('refusal' in rhythm) && rhythm.timings !== undefined);
+      const code = statedCode(command.keycode)!;
+      const keyCode = keyCodeOfStatedCode(protocol, code)!;
+      const built = blockOfDefinition(protocol, 1, { storedForm: false, keyCode });
+      assert.ok(!('refusal' in built));
+      const frames = withToggleCleared(protocol, withStatedWidths(protocol, code.frames));
+      const stripped = { ...rhythm.timings, carriedFirst: false };
+      const wrong = prontoPairs(prontoUnits(
+        pulsesOfBlock({ timings: stripped }, frames, built.tail), readPronto(command.pronto)!.unitUs,
+      ));
+      assert.notDeepEqual(wrong, both!.theirs, `${family} disagrees without the cell's own order`);
+    }
   });
 
 test('the three conditions the comparison honours each change the answer',

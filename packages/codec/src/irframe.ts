@@ -503,6 +503,33 @@ export interface FrameTimings {
    */
   firstMark?: number;
   /**
+   * The cell states its carried half **first**, so a pair goes out as (carried, constant).
+   *
+   * **Almost no family needs this and the reason is worth keeping.** Logitech's notation states plenty
+   * of families cell by cell as (space, mark) where our table stores (mark, space), and for 32 of the 37
+   * such families the **wire is the same either way**: the family's own header is a lone mark of exactly
+   * the constant length, so it is the first constant half, and after it the train is one alternating
+   * chain whichever end you name it from. `JVC 16 Bit` is that case and its measured row, taken off a
+   * real remote's configuration, is in the (mark, space) spelling.
+   *
+   * Two things break the equivalence and section 230 found both by comparing against Logitech's own
+   * renderings of two million commands:
+   *
+   * * the constant half is **not constant**, `oneMark` being set. Then the shift attaches each cell's
+   *   mark to the **previous** bit, so a set bit's longer mark goes out one position early.
+   *   `Antique 12 Bit`, `GPX 8 Bit` and `Goelst 12 Bit`, 153 commands, every one of them wrong.
+   * * the segment states **no header at all**, so there is no lone mark to be the first constant half
+   *   and the lead in's own last mark plays that role at its own length. `Bell 16 Bit` leads in with
+   *   400 where its constant half is 375, so the shift sends 775 of carrier where 400 belongs.
+   *   `Panasonic 31 Bit` is the same shape, 905 commands between them.
+   *
+   * **Not set on a measured row**, and that is deliberate rather than an omission: our corpus decoder
+   * reads a stored train from its first mark as (mark, space) pairs, so every row measured here is in
+   * that spelling by construction, and it is exact for all of them. Re-spelling those would mean
+   * re-deriving them from the corpus, which is a separate exercise with its own calibration.
+   */
+  carriedFirst?: boolean;
+  /**
    * The mark of a **set** cell, where the mark's length rides with its own cell's bit.
    *
    * **Three families carry two (mark, space) pairs instead of one flat**, section 170: every set cell
@@ -633,9 +660,14 @@ export function pulsesOfFrame(t: FrameTimings, bits: number, value: bigint): Pul
   if (t.sections !== undefined) return pulsesOfSections(t, bits, value);
   // A zero length header is no header, and emitting it as two pulses of zero would put a pair in the
   // train that no receiver could see and that our own decoder would then read as a bit cell.
-  const out: Pulse[] = t.header[0] === 0 && t.header[1] === 0
-    ? []
-    : [{ mark: true, us: t.header[0] }, { mark: false, us: t.header[1] }];
+  // Each half only where it has a length. A zero length interval is not an interval: emitting one would
+  // put a pair in the train no receiver could see and that our own decoder would read as a bit cell.
+  // **Per half rather than per header**, since section 230: a carried first family whose segment states a
+  // lone mark has a header of a mark and no space, that mark being a genuine lead in rather than the
+  // first constant half.
+  const out: Pulse[] = [];
+  if (t.header[0] !== 0) out.push({ mark: true, us: t.header[0] });
+  if (t.header[1] !== 0) out.push({ mark: false, us: t.header[1] });
   for (let i = bits - 1; i >= 0; i -= 1) {
     const carried = (value >> BigInt(i)) & 1n ? t.one : t.zero;
     if (t.carries === 'mark') {
@@ -646,8 +678,16 @@ export function pulsesOfFrame(t: FrameTimings, bits: number, value: bigint): Pul
       // else, which is `flat` unless the mark rides with the bit, section 170.
       const first = i === bits - 1 && t.firstMark !== undefined;
       const mark = ((value >> BigInt(i)) & 1n) && t.oneMark !== undefined ? t.oneMark : t.flat;
-      out.push({ mark: true, us: first ? t.firstMark! : mark });
-      out.push({ mark: false, us: carried });
+      if (t.carriedFirst === true) {
+        // The cell's own order: the half that carries the bit, then the constant one. `firstMark` is a
+        // convention of the other spelling, where the opening burst is the first cell's own mark.
+        if (first) throw new Error('a carried first frame has no opening burst of its own');
+        out.push({ mark: false, us: carried });
+        out.push({ mark: true, us: mark });
+      } else {
+        out.push({ mark: true, us: first ? t.firstMark! : mark });
+        out.push({ mark: false, us: carried });
+      }
     }
   }
   return out;
@@ -711,7 +751,21 @@ export type BlockTailItem =
    * which the measurement establishes by demanding them identical across records of different
    * values, and which is the safety rail: section 152's second-code tails must never be replayed
    * for a value they do not belong to. */
-  | { readonly words: readonly number[] }
+  | {
+    readonly words: readonly number[];
+    /**
+     * These words are the **following** copy's own lead in, so a copy period counts them.
+     *
+     * A copy period runs from the start of a copy's own segment through its pad, and a segment whose
+     * lead in differs from the family's is emitted as literal words in front of a bare copy. Without
+     * this the period would be solved from the copy alone and the pad would come out one lead in too
+     * long: `Daewoo 40 Bit` repeats a segment whose lead in is 9000 and 2260 where the frame's is 9000
+     * and 4500, and its last gap was out by exactly those 11260 microseconds on all 27 of its commands,
+     * section 230. Absent on a lead in that belongs to a **separate** literal segment, which is not part
+     * of any copy's period.
+     */
+    readonly ofCopy?: boolean;
+  }
   /** A pad space of the record's shared pad value plus this extra. */
   | { readonly pad: number };
 
@@ -796,16 +850,22 @@ export function pulsesOfBlock(
   // How long the current copy has been running, for the copy period rule: a pad under it stretches
   // everything since its own copy's first word to the period.
   let sinceCopy = 0;
+  /** A copy's own lead in, emitted before it and therefore counted into its period rather than the
+   * previous one's. */
+  let pending = 0;
   for (const item of tail.items) {
     if ('copy' in item) {
       const pulses = copy(item.copy, item.at ?? 0);
       out.push(...pulses);
-      sinceCopy = pulses.reduce((n, one) => n + one.us, 0);
+      sinceCopy = pending + pulses.reduce((n, one) => n + one.us, 0);
+      pending = 0;
       continue;
     }
     if ('words' in item) {
       out.push(...item.words.map((w) => ({ mark: w > 0, us: Math.abs(w) })));
-      sinceCopy += item.words.reduce((n, w) => n + Math.abs(w), 0);
+      const spent = item.words.reduce((n, w) => n + Math.abs(w), 0);
+      // Words belonging to the copy that follows are held over, since the copy resets the count.
+      if (item.ofCopy === true) pending += spent; else sinceCopy += spent;
       continue;
     }
     const us = tail.copyPeriod === undefined ? padValue + item.pad

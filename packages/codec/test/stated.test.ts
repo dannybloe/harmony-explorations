@@ -34,19 +34,19 @@ import { join } from 'node:path';
 const MEASURED = PROTOCOLS.filter((one) => one.source !== 'stated');
 const STATED = PROTOCOLS.filter((one) => one.source === 'stated');
 
-test('the table states four hundred and fifty eight entries, of which thirty seven are measured', () => {
+test('the table states four hundred and sixty one entries, of which thirty seven are measured', () => {
   // Exact, per the house rule: a floor would absorb an entry falling out of the generator, and the
   // number moves only when somebody regenerates it, and then it moves in the diff.
-  assert.equal(PROTOCOLS.length, 458);
+  assert.equal(PROTOCOLS.length, 461);
   assert.equal(MEASURED.length, 37);
   // **421 families this project has never seen a record of**, converted out of Logitech's own protocol
   // definitions on 31 August 2026, section 227. They are what makes a device from their catalogue
   // writable at all: before them the table answered for 37 families out of the 684 they define.
   //
-  // 461 and 424 for a day, until section 230 withdrew three: their rhythm is one this table's shape
-  // states **wrongly** rather than one it cannot state, and every one of their 153 commands disagreed
-  // with Logitech's own rendering of the same code.
-  assert.equal(STATED.length, 421);
+  // 421 for part of one day: section 230 withdrew three families whose rhythm this table's shape states
+  // wrongly, and then gave the shape the missing spelling instead, `carriedFirst`, so all three are back
+  // and reproduce Logitech's own renderings exactly.
+  assert.equal(STATED.length, 424);
   // A stated row has no evidence and says so, in all three numbers rather than in one.
   for (const one of STATED) {
     assert.deepEqual([one.codes, one.exact, one.spread], [0, 0, 0], one.family);
@@ -58,13 +58,13 @@ test('the table states four hundred and fifty eight entries, of which thirty sev
     // A block and a held block go together: a record needs both pointers, so half of one is no use.
     assert.equal(one.tail === undefined, one.held === undefined, one.family);
   }
-  // 16 of the 421 carry a whole block, being the ones whose definition also states how many times a
-  // repetition is sent, and the other 405 carry a frame and nothing after it.
+  // 16 of the 424 carry a whole block, being the ones whose definition also states how many times a
+  // repetition is sent, and the other 408 carry a frame and nothing after it.
   assert.equal(STATED.filter((one) => one.tail !== undefined).length, 16);
-  // Both shapes convert, which is what the second pass of section 227 added: 97 of the 421 are biphase,
+  // Both shapes convert, which is what the second pass of section 227 added: 97 of the 424 are biphase,
   // where the bit is which half of the cell carries the carrier.
   assert.equal(STATED.filter((one) => one.biphase !== undefined).length, 97);
-  assert.equal(STATED.filter((one) => one.header !== undefined).length, 324);
+  assert.equal(STATED.filter((one) => one.header !== undefined).length, 327);
   // **Three provenances, and they are three different strengths of claim.** `corpus` is a record some
   // remote was really carrying, whose family came from Logitech's analyser naming our decoding of it.
   // `compiled` is a record their own compiler produced on request, whose family their own catalogue
@@ -242,10 +242,8 @@ test('the table states four hundred and fifty eight entries, of which thirty sev
   // entries are worth beyond their own rows: Logitech's catalogue defines 81 further families whose set
   // bit is the **shorter** carried half. So an emitter must read the polarity off the table for every
   // family and can never assume the common direction, and that is no longer an inference from four
-  // cases out of 37. It was 84 until section 230, and all three that went were of this kind, which is
-  // not a coincidence: a family whose mark rides with the bit has no constant half to be the shorter
-  // one of, and reading it as though it had is what the refusal there replaces.
-  assert.equal(STATED.filter((one) => (one.zero ?? 0) > (one.one ?? 0)).length, 81);
+  // cases out of 37.
+  assert.equal(STATED.filter((one) => (one.zero ?? 0) > (one.one ?? 0)).length, 84);
 
   // **Three families carry two (mark, space) pairs instead of one flat**, section 170, and the field
   // that says so is `oneMark`, the set cell's own mark. Named as a set: a fourth appearing means a new
@@ -254,14 +252,14 @@ test('the table states four hundred and fifty eight entries, of which thirty sev
   assert.deepEqual(twoMark.map((one) => [one.family, one.flat, one.oneMark]),
                    [['MemorexV2 32 Bit Dual', 560, 594], ['Panasonic 16 Bit', 521, 525],
                     ['Sharp 48 Bit', 410, 409]]);
-  // 49 stated families take the same shape, so the three above are three cases of something common in
+  // 52 stated families take the same shape, so the three above are three cases of something common in
   // Logitech's catalogue rather than three oddities, which is the reverse of how they were first read:
   // a reader demanding one flat length refused all three and lost 29 catalogue commands.
   //
-  // 52 until section 230, and the three that went are the same three: this shape combined with a cell
-  // that states its constant half **last** is the one our emitter cannot express, since the shift that
-  // models the second attaches each cell's mark to the previous bit.
-  assert.equal(STATED.filter((one) => one.oneMark !== undefined).length, 49);
+  // **Three of the 52 need a second field beside it and section 230 is why.** This shape combined with a
+  // cell that states its constant half **last** cannot be spelled by the shift our table used to use,
+  // since the shift attaches each cell's mark to the previous bit, so those rows carry `carriedFirst`.
+  assert.equal(STATED.filter((one) => one.oneMark !== undefined).length, 52);
   // And each is exact on its own records, which for `Sharp 48 Bit` is what the one length rail refused
   // for a day: its two marks are one microsecond apart and still perfectly correlated with the bit.
   for (const one of twoMark) assert.equal(one.exact, one.codes, one.family);

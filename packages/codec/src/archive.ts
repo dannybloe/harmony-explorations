@@ -199,8 +199,7 @@ export type ConversionRefusal =
   | 'the header is not one mark and one space'
   | 'the header has no space and the cell supplies none'
   | 'biphase, and its two cells disagree about their half cell lengths'
-  | 'neither half of the cell is constant'
-  | 'the mark rides with the bit and the cell states it last';
+  | 'neither half of the cell is constant';
 
 /**
  * The rhythm a definition states, in the terms our own table and emitter use.
@@ -378,21 +377,17 @@ export function rhythmOfDefinition(
     one = on.space;
   }
   if (zero === one) return { refusal: 'neither half of the cell is constant' };
-  // **A cell stating its constant half last is modelled by a shift, and the shift only works while that
-  // half really is constant.** Our table emits a pair as (flat, carried); a family stating (carried,
-  // flat) comes out right anyway, because the flat that opens our train is absorbed by the header and
-  // every later one lands between the same two carried halves, which is why 29 such families reproduce
-  // Logitech's own renderings exactly. Where the mark rides with its own bit there is no such
-  // equivalence: the shift attaches each cell's mark to the **previous** bit, so a set bit's longer mark
-  // is sent one position early.
+  // **When the shift is not equivalent, the frame is emitted in the cell's own order instead.**
+  // Logitech states a cell as (space, mark) on 37 families where our table stores (mark, space), and for
+  // 32 of them the wire is identical: the segment's own header is a lone mark of exactly the constant
+  // length, so it **is** the first constant half and the rest is one alternating chain. `FrameTimings`
+  // carries the full argument on `carriedFirst`; two things break the equivalence and both were found by
+  // comparing against Logitech's own renderings, section 230.
   //
-  // Measured rather than reasoned, section 230: this refuses `Antique 12 Bit`, `GPX 8 Bit` and
-  // `Goelst 12 Bit`, and those three are exactly the families whose waveforms disagreed with Logitech's
-  // renderings on 153 of 153 commands, on the bit their mark rides with and nowhere else. The
-  // capability that would replace the refusal is a frame emitter that can put the carried half first.
-  if (oneMark !== undefined && !off.markFirst) {
-    return { refusal: 'the mark rides with the bit and the cell states it last' };
-  }
+  // This was a pair of refusals for one day, which was the honest answer while the emitter could not
+  // say it: 1058 commands of five families were being emitted wrongly, and refusing beat approximating.
+  const carriedFirst = carries === 'space' && !off.markFirst
+    && (oneMark !== undefined || (segment.Header ?? []).length === 0);
 
   // A header of no atoms is [0, 0], which is a real shape rather than a sentinel: the Sharp scheme
   // opens on its first bit cell.
@@ -414,7 +409,17 @@ export function rhythmOfDefinition(
   let header: readonly [number, number];
   let firstMark: number | undefined;
   let leadFolded = false;
-  if (head.length === 0) header = [0, 0];
+  // **A carried first frame's header is the segment's own atoms and nothing else.** None of the three
+  // absorptions below applies: the lone mark is a genuine lead in rather than the first constant half,
+  // there is nothing to fold a `KeyCodeStart` into, and `firstMark` is a convention of the other
+  // spelling. A header of a mark and no space is a real shape and the emitter states it as one.
+  if (carriedFirst) {
+    if (head.length === 0) header = [0, 0];
+    else if (head.length === 1 && head[0]!.Type === 1) header = [head[0]!.Value, 0];
+    else if (head.length === 2 && head[0]!.Type === 1 && head[1]!.Type === 0) {
+      header = [head[0]!.Value, head[1]!.Value];
+    } else return { refusal: 'the header is not one mark and one space' };
+  } else if (head.length === 0) header = [0, 0];
   else if (head.length === 2 && head[0]!.Type === 1 && head[1]!.Type === 0) {
     header = [head[0]!.Value, head[1]!.Value];
   } else if (head.length === 1 && head[0]!.Type === 1) {
@@ -436,6 +441,7 @@ export function rhythmOfDefinition(
     periodNs: periodOfCarrier(protocol.carrierHz),
     timings: {
       header, flat, zero, one, carries,
+      ...(carriedFirst ? { carriedFirst } : {}),
       ...(oneMark === undefined ? {} : { oneMark }),
       ...(firstMark === undefined ? {} : { firstMark }),
     },
@@ -618,15 +624,49 @@ export function keyCodeOfStatedCode(
  * **A writer must not use this.** A real transmission alternates the bit, which is what
  * `pressMinimumRepeats` repetitions of a held key need; clearing it is for reproducing a rendering.
  */
+/**
+ * The definition's keycode fields in their own order, which is by `token` and not by object key.
+ *
+ * **A code may state more values than the definition has fields, and the fields still apply.** Their
+ * renderer takes the last field for the extras, which is what `Philips 13 Bit` needs: one field of 13
+ * bits and codes that state the same value three times. So the lookup **clamps** rather than requiring
+ * the two counts to match, and requiring it is what left two of its commands and one of `Streamzap 14
+ * Bit`'s with their toggle bit uncleared, section 230.
+ */
+function fieldAt(protocol: ArchiveProtocol, at: number):
+{ bits: number; toggleBit: number | null } | undefined {
+  const fields = Object.values(protocol.keycodeFields ?? {}).sort((a, b) => a.token - b.token);
+  if (fields.length === 0) return undefined;
+  return fields[Math.min(at, fields.length - 1)];
+}
+
+/**
+ * The same frames at the widths the definition states, rather than at the ones the family's name does.
+ *
+ * See `frameWidths` for why the name is not enough. This is the applier, and it exists beside
+ * `withToggleCleared` because the two are the same kind of thing: what the definition says about a field,
+ * imposed on a code that states only a value. **Wider than its field, a value loses its leading bits**,
+ * which is Logitech's own stated rule and is what `Game Elements 15 Bit` needs: a name saying 15, a field
+ * saying 13, and a code stating a 15 bit number.
+ */
+export function withStatedWidths(
+  protocol: ArchiveProtocol,
+  frames: readonly { readonly bits: number; readonly value: bigint }[],
+): readonly { readonly bits: number; readonly value: bigint }[] {
+  return frames.map((frame, at) => {
+    const bits = fieldAt(protocol, at)?.bits;
+    if (bits === undefined || bits === frame.bits) return frame;
+    return { ...frame, bits, value: frame.value & ((1n << BigInt(bits)) - 1n) };
+  });
+}
+
 export function withToggleCleared(
   protocol: ArchiveProtocol,
   frames: readonly { readonly bits: number; readonly value: bigint }[],
 ): readonly { readonly bits: number; readonly value: bigint }[] {
-  const fields = Object.values(protocol.keycodeFields ?? {}).sort((a, b) => a.token - b.token);
-  if (fields.length !== frames.length) return frames;
   return frames.map((frame, at) => {
-    const toggle = fields[at]!.toggleBit;
-    if (toggle === null || toggle < 0 || toggle >= frame.bits) return frame;
+    const toggle = fieldAt(protocol, at)?.toggleBit;
+    if (toggle === undefined || toggle === null || toggle < 0 || toggle >= frame.bits) return frame;
     const mask = 1n << BigInt(frame.bits - 1 - toggle);
     return { ...frame, value: frame.value & ~mask };
   });
@@ -733,7 +773,10 @@ export function blockOfDefinition(
    * trailer. */
   const closing = (trailer: readonly number[]): number[] => {
     const out: number[] = [];
-    if (rhythm.timings !== undefined && rhythm.cellCarriedFirst) {
+    // Nothing is left over where the emitter states the cell in its own order: the copy already ends on
+    // its constant half, so appending another would send it twice.
+    if (rhythm.timings !== undefined && rhythm.cellCarriedFirst
+      && rhythm.timings.carriedFirst !== true) {
       out.push(rhythm.timings.carries === 'space' ? rhythm.timings.flat : -rhythm.timings.flat);
     }
     out.push(...trailer);
@@ -759,6 +802,8 @@ export function blockOfDefinition(
     items: BlockTailItem[];
     nominal: number | undefined;
     padded: boolean;
+    /** Which of the code's frames this copy sent, so a block can tell one padded frame from two. */
+    frame?: number;
   }
   let payloads = 0;
   let base = 0;
@@ -828,7 +873,7 @@ export function blockOfDefinition(
     // `Bell 16 Bit` and `Panasonic 31 Bit` are the case, section 230: both open on a lead in whose last
     // atom is a mark and both close each copy on a mark, so every one of their 905 commands disagreed
     // with Logitech's own rendering on that one interval. Refused rather than approximated.
-    if (rhythm.cellCarriedFirst && !ownHeader) {
+    if (rhythm.cellCarriedFirst && !ownHeader && rhythm.timings?.carriedFirst !== true) {
       const before = previous;
       if (before !== undefined && 'words' in before) {
         const last = before.words[before.words.length - 1];
@@ -837,7 +882,9 @@ export function blockOfDefinition(
     }
     const bare = ownHeader || (rhythm.leadFolded && !(first && emitted === 1));
     const items: BlockTailItem[] = [];
-    if (ownHeader && ownHead.length > 0) items.push({ words: ownHead });
+    // Marked as the copy's own, so a copy period counts it: the lead in belongs to this segment and not
+    // to the gap before it. Section 230.
+    if (ownHeader && ownHead.length > 0) items.push({ words: ownHead, ofCopy: true });
     items.push({ copy: bare ? 'bare' : 'full', ...(at === 0 ? {} : { at }) });
     const words = closing((segment.Trailer ?? []).map((a) => (a.Type === 1 ? a.Value : -a.Value)));
     const stated = segment.TotalLength ?? 0;
@@ -851,7 +898,7 @@ export function blockOfDefinition(
     }
     if (words.length > 0) items.push({ words });
     if (stated > 0) items.push({ pad: 0 });
-    return { items, nominal: stated > 0 ? stated : undefined, padded: stated > 0 };
+    return { items, nominal: stated > 0 ? stated : undefined, padded: stated > 0, frame: at };
   };
 
   const build = (
@@ -867,6 +914,8 @@ export function blockOfDefinition(
     let known = true;
     let period: number | undefined;
     let cyclePayloads = 0;
+    /** The frames a pad was solved for, which is one of the two tests between the two pad rules. */
+    const paddedFrames = new Set<number>();
     for (const [index, list] of refs.entries()) {
       payloads = 0;
       // Every repetition counts its frames from where the start block stopped.
@@ -882,6 +931,7 @@ export function blockOfDefinition(
         if (one.nominal === undefined) known = false; else nominal += one.nominal;
         if (one.padded) {
           pads += 1;
+          if (one.frame !== undefined) paddedFrames.add(one.frame);
           if (period !== undefined && period !== one.nominal) {
             return 'a padded cycle of several frames whose shared period is not one number';
           }
@@ -903,23 +953,21 @@ export function blockOfDefinition(
     const lead = first && rhythm.leadFolded && rhythm.timings !== undefined
       ? rhythm.timings.header[0] + rhythm.timings.header[1] : 0;
     if (pads === 0) return { items };
-    // A cycle of several frames pads each copy to its own period, since their durations differ; one
-    // frame per cycle pads against a single block total.
+    // **A block pads each copy to its own period where the copies can differ in length, and against a
+    // single block total where they cannot. Two tests and not one, which cost a measurement to get
+    // right**, section 230. A cycle of several payloads needs a pad each, those frames being different
+    // values. So does a block whose **start block and cycle** pad different frames, which is the case
+    // that was missed: `Roku 32 Bit 1` states one payload per cycle and pads twice, its start block's
+    // value and its repetition's, and the two carry a different number of set bits, so one shared pad
+    // splits the difference and both are wrong. 52 of its 918 commands, the other 866 agreeing only
+    // because their two values happen to run the same length; `Daewoo 40 Bit` is the same shape and was
+    // wrong on all 27 of its.
     //
-    // **This is where the residue of section 230's comparison lives, and it was measured rather than
-    // left as a remainder.** A block that pads **two different frames** wants a pad each: `Roku 32 Bit
-    // 1` pads its start block's value and its repetition's, and the two carry a different number of set
-    // bits, so one shared pad splits the difference and both are wrong. That is 52 of its 918 commands,
-    // and the other 866 agree because their two values happen to run the same length.
-    //
-    // **Neither way of demanding a pad per copy is an improvement, and both were tried on the whole
-    // archive.** Keying on the number of pads costs 9488 commands that a shared pad reproduces exactly,
-    // since a block padding the **same** frame twice is served correctly by one. Keying on the frames
-    // and preferring the per copy rule costs the same 9488, in the emitter rather than here: `copyPeriod`
-    // divides one pad over the copies too, so it refuses a period that does not come out whole. The fix
-    // is a genuine pad per copy in `pulsesOfBlock`, which is a change to the emitter and not to this
-    // reading, and until then a shared pad is the better of the two by 9436 commands.
-    if (cyclePayloads > 1) return { items, copyPeriod: period! };
+    // **Replacing the first test rather than joining it costs 9488 commands**, measured over the whole
+    // archive: a cycle of two payloads that clamp to one frame index has one padded frame and several
+    // pads, so it needs the per copy rule, and the frame test alone sends it to the block total where
+    // the division does not come out whole and the emitter refuses. Both tests are load bearing.
+    if (cyclePayloads > 1 || paddedFrames.size > 1) return { items, copyPeriod: period! };
     if (!known) return 'a padded cycle of several frames whose shared period is not one number';
     return { items, total: nominal + lead + (storedForm ? 1 : 0) };
   };

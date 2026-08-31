@@ -1739,6 +1739,15 @@ export interface StatedProtocol {
    * one length.
    */
   readonly oneMark?: number;
+  /**
+   * The cell states its carried half **first**, so a pair goes out as (carried, constant).
+   *
+   * \`FrameTimings.carriedFirst\` in \`irframe.ts\` carries the argument. The short of it: this spelling is
+   * needed only where storing the pair the other way round would change the wire, which is seven of the
+   * 37 families that state it this way, and **no measured row sets it**, our corpus decoder reading a
+   * stored train as (mark, space) pairs by construction. Section 230.
+   */
+  readonly carriedFirst?: boolean;
   readonly zero?: number;
   readonly one?: number;
   readonly carries?: FrameCarrier;
@@ -1995,6 +2004,7 @@ if (write) {
     }
     const t = e.timings!;
     return `${head}header: [${t.header[0]}, ${t.header[1]}], flat: ${t.flat}, `
+      + `${t.carriedFirst === true ? 'carriedFirst: true, ' : ''}`
       + `${t.firstMark === undefined ? '' : `firstMark: ${t.firstMark}, `}`
       + `${t.oneMark === undefined ? '' : `oneMark: ${t.oneMark}, `}`
       + `zero: ${t.zero}, one: ${t.one}, `
@@ -2054,6 +2064,7 @@ if (write) {
     }
     const t = e.timings!;
     return `${head}header: [${t.header[0]}, ${t.header[1]}], flat: ${t.flat}, `
+      + `${t.carriedFirst === true ? 'carriedFirst: true, ' : ''}`
       + `${t.firstMark === undefined ? '' : `firstMark: ${t.firstMark}, `}`
       + `${t.oneMark === undefined ? '' : `oneMark: ${t.oneMark}, `}`
       + `zero: ${t.zero}, one: ${t.one}, carries: '${t.carries}',`
