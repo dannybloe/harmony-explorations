@@ -780,7 +780,20 @@ export type BlockTailItem =
     readonly ofCopy?: boolean;
   }
   /** A pad space of the record's shared pad value plus this extra. */
-  | { readonly pad: number };
+  | {
+    readonly pad: number;
+    /**
+     * This pad's **own** copy period, overriding the block's, which the block cannot state where its
+     * copies are padded to different lengths.
+     *
+     * **A period belongs to a pad and the block's is its default**, section 233, which is the same
+     * relationship `pad` already has with the block's solved pad value. 21 of Logitech's families state
+     * a `TotalLength` per segment and send two of them in one repetition: `Adcom 12 Bit Dual` pads its
+     * first copy to 53500 microseconds and its second to 107000, and one number cannot say that. 7353
+     * codes were refused outright for it.
+     */
+    readonly period?: number;
+  };
 
 export interface BlockTail {
   /** The whole block in order. The first item is always a copy. */
@@ -849,6 +862,10 @@ export function pulsesOfCellFrame(t: CellTimings, bits: number, value: bigint): 
     const symbol = Number((value >> BigInt(t.bits * at)) & mask);
     const cell = t.cells[symbol];
     if (cell === undefined) throw new Error(`the family states no cell for symbol ${symbol}`);
+    // **An empty cell is a symbol that cannot be sent**, section 233, and it is caught here rather than
+    // when the family is read: two of Logitech's families declare more symbols than they define, and
+    // most of their codes never reach one, so this is a fact about the value and not about the family.
+    if (cell.length === 0) throw new Error(`the family states no intervals for symbol ${symbol}`);
     out.push(...cell.map((w) => ({ mark: w > 0, us: Math.abs(w) })));
   }
   return out;
@@ -929,9 +946,12 @@ export function pulsesOfBlock(
     if ('words' in item) return n + item.words.reduce((s, w) => s + Math.abs(w), 0);
     return n + item.pad;
   }, 0);
-  const pads = tail.items.filter((item) => 'pad' in item).length;
+  // Only the pads with no period of their own are solved against the block total; a pad stating its own
+  // period needs no share of the room.
+  const pads = tail.items.filter((item) =>
+    'pad' in item && item.period === undefined && tail.copyPeriod === undefined).length;
   let padValue = 0;
-  if (pads > 0 && tail.copyPeriod === undefined) {
+  if (pads > 0) {
     if (tail.total === undefined) throw new Error('a pad needs the total it is solved from');
     const room = tail.total - fixed;
     if (room <= 0 || room % pads !== 0) {
@@ -961,9 +981,18 @@ export function pulsesOfBlock(
       if (item.ofCopy === true) pending += spent; else sinceCopy += spent;
       continue;
     }
-    const us = tail.copyPeriod === undefined ? padValue + item.pad
-      : tail.copyPeriod - sinceCopy + item.pad;
-    if (us <= 0) throw new Error(`no whole pad fits: ${us} microseconds under the copy period`);
+    const period = item.period ?? tail.copyPeriod;
+    // **A copy that already overruns its period gets no gap, rather than a negative one**, section 233.
+    // A period is a minimum the copy is stretched to, so a frame longer than it has nothing to add:
+    // `Samsung 38 Bit` states 30800 microseconds for a segment whose frame runs to 31699 when enough of
+    // its bits are set, and Logitech's renderer emits the frame and moves straight on to the next copy.
+    // 90 of its commands threw here. The block **total** rule is left alone, since there a shortfall
+    // means the block does not fit and is an error rather than a clamp.
+    const us = period === undefined ? padValue + item.pad
+      : Math.max(0, period - sinceCopy) + item.pad;
+    // A pad of zero is now reachable and is not an error: see the clamp above. A block **total** that
+    // leaves no room is still caught, at its own site.
+    if (us < 0) throw new Error(`no whole pad fits: ${us} microseconds under the copy period`);
     out.push({ mark: false, us });
     sinceCopy += us;
   }

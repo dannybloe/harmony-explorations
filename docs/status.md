@@ -397,17 +397,18 @@ video recorder and a Denon receiver.
 **A code stated as a name and a number becomes pulses**, sections 152 to 169, which is what an
 importer of Logitech's still-answering device database needs: their catalogue serves no pulse data,
 only a protocol family and a frame value. The rhythm table in `packages/codec/src/protocols.ts`
-holds 600<!--fact:protocol_entries--> entries over 600<!--fact:protocol_families--> distinct families, one entry per family, of which
-**37<!--fact:protocol_measured--> were measured here and 563<!--fact:protocol_stated--> are Logitech's own definitions converted**, sections 227 and 231.
-The measured ones cover 32 of the 33 families this corpus holds a record of; the stated ones are
-families no configuration here has ever carried, so `codes: 0` on such a row is the honest number and
-`source` is what tells the two apart. 22 of the stated rows carry a whole block derived
-from Logitech's own statement of it, section 228, and the other 541 carry a frame and nothing after it,
-so a code of those families can be built and not yet written. It said "A stated row carries no measured
-block either, so a code of that family can be built and not yet written"<!--superseded--> for one day.
-What holds the 408 back is not the shape, which their definitions state and which reproduces all 29
+holds 681<!--fact:protocol_entries--> entries over 681<!--fact:protocol_families--> distinct families, one entry per family, of which
+**37<!--fact:protocol_measured--> were measured here and 644<!--fact:protocol_stated--> are Logitech's own definitions converted**, sections 227 and 231.
+The measured ones cover **all 33** families this corpus holds a record of, section 233; the stated ones
+are families no configuration here has ever carried, so `codes: 0` on such a row is the honest number and
+`source` is what tells the two apart. 33<!--fact:protocol_tails_stated--> of the stated rows carry a whole block derived
+from Logitech's own statement of it, sections 228 and 233, and the other 611 carry a frame and nothing
+after it, so a code of those families can be built and not yet written. It said "A stated row carries no
+measured block either, so a code of that family can be built and not yet written"<!--superseded--> for one
+day. What holds the 611 back is not the shape, which their definitions state and which reproduces all 29
 blocks measured off their compiler exactly, but **how many times a repetition is sent**, which they state
-for 39 of 684 families and which is not guessed here. It said "since one family appears at two carrier
+for 39 of 684 families and which is not guessed here. That is now the **only** thing holding any of them
+back, section 233: every other reason a stated row had no block has been read. It said "since one family appears at two carrier
 frequencies"<!--superseded--> until 31 August 2026, which was true of the table and false about
 Logitech: those two entries were two families their analyser both called `SharpO1 48 Bit`, and their
 catalogue states one carrier per family. Each entry says which route measured it, most off configurations Logitech's own
@@ -703,9 +704,17 @@ block calibration both pass unaltered.
 **And that shape is read too, section 232.** 84,694 commands of 29 families whose press cycle names two
 infrared segments with **different** rhythms were refused because a table row held one rhythm: a family
 can send several inside one press, and `Classe 16 Bit Toggle` sends four mode bits at a 442 microsecond
-half cell, one bit at 880 and sixteen data bits back at 442. That is RC6's shape. **1,950,618 of
-1,950,619 first transmissions agree and all 1,135,941 held repetitions**, over 446 families, with one
-command outstanding whose two candidate rules each cost a different single command.
+half cell, one bit at 880 and sixteen data bits back at 442. That is RC6's shape.
+
+**Then the whole population, section 233: 2,067,623 of 2,067,623 first transmissions agree and all
+1,166,798 held repetitions, over 680 families, with nothing outstanding.** The 240 commands not compared
+are the ones the archive renders no waveform for, so there is no comparison to make. Nine more readings
+did it, each one a refusal in section 232's census: the largest is that a two symbol family whose rhythm
+fits none of our specific shapes is a **cell table of two**, which states both intervals of a cell
+outright and so can hold a rhythm that will not split into a constant half and a carried one. The others
+are a press cycle's third block, sent when the key comes up; a code that states no repetition at all; a
+pad whose period is its own rather than the block's; the fourteen segment words a keycode may name; and
+a zero length interval keeping its side of the carrier.
 
 Four defects of ours came out of it, three of them silent. Logitech's own field order is `sequence` then
 `token` and reading it by token alone is ambiguous on 103 of their definitions, which put a repeat

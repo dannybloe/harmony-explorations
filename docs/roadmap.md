@@ -164,7 +164,9 @@ remote:
    first, which would send a segment in another segment's rhythm and look well formed.
    **1,950,618 of 1,950,619 first transmissions agree and all 1,135,941 held repetitions**, over 446
    families, up from 428. The rhythm and block calibrations both pass unaltered, so none of it was bought
-   by moving our own measurements.
+   by moving our own measurements. **Section 233 then took it to the whole population**, 2,067,623 of
+   2,067,623 and 1,166,798 held, over 680 families, with the only 240 uncompared being commands the
+   archive renders no waveform for.
    **Four defects of ours came out of it and three were silent.** Their field order is `sequence` then
    `token`, and reading it by token alone is ambiguous on 103 of their definitions and put a repeat
    cycle's value in the start block on 720 commands. A segment's own width sits inside their `Payload`
@@ -172,15 +174,19 @@ remote:
    The comparison **test** composed its own waveform instead of calling the library's and had drifted two
    readings behind. And the generator dropped the new field, exactly as it dropped `carriedFirst` the day
    before, which is now asserted per row rather than hoped for.
-   One command is outstanding, and its two candidate width rules each cost a different single command, so
-   it stays a named remainder rather than a fitted rule.
-7. **Accept the segment words a keycode may name.** 16,476 commands are declined because their keycode
-   names a word outside the closed set our reader takes: `Start` on 15,146, `Finish` on 10,442,
-   `Trailer` on 5581, `Divider` on 5121, and seven rarer ones. Each is a small reading and a word
-   outside the set is deliberately a refusal rather than a guess. A further 14,636 are declined on a
-   width, which is a separate question and unexamined. **This is now the biggest reachable group**, the
-   block refusals past it being a release block our table has no slot for (55 families) and a padded
-   cycle whose shared period is not one number (16).
+   One command was outstanding here, its two candidate width rules each costing a different single
+   command; section 233 narrowed the rule to the families where it is a reading rather than a fit, a
+   digit being a whole cell, and it costs neither.
+7. **Accept the segment words a keycode may name. Done, section 233**, along with the eight other
+   readings that stood between us and the whole catalogue. There are **fourteen** such words and what
+   makes the set a reading rather than a list is that a word is the name of a segment: all fourteen name
+   a segment their own family holds on 1,158,009 of 1,158,024 occurrences, and the join refuses the other
+   fifteen. The other eight are in section 233; the largest is that a two symbol family whose rhythm fits
+   none of our specific shapes is a cell table of two.
+   **Nothing in the archive is left to read.** The comparison covers every command that carries a
+   rendering, the table answers for every definition that has segments, and the only thing standing
+   between a stated row and a whole block is the repeat count, which Logitech states for 39 of 684
+   families and which is deliberately never guessed.
 
 **And section 192 answered the question standing in front of every write rail**, which is what a host's
 flash address actually means. It is not an address: one routine classifies it, a top byte of `0xFE` or
@@ -455,7 +461,7 @@ image is a second sample rather than a stand in. Other models are iterated on la
 
    **What is genuinely unpriced is everything after the frame.** A block repeats the frame and then goes
    quiet, and that tail is 140 distinct shapes across the corpus, with a per family rule for 29<!--fact:protocol_tails--> of the
-   rhythm table's 37<!--fact:protocol_measured--> measured entries since section 171, plus 22<!--fact:protocol_tails_stated--> derived from Logitech's own
+   rhythm table's 37<!--fact:protocol_measured--> measured entries since section 171, plus 33<!--fact:protocol_tails_stated--> derived from Logitech's own
    statement of it since section 228, and none for the remaining 541, so it is emitted where there is a
    rule and copied
    from a record of the same appliance rather than computed. That is a smaller job and a different one:

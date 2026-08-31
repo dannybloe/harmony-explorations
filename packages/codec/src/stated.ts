@@ -60,7 +60,8 @@ import { PROTOCOLS, type StatedProtocol } from './protocols.ts';
  * values are all the same width. Whether it indexes the values, a field of the protocol, or the widths
  * the family name spells is **unread**, and it is kept as written rather than normalised.
  */
-export type StatedWord = 'Start' | 'Repeat' | 'Trailer';
+export type StatedWord = 'Start' | 'Repeat' | 'RepeatStart' | 'Finish' | 'Trailer' | 'Divider'
+  | 'Space' | 'LongSpace' | 'Spacer' | 'Spacer2' | 'StopSpacer' | 'SS' | 'LS' | 'LRS';
 
 export interface StatedFrame {
   readonly value: bigint;
@@ -99,8 +100,20 @@ export interface StatedCode {
   readonly groups: readonly (readonly StatedItem[])[];
 }
 
-/** The words seen, as a closed set, so a fourth one is a refusal rather than a guess. */
-const WORDS = new Set<string>(['Start', 'Repeat', 'Trailer']);
+/**
+ * The words seen, as a closed set, so a fifteenth one is a refusal rather than a guess.
+ *
+ * **A word is the name of a segment and not a punctuation mark**, section 233, which is why the set
+ * could be grown from three to fourteen without deciding what any of them means: a keycode names its
+ * frames by number and its framing by name, and `keyCodeOfStatedCode` looks every one of them up in the
+ * definition's own segment list. Measured over the whole catalogue, all fourteen name a segment their
+ * family holds on 1158009 of 1158024 occurrences, and the fifteen that do not are refused by that join
+ * rather than by this list. So the two checks are deliberately both kept: this one keeps a malformed
+ * value such as `0x0x020122` from being read as framing, and the join keeps a word from being sent to a
+ * family that has no segment for it.
+ */
+const WORDS = new Set<string>(['Start', 'Repeat', 'RepeatStart', 'Finish', 'Trailer', 'Divider',
+  'Space', 'LongSpace', 'Spacer', 'Spacer2', 'StopSpacer', 'SS', 'LS', 'LRS']);
 
 /** A digit string in the base its family states, which is 16 everywhere but the one quaternary family. */
 function valueOf(digits: string, base: number): bigint {
@@ -179,8 +192,14 @@ export function statedCode(
      * quaternary, three of its five renderable codes send another number entirely. Logitech's own
      * definition states it, as the number of cells in the frame segment, so a caller holding the
      * definition passes it and the name's rule is the fallback for a caller holding only a table row.
+     *
+     * **A list is one entry per field, paired with the values exactly as `widths` is**, section 233,
+     * because a family can mix the bases: `Grundig 7 Bit Quad` writes a plain bit and then seven
+     * quaternary digits, and reading the second field in hexadecimal sends 16 where the appliance is
+     * told 4. `frameDigitBases` in `archive.ts` is what supplies these; a single number still means the
+     * whole code.
      */
-    readonly bitsPerDigit?: number;
+    readonly bitsPerDigit?: number | readonly number[];
   } = {},
 ): StatedCode | undefined {
   const parsed = /^G:([^:]+):\(([^)]*)\)\(([^)]*)\)\(([^)]*)\)/.exec(keyCode);
@@ -196,7 +215,6 @@ export function statedCode(
   // two widths and one frame.
   const stated = /(?:^|\s)((?:\d+\s*(?:and\s+)?)+)Bit/i.exec(family);
   const widths = [...(stated?.[1] ?? '').matchAll(/\d+/g)].map((one) => Number(one[0]));
-  if (widths.length === 0 || widths.some((one) => one === 0)) return undefined;
   // **The base the digits are written in**, which decides nothing but the parse. Two bits a digit is
   // four symbols and anything else is written in hexadecimal.
   //
@@ -213,26 +231,32 @@ export function statedCode(
   // each reading less often than it disagrees with both and cannot carry either. It does not have to:
   // every one of the 142 states its widths in `keycodeFields`, so a caller holding the definition never
   // needs the name, and `Galaxis 16 Bit Quad Toggle` is one of the four whose name means bits.
-  const base = (options.bitsPerDigit ?? (/\bQuad\b/i.test(family) ? 2 : 1)) === 2 ? 4 : 16;
+  const perDigit = options.bitsPerDigit === undefined
+    ? [/\bQuad\b/i.test(family) ? 2 : 1]
+    : typeof options.bitsPerDigit === 'number' ? [options.bitsPerDigit] : [...options.bitsPerDigit];
+  if (perDigit.length === 0) return undefined;
   // Read in slot order and keep it, since the order is the order the frames go out in. `at` records
-  // which slot each item came from, which is all `groups` needs to put the boundary back.
-  const raw: ({ value: bigint; index: number; at: number } | { word: StatedWord; at: number })[] = [];
+  // which slot each item came from, which is all `groups` needs to put the boundary back. The digits
+  // are kept as text here and read into a number below, because **which base to read them in depends
+  // on how many values the code turned out to state**, section 233, and that is not known yet.
+  const raw: ({ digits: string; index: number; at: number } | { word: StatedWord; at: number })[] = [];
   for (const [at, slot] of [parsed[2]!, parsed[3]!, parsed[4]!].entries()) {
     if (slot.trim() === '') continue;
     for (const part of slot.trim().split('_')) {
       if (WORDS.has(part)) { raw.push({ word: part as StatedWord, at }); continue; }
       const value = /^(\d)x([0-9A-Fa-f]+)$/.exec(part);
       if (value === null) return undefined;
-      const digits = value[2]!;
-      // A quaternary family's digits are 0 to 3 and nothing else, so a digit outside that is a refusal
-      // rather than a value read in whichever base happens to accept it.
-      if (base === 4 && !/^[0-3]+$/.test(digits)) return undefined;
-      raw.push({ value: valueOf(digits, base), index: Number(value[1]), at });
+      raw.push({ digits: value[2]!, index: Number(value[1]), at });
     }
   }
-  const values = raw.filter((one): one is { value: bigint; index: number; at: number } =>
+  const values = raw.filter((one): one is { digits: string; index: number; at: number } =>
     !('word' in one));
   if (values.length === 0) return undefined;
+  // The bases pair with the values on the same rule the widths do, and for the same reason: a code
+  // stating a whole multiple of the fields is repeating them. Where they do not pair the definition
+  // cannot say which field a value belongs to, so the name's single guess is what is left.
+  const bases = values.length % perDigit.length === 0 ? perDigit : [/\bQuad\b/i.test(family) ? 2 : 1];
+  const base = (at: number): 4 | 16 => (bases[at % bases.length] === 2 ? 4 : 16);
   // **Stated widths are used where they pair with the values and the name's are used otherwise**, which
   // is narrower than it first was and the difference was measured: taking the last stated width for
   // every extra value accepted 39 `Samsung 16 and 20 Bit` codes the name's rule had been refusing, and
@@ -240,7 +264,14 @@ export function statedCode(
   // definition has fields is a shape nobody has read, so it stays a refusal.
   const stateds = options.widths !== undefined && values.length % options.widths.length === 0
     ? options.widths : undefined;
-  if (stateds === undefined && widths.length !== 1 && widths.length !== values.length) return undefined;
+  // **A name stating no width at all is only a refusal for a caller that needs the name**, section 233.
+  // 43 families write no `Bit` in their name, `Philips RC5Ex` and the four `Epson ... Quad` among them,
+  // and every one of them states its widths in Logitech's own `keycodeFields`, so refusing them before
+  // looking at the definition threw away 8500 codes to save reading a field that was already in hand.
+  // A width of zero is still a refusal, since no field sends nothing.
+  if (stateds === undefined
+    && (widths.length === 0 || (widths.length !== 1 && widths.length !== values.length))) return undefined;
+  if (stateds === undefined && widths.some((one) => one === 0)) return undefined;
   // **The widths repeat where a code states a whole multiple of them**, section 232, which is one rule
   // covering two measured cases. `Philips 13 Bit` states one field and codes that state its value three
   // times, and there repeating is the same as taking the only width. `Galaxis 16 Bit Quad Toggle` states
@@ -254,15 +285,36 @@ export function statedCode(
     return widths.length === 1 ? widths[0]! : widths[at]!;
   };
   let seen = 0;
-  const items: StatedItem[] = raw.map((one) => 'word' in one
-    ? { kind: 'word' as const, word: one.word }
-    : { kind: 'frame' as const, frame: { value: one.value, bits: width(seen++), index: one.index } });
+  let refused = false;
+  const items: StatedItem[] = raw.map((one) => {
+    if ('word' in one) return { kind: 'word' as const, word: one.word };
+    const at = seen++;
+    // A quaternary field's digits are 0 to 3 and nothing else, so a digit outside that is a refusal
+    // rather than a value read in whichever base happens to accept it. The parse is skipped along with
+    // it, since `parseInt('4', 4)` is NaN and would reach the caller as a broken value.
+    if (base(at) === 4 && !/^[0-3]+$/.test(one.digits)) {
+      refused = true;
+      return { kind: 'frame' as const, frame: { value: 0n, bits: width(at), index: one.index } };
+    }
+    return {
+      kind: 'frame' as const,
+      frame: { value: valueOf(one.digits, base(at)), bits: width(at), index: one.index },
+    };
+  });
+  if (refused) return undefined;
   const groups: StatedItem[][] = [[], [], []];
   for (const [at, one] of raw.entries()) groups[one.at]!.push(items[at]!);
   const frames = items.flatMap((one) => one.kind === 'frame' ? [one.frame] : []);
   // The check that makes the width pairing a reading rather than a convention. A wrong pairing puts a
   // number in a frame too narrow to hold it, and that is visible; a value read in the wrong base is too.
-  if (frames.some((one) => one.value >= 1n << BigInt(one.bits))) return undefined;
+  //
+  // **It applies only where the width came from the family's name**, section 233. Where the caller
+  // passed the definition's own widths there is no pairing to check, and a value that overflows one is
+  // a statement of Logitech's rather than a misreading of ours: `Microsoft 30 Bit` writes values
+  // needing 31 bits on 70 of its commands and `Philips RC6` needs 7 where its field says 6, and their
+  // renderer **masks** both to the stated width, agreeing with ours on all 32003 once the refusal is
+  // lifted. So the value is cut to the definition's width by `withStatedWidths` rather than refused.
+  if (stateds === undefined && frames.some((one) => one.value >= 1n << BigInt(one.bits))) return undefined;
   const words = items.flatMap((one) => one.kind === 'word' ? [one.word] : []);
   return { family, items, frames, words, bits: frames[0]!.bits, groups };
 }

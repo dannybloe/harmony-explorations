@@ -29307,7 +29307,7 @@ Logitech states for 39 families and nowhere else.
 ### What the table gained
 
 A block shape is derivable for **382 of the 684 definitions**. Of the 424 stated table rows, 349 have a
-derivable shape and **22<!--fact:protocol_tails_stated--> of those also state their repeat count**, so 16 rows gained a `tail` and a
+derivable shape and **33<!--fact:protocol_tails_stated--> of those also state their repeat count**, so 16 rows gained a `tail` and a
 `held` and the other 408 keep a frame and nothing after it. The refusals, over all 684:
 
 **382 is 375 since section 230**, which added two refusals of its own the next day: three families whose
@@ -29318,7 +29318,7 @@ asserted in `packages/codec/test/archive.test.ts`.
 | count | why no block |
 |---|---|
 | 225 | the rhythm itself could not be read, which is section 227's own census: base four, base sixteen, one interval per bit and the rest |
-| 40 | a release block, which our table has no slot for. A family with one would be emitted incomplete rather than approximately |
+| 40 | a release block, which our table has no slot for. A family with one would be emitted incomplete rather than approximately | <!--superseded-->
 | 16 | a repetition naming an infrared segment whose **cells** differ, which would need two rows and a code that knew which |
 | 13 | no repetition stated at all |
 | 8 | a padded repetition of several frames whose stated periods disagree |
@@ -29768,9 +29768,14 @@ rhythm this converter can read, down from 225:
 | neither half of the cell is constant | 1 |
 
 One definition needed a rule of its own: `QE Space 100K Old` states its header as a 5000 mark and a
-space of length **0**, which is a mark and nothing after it. A zero length interval is dropped rather
+space of length **0**, which is a mark and nothing after it. A zero length interval is dropped rather<!--superseded-->
 than emitted, since a Pronto word floors at one and an interval of zero would silently merge its two
 neighbours. Nothing in the archive states one inside a cell.
+
+**Both halves of that are wrong and section 233 corrects them.** Nine families state a zero, six of the
+fifteen occurrences are **spaces**, and dropping the interval performs exactly the merge the floor exists
+to prevent. A zero mark is carried as one microsecond and a zero space stays zero, and both then behave
+alike.
 
 ### What is not compared, and the largest reason is now a single shape
 
@@ -29939,3 +29944,152 @@ each and `Zenith 11 Bit Quad` with one. Those four are written in the emitter's 
 than the table's older flat one, deliberately: the row's own fields are one shape spelled out and the
 extras are handed to the emitter as they stand, so `shapeOf` in `stated.ts` is the single place the two
 are joined. Two spellings in one row is the cost of not migrating 600 rows.
+
+## 233. Every rendered command in Logitech's catalogue, and every one agrees
+
+Section 232 left 124,000 of the archive's 2.07 million commands uncompared and one figure that read
+like an achievement rather than a limit: 1.95 million compared. Nine readings later there are **240**
+uncompared, and every one of those is a command the archive **renders no waveform for**, so no
+comparison exists to make. Of the 2,067,623 that can be compared, **2,067,623 agree**, over 680
+families, in both sections. The held repetition is 1,166,798 of 1,166,798.
+
+That is the whole population. The measurement is `make prontocheck`, which needs the public archive
+checkout and no network and no lab.
+
+### The nine readings, in the order they were found
+
+Each one began as a refusal counted in section 232's census, and each is a reading of Logitech's own
+definitions rather than a fit to their renderings. The controls are in
+`packages/codec/test/pronto.test.ts` and the census in `test/archive.test.ts`.
+
+**1. A two cell family that fits none of the specific readings is a cell table of two.** Our table has
+five shapes for a two symbol family and one of them has to match: a constant half and a carried half,
+in one of the spellings. 85 definitions matched none, 35 of them because they send **one interval per
+bit**, where two equal bits merge on the wire and the frame cannot be read back out. A cell table does
+not have that problem: it states the whole cell, both intervals, so any two cells are expressible. It
+is taken as a **fallback** behind the specific readings rather than as an alternative to them, so
+nothing that already read moves, and the specific reading's refusal is the one reported where both
+refuse. This is the single largest change: it took the definitions read from 599 to 679 and the
+comparison from 1.95 to 2.02 million.
+
+**2. The base a value's digits are written in is per field.** Section 231 established that a digit can
+be a whole cell and that the base comes from the definition's cell count rather than from the family's
+name. It was still one number for the whole family. `Grundig 7 Bit Quad` writes one plain bit and then
+seven quaternary digits: read whole in hexadecimal its `0000010` is 16 where the appliance is told 4.
+This is the same correction section 232 made to the **width** and it did not travel to the base, which
+is why the two now come out of one function, `statedShape`.
+
+**3. A name stating no width at all is only a refusal for a caller that needs the name.** 43 families
+write no `Bit` in their name, `Philips RC5Ex` and the four `Epson ... Quad` among them, and the reader
+refused them before looking at the widths the caller had already passed in. 8500 codes, of which
+`Philips RC5Ex` alone is 6965.
+
+**4. The segment words a keycode may name.** A keycode writes its frames as numbers and its framing as
+words, and the reader accepted three: `Start`, `Repeat` and `Trailer`. There are **fourteen**, and what
+makes that a reading rather than a list is that a word is the **name of a segment**: measured over the
+whole catalogue, all fourteen name a segment their own family holds on 1,158,009 of 1,158,024
+occurrences, and `keyCodeOfStatedCode` refuses the other fifteen by looking them up. So the closed set
+keeps a malformed value such as `0x0x020122` from being read as framing, and the join keeps a word from
+reaching a family with no segment for it. 25,000 codes, and it is what task 37 was queued for.
+
+**5. A zero length interval keeps its side of the carrier.** Nine of Logitech's families state an
+interval of length zero and **six of the fifteen occurrences are spaces**, so a zero cannot be read as
+one polarity or the other. It also cannot be carried as a zero: an interval's polarity is its sign
+throughout the reader, and zero has none, so a stated zero mark arrived downstream as a space and
+merged with what followed. A zero mark is therefore carried as **one microsecond**, the narrowest mark
+there is, and a zero space stays zero. Both then behave the same way: a zero contributes nothing to the
+merge of adjacent same polarity intervals, and any word left standing is floored to one unit.
+Logitech's renderer answers both cases and the two `QE` test patterns are where it says so.
+
+Two defects fell out of this one. The Pronto converter **skipped** a zero outright, which contradicted
+the floor twenty lines below it in the same function: that floor exists precisely so a word of zero
+cannot silently merge its two neighbours, and skipping the interval performed the merge the floor was
+there to prevent. And its merge keyed on the **sign** of a duration rather than on the pulse's own
+polarity, which is the same mistake one level down.
+
+**6. A value's width comes from the segment its own index names.** A keycode writes each value as
+`<index>x<digits>`, and that index is a **segment id**. `Imon Multi Bit Hex` holds ten segments of
+seven, eight, nine and ten digits and its codes pick one per group, so a width taken from the field's
+position sends a command a cell short. Ten families of 684 disagree between the two. The digit count
+then widens it where the family spells a digit as a whole cell, since there the number of digits **is**
+the number of cells: `Galaxis 16 Bit Quad Toggle` has one command in 21,398 that writes eight digits
+against a stated seven, and Logitech's renderer sends the eighth. That last rule applies to a cell
+family alone, and the reason is what makes it a reading: for a two symbol family the value is written
+in hexadecimal and a leading zero costs a digit and no bits, so `Game Elements 15 Bit`'s four digits
+against 13 stated bits mean nothing at all. This is the one that had been recorded in section 230 as a
+measured remainder, the "alternative width rule" that cost a different single command; narrowing it to
+cell families costs neither.
+
+**7. A press cycle has three blocks.** A keycode may name a third group, sent when the key comes up,
+and 60 families do. This was refused outright, 17,230 codes, on the ground that our block pair had
+nowhere to put it. A configuration's record has **three** block pointers, once, held and tail, and the
+third is exactly this. What settled how it is sent is Logitech's own rendering, which has two sections
+and puts the release group at the end of the **first**: ours was an exact prefix of theirs on every one
+of the 60 families and every length difference was a whole number of the release group's own frames.
+It is built as a block of its own rather than appended, because a configuration keeps it in its own
+pointer and because appending it would move the pad arithmetic.
+
+**8. A code may state no repetition, and then its start block is the whole transmission.** 1334 codes
+over 21 families. `B and O 17 Bit 2` writes `(0x01111111111111111)()()`, which is a command sent once
+however long the key is held, so the held block is **empty** rather than absent.
+
+**9. A copy period belongs to a pad and the block's is its default.** 21 families state a
+`TotalLength` per segment and send two of them in one repetition: `Adcom 12 Bit Dual` pads its first
+copy to 53,500 microseconds and its second to 107,000, and one number cannot say that. 7353 codes. The
+same field then answers a second case, `Airboard 9 Bit`'s 151, where a padded copy sits beside one that
+states no total at all: the block has no total to solve against while each pad knows exactly what it is
+stretching to. And a copy that already **overruns** its period gets no gap rather than a negative one,
+which is what a minimum is: `Samsung 38 Bit` states 30,800 microseconds for a segment whose frame runs
+to 31,699 when enough of its bits are set, and their renderer emits the frame and moves straight on.
+
+### Three things read as defects and were not ours
+
+**A value too wide for its stated field is cut to it.** `Microsoft 30 Bit` writes values needing 31
+bits on 70 of its commands and `Philips RC6` needs 7 where its field states 6. The check that refused
+them is a real safeguard, since a wrong width pairing puts a number in a frame too narrow to hold it,
+but it only means something where the width came from the family's **name**. Where the caller passed
+the definition's own widths there is no pairing to check and the overflow is Logitech's statement: the
+emitter sends the stated number of bits and the 31st is never reached, which is what their renderer
+does too.
+
+**An empty cell is a symbol a family declares and never defines.** Two families do, `Ferguson 9 Bit
+Toggle`'s fourth of four and six of `iMonFixed2`'s sixteen. That is a fact about a code that reaches
+one, not about the family, so the family reads and the emitter refuses the value.
+
+**A segment with no payload is a literal whatever its declared type.** `Airboard 9 Bit` states its
+repeat and its release as infrared segments carrying a whole waveform in the header and no payload at
+all, so reading the declared type alone sent them down the frame path.
+
+**And 124 of the archive's own strings are malformed.** A Pronto word is a 16 bit field and their
+renderer writes a five digit one on three families, `5C3F2` being 378,354 units of gap where 65,535 is
+the ceiling. The value is unambiguous, so it is read and the result carries an `overlong` flag rather
+than the reader quietly widening the format. All 124 agree with ours.
+
+### What the table holds now
+
+**681 rows: 37 measured and 644 stated**, up from 600 and 563. That is every definition in Logitech's
+catalogue that has any segments at all; the three missing state none. **33 stated rows carry a whole
+block**, up from 22, and the repeat count is now the **only** thing standing between a stated row and a
+whole block: 611 rows have no `pressMinimumRepeats` in their definition, and the count is never
+guessed.
+
+The cell tables are the bulk of the growth. 220 rows are one, of which **79 are a table of two**, 74 of
+four and 67 of sixteen. Five rows carry the other rhythms of their repetition, up from four, and two
+carry a pad's own copy period.
+
+**Every family in Logitech's device catalogue that this project has ever fetched a command from is now
+emittable**, which is the practical consequence: the 5219 command census of 24 August 2026 covers 33
+families, and the last one without a rhythm, `Saitek 11 Bit`, sends one interval per bit and is a cell
+table of two.
+
+### Two things this does not establish
+
+The comparison reads the same definitions both sides, so a wrong duration in Logitech's definition is a
+wrong duration in both waveforms. What it tests is us, and everything in the list above was us.
+
+And a stated row is still **stated and unverified**, decision 15. 644 of the 681 rows have `codes: 0`,
+`exact: 0` and `spread: 0`, which are the honest numbers, and the calibration deliberately excludes
+them: 34 of our 35 measured rhythms are reproduced from Logitech's own definitions field for field and
+none disagrees, and 29 of 29 measured blocks rebuild from them, and those are the numbers that say the
+archive can be believed. Nothing here makes an archive sourced definition shareable either: decision 11
+stands, and only a definition learned from hardware may go into a community database.

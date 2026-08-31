@@ -1774,7 +1774,11 @@ export interface StatedProtocol {
       readonly shape?: number;
     }
       | { readonly words: readonly number[] }
-      | { readonly pad: number })[];
+      | {
+        readonly pad: number;
+        /** This pad's own copy period, overriding the block's, section 233. */
+        readonly period?: number;
+      })[];
     readonly total?: number;
     readonly copyPeriod?: number;
   };
@@ -1794,7 +1798,11 @@ export interface StatedProtocol {
       readonly shape?: number;
     }
       | { readonly words: readonly number[] }
-      | { readonly pad: number })[];
+      | {
+        readonly pad: number;
+        /** This pad's own copy period, overriding the block's, section 233. */
+        readonly period?: number;
+      })[];
     readonly total?: number;
     readonly copyPeriod?: number;
   };
@@ -2022,7 +2030,7 @@ if (write) {
         + `${item.shape === undefined ? '' : `, shape: ${item.shape}`} }`;
     }
     if ('words' in item) return `{ words: [${item.words.join(', ')}] }`;
-    return `{ pad: ${item.pad} }`;
+    return `{ pad: ${item.pad}${item.period === undefined ? '' : `, period: ${item.period}`} }`;
   }).join(', ')}]${block.total === undefined ? '' : `, total: ${block.total}`}${
     block.copyPeriod === undefined ? '' : `, copyPeriod: ${block.copyPeriod}`} }`;
   const rowsOut = entries.map((e) => {

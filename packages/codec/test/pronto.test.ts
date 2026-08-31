@@ -18,8 +18,9 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { IR_ARCHIVE, skipWithoutIrArchive } from '@harmony/lab';
 import {
-  archiveProtocols, bitsPerDigit, blockOfDefinition, frameWidths, keyCodeOfStatedCode,
-  rhythmOfDefinition, waveformOfArchiveCommand, withStatedWidths, withToggleCleared,
+  archiveProtocols, bitsPerDigit, blockOfDefinition, frameDigitBases, frameSlots, frameWidths,
+  keyCodeOfStatedCode, rhythmOfDefinition, waveformOfArchiveCommand, withStatedWidths,
+  withToggleCleared,
 } from '../src/archive.ts';
 import { pulsesOfBlock } from '../src/irframe.ts';
 import {
@@ -154,12 +155,13 @@ test('our waveforms reproduce Logitech\'s own renderings over a slice of the cat
     // Exact, per the house rule, and the slice has to be big enough to be a check: a few thousand
     // commands over dozens of families, both sections, with nothing outstanding in it. The counts rose
     // from 10532 over 46 families when this stopped building the waveform itself and called the
-    // library's own composition, section 232, since its own copy was two readings behind.
-    assert.equal(compared, 10819);
-    assert.equal(agreed, 10819);
-    assert.equal(heldCompared, 6620);
-    assert.equal(heldAgreed, 6620);
-    assert.equal(families.size, 52);
+    // library's own composition, section 232, since its own copy was two readings behind, and again to
+    // 11445 over 58 when section 233 read the last of the refusals.
+    assert.equal(compared, 11445);
+    assert.equal(agreed, 11445);
+    assert.equal(heldCompared, 6741);
+    assert.equal(heldAgreed, 6741);
+    assert.equal(families.size, 58);
   });
 
 test('clearing the toggle bit is what makes a toggle family agree, and it is checked on one',
@@ -215,7 +217,7 @@ test('clearing the toggle bit is what makes a toggle family agree, and it is che
     assert.equal(asStated.filter((v, at) => v !== both!.theirs[at]).length, 2);
   });
 
-test('the cell\'s own order is what makes six of seven families agree, and stripping it breaks them',
+test('the cell\'s own order is what makes seven of seven families agree, and stripping it breaks them',
   { ...skipWithoutIrArchive() }, () => {
     // **The capability that replaced two refusals**, section 230. Logitech states a cell as (space, mark)
     // on 37 families where our table stores (mark, space), and for 30 of them the wire is the same
@@ -254,13 +256,15 @@ test('the cell\'s own order is what makes six of seven families agree, and strip
     // All seven have commands in the catalogue. Asserted rather than assumed, since a shrinking set here
     // is the comparison quietly covering less.
     assert.deepEqual([...found.keys()].sort(), [...carried].sort());
-    // **Six of them compare, and the seventh is named with its reason.** Every `Bell 16 Bit 2` code is
-    // written `(Start_0xBBFF)(RepeatStart_0xBBFF)`, and `RepeatStart` is not one of the three segment
-    // words our keycode reader accepts. That closed set is deliberate, a fourth word being a refusal
-    // rather than a guess, so this is a reading still to do and not a defect here.
+    // **All seven compare now**, and this said six until section 233. Every `Bell 16 Bit 2` code is
+    // written `(Start_0xBBFF)(RepeatStart_0xBBFF)`, and `RepeatStart` was not one of the three segment
+    // words our keycode reader accepted. The closed set is still deliberate and is fourteen words now,
+    // every one of them measured to name a segment its own family holds, so the reading that was still
+    // to do has been done. The empty list is asserted rather than dropped, since a word leaving the set
+    // would put a family back here without anything else noticing.
     const declined = [...found.keys()].filter((family) => statedCode(found.get(family)!.keycode)
       === undefined);
-    assert.deepEqual(declined, ['Bell 16 Bit 2']);
+    assert.deepEqual(declined, []);
 
     for (const [family, command] of found) {
       if (declined.includes(family)) continue;
@@ -304,9 +308,12 @@ test('a repetition can send several rhythms, and one of them alone emits a fract
       const built = blockOfDefinition(one, one.pressMinimumRepeats ?? 3);
       return 'refusal' in built ? null : [one.name, built.also.length + 1] as const;
     }).filter((one): one is readonly [string, number] => one !== null && one[1] > 1);
-    assert.equal(several.length, 23);
-    assert.equal(several.filter(([, n]) => n === 3).length, 9);
-    assert.equal(several.filter(([, n]) => n === 2).length, 14);
+    // 54 now, from 23 in section 232: reading a two cell family as a cell table of two, and reading the
+    // release block, both put segments into cycles that could not be read at all before. Section 233.
+    assert.equal(several.length, 54);
+    assert.equal(several.filter(([, n]) => n === 2).length, 34);
+    assert.equal(several.filter(([, n]) => n === 3).length, 18);
+    assert.equal(several.filter(([, n]) => n === 4).length, 2);
 
     // One command of each, found in the archive rather than written down here: a Pronto string is one of
     // the renderings decision 15 keeps out of this repository.
@@ -325,15 +332,15 @@ test('a repetition can send several rhythms, and one of them alone emits a fract
         }
       }
     }
-    // All 23 have commands in the catalogue, asserted rather than assumed: a shrinking set here is the
+    // All 54 have commands in the catalogue, asserted rather than assumed: a shrinking set here is the
     // comparison quietly covering less.
-    assert.equal(found.size, 23);
+    assert.equal(found.size, 54);
 
     let checked = 0;
     for (const [family, command] of found) {
       const both = compare(byName, family, command.keycode, command.pronto);
-      // Some of the 13 are declined by the keycode reader for a reason of their own, a segment word
-      // outside its closed set among them, and those are counted rather than asserted over.
+      // A family declined by the keycode reader for a reason of its own is counted rather than asserted
+      // over. There are none left, which the count below states exactly.
       if (both === undefined) continue;
       checked += 1;
       assert.deepEqual(both.ours, both.theirs, `${family} first transmission`);
@@ -347,10 +354,11 @@ test('a repetition can send several rhythms, and one of them alone emits a fract
       const protocol = byName.get(family)!;
       const rhythm = rhythmOfDefinition(protocol);
       assert.ok(!('refusal' in rhythm));
-      const widths = frameWidths(protocol);
+      const slots = frameSlots(command.keycode);
+      const widths = frameWidths(protocol, slots);
+      const perDigit = frameDigitBases(protocol, slots) ?? [bitsPerDigit(protocol)];
       const code = statedCode(command.keycode, widths === undefined
-        ? { bitsPerDigit: bitsPerDigit(protocol) }
-        : { widths, bitsPerDigit: bitsPerDigit(protocol) });
+        ? { bitsPerDigit: perDigit } : { widths, bitsPerDigit: perDigit });
       const keyCode = code === undefined ? undefined : keyCodeOfStatedCode(protocol, code);
       if (code === undefined || keyCode === undefined) continue;
       const built = blockOfDefinition(protocol, 1, { storedForm: false, keyCode });
@@ -358,17 +366,17 @@ test('a repetition can send several rhythms, and one of them alone emits a fract
       const names = [...built.tail.items, ...built.held.items]
         .some((item) => 'copy' in item && (item.shape ?? 0) > 0);
       if (!names) continue;
-      const frames = withToggleCleared(protocol, withStatedWidths(protocol, code.frames));
+      const frames = withToggleCleared(protocol, withStatedWidths(protocol, code.frames, slots));
       const shape = { ...rhythm.timings === undefined ? {} : { timings: rhythm.timings },
                       ...rhythm.biphase === undefined ? {} : { biphase: rhythm.biphase },
                       ...rhythm.cells === undefined ? {} : { cells: rhythm.cells } };
       assert.throws(() => pulsesOfBlock(shape, frames, built.tail),
                     /states no rhythm/, `${family} needs its other rhythms`);
     }
-    // Exact, so a family falling out of the comparison shows up here rather than passing quietly. One of
-    // the 23 is declined by the keycode reader, `Imon Multi2 Bit Hex`, whose codes name a segment word
-    // outside the closed set of three: that is a reading still to do and not a defect here.
-    assert.equal(checked, 22);
+    // Exact, so a family falling out of the comparison shows up here rather than passing quietly. All
+    // 54 are checked now: the one that used to be declined, `Imon Multi2 Bit Hex`, was declined for a
+    // segment word outside the closed set, and that set has been read. Section 233.
+    assert.equal(checked, 54);
   });
 
 test('the three conditions the comparison honours each change the answer',
@@ -434,4 +442,156 @@ test('the stored form and the signal differ by one microsecond, and it is the co
     if (totals[0] !== undefined && totals[1] !== undefined) {
       assert.equal(totals[0] - totals[1], 1);
     }
+  });
+
+test('a value\'s base is per field, and one base for the family sends another number',
+  { ...skipWithoutIrArchive() }, () => {
+    // **Section 233.** `Grundig 7 Bit Quad` writes one plain bit and then seven quaternary digits, so
+    // the base a keycode's digits are read in belongs to the field and not to the family. Read whole in
+    // hexadecimal, `0000010` is 16 where the appliance is told 4.
+    const grundig = archiveProtocols(IR_ARCHIVE!).find((one) => one.name === 'Grundig 7 Bit Quad')!;
+    const keycode = 'G:Grundig 7 Bit Quad:()(0x0_1x0000010)():3';
+    const slots = frameSlots(keycode);
+    assert.deepEqual(frameDigitBases(grundig, slots), [1, 2]);
+    assert.deepEqual(frameWidths(grundig, slots), [1, 14]);
+    const right = statedCode(keycode, {
+      widths: frameWidths(grundig, slots)!, bitsPerDigit: frameDigitBases(grundig, slots)!,
+    })!;
+    assert.deepEqual(right.frames.map((one) => one.value), [0n, 4n]);
+    // **The control**, and it has to bite: one base for the whole family reads the second field in
+    // hexadecimal and puts 16 on the wire. This is the reading that was live until section 233.
+    const wrong = statedCode(keycode, { widths: frameWidths(grundig, slots)!, bitsPerDigit: 1 })!;
+    assert.deepEqual(wrong.frames.map((one) => one.value), [0n, 16n]);
+  });
+
+test('a stated zero length interval keeps its side of the carrier', { ...skipWithoutIrArchive() }, () => {
+  // **Section 233.** Nine of Logitech's families state an interval of length zero, and six of the
+  // fifteen occurrences are spaces, so a zero cannot be read as one polarity. A signed duration has no
+  // sign at zero, so a zero **mark** is carried as one microsecond and a zero **space** stays zero:
+  // both then behave alike, contributing nothing to a merge and flooring to one unit where they stand
+  // alone. Their renderer answers both cases and this is the pair.
+  const root = IR_ARCHIVE!;
+  const pulse = archiveProtocols(root).find((one) => one.name === 'QE Pulse Test 1')!;
+  const pulseRhythm = rhythmOfDefinition(pulse);
+  assert.ok(!('refusal' in pulseRhythm) && pulseRhythm.cells !== undefined);
+  // A zero mark between two spaces: it cannot merge, so it survives as the narrowest mark there is.
+  assert.deepEqual(pulseRhythm.trailer, [1, -25000]);
+  const space = archiveProtocols(root).find((one) => one.name === 'QE Space 100K Old')!;
+  const spaceRhythm = rhythmOfDefinition(space);
+  assert.ok(!('refusal' in spaceRhythm) && spaceRhythm.cells !== undefined);
+  // A zero space after a mark: it stays zero and merges into the space that follows.
+  assert.deepEqual(spaceRhythm.cells.lead, [5000, 0]);
+
+  // And the conversion, which is where the two become one rule. A zero mark standing alone is one unit;
+  // a zero space beside another space adds nothing to it.
+  assert.deepEqual(prontoUnits([{ mark: true, us: 100 }, { mark: false, us: 0 },
+                                { mark: false, us: 100 }], 10), [10, -10]);
+  assert.deepEqual(prontoUnits([{ mark: true, us: 100 }, { mark: false, us: 100 },
+                                { mark: true, us: 0 }, { mark: false, us: 100 }], 10),
+                   [10, -10, 1, -10]);
+});
+
+test('a press cycle has three blocks and a Pronto string has two sections',
+  { ...skipWithoutIrArchive() }, () => {
+    // **Section 233.** A keycode may name a third group, sent when the key comes up, and 60 families do.
+    // A configuration's record has a pointer for it; Logitech's renderer has only two sections and puts
+    // it at the end of the first, which is how it was read.
+    const root = IR_ARCHIVE!;
+    const pace = archiveProtocols(root).find((one) => one.name === 'Pace 16 Bit Quad')!;
+    const keycode = 'G:Pace 16 Bit Quad:()(0x0202300002123312)(1x0202300022123312):3';
+    const slots = frameSlots(keycode);
+    const code = statedCode(keycode, {
+      widths: frameWidths(pace, slots)!, bitsPerDigit: frameDigitBases(pace, slots)!,
+    })!;
+    const keyCode = keyCodeOfStatedCode(pace, code)!;
+    const built = blockOfDefinition(pace, 1, { storedForm: false, keyCode });
+    assert.ok(!('refusal' in built));
+    assert.notEqual(built.release, undefined);
+    // The release block carries the code's **second** value, which is the whole point of it being a
+    // block of its own rather than a repeat of the first.
+    const rhythm = rhythmOfDefinition(pace);
+    assert.ok(!('refusal' in rhythm));
+    const frames = withToggleCleared(pace, withStatedWidths(pace, code.frames, slots));
+    const shape = { ...rhythm.cells === undefined ? {} : { cells: rhythm.cells }, also: built.also };
+    const once = pulsesOfBlock(shape, frames, built.tail);
+    const release = pulsesOfBlock(shape, frames, built.release!);
+    // **The control**: dropping the release block halves the first transmission, which is exactly the
+    // waveform that was emitted before this was read, and it is not a rounding difference.
+    assert.notDeepEqual(once, release);
+    const whole = waveformOfArchiveCommand(pace, keycode, { storedForm: false });
+    assert.ok(!('refusal' in whole));
+    assert.equal(whole.once.length, once.length + release.length);
+  });
+
+test('a Pronto word wider than the format is read and reported', () => {
+  // **Section 233.** A Pronto word is a 16 bit field and the archive's renderer writes a five digit one
+  // on 119 commands, a gap too long to state. The value is unambiguous, so it is read rather than
+  // refused, and the flag is what stops that quietly widening the format.
+  const wide = readPronto('0000 0068 0002 0000 0060 0018 0030 382BB')!;
+  assert.equal(wide.overlong, true);
+  assert.deepEqual(wide.once, [0x60, -0x18, 0x30, -0x382BB]);
+  // The control: an ordinary string is not flagged, so the flag means what it says.
+  assert.equal(readPronto('0000 0068 0002 0000 0060 0018 0030 0018')!.overlong, false);
+  // And seven digits is still a refusal, so this is a widening of one digit and not of the check.
+  assert.equal(readPronto('0000 0068 0002 0000 0060 0018 0030 1234567'), undefined);
+});
+
+test('a value\'s width comes from the segment its own index names', { ...skipWithoutIrArchive() }, () => {
+  // **Section 233.** A keycode writes each value as `<index>x<digits>` and that index is a segment id.
+  // `Imon Multi Bit Hex` holds ten segments of seven, eight, nine and ten digits and its codes pick one
+  // per group, so the width belongs to the segment the code names rather than to the field's position.
+  const imon = archiveProtocols(IR_ARCHIVE!).find((one) => one.name === 'Imon Multi Bit Hex')!;
+  const keycode = 'G:Imon Multi Bit Hex:(4x05494011)(4x05494011)(5x054A0011):3';
+  const slots = frameSlots(keycode);
+  assert.deepEqual(slots.map((one) => one.index), [4, 4, 5]);
+  // Segments 4 and 5 state eight digits each, where every field of this family states seven.
+  assert.deepEqual(frameWidths(imon, slots), [32, 32, 32]);
+  // **The control**: without the code's own indices the field's seven digits apply, and the command
+  // goes out a cell short. That is the waveform that was emitted before this was read.
+  assert.deepEqual(frameWidths(imon), [28, 28, 28]);
+
+  // **And a cell family's digit count wins where it is wider than the stated width**, which is the
+  // other half of the same resolution. `Galaxis 16 Bit Quad Toggle` states seven digits for its third
+  // field and one command writes eight, and a digit there is a whole cell, so the eighth is sent.
+  const galaxis = archiveProtocols(IR_ARCHIVE!)
+    .find((one) => one.name === 'Galaxis 16 Bit Quad Toggle')!;
+  const wide = 'G:Galaxis 16 Bit Quad Toggle:()(0x02012100_1x0_2x02121031)():3';
+  assert.deepEqual(frameWidths(galaxis, frameSlots(wide)), [16, 1, 16]);
+  // The control, and it is what keeps this from being a rule about hexadecimal spelling: an ordinary
+  // command of the same family, whose third value writes the seven digits its segment states, is
+  // unaffected.
+  const ordinary = 'G:Galaxis 16 Bit Quad Toggle:()(0x02012100_1x0_2x0212103)():3';
+  assert.deepEqual(frameWidths(galaxis, frameSlots(ordinary)), [16, 1, 14]);
+});
+
+test('a value too wide for its stated field is cut to it, not refused',
+  { ...skipWithoutIrArchive() }, () => {
+    // **Section 233.** `Microsoft 30 Bit` writes values needing 31 bits on 70 of its commands and
+    // `Philips RC6` needs 7 where its field states 6. Logitech's own renderer masks both to the stated
+    // width, so a value that overflows a **definition's** width is their statement rather than our
+    // misreading, and only a width taken from the family's **name** is checked against the value.
+    const microsoft = archiveProtocols(IR_ARCHIVE!).find((one) => one.name === 'Microsoft 30 Bit')!;
+    const keycode = 'G:Microsoft 30 Bit:()(0x45487BE3)():3';
+    const slots = frameSlots(keycode);
+    const widths = frameWidths(microsoft, slots)!;
+    assert.deepEqual(widths, [30]);
+    const code = statedCode(keycode, { widths, bitsPerDigit: frameDigitBases(microsoft, slots)! })!;
+    // The frame keeps the number the keycode wrote and carries the definition's width beside it, and
+    // the **emitter** is where the cut happens: it sends that many bits and the 31st is never reached.
+    // So the waveform is the masked value's, which is the assertion, and the record is not quietly
+    // rewritten, which is why this is stated in two parts.
+    assert.deepEqual(code.frames.map((one) => [one.value, one.bits]), [[0x45487BE3n, 30]]);
+    const masked = { value: 0x45487BE3n & ((1n << 30n) - 1n), bits: 30 };
+    const rhythm = rhythmOfDefinition(microsoft);
+    assert.ok(!('refusal' in rhythm) && rhythm.biphase !== undefined);
+    const built = blockOfDefinition(microsoft, 1, {
+      storedForm: false, keyCode: keyCodeOfStatedCode(microsoft, code)!,
+    });
+    assert.ok(!('refusal' in built));
+    const shape = { biphase: rhythm.biphase };
+    assert.deepEqual(pulsesOfBlock(shape, code.frames, built.tail),
+                     pulsesOfBlock(shape, [masked], built.tail));
+    // **The control**: with no widths passed, the name's 30 is checked against the value and the code
+    // is refused, which is the safeguard that catches a wrong width pairing and must keep working.
+    assert.equal(statedCode(keycode), undefined);
   });

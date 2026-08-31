@@ -496,6 +496,10 @@ def protocol_facts():
         'protocol_tails': str(sum(1 for row in measured if re.search(r'\btail:', row))),
         'protocol_tails_stated':
             str(sum(1 for row in rows if row not in measured and re.search(r'\btail:', row))),
+        # The sum of the two, for the one sentence that means "rows that can emit a whole record". It
+        # is a third marker rather than arithmetic in the prose, because the prose is what went stale:
+        # it read 51 while both halves it adds up had been rewritten under it. Section 233.
+        'protocol_tails_all': str(sum(1 for row in rows if re.search(r'\btail:', row))),
         'protocol_biphase': str(sum(1 for row in rows if re.search(r'\bbiphase:', row))),
     }
 

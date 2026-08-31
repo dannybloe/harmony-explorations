@@ -25,11 +25,9 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { IR_ARCHIVE } from '@harmony/lab';
 import {
-  archiveProtocols, bitsPerDigit, blockOfDefinition, frameWidths, keyCodeOfStatedCode, prontoUnits,
-  readPronto,
-  prontoPairs, rhythmOfDefinition, statedCode, pulsesOfBlock, withStatedWidths, withToggleCleared,
+  archiveProtocols, prontoPairs, prontoUnits, readPronto, waveformOfArchiveCommand,
 } from '../src/index.ts';
-import type { ArchiveProtocol, BlockTail, FrameShape, StatedCode } from '../src/index.ts';
+import type { ArchiveProtocol } from '../src/index.ts';
 
 const args = process.argv.slice(2);
 const option = (name: string): string | undefined => {
@@ -48,52 +46,13 @@ if (root === undefined) {
 
 const byName = new Map<string, ArchiveProtocol>(archiveProtocols(root).map((p) => [p.name, p]));
 
-/** What a family needs, worked out once: its shape, its widths, and the segment join. */
-interface Ready {
-  shape: FrameShape;
-  widths: number[] | undefined;
-  perDigit: number;
-  protocol: ArchiveProtocol;
-}
-const ready = new Map<string, Ready | null>();
-const setup = (family: string): Ready | null => {
-  const had = ready.get(family);
-  if (had !== undefined) return had;
-  const protocol = byName.get(family);
-  let one: Ready | null = null;
-  if (protocol !== undefined) {
-    const rhythm = rhythmOfDefinition(protocol);
-    if (!('refusal' in rhythm)) {
-      one = {
-        shape: { timings: rhythm.timings, biphase: rhythm.biphase, cells: rhythm.cells },
-        widths: frameWidths(protocol),
-        perDigit: bitsPerDigit(protocol),
-        protocol,
-      };
-    }
-  }
-  ready.set(family, one);
-  return one;
-};
-
 /**
- * The block pair for one command: its own groups, not the family's default.
- *
- * `storedForm: false` because a Pronto string is a signal and not a stored configuration, and the one
- * microsecond Logitech's compiler adds to a block's last duration belongs to the second.
+ * **There is deliberately no reading of a definition here.** `waveformOfArchiveCommand` is the one
+ * composition of the seven readings a command needs, and this file held a copy of it that fell two
+ * readings behind twice: once building a shape of two fields where there are three, and once taking a
+ * value's width from its field where the code's own segment states it. Both were invisible, because a
+ * wrong width still produces a well formed waveform. Section 233.
  */
-const blocksFor = (
-  one: Ready, code: StatedCode,
-): { tail: BlockTail; held: BlockTail; also: readonly FrameShape[] } | undefined => {
-  const keyCode = keyCodeOfStatedCode(one.protocol, code);
-  if (keyCode === undefined) return undefined;
-  const built = blockOfDefinition(one.protocol, 1, { storedForm: false, keyCode });
-  if ('refusal' in built) return undefined;
-  // **The block's other rhythms travel with it**, section 232: a copy naming one of them throws in the
-  // emitter without it rather than falling back on the frame's, which is the right way round.
-  return { tail: built.tail, held: built.held, also: built.also };
-};
-
 let commands = 0;
 let onceCompared = 0; let onceAgreed = 0;
 let repeatCompared = 0; let repeatAgreed = 0;
@@ -101,6 +60,8 @@ const skipped = new Map<string, number>();
 const perFamily = new Map<string, { once: [number, number]; repeat: [number, number] }>();
 const samples: string[] = [];
 const bump = (m: Map<string, number>, k: string): void => { m.set(k, (m.get(k) ?? 0) + 1); };
+/** Which family each refusal came from, printed under `--detail` so a group can be chased. */
+const byFamily = new Map<string, number>();
 
 let sets = 0;
 const buckets = readdirSync(join(root, 'codesets')).sort();
@@ -114,34 +75,30 @@ outer: for (const bucket of buckets) {
     for (const cmd of parsed.commands ?? []) {
       if (only !== undefined && cmd.protocol !== only) continue;
       commands += 1;
-      if (cmd.pronto === undefined) { bump(skipped, 'the archive renders no waveform'); continue; }
-      const pronto = readPronto(cmd.pronto);
-      if (pronto === undefined) { bump(skipped, 'our Pronto reader declines the string'); continue; }
-      const one = setup(cmd.protocol);
-      if (one === null) { bump(skipped, 'no rhythm derivable for the family'); continue; }
-      // The definition's widths go **into** the reader and not over its answer: a base four or base
-      // sixteen code is refused outright against the width its family's name states, so correcting it
-      // afterwards would never see the code. Section 231.
-      const code = statedCode(cmd.keycode, one.widths === undefined
-        ? { bitsPerDigit: one.perDigit }
-        : { widths: one.widths, bitsPerDigit: one.perDigit });
-      if (code === undefined) { bump(skipped, 'our keycode reader declines the code'); continue; }
-      const blocks = blocksFor(one, code);
-      if (blocks === undefined) { bump(skipped, 'no block derivable for this code'); continue; }
-      // **The width comes from the definition and not from the family's name**, which is section 230's
-      // second correction: on 23 families the name states the total across the frames rather than each.
-      // Their renderings all carry the toggle bit at zero, which their README states, and that is a
-      // condition on the comparison rather than a fact about the command: see `withToggleCleared`.
-      const frames = withToggleCleared(one.protocol, withStatedWidths(one.protocol, code.frames));
-      let ours: number[]; let oursHeld: number[];
-      try {
-        const shape: FrameShape = { ...one.shape, also: blocks.also };
-        ours = prontoPairs(prontoUnits(pulsesOfBlock(shape, frames, blocks.tail), pronto.unitUs));
-        oursHeld = prontoPairs(prontoUnits(pulsesOfBlock(shape, frames, blocks.held), pronto.unitUs));
-      } catch (e) {
-        bump(skipped, `our encoder threw: ${String(e).slice(0, 60)}`);
+      if (cmd.pronto === undefined) {
+        bump(skipped, 'the archive renders no waveform');
+        if (detail) bump(byFamily, `no rendering :: ${cmd.protocol}`);
         continue;
       }
+      const pronto = readPronto(cmd.pronto);
+      if (pronto === undefined) {
+        bump(skipped, 'our Pronto reader declines the string');
+        if (detail) bump(byFamily, `pronto reader :: ${cmd.protocol} :: ${cmd.pronto.slice(0, 40)}`);
+        continue;
+      }
+      const protocol = byName.get(cmd.protocol);
+      if (protocol === undefined) { bump(skipped, 'no rhythm derivable for the family'); continue; }
+      // `storedForm: false` because a Pronto string is a signal and not a stored configuration, and the
+      // one microsecond Logitech's compiler adds to a block's last duration belongs to the second.
+      const built = waveformOfArchiveCommand(protocol, cmd.keycode, { storedForm: false });
+      if ('refusal' in built) {
+        bump(skipped, built.refusal);
+        if (detail) bump(byFamily, `${built.refusal} :: ${cmd.protocol}`);
+        continue;
+      }
+      if (pronto.overlong) bump(skipped, 'the archive renders a word wider than the format (compared anyway)');
+      const ours = prontoPairs(prontoUnits(built.once, pronto.unitUs));
+      const oursHeld = prontoPairs(prontoUnits(built.held, pronto.unitUs));
       const row = perFamily.get(cmd.protocol) ?? { once: [0, 0] as [number, number], repeat: [0, 0] as [number, number] };
       const same = (a: readonly number[], b: readonly number[]): boolean =>
         a.length === b.length && a.every((v, at) => v === b[at]);
@@ -179,3 +136,9 @@ for (const [family, r] of bad) {
   console.log(`  ${family.padEnd(34)} first ${r.once[0]} ok ${r.once[1]} bad   held ${r.repeat[0]} ok ${r.repeat[1]} bad`);
 }
 for (const s of samples) console.log(`  ${s}`);
+if (detail && byFamily.size > 0) {
+  console.log('refusals by family:');
+  for (const [k, n] of [...byFamily].sort((a, b) => b[1] - a[1])) {
+    console.log(`  ${String(n).padStart(6)} ${k}`);
+  }
+}
