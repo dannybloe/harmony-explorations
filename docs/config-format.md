@@ -1747,8 +1747,18 @@ device anything; the inter device delay is how long it waits between two codes g
 devices. The other four, `PowerOnDelayFlagCounter`, `PowerOnDelayFixingTriggered` and their inter
 device twins, have maxima of 5 and 100 and are unread.
 
-**Only arch 14 carries them.** The twelve other containers of the corpus that drive devices state no
-delay for any of them, and draw none of the 451 strings.
+**Only arch 14 carries the variables, and every architecture states the delay.** That is section
+235's correction to this paragraph, which said the other containers "state no delay for any of
+them"<!--superseded-->. Arch 8, 9 and 12 put the power on delay in the action list instead, as one
+`0x7C` at the top level of the list a device's `Power` variable runs when it goes from 0 to 1: 57
+transitions, every one carrying exactly one, against 16 on arch 14 carrying none. The unit is the
+same, which is settled by Logitech compiling one configuration per architecture for the same three
+devices, and the two agree device for device. `powerOnInstructions` returns the list, the position in
+it and the value, since on those architectures changing a delay is a one byte edit.
+
+What the inlining architectures do **not** state is a default, an identifier or an inter device
+delay. Where they keep an inter device delay, if they keep one, is open. They draw none of the 451
+strings either, having no slider.
 
 **Which device an identifier belongs to is stated by the screen and nowhere else.** A device's buttons
 and its infrared group are reached through an ASCII label, `TV_Power_2`; its delays are held under
@@ -1765,8 +1775,15 @@ space on the screen, because the underscore is base slot 0's own separator.
 says what a German build draws. A config whose screen says something else loses the join and keeps
 every delay.
 
-`deviceDelays` and `deviceIdOfGroup` in `packages/codec/src/inventory.ts`.
-[findings.md](findings.md) section 234.
+**A second route to the identifier reaches 16 of the 19 and agrees on all of them**, section 235:
+where the other architectures put the `0x7C`, arch 14 puts a `0x72` naming that device's own
+`PowerOnDelay_<identifier>`, and the same list's `0x7D` names the group. It needs no drawn text, so
+it is not language bound; it answers for fewer devices, because one that nothing switches on has no
+such list. That `0x72`'s base slot 14 record has 451 entries, which states the 0 to 450 range a
+third time.
+
+`deviceDelays`, `powerOnInstructions` and `deviceIdOfGroup` in `packages/codec/src/inventory.ts`.
+[findings.md](findings.md) sections 234 and 235.
 
 Read with `gspm.state_table`, `gspm.state_records` and `gspm.state_index`; `stateTable` and
 `stateRecords` in `packages/codec`.
@@ -2868,7 +2885,7 @@ Architecture 12 has an analogous pair, `{0x75 a; 0x7E b}`, with one group and a 
 neither the same size nor contiguous, so the structure does not transfer as it stands.
 [findings.md](findings.md) section 28.
 
-#### `0x7C` is a per device quantity, capped at 100
+#### `0x7C` is a per device delay in tenths of a second, capped at 100
 
 **Confirmed on four architectures, and on two firmware images.** The operand is
 `{ u8 group; u8 value }`: the group is an infrared group, and in 21882 uses across twelve
@@ -2903,10 +2920,20 @@ The union is 101 to 450 per group, contiguous, each value once. **450 is also th
 `0x6C` vocabulary**, which is 0 to 450, reached from a completely different direction. So the two
 are the same enumeration: one instruction covers up to 100, more than one spells out the rest.
 
-*What the enumeration counts is not established.* The firmware says it is per device, bounded at
-450 in practice, consumed by the infrared sender, and folded by taking the larger of two
-consecutive requests, which is how a duration behaves and not how a repeat count does. The unit
-itself wants the timer that drains the queue. [findings.md](findings.md) sections 29 and 70.
+**It is a delay, in tenths of a second**, section 235, which closes what this paragraph left open as
+"the unit itself wants the timer that drains the queue"<!--superseded-->. The instinct in the old
+wording was right, that folding by the larger is how a duration behaves; what settled it was a
+calibration rather than the timer. Logitech's service compiled a configuration for the same three
+devices twice, once for a Harmony One and once for a Harmony 600, and arch 14 states a device's power
+on delay in a state variable whose unit its own screen spells out in tenths. The two agree device for
+device, 3 of 3, so the operand is tenths of a second and 450 is 45 seconds.
+
+**Where a device's power on delay lives on arch 8, 9 and 12 is one of these instructions**: exactly
+one, at the top level of the action list a device's `Power` variable runs on its 0 to 1 transition,
+naming that device's own group. 57 of 57 transitions across those three architectures carry one and
+all 16 on arch 14 carry none. The nested list that sends the code carries its own `0x7C` of value 1,
+the ordinary per send quantity, so a reader must stay at the top level. `powerOnInstructions` in
+`packages/codec`. [findings.md](findings.md) sections 29, 70 and 235.
 
 #### `0x6C` writes a device record, and never alone
 
@@ -3151,7 +3178,7 @@ Placed by their handlers:
 | `0x66`, `0x65` | **append to the flash journal**: `0x66` the operand's high byte, `0x65` its low byte and then its high byte. Arch 14 only, section 108 |
 | `0x76` | **position the serial flash cursor** at the record its operand indexes, remembering the index so a later instruction walks forward. Which array it indexes is *not established*, section 108 |
 | `0x74`, `0x75` | ~~**one instruction, not two**: the dispatcher never tests `0x75` and nothing downstream reads the opcode~~<!--superseded--> **two instructions**, section 74. Arch 14 issues neither, and the arch 12 dispatcher tests both: `0x75` **sounds a tone**, `0x74` accumulates a digit |
-| `0x7C` | **a per device quantity**, into the same infrared queue `0x7D` uses, below |
+| `0x7C` | **a delay before the next code to that device**, tenths of a second, into the same infrared queue `0x7D` uses, below |
 | `0x73` | **run the base slot 11 screen program** the operand indexes |
 | `0x75` | **sound a tone**: low byte the half period, high byte the cycles. Four operands in the corpus, 461 Hz to 4.7 kHz, below |
 | `0x07` with operand `0xF8xx` | **step the date** held in state variables 3, 5 and 6 |
@@ -3228,7 +3255,7 @@ table derived from the 525 does not cover the remotes on the bench.
 |---|---|---|---|---|
 | `0x7A` | 2875 | 10 | 0 to 65277 | unknown, and only ten distinct operands in 2875 uses |
 | `0x6C` | 2832 | 472 | 0 to 32788 | **write a device record**, arch 14 only, above |
-| `0x7C` | 7272 | 600 | 1 to 1380 | **a per device quantity**, `{ u8 group; u8 value }`, above |
+| `0x7C` | 7272 | 600 | 1 to 1380 | **a per device delay in tenths of a second**, `{ u8 group; u8 value }`, above |
 | `0x7F` | 2795 | 1576 | 52 to 7655 | **action list index**, above |
 | `0x1F` | 1215 | 121 | 59392 to 65290 | **a register machine**, band by band, above |
 | `0x7E` | 861 | 268 | 0 to 373 | **enter the mode** at this index in base slot 6, above |

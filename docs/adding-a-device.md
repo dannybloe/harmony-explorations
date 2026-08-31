@@ -359,7 +359,9 @@ for.
       fields are marked unknown in FreeHarmony's `writeback.ts`. The reason given was that which base
       slot 15 group holds them is not read, and **section 234 refutes that**: no group does, the section
       is per model, and the two delays are named state variables in base slot 13 in tenths of a second.
-      So two of the six can be filled in now on arch 14 (Harmony 600 and 700). This goal does not need
+      So two of the six can be filled in now on arch 14 (Harmony 600 and 700), and section 235 adds
+      the power on delay on arch 8, 9 and 12, where it is an instruction rather than a variable and a
+      writer can change it in one byte. This goal does not need
       them, and a device added without them takes the firmware's defaults, so the item is to **say so in
       the model** rather than to leave a caller guessing. Said, 25 August 2026: `DeviceTiming`'s
       docstring states that absent means the firmware's defaults and never unknown to the model

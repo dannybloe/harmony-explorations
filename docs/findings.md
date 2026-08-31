@@ -8108,10 +8108,20 @@ group, 340 of 345 on a Harmony One, carrying a small value.
 
 ### What is not established
 
-**What the quantity measures.** The evidence says it is per device, bounded at 450 in practice,
+~~**What the quantity measures.** The evidence says it is per device, bounded at 450 in practice,
 consumed by the infrared sender, and folded by taking the larger of two consecutive requests. That
 last rule is what a duration behaves like and not what a repeat count behaves like, but the unit is
-a guess and this document does not make it. Finishing it wants the timer that drains the queue.
+a guess<!--superseded--> and this document does not make it. Finishing it wants the timer that drains the
+queue.~~
+
+**It is a delay, in tenths of a second, section 235.** The instinct above was right and the reason
+given for not finishing it was wrong: what settled it was not the timer that drains the queue but a
+pair of configurations Logitech compiled for the **same three devices**, one for a Harmony One and
+one for a Harmony 600. Arch 14 states a device's power on delay in a state variable whose unit its
+own screen spells out in tenths of a second; arch 8, 9 and 12 state it as one of these instructions
+in the list that switches the device on. The two agree device for device, so the operand is tenths
+of a second, and the 450 ceiling is 45 seconds. The fold rule reads correctly under it: two requests
+for one device collapse to the longer wait.
 
 ~~**The third producer**, tag `0x5`, which reaches the same worker from outside the action list
 language.~~ **It is opcode `0x67`**, section 71, and it was called an outsider only because this
@@ -30252,3 +30262,116 @@ battery curve instead.
 `deviceDelays` and `deviceIdOfGroup` in `packages/codec/src/inventory.ts`;
 `packages/codec/test/inventory.test.ts` carries seven tests, including both controls above and the
 button map closure.
+
+## 235. `0x7C` is a delay in tenths of a second, so every architecture states a power on delay
+
+Section 234 found a device's power on delay on arch 14 (Harmony 600 and 700) and reported that the
+other twelve containers with devices in them state none. That was true of the **variables** and it
+was the wrong conclusion about the format: arch 8, 9 and 12 state the same number as an instruction,
+in the action list that switches the device on. It is opcode `0x7C`, whose unit section 70 measured
+everything about except what it counts.
+
+This matters beyond tidiness. The only remote this project may write to is a Harmony One, arch 12,
+and until now nothing readable on one was worth changing. A power on delay is one byte.
+
+### Where it is
+
+A device's `Power` variable in base slot 13 has a transition from 0 to 1 carrying one action list
+instruction, section 86. That list sends the power code through a nested list and then, **at its own
+top level**, carries exactly one `0x7C` naming the same infrared group:
+
+```
+list 3196   named by Denon_Power 0->1
+  7F 0x1C9      run the list that sends the power code
+  7C 0x003C     group 0, 60
+```
+
+**The split has no exception either way.** Over twenty containers, every one of the 57 power on
+transitions on arch 8, 9 and 12 carries exactly one `0x7C` at that top level, and every one of the
+16 on arch 14 carries none. The group it names is the device's own group on 56 of 56, the odd one
+out being a device no route names at all.
+
+**Top level only is the rule and it is load bearing.** The nested list that sends the code carries a
+`0x7C` of its own with the value 1, one per send, which is the ordinary per send quantity section 70
+described. A reader that walked into it would sum the two and report 61 where the delay is 60. Made
+into a control: reading one level deeper makes three of these tests fail.
+
+### The unit, settled by a pair Logitech compiled for us
+
+Section 70 could say `0x7C` is per device, bounded at 450, consumed by the infrared sender and
+folded by taking the larger of two consecutive requests, and could not say what it counts. The
+closure is a calibration case rather than more firmware.
+
+Logitech's service compiled a configuration for the **same three devices twice**, once for a Harmony
+One and once for a Harmony 600, sections 121 and 125. The two architectures keep the delay in places
+with nothing in common. Joined on the device's own name:
+
+| device | Harmony 600, a state variable | Harmony One, a `0x7C` operand |
+|---|---|---|
+| the television | 35 | 35 |
+| the Blu-ray player | 15 | 15 |
+| the receiver | 15 | 15 |
+
+The Harmony 600 side's unit is stated by that config's own screen, 451 labels from `( 0 sec )` to
+`( 45 sec )` in tenths, section 234. So the operand is tenths of a second and 450 is 45 seconds.
+
+**Scored against the wrong answer.** The other candidate for a quantity sitting beside a power code
+is the inter device delay, and the Harmony 600 states that too: 5 for all three devices. The Harmony
+One's numbers are 35, 15 and 15, so nothing matches it. A third configuration of the same three
+devices, compiled for the same Harmony One on a different day, gives the same three numbers again.
+
+### What the values look like
+
+Across twenty containers and four architectures, 56 inline delays and 19 in variables, 75 of the 83
+devices in the lab. The eight without one have no `Power` variable at all, which is what an audio
+switch or a media centre looks like: nothing switches them on.
+
+The distinct values are 10, 15, 20, 25, 30, 35, 50, 52, 60, 80, 85, 95 and 100 tenths. A television
+is usually the slowest thing in the room, at 8 to 10 seconds; an amplifier reads 5.2 and a games
+console 2.5.
+
+**Seven of the 56 sit exactly at 100**, which is the firmware's own fold cap, section 70. That is the
+largest delay a single instruction can express, so it is also the rail below.
+
+### A second route to the identifier join, agreeing with the screen
+
+Section 234 joined a device's infrared group to Logitech's numeric identifier through the screen,
+because base slot 0 relates the two vocabularies nowhere. The same power on list gives a second
+route on arch 14, and it needs no drawn text: where the other architectures put a `0x7C`, arch 14
+puts a `0x72` naming that device's own `PowerOnDelay_<identifier>`, and the list's `0x7D` names the
+group. The two are related structurally.
+
+**18 of 18 agree with the screen route**, over every 0 to 1 transition in the four containers that
+carry delay variables. It does not replace the screen, which answers for all 19 devices where this
+answers for 16: a device nothing switches on has no such list. So it is corroboration, and
+`deviceIdOfGroup` keeps the screen.
+
+The same `0x72` gives the range a third statement. Its high byte selects a base slot 14 record, and
+the record for a delay variable has **451 entries**, one per position of the slider, matching the 451
+drawn labels and the 0 to 450 range exactly.
+
+### For a writer, and this is the point of the section
+
+Changing a device's power on delay on a Harmony One, a Harmony 525 or a Harmony 880 is **one byte**:
+the low byte of a `0x7C` operand in a base slot 10 action list. Nothing moves, no length changes, no
+count is restamped. `powerOnInstructions` returns the list, the position in it and the current value
+for exactly that reason.
+
+Three rails come with it.
+
+* **100 is the ceiling of a single instruction**, not 255. The firmware folds two consecutive
+  quantities for one device by taking the larger, **except** at 100, where it pushes a second entry
+  instead, section 70. So a delay above 10 seconds is a run of instructions and raising one past 100
+  is a length change rather than a byte edit. Seven devices in the lab already sit at the cap.
+* **The value is per device and consecutive ones interact.** Section 70's fold rule means an editor
+  that inserted a quantity next to an existing one would change the existing one's effect.
+* **Arch 14 is not writable this way.** Its delay is a state variable, so changing it is an edit to
+  a base slot 13 record, and it has no write target anyway.
+
+`deviceDelays` reports both, with a `source` of `variable` or `instruction`, and refuses to invent
+the fields the inlining architectures do not have: no identifier, no default, and no inter device
+delay. **Where those architectures keep an inter device delay, if they keep one, is open.**
+
+`powerOnInstructions` and `deviceDelays` in `packages/codec/src/inventory.ts`;
+`packages/codec/test/inventory.test.ts`, where two of section 234's tests were rewritten rather than
+removed because this section refuted their titles.

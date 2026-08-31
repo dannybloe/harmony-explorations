@@ -12,7 +12,7 @@
  * tests assert how many variables carry a device identifier rather than which.
  */
 import { Container } from './gspm.ts';
-import { irGroups } from './ir.ts';
+import { IR_QUANTITY_OPCODE, irGroups } from './ir.ts';
 import {
   handlerSets,
   modePages,
@@ -1537,17 +1537,45 @@ export interface DeviceDelays {
   group: number;
   /** The device's own label, as `devices` gives it, underscores and all. */
   name: string;
-  /** Logitech's numeric identifier for the device, which is what the variable names carry. */
-  id: number;
+  /**
+   * Where the number was read, because the two architectures keep it in unrelated places and a
+   * caller that wants to **change** one has to know which.
+   *
+   * `variable` is arch 14 (Harmony 600 and 700): a state variable in base slot 13 whose name carries
+   * Logitech's device identifier. `instruction` is arch 8, 9 and 12 (Harmony 880 and 885, Harmony
+   * 525, Harmony One): a `0x7C` inline in the action list that switches the device on. Section 235.
+   */
+  source: 'variable' | 'instruction';
   /** Tenths of a second between switching the device on and sending it anything. */
   powerOn: number;
-  /** What the remote's own "set to default" page would put back into `powerOn`. */
-  defaultPowerOn: number;
-  /** Tenths of a second between two codes when the second goes to a different device. */
-  interDevice: number;
-  /** What that page would put back into `interDevice`. */
-  defaultInterDevice: number;
+  /**
+   * Logitech's numeric identifier for the device. **Arch 14 only**, since it is the variable's name
+   * that carries it and the other architectures have no variable.
+   */
+  id?: number;
+  /** What the remote's own "set to default" page would put back into `powerOn`. Arch 14 only. */
+  defaultPowerOn?: number;
+  /**
+   * Tenths of a second between two codes when the second goes to a different device. **Arch 14
+   * only**, and its absence elsewhere is honest rather than settled: where arch 8, 9 and 12 keep
+   * this, if they keep it at all, is open.
+   */
+  interDevice?: number;
+  /** What that page would put back into `interDevice`. Arch 14 only. */
+  defaultInterDevice?: number;
 }
+
+/**
+ * The base slot 13 property whose transitions switch a device on and off.
+ *
+ * `deviceVariables` splits a level 1 name into a device and a property, so this is that property's
+ * spelling rather than a suffix match on the whole name.
+ */
+const POWER_PROPERTY = 'Power';
+
+/** The transition that switches a device on: its off value to its on value. */
+const POWER_OFF = 0;
+const POWER_ON = 1;
 
 /**
  * Which of Logitech's device identifiers belongs to each infrared group, read off the screen.
@@ -1672,23 +1700,88 @@ export function deviceDelays(c: Container): DeviceDelays[] {
     byId.set(id, acc);
   }
   const groups = deviceIdOfGroup(c);
+  const inline = powerOnInstructions(c);
   const out: DeviceDelays[] = [];
   for (const device of devices(c)) {
+    if (device.name === undefined) continue;
     const id = groups.get(device.group);
     const held = id === undefined ? undefined : byId.get(id);
     // All four or none: a device missing one of them would give a caller a zero it cannot tell
     // from a real zero, and a real zero is what most televisions carry.
-    if (device.name === undefined || id === undefined || held === undefined) continue;
-    if (DELAY_PROPERTIES.some((one) => held.get(one) === undefined)) continue;
+    if (id !== undefined && held !== undefined
+      && !DELAY_PROPERTIES.some((one) => held.get(one) === undefined)) {
+      out.push({
+        group: device.group,
+        name: device.name,
+        source: 'variable',
+        id,
+        powerOn: held.get('PowerOnDelay') as number,
+        defaultPowerOn: held.get('DefaultPowerOnDelay') as number,
+        interDevice: held.get('InterDeviceDelay') as number,
+        defaultInterDevice: held.get('DefaultInterDeviceDelay') as number,
+      });
+      continue;
+    }
+    const at = inline.get(device.group);
+    if (at === undefined) continue;
     out.push({
       group: device.group,
       name: device.name,
-      id,
-      powerOn: held.get('PowerOnDelay') as number,
-      defaultPowerOn: held.get('DefaultPowerOnDelay') as number,
-      interDevice: held.get('InterDeviceDelay') as number,
-      defaultInterDevice: held.get('DefaultInterDeviceDelay') as number,
+      source: 'instruction',
+      powerOn: at.tenths,
     });
+  }
+  return out;
+}
+
+/** Where a device's power on delay sits when it is an instruction rather than a variable. */
+export interface PowerOnInstruction {
+  /** The base slot 10 list the device's `Power` variable runs when it goes from off to on. */
+  list: number;
+  /** Which instruction of that list it is, counting from zero, so a writer can address the byte. */
+  at: number;
+  /** The delay itself, in tenths of a second, which is the instruction's low byte. */
+  tenths: number;
+}
+
+/**
+ * The `0x7C` that holds each device's power on delay, on the architectures that inline it.
+ *
+ * **Arch 8, 9 and 12 keep a device's power on delay in the action list rather than in a variable**,
+ * and this is where. A device's `Power` variable has a transition from 0 to 1 carrying one action
+ * list instruction, section 86; that list sends the power code through a nested list and then, at
+ * its own top level, carries exactly one `0x7C` naming the same infrared group. Section 70 read
+ * `0x7C` as a per device quantity and left its unit open; it is tenths of a second, section 235.
+ *
+ * **Top level only, and that is the whole rule.** The nested list that sends the code carries a
+ * `0x7C` of its own with the value 1, one per send, and a reader that walked into it would sum the
+ * two. Every one of the 57 transitions on those three architectures has exactly one at the top
+ * level and every one of the 16 on arch 14 has none, which is a split with no exception either way.
+ *
+ * The group is not taken on trust: a `0x7C` naming a different group than the device would be some
+ * other quantity and is dropped. 56 of 56 agree, the odd one out being a device no route names.
+ */
+export function powerOnInstructions(c: Container): Map<number, PowerOnInstruction> {
+  const out = new Map<number, PowerOnInstruction>();
+  const lists = c.actionLists();
+  const records = stateRecords(c);
+  if (lists === undefined || records === undefined) return out;
+  const byLabel = new Map(devices(c).flatMap((one) => (one.name === undefined ? [] : [[one.name, one.group] as const])));
+  for (const variable of deviceVariables(c)) {
+    if (variable.property !== POWER_PROPERTY) continue;
+    const group = byLabel.get(variable.device);
+    if (group === undefined) continue;
+    for (const value of records[variable.index]?.values ?? []) {
+      if (value.opcode !== ACTION_LIST_INDEX) continue;
+      if (value.from !== POWER_OFF || value.to !== POWER_ON) continue;
+      const held = (lists[value.operand] ?? [])
+        .map((one, at) => ({ one, at }))
+        .filter(({ one }) => one.opcode === IR_QUANTITY_OPCODE);
+      if (held.length !== 1) continue;
+      const only = held[0] as { one: { operand: number }; at: number };
+      if (only.one.operand >> 8 !== group) continue;
+      out.set(group, { list: value.operand, at: only.at, tenths: only.one.operand & 0xff });
+    }
   }
   return out;
 }

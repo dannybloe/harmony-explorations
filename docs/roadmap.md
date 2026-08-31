@@ -65,14 +65,31 @@ ignored.
 third, how many repeats a code needs, is not a state variable at all: it is a property of the infrared
 record, base slot 5, and it is open.
 
+**And a Harmony One states its power on delay too, section 235**, which is what makes the next step
+possible rather than merely desirable. The reading above was arch 14's, and the only remote this
+project may write to is a Harmony One. On arch 8, 9 and 12 the same number is an instruction rather
+than a variable, one `0x7C` at the top of the list that switches the device on, and the unit is settled
+by Logitech having compiled a configuration for the same three devices for both architectures: they
+agree device for device.
+
 So what is left before the first write that changes something is the write itself. Phase 8 in
 `docs/adding-a-device.md` is at ten of its twelve boxes, and neither of the two remaining is a rail. The
 write path is measured on hardware, section 222; the compatibility gate is performed rather than
 asserted, section 225; and the unit on the cable is identified off the unit, section 226, exercised on
-the spare Harmony One with both of its refusals shown to bite. **The obvious first change is a delay**,
-because it is one `u16` in a record whose neighbours do not move, its effect is visible without any
-equipment beyond the device itself, and both calibration configurations can be recompiled by Logitech's
-service with a delay set deliberately, which gives the change a known answer before it is written.
+the spare Harmony One with both of its refusals shown to bite.
+
+**The first change should be a power on delay, and it is one byte.** `powerOnInstructions` hands back
+the action list, the position in it and the current value, so the edit moves nothing, changes no
+length and restamps no count, which is the smallest change this format admits. It is also the one
+whose effect a person can see without any instrument: set a television's delay to its maximum, start
+the activity, and watch the remote wait before it sends anything. Two rails come with it, both in
+section 235: **100 tenths is the ceiling of a single instruction**, since the firmware folds two
+consecutive quantities by taking the larger except at 100, so raising a delay past ten seconds is a
+length change and not a byte edit; and seven devices in the lab already sit at that cap.
+
+**Give it a known answer first.** Logitech's service will compile a configuration for the spare
+Harmony One with a delay set deliberately, which says what byte their generator moves before we move
+it ourselves. That is the same shape as every other calibration here and it costs one compile.
 
 `make lab-check PATH_ARG=<path>` first, per decision 12, because the last nine digs each re-derived
 something the site already held.

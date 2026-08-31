@@ -439,7 +439,7 @@ finding.
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 234<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 235<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -678,6 +678,16 @@ its instructions copy that device's defaults into its current values. 19 of 19 d
 containers that have delays, against 1 and 4 of 19 for the two orderings of the identifiers anybody
 would guess, and Logitech's own button maps for the calibration account agree about which device is
 which. So changing a delay is a same length edit of one `u16`, the cheapest change this format has.
+
+**And a Harmony One states the same delay, one commit later**, section 235, which is what turns the
+reading above into something worth writing. Arch 14 was the odd one out: it keeps the number in a
+variable, and the Harmony 880, the Harmony 525 and the Harmony One keep it as one instruction at the
+top of the action list that switches the device on. That instruction had been read for weeks as "a
+quantity" with the unit unknown, and what settled it was Logitech compiling a configuration for the
+**same three devices** twice, once per architecture: the two agree device for device, so the operand
+is tenths of a second. 75 of the 83 devices in the lab now state a power on delay, the eight without
+one being the things nothing switches on. This matters because the only remote this project may write
+to is a Harmony One, and changing a delay there is **one byte** with nothing moving around it.
 
 **Two million of Logitech's own waveforms, against our encoder, and nothing disagrees**,
 sections 230 and 231. The infrared archive carries a rendered waveform for every command in their catalogue,

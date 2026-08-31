@@ -60,7 +60,10 @@ import {
   deviceDelays,
   deviceIdOfGroup,
   deviceIds,
+  IR_QUANTITY_CAP,
   parameterGroups,
+  powerOnInstructions,
+  valueMaps,
   STATE_WRITE_BASE,
   parse,
   reading,
@@ -1526,6 +1529,22 @@ const DELAYS: readonly [string, readonly (readonly [number, number, number])[]][
   ['calibration_h600', [[0, 35, 5], [1, 15, 5], [2, 15, 5]]],
 ];
 
+/**
+ * Every container the lab holds that drives devices: `INVENTORY` plus the five Logitech's own
+ * service compiled for us, which are outside the corpus lists deliberately, section 121.
+ *
+ * Named once because five tests below walk it and a population that drifts between them is the
+ * defect `docs/findings.md` section 143 is about.
+ */
+const DELAY_POPULATION: readonly string[] = [
+  ...INVENTORY.map(([name]) => name),
+  'calibration_one',
+  'calibration_h600',
+  'calibration_favchannels',
+  'one_spare_myharmony',
+  'calibration_favzero',
+];
+
 for (const [name, rows] of DELAYS) {
   test(`${name} states a power on delay for each of its ${rows.length} devices`,
     skipUnless(name), () => {
@@ -1542,22 +1561,143 @@ for (const [name, rows] of DELAYS) {
     });
 }
 
-test('nothing but an arch 14 config carries a device delay at all', skipWithoutLab(), () => {
-  // The counterweight to the four tests above, and it is what makes them a population rather than a
-  // list: every other container in the corpus reads zero, including six with devices in them.
-  const withDelays = DELAYS.map(([name]) => name);
-  let checked = 0;
-  let withDevicesAndNoDelays = 0;
-  for (const [name] of INVENTORY) {
-    if (withDelays.includes(name)) continue;
-    const c = parse(require_(name));
-    assert.deepEqual(deviceDelays(c), [], name);
-    if (devices(c).length > 0) withDevicesAndNoDelays += 1;
-    checked += 1;
-  }
-  assert.equal(checked, 12);
-  assert.equal(withDevicesAndNoDelays, 12, 'all twelve drive devices and state no delay for any');
-});
+test('every architecture states a power on delay, and only arch 14 keeps it in a variable',
+  skipWithoutLab(), () => {
+    // **This test's title used to be "nothing but an arch 14 config carries a device delay at all",
+    // and section 235 refuted it.** What is arch 14's alone is the **storage**: it holds the number
+    // in a state variable, and arch 8, 9 and 12 hold it as a `0x7C` inline in the list that switches
+    // the device on. The counterweight the old test provided is kept in a form that survives: the two
+    // sources are disjoint, so no device is read twice and no architecture uses both.
+    let variable = 0;
+    let instruction = 0;
+    let devicesSeen = 0;
+    const architectures = new Map<number, Set<string>>();
+    for (const name of DELAY_POPULATION) {
+      const c = parse(require_(name));
+      const arch = c.architecture as number;
+      devicesSeen += devices(c).length;
+      const kinds = architectures.get(arch) ?? new Set<string>();
+      for (const row of deviceDelays(c)) {
+        kinds.add(row.source);
+        if (row.source === 'variable') {
+          variable += 1;
+          assert.notEqual(row.id, undefined, `${name}: a variable row with no identifier`);
+        } else {
+          instruction += 1;
+          assert.equal(row.id, undefined, `${name}: an instruction row cannot know an identifier`);
+          assert.equal(row.interDevice, undefined, `${name}: nor an inter device delay`);
+        }
+      }
+      architectures.set(arch, kinds);
+    }
+    assert.equal(variable, 19);
+    assert.equal(instruction, 56);
+    assert.equal(devicesSeen, 83, 'so 8 devices of 83 state no delay: nothing switches them on');
+    // No architecture mixes the two, which is what makes `source` a property of the format rather
+    // than of the sample.
+    assert.deepEqual([...architectures].sort((a, b) => a[0] - b[0]).map(([a, k]) => [a, [...k]]),
+      [[8, ['instruction']], [9, ['instruction']], [12, ['instruction']], [14, ['variable']]]);
+  });
+
+test('the power on delay is one instruction at the top of the list that switches the device on',
+  skipWithoutLab(), () => {
+    // The split with no exception either way, which is what says the reading is structural rather
+    // than fitted: every power on transition on the three inlining architectures carries exactly one
+    // `0x7C` in its own list, and every one on arch 14 carries none. Reading the nested list too
+    // would add the per send quantity of 1 that follows every code, so the top level is the rule.
+    let inlining = 0;
+    let arch14 = 0;
+    const values = new Set<number>();
+    for (const name of DELAY_POPULATION) {
+      const c = parse(require_(name));
+      const held = powerOnInstructions(c);
+      for (const [group, one] of held) {
+        assert.ok(one.tenths <= IR_QUANTITY_CAP, `${name} ${group}: above the firmware's own cap`);
+        values.add(one.tenths);
+      }
+      if (c.architecture === 14) {
+        assert.equal(held.size, 0, `${name}: arch 14 states its delays in variables`);
+        arch14 += 1;
+      } else {
+        inlining += held.size;
+      }
+    }
+    assert.equal(inlining, 56);
+    assert.equal(arch14, 4);
+    // Every distinct value in the corpus, so a new sample carrying an implausible one shows up here.
+    assert.deepEqual([...values].sort((a, b) => a - b),
+      [10, 15, 20, 25, 30, 35, 50, 52, 60, 80, 85, 95, 100]);
+  });
+
+test('the same three devices give the same delays on a Harmony One and on a Harmony 600',
+  skipUnless('calibration_one', 'calibration_h600', 'calibration_favchannels'), () => {
+    // **The closure that settles the unit of `0x7C`**, section 235, and it is the strongest thing in
+    // this file: Logitech compiled a configuration for the same three devices twice, once for each
+    // architecture, and the two keep the delay in unrelated places. The Harmony 600 states it in a
+    // state variable whose unit the screen spells out in tenths of a second; the Harmony One states
+    // it as a `0x7C` operand whose unit section 70 could not name. They agree device for device, so
+    // the operand is tenths of a second.
+    const byName = (sample: string): Map<string, number> =>
+      new Map(deviceDelays(parse(load(sample) as Uint8Array)).map((one) => [one.name, one.powerOn]));
+    const h600 = byName('calibration_h600');
+    assert.equal(h600.size, 3);
+    for (const one of ['calibration_one', 'calibration_favchannels']) {
+      const arch12 = byName(one);
+      assert.deepEqual([...arch12.keys()].sort(), [...h600.keys()].sort(), one);
+      for (const [name, tenths] of h600) assert.equal(arch12.get(name), tenths, `${one} ${name}`);
+    }
+    // And scored against the wrong answer, because the inter device delay is the other candidate for
+    // what a `0x7C` beside a power code could be: it is 5 for all three on the Harmony 600 and the
+    // Harmony One's values are 15, 35 and 15, so nothing here matches it.
+    const inter = new Set(deviceDelays(parse(load('calibration_h600') as Uint8Array))
+      .map((one) => one.interDevice));
+    assert.deepEqual([...inter], [5]);
+    assert.deepEqual([...new Set(h600.values())].sort((a, b) => a - b), [15, 35]);
+  });
+
+test("the list that switches a device on names that device's delay variable too", skipWithoutLab(),
+  () => {
+    // **The independent route to the identifier join**, and it needs no drawn text at all: on arch 14
+    // the same list carries a `0x72` naming `PowerOnDelay_<identifier>` and a `0x7D` naming the
+    // infrared group, so the two are related structurally. It agrees with the screen route on 16 of
+    // 16, and the three devices it cannot answer for are the ones nothing switches on, so it is a
+    // corroboration rather than a replacement: `deviceIdOfGroup` keeps the screen, which answers 19.
+    let overlap = 0;
+    for (const [name] of DELAYS) {
+      const c = parse(require_(name));
+      const lists = c.actionLists() as { opcode: number; operand: number }[][];
+      const records = stateRecords(c) ?? [];
+      const identifiers = new Map(stateVariables(c).map((one) => [one.index, one.deviceId]));
+      const fromScreen = deviceIdOfGroup(c);
+      for (const variable of stateVariables(c)) {
+        for (const value of records[variable.index]?.values ?? []) {
+          if (value.opcode !== ACTION_LIST_INDEX_OPCODE || value.from !== 0 || value.to !== 1) continue;
+          const ids = new Set<number>();
+          const groups = new Set<number>();
+          const walk = (index: number, seen: Set<number>, depth: number): void => {
+            if (seen.has(index) || depth > 5 || lists[index] === undefined) return;
+            seen.add(index);
+            for (const one of lists[index] as { opcode: number; operand: number }[]) {
+              if (one.opcode === 0x72) {
+                const id = identifiers.get(one.operand & 0xff);
+                if (id !== undefined) ids.add(id);
+              }
+              if (one.opcode === 0x7d) groups.add(one.operand >> 8);
+              if (one.opcode === ACTION_LIST_INDEX_OPCODE) walk(one.operand, seen, depth + 1);
+            }
+          };
+          walk(value.operand, new Set(), 0);
+          if (ids.size !== 1 || groups.size !== 1) continue;
+          const group = [...groups][0] as number;
+          assert.equal(fromScreen.get(group), [...ids][0], `${name}: group ${group}`);
+          overlap += 1;
+        }
+      }
+    }
+    // Eighteen rather than nineteen, because the loop walks every variable's 0 to 1 transition and
+    // not only a `Power` one, so a device may be reached twice and one is reached not at all.
+    assert.equal(overlap, 18);
+  });
 
 test('the screen route beats both orderings of the identifiers it could have been',
   skipWithoutLab(), () => {
@@ -1597,8 +1737,11 @@ test('a device delay is a tenth of a second, which the config draws 451 of', ski
       const match = written.exec(one.text.trim());
       if (match !== null) tenths.add(Math.round(Number(match[1]) * 10));
     }
-    if (deviceDelays(c).length === 0) {
-      assert.equal(tenths.size, 0, `${name}: no delays and yet a delay slider`);
+    // **Keyed on the storage and not on having delays**, which is section 235's correction to this
+    // test: every architecture states a power on delay, and only the one that keeps it in a variable
+    // offers the slider that draws these labels.
+    if (!deviceDelays(c).some((one) => one.source === 'variable')) {
+      assert.equal(tenths.size, 0, `${name}: no delay variable and yet a delay slider`);
       silent += 1;
       continue;
     }
@@ -1610,6 +1753,11 @@ test('a device delay is a tenth of a second, which the config draws 451 of', ski
       [], `${name}: the ladder has a gap`);
     // And every device's stored value is one of the positions the slider offers.
     for (const row of deviceDelays(c)) assert.ok(tenths.has(row.powerOn), `${name} ${row.group}`);
+    // The same ladder a third time, from a third place: base slot 14's record for a delay variable
+    // has one entry per position, which is what turns the stored number into something the firmware
+    // can act on. Section 235.
+    const perValue = new Set(valueMaps(c)?.map((one) => one.entries.length));
+    assert.ok(perValue.has(sorted.length), `${name}: no value map with ${sorted.length} entries`);
     drawn += 1;
   }
   assert.equal(drawn, 3, 'the three arch 14 configs of INVENTORY');
@@ -1625,7 +1773,7 @@ test('base slot 15 is per model and states nothing about a device', skipWithoutL
   const shapes = new Map<number, Set<string>>();
   const values = new Map<string, Set<number>>();
   let checked = 0;
-  for (const [name] of [...INVENTORY, ...DELAYS.slice(3)]) {
+  for (const name of DELAY_POPULATION) {
     const c = parse(require_(name));
     const groups = parameterGroups(c);
     if (groups === undefined) continue;
@@ -1637,22 +1785,23 @@ test('base slot 15 is per model and states nothing about a device', skipWithoutL
       .add(devices(c).length);
     checked += 1;
   }
-  assert.equal(checked, 16);
+  assert.equal(checked, 20);
   // One shape per architecture, over device counts that differ by seven.
   assert.deepEqual(
     [...shapes].map(([arch, set]) => [arch, set.size])
       .sort((a, b) => (a[0] as number) - (b[0] as number)),
     [[8, 1], [9, 1], [12, 1], [14, 1]]);
-  // And the values are not counting devices either. Sixteen containers carry five distinct value
-  // sets, four of which are shared by containers holding **different** numbers of devices, the
-  // widest by six containers holding 3, 4, 6 and 7. The fifth is the two Harmony 700 configs, which
-  // are one model and both hold six devices, so it is silent rather than contrary.
+  // And the values are not counting devices either. Twenty containers carry five distinct value
+  // sets, four of which are shared by containers holding **different** numbers of devices: one by
+  // Harmony Ones holding 1, 3, 5 and 6, and one by arch 8 containers holding 3, 4, 6 and 7. The
+  // fifth is the two Harmony 700 configs, one model and six devices each, so it is silent rather
+  // than contrary.
   const spans = [...values.values()].map((one) => [...one].sort((a, b) => a - b));
   assert.equal(spans.length, 5);
   assert.equal(spans.filter((one) => one.length > 1).length, 4);
   assert.deepEqual(
     spans.sort((a, b) => b.length - a.length || a.join().localeCompare(b.join())),
-    [[3, 4, 6, 7], [1, 4], [1, 5], [3, 4], [6]]);
+    [[1, 3, 5, 6], [3, 4, 6, 7], [1, 4], [3, 4], [6]]);
 });
 
 test("a device's delay equals its default in every config here", skipWithoutLab(), () => {
