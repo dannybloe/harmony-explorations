@@ -92,10 +92,16 @@ remote:
    configuration here holds a record of. The table went from 37 entries to 461, so it answers for 461
    of Logitech's 684 families rather than 37. The calibration rose with it: 34 of our 35 measured
    rhythms are reproduced from their definitions field for field, none disagreeing.
-   **What is left is a stated row's missing block.** It carries no `tail`, so a code of such a family
-   can be built and not written, and their definition does state a trailer, a total length and a repeat
-   segment. Deriving a block from those has a 35 family calibration available, which is the right size
-   of check, and it is the step that turns 424 buildable families into 424 writable ones. The three
+   **The stated row's missing block was the next step and it is done, section 228**, and it did not turn
+   424 buildable families into 424 writable ones. Their `KeyCode` field states a block's shape whole and
+   the reading of it reproduces all 29 blocks measured off their compiler to the microsecond, so the
+   shape is settled. What their definitions do not state, on 645 of 684, is how many times a repetition
+   is sent, and a block is the shape plus that count. It is stated on 39 definitions, right on all five
+   of ours that have it, and deliberately **not** defaulted, since our own measurement puts it at three
+   for 22 of the 24 unstated families and at one for two, which would be a fit to this corpus. So 16
+   stated rows gained a block and the writable count went from 29 families to 45 out of 461 buildable.
+   **What stands between 45 and 461 is one integer per family that Logitech's own data does not carry**,
+   which is a want list item for the catalogue rather than a reading to write. The three
    shapes still unread are 75 base four, 67 base sixteen and 35 one interval per bit; each needs its
    own reading and its own calibration, and the base four one is the only shape our table already has.
    The second number this step was meant to produce is **not** done: nobody has yet built a waveform
@@ -380,7 +386,8 @@ image is a second sample rather than a stand in. Other models are iterated on la
 
    **What is genuinely unpriced is everything after the frame.** A block repeats the frame and then goes
    quiet, and that tail is 140 distinct shapes across the corpus, with a per family rule for 29<!--fact:protocol_tails--> of the
-   rhythm table's 37<!--fact:protocol_measured--> measured entries since section 171 and none for the rest, so it is emitted where there is a
+   rhythm table's 37<!--fact:protocol_measured--> measured entries since section 171, plus 16<!--fact:protocol_tails_stated--> derived from Logitech's own
+   statement of it since section 228, and none for the remaining 408, so it is emitted where there is a
    rule and copied
    from a record of the same appliance rather than computed. That is a smaller job and a different one:
    it needs a record to copy from, which means the catalogue import wants a configuration beside it

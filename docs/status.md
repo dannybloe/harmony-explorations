@@ -391,8 +391,13 @@ holds 461<!--fact:protocol_entries--> entries over 461<!--fact:protocol_families
 **37<!--fact:protocol_measured--> were measured here and 424<!--fact:protocol_stated--> are Logitech's own definitions converted**, section 227.
 The measured ones cover 32 of the 33 families this corpus holds a record of; the stated ones are
 families no configuration here has ever carried, so `codes: 0` on such a row is the honest number and
-`source` is what tells the two apart. A stated row carries no measured block either, so a code of that
-family can be built and not yet written. It said "since one family appears at two carrier
+`source` is what tells the two apart. 16 of the stated rows carry a whole block derived
+from Logitech's own statement of it, section 228, and the other 408 carry a frame and nothing after it,
+so a code of those families can be built and not yet written. It said "A stated row carries no measured
+block either, so a code of that family can be built and not yet written"<!--superseded--> for one day.
+What holds the 408 back is not the shape, which their definitions state and which reproduces all 29
+blocks measured off their compiler exactly, but **how many times a repetition is sent**, which they state
+for 39 of 684 families and which is not guessed here. It said "since one family appears at two carrier
 frequencies"<!--superseded--> until 31 August 2026, which was true of the table and false about
 Logitech: those two entries were two families their analyser both called `SharpO1 48 Bit`, and their
 catalogue states one carrier per family. Each entry says which route measured it, most off configurations Logitech's own

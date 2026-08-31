@@ -15,7 +15,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { framesOfPulses, pulsesOfFrame } from '../src/irframe.ts';
-import { PROTOCOLS } from '../src/protocols.ts';
+import { PROTOCOLS, type StatedProtocol } from '../src/protocols.ts';
 import { blockOfStatedCode, closingSpace, pulsesOfStatedCode, statedCode, statedProtocol, timingsOf }
   from '../src/stated.ts';
 import { LAB, skipWithoutLab } from '@harmony/lab';
@@ -46,9 +46,17 @@ test('the table states four hundred and sixty one entries, of which thirty seven
   // A stated row has no evidence and says so, in all three numbers rather than in one.
   for (const one of STATED) {
     assert.deepEqual([one.codes, one.exact, one.spread], [0, 0, 0], one.family);
-    assert.equal(one.tail, undefined, `${one.family} has no measured block`);
-    assert.equal(one.held, undefined, one.family);
+    // **A stated row may carry a block since section 228, and it is derived rather than measured**, so
+    // what has to be absent is the rebuild count: `tailExact` says how many records rebuilt from this
+    // row, and there are no records. This loop asserted no block at all until 31 August 2026.
+    assert.equal(one.tailExact, undefined, `${one.family} has no measured block`);
+    assert.equal(one.heldExact, undefined, one.family);
+    // A block and a held block go together: a record needs both pointers, so half of one is no use.
+    assert.equal(one.tail === undefined, one.held === undefined, one.family);
   }
+  // 16 of the 424 carry a whole block, being the ones whose definition also states how many times a
+  // repetition is sent, and the other 408 carry a frame and nothing after it.
+  assert.equal(STATED.filter((one) => one.tail !== undefined).length, 16);
   // Both shapes convert, which is what the second pass of section 227 added: 97 of the 424 are biphase,
   // where the bit is which half of the cell carries the carrier.
   assert.equal(STATED.filter((one) => one.biphase !== undefined).length, 97);
@@ -502,7 +510,7 @@ test('the table answers for the recorded census, counted rather than printed', s
     ['Saitek 11 Bit']);
 });
 
-test('twenty nine entries state their whole block, and the counts are per family', () => {
+test('twenty nine measured entries state their whole block, and the counts are per family', () => {
   // **Section 171: what follows the frame is measured per family**, as copies of the code's own
   // frames, literal words, and pad spaces solved from a constant total or a constant copy period.
   // Named with both counts, because the families where the whole block does not rebuild are the
@@ -510,7 +518,7 @@ test('twenty nine entries state their whole block, and the counts are per family
   // ten are corpus records of one command whose copies differ from the compiled shape, and
   // MemorexO1 32 Bit had a shortfall of 81 of 108 which was three families under one name, and is 3 of
   // 3 now that Logitech's catalogue has named each rhythm in it.
-  const tailed = PROTOCOLS.filter((one) => one.tail !== undefined)
+  const tailed = MEASURED.filter((one) => one.tail !== undefined)
     .map((one) => [one.family, one.tailExact, one.codes] as const);
   // The eight without one are named, because a family in the table with no measured block is a family
   // a writer cannot emit a repeat for, which is worth seeing rather than inferring from a shorter list.
@@ -518,9 +526,10 @@ test('twenty nine entries state their whole block, and the counts are per family
                    ['Kreatel IP 22 Bit', 'Galaxis 16 Bit Quad Toggle',
                     'Philips Hurd 16 Bit LongToggle', 'MitsubishiO1 Dual 8 16 Bit', 'Samsung 38 Bit',
                     'Roku 32 Bit 1', 'Panasonic 16 Bit', 'Sharp 48 Bit']);
-  // Every stated entry is also without one, which is why they are excluded above rather than absorbed:
-  // a list of 432 names would have stopped being a check anybody reads.
-  assert.equal(STATED.filter((one) => one.tail !== undefined).length, 0);
+  // **16 stated entries carry a derived block since section 228 and the rest carry none**, which is why
+  // this list is scoped to the measured rows: mixing the two would put a block nobody measured into a
+  // table of rebuild counts, and there is no record to have rebuilt.
+  assert.equal(STATED.filter((one) => one.tail !== undefined).length, 16);
   assert.deepEqual([...tailed].sort((a, b) => a[0].localeCompare(b[0]) || (a[2] - b[2])), [
     ['JerroldO1 16 Bit', 47, 47],
     ['JVC 16 Bit', 108, 108],
@@ -556,11 +565,17 @@ test('twenty nine entries state their whole block, and the counts are per family
   // **The second frame in the tail is the code's own other frame**, section 171 stage two: the dual
   // families and the Sharp 15 pair alternate the code's two stated frames, replayable for any code
   // because a tail item names the frame's index rather than a value. Named as a set.
-  const second = PROTOCOLS.filter((one) =>
+  const alternating = (rows: readonly StatedProtocol[]) => rows.filter((one) =>
     one.tail?.items.some((item) => 'copy' in item && item.at === 1) ?? false)
-    .map((one) => one.family);
-  assert.deepEqual(second.sort(), ['MemorexV2 32 Bit Dual', 'Pioneer 32 Bit 2', 'Pioneer 32 Bit Dual',
-    'PioneerO1 32 Bit Dual', 'Samsung 16 and 20 Bit', 'Sharp 15 Bit', 'Sharp 15 Bit 2']);
+    .map((one) => one.family).sort();
+  assert.deepEqual(alternating(MEASURED), ['MemorexV2 32 Bit Dual', 'Pioneer 32 Bit 2',
+    'Pioneer 32 Bit Dual', 'PioneerO1 32 Bit Dual', 'Samsung 16 and 20 Bit', 'Sharp 15 Bit',
+    'Sharp 15 Bit 2']);
+  // **And five of the derived blocks are the same shape**, which is worth asserting rather than
+  // excluding: the alternation was measured off our own records first and Logitech's definitions state
+  // it independently, in their `KeyCode` field, for five families this corpus holds no record of.
+  assert.deepEqual(alternating(STATED), ['Apex 24 and 16 Bit', 'Entone 24 Bit', 'Entone 56 Bit',
+    'EntoneV1 24 Bit', 'Pace 4 and 20 Bit']);
 
   // **The Sharp 15 families pad each copy to a constant period, not the block to a total**: their
   // two alternating frames differ in duration, so the gaps differ within one record, which is the
@@ -569,6 +584,8 @@ test('twenty nine entries state their whole block, and the counts are per family
     .map((one) => [one.family, one.tail!.copyPeriod] as const);
   assert.deepEqual(perCopy.sort((a, b) => a[0].localeCompare(b[0])),
     [['Sharp 15 Bit', 65000], ['Sharp 15 Bit 2', 67792]]);
+  // Scoped to the whole table on purpose, unlike the totals below: no derived block takes this rule, so
+  // a stated family appearing here would mean the derivation had started using it and wants looking at.
 
   // **Padding to a constant total block duration is real and it is per family**, which section 152's
   // corpus wide attempt could not show. Named with the totals, since a total is a measurement.
@@ -577,7 +594,7 @@ test('twenty nine entries state their whole block, and the counts are per family
   // the entry held Toshiba's records under Logitech's Memorex name. The real MemorexO1 closes with
   // literal words, 560 and a 35101 space, so the two families differ in their tail shape as well as in
   // all five of their durations.
-  const padded = PROTOCOLS.filter((one) => one.tail?.total !== undefined)
+  const padded = MEASURED.filter((one) => one.tail?.total !== undefined)
     .map((one) => [one.family, one.tail!.total] as const);
   assert.deepEqual([...padded].sort((a, b) => a[0].localeCompare(b[0])), [
     ['JerroldO1 16 Bit', 199001],
@@ -594,6 +611,23 @@ test('twenty nine entries state their whole block, and the counts are per family
   // Sony's three families pad each copy to the published 45 ms frame period, and the block total says
   // the same number a third way: three copies and the one microsecond every family's last space adds.
   assert.equal(3 * 45000 + 1, 135001);
+  // **Six of the derived blocks pad to a total too**, listed separately because a measured total is a
+  // measurement and a derived one is Logitech's statement plus the one microsecond rule, section 228.
+  const statedTotals = STATED.filter((one) => one.tail?.total !== undefined)
+    .map((one) => [one.family, one.tail!.total] as const);
+  assert.deepEqual([...statedTotals].sort((a, b) => a[0].localeCompare(b[0])), [
+    ['Auvio 32 Bit', 215836],
+    ['Cambridge Audio 32 Bit', 226366],
+    ['Canton 32 Bit', 176951],
+    ['DLO 32 Bit', 219051],
+    ['Naxoo 32 Bit', 214501],
+    ['Toshiba HF 32 Bit', 215736],
+  ]);
+  // **`Toshiba HF 32 Bit`'s derived block is `Toshiba 32 Bit`'s measured one exactly**, total and all,
+  // which is a free corroboration: two catalogue names, one block, one arrived at by measuring their
+  // compiler's output and the other by reading their definition.
+  assert.deepEqual(statedProtocol('Toshiba HF 32 Bit')?.tail,
+                   statedProtocol('Toshiba 32 Bit')?.tail);
 });
 
 test('a whole block is emitted from the catalogue string alone, and totals what the family stores', () => {
@@ -642,7 +676,7 @@ test('the held block is measured per family, and it is what a held key repeats',
   // **Section 127 made emittable**: a record's second pointer repeats for as long as the key is
   // down, and its duration is the repeat interval the user feels. Whether a command carries one at
   // all is the command's own property, so the population is stated beside the count.
-  const held = PROTOCOLS.filter((one) => one.held !== undefined)
+  const held = MEASURED.filter((one) => one.held !== undefined)
     .map((one) => [one.family, one.heldExact, one.heldOf] as const);
   assert.equal(held.length, 29, 'families with a measured held block');
   assert.equal(held.reduce((n, one) => n + one[1]!, 0), 2153, 'held blocks rebuilt word for word');

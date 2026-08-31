@@ -26,9 +26,9 @@ import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { imagePath, IR_ARCHIVE, LAB } from '@harmony/lab';
-import { ArchiveError, archiveProtocols, catalogueByRhythm, familiesOfRhythm,
-         rhythmOfDefinition, type ArchiveRhythm, type CatalogueFamily,
-         type ConversionRefusal } from '../src/archive.ts';
+import { ArchiveError, archiveProtocols, blockOfDefinition, catalogueByRhythm, familiesOfRhythm,
+         rhythmOfDefinition, type ArchiveBlock, type ArchiveRhythm, type BlockRefusal,
+         type CatalogueFamily, type ConversionRefusal } from '../src/archive.ts';
 import { parse, type Container } from '../src/gspm.ts';
 import { payloadOf } from '../src/ezhex.ts';
 import { statedCode } from '../src/stated.ts';
@@ -1750,6 +1750,12 @@ export interface StatedProtocol {
    * spaces sharing one per record value plus the stated extra, solved from \`total\`. Absent where
    * the family's records do not agree on one shape, and \`blockOfStatedCode\` refuses such a
    * family rather than guessing, because a tail can hold a second command, section 152.
+   *
+   * **On a \`source: 'stated'\` row this is derived from Logitech's own definition rather than
+   * measured**, section 228, and \`tailExact\` is absent there because there is nothing to have
+   * rebuilt. The derivation reproduces all 29 measured blocks to the microsecond, which is the
+   * reason to believe it; a stated row only carries one where the definition also states how many
+   * times a repetition is sent, since that half is stated on 39 of their 684 definitions.
    */
   readonly tail?: {
     readonly items: readonly ({ readonly copy: 'full' | 'bare'; readonly at?: number }
@@ -2006,26 +2012,40 @@ if (write) {
    * families we did measure are reproduced from their definitions field for field with none disagreeing.
    * A caller that needs to know the difference reads `source`.
    *
-   * **A stated row carries no `tail` and no `held`**, so `blockOfStatedCode` refuses it and only the
-   * frame can be emitted. That is deliberate: what follows a frame does not follow from the bits,
-   * section 152, and their definition states it in a form this converter does not read yet. So a stated
-   * family is a code that can be built and not yet a record that can be written.
+   * **A stated row carries a `tail` and a `held` only where the definition states its repeat count**,
+   * section 228. Their `KeyCode` field states a block's whole **shape**, and the derivation is believed
+   * because it reproduces all 29 blocks measured off their compiler to the microsecond. What it does not
+   * state, on 645 definitions of 684, is how many repetitions the compiler emits, and a block is the
+   * shape plus that count. Defaulting it to the 3 that 22 of our 24 unstated families happen to use
+   * would be fitting to the corpus, which is the mistake that produced three wrong family names in the
+   * first place, so a family whose count is unstated keeps no block and stays buildable rather than
+   * writable.
    *
    * Ordered by family name so the generated file's diff is stable, since the filesystem's order is not.
    */
   const measured = new Set(entries.map((e) => e.family));
-  const stated: ArchiveRhythm[] = [];
+  const stated: { rhythm: ArchiveRhythm; block?: ArchiveBlock }[] = [];
   const refused = new Map<ConversionRefusal, number>();
+  const blockRefused = new Map<BlockRefusal | 'the definition states no repeat count', number>();
   for (const one of archiveProtocols(IR_ARCHIVE!)) {
     const read = rhythmOfDefinition(one);
     if ('refusal' in read) { refused.set(read.refusal, (refused.get(read.refusal) ?? 0) + 1); continue; }
     if (measured.has(read.family)) continue;
-    stated.push(read);
+    // The block needs a repeat count the definition may not state, so ask for the shape with the count
+    // it states and drop the block where it states none. Nothing here guesses a count.
+    const built = one.pressMinimumRepeats === null ? undefined
+      : blockOfDefinition(one, one.pressMinimumRepeats);
+    const why = built === undefined ? 'the definition states no repeat count'
+      : 'refusal' in built ? built.refusal : undefined;
+    if (why !== undefined) blockRefused.set(why, (blockRefused.get(why) ?? 0) + 1);
+    stated.push({ rhythm: read, ...(built !== undefined && !('refusal' in built) ? { block: built } : {}) });
   }
-  stated.sort((a, b) => a.family.localeCompare(b.family));
-  const statedOut = stated.map((e) => {
+  stated.sort((a, b) => a.rhythm.family.localeCompare(b.rhythm.family));
+  const statedOut = stated.map(({ rhythm: e, block }) => {
     const head = `  { family: '${e.family.replace(/'/g, "\\'")}', periodNs: ${e.periodNs}, `;
-    const tail = ` codes: 0, exact: 0, spread: 0, source: 'stated' },`;
+    const blocks = block === undefined ? ''
+      : ` tail: ${blockOut(block.tail)}, held: ${blockOut(block.held)},`;
+    const tail = `${blocks} codes: 0, exact: 0, spread: 0, source: 'stated' },`;
     const b = e.biphase;
     if (b !== undefined) {
       const lead = b.lead.map((one) => `{ mark: ${one.mark}, us: ${one.us} }`).join(', ');
@@ -2039,11 +2059,14 @@ if (write) {
       + `zero: ${t.zero}, one: ${t.one}, carries: '${t.carries}',`
       + `${e.framePeriod === undefined ? '' : ` framePeriod: ${e.framePeriod},`}${tail}`;
   }).join('\n');
+  const withBlockCount = stated.filter((one) => one.block !== undefined).length;
   const statedBlock = stated.length === 0 ? '' :
     `\n  // **Stated by Logitech and measured by nobody**, converted out of their own protocol`
-    + `\n  // definitions in the infrared archive, section 227. \`codes: 0\` is the honest count: this`
-    + `\n  // corpus holds no record of any of these families. No \`tail\`, so only the frame can be`
-    + `\n  // emitted and \`blockOfStatedCode\` refuses them.\n${statedOut}`;
+    + `\n  // definitions in the infrared archive, sections 227 and 228. \`codes: 0\` is the honest`
+    + `\n  // count: this corpus holds no record of any of these families. ${withBlockCount} of them carry a`
+    + `\n  // whole block, being the ones whose definition states how many times a repetition is sent;`
+    + `\n  // the rest carry a frame and no \`tail\`, so \`blockOfStatedCode\` refuses them. The count is`
+    + `\n  // never guessed: see blockOfDefinition in src/archive.ts.\n${statedOut}`;
 
   const seedsOut = DOCUMENTED.map((e) =>
     `  { family: '${e.family}', periodNs: ${e.periodNs}, `
@@ -2062,6 +2085,12 @@ if (write) {
   console.log(`\n${stated.length} stated entries converted out of Logitech's own definitions, `
     + `${[...refused.values()].reduce((n, one) => n + one, 0)} definitions refused:`);
   for (const [why, n] of [...refused.entries()].sort((a, b) => b[1] - a[1])) {
+    console.log(`  ${String(n).padStart(4)}  ${why}`);
+  }
+  const withBlock = stated.filter((one) => one.block !== undefined).length;
+  console.log(`\nof those ${stated.length}, ${withBlock} carry a whole block and `
+    + `${stated.length - withBlock} carry only a frame:`);
+  for (const [why, n] of [...blockRefused.entries()].sort((a, b) => b[1] - a[1])) {
     console.log(`  ${String(n).padStart(4)}  ${why}`);
   }
   console.log(`\n${entries.length} measured and ${DOCUMENTED.length} documented entries `

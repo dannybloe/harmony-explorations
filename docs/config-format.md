@@ -1930,11 +1930,25 @@ now zero throughout, the one entry that had a band having turned out to be three
 **`source: 'stated'` means Logitech states this rhythm and nobody here has measured it**, section 227.
 424 of the table's 461 entries are of that kind, converted out of their own definitions for families no
 configuration in this corpus holds a record of. Such a row carries `codes: 0`, `exact: 0` and
-`spread: 0`, which are the honest numbers rather than placeholders, and **no `tail` and no `held`**, so
-only the frame can be emitted from it and `blockOfStatedCode` refuses it. What follows a frame is not
-derivable from the bits and their definition states it in a form this converter does not read, so a
-stated family is a code that can be built and not yet a record that can be written. Anything counting
-what reproduces a corpus record must exclude these rows; `source` is the field to filter on.
+`spread: 0`, which are the honest numbers rather than placeholders, and no `tailExact` and no
+`heldExact`, since those count the records that rebuilt from the row and there are none. Anything
+counting what reproduces a corpus record must exclude these rows; `source` is the field to filter on.
+
+**16<!--fact:protocol_tails_stated--> of those 424<!--fact:protocol_stated--> carry a `tail` and a `held` as well, derived rather than measured**, section 228, and
+the other 408 carry a frame and nothing after it, so `blockOfStatedCode` refuses those. A block is one
+repetition's shape plus how many repetitions go out. Logitech's `KeyCode` field states the shape whole,
+and the derivation of it reproduces all 29 blocks measured off their own compiler to the microsecond,
+which is why a derived one is believed. The count is `pressMinimumRepeats`, stated on 39 of their 684
+definitions and null on 645, and where it is stated for a family we measured it is right on five of five.
+**It is never defaulted**: our own measurement puts it at three for 22 of the 24 unstated families and at
+one for the other two, so a default would be a fit to this corpus rather than a derivation. A family
+whose count is unstated therefore keeps no block and stays buildable rather than writable.
+
+Two things a derived block does not claim. Its long gaps are chunked greedily into stored words of at
+most 32767 microseconds, where Logitech's compiler chunks inconsistently, so it matches on the wire and
+not necessarily word for word; and a family whose codes all carry the same number of set bits cannot show
+whether its gap is padded or literal, which is why the 29 measured rows keep their measured blocks rather
+than being replaced by derived ones.
 
 Two families of shape sit inside those five numbers, and both are measured off a configuration Logitech's
 own compiler produced rather than allowed for in advance, section 160:

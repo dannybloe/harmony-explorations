@@ -32,7 +32,9 @@
  */
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import type { BiphaseTimings, FrameCarrier, FrameTimings, Pulse } from './irframe.ts';
+import type {
+  BiphaseTimings, BlockTail, BlockTailItem, FrameCarrier, FrameTimings, Pulse,
+} from './irframe.ts';
 
 /**
  * The archive schema this converter was written against.
@@ -73,6 +75,26 @@ interface Definition {
   readonly Flags: readonly unknown[] | null;
   readonly HoldDelay: number | null;
   readonly HoldMinimumRepeats: number | null;
+  /**
+   * Which segments a block is made of, which is the block structure stated outright.
+   *
+   * **Read on 31 August 2026 and it had been sitting there unread**, which is worth recording because
+   * the shape of a block was reconstructed by hand from our own measurements first: `Repeat` is one
+   * repetition, in order, `Start` is what precedes the first one, and `Finish` is what a release sends.
+   * `SegmentType` says which list a name is in, 1 an infrared segment carrying a payload and 0 a code
+   * segment of literal durations.
+   */
+  readonly KeyCode: {
+    readonly Start: readonly SegmentRef[] | null;
+    readonly Repeat: readonly SegmentRef[] | null;
+    readonly Finish: readonly SegmentRef[] | null;
+  } | null;
+}
+
+/** One entry of a `KeyCode` list: a segment by name, and which of the two lists to find it in. */
+interface SegmentRef {
+  readonly SegmentName: string | null;
+  readonly SegmentType: number;
 }
 
 /** One protocol file of the archive, as it sits on disk. */
@@ -190,6 +212,25 @@ export interface ArchiveRhythm {
   /** The closing mark and inter frame gap the trailer states, microseconds, a space negative. */
   readonly trailer: readonly number[];
   /**
+   * Whether the cell states the half that carries the bit **first**.
+   *
+   * The one thing a block derivation needs that the rhythm alone does not say. Our reader takes a train
+   * from its first mark and reads (mark, space) pairs, so where the carried half comes first the whole
+   * frame is shifted by one and the cell's constant half is left over at the end. `blockOfDefinition`
+   * puts it back as a literal word, which is why `JVC 16 Bit`'s block carries a bare 500 after every
+   * copy and `Toshiba 32 Bit`'s carries a 568 that their trailer states outright.
+   */
+  readonly cellCarriedFirst: boolean;
+  /**
+   * Whether the family's lead in came from its `KeyCodeStart` code segment rather than its own header.
+   *
+   * A block derivation must know, because a folded lead is **already inside** the first copy: emitting
+   * that code segment as literal words as well would send `JVC 16 Bit`'s 8400 and 4200 twice. Where it
+   * is folded the first copy is `full` and every later one `bare`, which is exactly the shape measured
+   * off Logitech's compiler.
+   */
+  readonly leadFolded: boolean;
+  /**
    * The constant total a pulse width frame is padded out to, our table's `framePeriod`.
    *
    * Their `TotalLength`, which is the `^45000u` of the IRP notation. Carried only where the mark is the
@@ -297,6 +338,10 @@ export function rhythmOfDefinition(
       bits: field?.bits,
       trailer: (segment.Trailer ?? []).map((a) => (a.Type === 1 ? a.Value : -a.Value)),
       framePeriod: undefined,
+      // A biphase cell states both halves in both orders, so a copy is complete and nothing is left
+      // over; and the lead in is the header's own atoms, never another segment's.
+      cellCarriedFirst: false,
+      leadFolded: false,
     };
   }
 
@@ -346,6 +391,7 @@ export function rhythmOfDefinition(
     .find((s) => s.Name === `${protocol.name} KeyCodeStart`)?.Header ?? [];
   let header: readonly [number, number];
   let firstMark: number | undefined;
+  let leadFolded = false;
   if (head.length === 0) header = [0, 0];
   else if (head.length === 2 && head[0]!.Type === 1 && head[1]!.Type === 0) {
     header = [head[0]!.Value, head[1]!.Value];
@@ -354,6 +400,7 @@ export function rhythmOfDefinition(
     if (carries === 'mark') header = [head[0]!.Value, flat];
     else if (lead.length === 2 && lead[0]!.Type === 1 && lead[1]!.Type === 0) {
       header = [lead[0]!.Value, lead[1]!.Value];
+      leadFolded = true;
       if (head[0]!.Value !== flat) firstMark = head[0]!.Value;
     } else {
       header = [0, 0];
@@ -373,6 +420,8 @@ export function rhythmOfDefinition(
     bits: field?.bits,
     trailer: (segment.Trailer ?? []).map((a) => (a.Type === 1 ? a.Value : -a.Value)),
     framePeriod: carries === 'mark' && segment.TotalLength ? segment.TotalLength : undefined,
+    cellCarriedFirst: carries === 'space' ? !off.markFirst : off.markFirst,
+    leadFolded,
   };
 }
 
@@ -448,4 +497,242 @@ export function familiesOfRhythm(
   if (all.length < 2 || bits === undefined) return all;
   const narrowed = all.filter((one) => one.bits === bits);
   return narrowed.length === 0 ? all : narrowed;
+}
+
+/** Why a block could not be derived from a definition. Counted rather than thrown, as a refusal is. */
+export type BlockRefusal =
+  | 'the rhythm itself could not be read'
+  | 'the definition states no repeat cycle'
+  | 'a release block, which our table has no slot for'
+  | 'a cycle names a segment the definition does not hold'
+  | 'a cycle names an infrared segment stating a different rhythm'
+  | 'a padded cycle of several frames whose shared period is not one number';
+
+/**
+ * A block as our table states it, derived from a definition, plus the repeat count it stated.
+ *
+ * `tail` is the whole first block and `held` is one repetition, which is our table's pair. **`held`
+ * needs no repeat count and `tail` does**, which is the finding this type carries in its shape: a
+ * repetition is stated in full by `KeyCode.Repeat`, and how many of them Logitech's compiler emits is
+ * stated on 39 definitions of 684 and nowhere else.
+ */
+export interface ArchiveBlock {
+  readonly tail: BlockTail;
+  readonly held: BlockTail;
+  /** `pressMinimumRepeats`, or undefined on the 645 definitions that state none. */
+  readonly statedRepeats: number | undefined;
+}
+
+/**
+ * Derive a family's first block and its held block from Logitech's own definition.
+ *
+ * **What a definition states and what it does not.** `KeyCode` names the segments of one repetition,
+ * of a preceding start block and of a release block; each infrared segment states its trailer and, where
+ * it is padded, the constant duration a copy is stretched to; each code segment states literal
+ * durations. All of that is the block's **shape** and it is derived here. What is **not** stated, on 645
+ * definitions of 684, is how many repetitions the compiler emits, so it is an argument rather than a
+ * derivation. Where `pressMinimumRepeats` does state it, it agrees with all five of the blocks measured
+ * here that have it, which is the only calibration available for it.
+ *
+ * **Three conventions of theirs are folded in, each measured against our own blocks.**
+ *
+ * * The block's **final duration is one microsecond longer** than the definition states. Measured on
+ *   every one of the measured families that can show it, in both places it can land: the last pad where
+ *   the block is padded, and the last literal word where it is not.
+ * * A **padded copy** becomes a pad our emitter solves, against a block total where one repetition holds
+ *   a single frame and against a per copy period where it holds several. The second branch is the two
+ *   `Sharp 15` families, whose two frames differ in duration so one shared pad cannot state both.
+ * * A **biphase** copy has a fixed duration, so its gap is a literal rather than a pad. That is not a
+ *   choice: our emitter solves one pad value for a whole block, and the `+ 1` makes that division
+ *   inexact, which is why Logitech's compiler stores literals for these families too.
+ *
+ * The gap is chunked at 32767 microseconds, which is the widest duration a stored word holds. **The
+ * chunking is ours and not theirs**: `Magnavox 13 Bit`'s 92000 is stored as 32767, 32767 and 26466,
+ * greedily, while `Microsoft 30 Bit`'s 68643 is stored as 32767, 17938 and 17938, which no greedy rule
+ * produces. A gap is additive on the wire, so both send the same signal and a comparison is made on the
+ * train rather than on the words.
+ */
+export function blockOfDefinition(
+  protocol: ArchiveProtocol, repeats: number,
+): ArchiveBlock | { readonly refusal: BlockRefusal } {
+  const rhythm = rhythmOfDefinition(protocol);
+  if ('refusal' in rhythm) return { refusal: 'the rhythm itself could not be read' };
+  const keycode = protocol.definition.KeyCode;
+  const cycle = keycode?.Repeat ?? [];
+  if (cycle.length === 0) return { refusal: 'the definition states no repeat cycle' };
+  // A release block is a third block our table states no slot for, so a family that has one would be
+  // emitted incomplete. 64 definitions carry one and none of the families measured here does.
+  if ((keycode?.Finish ?? []).length > 0) {
+    return { refusal: 'a release block, which our table has no slot for' };
+  }
+  const start = keycode?.Start ?? [];
+  const frames = Object.keys(protocol.keycodeFields ?? {}).length || 1;
+  const startPayloads = (keycode?.Start ?? []).filter((r) => r.SegmentType === 1).length;
+  const infrared = protocol.definition.IRSegments ?? [];
+  const literals = protocol.definition.CodeSegments ?? [];
+  const named = (ref: SegmentRef): Segment | undefined =>
+    (ref.SegmentType === 1 ? infrared : literals).find((s) => s.Name === ref.SegmentName);
+
+  /** The words a payload copy leaves over: the constant half where the cell states it last, then the
+   * trailer. */
+  const closing = (trailer: readonly number[]): number[] => {
+    const out: number[] = [];
+    if (rhythm.timings !== undefined && rhythm.cellCarriedFirst) {
+      out.push(rhythm.timings.carries === 'space' ? rhythm.timings.flat : -rhythm.timings.flat);
+    }
+    out.push(...trailer);
+    return out;
+  };
+  /** A gap in stored words, each at most the widest a duration word holds. */
+  const chunked = (us: number): number[] => {
+    const out: number[] = [];
+    for (let left = us; left > 0; left -= 32767) out.push(-Math.min(left, 32767));
+    return out;
+  };
+  /** How long one biphase copy runs, which is fixed because both cells hold the same two halves. */
+  const biphaseCopy = (): number | undefined => {
+    const b = rhythm.biphase;
+    if (b === undefined || rhythm.bits === undefined) return undefined;
+    return b.lead.reduce((n, p) => n + p.us, 0) + rhythm.bits * (b.mark + b.space);
+  };
+
+  // One emission of a `KeyCode` entry: its items and the duration it nominally runs for, which is what
+  // a block total is summed from. A payload emission's own duration is value dependent, so an unpadded
+  // one contributes nothing and the block then carries no total, which is right: it has no pad either.
+  interface Emission { items: BlockTailItem[]; nominal: number | undefined; padded: boolean }
+  let payloads = 0;
+  let base = 0;
+  /** How many payload copies the whole block has emitted, which is what decides the folded lead. */
+  let emitted = 0;
+  const emit = (ref: SegmentRef, first: boolean): Emission | BlockRefusal => {
+    const segment = named(ref);
+    if (segment === undefined) return 'a cycle names a segment the definition does not hold';
+    if (ref.SegmentType !== 1) {
+      // A literal group: its header and trailer verbatim, padded out to its own stated total. This is
+      // the ditto `Toshiba 32 Bit` and `JerroldO1 16 Bit` send after their one frame.
+      const words = [...(segment.Header ?? []), ...(segment.Trailer ?? [])]
+        .map((a) => (a.Type === 1 ? a.Value : -a.Value));
+      const stated = segment.TotalLength ?? 0;
+      const held = words.reduce((n, w) => n + Math.abs(w), 0);
+      if (stated > held) words.push(...chunked(stated - held));
+      return { items: [{ words }], nominal: Math.max(stated, held), padded: false };
+    }
+    // The frame. Only the segment the rhythm was read from can be emitted, since every duration in the
+    // copy comes from that reading; a cycle naming another one is refused rather than approximated.
+    const frame = infrared.find((s) => s.Name === protocol.name)
+      ?? (infrared.length === 1 ? infrared[0] : undefined);
+    // **A second infrared segment is not automatically a second rhythm.** A dual family such as
+    // `Samsung 16 and 20 Bit` states its two frames as two segments, and our table holds one shape per
+    // family, so the copies are the same shape at two frame indices. That is only sound if the second
+    // segment states the same durations, which is checked here rather than assumed: a segment whose
+    // header, trailer, padding or cells differ is refused.
+    if (segment !== frame) {
+      // Compared on the cells' own durations rather than on the raw objects, which carry per atom
+      // bounds that differ between two segments stating the same rhythm.
+      const cells = (one: Segment): string => JSON.stringify(
+        (one.Payload?.Encodings ?? []).map((e) => [
+          e.BitType, (e.Atoms ?? []).map((a) => (a.Type === 1 ? a.Value : -a.Value)),
+        ]),
+      );
+      if (frame === undefined || cells(segment) !== cells(frame)) {
+        return 'a cycle names an infrared segment stating a different rhythm';
+      }
+    }
+    // Which of the code's frames this copy sends. **The index restarts with every repetition**, which
+    // the two `Sharp 15` families measure: they alternate their two frames rather than sticking on the
+    // second. The start block's payloads come first, so a cycle of one payload after a payload start is
+    // the **second** frame, which is what `Pioneer 32 Bit 2` does.
+    const at = Math.min(base + payloads, frames - 1);
+    payloads += 1;
+    emitted += 1;
+    // A folded lead sits inside the first block's first copy; every later copy drops it, and so does
+    // every copy of the held block, which is what `JVC 16 Bit`'s measured pair shows.
+    // A second segment carrying no header of its own sends the frame without its lead in, which is our
+    // `bare` copy: the second frame of `Samsung 16 and 20 Bit` opens straight on a bit cell.
+    const headless = segment !== frame && (segment.Header ?? []).length === 0
+      && (frame?.Header ?? []).length > 0;
+    const bare = headless || (rhythm.leadFolded && !(first && emitted === 1));
+    const items: BlockTailItem[] = [{ copy: bare ? 'bare' : 'full', ...(at === 0 ? {} : { at }) }];
+    const words = closing((segment.Trailer ?? []).map((a) => (a.Type === 1 ? a.Value : -a.Value)));
+    const stated = segment.TotalLength ?? 0;
+    const fixed = biphaseCopy();
+    if (stated > 0 && fixed !== undefined) {
+      // Biphase: the copy's duration is known, so the gap is a literal.
+      const held = words.reduce((n, w) => n + Math.abs(w), 0);
+      if (words.length > 0) items.push({ words: [...words, ...chunked(stated - fixed - held)] });
+      else items.push({ words: chunked(stated - fixed) });
+      return { items, nominal: stated, padded: false };
+    }
+    if (words.length > 0) items.push({ words });
+    if (stated > 0) items.push({ pad: 0 });
+    return { items, nominal: stated > 0 ? stated : undefined, padded: stated > 0 };
+  };
+
+  const build = (
+    refs: readonly (readonly SegmentRef[])[], first: boolean, from: number,
+  ): BlockTail | BlockRefusal => {
+    base = from;
+    payloads = 0;
+    emitted = 0;
+    const opens = first && start.length > 0 && refs.length > 1;
+    const items: BlockTailItem[] = [];
+    let nominal = 0;
+    let pads = 0;
+    let known = true;
+    let period: number | undefined;
+    let cyclePayloads = 0;
+    for (const [index, list] of refs.entries()) {
+      payloads = 0;
+      // Every repetition counts its frames from where the start block stopped.
+      if (opens && index > 0) base = startPayloads;
+      for (const ref of list) {
+        // The code segment a folded lead came from is skipped: its durations are already the first
+        // copy's header, and emitting them again sends the lead twice.
+        if (rhythm.leadFolded && ref.SegmentType === 0
+          && ref.SegmentName === `${protocol.name} KeyCodeStart`) continue;
+        const one = emit(ref, first);
+        if (typeof one === 'string') return one;
+        items.push(...one.items);
+        if (one.nominal === undefined) known = false; else nominal += one.nominal;
+        if (one.padded) {
+          pads += 1;
+          if (period !== undefined && period !== one.nominal) {
+            return 'a padded cycle of several frames whose shared period is not one number';
+          }
+          period = one.nominal;
+        }
+      }
+      if (index === refs.length - 1) cyclePayloads = list.filter((r) => r.SegmentType === 1).length;
+    }
+    // The one microsecond the compiler adds to a block's last duration, in whichever of the two places
+    // that block ends.
+    const last = items[items.length - 1];
+    if (last !== undefined && 'pad' in last) items[items.length - 1] = { pad: 1 };
+    else if (last !== undefined && 'words' in last && last.words.length > 0) {
+      const words = [...last.words];
+      const at = words.length - 1;
+      words[at] = words[at]! + Math.sign(words[at]!);
+      items[items.length - 1] = { words };
+    }
+    const lead = first && rhythm.leadFolded && rhythm.timings !== undefined
+      ? rhythm.timings.header[0] + rhythm.timings.header[1] : 0;
+    if (pads === 0) return { items };
+    // A cycle of several frames pads each copy to its own period, since their durations differ; one
+    // frame per cycle pads against a single block total.
+    if (cyclePayloads > 1) return { items, copyPeriod: period! };
+    if (!known) return 'a padded cycle of several frames whose shared period is not one number';
+    return { items, total: nominal + lead + 1 };
+  };
+
+  // The first block is the start block then the cycle as many times as asked; the held block is one
+  // cycle, and needs no count at all.
+  const tail = build(
+    [...(start.length > 0 ? [start] : []), ...Array.from({ length: repeats }, () => cycle)], true, 0,
+  );
+  if (typeof tail === 'string') return { refusal: tail };
+  // The held block starts where the first block's start block left off, which is why
+  // `Pioneer 32 Bit 2` repeats its **second** frame: its start block sent the first.
+  const held = build([cycle], false, startPayloads);
+  if (typeof held === 'string') return { refusal: held };
+  return { tail, held, statedRepeats: protocol.pressMinimumRepeats ?? undefined };
 }

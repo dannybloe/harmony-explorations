@@ -18,10 +18,12 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { IR_ARCHIVE, skipWithoutIrArchive } from '@harmony/lab';
 import {
-  ARCHIVE_SCHEMA_VERSION, ArchiveError, archiveManifest, archiveProtocols, catalogueByRhythm,
-  familiesOfRhythm, periodOfCarrier, rhythmKey, rhythmOfDefinition, type ConversionRefusal,
+  ARCHIVE_SCHEMA_VERSION, ArchiveError, archiveManifest, archiveProtocols, blockOfDefinition,
+  catalogueByRhythm, familiesOfRhythm, periodOfCarrier, rhythmKey, rhythmOfDefinition,
+  type BlockRefusal, type ConversionRefusal,
 } from '../src/archive.ts';
-import type { BiphaseTimings, FrameTimings } from '../src/irframe.ts';
+import { pulsesOfBlock, type BiphaseTimings, type BlockTail, type FrameTimings, type Pulse }
+  from '../src/irframe.ts';
 import { PROTOCOLS, type StatedProtocol } from '../src/protocols.ts';
 import { blockOfStatedCode, pulsesOfStatedCode, statedProtocol } from '../src/stated.ts';
 
@@ -245,7 +247,7 @@ test('a rhythm can be ambiguous in the catalogue, and the width is what narrows 
                     rhythmKey(sony.periodNs, { timings: { ...timings, one: timings.one + 1 } }));
   });
 
-test('a stated family can build a code, and cannot build a whole record', () => {
+test('a stated family can build a code, and most of them cannot build a whole record', () => {
   // **The functional claim behind the 424 rows**: before them the table answered for 37 of Logitech's
   // families, so a device taken from their catalogue could not be written unless it happened to use one
   // of those. This is the check that the rows are usable rather than merely present, and it needs no
@@ -265,8 +267,10 @@ test('a stated family can build a code, and cannot build a whole record', () => 
   const biphase = pulsesOfStatedCode('3B Technology 27 Bit', 27, 0x1234567n);
   assert.equal(biphase?.length, 56);
 
-  // **And none of them can be written**, which is the limit the rows carry with them: a record is a
-  // frame plus what follows it, and what follows it is not derivable from the bits, section 152.
+  // **And none of these three can be written**, which is the limit most of the rows carry with them: a
+  // record is a frame plus what follows it, and what follows it does not follow from the bits, section
+  // 152. Section 228 lifted it for the 16 whose definition states how many times a repetition is sent,
+  // and these three are not among them, which the assertion below is now also asserting.
   for (const family of ['SharpO1 48 Bit', 'Akai 32 Bit', '3B Technology 27 Bit']) {
     assert.equal(statedProtocol(family)?.tail, undefined, family);
     assert.equal(blockOfStatedCode(`G:${family}:()(0x1234)():3`), undefined, family);
@@ -301,4 +305,217 @@ test('a biphase frame can carry two same sign intervals in a row, and that is th
     records += row.codes;
   }
   assert.equal(records, 533);
+});
+
+/**
+ * The wire a block sends: consecutive intervals of one sign summed, zero length ones dropped.
+ *
+ * **The equivalence a block comparison has to be made under**, and not a convenience. Two ways of
+ * chunking one gap into stored words send the same signal, and Logitech's compiler does not chunk
+ * consistently: `Magnavox 13 Bit`'s 92000 microsecond gap is stored greedily as 32767, 32767 and
+ * 26466, while `Microsoft 30 Bit`'s 68643 is stored as 32767, 17938 and 17938, which no greedy rule
+ * produces. Comparing stored words would report those as disagreements about the signal, which they
+ * are not.
+ */
+const wireOf = (pulses: readonly Pulse[]): string => {
+  const out: number[] = [];
+  for (const pulse of pulses) {
+    if (pulse.us === 0) continue;
+    const value = pulse.mark ? pulse.us : -pulse.us;
+    const last = out[out.length - 1];
+    if (last !== undefined && Math.sign(last) === Math.sign(value)) out[out.length - 1] = last + value;
+    else out.push(value);
+  }
+  return out.join(',');
+};
+
+test('Logitech\'s definitions rebuild every block we measured, twenty nine of twenty nine',
+  { ...skipWithoutIrArchive() }, () => {
+  // **This is the reason to believe a derived block at all**, and it is the same shape of check as the
+  // rhythm calibration above: 29 of the table's rows carry a block measured off Logitech's own
+  // compiler, byte for byte, over 3000-odd records between them. Their definitions state a block's
+  // shape in a vocabulary of their own, `KeyCode` naming the segments of one repetition and of what
+  // precedes it, and the question is whether reading it reproduces those 29.
+  //
+  // It reproduces all 29 to the microsecond, including the one microsecond their compiler adds to a
+  // block's final duration. 28 of them on any code value; `MemorexO1 32 Bit` only on a value of the
+  // popcount its own records carry, for the reason its own test below sets out.
+  const archive = new Map(archiveProtocols(IR_ARCHIVE!).map((one) => [one.name, one]));
+  const agreed: string[] = [];
+  const disagreed: string[] = [];
+  for (const row of MEASURED) {
+    if (row.tail === undefined) continue;
+    const definition = archive.get(row.family);
+    const shape = shapeOf(row);
+    if (definition === undefined || shape === undefined) { disagreed.push(row.family); continue; }
+    const read = rhythmOfDefinition(definition);
+    if ('refusal' in read) { disagreed.push(row.family); continue; }
+    const bits = read.bits ?? 16;
+    const mask = (1n << BigInt(bits)) - 1n;
+    // Four values rather than one, since a block's pads are solved against the frame's own duration and
+    // a derivation that ignored the value would pass on a single one. The last is of popcount 20.
+    const values = [0xA5A5A5A5A5A5n, 0x5A5A5A5A5A5An, 0x123456789An, (1n << 20n) - 1n];
+    // **The two frames carry different values on purpose.** A dual family alternates the code's two
+    // frames, and with one value in both slots the comparison cannot tell frame 0 from frame 1: the
+    // control that removes the per repetition restart of the frame index passed until this line did.
+    const frames = (value: bigint) => [value & mask, ~value & mask].map((one) => ({ bits, value: one }));
+    // The repeat count is **searched** rather than taken from the definition, because the definition
+    // states it for only five of these; the next test is what compares those five.
+    let repeats: number | undefined;
+    for (let n = 1; n <= 8 && repeats === undefined; n += 1) {
+      const built = blockOfDefinition(definition, n);
+      if ('refusal' in built) break;
+      const same = values.every((value) => {
+        try {
+          return wireOf(pulsesOfBlock(shape, frames(value), row.tail!))
+            === wireOf(pulsesOfBlock(shape, frames(value), built.tail))
+            && (row.held === undefined
+              || wireOf(pulsesOfBlock(shape, frames(value), row.held))
+                === wireOf(pulsesOfBlock(shape, frames(value), built.held)));
+        } catch { return false; }
+      });
+      if (same) repeats = n;
+    }
+    if (repeats === undefined) disagreed.push(row.family); else agreed.push(row.family);
+  }
+  // Asserted as the exact population rather than as a count, so a row losing its block or gaining a
+  // wrong one names itself.
+  assert.deepEqual(disagreed, ['MemorexO1 32 Bit']);
+  assert.equal(agreed.length, 28);
+  assert.equal(agreed.length + disagreed.length, MEASURED.filter((one) => one.tail !== undefined).length);
+});
+
+test('a padded gap can look like a literal one, and MemorexO1 32 Bit is where that bit',
+  { ...skipWithoutIrArchive() }, () => {
+  // **The one family the calibration above could not match on an arbitrary value, and it is our
+  // measurement that is the looser statement rather than theirs.** Their definition pads every copy out
+  // to a constant 107600 microseconds, so the gap after the frame depends on how long the frame ran and
+  // therefore on the code's bits. Our row states a **literal** gap of 35101, measured because all three
+  // of the corpus's records of this family carry the same gap.
+  //
+  // Both are right. This is a 32 bit scheme whose code is an address plus a command plus that command
+  // complemented, so **every** code of the family has exactly the same number of set bits, twenty, and
+  // therefore exactly the same frame duration. A padded gap is then indistinguishable from a literal
+  // one, and three records could never have told them apart.
+  //
+  // 35100 is 107600 less the frame at twenty set bits, and the stored 35101 is that plus the one
+  // microsecond their compiler adds to a block's last duration. So the two statements agree exactly.
+  const definition = archiveProtocols(IR_ARCHIVE!).find((one) => one.name === 'MemorexO1 32 Bit')!;
+  const row = MEASURED.find((one) => one.family === 'MemorexO1 32 Bit')!;
+  const shape = shapeOf(row)!;
+  const twenty = (1n << 20n) - 1n;
+  assert.equal(twenty.toString(2).split('').filter((c) => c === '1').length, 20);
+  const frames = [{ bits: 32, value: twenty }];
+  const built = blockOfDefinition(definition, 1);
+  assert.ok(!('refusal' in built));
+  if ('refusal' in built) return;
+  assert.equal(wireOf(pulsesOfBlock(shape, frames, built.tail)),
+               wireOf(pulsesOfBlock(shape, frames, row.tail!)));
+  assert.equal(wireOf(pulsesOfBlock(shape, frames, built.held)),
+               wireOf(pulsesOfBlock(shape, frames, row.held!)));
+  // And the control: at any other popcount the two part company, which is what makes the agreement
+  // above a measurement rather than an accident of a lenient comparison.
+  const nineteen = [{ bits: 32, value: (1n << 19n) - 1n }];
+  assert.notEqual(wireOf(pulsesOfBlock(shape, nineteen, built.tail)),
+                  wireOf(pulsesOfBlock(shape, nineteen, row.tail!)));
+});
+
+test('the repeat count is stated for five of the blocks we measured, and right on all five',
+  { ...skipWithoutIrArchive() }, () => {
+  // **The half of a block that is not derivable, and this is the whole evidence about it.** A block is
+  // one repetition's shape and how many repetitions go out. The shape is stated in full. The count is
+  // `pressMinimumRepeats`, which is stated on 39 of the archive's 684 definitions and null on 645, and
+  // `HoldMinimumRepeats` is null on all 684, so a held block's count is never stated at all.
+  //
+  // Where it is stated for a family we measured it agrees, five times out of five. Where it is not, our
+  // own measurement gives 3 on 22 of the 24 and 1 on the other two, so **defaulting it to 3 would fit
+  // 22 of 24 and would be a fit to this corpus rather than a derivation**. That is exactly the mistake
+  // that put three wrong family names in this table, so no default is taken and a family whose count is
+  // unstated gets no block.
+  const archive = archiveProtocols(IR_ARCHIVE!);
+  assert.equal(archive.length, 684);
+  assert.equal(archive.filter((one) => one.pressMinimumRepeats !== null).length, 39);
+  assert.equal(archive.filter((one) => one.definition.HoldMinimumRepeats !== null).length, 0);
+
+  const byName = new Map(archive.map((one) => [one.name, one]));
+  const stated = new Map<string, number>();
+  for (const row of MEASURED) {
+    if (row.tail === undefined) continue;
+    const count = byName.get(row.family)?.pressMinimumRepeats;
+    if (count !== null && count !== undefined) stated.set(row.family, count);
+  }
+  assert.deepEqual([...stated.entries()].sort(), [
+    ['JerroldO1 16 Bit', 1], ['Logitech 24 Bit', 1], ['Samsung 16 and 20 Bit', 1],
+    ['Sony 12 Bit', 3], ['Toshiba 32 Bit', 1],
+  ]);
+  // Each of the five reproduces our measured block at the count they state, and at no other count, so
+  // the agreement is a measurement rather than a coincidence of a permissive comparison.
+  for (const [family, count] of stated) {
+    const row = MEASURED.find((one) => one.family === family)!;
+    const definition = byName.get(family)!;
+    const shape = shapeOf(row)!;
+    const read = rhythmOfDefinition(definition);
+    assert.ok(!('refusal' in read));
+    if ('refusal' in read) continue;
+    const bits = read.bits ?? 16;
+    const mask = (1n << BigInt(bits)) - 1n;
+    // Two different values, so a dual family's two frames are distinguishable, per the note above.
+    const frames = [0xA5A5A5A5A5A5n & mask, ~0xA5A5A5A5A5A5n & mask].map((value) => ({ bits, value }));
+    const ours = wireOf(pulsesOfBlock(shape, frames, row.tail!));
+    const at = (n: number): string | undefined => {
+      const built = blockOfDefinition(definition, n);
+      if ('refusal' in built) return undefined;
+      try { return wireOf(pulsesOfBlock(shape, frames, built.tail)); } catch { return undefined; }
+    };
+    assert.equal(at(count), ours, family);
+    assert.notEqual(at(count + 1), ours, `${family} at one repetition more`);
+  }
+});
+
+test('sixteen stated families carry a whole block, and the other four hundred and eight a frame', () => {
+  // The table's own claim, checked without a checkout, since the table is committed. 16 is small and it
+  // is the honest number: a stated row gets a block only where the definition states its repeat count,
+  // and the other 408 stay buildable rather than writable. Four of the 408 are refused for a reason of
+  // their own even so, having a release block our table states no slot for.
+  const stated = PROTOCOLS.filter((one) => one.source === 'stated');
+  assert.equal(stated.length, 424);
+  const withBlock = stated.filter((one) => one.tail !== undefined);
+  assert.equal(withBlock.length, 16);
+  // A block and a held block go together: one without the other would be a record half writable.
+  for (const row of withBlock) assert.notEqual(row.held, undefined, row.family);
+  // And nothing measured claims to have rebuilt a derived block, since there is no record to rebuild.
+  for (const row of withBlock) assert.equal(row.tailExact, undefined, row.family);
+  assert.deepEqual(withBlock.map((one) => one.family), [
+    'Apex 24 and 16 Bit', 'Auvio 32 Bit', 'Cambridge Audio 32 Bit', 'Canton 32 Bit', 'DLO 32 Bit',
+    'Entone 24 Bit', 'Entone 56 Bit', 'EntoneV1 24 Bit', 'Idylis 24 Bit', 'LG 32 Bit', 'Naxoo 32 Bit',
+    'Pace 4 and 20 Bit', 'Samsung 42 Bit', 'Samsung 42 Bit 2', 'SamsungO1 32 Bit', 'Toshiba HF 32 Bit',
+  ]);
+});
+
+test('every definition derives a block or says why not', { ...skipWithoutIrArchive() }, () => {
+  // The companion to the rhythm reading's refusal census, and for the same reason: one "could not"
+  // bucket hides which reading to write next. Counted with the repeat count each definition states, or
+  // with three where it states none, since this measures the **shape** and not the count.
+  const refusals = new Map<BlockRefusal, number>();
+  let derived = 0;
+  for (const protocol of archiveProtocols(IR_ARCHIVE!)) {
+    const built = blockOfDefinition(protocol, protocol.pressMinimumRepeats ?? 3);
+    if ('refusal' in built) refusals.set(built.refusal, (refusals.get(built.refusal) ?? 0) + 1);
+    else derived += 1;
+  }
+  assert.equal(derived, 382);
+  assert.deepEqual([...refusals.entries()].sort((a, b) => b[1] - a[1]), [
+    // The rhythm's own refusals, counted there: base four, base sixteen, one interval per bit and the
+    // rest. A block cannot be read out of a frame that could not be.
+    ['the rhythm itself could not be read', 225],
+    // A third block, sent on release. Our table has `tail` and `held` and nothing for it, so a family
+    // with one would be emitted incomplete rather than approximately.
+    ['a release block, which our table has no slot for', 40],
+    // A cycle whose second frame states different **cells**, not merely a different gap: our table holds
+    // one rhythm per family, so two would need two rows and a code that knew which.
+    ['a cycle names an infrared segment stating a different rhythm', 16],
+    ['the definition states no repeat cycle', 13],
+    ['a padded cycle of several frames whose shared period is not one number', 8],
+  ]);
+  assert.equal(derived + [...refusals.values()].reduce((n, one) => n + one, 0), 684);
 });

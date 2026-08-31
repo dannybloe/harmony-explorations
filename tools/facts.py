@@ -489,7 +489,13 @@ def protocol_facts():
         'protocol_measured': str(len(measured)),
         'protocol_stated': str(len(rows) - len(measured)),
         'protocol_families': str(len(set(families))),
-        'protocol_tails': str(sum(1 for row in rows if re.search(r'\btail:', row))),
+        # **The same split again, and for the same reason, one day later.** Section 228 gave 16 stated
+        # entries a derived block, so a single "rows with a tail" count went from 29 to 45 and every one
+        # of the four sentences quoting it meant the 29. A measured tail was rebuilt from real records
+        # and a derived one never was, so they are two claims and take two markers.
+        'protocol_tails': str(sum(1 for row in measured if re.search(r'\btail:', row))),
+        'protocol_tails_stated':
+            str(sum(1 for row in rows if row not in measured and re.search(r'\btail:', row))),
         'protocol_biphase': str(sum(1 for row in rows if re.search(r'\bbiphase:', row))),
     }
 

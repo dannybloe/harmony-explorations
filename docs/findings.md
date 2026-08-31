@@ -29125,10 +29125,13 @@ Three things about those rows are deliberate:
 
 * **`codes: 0`, `exact: 0` and `spread: 0` are the honest numbers in all three places**, not one flag
   and two placeholders. Nothing here was measured off anything.
-* **No `tail` and no `held`**, so `blockOfStatedCode` refuses them and only the frame can be built. What
-  follows a frame does not follow from the bits, section 152, and their definition states it in a form
-  this converter does not read. A stated family is a code that can be built and not yet a record that
-  can be written.
+* **No `tail` and no `held`**, so `blockOfStatedCode` refuses them and only the frame can be built.<!--superseded-->
+  **Corrected the next day, section 228**: their definition states what follows a frame, in a field
+  nobody here had read, and reading it reproduces all 29 blocks measured off their compiler to the
+  microsecond. 16 of these 424 rows carry a whole block as a result. What their definitions do not state,
+  on 645 of 684, is how many times a repetition is sent, so the other 408 stay buildable rather than
+  writable. The reason given here, that what follows a frame does not follow from the bits, was true and
+  was the wrong reason: it does not follow from the bits and it did not have to.
 * **Every claim in `stated.test.ts` about the corpus is now scoped to the measured 37**, through one
   `MEASURED` filter, and the calibration in `archive.test.ts` excludes the stated rows for the opposite
   reason: a stated row agrees with the catalogue by construction, so counting it as agreement is
@@ -29174,3 +29177,149 @@ the other, whichever leaves the lead in beside a like half, and each reproduces 
 measured over to the microsecond, 533 records between them. So the stored form keeps the two apart and
 the emitter is already right. It is pinned by a test, because it stops being harmless the moment a block
 is derived from their definitions.
+
+## 228. Logitech's definitions state a block whole, except how many times it repeats
+
+**31 August 2026.** Section 227 converted Logitech's own protocol definitions into 424 new rhythm table
+entries, and every one of them could build a code and not write one: our table's `tail` and `held`, the
+first block and the block a held key repeats, were measured per family off their compiler and existed for
+29 families only. This is the reading of the field that states them, the calibration that makes it
+believable, and the one half of a block their definitions do not state at all.
+
+**The field had been sitting unread.** `IrProtocol.KeyCode` carries three lists, `Start`, `Repeat` and
+`Finish`, each naming segments by name and by kind, 1 for an infrared segment carrying a payload and 0
+for a code segment of literal durations. `Repeat` is **one repetition**, in order; `Start` is what
+precedes the first one; `Finish` is what a key release sends. Section 227 read `IRSegments`,
+`CodeSegments`, `keycodeFields`, `pressMinimumRepeats` and the carrier out of the same files and did not
+read this one, and the whole shape of a block was then reconstructed by hand from our own measurements
+before the field was found. Both readings agree, which is the only good thing about that order.
+
+Three other fields were unread on the same objects and are worth recording so nobody looks again:
+`Attributes`, `Flags`, `ControlSection`, `Rating`, `RelatedProtocols` and `Status` are empty or null on
+all 684 definitions, `NumberOfLinkedLanguage` is 0 on all 684, and `HoldMinimumRepeats` is null on all
+684.
+
+### What a block is, in their vocabulary and ours
+
+One repetition is, per payload segment it names: a copy of the frame, then the words that segment's
+trailer states, then a pad where that segment states a nonzero `TotalLength`. A code segment contributes
+its header and trailer as literal words, padded out to its own `TotalLength`. The first block is the
+start block followed by the repetition as many times as the compiler emits it; the held block is one
+repetition.
+
+Six conventions turn that into our own `BlockTail`, and each was measured against the 29 blocks we
+already had rather than assumed.
+
+**The block's final duration is one microsecond longer than the definition states.** It lands in
+whichever place the block ends: the last pad, as `{ pad: 1 }`, or the last literal word. `Toshiba
+32 Bit`'s stated ditto gap is 96077 and its records hold 96078; `Sharp 48 Bit 2`'s last gap is 73611
+stated and 73612 stored; `Logitech 24 Bit`'s is 50000 and 50001. It holds on every one of the 29.
+
+**A frame's leftover constant half becomes a literal word.** Our reader takes a train from its first mark
+and reads (mark, space) pairs, so a family whose cell states the **carried** half first comes out shifted
+by one and the cell's constant half is left over at the end. That is why `JVC 16 Bit`'s block carries a
+bare 500 mark after every copy where their definition's trailer is empty, and why `Toshiba 32 Bit`'s
+carries a 568 that their trailer states outright. One rule covers both: prepend the constant half, signed,
+exactly when the cell states the carried half first.
+
+**A folded lead in is inside the first copy and outside the stated total.** Where a family's lead comes
+from its `KeyCodeStart` code segment rather than from its own header, section 227 folds it into our
+`header`, so the code segment must not be emitted again as literal words, later copies are `bare`, and
+the lead's duration is added to the block total once. `JVC 16 Bit`'s measured total of 147601 is its 12600
+lead plus three copies of 45000 plus the one microsecond.
+
+**The frame index restarts with every repetition.** A dual family alternates the code's two frames, so
+the k-th payload of a repetition sends frame k, counting from however many frames the start block
+consumed. That is what the two `Sharp 15` families measure, alternating rather than sticking on the
+second, and what `Pioneer 32 Bit 2` measures from the other side: its start block sends the first frame
+and every repetition sends the **second**.
+
+**A padded copy becomes a pad against a block total, or against a per copy period where a repetition
+holds several frames.** The second branch is the two `Sharp 15` families alone: their two frames differ
+in duration, so one shared pad value cannot state both gaps. Every single frame padded family in the 29
+takes the total.
+
+**A biphase copy's gap is a literal, not a pad.** Both cells of a biphase family hold the same two half
+cells, so a copy's duration is fixed and the gap is computable. That is not a preference: our emitter
+solves one pad value for a whole block, and the one microsecond makes that division inexact, which is why
+Logitech's compiler stores literals for these families too. `Microsoft 30 Bit` states no trailer at all
+and a `TotalLength` of 105850, and 105850 less its 37207 microsecond frame is the 68643 its records store.
+
+**A second infrared segment is not automatically a second rhythm**, and this is the one place the reading
+had to be loosened rather than tightened. `Samsung 16 and 20 Bit` states its two frames as two segments
+whose **cells are identical** and whose header, trailer and padding differ: the second has no header,
+which is why its second copy is `bare`, and it states a 57500 gap where the first states 4495. So the
+cells are compared and the rest is taken per segment. A segment whose cells differ is refused, 16 of them.
+
+### The calibration: 29 of 29
+
+Every one of the 29 blocks measured off Logitech's compiler is reproduced by reading their definition,
+to the microsecond, comparing the signal on the wire rather than the stored words. 28 of them on any code
+value; `MemorexO1 32 Bit` on one value, for a reason that turned out to be about our measurement.
+
+The comparison is made on the wire, meaning consecutive intervals of one sign summed, because **their
+compiler does not chunk a long gap consistently.** A stored duration word holds at most 32767
+microseconds. `Magnavox 13 Bit`'s 92000 microsecond gap is stored greedily as 32767, 32767 and 26466;
+`Microsoft 30 Bit`'s 68643 is stored as 32767, 17938 and 17938, which no greedy rule produces. Both send
+the same signal. So a derived block chunks greedily and a byte exact rebuild of a **measured** record
+still needs the measured row, which is why the 29 keep their measured blocks.
+
+**`MemorexO1 32 Bit` is the informative one, and the looser statement was ours.** Their definition pads
+every copy to a constant 107600 microseconds, so the gap after the frame depends on the code's bits. Our
+row states a **literal** gap of 35101, measured because all three of the corpus's records of that family
+carry the same gap. Both are right at once: this is a 32 bit scheme whose code is an address plus a
+command plus that command complemented, so every code of the family has exactly twenty set bits and
+therefore exactly the same frame duration. A padded gap is then indistinguishable from a literal one, and
+three records could never have told them apart. 107600 less the frame at twenty set bits is 35100, and the
+stored 35101 is that plus the one microsecond rule. The two statements agree exactly, and at nineteen set
+bits they part company, which is the control.
+
+So the general lesson, and it is about our own tail measurement rather than about this family: **a family
+whose codes all carry the same number of set bits cannot show whether its gap is padded or literal.** Every
+scheme with a complemented byte is of that kind, which is most of the NEC family. The measurement is not
+wrong; it is weaker than it reads.
+
+### The half that is not stated, and no default was taken
+
+`pressMinimumRepeats` is stated on **39 of the 684 definitions** and null on 645. Where it is stated for
+a family we measured, it is right five times out of five: `Toshiba 32 Bit`, `Logitech 24 Bit`,
+`JerroldO1 16 Bit` and `Samsung 16 and 20 Bit` at one repetition, `Sony 12 Bit` at three. Each reproduces
+our measured block at the count they state and at no other count.
+
+Where it is not stated, our own measurement gives **three repetitions on 22 of the 24 and one on the
+other two**, `Memorex 32 Bit` and `MemorexO1 32 Bit`. So a default of three would fit 22 of 24, and
+taking it would be fitting to this corpus rather than deriving anything, which is precisely the mistake
+that put three wrong family names in this table in the first place, section 227. No default is taken.
+`HoldMinimumRepeats` is null on all 684, so a held block's count is never stated either, and it does not
+need one: a held block is one repetition.
+
+A duration threshold was looked for and does not exist. The one repetition families run 62000 to 107870
+microseconds per copy and the three repetition ones 45000 to 137736, and `Short 11 Bit 2` at 136745 per
+copy gets three copies where `Toshiba 32 Bit` at 107870 gets one. So the count is a per family constant
+Logitech states for 39 families and nowhere else.
+
+### What the table gained
+
+A block shape is derivable for **382 of the 684 definitions**. Of the 424 stated table rows, 349 have a
+derivable shape and **16<!--fact:protocol_tails_stated--> of those also state their repeat count**, so 16 rows gained a `tail` and a
+`held` and the other 408 keep a frame and nothing after it. The refusals, over all 684:
+
+| count | why no block |
+|---|---|
+| 225 | the rhythm itself could not be read, which is section 227's own census: base four, base sixteen, one interval per bit and the rest |
+| 40 | a release block, which our table has no slot for. A family with one would be emitted incomplete rather than approximately |
+| 16 | a repetition naming an infrared segment whose **cells** differ, which would need two rows and a code that knew which |
+| 13 | no repetition stated at all |
+| 8 | a padded repetition of several frames whose stated periods disagree |
+
+So the writable count goes from 29<!--fact:protocol_tails--> families to 45, against 461 buildable. That is a small gain and it is
+the honest one: what stands between 45 and 378 is one integer per family that Logitech's own data does
+not carry.
+
+**One free corroboration fell out of it.** `Toshiba HF 32 Bit` is a catalogue family this corpus holds no
+record of, and its derived block is `Toshiba 32 Bit`'s measured block exactly, total and all, arrived at
+by reading a definition rather than by measuring their compiler's output. Five other derived blocks
+alternate two frames, the shape our own records showed first for seven families.
+
+A stated row's block carries no `tailExact` and no `heldExact`, because those count records that rebuilt
+from it and there are none. `source` is still what tells a caller the difference.

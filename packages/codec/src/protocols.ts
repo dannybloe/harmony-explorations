@@ -75,6 +75,12 @@ export interface StatedProtocol {
    * spaces sharing one per record value plus the stated extra, solved from `total`. Absent where
    * the family's records do not agree on one shape, and `blockOfStatedCode` refuses such a
    * family rather than guessing, because a tail can hold a second command, section 152.
+   *
+   * **On a `source: 'stated'` row this is derived from Logitech's own definition rather than
+   * measured**, section 228, and `tailExact` is absent there because there is nothing to have
+   * rebuilt. The derivation reproduces all 29 measured blocks to the microsecond, which is the
+   * reason to believe it; a stated row only carries one where the definition also states how many
+   * times a repetition is sent, since that half is stated on 39 of their 684 definitions.
    */
   readonly tail?: {
     readonly items: readonly ({ readonly copy: 'full' | 'bare'; readonly at?: number }
@@ -246,9 +252,11 @@ export const PROTOCOLS: readonly StatedProtocol[] = [
   { family: 'Panasonic 16 Bit', periodNs: 26315, header: [0, 0], flat: 521, oneMark: 525, zero: 1575, one: 527, carries: 'space', codes: 1, exact: 1, spread: 0, source: 'compiled' },
   { family: 'Sharp 48 Bit', periodNs: 26455, header: [3367, 1720], flat: 410, oneMark: 409, zero: 434, one: 1304, carries: 'space', codes: 1, exact: 1, spread: 0, source: 'compiled' },
   // **Stated by Logitech and measured by nobody**, converted out of their own protocol
-  // definitions in the infrared archive, section 227. `codes: 0` is the honest count: this
-  // corpus holds no record of any of these families. No `tail`, so only the frame can be
-  // emitted and `blockOfStatedCode` refuses them.
+  // definitions in the infrared archive, sections 227 and 228. `codes: 0` is the honest
+  // count: this corpus holds no record of any of these families. 16 of them carry a
+  // whole block, being the ones whose definition states how many times a repetition is sent;
+  // the rest carry a frame and no `tail`, so `blockOfStatedCode` refuses them. The count is
+  // never guessed: see blockOfDefinition in src/archive.ts.
   { family: '3B Technology 27 Bit', periodNs: 27777, biphase: { mark: 270, space: 250, lead: [{ mark: true, us: 260 }, { mark: false, us: 265 }], setIsMark: true }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Abacus 13 Bit', periodNs: 28818, biphase: { mark: 1160, space: 900, lead: [{ mark: true, us: 1180 }], setIsMark: true }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Accuscreens 48 Bit', periodNs: 26315, header: [5000, 620], flat: 410, oneMark: 1210, zero: 1210, one: 410, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
@@ -266,7 +274,7 @@ export const PROTOCOLS: readonly StatedProtocol[] = [
   { family: 'Antex 23 Bit', periodNs: 19607, header: [838, 828], flat: 838, zero: 2556, one: 828, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Anthem 32 Bit', periodNs: 26315, header: [8050, 4030], flat: 605, zero: 605, one: 1815, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Antique 12 Bit', periodNs: 26990, header: [0, 0], flat: 409, oneMark: 832, zero: 858, one: 434, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
-  { family: 'Apex 24 and 16 Bit', periodNs: 26315, header: [3660, 1810], flat: 550, zero: 550, one: 1130, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
+  { family: 'Apex 24 and 16 Bit', periodNs: 26315, header: [3660, 1810], flat: 550, zero: 550, one: 1130, carries: 'space', tail: { items: [{ copy: 'full' }, { copy: 'full', at: 1 }, { words: [550, -52000] }, { words: [3660, -3660, 550, -96701] }] }, held: { items: [{ words: [3660, -3660, 550, -96701] }] }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Apex 32 Bit', periodNs: 26525, header: [8600, 4370], flat: 575, zero: 1145, one: 2950, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Apple 15 Bit', periodNs: 26315, header: [2409, 2400], flat: 1045, oneMark: 700, zero: 697, one: 1360, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Apple 15 Bit Toggle', periodNs: 26315, header: [2400, 2400], flat: 1050, oneMark: 700, zero: 700, one: 1350, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
@@ -279,7 +287,7 @@ export const PROTOCOLS: readonly StatedProtocol[] = [
   { family: 'Audio Synthesis 8 Bit', periodNs: 26939, header: [2580, 860], flat: 875, zero: 850, one: 1710, carries: 'mark', framePeriod: 98000, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Audiovox 32 Bit', periodNs: 26525, header: [4515, 4515], flat: 560, zero: 560, one: 1700, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Auton 18 Bit', periodNs: 25510, header: [0, 0], flat: 3732, oneMark: 518, zero: 521, one: 3742, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
-  { family: 'Auvio 32 Bit', periodNs: 26315, header: [9025, 4575], flat: 560, zero: 570, one: 1690, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
+  { family: 'Auvio 32 Bit', periodNs: 26315, header: [9025, 4575], flat: 560, zero: 570, one: 1690, carries: 'space', tail: { items: [{ copy: 'full' }, { pad: 0 }, { words: [9025, -2250, 560, -95501] }], total: 215836 }, held: { items: [{ words: [9025, -2250, 560, -95501] }] }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Aux 104 Bit', periodNs: 24390, header: [9080, 4444], flat: 625, zero: 731, one: 1971, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'AvantgardeA 6 Bit Toggle', periodNs: 24875, biphase: { mark: 385, space: 415, lead: [{ mark: true, us: 795 }, { mark: false, us: 795 }, { mark: true, us: 385 }], setIsMark: false }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'AvantgardeB 6 Bit Toggle', periodNs: 24875, biphase: { mark: 385, space: 415, lead: [{ mark: true, us: 795 }, { mark: false, us: 795 }, { mark: true, us: 385 }], setIsMark: false }, codes: 0, exact: 0, spread: 0, source: 'stated' },
@@ -314,9 +322,9 @@ export const PROTOCOLS: readonly StatedProtocol[] = [
   { family: 'ByDsign 16 Bit', periodNs: 28169, header: [0, 0], flat: 458, zero: 1694, one: 590, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Cabasse 16 Bit', periodNs: 26385, header: [0, 0], flat: 350, zero: 800, one: 1900, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Cambridge 32 Bit Dual', periodNs: 26315, header: [9025, 4750], flat: 525, zero: 1740, one: 610, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
-  { family: 'Cambridge Audio 32 Bit', periodNs: 27777, header: [9500, 4400], flat: 575, zero: 575, one: 1665, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
+  { family: 'Cambridge Audio 32 Bit', periodNs: 27777, header: [9500, 4400], flat: 575, zero: 575, one: 1665, carries: 'space', tail: { items: [{ copy: 'full' }, { words: [575] }, { pad: 0 }, { words: [4750, -4400, 575, -1665, 575, -100001] }], total: 226366 }, held: { items: [{ words: [4750, -4400, 575, -1665, 575, -100001] }] }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Canton 22 Bit', periodNs: 26315, biphase: { mark: 600, space: 600, lead: [{ mark: true, us: 600 }, { mark: false, us: 600 }], setIsMark: true }, codes: 0, exact: 0, spread: 0, source: 'stated' },
-  { family: 'Canton 32 Bit', periodNs: 26809, header: [13505, 4625], flat: 600, zero: 605, one: 1850, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
+  { family: 'Canton 32 Bit', periodNs: 26809, header: [13505, 4625], flat: 600, zero: 605, one: 1850, carries: 'space', tail: { items: [{ copy: 'full' }, { words: [600] }, { pad: 0 }, { words: [13505, -2345, 600, -61501] }], total: 176951 }, held: { items: [{ words: [13505, -2345, 600, -61501] }] }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Carrier 32 Bit', periodNs: 26315, header: [8428, 4214], flat: 519, zero: 533, one: 1588, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Casio 40 Bit', periodNs: 26315, header: [8984, 4474], flat: 569, zero: 555, one: 1671, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'ChannelPlus 11 Bit', periodNs: 27027, header: [0, 0], flat: 480, zero: 4609, one: 7103, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
@@ -359,7 +367,7 @@ export const PROTOCOLS: readonly StatedProtocol[] = [
   { family: 'Digimatrix 24 Bit', periodNs: 26385, header: [8980, 4520], flat: 540, zero: 1700, one: 580, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Digital 24 Bit', periodNs: 26315, header: [4064, 3970], flat: 465, zero: 1007, one: 2000, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'DishNetwork 10 Bit', periodNs: 17857, header: [0, 0], flat: 375, zero: 2762, one: 4437, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
-  { family: 'DLO 32 Bit', periodNs: 26315, header: [9120, 4515], flat: 585, zero: 585, one: 1715, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
+  { family: 'DLO 32 Bit', periodNs: 26315, header: [9120, 4515], flat: 585, zero: 585, one: 1715, carries: 'space', tail: { items: [{ copy: 'full' }, { words: [585] }, { pad: 0 }, { words: [9085, -2500, 585, -96881] }], total: 219051 }, held: { items: [{ words: [9085, -2500, 585, -96881] }] }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Domintell 7 Bit', periodNs: 25974, biphase: { mark: 920, space: 920, lead: [{ mark: true, us: 920 }], setIsMark: true }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Dream Multimedia 32 Bit', periodNs: 26109, header: [8990, 4490], flat: 568, zero: 552, one: 1672, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Dream Vision 20 Bit Dual', periodNs: 33333, biphase: { mark: 533, space: 832, lead: [{ mark: true, us: 1065 }, { mark: false, us: 868 }], setIsMark: true }, codes: 0, exact: 0, spread: 0, source: 'stated' },
@@ -375,9 +383,9 @@ export const PROTOCOLS: readonly StatedProtocol[] = [
   { family: 'EluneVision 32 Bit', periodNs: 25000, header: [3150, 750], flat: 350, oneMark: 1050, zero: 1075, one: 375, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Emerson 5 Bit', periodNs: 27247, header: [0, 0], flat: 55, zero: 3108, one: 4565, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Emotiva 24 Bit', periodNs: 26666, header: [4530, 4500], flat: 535, zero: 560, one: 1680, carries: 'mark', framePeriod: 67300, codes: 0, exact: 0, spread: 0, source: 'stated' },
-  { family: 'Entone 24 Bit', periodNs: 27777, biphase: { mark: 450, space: 450, lead: [{ mark: true, us: 2666 }, { mark: false, us: 900 }, { mark: true, us: 450 }, { mark: false, us: 450 }, { mark: true, us: 450 }, { mark: false, us: 450 }, { mark: true, us: 450 }, { mark: false, us: 900 }, { mark: true, us: 450 }, { mark: false, us: 900 }, { mark: true, us: 900 }], setIsMark: true }, codes: 0, exact: 0, spread: 0, source: 'stated' },
-  { family: 'Entone 56 Bit', periodNs: 26315, biphase: { mark: 444, space: 444, lead: [{ mark: true, us: 2666 }, { mark: false, us: 889 }, { mark: true, us: 444 }, { mark: false, us: 444 }, { mark: true, us: 444 }, { mark: false, us: 444 }, { mark: true, us: 444 }, { mark: false, us: 879 }, { mark: true, us: 444 }, { mark: false, us: 879 }, { mark: true, us: 889 }], setIsMark: true }, codes: 0, exact: 0, spread: 0, source: 'stated' },
-  { family: 'EntoneV1 24 Bit', periodNs: 27777, biphase: { mark: 450, space: 450, lead: [{ mark: true, us: 2620 }, { mark: false, us: 900 }, { mark: true, us: 450 }, { mark: false, us: 450 }, { mark: true, us: 450 }, { mark: false, us: 450 }, { mark: true, us: 450 }, { mark: false, us: 900 }, { mark: true, us: 450 }, { mark: false, us: 900 }, { mark: true, us: 900 }], setIsMark: true }, codes: 0, exact: 0, spread: 0, source: 'stated' },
+  { family: 'Entone 24 Bit', periodNs: 27777, biphase: { mark: 450, space: 450, lead: [{ mark: true, us: 2666 }, { mark: false, us: 900 }, { mark: true, us: 450 }, { mark: false, us: 450 }, { mark: true, us: 450 }, { mark: false, us: 450 }, { mark: true, us: 450 }, { mark: false, us: 900 }, { mark: true, us: 450 }, { mark: false, us: 900 }, { mark: true, us: 900 }], setIsMark: true }, tail: { items: [{ copy: 'full' }, { words: [-32767, -32767, -32767, -32767, -32767, -32767, -32767, -8765] }, { copy: 'full', at: 1 }, { words: [-32767, -32767, -32767, -32767, -32767, -32767, -32767, -8766] }] }, held: { items: [{ copy: 'full', at: 1 }, { words: [-32767, -32767, -32767, -32767, -32767, -32767, -32767, -8766] }] }, codes: 0, exact: 0, spread: 0, source: 'stated' },
+  { family: 'Entone 56 Bit', periodNs: 26315, biphase: { mark: 444, space: 444, lead: [{ mark: true, us: 2666 }, { mark: false, us: 889 }, { mark: true, us: 444 }, { mark: false, us: 444 }, { mark: true, us: 444 }, { mark: false, us: 444 }, { mark: true, us: 444 }, { mark: false, us: 879 }, { mark: true, us: 444 }, { mark: false, us: 879 }, { mark: true, us: 889 }], setIsMark: true }, tail: { items: [{ copy: 'full' }, { words: [-32767, -8639] }, { copy: 'full', at: 1 }, { words: [-32767, -8640] }] }, held: { items: [{ copy: 'full', at: 1 }, { words: [-32767, -8640] }] }, codes: 0, exact: 0, spread: 0, source: 'stated' },
+  { family: 'EntoneV1 24 Bit', periodNs: 27777, biphase: { mark: 450, space: 450, lead: [{ mark: true, us: 2620 }, { mark: false, us: 900 }, { mark: true, us: 450 }, { mark: false, us: 450 }, { mark: true, us: 450 }, { mark: false, us: 450 }, { mark: true, us: 450 }, { mark: false, us: 900 }, { mark: true, us: 450 }, { mark: false, us: 900 }, { mark: true, us: 900 }], setIsMark: true }, tail: { items: [{ copy: 'full' }, { words: [-32767, -32767, -2346] }, { copy: 'full', at: 1 }, { words: [-32767, -32767, -2347] }] }, held: { items: [{ copy: 'full', at: 1 }, { words: [-32767, -32767, -2347] }] }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Erard 24 Bit', periodNs: 26315, header: [9475, 3977], flat: 989, zero: 2016, one: 4000, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Escient 18 Bit', periodNs: 27027, biphase: { mark: 545, space: 400, lead: [{ mark: true, us: 1900 }, { mark: false, us: 670 }], setIsMark: false }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Escient 20 Bit', periodNs: 26315, header: [1970, 1040], flat: 510, zero: 500, one: 1500, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
@@ -420,7 +428,7 @@ export const PROTOCOLS: readonly StatedProtocol[] = [
   { family: 'Holmes 8 Bit', periodNs: 26315, header: [2518, 2540], flat: 830, oneMark: 410, zero: 430, one: 850, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'HTPC 9 Bit', periodNs: 26558, header: [1737, 400], flat: 415, zero: 417, one: 915, carries: 'mark', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Hunter Douglas 7 Bit', periodNs: 26399, biphase: { mark: 468, space: 487, lead: [{ mark: true, us: 1408 }, { mark: false, us: 492 }, { mark: true, us: 473 }], setIsMark: true }, codes: 0, exact: 0, spread: 0, source: 'stated' },
-  { family: 'Idylis 24 Bit', periodNs: 26315, header: [4000, 4500], flat: 1000, zero: 1000, one: 2000, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
+  { family: 'Idylis 24 Bit', periodNs: 26315, header: [4000, 4500], flat: 1000, zero: 1000, one: 2000, carries: 'space', tail: { items: [{ copy: 'full' }, { words: [3000, -94500] }, { words: [15000, -5000, 5000, -90001] }] }, held: { items: [{ words: [15000, -5000, 5000, -90001] }] }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'iMuse 31 Bit Dual', periodNs: 25806, header: [8825, 4440], flat: 558, zero: 542, one: 1659, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Intertechno 24 Bit', periodNs: 27777, header: [0, 0], flat: 388, oneMark: 1165, zero: 1165, one: 388, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Intertechno 24 Bit 2', periodNs: 26315, header: [0, 0], flat: 342, oneMark: 1026, zero: 1026, one: 342, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
@@ -443,7 +451,7 @@ export const PROTOCOLS: readonly StatedProtocol[] = [
   { family: 'Leviton 16 Bit', periodNs: 26315, header: [500, 5500], flat: 500, zero: 1500, one: 3500, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Leviton 32 Bit', periodNs: 100000, header: [82, 13325], flat: 82, zero: 1027, one: 2150, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'LG 20 Bit', periodNs: 26315, header: [2980, 2520], flat: 486, zero: 514, one: 1514, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
-  { family: 'LG 32 Bit', periodNs: 26315, header: [4490, 4490], flat: 560, zero: 560, one: 1680, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
+  { family: 'LG 32 Bit', periodNs: 26315, header: [4490, 4490], flat: 560, zero: 560, one: 1680, carries: 'space', tail: { items: [{ copy: 'full' }, { words: [560, -49000] }, { words: [4490, -4490, 560, -1680, 560, -95001] }] }, held: { items: [{ words: [4490, -4490, 560, -1680, 560, -95001] }] }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'LifesizeA 17 Bit Toggle', periodNs: 26315, header: [2600, 2600], flat: 1160, zero: 1160, one: 2890, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'LifesizeB 17 Bit Toggle', periodNs: 26315, header: [2600, 2600], flat: 1160, zero: 1160, one: 2890, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'LifesizeIconA 17 Bit Toggle', periodNs: 26315, header: [2600, 2600], flat: 1160, zero: 1160, one: 2890, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
@@ -497,7 +505,7 @@ export const PROTOCOLS: readonly StatedProtocol[] = [
   { family: 'Motorola LF 32 Bit', periodNs: 27777, biphase: { mark: 318, space: 325, lead: [{ mark: true, us: 2575 }, { mark: false, us: 1890 }, { mark: true, us: 635 }], setIsMark: false }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'National 152 Bit', periodNs: 27397, header: [3500, 1745], flat: 430, zero: 435, one: 1310, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'National 40 Bit', periodNs: 27397, header: [3500, 1780], flat: 450, zero: 440, one: 1320, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
-  { family: 'Naxoo 32 Bit', periodNs: 18181, header: [8960, 4470], flat: 570, zero: 540, one: 1660, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
+  { family: 'Naxoo 32 Bit', periodNs: 18181, header: [8960, 4470], flat: 570, zero: 540, one: 1660, carries: 'space', tail: { items: [{ copy: 'full' }, { words: [570] }, { pad: 0 }, { words: [8960, -2230, 570, -32767, -32767, -29957] }], total: 214501 }, held: { items: [{ words: [8960, -2230, 570, -32767, -32767, -29957] }] }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'NEC 32 Bit', periodNs: 26393, header: [8993, 4487], flat: 578, zero: 550, one: 1700, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'NEC 48 Bit', periodNs: 26315, header: [9000, 4500], flat: 565, zero: 550, one: 1700, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'NetTV 24 Bit', periodNs: 26595, header: [3400, 3500], flat: 837, oneMark: 867, zero: 864, one: 2578, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
@@ -514,7 +522,7 @@ export const PROTOCOLS: readonly StatedProtocol[] = [
   { family: 'OrTek 17 Bit', periodNs: 26292, biphase: { mark: 472, space: 508, lead: [{ mark: true, us: 2000 }, { mark: false, us: 480 }], setIsMark: true }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'ORtek 26 Bit', periodNs: 26315, biphase: { mark: 500, space: 500, lead: [{ mark: true, us: 2000 }, { mark: false, us: 500 }], setIsMark: true }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'ORtek Mouse 16 Bit', periodNs: 26315, biphase: { mark: 500, space: 500, lead: [{ mark: true, us: 2000 }, { mark: false, us: 500 }], setIsMark: true }, codes: 0, exact: 0, spread: 0, source: 'stated' },
-  { family: 'Pace 4 and 20 Bit', periodNs: 28089, biphase: { mark: 433, space: 458, lead: [], setIsMark: false }, codes: 0, exact: 0, spread: 0, source: 'stated' },
+  { family: 'Pace 4 and 20 Bit', periodNs: 28089, biphase: { mark: 433, space: 458, lead: [], setIsMark: false }, tail: { items: [{ words: [2679, -876] }, { copy: 'full' }, { words: [-909, 879] }, { copy: 'full', at: 1 }, { words: [-123112] }] }, held: { items: [{ words: [2679, -876] }, { copy: 'full' }, { words: [-909, 879] }, { copy: 'full', at: 1 }, { words: [-123112] }] }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Pace 4 and 20 Bit Full', periodNs: 28089, biphase: { mark: 433, space: 458, lead: [], setIsMark: false }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Panasonic 10 Bit', periodNs: 22222, header: [0, 0], flat: 800, zero: 2600, one: 6000, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Panasonic 31 Bit', periodNs: 27548, header: [0, 0], flat: 870, zero: 887, one: 2644, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
@@ -558,8 +566,8 @@ export const PROTOCOLS: readonly StatedProtocol[] = [
   { family: 'Samsung 32 Bit', periodNs: 26315, header: [4500, 4500], flat: 600, zero: 500, one: 1600, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Samsung 38 Bit 2', periodNs: 26315, header: [4490, 4473], flat: 490, zero: 480, one: 1480, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Samsung 38 Bit 3', periodNs: 26315, header: [4465, 4490], flat: 485, zero: 514, one: 1510, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
-  { family: 'Samsung 42 Bit', periodNs: 26315, header: [9000, 4500], flat: 600, zero: 500, one: 1600, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
-  { family: 'Samsung 42 Bit 2', periodNs: 26315, header: [9030, 4515], flat: 550, oneMark: 560, zero: 570, one: 1705, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
+  { family: 'Samsung 42 Bit', periodNs: 26315, header: [9000, 4500], flat: 600, zero: 500, one: 1600, carries: 'space', tail: { items: [{ copy: 'full' }, { words: [600, -23000] }, { words: [9000, -4500, 600, -95001] }] }, held: { items: [{ words: [9000, -4500, 600, -95001] }] }, codes: 0, exact: 0, spread: 0, source: 'stated' },
+  { family: 'Samsung 42 Bit 2', periodNs: 26315, header: [9030, 4515], flat: 550, oneMark: 560, zero: 570, one: 1705, carries: 'space', tail: { items: [{ copy: 'full' }, { words: [570, -23106] }] }, held: { items: [{ copy: 'full' }, { words: [570, -23106] }] }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Samsung 48 Bit', periodNs: 26315, header: [2480, 1890], flat: 420, zero: 1165, one: 445, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Samsung 48 Bit 2', periodNs: 26315, header: [3285, 1890], flat: 420, zero: 1165, one: 460, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Samsung 49 Bit', periodNs: 26315, header: [3332, 1684], flat: 448, zero: 1270, one: 397, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
@@ -567,7 +575,7 @@ export const PROTOCOLS: readonly StatedProtocol[] = [
   { family: 'Samsung 56 Bit Dual', periodNs: 26315, header: [3000, 9031], flat: 492, zero: 552, one: 1566, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Samsung HA 32 Bit', periodNs: 26315, header: [4500, 4500], flat: 560, zero: 560, one: 1680, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Samsung STB 32 Bit', periodNs: 26455, header: [4515, 4515], flat: 560, zero: 560, one: 1690, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
-  { family: 'SamsungO1 32 Bit', periodNs: 26315, header: [4485, 4485], flat: 545, zero: 575, one: 1690, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
+  { family: 'SamsungO1 32 Bit', periodNs: 26315, header: [4485, 4485], flat: 545, zero: 575, one: 1690, carries: 'space', tail: { items: [{ copy: 'full' }, { words: [545, -44000] }, { words: [4485, -4485, 545, -575, 545, -32767, -32767, -30432] }] }, held: { items: [{ words: [4485, -4485, 545, -575, 545, -32767, -32767, -30432] }] }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Sanyo 10 Bit', periodNs: 24759, header: [0, 0], flat: 2848, firstMark: 2853, zero: 8563, one: 19977, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Sanyo 136 Bit', periodNs: 26315, header: [3320, 1675], flat: 400, zero: 430, one: 1265, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Sanyo 152 Bit', periodNs: 26178, header: [3315, 1670], flat: 410, zero: 410, one: 1245, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
@@ -641,7 +649,7 @@ export const PROTOCOLS: readonly StatedProtocol[] = [
   { family: 'Toshiba 80 Bit', periodNs: 27027, header: [4380, 4500], flat: 530, zero: 550, one: 1630, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Toshiba 88 Bit', periodNs: 27027, header: [4400, 4500], flat: 536, zero: 1627, one: 547, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Toshiba 96 Bit', periodNs: 27027, header: [4380, 4500], flat: 530, zero: 550, one: 1630, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
-  { family: 'Toshiba HF 32 Bit', periodNs: 2197, header: [8990, 4490], flat: 568, zero: 552, one: 1662, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
+  { family: 'Toshiba HF 32 Bit', periodNs: 2197, header: [8990, 4490], flat: 568, zero: 552, one: 1662, carries: 'space', tail: { items: [{ copy: 'full' }, { words: [568] }, { pad: 0 }, { words: [8990, -2230, 568, -96078] }], total: 215736 }, held: { items: [{ words: [8990, -2230, 568, -96078] }] }, codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'ToshibaV2 32 Bit', periodNs: 26315, header: [8511, 4248], flat: 512, zero: 538, one: 1657, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Traxon 15 Bit', periodNs: 28490, header: [210, 695], flat: 200, zero: 1345, one: 3165, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
   { family: 'Ultraflex 12 Bit', periodNs: 28490, header: [208, 3138], flat: 208, zero: 2100, one: 3138, carries: 'space', codes: 0, exact: 0, spread: 0, source: 'stated' },
