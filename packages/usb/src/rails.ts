@@ -16,6 +16,7 @@
 
 import { ESCAPE_END_SESSION, ESCAPE_SUB_COMMANDS, readVersion } from './protocol.ts';
 import { compareIntendedVersion } from './compatible.ts';
+import { sameUnit } from './identity.ts';
 import type { Compatibility, StatedVersion } from './compatible.ts';
 
 export class RailError extends Error {}
@@ -176,8 +177,25 @@ export interface WritePermission {
    * architecture from somewhere else is refused.
    */
   readonly versionBlock: Uint8Array;
-  /** The unit is the spare remote. Nothing else is ever a write target. */
-  readonly targetIsTheSpareRemote: boolean;
+  /**
+   * The identity block read off the connected remote, as `readUnitIdentity` returned it.
+   *
+   * **This was `targetIsTheSpareRemote`, a boolean, until 30 August 2026**, section 226. Two Harmony
+   * Ones enumerate identically, so section 188 recorded the question as one the library could not
+   * answer, and every caller answered it `true`. It can be answered: the unit's own program memory
+   * holds a 64 byte identity block whose two GUIDs are what Logitech's own service takes as a
+   * serial. Danny's decision was to identify a unit the way the vendor does rather than to invent a
+   * fingerprint, which was this project's own earlier proposal.
+   */
+  readonly identityBlock: Uint8Array;
+  /**
+   * The identity of the unit that **may** be written to, from wherever the caller keeps it.
+   *
+   * Not a table in this library, deliberately: a unit identifier is that unit's hardware identity, so
+   * the bench keeps it in the private lab and FreeHarmony keeps it with the user's own data. Either
+   * the whole block or the 32 byte discriminator, since a stored copy is the shorter one.
+   */
+  readonly permittedUnit: Uint8Array;
 }
 
 function assertPermissionIsUsable(p: WritePermission): void {
@@ -191,9 +209,7 @@ function assertPermissionIsUsable(p: WritePermission): void {
       `architecture ${p.architecture} has no write target on the bench, so writing to it is refused`,
     );
   }
-  if (!p.targetIsTheSpareRemote) {
-    throw new RailError('the spare remote is the only write target');
-  }
+  assertUnitIsPermitted(p);
   if (!p.originalDumpVerified) {
     throw new RailError('no verified original dump of this unit: refusing to write');
   }
@@ -248,6 +264,42 @@ export function assertConfigIsForThisRemote(
     );
   }
   return comparison;
+}
+
+/**
+ * Throws unless the remote on the cable is the one that may be written to.
+ *
+ * A byte comparison of what the unit reports against what the caller has recorded, section 226,
+ * which replaces the boolean `targetIsTheSpareRemote`. Three refusals and the third is the one worth
+ * having:
+ *
+ * * the two identities differ, so this is a different unit
+ * * either is the wrong length to be an identity at all
+ * * **either carries no per unit value**, its GUID fields being uniform filler. That is the trap
+ *   this whole path is about: the field named the serial is `0xEE` on every remote read here, so a
+ *   comparison of the obvious field matches every unit against every other and reports a confident
+ *   yes. `identifiesAUnit` refuses instead, and a refusal that says "this cannot be told" is the
+ *   only honest answer there.
+ */
+export function assertUnitIsPermitted(
+  p: Pick<WritePermission, 'identityBlock' | 'permittedUnit'>,
+): void {
+  let same;
+  try {
+    same = sameUnit(p.identityBlock, p.permittedUnit);
+  } catch (error: unknown) {
+    throw new RailError(
+      `the connected unit cannot be identified, so it is not a permitted write target: ${
+        error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+  if (!same) {
+    throw new RailError(
+      'the remote on the cable is not the unit this write is permitted for: its identity block '
+        + 'differs from the recorded one. Two Harmony Ones enumerate identically, which is why this '
+        + 'is checked against the unit and not against the model',
+    );
+  }
 }
 
 /** The half-open range a write may touch, for the architecture in `p`. */
@@ -370,7 +422,7 @@ export function assertEraseAllowed(p: WritePermission, address: number): void {
  * `WRITE_MISC` selector `0x07` is volatile: nothing survives a power cycle, so it cannot brick
  * anything. It is still a write to a live device, and it sits behind the same flag for that
  * reason and no other. Note what it does not need: a dump, or a matching INTENDEDVERSION, neither
- * of which means anything for RAM. It does still need the flag and the spare remote, because the
+ * of which means anything for RAM. It does still need the flag and the permitted unit, because the
  * point of a read only build is that it does not write.
  */
 export function assertRamWriteAllowed(
@@ -378,15 +430,20 @@ export function assertRamWriteAllowed(
   // rail is a runtime boundary and JavaScript crosses it, so a guard the type says is unreachable is
   // the shape `CLAUDE.md` warns about, an unreachable guard reading as protection. Widening the
   // parameter is what makes the check reachable and the test able to state it.
-  p: { readonly architecture?: number | undefined; readonly targetIsTheSpareRemote: boolean },
+  p: {
+    readonly architecture?: number | undefined;
+    readonly identityBlock: Uint8Array;
+    readonly permittedUnit: Uint8Array;
+  },
   dataAddress: number,
 ): void {
   if (!WRITES_ENABLED) {
     throw new RailError('writing is disabled: this build is read only');
   }
-  if (!p.targetIsTheSpareRemote) {
-    throw new RailError('the spare remote is the only write target, RAM included');
-  }
+  // The unit check, RAM included, and it is a comparison rather than a boolean since section 226.
+  // Nothing survives a power cycle here, so this is not about bricking a remote; it is that a read
+  // only build must not disturb a variable on somebody's working unit either.
+  assertUnitIsPermitted(p);
   // An architecture check, like every other write rail here. It had none, so a caller passing
   // `targetIsTheSpareRemote` reached `WRITE_MISC` on a Harmony 600 or a Harmony 525, whose selector 7
   // executors nobody has read. `ARCHITECTURES_WITH_A_WRITE_TARGET` is the same list flash uses and the
@@ -443,14 +500,14 @@ export const SFR_PAGE_START = 0xf40;
  * **What this rail deliberately does not decide.** Whether FreeHarmony may send it at the end of
  * every read only session is a judgment call and is not settled by this function existing: the
  * conditions below keep it to the spare remote and to an architecture whose escape has actually been
- * read, which is enough for the experiment and not enough for a product. Lifting
- * `targetIsTheSpareRemote` is the decision, and it belongs in a commit that says so.
+ * read, which is enough for the experiment and not enough for a product. Widening the permitted unit
+ * beyond the bench spare is the decision, and it belongs in a commit that says so.
  *
  * Arch 9 is refused because nobody has read its escape. A read profile is not a write profile,
  * which is the same rule `ARCHITECTURES_WITH_A_WRITE_TARGET` states for flash.
  */
 export function assertSessionEndAllowed(
-  p: Pick<WritePermission, 'architecture' | 'targetIsTheSpareRemote'>,
+  p: Pick<WritePermission, 'architecture' | 'identityBlock' | 'permittedUnit'>,
   subCommand: number,
 ): void {
   if (!WRITES_ENABLED) {
@@ -475,11 +532,9 @@ export function assertSessionEndAllowed(
       `architecture ${p.architecture} does not dispatch escape sub-command 0x${subCommand.toString(16)}`,
     );
   }
-  if (!p.targetIsTheSpareRemote) {
-    throw new RailError(
-      'the spare remote is the only unit this may be sent to until the session-end question is decided',
-    );
-  }
+  // Same comparison as every other rail, section 226: the unit on the cable against the one the
+  // caller recorded, rather than a boolean the caller sets.
+  assertUnitIsPermitted(p);
 }
 
 /**

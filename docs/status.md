@@ -637,6 +637,19 @@ cannot drift apart; what a reader should not expect is two independent statement
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
 
+**And which remote is on the cable is read off the remote**, section 226, which was the last of the
+three things the write rails took a caller's word for. Two Harmony Ones enumerate identically, so the
+question had been recorded as unanswerable; it is not, because the remote holds a 64 byte identity block
+in its own program memory whose two GUIDs are exactly what Logitech's own service takes as a serial.
+This project's first proposal was to fingerprint the unit by its configuration, and Danny refused it and
+asked whether the vendor already had a way, which they do. **The lesson is the ordering rule again**:
+look at how their software does it before working out how it should be done. The trap worth knowing is
+that the field actually named the serial is `0xEE` on every remote read here, so comparing it matches
+every unit against every other and says yes with confidence. The values live in the private lab and
+FreeHarmony will keep them with the user's own data; the contribution probe still emits none, because
+its report is published by other people. **One read per remote is what is left**, and until it happens
+the rail refuses, which is the correct default.
+
 **The compatibility gate is performed rather than asserted**, section 225, which is the one write
 rail with a specific job: refusing a configuration built for a different remote. It took a boolean and
 every caller passed true, so the check with the most to say was the caller's opinion. It takes the two

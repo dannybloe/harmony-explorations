@@ -1307,6 +1307,23 @@ themselves are not published here, per `CLAUDE.md`: a remote's serial GUIDs are 
 That the first field is `0xEE` filled is itself consistent. This is the never programmed spare, and
 `concordance -i` reports its serial as all E's, so both readers of that location agree it is unset.
 
+**This block is what identifies a unit, and `packages/usb` reads it since section 226**:
+`readUnitIdentity` is one `READ_FLASH` of this window, `IDENTITY_PAGE` and `IDENTITY_OFFSET` in
+`identity.ts`, and the write rails compare what the remote reports against what the caller recorded.
+Two consequences a reimplementation has to get right.
+
+**The field named the serial identifies nothing.** It is `0xEE` on all three remotes read here, per the
+paragraph above, so a comparison of that field alone matches every unit against every other and reports
+a confident yes. The per unit values are the two GUIDs at `+0x10` and `+0x20`, and an identity whose
+GUID fields are uniform filler is refused rather than matched, since the truth there is "this cannot be
+told" and not "a different unit".
+
+**The count must stay even.** 64 is, and an internal read of an odd count never terminates and hangs
+the remote, section 94, so the length of this read is a rail rather than a choice.
+
+The values themselves stay in the private lab, which is why nothing here or in `packages/usb` carries a
+table of units: this repository is public, and a unit identity is that remote's hardware identity.
+
 #### A second prediction, for the Harmony 600, before reading it
 
 Everything above is one remote and one architecture, so it predicts the other. Arch 14 differs where

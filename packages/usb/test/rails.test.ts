@@ -39,6 +39,8 @@ import {
   encodeRequest,
   encodeVersionBlock,
   eraseBoundsFor,
+  IDENTITY_BYTES,
+  IDENTITY_FIELDS,
   guardMutations,
   readFlashRequest,
   writableRange,
@@ -46,6 +48,30 @@ import {
 import type { Transport } from '../src/index.ts';
 // Deep import on purpose: this is the hatch the barrel deliberately does not offer, section 224.
 import { authoriseReport } from '../src/authorise.ts';
+
+/**
+ * A synthetic identity block in the shape a remote's really is: `0xEE` where the serial field is,
+ * two distinct GUIDs, sixteen zeroes.
+ *
+ * The `0xEE` fill is deliberate rather than decoration. That is what every remote read here actually
+ * carries in the field named the serial, so a test permission built without it would not exercise
+ * the refusal that field is the whole reason for.
+ */
+function identityFor(seed: number): Uint8Array {
+  const block = new Uint8Array(IDENTITY_BYTES).fill(0);
+  block.fill(0xee, IDENTITY_FIELDS.serial, IDENTITY_FIELDS.guidA);
+  for (let i = 0; i < 0x20; i += 1) {
+    block[IDENTITY_FIELDS.guidA + i] = (seed * 31 + i * 7 + 1) & 0xff;
+  }
+  return block;
+}
+
+/** The unit these tests may write to, and one that is not it. */
+const THIS_UNIT = identityFor(1);
+const ANOTHER_UNIT = identityFor(2);
+
+/** What an identity looks like when nothing per unit was ever written into it. */
+const NO_IDENTITY = new Uint8Array(IDENTITY_BYTES).fill(0xee);
 
 /**
  * A version block the spare Harmony One would send, from the values `concordance -i` reads off both
@@ -85,7 +111,13 @@ const IDEAL = {
   originalDumpVerified: true,
   intendedVersion: ONE_STATED,
   versionBlock: ONE_BLOCK,
-  targetIsTheSpareRemote: true,
+  // **A comparison and not a boolean since section 226.** This carried `targetIsTheSpareRemote:
+  // true`, which is what every caller passed and what made the question unanswerable: two Harmony
+  // Ones enumerate identically, so nothing the library could see told them apart. It compares the
+  // unit's own identity block against the one the caller recorded, and the same block on both sides
+  // is a permission for the remote actually on the cable.
+  identityBlock: THIS_UNIT,
+  permittedUnit: THIS_UNIT,
 } as const;
 
 /**
@@ -99,8 +131,11 @@ const IDEAL_SOURCE = `const IDEAL = {
     configLength: IDEAL.configLength,
     originalDumpVerified: IDEAL.originalDumpVerified,
     intendedVersion: IDEAL.intendedVersion,
-    targetIsTheSpareRemote: IDEAL.targetIsTheSpareRemote,
   })},
+  identityBlock: Uint8Array.from(${JSON.stringify([...THIS_UNIT])}),
+  permittedUnit: Uint8Array.from(${JSON.stringify([...THIS_UNIT])}),
+  another: Uint8Array.from(${JSON.stringify([...ANOTHER_UNIT])}),
+  noIdentity: Uint8Array.from(${JSON.stringify([...NO_IDENTITY])}),
   versionBlock: rails.encodeVersionBlock(${JSON.stringify({
     firmware: 0x34,
     hardware: 0x05,
@@ -165,8 +200,18 @@ test('the package offers no way to build a request that changes a remote', async
   // device with writing disabled and an address outside the region. Hiding a builder and then leaving
   // the permission itself in the caller's hand is the same mistake at one remove, so the rule now
   // covers both: the barrel offers no way to send a mutating report **and** no way to permit one.
-  const permits = Object.keys(barrel).filter((name) => /authoris|permit|allowReport/i.test(name));
+  // **A rail is excluded, and the exclusion is stated rather than assumed.** Everything in
+  // `rails.ts` is named `assert...` and its contract is to throw, so `assertUnitIsPermitted` reads
+  // like a permission and grants nothing: it is the refusal that a remote is not the recorded unit.
+  // Narrowing the pattern this way rather than dropping `permit` from it keeps the rule aimed at
+  // what hands an authorisation out. The control below is that the exclusion is visible: the rail is
+  // exported, deliberately, and a test says so.
+  const permits = Object.keys(barrel)
+    .filter((name) => /authoris|permit|allowReport/i.test(name))
+    .filter((name) => !name.startsWith('assert'));
   assert.deepEqual(permits, [], 'the barrel offers a way to authorise a report');
+  assert.equal(typeof barrel['assertUnitIsPermitted'], 'function',
+    'the unit rail is exported, which is why the filter above has to exclude it by name shape');
 
   // The control, same shape as the one above: the hatch exists and a deep import reaches it, so this
   // is a boundary and not a deletion. `remote.ts` uses it on every send.
@@ -311,7 +356,10 @@ test('with writing enabled, the remaining conditions still each refuse on their 
       }
     };
     check('flag on and everything in order', IDEAL, base, 16);
-    check('not the spare remote', {...IDEAL, targetIsTheSpareRemote: false}, base, 16);
+    check('another unit on the cable', {...IDEAL, identityBlock: IDEAL.another}, base, 16);
+    // An identity carrying nothing per unit, which is what the field named the serial looks like on
+    // every remote here: refused rather than matched, section 226.
+    check('an unidentifiable unit', {...IDEAL, identityBlock: IDEAL.noIdentity}, base, 16);
     check('no verified dump', {...IDEAL, originalDumpVerified: false}, base, 16);
     // **Now a real comparison rather than a boolean**, section 225: the config claims skin 99 and
     // the remote reports 54, so the rail is the thing that notices. The row below it is the second
@@ -330,7 +378,8 @@ test('with writing enabled, the remaining conditions still each refuse on their 
     // The flag being on is necessary and not sufficient, which is the shape that matters: every
     // other condition still refuses by itself.
     'flag on and everything in order: ALLOWED',
-    'not the spare remote: refused by RailError',
+    'another unit on the cable: refused by RailError',
+    'an unidentifiable unit: refused by RailError',
     'no verified dump: refused by RailError',
     'intended version mismatch: refused by RailError',
     'a version field nobody can compare: refused by RailError',
@@ -374,7 +423,8 @@ test('with writing enabled, a RAM write still refuses an SFR address and a wrong
     check('a Harmony 600', {...IDEAL, architecture: 14}, 0x100);
     check('a Harmony 525', {...IDEAL, architecture: 9}, 0x100);
     check('no architecture at all', {...IDEAL, architecture: undefined}, 0x100);
-    check('not the spare remote', {...IDEAL, targetIsTheSpareRemote: false}, 0x100);
+    check('another unit on the cable', {...IDEAL, identityBlock: IDEAL.another}, 0x100);
+    check('an unidentifiable unit', {...IDEAL, identityBlock: IDEAL.noIdentity}, 0x100);
     console.log(JSON.stringify(out));
   `);
   assert.deepEqual(JSON.parse(output), [
@@ -391,7 +441,8 @@ test('with writing enabled, a RAM write still refuses an SFR address and a wrong
     'a Harmony 600: refused by RailError',
     'a Harmony 525: refused by RailError',
     'no architecture at all: refused by RailError',
-    'not the spare remote: refused by RailError',
+    'another unit on the cable: refused by RailError',
+    'an unidentifiable unit: refused by RailError',
   ]);
 });
 
@@ -445,14 +496,20 @@ test('the session end escape is refused in the shipped state, and only for the r
   // own rail rather than a share of the flash one: none of the flash conditions mean anything for
   // it, so reusing them would be a rail that reads strict and checks nothing relevant.
   assert.throws(
-    () => assertSessionEndAllowed({ architecture: 12, targetIsTheSpareRemote: true }, 0x01),
+    () => assertSessionEndAllowed(
+      { architecture: 12, identityBlock: THIS_UNIT, permittedUnit: THIS_UNIT }, 0x01),
     /read only/,
   );
 });
 
 test('with writing enabled, the session end escape refuses everything but itself', () => {
   const output = withWritesEnabled(`
-    const spare12 = { architecture: 12, targetIsTheSpareRemote: true };
+    const spare12 = {
+      architecture: 12,
+      identityBlock: Uint8Array.from(${JSON.stringify([...THIS_UNIT])}),
+      permittedUnit: Uint8Array.from(${JSON.stringify([...THIS_UNIT])}),
+    };
+    const another = Uint8Array.from(${JSON.stringify([...ANOTHER_UNIT])});
     const refusals = [];
     const check = (name, permission, sub) => {
       try {
@@ -471,7 +528,7 @@ test('with writing enabled, the session end escape refuses everything but itself
     check('the other reset, 0x03', spare12, 0x03);
     check('arch 14 only sub-command 0x05', {...spare12, architecture: 14}, 0x05);
     check('arch 9, whose escape nobody has read', {...spare12, architecture: 9}, 0x01);
-    check('not the spare remote', {...spare12, targetIsTheSpareRemote: false}, 0x01);
+    check('another unit on the cable', {...spare12, identityBlock: another}, 0x01);
     console.log(JSON.stringify(refusals));
   `);
   assert.deepEqual(JSON.parse(output), [
@@ -487,7 +544,7 @@ test('with writing enabled, the session end escape refuses everything but itself
     // A read profile is not a write profile, which is the same rule the flash rails state.
     'arch 9, whose escape nobody has read: refused by RailError',
     // And the conservative condition that keeps this an experiment rather than a product decision.
-    'not the spare remote: refused by RailError',
+    'another unit on the cable: refused by RailError',
   ]);
 });
 

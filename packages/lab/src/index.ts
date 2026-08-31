@@ -471,3 +471,44 @@ export function skipWithoutLab(): { skip: string | false } {
   if (LAB !== undefined && existsSync(LAB)) return { skip: false };
   return { skip: 'no lab directory; set HARMONY_LAB or put one alongside the repository' };
 }
+
+/**
+ * Where the lab keeps a unit identity, one file per remote, named after the unit.
+ *
+ * **Deliberately not in `IMAGES`.** That registry is the corpus, and `PARSEABLE` is discovered from
+ * it, so registering a 64 byte identity block there would put it in the parseable population and
+ * move about seven corpus wide totals for a file that is not a config. A unit identity is a different
+ * kind of thing and gets a different door.
+ */
+const UNITS_DIRECTORY = 'units';
+
+/**
+ * The recorded identity of a named unit, as hex text, or undefined when the lab has no record.
+ *
+ * **Why the lab and not this repository**: a unit identity is that remote's hardware identity, the
+ * two GUIDs Logitech's own service takes as a serial, and this repository is public. Danny's
+ * decision on 30 August 2026. FreeHarmony will keep the same value with the user's own data, which is
+ * the same arrangement with a different owner, so the stored form is deliberately the plain hex
+ * `unitIdentityText` produces rather than anything this package invents.
+ *
+ * Undefined rather than throwing, like `load`, so a caller decides whether a missing record is a skip
+ * or a refusal. Every write path here treats it as a refusal: without a record there is nothing to
+ * compare the connected remote against, and that is exactly when a write must not proceed.
+ */
+export function unitIdentity(label: string): string | undefined {
+  if (LAB === undefined) return undefined;
+  const path = join(LAB, UNITS_DIRECTORY, `${label}.txt`);
+  if (!existsSync(path)) return undefined;
+  // Comments and blank lines are allowed, so the file can say which remote it is and when it was
+  // read without a second file to hold that. The first content line is the identity.
+  for (const line of readFileSync(path, 'utf8').split('\n')) {
+    const trimmed = line.trim();
+    if (trimmed !== '' && !trimmed.startsWith('#')) return trimmed;
+  }
+  return undefined;
+}
+
+/** Absolute path of a unit identity file, for a script that has to tell the operator where to put it. */
+export function unitIdentityPath(label: string): string {
+  return join(LAB ?? '<no lab>', UNITS_DIRECTORY, `${label}.txt`);
+}

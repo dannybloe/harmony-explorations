@@ -52,8 +52,11 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Sixty two have been found and corrected so far. **The three newest are in section 225**, and all three
-are about the compatibility gate: the third component of a remote's hardware version was listed as
+Sixty three have been found and corrected so far. **The newest is in section 226**, and it is a claim
+of ours restated in code for three days after `docs/findings.md` had corrected it: the rehearsal's dump
+allow list plus its byte compare were said to identify the unit on the cable, where they prove content,
+so another Harmony One whose selected block happened to match would have passed as the spare. **The
+three before it are in section 225**, and all three are about the compatibility gate: the third component of a remote's hardware version was listed as
 something concordance prints and we cannot place, and it is not in the version block at all;
 `BOARD` was said to be normalised on the file's side only, where a two component reading against a
 three component statement needs both sides normalised; and the rule that a list of versions is a
@@ -28824,3 +28827,112 @@ is the honest ceiling for that field: the library cannot know where a caller's b
 `targetIsTheSpareRemote` stays a caller assertion by a decision that is recorded and deliberate,
 section 188, since identifying a unit would mean carrying a serial through the enumeration path that
 `@harmony/probe` reads, and the reason that path has no serial is worth more.
+
+## 226. Which unit is on the cable, read off the unit instead of asserted
+
+`WritePermission` had a boolean called `targetIsTheSpareRemote` and every caller passed `true`. It was
+the last of the three world facts section 188 recorded as things the library cannot check, and the
+reason given was sound as far as it went: two Harmony Ones enumerate identically, and `listHarmony`
+deliberately drops the serial so that one cannot reach `@harmony/probe`'s publishable report.
+
+It can be checked, and the route was already read. The mistake was in what the check would have to be.
+
+### The proposal that was wrong, and why it was wrong
+
+This project's own first answer, on 30 August 2026, was to identify the unit by its **configuration**:
+the rehearsal already compares the block it is about to write against the lab dump byte for byte, and a
+configuration is unit specific, so make that the identification. Danny refused it on cost and then
+asked the question that settles it, whether Logitech does anything of the kind.
+
+They do, and they do it with the serial. `RemoteManager/AddRemoteToAccount` takes three brace wrapped
+GUIDs and `ValidateRemote` refuses a synthetic one, section 136, which is how a remote is bound to an
+account. So the configuration fingerprint was reinventing a serial check the hard way, and the
+instruction was to do what the vendor does.
+
+**The general lesson is the one worth keeping, and it is decision 2 in `CLAUDE.md` again**: before
+working out how something should be done, look at how their software does it. The fingerprint idea had
+an argument behind it, a measurement behind it and a script already performing half of it, and it was
+still the wrong shape, because a question of the form "how do you tell two of these apart" is one the
+people who built them answered first.
+
+### The route needs no new protocol
+
+`docs/usb-protocol.md` found a 64 byte identity block at internal page `0xFF` offset `0xF400`,
+confirmed on three remotes across two architectures, as four 16 byte fields. The closure recorded there
+is strong: `concordance -i` prints three GUIDs for a connected remote, the lab holds that output for one
+exact unit from months earlier, and all three appear in the block in the same order, the latter two
+mixed endian. So an address predicted in advance returned three values obtained without this code.
+
+`readUnitIdentity` is one `READ_FLASH` of that window. Nothing is written and the count is even, which
+matters: an internal read of an odd count never terminates and hangs the remote, section 94.
+
+### The trap, which is most of what the module is for
+
+**The field named the serial cannot identify anything.** It is `0xEE` filled on all three remotes read
+here, `concordance -i` agrees the serial is unset on the spare, and `docs/usb-protocol.md` already
+recorded it as a field nobody writes. So the obvious implementation, comparing the field actually called
+the serial, matches **every** unit against every other and reports a confident yes. That is the exact
+failure the whole path exists to prevent, arrived at by doing the natural thing.
+
+The per unit values are the two GUIDs after it, 32 bytes, and that is what `unitDiscriminator` returns.
+`identifiesAUnit` is the refusal that goes with it: a block whose GUID fields are uniform filler, in
+any of the three fills this project has seen in that region, is not an identification, and `sameUnit`
+throws rather than answering false. False would read as "a different unit" where the truth is "this
+cannot be told", and a rail acting on the first refuses for a reason that is not true.
+
+The control: making `unitDiscriminator` return the serial field instead of the GUIDs fails nine tests
+across two files, and the reversal was compared byte for byte against a copy taken first.
+
+### The rails take two blocks, not a boolean
+
+Same shape as section 225 one section earlier, and by now it is a pattern rather than a fix: the
+permission carries the identity read off the remote and the identity of the unit that may be written
+to, and the rail compares them. `assertUnitIsPermitted` is that rail, and it now guards flash writes,
+erases, RAM writes and the session end escape, all four of which previously read the boolean.
+
+**No table of units lives in this library.** A unit identity is that remote's hardware identity, and
+Danny's decision on 30 August 2026 was that the values stay out of this public repository. Where the
+expected one is kept is the caller's business:
+
+* on the bench, a file in the private lab, `units/<label>.txt`, reached by `unitIdentity` in
+  `packages/lab`, which is deliberately **not** in `IMAGES`: that registry is the corpus and
+  `PARSEABLE` is discovered from it, so registering a 64 byte identity would move about seven corpus
+  wide totals for a file that is not a configuration
+* in **FreeHarmony**, stored with the user's own data alongside everything else it knows about their
+  remote, which is Danny's statement of the product design the same day
+
+Both want the same thing from here, so the stored form is plain hex of the 32 bytes, 64 characters,
+which round trips exactly and has nothing for a later reader to get wrong. A GUID rendering would have,
+since the two after the serial are stored mixed endian and every reader would have to agree which way
+round to print them.
+
+**`packages/probe` is untouched, deliberately.** Its report is meant to be published by other people,
+so the reason its enumeration path carries no serial is stronger than this rail, not weaker: publishing
+one's own hardware identity is a decision an owner can take, and publishing a stranger's on their
+behalf is not.
+
+### What this replaces, in two scripts
+
+`rehearse-block.ts` claimed that its dump allow list and its byte compare together said which unit was
+on the cable. They do not, and the review of 27 August recorded that they prove **content**: another
+Harmony One whose selected block happened to match would have passed as the spare. That correction sat
+in `docs/findings.md` for three days while the script restated the dead claim in its own docstring, so
+it is a fifth instance of a fact landing in one place and not in the other four.
+
+`end-session-experiment.ts` identified the unit by comparing the first 32 bytes of the config region
+against the spare's dump, which is the fingerprint idea in miniature, written before anybody had asked
+whether the vendor had a better one.
+
+Both read the identity block now and both refuse when the lab holds no recorded identity, which is the
+correct default: with no record there is nothing to compare against, and that is exactly when a write
+must not proceed.
+
+### What is left
+
+Nothing on the bench has been read yet, so the lab holds no identity for any unit and both scripts
+refuse. That is one read per remote and no write, and until it is done this rail is implemented and
+unexercised on hardware.
+
+Of section 188's three world facts, one is now measured, section 225's is performed by the rail, and
+`originalDumpVerified` is the honest ceiling: the library cannot know where a caller's bytes came from,
+so the rehearsal passes the measurement it already made instead of a literal.

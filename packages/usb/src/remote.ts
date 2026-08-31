@@ -60,6 +60,7 @@ import {
   writeMiscRequest,
 } from './writes.ts';
 import { authoriseReport } from './authorise.ts';
+import { IDENTITY_BYTES, IDENTITY_OFFSET, IDENTITY_PAGE } from './identity.ts';
 import type { Transport } from './transport.ts';
 
 /**
@@ -463,6 +464,27 @@ export class HarmonyRemote {
    * measurement here had that backwards and recorded `0xFE` as returning nothing, which came from a
    * single probe rather than from the device. `docs/findings.md` section 22.
    */
+  /**
+   * The unit's own 64 byte identity block, which is what says **which** remote this is.
+   *
+   * One `READ_FLASH` of internal page `0xFF` at `0xF400`, so no new protocol and no write. The
+   * address was predicted before it was read and confirmed on three remotes across two
+   * architectures, `docs/usb-protocol.md`, and the closure is that all three GUIDs `concordance -i`
+   * prints for one exact unit appear in it in the same order.
+   *
+   * **What it is for**: two Harmony Ones enumerate identically, so `targetIsTheSpareRemote` was a
+   * boolean a caller asserted. This is the reading that replaces it. `identity.ts` holds the
+   * comparison and, importantly, the refusal of a block that cannot identify anything, since the
+   * field named the serial is `0xEE` on every unit here.
+   *
+   * It returns the bytes and nothing else: no table of units, no name, no file. Where a caller keeps
+   * the expected value is the caller's decision, the lab on the bench and the user's own data in
+   * FreeHarmony.
+   */
+  async readUnitIdentity(): Promise<Uint8Array> {
+    return this.readInternalMemory(IDENTITY_PAGE, IDENTITY_OFFSET, IDENTITY_BYTES);
+  }
+
   async readInternalMemory(subSelector: 0xfe | 0xff, offset: number, count: number): Promise<Uint8Array> {
     if (refusableInternalCount(count)) {
       // A read of this region can restart the remote, and this refusal is what avoids it. Measured
@@ -616,7 +638,11 @@ export class HarmonyRemote {
    * volatile and a hang resets the device, section 100.
    */
   async writeRam(
-    p: { readonly architecture?: number | undefined; readonly targetIsTheSpareRemote: boolean },
+    p: {
+      readonly architecture?: number | undefined;
+      readonly identityBlock: Uint8Array;
+      readonly permittedUnit: Uint8Array;
+    },
     dataAddress: number,
     value: number,
   ): Promise<void> {
@@ -668,7 +694,7 @@ export class HarmonyRemote {
    * read only product may send it is not decided by this method existing.
    */
   async endSession(
-    p: Pick<WritePermission, 'architecture' | 'targetIsTheSpareRemote'>,
+    p: Pick<WritePermission, 'architecture' | 'identityBlock' | 'permittedUnit'>,
   ): Promise<void> {
     assertSessionEndAllowed(p, ESCAPE_END_SESSION);
     await this.send(escapeRequest(ESCAPE_END_SESSION));

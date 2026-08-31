@@ -25,8 +25,16 @@
  * a read after it is the difference between "cleared a variable" and "left the command layer in a
  * state where the next read misbehaves".
  */
-import { HarmonyRemote, listHarmony, openHarmony, WRITES_ENABLED } from '../src/index.ts';
-import { load } from '@harmony/lab';
+import {
+  HarmonyRemote,
+  assertUnitIsPermitted,
+  listHarmony,
+  openHarmony,
+  unitIdentityFromText,
+  unitIdentityText,
+  WRITES_ENABLED,
+} from '../src/index.ts';
+import { unitIdentity, unitIdentityPath } from '@harmony/lab';
 
 const CONFIG_BASE = 0x040000;
 const WINDOW = 32;
@@ -47,13 +55,23 @@ if (!WRITES_ENABLED) {
   );
 }
 
-// The spare's own dump is how the unit is identified. Two Harmony Ones enumerate identically and a
-// port says nothing about which is which, `docs/findings.md` section 88.
-const dump = load('one_spare_after_sync');
-if (dump === undefined) {
-  fail('no lab copy of one-spare-after-sync-config.bin, so the unit cannot be identified');
+/**
+ * The unit is identified by its **own identity block**, section 226, not by what it holds.
+ *
+ * This compared the first 32 bytes of the config region against the spare's dump, which proves
+ * content and not identity: any unit whose configuration happened to start the same way would have
+ * passed. The remote states which unit it is, in its own program memory, and that is what Logitech's
+ * service takes as a serial. The lab holds the recorded value, because a unit identity is that
+ * remote's hardware identity and this repository is public.
+ */
+const PERMITTED_UNIT_LABEL = 'one_spare';
+const stored = unitIdentity(PERMITTED_UNIT_LABEL);
+if (stored === undefined) {
+  fail(`the lab has no recorded identity for ${PERMITTED_UNIT_LABEL}, so the unit on the cable `
+    + 'cannot be identified and this experiment must not run. Write the identity read-identity.ts '
+    + `prints to ${unitIdentityPath(PERMITTED_UNIT_LABEL)}`);
 }
-const expected = dump.subarray(0, WINDOW);
+const permitted = unitIdentityFromText(stored);
 
 const candidates = (await listHarmony()).filter((d) => d.productId === 0xc121);
 if (candidates.length === 0) fail('no Harmony One attached');
@@ -83,18 +101,17 @@ try {
   if (version === undefined) fail('the remote is not answering');
   process.stdout.write(`version    ${hex(version)}\n`);
 
+  // Which unit, first, before anything is sent that is not a read.
+  const identityBlock = await remote.readUnitIdentity();
+  assertUnitIsPermitted({ identityBlock, permittedUnit: permitted });
+  process.stdout.write(`unit identity ${unitIdentityText(identityBlock).slice(0, 8)}..., which `
+    + `matches the recorded ${PERMITTED_UNIT_LABEL}\n`);
+
   const before = await remote.readFlash(CONFIG_BASE, WINDOW);
-  process.stdout.write(`config     ${hex(before)}\n`);
-  if (hex(before) !== hex(expected)) {
-    fail(
-      'this is not the spare: its config base does not match one-spare-after-sync-config.bin.\n' +
-        `  expected ${hex(expected)}`,
-    );
-  }
-  process.stdout.write('identified as the spare Harmony One, by what it holds\n\n');
+  process.stdout.write(`config     ${hex(before)}\n\n`);
 
   process.stdout.write('sending 0xE0 0x01, which clears the command state and expects no reply\n');
-  await remote.endSession({ architecture: 12, targetIsTheSpareRemote: true });
+  await remote.endSession({ architecture: 12, identityBlock, permittedUnit: permitted });
 
   const after = await remote.readFlash(CONFIG_BASE, WINDOW);
   const intact = hex(after) === hex(before);

@@ -46,12 +46,14 @@
  */
 import { readFileSync } from 'node:fs';
 
-import { imagePath } from '@harmony/lab';
+import { imagePath, unitIdentity, unitIdentityPath } from '@harmony/lab';
 
 import {
   ERASE_BLOCK_SIZE,
   HarmonyRemote,
   compareIntendedVersion,
+  unitIdentityFromText,
+  unitIdentityText,
   type StatedVersion,
   RailError,
   RemoteError,
@@ -61,7 +63,7 @@ import {
   openHarmony,
   readVersion,
 } from '../src/index.ts';
-import { CONFIG_REGION_BASE, assertFirstWriteAllowed } from '../src/rails.ts';
+import { CONFIG_REGION_BASE, assertFirstWriteAllowed, assertUnitIsPermitted } from '../src/rails.ts';
 import { NOMINAL_FLASH_SIZE, failureLine, neighbourBlocks } from '../src/rehearsal.ts';
 import { writeChunkLengths } from '../src/writes.ts';
 
@@ -121,6 +123,29 @@ const SPARE_DUMPS = new Set([
   // identification.
   'one_spare_20260830',
 ]);
+
+/**
+ * The lab's name for the unit this may run against.
+ *
+ * One label, because there is one write target. `../lab/units/<label>.txt` holds the identity as hex,
+ * which is what `unitIdentityText` produces off a live remote, and the lab is where it lives because a
+ * unit identity is that remote's hardware identity and this repository is public. Section 226.
+ */
+const PERMITTED_UNIT_LABEL = 'one_spare';
+
+/** The recorded identity, or a refusal: with no record there is nothing to compare against. */
+function permittedUnit(): Uint8Array {
+  const stored = unitIdentity(PERMITTED_UNIT_LABEL);
+  if (stored === undefined) {
+    throw new Refusal(
+      `the lab has no recorded identity for ${PERMITTED_UNIT_LABEL}, so nothing can say whether the `
+        + 'remote on the cable is the one this may write to. Two Harmony Ones enumerate identically. '
+        + `Write the unit's identity, as printed by read-identity.ts, to `
+        + `${unitIdentityPath(PERMITTED_UNIT_LABEL)}`,
+    );
+  }
+  return unitIdentityFromText(stored);
+}
 
 function argument(name: string): string | undefined {
   const at = process.argv.indexOf(`--${name}`);
@@ -229,6 +254,16 @@ async function main(): Promise<void> {
     const identity = readVersion(versionBytes);
     process.stdout.write(`firmware ${identity.firmware}, flash id ${identity.flash}, `
       + `architecture ${architecture}, skin ${identity.skin}\n`);
+
+    // **Which unit this is**, before anything else is decided about it. One read of internal program
+    // memory, no write, and the comparison is against what the lab recorded rather than against a
+    // boolean. Printed as the first few characters only: the whole value identifies a specific piece
+    // of somebody's hardware and belongs in the lab, not in a terminal log that gets pasted about.
+    const permitted = permittedUnit();
+    const identityBlock = await remote.readUnitIdentity();
+    assertUnitIsPermitted({ identityBlock, permittedUnit: permitted });
+    process.stdout.write(`unit identity ${unitIdentityText(identityBlock).slice(0, 8)}..., which `
+      + `matches the recorded ${PERMITTED_UNIT_LABEL}\n`);
     const base = CONFIG_REGION_BASE[architecture];
     const blockSize = ERASE_BLOCK_SIZE[architecture];
     const ceiling = WRITABLE_CEILING[architecture];
@@ -345,11 +380,13 @@ async function main(): Promise<void> {
       // will carry a wrapper and this is where the gate starts doing work.
       intendedVersion: statedVersion,
       versionBlock: versionBytes,
-      // Earned by two checks together, not asserted: `--dump` is restricted to the spare's own
-      // dumps, and the block on the device matched that dump byte for byte. A configuration is
-      // unit specific, so those two together say which unit is on the cable, which enumeration
-      // cannot.
-      targetIsTheSpareRemote: true,
+      // **Read off the unit rather than asserted, section 226.** This was `targetIsTheSpareRemote:
+      // true` with a paragraph arguing that the dump allow list plus a byte compare together say
+      // which unit is on the cable. They do not: they prove content, which the review of 27 August
+      // recorded and this script then restated for three days. The unit's own identity block says
+      // it, and the lab holds what the permitted one is.
+      identityBlock,
+      permittedUnit: permitted,
     };
 
     const before = new Map<number, Uint8Array>();

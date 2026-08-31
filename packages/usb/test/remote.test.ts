@@ -22,6 +22,8 @@ import {
   architectureFromVersion,
   decodeReply,
   encodeVersionBlock,
+  IDENTITY_BYTES,
+  IDENTITY_FIELDS,
   FILE_BASED_PRODUCTS,
   HARMONY_PRODUCT_FIRST,
   HARMONY_PRODUCT_LAST,
@@ -38,6 +40,17 @@ import {
   transportOver,
   type Transport,
 } from '../src/index.ts';
+
+/**
+ * An identity block in the shape a remote's really is: `0xEE` where the serial field is, which is
+ * what every unit read here carries, and a written GUID pair, which is what tells units apart.
+ */
+const TEST_UNIT = (() => {
+  const block = new Uint8Array(IDENTITY_BYTES).fill(0);
+  block.fill(0xee, IDENTITY_FIELDS.serial, IDENTITY_FIELDS.guidA);
+  for (let i = 0; i < 0x20; i += 1) block[IDENTITY_FIELDS.guidA + i] = (i * 7 + 3) & 0xff;
+  return block;
+})();
 
 /**
  * A remote that answers from a script, after `latency` polls of silence.
@@ -291,7 +304,10 @@ test('every write method refuses before it touches the transport', async () => {
     // the flag is still what refuses.
     intendedVersion: {},
     versionBlock: encodeVersionBlock({ architecture: 12 }),
-    targetIsTheSpareRemote: true,
+    // The unit check's two inputs, section 226, agreeing, so the flag is still what refuses. The
+    // `0xEE` fill is the shape a real block has in the field named the serial.
+    identityBlock: TEST_UNIT,
+    permittedUnit: TEST_UNIT,
   };
   await assert.rejects(() => remote.writeFlash(permission, 0x040000, new Uint8Array(4)));
   await assert.rejects(() => remote.eraseFlash(permission, 0x040000));
@@ -320,7 +336,8 @@ test('an erase request reaches the device on no path at all with writes disabled
           originalDumpVerified: true,
           intendedVersion: {},
           versionBlock: encodeVersionBlock({ architecture: 12 }),
-          targetIsTheSpareRemote: true,
+          identityBlock: TEST_UNIT,
+          permittedUnit: TEST_UNIT,
         },
         0x020000,
       ),

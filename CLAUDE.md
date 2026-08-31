@@ -502,10 +502,12 @@ surveyed with the HID command layer mined and three resource files with it. `mak
 answer to how far anything has been dug, and a count in this file is exactly the kind of thing it
 exists to replace.
 
-**The survey is done since 28 August 2026** and `reference/lab-register.md` is the register: 44
+**The survey is done since 28 August 2026** and `reference/lab-register.md` is the register: 46
 artefacts, each with a status and its tags, with a test that fails when the lab gains one the register
 does not name. It said 58 for a day, which was a count nothing recomputed, and the row count is
-asserted exactly now. So "did we already know this" is a **command** rather than a memory exercise:
+asserted exactly now. **This said 44 while the test asserted 45**, until 30 August 2026, which is the
+same defect the previous sentence describes and one paragraph away from it: the count is asserted in
+`tests/test_toolchain.py` and restated here, and only one of the two moves when a row is added. So "did we already know this" is a **command** rather than a memory exercise:
 `make lab-check PATH_ARG=<path>`, which prints every register row bearing on a path, ancestors and
 descendants both. That is the point: an expensive check gets skipped under momentum, so making it
 cheap is the only structural fix, and section 209 is what finally made it cheap instead of writing a
@@ -630,6 +632,15 @@ document:
   stays blocked until a second arch 14 remote exists; **arch 9 (Harmony 525) has none either.**
   Reading arch 14 is unaffected. The spare is no longer blank, so anything wanting a virgin arch 12
   remote wants its lab dump rather than the unit.
+  **Which unit is on the cable is read off the unit since section 226**, rather than asserted by the
+  caller: one `READ_FLASH` of the 64 byte identity block in the remote's own program memory, whose
+  two GUIDs are what Logitech's service takes as a serial. Danny's decision, on the ground that the
+  vendor already solved telling two remotes apart and this project's own proposal, a fingerprint of
+  the configuration, was reinventing it. **The trap is that the field named the serial identifies
+  nothing**: it is `0xEE` on every remote read here, so comparing it matches every unit against every
+  other. **The values live in the lab and not here**, `units/<label>.txt`, and FreeHarmony keeps the
+  same value with the user's own data; `packages/probe` still emits none, because its report is
+  published by other people.
 * No write proceeds without a verified original dump of that exact unit in the lab, and without the
   config's `INTENDEDVERSION` matching the connected remote. **The comparison is over six fields and
   not four**, section 87: protocol, skin, flash and board plus `SOFTWARETYPE` and `ARCHITECTURE`,

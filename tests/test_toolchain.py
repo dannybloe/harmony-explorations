@@ -414,7 +414,9 @@ class ATypeScriptSampleLoopStatesItsPopulation(unittest.TestCase):
         # 52 since the compatibility gate, section 225: `packages/usb/test/compatible.test.ts` is
         # literals only and `packages/corpus/test/compatibility.test.ts` is the corpus half, which
         # needs both languages' halves of the config format and so cannot live beside the first.
-        self.assertEqual(scanned, 52, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
+        # 53 since `packages/usb/test/identity.test.ts`, section 226, which identifies the unit on
+        # the cable and works on synthetic blocks because the real values live in the lab.
+        self.assertEqual(scanned, 53, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
         self.assertEqual(
             {name: len(lines) for name, lines in counted.items()},
             TYPESCRIPT_LOOPS_ALLOWED_TO_SKIP_A_SAMPLE,
@@ -534,7 +536,8 @@ class ABoundOnACorpusTotalIsExact(unittest.TestCase):
         # 50 since `packages/usb/test/rehearsal.test.ts`, the job 3 review of 30 August 2026.
         # 52 since the compatibility gate, section 225: one test file per package, since the corpus
         # half needs the codec and `packages/usb` deliberately does not depend on it.
-        self.assertEqual(len(scanned), 52, 'TypeScript test files, which moves when one is added')
+        # 53 since `packages/usb/test/identity.test.ts`, section 226.
+        self.assertEqual(len(scanned), 53, 'TypeScript test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):
@@ -1190,7 +1193,9 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
         # named **without** a trailing slash, because this check reads any backticked name
         # containing one as a path relative to the lab root: `system/` is not such a path, and
         # spelling ten of them that way cost ten failures before the spelling was the fix.
-        self.assertEqual(len(named), 65, 'lab paths the register names, as at 30 August 2026')
+        # 66 since `units/`, section 226: the identity of each bench remote, which is what the
+        # write rails compare the connected unit against and which must not be in this repository.
+        self.assertEqual(len(named), 66, 'lab paths the register names, as at 30 August 2026')
         for path in sorted(named):
             with self.subTest(path=path):
                 if '*' in path:
@@ -1270,8 +1275,10 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
         58 for a day, which was a count nothing recomputed, and this is what recomputes it.
         """
         module, rows = self.rows()
-        self.assertEqual(len(rows), 45)
-        self.assertEqual(len(dict(rows)), 45, 'a duplicated path would make a query ambiguous')
+        # 46 since `units/`, section 226: the identity of each bench remote, which the write rails
+        # compare the connected unit against and which may not be in a public repository.
+        self.assertEqual(len(rows), 46)
+        self.assertEqual(len(dict(rows)), 46, 'a duplicated path would make a query ambiguous')
         self.assertNotIn('unseen', dict(rows), 'the status legend is not an artefact')
 
     def test_a_query_is_answered_by_ancestors_and_by_descendants(self):

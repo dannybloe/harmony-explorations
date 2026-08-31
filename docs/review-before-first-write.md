@@ -596,5 +596,8 @@ exactly that test.
 two of them. **One of the three stopped being an assertion the same day**, section 225: the version
 comparison is performed by the rail out of two inputs rather than asked of the caller, which is job
 2's own finding applied to the next field along. `originalDumpVerified` now carries the measurement
-the rehearsal already made instead of a literal, and `targetIsTheSpareRemote` stays an assertion by
-the deliberate decision not to carry a serial through the enumeration path.
+the rehearsal already made instead of a literal, and **the third went the same way the next day**,
+section 226: the unit is identified by the 64 byte identity block in its own program memory, the way
+Logitech's own service identifies one. So of the three world facts this review raised, two are now
+comparisons the rail performs and the third is at its honest ceiling. The reason the enumeration path
+carries no serial is untouched and is why `packages/probe` still emits none.
