@@ -62,7 +62,7 @@ That is the checklist. Below it, behind a gate:
 | phase | what it gets us | status |
 |---|---|---|
 | 8 | the write path, on the spare Harmony One | **the rehearsal succeeded, 30 August 2026**, section 222: one block of the unit's own configuration erased and put back unchanged, verified over the block and over the whole file. Ten of its twelve boxes are ticked; the version comparison is performed rather than moot since section 225 and the unit is identified off the unit since section 226, so the two left are a configuration **we** produced reading back off it and the standing rule that the flag stays off. What is untried is a write that **changes** something |
-| 9 | the appliance responds | **gate opened 25 August 2026**, after phase 8 |
+| 9 | the appliance responds | **blocked on a relayout**, section 239: the tool exists and the appliance is chosen, and the spare's device list is full at six devices, so a seventh changes layout family rather than appending a row |
 
 ## What this deliberately does not need
 
@@ -728,6 +728,22 @@ M4, and behind the gate above. The rails are written and off, `packages/usb/src/
 
 ## Phase 9: the appliance responds
 
+**Blocked on a relayout, found 1 September 2026, section 239.** The composition ran against a second
+configuration for the first time and two constants in it turned out to be per config. The first is
+fixed: the state variable a device list row marks device mode with is read off the file now, since it
+is a different variable in each of the fourteen configurations here and it moves between two syncs of
+one remote. The second is the blocker: **the spare Harmony One drives six devices and its device list
+is full.** A page's lead byte states its row count exactly, the list runs two pages of three, and
+Logitech's own compiler answers a seventh device by changing layout family rather than by appending,
+four pages for nine devices and five for fifteen. `composeDeviceScreen` refuses it by name.
+
+So the appliance to add and the tool to add it with are both ready, `packages/codec/bin/compose-device.ts`,
+and what stands in the way is one piece of phase 6 that was never needed on a five device config.
+
+- [ ] **compose a third device list page**, or take a host configuration with room. The first is the
+      real fix and needs the lead 4 and 5 family read: what its page draws that lead 12 does not, and
+      how the flip cycles more than two pages. Both are measurable off the nine and fifteen device
+      compiles already in the lab
 - [ ] write the config phase 6 produced to the spare Harmony One
 - [ ] press the device's button at the appliance and watch it respond
 - [ ] **check**: the appliance responds, the remote still boots, its clock is right, its other activities

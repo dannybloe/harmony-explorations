@@ -439,7 +439,7 @@ finding.
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 238<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 239<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -659,6 +659,18 @@ figures common to both carry `fact:` markers, so `make facts` moves every copy t
 cannot drift apart; what a reader should not expect is two independent statements of one measurement.
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
+
+**Phase 9 is blocked and the block is worth more than the phase**, section 239. Putting an appliance
+from Logitech's catalogue on to the spare Harmony One ran the composition against a second
+configuration for the first time, and two things it had been carrying as constants turned out to be
+per config. The state variable a device list row marks device mode with is one of eight different
+numbers across the fourteen configurations here, and it **moves between two syncs of the same
+remote**, so it is read off the file now; with the constant in place the spare's own configuration
+reported that it had no device list at all, which is what a hardcoded operand looks like when it is
+wrong. The second is the blocker: a mode page's lead byte states its row count exactly, the spare
+drives six devices over two full pages, and Logitech's compiler answers a seventh by switching
+layout family rather than appending. So the tool and the appliance are ready and one piece of phase
+6 is missing.
 
 **The oldest unpriced rail has a number now**, section 238. "Refuse an oversized sequence" had been
 written down since 29 August with nothing behind it, because the only evidence was a lab note: a 25

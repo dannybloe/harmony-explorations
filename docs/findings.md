@@ -30824,3 +30824,90 @@ would put the count past its equality test and make the whole reading unsafe.
 * `tests/test_action_queue.py`, the firmware half on the Harmony One and Harmony 600 images.
 * `packages/codec/test/queue.test.ts`, the corpus table and the refusal.
 * The behaviour it is a rail for is `../lab/reads/20260823T1408Z-onres-sequence-NOTES.md`.
+
+## 239. Two constants in the composer were per config, and the second one blocks phase 9
+
+Phase 9 of `docs/adding-a-device.md` is one command: put an appliance from Logitech's catalogue on
+the spare Harmony One, press its button, watch the appliance answer. The composition it uses was
+built and proved in phases 6 and 7 against **one** configuration, `one_config`, and running it
+against a second one for the first time refuted two things it had been carrying as constants.
+
+### The device mode marker is a different variable in every configuration
+
+A device list row is three instructions: beep, enter the device's mode, and write 1 into the state
+variable that marks the remote as being in device mode. The composer wrote `0x98`, which is
+`0x80 | 24`, because that is what `one_config` writes.
+
+It is 24 in exactly one of the fourteen configurations here that carry a device list.
+
+| | marker |
+|---|---|
+| `one_config` | 24 |
+| the spare's own configuration, 30 August | 25 |
+| the compile before it | 26 |
+| the two calibration configs and the phase 7 pair | 27 |
+| the spare before its first sync, and `one_config_unprogrammed` | 30 |
+| the spare after that sync | 31 |
+| the three protocol campaign compiles | 31, 32, 33 |
+
+Eight distinct values, and **the same remote's two reads either side of one sync differ by one**, so
+this is not even stable per unit. The variable is unnamed in the name tree in all fourteen, so there
+is nothing to look it up by, and its offset from `CurrentActivityState` is not constant either: 20
+plus 4 on `one_config` and 20 plus 5 on the spare.
+
+What is stable is that a configuration's own rows all write the same one. So `deviceModeMarker`
+takes the majority over every row shaped list, which is a reading off the file rather than a number
+carried in the code. With the constant in place the spare's configuration reported that it had **no
+device list at all**, which is the failure mode worth naming: a hardcoded operand does not report a
+mismatch, it reports an absence.
+
+### The device list has two layout families and seven devices is where it switches
+
+Past that, the composition reaches the real limit. A mode page's lead byte states how many device
+rows its list binds, exactly, over every arch 12 configuration here:
+
+| lead | rows | pages |
+|---|---|---|
+| 4 | 3 | 117 |
+| 5 | 1 | 9 |
+| 12 | 3 | 55 |
+| 13 | 2 | 19 |
+| 20 | 3 | 16 |
+| 21 | 1 | 4 |
+| 26 | 1 | 3 |
+| 28 | 1 | 6 |
+
+Never two counts for one lead, which is what makes it a reading rather than a correlation. The
+device list uses two of those families and Logitech's compiler picks between them by device count:
+
+* five devices, `one_config`: two pages, leads 12 and 13, three rows then two
+* six devices, the spare and `calibration_favzero`: two pages, leads 12 and 12, both full
+* nine devices: four pages, leads 4, 4, 4 and 5
+* fifteen devices: five pages, all lead 4
+
+So the spare's device list is **full**, and a seventh device is not a row appended to the last page.
+It is a relayout: both existing pages change family, a third page appears, and the page flip has to
+cycle three instead of two. `composeDeviceScreen` refuses it by name rather than guessing, and that
+refusal is what phase 9 now stands behind.
+
+### What this says about the method
+
+Both defects are the same shape and neither could have been found by more care on one sample. The
+composer's own docstring says it is "calibrated on a config with five", which was honest and was
+read as a note about the device count when it was also a note about every operand in the file. A
+constant lifted from one configuration is a hypothesis about all of them, and the corpus is what
+tests it: the marker table above took one pass over fourteen containers.
+
+### What would falsify it
+
+A Harmony One configuration whose device list rows write two different variables, which would make
+the majority the wrong reading. Or a mode page whose lead byte goes with a row count the table above
+does not give it.
+
+### Where it lands
+
+* `deviceModeMarker` in `packages/codec/src/compose.ts`, and the refusal beside it.
+* `packages/codec/bin/compose-device.ts`, which is phase 9's tool: an appliance out of the catalogue
+  into a configuration, with every reader check and the erase block count printed.
+* `packages/codec/test/compose.test.ts`: the marker table, the lead table, and the refusal that
+  proves the spare gets past the marker and stops at the layout.

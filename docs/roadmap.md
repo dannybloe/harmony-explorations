@@ -128,6 +128,15 @@ the erase and write sequence now has one implementation, `writeBlock`, shared by
 writer, reachable through the `@harmony/usb/write` subpath so that a third caller is a decision
 somebody sees.
 
+**Phase 9 is started and blocked, section 239**, and the block is a piece of phase 6 rather than
+anything to do with a remote. Composing an appliance from Logitech's catalogue on to the spare's own
+configuration ran that code against a second container for the first time, and two of its constants
+were per config. The device mode marker is fixed, read off the file rather than carried. The device
+list layout is not: the spare drives six devices over two full pages, a page's lead byte states its
+row count exactly, and Logitech's compiler answers a seventh device by changing layout family, four
+pages for nine devices and five for fifteen. So the next piece of work is composing a third device
+list page, and both families are already measurable off compiles in the lab.
+
 **And the rail that had no number has one, section 238.** "Refuse an oversized sequence" was written
 down on 29 August with nothing behind it, since its only evidence was a lab note, and it was named
 here as the highest severity way to build a config that harms a remote. The number came off the
