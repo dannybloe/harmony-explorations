@@ -94,8 +94,9 @@ format fact: a 25 item sequence at Logitech's own stated maximum expands to roug
 instructions, and heavy tapping of the touch panel while it runs hung a Harmony One three times out of
 three, batteries out each time, against five runs that completed. Reproducible rather than variance,
 and the mechanism is open. So **their stated maximum is not a safe bound**, and the rail a writer needs
-is bounded by the expanded instruction count rather than by their item count. That rail is stated in
-the `writing-a-config` skill and is **not implemented anywhere**, which is recorded there.
+is bounded by the **peak depth** of the forty instruction action queue rather than by their item count.
+Section 238 derived that number from the firmware and `assertQueueFits` implements it; this document
+said the rail was implemented nowhere, which was true until 1 September 2026.
 
 **On "what would make this interesting" above**: H2 is refuted, so the question it raises does not
 arise. A sequence's delays are in the config, in the action list, and a reader can recover them.

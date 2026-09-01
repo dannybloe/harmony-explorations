@@ -213,7 +213,7 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         files = self._test_files()
         # The population, so a glob that stops matching fails here rather than passing quietly.
         # Exact, since a test file is added deliberately and rarely, unlike a test function.
-        self.assertEqual(len(files), 31, 'the Python test files')
+        self.assertEqual(len(files), 32, 'the Python test files')
         with_block = 0
         for path in files:
             with open(path, encoding='utf-8') as handle:
@@ -230,7 +230,7 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
                              % (os.path.basename(path), at[0] + 1, len(hidden), ', '.join(hidden)))
         # And the check has teeth only if most files actually carry a block. Exact: all but two do,
         # and the two that do not are named in the comment above rather than left to a tolerance.
-        self.assertEqual(with_block, 29,
+        self.assertEqual(with_block, 30,
                          'files carrying a __main__ block, of %d' % len(files))
 
 
@@ -422,7 +422,7 @@ class ATypeScriptSampleLoopStatesItsPopulation(unittest.TestCase):
         # definitions out of the infrared archive checkout and skips without one, like a lab test.
         # 56 since `packages/codec/test/pronto.test.ts`, section 230: Pronto Hex, and our own waveforms
         # against the two million Logitech's renderer produced from the same definitions.
-        self.assertEqual(scanned, 56, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
+        self.assertEqual(scanned, 57, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
         self.assertEqual(
             {name: len(lines) for name, lines in counted.items()},
             TYPESCRIPT_LOOPS_ALLOWED_TO_SKIP_A_SAMPLE,
@@ -544,7 +544,7 @@ class ABoundOnACorpusTotalIsExact(unittest.TestCase):
         # half needs the codec and `packages/usb` deliberately does not depend on it.
         # 53 since `packages/usb/test/identity.test.ts`, section 226.
         # 55 since `packages/codec/test/catalogue.test.ts`, section 229; 54 since `archive.test.ts`.
-        self.assertEqual(len(scanned), 56, 'TypeScript test files, which moves when one is added')
+        self.assertEqual(len(scanned), 57, 'TypeScript test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):
@@ -649,7 +649,7 @@ class APythonBoundOnACorpusTotalIsExact(unittest.TestCase):
 
     def test_the_pattern_still_matches_a_known_bound(self):
         found, scanned = self._bounds()
-        self.assertEqual(len(scanned), 31, 'Python test files, which moves when one is added')
+        self.assertEqual(len(scanned), 32, 'Python test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):

@@ -2856,6 +2856,37 @@ what makes it a reading rather than a range that happens to fit. It also matches
 harmony-decompiler reports for arch 9, where `0x7F` is "run an action list", so the meaning
 transfers across architectures even though the wider inventory does not.
 
+#### `0x7F` is a call, and the queue it calls into holds forty instructions
+
+**Confirmed on arch 12 and arch 14**, from the firmware on both. A list is not interpreted in place.
+It is spooled whole into a ring of 120 bytes, which is exactly forty three byte instructions, and
+the main loop then executes one instruction and rotates whatever that instruction pushed from the
+tail of the ring to its head. So a `0x7F` runs its sublist **next** rather than after everything
+already queued, the ring holds the call stack, and its depth is bounded by nesting rather than by a
+list's length.
+
+**Every push into a full ring is discarded with no error.** All three push routines test the count
+first and return, and the two that report anything are called from code that ignores the answer. The
+ring is shared: a key press, a state change, a display band announcement and the host's own
+`MISC_QUEUE_ACTION` push into the same forty slots a running activity occupies.
+
+So a config states an implicit demand, the deepest its own lists go, and a config whose demand
+exceeds forty is one the remote accepts and silently does less than.
+
+| | deepest run of any list |
+|---|---|
+| the four configs carrying a hand authored sequence or a fifteen device campaign | 35 |
+| every other Harmony One config | 22 |
+| Harmony 700 | 18 |
+| Harmony 890 and Harmony 600 | 14 |
+| Harmony 880 and 885 | 13 |
+| Harmony 525 | 9 |
+
+Nothing measured overflows, so forty is a rail for what a writer produces rather than a description
+of the corpus. `packages/codec/src/queue.ts` computes it and `assertQueueFits` refuses; the figure it
+reports follows `0x7F` only and is therefore a lower bound, since a write to a state variable also
+pushes. `docs/findings.md` section 238.
+
 #### The final run belongs to base slot 8
 
 The lists a `0x7F` never names are not orphans. Base slot 8 holds a `u16` reference to **every** list

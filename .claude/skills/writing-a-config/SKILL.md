@@ -170,22 +170,23 @@ produce a config the remote accepts and mishandles.
   out of three with the batteries out each time, against five gentle or untouched runs that all completed.
   The mechanism is open and two readings are dead. **This is a new hazard class**: a config the remote
   accepts, whose checksums verify, which this project accounts for to the byte, and which writes nowhere it
-  should not. It simply runs. So a writer **refuses** an oversized sequence rather than warning, bounded by
-  the expanded instruction count and not by their item count, which permits this one. The pause itself is
-  opcode `0x7C` inline in tenths of a second in the low byte, so 25.5 seconds is the ceiling the format can
-  express and their 20 second limit sits just under it.
+  should not. It simply runs. So a writer **refuses** an oversized sequence rather than warning. The pause
+  itself is opcode `0x7C` inline in tenths of a second in the low byte, so 25.5 seconds is the ceiling the
+  format can express and their 20 second limit sits just under it.
 
-  **That refusal is not implemented anywhere, and this rail is the only one here with nothing behind
-  it.** Written down on 29 August 2026 rather than left to be discovered: there is no bound in
-  `packages/codec`, no test, and no section in `docs/findings.md`, because the measurement was
-  deliberately kept out of the findings. Every other rail on this page traces to a firmware reading
-  with an assertion behind it; this one traces to a lab note. So the highest severity way to build a
-  config that harms a remote is invisible to `make facts`, `make test` and every other check this
-  repository has, and a session that greps for a refusal will find none and may conclude there is
-  nothing to refuse. **Nothing composed here may be written to a remote until this has a number and a
-  refusal**, and the number is the open part: 55 expanded instructions hung one and the largest clean
-  run is unmeasured, so the bound has to come from a run that establishes a ceiling rather than from
-  the one figure that failed.
+  **The number is the peak depth of the action queue, and it is forty**, section 238. Not the total a
+  sequence expands to, which is what this page said for two days: the main loop rotates whatever an
+  instruction pushed to the head, so opcode `0x7F` is a call, the ring holds the call stack, and what runs
+  out is how deep the nesting goes rather than how long the program is. Every push into a full ring is
+  discarded with no error anywhere, so a config that asks for more runs and quietly does less than it says.
+  `assertQueueFits` in `packages/codec/src/queue.ts` is the refusal and `write-config.ts` performs it
+  before anything is erased.
+
+  **What is settled is the hard ceiling, not the safe one.** Nothing in the corpus overflows: the sequence
+  that hung a remote peaks at 35 of the 40, and every configuration Logitech compiled from an ordinary
+  account peaks at 22 or below. So the sequence leaves five slots for every key press, state change and
+  display event the remote still has to queue where an ordinary config leaves eighteen, and nothing has
+  been measured in between. A softer bound than 40 is a decision rather than a reading.
 * **Two erase blocks is the floor for any edit, not a page binding's quirk**, section 237. The
   trailer checksum sits at the far end of the container and `applyEdits` restamps it, so a one byte
   change to a device's power on delay moves `0x083BFD` and `0x1D6B66` on the spare Harmony One, 1.3

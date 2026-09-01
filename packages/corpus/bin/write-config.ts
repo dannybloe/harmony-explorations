@@ -61,7 +61,9 @@ import {
   transfersFor,
   writeBlock,
 } from '@harmony/usb/write';
-import { parse, trailerChecksum } from '@harmony/codec';
+import {
+  ACTION_QUEUE_INSTRUCTIONS, QueueError, assertQueueFits, parse, trailerChecksum, worstQueueRun,
+} from '@harmony/codec';
 import { profileFor, readConfig } from '../src/index.ts';
 
 /**
@@ -135,6 +137,22 @@ async function main(): Promise<void> {
   }
   process.stdout.write(`${configPath}: ${wanted.length} bytes, trailer checksum `
     + `0x${computed.toString(16)}, which recomputes\n`);
+
+  // **A check the remote does not make, which is exactly why it is here.** An action list is
+  // spooled into a ring of forty instructions and every push into a full ring is discarded without
+  // a word, so a config that asks for more runs and quietly does less than it says. Section 238.
+  try {
+    assertQueueFits(container);
+  } catch (error) {
+    if (!(error instanceof QueueError)) throw error;
+    fail(`${configPath} overflows the remote's action queue: ${error.message}. The remote would `
+      + 'accept it and silently drop instructions, so it is refused here');
+  }
+  const worst = worstQueueRun(container);
+  if (worst !== undefined) {
+    process.stdout.write(`deepest action list: ${worst.peak} of ${ACTION_QUEUE_INSTRUCTIONS} queue `
+      + `slots, at list ${worst.list}\n`);
+  }
 
   if (wanted.length > dump.length) {
     fail(`the config is ${wanted.length} bytes and ${dumpName} covers ${dump.length}: the dump has `

@@ -439,7 +439,7 @@ finding.
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 237<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 238<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -659,6 +659,19 @@ figures common to both carry `fact:` markers, so `make facts` moves every copy t
 cannot drift apart; what a reader should not expect is two independent statements of one measurement.
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
+
+**The oldest unpriced rail has a number now**, section 238. "Refuse an oversized sequence" had been
+written down since 29 August with nothing behind it, because the only evidence was a lab note: a 25
+step sequence hung a Harmony One three times out of three and nothing said what a writer should
+refuse at. The number came off the firmware rather than off more runs at the remote. **A Harmony
+spools every action list into one ring of forty instructions, shared with key presses, state changes
+and display events, and every push into a full ring is discarded with no error anywhere.** So a
+config can quietly do less than it says. Nothing in the corpus overflows: the sequence that hung the
+remote peaks at 35 of the 40, and every configuration Logitech compiled from an ordinary account
+peaks at 22 or below, so what the sequence is short of is headroom rather than slots of its own.
+`assertQueueFits` refuses, and `write-config.ts` runs it before anything is erased. The hang itself
+is still unexplained and one more reading of it is dead: the queue is a call stack, not an append
+list, which is what a first pass through the same routines had it as.
 
 **And a configuration our own codec produced is now on a remote**, section 237, which is the last box
 in front of adding a device. Everything written before today came off the remote it went back to;

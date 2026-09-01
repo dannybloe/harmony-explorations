@@ -128,6 +128,21 @@ the erase and write sequence now has one implementation, `writeBlock`, shared by
 writer, reachable through the `@harmony/usb/write` subpath so that a third caller is a decision
 somebody sees.
 
+**And the rail that had no number has one, section 238.** "Refuse an oversized sequence" was written
+down on 29 August with nothing behind it, since its only evidence was a lab note, and it was named
+here as the highest severity way to build a config that harms a remote. The number came off the
+firmware: **every action list is spooled into one ring of forty instructions**, shared with key
+presses, state changes and display events, and every push into a full ring is discarded with no error
+anywhere. `assertQueueFits` refuses a config that overflows it and `write-config.ts` runs the check
+before it erases anything, so no rail on the writer's list is unimplemented now.
+
+What it does **not** do is explain the hang, and phase 9 should not wait for that. Nothing in the
+corpus overflows: the sequence that hung the remote peaks at 35 of the 40 where every configuration
+Logitech compiled from an ordinary account peaks at 22 or below, so what it is short of is headroom
+rather than slots of its own, and nothing has been measured in between. A bound tighter than forty is
+a decision rather than a reading, and it wants either the mechanism or a run at a remote that
+establishes a clean ceiling.
+
 `make lab-check PATH_ARG=<path>` first, per decision 12, because the last nine digs each re-derived
 something the site already held.
 

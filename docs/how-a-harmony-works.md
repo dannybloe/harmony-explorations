@@ -208,8 +208,10 @@ at one a second cost nothing at all.
 writer. A config at their limit is one the remote accepts, whose checksums verify, which this project
 accounts for to the byte, and which can leave the remote unusable until its batteries come out. It writes
 nowhere it should not; it simply runs. A writer should therefore **refuse** an oversized sequence rather
-than warn about it, and bound it by the expanded instruction count rather than by the item count, which
-permits this one.
+than warn about it, and the bound is the **peak depth of the action queue**, forty instructions, rather
+than the item count, which permits this one. Section 238 measured it: a Harmony spools action lists into
+one ring of forty and discards in silence anything that does not fit, this sequence peaks at 35 of the 40
+and every configuration Logitech compiled from an ordinary account peaks at 22 or below.
 
 ## A sequence can only use the activity's own appliances
 

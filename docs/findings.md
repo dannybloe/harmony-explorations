@@ -30686,3 +30686,141 @@ length edit whose changed bytes fall in blocks `blocksDiffering` does not name.
 * `packages/usb/bin/read-region.ts`, and `packages/corpus/bin/write-config.ts`.
 * `packages/codec/test/edit.test.ts` and `packages/usb/test/rehearsal.test.ts`.
 * The container that was written is `one_spare_written_by_us` in the lab.
+
+## 238. The action queue holds forty instructions and drops the rest in silence
+
+The oldest unpriced rail in this project was "refuse an oversized sequence", and it had no number
+behind it: a 25 step sequence hung a Harmony One three times out of three on 23 August 2026, the
+lab note recorded the behaviour, and nothing said what a writer should refuse at. This is that
+number, derived from the firmware rather than from more runs at a remote that has to have its
+batteries pulled afterwards.
+
+**The ring holds forty instructions and it is the only one.** Section 34 found it on arch 14, 120
+bytes at RAM `0x0127` on the Harmony 700 and `0x021E` on the Harmony 600; on arch 12 it is
+`0x0E29` to `0x0EA0` on the Harmony One, the same 120 bytes, the same three byte instruction, the
+same 40 slots. A key press, a state change, a display band announcement and the host's own
+`MISC_QUEUE_ACTION` all push into the slots a running activity is occupying.
+
+### What was misread, and it changed the arithmetic by a factor of eight
+
+The first pass through these routines had `0x7F` **appending** its sublist at the tail, which
+follows from the spooler alone: `0x2E9FE` on the Harmony One seeks base slot 10, reads the count
+and calls `0x24D22` once per instruction, and each of those pushes at the tail. Under that reading a
+list of twenty one sends grows the ring by one instruction per send and an ordinary Harmony 700
+activity demands 169 slots of the 40, which would mean every remote in the corpus drops
+instructions constantly.
+
+The main loop is what settles it, `0x28B32` on the Harmony One and `0x14FDA` on the Harmony 600,
+identical in shape:
+
+```
+CALL executor      one instruction
+CLRWDT
+CALL rotate        move everything that instruction pushed from the tail to the head
+CLRWDT
+```
+
+The rotate is `0x24E08`, and it moves three bytes per instruction the push routine counted, one byte
+at a time through `0x24B6E`. That routine steps **both** cursors back one and then copies the byte
+the tail now points at to the head, so the ring turns rather than grows and the count does not move.
+Three of those turn the last pushed instruction into the next one to run.
+
+So **`0x7F` is a call**. Its sublist runs next, the ring holds the call stack rather than a flat
+program, and the depth is bounded by nesting instead of by a config's instruction count. Every
+ordinary configuration then fits comfortably, which is the calibration the wrong reading failed.
+
+### Nothing complains when it is full
+
+Three routines push, and all three test the count first and return:
+
+| | Harmony One | what it pushes |
+|---|---|---|
+| the full test | `0x24B00` | `MOVLW 0x78; SUBWF count,W; BZ` |
+| an event | `0x24BF0` | `0x1F 0xFC <event>`, from 21 call sites |
+| an instruction, counted for the rotate | `0x24CD6` | three bytes, and the counter after the test |
+| an instruction | `0x24CFE` | three bytes |
+
+`0x24BF0` returns nothing at all, so a dropped event and a delivered one are indistinguishable to
+its caller. The two instruction pushes return a flag and the spooler ignores it. The order inside
+`0x24CD6` is worth keeping: the full test comes **before** the counter, so a dropped instruction is
+not counted and the rotate still moves exactly what arrived. The bookkeeping stays consistent and
+the instruction is gone.
+
+**The full test is an equality**, not a comparison, so a count that ever passed `0x78` would read as
+"room" forever and the ring would be destroyed. Nothing can push it past: the only routine that adds
+to the count without pushing is the executor's retry at `0x25892`, which restores exactly the three
+bytes it popped, and the six byte instruction's arm at `0x253E2` restores its second three the same
+way. **No interrupt touches the ring**, checked by walking every call reachable from the three
+interrupt service routines on the Harmony One image: none of them reaches any push, pop or rotate.
+So the margin is zero and nothing spends it, which is worth stating because it is what makes any
+future writer of that count a hazard.
+
+### The retry, which is why a sequence makes the remote unresponsive
+
+`0x7D` and `0x7C` hand their operand to the send queue of section 236. When that queue is full the
+handler sets a flag at `0x0D00` and the dispatcher's common exit rewinds the read cursor by three
+and adds three back to the count, so the instruction is put back at the head and tried again next
+turn. That is genuine back pressure and it is correct. It also means that for as long as the send
+queue is full, the executor makes no progress, which is what the bench saw as a remote that does
+nothing at all for the sixty odd seconds a long sequence takes.
+
+### What the corpus demands
+
+`packages/codec/src/queue.ts` runs the model over every action list of every configuration. It
+follows `0x7F` and nothing else, deliberately: a write to a state variable also pushes, one
+instruction per transition it fires, and following that needs the state machine's own semantics,
+since a transition runs only when the variable currently holds its `from` value. A model that
+ignored that fired every transition ending at the written value and invented twelve non terminating
+lists in a Harmony 700 configuration that works. So the peak reported is a **lower bound**, which is
+the right direction for a refusal: over the ceiling proves loss, under it proves nothing.
+
+| | deepest run | of 40 |
+|---|---|---|
+| the four configs carrying a hand authored sequence or a fifteen device campaign | 35 | 5 slots free |
+| every other Harmony One config, ten of them | 22 | 18 slots free |
+| Harmony 700 | 18 | |
+| Harmony 890, Harmony 600 | 14 | |
+| Harmony 880 and 885 | 13 | |
+| Harmony 525 | 9 | |
+
+**Nothing in the corpus overflows**, so the sequence that hung a remote does not do so by dropping
+its own instructions. What it does is leave five slots for everything else the remote has to queue,
+where a configuration Logitech's compiler produced from an ordinary account leaves eighteen. The
+same unit measures both: `one_spare_myharmony` peaks at 22 and `one_spare_20260830`, after the two
+sequences were authored on to it, peaks at 35, and the list the deepest run starts from is one of
+the sequence's own copies.
+
+**Twelve lists in each Harmony 700 configuration are a cycle of `0x7F` calls** that the model walks
+until its step ceiling. They are loops with a conditional exit, the list at the head of one carrying
+the comparison opcodes that leave it, and this model executes no conditionals. They are reported as
+undecided rather than as overflowing, because judging them would refuse every Harmony 700 config in
+the corpus.
+
+### What this does and does not settle
+
+It settles the rail's number. A writer refuses a config whose lists demand more than forty
+instructions in flight, because those instructions are provably discarded, and `write-config.ts`
+performs that check before it erases anything. It also gives the honest shape of the softer
+question: the corpus's own ceiling for a configuration that has always behaved is 22, the one that
+hung reaches 35, and nothing has been measured in between.
+
+**It does not explain the hang.** Dropping a queued event loses a tap the remote was ignoring
+anyway, and dropping the tail of a two instruction sublist loses a delay. Neither strands anything.
+The mechanism stays open, and two readings are now dead rather than one: the destructive overflow of
+section 34's queue, killed on the bench because a single tap did not tip it, and the tail append
+reading above, killed by the main loop. What the measurement adds is that the sequence runs with
+five slots of headroom where everything else runs with eighteen, so whatever the mechanism is, that
+is the resource it is short of.
+
+### What would falsify it
+
+A configuration in this corpus whose lists demand more than forty instructions in flight and whose
+remote nonetheless does everything it says. Or an interrupt path that pushes into the ring, which
+would put the count past its equality test and make the whole reading unsafe.
+
+### Where it lands
+
+* `packages/codec/src/queue.ts`, and `assertQueueFits` in `packages/corpus/bin/write-config.ts`.
+* `tests/test_action_queue.py`, the firmware half on the Harmony One and Harmony 600 images.
+* `packages/codec/test/queue.test.ts`, the corpus table and the refusal.
+* The behaviour it is a rail for is `../lab/reads/20260823T1408Z-onres-sequence-NOTES.md`.

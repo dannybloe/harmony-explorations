@@ -1889,7 +1889,7 @@ file.
 | a favourite channel is not a key binding | it touches four sections and adds no key binding and no infrared group |
 | and it is not one mechanism either | a channel that survives being written as an integer goes through base slot 16; one with a leading zero is spelled out digit by digit. Each side has its own precondition |
 | a record's three digit tables are three pointers and may be shared | the same check base slot 5's duration blocks need |
-| a sequence at Logitech's own stated limit can hang a remote for good | **refuse** an oversized sequence rather than warning, bounded by the expanded instruction count and not by their item count, which permits the one that killed a remote |
+| a sequence at Logitech's own stated limit can hang a remote for good | **refuse** an oversized sequence rather than warning, bounded by the **peak depth** of the forty instruction action queue and not by their item count, which permits the one that killed a remote. `assertQueueFits` |
 | a same length edit is not a small write | the cheapest costs **two** 64 KiB erase blocks, and that is the floor rather than a page binding's quirk: the trailer checksum is at the far end of the file and every edit moves it. So the step is read the blocks, apply, erase, write back whole, verify by reading, and the known good content has to be a flash **region** rather than a container, since the checksum's block runs past the container's end |
 | a small logical change reshuffles the whole image | make minimal diffs against an existing config; reproducing what their generator would emit is not achievable |
 
