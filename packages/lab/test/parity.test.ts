@@ -50,7 +50,7 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // `make test-nolab` caught, four times now, when the count was left behind by a registration.
   // 81 since `one_spare_20260830`, the fourth state of the spare Harmony One, read on 30 August 2026.
   // 82 since the read taken after the first write, section 222.
-  assert.equal(Object.keys(pythonImages()).length, 86, 'every fixture tests/lab.py names');
+  assert.equal(Object.keys(pythonImages()).length, 87, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {
@@ -62,7 +62,7 @@ test('the two sides exclude the same fixtures from the parseable population', ()
   assert.ok(block, 'tests/lab.py has no PARSEABLE_EXCLUDED tuple in the expected shape');
   const names = [...block[1]!.matchAll(/'([^']+)'/g)].map((m) => m[1]!);
   assert.deepEqual([...PARSEABLE_EXCLUDED].sort(), names.sort());
-  // Seven since 1 September 2026. Three are byte for byte duplicates of a container already counted;
+  // Eight since 1 September 2026. Three are byte for byte duplicates of a container already counted;
   // two are the reads taken after the writes that **changed** something, each that same container
   // plus two or three known operand bytes; the sixth is that container again read as a flash region
   // rather than as a container, which a write needs because an edit moves the trailer checksum into
@@ -72,5 +72,5 @@ test('the two sides exclude the same fixtures from the parseable population', ()
   // and that is by design rather than accumulation. The seventh is the first container the codec
   // itself produced, which differs from the pre write read in the one delay it was asked to change
   // and in the checksum that follows from it.
-  assert.equal(names.length, 7, 'each one a container already counted, or that container plus a known edit');
+  assert.equal(names.length, 8, 'each one a container already counted, or that container plus a known edit');
 });

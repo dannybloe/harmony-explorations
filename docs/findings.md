@@ -30643,6 +30643,20 @@ because a read is idempotent. A second, independent read then matched the file.
 bit passed the whole file. Fixed by editing to 99 rather than 100, and recorded here because the
 shape generalises: a test that only ever writes round numbers cannot see a mask.
 
+### And it wrote the other way, which is what makes it a tool rather than an event
+
+The same writer put the delay back, from the same container edited to 60 tenths, at 09:18Z. Two
+blocks again, the same two, and the whole configuration read back byte for byte identical to the
+file. That file is byte identical to `20260830T1430Z-harmony-one-spare-config.bin`, the dump taken
+before this project had ever changed anything on a remote, so **the spare Harmony One is back in the
+state it started the day in** and the claim is checked at both ends: the writer compared the device
+against the file, and `cmp` compared the file against the 30 August dump.
+
+Five writes went to that unit on 1 September 2026, three through the block rehearsal's `--set` and
+two through the container writer, and the erase stayed inside its own block on both sides every
+time, which is ten independent measurements of the 64 KiB block size on this part. The sequence is
+`../lab/reads/20260901-one-spare-write-sequence-NOTES.md`.
+
 ### The tooling wart, stated rather than solved
 
 **Each write invalidates the dump the next one compares against.** The compare is what makes a write

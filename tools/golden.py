@@ -82,6 +82,8 @@ CONTAINERS = (
     # And the first container the codec produced and a remote accepted. Its vector differs from
     # the others' in nothing a vector carries, an action list operand not being one of them.
     'one_spare_written_by_us',
+    # And that same state as a region, which parses to the same container. Identical again.
+    'one_spare_written_region',
     # The two configs Logitech compiled to a specification we wrote, section 132. They are out of the
     # corpus wide claim lists, deliberately, and they belong here for the same reason the arch 9 safe
     # mode container does: a golden vector is a cheap check between two implementations and costs the

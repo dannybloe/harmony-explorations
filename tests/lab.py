@@ -220,6 +220,10 @@ IMAGES = {
     # one_spare_20260830 with one power on delay raised, so two bytes differ, the operand and the
     # trailer checksum, and they land in different erase blocks.
     'one_spare_written_by_us': '20260901T0851Z-one-spare-written-by-us-config.bin',
+    # The same state read as a region, so the revert has known good content for both blocks it
+    # touches. Leading bytes identical to one_spare_written_by_us, tail identical to the earlier
+    # region read.
+    'one_spare_written_region': '20260901T091517Z-one-spare-written-region-0x40000-0x1e0000.bin',
     # Two configs Logitech compiled to a specification we wrote, 13 August 2026, and the corpus's only
     # **known answer** samples: three devices and two activities chosen by us, on a throwaway account,
     # then compiled by the live service and downloaded without a byte reaching a remote. Section 132.
@@ -374,7 +378,7 @@ def _find(filename):
 PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_config',
                       'one_spare_after_first_write', 'one_spare_20260901_delay',
                       'one_spare_20260901_denon', 'one_spare_20260901_region',
-                      'one_spare_written_by_us')
+                      'one_spare_written_by_us', 'one_spare_written_region')
 
 CONTAINERS = (
     'h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'h525_config_2', 'one_config',

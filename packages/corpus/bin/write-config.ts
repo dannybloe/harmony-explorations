@@ -78,6 +78,9 @@ import { profileFor, readConfig } from '../src/index.ts';
  */
 const SPARE_DUMPS = new Set([
   'one_spare_20260901_region',
+  // The state after the first config this codec wrote, so the revert has something to compare
+  // against. Every write adds one of these, which section 237 records as the open wart.
+  'one_spare_written_region',
 ]);
 
 /** The lab's name for the unit this may run against. One label, because there is one write target. */

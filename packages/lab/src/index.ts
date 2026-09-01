@@ -218,6 +218,14 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // erases. Read back off the remote afterwards and byte identical to the file that was sent.
   // Excluded from the parseable population like the other states of this unit.
   one_spare_written_by_us: '20260901T0851Z-one-spare-written-by-us-config.bin',
+  // The same state read as a region, so the revert has known good content for both blocks. Its
+  // leading bytes are `one_spare_written_by_us` exactly and its tail is unchanged from
+  // `one_spare_20260901_region`, which together say the write reached those two bytes and nothing
+  // else in 1703936. **This is the fourth region or container of one unit registered in a day**, and
+  // that is the wart section 237 records rather than solves: a write invalidates the dump the next
+  // one compares against, so the compare that makes a write recoverable is also what makes it one
+  // way until a fresh read exists.
+  one_spare_written_region: '20260901T091517Z-one-spare-written-region-0x40000-0x1e0000.bin',
   // Two configs Logitech compiled to a specification we wrote, 13 August 2026: the corpus's only
   // known answer samples. Section 132. Not in the corpus wide lists, on purpose; see tests/lab.py.
   calibration_one: 'calibration-one-spare.bin',
@@ -336,7 +344,7 @@ export const IMAGES: Readonly<Record<string, string>> = {
 export const PARSEABLE_EXCLUDED: readonly string[] =
   ['vendor_region_user_config', 'vendor_region_embedded_config', 'one_spare_after_first_write',
     'one_spare_20260901_delay', 'one_spare_20260901_denon', 'one_spare_20260901_region',
-    'one_spare_written_by_us'];
+    'one_spare_written_by_us', 'one_spare_written_region'];
 
 const cache = new Map<string, string[]>();
 
