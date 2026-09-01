@@ -186,6 +186,14 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // twice. The verification read failed twice before it succeeded, section 222, which is recorded
   // there and unexplained.
   one_spare_after_first_write: '20260830T1618Z-harmony-one-spare-after-first-write-config.bin',
+  // The same unit again, read on 1 September 2026 **after the first write that changed something**:
+  // two power on delay operands raised, in one 64 KiB block, checksum neutral because both sit at
+  // the same word parity. It differs from `one_spare_20260830` in exactly those two bytes and in
+  // nothing else, which is what the read back established, so it is that configuration plus a known
+  // edit rather than a new sample and it is excluded from the parseable population for the same
+  // reason the row above is. It is named because the write rehearsal takes its dumps by name and,
+  // the device having been changed, this is now the only image its byte compare can match.
+  one_spare_20260901_delay: '20260901T0555Z-one-spare-20260831-delay-config.bin',
   // Two configs Logitech compiled to a specification we wrote, 13 August 2026: the corpus's only
   // known answer samples. Section 132. Not in the corpus wide lists, on purpose; see tests/lab.py.
   calibration_one: 'calibration-one-spare.bin',
@@ -302,7 +310,8 @@ export const IMAGES: Readonly<Record<string, string>> = {
  * golden vectors differ only in where the container sits in its file.
  */
 export const PARSEABLE_EXCLUDED: readonly string[] =
-  ['vendor_region_user_config', 'vendor_region_embedded_config', 'one_spare_after_first_write'];
+  ['vendor_region_user_config', 'vendor_region_embedded_config', 'one_spare_after_first_write',
+    'one_spare_20260901_delay'];
 
 const cache = new Map<string, string[]>();
 

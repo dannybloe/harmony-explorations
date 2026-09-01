@@ -146,6 +146,13 @@ const SPARE_DUMPS = new Set([
   // with a different equipment list. That rules out the slip this list exists for and it is not an
   // identification.
   'one_spare_20260830',
+  // Added 1 September 2026, and it is the first entry here that is **not** the unit's untouched
+  // content: it is the read taken after the first write that changed something, section 236, so it
+  // is `one_spare_20260830` plus two power on delay operands. It has to be named because the byte
+  // compare below is against the dump, and the device no longer matches the row above: without a
+  // dump of what the unit actually holds there is no way to write to it again, including no way to
+  // put the original bytes back. The script's own refusal says "take a fresh dump" and this is it.
+  'one_spare_20260901_delay',
 ]);
 
 /**

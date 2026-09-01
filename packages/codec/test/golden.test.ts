@@ -69,6 +69,12 @@ const CONTAINERS = [
   // The same unit after the first write, section 222. Its vector duplicates the one above on
   // purpose: the write reproduced the bytes that were there, so a difference would be a finding.
   'one_spare_after_first_write',
+  // And the same unit after the first write that **changed** something, section 236. Its vector is
+  // byte identical to the two above, and that is the claim: the write changed two operands inside
+  // an action list, which no field a golden vector carries reaches, so a difference here would mean
+  // the write moved something structural. The first version of this comment predicted a difference
+  // and generating the vector refuted it.
+  'one_spare_20260901_delay',
   // The two configs Logitech compiled to a specification we wrote, section 132: the only samples
   // whose devices and activities were chosen before the bytes existed, so a disagreement between the
   // two implementations about them would be a disagreement about a known answer.
@@ -201,7 +207,11 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 47 since the read taken after the first write, section 222, which **is** a duplicate of that one
   // and is kept for exactly that: a vector that stopped matching would say the write changed
   // something.
-  assert.equal(present.length, 47, 'every vector, which is what `make golden` compares');
+  // 48 since the read taken after the first write that **changed** something, section 236, which is
+  // a duplicate of both for the same reason and for a sharper one: two operands on the remote are
+  // deliberately not what a vector carries, so this one matching says the edit stayed where it was
+  // aimed.
+  assert.equal(present.length, 48, 'every vector, which is what `make golden` compares');
   // 38 since the Harmony 895 landed: its key table reads with the existing reader even though
   // every other arch 10 reader is gated, which is what made section 177's keypad closure possible
   // without any arch 10 progress at all.
@@ -210,8 +220,9 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 41 since section 215's pair, both of which have one: the user config duplicates
   // `one_spare_before_sync` and the embedded one duplicates `one_safemode`.
   // 42 since `one_spare_20260830`, an ordinary arch 12 container read off a Harmony One, and 43 since
-  // the read taken after the first write, which duplicates it.
-  assert.equal(complete, 43, 'the vectors whose container has a key table at all');
+  // the read taken after the first write, which duplicates it. 44 since the read taken after the
+  // first write that changed something, which duplicates it too.
+  assert.equal(complete, 44, 'the vectors whose container has a key table at all');
 
   // **The number sender field, and why it needs its own guard.** It is an empty array on 30 vectors
   // and null on 8, with eight carrying a record since 30 August 2026, and this comment said 25 and 9
@@ -247,7 +258,10 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // survived the erase and the write, which is the same statement as the whole file comparison and
   // is worth having on this field in particular, base slot 16 being the one the two implementations
   // are compared on at all.
-  assert.equal(senders.filter((one) => Array.isArray(one) && one.length > 0).length, 9,
+  // Ten since the read taken after the first write that changed something, which duplicates it
+  // again: the record survived a second erase and write, this one with two bytes deliberately
+  // different, so it also says the edit did not disturb a section it was nowhere near.
+  assert.equal(senders.filter((one) => Array.isArray(one) && one.length > 0).length, 10,
     'the configs that populate base slot 16');
 });
 
@@ -259,7 +273,7 @@ test('the list above covers exactly what the Python side writes a vector for', (
   const block = /^CONTAINERS = \($(.*?)^\)$/ms.exec(source);
   assert.ok(block, 'tools/golden.py has no CONTAINERS tuple in the expected shape');
   const python = [...block[1]!.matchAll(/'([a-z0-9_]+)'/g)].map((m) => m[1] as string);
-  assert.equal(python.length, 47, 'the golden vectors, which is what `make golden` prints');
+  assert.equal(python.length, 48, 'the golden vectors, which is what `make golden` prints');
   assert.deepEqual([...CONTAINERS].sort(), python.sort());
 });
 

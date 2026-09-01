@@ -65,6 +65,13 @@ CONTAINERS = (
     # duplicate the one above exactly, which is the claim rather than an accident: the write put the
     # unit's own bytes back, so a differing vector would mean the configuration changed.
     'one_spare_after_first_write',
+    # And the same unit again, after the first write that **changed** something, section 236. Its
+    # vector is byte identical to the two above and that is the claim, not a disappointment: the
+    # write changed two operands inside an action list, which no field a golden vector carries
+    # reaches, so a **difference** here would mean the write moved something structural. The two
+    # changed numbers are checked where they live, against the read back, and not here. Written
+    # after generating it, because the first version of this comment predicted a difference.
+    'one_spare_20260901_delay',
     # The two configs Logitech compiled to a specification we wrote, section 132. They are out of the
     # corpus wide claim lists, deliberately, and they belong here for the same reason the arch 9 safe
     # mode container does: a golden vector is a cheap check between two implementations and costs the
