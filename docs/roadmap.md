@@ -139,9 +139,15 @@ before it erases anything, so no rail on the writer's list is unimplemented now.
 What it does **not** do is explain the hang, and phase 9 should not wait for that. Nothing in the
 corpus overflows: the sequence that hung the remote peaks at 35 of the 40 where every configuration
 Logitech compiled from an ordinary account peaks at 22 or below, so what it is short of is headroom
-rather than slots of its own, and nothing has been measured in between. A bound tighter than forty is
-a decision rather than a reading, and it wants either the mechanism or a run at a remote that
-establishes a clean ceiling.
+rather than slots of its own, and nothing has been measured in between.
+
+**A bound tighter than forty is deferred, by Danny on 1 September 2026**, and it belongs to
+FreeHarmony rather than here. The hard rail is in and costs nothing; a softer one is a product
+judgement about what to let somebody build, so it gets decided when the application has a sequence
+editor to decide it for. Nothing here needs it in the meantime, since nothing here composes a
+sequence. Written down so it is not re-derived: the open half is the mechanism, and the number that
+would settle it wants a run at a remote that establishes a clean ceiling rather than another
+reading.
 
 `make lab-check PATH_ARG=<path>` first, per decision 12, because the last nine digs each re-derived
 something the site already held.
