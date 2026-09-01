@@ -439,7 +439,7 @@ finding.
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 235<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 236<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -659,6 +659,25 @@ figures common to both carry `fact:` markers, so `make facts` moves every copy t
 cannot drift apart; what a reader should not expect is two independent statements of one measurement.
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
+
+**A remote's configuration has been changed, and the first change showed nothing**, section 236.
+Two writes on the spare Harmony One, one byte of real content each inside a 64 KiB block reproduced
+from a verified dump, both read back and compared. The first raised a television's power on delay
+from five seconds to ten and the activity behaved exactly as before, which turned out to be what the
+firmware requires rather than a failure: the queue that carries commands tags every entry with a
+device and holds a command back only when an earlier entry names the **same** device, so a delay
+delays one thing, the next command to its own device. That television gets one command in that
+activity, so its ten seconds ran down in the background. The second write raised the **receiver's**,
+which does get a second command, and its gap grew from about six seconds to about ten on the bench.
+One reading, two opposite predictions, both observed.
+
+Two things came with it. The mechanism is read on **both** bench architectures and the routine that
+carries it is identical on the two but for one literal, which is what lets a reading taken off a
+Harmony 700 image license a claim about the Harmony One that was written to. And the corpus says how
+often this bites: of 127 pairs of an activity and a device it switches on, 35 send that device
+nothing after the power code, so a quarter of the power on delays in these configurations can never
+be felt, with 13 containers holding both kinds at once. An interface that offers "power on delay" as
+a pause in the activity would be wrong about those.
 
 **A device's delays were not where the plan said, and the screen is what says whose they are**,
 section 234. The plan of record carried "which base slot 15 group holds a device's delays" as the<!--superseded-->

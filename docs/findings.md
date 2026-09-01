@@ -30421,3 +30421,125 @@ measurement rather than on nobody having looked.
 removed because this section refuted their titles. The service reply is a **dated** capture in the
 lab, since an account is a live thing whose contents change and a test that read whatever is there
 today would be asserting about the future.
+
+## 236. The delay is per device, so the first write that changed a remote showed nothing
+
+**This is the first time this project has changed a byte on a remote to test a claim, and the first
+attempt failed.** A television's power on delay was raised from 5.0 seconds to 10.0 on the spare
+Harmony One, the write verified byte for byte, and starting the activity that switches that
+television on produced no visible pause at all. The bytes were right and the experiment was wrong,
+and finding out why finished the half of section 70 that was left open.
+
+**A quantity does not pause the sequence. It holds back the next command to its own device.** So a
+device that an activity sends one command to can carry any delay at all and nobody will ever see it.
+That is not a detail of the encoding, it is what the number means, and an editor that offered
+"power on delay" as a stopwatch on the activity would be lying to its user about most devices.
+
+### What the queue actually does, on both architectures
+
+Section 70 read the producer: the `0x7D` send and the `0x7C` quantity handlers push two byte entries
+into a circular buffer of 30 bytes, tagged `kind << 4 | group` on arch 14, and it named "the timer
+that drains the queue" as what would finish the reading. There are three consumers rather than a
+timer, and the one that matters is a helper both of the others call.
+
+| | arch 14, Harmony 700 | arch 12, Harmony One |
+|---|---|---|
+| the buffer | `0x065` to `0x083` | `0x686` to `0x6A4` |
+| the read cursor | `0x083` | `0x6A4` |
+| the scan | `0x13204` | `0x2706A` |
+| the picker, may a send go | `0x1338A` | `0x2711C` |
+| the countdown, one tick | `0x13706` | `0x27318` |
+
+The **scan** walks the entries ahead of a given position and answers a question about them, with a
+mode byte selecting which question. Both consumers ask the same one, mode 3: **is there any earlier
+entry in the queue naming this same device**.
+
+* the **picker** reads an entry, and for a send it asks that question about the send's own device. A
+  yes means the send is passed over and the walk moves on; a no means it may go out.
+* the **countdown** does the same for a quantity, and only when the answer is no does it subtract one
+  and write the entry back. At one it marks the entry with kind `0x60`, which the scan then skips,
+  and a later pass removes it.
+
+Two things follow immediately. A quantity is a **duration** rather than a count of transmissions,
+because it is decremented once per tick regardless of what is being sent, which is the reading
+section 70 leaned towards and could not settle. And the ordering the queue enforces is **per device
+and not global**: two devices never wait for each other, so an activity's power codes go out one
+after another with no gap between them however large their delays are.
+
+**The scan reads identically on the two architectures but for one literal.** Seven literals in
+order, `0x00`, the kind mask, `0x0F`, `0x04`, `0x04`, `0x60`, `0x40`, with the mask `0xF0` on arch
+14 and `0xE0` on arch 12. That is what joins the reading to the measurement, since the code was read
+on a Harmony 700 image and the byte was changed on a Harmony One. It also says something small and
+unexplained: arch 12 takes three bits for the kind and still four for the device, so bit 4 of a tag
+belongs to neither field.
+
+### The two hardware measurements
+
+Both on the spare Harmony One, 1 September 2026, each one byte in a 64 KiB block erased and written
+back with the rest of the block reproduced from a verified dump, and each read back and compared.
+
+**The negative one came first and was not planned as a control.** The television's delay was raised
+from 50 to 100, tenths of a second, and its activity behaved exactly as before. Under the reading
+above that is required rather than surprising: that activity sends the television its power code and
+nothing else, so the ten seconds ran down in the background while the other devices carried on.
+
+**The positive one was chosen from the reading and it moved.** The receiver is the one device in that
+activity that gets a second command, its power code and then an input change, and its delay was 60.
+Raised to 100, the gap between the receiver powering on and it switching input grew from about six
+seconds to about ten, observed on the bench.
+
+So the reading predicted one visible change and one invisible one, from the same file, on the same
+remote, in the same activity, and both came out. A pause in the sequence would have shown the first
+and cannot explain the second being the only one that moved.
+
+### The corpus says how often this bites, and it is often
+
+For every activity in every container that inlines its delays, and every device that activity
+switches on, count the further commands that activity sends to that same device:
+
+| | |
+|---|---|
+| pairs of an activity and a device it switches on | 127 |
+| the activity sends that device a later command, so the delay is felt | 92 |
+| it does not, so the delay can never be felt | 35 |
+| containers holding both kinds at once | 13 |
+
+**One in four power on delays in this corpus does nothing at all**, and the split is inside
+configurations rather than between them, so it is not a property of one generator's mood. The spare
+Harmony One's own "TV kijken" is the case in miniature: the receiver's six seconds has a command
+behind it and the television's five has nothing behind it, which is precisely the pair the bench
+measured.
+
+Arch 14 (Harmony 600 and 700) contributes nothing to that table by construction, since it keeps a
+power on delay in a state variable rather than inline, section 235. Whether its variable feeds the
+same queue is not read here.
+
+### What a writer has to know
+
+* **A power on delay is a gap before the next command to that device, not a pause.** An editor may
+  show it, and an editor that promises it will delay the activity is wrong for 35 of these 127 cases.
+* **A remedy exists and it is not this byte.** Making an activity wait longer before touching the
+  next device is a property of the sequence, and nothing found here does that.
+* **A `--set` on the write rehearsal takes away the route back.** The script compares the block on
+  the device with a named lab dump before erasing, so the moment a write succeeds the remote stops
+  matching that dump and the same command refuses, including the one that would restore the original
+  bytes. The dump of the new state has to be taken and registered. Recorded here because it is a
+  property of the rail rather than a slip: the compare is what makes the write safe and it is also
+  what makes it one way until a fresh read exists.
+
+### What would falsify it
+
+A device whose delay is felt in an activity that sends it nothing else, or a queue entry emitted
+while an earlier entry for its device is still pending. Either would mean the scan is answering a
+different question than mode 3 reads as.
+
+### Where it lands
+
+* `docs/config-format.md`, opcode `0x7C`.
+* `packages/codec/src/inventory.ts`: `activityStartSteps`, `powerOnDelayReach` and
+  `ACTIVITY_START_TAG`, with `packages/codec/test/inventory.test.ts` for the corpus table.
+* `tests/test_send_queue.py` for the firmware, on both images. Its address anchor bit on its first
+  run against a real mistake rather than a planted one: the Harmony 700's countdown was recorded as
+  its loop head, twelve bytes past its entry, and every other assertion in the file passed with it
+  because a window that starts late still covers the routine.
+* The lab carries the two writes and the reads either side of them, with the revert path per state.

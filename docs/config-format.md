@@ -2945,6 +2945,37 @@ all 16 on arch 14 carry none. The nested list that sends the code carries its ow
 the ordinary per send quantity, so a reader must stay at the top level. `powerOnInstructions` in
 `packages/codec`. [findings.md](findings.md) sections 29, 70 and 235.
 
+**What the delay delays is the next code to that same device, and nothing else**, section 236, which
+finishes what the fold rule above only hinted at. Three consumers drain the queue and two of them ask
+one shared helper the same question, "is there an earlier entry naming this device": the picker
+emits a send only when the answer is no, and the tick subtracts one from a quantity only when the
+answer is no. So the queue is ordered **per device** and never globally. The scan is `0x13204` on
+the Harmony 700 and `0x2706A` on the Harmony One, and it reads identically on the two but for the
+kind mask, `0xF0` against `0xE0`; the picker is `0x1338A` and `0x2711C`, the tick `0x13706` and
+`0x27318`.
+
+Three consequences a reader or an editor has to carry.
+
+* **A power on delay an activity cannot show is not a defect.** In this corpus 35 of 127 pairs of an
+  activity and a device it switches on send that device nothing after the power code, so those
+  delays run down in the background and are never felt. 13 containers hold both kinds at once.
+  `powerOnDelayReach` in `packages/codec` is the measurement.
+* **Two devices never wait for each other.** An activity's power codes go out one after another
+  whatever their delays are, because each delay only guards its own device's queue.
+* **The quantity is a duration and not a repeat count**, settled by the tick decrementing it once
+  per tick regardless of what is being transmitted, which is independent of section 235's unit
+  and agrees with it.
+
+Confirmed on hardware, both ways round, on a Harmony One on 1 September 2026: raising a television's
+delay to ten seconds in an activity that sends it one command changed nothing observable, and raising
+the receiver's in the same activity, where an input change follows, moved its gap from about six
+seconds to about ten.
+
+Arch 12 masks the kind with three bits and the device with four, so bit 4 of a tag belongs to neither
+field, where arch 14 gives it to the kind. Unconfirmed what it is for, and nothing in the corpus can
+say: the group is what fills those bits and no config here has more than seven groups, so bit 4 is
+never set in the first place.
+
 #### `0x6C` writes a device record, and never alone
 
 **Confirmed on three arch 14 containers.** Every use is the second half of `[0x7A key, 0x6C value]`

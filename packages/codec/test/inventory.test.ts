@@ -38,6 +38,9 @@ import {
   activityBindings,
   activityCount,
   activityNames,
+  activityStartSteps,
+  powerOnDelayReach,
+  ACTIVITY_START_TAG,
   activityWriterCount,
   characterMap,
   idleActivityValue,
@@ -1916,4 +1919,105 @@ test('the config carries the delay the account is set to and not the one it came
       if (power.PowerOnDelay !== power.DefaultPowerOnDelay) differing += 1;
     }
     assert.equal(differing, 2, 'two of the ten are tuned away from their catalogue default');
+  });
+
+/**
+ * Every container that inlines a power on delay, with how many activity-and-device pairs it has and
+ * how many of those the activity could ever feel. Section 236.
+ *
+ * Arch 14 (Harmony 600 and 700) is absent by construction: it keeps the delay in a state variable,
+ * so `powerOnInstructions` finds none and `powerOnDelayReach` returns nothing. That is asserted
+ * below rather than left implicit, because a reader that silently stopped finding delays would
+ * otherwise turn this whole table into a row of zeroes and pass.
+ */
+const DELAY_REACH: readonly [string, number, number][] = [
+  ['one_spare_before_sync', 1, 1],
+  ['one_spare_after_sync', 1, 1],
+  ['one_config', 16, 15],
+  ['one_config_unprogrammed', 1, 1],
+  ['arch8_config_a', 3, 2],
+  ['arch8_config_b', 5, 4],
+  ['arch8_config_c', 8, 6],
+  ['arch8_config_d', 8, 6],
+  ['h525_config', 5, 4],
+  ['h525_config_2', 1, 1],
+  ['arch8_config_880', 6, 2],
+  ['arch8_config_885', 22, 20],
+  ['calibration_one', 5, 4],
+  ['calibration_favchannels', 5, 4],
+  ['one_spare_myharmony', 14, 7],
+  ['calibration_favzero', 13, 7],
+  // The unit the hardware measurement of 1 September 2026 was made on, in the state it was in before
+  // the write. Its "TV kijken" is the case in the flesh: the receiver's six seconds has a command
+  // behind it and the television's five has nothing, and raising the television's to ten changed
+  // nothing anybody could see.
+  ['one_spare_20260830', 13, 7],
+];
+
+for (const [name, pairs, felt] of DELAY_REACH) {
+  test(`${name} has ${pairs} activity and device pairs with a power on delay, ${felt} of them felt`,
+    skipUnless(name), () => {
+      const reach = powerOnDelayReach(parse(load(name) as Uint8Array));
+      assert.equal(reach.length, pairs);
+      assert.equal(reach.filter((one) => one.laterCommands > 0).length, felt);
+    });
+}
+
+test('a power on delay is felt only where the activity sends that device a second command',
+  skipWithoutLab(), () => {
+    // **The corpus half of section 236, and it is what explains a negative hardware result.** The
+    // send queue tags every entry with a device and emits a command only when no earlier entry names
+    // the same device, so a quantity delays exactly one thing: the next command to its own device.
+    // An activity that sends a device its power code and nothing else cannot show that device's
+    // delay at all, which is what happened on the bench on 1 September 2026 when the television's
+    // was raised to ten seconds and nothing changed.
+    let pairs = 0;
+    let felt = 0;
+    for (const [name] of DELAY_REACH) {
+      const reach = powerOnDelayReach(parse(require_(name)));
+      pairs += reach.length;
+      felt += reach.filter((one) => one.laterCommands > 0).length;
+    }
+    assert.equal(pairs, 127, 'an activity and a device it switches on');
+    assert.equal(felt, 92);
+    assert.equal(pairs - felt, 35, 'delays no activity of theirs can show');
+    // Not vacuous in either direction: both outcomes really occur, and they occur inside the same
+    // configuration rather than one container being all of one kind.
+    const mixed = DELAY_REACH.filter(([, all, some]) => some > 0 && some < all);
+    assert.equal(mixed.length, 13, 'containers holding both kinds at once');
+  });
+
+test('arch 14 keeps the delay in a variable, so it has no pairs to count',
+  skipUnless('h600_config', 'h700_config', 'h700_config_2', 'calibration_h600'), () => {
+    // The control for the table above. Without it a `powerOnInstructions` that had stopped working
+    // would report zero pairs everywhere and only the exact per container counts would notice.
+    for (const name of ['h600_config', 'h700_config', 'h700_config_2', 'calibration_h600']) {
+      assert.equal(powerOnDelayReach(parse(load(name) as Uint8Array)).length, 0, name);
+    }
+  });
+
+test('the start sequence is the handler set entry tagged 1, and the other low tags are not it',
+  skipWithoutLab(), () => {
+    // What `ACTIVITY_START_TAG` rests on. Three tags below 0x80 appear across this corpus and the
+    // walk from tag 1 is the one carrying the power on delays: every pair the table above counts is
+    // found through it. The claim that would be too strong is that the others send nothing, and they
+    // do send, so it is stated as a share rather than as an absence.
+    let onStart = 0;
+    let elsewhere = 0;
+    for (const [name] of DELAY_REACH) {
+      const c = parse(require_(name));
+      const power = powerOnInstructions(c);
+      for (const binding of activityBindings(c)) {
+        const steps = activityStartSteps(c, binding.set);
+        for (const [group, one] of power) {
+          const here = steps.some((s) => s.kind === 'delay' && s.group === group && s.value === one.tenths);
+          if (here) onStart += 1; else elsewhere += 1;
+        }
+      }
+    }
+    assert.equal(ACTIVITY_START_TAG, 1);
+    assert.equal(onStart, 127, 'the pairs the table above counts, all of them reached through tag 1');
+    // The rest are a device that activity does not switch on, which is the ordinary case and is why
+    // the number is large: 62 activities times the devices each config has.
+    assert.equal(elsewhere, 142);
   });

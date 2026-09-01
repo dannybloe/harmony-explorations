@@ -180,6 +180,14 @@ holds 255, so the largest pause the format can express is 25.5 seconds and their
 number just under it. So it is a bound with something behind it, and a writer that offered 30 seconds
 would be offering something unrepresentable.
 
+**And that instruction names a device**, section 236, which is a caveat this page has to carry because
+it is about what the product does rather than about bytes. The opcode goes into a queue whose entries
+are tagged with a device, and the firmware holds back a command only when an earlier entry in the queue
+names that same device. So a pause between two commands to **one** appliance is a pause in the ordinary
+sense, and what a pause does in a sequence that walks several appliances is not read here: mechanically
+it can only hold up the appliance it names. Which device Logitech's compiler puts on a sequence pause
+has not been looked at, and the sequence that was authored is in the lab to look at.
+
 **The 25 counts pauses, and the queue is not the reason for it.** The hypothesis here was that
 *the 25 may not be arbitrary*<!--superseded-->, because the action list queue is 120 bytes of three byte
 instructions, section 34, which is 40 instructions, so 25 sends would fit with fifteen to spare. The

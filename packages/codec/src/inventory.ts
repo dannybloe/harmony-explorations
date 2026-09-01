@@ -1785,3 +1785,142 @@ export function powerOnInstructions(c: Container): Map<number, PowerOnInstructio
   }
   return out;
 }
+
+/** The infrared send, the companion of `IR_QUANTITY_OPCODE` and one bit away from it. Section 70. */
+const IR_SEND_OPCODE = 0x7d;
+
+/**
+ * The handler set entry that runs an activity's start sequence.
+ *
+ * A base slot 9 set's tagged list carries key bindings, whose tags are key codes with an event type
+ * in the top two bits (section 17), and a handful of entries below `0x80` that are not keys. Three
+ * of those appear in this corpus, tags 1, 2 and 5, and **tag 1 is the start sequence**: over 21
+ * containers it holds 735 of the 917 quantity instructions any low tag reaches and every power on
+ * delay `powerOnInstructions` finds, and reading one out shows it switching each device on, setting
+ * the inputs, switching off what the activity does not want and finally writing
+ * `CurrentActivityState`.
+ *
+ * The other two are named by what they do rather than guessed at. Tag 5 exists on the same 92 set
+ * entries and re-sends **only** the input commands, with no power change, which is the shape of a
+ * "fix it" chain; tag 2 writes state variables and reaches 5 sends in the whole corpus. Neither is
+ * read further here, because neither carries a power on delay.
+ */
+export const ACTIVITY_START_TAG = 1;
+
+/** One thing an activity's start sequence puts on the send queue, in order. */
+export interface QueuedStep {
+  /** A code going out, or a quantity for the group named beside it. */
+  kind: 'send' | 'delay';
+  /** The infrared group, which is the operand's high byte for both opcodes. */
+  group: number;
+  /** The code number for a send, tenths of a second for a delay. */
+  value: number;
+}
+
+/**
+ * What an activity's start sequence pushes onto the send queue, in the order it pushes it.
+ *
+ * `set` is a base slot 9 handler set index, as `activityBindings` reports it. The walk follows
+ * `0x7F` into nested lists and follows a state variable write into the base slot 13 transition it
+ * triggers, which is where the sends actually live: the start list writes `TV_Power = 1` and the
+ * code goes out because that variable's 0 to 1 transition runs a list, section 86.
+ *
+ * **Depth and revisits are bounded and that is not a detail.** A transition can write a variable
+ * whose transition writes the first one back, so the walk carries a visited set per branch and a
+ * depth ceiling. Without them a config that does that would hang the reader rather than misreport.
+ */
+export function activityStartSteps(c: Container, set: number): QueuedStep[] {
+  const lists = c.actionLists();
+  const records = stateRecords(c);
+  const sets = handlerSets(c);
+  if (lists === undefined || records === undefined || sets === undefined) return [];
+  const address = sets.addresses[set];
+  if (address === undefined) return [];
+
+  const steps: QueuedStep[] = [];
+  const walk = (index: number, seen: Set<number>, depth: number): void => {
+    const list = lists[index];
+    if (list === undefined || seen.has(index) || depth > WALK_DEPTH) return;
+    seen.add(index);
+    for (const instruction of list) {
+      if (instruction.opcode >= STATE_WRITE_BASE) {
+        // A write to a state variable, which runs whatever that value's transition names.
+        const variable = instruction.opcode - STATE_WRITE_BASE;
+        for (const value of records[variable]?.values ?? []) {
+          if (value.opcode !== ACTION_LIST_INDEX) continue;
+          if (value.to !== instruction.operand) continue;
+          walk(value.operand, new Set(), depth + 1);
+        }
+      } else if (instruction.opcode === IR_SEND_OPCODE) {
+        steps.push({ kind: 'send', group: instruction.operand >>> 8, value: instruction.operand & 0xff });
+      } else if (instruction.opcode === IR_QUANTITY_OPCODE) {
+        steps.push({ kind: 'delay', group: instruction.operand >>> 8, value: instruction.operand & 0xff });
+      } else if (instruction.opcode === ACTION_LIST_INDEX) {
+        walk(instruction.operand, seen, depth + 1);
+      }
+    }
+  };
+  for (const entry of taggedList(c, address)?.entries ?? []) {
+    if (entry.opcode !== ACTION_LIST_INDEX) continue;
+    if (entry.tag !== ACTIVITY_START_TAG) continue;
+    walk(entry.operand, new Set(), 0);
+  }
+  return steps;
+}
+
+/** How deep `activityStartSteps` follows a chain before giving up. */
+const WALK_DEPTH = 8;
+
+/** One activity's power on delay for one device, and whether that activity can ever feel it. */
+export interface DelayReach {
+  /** The value written into `CurrentActivityState`, as `activityBindings` reports it. */
+  activity: number;
+  /** The device's infrared group. */
+  group: number;
+  /** Its power on delay, in tenths of a second. */
+  tenths: number;
+  /**
+   * How many further commands this activity sends to that same device after queueing the delay.
+   *
+   * **Zero means the delay is never felt**, section 236: the queue holds back a command only when an
+   * earlier entry names the same group, so a quantity with nothing behind it runs down in the
+   * background while other devices carry on.
+   */
+  laterCommands: number;
+}
+
+/**
+ * Every activity's power on delay per device, with the thing that decides whether it does anything.
+ *
+ * **This is section 236's claim in executable form.** The number in the config is not a pause in the
+ * start sequence: the firmware's send queue tags every entry with a device and emits a command only
+ * when no earlier entry names the same device, so a delay stalls exactly one thing, the next command
+ * to its own device. An activity that sends a device its power code and nothing else therefore
+ * cannot show that device's delay, however large it is, which is what the hardware measurement of
+ * 1 September 2026 found the hard way.
+ *
+ * Arch 14 (Harmony 600 and 700) keeps a power on delay in a state variable rather than inline, so
+ * `powerOnInstructions` is empty there and so is this.
+ */
+export function powerOnDelayReach(c: Container): DelayReach[] {
+  const power = powerOnInstructions(c);
+  if (power.size === 0) return [];
+  const out: DelayReach[] = [];
+  for (const binding of activityBindings(c)) {
+    const steps = activityStartSteps(c, binding.set);
+    if (steps.length === 0) continue;
+    for (const [group, instruction] of power) {
+      // The delay itself, identified by its group **and** its value, so the `1` that every send
+      // carries alongside it is not mistaken for the power on delay.
+      const at = steps.findIndex(
+        (step) => step.kind === 'delay' && step.group === group && step.value === instruction.tenths,
+      );
+      if (at < 0) continue;
+      const laterCommands = steps
+        .slice(at + 1)
+        .filter((step) => step.kind === 'send' && step.group === group).length;
+      out.push({ activity: binding.activity, group, tenths: instruction.tenths, laterCommands });
+    }
+  }
+  return out;
+}

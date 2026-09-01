@@ -96,6 +96,17 @@ produce a config the remote accepts and mishandles.
   is how a repeat rate changes, per code, and a duration word caps at 32767 us so a same length edit can
   only reach the ceiling of the words already there. `0x7C` is **not** what repeats a held key, which is
   the reading section 70 guessed at and this refutes.
+* **A power on delay holds back one device and not the activity**, section 236. The `0x7C` quantity
+  goes into a queue whose entries are tagged with a device, and both consumers of that queue, the
+  picker that decides whether a send may go out and the tick that counts a quantity down, first ask
+  one shared helper whether an earlier entry names the same device. So two devices never wait for
+  each other and a quantity with nothing behind it for its own device is never felt. Measured both
+  ways on a Harmony One on 1 September 2026: a television's delay raised to ten seconds in an
+  activity that sends it one command changed nothing, and the receiver's raised in the same activity,
+  where an input change follows, moved its gap from six seconds to ten. In the corpus 35 of 127 pairs
+  of an activity and a device it switches on can never show that device's delay. So a writer may
+  change the byte, and an interface that calls it a pause in the activity is wrong for a quarter of
+  them.
 * **A frame can be written and its tail cannot simply be copied**, section 152. Five durations off a
   record rebuild its frame exactly, and 52 of 58 device groups use one set of timings for every code,
   so a code stated as a bare number elsewhere can be written using a sibling code's timings. What

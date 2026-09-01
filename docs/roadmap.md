@@ -82,7 +82,7 @@ the spare Harmony One with both of its refusals shown to bite.
 the action list, the position in it and the current value, so the edit moves nothing, changes no
 length and restamps no count, which is the smallest change this format admits. It is also the one
 whose effect a person can see without any instrument: set a television's delay to its maximum, start
-the activity, and watch the remote wait before it sends anything. Two rails come with it, both in
+the activity, and watch the remote wait before it sends anything.<!--superseded--> Two rails come with it, both in
 section 235: **100 tenths is the ceiling of a single instruction**, since the firmware folds two
 consecutive quantities by taking the larger except at 100, so raising a delay past ten seconds is a
 length change and not a byte edit; and seven devices in the lab already sit at that cap.
@@ -95,10 +95,25 @@ the spare Harmony One it agrees with our reading on four of four devices, at exa
 the stored number. Two of those four are tuned away from the catalogue default, and the configuration
 carries the tuned value both times, so the field is identified rather than merely consistent.
 
-So the byte is known before it is written. What is left is the write, and it wants somebody at the
-bench: it is the first change this project will have made to one of these remotes, its effect is
-watched rather than measured, and the read back that verifies it is the caller's obligation rather
-than the library's.
+**Done, 1 September 2026, section 236, and the first attempt showed nothing.** Two writes on the
+spare Harmony One, each one byte of real content inside a 64 KiB block reproduced from a verified
+dump and read back afterwards. The first raised a television's delay from five seconds to ten and the
+activity behaved exactly as it had, which the firmware turns out to require: the queue holds a command
+back only when an earlier entry names the **same** device, so a delay delays the next command to its
+own device and nothing else, and that activity sends that television one command. The second raised
+the receiver's, which does get a later input command, and its gap grew from about six seconds to about
+ten on the bench. So the paragraph above was right that the effect is watchable and wrong about which
+device to watch, and the sentence "set a television's delay to its maximum, start the activity, and
+watch the remote wait before it sends anything"<!--superseded--> describes something no remote does.
+
+Three things to carry out of it rather than re-derive. **A `--set` on the write rehearsal takes away
+the route back**, because the script compares the block against a named lab dump before erasing, so
+after a successful write the same command refuses and a fresh dump has to be read and registered
+before anything, the revert included, can run again. **A quarter of the power on delays in this corpus
+can never be felt**, 35 of 127 pairs of an activity and a device it switches on, which is a fact an
+interface has to respect rather than a curiosity. And the queue reading holds on **both** bench
+architectures, the routine differing in one literal, which is what lets code read off a Harmony 700
+image license a claim about the Harmony One.
 
 `make lab-check PATH_ARG=<path>` first, per decision 12, because the last nine digs each re-derived
 something the site already held.

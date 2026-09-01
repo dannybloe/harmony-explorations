@@ -702,8 +702,23 @@ M4, and behind the gate above. The rails are written and off, `packages/usb/src/
       a failure and not a warning. Done, and the whole configuration was compared as well, which is the
       check the range comparison cannot make: an erase carries no count, so damage elsewhere is exactly
       what it could cause
+- [x] **a change of ours is on the remote and behaves as predicted**, 1 September 2026, section 236.
+      Two writes, each one byte of real content in a block otherwise reproduced from a verified dump,
+      both read back byte identical and the whole configuration re-read and checked afterwards. The
+      byte was a device's power on delay, chosen because its effect can be watched without an
+      instrument. **The first attempt showed nothing and that was the finding**: the queue holds a
+      command back only when an earlier entry names the same device, so a delay delays the next
+      command to its own device, and the activity sent that television nothing else. The second write
+      moved the receiver's, where an input change follows, and its gap grew from about six seconds to
+      about ten. Three things came with it: `--set` takes the route back away until a fresh dump is
+      registered, since the compare that makes the write safe is against a named dump; 35 of the
+      corpus's 127 pairs of an activity and a device it switches on can never show that device's
+      delay; and the queue reading holds on both bench architectures
 - [ ] **check**: a config we produced is on the spare Harmony One and reads back byte identical to what
-      we sent
+      we sent. **Still open, and narrower than it was**: the box above is an *edit* of the remote's own
+      configuration, two bytes inside a block otherwise reproduced byte for byte, which is not a config
+      this project built. What is left for this box is a container that came out of `edit.ts` or
+      `relocate.ts` rather than out of a dump
 - [ ] the flag stays off for anything that is not this bench script
 
 ## Phase 9: the appliance responds
