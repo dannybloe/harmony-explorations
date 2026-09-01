@@ -1,9 +1,33 @@
 /**
- * The write rehearsal: put one erase block of a remote's own configuration back, unchanged.
+ * The write rehearsal: put one erase block of a remote's own configuration back, unchanged, or with
+ * named bytes changed.
  *
  *   node packages/usb/bin/rehearse-block.ts --dump one_spare_myharmony --block 0x040000
  *   HARMONY_ENABLE_WRITES=1 HARMONY_FIRST_WRITE=1 node packages/usb/bin/rehearse-block.ts \
  *     --dump one_spare_myharmony --block 0x040000 --commit
+ *   ... --block 0x080000 --set 0x83bef=100 --commit
+ *
+ * ## `--set`, and why it belongs here rather than in a second script
+ *
+ * The rehearsal writes a block back **unchanged**, which is the only first write whose correct
+ * outcome is known in advance. A write that changes something needs every rail this file already
+ * has: the dump allow list, the unit read off the unit, the block compared with the dump before
+ * anything is sent, the neighbours read either side of the erase, and the read back. A second script
+ * would be a second copy of all of it, which is the state this repository's oldest rule forbids, so
+ * `--set` is one option on this one.
+ *
+ * `--set <flash address>=<byte>`, repeatable. Each address must be **inside the block being
+ * written**, so the option cannot reach past what the erase already covers, and the compare against
+ * the dump happens on the **unedited** block, so `originalDumpVerified` still means "the bytes about
+ * to be erased are the bytes the lab has". What changes is only what the transfers carry and what
+ * the read back is compared against.
+ *
+ * **It does not compute a checksum and must not.** A container's trailer checksum lives at its very
+ * end, which on the spare's configuration is a different erase block from anything worth editing, so
+ * a block scoped tool cannot recompute it. `applyEdits` in `packages/codec` is what works out every
+ * byte that has to change, including that one; this script is handed the answer and states it back.
+ * So a change is two runs of this script, one per block, and between them the configuration on the
+ * remote has a stale checksum. That window is deliberate and stated rather than hidden.
  *
  * **Without `--commit` it writes nothing and is worth running on its own.** It reads the block off
  * the remote, compares it with the dump, and prints exactly what a commit would send. That is the
@@ -152,6 +176,46 @@ function argument(name: string): string | undefined {
   return at < 0 ? undefined : process.argv[at + 1];
 }
 
+/** Every occurrence of a repeatable option, in the order given. */
+function arguments_(name: string): string[] {
+  const out: string[] = [];
+  process.argv.forEach((one, at) => {
+    if (one === `--${name}`) {
+      const value = process.argv[at + 1];
+      if (value !== undefined) out.push(value);
+    }
+  });
+  return out;
+}
+
+/** One `--set <flash address>=<byte>`. */
+interface ByteChange {
+  address: number;
+  value: number;
+}
+
+/**
+ * Parse the `--set` options, refusing anything that is not a flash address and a byte.
+ *
+ * Deliberately strict about the shape: a mistyped value that parsed as `NaN` would reach
+ * `Uint8Array.set` and land as zero, which is a byte this would then write and verify happily.
+ */
+function byteChanges(): ByteChange[] {
+  return arguments_('set').map((text) => {
+    const [left, right] = text.split('=');
+    if (left === undefined || right === undefined) {
+      fail(`--set wants <flash address>=<byte>, not ${text}`);
+    }
+    const address = Number(left);
+    const value = Number(right);
+    if (!Number.isInteger(address) || address < 0) fail(`--set: ${left} is not an address`);
+    if (!Number.isInteger(value) || value < 0 || value > 0xff) {
+      fail(`--set: ${right} is not a byte`);
+    }
+    return { address, value };
+  });
+}
+
 function fail(message: string): never {
   process.stderr.write(`${message}\n`);
   process.exit(1);
@@ -208,6 +272,7 @@ async function main(): Promise<void> {
   const block = Number(blockText);
   if (!Number.isInteger(block) || block < 0) fail(`--block is not an address: ${blockText}`);
   const commit = process.argv.includes('--commit');
+  const changes = byteChanges();
 
   if (!SPARE_DUMPS.has(dumpName)) {
     fail(`${dumpName} is not one of the spare Harmony One's own dumps `
@@ -330,6 +395,35 @@ async function main(): Promise<void> {
     process.stdout.write(`the block matches ${dumpName} byte for byte, so writing it back is a `
       + 'write that changes nothing\n');
 
+    /**
+     * What the transfers will carry: the dump's own bytes, with any `--set` applied.
+     *
+     * A copy rather than the `subarray` view, because that view aliases `dump` and mutating it would
+     * quietly change the thing the compare above just verified against. With no `--set` this is the
+     * same bytes and the run is the unchanged rehearsal exactly as before.
+     *
+     * Every change is checked to be inside this block. `--set` cannot reach a byte the erase does
+     * not already cover, so it widens what a run writes and not where it writes.
+     */
+    const toWrite = Uint8Array.from(intended);
+    for (const change of changes) {
+      if (change.address < block || change.address >= block + blockSize) {
+        throw new Refusal(`--set 0x${change.address.toString(16)} is outside the block `
+          + `0x${block.toString(16)} to 0x${(block + blockSize).toString(16)}, which is the only `
+          + 'range this run erases. Give it its own run.');
+      }
+      const at = change.address - block;
+      const was = toWrite[at] as number;
+      toWrite[at] = change.value;
+      process.stdout.write(`--set 0x${change.address.toString(16)}: ${was} -> ${change.value}`
+        + `${was === change.value ? ', which is already its value' : ''}\n`);
+    }
+    const differing = firstDifference(toWrite, intended);
+    process.stdout.write(differing === undefined
+      ? 'nothing is changed, so this is a write whose correct outcome is the current content\n'
+      : `${changes.length} byte(s) changed, first at 0x${(block + differing).toString(16)}: this `
+        + "write CHANGES the remote's configuration\n");
+
     // The blocks either side, which are what measure the erase span rather than assuming it. See
     // `neighbourBlocks`: the size of an erase is the flash chip's business and this project has it
     // on Logitech's client's word alone.
@@ -439,14 +533,14 @@ async function main(): Promise<void> {
       process.stdout.write(`writing ${transfer.length} bytes at `
         + `0x${transfer.address.toString(16)}\n`);
       await remote.writeFlash(permission, transfer.address,
-        intended.subarray(from, from + transfer.length));
+        toWrite.subarray(from, from + transfer.length));
     }
 
     const back = await readBlock(block);
-    const wrong = firstDifference(back, intended);
+    const wrong = firstDifference(back, toWrite);
     if (wrong !== undefined) {
       throw new Refusal(`the read back differs at 0x${(block + wrong).toString(16)}: `
-        + `0x${back[wrong]!.toString(16)} on the device, 0x${intended[wrong]!.toString(16)} `
+        + `0x${back[wrong]!.toString(16)} on the device, 0x${toWrite[wrong]!.toString(16)} `
         + 'intended. The write did not land.');
     }
 
@@ -466,8 +560,16 @@ async function main(): Promise<void> {
     }
 
     pastTheErase = false;
-    process.stdout.write('the block reads back byte for byte identical to the dump. '
-      + 'The configuration is unchanged and a write has been performed and verified.\n');
+    // **The line has to say which of the two runs this was**, and it did not: it read "identical to
+    // the dump. The configuration is unchanged" after a run that had just changed two bytes, because
+    // it was written when `--set` did not exist. The compare above was correct throughout; the
+    // sentence reporting it was false, which is the worse of the two failures to have.
+    process.stdout.write(differing === undefined
+      ? 'the block reads back byte for byte identical to the dump. The configuration is unchanged '
+        + 'and a write has been performed and verified.\n'
+      : `the block reads back byte for byte identical to the dump with the ${changes.length} `
+        + 'changed byte(s) in it, so the write landed and nothing else in the block moved. The '
+        + "remote's configuration has been changed.\n");
   } finally {
     // A failure to close must not replace the message above it. The operator is being told whether
     // the remote is mid write, and losing that sentence to "the device did not close" is the one
