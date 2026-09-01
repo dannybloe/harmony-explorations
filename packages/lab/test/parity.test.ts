@@ -50,7 +50,7 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // `make test-nolab` caught, four times now, when the count was left behind by a registration.
   // 81 since `one_spare_20260830`, the fourth state of the spare Harmony One, read on 30 August 2026.
   // 82 since the read taken after the first write, section 222.
-  assert.equal(Object.keys(pythonImages()).length, 83, 'every fixture tests/lab.py names');
+  assert.equal(Object.keys(pythonImages()).length, 84, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {
@@ -62,9 +62,11 @@ test('the two sides exclude the same fixtures from the parseable population', ()
   assert.ok(block, 'tests/lab.py has no PARSEABLE_EXCLUDED tuple in the expected shape');
   const names = [...block[1]!.matchAll(/'([^']+)'/g)].map((m) => m[1]!);
   assert.deepEqual([...PARSEABLE_EXCLUDED].sort(), names.sort());
-  // Four since 1 September 2026. Three of them are byte for byte duplicates of a container already
-  // counted; the fourth, the read taken after the first write that **changed** something, is that
-  // same container plus two known operand bytes, so counting it would count one configuration twice
-  // for every total that does not depend on those two bytes, which is all of them.
-  assert.equal(names.length, 4, 'each one a container already counted, or that container plus a known edit');
+  // Five since 1 September 2026. Three are byte for byte duplicates of a container already counted;
+  // the other two are the reads taken after the two writes that **changed** something, each that same
+  // container plus two or three known operand bytes, so counting either would count one configuration
+  // twice for every total that does not depend on those bytes, which is all of them. One state of a
+  // remote per write is what the write rehearsal's compare demands, so this list grows with the
+  // writes and that is by design rather than accumulation.
+  assert.equal(names.length, 5, 'each one a container already counted, or that container plus a known edit');
 });

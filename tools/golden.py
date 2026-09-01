@@ -72,6 +72,10 @@ CONTAINERS = (
     # changed numbers are checked where they live, against the read back, and not here. Written
     # after generating it, because the first version of this comment predicted a difference.
     'one_spare_20260901_delay',
+    # And after the second one, which is the state the revert started from. Its vector differs from
+    # the row above in nothing a vector carries, for the same reason: what changed is an operand
+    # inside an action list.
+    'one_spare_20260901_denon',
     # The two configs Logitech compiled to a specification we wrote, section 132. They are out of the
     # corpus wide claim lists, deliberately, and they belong here for the same reason the arch 9 safe
     # mode container does: a golden vector is a cheap check between two implementations and costs the

@@ -102,8 +102,10 @@ activity behaved exactly as it had, which the firmware turns out to require: the
 back only when an earlier entry names the **same** device, so a delay delays the next command to its
 own device and nothing else, and that activity sends that television one command. The second raised
 the receiver's, which does get a later input command, and its gap grew from about six seconds to about
-ten on the bench. So the paragraph above was right that the effect is watchable and wrong about which
-device to watch, and the sentence "set a television's delay to its maximum, start the activity, and
+ten on the bench. A third write then restored all three bytes and the whole configuration read off the
+remote afterwards is byte identical to the dump from before any of them, which is the closure a single
+write's read back cannot give, since an erase carries no count and the thing to fear is a neighbour. So
+the paragraph above was right that the effect is watchable and wrong about which device to watch, and the sentence "set a television's delay to its maximum, start the activity, and
 watch the remote wait before it sends anything"<!--superseded--> describes something no remote does.
 
 Three things to carry out of it rather than re-derive. **A `--set` on the write rehearsal takes away

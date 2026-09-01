@@ -208,6 +208,10 @@ IMAGES = {
     # the same word parity. It is one_spare_20260830 plus exactly those two bytes, so it is excluded
     # from the parseable population for the same reason the row above is.
     'one_spare_20260901_delay': '20260901T0555Z-one-spare-20260831-delay-config.bin',
+    # And the state after the second changing write an hour later, section 236: the receiver's power
+    # on delay raised from six seconds to ten, which is the change that could be seen. Excluded from
+    # the parseable population like the two rows above it.
+    'one_spare_20260901_denon': '20260901T0645Z-one-spare-denon-delay-config.bin',
     # Two configs Logitech compiled to a specification we wrote, 13 August 2026, and the corpus's only
     # **known answer** samples: three devices and two activities chosen by us, on a throwaway account,
     # then compiled by the live service and downloaded without a byte reaching a remote. Section 132.
@@ -360,7 +364,8 @@ def _find(filename):
 # the spare unit through Logitech's client, so the two agreeing confirms both that our cut was made in
 # the right place and that the embedded config is the same on two units.
 PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_config',
-                      'one_spare_after_first_write', 'one_spare_20260901_delay')
+                      'one_spare_after_first_write', 'one_spare_20260901_delay',
+                      'one_spare_20260901_denon')
 
 CONTAINERS = (
     'h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'h525_config_2', 'one_config',

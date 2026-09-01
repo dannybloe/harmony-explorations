@@ -153,6 +153,8 @@ const SPARE_DUMPS = new Set([
   // dump of what the unit actually holds there is no way to write to it again, including no way to
   // put the original bytes back. The script's own refusal says "take a fresh dump" and this is it.
   'one_spare_20260901_delay',
+  // And after the second, which is the state the revert starts from.
+  'one_spare_20260901_denon',
 ]);
 
 /**

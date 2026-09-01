@@ -75,6 +75,9 @@ const CONTAINERS = [
   // the write moved something structural. The first version of this comment predicted a difference
   // and generating the vector refuted it.
   'one_spare_20260901_delay',
+  // And after the second one, which is the state the revert started from. Identical again, and for
+  // the same reason: what changed is an operand inside an action list.
+  'one_spare_20260901_denon',
   // The two configs Logitech compiled to a specification we wrote, section 132: the only samples
   // whose devices and activities were chosen before the bytes existed, so a disagreement between the
   // two implementations about them would be a disagreement about a known answer.
@@ -211,7 +214,7 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // a duplicate of both for the same reason and for a sharper one: two operands on the remote are
   // deliberately not what a vector carries, so this one matching says the edit stayed where it was
   // aimed.
-  assert.equal(present.length, 48, 'every vector, which is what `make golden` compares');
+  assert.equal(present.length, 49, 'every vector, which is what `make golden` compares');
   // 38 since the Harmony 895 landed: its key table reads with the existing reader even though
   // every other arch 10 reader is gated, which is what made section 177's keypad closure possible
   // without any arch 10 progress at all.
@@ -222,7 +225,7 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 42 since `one_spare_20260830`, an ordinary arch 12 container read off a Harmony One, and 43 since
   // the read taken after the first write, which duplicates it. 44 since the read taken after the
   // first write that changed something, which duplicates it too.
-  assert.equal(complete, 44, 'the vectors whose container has a key table at all');
+  assert.equal(complete, 45, 'the vectors whose container has a key table at all');
 
   // **The number sender field, and why it needs its own guard.** It is an empty array on 30 vectors
   // and null on 8, with eight carrying a record since 30 August 2026, and this comment said 25 and 9
@@ -261,7 +264,10 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // Ten since the read taken after the first write that changed something, which duplicates it
   // again: the record survived a second erase and write, this one with two bytes deliberately
   // different, so it also says the edit did not disturb a section it was nowhere near.
-  assert.equal(senders.filter((one) => Array.isArray(one) && one.length > 0).length, 10,
+  // Eleven since the read after the second such write. It survived three erase and write cycles of
+  // the same block in the end, since the third put the bytes back, and the whole configuration then
+  // read off the remote is byte identical to the dump from before any of them.
+  assert.equal(senders.filter((one) => Array.isArray(one) && one.length > 0).length, 11,
     'the configs that populate base slot 16');
 });
 
@@ -273,7 +279,7 @@ test('the list above covers exactly what the Python side writes a vector for', (
   const block = /^CONTAINERS = \($(.*?)^\)$/ms.exec(source);
   assert.ok(block, 'tools/golden.py has no CONTAINERS tuple in the expected shape');
   const python = [...block[1]!.matchAll(/'([a-z0-9_]+)'/g)].map((m) => m[1] as string);
-  assert.equal(python.length, 48, 'the golden vectors, which is what `make golden` prints');
+  assert.equal(python.length, 49, 'the golden vectors, which is what `make golden` prints');
   assert.deepEqual([...CONTAINERS].sort(), python.sort());
 });
 

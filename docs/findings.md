@@ -30245,6 +30245,22 @@ shared, match exactly.
 The reply lives in the lab, since it carries an account identity, and the test finds the shared
 identifier itself rather than naming one.
 
+### The remote was put back, and that is the closure the writes themselves cannot give
+
+A third write, an hour later, set all three changed bytes to their original values in the same block,
+and the whole configuration was then read off the remote again: **1665900 bytes byte identical to the
+dump taken before any of this**. So three erase and write cycles of a 64 KiB block, two of them
+changing content and one restoring it, leave the unit exactly as it started.
+
+That is worth more than any single write's read back. Each write verifies the range it wrote, which
+cannot see damage elsewhere, and `ERASE_FLASH` carries no count, so the thing to fear is a neighbour.
+The neighbour check runs per write and is a comparison of two reads; this is a comparison against a
+dump taken two days and three erases earlier, over the whole configuration.
+
+It also makes the revert a measured route rather than a plan. Before today nothing here had put a
+remote back after changing it, and the honest description of a first changing write is that it is only
+safe if the way back is exercised.
+
 ### What a writer has to know
 
 The current and the default are **equal for every device in every config here**, 19 of 19 pairs. That
@@ -30542,4 +30558,6 @@ different question than mode 3 reads as.
   run against a real mistake rather than a planted one: the Harmony 700's countdown was recorded as
   its loop head, twelve bytes past its entry, and every other assertion in the file passed with it
   because a window that starts late still covers the routine.
-* The lab carries the two writes and the reads either side of them, with the revert path per state.
+* The lab carries the three writes and the reads either side of them, with the revert path per state.
+  The post revert read is deliberately **not** registered as a named dump, since it is byte identical
+  to `one_spare_20260830` and that is what it is for.

@@ -669,7 +669,9 @@ device and holds a command back only when an earlier entry names the **same** de
 delays one thing, the next command to its own device. That television gets one command in that
 activity, so its ten seconds ran down in the background. The second write raised the **receiver's**,
 which does get a second command, and its gap grew from about six seconds to about ten on the bench.
-One reading, two opposite predictions, both observed.
+One reading, two opposite predictions, both observed. A third write then put all three changed
+bytes back, and the whole configuration read off the remote afterwards is **byte identical to the
+dump taken before any of this**, so the way back is a measured route rather than a plan.
 
 Two things came with it. The mechanism is read on **both** bench architectures and the routine that
 carries it is identical on the two but for one literal, which is what lets a reading taken off a

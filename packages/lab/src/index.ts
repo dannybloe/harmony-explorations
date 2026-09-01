@@ -194,6 +194,13 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // reason the row above is. It is named because the write rehearsal takes its dumps by name and,
   // the device having been changed, this is now the only image its byte compare can match.
   one_spare_20260901_delay: '20260901T0555Z-one-spare-20260831-delay-config.bin',
+  // And the state after the **second** changing write, an hour later: the receiver's power on delay
+  // raised from six seconds to ten, which is the change the bench could see, section 236. Registered
+  // for the same reason as the row above, which is the reason itself: after a write the remote
+  // matches no dump, so the compare in front of the next write refuses until a fresh read exists, and
+  // that includes the write that puts the original bytes back. Excluded from the parseable population
+  // like the other two, being `one_spare_20260830` plus three known bytes.
+  one_spare_20260901_denon: '20260901T0645Z-one-spare-denon-delay-config.bin',
   // Two configs Logitech compiled to a specification we wrote, 13 August 2026: the corpus's only
   // known answer samples. Section 132. Not in the corpus wide lists, on purpose; see tests/lab.py.
   calibration_one: 'calibration-one-spare.bin',
@@ -311,7 +318,7 @@ export const IMAGES: Readonly<Record<string, string>> = {
  */
 export const PARSEABLE_EXCLUDED: readonly string[] =
   ['vendor_region_user_config', 'vendor_region_embedded_config', 'one_spare_after_first_write',
-    'one_spare_20260901_delay'];
+    'one_spare_20260901_delay', 'one_spare_20260901_denon'];
 
 const cache = new Map<string, string[]>();
 
