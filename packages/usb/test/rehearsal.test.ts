@@ -14,7 +14,12 @@ import assert from 'node:assert/strict';
 
 import { require_, skipWithoutLab } from '@harmony/lab';
 
-import { NOMINAL_FLASH_SIZE, failureLine, neighbourBlocks } from '../src/rehearsal.ts';
+import {
+  NOMINAL_FLASH_SIZE,
+  blocksDiffering,
+  failureLine,
+  neighbourBlocks,
+} from '../src/rehearsal.ts';
 
 const ONE = 12;
 const BLOCK = 0x10000;
@@ -91,4 +96,42 @@ test('the first write put the block back unchanged, and the whole configuration 
   assert.equal(after.length, before.length, 'the configuration did not change length');
   assert.equal(before.length, 1665900, 'the spare Harmony One config as read on 30 August 2026');
   assert.deepEqual(after, before, 'the remote after the first write is the remote before it');
+});
+
+test('a difference either side of a block boundary is two blocks', () => {
+  // The case the arithmetic exists for. A run that straddles a boundary must name both, and a
+  // reader that rounded the wrong way would erase one, write it correctly, and leave the other
+  // holding the old byte with every per block read back passing.
+  const size = 0x100;
+  const base = 0x040000;
+  const dump = new Uint8Array(4 * size);
+  const target = Uint8Array.from(dump);
+  target[size - 1] = 1;
+  target[size] = 1;
+  assert.deepEqual(blocksDiffering(dump, target, base, size), [base, base + size]);
+});
+
+test('a block is named once however many bytes in it differ', () => {
+  const size = 0x100;
+  const dump = new Uint8Array(3 * size);
+  const target = Uint8Array.from(dump);
+  for (const at of [0, 5, size - 1]) target[at] = 1;
+  assert.deepEqual(blocksDiffering(dump, target, 0, size), [0]);
+  // And identical images name none, which is the arm that makes "nothing to write" reachable
+  // rather than a branch nothing takes.
+  assert.deepEqual(blocksDiffering(dump, Uint8Array.from(dump), 0, size), []);
+});
+
+test('the two bytes a delay edit moves land in two blocks a megabyte apart', skipWithoutLab(), () => {
+  // **The measurement behind "a same length edit costs two erase blocks", section 187**, done on the
+  // images rather than on the arithmetic: the delay itself and the trailer checksum, which sits at
+  // the far end of the container. Two erases to change one number is the shape a config writer has
+  // to be built around, and it is why the dump it compares against has to be a **region**: the
+  // checksum's block runs past the end of every container.
+  const before = require_('one_spare_20260830');
+  const after = require_('one_spare_written_by_us');
+  assert.equal(before.length, after.length);
+  const blocks = blocksDiffering(before, after, 0x040000, 0x10000);
+  assert.deepEqual(blocks, [0x080000, 0x1d0000]);
+  assert.equal(blocks[1]! - blocks[0]!, 0x150000, 'and they are 1.3 MiB apart');
 });

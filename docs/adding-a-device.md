@@ -714,11 +714,16 @@ M4, and behind the gate above. The rails are written and off, `packages/usb/src/
       registered, since the compare that makes the write safe is against a named dump; 35 of the
       corpus's 127 pairs of an activity and a device it switches on can never show that device's
       delay; and the queue reading holds on both bench architectures
-- [ ] **check**: a config we produced is on the spare Harmony One and reads back byte identical to what
-      we sent. **Still open, and narrower than it was**: the box above is an *edit* of the remote's own
-      configuration, two bytes inside a block otherwise reproduced byte for byte, which is not a config
-      this project built. What is left for this box is a container that came out of `edit.ts` or
-      `relocate.ts` rather than out of a dump
+- [x] **check**: a config we produced is on the spare Harmony One and reads back byte identical to
+      what we sent. **Done, 1 September 2026, section 237.** A container `setPowerOnDelay` and
+      `applyEdits` emitted, every byte of it, installed by `packages/corpus/bin/write-config.ts` and
+      then read off the remote again: 1665900 bytes identical to the file. Three things it taught.
+      A one byte edit is a **two block** write, because the trailer checksum moves with it and lives
+      a megabyte away, so the floor for any edit is two erases. A dump has to be a flash **region**
+      and not a container, since the checksum's block runs past the container's declared end and
+      those bytes are still destroyed by the erase. And the verification read failed while the write
+      succeeded, on section 223's dropped chunk, which is the worst way round to fail and is why it
+      goes through `readConfig` and its retry now
 - [ ] the flag stays off for anything that is not this bench script
 
 ## Phase 9: the appliance responds

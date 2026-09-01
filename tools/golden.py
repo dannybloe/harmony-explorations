@@ -76,6 +76,12 @@ CONTAINERS = (
     # the row above in nothing a vector carries, for the same reason: what changed is an operand
     # inside an action list.
     'one_spare_20260901_denon',
+    # And the same unit as a flash region, which parses to the same container as one_spare_20260830.
+    # Here for the same reason as the two rows above: a vector identical to theirs is the claim.
+    'one_spare_20260901_region',
+    # And the first container the codec produced and a remote accepted. Its vector differs from
+    # the others' in nothing a vector carries, an action list operand not being one of them.
+    'one_spare_written_by_us',
     # The two configs Logitech compiled to a specification we wrote, section 132. They are out of the
     # corpus wide claim lists, deliberately, and they belong here for the same reason the arch 9 safe
     # mode container does: a golden vector is a cheap check between two implementations and costs the

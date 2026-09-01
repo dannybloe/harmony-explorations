@@ -45,16 +45,18 @@ import {
   taggedList,
 } from './sections.ts';
 import type { StateRecord, TaggedEntry } from './sections.ts';
-import { FIRMWARE_STATE_VARIABLES } from './inventory.ts';
+import { FIRMWARE_STATE_VARIABLES, powerOnInstructions } from './inventory.ts';
 import {
   CLOCK_FIELDS_OFFSET,
   CLOCK_FIELD_COUNT,
   CLOCK_FIRST_YEAR,
   CLOCK_LAST_YEAR,
+  ACTION_LIST_TABLE_SLOT,
   CLOCK_RECORD_SLOT,
   Container,
   GspmError,
   TRAILER_CHECKSUM_OFFSET,
+  archSlot,
   clockRecord,
   clockRecordFields,
   timestampOf,
@@ -62,6 +64,7 @@ import {
 } from './gspm.ts';
 import { claims } from './coverage.ts';
 import { parameterGroups, timers } from './tables.ts';
+import { IR_QUANTITY_CAP } from './ir.ts';
 
 /** What a caller may not do. Separate from `GspmError` so an editor can catch only its own. */
 export class EditError extends GspmError {}
@@ -465,6 +468,54 @@ export function setTimerDuration(c: Container, index: number, seconds: number): 
     start: off + 1,
     bytes: Uint8Array.from([seconds & 0xff, (seconds >>> 8) & 0xff, 0]),
     owner: `timer ${index}`,
+  }];
+}
+
+/**
+ * One device's power on delay, on the architectures that inline it.
+ *
+ * **The smallest change this format admits**: one byte, in place, moving nothing and restamping no
+ * count, which is why it is the first thing this project ever changed on a remote. The instruction
+ * is the single `0x7C` at the top level of the action list that device's `Power` variable runs on
+ * its 0 to 1 transition, `powerOnInstructions`.
+ *
+ * **`tenths` is capped at 100 and that is the firmware's cap, not a field width.** A byte holds 255,
+ * but the enqueueing worker folds two consecutive quantities for one device by taking the larger
+ * **except** at 100, where it pushes a second entry instead, section 70. So a value above 100 is
+ * spelled out as several instructions, which is a length change and not a byte edit, and a caller
+ * asking for one here is asking for something this function cannot honestly do.
+ *
+ * **What it will not tell you is whether the delay does anything**, section 236. The quantity holds
+ * back the next command to its own device and nothing else, so in an activity that sends that device
+ * only its power code the value is inert however large it is. That is a question about an activity
+ * rather than about a device, `powerOnDelayReach` answers it, and it deliberately does not gate this
+ * edit: a delay that is inert in one activity may not be in another.
+ */
+export function setPowerOnDelay(c: Container, group: number, tenths: number): Edit[] {
+  const found = powerOnInstructions(c).get(group);
+  if (found === undefined) {
+    throw new EditError(`no device with infrared group ${group} states a power on delay inline`);
+  }
+  if (!Number.isInteger(tenths) || tenths < 0) {
+    throw new EditError('a delay is a whole number of tenths of a second');
+  }
+  if (tenths > IR_QUANTITY_CAP) {
+    throw new EditError(
+      `${tenths} tenths is past the ${IR_QUANTITY_CAP} one instruction carries, and spelling it `
+      + 'out takes more instructions, which is a length change rather than a byte edit',
+    );
+  }
+  const table = c.pointerArray(archSlot(c.architecture as number, ACTION_LIST_TABLE_SLOT));
+  const address = table?.[found.list];
+  if (address === undefined) throw new EditError(`action list ${found.list} has no address`);
+  // The operand's low byte, an instruction being `{ u16 operand; u8 opcode }` with the operand low
+  // byte first and instruction k at `listAddress + 1 + 3k` past the count byte.
+  const off = c.blobOffsetOf(address + 1 + 3 * found.at);
+  if (off === undefined) throw new EditError(`action list ${found.list} is outside the container`);
+  return [{
+    start: off,
+    bytes: Uint8Array.from([tenths]),
+    owner: `power on delay of group ${group}`,
   }];
 }
 

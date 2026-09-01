@@ -30561,3 +30561,114 @@ different question than mode 3 reads as.
 * The lab carries the three writes and the reads either side of them, with the revert path per state.
   The post revert read is deliberately **not** registered as a named dump, since it is byte identical
   to `one_spare_20260830` and that is what it is for.
+
+## 237. A configuration our own codec produced is on a remote, and it came back byte identical
+
+**The last box in front of adding a device.** Everything written to a remote before today came off
+that remote: section 222 put a block of its own dump back unchanged, and section 236 changed two
+operands inside a block otherwise reproduced from a dump. This is a container the codec **emitted**,
+every byte of it, installed and read back.
+
+The change is one device's power on delay, six seconds to ten, through `setPowerOnDelay` and
+`applyEdits`. That is deliberately the smallest change the format admits: one byte of content, no
+length change, no count restamped, and a value whose effect on the bench is known from section 236.
+The interesting part is not the byte, it is that nothing else moved.
+
+### A one byte edit is a two block write, measured rather than argued
+
+`applyEdits` reports two runs, not one: the operand, and the trailer checksum it restamps. On the
+spare Harmony One's configuration they sit at `0x083BFD` and `0x1D6B66`, which is 1.3 MiB apart and
+therefore in different 64 KiB erase blocks. So the cheapest possible edit costs **two** erases,
+which section 187 derived for a page binding and its copy and which turns out to be the floor for
+anything at all: the checksum is at the far end and every edit moves it.
+
+Two consequences that shaped the tooling.
+
+**A container is not enough to write from.** The checksum's block runs past the container's declared
+end, so a dump of the configuration covers only part of it, and the bytes past the end are still
+bytes the erase destroys and the write has to put back. `read-region.ts` reads flash from the config
+base to the end of the block the container ends inside; on this unit that is 38036 further bytes and
+all of them read as erased. Its leading 1665900 bytes are byte identical to the container read two
+days earlier, which is the control that makes it a second independent read rather than a new claim.
+
+**Which blocks differ is arithmetic worth a test of its own.** `blocksDiffering` is in
+`packages/usb/src/rehearsal.ts` because the failure it prevents is invisible: a difference at the
+last byte of one block and the first of the next is two blocks, and a reader that rounded the wrong
+way would erase one, write it correctly, and leave the other holding the old byte with every per
+block read back passing.
+
+### What the writer does, and the one thing it does that the rehearsal cannot
+
+`packages/corpus/bin/write-config.ts`. It is in that package because it needs both halves: the
+container parser, since the trailer checksum is the one field the remote itself checks and a writer
+that does not verify it can produce a file that will not boot, and the USB write path.
+
+The sequence, per run: parse the config and recompute its checksum; identify the unit from its own
+identity block; compute the differing blocks; **read every one of them off the remote and compare
+with the region dump before erasing any of them**; then per block, read the neighbours, erase,
+confirm all ones, re-read the neighbours, write, read back and compare.
+
+Reading every block before erasing any is the difference from doing it per block as it goes. A
+second block that turned out not to match the dump would otherwise be discovered with the first
+already rewritten, which is the one state the script must not create.
+
+The erase and write sequence itself is `writeBlock` in `packages/usb/src/blockwrite.ts`, extracted
+from the rehearsal so the two callers share one copy. Its order is the argument rather than an
+implementation detail, and a second caller that re-derived it would get a plausible sequence with a
+hole in it.
+
+**And then the whole configuration is read back and compared with the file**, which no per block
+check can stand in for: a block that was never written, or written in the wrong order, or a run of
+the config falling between two blocks, all show up there and nowhere else. It did: 1665900 bytes
+byte identical to what was sent.
+
+### The offline half closes too
+
+Editing the delay from 60 to 100 and back to 60 reproduces the input byte for byte, and the way up
+really moved, so it is not the identity twice. That says the checksum restamp is a function of the
+bytes rather than of the edit, and the file produced by the second edit is byte identical to the
+dump taken before any write this project has ever performed.
+
+### What went wrong, because it is the useful part
+
+**The verification read failed and the write did not.** The first version read the range back with
+its own loop of `readFlash` and died at 24304 bytes with a chunk out of sequence, which is section
+223's transient: HIDAPI's macOS backend holds about 31 input reports and discards the oldest, so a
+consumer that stalls loses a run. Both blocks had already been written and verified. So the run
+reported a failure with the remote in exactly the state that was wanted, which is the worst way
+round to fail, and the fix is that the read goes through `readConfig`, which retries a window
+because a read is idempotent. A second, independent read then matched the file.
+
+**Every value the editor's tests reached for was even.** A control that cleared the operand's low
+bit passed the whole file. Fixed by editing to 99 rather than 100, and recorded here because the
+shape generalises: a test that only ever writes round numbers cannot see a mask.
+
+### The tooling wart, stated rather than solved
+
+**Each write invalidates the dump the next one compares against.** The compare is what makes a write
+recoverable, so after a successful write the remote matches no registered dump and everything
+refuses, the revert included, until a fresh region read is taken and named. That is three
+registrations in one day, each adding a near duplicate container to the golden vectors and the
+parseable exclusions.
+
+Two candidate answers and neither is chosen: keep registering, on the ground that one state per
+write is honest bookkeeping; or give the writer an option stating the deviations the compare must
+find, so a container this run installed and verified can stand in for a fresh read. The second is
+less honest bookkeeping and less reading, and the choice wants somebody who has done it a few more
+times.
+
+### What would falsify it
+
+A container the codec emits that a remote accepts and holds differently from the file, or a same
+length edit whose changed bytes fall in blocks `blocksDiffering` does not name.
+
+### Where it lands
+
+* `docs/config-format.md`, the note on what a same length edit costs.
+* `packages/codec/src/edit.ts`: `setPowerOnDelay`, with `bin/set-delay.ts` to produce a container.
+* `packages/usb/src/blockwrite.ts` and `blocksDiffering` in `rehearsal.ts`, reachable to a caller in
+  this workspace through the `@harmony/usb/write` subpath, which exists so that a second write
+  caller is a decision visible in a diff.
+* `packages/usb/bin/read-region.ts`, and `packages/corpus/bin/write-config.ts`.
+* `packages/codec/test/edit.test.ts` and `packages/usb/test/rehearsal.test.ts`.
+* The container that was written is `one_spare_written_by_us` in the lab.

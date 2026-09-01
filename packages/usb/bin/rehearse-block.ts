@@ -89,17 +89,13 @@ import {
 } from '../src/index.ts';
 import { CONFIG_REGION_BASE, assertFirstWriteAllowed, assertUnitIsPermitted } from '../src/rails.ts';
 import { NOMINAL_FLASH_SIZE, failureLine, neighbourBlocks } from '../src/rehearsal.ts';
-import { writeChunkLengths } from '../src/writes.ts';
-
-/**
- * A single transfer's size.
- *
- * The announce carries a 16 bit count, so 65535 is the hard limit; half of it is used because an
- * erase block is 64 KiB and two equal halves split it exactly, where 65535 would leave a transfer
- * of one byte behind. The constant is the choice and the comment used to state only the limit,
- * which reads as if the limit produced the number.
- */
-const MAX_TRANSFER = 0x8000;
+import {
+  MAX_TRANSFER,
+  firstDifference,
+  reportCount,
+  transfersFor,
+  writeBlock,
+} from '../src/blockwrite.ts';
 
 /**
  * The lab images that are the **spare** Harmony One's own configuration, and the only ones `--dump`
@@ -241,21 +237,6 @@ function fail(message: string): never {
  */
 class Refusal extends Error {}
 
-/**
- * The first index at which two equal length buffers differ.
- *
- * It demands equal lengths rather than returning `Math.min` of the two, which is what it did: both
- * callers immediately index the result to print the differing bytes, so an index one past the end of
- * the shorter buffer was a report that could not be produced. Unreachable, since every buffer here
- * is a whole block, and a non-null assertion at the call site was all that hid it.
- */
-function firstDifference(a: Uint8Array, b: Uint8Array): number | undefined {
-  if (a.length !== b.length) {
-    throw new Refusal(`comparing ${a.length} bytes with ${b.length}, which is a bug in this script`);
-  }
-  for (let i = 0; i < a.length; i += 1) if (a[i] !== b[i]) return i;
-  return undefined;
-}
 /**
  * True from the moment the erase is sent until the block has been written and verified.
  *
@@ -447,11 +428,8 @@ async function main(): Promise<void> {
         + 'a block at the edge of the chip has one side that cannot be compared\n');
 
     // What a commit would send, printed either way.
-    const transfers: { address: number; length: number }[] = [];
-    for (let done = 0; done < blockSize; done += MAX_TRANSFER) {
-      transfers.push({ address: block + done, length: Math.min(MAX_TRANSFER, blockSize - done) });
-    }
-    const packets = transfers.reduce((n, t) => n + writeChunkLengths(t.length).length + 2, 0);
+    const transfers = transfersFor(block, blockSize);
+    const packets = reportCount(transfers);
     process.stdout.write(`plan: read the neighbours, erase 0x${blockSize.toString(16)} bytes at `
       + `0x${block.toString(16)}, check the neighbours again, then ${transfers.length} transfer(s) `
       + `of ${transfers.map((t) => t.length).join(' and ')} bytes, ${packets} reports in total, `
@@ -464,11 +442,6 @@ async function main(): Promise<void> {
     }
 
     assertFirstWriteAllowed();
-    if (neighbours.length === 0) {
-      throw new Refusal('no neighbouring block can be read, so nothing would measure how far the '
-        + 'erase reached, and how far it reaches is the one thing about it this project has never '
-        + 'confirmed. Refusing to erase.');
-    }
     const permission = {
       architecture,
       configLength: dump.length,
@@ -492,83 +465,22 @@ async function main(): Promise<void> {
       permittedUnit: permitted,
     };
 
-    const before = new Map<number, Uint8Array>();
-    for (const neighbour of neighbours) {
-      process.stdout.write(`reading neighbour 0x${neighbour.toString(16)} as a baseline\n`);
-      before.set(neighbour, await readBlock(neighbour));
-    }
+    await writeBlock({
+      remote,
+      permission,
+      block,
+      blockSize,
+      content: toWrite,
+      neighbours,
+      readBlock,
+      log: (line) => process.stdout.write(`${line}\n`),
+      onPastTheErase: (value) => { pastTheErase = value; },
+      // The dump is what this run restores from, so a block it covers is one whose content is
+      // recoverable, which is the distinction the refusal draws.
+      coversBlock: (address) => address >= base && address - base + blockSize <= dump.length,
+      sourceName: dumpName,
+    });
 
-    process.stdout.write(`erasing 0x${block.toString(16)}\n`);
-    // Set before the command goes out, not after it comes back: an erase that fails halfway is
-    // still an erase that happened, and this flag decides what the operator is told.
-    pastTheErase = true;
-    await remote.eraseFlash(permission, block);
-    const erased = await readBlock(block);
-    const notErased = erased.findIndex((b) => b !== 0xff);
-    if (notErased >= 0) {
-      throw new Refusal(`the erase left 0x${erased[notErased]!.toString(16)} at `
-        + `0x${(block + notErased).toString(16)}, so it did not take. The block is in an unknown `
-        + 'state.');
-    }
-    process.stdout.write('erased, and the block reads back as all ones\n');
-
-    for (const neighbour of neighbours) {
-      const was = before.get(neighbour);
-      if (was === undefined) {
-        throw new Refusal(`no baseline for 0x${neighbour.toString(16)}, which is a bug here`);
-      }
-      const moved = firstDifference(await readBlock(neighbour), was);
-      if (moved !== undefined) {
-        const at = neighbour + moved;
-        const covered = neighbour >= base && neighbour - base + blockSize <= dump.length;
-        throw new Refusal(`the erase changed 0x${at.toString(16)}, which is in the neighbouring `
-          + `block 0x${neighbour.toString(16)} and outside the block it was told to erase. So the `
-          + `erase sector on this chip is larger than the 0x${blockSize.toString(16)} bytes this `
-          + "project has assumed, which was Logitech's client's word and has never been measured. "
-          + (covered
-            ? `${dumpName} covers that block, so its content is recoverable, but not by this `
-              + 'script: it restores one block and this needs a plan for two.'
-            : 'The lab dump does not cover that block, so what was there is not recoverable from '
-              + 'it. Stop and read docs/adding-a-device.md phase 8 before touching this unit '
-              + 'again.'));
-      }
-    }
-    if (neighbours.length === 2) {
-      process.stdout.write('the erase stayed inside its own block, measured on both sides\n');
-    }
-
-    for (const transfer of transfers) {
-      const from = transfer.address - block;
-      process.stdout.write(`writing ${transfer.length} bytes at `
-        + `0x${transfer.address.toString(16)}\n`);
-      await remote.writeFlash(permission, transfer.address,
-        toWrite.subarray(from, from + transfer.length));
-    }
-
-    const back = await readBlock(block);
-    const wrong = firstDifference(back, toWrite);
-    if (wrong !== undefined) {
-      throw new Refusal(`the read back differs at 0x${(block + wrong).toString(16)}: `
-        + `0x${back[wrong]!.toString(16)} on the device, 0x${toWrite[wrong]!.toString(16)} `
-        + 'intended. The write did not land.');
-    }
-
-    // Only the block above, and only after the write: a write's address is announced and the
-    // remote advances its own pointer from there, so the sole direction it could run past its
-    // range is upwards. The erase is the operation with no count at all and it is checked on both
-    // sides above.
-    const above = neighbours.find((n) => n > block);
-    const wasAbove = above === undefined ? undefined : before.get(above);
-    if (above !== undefined && wasAbove !== undefined) {
-      const spilled = firstDifference(await readBlock(above), wasAbove);
-      if (spilled !== undefined) {
-        throw new Refusal(`the write changed 0x${(above + spilled).toString(16)}, past the end of `
-          + 'the range it announced. The block it was asked to write is correct, and something '
-          + 'above it is not.');
-      }
-    }
-
-    pastTheErase = false;
     // **The line has to say which of the two runs this was**, and it did not: it read "identical to
     // the dump. The configuration is unchanged" after a run that had just changed two bytes, because
     // it was written when `--set` did not exist. The compare above was correct throughout; the

@@ -79,6 +79,13 @@ re-implementing a PIC18 decoder is not the exercise. The line runs between tools
 **Must not be read.** This list was built by inventorying the tree rather than from memory, and that
 mattered: five documents came **off** an earlier draft of it and nine paths went **on**.
 
+**And it needed a tenth on 1 September 2026, which is the list working.** The write path acquired a
+second caller and it is not in `packages/usb/`: `packages/corpus/bin/write-config.ts` composes the
+codec and the USB package, so a directory level entry could not cover it and the sweep said so. Worth
+recording because the entry that was already there, `packages/usb/` whole, had absorbed every new
+write file for a month without anybody having to think, and the first one outside it was the first
+that could have leaked.
+
 | path | why |
 |---|---|
 | `docs/findings.md` | section 175 is the answer, and other sections state parts of it |
@@ -91,6 +98,7 @@ mattered: five documents came **off** an earlier draft of it and nine paths went
 | `docs/review-before-first-write.md` | this document, which states which questions are open |
 | `packages/usb/` | all of it, the protocol, the rails, the write builder, the scripts and the tests |
 | `tests/`, `packages/bench/test/` | the regression tests pin the claims |
+| `packages/corpus/bin/write-config.ts` | **added 1 September 2026, section 237.** The write path grew a second caller, in a package the earlier list did not cover at all because nothing there wrote. It states the erase and write sequence by driving it, names the first write door, and says which blocks an edit touches |
 | `.claude/skills/recovering-a-remote/SKILL.md`, `.agents/skills/recovering-a-remote` | **added 29 August 2026 and the reason is question 4.** It states the classifying routine, its three callers, what each top byte selects, the ceiling per architecture and the polarity in the words "it rests at refuse", which is the whole of the highest value question in this review. It is reachable both as a skill Codex discovers on its own and as a tracked file |
 | `tools/ghidra/seed_code.txt`, `tools/ghidra/seed_funcs.txt` | machine generated branch target seeds |
 | the `concordance` checkout | `specs/protocol.txt` documents the protocol independently |

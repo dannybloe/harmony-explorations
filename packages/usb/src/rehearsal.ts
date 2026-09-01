@@ -72,3 +72,43 @@ export function failureLine(message: string, pastTheErase: boolean): string {
     + 'the block again. If it cannot be rerun, the unit needs its configuration restored from the '
     + 'lab dump, which is the route docs/adding-a-device.md phase 8 has never exercised.';
 }
+
+/**
+ * Which erase blocks two same length images differ in, as flash addresses.
+ *
+ * **The arithmetic a config writer gets wrong quietly.** A same length edit changes a handful of
+ * bytes and a container is over a megabyte, so writing all of it would be twenty six erase cycles to
+ * change two; writing the blocks that differ is the whole design. What that turns on is a boundary:
+ * a difference at the last byte of one block and the first of the next is two blocks, and a reader
+ * that rounded the wrong way would erase one of them and leave the other holding the old byte, which
+ * every per block read back would pass.
+ *
+ * `base` is the flash address `dump[0]` sits at. Both images must be the same length, because a
+ * shorter target is not a same length edit and the caller has already refused it; asking here rather
+ * than clamping is deliberate, since clamping would silently ignore the tail.
+ *
+ * Here rather than in the script for the reason the rest of this file is: it decides what gets
+ * erased and it needs no remote to check.
+ */
+export function blocksDiffering(
+  dump: Uint8Array,
+  target: Uint8Array,
+  base: number,
+  blockSize: number,
+): number[] {
+  if (dump.length !== target.length) {
+    throw new Error(`comparing ${dump.length} bytes with ${target.length}`);
+  }
+  if (blockSize <= 0) throw new Error(`a block is ${blockSize} bytes`);
+  const out: number[] = [];
+  for (let at = 0; at < dump.length; at += 1) {
+    if (dump[at] === target[at]) continue;
+    const block = base + Math.floor(at / blockSize) * blockSize;
+    out.push(block);
+    // Skip to the last byte of this block; the loop's own increment moves past it. One difference
+    // inside a block is enough to name it, and the next iteration starts in the next block, so a
+    // block cannot be named twice and the dedupe this used to do is unnecessary.
+    at = block - base + blockSize - 1;
+  }
+  return out;
+}

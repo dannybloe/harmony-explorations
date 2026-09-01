@@ -7,7 +7,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./models": "./src/models.ts"
+    "./models": "./src/models.ts",
+    "./write": "./src/write.ts"
   },
   "scripts": {
     "typecheck": "tsc --build"

@@ -117,6 +117,17 @@ interface has to respect rather than a curiosity. And the queue reading holds on
 architectures, the routine differing in one literal, which is what lets code read off a Harmony 700
 image license a claim about the Harmony One.
 
+**And a configuration the codec produced followed the same day, section 237.** That is phase 8's last
+box: `setPowerOnDelay` and `applyEdits` emitted a container, `packages/corpus/bin/write-config.ts`
+installed it, and the whole 1665900 bytes read back identical to the file. What phase 9 inherits from
+it is three things that were not known this morning. A one byte edit costs **two** erase blocks,
+because the trailer checksum is at the far end and moves with everything, so two is the floor rather
+than a property of the page binding case section 187 measured. A write needs known good content for a
+flash **region**, not for a container, since the checksum's block runs past the container's end. And
+the erase and write sequence now has one implementation, `writeBlock`, shared by the rehearsal and the
+writer, reachable through the `@harmony/usb/write` subpath so that a third caller is a decision
+somebody sees.
+
 `make lab-check PATH_ARG=<path>` first, per decision 12, because the last nine digs each re-derived
 something the site already held.
 

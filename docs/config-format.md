@@ -2945,6 +2945,13 @@ all 16 on arch 14 carry none. The nested list that sends the code carries its ow
 the ordinary per send quantity, so a reader must stay at the top level. `powerOnInstructions` in
 `packages/codec`. [findings.md](findings.md) sections 29, 70 and 235.
 
+**Changing one is a two block write**, section 237. `applyEdits` restamps the trailer checksum, which
+sits at the far end of the container, so the operand and the checksum land in different 64 KiB erase
+blocks: `0x083BFD` and `0x1D6B66` on the spare Harmony One, 1.3 MiB apart. That makes two erases the
+**floor** for any same length edit, not a property of page bindings, which is where section 187 first
+measured it. It also means a writer needs known good content for a flash **region** rather than for a
+container, since the checksum's block runs past the container's declared end.
+
 **What the delay delays is the next code to that same device, and nothing else**, section 236, which
 finishes what the fold rule above only hinted at. Three consumers drain the queue and two of them ask
 one shared helper the same question, "is there an earlier entry naming this device": the picker

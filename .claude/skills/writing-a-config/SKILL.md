@@ -186,6 +186,15 @@ produce a config the remote accepts and mishandles.
   refusal**, and the number is the open part: 55 expanded instructions hung one and the largest clean
   run is unmeasured, so the bound has to come from a run that establishes a ceiling rather than from
   the one figure that failed.
+* **Two erase blocks is the floor for any edit, not a page binding's quirk**, section 237. The
+  trailer checksum sits at the far end of the container and `applyEdits` restamps it, so a one byte
+  change to a device's power on delay moves `0x083BFD` and `0x1D6B66` on the spare Harmony One, 1.3
+  MiB apart and therefore in different blocks. Two things follow for a writer. The known good content
+  it compares against has to be a flash **region** and not a container, since the checksum's block
+  runs past the container's declared end and those bytes are still destroyed by the erase. And every
+  block it will touch is read and compared **before** any of them is erased, because a second block
+  that turns out not to match would otherwise be discovered with the first already rewritten.
+  `packages/corpus/bin/write-config.ts` is the implementation and it has done this once.
 * **A same length edit is not a small write, and the cheapest one costs two erase blocks**, section
   187. `edit.ts` permits a same length edit and refuses a length change, which is the right rule for
   the **container** and says nothing about the **medium**: flash only clears bits, so changing one

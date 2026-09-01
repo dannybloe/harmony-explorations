@@ -40,8 +40,10 @@ import {
   pageListCopies,
   parameterGroups,
   parse,
+  powerOnInstructions,
   setPageListEntry,
   setParameter,
+  setPowerOnDelay,
   setTimerDuration,
   taggedList,
   timers,
@@ -761,4 +763,94 @@ test('a same length edit is not a small write: one page binding costs two erase 
     total += editable;
   }
   assert.equal(total, 187, 'every editable page in the corpus, and all of them cost two blocks');
+});
+
+
+/** The containers that inline a power on delay, which is every architecture but 14. */
+const DELAY_SAMPLES = ['one_spare_20260830', 'one_config', 'h525_config', 'arch8_config_885'];
+
+test('a delay edit changes one byte of content and the checksum, and nothing else',
+  skipUnless(...DELAY_SAMPLES), () => {
+    // **The smallest change this format admits**, and the reason it was the first thing written to a
+    // remote: one byte in place, no length change, no count restamped. The second run is the trailer
+    // checksum, which `applyEdits` recomputes, and it is not an artefact of this edit: it is why a
+    // same length edit costs **two** erase blocks rather than one, since the checksum lives at the
+    // far end of the container. Section 237.
+    for (const name of DELAY_SAMPLES) {
+      const c = parse(require_(name));
+      const [group, one] = [...powerOnInstructions(c)][0] as [number, { tenths: number }];
+      // **Odd on purpose.** Every value these tests reached for was even, and a control that
+      // cleared the operand's low bit passed the whole file. A delay is a plain byte, so an even
+      // one exercises seven of its eight bits.
+      const wanted = one.tenths === 99 ? 97 : 99;
+      const report = applyEdits(c, setPowerOnDelay(c, group, wanted));
+      assert.equal(report.changed.length, 2, `${name}: the operand and the checksum`);
+      assert.equal(report.changed[0]!.length, 1, `${name}: one byte of content`);
+      // The second run is the trailer word, which is what says the first one is content rather than
+      // the two being any pair of bytes. **Which byte of the word moves depends on the value**, so
+      // this bounds the run inside the word rather than naming a byte: an earlier version asserted
+      // the high byte and three samples of four happened to agree with it.
+      const trailer = c.blob.length - TRAILER_CHECKSUM_OFFSET;
+      const second = report.changed[1] as { start: number; length: number };
+      assert.ok(second.start >= trailer && second.start + second.length <= trailer + 2,
+        `${name}: the second run is 0x${second.start.toString(16)} for ${second.length}, which is `
+        + `not inside the trailer word at 0x${trailer.toString(16)}`);
+      const after = parse(report.bytes);
+      assert.equal(powerOnInstructions(after).get(group)?.tenths, wanted, name);
+      assert.equal(after.trailerChecksum, trailerChecksum(report.bytes), `${name}: recomputes`);
+    }
+  });
+
+test('every other device keeps its delay', skipUnless(...DELAY_SAMPLES), () => {
+  // The control for the test above, which would pass if the edit wrote the right value into every
+  // device at once. Four containers holding three to seven devices each.
+  let checked = 0;
+  for (const name of DELAY_SAMPLES) {
+    const c = parse(require_(name));
+    const was = powerOnInstructions(c);
+    const [group] = [...was][0] as [number, unknown];
+    const after = powerOnInstructions(parse(applyEdits(c, setPowerOnDelay(c, group, 7)).bytes));
+    for (const [other, one] of was) {
+      if (other === group) continue;
+      assert.equal(after.get(other)?.tenths, one.tenths, `${name}: group ${other} moved`);
+      checked += 1;
+    }
+  }
+  assert.equal(checked, 14, 'devices left alone across the four containers');
+});
+
+test('a delay edit round trips back to the bytes it started from',
+  skipUnless('one_spare_20260830'), () => {
+    // Sixty tenths to a hundred and back, and the result is the input byte for byte. That is the
+    // check that the checksum restamp is a function of the bytes rather than of the edit, and it is
+    // the offline half of what the remote confirmed on 1 September 2026.
+    const c = parse(require_('one_spare_20260830'));
+    const up = applyEdits(c, setPowerOnDelay(c, 0, 100)).bytes;
+    const back = parse(up);
+    const down = applyEdits(back, setPowerOnDelay(back, 0, 60)).bytes;
+    assert.deepEqual(down, c.blob, 'up and back down is the identity');
+    assert.notDeepEqual(up, c.blob, 'and the way up really moved, so this is not vacuous');
+  });
+
+test('a delay past what one instruction carries is refused rather than truncated',
+  skipUnless('one_spare_20260830'), () => {
+    // **101 is not a wide value, it is a different shape.** The firmware folds two consecutive
+    // quantities for one device by taking the larger except at 100, where it pushes a second entry,
+    // so a value above the cap is spelled out as several instructions and that is a length change.
+    // A byte would hold it, which is exactly why the refusal has to be explicit.
+    const c = parse(require_('one_spare_20260830'));
+    assert.throws(() => setPowerOnDelay(c, 0, 101), EditError);
+    assert.throws(() => setPowerOnDelay(c, 0, 255), EditError);
+    assert.throws(() => setPowerOnDelay(c, 0, -1), EditError);
+    assert.throws(() => setPowerOnDelay(c, 0, 1.5), EditError);
+    // And 100 itself is allowed, so the bound is the cap and not one below it.
+    assert.equal(setPowerOnDelay(c, 0, 100).length, 1);
+  });
+
+test('a device that states no inline delay is refused', skipUnless('h600_config'), () => {
+  // Arch 14 (Harmony 600 and 700) keeps a power on delay in a state variable, so there is no
+  // instruction to edit and this must say so rather than write a byte somewhere plausible.
+  const c = parse(require_('h600_config'));
+  assert.equal(powerOnInstructions(c).size, 0, 'arch 14 inlines none');
+  assert.throws(() => setPowerOnDelay(c, 0, 50), EditError);
 });

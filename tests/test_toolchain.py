@@ -1491,7 +1491,7 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # 19 since 29 August 2026: the `recovering-a-remote` skill went on the list, as both its
         # real path and the `.agents/` symlink a second agent discovers it through. It states the
         # interlock, which is question 4.
-        self.assertEqual(len(must), 19, 'the withhold list should resolve to 19 paths, got %s'
+        self.assertEqual(len(must), 20, 'the withhold list should resolve to 20 paths, got %s'
                          % sorted(must))
 
     def test_every_may_read_path_is_clean_of_the_write_path(self):
@@ -1548,12 +1548,19 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # unaided. `tests/` is already withheld whole, so this is the sweep working rather than a leak,
         # and the list was re-read against all 25 before this number moved.
         #
+        # 30 since section 237, 1 September 2026, and only one of the three widens anything. Two are
+        # `packages/usb/src/blockwrite.ts` and `packages/usb/src/write.ts`, inside a directory the
+        # withhold list covers whole, which is the sweep noticing new files rather than a leak. The
+        # third, `packages/corpus/bin/write-config.ts`, is the write path's first caller **outside**
+        # `packages/usb/`, so no directory entry covered it and it has its own row now. The list was
+        # re-read against all 30 before this number moved.
+        #
         # 27 since the job 3 review of 30 August 2026, which added `packages/usb/src/rehearsal.ts`
         # and `packages/usb/test/rehearsal.test.ts`. Both state the transfer only by naming what an
         # erase does not carry, and both are inside `packages/usb/`, which the withhold list already
         # covers whole, so nothing widens: this is the sweep noticing two new files in a withheld
         # directory. The list was re-read against all 27 before this number moved.
-        self.assertEqual(len(stating), 27,
+        self.assertEqual(len(stating), 30,
                          'the number of files stating the write path moved, so re-read the withhold '
                          'list before restamping this: %s' % stating)
 

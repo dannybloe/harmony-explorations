@@ -201,6 +201,23 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // that includes the write that puts the original bytes back. Excluded from the parseable population
   // like the other two, being `one_spare_20260830` plus three known bytes.
   one_spare_20260901_denon: '20260901T0645Z-one-spare-denon-delay-config.bin',
+  // The same unit read as a **region** rather than as a container, 1 September 2026, after the
+  // revert put it back to `one_spare_20260830`. It runs from the config base to the end of the block
+  // the container ends inside, `0x040000` to `0x1E0000`, and that extra 38036 bytes is the whole
+  // point: an edit moves the trailer checksum, the checksum is in that last block, and a write
+  // refuses a block its known good content does not cover. Its leading 1665900 bytes are byte
+  // identical to `one_spare_20260830` and the rest reads as erased flash, which is the control that
+  // makes it a second independent read rather than a new claim. Excluded from the parseable
+  // population for the same reason the reads above are.
+  one_spare_20260901_region: '20260901T084229Z-one-spare-region-0x40000-0x1e0000.bin',
+  // **The first configuration this project's own codec produced and put on a remote**, 1 September
+  // 2026, section 237. It is `one_spare_20260830` with one device's power on delay raised from six
+  // seconds to ten, through `setPowerOnDelay` and `applyEdits`, so it differs in two bytes: the
+  // operand, and the trailer checksum a megabyte further on that `applyEdits` restamped. Those two
+  // land in different 64 KiB blocks, which is the measurement behind a same length edit costing two
+  // erases. Read back off the remote afterwards and byte identical to the file that was sent.
+  // Excluded from the parseable population like the other states of this unit.
+  one_spare_written_by_us: '20260901T0851Z-one-spare-written-by-us-config.bin',
   // Two configs Logitech compiled to a specification we wrote, 13 August 2026: the corpus's only
   // known answer samples. Section 132. Not in the corpus wide lists, on purpose; see tests/lab.py.
   calibration_one: 'calibration-one-spare.bin',
@@ -318,7 +335,8 @@ export const IMAGES: Readonly<Record<string, string>> = {
  */
 export const PARSEABLE_EXCLUDED: readonly string[] =
   ['vendor_region_user_config', 'vendor_region_embedded_config', 'one_spare_after_first_write',
-    'one_spare_20260901_delay', 'one_spare_20260901_denon'];
+    'one_spare_20260901_delay', 'one_spare_20260901_denon', 'one_spare_20260901_region',
+    'one_spare_written_by_us'];
 
 const cache = new Map<string, string[]>();
 

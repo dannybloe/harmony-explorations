@@ -439,7 +439,7 @@ finding.
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 236<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 237<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -659,6 +659,18 @@ figures common to both carry `fact:` markers, so `make facts` moves every copy t
 cannot drift apart; what a reader should not expect is two independent statements of one measurement.
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
+
+**And a configuration our own codec produced is now on a remote**, section 237, which is the last box
+in front of adding a device. Everything written before today came off the remote it went back to;
+this one the codec emitted, every byte of it, and the remote handed it back identical. The change is
+one device's power on delay, six seconds to ten, which is the smallest edit the format admits.
+
+What it cost to find out is the part worth carrying. A **one byte** edit is a **two block** write,
+because the checksum at the far end of the file moves with it, so two erases is the floor for any
+edit rather than a property of the one case that had been measured. A writer therefore needs a copy
+of a whole flash **region** and not of a configuration, since the checksum's block runs off the end of
+the file. And the verification read failed while the write succeeded, on a known transport hiccup,
+which is the worst way round to fail and is now fixed by reading through the retrying reader.
 
 **A remote's configuration has been changed, and the first change showed nothing**, section 236.
 Two writes on the spare Harmony One, one byte of real content each inside a 64 KiB block reproduced

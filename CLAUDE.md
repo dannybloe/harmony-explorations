@@ -1008,8 +1008,16 @@ packages/lab/                   TS: finds the private lab directory, mirrors tes
 packages/usb/                   TS: the command protocol and the write rails, read path measured.
                                 Also the **second** protocol, for the file based family openHarmony
                                 refuses, and the table that turns a reported skin into a model and
-                                its hardware capabilities
-packages/corpus/                TS: read a config off a remote and file it, composes the other three
+                                its hardware capabilities. The erase and write sequence has **one**
+                                implementation, `writeBlock`, and a caller in this workspace reaches
+                                it through the `@harmony/usb/write` subpath rather than the barrel,
+                                so that a third write caller is a decision visible in a diff
+packages/corpus/                TS: read a config off a remote and file it, **and put one back**:
+                                since section 237 it also holds the config writer, which is here
+                                rather than in packages/usb because it needs the container parser
+                                to check the one field the remote itself checks. It is the write
+                                path's first caller outside that package, which is why the blind
+                                review's withhold list gained a row for it
 packages/bench/                 TS: the bench instrument, a server plus a page in web/
 packages/probe/                 TS: the contribution probe, a report with shape and no contents
 ```
@@ -1882,7 +1890,7 @@ file.
 | and it is not one mechanism either | a channel that survives being written as an integer goes through base slot 16; one with a leading zero is spelled out digit by digit. Each side has its own precondition |
 | a record's three digit tables are three pointers and may be shared | the same check base slot 5's duration blocks need |
 | a sequence at Logitech's own stated limit can hang a remote for good | **refuse** an oversized sequence rather than warning, bounded by the expanded instruction count and not by their item count, which permits the one that killed a remote |
-| a same length edit is not a small write | the cheapest costs **two** 64 KiB erase blocks, so the step is read the blocks, apply, erase, write back whole, verify by reading |
+| a same length edit is not a small write | the cheapest costs **two** 64 KiB erase blocks, and that is the floor rather than a page binding's quirk: the trailer checksum is at the far end of the file and every edit moves it. So the step is read the blocks, apply, erase, write back whole, verify by reading, and the known good content has to be a flash **region** rather than a container, since the checksum's block runs past the container's end |
 | a small logical change reshuffles the whole image | make minimal diffs against an existing config; reproducing what their generator would emit is not achievable |
 
 ## Open

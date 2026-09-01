@@ -212,6 +212,14 @@ IMAGES = {
     # on delay raised from six seconds to ten, which is the change that could be seen. Excluded from
     # the parseable population like the two rows above it.
     'one_spare_20260901_denon': '20260901T0645Z-one-spare-denon-delay-config.bin',
+    # The same unit read as a region rather than a container, from the config base to the end of the
+    # block the container ends inside, so that a write which moves the trailer checksum has known
+    # good content for that block. Leading bytes identical to one_spare_20260830, tail erased.
+    'one_spare_20260901_region': '20260901T084229Z-one-spare-region-0x40000-0x1e0000.bin',
+    # The first configuration this project's own codec produced and put on a remote, section 237:
+    # one_spare_20260830 with one power on delay raised, so two bytes differ, the operand and the
+    # trailer checksum, and they land in different erase blocks.
+    'one_spare_written_by_us': '20260901T0851Z-one-spare-written-by-us-config.bin',
     # Two configs Logitech compiled to a specification we wrote, 13 August 2026, and the corpus's only
     # **known answer** samples: three devices and two activities chosen by us, on a throwaway account,
     # then compiled by the live service and downloaded without a byte reaching a remote. Section 132.
@@ -365,7 +373,8 @@ def _find(filename):
 # the right place and that the embedded config is the same on two units.
 PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_config',
                       'one_spare_after_first_write', 'one_spare_20260901_delay',
-                      'one_spare_20260901_denon')
+                      'one_spare_20260901_denon', 'one_spare_20260901_region',
+                      'one_spare_written_by_us')
 
 CONTAINERS = (
     'h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'h525_config_2', 'one_config',
