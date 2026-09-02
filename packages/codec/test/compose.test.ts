@@ -39,6 +39,7 @@ import {
   characterMap,
   composeDeviceScreen,
   deviceModeMarker,
+  touchPages,
   modePages,
   modeRecords,
   modeTable,
@@ -501,28 +502,45 @@ test('the spare Harmony One config gets as far as its menus being full, not as f
       ROWS.map((row) => ({ label: row.label, list: device.lists[row.k] as number }))),
     (error: unknown) => {
       assert.ok(error instanceof ComposeError);
-      assert.match(error.message, /last page is full/);
+      assert.match(error.message, /holds 3 of 3 rows, so it is full/);
       assert.doesNotMatch(error.message, /no device list menu/);
       return true;
     });
 });
 
 /**
- * A mode page's lead byte against how many device rows its list binds, over every arch 12 config.
+ * A device list page binds as many rows as its hit page has room for, and the last page is the
+ * short one.
  *
- * **The lead states the row count, and it states which layout family the page belongs to.** Two
- * families carry a device list: `{12, 13}` for three rows and two, and `{4, 5}` for three and one.
- * Which one a config uses turns on how many devices it drives, and seven is where it switches:
- * every configuration here with six or fewer uses `{12, 13}` over two pages, and the nine and
- * fifteen device compiles use `{4, 5}` over four and five. So adding a seventh device is not an
- * append, it is a relayout, which is why the composer refuses it. Section 239.
+ * **This replaces a wrong reading of the same bytes**, and the wrong one is instructive. The first
+ * pass compared the lead byte across configurations, saw 12 and 13 in one and 4 and 5 in another,
+ * and concluded that Logitech switched layout family at seven devices. The lead byte is an index
+ * into that configuration's **own** hit map table, section 125, so the numbers were never
+ * comparable. What every one of these pages actually offers is the same six areas, and there is one
+ * layout: three rows to a page, the page flip on the next scan up, the two screen edges last. Since
+ * the row count is the area count minus three, a partly filled page is a smaller hit page and never
+ * a different design. Section 239.
  */
-const PAGE_LEADS: Readonly<Record<number, readonly [rows: number, pages: number]>> = {
-  4: [3, 117], 5: [1, 9], 12: [3, 55], 13: [2, 19], 20: [3, 16], 21: [1, 4], 26: [1, 3], 28: [1, 6],
+const MENU_PAGE_SHAPES: Readonly<Record<string, readonly number[]>> = {
+  one_config: [3, 2],
+  one_config_unprogrammed: [1],
+  one_spare_before_sync: [1],
+  one_spare_after_sync: [1],
+  one_spare_myharmony: [3, 2],
+  one_spare_20260830: [3, 3],
+  calibration_one: [3],
+  calibration_favchannels: [3],
+  calibration_favzero: [3, 3],
+  phase7_before: [3],
+  phase7_after: [3, 1],
+  compiled_protocols: [3, 3, 3, 3, 3],
+  compiled_protocols_2: [3, 3, 3, 3, 3],
+  compiled_protocols_3: [3, 3, 3, 1],
 };
 
-test('a mode page lead byte goes with exactly one device row count', skipWithoutLab(), () => {
-  const seen = new Map<number, Map<number, number>>();
+test('a device list page binds exactly its hit page room, and only the last page is short',
+     skipWithoutLab(), () => {
+  const shapes: Record<string, readonly number[]> = {};
   for (const name of Object.keys(IMAGES)) {
     if (PARSEABLE_EXCLUDED.includes(name)) continue;
     const data = require_(name);
@@ -534,34 +552,43 @@ test('a mode page lead byte goes with exactly one device row count', skipWithout
       continue;
     }
     if (container.architecture !== 12) continue;
-    const lists = container.actionLists() ?? [];
     const marker = deviceModeMarker(container);
     if (marker === undefined) continue;
+    const lists = container.actionLists() ?? [];
     const isRow = (index: number): boolean => {
       const list = lists[index];
       return list !== undefined && list.length === 3 && list[0]?.opcode === 0x75
         && list[1]?.opcode === 0x7e
         && list[2]?.opcode === marker.opcode && list[2]?.operand === marker.operand;
     };
+    const hits = touchPages(container)?.records ?? [];
+    let widest: number[] | undefined;
     for (const record of modeRecords(container) ?? []) {
+      const perPage: number[] = [];
       for (const page of record.pages) {
         let rows = 0;
         for (const entry of taggedList(container, page.list)?.entries ?? []) {
           if (entry.opcode === 0x7f && isRow(entry.operand)) rows += 1;
         }
+        perPage.push(rows);
         if (rows === 0) continue;
-        const lead = page.lead as number;
-        const counts = seen.get(lead) ?? new Map<number, number>();
-        counts.set(rows, (counts.get(rows) ?? 0) + 1);
-        seen.set(lead, counts);
+        // The reading: the row count is the hit page's area count minus three, which is the page
+        // flip plus the two screen edges.
+        const areas = hits[page.lead as number]?.areas.length;
+        assert.equal(rows, (areas as number) - 3,
+          `${name} menu page on hit page ${page.lead} binds ${rows} rows of ${areas} areas`);
+      }
+      const total = perPage.reduce((a, b) => a + b, 0);
+      if (total > 0 && (widest === undefined || total > widest.reduce((a, b) => a + b, 0))) {
+        widest = perPage.filter((rows) => rows > 0);
       }
     }
+    if (widest === undefined) continue;
+    // Only the last page is allowed to be short.
+    widest.slice(0, -1).forEach((rows, k) => {
+      assert.equal(rows, 3, `${name} page ${k} of the device list is not full`);
+    });
+    shapes[name] = widest;
   }
-  const flat: Record<number, [number, number]> = {};
-  for (const [lead, counts] of seen) {
-    assert.equal(counts.size, 1, `lead ${lead} goes with one row count, not ${counts.size}`);
-    const entry = [...counts][0] as [number, number];
-    flat[lead] = [entry[0], entry[1]];
-  }
-  assert.deepEqual(flat, PAGE_LEADS);
+  assert.deepEqual(shapes, MENU_PAGE_SHAPES);
 });

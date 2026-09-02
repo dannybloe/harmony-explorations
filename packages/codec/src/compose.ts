@@ -52,6 +52,7 @@ import {
 import type { Pulse } from './irframe.ts';
 import { IR_TABLE_SLOT } from './ir.ts';
 import { blockOfStatedCode, statedCode, statedProtocol } from './stated.ts';
+import { touchPages } from './tables.ts';
 import { relocate } from './relocate.ts';
 import { Writer } from './emit.ts';
 
@@ -469,8 +470,31 @@ const MENU_LABEL_X = 0x3f;
 const MENU_ROW3_LABEL_Y = 0xa5;
 const MENU_ROW3_BG: readonly [number, number] = [0x06, 0x92];
 /** The two row layouts of a device list page, as base slot 17 hit page indices, section 125. */
-const MENU_LEAD_TWO_ROWS = 13;
-const MENU_LEAD_THREE_ROWS = 12;
+/**
+ * The scan codes a device list hit page offers, in order, per row count it supports.
+ *
+ * **The lead byte is an index into the config's own hit map table and never a layout**, section
+ * 125, so a number here would be per config: the three row page is index 12 in `one_config` and in
+ * the spare's own configuration, 4 in the protocol campaign compiles, and the two row page is 13 in
+ * the first and 15, 16, 17 and more in the second. The composer used 12 and 13 and got the spare's
+ * three row page right by luck. So a page is matched on **what its hit page offers** instead.
+ *
+ * A page's rows sit on the lowest scans, the page flip on the next one up, and the last two are the
+ * screen's edges. So the row count is the area count minus three, and this table is that spelled
+ * out rather than computed, since the order is what a match needs.
+ */
+const MENU_HIT_AREAS: readonly (readonly number[])[] = [
+  [48, 49, 46, 47],
+  [48, 49, 50, 46, 47],
+  [48, 49, 50, 51, 46, 47],
+];
+/** How many device rows a hit page offering `areas` supports, or undefined if it is not one. */
+function menuRowCapacity(areas: readonly number[]): number | undefined {
+  const at = MENU_HIT_AREAS.findIndex(
+    (want) => want.length === areas.length && want.every((code, k) => areas[k] === code),
+  );
+  return at < 0 ? undefined : at + 1;
+}
 /** The device page layout: six command slots, the bottom pair and the side keys. */
 const DEVICE_PAGE_LEAD = 10;
 /** The beeper's operand on every menu row in the corpus, opcode 0x75, section 73. */
@@ -827,8 +851,25 @@ export function composeDeviceScreen(
     const record = modeRecords(current)?.[menu];
     const page = record?.pages.at(-1);
     if (record === undefined || page === undefined) throw new ComposeError('a menu lost its page');
-    if (page.lead !== MENU_LEAD_TWO_ROWS) {
-      throw new ComposeError(`menu ${menu}'s last page is full, and a new page is not composed here`);
+    const hits = touchPages(current)?.records ?? [];
+    const areas = hits[page.lead as number]?.areas.map((area) => area.code) ?? [];
+    const capacity = menuRowCapacity(areas);
+    if (capacity === undefined) {
+      throw new ComposeError(`menu ${menu}'s last page uses a hit page this does not know: `
+        + `[${areas.join(', ')}]`);
+    }
+    if (capacity !== 2) {
+      throw new ComposeError(`menu ${menu}'s last page holds ${capacity} of `
+        + `${capacity} rows, so it is full and a new page is not composed here`);
+    }
+    // The page it becomes: **this menu's own** three row page, taken from an earlier page of the
+    // same record rather than by searching the table. A config carries several hit pages offering
+    // the three row set, so a search finds one of them and not the one the menu is drawn against.
+    const grown = record.pages
+      .map((one) => one.lead as number)
+      .find((lead) => menuRowCapacity(hits[lead]?.areas.map((area) => area.code) ?? []) === 3);
+    if (grown === undefined) {
+      throw new ComposeError(`menu ${menu} has no three row page to take a hit page from`);
     }
     const list = taggedList(current, page.list);
     if (list === undefined || list.entries.some((entry) => entry.flags !== undefined)) {
@@ -870,7 +911,7 @@ export function composeDeviceScreen(
     const after = modeRecords(current)?.[menu]?.pages.at(-1);
     const afterOff = after === undefined ? undefined : current.blobOffsetOf(after.address);
     if (afterOff === undefined) throw new ComposeError('a menu page moved out of reach');
-    current.blob[afterOff] = MENU_LEAD_THREE_ROWS;
+    current.blob[afterOff] = grown;
     current = parse(current.blob);
 
     // The program: the third row's background and the device's label, inserted where the closing

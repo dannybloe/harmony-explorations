@@ -30861,42 +30861,62 @@ carried in the code. With the constant in place the spare's configuration report
 device list at all**, which is the failure mode worth naming: a hardcoded operand does not report a
 mismatch, it reports an absence.
 
-### The device list has two layout families and seven devices is where it switches
+### The device list is one layout, three rows to a page, and a page is chosen by its hit map
 
-Past that, the composition reaches the real limit. A mode page's lead byte states how many device
-rows its list binds, exactly, over every arch 12 configuration here:
+**Corrected in place on 1 September 2026, the same day it was written, after Danny said he had never
+seen the device list change shape.** He was right and the first version of this section was wrong.
+It said the device list had **two layout families and that seven devices is where it switches**<!--superseded-->,
+on the strength of `one_config` using lead bytes 12 and 13 where the fifteen device compiles use 4
+and 5.
 
-| lead | rows | pages |
-|---|---|---|
-| 4 | 3 | 117 |
-| 5 | 1 | 9 |
-| 12 | 3 | 55 |
-| 13 | 2 | 19 |
-| 20 | 3 | 16 |
-| 21 | 1 | 4 |
-| 26 | 1 | 3 |
-| 28 | 1 | 6 |
+The lead byte is a **zero based index into that configuration's own hit map table**, section 125. So
+12 in one file and 4 in another are indices into different tables and were never comparable. Every
+one of those pages offers the **same six areas**, `48, 49, 50, 51, 46, 47`: three device rows on the
+lowest scans, the page flip on the next one up, and the two screen edges last.
 
-Never two counts for one lead, which is what makes it a reading rather than a correlation. The
-device list uses two of those families and Logitech's compiler picks between them by device count:
+There is one layout. **A device list page binds exactly its hit page's area count minus three**, on
+every device list page of every arch 12 configuration here, and a menu's pages are full except the
+last:
 
-* five devices, `one_config`: two pages, leads 12 and 13, three rows then two
-* six devices, the spare and `calibration_favzero`: two pages, leads 12 and 12, both full
-* nine devices: four pages, leads 4, 4, 4 and 5
-* fifteen devices: five pages, all lead 4
+| | pages |
+|---|---|
+| one device | 1 |
+| three devices | 3 |
+| four devices | 3, 1 |
+| five devices | 3, 2 |
+| six devices | 3, 3 |
+| nine devices | 3, 3, 3, 1 |
+| fifteen devices | 3, 3, 3, 3, 3 |
 
-So the spare's device list is **full**, and a seventh device is not a row appended to the last page.
-It is a relayout: both existing pages change family, a third page appears, and the page flip has to
-cycle three instead of two. `composeDeviceScreen` refuses it by name rather than guessing, and that
-refusal is what phase 9 now stands behind.
+So a partly filled page is a **smaller hit page** rather than a different design, and a seventh
+device on the spare Harmony One is a third page holding one row. That is a much smaller job than the
+relayout this section first claimed, and the spare's configuration already carries hit pages
+offering the one row set, so the third page reuses one exactly as the device's own page reuses the
+six slot layout.
+
+**A third constant went the same way as the marker.** The composer matched a menu's last page with
+`lead === 13` and stamped `lead = 12` on it, which is `one_config`'s two row and three row hit pages.
+Those indices are per config too: the spare's three row page is 12 by coincidence and its two row
+pages are 15, 16, 17 and more. A page is matched on the areas its hit page offers now, and the page
+it becomes is taken from **the same menu's own** earlier page, since a configuration carries several
+hit pages offering the three row set and a search finds one of them rather than the one this menu is
+drawn against.
 
 ### What this says about the method
 
-Both defects are the same shape and neither could have been found by more care on one sample. The
+All three defects are the same shape and none could have been found by more care on one sample. The
 composer's own docstring says it is "calibrated on a config with five", which was honest and was
 read as a note about the device count when it was also a note about every operand in the file. A
 constant lifted from one configuration is a hypothesis about all of them, and the corpus is what
 tests it: the marker table above took one pass over fourteen containers.
+
+**And the correction has a second lesson, which is about the reply rather than the code.** The
+layout claim was reported to Danny before it had a test, and he refuted it from having used these
+remotes for years. What made it wrong was comparing a number across two files without asking what
+the number indexes, which is this repository's own oldest trap in a new place: `docs/config-format.md`
+says a group index is not portable between architectures and a mode page's hit index is not portable
+between configurations for the same reason. The measurement that settles it, rows against hit page
+areas, is one line and was not run.
 
 ### What would falsify it
 
