@@ -775,9 +775,10 @@ waits for Danny's go, per the gate above.
       3 September 2026. The remote showed a status screen asking for a sync after that write until
       its battery was pulled, which the two device writes both did and which section 247 closes: a
       later write on the same day that ended with the cached region descriptors dropped and the
-      remote restarted showed the ordinary screen and needed no battery pull. The message itself is
-      one of thirty the firmware ships and says nothing about the configuration, section 244, and
-      what selects it is still unread
+      remote restarted showed the ordinary screen and needed no battery pull, and section 248's
+      control attributes that to the dropped descriptors rather than to the restart. The message
+      itself is one of thirty the firmware ships and says nothing about the configuration, section
+      244, and what selects it is still unread
 - [x] write up the whole run as a finding, with what did not work the first time. Section 242, which
       also names the two defects on the page: labels measured through a stale font table and the
       catalogue's command names being wider than a pad. Both fixed in the code, neither yet on the remote

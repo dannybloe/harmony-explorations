@@ -691,8 +691,10 @@ which is the third time an upstream selector name has been wrong for this archit
 **Sent to a Harmony One on 3 September 2026**, section 247, as the first step of a two block config
 write. The remote accepted it, the write completed, and afterwards the remote no longer asked to be
 synced with Logitech's website, which every previous write on this bench had left it doing until its
-battery came out. The same run also sent the reset escape at the end, so the outcome is not
-attributed to this selector alone.
+battery came out. That run also sent the reset escape at the end, so the control came next, section
+248: the same container written again with this selector and **no** reset left the ordinary screen as
+well. So this selector is what closes that symptom, and those same bytes written without it had asked
+for a sync every time.
 
 Selector `0x06` pairs with the read's `0x06`, calling `0x1AB96` where the read calls `0x1AB8A`,
 so it is a second address space of some kind. Not identified.

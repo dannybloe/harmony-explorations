@@ -3,6 +3,7 @@
  *
  *   node packages/corpus/bin/write-config.ts --config <file> --dump one_spare_20260901_region
  *   HARMONY_ENABLE_WRITES=1 HARMONY_FIRST_WRITE=1 ... --commit
+ *   ... --commit --no-restart      section 247's control: every step but the last
  *
  * **This is the step `rehearse-block.ts` was the rehearsal for.** That script writes a unit's own
  * dump back, so its correct outcome is known in advance and a difference is a failure. This one
@@ -92,6 +93,9 @@ const SPARE_DUMPS = new Set([
   'one_spare_plus_lg2_region',
   // And after that write, section 247, which is the compare base for whatever comes next.
   'one_spare_denon65_region',
+  // And after the revert, section 248. Identical to `one_spare_plus_lg2_region`, so either name
+  // is a valid compare base for whatever comes next.
+  'one_spare_reverted_region',
 ]);
 
 /** The lab's name for the unit this may run against. One label, because there is one write target. */
@@ -146,6 +150,12 @@ async function main(): Promise<void> {
   const dumpName = argument('dump')
     ?? fail("--dump names the lab region read holding this unit's current content");
   const commit = process.argv.includes('--commit');
+  // **The control for section 247, and it exists because that write proved two things at once.**
+  // The invalidate and the restart went in together, so the screen coming back clean could have
+  // been either. This omits the restart and nothing else, which makes the next run the
+  // experiment that separates them: a clean screen afterwards means the invalidate is the fix.
+  // It only ever **skips** a command, so it needs no rail of its own.
+  const restart = !process.argv.includes('--no-restart');
 
   if (!SPARE_DUMPS.has(dumpName)) {
     fail(`${dumpName} is not one of the spare Harmony One's own region reads `
@@ -434,11 +444,16 @@ async function main(): Promise<void> {
     // the handle was finished and the close was expected to complain, and it is not: on macOS the
     // handle survives the escape long enough to close cleanly, and the remote leaves the bus
     // afterwards. The arm below still catches the other case rather than assuming this one.
-    say('restarting the remote, which is what a battery pull was doing by hand\n');
-    await remote.resetDevice(permission);
-    resetSent = true;
-    say('the restart is sent. The remote leaves the bus and comes back on its own; '
-      + 'give it a few seconds before enumerating again\n');
+    if (restart) {
+      say('restarting the remote, which is what a battery pull was doing by hand\n');
+      await remote.resetDevice(permission);
+      resetSent = true;
+      say('the restart is sent. The remote leaves the bus and comes back on its own; '
+        + 'give it a few seconds before enumerating again\n');
+    } else {
+      say('--no-restart: the restart is deliberately not sent, which is section 247\'s control. '
+        + 'Look at the screen: a clean one means the invalidate is what fixes it\n');
+    }
   } finally {
     try {
       await remote.close();

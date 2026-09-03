@@ -52,7 +52,8 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // 82 since the read taken after the first write, section 222.
   // 90 since the fourth region read of the spare Harmony One, section 246.
   // 91 since the read taken after the write of section 247.
-  assert.equal(Object.keys(pythonImages()).length, 91, 'every fixture tests/lab.py names');
+  // 92 since the read taken after the revert of section 248.
+  assert.equal(Object.keys(pythonImages()).length, 92, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {
@@ -81,5 +82,6 @@ test('the two sides exclude the same fixtures from the parseable population', ()
   // the dump, which is the wart section 237 records rather than solves.
   // The eleventh is that same unit after the write of section 247, which is that container plus
   // one delay operand and the checksum that follows from it.
-  assert.equal(names.length, 12, 'each one a container already counted, or that container plus a known edit');
+  // The twelfth is the revert of section 248, which is byte for byte the ninth again.
+  assert.equal(names.length, 13, 'each one a container already counted, or that container plus a known edit');
 });

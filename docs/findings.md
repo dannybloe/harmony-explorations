@@ -31744,3 +31744,63 @@ symptoms have now survived every other write this project has made.
   working for the first time on a run that mattered.
 * The remote is left with that device's power on delay half a second longer than Logitech's compiler
   put it, which is a deliberate, reversible difference rather than an oversight.
+
+## 248. The control separates the two steps: it is the cache drop, not the restart
+
+**Date:** 3 September 2026. **Status:** measured on the spare Harmony One, arch 12, one write, with
+Danny reading the screen off the cable.
+
+**Section 247 closed two symptoms with two commands and could not say which did it.** This is the
+control it named: the same write with the cache drop sent and the restart deliberately withheld,
+`--no-restart` in `write-config.ts`, which skips a command and adds nothing. Afterwards the remote
+was unplugged, **not** battery pulled, and it showed the ordinary activities screen.
+
+So the answer is the invalidate. The restart is a convenience, and both stay in the sequence because
+that is what concordance and Logitech's own client both do, but the thing that stops a Harmony One
+asking to be synced after a write is dropping its cached region descriptors before the erase.
+
+### Why this comparison is unusually clean
+
+The configuration written here is `20260903-one-spare-plus-lg-2.bin`, byte for byte the container
+that was already on the remote at 12:57 that day. Section 242's sixth attempt put those same bytes on
+the same unit, in the same two blocks among its 25, **without** the invalidate, and the remote asked
+to be synced until its battery came out. So the content, the target and the unit are all held fixed
+and the one command before the first erase is the only difference.
+
+| | 12:57, section 242 | 17:41, section 247 | 18:05, this section |
+|---|---|---|---|
+| bytes written | candidate 2 | candidate 2 plus one delay | candidate 2 again |
+| invalidate first | no | yes | **yes** |
+| restart last | no | yes | **no** |
+| screen afterwards | asks for a sync | ordinary | **ordinary** |
+| battery pulled | needed | not needed | not needed |
+
+The third column is section 247 and the fourth is this one, so the pair moves one variable at a time
+from a state where the symptom appeared.
+
+### What it does not establish
+
+**That the message can only ever be set by a write with no invalidate.** The inference rests on the
+morning's writes setting it on every attempt, clean ones included, which they did, and section 244
+still leaves the condition that selects a status screen unread. A reading of that condition in the
+firmware would turn this from a controlled observation into a mechanism, and it is the obvious next
+thing to look for.
+
+**And it says nothing about the other architectures.** Arch 14 copies its configuration into internal
+flash rather than executing it in place, so the descriptors this clears describe something different
+there, and neither of them has a write target anyway.
+
+### The round trip that came with it
+
+This write is also a revert: the remote is back to the container it held before section 247's delay
+edit, which makes the pair A to B to A on real hardware, in two blocks each way, with a region read
+at every corner. The two writes together are the first demonstration here that an edit to a
+configuration on a remote can be undone by writing the previous bytes back, rather than only
+demonstrated block by block from a dump.
+
+### Where it lands
+
+* `write-config.ts` gains `--no-restart`, documented as this control rather than as an option, since
+  every other run should send the restart.
+* `tests/test_write_sequence.py` gains the round trip: the region after the revert against the region
+  before the edit.

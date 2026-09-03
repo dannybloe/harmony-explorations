@@ -146,9 +146,11 @@ write, until its battery came out, was our write sequence being three steps wher
 eight: nothing dropped the remote's cached description of the flash before the erase, and nothing
 restarted it afterwards. Both were read out of Logitech's own client and concordance, the first was
 identified in the firmware before it was ever sent, and a two block write on 3 September 2026 with
-both in place came back to the ordinary screen and re-enumerated on its own. **Which of the two did
-it is not separated**, since they went in together, and the control is one more write with the
-invalidate and no restart.
+both in place came back to the ordinary screen and re-enumerated on its own. **The control ran the
+same evening and the answer is the invalidate**, section 248: the same container written again with
+the invalidate and the restart withheld left the ordinary screen, where those same bytes written
+without it had asked for a sync every time. The restart stays in the sequence because both working
+implementations send it, and it is now known not to be what fixes the screen.
 
 **The page section 239 found missing was composed the same morning, section 241:** on the
 spare's own configuration every device list menu gains a third page holding one row, on a hit page

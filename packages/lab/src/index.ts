@@ -243,6 +243,10 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // one power on delay raised, so it is the region above with two bytes different, the operand
   // and the trailer checksum, in two different erase blocks.
   one_spare_denon65_region: '20260903T174116Z-one-spare-denon65-region-0x40000-0x1e0000.bin',
+  // And after the revert that was also section 248's control: **byte for byte identical to
+  // `one_spare_plus_lg2_region` over all 1703936 bytes**, which is why it is here rather than
+  // being left out as a duplicate. The identity is the claim, and it is asserted.
+  one_spare_reverted_region: '20260903T175608Z-one-spare-reverted-region-0x40000-0x1e0000.bin',
   // Two configs Logitech compiled to a specification we wrote, 13 August 2026: the corpus's only
   // known answer samples. Section 132. Not in the corpus wide lists, on purpose; see tests/lab.py.
   calibration_one: 'calibration-one-spare.bin',
@@ -362,7 +366,8 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
   ['vendor_region_user_config', 'vendor_region_embedded_config', 'one_spare_after_first_write',
     'one_spare_20260901_delay', 'one_spare_20260901_denon', 'one_spare_20260901_region',
     'one_spare_written_by_us', 'one_spare_written_region', 'one_spare_plus_lg_region',
-    'one_spare_mixed_region', 'one_spare_plus_lg2_region', 'one_spare_denon65_region'];
+    'one_spare_mixed_region', 'one_spare_plus_lg2_region', 'one_spare_denon65_region',
+    'one_spare_reverted_region'];
 
 const cache = new Map<string, string[]>();
 

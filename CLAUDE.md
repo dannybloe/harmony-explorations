@@ -743,9 +743,11 @@ document:
   this bench performed by hand after every write. Both are implemented behind
   `assertInvalidateAllowed` and `assertResetAllowed`, and **both have been sent**, section 247: a two
   block write on 3 September 2026 after which the remote left the bus, came back on its own running
-  its application, and showed the ordinary screen rather than asking to be synced. **Which of the two
-  closed that screen is not separated**, since they went in together, and the control is one more
-  write with the invalidate and no restart. Setting the clock over USB, their step 8, is
+  its application, and showed the ordinary screen rather than asking to be synced. **The control ran
+  the same day and it is the invalidate**, section 248: the same bytes written again with the
+  invalidate and the restart withheld left the ordinary screen too, where writing those same bytes
+  without the invalidate had asked for a sync every time. So the restart is a convenience and both
+  stay, because that is what both working implementations do. Setting the clock over USB, their step 8, is
   deliberately **not** implemented, because our writer stamps the configuration and an arch 12 remote
   reseeds its clock from that stamp at every boot. And a transfer is **3150 bytes**, which is
   Logitech's client's number and concordance's alike, where ours was 32768 until 3 September 2026.

@@ -439,7 +439,7 @@ finding.
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 247<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 248<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -676,8 +676,16 @@ flash gate at all, so it is a cache drop rather than the flash operation the nam
 is the escape section 97 had already read. A two block write on 3 September 2026 sent both, read back
 byte for byte, and the remote then left the USB bus, came back on its own running its application,
 and showed the ordinary activities screen: **the screen asking for a sync and the battery pull are
-both gone**. Which of the two steps closed the screen is not separated, since they went in together,
-and the control that would separate them is one more write with the invalidate and no restart. The
+both gone**.
+
+**And the control ran the same evening, section 248: it is the cache drop.** The same container was
+written again with the invalidate sent and the restart withheld, and the remote showed the ordinary
+screen off the cable, with no battery pull. What makes that clean is that those exact bytes had gone
+onto that exact unit earlier in the day **without** the invalidate, and it asked to be synced until
+its battery came out, so the content, the target and the unit are all held fixed. The restart stays
+in the sequence because both working implementations send it, and it is now known not to be what
+closes the screen. The write was also a revert, so the remote is back where it started and the two
+writes together are the first edit-then-undo this project has done on real hardware. The
 third step, setting the clock over USB, is deliberately not implemented: our writer stamps the
 configuration and an arch 12 remote reseeds its clock from that stamp at every boot.
 

@@ -22,6 +22,8 @@ import lab
 #: The unit before and after the write, both read by `read-region.ts`, both starting at flash
 #: 0x040000, which is where an offset below has to be added to name a flash address.
 BEFORE, AFTER = 'one_spare_plus_lg2_region', 'one_spare_denon65_region'
+#: And after the write that put the previous bytes back, which was also section 248's control.
+REVERTED = 'one_spare_reverted_region'
 REGION_BASE = 0x040000
 
 #: The container this write installed, and its length, which is where the region stops being it.
@@ -40,6 +42,11 @@ BLOCK = 0x10000
 def _pair():
     lab.require(BEFORE, AFTER)
     return lab.load(BEFORE), lab.load(AFTER)
+
+
+def _round_trip():
+    lab.require(BEFORE, AFTER, REVERTED)
+    return lab.load(BEFORE), lab.load(AFTER), lab.load(REVERTED)
 
 
 class TheFullSequenceWroteExactlyWhatItAimedAt(unittest.TestCase):
@@ -97,6 +104,36 @@ class TheFullSequenceWroteExactlyWhatItAimedAt(unittest.TestCase):
         before, after = _pair()
         self.assertEqual(len(before) - CONFIG_LENGTH, 35645)
         self.assertEqual(before[CONFIG_LENGTH:], after[CONFIG_LENGTH:])
+
+
+class TheRevertPutTheRegionBackExactly(unittest.TestCase):
+    """Section 248: the second write is a revert, so the pair is A to B to A on real hardware.
+
+    **This is what a round trip test cannot say when it runs on a file**, which is what every other
+    one here does: four erases and four block writes happened between the two ends, and the ends
+    agree. A writer that reproduced its input in memory and wrote something else to the flash would
+    pass every emitter test in this repository and fail this.
+    """
+
+    def test_the_whole_region_came_back_to_where_it_started(self):
+        """Not just the container: all 1703936 bytes, including the tail nobody asked to move."""
+        before, _, reverted = _round_trip()
+        self.assertEqual(len(reverted), len(before))
+        self.assertEqual(reverted, before)
+
+    def test_the_revert_moved_exactly_the_two_bytes_the_edit_had_moved(self):
+        """The same assertion as the edit's, in the other direction, so neither end is assumed.
+
+        A test that only compared the two ends would pass if both writes had been no-ops. This says
+        the middle state really was different, in those two places and nowhere else.
+        """
+        _, after, reverted = _round_trip()
+        differing = [at for at in range(len(after)) if after[at] != reverted[at]]
+        self.assertEqual([REGION_BASE + at for at in differing],
+                         [REGION_BASE + DELAY_AT, REGION_BASE + CHECKSUM_AT])
+        self.assertEqual((after[DELAY_AT], reverted[DELAY_AT]), (DELAY_AFTER, DELAY_BEFORE))
+        self.assertEqual((after[CHECKSUM_AT], reverted[CHECKSUM_AT]),
+                         (CHECKSUM_AFTER, CHECKSUM_BEFORE))
 
 
 if __name__ == '__main__':
