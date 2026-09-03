@@ -491,7 +491,7 @@ function rowsOfCompiled(sample: { name: string; path: string; commands: string }
     const at = device.name === undefined ? -1
       : appliances.findIndex((a) => (a.name ?? '').replace(/ /g, '_') === device.name
         && (a.name ?? '') !== '');
-    if (at >= 0) named.set(device.group, at);
+    if (at >= 0 && device.group !== undefined) named.set(device.group, at);
   }
 
   const out: Measured[] = [];

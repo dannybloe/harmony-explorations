@@ -112,7 +112,7 @@ Three things to carry out of it rather than re-derive. **A `--set` on the write 
 the route back**, because the script compares the block against a named lab dump before erasing, so
 after a successful write the same command refuses and a fresh dump has to be read and registered
 before anything, the revert included, can run again. **A quarter of the power on delays in this corpus
-can never be felt**, 35 of 127 pairs of an activity and a device it switches on, which is a fact an
+can never be felt**, 37<!--fact:delay_unfelt--> of 129<!--fact:delay_pairs--> pairs of an activity and a device it switches on, which is a fact an
 interface has to respect rather than a curiosity. And the queue reading holds on **both** bench
 architectures, the routine differing in one literal, which is what lets code read off a Harmony 700
 image license a claim about the Harmony One.

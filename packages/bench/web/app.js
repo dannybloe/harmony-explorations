@@ -275,7 +275,7 @@ async function showInventory(name) {
   ]);
   for (const device of inv.devices) {
     row(devices, [
-      el('td', device.group, 'num mono'),
+      el('td', device.group ?? '', 'num mono'),
       device.name === undefined ? el('td', 'unnamed', 'dim') : el('td', device.name),
       el('td', device.source ?? '', 'dim'),
       el('td', device.codes, 'num mono'),

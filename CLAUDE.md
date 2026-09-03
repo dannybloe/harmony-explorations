@@ -1878,7 +1878,7 @@ file.
 | a timer fires one instruction, not a list | and its duration is clamped to sixteen bits with no error |
 | infrared duration blocks are shared | check who else names a block before editing it in place |
 | a record's three block pointers are once, held and tail | slot 1 repeats for as long as the key is down, so its trailing gap **is** the repeat rate. A duration word caps at 32767 us |
-| a power on delay holds back one device, not the sequence | so raising it does nothing at all unless that activity sends the same device a later command, which 35 of 127 activity and device pairs here do not. An editor that presents it as a pause in the activity is wrong about most of them |
+| a power on delay holds back one device, not the sequence | so raising it does nothing at all unless that activity sends the same device a later command, which 37<!--fact:delay_unfelt--> of 129<!--fact:delay_pairs--> activity and device pairs here do not. An editor that presents it as a pause in the activity is wrong about most of them |
 | a frame can be written, and its tail is emitted for the families that have a rule and copied otherwise | 140 distinct tail shapes, a rule for 29<!--fact:protocol_tails--> of the rhythm table's 37<!--fact:protocol_measured--> measured entries plus 33<!--fact:protocol_tails_stated--> derived from Logitech's own statement, and none for the rest. 226 records hold a second, different code in the tail |
 | a record's carrier period is truncated, not rounded | `floor(1e9 / f)` nanoseconds, per record rather than per device |
 | a picture's position is implied by everything before it | inserting or resizing one moves every later address |

@@ -73,6 +73,7 @@ import {
   stateRecords,
   stateVariables,
 } from '../src/index.ts';
+import { INLINE_DELAY_CONTAINERS } from '../bin/corpus.ts';
 
 /** `[sample, named variables, activities, devices, device ids in the names]`. */
 const INVENTORY: readonly [string, number, number, number, number][] = [
@@ -624,7 +625,7 @@ test('on arch 9 and arch 14 the device names its own mode, and the pairing is wh
       const says = (group: number, label: string): boolean =>
         [...(titles.get(group) ?? [])].some((one) => plain(one) === plain(label));
       for (const device of rows) {
-        if (device.source !== 'names' || device.name === undefined) continue;
+        if (device.source !== 'names' || device.name === undefined || device.group === undefined) continue;
         if (says(device.group, device.name)) agree += 1;
         else assert.fail(`${name}: group ${device.group} does not say its own name`);
         // A config with one device cannot be shifted onto anything but itself.
@@ -1594,8 +1595,8 @@ test('every architecture states a power on delay, and only arch 14 keeps it in a
       architectures.set(arch, kinds);
     }
     assert.equal(variable, 19);
-    assert.equal(instruction, 56);
-    assert.equal(devicesSeen, 83, 'so 8 devices of 83 state no delay: nothing switches them on');
+    assert.equal(instruction, 57);
+    assert.equal(devicesSeen, 83, 'so 7 devices of 83 state no delay: nothing switches them on');
     // No architecture mixes the two, which is what makes `source` a property of the format rather
     // than of the sample.
     assert.deepEqual([...architectures].sort((a, b) => a[0] - b[0]).map(([a, k]) => [a, [...k]]),
@@ -1625,7 +1626,7 @@ test('the power on delay is one instruction at the top of the list that switches
         inlining += held.size;
       }
     }
-    assert.equal(inlining, 56);
+    assert.equal(inlining, 57);
     assert.equal(arch14, 4);
     // Every distinct value in the corpus, so a new sample carrying an implausible one shows up here.
     assert.deepEqual([...values].sort((a, b) => a - b),
@@ -1946,13 +1947,20 @@ const DELAY_REACH: readonly [string, number, number][] = [
   ['calibration_one', 5, 4],
   ['calibration_favchannels', 5, 4],
   ['one_spare_myharmony', 14, 7],
-  ['calibration_favzero', 13, 7],
+  ['calibration_favzero', 14, 7],
   // The unit the hardware measurement of 1 September 2026 was made on, in the state it was in before
   // the write. Its "TV kijken" is the case in the flesh: the receiver's six seconds has a command
   // behind it and the television's five has nothing, and raising the television's to ten changed
   // nothing anybody could see.
-  ['one_spare_20260830', 13, 7],
+  ['one_spare_20260830', 14, 7],
 ];
+
+test('the delay table names exactly the containers the reports run the same totals over', () => {
+  // Two population lists nobody compares drift apart, so this one is compared: `bin/devices.ts`
+  // computes the totals the documents quote over `INLINE_DELAY_CONTAINERS`, and the table above is
+  // what asserts them per container.
+  assert.deepEqual(DELAY_REACH.map(([name]) => name), INLINE_DELAY_CONTAINERS);
+});
 
 for (const [name, pairs, felt] of DELAY_REACH) {
   test(`${name} has ${pairs} activity and device pairs with a power on delay, ${felt} of them felt`,
@@ -1978,9 +1986,9 @@ test('a power on delay is felt only where the activity sends that device a secon
       pairs += reach.length;
       felt += reach.filter((one) => one.laterCommands > 0).length;
     }
-    assert.equal(pairs, 127, 'an activity and a device it switches on');
+    assert.equal(pairs, 129, 'an activity and a device it switches on');
     assert.equal(felt, 92);
-    assert.equal(pairs - felt, 35, 'delays no activity of theirs can show');
+    assert.equal(pairs - felt, 37, 'delays no activity of theirs can show');
     // Not vacuous in either direction: both outcomes really occur, and they occur inside the same
     // configuration rather than one container being all of one kind.
     const mixed = DELAY_REACH.filter(([, all, some]) => some > 0 && some < all);
@@ -2016,8 +2024,8 @@ test('the start sequence is the handler set entry tagged 1, and the other low ta
       }
     }
     assert.equal(ACTIVITY_START_TAG, 1);
-    assert.equal(onStart, 127, 'the pairs the table above counts, all of them reached through tag 1');
+    assert.equal(onStart, 129, 'the pairs the table above counts, all of them reached through tag 1');
     // The rest are a device that activity does not switch on, which is the ordinary case and is why
     // the number is large: 62 activities times the devices each config has.
-    assert.equal(elsewhere, 142);
+    assert.equal(elsewhere, 154);
   });

@@ -816,7 +816,8 @@ test('every other device keeps its delay', skipUnless(...DELAY_SAMPLES), () => {
       checked += 1;
     }
   }
-  assert.equal(checked, 14, 'devices left alone across the four containers');
+  // 14 until section 240 gave the spare Harmony One's set top box a name, and with it its delay.
+  assert.equal(checked, 15, 'devices left alone across the four containers');
 });
 
 test('a delay edit round trips back to the bytes it started from',

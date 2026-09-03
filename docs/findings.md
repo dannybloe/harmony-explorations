@@ -30338,9 +30338,12 @@ devices, compiled for the same Harmony One on a different day, gives the same th
 
 ### What the values look like
 
-Across twenty containers and four architectures, 56 inline delays and 19 in variables, 75 of the 83
-devices in the lab. The eight without one have no `Power` variable at all, which is what an audio
-switch or a media centre looks like: nothing switches them on.
+Across twenty containers and four architectures, 57 inline delays and 19 in variables, 76 of the 83
+devices in the lab. The seven without one have no `Power` variable at all, which is what an audio
+switch or a media centre looks like: nothing switches them on. **This said 56, 75 and eight until
+3 September 2026**, and no delay moved: a delay is found through the device's name, and the inventory
+left a set top box on the spare Harmony One unnamed until section 240 gave it the device list as a
+naming route.
 
 The distinct values are 10, 15, 20, 25, 30, 35, 50, 52, 60, 80, 85, 95 and 100 tenths. A television
 is usually the slowest thing in the room, at 8 to 10 seconds; an amplifier reads 5.2 and a games
@@ -30515,10 +30518,14 @@ switches on, count the further commands that activity sends to that same device:
 
 | | |
 |---|---|
-| pairs of an activity and a device it switches on | 127 |
-| the activity sends that device a later command, so the delay is felt | 92 |
-| it does not, so the delay can never be felt | 35 |
+| pairs of an activity and a device it switches on | 129<!--fact:delay_pairs--> |
+| the activity sends that device a later command, so the delay is felt | 92<!--fact:delay_felt--> |
+| it does not, so the delay can never be felt | 37<!--fact:delay_unfelt--> |
 | containers holding both kinds at once | 13 |
+
+The first two rows read 127 and 35 until 3 September 2026, and the two pairs that joined are the same
+set top box's delay in two configurations of the spare Harmony One, found once the device had a name,
+section 240. Both are of the unfelt kind, so the quarter stands.
 
 **One in four power on delays in this corpus does nothing at all**, and the split is inside
 configurations rather than between them, so it is not a property of one generator's mood. The spare
@@ -30533,7 +30540,7 @@ same queue is not read here.
 ### What a writer has to know
 
 * **A power on delay is a gap before the next command to that device, not a pause.** An editor may
-  show it, and an editor that promises it will delay the activity is wrong for 35 of these 127 cases.
+  show it, and an editor that promises it will delay the activity is wrong for 37<!--fact:delay_unfelt--> of these 129<!--fact:delay_pairs--> cases.
 * **A remedy exists and it is not this byte.** Making an activity wait longer before touching the
   next device is a property of the sequence, and nothing found here does that.
 * **A `--set` on the write rehearsal takes away the route back.** The script compares the block on
@@ -30926,8 +30933,77 @@ does not give it.
 
 ### Where it lands
 
-* `deviceModeMarker` in `packages/codec/src/compose.ts`, and the refusal beside it.
-* `packages/codec/bin/compose-device.ts`, which is phase 9's tool: an appliance out of the catalogue
+* `deviceModeMarker`, in `packages/codec/src/compose.ts` when this was written and in `inventory.ts` since
+  section 240 made the inventory its second caller, and the refusal beside the composer.
+* `packages/codec/bin/compose-device.ts`, which is phase 9's tool: a device out of the catalogue
   into a configuration, with every reader check and the erase block count printed.
 * `packages/codec/test/compose.test.ts`: the marker table, the lead table, and the refusal that
   proves the spare gets past the marker and stops at the layout.
+
+## 240. A device that sends nothing was not a device, and the device list is what counts them
+
+**Date:** 3 September 2026. **Status:** confirmed on the one configuration that has such a device
+and on the sixteen that do not, with the device list read on fourteen arch 12 configurations.
+
+**The inventory undercounted.** `devices()` in `packages/codec/src/inventory.ts` built its list from
+base slot 5's infrared groups, on the reading of section 86 that a device **is** an infrared group.
+A Wii on the configuration Logitech compiled for the protocol campaign, `compiled_protocols_3`, has a
+device mode that sends nothing, so it has no group, so the inventory reported nine devices where the
+remote's own device list draws ten. The count was quoted to Danny as "the nine device configuration"
+and he did not recognise it, which is how it was found: the screen was rendered and it has four
+pages, three rows, three rows, three rows and one row.
+
+**The device list is the population, and it is read now.** Section 239 read its rows for the
+composer: a row is a three instruction list, a beep, an enter mode and a write of the configuration's
+own device mode marker, on a page whose hit areas are three rows or fewer. `deviceListRows` walks
+every menu whose pages carry that shape, keeps the one reaching the most modes, and pairs each row
+with the label drawn at its rank on the page. That gives the inventory a **fourth route**: a row whose
+mode reaches exactly one infrared group ties that group to a mode and, where the three earlier routes
+named nothing, to the label the row draws; a row whose mode reaches **no** group is a device with no
+infrared codes, appended with `group` undefined and `codes` zero.
+
+| | before | after |
+|---|---|---|
+| devices on `compiled_protocols_3` | 9 | 10 |
+| named on the spare Harmony One's six device configurations | 4 of 6 | 6 of 6 |
+| devices named `by list` in the corpus lists `make devices` runs over | | 0 |
+| power on delay pairs, section 236 | 127 | 129<!--fact:delay_pairs--> |
+| inline delays, section 235 | 56 | 57 |
+
+The last three rows are the consequences. The corpus lists gain nothing, since every device in them
+already had a name by section 126's routes, which is why the defect survived: those routes name a
+group, and a device with no group had nothing for them to name. The two spare Harmony One
+configurations gain two names, a set top box and a media player, both of which base slot 0 never
+mentions and no key page titles. And the delay counts move because a delay is looked up through the
+device's name, section 235, so the set top box's delay existed in the file and was invisible to every
+count until the device was named.
+
+**Two things the labels taught.** A device name longer than the row wraps onto a second line drawn
+twelve pixels below the first, where the rows sit 54 apart, so `Yamaha AV` over `Receiver` is one
+label and not two. Counting lines rather than labels is what left the Wii's page unpaired in the
+first version of this reader, and the rule is lines closer than half a row pitch are one label. And
+the drawn label is the **user's** name for the device where base slot 0 carries Logitech's, `KPN`
+against `Motorola_STB` on the same configuration, so where both exist the earlier route still wins and
+the label is only a fallback; a reader that wanted the user's spelling would take the list first.
+
+**The type says it.** `Device.group` is optional now, and every consumer that indexes by group had to
+say what it does with a device that has none: the protocol join skips it, the delay reach skips it,
+and the titles route skips it. Each of those was a place where a device without codes would have been
+an exception rather than a device.
+
+### What would falsify it
+
+A configuration whose device list draws a row for something that is not a device, or draws no row for
+a device that sends codes. Fourteen arch 12 configurations agree on both, and the device list is arch
+12's alone here: arch 14 and arch 9 configurations show no list of this shape, so their inventories
+are unchanged and their populations are still the infrared groups.
+
+### Where it lands
+
+* `deviceListRows`, `deviceModeMarker` and the fourth route in `devices()`,
+  `packages/codec/src/inventory.ts`; `compose.ts` imports the marker from there rather than deriving
+  it again.
+* `INLINE_DELAY_CONTAINERS` in `packages/codec/bin/corpus.ts`, the population the delay totals are
+  computed over, stated once and compared against the test table; `bin/devices.ts` prints the totals
+  and `tools/facts.py` reads them, so the seven documents quoting them carry markers now.
+* `packages/codec/test/inventory.test.ts`: the moved counts, and the population comparison.

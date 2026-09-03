@@ -53,6 +53,7 @@ import type { Pulse } from './irframe.ts';
 import { IR_TABLE_SLOT } from './ir.ts';
 import { blockOfStatedCode, statedCode, statedProtocol } from './stated.ts';
 import { touchPages } from './tables.ts';
+import { deviceModeMarker } from './inventory.ts';
 import { relocate } from './relocate.ts';
 import { Writer } from './emit.ts';
 
@@ -502,16 +503,11 @@ const ROW_BEEP_OPERAND = 0x0fca;
 /** Opcode 0x7e: enter the mode the operand indexes. */
 const ENTER_MODE = 0x7e;
 /**
- * The lowest opcode that writes a state variable, `0x80 | 0`. Section 34.
- *
  * A menu row ends by writing 1 into the variable that marks device mode, and **which variable that
- * is differs per configuration**: 24 on `one_config`, 25 on the spare Harmony One's own, 26 on the
- * compile before it. It is unnamed in the name tree in all three, so there is nothing to look it up
- * by, and the offset from `CurrentActivityState` is not constant either. So the composer reads the
- * marker off the rows the config already has rather than carrying a number, which is what
- * `deviceListMenus` returns alongside the menus.
+ * is differs per configuration**, eight values across fourteen configs, section 239. So the composer
+ * reads it off the rows the config already has rather than carrying a number.
  */
-const STATE_WRITE_FLOOR = 0x80;
+/** The marker itself is read by `deviceModeMarker` in `inventory.ts`; this file only writes it. */
 /** Screen language opcodes, spelled here because the writer emits them as bytes. */
 const OP_END = 0x00;
 const OP_IMAGE = 0x02;
@@ -575,45 +571,6 @@ function textWidth(c: Container, set: FontSet, codes: readonly number[]): number
  * menus from the per activity ones that list two or three. A config with one device cannot tell
  * those apart, and this composer is calibrated on a config with five.
  */
-/** A menu row's shape: beep, enter a mode, mark device mode. */
-function isMenuRowShape(list: readonly Instruction[] | undefined): boolean {
-  return list !== undefined && list.length === 3
-    && list[0]?.opcode === 0x75
-    && list[1]?.opcode === ENTER_MODE
-    && (list[2] as Instruction).opcode >= STATE_WRITE_FLOOR;
-}
-
-/**
- * The instruction a device list row ends with, which marks the remote as being in device mode.
- *
- * **Read off the configuration rather than carried as a constant**, and that is the correction: the
- * composer hardcoded a write of 1 into state variable 24, which is what `one_config` uses, and the
- * spare Harmony One's own configuration uses 25 while the compile before it uses 26. The variable
- * is unnamed in the name tree in all three, so there is nothing to look it up by, and its offset
- * from `CurrentActivityState` is not constant either. What is stable is that the config's own rows
- * all write the same one, so the majority answer over every row shaped list is the marker.
- *
- * Returns undefined for a configuration with no such row, which is every architecture but arch 12
- * (Harmony One) and any Harmony One config with no device list.
- */
-export function deviceModeMarker(c: Container): Instruction | undefined {
-  const tally = new Map<string, { instruction: Instruction; count: number }>();
-  for (const list of c.actionLists() ?? []) {
-    if (!isMenuRowShape(list)) continue;
-    const end = list[2] as Instruction;
-    const key = `${end.opcode}:${end.operand}`;
-    const seen = tally.get(key);
-    if (seen === undefined) tally.set(key, { instruction: end, count: 1 });
-    else seen.count += 1;
-  }
-  let marker: Instruction | undefined;
-  let most = 0;
-  for (const { instruction, count } of tally.values()) {
-    if (count > most) { most = count; marker = instruction; }
-  }
-  return marker;
-}
-
 function deviceListMenus(
   c: Container,
 ): { menus: number[]; reach: number; marker: Instruction | undefined } {
@@ -621,7 +578,8 @@ function deviceListMenus(
   const marker = deviceModeMarker(c);
   const isRow = (index: number): boolean => {
     const list = lists[index];
-    if (!isMenuRowShape(list) || marker === undefined) return false;
+    if (list === undefined || list.length !== 3 || list[0]?.opcode !== 0x75
+        || list[1]?.opcode !== ENTER_MODE || marker === undefined) return false;
     const end = (list as readonly Instruction[])[2] as Instruction;
     return end.opcode === marker.opcode && end.operand === marker.operand;
   };

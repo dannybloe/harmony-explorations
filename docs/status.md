@@ -439,7 +439,7 @@ finding.
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 239<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 240<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -660,7 +660,7 @@ cannot drift apart; what a reader should not expect is two independent statement
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
 
-**Phase 9 is blocked and the block is worth more than the phase**, section 239. Putting an appliance
+**Phase 9 is blocked and the block is worth more than the phase**, section 239. Putting a device
 from Logitech's catalogue on to the spare Harmony One ran the composition against a second
 configuration for the first time, and two things it had been carrying as constants turned out to be
 per config. The state variable a device list row marks device mode with is one of eight different
@@ -672,7 +672,15 @@ he had never seen the device list change shape: there is **one** layout, three r
 page binds exactly its hit page's area count minus three. The spare drives six devices over two full
 pages, so a seventh needs a **third page holding one row**. The wrong version compared a lead byte
 between two configurations, and a lead byte indexes that configuration's own hit map table. So the
-tool and the appliance are ready and one piece of phase 6 is missing.
+tool and the device are ready and one piece of phase 6 is missing.
+
+**A device that sends nothing was not counted**, section 240, found because a count quoted in
+conversation did not match what Danny remembered of the remote. The inventory built its device list
+from the infrared groups, so a Wii whose device mode sends no code had no group and was not a device:
+nine reported where the remote's own device list draws ten. The device list is a route now, and it
+names devices the older routes could not reach, which moved the power on delay counts of section 236
+from 127 to 129<!--fact:delay_pairs--> pairs without a single delay changing, since a delay is found through the
+device's name.
 
 **The oldest unpriced rail has a number now**, section 238. "Refuse an oversized sequence" had been
 written down since 29 August with nothing behind it, because the only evidence was a lab note: a 25
@@ -715,7 +723,7 @@ dump taken before any of this**, so the way back is a measured route rather than
 Two things came with it. The mechanism is read on **both** bench architectures and the routine that
 carries it is identical on the two but for one literal, which is what lets a reading taken off a
 Harmony 700 image license a claim about the Harmony One that was written to. And the corpus says how
-often this bites: of 127 pairs of an activity and a device it switches on, 35 send that device
+often this bites: of 129<!--fact:delay_pairs--> pairs of an activity and a device it switches on, 37<!--fact:delay_unfelt--> send that device
 nothing after the power code, so a quarter of the power on delays in these configurations can never
 be felt, with 13 containers holding both kinds at once. An interface that offers "power on delay" as
 a pause in the activity would be wrong about those.
@@ -745,7 +753,7 @@ variable, and the Harmony 880, the Harmony 525 and the Harmony One keep it as on
 top of the action list that switches the device on. That instruction had been read for weeks as "a
 quantity" with the unit unknown, and what settled it was Logitech compiling a configuration for the
 **same three devices** twice, once per architecture: the two agree device for device, so the operand
-is tenths of a second. 75 of the 83 devices in the lab now state a power on delay, the eight without
+is tenths of a second. 76 of the 83 devices in the lab now state a power on delay, the seven without
 one being the things nothing switches on. This matters because the only remote this project may write
 to is a Harmony One, and changing a delay there is **one byte** with nothing moving around it.
 

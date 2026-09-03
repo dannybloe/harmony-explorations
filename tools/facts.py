@@ -303,7 +303,8 @@ def device_facts():
     found = {}
     for line in out.stdout.splitlines():
         parts = line.split()
-        if len(parts) == 2 and parts[0] in ('devices_named', 'devices_total'):
+        if len(parts) == 2 and parts[0] in ('devices_named', 'devices_total',
+                                            'delay_pairs', 'delay_felt', 'delay_unfelt'):
             found[parts[0]] = parts[1]
     return found
 

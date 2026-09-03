@@ -25,7 +25,8 @@ import { characterMap, screenStrings } from './text.ts';
 import { panelPoint, touchOwner, touchPageOf } from './touch.ts';
 import type { ScreenString } from './text.ts';
 import type { TouchArea } from './tables.ts';
-import type { ModePage, StateRecord } from './sections.ts';
+import type { ModePage, ModeRecord, StateRecord } from './sections.ts';
+import type { Instruction } from './gspm.ts';
 import type { ScreenChoice } from './render.ts';
 
 /**
@@ -684,22 +685,37 @@ const INFRARED_GROUP_SHIFT = 8;
 
 /** One device: an infrared group, and the name the config gives it. */
 export interface Device {
-  /** Index into base slot 5's group array, which is the device's identity. Section 86. */
-  group: number;
-  /** How many infrared codes it has. A group may be empty. */
+  /**
+   * Index into base slot 5's group array, which is the device's identity when it sends infrared.
+   * Section 86. **Undefined for a device that sends nothing**, which the remote lists all the same:
+   * the Wii in a protocol campaign compile has a row on the device list, a device mode of its own,
+   * and not one infrared code, and until 1 September 2026 this reader did not see it, because it
+   * took the infrared groups as the population. Section 239.
+   */
+  group?: number;
+  /** How many infrared codes it has. A group may be empty, and a device may have no group. */
   codes: number;
   /** The name, where the config states one. */
   name?: string;
   /**
-   * Where that name came from, because the three routes are not equally strong:
+   * Where that name came from, because the four routes are not equally strong:
    *
    * * `names` is base slot 0's own ASCII, tied to this group by the variable's transitions. Stated.
    * * `elimination` is the one label left over for the one group left over. Forced, not read.
    * * `screen` is the title the device's own mode draws, decoded from glyph pixels. Last resort.
+   * * `list` is the label drawn on the device's row of the device list, decoded the same way. It is
+   *   what the person holding the remote reads, and it is the only route that reaches a device with
+   *   no infrared codes, so it fills the gaps the first three leave and overrides none of them.
    */
-  source?: 'names' | 'elimination' | 'screen';
+  source?: 'names' | 'elimination' | 'screen' | 'list';
   /** The base slot 13 variables whose name carries this device's label. */
   variables: number[];
+  /**
+   * The mode the device list enters for this device, as a base slot 6 index. Arch 12 (Harmony One)
+   * only, since the row shape it is read from is that model's, and undefined where no row reaches
+   * the device.
+   */
+  mode?: number;
 }
 
 /**
@@ -761,14 +777,143 @@ export function deviceVariables(c: Container): DeviceVariable[] {
  * label turns up in the screen text as well, and those are two encodings of one string decoded by
  * unrelated code, base slot 0's bytes against base slot 7's glyph pixels.
  */
+/** A device list row's shape: beep, enter a mode, mark device mode. Arch 12 (Harmony One). */
+function isDeviceListRowShape(list: readonly Instruction[] | undefined): boolean {
+  return list !== undefined && list.length === 3
+    && list[0]?.opcode === 0x75
+    && list[1]?.opcode === ENTER_MODE_OPCODE
+    && (list[2] as Instruction).opcode >= STATE_WRITE_BASE;
+}
+
+/** Opcode `0x7e`: enter the mode the operand indexes. */
+const ENTER_MODE_OPCODE = 0x7e;
+
+/**
+ * The instruction a device list row ends with, which marks the remote as being in device mode.
+ *
+ * **Read off the configuration rather than carried as a constant**, and that is a correction: the
+ * composer hardcoded a write of 1 into state variable 24, which is what `one_config` uses, and it is
+ * one of eight different variables across the fourteen configurations here that carry a device list,
+ * moving between two syncs of one remote. It is unnamed in the name tree in all of them, so there is
+ * nothing to look it up by. What is stable is that a config's own rows all write the same one, so the
+ * majority answer over every row shaped list is the marker. Section 239.
+ *
+ * Undefined for a configuration with no such row, which is every architecture but arch 12 (Harmony
+ * One) and any Harmony One config with no device list.
+ */
+export function deviceModeMarker(c: Container): Instruction | undefined {
+  const tally = new Map<string, { instruction: Instruction; count: number }>();
+  for (const list of c.actionLists() ?? []) {
+    if (!isDeviceListRowShape(list)) continue;
+    const end = list[2] as Instruction;
+    const key = `${end.opcode}:${end.operand}`;
+    const seen = tally.get(key);
+    if (seen === undefined) tally.set(key, { instruction: end, count: 1 });
+    else seen.count += 1;
+  }
+  let marker: Instruction | undefined;
+  let most = 0;
+  for (const { instruction, count } of tally.values()) {
+    if (count > most) { most = count; marker = instruction; }
+  }
+  return marker;
+}
+
+/** One row of the device list: where it sits, which mode it enters, and what it says. */
+export interface DeviceListRow {
+  /** The menu mode the row is on, as a base slot 6 index. */
+  menu: number;
+  /** Which page of that menu, zero based. */
+  page: number;
+  /** The touch scan the row is bound to: 48 is the top row, 49 the middle, 50 the bottom. */
+  scan: number;
+  /** The device mode the row enters. */
+  mode: number;
+  /** The label drawn on the row, where the page's strings pair with its rows one to one. */
+  label?: string;
+}
+
+/**
+ * The device list, read off the widest menu that lists devices.
+ *
+ * **This is the list the Devices button shows**, and it is the authoritative population of devices,
+ * per `docs/how-a-harmony-works.md`: a device is what that list offers, whether or not it sends
+ * infrared. A configuration carries several copies of the list, one per context it is shown in,
+ * all reaching the same modes, so the first menu reaching the most distinct device modes is taken.
+ *
+ * A row's label is the string drawn on its page at the row's rank, top to bottom, and only when the
+ * page draws exactly as many strings of two characters or more as it has rows. A page that draws
+ * more, a page indicator say, leaves its rows unlabelled rather than mislabelled.
+ */
+export function deviceListRows(c: Container): DeviceListRow[] {
+  const marker = deviceModeMarker(c);
+  if (marker === undefined) return [];
+  const lists = c.actionLists() ?? [];
+  const isRow = (index: number): boolean => {
+    const list = lists[index];
+    if (!isDeviceListRowShape(list)) return false;
+    const end = (list as readonly Instruction[])[2] as Instruction;
+    return end.opcode === marker.opcode && end.operand === marker.operand;
+  };
+  const records = modeRecords(c) ?? [];
+  let best: DeviceListRow[] = [];
+  let bestReach = 0;
+  records.forEach((record, menu) => {
+    const rows: DeviceListRow[] = [];
+    record.pages.forEach((page, pageIndex) => {
+      for (const entry of taggedList(c, page.list)?.entries ?? []) {
+        if (entry.opcode !== ACTION_LIST_INDEX || !isRow(entry.operand)) continue;
+        const mode = (lists[entry.operand] as readonly Instruction[])[1] as Instruction;
+        rows.push({ menu, page: pageIndex, scan: entry.tag & 0x3f, mode: mode.operand });
+      }
+    });
+    const reach = new Set(rows.map((row) => row.mode)).size;
+    if (reach > bestReach) { bestReach = reach; best = rows; }
+  });
+  if (best.length === 0) return best;
+
+  // The labels, by rank on the page. A long name wraps onto a second line drawn a glyph height
+  // below the first ("Yamaha AV" over "Receiver", "Microsoft Media" over "Player"), where the rows
+  // themselves sit 54 pixels apart, so lines closer than half a row pitch are one label. Counting
+  // lines rather than labels is what left the Wii's page unpaired in section 240's first reading.
+  const record = records[best[0]!.menu] as ModeRecord;
+  const drawn = screenStrings(c, characterMap(c));
+  record.pages.forEach((page, pageIndex) => {
+    const onPage = best.filter((row) => row.page === pageIndex).sort((a, b) => a.scan - b.scan);
+    const lines = drawn
+      .filter((one) => one.program === page.program
+        && one.text.trim().length >= SHORTEST_USEFUL_LABEL)
+      .sort((a, b) => a.y - b.y);
+    const labels: string[] = [];
+    let lastY = Number.NEGATIVE_INFINITY;
+    for (const line of lines) {
+      if (labels.length > 0 && line.y - lastY < DEVICE_LIST_ROW_PITCH / 2) {
+        labels[labels.length - 1] += ` ${line.text.trim()}`;
+      } else {
+        labels.push(line.text.trim());
+      }
+      lastY = line.y;
+    }
+    if (labels.length !== onPage.length) return;
+    onPage.forEach((row, k) => { row.label = labels[k] as string; });
+  });
+  return best;
+}
+
+/** Vertical distance between two rows of the device list on the arch 12 screen, in pixels. */
+const DEVICE_LIST_ROW_PITCH = 54;
+
 export function devices(c: Container): Device[] {
   const groups = irGroups(c) ?? [];
   const records = stateRecords(c);
-  const out: Device[] = groups.map((group, index) => ({
+  // The infrared devices, one per group, which the first three routes name. A device with no
+  // group cannot be here, so those are collected separately and appended at the end.
+  const out: (Device & { group: number })[] = groups.map((group, index) => ({
     group: index,
     codes: group.addresses.length,
     variables: [],
   }));
+  const withoutInfrared: Device[] = [];
   const sent = infraredGroupsPerList(c);
   if (sent.size === 0 && groups.length === 0) return out;
   const groupsOf = (index: number): Set<number> => sent.get(index) ?? new Set<number>();
@@ -807,7 +952,7 @@ export function devices(c: Container): Device[] {
   const freeGroups = out.filter((device) => device.name === undefined && !contested.has(device.group));
   const freeLabels = labels.filter((label) => !named.has(label));
   if (freeGroups.length === 1 && freeLabels.length === 1) {
-    const device = freeGroups[0] as Device;
+    const device = freeGroups[0] as Device & { group: number };
     device.name = freeLabels[0] as string;
     device.source = 'elimination';
     for (const variable of deviceVariables(c)) {
@@ -827,7 +972,36 @@ export function devices(c: Container): Device[] {
       device.source = 'screen';
     }
   }
-  return out;
+  // Route four, and the population fix: the device list itself. A row whose mode reaches exactly one
+  // group ties that group to a mode and, where the first three routes named nothing, to the label the
+  // row draws. A row whose mode reaches **no** group is a device with no infrared codes, which the
+  // groups above cannot hold, so it is appended: the Wii of section 240.
+  for (const row of deviceListRows(c)) {
+    const reached = new Set<number>();
+    for (const page of (modeRecords(c) ?? [])[row.mode]?.pages ?? []) {
+      for (const entry of taggedList(c, page.list)?.entries ?? []) {
+        if (entry.opcode !== ACTION_LIST_INDEX) continue;
+        for (const group of groupsOf(entry.operand)) reached.add(group);
+      }
+    }
+    if (reached.size === 1) {
+      const device = out[[...reached][0] as number];
+      if (device === undefined) continue;
+      if (device.mode === undefined) device.mode = row.mode;
+      if (device.name === undefined && row.label !== undefined) {
+        device.name = row.label;
+        device.source = 'list';
+      }
+    } else if (reached.size === 0 && !withoutInfrared.some((device) => device.mode === row.mode)) {
+      withoutInfrared.push({
+        codes: 0,
+        variables: [],
+        mode: row.mode,
+        ...(row.label === undefined ? {} : { name: row.label, source: 'list' as const }),
+      });
+    }
+  }
+  return [...out, ...withoutInfrared];
 }
 
 /**
@@ -1654,6 +1828,7 @@ export function deviceIdOfGroup(c: Container): Map<number, number> {
   for (const device of devices(c)) {
     if (device.name === undefined) continue;
     const label = device.name.replaceAll('_', ' ');
+    if (device.group === undefined) continue;
     const exact = titles.get(label);
     if (exact !== undefined) {
       out.set(device.group, exact);
@@ -1703,7 +1878,7 @@ export function deviceDelays(c: Container): DeviceDelays[] {
   const inline = powerOnInstructions(c);
   const out: DeviceDelays[] = [];
   for (const device of devices(c)) {
-    if (device.name === undefined) continue;
+    if (device.name === undefined || device.group === undefined) continue;
     const id = groups.get(device.group);
     const held = id === undefined ? undefined : byId.get(id);
     // All four or none: a device missing one of them would give a caller a zero it cannot tell

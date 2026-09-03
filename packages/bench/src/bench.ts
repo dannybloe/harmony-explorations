@@ -71,7 +71,8 @@ export const VERSION_FIELDS = VERSION_FIELD_NAMES;
 
 /** A device as the page shows it: what it is called, and how it behaves when a key is held. */
 export interface DeviceView {
-  readonly group: number;
+  /** Its infrared group, or none for a device that sends nothing, section 240. */
+  readonly group: number | undefined;
   readonly name: string | undefined;
   /** Which route named it, since `names` is stated and `screen` is a last resort. Section 126. */
   readonly source: string | undefined;
@@ -290,7 +291,7 @@ export class Bench {
     const deviceViews = devices(c).map((device): DeviceView => {
       const periods = new Set<number>();
       let repeating = 0;
-      for (let code = 0; code < device.codes; code += 1) {
+      for (let code = 0; device.group !== undefined && code < device.codes; code += 1) {
         const period = periodOf(device.group, code);
         if (period === undefined) continue;
         repeating += 1;

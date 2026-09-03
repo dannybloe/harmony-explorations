@@ -711,8 +711,8 @@ M4, and behind the gate above. The rails are written and off, `packages/usb/src/
       command to its own device, and the activity sent that television nothing else. The second write
       moved the receiver's, where an input change follows, and its gap grew from about six seconds to
       about ten. Three things came with it: `--set` takes the route back away until a fresh dump is
-      registered, since the compare that makes the write safe is against a named dump; 35 of the
-      corpus's 127 pairs of an activity and a device it switches on can never show that device's
+      registered, since the compare that makes the write safe is against a named dump; 37<!--fact:delay_unfelt--> of the
+      corpus's 129<!--fact:delay_pairs--> pairs of an activity and a device it switches on can never show that device's
       delay; and the queue reading holds on both bench architectures
 - [x] **check**: a config we produced is on the spare Harmony One and reads back byte identical to
       what we sent. **Done, 1 September 2026, section 237.** A container `setPowerOnDelay` and

@@ -2541,8 +2541,10 @@ and not the highest.
 #### Which devices a config drives, and what each one is called
 
 **Confirmed on 15<!--fact:user_configs--> user configs across four architectures**, section 126,
-which names 63<!--fact:devices_named--> of 63<!--fact:devices_total--> devices. A device is an infrared group,
-section 86, so the list is base slot 5's group array and the question is only the name.
+which names 63<!--fact:devices_named--> of 63<!--fact:devices_total--> devices. A device that sends codes is an
+infrared group, section 86, so the list starts from base slot 5's group array and the question is
+the name. **A device can send nothing**, section 240: on arch 12 the device list itself is the
+population, and a row whose mode reaches no group is a device with `group` undefined and no codes.
 
 A level 1 name that belongs to a device is spelled
 
@@ -2994,7 +2996,7 @@ kind mask, `0xF0` against `0xE0`; the picker is `0x1338A` and `0x2711C`, the tic
 
 Three consequences a reader or an editor has to carry.
 
-* **A power on delay an activity cannot show is not a defect.** In this corpus 35 of 127 pairs of an
+* **A power on delay an activity cannot show is not a defect.** In this corpus 37<!--fact:delay_unfelt--> of 129<!--fact:delay_pairs--> pairs of an
   activity and a device it switches on send that device nothing after the power code, so those
   delays run down in the background and are never felt. 13 containers hold both kinds at once.
   `powerOnDelayReach` in `packages/codec` is the measurement.

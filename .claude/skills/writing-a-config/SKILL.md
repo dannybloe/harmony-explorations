@@ -103,7 +103,7 @@ produce a config the remote accepts and mishandles.
   each other and a quantity with nothing behind it for its own device is never felt. Measured both
   ways on a Harmony One on 1 September 2026: a television's delay raised to ten seconds in an
   activity that sends it one command changed nothing, and the receiver's raised in the same activity,
-  where an input change follows, moved its gap from six seconds to ten. In the corpus 35 of 127 pairs
+  where an input change follows, moved its gap from six seconds to ten. In the corpus 37<!--fact:delay_unfelt--> of 129<!--fact:delay_pairs--> pairs
   of an activity and a device it switches on can never show that device's delay. So a writer may
   change the byte, and an interface that calls it a pause in the activity is wrong for a quarter of
   them.

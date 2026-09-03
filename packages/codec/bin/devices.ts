@@ -20,8 +20,8 @@
  * them recomputed rather than remembered.
  */
 import { LAB, load } from '@harmony/lab';
-import { parse, devices } from '../src/index.ts';
-import { CONTAINERS } from './corpus.ts';
+import { parse, devices, powerOnDelayReach } from '../src/index.ts';
+import { CONTAINERS, INLINE_DELAY_CONTAINERS } from './corpus.ts';
 
 // The same population as `bin/activities.ts`, for the same reason: the 880 is the one container whose
 // contents are described in writing by their owner, so it is the one place a device count can be
@@ -83,8 +83,26 @@ for (const architecture of [...perArchitecture.keys()].sort((a, b) => a - b)) {
   const here = perArchitecture.get(architecture) as { named: number; total: number };
   console.log(`       arch ${String(architecture).padStart(2)}  ${here.named}/${here.total}`);
 }
-for (const source of ['names', 'elimination', 'screen']) {
+for (const source of ['names', 'elimination', 'screen', 'list']) {
   console.log(`       by ${source.padEnd(12)} ${perSource.get(source) ?? 0}`);
 }
 console.log(`devices_named ${named}`);
 console.log(`devices_total ${total}`);
+
+// Section 236's table: over every container that inlines a power on delay, the pairs of an activity
+// and a device it switches on, and how many of those the activity can ever feel. A delay is found
+// through the device's **name**, so a device the inventory leaves unnamed has no delay here at all,
+// which is how the fix of section 240 moved these by two without touching a delay.
+let pairs = 0;
+let felt = 0;
+for (const name of INLINE_DELAY_CONTAINERS) {
+  const blob = load(name);
+  if (blob === undefined) continue;
+  const reach = powerOnDelayReach(parse(blob));
+  pairs += reach.length;
+  felt += reach.filter((one) => one.laterCommands > 0).length;
+}
+console.log(`\npower on delays: ${pairs} activity and device pairs, ${felt} felt, ${pairs - felt} never felt`);
+console.log(`delay_pairs ${pairs}`);
+console.log(`delay_felt ${felt}`);
+console.log(`delay_unfelt ${pairs - felt}`);
