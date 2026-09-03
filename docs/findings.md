@@ -31163,6 +31163,29 @@ So the page on the spare is the one this section describes, labels and all. The 
 with centred, short labels, and it is a write of the whole configuration again, since the labels change
 the page's length.
 
+### The clock was wrong, and the checklist said it would be
+
+After the battery pull the remote showed `Sun 3:42`. The configuration written carries its input's
+build stamp, Saturday 22 August 2026 at 15:10:25, because neither the composer nor the tool stamped
+the save, and a Harmony One resets its clock to that stamp at every boot, section 111: 15:10 plus the
+half hour since the battery pull is 15:42, shown in twelve hour form. So the rail that a save is
+stamped with the moment of saving, base slot 3 and the clock's seven state values, fired exactly as
+written, and `compose-device.ts` applies `saveEdits` now. **The day name is a lead.** The stamp's
+weekday byte is 0, which section 21 reads as Saturday, days since 1 January 2000 modulo 7, and the
+remote showed Sunday. The byte is what the corpus says it is; what the firmware names it is a table
+this project has not read, and the second candidate, stamped Thursday 3 September with a byte of 5,
+shows either `Thu` or `Fri` at its first boot and settles it.
+
+The existing activity still works as it did, so the other check is ticked.
+
+### The second candidate
+
+`work/20260903-one-spare-plus-lg-2.bin`, from the same 30 August input: the same device with labels
+`Power`, `Vol+`, `Vol-`, `Ch+`, `Ch-` and `Mute`, every one centred on its pad in the render, stamped
+`2026-09-03T11:22:35`, 1668291 bytes, 25 blocks again. Not written yet; its compare base is a region
+read of the remote as the first write left it, which does not exist until the remote is back on the
+cable.
+
 ### What would falsify it
 
 The television not answering a command whose number the configuration already sent, which would put

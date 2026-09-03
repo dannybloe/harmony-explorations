@@ -40,6 +40,8 @@ import {
   worstQueueRun,
   assertQueueFits,
   ACTION_QUEUE_INSTRUCTIONS,
+  localTimestamp,
+  saveEdits,
 } from '../src/index.ts';
 import { irFrame } from '../src/irframe.ts';
 
@@ -103,7 +105,12 @@ const withDevice = parse(composed.bytes);
 const screen = composeDeviceScreen(withDevice, label,
   labels.map((name, k) => ({ label: name, list: composed.lists[k] as number })),
   iconLike === undefined ? {} : { iconLike });
-const after = parse(screen.bytes);
+// **A save is stamped with the moment of saving**, base slot 3 and the clock's seven state values,
+// which is the rail that separates a save from a round trip. The first device written to a remote
+// carried its input's stamp, and after a battery pull the remote's clock showed 22 August, section
+// 242: a Harmony One resets its clock to this stamp at every boot, section 111.
+const builtAt = localTimestamp(new Date());
+const after = parse(saveEdits(parse(screen.bytes), [], builtAt).bytes);
 
 // Read the result back with the same readers rather than trusting the composition.
 const nowDevices = inventory(after).devices;
@@ -117,6 +124,7 @@ if (!trailerAgrees(after)) fail('the result does not state its own checksum');
 if (!roundTrip(after).equal) fail('the emitter does not reproduce the result');
 assertQueueFits(after);
 const worst = worstQueueRun(after);
+process.stdout.write(`stamped ${builtAt}\n`);
 process.stdout.write(`${after.blob.length} bytes, ${nowDevices.length} devices, group `
   + `${composed.group}, mode ${screen.mode}, ${screen.menus.length} device list menus: `
   + `${screen.menus.length - screen.pagesAdded.length} grew a row, ${screen.pagesAdded.length} got a page\n`);
