@@ -131,8 +131,16 @@ somebody sees.
 **Phase 9 is done, section 242.** The LG television answers the spare Harmony One from a row this
 project composed and wrote, 3 September 2026. What the write taught is in that section: a transfer can
 time out halfway through a block and the writer now knows a half written block when it reads one back,
-and the page's labels need a display name and a font table read after the relocations. The check that
-is left is the clock and the other activities, and a second write with readable labels.
+and the page's labels need a display name and a font table read after the relocations. **The second
+write went in the same afternoon and every check is ticked**: readable labels, a stamped save so the
+clock is right, and the other activities unchanged.
+
+**One of that afternoon's two puzzles is closed, section 243.** A block found erased with no erase in
+any log was read as the remote doing it to itself, and the firmware says it cannot: the application has
+one route to an external erase and its address arrives in a USB report, while the programming path it
+can use unasked only clears bits. So the erase was ours and the record of it was lost, which is why
+the writer now keeps its own journal beside the configuration, one file per run. What is still open is
+the remote calling itself unprogrammed after a write until its battery comes out.
 
 **The page section 239 found missing was composed the same morning, section 241:** on the
 spare's own configuration every device list menu gains a third page holding one row, on a hit page
