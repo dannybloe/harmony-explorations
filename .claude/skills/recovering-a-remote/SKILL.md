@@ -25,6 +25,14 @@ the rail demanding a verified dump is what separates a recoverable remote from a
 config is wrong still boots and our own read path still works. That is the structural reassurance
 behind a first write, and it is worth more than any of the arguments below.
 
+**A stranded remote tells you what is wrong, and there are thirty things it can say.** The container
+at flash `0x002000` on a Harmony One is the firmware's status screen library, section 244: 30 screens
+on arch 12 and 35 on arch 14, the same list in the same order with five extra in front. Three of them
+are about the configuration and they are three **different** screens, an invalid configuration, a
+corrupted one, and a request to go to the website and update settings. So read the screen before
+diagnosing anything, and `packages/codec/test/status.test.ts` holds the list. What selects a screen is
+unread, so the screen says what the firmware thinks and not why.
+
 Moved out of `CLAUDE.md` on 29 August 2026, where nine and a half thousand characters of firmware
 reading sat in every session's context to answer a question that only arises when something has gone
 wrong or is about to.

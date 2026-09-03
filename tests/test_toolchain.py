@@ -422,7 +422,7 @@ class ATypeScriptSampleLoopStatesItsPopulation(unittest.TestCase):
         # definitions out of the infrared archive checkout and skips without one, like a lab test.
         # 56 since `packages/codec/test/pronto.test.ts`, section 230: Pronto Hex, and our own waveforms
         # against the two million Logitech's renderer produced from the same definitions.
-        self.assertEqual(scanned, 57, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
+        self.assertEqual(scanned, 58, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
         self.assertEqual(
             {name: len(lines) for name, lines in counted.items()},
             TYPESCRIPT_LOOPS_ALLOWED_TO_SKIP_A_SAMPLE,
@@ -544,7 +544,7 @@ class ABoundOnACorpusTotalIsExact(unittest.TestCase):
         # half needs the codec and `packages/usb` deliberately does not depend on it.
         # 53 since `packages/usb/test/identity.test.ts`, section 226.
         # 55 since `packages/codec/test/catalogue.test.ts`, section 229; 54 since `archive.test.ts`.
-        self.assertEqual(len(scanned), 57, 'TypeScript test files, which moves when one is added')
+        self.assertEqual(len(scanned), 58, 'TypeScript test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):

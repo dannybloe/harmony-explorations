@@ -31223,7 +31223,7 @@ at all, and programming, which it can do unasked, only clears bits. The erase wa
 of it was lost. Section 243 also measures what the flash says, which is 23 blocks changed against two
 in the logs, and it is why the writer keeps its own journal now.
 
-**The unprogrammed screen is not a memory of a bad boot**, which this section said after the first
+**The screen after a write is not a memory of a bad boot**, which this section said after the first
 write. It appeared again after the second write completed cleanly, and cleared again with a battery
 pull. So it follows a write while the remote is connected, whatever the write's outcome, and the
 reading to test is that the remote's own bookkeeping in RAM outlives the flash it describes.
@@ -31236,8 +31236,10 @@ every write leaves the remote matching none.
 
 The television not answering a command whose number the configuration already sent, which would put
 the fault in the page rather than the code; it answered. The remote failing to boot on the new
-configuration; it boots. And the unprogrammed screen reappearing after a clean write, which would refute
-the reading above.
+configuration; it boots. And the screen reappearing after a clean write, which would refute the
+reading above. **Section 244 read what that screen actually says**: not that the remote is
+unprogrammed, but go to the website to update settings, one of thirty status screens the firmware
+ships, and the two the table keeps for a configuration that is wrong are different screens.
 
 ### Where it lands
 
@@ -31351,3 +31353,99 @@ second caller in another arch 12 image, if one ever reaches the lab.
 * `docs/usb-protocol.md`: the structured fact, beside the erase command it belongs to.
 * `packages/corpus/bin/write-config.ts`: the durable journal.
 * Section 242's hypothesis, corrected in place.
+
+## 244. The remote was not calling itself unprogrammed, and there are thirty screens it could have shown instead
+
+**Date:** 3 September 2026. **Status:** the table is measured in five containers across two
+architectures, with `packages/codec/test/status.test.ts` behind it. Which screen the spare Harmony One
+showed is Danny's observation, twice, and the calibration below is what makes it more than a
+recollection.
+
+**The question was why the spare Harmony One calls itself unprogrammed after a write**<!--superseded-->.
+It does not.
+The message it shows is **"Go to Website to update settings"**, and it is one entry in a table of
+status screens the firmware ships, alongside separate entries for an **invalid** configuration and a
+**corrupted** one. A remote showing the website screen is not complaining about its configuration at
+all, so the open question was written down in terms that presuppose the wrong answer.
+
+### The table
+
+The container this project calls the safe mode container, at flash `0x002000` on a Harmony One, holds
+30 status screens. Their text, in the order the container stores them:
+
+| | |
+|---|---|
+| 0 | Go to Website to update settings |
+| 1 | USB Initialization |
+| 2 | Bootloader Locked |
+| 3 | Real Time Clock |
+| 4 | IR LEDs and Photodiode |
+| 5 to 8 | FLASH Memory ID, Erase, Write, Clear |
+| 9 | LCD Module Failed |
+| 10 | PLL Failure |
+| 11 | BootRAM Truncated |
+| 12, 13 | Safe Mode, Safe Mode Requested |
+| 14 to 17 | Battery Low, Battery Fast Charge, Battery Trickle Charge, Battery Charge Complete |
+| 18 | IR Sending |
+| 19 | Invalid Configuration |
+| 20, 21 | Bootloader Bad Image, Bootloader Upgrade Failed |
+| 22 to 24 | Battery ADC, LightSense ADC and Revision ADC Not Calibrated |
+| 25 | Application Terminated |
+| 26 | Configuration Corrupted |
+| 27 | Missing License |
+| 28 | USB CONNECTED |
+| 29 | Needs to be setup. Battery Charging |
+
+**Arch 14 holds the same 30 in the same order with five more in front**: Update Successful, Upgrade
+Successful, Update in progress, Learning, and Firmware upgrade in progress. So a Harmony 600 or 700
+ships 35 and a Harmony One 30, and the difference is a prefix rather than a different table.
+
+**The closure is that five images agree by two routes.** Two arch 12 containers, one read off a
+remote's own flash and one extracted from Logitech's firmware package, are identical; three arch 14
+containers, a Harmony 600's, a Harmony 650's and the Harmony 700 package's, are identical to each
+other; and the Harmony One's 30 are the arch 14 35 with the first five removed, exactly. Nothing in
+the reader knows what any of these words are, so a decoder slip would have to make the same slip
+five times in two typefaces.
+
+### Why this answers the bench question, and the calibration that makes it evidence
+
+Two screens were seen on the spare that afternoon and **both are in this table**. On the cable it
+showed `USB CONNECTED`, which is entry 28 and is spelled in capitals; unplugged it showed entry 0.
+The capitals matter, because the application image carries its own `USB Connected` string in German,
+Spanish, French and English in title case, so the two spellings say which of the two was on the
+screen.
+
+**The calibration is that the same remote showed a different screen when its configuration really was
+broken.** After the attempt that was killed mid write, with 24 blocks of one configuration and one
+block erased, it said its configuration was **corrupted**, which is entry 26. After a write that
+completed and read back byte for byte, it said **go to the website**. So the table's distinction is
+one the firmware actually draws, and the remote reports the two states differently. That is a known
+answer case rather than a reading of ours: the corrupted screen was seen at a moment when the flash
+was independently measured to be inconsistent.
+
+**And position is not what selects a screen.** The website message is entry 0 on the Harmony One and
+entry 5 on arch 14, so the tempting reading, that entry 0 is what a remote shows when nothing set a
+status code, cannot be right for both.
+
+### What is still open, and what would settle it
+
+Which condition selects entry 0 is unread. The application image holds no variable that is written
+with a spread of literals in the range of these indices, so the index is not assigned as a constant,
+and the routine that draws one has not been found. Two candidates remain and one command
+distinguishes them: if the remote is running its **application** it is the application drawing a
+status screen, and if it is not, the screen belongs to safe mode or the bootloader, which is where
+this container physically sits. `read-identity.ts` prints the **software type**, 0 running normally
+and 4 in safe mode, so reading it on the cable straight after a write is the measurement, and it is a
+single read.
+
+Two things follow for the meantime. **The open question is reworded** rather than answered: a remote
+that has just been written to shows a status screen asking for a sync, and what sets it is unknown.
+And **that wording is dead**<!--superseded-->, since the remote says nothing of the kind and the table
+has two other things it says when a configuration is wrong.
+
+### Where it lands
+
+* `packages/codec/test/status.test.ts`: the counts, the five way agreement, the prefix relation, and
+  the negative that the message is neither of the configuration screens.
+* `docs/config-format.md`: what the container at flash `0x002000` holds.
+* Section 242's open question, reworded in place, and `reference/superseded.md`.

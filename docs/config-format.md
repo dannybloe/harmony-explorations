@@ -1141,6 +1141,16 @@ mode page record, 91 to 294 programs per container end with a terminator that is
 at all, 36 times on the One, so the byte is part of the program only when it is zero.
 `docs/findings.md` section 84.
 
+**The container at flash `0x002000` is the firmware's status screen library**, section 244, and
+calling it the safe mode container understates it. Its screen programs are the messages a remote
+shows when it is not showing a configuration: 30 on a Harmony One and 35 on arch 14, the arch 12 set
+being the arch 14 set with its first five removed and the shared 30 in the same order. Five images
+across two architectures agree, by two routes, a read off a remote's own flash and Logitech's own
+firmware packages. Three of the 35 are about the configuration and they are **three different
+screens**, an invalid one, a corrupted one and a request to go to the website and update settings, so
+which one a stranded remote shows is diagnostic. Which condition selects a screen is **unread**, and
+position does not: the website message is entry 0 on arch 12 and entry 5 on arch 14.
+
 ### Base slot 7: the font table
 
 A count prefixed pointer array of 5 to 18 entries, indexed by **opcode 16 of the screen language**.

@@ -772,8 +772,10 @@ waits for Danny's go, per the gate above.
       off again on the second press.** Danny at the set, 3 September 2026
 - [x] **check**: the device responds, the remote boots, its other activities still work, the config reads
       back byte identical, and **its clock is right** since the save is stamped, all observed on
-      3 September 2026. The remote calls itself unprogrammed after a write until its battery is pulled,
-      which happens after a clean write too and is section 242's open question
+      3 September 2026. The remote shows a status screen asking for a sync after a write until its
+      battery is pulled, which happens after a clean write too and is the open question sections 242
+      and 244 carry: the message is one of thirty the firmware ships and says nothing about the
+      configuration, and what selects it is unread
 - [x] write up the whole run as a finding, with what did not work the first time. Section 242, which
       also names the two defects on the page: labels measured through a stale font table and the
       catalogue's command names being wider than a pad. Both fixed in the code, neither yet on the remote

@@ -439,7 +439,7 @@ finding.
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 243<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 244<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -664,8 +664,8 @@ accounting table** here, which was a real duplicate with nothing added and has b
 answers it, section 242.** The candidate below was written on 3 September 2026, 25 blocks read back
 identical, and Danny switched the LG on and off from the new row. The first attempt broke off halfway
 through its first block and the writer's compare had to learn what a half written block is before the
-rerun would go; the remote called itself unprogrammed until a battery pull, which happens after a
-clean write too and so follows the write rather than the broken one. The page's labels were wrong on
+rerun would go; the remote showed a status screen asking for a sync until a battery pull, which
+happens after a clean write too and so follows the write rather than the broken one. The page's labels were wrong on
 the remote, measured through a stale font table and too long for their pads, and a second
 configuration with readable labels and a save stamp is on the remote since that afternoon: its clock
 is right, which is what the stamping rail exists for. That write took five attempts and three of them
@@ -677,8 +677,17 @@ itself. The firmware says it cannot: the application reaches the external flash 
 gate through exactly one wrapper with exactly one caller, the erase command's own handler, whose
 address arrives in a USB report, and the programming path it can use unasked only clears bits. So the
 erase was ours and what went missing was the record of it, which is why the writer now appends its own
-journal beside the configuration, one file per run. The other puzzle stands: a remote that calls
-itself unprogrammed after a write until its battery comes out.
+journal beside the configuration, one file per run.
+
+**The other puzzle is reworded rather than solved, section 244.** What the remote shows after a write
+is not a claim to be unprogrammed: it is "Go to Website to update settings", one of thirty status
+screens the firmware ships, and the table keeps separate screens for an invalid configuration and a
+corrupted one. That distinction is one the remote really draws, since it showed the corrupted screen
+at the moment its flash was independently measured to be inconsistent and the website screen after a
+write that read back byte for byte. So the configuration is not what it is complaining about, and
+what selects the screen is unread. One read settles where the screen comes from: the identity block's
+software type says 0 running normally and 4 in safe mode, and the container these screens live in
+sits with the bootloader rather than with the configuration.
 
 **The missing page was composed first, section 241**, and the candidate configuration for the first
 write that adds a device was in the lab within the hour: the spare Harmony One's own configuration plus an LG television
