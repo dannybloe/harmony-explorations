@@ -1,5 +1,5 @@
 /**
- * Put an appliance from Logitech's catalogue into a configuration, screen page and all.
+ * Put a device from Logitech's catalogue into a configuration, screen page and all.
  *
  *   node packages/codec/bin/compose-device.ts --in <config> --out <file> \
  *       --manufacturer LG --model OLED55C27LA --label LG \
@@ -61,13 +61,16 @@ const manufacturer = argument('manufacturer') ?? fail('--manufacturer names the 
 const model = argument('model') ?? fail('--model names the catalogue device');
 const label = argument('label') ?? fail('--label is what the config will call it');
 const wanted = (argument('commands') ?? fail('--commands is a comma separated list')).split(',');
+// Which existing device list row's icon the new row wears, by its drawn label: a television gets
+// the television's. Without it the first row's icon is copied, whatever device that is.
+const iconLike = argument('icon-like');
 
 if (IR_ARCHIVE === undefined) {
   fail('no infrared archive: clone logitech-harmony-ir-archive beside this repository, '
     + 'or set HARMONY_IR_ARCHIVE');
 }
 
-// The appliance, and the commands asked for in the order asked for, since that is the row order on
+// The device, and the commands asked for in the order asked for, since that is the row order on
 // the page. A name the codeset does not carry is a refusal rather than a shorter page.
 const device = catalogueDevice(IR_ARCHIVE, manufacturer, model);
 const available = catalogueCommands(IR_ARCHIVE, device.codeset ?? fail('the device states no codeset'));
@@ -93,7 +96,8 @@ process.stdout.write(`${input}: ${before.blob.length} bytes, ${wasDevices.length
 const composed = composeDevice(before, { label, commands, power: 0 });
 const withDevice = parse(composed.bytes);
 const screen = composeDeviceScreen(withDevice, label,
-  wanted.map((name, k) => ({ label: name, list: composed.lists[k] as number })));
+  wanted.map((name, k) => ({ label: name, list: composed.lists[k] as number })),
+  iconLike === undefined ? {} : { iconLike });
 const after = parse(screen.bytes);
 
 // Read the result back with the same readers rather than trusting the composition.
@@ -109,11 +113,12 @@ if (!roundTrip(after).equal) fail('the emitter does not reproduce the result');
 assertQueueFits(after);
 const worst = worstQueueRun(after);
 process.stdout.write(`${after.blob.length} bytes, ${nowDevices.length} devices, group `
-  + `${composed.group}, mode ${screen.mode}, ${screen.menus.length} device list menus grew a row\n`);
+  + `${composed.group}, mode ${screen.mode}, ${screen.menus.length} device list menus: `
+  + `${screen.menus.length - screen.pagesAdded.length} grew a row, ${screen.pagesAdded.length} got a page\n`);
 process.stdout.write(`every byte accounted, no overlap, checksum agrees, emitter round trips, `
   + `deepest action list ${worst?.peak} of ${ACTION_QUEUE_INSTRUCTIONS} queue slots\n`);
 
-// **The known answer**, where the host config already drives the same appliance: every number the
+// **The known answer**, where the host config already drives the same device: every number the
 // new device sends should already be in the file, put there by Logitech's own compiler. That is not
 // a property of the composition, it is a property of this pairing, so it is reported rather than
 // demanded.
@@ -131,7 +136,7 @@ for (const command of commands) {
   if (value !== undefined && existing.has(value)) known += 1;
 }
 process.stdout.write(`${known} of ${commands.length} commands send a number this configuration `
-  + 'already carries, so the appliance is known to answer them\n');
+  + 'already carries, so the device is known to answer them\n');
 
 // What the write would cost, in the unit a write is actually performed in.
 const blocks = new Set<number>();

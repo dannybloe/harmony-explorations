@@ -38,7 +38,9 @@ import {
   archSlot,
   characterMap,
   composeDeviceScreen,
+  deviceListRows,
   deviceModeMarker,
+  devices,
   touchPages,
   modePages,
   modeRecords,
@@ -487,23 +489,118 @@ test('every Harmony One config states its own device mode marker, and they diffe
                   'one remote, two syncs, two different variables');
 });
 
-test('the spare Harmony One config gets as far as its menus being full, not as far as no menus',
+test('the spare Harmony One config gets a third device list page on every menu, and one hit page serves all nine',
      skipUnless('one_spare_20260830'), () => {
-  // **The refusal is the claim.** With the marker hardcoded this container reported that it had no
-  // device list at all, because its rows write variable 25 and the composer looked for 24. Reading
-  // the marker off the config finds all nine menus, and what stops the composition is the real
-  // limit: six devices fill both pages of the two page layout, and a seventh needs a third page
-  // that nothing here composes. Section 239.
+  // **This test used to assert a refusal**, that six devices fill both pages and a seventh needs a
+  // third page nothing composed, section 239. Section 241 composes it, the way Logitech lays a
+  // seventh device out: pages of three and the last page short. What is asserted is the shape
+  // rather than the bytes, because the bytes are read back through the same readers the corpus is
+  // read with, and the render is what says the page draws.
   const pristine = parse(require_('one_spare_20260830'));
   const device = composeDevice(pristine, { label: 'LG', commands: TELEVISION, power: 0 });
   const before = parse(device.bytes);
+  const hitsBefore = touchPages(before)!.records.length;
+  const pagesBefore = modePages(before).length;
+  const composed = composeDeviceScreen(before, 'LG',
+    ROWS.map((row) => ({ label: row.label, list: device.lists[row.k] as number })), { iconLike: 'TV' });
+  const after = parse(composed.bytes);
+  assert.equal(composed.menus.length, 9, 'the nine contexts the spare shows its device list in');
+  assert.deepEqual(composed.pagesAdded, composed.menus, 'every menu was full, so every menu got a page');
+
+  // The whole file still holds together.
+  const report = coverage(after);
+  assert.equal(report.accounted, report.total, 'every byte is claimed');
+  assert.deepEqual(report.overlaps, [], 'and no byte twice');
+  assert.ok(trailerAgrees(after));
+  assert.equal(roundTrip(after).equal, true, 'the emitter reproduces the composed file');
+
+  // One hit page for all nine menus: the first composes it, because the spare carries no one row
+  // page with the device list's rectangles, and the other eight find it by geometry. Its rectangles
+  // are the full page's own, the top row's for the row and the bottom key's for the bottom key,
+  // which is the rule two configurations state, section 241.
+  const hits = touchPages(after)!;
+  assert.equal(hits.records.length, hitsBefore + 1, 'one new hit page, not nine');
+  const added = hits.records[hitsBefore]!;
+  const firstMenu = modeRecords(after)![composed.menus[0] as number]!;
+  const full = hits.records[firstMenu.pages[0]!.lead as number]!;
+  const rect = (area: { x: number; width: number; y: number; height: number }) =>
+    [area.x, area.width, area.y, area.height];
+  assert.deepEqual(added.areas.map((area) => area.code), [48, 49, 46, 47]);
+  assert.deepEqual(added.areas.map(rect),
+                   [48, 51, 46, 47].map((code) => rect(full.areas.find((area) => area.code === code)!)));
+  assert.ok(added.areas.every((area) => area.self === area.address), 'each area ends in its own address');
+
+  // Every menu: three pages of three, three and one row, the new page on the new hit page, its row
+  // on the top scan running the shared entering list, its bottom key bound the way the page before
+  // it binds its own, and the page drawing whole in every variant of its bottom key.
+  const lists = after.actionLists()!;
+  for (const menu of composed.menus) {
+    const record = modeRecords(after)![menu]!;
+    assert.equal(record.pageCount, 3, `menu ${menu} has three pages`);
+    assert.deepEqual(record.pages.map((page) => hits.records[page.lead as number]!.areas.length - 3),
+                     [3, 3, 1], `menu ${menu} is three, three and one`);
+    const added3 = record.pages[2]!;
+    assert.equal(added3.lead, hitsBefore, `menu ${menu}'s new page uses the new hit page`);
+    const list = taggedList(after, added3.list)!;
+    const previous = taggedList(after, record.pages[1]!.list)!.entries.find((one) => one.tag === (0x80 | 51))!;
+    assert.deepEqual(list.entries.map((one) => [one.tag & 0x3f, one.opcode, one.operand]),
+                     [[48, 0x7f, composed.rowList], [49, previous.opcode, previous.operand]]);
+    assert.deepEqual(lists[composed.rowList]!.map((one) => [one.opcode, one.operand]),
+                     [[0x75, 0x0fca], [0x7e, composed.mode], [0x99, 1]],
+                     'the row beeps, enters the mode and marks device mode with this config\'s own variable');
+    // Eight menus close on the bottom key switch and render twice, `Activities` and `Current
+    // Activity`; menu 253, the list shown while an activity runs, draws its key plain and renders once.
+    const rendered = renderVariants(after, added3.program);
+    assert.equal(rendered.variants.length, menu === 253 ? 1 : 2, `menu ${menu}'s bottom key states`);
+    for (const variant of rendered.variants) {
+      assert.equal(variant.page.glyphsMissing, 0, `menu ${menu} draws every glyph`);
+      assert.equal(variant.page.picturesMissing, 0, `menu ${menu} draws every picture`);
+    }
+  }
+
+  // Section 69's rail, for the nine new pages and the device's own: a pool copy each, agreeing.
+  const pages = modePages(after);
+  const copies = pageListCopies(after);
+  assert.equal(pages.length, pagesBefore + 1 + composed.menus.length);
+  assert.equal(copies.length, pages.length, 'one copy per page');
+  for (const menu of composed.menus) {
+    const page = modeRecords(after)![menu]!.pages[2]!;
+    const index = pages.findIndex((one) => one.address === page.address);
+    const mine = taggedList(after, page.list)!;
+    const copy = taggedList(after, copies[index]! + after.flashBase)!;
+    assert.deepEqual(copy.entries.map((one) => [one.tag, one.opcode, one.operand]),
+                     mine.entries.map((one) => [one.tag, one.opcode, one.operand]));
+  }
+
+  // And the inventory reads the seventh device off the list, as section 240 reads the Wii.
+  const rows = deviceListRows(after);
+  assert.equal(rows.length, 7);
+  assert.deepEqual(rows.filter((row) => row.page === 2).map((row) => [row.scan, row.label]), [[48, 'LG']]);
+  assert.equal(devices(after).length, 7);
+  const map = characterMap(after)!;
+  assert.equal(screenStrings(after, map).filter((one) => one.text === 'LG').length, composed.menus.length + 1,
+               'nine menu rows and the title');
+});
+
+test('a menu whose last page holds one row is refused rather than grown', skipUnless('one_spare_20260830'), () => {
+  // The one shape left without a route: what a one row page becomes when a row is added has not
+  // been measured beside its original, since Logitech recompiles the whole list. So it is refused
+  // with the count in the message. The fixture is the spare composed once, whose menus then end on
+  // the one row page the test above checks; `compiled_protocols_3` ends on one too but its fonts
+  // are numbered differently from the constants the device page still carries, section 241, so it
+  // is refused earlier and for the wrong reason.
+  const pristine = parse(require_('one_spare_20260830'));
+  const first = composeDevice(pristine, { label: 'LG', commands: TELEVISION, power: 0 });
+  const once = composeDeviceScreen(parse(first.bytes), 'LG',
+    ROWS.map((row) => ({ label: row.label, list: first.lists[row.k] as number })), { iconLike: 'TV' });
+  const second = composeDevice(parse(once.bytes), { label: 'TV', commands: TELEVISION, power: 0 });
+  const before = parse(second.bytes);
   assert.throws(
-    () => composeDeviceScreen(before, 'LG',
-      ROWS.map((row) => ({ label: row.label, list: device.lists[row.k] as number }))),
+    () => composeDeviceScreen(before, 'TV',
+      ROWS.map((row) => ({ label: row.label, list: second.lists[row.k] as number }))),
     (error: unknown) => {
       assert.ok(error instanceof ComposeError);
-      assert.match(error.message, /holds 3 of 3 rows, so it is full/);
-      assert.doesNotMatch(error.message, /no device list menu/);
+      assert.match(error.message, /holds 1 row\(s\)/);
       return true;
     });
 });

@@ -128,14 +128,20 @@ the erase and write sequence now has one implementation, `writeBlock`, shared by
 writer, reachable through the `@harmony/usb/write` subpath so that a third caller is a decision
 somebody sees.
 
-**Phase 9 is started and blocked, section 239**, and the block is a piece of phase 6 rather than
-anything to do with a remote. Composing an appliance from Logitech's catalogue on to the spare's own
+**Phase 9 is at its write, section 241.** The page section 239 found missing is composed: on the
+spare's own configuration every device list menu gains a third page holding one row, on a hit page
+derived from the full page's rectangles, and the candidate file passes every reader, the emitter and
+the render. What is left is the write, 25 of the configuration's 26 blocks, and the button press, both behind
+Danny's go.
+
+**Phase 9 was started and blocked by section 239**, and the block was a piece of phase 6 rather than
+anything to do with a remote. Composing a device from Logitech's catalogue on to the spare's own
 configuration ran that code against a second container for the first time, and three of its constants
 were per config. Two are fixed: the device mode marker is read off the file rather than carried, and
 a menu page is matched on what its hit page offers rather than on a hit page index. What is left is
 the work. The spare drives six devices over two full pages of three, and a device list page binds
 exactly its hit page's area count minus three, so a seventh device is a **third page holding one
-row**. The nine device compile in the lab is a worked example of exactly that shape. An earlier
+row**. The nine device compile in the lab was the worked example of exactly that shape. An earlier
 version of this paragraph said Logitech changed layout family at seven devices, which came from
 comparing a lead byte between two configurations and is corrected in section 239.
 

@@ -439,7 +439,7 @@ finding.
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 240<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 241<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -660,7 +660,14 @@ cannot drift apart; what a reader should not expect is two independent statement
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
 
-**Phase 9 is blocked and the block is worth more than the phase**, section 239. Putting a device
+**Phase 9's missing page is composed, section 241**, and the candidate configuration for the first
+write that adds a device is in the lab: the spare Harmony One's own configuration plus an LG television
+with six commands, 1668321 bytes, seven devices, every one of its nine device list menus given a third
+page holding one row on a hit page derived from the full page's rectangles. Every reader accounts for
+every byte, the emitter reproduces it and the new page renders as Logitech's own short pages do. The
+write is 25 of the configuration's 26 blocks, and it waits for Danny's go.
+
+**Phase 9 was blocked for two days and the block was worth more than the phase**, section 239. Putting a device
 from Logitech's catalogue on to the spare Harmony One ran the composition against a second
 configuration for the first time, and two things it had been carrying as constants turned out to be
 per config. The state variable a device list row marks device mode with is one of eight different
@@ -670,9 +677,9 @@ reported that it had no device list at all, which is what a hardcoded operand lo
 wrong. The second is the blocker and its first write up was wrong, corrected the same day after Danny said
 he had never seen the device list change shape: there is **one** layout, three rows to a page, and a
 page binds exactly its hit page's area count minus three. The spare drives six devices over two full
-pages, so a seventh needs a **third page holding one row**. The wrong version compared a lead byte
+pages, so a seventh needs a **third page holding one row**, which section 241 then composed. The wrong version compared a lead byte
 between two configurations, and a lead byte indexes that configuration's own hit map table. So the
-tool and the device are ready and one piece of phase 6 is missing.
+tool and the device were ready and one piece of phase 6 was missing.
 
 **A device that sends nothing was not counted**, section 240, found because a count quoted in
 conversation did not match what Danny remembered of the remote. The inventory built its device list

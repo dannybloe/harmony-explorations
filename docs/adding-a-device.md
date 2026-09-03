@@ -726,28 +726,40 @@ M4, and behind the gate above. The rails are written and off, `packages/usb/src/
       goes through `readConfig` and its retry now
 - [ ] the flag stays off for anything that is not this bench script
 
-## Phase 9: the appliance responds
+## Phase 9: the device responds
 
-**Blocked on one missing page, found 1 September 2026, section 239.** The composition ran against a
-second configuration for the first time and three of its constants turned out to be per config. Two
-are fixed: the state variable a device list row marks device mode with is read off the file now,
-being a different variable in each of the fourteen configurations here and moving between two syncs
-of one remote, and a menu page is matched on the areas its hit page offers rather than on a hit page
-index. The blocker is the third thing: **the spare Harmony One drives six devices and its device list
-is two full pages of three.**
+**The missing page is composed, 3 September 2026, section 241**, and the candidate is in the lab as
+`work/20260903-one-spare-plus-lg.bin`. Section 239 had found the block: the spare Harmony One drives
+six devices and its device list is two full pages of three, and Logitech lays a seventh out as a third
+page holding one row. `composeDeviceScreen` builds that page now on every one of the spare's nine
+device list menus, deriving the one row hit page from the full page's own rectangles because the spare
+carries none with the device list's geometry, and copying the bottom key and page counter off the
+menu's own last page in either of the two shapes the configuration draws them in.
 
-There is one layout, three rows to a page, and a page binds exactly its hit page's area count minus
-three. So a seventh device is a **third page holding one row**, not a relayout, and the spare's
-configuration already carries hit pages offering the one row set. `composeDeviceScreen` refuses to
-build a new page rather than guessing at one.
+What the tool reports for the LG television, six commands, the television icon copied from the
+existing TV row:
 
-So the appliance to add and the tool to add it with are both ready, `packages/codec/bin/compose-device.ts`,
-and what stands in the way is one piece of phase 6 that was never needed on a five device config.
+```
+node packages/codec/bin/compose-device.ts --in ../lab/reads/20260830T1430Z-harmony-one-spare-config.bin \
+    --out ../lab/work/20260903-one-spare-plus-lg.bin --manufacturer LG --model OLED55C27LA \
+    --label LG --icon-like TV --commands PowerToggle,VolumeUp,VolumeDown,ChannelUp,ChannelDown,Mute
+1668321 bytes, 7 devices, group 6, mode 287, 9 device list menus: 0 grew a row, 9 got a page
+every byte accounted, no overlap, checksum agrees, emitter round trips, deepest action list 35 of 40 queue slots
+6 of 6 commands send a number this configuration already carries, so the device is known to answer them
+the write would touch 25 erase block(s) of 64 KiB, the first at offset 0x0, 2421 bytes longer than the input
+```
 
-- [ ] **compose a third device list page.** A page record, its tagged list and pool copy, its screen
-      program, and the flip wired to cycle three pages instead of two. The hit page is reused, like
-      the device page's own, and the nine device compile in the lab is a worked example of a menu
-      whose last page holds one row
+Twenty five of the configuration's 26 blocks, because 2421 inserted bytes move everything above them
+and only the block between the header and the first insertion stays, which is the other end of the
+scale from section 187's two block floor. The write is the next box and it
+waits for Danny's go, per the gate above.
+
+- [x] **compose a third device list page.** Section 241: a hit page derived from the full page's
+      rectangles or found by geometry, the page list and its pool copy, the mode entry grown by a
+      pointer, and a block holding the program, the page counter, the bottom key's arms and the page
+      record, everything in it read off the menu's own pages. Rendered, and it reads as Logitech's own
+      fourth page on the nine device compile does: the counter, the icon, the label, the bottom key in
+      both its states
 - [ ] write the config phase 6 produced to the spare Harmony One
 - [ ] press the device's button at the appliance and watch it respond
 - [ ] **check**: the appliance responds, the remote still boots, its clock is right, its other activities

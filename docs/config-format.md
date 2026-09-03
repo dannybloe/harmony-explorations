@@ -1350,6 +1350,11 @@ bit coordinates and the largest rectangle reaches 4437.
 A page's areas are laid out contiguously immediately before the page's own header, and each area's
 last three bytes are its own address; both hold for every page and every area in both configs.
 
+**A short device list page is the full page's rectangles**, section 241: for `r` rows it carries the
+full page's first `r` row rectangles under scans 48 upward, the full page's bottom key rectangle under
+scan `48 + r`, then the two edges. Stated by the one row and two row pages beside a full page on two
+configurations, and it is how `composeMenuPage` derives a hit page the configuration lacks.
+
 The code at `+0x08` takes ten values, 43, 44, 46, 47 and 48 to 53, which sit inside the block of
 scan codes the One's key table carries where arch 14 numbers 41 to 54. A page's codes run 48
 upward consecutively, then 43 and 44 for the two largest pages, and always end with 46 and 47,

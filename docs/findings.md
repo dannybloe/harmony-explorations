@@ -31007,3 +31007,102 @@ are unchanged and their populations are still the infrared groups.
   computed over, stated once and compared against the test table; `bin/devices.ts` prints the totals
   and `tools/facts.py` reads them, so the seven documents quoting them carry markers now.
 * `packages/codec/test/inventory.test.ts`: the moved counts, and the population comparison.
+
+## 241. A seventh device is a third page, and it is composed now
+
+**Date:** 3 September 2026. **Status:** confirmed by construction on the spare Harmony One's own
+configuration, read back through every reader this project has, rendered, and not yet written to a
+remote.
+
+**What was blocked in section 239 is built.** The spare Harmony One drives six devices over two full
+pages of three, and Logitech's compiler lays a seventh out as a third page holding one row, section
+239's reading of the nine device compile. `composeDeviceScreen` does the same now: when a menu's last
+page is full it composes a page rather than a row, and the spare's nine device list menus each gain
+one. The candidate for the first write that adds a device is in the lab, `work/20260903-one-spare-plus-lg.bin`:
+
+| | |
+|---|---|
+| input | the spare's configuration of 30 August 2026, 1665900 bytes, 6 devices |
+| output | 1668321 bytes, 7 devices, every byte accounted, no overlap, checksum agrees, emitter round trips |
+| device list menus | 9, every one full, every one given a third page |
+| hit pages | 39 to 40, one new page shared by all nine menus |
+| mode pages | 356 to 366 |
+| deepest action list | 35 of 40 queue slots, unchanged |
+| the write | 25 of the configuration's 26 blocks of 64 KiB, the second alone untouched |
+
+The last row is what a length change costs: 2421 bytes inserted below the header's own `end_addr`
+move everything above them, so the write is all of the configuration but the one block below the
+first insertion and above the header. Section 187 priced a same length edit at two blocks; this is the
+other end of the scale.
+
+### A short page's hit rectangles are the full page's
+
+The device list's hit page offers six areas, three rows, the bottom key and the two screen edges, and
+the spare carries no four area page with those rectangles: its three one row pages sit at other
+positions on the panel, so reusing one would have put the row's touch zone somewhere else than the
+row. The rule for deriving one is stated by two configurations. On the nine device compile, the one
+row page's area for scan 49 is the full page's area for scan 51, `(1257, 1395, 271, 1001)`, and its
+scan 48, 46 and 47 are the full page's own. On the spare, the same holds between its full page and its
+two row page, scan 50 there carrying the full page's scan 51 rectangle. So **the bottom key keeps its
+rectangle and takes the next scan up from the last row**, and a page for `r` rows is the full page's
+first `r` row rectangles, then the bottom key's under scan `48 + r`, then the edges. Composed once,
+found by geometry by the eight menus after it, so the hit map grows by one page and not nine.
+
+The hit map's own table could not be grown by `appendTableEntries`: that helper takes the slot's
+whole extent to be the table, and base slot 17's extent runs on past the pointers. It is grown off
+what `touchPages` read instead, a byte of count and three per page.
+
+### The page has two tails, and the counter is a number and a slash
+
+Everything a page needs is read off the menu's own pages, which is section 239's lesson applied
+before it was needed again: the chrome call, the row background, the device icon, the row font, the
+bottom key's binding and what the page draws after its rows. That last part has **two shapes** on one
+configuration. Eight menus close on a switch over state variable 38 with two arms, each drawing the
+bottom key label and jumping to a shared tail that draws the page counter, `Activities` against
+`Current Activity`; the ninth, the list shown while an activity runs, draws the label plain and the
+counter inline and ends. Both are copied instruction by instruction with every embedded address
+restamped, and an instruction the copier does not know how to restamp refuses rather than copying
+stale.
+
+The counter is **a number and a slash and no total**: the render of the nine device compile's fourth
+page reads `4/`, and the spare's second reads `2/`, so nothing on the existing pages changes when a
+third arrives. The number is drawn afresh in the font the tail selects, and the `/` is the shared
+string the other pages point at.
+
+### Three stale addresses in one afternoon, each caught by a reader
+
+The function inserts five times, and three times an address read before an insertion was used after
+it. The menu's pages, read before the hit page went in, made the last page's list read as binding
+its bottom key four times. The font table, read before the copy, the list and the entry went in, made
+font 11 report no glyph for a `3` it holds. And the chrome, background and icon addresses, read before
+the entry grew, put the page list pointer into base slot 10, where the emitter found two readers
+rebuilding one address differently. None of the three was found by inspection; each was a reader
+refusing, which is the argument for reading the result back through everything rather than trusting
+the composition. The rule the code carries now is the one section 239 already stated for a picture:
+**an address read before an insertion below it is stale by that insertion**, so every address the
+block embeds is read after the last relocation.
+
+### What is still carried as a constant
+
+The device page's own fonts, 9 for its title and its rows, and its hit page, 10, are per configuration
+in the same way section 239's three were: the nine device compile numbers its fonts differently and
+is refused for a missing glyph before its one row page can refuse it for the right reason. The spare
+and `one_config` agree with the constants, so nothing here is blocked by it, and it is written down
+rather than fixed because phase 9's target is the spare. Section 239's method applies: read them off
+an existing device page.
+
+### What would falsify it
+
+A Harmony One configuration whose short device list page gives its bottom key a rectangle other than
+the full page's. A menu page whose tail is a third shape, which the copier refuses rather than
+guessing. And the write itself: the remote drawing the third page, flipping to it, and entering the
+television's mode from its row is what this section does not yet claim.
+
+### Where it lands
+
+* `composeMenuPage` in `packages/codec/src/compose.ts`, called by `composeDeviceScreen` for a full
+  menu, with `iconLike` to say whose icon the row wears; `menuIconLike` and `sameRectangle` beside it.
+* `packages/codec/bin/compose-device.ts` takes `--icon-like` and reports rows grown against pages added.
+* `packages/codec/test/compose.test.ts`: the spare composed whole, the hit page's rectangles against
+  the full page's, the three, three, one shape on all nine menus, the render, the pool copies, and the
+  one row refusal exercised by composing twice.
