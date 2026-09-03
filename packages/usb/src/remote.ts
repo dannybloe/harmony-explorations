@@ -369,6 +369,19 @@ export class HarmonyRemote {
    * Bounded by the same idle poll count as a read, so a remote that has stopped talking costs the
    * same wait as any other silence rather than hanging.
    */
+  /**
+   * Read whatever a previous session left queued, before asking the remote anything.
+   *
+   * The drain on a failed read, below, cleans a pipe this session dirtied. It cannot clean one a
+   * **previous** session left: on 3 September 2026 the remote re-enumerated in the middle of a flash
+   * read, section 242, the handle that read died with it, and the next session's `GET_VERSION` was
+   * answered with the rest of that read. So a session that has to be right, the writer's, drains
+   * first. Reads only, bounded like the drain below, and quiet when there is nothing to take.
+   */
+  async drainLeftovers(): Promise<void> {
+    await this.drainFlashRead();
+  }
+
   private async drainFlashRead(): Promise<void> {
     let idle = 0;
     while (idle < this.idlePolls) {

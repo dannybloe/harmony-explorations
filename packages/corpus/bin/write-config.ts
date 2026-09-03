@@ -85,6 +85,8 @@ const SPARE_DUMPS = new Set([
   'one_spare_written_region',
   // After the first write that added a device, section 242, for the second one.
   'one_spare_plus_lg_region',
+  // Mid write: 24 blocks of the second candidate and one erased, section 242.
+  'one_spare_mixed_region',
 ]);
 
 /** The lab's name for the unit this may run against. One label, because there is one write target. */
@@ -170,6 +172,9 @@ async function main(): Promise<void> {
 
   const remote = new HarmonyRemote(await openHarmony({ productId }));
   try {
+    // A previous session that died mid read leaves the remote streaming, and the first question
+    // asked here would be answered with its leftovers. Section 242, the second device write.
+    await remote.drainLeftovers();
     const versionBytes = await remote.getVersion();
     const architecture = architectureFromVersion(versionBytes);
     if (architecture === undefined) {

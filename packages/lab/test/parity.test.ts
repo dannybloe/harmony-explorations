@@ -50,7 +50,7 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // `make test-nolab` caught, four times now, when the count was left behind by a registration.
   // 81 since `one_spare_20260830`, the fourth state of the spare Harmony One, read on 30 August 2026.
   // 82 since the read taken after the first write, section 222.
-  assert.equal(Object.keys(pythonImages()).length, 88, 'every fixture tests/lab.py names');
+  assert.equal(Object.keys(pythonImages()).length, 89, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {
@@ -75,5 +75,5 @@ test('the two sides exclude the same fixtures from the parseable population', ()
   // write that added a device left it, read as a region: section 241's candidate byte for byte, a
   // configuration this project composed rather than one Logitech compiled, so it is not a corpus
   // member either, section 242.
-  assert.equal(names.length, 9, 'each one a container already counted, or that container plus a known edit');
+  assert.equal(names.length, 10, 'each one a container already counted, or that container plus a known edit');
 });

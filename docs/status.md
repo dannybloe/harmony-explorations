@@ -665,8 +665,12 @@ answers it, section 242.** The candidate below was written on 3 September 2026, 
 identical, and Danny switched the LG on and off from the new row. The first attempt broke off halfway
 through its first block and the writer's compare had to learn what a half written block is before the
 rerun would go; the remote called itself unprogrammed until a battery pull, which is read as the
-memory of that broken boot and is one observation. The page's labels are wrong on the remote, measured
-through a stale font table and too long for their pads, fixed in the code and not yet written.
+memory of that broken boot and is one observation. The page's labels were wrong on the remote, measured
+through a stale font table and too long for their pads, and a second configuration with readable
+labels and a save stamp is on the remote since that afternoon: its clock is right, which is what the
+stamping rail exists for. That write took five attempts and three of them were the link rather than
+the code, section 242, which is also where the two open questions live: a block nothing of ours
+erased, and a remote that calls itself unprogrammed after a write until its battery comes out.
 
 **The missing page was composed first, section 241**, and the candidate configuration for the first
 write that adds a device was in the lab within the hour: the spare Harmony One's own configuration plus an LG television

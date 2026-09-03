@@ -770,11 +770,10 @@ waits for Danny's go, per the gate above.
       compare now recognises a half written block as known content, and the rerun went through
 - [x] press the device's button at the device and watch it respond. **The television switched on, and
       off again on the second press.** Danny at the set, 3 September 2026
-- [ ] **check**: the device responds (yes), the remote still boots (yes, after a battery pull; it called
-      itself unprogrammed until then, section 242), its other activities still work (yes), and the config
-      reads back byte identical (yes). **Its clock is wrong**, showing the input's build stamp of 22
-      August plus the uptime, because the save was not stamped; the tool stamps now and the second
-      candidate carries 3 September. Ticked when that one has booted with the right time
+- [x] **check**: the device responds, the remote boots, its other activities still work, the config reads
+      back byte identical, and **its clock is right** since the save is stamped, all observed on
+      3 September 2026. The remote calls itself unprogrammed after a write until its battery is pulled,
+      which happens after a clean write too and is section 242's open question
 - [x] write up the whole run as a finding, with what did not work the first time. Section 242, which
       also names the two defects on the page: labels measured through a stale font table and the
       catalogue's command names being wider than a pad. Both fixed in the code, neither yet on the remote

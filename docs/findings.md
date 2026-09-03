@@ -31140,12 +31140,11 @@ reports it. The second attempt then ran clean.
 **The remote said it was unprogrammed until its battery came out**, and that is the observation to
 carry. On the cable after the write it showed a USB connected message with no image; unplugged, it
 showed the screen that sends the user to the website to program it; after a battery pull it booted on
-the new configuration and showed the third page. The reading, **unconfirmed on one occurrence**: the
-reboot after the interrupted first attempt happened on a half written first block, which is exactly
-the state that screen exists for, and the second write completed underneath a remote that had already
-decided so. The message was the remote's memory of a bad boot and not the state of its flash, which
-the read back had shown to be right. What would settle it is a write that does not break off, on a
-remote that is watched through the cable pull.
+the new configuration and showed the third page. The reading offered here was that the message was
+the remote's memory of a bad boot rather than the state of its flash<!--superseded-->. It **was refuted the same
+afternoon** by the second write: it appeared again after a write that did not break off at all. So the
+screen follows a write while the remote is connected, whatever the write's outcome, and what is left
+to test is whether the remote's own bookkeeping in RAM outlives the flash it describes.
 
 ### What is wrong on the page, and why
 
@@ -31178,13 +31177,55 @@ shows either `Thu` or `Fri` at its first boot and settles it.
 
 The existing activity still works as it did, so the other check is ticked.
 
-### The second candidate
+### The second candidate, and the stamp works
 
 `work/20260903-one-spare-plus-lg-2.bin`, from the same 30 August input: the same device with labels
 `Power`, `Vol+`, `Vol-`, `Ch+`, `Ch-` and `Mute`, every one centred on its pad in the render, stamped
-`2026-09-03T11:22:35`, 1668291 bytes, 25 blocks again. Not written yet; its compare base is a region
-read of the remote as the first write left it, which does not exist until the remote is back on the
-cable.
+`2026-09-03T11:22:35`, 1668291 bytes, 25 blocks again. **It is on the remote and its clock is right**,
+observed by Danny after a battery pull, which is the check the rail exists for: base slot 3 and the
+clock's seven state values stamped at save time, and a remote that resets its clock to that stamp at
+every boot then boots on the correct date and time.
+
+The labels are readable on the remote, so both defects of the first write are closed.
+
+### The second write cost five attempts and taught four things
+
+| attempt | what happened |
+|---|---|
+| 1 | a read during the compare lost a chunk, section 223. Nothing erased |
+| 2 | two blocks erased and written, then a neighbour baseline read returned 1798 of 32768 bytes. The remote re-enumerated, so it rebooted under the reader |
+| 3 | `GET_VERSION` answered with a flash data reply: the dead session's stream was still queued |
+| 4 | run in the background, killed after eight minutes on a log that had stopped moving |
+| 5 | refused: the remote and the dump differed at `0x70000`, `0xff` on the device |
+
+**A session inherits the previous session's stream, and the drain has to run before the first
+question.** Section 223 drains after a failed read, which cleans a pipe this session dirtied; it
+cannot clean one a **dead** session left, and a handle dies with a remote that re-enumerates. So
+`HarmonyRemote.drainLeftovers` exists and the writer calls it before it asks anything.
+
+**A quiet log is not a stopped write, and killing one is how a remote reaches a state no dump
+describes.** Attempt 4 was killed on the reasoning that eight minutes on one compare read was a stall.
+The flash afterwards held **24 of the 25 blocks of the second candidate**, byte for byte, which the
+logs of every attempt account for two of. The disagreement is unresolved and the flash is the half
+that was measured, twice, by two independent reads. What follows for practice is the rule rather than
+the explanation: a read may be killed, a write is killed only once the remote has stopped answering,
+and the state afterwards is unknown until a region read says otherwise.
+
+**`0x70000` was erased by nothing this project sent.** Attempt 2's neighbour check verified that block
+intact after erasing its neighbour, no later attempt sent an erase, and the block reads as 65536 bytes
+of `0xff` in two sessions. The standing hypothesis, **unconfirmed**, is the remote itself: section 47's
+log area writer is disarmed by a good configuration on arch 12, and the remote spent that period
+holding a configuration whose checksum did not match. What would settle it is watching that block
+while a corrupt configuration boots.
+
+**The unprogrammed screen is not a memory of a bad boot**, which this section said after the first
+write. It appeared again after the second write completed cleanly, and cleared again with a battery
+pull. So it follows a write while the remote is connected, whatever the write's outcome, and the
+reading to test is that the remote's own bookkeeping in RAM outlives the flash it describes.
+
+The registered dumps grew by two, the state after the first write and the mid write state, which is
+the wart section 237 named: a compare that makes a write recoverable is against a named lab image, so
+every write leaves the remote matching none.
 
 ### What would falsify it
 
