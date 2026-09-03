@@ -31737,6 +31737,12 @@ outcome.
 
 ### What would falsify it
 
+**Section 250 supplies a sharper one and it is unrun**: from a remote power cycled into a verified
+state, a write with neither the invalidate nor the restart is predicted to leave the ordinary screen
+too, because nothing in a write clears the verdict that a status screen needs to be gone. If that
+holds, this section's two steps are still right to send and section 248's attribution of the screen
+to the invalidate is wrong.
+
 A write with the full sequence that still leaves the remote asking for a sync, or that still needs a
 battery pull. Either would mean the two steps are not what those symptoms were about, and the
 symptoms have now survived every other write this project has made.
@@ -31751,21 +31757,28 @@ symptoms have now survived every other write this project has made.
 * The remote is left with that device's power on delay half a second longer than Logitech's compiler
   put it, which is a deliberate, reversible difference rather than an oversight.
 
-## 248. The control separates the two steps: it is the cache drop, not the restart
+## 248. The control separates the two steps, and its conclusion was overturned the same day
 
 **Date:** 3 September 2026. **Status:** measured on the spare Harmony One, arch 12, one write, with
-Danny reading the screen off the cable.
+Danny reading the screen off the cable. **The measurement stands and the conclusion does not**:
+section 250, read out of the firmware a few hours later, shows that no write clears the flag a status
+screen needs to be gone, so this run cannot be evidence that the invalidate is what suppresses the
+screen. The heading said "it is the cache drop, not the restart"<!--superseded--> and the argument is
+at the end of this section, kept rather than rewritten, because the recorded mistake is the point.
 
 **Section 247 closed two symptoms with two commands and could not say which did it.** This is the
 control it named: the same write with the cache drop sent and the restart deliberately withheld,
 `--no-restart` in `write-config.ts`, which skips a command and adds nothing. Afterwards the remote
 was unplugged, **not** battery pulled, and it showed the ordinary activities screen.
 
-So the answer is the invalidate. The restart is a convenience, and both stay in the sequence because
-that is what concordance and Logitech's own client both do, but the thing that stops a Harmony One
-asking to be synced after a write is dropping its cached region descriptors before the erase.
+**So the answer is the invalidate**<!--superseded-->, was the reading, with the restart a
+convenience. Both do stay in the sequence, because both working implementations send them, and the
+invalidate has a better reason than this one: section 250 finds that it is what makes the remote
+**re-validate** the bytes we just wrote, where a write with no invalidate leaves a verdict that was
+earned against different bytes. What this run does not establish is the counterfactual, since a write
+without the invalidate from the same starting state was never performed.
 
-### Why this comparison is unusually clean
+### Why this comparison looked unusually clean, and what it was missing
 
 The configuration written here is `20260903-one-spare-plus-lg-2.bin`, byte for byte the container
 that was already on the remote at 12:57 that day. Section 242's sixth attempt put those same bytes on
@@ -31784,6 +31797,13 @@ and the one command before the first erase is the only difference.
 The third column is section 247 and the fourth is this one, so the pair moves one variable at a time
 from a state where the symptom appeared.
 
+**What the table leaves out is the remote's own state going in**, and section 250 says that is the
+variable that mattered. The 12:57 write is one of a run of attempts during which the remote crashed
+mid-erase and booted onto an incomplete configuration; the two later ones started from a remote that
+had been power cycled into a configuration it had validated. A status screen needs the verdict to be
+gone when the validator runs, and only a boot, a licence failure, a checksum failure or the invalidate
+clears it. So the rows differ in more than the one command.
+
 ### What it does not establish
 
 **That the message can only ever be set by a write with no invalidate.** The inference rests on the
@@ -31791,6 +31811,12 @@ morning's writes setting it on every attempt, clean ones included, which they di
 still leaves the condition that selects a status screen unread. A reading of that condition in the
 firmware would turn this from a controlled observation into a mechanism, and it is the obvious next
 thing to look for.
+
+**That reading happened, sections 249 and 250, and it did not confirm this one.** The caveat above is
+the right caveat and it was not strong enough: what the firmware says is that a write clears nothing,
+so the state the remote was in before each run is doing the work this section attributed to one
+command. The lesson to keep is that a control which moves one variable in the **host's** behaviour is
+not a control over the **device's** state, and nothing here measured the latter.
 
 **And it says nothing about the other architectures.** Arch 14 copies its configuration into internal
 flash rather than executing it in place, so the descriptors this clears describe something different
@@ -31916,17 +31942,21 @@ read out of the firmware before**. The bit is the same bit the invalidate comman
 
 ### How the validator runs after boot, which is what the bench saw
 
-It runs twice at boot, once per container. It also runs from a **polled re-check**: while a port bit
-is in one state and the configuration counts as verified, a flag is armed; when the port bit changes
-and the verified flag has gone, both containers are validated again. What the port bit physically is
-has not been identified, and the cable is the obvious candidate.
+It runs twice at boot, once per container. It also runs from a **polled re-check** in the main loop,
+and section 250 reads that poll in full: the port bit is the **cable**, the flag is armed while the
+cable is out and the verdict stands, and both containers are validated while the cable is in, the flag
+is armed and the verdict has gone. This section guessed the cable and left the direction open; the
+direction matters, because it is what makes a failed validation a one way door.
 
-That closes the bench story of sections 247 and 248. After a write the verified flag is gone, so the
-re-check fires. Without the invalidate it reported **screen 0**, which by the reading above means a
-cookie did not match, and the flash demonstrably held the right cookies, since the whole
-configuration read back byte for byte. So the read that fed the cookie check was not seeing the flash
-the write had left. After the write that was killed half way it reported **screen 26** instead, which
-is the checksum arm, and that is exactly right for 24 blocks of one configuration and one erased.
+**This paragraph read the bench backwards and section 250 corrects it.** It said that after a write
+the verified flag is gone so the re-check fires, and that without the invalidate the failing check
+meant "the read that fed the cookie check was not seeing the flash the write had left"<!--superseded-->.
+Neither half survives: **no erase or write handler clears the verified flag**, so a write on its own
+fires no re-check at all, and none of the validator's read helpers can reach the cached descriptors,
+so clearing them cannot change whether a cookie matches. What the bench actually hit was the **boot**
+path, on a remote that crashed mid-erase, and what keeps a screen up afterwards is a latch section 250
+reads out. The screen numbers and the two arms above are unaffected; what was wrong is the account of
+which run reached them and why.
 
 ### What is still open
 
@@ -31953,3 +31983,115 @@ mean the byte is not the discriminator this says it is.
 * `packages/codec/test/status.test.ts`: the code plus base mapping over six containers, with the
   control that no neighbouring base fits.
 * Section 244's closing paragraph, corrected in place, and `reference/superseded.md`.
+
+## 250. Why the screen stays up until the batteries come out, and what the invalidate is really for
+
+**Date:** 3 September 2026. **Status:** read out of the Harmony One 3.4 application image, with
+`tests/test_status_screens.py` behind every claim. **It corrects section 249's account of the bench
+and section 248's attribution**, both of which were written the same day and both of which read the
+mechanism backwards.
+
+### The correction first
+
+Section 249 said the invalidate must change what the cookie read sees, reasoning that the flash held
+the right cookies and the remote said otherwise, so the read had to be at fault. The reasoning was
+sound and the conclusion is wrong. **None of the validator's six read helpers can reach the module
+that owns the cached descriptors**, at any depth a call chain search follows, while the invalidate's
+own executor reaches it immediately, which is the control that makes the search an answer rather than
+a failure. So clearing a descriptor cannot change whether a cookie matches, and the sentence
+"the read that fed the cookie check was not seeing the flash the write had left"<!--superseded--> has
+nothing behind it.
+
+What is true is better, and it explains something no previous section could.
+
+### A status screen needs the verdict already gone
+
+Both configuration screens sit behind one test of the verified bit. **If the remote already counts
+its configuration as verified, a validation that fails displays nothing at all**: the jump goes past
+both calls. So a screen means the bit was clear at the moment the validator ran.
+
+The bit is written in exactly **five** places, and this is the fact everything else turns on:
+
+| | what it is |
+|---|---|
+| `0x2C860` | the boot initialisation, which clears it |
+| `0x28AB6` | the boot arm that fails a licence check |
+| `0x28FFA` | a trailer checksum that disagrees |
+| `0x29006` | a trailer checksum that agrees, which sets it |
+| `0x266B8` | the `WRITE_MISC` invalidate |
+
+**No erase, write or transfer handler touches it.** So a configuration write, on its own, leaves the
+remote's old verdict standing, and the remote goes on believing a configuration it has not looked at.
+
+### The latch, which is the part nobody had explained
+
+The main routine, reached from the reset vector, polls one routine in its loop. That routine has two
+halves and they are gated on the cable, which is `PORTA` bit 4: the routine that answers whether USB
+is up refuses on that bit before it even reads the USB control register, so set means a cable and
+clear means none.
+
+* **While the cable is out and the verdict stands**, it arms a flag.
+* **While the cable is in, the flag is armed and the verdict has gone**, it validates both
+  containers, and then clears the flag whatever it found. No branch protects that clear.
+
+Put those together and the behaviour follows. A validation that fails leaves the verdict clear and
+the flag cleared, so the arming condition, cable out **and** verdict standing, can never be met
+again. **The remote never looks at its configuration again.** No amount of unplugging, replugging or
+writing will move it, and a power cycle is the only way out, because only the boot path validates
+without needing an armed flag.
+
+That is the "until a battery pull" that sections 242, 244 and 247 all recorded as an observation.
+
+### So what is the invalidate for
+
+**It is what makes the remote check our work.** Sending it clears the verdict, so the re-check fires
+while the cable is still in, the validator runs over the configuration we just wrote, and a
+configuration that passes gets the verdict set again. Without it the remote keeps a verdict it earned
+against different bytes.
+
+That is a better reason to send it than the one section 248 gave, and it reverses the sign of the
+advice. A write with no invalidate does not avoid the screen by being safer. It avoids the screen by
+**not looking**, and the state it leaves behind, a verdict that was never re-earned, is the state
+that turns into a stuck screen the moment the remote does boot.
+
+### Section 248's control, re-read
+
+That section wrote the same container again with the invalidate and the restart withheld, got the
+ordinary screen, and concluded the invalidate is what closes the screen. The observation stands and
+the conclusion does not follow. What the run actually shows is that a write **with** the invalidate
+leaves a remote whose verdict has been re-earned against the bytes on the flash, which is the
+outcome to want. It does not show what a write **without** the invalidate would have done from the
+same starting state, because that was never run.
+
+**The experiment that would separate them is now specified rather than guessed**, and it is one run:
+from a remote power cycled into a verified state, write two blocks with **neither** the invalidate nor
+the restart. This reading predicts **no screen**, because nothing clears the verdict, and it predicts
+the remote is left believing a configuration it has not read. A screen appearing would refute this
+section outright.
+
+### What the bench episode was, then
+
+Section 242's writes crashed the remote mid-erase, which its own notes record, and arch 12 executes
+its configuration in place out of the flash being erased. On the boot that followed, the boot path
+validated an incomplete configuration with the verdict cleared by the boot initialisation, failed,
+put a screen up and latched. A later clean write could not clear it, and did not: only the battery
+pull did. That accounts for the corrupted screen after the killed attempt, the website screen after
+the others, and the fact that a clean write appeared not to help.
+
+### What is still open
+
+* **Which of the two failures the bench actually hit**, since a cookie and a checksum are
+  distinguishable on the screen but nobody read the screen at each boot.
+* **What the descriptors are for**, which is now a separate question rather than part of this one:
+  three records of five bytes, byte 0 bit 0 marking one live, thirty sites addressing them inside one
+  module, and no reader in the validator's path.
+* **Whether arch 14 latches the same way.** Its display routine and its validator have the same
+  shape, and neither its poll nor its flag has been read.
+
+### Where it lands
+
+* `tests/test_status_screens.py`: the five writers of the verified bit and the erase and write
+  handlers being outside them, the guard in front of both screen calls, the poll's two halves, the
+  unconditional clear of the flag, the cable bit's polarity from the USB routine, and the negative
+  that no read helper reaches the descriptor module with the invalidate's executor as its control.
+* Sections 248 and 249, corrected in place, and `reference/superseded.md`.

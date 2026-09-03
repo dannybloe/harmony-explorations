@@ -439,7 +439,7 @@ finding.
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 249<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 250<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -728,7 +728,19 @@ screens seen on the bench are accounted for. The search that had failed was for 
 with a spread of literals, and the index that matters is zero, written by a clear rather than by a
 literal. Reading it also confirmed the container's own pointer table from the firmware, since the
 second marker's offset is exactly where a table of 22 four byte items ends on a Harmony One and 20 on
-a Harmony 600. One read settles where the screen comes from: the identity block's
+a Harmony 600.
+
+**And a second reading the same evening overturned what we thought the fix was, section 250.** A
+status screen only appears if the remote's own verdict on its configuration has already been thrown
+away, and **nothing in a write throws it away**: the five places that touch that verdict are the boot,
+a licence check, the two arms of the checksum test, and the invalidate command. So a write on its own
+makes the remote check nothing, and the screen the bench saw came from a **boot** over a
+half-written configuration. What keeps it up is a latch: the remote only re-checks while it still
+holds a good verdict, so a failed check is a one way door and a power cycle is the only way back,
+which is the battery pull three earlier sections recorded without explaining. The invalidate's real
+job is therefore the opposite of suppressing the screen: it is what makes the remote read the bytes we
+just wrote and earn a fresh verdict. Section 248's attribution is withdrawn and the run that would
+settle it is specified and unrun. One read settles where the screen comes from: the identity block's
 software type says 0 running normally and 4 in safe mode, and the container these screens live in
 sits with the bootloader rather than with the configuration.
 

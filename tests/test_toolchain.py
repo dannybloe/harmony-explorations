@@ -1572,7 +1572,11 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # transfer's chunk size, which is one of the numbers a blind reviewer is meant to derive
         # off Logitech's client unaided. It is inside `packages/usb/`, which the withhold list
         # covers whole, so nothing widens. The list was re-read against all 31 before this moved.
-        self.assertEqual(len(stating), 31,
+        # 32 since section 249, which added `tests/test_status_screens.py`: it names the erase and
+        # write handlers, in a negative asserting they do not touch the validator's flag. `tests/`
+        # is withheld whole, so nothing widens. The list was re-read against all 32 before this
+        # number moved.
+        self.assertEqual(len(stating), 32,
                          'the number of files stating the write path moved, so re-read the withhold '
                          'list before restamping this: %s' % stating)
 

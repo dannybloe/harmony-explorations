@@ -751,7 +751,14 @@ document:
   section 249: the firmware raises a status **code**, the same number on every architecture, and the
   two configuration messages are the two arms of one test in the container validator. A cookie that
   does not match gives code 0, "Go to Website to update settings"; cookies that match with a trailer
-  checksum that does not gives code 26, "Configuration Corrupted". Setting the clock over USB, their step 8, is
+  checksum that does not gives code 26, "Configuration Corrupted".
+  **What the invalidate is for is not what section 248 concluded**, section 250: no erase or write
+  handler clears the flag a status screen needs to be gone, so a write fires no re-check at all. The
+  invalidate is what makes the remote **re-validate** the bytes just written, and without it the
+  remote keeps a verdict earned against different bytes. A screen goes up on a **boot** over an
+  incomplete configuration, and it stays up because the re-check arms its flag only while that verdict
+  stands, so a failed validation is a one way door out of which only a power cycle leads.
+  Setting the clock over USB, their step 8, is
   deliberately **not** implemented, because our writer stamps the configuration and an arch 12 remote
   reseeds its clock from that stamp at every boot. And a transfer is **3150 bytes**, which is
   Logitech's client's number and concordance's alike, where ours was 32768 until 3 September 2026.

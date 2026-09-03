@@ -280,5 +280,232 @@ class WhichContainerIsValidatedIsOneBit(unittest.TestCase):
         self.assertEqual(built, ONE_PAGE_REGISTER)
 
 
+
+#: The cached region descriptors the invalidate command clears, section 246: three records of five
+#: bytes, addressed as `index * 5 + 0x0EE8`, byte 0 bit 0 marking a record live.
+DESCRIPTORS_AT = 0x0EE8
+DESCRIPTOR_STRIDE = 5
+DESCRIPTOR_COUNT = 3
+#: The module that owns them. Every site that computes an address into the table sits inside it.
+DESCRIPTOR_MODULE = (0x29CF0, 0x2A230)
+
+#: The five read helpers the validator uses, which is the population the negative below is over.
+VALIDATOR_READ_HELPERS = (0x2BA2C, 0x2B98C, 0x2B8AC, 0x2BA14, 0x2B8F8, 0x2B88A)
+
+#: The main routine, called from the reset vector, and the poll inside its loop.
+ONE_MAIN = 0x28A0E
+ONE_ENTRY_POINT = 0x2EA38
+ONE_POLL = 0x2906C
+ONE_POLL_CALL = 0x28B90
+#: The re-check's three gates, and the flag it arms and clears.
+ONE_ARMED_FLAG = 0x318
+ONE_REVALIDATE = 0x29082
+ONE_CLEARS_THE_FLAG = 0x290A6
+
+#: Every place the verified bit is written, bank confirmed. None of them is in a write handler.
+ONE_VERIFIED_BIT = 2
+VERIFIED_WRITERS = {0x266B8: 'BCF', 0x28AB6: 'BCF', 0x28FFA: 'BCF', 0x29006: 'BSF', 0x2C860: 'BCF'}
+
+#: The routine that answers whether USB is up, and the bit it refuses on.
+ONE_USB_PRESENT = 0x20354
+CABLE_BIT = 4
+
+
+def _bit_writes(name, base, address, bit):
+    """Every BSF or BCF of one bit of one data address, with the bank confirmed rather than guessed."""
+    code = lab.load(name)
+    off, bsr, out = 0, None, {}
+    while off + 2 <= len(code):
+        instr = isa.decode(code, off, base)
+        at = base + off
+        if instr.category == isa.BANKSEL:
+            bsr = instr.fields['k']
+        if instr.category == isa.BIT and instr.fields['b'] == bit \
+                and instr.mnemonic in ('BSF', 'BCF'):
+            where, _ = isa.resolve_file(instr.fields['f'], instr.fields['a'], bsr)
+            if where == address and bsr == (address >> 8):
+                out[at] = instr.mnemonic
+        off += 2 * instr.words
+    return out
+
+
+def _routine(instrs, entry):
+    """One routine's instructions, from its entry to the first return at or after it."""
+    out = []
+    for at, instr in instrs:
+        if at < entry:
+            continue
+        out.append((at, instr))
+        if instr.mnemonic.startswith('RETURN') or instr.mnemonic == 'RETLW':
+            break
+    return out
+
+
+def _reaches(instrs, entry, low, high, depth=6, seen=None):
+    """Whether a call or jump chain from `entry` gets into [low, high), within `depth` levels."""
+    if seen is None:
+        seen = set()
+    if entry in seen or depth == 0:
+        return False
+    seen.add(entry)
+    for _, instr in _routine(instrs, entry):
+        target = instr.fields.get('target')
+        if target is None or instr.mnemonic not in ('CALL', 'RCALL', 'GOTO', 'BRA'):
+            continue
+        if low <= target < high:
+            return True
+        if instr.mnemonic in ('CALL', 'RCALL', 'GOTO') \
+                and _reaches(instrs, target, low, high, depth - 1, seen):
+            return True
+    return False
+
+
+class TheValidatorsReadNeverConsultsTheCachedDescriptors(unittest.TestCase):
+    """The negative that refutes section 249's own account of the bench, in place.
+
+    That section said the invalidate must change what the cookie read sees, on the reasoning that
+    the flash held the right cookies and the remote reported otherwise. The reasoning was sound and
+    the conclusion is wrong: none of the validator's read helpers can reach the module that owns the
+    descriptors, so clearing them cannot change whether a cookie matches. Section 250 has what does.
+    """
+
+    def test_the_descriptor_table_is_addressed_only_inside_one_module(self):
+        """Thirty sites, all in one range, which is what makes the negative below checkable."""
+        instrs = _instructions('one34_code', 0x20000)
+        sites = []
+        for n, (at, instr) in enumerate(instrs):
+            if instr.mnemonic != 'MULLW' or instr.fields.get('k') != DESCRIPTOR_STRIDE:
+                continue
+            literals = [p.fields['k'] for _, p in instrs[n:n + 12] if p.mnemonic == 'MOVLW']
+            if DESCRIPTORS_AT & 0xFF in literals and DESCRIPTORS_AT >> 8 in literals:
+                sites.append(at)
+        self.assertEqual(len(sites), 30)
+        low, high = DESCRIPTOR_MODULE
+        self.assertTrue(all(low <= at < high for at in sites),
+                        'every site inside 0x%05X to 0x%05X' % DESCRIPTOR_MODULE)
+
+    def test_no_read_helper_of_the_validator_reaches_that_module(self):
+        instrs = _instructions('one34_code', 0x20000)
+        low, high = DESCRIPTOR_MODULE
+        for helper in VALIDATOR_READ_HELPERS:
+            with self.subTest(helper=hex(helper)):
+                self.assertFalse(_reaches(instrs, helper, low, high),
+                                 'a read helper must not consult a cached descriptor')
+
+    def test_the_control_is_that_the_invalidate_handler_does_reach_it(self):
+        """Otherwise the search above could be failing rather than answering."""
+        instrs = _instructions('one34_code', 0x20000)
+        low, high = DESCRIPTOR_MODULE
+        self.assertTrue(_reaches(instrs, 0x266B2, low, high),
+                        "the invalidate's own executor reaches the module")
+
+
+class AStatusScreenNeedsTheVerifiedBitAlreadyClear(unittest.TestCase):
+    """Section 250, and it is what makes the screen a latch rather than a report.
+
+    Both configuration screens sit behind one test of the verified bit: if the remote already counts
+    its configuration as verified, a failing validation displays nothing at all. So a screen means
+    the bit was clear when the validator ran, and the four places that clear it are what matters.
+    """
+
+    def test_the_two_screen_calls_are_behind_a_test_of_that_bit(self):
+        instrs = _instructions('one34_code', 0x20000)
+        guard = dict((at, i) for at, i in instrs).get(0x29010)
+        self.assertIsNotNone(guard)
+        self.assertEqual(guard.mnemonic, 'BTFSC')
+        self.assertEqual(guard.fields['b'], ONE_VERIFIED_BIT)
+        # And it jumps past both calls when the bit is set.
+        self.assertEqual(dict(instrs)[0x29012].fields['target'], 0x29032)
+        for site in (0x29022, 0x2902E):
+            self.assertLess(site, 0x29032, 'the screen call is skipped by that jump')
+
+    def test_the_bit_is_written_in_five_places_and_none_is_a_write_handler(self):
+        """Exactly five, so a sixth writer would fail this rather than pass unnoticed.
+
+        The five are: the boot initialisation, the boot arm that fails a licence check, the checksum
+        mismatch, the checksum match, and the `WRITE_MISC` invalidate. **No flash write, erase or
+        transfer handler touches it**, which is the fact section 250 turns on: a write on its own
+        leaves the remote's verdict standing.
+        """
+        writes = _bit_writes('one34_code', 0x20000, 0x1A4, ONE_VERIFIED_BIT)
+        self.assertEqual(writes, VERIFIED_WRITERS)
+        # The erase and write handlers, from `tests/test_external_erase.py`, are outside all five.
+        for handler in (0x265FC, 0x2B862, 0x2B87E):
+            self.assertNotIn(handler, writes)
+
+
+class TheRemoteCanOnlyReCheckWhileItsVerdictStands(unittest.TestCase):
+    """Why a status screen stays up until the batteries come out, which nothing here had explained.
+
+    The main loop polls one routine. It **arms** a flag while the cable is out and the configuration
+    counts as verified, and it **re-validates** while the cable is in, the flag is armed and the
+    verdict has gone. The flag is cleared after a re-validation whatever the outcome. So a failed
+    validation leaves the verdict clear, the arming condition can never be met again, and the remote
+    never looks at its configuration again. A power cycle is the only way out.
+    """
+
+    def test_the_poll_runs_from_the_main_loop_reached_from_the_reset_vector(self):
+        instrs = _instructions('one34_code', 0x20000)
+        by_address = dict(instrs)
+        self.assertEqual(by_address[ONE_POLL_CALL].fields['target'], ONE_POLL)
+        self.assertEqual(by_address[ONE_ENTRY_POINT].fields['target'], ONE_MAIN)
+        self.assertLess(ONE_MAIN, ONE_POLL_CALL, 'the poll is inside that routine')
+
+    def test_arming_needs_the_cable_out_and_the_verdict_standing(self):
+        instrs = dict(_instructions('one34_code', 0x20000))
+        # cable in -> straight to the re-validation half
+        self.assertEqual(instrs[0x29070].fields['target'], ONE_REVALIDATE)
+        self.assertEqual(instrs[0x29070].mnemonic, 'BNZ')
+        # verdict gone -> the same, so the flag is armed on neither
+        self.assertEqual(instrs[0x29078].fields['target'], ONE_REVALIDATE)
+        self.assertEqual(instrs[0x29078].mnemonic, 'BZ')
+        self.assertEqual(instrs[0x2907E].mnemonic, 'MOVWF')
+        self.assertEqual(instrs[0x2907E].fields['f'], ONE_ARMED_FLAG & 0xFF)
+
+    def test_the_flag_is_cleared_after_a_revalidation_whatever_it_found(self):
+        """The half that makes it a one way door: no branch protects the clear."""
+        instrs = _instructions('one34_code', 0x20000)
+        by_address = dict(instrs)
+        self.assertEqual(by_address[ONE_CLEARS_THE_FLAG].mnemonic, 'CLRF')
+        self.assertEqual(by_address[ONE_CLEARS_THE_FLAG].fields['f'], ONE_ARMED_FLAG & 0xFF)
+        between = [i for at, i in instrs if 0x29096 <= at < ONE_CLEARS_THE_FLAG]
+        self.assertEqual([i.mnemonic for i in between if i.fields.get('target') is not None],
+                         ['RCALL', 'RCALL', 'CALL'],
+                         'the two validations and one more call, and no conditional branch')
+
+
+class ThePortBitTheReCheckWaitsOnIsTheCable(unittest.TestCase):
+    """Which is what makes the account above about plugging in rather than about an unknown input.
+
+    The routine that answers whether USB is up refuses on this bit before it looks at the USB
+    module's own control register, so the bit set means a cable and clear means none.
+    """
+
+    def test_the_usb_present_routine_refuses_on_the_bit_before_reading_ucon(self):
+        instrs = dict(_instructions('one34_code', 0x20000))
+        test = instrs[ONE_USB_PRESENT]
+        self.assertEqual((test.mnemonic, test.fields['b']), ('BTFSS', CABLE_BIT))
+        _, name = isa.resolve_file(test.fields['f'], test.fields['a'], None)
+        self.assertEqual(name, 'PORTA')
+        # Bit clear takes the branch, which returns zero without looking at the USB module.
+        self.assertEqual(instrs[ONE_USB_PRESENT + 2].fields['target'], 0x20360)
+        self.assertEqual(instrs[0x20360].mnemonic, 'RETLW')
+        self.assertEqual(instrs[0x20360].fields['k'], 0)
+        # Bit set falls through to two tests of UCON, the USB control register.
+        for at in (0x20358, 0x2035C):
+            _, register = isa.resolve_file(instrs[at].fields['f'], instrs[at].fields['a'], None)
+            self.assertEqual(register, 'UCON')
+
+    def test_the_recheck_and_the_usb_routine_read_the_same_bit(self):
+        """Otherwise the polarity above would be about some other input."""
+        instrs = dict(_instructions('one34_code', 0x20000))
+        for at in (ONE_POLL, 0x29088):
+            read = instrs[at]
+            self.assertEqual(read.mnemonic, 'MOVF')
+            _, name = isa.resolve_file(read.fields['f'], read.fields['a'], None)
+            self.assertEqual(name, 'PORTA')
+            self.assertEqual(instrs[at + 2].mnemonic, 'ANDLW')
+            self.assertEqual(instrs[at + 2].fields['k'], 1 << CABLE_BIT)
+
 if __name__ == '__main__':
     unittest.main()

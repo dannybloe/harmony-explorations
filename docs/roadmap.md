@@ -156,8 +156,16 @@ implementations send it, and it is now known not to be what fixes the screen.
 The firmware raises a status code, one routine displays it, and that routine has exactly five callers,
 so there are five conditions and no more. The two configuration messages are the two arms of one test
 in the container validator: a marker in the file that does not match shows "go to the website", and a
-checksum that does not match shows "configuration corrupted". What is left is one level lower and
-named in the section: which read below the validator the cleared descriptors change.
+checksum that does not match shows "configuration corrupted".
+
+**And the level below that turned out to change nothing, section 250.** The cached descriptors are
+unreachable from every one of the validator's read helpers, so section 249's account of the bench is
+withdrawn. What is true is sharper: a status screen needs the remote's verdict on its configuration
+to be already gone, no write clears that verdict, and the remote re-checks only while the verdict
+stands, so a failed check latches until a power cycle. That is the battery pull three earlier
+sections recorded without explaining. The invalidate's job is to make the remote re-validate what we
+wrote rather than to suppress a screen, so section 248's attribution is withdrawn too, and the one
+run that would settle it is specified at the end of section 250 and not yet performed.
 
 **The page section 239 found missing was composed the same morning, section 241:** on the
 spare's own configuration every device list menu gains a third page holding one row, on a hit page
