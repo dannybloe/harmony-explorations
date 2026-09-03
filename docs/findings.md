@@ -31415,6 +31415,14 @@ The capitals matter, because the application image carries its own `USB Connecte
 Spanish, French and English in title case, so the two spellings say which of the two was on the
 screen.
 
+**The icon settles it, and that is a measurement rather than a spelling.** Not one of the 30 screens
+draws a bitmap or a picture: they are text on a bare screen, in all five containers. So an icon on the
+screen means the application is drawing its own screen and not one of these. Danny described the
+screen after the write as `USB CONNECTED` with **no image**, and the screen a connected remote shows
+in its ordinary state, checked on the cable on 3 September 2026 with the application confirmed to be
+running, as `USB Connected` with the icon. Each description fits exactly one of the two, so the remote
+was not in its normal interface after the write.
+
 **The calibration is that the same remote showed a different screen when its configuration really was
 broken.** After the attempt that was killed mid write, with 24 blocks of one configuration and one
 block erased, it said its configuration was **corrupted**, which is entry 26. After a write that

@@ -18,7 +18,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { load, skipWithoutLab, require_ } from '@harmony/lab';
-import { parse, screenStrings } from '../src/index.ts';
+import { bitmapReference, parse, pictureReference, screenProgram, screenStrings } from '../src/index.ts';
 
 /** The status containers, by architecture, and where each one came from. */
 const ARCH12 = ['one_safemode', 'one34_region2'];
@@ -49,6 +49,19 @@ const ARCH14_EXTRA = [
  * by the page list instead would need two readings, since arch 12 lists a wrapper and its text
  * program as two entries while arch 14 lists one program twice.
  */
+function statusPrograms(name: string): Map<number, string> {
+  const container = parse(load(name)!);
+  const byProgram = new Map<number, string[]>();
+  for (const drawn of screenStrings(container) as Array<{ program: number; text: string }>) {
+    const lines = byProgram.get(drawn.program);
+    if (lines === undefined) byProgram.set(drawn.program, [drawn.text.trim()]);
+    else lines.push(drawn.text.trim());
+  }
+  return new Map([...byProgram.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([at, lines]) => [at, lines.join(' ')]));
+}
+
 function statusScreens(name: string): string[] {
   const container = parse(load(name)!);
   const byProgram = new Map<number, string[]>();
@@ -108,4 +121,22 @@ test('the USB screen is one of these too, in capitals the firmware does not use'
   assert.ok(one.includes(CONNECTED));
   assert.equal(one.filter((s) => s.toLowerCase().includes('usb')).length, 2,
     'this one and the initialisation screen');
+});
+
+test('a status screen is text and nothing else, which is what the icon distinguishes', skipWithoutLab(), () => {
+  for (const sample of SAMPLES) require_(sample);
+  // Danny described two screens on the spare that afternoon: the one it shows now with the cable in,
+  // "USB Connected" with an icon, and the one it showed after a write, "USB CONNECTED" with no
+  // image. Neither description is worth anything unless the two screens differ measurably, and they
+  // do: no status screen in any of these containers draws a bitmap or a picture, so an icon on the
+  // screen means the application is drawing its own and not one of these.
+  for (const name of SAMPLES) {
+    const container = parse(load(name)!);
+    for (const [at, text] of statusPrograms(name)) {
+      const drawn = screenProgram(container, at) ?? [];
+      const art = drawn.filter((i) =>
+        bitmapReference(i) !== undefined || pictureReference(i) !== undefined);
+      assert.equal(art.length, 0, `${name}: '${text}' draws ${art.length} image(s)`);
+    }
+  }
 });
