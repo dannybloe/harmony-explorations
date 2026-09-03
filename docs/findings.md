@@ -31446,6 +31446,12 @@ this container physically sits. `read-identity.ts` prints the **software type**,
 and 4 in safe mode, so reading it on the cable straight after a write is the measurement, and it is a
 single read.
 
+**A read only session does not trigger it**, measured on 3 September 2026 on the spare Harmony One.
+One `GET_VERSION` and 2048 single byte reads of its data memory, then the cable out: the remote went
+straight back to its ordinary activities screen. So a host merely talking to it is not the cause, and
+the trigger is something the write does that a read does not. The rung above this one, a full
+configuration read, which is what the writer performs before it writes anything, is unrun.
+
 Two things follow for the meantime. **The open question is reworded** rather than answered: a remote
 that has just been written to shows a status screen asking for a sync, and what sets it is unknown.
 And **that wording is dead**<!--superseded-->, since the remote says nothing of the kind and the table
