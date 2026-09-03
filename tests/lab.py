@@ -224,6 +224,7 @@ IMAGES = {
     # touches. Leading bytes identical to one_spare_written_by_us, tail identical to the earlier
     # region read.
     'one_spare_written_region': '20260901T091517Z-one-spare-written-region-0x40000-0x1e0000.bin',
+    'one_spare_plus_lg_region': '20260903T092929Z-one-spare-plus-lg-region-0x40000-0x1e0000.bin',
     # Two configs Logitech compiled to a specification we wrote, 13 August 2026, and the corpus's only
     # **known answer** samples: three devices and two activities chosen by us, on a throwaway account,
     # then compiled by the live service and downloaded without a byte reaching a remote. Section 132.
@@ -378,7 +379,8 @@ def _find(filename):
 PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_config',
                       'one_spare_after_first_write', 'one_spare_20260901_delay',
                       'one_spare_20260901_denon', 'one_spare_20260901_region',
-                      'one_spare_written_by_us', 'one_spare_written_region')
+                      'one_spare_written_by_us', 'one_spare_written_region',
+                      'one_spare_plus_lg_region')
 
 CONTAINERS = (
     'h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'h525_config_2', 'one_config',

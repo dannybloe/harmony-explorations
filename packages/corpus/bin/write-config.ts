@@ -83,6 +83,8 @@ const SPARE_DUMPS = new Set([
   // The state after the first config this codec wrote, so the revert has something to compare
   // against. Every write adds one of these, which section 237 records as the open wart.
   'one_spare_written_region',
+  // After the first write that added a device, section 242, for the second one.
+  'one_spare_plus_lg_region',
 ]);
 
 /** The lab's name for the unit this may run against. One label, because there is one write target. */

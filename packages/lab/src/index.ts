@@ -226,6 +226,10 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // one compares against, so the compare that makes a write recoverable is also what makes it one
   // way until a fresh read exists.
   one_spare_written_region: '20260901T091517Z-one-spare-written-region-0x40000-0x1e0000.bin',
+  // The spare as the first write that added a device left it, 3 September 2026, section 242: the
+  // first candidate of section 241 byte for byte over its 1668321 bytes, then zero fill. The compare
+  // base for the second write, which carries readable labels and a stamp.
+  one_spare_plus_lg_region: '20260903T092929Z-one-spare-plus-lg-region-0x40000-0x1e0000.bin',
   // Two configs Logitech compiled to a specification we wrote, 13 August 2026: the corpus's only
   // known answer samples. Section 132. Not in the corpus wide lists, on purpose; see tests/lab.py.
   calibration_one: 'calibration-one-spare.bin',
@@ -344,7 +348,7 @@ export const IMAGES: Readonly<Record<string, string>> = {
 export const PARSEABLE_EXCLUDED: readonly string[] =
   ['vendor_region_user_config', 'vendor_region_embedded_config', 'one_spare_after_first_write',
     'one_spare_20260901_delay', 'one_spare_20260901_denon', 'one_spare_20260901_region',
-    'one_spare_written_by_us', 'one_spare_written_region'];
+    'one_spare_written_by_us', 'one_spare_written_region', 'one_spare_plus_lg_region'];
 
 const cache = new Map<string, string[]>();
 
