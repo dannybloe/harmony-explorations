@@ -439,7 +439,7 @@ finding.
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 248<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 249<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -714,8 +714,21 @@ is not a claim to be unprogrammed: it is "Go to Website to update settings", one
 screens the firmware ships, and the table keeps separate screens for an invalid configuration and a
 corrupted one. That distinction is one the remote really draws, since it showed the corrupted screen
 at the moment its flash was independently measured to be inconsistent and the website screen after a
-write that read back byte for byte. So the configuration is not what it is complaining about, and
-what selects the screen is unread. One read settles where the screen comes from: the identity block's
+write that read back byte for byte.
+
+**And what selects the screen is read now, section 249.** The firmware raises a status **code**, and
+the same number means the same screen on all three architectures read; the record it reaches is that
+code plus a base per container, which is why the message is entry 0 on a Harmony One and entry 5 on a
+Harmony 600. One routine displays a screen and it has exactly five callers, so there are five
+conditions and no more. The two configuration messages are the two arms of one test at the end of the
+routine that validates a container: it checks three markers in the file and then its checksum, and a
+marker that does not match shows "go to the website" while a checksum that does not match shows
+"configuration corrupted". So the two messages mean two different things, precisely, and both of the
+screens seen on the bench are accounted for. The search that had failed was for a variable written
+with a spread of literals, and the index that matters is zero, written by a clear rather than by a
+literal. Reading it also confirmed the container's own pointer table from the firmware, since the
+second marker's offset is exactly where a table of 22 four byte items ends on a Harmony One and 20 on
+a Harmony 600. One read settles where the screen comes from: the identity block's
 software type says 0 running normally and 4 in safe mode, and the container these screens live in
 sits with the bootloader rather than with the configuration.
 

@@ -31431,15 +31431,21 @@ one the firmware actually draws, and the remote reports the two states different
 answer case rather than a reading of ours: the corrupted screen was seen at a moment when the flash
 was independently measured to be inconsistent.
 
-**And position is not what selects a screen.** The website message is entry 0 on the Harmony One and
-entry 5 on arch 14, so the tempting reading, that entry 0 is what a remote shows when nothing set a
-status code, cannot be right for both.
+**And position is not what selects a screen**<!--superseded-->, which was read off the website
+message being entry 0 on the Harmony One and entry 5 on arch 14. **Section 249 refutes it and
+position is exactly what selects one**: the firmware raises a status **code**, the same number on
+every architecture, and the record it reaches is that code plus a base per container, 0 on arch 12, 5
+on arch 14 and 11 on arch 9. What this paragraph had right is the narrower point it was reaching for:
+entry 0 is not a default shown when nothing set a code. It is code 0, and code 0 has a meaning.
 
 ### What is still open, and what would settle it
 
-Which condition selects entry 0 is unread. The application image holds no variable that is written
-with a spread of literals in the range of these indices, so the index is not assigned as a constant,
-and the routine that draws one has not been found. Two candidates remain and one command
+Which condition selects entry 0 is unread<!--superseded-->; **section 249 reads it**, and the
+reason given here for the failure is worth keeping because it was the wrong reason. The application
+image holds no variable written with a spread of literals in the range of these indices, and that is
+true and useless: the index that matters is **zero**, written by a `CLRF`, so a search for literals
+was looking for the one thing that is not there. The routine that draws one is `0x2871C` and it has
+five callers. Two candidates remain and one command
 distinguishes them: if the remote is running its **application** it is the application drawing a
 status screen, and if it is not, the screen belongs to safe mode or the bootloader, which is where
 this container physically sits. `read-identity.ts` prints the **software type**, 0 running normally
@@ -31804,3 +31810,146 @@ demonstrated block by block from a dump.
   every other run should send the restart.
 * `tests/test_write_sequence.py` gains the round trip: the region after the revert against the region
   before the edit.
+
+## 249. What puts a status screen on the display, and which condition picks which one
+
+**Date:** 3 September 2026. **Status:** read out of four firmware images, three architectures, with
+`tests/test_status_screens.py` and two tests in `packages/codec/test/status.test.ts` behind it. The
+bench half is sections 247 and 248, and this is the mechanism under them.
+
+**Section 244 named the thirty screens and left the selection unread**, and it said why: no variable
+in the application image is written with a spread of literals in the range of these indices. That
+search could not have found this one. **The index that matters is written by `CLRF` and carries no
+literal at all**, because it is zero, so a search for literals was looking for the one thing that is
+not there. The route that worked was the other way round: find the routine that displays a screen,
+then read its callers.
+
+### One routine, and every caller is a condition
+
+`0x2871C` on the Harmony One takes a 16 bit screen number in two adjacent bytes and displays it. It
+has **exactly five callers**, and the same routine with the same shape exists in every image:
+
+| | Harmony One | 600 and 700 | Harmony 525 |
+|---|---|---|---|
+| the routine | `0x2871C` | `0x14B3C`, `0x16B20` | `0x05D38` |
+| callers | 5 | 5 | 4 |
+| numbers passed | 27, 9, 25, 26, 0 | 22, 27, 25, 26, 0 | 27, 25, 26, 0 |
+
+Against section 244's table those are **Missing License**, **LCD Module Failed** or **Battery ADC Not
+Calibrated**, **Application Terminated**, **Configuration Corrupted** and **Go to Website to update
+settings**. Five apt names out of a table of thirty, and each sits in a code path where its name
+makes sense: the licence one after a check that returns a yes or no, the hardware one beside it in
+the boot sequence, and the two configuration ones at the end of the routine that validates a
+container.
+
+**The numbers are the same on every architecture**, which is what makes them a status code rather
+than a position: 0, 25, 26 and 27 appear in all four images with the same value.
+
+### The record they select is the code plus a base per container
+
+This is where section 244's last paragraph needs correcting. It observed that the website message is
+entry 0 on the Harmony One and entry 5 on arch 14 and concluded that **position is not what selects a
+screen**<!--superseded-->. Position is exactly what selects it. What differs is where the container
+starts counting:
+
+| | code | Harmony One record | arch 14 record | Harmony 525 record |
+|---|---|---|---|---|
+| Go to Website to update settings | 0 | 0 | 5 | 11 |
+| LCD Module Failed | 9 | 9 | 14 | 20 |
+| Battery ADC Not Calibrated | 22 | 22 | 27 | 33 |
+| Application Terminated | 25 | 25 | 30 | 36 |
+| Configuration Corrupted | 26 | 26 | 31 | absent |
+| Missing License | 27 | 27 | 32 | 38 |
+
+One base per container, `0`, `5` and `11`, fits every screen with no exception, and the control is
+that neither neighbouring offset does. Six containers, 35 of a possible 36 agreements. **Where arch
+14 and arch 9 apply their base is open**: their display routine adds nothing, so it happens below,
+and that is a falsifiable prediction rather than a guess.
+
+The arch 9 figure comes from a **user configuration** rather than a status container, which is an
+oddity worth its own look: on that architecture these screens appear to travel with the config.
+
+### Screen 0 against screen 26 is one byte
+
+The two configuration screens are the two arms of one test, at the end of the container validator,
+`0x28D92` on the Harmony One. The validator clears one byte at its entry and sets it in exactly one
+place. Read as a sentence:
+
+* it checks three cookies in the container, and **any failure jumps to the screen block with the
+  byte still zero**, which is screen 0, **Go to Website to update settings**;
+* if the cookies pass it computes the trailer checksum and compares it with the stated one, and a
+  **mismatch sets the byte to one**, which is screen 26, **Configuration Corrupted**;
+* a match sets the verified flag and shows nothing.
+
+So the two messages mean two different things and the difference is precise. Screen 26 says "I read
+a container here and its checksum is wrong". Screen 0 says "I never got as far as a checksum".
+
+### The three cookies, and a firmware confirmation of section 20 that came free
+
+The checks are the container's own markers, in this order:
+
+| | what | where |
+|---|---|---|
+| 1 | `GSPM`, or `AHCM` on arch 9 | offset 0 |
+| 2 | `LWJL` | offset `0x63` on arch 12, `0x5B` on arch 14 |
+| 3 | `PTYY` | the section base slot 4 points at |
+
+**`0x63` is `0x0B + 4 * 22` and `0x5B` is `0x0B + 4 * 20`.** Section 20 corrected both parsers here
+from a `u32` table at `0x0C` to a table of four byte items at `0x0B`, one slot longer than either had
+read, and the closure offered then was that the arithmetic hits the marker offset on seventeen
+samples. This is the firmware performing the same arithmetic: the slot counts in the key facts table,
+22 on arch 12 and 20 on arch 14, are Logitech's own.
+
+### Which container is validated is one bit, and it names both bases
+
+`0x2BA2C` positions a container read and branches on a single bit of one flags byte, writing one of
+two values to the page register at `0x020025`:
+
+| bit | page | flash | which container |
+|---|---|---|---|
+| set | `0x01` | `0x040000` | the user configuration |
+| clear | `0xFD` | `0x002000` | the status screens |
+
+A page is the flash address's top byte less three, so `0x00 - 3` wraps to `0xFD`. Both bases were
+known, one from where a configuration is written and one from a dump's offset, and **neither had been
+read out of the firmware before**. The bit is the same bit the invalidate command clears, section 246.
+
+### How the validator runs after boot, which is what the bench saw
+
+It runs twice at boot, once per container. It also runs from a **polled re-check**: while a port bit
+is in one state and the configuration counts as verified, a flag is armed; when the port bit changes
+and the verified flag has gone, both containers are validated again. What the port bit physically is
+has not been identified, and the cable is the obvious candidate.
+
+That closes the bench story of sections 247 and 248. After a write the verified flag is gone, so the
+re-check fires. Without the invalidate it reported **screen 0**, which by the reading above means a
+cookie did not match, and the flash demonstrably held the right cookies, since the whole
+configuration read back byte for byte. So the read that fed the cookie check was not seeing the flash
+the write had left. After the write that was killed half way it reported **screen 26** instead, which
+is the checksum arm, and that is exactly right for 24 blocks of one configuration and one erased.
+
+### What is still open
+
+* **Where the cleared descriptors come in.** `0x2BA2C` takes the container base from the bit alone
+  and consults nothing, so whatever the invalidate changes is inside the read below it. The
+  descriptor table is reached through computed pointers and no `LFSR` names it, so the tracer cannot
+  see it and following the arithmetic is the next dig.
+* **Where arch 14 and arch 9 add their base**, per the prediction above.
+* **What the port bit is.**
+* **Why arch 9 carries these screens in a user configuration.**
+
+### What would falsify it
+
+A sixth caller of the display routine on arch 12, which would be a condition unaccounted for. A
+status screen appearing that is not one of the five. A container whose named screens do not sit at
+their code plus one base. Or a remote showing screen 26 with cookies that do not match, which would
+mean the byte is not the discriminator this says it is.
+
+### Where it lands
+
+* `tests/test_status_screens.py`: the display routine and its call sites per image, the numbers, the
+  discriminator's single writer, the three cookie exits, the cookies themselves, the marker offsets
+  against the slot counts, and the two container bases.
+* `packages/codec/test/status.test.ts`: the code plus base mapping over six containers, with the
+  control that no neighbouring base fits.
+* Section 244's closing paragraph, corrected in place, and `reference/superseded.md`.

@@ -152,6 +152,13 @@ the invalidate and the restart withheld left the ordinary screen, where those sa
 without it had asked for a sync every time. The restart stays in the sequence because both working
 implementations send it, and it is now known not to be what fixes the screen.
 
+**And the screen itself is read, section 249**, which closes the last of that afternoon's questions.
+The firmware raises a status code, one routine displays it, and that routine has exactly five callers,
+so there are five conditions and no more. The two configuration messages are the two arms of one test
+in the container validator: a marker in the file that does not match shows "go to the website", and a
+checksum that does not match shows "configuration corrupted". What is left is one level lower and
+named in the section: which read below the validator the cleared descriptors change.
+
 **The page section 239 found missing was composed the same morning, section 241:** on the
 spare's own configuration every device list menu gains a third page holding one row, on a hit page
 derived from the full page's rectangles, and the candidate file passes every reader, the emitter and

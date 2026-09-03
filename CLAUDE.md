@@ -747,7 +747,11 @@ document:
   the same day and it is the invalidate**, section 248: the same bytes written again with the
   invalidate and the restart withheld left the ordinary screen too, where writing those same bytes
   without the invalidate had asked for a sync every time. So the restart is a convenience and both
-  stay, because that is what both working implementations do. Setting the clock over USB, their step 8, is
+  stay, because that is what both working implementations do. **And the screen itself is read now**,
+  section 249: the firmware raises a status **code**, the same number on every architecture, and the
+  two configuration messages are the two arms of one test in the container validator. A cookie that
+  does not match gives code 0, "Go to Website to update settings"; cookies that match with a trailer
+  checksum that does not gives code 26, "Configuration Corrupted". Setting the clock over USB, their step 8, is
   deliberately **not** implemented, because our writer stamps the configuration and an arch 12 remote
   reseeds its clock from that stamp at every boot. And a transfer is **3150 bytes**, which is
   Logitech's client's number and concordance's alike, where ours was 32768 until 3 September 2026.

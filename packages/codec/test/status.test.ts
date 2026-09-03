@@ -18,7 +18,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { load, skipWithoutLab, require_ } from '@harmony/lab';
-import { bitmapReference, parse, pictureReference, screenProgram, screenStrings } from '../src/index.ts';
+import { bitmapReference, modeRecords, parse, pictureReference, screenProgram, screenStrings } from '../src/index.ts';
 
 /** The status containers, by architecture, and where each one came from. */
 const ARCH12 = ['one_safemode', 'one34_region2'];
@@ -137,6 +137,94 @@ test('a status screen is text and nothing else, which is what the icon distingui
       const art = drawn.filter((i) =>
         bitmapReference(i) !== undefined || pictureReference(i) !== undefined);
       assert.equal(art.length, 0, `${name}: '${text}' draws ${art.length} image(s)`);
+    }
+  }
+});
+
+/**
+ * The status codes the firmware raises, section 249, and the screen each one has to reach.
+ *
+ * These five numbers were read out of four firmware images by finding the routine that displays a
+ * status screen and looking at what its callers pass it. They are the same numbers on every
+ * architecture. What differs is where the container puts the record they select, which is what the
+ * test below measures.
+ */
+const CODES: ReadonlyArray<readonly [number, string]> = [
+  [0, 'Go to Website'],
+  [9, 'LCD Module'],
+  [22, 'Battery ADC'],
+  [25, 'Application'],
+  [26, 'Configuration / Corrupted'],
+  [27, 'Missing'],
+];
+
+/** Where each architecture's container starts counting, measured below rather than assumed. */
+const RECORD_BASE: Record<string, number> = {
+  one_safemode: 0, one34_region2: 0,
+  h700_gspm: 5, h600_safemode_gspm: 5, h650_safemode_gspm: 5,
+  // One arch 9 sample, and it is a **user configuration** rather than a status container, which is
+  // itself worth a look: on that architecture these screens travel with the config.
+  h525_config: 11,
+};
+
+/** The first screen of each mode record, since a status screen is one record holding one page. */
+function recordScreens(name: string): string[] {
+  const container = parse(load(name)!);
+  const byProgram = new Map<number, string[]>();
+  for (const drawn of screenStrings(container) as Array<{ program: number; text: string }>) {
+    const lines = byProgram.get(drawn.program);
+    if (lines === undefined) byProgram.set(drawn.program, [drawn.text.trim()]);
+    else lines.push(drawn.text.trim());
+  }
+  return (modeRecords(container) ?? []).map((record) => {
+    const page = record.pages[0] as { program: number } | undefined;
+    if (page === undefined) return '';
+    return (byProgram.get(page.program) ?? []).join(' / ');
+  });
+}
+
+test("a status code plus the container's own base is the record it shows", skipWithoutLab(), () => {
+  for (const sample of Object.keys(RECORD_BASE)) require_(sample);
+  // **This is the half the firmware cannot state and the container cannot either.** The image says
+  // the code is 26; the container says record 31 is the corrupted screen; only the two together say
+  // arch 14 counts from five. Every screen of every container is checked against one base per
+  // container, so a base fitted to one screen would fail on the next.
+  let checked = 0;
+  for (const [name, offset] of Object.entries(RECORD_BASE)) {
+    const screens = recordScreens(name);
+    for (const [code, words] of CODES) {
+      const at = screens[code + offset];
+      if (at === undefined || at === '') continue;
+      if (!at.startsWith(words)) continue;
+      checked += 1;
+    }
+    // Every code the container has a screen for must land, so count them the other way too: how
+    // many of the six names appear anywhere, against how many appear at code plus the base.
+    const anywhere = CODES.filter(([, words]) => screens.some((s) => s.startsWith(words))).length;
+    const landed = CODES.filter(([code, words]) =>
+      (screens[code + offset] ?? '').startsWith(words)).length;
+    assert.equal(landed, anywhere,
+      `${name}: ${anywhere} of these screens exist and ${landed} sit at their code plus ${offset}`);
+  }
+  // 35 rather than a floor, out of a possible 36: six names in six containers, less the one screen
+  // that is absent from one of them. The figure is stated because a base fitted per container could
+  // pass the equality above while quietly matching fewer screens than exist.
+  assert.equal(checked, 35, 'name and position agreeing, across six containers');
+});
+
+test('no other base would fit, which is what makes the offset measured', skipWithoutLab(), () => {
+  for (const sample of Object.keys(RECORD_BASE)) require_(sample);
+  // The control. An offset that lands six screens is only evidence if the neighbouring offsets do
+  // not, and a table of thirty short entries is exactly where an accident could happen.
+  for (const [name, offset] of Object.entries(RECORD_BASE)) {
+    const screens = recordScreens(name);
+    const score = (shift: number) => CODES.filter(([code, words]) =>
+      (screens[code + shift] ?? '').startsWith(words)).length;
+    const best = score(offset);
+    for (const wrong of [offset - 2, offset - 1, offset + 1, offset + 2]) {
+      if (wrong < 0) continue;
+      assert.ok(score(wrong) < best,
+        `${name}: offset ${wrong} scores ${score(wrong)} against ${best} for ${offset}`);
     }
   }
 });
