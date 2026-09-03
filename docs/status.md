@@ -439,7 +439,7 @@ finding.
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 244<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 245<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -659,6 +659,16 @@ figures common to both carry `fact:` markers, so `make facts` moves every copy t
 cannot drift apart; what a reader should not expect is two independent statements of one measurement.
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
+
+**Our config write is missing three of a working implementation's steps, section 245.** Read out of
+concordance on 3 September 2026, after two configurations had been written: a working write on a
+Harmony One is invalidate the flash, erase, write, verify, reset the remote, set its clock, and ours
+is erase, write, verify. The invalidate exists so that nothing references the configuration while it
+is being replaced, which matters most on the one architecture that executes its configuration in
+place, and the reset is the battery pull that has been done by hand after every write here. The
+transfer size is fixed already: both Logitech's client and concordance cap a write at 3150 bytes and
+ours was sending 32768, ten times longer than anything either has been seen to send. The three
+missing steps are writes and are not implemented yet.
 
 **Phase 9 is done: a device out of Logitech's catalogue is on the spare Harmony One and the television
 answers it, section 242.** The candidate below was written on 3 September 2026, 25 blocks read back

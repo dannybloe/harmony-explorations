@@ -31463,3 +31463,93 @@ has two other things it says when a configuration is wrong.
   the negative that the message is neither of the configuration screens.
 * `docs/config-format.md`: what the container at flash `0x002000` holds.
 * Section 242's open question, reworded in place, and `reference/superseded.md`.
+
+## 245. A working config write is eight steps and ours was two
+
+**Date:** 3 September 2026. **Status:** read out of concordance's own source, `libconcord/`, against
+`docs/host-client.md`'s reading of Logitech's client. Protocol facts only, no code taken, decision 1.
+The transfer size is changed and tested; the three missing steps are not implemented yet.
+
+**This section exists because the reading came after the writes and not before.** Decision 2 says to
+read Logitech's client and the firmware before deriving anything, and concordance has been checked
+out beside this repository the whole time. Two configurations were written to the spare Harmony One
+on 3 September, one of them over six attempts, before anybody opened `CRemote::WriteFlash`. Every
+number below was sitting there.
+
+### What a working implementation does
+
+`_update_configuration_hid` in `libconcord.cpp`, in order:
+
+| | step | what it is | do we? |
+|---|---|---|---|
+| 1 | `prep_config` | arch 14 only, returns immediately on every other architecture | not needed on arch 12 |
+| 2 | `invalidate_flash` | `WRITE_MISC` with a one byte payload of `0x02`, answered by a done naming `WRITE_MISC`. Its own comment: "so that nothing will attempt to reference it while we're working" | **no** |
+| 3 | `erase_config` | the whole config range, block by block | yes, per block |
+| 4 | `write_config_to_remote` | the transfers | yes |
+| 5 | `verify_remote_config` | read back and compare | yes, per block |
+| 6 | `finish_config` | arch 14 only, returns immediately elsewhere | not needed on arch 12 |
+| 7 | `reset_remote` | `0xE0` with a payload of `0x02`, then wait for the remote to come back on the bus | **no** |
+| 8 | `_set_time` | the host's clock, over USB | **no** |
+
+So on a Harmony One a working write is invalidate, erase, write, verify, reset, set the time, and
+ours is erase, write, verify.
+
+**Step 2 is the one that should have been read before touching a remote.** Arch 12 executes its
+configuration **in place** out of the flash being erased, key facts in `CLAUDE.md`, so a write with
+no invalidate is an erase underneath a running interpreter. Two writes that afternoon broke off part
+way through a block, once with the host unable to hand the remote a packet and once with the remote
+rebooting under the next read, and neither has any other explanation on the table.
+
+**Step 7 is the open question from section 244, answered from the other side.** `reset_remote` sends
+a device reset and waits for the remote to boot, which is exactly the battery pull that has been done
+by hand after every write here. A remote that is never told to restart has no reason to leave the
+state it is in, and the state it is in is showing a status screen. This does not say which condition
+picks that screen; it says why the remote stays in it.
+
+**Step 8 is why a concordance written remote has the right time**, and it carries a wrinkle worth
+recording rather than acting on: concordance fills the day of week field from the host's `tm_wday`,
+which counts **Sunday as 0**, where base slot 3's own field is days since 1 January 2000 modulo 7,
+which makes **Saturday 0** and is validated against all 21 containers. Two conventions, one field.
+That is a lead for section 242's day name puzzle and it is not settled here.
+
+### The transfer size, which is changed
+
+Ours announced an address and then sent **520 data packets** before saying it was done, twice per
+64 KiB block, because `MAX_TRANSFER` was `0x8000`: half of the announce's 16 bit limit, which splits a
+block into two equal halves. Reasoned from the protocol's ceiling rather than from anything a remote
+has been seen to accept.
+
+Both working implementations cap a transfer at **3150 bytes**, which is 50 packets of 63. Logitech's
+client sends fifty whole packets per announce, section 213; concordance's `max_chunk_len` is 3150 for
+every protocol but the seven byte one, where it is 749 and is 107 packets of 7. Two implementations
+sharing no code, written years apart, agreeing on the byte. Ours was **10.4 times longer** than either
+has ever sent.
+
+`MAX_TRANSFER` is 3150 now, so a block is 21 transfers instead of 2, with 21 acknowledgement round
+trips instead of 2 and about the same number of reports. A failure now loses at most 3150 bytes of
+progress.
+
+**Nothing in the workspace noticed that change**, and that is the second half of this section. No test
+named `transfersFor`, `MAX_TRANSFER` or `reportCount`, so the burst length could be changed tenfold
+with every test still passing. `packages/usb/test/blockwrite.test.ts` exists now: the transfers tile
+the block exactly, a 64 KiB block is 21 of them with the last one 2536 bytes, and the count a dry run
+quotes is compared against what the request builder actually builds rather than against the formula
+written a second time.
+
+**Pacing is settled and it is not the difference.** Neither implementation sleeps between packets, so
+`betweenPacketsMs` staying 0 agrees with both. What was wrong was the length of the burst, not its
+speed.
+
+### What would falsify it
+
+A write with the invalidate and the reset in place that still breaks off part way through a block,
+which would put the fault somewhere else entirely. A remote that comes back to its ordinary screen
+after a reset without a battery pull is the positive result for step 7; one that does not refutes the
+reading of section 244's screen as a state the remote is simply left in.
+
+### Where it lands
+
+* `packages/usb/src/blockwrite.ts`: `MAX_TRANSFER`, with both references named.
+* `packages/usb/test/blockwrite.test.ts`: the transfer plan, which had no test.
+* Open: the invalidate, the reset and the clock, all three of them writes, so all three behind the
+  rails and `WRITES_ENABLED`.

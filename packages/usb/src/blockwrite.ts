@@ -23,14 +23,29 @@ import type { WritePermission } from './rails.ts';
 import { writeChunkLengths } from './writes.ts';
 
 /**
- * A single transfer's size.
+ * A single transfer's size, which is **both working implementations' number and not ours**.
  *
- * The announce carries a 16 bit count, so 65535 is the hard limit; half of it is used because an
- * erase block is 64 KiB and two equal halves split it exactly, where 65535 would leave a transfer
- * of one byte behind. The constant is the choice and the comment used to state only the limit,
- * which reads as if the limit produced the number.
+ * 3150 bytes is 50 packets of 63, and it is what Logitech's own client sends per announce, section
+ * 213, and what concordance caps a chunk at, `max_chunk_len` in its `CRemote::WriteFlash` for every
+ * protocol but the seven byte one, where it is 749 and is 107 packets of 7. Two implementations that
+ * share no code and were written years apart agree on the byte, which is as strong as agreement gets
+ * here.
+ *
+ * **This was 0x8000 until 3 September 2026 and that was reasoned from the wrong end.** The announce
+ * carries a 16 bit count, so 65535 is the hard limit, and half of it splits a 64 KiB erase block into
+ * two equal transfers. Both true, and neither is evidence about what a remote will accept: it made
+ * our transfers **10.4 times longer** than anything the vendor or concordance has ever sent one. Two
+ * writes that afternoon broke off part way through a block, once with the host unable to hand the
+ * remote a packet at all and once with the remote rebooting under the next read, and a burst ten
+ * times longer than the only two known good implementations use is the first thing to suspect.
+ * Section 245.
+ *
+ * The cost is 21 transfers per block instead of 2, so 21 acknowledgement round trips instead of 2 and
+ * about the same number of reports. What it buys is that a failure loses at most 3150 bytes of
+ * progress rather than 32768, and that our write path stops being the only one of three doing
+ * something nobody has seen a remote accept.
  */
-export const MAX_TRANSFER = 0x8000;
+export const MAX_TRANSFER = 3150;
 
 /** A refusal from this sequence, so a caller can tell it from a transport error. */
 export class BlockWriteError extends Error {}
