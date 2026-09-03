@@ -24,6 +24,7 @@
  */
 import {
   ESCAPE_END_SESSION,
+  ESCAPE_RESET,
   ERASE_FLASH,
   FLASH_CHUNK_DATA,
   GET_VERSION,
@@ -47,6 +48,8 @@ import {
   assertFlashWriteAllowed,
   assertDeliberateHangAllowed,
   assertRamWriteAllowed,
+  assertInvalidateAllowed,
+  assertResetAllowed,
   assertSessionEndAllowed,
   type WritePermission,
 } from './rails.ts';
@@ -56,6 +59,7 @@ import {
   eraseFlashRequest,
   writeFlashRequests,
   escapeRequest,
+  invalidateRequest,
   writeFlashRequest,
   writeMiscRequest,
 } from './writes.ts';
@@ -711,6 +715,52 @@ export class HarmonyRemote {
   ): Promise<void> {
     assertSessionEndAllowed(p, ESCAPE_END_SESSION);
     await this.send(escapeRequest(ESCAPE_END_SESSION));
+  }
+
+  /**
+   * Drop the remote's cached region descriptors: `0xA1 0x02`, step 2 of a config write.
+   *
+   * **Why a write needs it**, section 245: concordance's own comment is that it exists "so that
+   * nothing will attempt to reference it while we're working", and arch 12 executes its
+   * configuration in place out of the flash a write is about to erase. Ours did not send it, and two
+   * writes on 3 September 2026 broke off part way through a block.
+   *
+   * **What it actually does was read before it was ever sent**, section 246: three five byte records
+   * in data memory and a two byte entry each in a second table, no flash gate reached, nothing
+   * persistent. So the name upstream gives it, invalidate flash, is misleading, and `MISC_INVALIDATE`
+   * carries the correction.
+   *
+   * It **is** acknowledged, unlike the escape, and the acknowledgement's command byte is checked for
+   * the reason `writeRam`'s comment gives: a reply to some other command satisfies a bare `kind`
+   * test.
+   */
+  async invalidateCachedRegions(p: WritePermission): Promise<void> {
+    assertInvalidateAllowed(p);
+    const reply = await this.exchange(invalidateRequest());
+    if (reply.kind !== 'ack') throw new RemoteError('the invalidate was not acknowledged');
+    if (reply.command !== WRITE_MISC) {
+      throw new RemoteError(
+        `the remote acknowledged command 0x${reply.command.toString(16)}, not WRITE_MISC`,
+      );
+    }
+  }
+
+  /**
+   * Restart the remote: the escape with sub-command `0x02`, the last step of a config write.
+   *
+   * `0x02` sets a flag whose single reader drives the top level mode to 3, and mode 3 waits and then
+   * executes the PIC18 `RESET` instruction, section 97. concordance sends this and then waits for the
+   * remote to reappear on the bus, which is the battery pull this bench has been doing by hand after
+   * every write, section 245.
+   *
+   * **No reply is waited for and the handle is finished afterwards.** Nothing acknowledges a command
+   * that ends in a reset, and the device leaves the bus, so a caller closes the handle and, if it
+   * needs the remote again, enumerates afresh. concordance ignores the transport error its own write
+   * of this report can return for the same reason.
+   */
+  async resetDevice(p: WritePermission): Promise<void> {
+    assertResetAllowed(p);
+    await this.send(escapeRequest(ESCAPE_RESET));
   }
 }
 

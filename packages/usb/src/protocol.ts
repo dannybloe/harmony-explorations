@@ -195,6 +195,32 @@ export function readMiscRequest(selector: number, parameter: number): Uint8Array
 export const MISC_RAM = 0x07;
 
 /**
+ * `WRITE_MISC` selector `0x02`, which concordance calls `invalidate_flash` and which touches no
+ * flash at all on a Harmony One.
+ *
+ * **Read from the image before it was ever sent**, `docs/findings.md` section 246, because the
+ * comment above about `MISC_RAM` is the standing warning that upstream's selector names have already
+ * been wrong for one architecture. Arch 12's `WRITE_MISC` selector chain is at `0x26626` and
+ * `chains.py` puts `0x02` at `0x266B2`, which calls `0x2A05E` and then clears bits 2 and 3 of the
+ * flags byte at `0x1A4`. `0x2A05E` walks **three** five byte records in **data memory** at `0x0EE8`,
+ * clearing bit 0 of each and zeroing its other four bytes, and calls a leaf at `0x27C62` that zeroes
+ * a two byte entry per record in a second table at `0x0F24`. Nothing in that call graph reaches any
+ * of the flash programmer's gates or wrappers, checked with a positive control from the erase
+ * handler, which does reach them.
+ *
+ * So it drops **cached descriptors**, which is what makes it the right first step of a config write:
+ * concordance's own comment says it exists "so that nothing will attempt to reference it while we're
+ * working", and arch 12 executes its configuration in place out of the flash about to be erased. It
+ * writes nothing persistent, so an aborted write leaves no marker behind and a power cycle would
+ * clear it anyway.
+ *
+ * The name here says what it does rather than what upstream calls it, for the same reason `MISC_RAM`
+ * carries its correction: a caller reading `invalidateFlash` would reasonably expect flash to be
+ * involved.
+ */
+export const MISC_INVALIDATE = 0x02;
+
+/**
  * `READ_MISC` selector `0x0C`, the hardware feature read, and the two details it services.
  *
  * Named by Logitech's classic client and then confirmed against all three firmware images, section
@@ -237,8 +263,14 @@ export const WRITE_MISC_SELECTORS: readonly number[] = [
  * here does wait.
  *
  * `0x02` and `0x03` set a flag whose single reader drives the top level mode to 3, and mode 3 waits
- * and then executes the PIC18 `RESET` instruction. This library does not implement them, and
- * `assertSessionEndAllowed` refuses them by number rather than leaving them merely unused.
+ * and then executes the PIC18 `RESET` instruction.
+ *
+ * **`0x02` is implemented since 3 September 2026**, as the last step of a config write: this said the
+ * library implemented neither, which was true for as long as nothing here had read what a working
+ * write actually does. concordance ends a config write with exactly this report and then waits for
+ * the remote to come back on the bus, sections 245 and 246. It goes through `assertResetAllowed`, not
+ * `assertSessionEndAllowed`, which still refuses both by number because it takes a lighter
+ * permission. `0x03` remains unimplemented and has no caller.
  */
 export const ESCAPE_END_SESSION = 0x01;
 export const ESCAPE_RESET = 0x02;

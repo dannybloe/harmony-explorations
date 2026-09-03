@@ -115,6 +115,8 @@ function fail(message: string): never {
  * because a write whose account can be lost is the state this exists to end.
  */
 let journalPath: string | undefined;
+/** Whether the restart has gone out, which is what makes a failing close expected. */
+let resetSent = false;
 
 function say(line: string): void {
   process.stdout.write(line);
@@ -366,6 +368,14 @@ async function main(): Promise<void> {
       permittedUnit: permitted,
     };
 
+    // **Step 2 of a working write, and ours did not have it**, sections 245 and 246. concordance
+    // drops the remote's cached region descriptors before it erases anything, "so that nothing will
+    // attempt to reference it while we're working" in its own words, and arch 12 executes its
+    // configuration in place out of the flash the next line is about to erase. It writes no flash and
+    // nothing persistent, so a run that fails after this point leaves no marker behind.
+    say('dropping the cached region descriptors, so nothing references the config while it changes\n');
+    await remote.invalidateCachedRegions(permission);
+
     for (const plan of plans) {
       await writeBlock({
         remote,
@@ -410,11 +420,29 @@ async function main(): Promise<void> {
     }
     say('the whole configuration reads back byte for byte identical to the file. '
       + "A config we produced is on the remote.\n");
+
+    // **Step 7, and it is the last thing this script does on purpose.** concordance ends a config
+    // write with a device reset and waits for the remote to come back, which is the battery pull
+    // this bench has performed by hand after every write, section 245. Nothing acknowledges a
+    // command that ends in a reset, so there is nothing to wait for here and the handle is finished:
+    // the `finally` below closes it and the close is expected to complain.
+    say('restarting the remote, which is what a battery pull was doing by hand\n');
+    await remote.resetDevice(permission);
+    resetSent = true;
+    say('the restart is sent. The remote leaves the bus and comes back on its own; '
+      + 'give it a few seconds before enumerating again\n');
   } finally {
     try {
       await remote.close();
     } catch (error: unknown) {
-      process.stderr.write(`(the device did not close cleanly: ${String(error)})\n`);
+      // After a reset the device has already left the bus, so a close that complains is the expected
+      // outcome rather than a fault, and reporting it as one would teach an operator to ignore the
+      // line when it is real.
+      if (resetSent) {
+        say(`(the handle was already gone, which is what a restart does)\n`);
+      } else {
+        process.stderr.write(`(the device did not close cleanly: ${String(error)})\n`);
+      }
     }
   }
 }

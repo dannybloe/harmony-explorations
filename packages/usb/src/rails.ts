@@ -518,7 +518,7 @@ export function assertSessionEndAllowed(
   if (subCommand !== ESCAPE_END_SESSION) {
     throw new RailError(
       `escape sub-command 0x${subCommand.toString(16)} is not the session end: 0x02 and 0x03 ` +
-        'reboot the remote and this project does not implement a reboot',
+        'reboot the remote, and 0x02 goes through assertResetAllowed rather than this rail',
     );
   }
   const known = ESCAPE_SUB_COMMANDS[p.architecture];
@@ -535,6 +535,54 @@ export function assertSessionEndAllowed(
   // Same comparison as every other rail, section 226: the unit on the cable against the one the
   // caller recorded, rather than a boolean the caller sets.
   assertUnitIsPermitted(p);
+}
+
+/**
+ * Throws unless the cached region descriptors may be dropped: `WRITE_MISC` selector `0x02`.
+ *
+ * **Step 2 of a working config write**, section 245, and the reason it is gated at all is that it
+ * changes a running device's state rather than that it endangers storage. Section 246 read the
+ * executor before this was ever sent: on arch 12 it clears three five byte records in **data
+ * memory** and a two byte entry each in a second table, reaches no flash gate at all, and so leaves
+ * nothing behind that a power cycle would not.
+ *
+ * It takes the **full** write permission rather than the lighter one the session end takes, and that
+ * is deliberate: its only purpose is to precede an erase, so a caller holding it already has a
+ * verified dump and a config that matches the remote, and requiring them here means the sequence
+ * cannot be half authorised. A caller that wants to drop caches for some other reason is a decision
+ * to take in a commit that says so.
+ */
+export function assertInvalidateAllowed(p: WritePermission): void {
+  assertPermissionIsUsable(p);
+}
+
+/**
+ * Throws unless the remote may be restarted: the escape with sub-command `0x02`.
+ *
+ * **Step 7 of a working config write**, section 245. concordance sends exactly this and then waits
+ * for the remote to come back on the bus, which is the battery pull that has been performed by hand
+ * after every write on this bench. The firmware side was read long before, section 97: `0x02` sets a
+ * flag whose single reader drives the top level mode to 3, and mode 3 waits and then executes the
+ * PIC18 `RESET` instruction. So it is a deliberate reboot rather than a watchdog or a jump.
+ *
+ * **The handle dies with it**, so a caller must treat the transport as gone afterwards and must not
+ * wait for a reply: nothing acknowledges a command that ends in a reset.
+ *
+ * Full write permission again, for the same reason as the invalidate: this is the last step of a
+ * sequence, not a facility. Sending a reboot to a remote that this process has no business writing
+ * to is exactly what the unit check exists to prevent, and `assertSessionEndAllowed` keeps the
+ * lighter gate because `0x01` writes nothing and changes one variable.
+ *
+ * **It deliberately does not re-check that the architecture dispatches the escape.** The first
+ * version did, copying `assertSessionEndAllowed`, and that check could never fire: the shared gate
+ * above refuses every architecture outside `ARCHITECTURES_WITH_A_WRITE_TARGET`, which is `[12]`, and
+ * arch 12 does dispatch `0x02`. An unreachable guard is worse than none because it reads as
+ * protection, so the claim is a test instead, `TheOnlyWriteTargetDispatchesTheReset`, which compares
+ * the two tables. The session end rail keeps its own copy because it takes the lighter permission and
+ * really can be reached with any architecture.
+ */
+export function assertResetAllowed(p: WritePermission): void {
+  assertPermissionIsUsable(p);
 }
 
 /**

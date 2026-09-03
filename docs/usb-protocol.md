@@ -636,7 +636,9 @@ only acknowledges, replying `0xF0` then `0xA0`; the work is done at parse time, 
 chain is at `0x0C3AA`.
 
 **Nine selectors are serviced**: `0x01`, `0x02`, `0x05`, `0x06`, `0x07`, `0x08`, `0x09`, `0x0A`,
-`0x0B`. Three of them settle open questions.
+`0x0B`. Three of them settle open questions, and `0x02` was added to the identified ones by section
+246, which read it before this project sent it. **Arch 12 services eight**, the same list without
+`0x09`, decoded from its own chain at `0x26626`.
 
 **Selector `0x07` writes RAM**, exactly mirroring the read:
 
@@ -671,6 +673,20 @@ That conclusion carries the same caveat as everywhere else in this document: the
 upstream's, and upstream's `MISC_RAM 0x06` was already wrong for this architecture. What is
 established from the image is that `0x09` is a no-op and `0x03` is unhandled. Which capability
 those two numbers were meant to be is upstream's claim, not a finding here.
+
+**Selector `0x02` drops three cached region descriptors, and it is not a flash operation at all.**
+Section 246, read on arch 12 where the chain is at `0x26626` and this selector's executor at
+`0x266B2`. It calls `0x2A05E`, which walks three five byte records in **data memory** based at
+`0x0EE8`, clears bit 0 of each, zeroes the other four bytes, and through a leaf at `0x27C62` zeroes a
+two byte entry each in a second table at `0x0F24`; the handler then clears bits 2 and 3 of the flags
+byte at `0x1A4`. Nothing in that call graph reaches a flash gate, checked with a positive control from
+the erase handler, which does. The neighbouring routine `0x2A0C8` walks the same records and
+decrements a three byte counter in each, so bit 0 is what makes a descriptor live.
+
+concordance names it `invalidate_flash` and sends it as the first step of a config write, "so that
+nothing will attempt to reference it while we're working". The purpose is right and the name is not,
+which is the third time an upstream selector name has been wrong for this architecture.
+`MISC_INVALIDATE` in `packages/usb/src/protocol.ts` carries the correction.
 
 Selector `0x06` pairs with the read's `0x06`, calling `0x1AB96` where the read calls `0x1AB8A`,
 so it is a second address space of some kind. Not identified.

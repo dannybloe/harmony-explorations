@@ -733,6 +733,16 @@ document:
   called the protocol is `platform` and is the same on arch 12 (Harmony One) and arch 14 (Harmony 600
   and 700). **A config read off a remote states none of the six**, having no header, so the gate has
   something to compare only for a config that arrived as a file or that we built.
+* **A config write is a sequence and it is not ours to invent**, sections 245 and 246. concordance
+  does eight steps and this project did three: what was missing is dropping the remote's cached
+  region descriptors **before** the first erase, `WRITE_MISC` selector `0x02`, which matters most on
+  arch 12 (Harmony One) because it executes its configuration in place out of the flash being
+  erased; and **restarting the remote** at the end, the escape's `0x02`, which is the battery pull
+  this bench performed by hand after every write. Both are implemented behind
+  `assertInvalidateAllowed` and `assertResetAllowed`. Setting the clock over USB, their step 8, is
+  deliberately **not** implemented, because our writer stamps the configuration and an arch 12 remote
+  reseeds its clock from that stamp at every boot. And a transfer is **3150 bytes**, which is
+  Logitech's client's number and concordance's alike, where ours was 32768 until 3 September 2026.
 * **An erase of the config region can only have come from a host**, section 243, which is why an
   unexplained erased block is a hole in our own record rather than something the remote did. The
   application reaches the external flash programmer's erase gate through one wrapper with one caller,

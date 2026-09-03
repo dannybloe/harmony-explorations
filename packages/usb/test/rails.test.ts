@@ -22,6 +22,8 @@ import {
   CONFIG_REGION_BASE,
   ERASE_BLOCK_SIZE,
   ERASE_FLASH,
+  ESCAPE_RESET,
+  ESCAPE_SUB_COMMANDS,
   READ_FLASH,
   RailError,
   TransportError,
@@ -33,7 +35,9 @@ import {
   assertFlashWriteAllowed,
   assertDeliberateHangAllowed,
   assertFirstWriteAllowed,
+  assertInvalidateAllowed,
   assertRamWriteAllowed,
+  assertResetAllowed,
   assertSessionEndAllowed,
   address24,
   encodeRequest,
@@ -230,6 +234,27 @@ test('with writing disabled, every write path refuses even with everything else 
   assert.throws(() => assertFlashWriteAllowed(IDEAL, base, 16), RailError);
   assert.throws(() => assertEraseAllowed(IDEAL, base), RailError);
   assert.throws(() => assertRamWriteAllowed(IDEAL, 0x100), RailError);
+  // The two steps a working config write has and ours did not, sections 245 and 246. They are here
+  // rather than trusted to the shared gate they call, because this test is the list of everything
+  // the flag stops and a path missing from it is a path nobody notices is ungated.
+  assert.throws(() => assertInvalidateAllowed(IDEAL), RailError);
+  assert.throws(() => assertResetAllowed(IDEAL), RailError);
+});
+
+test('the only architecture with a write target is one whose reset escape has been read', () => {
+  // `assertResetAllowed` used to check this at runtime and could never fire, since the shared gate
+  // refuses every architecture outside the list below. The claim is real all the same and this is the
+  // shape that can fail: two tables that nobody compares drift apart, and widening the write target
+  // list to an architecture whose escape is unread would make the writer send a reboot nobody has
+  // traced. Section 246.
+  assert.deepEqual([...ARCHITECTURES_WITH_A_WRITE_TARGET], [12]);
+  for (const architecture of ARCHITECTURES_WITH_A_WRITE_TARGET) {
+    const dispatched = ESCAPE_SUB_COMMANDS[architecture];
+    assert.notEqual(dispatched, undefined,
+      `architecture ${architecture} may be written to and its escape is unread`);
+    assert.ok(dispatched!.includes(ESCAPE_RESET),
+      `architecture ${architecture} may be written to and does not dispatch the reset`);
+  }
 });
 
 test('the SFR page is where the RAM write bound comes from, and it is the documented one', () => {
@@ -389,6 +414,47 @@ test('with writing enabled, the remaining conditions still each refuse on their 
     'one byte below the region: refused by RailError',
     'running one byte past the end: refused by RailError',
     'the whole region exactly: ALLOWED',
+  ]);
+});
+
+test('with writing enabled, the invalidate and the reset each still refuse on their own', () => {
+  // The two steps sections 245 and 246 added. They take the **full** permission rather than the
+  // lighter one the session end takes, deliberately, so every condition that guards an erase guards
+  // these too and a write sequence cannot be half authorised. This is the check that the sharing is
+  // real rather than intended.
+  const output = withWritesEnabled(`
+    ${IDEAL_SOURCE}
+    const refusals = [];
+    const check = (name, call) => {
+      try {
+        call();
+        refusals.push(name + ': ALLOWED');
+      } catch (error) {
+        refusals.push(name + ': refused by ' + error.constructor.name);
+      }
+    };
+    for (const [what, rail] of [['invalidate', rails.assertInvalidateAllowed],
+                                ['reset', rails.assertResetAllowed]]) {
+      check(what + ', everything in order', () => rail(IDEAL));
+      check(what + ', another unit', () => rail({...IDEAL, identityBlock: IDEAL.another}));
+      check(what + ', no verified dump', () => rail({...IDEAL, originalDumpVerified: false}));
+      check(what + ', architecture 14', () => rail({...IDEAL, architecture: 14}));
+      check(what + ', config for another skin',
+        () => rail({...IDEAL, intendedVersion: {...IDEAL.intendedVersion, SKIN: '99'}}));
+    }
+    console.log(JSON.stringify(refusals));
+  `);
+  assert.deepEqual(JSON.parse(output), [
+    'invalidate, everything in order: ALLOWED',
+    'invalidate, another unit: refused by RailError',
+    'invalidate, no verified dump: refused by RailError',
+    'invalidate, architecture 14: refused by RailError',
+    'invalidate, config for another skin: refused by RailError',
+    'reset, everything in order: ALLOWED',
+    'reset, another unit: refused by RailError',
+    'reset, no verified dump: refused by RailError',
+    'reset, architecture 14: refused by RailError',
+    'reset, config for another skin: refused by RailError',
   ]);
 });
 

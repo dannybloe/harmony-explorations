@@ -55,13 +55,24 @@ question we cannot answer ourselves is where an independent reading is worth mos
 |---|---|---|
 | 1 | the transfer sequence: which command, what a data packet holds, what answers each step, how a length is stated, whether a whole erase block fits in one transfer | **settled**, and this is the part that checks section 175 |
 | 2 | does programming erase first, or is the old content marked invalid and written over | **closed on both bench architectures since 29 August 2026**, and this row said open. Section 186 read the Harmony 600's SPI path and section 191 the Harmony One's resident flash library, where erase and program are separate gates; there is a passing test for the arch 14 half. Still worth an independent reading, but as a check rather than as the open question it was billed as. The hypothesis from Logitech's own client stays withheld |
-| 3 | must the host pace its packets | **half settled, and the halves must not be merged.** The firmware asks for no pacing, derived. Whether the USB peripheral can accept a second report before the first is serviced is unread: that is the endpoint's buffer descriptor and its ownership bit |
+| 3 | must the host pace its packets, and **how long may a burst be** | **the pacing half is settled twice over and the burst half was never asked.** No pacing: the firmware asks for none, derived, and neither Logitech's client nor concordance sleeps between packets, so all three agree. What nobody asked until 3 September 2026 is how many packets one announce may carry, and both implementations cap a transfer at 3150 bytes where ours sent 32768, sections 245 and 246. The peripheral half stays unread: whether the endpoint can accept a second report before the first is serviced is its buffer descriptor's ownership bit |
 | 4 | the write protect interlock: which bit, its polarity, its resting state, what sets and clears it | settled, and **the highest value target, because we have got it wrong twice.** Both wrong versions are kept in `reference/superseded.md` |
 
 Question 4 is the one to spend the time on, and the reason is its history rather than its difficulty.
 A place where two successive readings of ours were wrong is exactly where a third, independent one
-earns its keep. Question 3's peripheral half is second, and it has an additional weakness worth
-stating: **the pacing finding has no regression test**, so it is the least pinned of the four.
+earns its keep. Question 3's peripheral half is second, and it had an additional weakness worth
+stating: the pacing finding had no regression test, so it was the least pinned of the four.
+`packages/usb/test/blockwrite.test.ts` pins the burst half since 3 September 2026 and the pacing half
+still has none.
+
+**A fifth question is added, and it is the one this review would have caught.** A write is a
+**sequence** and the four above are all about one transfer. concordance's config write is eight steps
+and this project performed three: what was missing is dropping the remote's cached region descriptors
+before the first erase and restarting the remote at the end, section 245. A reviewer asked "is the
+transfer right" would have answered yes to a write that was missing both. So question 5 is: **what
+must happen before the first erase and after the last verify**, answered from the firmware rather than
+from either implementation, and the two steps this project now performs are the claim to check rather
+than the ground truth.
 
 ## The line: instruments yes, conclusions no
 

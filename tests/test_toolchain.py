@@ -422,7 +422,10 @@ class ATypeScriptSampleLoopStatesItsPopulation(unittest.TestCase):
         # definitions out of the infrared archive checkout and skips without one, like a lab test.
         # 56 since `packages/codec/test/pronto.test.ts`, section 230: Pronto Hex, and our own waveforms
         # against the two million Logitech's renderer produced from the same definitions.
-        self.assertEqual(scanned, 58, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
+        # 59 since `packages/usb/test/blockwrite.test.ts`, section 245: the transfer planner had
+        # no test at all while its chunk size was ten times Logitech's own, so the module the
+        # write path leans on hardest was the one nothing asserted.
+        self.assertEqual(scanned, 59, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
         self.assertEqual(
             {name: len(lines) for name, lines in counted.items()},
             TYPESCRIPT_LOOPS_ALLOWED_TO_SKIP_A_SAMPLE,
@@ -544,7 +547,10 @@ class ABoundOnACorpusTotalIsExact(unittest.TestCase):
         # half needs the codec and `packages/usb` deliberately does not depend on it.
         # 53 since `packages/usb/test/identity.test.ts`, section 226.
         # 55 since `packages/codec/test/catalogue.test.ts`, section 229; 54 since `archive.test.ts`.
-        self.assertEqual(len(scanned), 58, 'TypeScript test files, which moves when one is added')
+        # 59 since `packages/usb/test/blockwrite.test.ts`, section 245: the transfer planner had
+        # no test at all while its chunk size was ten times Logitech's own, so the module the
+        # write path leans on hardest was the one nothing asserted.
+        self.assertEqual(len(scanned), 59, 'TypeScript test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):
@@ -1560,7 +1566,11 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # erase does not carry, and both are inside `packages/usb/`, which the withhold list already
         # covers whole, so nothing widens: this is the sweep noticing two new files in a withheld
         # directory. The list was re-read against all 27 before this number moved.
-        self.assertEqual(len(stating), 30,
+        # 31 since section 245, which added `packages/usb/test/blockwrite.test.ts`: it states the
+        # transfer's chunk size, which is one of the numbers a blind reviewer is meant to derive
+        # off Logitech's client unaided. It is inside `packages/usb/`, which the withhold list
+        # covers whole, so nothing widens. The list was re-read against all 31 before this moved.
+        self.assertEqual(len(stating), 31,
                          'the number of files stating the write path moved, so re-read the withhold '
                          'list before restamping this: %s' % stating)
 

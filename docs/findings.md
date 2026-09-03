@@ -31473,8 +31473,15 @@ The transfer size is changed and tested; the three missing steps are not impleme
 **This section exists because the reading came after the writes and not before.** Decision 2 says to
 read Logitech's client and the firmware before deriving anything, and concordance has been checked
 out beside this repository the whole time. Two configurations were written to the spare Harmony One
-on 3 September, one of them over six attempts, before anybody opened `CRemote::WriteFlash`. Every
-number below was sitting there.
+on 3 September, one of them over six attempts, before anybody opened `CRemote::WriteFlash`.
+
+**And it is worse than never having looked, which the first version of this paragraph missed.**
+concordance's **firmware** update sequence was read on 11 August 2026 and is written up earlier in
+this document, `prep_firmware`, `invalidate_flash`, erase, write, `finish_firmware`, `reset_remote`,
+`_set_time`, with the note that "`invalidate_flash` marks the config unusable". So the same invalidate
+and the same reset were in hand for three weeks, in this file, and the **config** sequence sitting
+twenty lines away in the same source was never read. That is the failure this project keeps
+recording: the knowledge was here and nothing applied it.
 
 ### What a working implementation does
 
@@ -31547,9 +31554,122 @@ which would put the fault somewhere else entirely. A remote that comes back to i
 after a reset without a battery pull is the positive result for step 7; one that does not refutes the
 reading of section 244's screen as a state the remote is simply left in.
 
+### Steps 2 and 7 are implemented, and step 8 deliberately is not
+
+Both went in the same day, behind `WRITES_ENABLED` and the full write permission, section 246 for
+what the invalidate actually does and `assertInvalidateAllowed` and `assertResetAllowed` for the
+gates. The writer drops the cached descriptors before its first erase and restarts the remote after
+the whole configuration has read back identical.
+
+**Setting the clock is not needed here and that is an argument rather than an omission.** concordance
+writes a configuration it did not author, carrying whatever build timestamp Logitech's compiler put
+in it, so it has to set the remote's clock over USB afterwards. Ours stamps base slot 3 and the clock
+state variables with the moment of saving, which is a rail of its own, and an arch 12 remote reseeds
+its clock from that stamp at every boot, section 111. Measured on the bench the same afternoon: the
+spare's live clock read its configuration's own save time plus the time since the battery went back
+in. So the reset that now ends a write lands the remote on a correct clock without a further command,
+and adding one would be a second way to set the same field.
+
 ### Where it lands
 
 * `packages/usb/src/blockwrite.ts`: `MAX_TRANSFER`, with both references named.
 * `packages/usb/test/blockwrite.test.ts`: the transfer plan, which had no test.
-* Open: the invalidate, the reset and the clock, all three of them writes, so all three behind the
-  rails and `WRITES_ENABLED`.
+* `packages/usb/src/rails.ts`: `assertInvalidateAllowed` and `assertResetAllowed`.
+* `packages/usb/src/remote.ts`: `invalidateCachedRegions` and `resetDevice`.
+* `packages/corpus/bin/write-config.ts`: both, in the sequence.
+* `packages/usb/test/rails.test.ts`: both refused with the flag off, and each condition refusing on
+  its own with the flag on.
+
+## 246. What "invalidate flash" does on a Harmony One, read before it was ever sent
+
+**Date:** 3 September 2026. **Status:** read out of the Harmony One 3.4 application image, with a
+positive control on the reachability scan. The two rails and the two methods behind it are
+implemented and tested; neither has been sent to a remote.
+
+**Section 245 said a working config write starts by invalidating the flash, and this is the step this
+project would have got wrong by trusting the name.** `docs/usb-protocol.md` already warned about
+exactly that: its `WRITE_MISC` write-up identifies three of the nine selectors and says of the rest
+that "the names are upstream's, and upstream's `MISC_RAM 0x06` was already wrong for this
+architecture". Selector `0x02` was one of the unidentified ones.
+
+### The chain, and then the routine
+
+Arch 12's `WRITE_MISC` selector chain is at `0x26626`, which our own protocol table already gave.
+`chains.py` decodes it to eight cases, one fewer than arch 14, which has `0x09` as a no-op:
+
+| selector | executor |
+|---|---|
+| `0x01` | `0x2668E` |
+| `0x02` | `0x266B2` |
+| `0x05` | `0x266F4` |
+| `0x06` | `0x266CC` |
+| `0x07` | `0x266E0` |
+| `0x08` | `0x26704` |
+| `0x0A` | `0x2670C` |
+| `0x0B` | `0x26714` |
+
+`0x266B2` calls `0x2A05E` and then clears bits 2 and 3 of the flags byte at `0x1A4`, which is the same
+byte section 175's write enable bit lives in.
+
+`0x2A05E` walks `i` from 0 to 2 over **five byte records in data memory** based at `0x0EE8`:
+
+* clears **bit 0** of the record's first byte,
+* calls `0x27C62` with `i`, a leaf routine that zeroes a **two byte** entry at `0x0F24 + 2i`,
+* zeroes the record's other four bytes.
+
+So three descriptors, each a flags byte and a four byte body, plus a two byte entry each in a second
+table. The routine immediately after it, `0x2A0C8`, walks the same three records, tests bit 0 and bit
+4 of the flags byte and **decrements** the three byte field at offset 2 when it is nonzero, so the
+records are live entries with a counter and bit 0 is what makes one live.
+
+### The load bearing fact is what it does not touch
+
+**No flash.** Walking the call graph from `0x27C62` finds no call at all, so it is a leaf, and nothing
+in `0x2A05E` or its handler reaches any of the flash programmer's gates or wrappers. The scan carries
+its own positive control, which is the part worth keeping: the same walk from the `ERASE_FLASH`
+handler at `0x265FC` finds `0x2DECA`, so a walk that reports nothing is reporting a fact rather than
+a broken scanner.
+
+Three consequences.
+
+**It is safe to send**, in the sense that matters here: it writes nothing persistent, so a write that
+fails after it leaves no marker behind, and a power cycle would clear its effect regardless.
+
+**It really is the right first step**, which is the part the name got right. concordance's own comment
+is that it exists "so that nothing will attempt to reference it while we're working", and clearing bit
+0 of three live descriptors is precisely that. Arch 12 executes its configuration in place out of the
+flash a write is about to erase, so having the firmware stop referencing it is not housekeeping.
+
+**And upstream's name is wrong again.** It invalidates cached descriptors, not flash.
+`MISC_INVALIDATE` is the constant here and it carries the correction, for the same reason `MISC_RAM`
+carries its own.
+
+### The reset needed no new reading
+
+`0x02` on the escape was read in section 97: it sets a flag whose single reader drives the top level
+mode to 3, and mode 3 waits and then executes the PIC18 `RESET` instruction. That is a deliberate
+reboot rather than a watchdog. What was missing was not the firmware but the knowledge that a config
+write is supposed to end with one, which is section 245.
+
+### One guard was removed for being unreachable
+
+`assertResetAllowed` first copied `assertSessionEndAllowed` and re-checked that the architecture
+dispatches the escape. That check can never fire: the shared gate refuses every architecture outside
+`ARCHITECTURES_WITH_A_WRITE_TARGET`, which is `[12]`, and arch 12 dispatches `0x02`. An unreachable
+guard is worse than none because it reads as protection, so the claim became a test that compares the
+two tables instead, and its control is adding arch 9 to the write target list, which fails it.
+
+### What would falsify it
+
+A `WRITE_MISC` selector `0x02` that changes flash on some other architecture, which would make the
+name right there and this reading local to arch 12, where it is already stated to be. Or a Harmony One
+that behaves differently after the invalidate than the three cleared descriptors predict, which is
+what the next write will show.
+
+### Where it lands
+
+* `packages/usb/src/protocol.ts`: `MISC_INVALIDATE`, with the reading, and the escape's now corrected
+  note about what this library implements.
+* `packages/usb/src/writes.ts`: `invalidateRequest`, one payload byte, `0xA1 0x02` on the wire, which
+  is byte for byte what concordance sends.
+* `docs/usb-protocol.md`: selector `0x02` identified, where it was one of the unidentified ones.

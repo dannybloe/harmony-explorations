@@ -25,6 +25,7 @@ import {
   ERASE_FLASH,
   ESCAPE,
   MAX_PAYLOAD,
+  MISC_INVALIDATE,
   ProtocolError,
   WRITE_FLASH,
   WRITE_FLASH_DATA,
@@ -60,6 +61,18 @@ export function writeFlashRequest(address: number, count: number): Uint8Array {
  */
 export function eraseFlashRequest(address: number): Uint8Array {
   return encodeRequest(ERASE_FLASH, address24(address));
+}
+
+/**
+ * `WRITE_MISC` with a **one byte** payload: just the selector, no address and no value.
+ *
+ * The shape matters and it is not the one below. `writeMiscRequest` sends five payload bytes, which
+ * is what the selectors that address something need; the invalidate takes an operand nowhere, and
+ * concordance sends `COMMAND_WRITE_MISC | 0x01` with the selector alone. `MISC_INVALIDATE` carries
+ * what the firmware does with it, read before this was ever sent.
+ */
+export function invalidateRequest(): Uint8Array {
+  return encodeRequest(WRITE_MISC, [MISC_INVALIDATE]);
 }
 
 /** `WRITE_MISC`: a selector, a 16-bit address and a 16-bit value. */
