@@ -84,6 +84,14 @@ CONTAINERS = (
     'one_spare_written_by_us',
     # And that same state as a region, which parses to the same container. Identical again.
     'one_spare_written_region',
+    # The two states the device writes of 3 September 2026 left that unit in, section 242: after the
+    # first, which put an LG television on it, and mid way through the second, where 24 of the 25
+    # blocks hold the new configuration and one is erased flash. The second one is the interesting
+    # vector rather than another duplicate: it is the first sample here whose container was assembled
+    # by this project's own composer rather than by Logitech's compiler, so the two implementations
+    # agreeing about it is a claim about our own output and not only about theirs.
+    'one_spare_plus_lg_region',
+    'one_spare_mixed_region',
     # The two configs Logitech compiled to a specification we wrote, section 132. They are out of the
     # corpus wide claim lists, deliberately, and they belong here for the same reason the arch 9 safe
     # mode container does: a golden vector is a cheap check between two implementations and costs the

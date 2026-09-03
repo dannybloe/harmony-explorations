@@ -86,6 +86,12 @@ const CONTAINERS = [
   'one_spare_written_by_us',
   // And that same state read as a region, which parses to the same container again.
   'one_spare_written_region',
+  // The two states the device writes of 3 September 2026 left the spare in, section 242. The mid
+  // write one is the first sample here whose container this project's own composer assembled rather
+  // than Logitech's compiler, so the two implementations agreeing about it says something about our
+  // own output.
+  'one_spare_plus_lg_region',
+  'one_spare_mixed_region',
   // The two configs Logitech compiled to a specification we wrote, section 132: the only samples
   // whose devices and activities were chosen before the bytes existed, so a disagreement between the
   // two implementations about them would be a disagreement about a known answer.
@@ -222,7 +228,7 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // a duplicate of both for the same reason and for a sharper one: two operands on the remote are
   // deliberately not what a vector carries, so this one matching says the edit stayed where it was
   // aimed.
-  assert.equal(present.length, 52, 'every vector, which is what `make golden` compares');
+  assert.equal(present.length, 54, 'every vector, which is what `make golden` compares');
   // 38 since the Harmony 895 landed: its key table reads with the existing reader even though
   // every other arch 10 reader is gated, which is what made section 177's keypad closure possible
   // without any arch 10 progress at all.
@@ -232,8 +238,11 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // `one_spare_before_sync` and the embedded one duplicates `one_safemode`.
   // 42 since `one_spare_20260830`, an ordinary arch 12 container read off a Harmony One, and 43 since
   // the read taken after the first write, which duplicates it. 44 since the read taken after the
-  // first write that changed something, which duplicates it too.
-  assert.equal(complete, 48, 'the vectors whose container has a key table at all');
+  // first write that changed something, which duplicates it too. 50 since the two states the device
+  // writes of 3 September 2026 left that unit in, section 242, whose containers this project's own
+  // composer assembled: they carry a key table like any other and are the first vectors here that
+  // check our own output rather than Logitech's.
+  assert.equal(complete, 50, 'the vectors whose container has a key table at all');
 
   // **The number sender field, and why it needs its own guard.** It is an empty array on 30 vectors
   // and null on 8, with eight carrying a record since 30 August 2026, and this comment said 25 and 9
@@ -275,7 +284,10 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // Eleven since the read after the second such write. It survived three erase and write cycles of
   // the same block in the end, since the third put the bytes back, and the whole configuration then
   // read off the remote is byte identical to the dump from before any of them.
-  assert.equal(senders.filter((one) => Array.isArray(one) && one.length > 0).length, 14,
+  // Sixteen since the two device writes of 3 September 2026, section 242: the spare's favourite
+  // channel records come through the composition unchanged, which is worth a line of its own because
+  // the composer inserts bytes below them and base slot 16's records state addresses.
+  assert.equal(senders.filter((one) => Array.isArray(one) && one.length > 0).length, 16,
     'the configs that populate base slot 16');
 });
 
@@ -287,7 +299,7 @@ test('the list above covers exactly what the Python side writes a vector for', (
   const block = /^CONTAINERS = \($(.*?)^\)$/ms.exec(source);
   assert.ok(block, 'tools/golden.py has no CONTAINERS tuple in the expected shape');
   const python = [...block[1]!.matchAll(/'([a-z0-9_]+)'/g)].map((m) => m[1] as string);
-  assert.equal(python.length, 52, 'the golden vectors, which is what `make golden` prints');
+  assert.equal(python.length, 54, 'the golden vectors, which is what `make golden` prints');
   assert.deepEqual([...CONTAINERS].sort(), python.sort());
 });
 
