@@ -952,6 +952,16 @@ in safe mode, 46 times in the application, and never in either arch 14 image.
 `0x70` START_IRCAP, and both flash commands reach the parallel NOR programmer. So restoring a Harmony
 One needs no protocol this project has not already read.
 
+**`ERASE_FLASH` is the only route to an external erase on arch 12, and the application has no other.**
+The programmer library's erase gate at internal `0x1E00E` has exactly one caller, the wrapper at
+`0x2DECA`, and that wrapper has exactly one caller in the whole application, the `ERASE_FLASH` handler
+at `0x265FC`, which takes its three address bytes out of the report through the parser at `0x20380`
+before it runs. The two program gates are reached from their own wrappers, called from the
+application's own flash access layer at `0x2B862` and `0x2B87E`, so the firmware **can** program
+external flash unasked and **cannot** erase it. Since programming only clears bits, nothing running on
+the remote can turn a block of the configuration region into `0xff`. Section 243, and
+`tests/test_external_erase.py`.
+
 ### The state machine, in full
 
 The main loop's dispatch on the state variable is **one chain of 70 cases** running from

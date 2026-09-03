@@ -31206,17 +31206,22 @@ cannot clean one a **dead** session left, and a handle dies with a remote that r
 **A quiet log is not a stopped write, and killing one is how a remote reaches a state no dump
 describes.** Attempt 4 was killed on the reasoning that eight minutes on one compare read was a stall.
 The flash afterwards held **24 of the 25 blocks of the second candidate**, byte for byte, which the
-logs of every attempt account for two of. The disagreement is unresolved and the flash is the half
-that was measured, twice, by two independent reads. What follows for practice is the rule rather than
-the explanation: a read may be killed, a write is killed only once the remote has stopped answering,
-and the state afterwards is unknown until a region read says otherwise.
+logs of every attempt account for two of. The flash is the half that was measured, twice, by two
+independent reads, and section 243 measures the accounting and reconstructs how the record went
+missing. What follows for practice is the rule rather than the explanation: a read may be killed, a
+write is killed only once the remote has stopped answering, and the state afterwards is unknown until
+a region read says otherwise.
 
-**`0x70000` was erased by nothing this project sent.** Attempt 2's neighbour check verified that block
-intact after erasing its neighbour, no later attempt sent an erase, and the block reads as 65536 bytes
-of `0xff` in two sessions. The standing hypothesis, **unconfirmed**, is the remote itself: section 47's
-log area writer is disarmed by a good configuration on arch 12, and the remote spent that period
-holding a configuration whose checksum did not match. What would settle it is watching that block
-while a corrupt configuration boots.
+**`0x70000` was erased by nothing this project logged.** Attempt 2's neighbour check verified that
+block intact after erasing its neighbour, no attempt's log records an erase of it, and the block reads
+as 65536 bytes of `0xff` in two sessions. The standing hypothesis offered here was the remote itself,
+on the ground that section 47's log area writer is disarmed by a good configuration on arch 12 and the
+remote spent that period holding a configuration whose checksum did not match<!--superseded-->.
+**Section 243 refutes it from the firmware**: the application has exactly one route to an external
+erase and its address arrives in a USB report, so the remote cannot erase its own configuration region
+at all, and programming, which it can do unasked, only clears bits. The erase was ours and the record
+of it was lost. Section 243 also measures what the flash says, which is 23 blocks changed against two
+in the logs, and it is why the writer keeps its own journal now.
 
 **The unprogrammed screen is not a memory of a bad boot**, which this section said after the first
 write. It appeared again after the second write completed cleanly, and cleared again with a battery
@@ -31243,3 +31248,106 @@ the reading above.
 * `packages/codec/test/compose.test.ts`: every device page label inside and centred on its pad.
 * The lab: both write logs beside the candidate's note, `reads/20260903T-one-spare-plus-lg-write-attempt1.log`
   and `attempt2.log`.
+
+## 243. The remote cannot erase its own configuration region, so the erased block was ours
+
+**Date:** 3 September 2026. **Status:** measured in the Harmony One 3.4 application image, with
+`tests/test_external_erase.py` behind it. One image, because it is the only arch 12 application
+firmware in the lab, and nothing here is asserted of arch 14, where the configuration is copied into
+internal flash instead. The reconstruction at the end of this section is a reconstruction and says so.
+
+**Section 242 left a block erased with nothing to blame.** `0x70000` on the spare Harmony One read as
+65536 bytes of `0xff`, no attempt's log recorded an erase of it, and the hypothesis on the table was
+the remote: section 47's log area writer lives in that region, it is disarmed by a good configuration
+on arch 12, and the remote had spent that period holding a configuration whose checksum did not match.
+That hypothesis is dead, and the reason is worth more than the case.
+
+### The application has one erase and it comes off the wire
+
+The external flash programmer is a library in internal flash reached through five one instruction
+gates, section 191. The application wraps three of them in three routines that differ only in how many
+data bytes they hand over, and each wrapper guards the bus, copies the same three address bytes at
+`0x19C` into the library's argument slots at `0x060`, calls its gate and unguards:
+
+| wrapper | gate | data bytes | so it is |
+|---|---|---|---|
+| `0x2DE7E` | `0x1E010` | one, from `0x311` | program a byte |
+| `0x2DEA0` | `0x1E012` | three, from `0x312` | program three |
+| `0x2DECA` | `0x1E00E` | none, address only | **erase the sector** |
+
+The twelve bytes in the middle are byte identical in all three, which is what makes the data byte count
+the only difference between programming and erasing.
+
+**The erase wrapper has exactly one caller in the whole application**, `0x265FC`, and the erase gate
+has exactly one caller, the instruction inside that wrapper, so a second wrapper around the same gate
+would be caught too. That one caller is the `ERASE_FLASH` handler, and it takes its address off the
+USB report three bytes at a time: three calls to the report parser at `0x20380`, storing the top byte
+first into `0x287`, `0x286` and `0x285`, and then `0x265CE` hands those three to the programmer's
+address low byte first. The address is nowhere computed. It is read off the wire.
+
+**The negative control is the program gates**, because if every gate had one caller in one routine the
+finding would be about the library's shape rather than about who can erase. They do not: each is called
+from its own wrapper, and those wrappers are called from `0x2B862` and `0x2B87E`, inside the
+application's own external flash access layer, which sets the page register itself at `0x2B840` and has
+entry points for reading and programming. So **the application can program external flash without any
+host asking**, which is how the log area writer would work, and it has no way to erase.
+
+**And the cross reference has its own control.** `trace.xrefs` sees direct transfers, so a computed jump
+through `PCL` would be invisible to it. The gate's word address `0x0F007` appears nowhere in the image
+as the little endian three byte literal such a jump would have to load. The reversed order occurs twice
+and both are the second word of a `MOVFF`, asserted by decoding them rather than dismissed by eye.
+
+### Why that settles it
+
+Flash only clears bits. Programming can turn a `1` into a `0` and never the other way, so no amount of
+log writing turns a block into 65536 bytes of `0xff`; only an erase does, and the block was verified
+intact before it went. The only erase route in the application is a host command, and the only host was
+this project. So the erase was ours, and section 242's standing hypothesis is refuted rather than
+unresolved.
+
+### What the flash actually says, measured
+
+Both region reads of that afternoon are clean and internally consistent, which had to be established
+before reading anything into them:
+
+| read | against candidate 1 | against candidate 2 |
+|---|---|---|
+| 11:29, after candidate 1's write | identical in all 26 blocks | differs in 25 |
+| 12:48, before the last attempt | differs in 25 | identical in 25 of 26, `0x70000` wholly erased |
+
+So between the two reads 23 blocks changed from candidate 1's content to candidate 2's, and one was
+erased and not written. The logs of the five attempts in that window account for **two** of those
+blocks, `0x40000` and `0x60000`, written by the attempt that then died on a short read. The other 21
+blocks and the erase are recorded nowhere.
+
+**The leading reconstruction, and it is a reconstruction:** two runs shared one output file, and the
+second truncated the first's record. The attempt that was killed and the rerun after it both redirected
+to the same path, so a run that got most of the way through would leave no trace once the next run
+opened that file for writing. Nothing measured distinguishes that from a run whose output was lost
+another way, and the point is that the record cannot answer it.
+
+**So the writer keeps its own journal now.** `packages/corpus/bin/write-config.ts` appends every line it
+prints to a file beside the configuration, named for the moment the run started and opened for append,
+so two runs cannot share one and a killed run keeps what it had already done. The header line carries
+the arguments. That is not a fix for whatever lost the record; it is the thing that makes the next
+occurrence answerable.
+
+**One refusal in that sequence was right and worth keeping.** The compare accepts a block that holds an
+interrupted write of the file being written, since flash only clears bits and a report lands whole, but
+it requires at least one byte that is not `0xff`. A wholly erased block carries no evidence of who
+erased it, so it is refused and a fresh region read is demanded. That is exactly what happened at
+`0x70000`, and this section is why the demand was correct.
+
+### What would falsify it
+
+An erase route the cross referencer cannot see, meaning a computed jump into the gate, which the last
+control above looks for and does not find. A Harmony One turning a block of its configuration region
+into `0xff` with nothing attached, which is now a prediction that it cannot. Or the same gate having a
+second caller in another arch 12 image, if one ever reaches the lab.
+
+### Where it lands
+
+* `tests/test_external_erase.py`: the six assertions above, controls checked by moving each address.
+* `docs/usb-protocol.md`: the structured fact, beside the erase command it belongs to.
+* `packages/corpus/bin/write-config.ts`: the durable journal.
+* Section 242's hypothesis, corrected in place.

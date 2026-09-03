@@ -733,6 +733,15 @@ document:
   called the protocol is `platform` and is the same on arch 12 (Harmony One) and arch 14 (Harmony 600
   and 700). **A config read off a remote states none of the six**, having no header, so the gate has
   something to compare only for a config that arrived as a file or that we built.
+* **An erase of the config region can only have come from a host**, section 243, which is why an
+  unexplained erased block is a hole in our own record rather than something the remote did. The
+  application reaches the external flash programmer's erase gate through one wrapper with one caller,
+  the `ERASE_FLASH` handler, whose address arrives in a USB report; the programming path it uses
+  unasked only clears bits, so nothing running on a Harmony One can turn a block of its own
+  configuration into `0xff`. Measured on arch 12 (Harmony One) alone. **The practical consequence is
+  the writer's journal**: `write-config.ts` appends every line it prints to a file beside the
+  configuration, one per run, because the afternoon that produced this finding lost the record of 21
+  blocks and the flash was the only witness left.
 * Every write is followed by a `READ_FLASH` of the same range and a byte comparison. A mismatch is
   a failure, not a warning. **This one is a caller's obligation and not a library refusal**, unlike
   every other bullet here: `writeFlash` deliberately does not verify itself, because it would be

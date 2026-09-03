@@ -29,7 +29,7 @@
  * identified off its own identity block, the architecture comes off the device, and the erase is
  * measured against both neighbours.
  */
-import { readFileSync } from 'node:fs';
+import { appendFileSync, readFileSync } from 'node:fs';
 
 import { imagePath, unitIdentity, unitIdentityPath } from '@harmony/lab';
 import {
@@ -102,6 +102,25 @@ function fail(message: string): never {
   process.exit(1);
 }
 
+/**
+ * Every line this prints, appended to a file as it is printed.
+ *
+ * **Because a killed run's account of itself was lost, and that is worse than the kill**, section
+ * 243: on 3 September 2026 a write was killed on a log that had stopped moving, and the flash
+ * afterwards held 22 blocks the log did not mention. The remote cannot erase its own configuration
+ * region, section 243, so those blocks were this script's own work and nothing recorded it.
+ * `appendFileSync` is the whole point: the line reaches the file before the next one is composed, so
+ * a `SIGTERM` cannot take away the record of what has already been sent to the flash. One file per
+ * run, beside the config, and a journal that cannot be opened is a refusal rather than a warning,
+ * because a write whose account can be lost is the state this exists to end.
+ */
+let journalPath: string | undefined;
+
+function say(line: string): void {
+  process.stdout.write(line);
+  if (journalPath !== undefined) appendFileSync(journalPath, line);
+}
+
 /** A refusal raised after the device is open, so the `finally` still closes it. */
 class Refusal extends Error {}
 
@@ -115,6 +134,8 @@ async function main(): Promise<void> {
   });
 
   const configPath = argument('config') ?? fail('--config is the container to put on the remote');
+  journalPath = `${configPath}.write-${new Date().toISOString().replace(/[:.]/g, '')}.log`;
+  appendFileSync(journalPath, `# ${process.argv.slice(1).join(' ')}\n`);
   const dumpName = argument('dump')
     ?? fail("--dump names the lab region read holding this unit's current content");
   const commit = process.argv.includes('--commit');
@@ -139,7 +160,7 @@ async function main(): Promise<void> {
     fail(`${configPath} states checksum 0x${container.trailerChecksum.toString(16)} and its bytes `
       + `give 0x${computed.toString(16)}: it is damaged, and the remote would refuse to boot it`);
   }
-  process.stdout.write(`${configPath}: ${wanted.length} bytes, trailer checksum `
+  say(`${configPath}: ${wanted.length} bytes, trailer checksum `
     + `0x${computed.toString(16)}, which recomputes\n`);
 
   // **A check the remote does not make, which is exactly why it is here.** An action list is
@@ -154,7 +175,7 @@ async function main(): Promise<void> {
   }
   const worst = worstQueueRun(container);
   if (worst !== undefined) {
-    process.stdout.write(`deepest action list: ${worst.peak} of ${ACTION_QUEUE_INSTRUCTIONS} queue `
+    say(`deepest action list: ${worst.peak} of ${ACTION_QUEUE_INSTRUCTIONS} queue `
       + `slots, at list ${worst.list}\n`);
   }
 
@@ -181,7 +202,7 @@ async function main(): Promise<void> {
       throw new Refusal('the remote did not say which architecture it is');
     }
     const identity = readVersion(versionBytes);
-    process.stdout.write(`firmware ${identity.firmware}, flash id ${identity.flash}, `
+    say(`firmware ${identity.firmware}, flash id ${identity.flash}, `
       + `architecture ${architecture}, skin ${identity.skin}\n`);
 
     const stored = unitIdentity(PERMITTED_UNIT_LABEL);
@@ -193,7 +214,7 @@ async function main(): Promise<void> {
     const permitted = unitIdentityFromText(stored);
     const identityBlock = await remote.readUnitIdentity();
     assertUnitIsPermitted({ identityBlock, permittedUnit: permitted });
-    process.stdout.write(`unit identity ${unitIdentityText(identityBlock).slice(0, 8)}..., which `
+    say(`unit identity ${unitIdentityText(identityBlock).slice(0, 8)}..., which `
       + `matches the recorded ${PERMITTED_UNIT_LABEL}\n`);
 
     const base = CONFIG_REGION_BASE[architecture];
@@ -214,7 +235,7 @@ async function main(): Promise<void> {
      */
     const statedVersion: StatedVersion = {};
     const comparison = compareIntendedVersion(statedVersion, identity);
-    process.stdout.write(`compatibility: ${comparison.compared} of ${comparison.fields.length} `
+    say(`compatibility: ${comparison.compared} of ${comparison.fields.length} `
       + `fields stated by the config`
       + (comparison.compared === 0
         ? ', so there is nothing to compare: this container carries no wrapper\n'
@@ -245,11 +266,11 @@ async function main(): Promise<void> {
     // other holding the old byte, and every per block read back would still pass.
     const blocks = blocksDiffering(dump, target, base, blockSize);
     if (blocks.length === 0) {
-      process.stdout.write('the config is byte identical to the dump: there is nothing to write\n');
+      say('the config is byte identical to the dump: there is nothing to write\n');
       return;
     }
     const changedBytes = [...dump].reduce((n, b, at) => (b === target[at] ? n : n + 1), 0);
-    process.stdout.write(`${changedBytes} byte(s) differ from ${dumpName}, in `
+    say(`${changedBytes} byte(s) differ from ${dumpName}, in `
       + `${blocks.length} block(s): ${blocks.map((b) => `0x${b.toString(16)}`).join(', ')}\n`);
 
     for (const block of blocks) {
@@ -285,7 +306,7 @@ async function main(): Promise<void> {
     // rewritten, which is the one state this script must not create.
     let interrupted = 0;
     for (const plan of plans) {
-      process.stdout.write(`reading 0x${plan.block.toString(16)} off the remote to compare\n`);
+      say(`reading 0x${plan.block.toString(16)} off the remote to compare\n`);
       const live = await readBlock(plan.block);
       const differs = firstDifference(live, plan.intended);
       // **A block an earlier run erased and did not finish writing is known content too**, which the
@@ -299,7 +320,7 @@ async function main(): Promise<void> {
           && live.every((byte, k) => byte === plan.content[k] || byte === 0xff)
           && live.some((byte) => byte !== 0xff)) {
         interrupted += 1;
-        process.stdout.write(`0x${plan.block.toString(16)} holds an interrupted write of this file: `
+        say(`0x${plan.block.toString(16)} holds an interrupted write of this file: `
           + 'this file\'s bytes then erased flash, so what an erase would destroy is known\n');
         continue;
       }
@@ -311,24 +332,24 @@ async function main(): Promise<void> {
           + 'fresh region read.');
       }
     }
-    process.stdout.write(interrupted === 0
+    say(interrupted === 0
       ? `every block matches ${dumpName} byte for byte, so what the erase would destroy is known\n`
       : `every block matches ${dumpName} byte for byte but ${interrupted} holding an interrupted `
         + 'write of this file, so what the erase would destroy is known\n');
 
     for (const plan of plans) {
       if (plan.neighbours.length !== 2) {
-        process.stdout.write(`0x${plan.block.toString(16)}: only ${plan.neighbours.length} `
+        say(`0x${plan.block.toString(16)}: only ${plan.neighbours.length} `
           + 'neighbouring block(s) can be checked\n');
       }
     }
     const totalPackets = plans.reduce((n, p) => n + p.packets, 0);
-    process.stdout.write(`plan: per block, read the neighbours, erase 0x${blockSize.toString(16)} `
+    say(`plan: per block, read the neighbours, erase 0x${blockSize.toString(16)} `
       + `bytes, check the neighbours again, write it back and read it back. `
       + `${plans.length} erase(s), ${totalPackets} reports in total\n`);
 
     if (!commit) {
-      process.stdout.write('dry run: nothing was written. Add --commit, with '
+      say('dry run: nothing was written. Add --commit, with '
         + 'HARMONY_ENABLE_WRITES=1 and HARMONY_FIRST_WRITE=1, to perform it\n');
       return;
     }
@@ -354,7 +375,7 @@ async function main(): Promise<void> {
         content: plan.content,
         neighbours: plan.neighbours,
         readBlock,
-        log: (line) => process.stdout.write(`${line}\n`),
+        log: (line) => say(`${line}\n`),
         onPastTheErase: (value) => { pastTheErase = value; },
         coversBlock: (address) => address >= base && address - base + blockSize <= dump.length,
         sourceName: dumpName,
@@ -371,10 +392,10 @@ async function main(): Promise<void> {
     // reports and discards the oldest, so a consumer that stalls loses a run. Both blocks had
     // already been written and verified, so the write was fine and the verification was not, which
     // is the worst way round to fail. `readConfig` retries a window, because a read is idempotent.
-    process.stdout.write(`reading the configuration back to compare with the file\n`);
+    say(`reading the configuration back to compare with the file\n`);
     const reread = await readConfig(remote, profileFor(productId));
     if (reread.retries > 0) {
-      process.stdout.write(`${reread.retries} window(s) had to be asked for again\n`);
+      say(`${reread.retries} window(s) had to be asked for again\n`);
     }
     const back = reread.bytes;
     if (back.length !== wanted.length) {
@@ -387,7 +408,7 @@ async function main(): Promise<void> {
         + `0x${wrong.toString(16)}: 0x${back[wrong]!.toString(16)} on the device, `
         + `0x${wanted[wrong]!.toString(16)} in the file`);
     }
-    process.stdout.write('the whole configuration reads back byte for byte identical to the file. '
+    say('the whole configuration reads back byte for byte identical to the file. '
       + "A config we produced is on the remote.\n");
   } finally {
     try {

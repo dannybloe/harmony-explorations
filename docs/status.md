@@ -439,7 +439,7 @@ finding.
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 242<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 243<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -664,13 +664,21 @@ accounting table** here, which was a real duplicate with nothing added and has b
 answers it, section 242.** The candidate below was written on 3 September 2026, 25 blocks read back
 identical, and Danny switched the LG on and off from the new row. The first attempt broke off halfway
 through its first block and the writer's compare had to learn what a half written block is before the
-rerun would go; the remote called itself unprogrammed until a battery pull, which is read as the
-memory of that broken boot and is one observation. The page's labels were wrong on the remote, measured
-through a stale font table and too long for their pads, and a second configuration with readable
-labels and a save stamp is on the remote since that afternoon: its clock is right, which is what the
-stamping rail exists for. That write took five attempts and three of them were the link rather than
-the code, section 242, which is also where the two open questions live: a block nothing of ours
-erased, and a remote that calls itself unprogrammed after a write until its battery comes out.
+rerun would go; the remote called itself unprogrammed until a battery pull, which happens after a
+clean write too and so follows the write rather than the broken one. The page's labels were wrong on
+the remote, measured through a stale font table and too long for their pads, and a second
+configuration with readable labels and a save stamp is on the remote since that afternoon: its clock
+is right, which is what the stamping rail exists for. That write took five attempts and three of them
+were the link rather than the code, section 242.
+
+**One of that afternoon's two puzzles is closed, section 243.** A block of the spare's configuration
+region was found erased with no erase in any log, and the reading offered was the remote doing it to
+itself. The firmware says it cannot: the application reaches the external flash programmer's erase
+gate through exactly one wrapper with exactly one caller, the erase command's own handler, whose
+address arrives in a USB report, and the programming path it can use unasked only clears bits. So the
+erase was ours and what went missing was the record of it, which is why the writer now appends its own
+journal beside the configuration, one file per run. The other puzzle stands: a remote that calls
+itself unprogrammed after a write until its battery comes out.
 
 **The missing page was composed first, section 241**, and the candidate configuration for the first
 write that adds a device was in the lab within the hour: the spare Harmony One's own configuration plus an LG television
