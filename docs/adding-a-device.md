@@ -728,7 +728,11 @@ M4, and behind the gate above. The rails are written and off, `packages/usb/src/
 
 ## Phase 9: the device responds
 
-**The missing page is composed, 3 September 2026, section 241**, and the candidate is in the lab as
+**Done, 3 September 2026, section 242: the LG television answers the spare Harmony One.** The write,
+the press and the finding are ticked below; what is left of the check is the clock and the other
+activities, and a second write with readable labels.
+
+**The missing page was composed the same day, section 241**, and the candidate is in the lab as
 `work/20260903-one-spare-plus-lg.bin`. Section 239 had found the block: the spare Harmony One drives
 six devices and its device list is two full pages of three, and Logitech lays a seventh out as a third
 page holding one row. `composeDeviceScreen` builds that page now on every one of the spare's nine
@@ -760,11 +764,18 @@ waits for Danny's go, per the gate above.
       record, everything in it read off the menu's own pages. Rendered, and it reads as Logitech's own
       fourth page on the nine device compile does: the counter, the icon, the label, the bottom key in
       both its states
-- [ ] write the config phase 6 produced to the spare Harmony One
-- [ ] press the device's button at the appliance and watch it respond
-- [ ] **check**: the appliance responds, the remote still boots, its clock is right, its other activities
-      still work, and the config reads back byte identical
-- [ ] write up the whole run as a finding, with what did not work the first time
+- [x] write the config phase 6 produced to the spare Harmony One. **3 September 2026, section 242**: 25
+      blocks, every erase measured against its neighbours, the whole configuration read back identical.
+      The first attempt timed out halfway through the first block and the remote rebooted; the writer's
+      compare now recognises a half written block as known content, and the rerun went through
+- [x] press the device's button at the device and watch it respond. **The television switched on, and
+      off again on the second press.** Danny at the set, 3 September 2026
+- [ ] **check**: the device responds (yes), the remote still boots (yes, after a battery pull; it called
+      itself unprogrammed until then, section 242), its clock is right, its other activities still work,
+      and the config reads back byte identical (yes). The clock and the activities are not checked yet
+- [x] write up the whole run as a finding, with what did not work the first time. Section 242, which
+      also names the two defects on the page: labels measured through a stale font table and the
+      catalogue's command names being wider than a pad. Both fixed in the code, neither yet on the remote
 
 ## The order, and what could be done in parallel
 

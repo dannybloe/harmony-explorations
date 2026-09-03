@@ -1148,12 +1148,26 @@ export function composeDeviceScreen(
   chrome.bytes.forEach((byte) => block.u8(byte));
   block.u8(OP_CALL).u24(chromeAddress);
   block.u8(OP_FONT).u8(DEVICE_ROW_FONT);
-  rows.forEach((_, k) => {
+  // The font table is read afresh here, section 242: `rowSet` above was read before four
+  // relocations moved every glyph, so measuring a label through it gave zero for every label and
+  // the first device page written to a remote had each label starting at its pad's middle and
+  // running off the right edge. A set read before an insertion below it is stale by that insertion.
+  const measuringSet = (fontSets(current) ?? [])[DEVICE_ROW_FONT];
+  if (measuringSet === undefined) throw new ComposeError('the row font stopped reading');
+  rows.forEach((row, k) => {
     const [x, y] = DEVICE_PAGE_SLOTS[k] as readonly [number, number];
     const codes = rowCodes[k] as number[];
     block.u8(OP_IMAGE).u8(x).u8(y).u24(shifted(slots[k] as number));
     const width = bitmapAt(current, slots[k] as number)?.stride ?? 0;
-    const labelX = Math.max(0, x + Math.round((width - textWidth(current, rowSet, codes)) / 2));
+    const wide = textWidth(current, measuringSet, codes);
+    // A label wider than its pad is refused rather than drawn off the edge, which is what the
+    // catalogue's own command names do: `PowerToggle` is wider than the 81 pixel pad and read as
+    // `PowerT` on the remote. The caller supplies a display label instead.
+    if (wide > width) {
+      throw new ComposeError(`'${row.label}' is ${wide} pixels wide and its pad is ${width}, `
+        + 'so it would run off the pad: give the command a shorter label');
+    }
+    const labelX = x + Math.round((width - wide) / 2);
     block.u8(OP_TEXT_INLINE).u8(labelX).u8(y + DEVICE_LABEL_DROP);
     codes.forEach((code) => block.u8(code));
     block.u8(0);

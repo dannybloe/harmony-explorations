@@ -3,7 +3,8 @@
  *
  *   node packages/codec/bin/compose-device.ts --in <config> --out <file> \
  *       --manufacturer LG --model OLED55C27LA --label LG \
- *       --commands PowerToggle,VolumeUp,VolumeDown,ChannelUp,ChannelDown,Mute
+ *       --commands PowerToggle,VolumeUp,VolumeDown,ChannelUp,ChannelDown,Mute \
+ *       --labels Power,Vol+,Vol-,Ch+,Ch-,Mute --icon-like TV
  *
  * This is phase 9 of `docs/adding-a-device.md` in one command: pick a device out of the catalogue,
  * compose it, and print every check somebody should read before the result goes near a remote.
@@ -64,6 +65,10 @@ const wanted = (argument('commands') ?? fail('--commands is a comma separated li
 // Which existing device list row's icon the new row wears, by its drawn label: a television gets
 // the television's. Without it the first row's icon is copied, whatever device that is.
 const iconLike = argument('icon-like');
+// What each pad says, in the commands' order. The catalogue's own names are the default and the
+// long ones do not fit an 81 pixel pad, section 242, so a real device page passes `--labels`.
+const labels = argument('labels')?.split(',') ?? wanted;
+if (labels.length !== wanted.length) fail('--labels needs one label per command, in the same order');
 
 if (IR_ARCHIVE === undefined) {
   fail('no infrared archive: clone logitech-harmony-ir-archive beside this repository, '
@@ -96,7 +101,7 @@ process.stdout.write(`${input}: ${before.blob.length} bytes, ${wasDevices.length
 const composed = composeDevice(before, { label, commands, power: 0 });
 const withDevice = parse(composed.bytes);
 const screen = composeDeviceScreen(withDevice, label,
-  wanted.map((name, k) => ({ label: name, list: composed.lists[k] as number })),
+  labels.map((name, k) => ({ label: name, list: composed.lists[k] as number })),
   iconLike === undefined ? {} : { iconLike });
 const after = parse(screen.bytes);
 

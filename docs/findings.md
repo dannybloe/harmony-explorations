@@ -31106,3 +31106,76 @@ television's mode from its row is what this section does not yet claim.
 * `packages/codec/test/compose.test.ts`: the spare composed whole, the hit page's rectangles against
   the full page's, the three, three, one shape on all nine menus, the render, the pool copies, and the
   one row refusal exercised by composing twice.
+
+## 242. A device from Logitech's catalogue is on a Harmony One and the television answers it
+
+**Date:** 3 September 2026. **Status:** performed once, on the spare Harmony One, observed by Danny at
+the television. The write is measured; the reading of the screen the remote showed in between is one
+observation and is marked as such.
+
+**Phase 9's goal is reached.** Section 241's candidate, the spare's own configuration plus an LG
+television with six commands, was written to the spare by `packages/corpus/bin/write-config.ts`, 25 of
+the configuration's 26 blocks, each erase measured against both neighbours, each block read back, and
+the whole configuration read back byte for byte identical to the file. On the remote the device list
+has a third page with one row, `LG`, with a television icon and `3/` at the top left, as the render
+predicted; pressing the row opens a page of six pads; pressing the first pad switched the television
+on, and pressing it again switched it off. So a device chosen out of Logitech's catalogue, composed and
+written by this project's own code, is on a remote and drives its device.
+
+### What did not work the first time
+
+**The first attempt timed out halfway through its first block.** The block at `0x40000` was erased,
+its first 32 KiB written, and the second transfer failed with an I/O timeout from the host's HID
+layer; the remote then re-enumerated under a new path, so it rebooted. Its application ran normally
+afterwards, software type 0, and it answered a version request. Why the transfer timed out is not
+known: the same sequence went through on the second attempt, and the five writes of 1 September went
+through first time. **The writer's own advice was wrong and is fixed.** The failure message says to
+rerun with the same arguments, and the rerun would have refused, because the compare accepted a block
+only when it matched the dump byte for byte, and the half written block matched neither the dump nor
+the file. Flash only clears bits and a report lands whole, so an interrupted write leaves every byte
+either what the file puts there or erased, and nothing else; the compare recognises that state now,
+byte by byte rather than as a prefix since a byte the file wants at `0xff` cannot say which, and
+reports it. The second attempt then ran clean.
+
+**The remote said it was unprogrammed until its battery came out**, and that is the observation to
+carry. On the cable after the write it showed a USB connected message with no image; unplugged, it
+showed the screen that sends the user to the website to program it; after a battery pull it booted on
+the new configuration and showed the third page. The reading, **unconfirmed on one occurrence**: the
+reboot after the interrupted first attempt happened on a half written first block, which is exactly
+the state that screen exists for, and the second write completed underneath a remote that had already
+decided so. The message was the remote's memory of a bad boot and not the state of its flash, which
+the read back had shown to be right. What would settle it is a write that does not break off, on a
+remote that is watched through the cable pull.
+
+### What is wrong on the page, and why
+
+**Every label on the device page starts at its pad's middle and runs off the right edge**, so
+`PowerToggle` reads `PowerT`. Two causes, one a defect and one a naming choice. The defect is section
+241's stale address in one more place: the font table the label is measured through was read at the top
+of `composeDeviceScreen`, four relocations before the measurement, so every label measured zero wide
+and was centred as if it were, from the pad's middle. Read afresh now, and `compose.test.ts` asserts
+that every label starts and ends inside its pad and is centred there, which fails with the stale table.
+The naming choice is that the tool used the catalogue's command names as labels, and `PowerToggle` is
+wider than the 81 pixel pad in any position. The composer refuses a label wider than its pad now, and
+the tool takes `--labels`, one display label per command.
+
+So the page on the spare is the one this section describes, labels and all. The next write replaces it
+with centred, short labels, and it is a write of the whole configuration again, since the labels change
+the page's length.
+
+### What would falsify it
+
+The television not answering a command whose number the configuration already sent, which would put
+the fault in the page rather than the code; it answered. The remote failing to boot on the new
+configuration; it boots. And the unprogrammed screen reappearing after a clean write, which would refute
+the reading above.
+
+### Where it lands
+
+* `packages/corpus/bin/write-config.ts`: the compare accepts an interrupted write of the file being
+  written and says so.
+* `packages/codec/src/compose.ts`: the label is measured through a font table read after the
+  relocations, and a label wider than its pad is refused. `bin/compose-device.ts` takes `--labels`.
+* `packages/codec/test/compose.test.ts`: every device page label inside and centred on its pad.
+* The lab: both write logs beside the candidate's note, `reads/20260903T-one-spare-plus-lg-write-attempt1.log`
+  and `attempt2.log`.

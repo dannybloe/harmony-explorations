@@ -276,10 +276,26 @@ async function main(): Promise<void> {
     // **Read and compare every block before erasing any of them.** Not per block as it goes: a
     // second block that turns out not to match the dump would be discovered with the first already
     // rewritten, which is the one state this script must not create.
+    let interrupted = 0;
     for (const plan of plans) {
       process.stdout.write(`reading 0x${plan.block.toString(16)} off the remote to compare\n`);
       const live = await readBlock(plan.block);
       const differs = firstDifference(live, plan.intended);
+      // **A block an earlier run erased and did not finish writing is known content too**, which the
+      // failure message below promised and this compare did not deliver until 3 September 2026:
+      // the first write that added a device timed out half way through its first block, and the
+      // rerun the message asked for refused, because the block matched neither the dump nor the
+      // file. Flash only clears bits and a report lands whole, so an interrupted write leaves every
+      // byte either what this file puts there or erased, and nothing else. That state is recognised
+      // byte by byte rather than as a prefix, since a byte the file wants at 0xff cannot say which.
+      if (differs !== undefined
+          && live.every((byte, k) => byte === plan.content[k] || byte === 0xff)
+          && live.some((byte) => byte !== 0xff)) {
+        interrupted += 1;
+        process.stdout.write(`0x${plan.block.toString(16)} holds an interrupted write of this file: `
+          + 'this file\'s bytes then erased flash, so what an erase would destroy is known\n');
+        continue;
+      }
       if (differs !== undefined) {
         throw new Refusal(`the remote and ${dumpName} differ at `
           + `0x${(plan.block + differs).toString(16)}: 0x${live[differs]!.toString(16)} on the `
@@ -288,8 +304,10 @@ async function main(): Promise<void> {
           + 'fresh region read.');
       }
     }
-    process.stdout.write(`every block matches ${dumpName} byte for byte, so what the erase would `
-      + 'destroy is known\n');
+    process.stdout.write(interrupted === 0
+      ? `every block matches ${dumpName} byte for byte, so what the erase would destroy is known\n`
+      : `every block matches ${dumpName} byte for byte but ${interrupted} holding an interrupted `
+        + 'write of this file, so what the erase would destroy is known\n');
 
     for (const plan of plans) {
       if (plan.neighbours.length !== 2) {

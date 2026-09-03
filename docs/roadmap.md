@@ -128,11 +128,16 @@ the erase and write sequence now has one implementation, `writeBlock`, shared by
 writer, reachable through the `@harmony/usb/write` subpath so that a third caller is a decision
 somebody sees.
 
-**Phase 9 is at its write, section 241.** The page section 239 found missing is composed: on the
+**Phase 9 is done, section 242.** The LG television answers the spare Harmony One from a row this
+project composed and wrote, 3 September 2026. What the write taught is in that section: a transfer can
+time out halfway through a block and the writer now knows a half written block when it reads one back,
+and the page's labels need a display name and a font table read after the relocations. The check that
+is left is the clock and the other activities, and a second write with readable labels.
+
+**The page section 239 found missing was composed the same morning, section 241:** on the
 spare's own configuration every device list menu gains a third page holding one row, on a hit page
 derived from the full page's rectangles, and the candidate file passes every reader, the emitter and
-the render. What is left is the write, 25 of the configuration's 26 blocks, and the button press, both behind
-Danny's go.
+the render. The write was 25 of the configuration's 26 blocks.
 
 **Phase 9 was started and blocked by section 239**, and the block was a piece of phase 6 rather than
 anything to do with a remote. Composing a device from Logitech's catalogue on to the spare's own

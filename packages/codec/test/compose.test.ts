@@ -39,6 +39,10 @@ import {
   characterMap,
   composeDeviceScreen,
   deviceListRows,
+  fontSets,
+  glyphOf,
+  screenProgram,
+  bitmapAt,
   deviceModeMarker,
   devices,
   touchPages,
@@ -227,6 +231,30 @@ test('one_config takes the television onto its screen and every check holds', sk
   assert.equal(rendered.variants.length, 1, 'no switch, so one screen');
   assert.equal(rendered.variants[0]!.page.glyphsMissing, 0);
   assert.equal(rendered.variants[0]!.page.picturesMissing, 0);
+  // Every label sits inside its pad, section 242: the first device page written to a remote had
+  // each label starting at the pad's middle, because the label was measured through a font table
+  // read before the relocations moved the glyphs, so it measured zero wide. The check is the
+  // geometry the remote shows: a pad's picture is drawn at (x, y), its label is the text drawn
+  // twenty pixels lower, and the text's width in the row font must fit between the pad's edges.
+  const program = screenProgram(after, page.program)!;
+  const rowSet = fontSets(after)![9]!;
+  const pads = program.filter((one) => one.opcode === 0x02).map((one) => ({
+    x: one.operands[0]!, y: one.operands[1]!,
+    width: bitmapAt(after, one.operands[2]! | (one.operands[3]! << 8) | (one.operands[4]! << 16))!.stride,
+  }));
+  const labels = program.filter((one) => one.opcode === 0x05 && one.operands[1]! > 20);
+  assert.equal(labels.length, ROWS.length);
+  labels.forEach((text, k) => {
+    const pad = pads.find((one) => one.y + 20 === text.operands[1]! && one.x <= text.operands[0]!
+      && text.operands[0]! < one.x + one.width)!;
+    assert.ok(pad !== undefined, `label ${k} is drawn on a pad`);
+    const width = [...(text.glyphs ?? [])].reduce((sum, code) => sum + (glyphOf(after, rowSet, code)?.width ?? 0), 0);
+    assert.ok(width > 0, `label ${k} measures wider than nothing`);
+    assert.ok(text.operands[0]! + width <= pad.x + pad.width, `label ${k} ends inside its pad`);
+    assert.ok(text.operands[0]! >= pad.x, `label ${k} starts inside its pad`);
+    assert.ok(Math.abs((text.operands[0]! - pad.x) - (pad.x + pad.width - text.operands[0]! - width)) <= 1,
+              `label ${k} is centred on its pad`);
+  });
 
   // Every menu's grown page: the row on scan 50 runs the shared entering list, the flip moved to
   // scan 51 whatever spelling it had, the lead byte declares the three row layout, and the page

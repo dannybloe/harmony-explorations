@@ -681,10 +681,11 @@ files already here rather than for incoming ones.
 
 ## Never write to a remote
 
-Read paths only, with **one** exception performed deliberately and once: on 30 August 2026 a 64 KiB
-block of the spare Harmony One's own configuration was erased and written straight back, unchanged
-and verified, section 222. Nothing on a remote has been **changed** by this project. These devices
-are irreplaceable. Note that patching a concordance
+Read paths only, except on the **spare Harmony One**, deliberately and behind two flags: a block written
+back unchanged on 30 August 2026, section 222; a delay byte changed and reverted on 1 September, sections
+236 and 237; and a device added on 3 September, section 242, 25 blocks, after which the television
+answered it. No other remote has been written to, and the spare is the only one that may be. These
+devices are irreplaceable. Note that patching a concordance
 architecture constant to fix the firmware dump also redirects `erase_firmware()` and
 `write_firmware_to_remote(direct=1)`, so a patched build must be treated as read-only.
 
