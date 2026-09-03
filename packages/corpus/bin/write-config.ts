@@ -87,6 +87,9 @@ const SPARE_DUMPS = new Set([
   'one_spare_plus_lg_region',
   // Mid write: 24 blocks of the second candidate and one erased, section 242.
   'one_spare_mixed_region',
+  // And that state finished, the compare base for the first write to use the whole eight step
+  // sequence, section 246.
+  'one_spare_plus_lg2_region',
 ]);
 
 /** The lab's name for the unit this may run against. One label, because there is one write target. */

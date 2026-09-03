@@ -234,6 +234,11 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // the second candidate and 0x70000 is erased flash. Read because the previous dump had stopped
   // being the unit's content, which is what the writer's compare refused on. Section 242.
   one_spare_mixed_region: '20260903T104804Z-one-spare-mixed-region-0x40000-0x1e0000.bin',
+  // The state the second device write left the spare in once it was finished, 3 September 2026: the
+  // mixed region above with 0x70000 filled in, so its first 1668291 bytes are the second candidate
+  // byte for byte. Read as the compare base for the first write to use the whole eight step
+  // sequence, section 246, since the dump a write compares against is invalidated by that write.
+  one_spare_plus_lg2_region: '20260903T172120Z-one-spare-plus-lg2-region-0x40000-0x1e0000.bin',
   // Two configs Logitech compiled to a specification we wrote, 13 August 2026: the corpus's only
   // known answer samples. Section 132. Not in the corpus wide lists, on purpose; see tests/lab.py.
   calibration_one: 'calibration-one-spare.bin',
@@ -353,7 +358,7 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
   ['vendor_region_user_config', 'vendor_region_embedded_config', 'one_spare_after_first_write',
     'one_spare_20260901_delay', 'one_spare_20260901_denon', 'one_spare_20260901_region',
     'one_spare_written_by_us', 'one_spare_written_region', 'one_spare_plus_lg_region',
-    'one_spare_mixed_region'];
+    'one_spare_mixed_region', 'one_spare_plus_lg2_region'];
 
 const cache = new Map<string, string[]>();
 

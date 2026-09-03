@@ -92,6 +92,9 @@ const CONTAINERS = [
   // own output.
   'one_spare_plus_lg_region',
   'one_spare_mixed_region',
+  // And that mid write state finished, which is the fourth region of this unit and parses to the
+  // container our own composer produced, section 246.
+  'one_spare_plus_lg2_region',
   // The two configs Logitech compiled to a specification we wrote, section 132: the only samples
   // whose devices and activities were chosen before the bytes existed, so a disagreement between the
   // two implementations about them would be a disagreement about a known answer.
@@ -228,7 +231,9 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // a duplicate of both for the same reason and for a sharper one: two operands on the remote are
   // deliberately not what a vector carries, so this one matching says the edit stayed where it was
   // aimed.
-  assert.equal(present.length, 54, 'every vector, which is what `make golden` compares');
+  // 55 since the region read taken once the second device write was finished, section 246, which
+  // is a duplicate of the mid write one above except in the block that write completed.
+  assert.equal(present.length, 55, 'every vector, which is what `make golden` compares');
   // 38 since the Harmony 895 landed: its key table reads with the existing reader even though
   // every other arch 10 reader is gated, which is what made section 177's keypad closure possible
   // without any arch 10 progress at all.
@@ -242,7 +247,8 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // writes of 3 September 2026 left that unit in, section 242, whose containers this project's own
   // composer assembled: they carry a key table like any other and are the first vectors here that
   // check our own output rather than Logitech's.
-  assert.equal(complete, 50, 'the vectors whose container has a key table at all');
+  // 51 since that mid write state finished, section 246, which carries the same key table.
+  assert.equal(complete, 51, 'the vectors whose container has a key table at all');
 
   // **The number sender field, and why it needs its own guard.** It is an empty array on 30 vectors
   // and null on 8, with eight carrying a record since 30 August 2026, and this comment said 25 and 9
@@ -287,7 +293,9 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // Sixteen since the two device writes of 3 September 2026, section 242: the spare's favourite
   // channel records come through the composition unchanged, which is worth a line of its own because
   // the composer inserts bytes below them and base slot 16's records state addresses.
-  assert.equal(senders.filter((one) => Array.isArray(one) && one.length > 0).length, 16,
+  // Seventeen since that state finished, section 246: a third erase and write of the composed
+  // configuration's blocks and those records still read the same.
+  assert.equal(senders.filter((one) => Array.isArray(one) && one.length > 0).length, 17,
     'the configs that populate base slot 16');
 });
 
@@ -299,7 +307,7 @@ test('the list above covers exactly what the Python side writes a vector for', (
   const block = /^CONTAINERS = \($(.*?)^\)$/ms.exec(source);
   assert.ok(block, 'tools/golden.py has no CONTAINERS tuple in the expected shape');
   const python = [...block[1]!.matchAll(/'([a-z0-9_]+)'/g)].map((m) => m[1] as string);
-  assert.equal(python.length, 54, 'the golden vectors, which is what `make golden` prints');
+  assert.equal(python.length, 55, 'the golden vectors, which is what `make golden` prints');
   assert.deepEqual([...CONTAINERS].sort(), python.sort());
 });
 
