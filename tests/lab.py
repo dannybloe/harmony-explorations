@@ -230,6 +230,9 @@ IMAGES = {
     # use the whole eight step sequence, section 246. Its first 1668291 bytes are the second
     # candidate byte for byte and the rest is the previous read unchanged.
     'one_spare_plus_lg2_region': '20260903T172120Z-one-spare-plus-lg2-region-0x40000-0x1e0000.bin',
+    # And after the first write to use the whole eight step sequence, section 247: the region
+    # above with exactly two bytes different, which tests/test_write_sequence.py asserts.
+    'one_spare_denon65_region': '20260903T174116Z-one-spare-denon65-region-0x40000-0x1e0000.bin',
     # Two configs Logitech compiled to a specification we wrote, 13 August 2026, and the corpus's only
     # **known answer** samples: three devices and two activities chosen by us, on a throwaway account,
     # then compiled by the live service and downloaded without a byte reaching a remote. Section 132.
@@ -386,7 +389,7 @@ PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_confi
                       'one_spare_20260901_denon', 'one_spare_20260901_region',
                       'one_spare_written_by_us', 'one_spare_written_region',
                       'one_spare_plus_lg_region', 'one_spare_mixed_region',
-                      'one_spare_plus_lg2_region')
+                      'one_spare_plus_lg2_region', 'one_spare_denon65_region')
 
 CONTAINERS = (
     'h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'h525_config_2', 'one_config',

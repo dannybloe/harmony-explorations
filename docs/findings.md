@@ -31673,3 +31673,74 @@ what the next write will show.
 * `packages/usb/src/writes.ts`: `invalidateRequest`, one payload byte, `0xA1 0x02` on the wire, which
   is byte for byte what concordance sends.
 * `docs/usb-protocol.md`: selector `0x02` identified, where it was one of the unidentified ones.
+
+## 247. The full write sequence on hardware: the remote restarts itself and asks for nothing
+
+**Date:** 3 September 2026. **Status:** measured on the spare Harmony One, arch 12, with Danny
+watching the screen. One write, one byte of content, both new steps sent for the first time.
+
+**Sections 245 and 246 said our write was missing a first step and a last one, and this is the write
+that sent them.** The two symptoms every previous write on this bench left behind are both gone. The
+remote did not ask to be synced with Logitech's website, and it did not need its battery pulled: it
+left the USB bus on its own and came back thirteen seconds later running its application, software
+type 0, with the ordinary activities screen on it.
+
+### What was written, and why it is the smallest thing that could have been
+
+The configuration already on the remote was the second device candidate of section 242, confirmed by
+a region read before anything was touched: 64974 of its bytes differ from the read taken mid write
+and every one of them is inside `0x70000`, the block the sixth attempt completed, so the fresh read
+is that state plus that block and nothing else. Its first 1668291 bytes are the candidate file byte
+for byte, which is a second route to the same statement as that attempt's own read back.
+
+`set-delay.ts` then raised one device's power on delay from 60 to 65 tenths of a second, which is one
+byte of content and, with the trailer checksum that follows from it, **two** bytes in two runs
+1389461 bytes apart. Section 187 is why that costs two 64 KiB erase blocks rather than one, and it is
+the cheapest real write this project can make.
+
+| | |
+|---|---|
+| blocks | `0x80000` and `0x1D0000`, each matching the dump byte for byte before the erase |
+| erase | 64 KiB each, both neighbours read before and after, unchanged both times |
+| write | 42 transfers of 3150 bytes and a tail, which is section 245's corrected chunk size |
+| read back | per block, and then the whole 1668291 bytes against the file: identical |
+| restart | sent, the device left the bus, and it enumerated again on its own |
+
+### The honest limit: two changes went in together
+
+**This does not say which of the two steps closed the screen.** The invalidate and the restart were
+both added by section 246 and both sent in this run, and section 244 leaves open which condition
+selects a status screen, so nothing here attributes the outcome to one of them. The reading in 246
+predicts the invalidate is the one that matters, because it clears the descriptors the running
+firmware would otherwise keep using for a region that has changed under it, and a restart would
+reload those descriptors anyway.
+
+The control that separates them is cheap and has not been run: one more one byte write with the
+invalidate and **without** the restart. If the screen stays clean, the invalidate is the fix and the
+restart is a convenience. If it comes back, the restart is the fix and the invalidate is insurance on
+an architecture that executes its configuration out of the flash being erased.
+
+### A prediction of our own that was wrong, corrected in place
+
+`write-config.ts` closes the device in a `finally` and reported a failing close as expected, on the
+reasoning that a reset leaves nothing to close. **The close succeeded**, so that arm did not fire and
+its comment was wrong on this platform: the handle survives long enough to be closed after the escape
+goes out. The arm stays, because it costs nothing and a platform where the handle dies immediately is
+the ordinary case rather than a surprise, but it no longer claims the failure is the expected
+outcome.
+
+### What would falsify it
+
+A write with the full sequence that still leaves the remote asking for a sync, or that still needs a
+battery pull. Either would mean the two steps are not what those symptoms were about, and the
+symptoms have now survived every other write this project has made.
+
+### Where it lands
+
+* `one_spare_plus_lg2_region` and `one_spare_denon65_region` as fixtures, being the unit before and
+  after this write, with the test that the second holds the file we wrote and differs from the first
+  in exactly the two bytes the edit aimed at.
+* The write journal is beside the config in the lab, one file per run, which is section 243's fix
+  working for the first time on a run that mattered.
+* The remote is left with that device's power on delay half a second longer than Logitech's compiler
+  put it, which is a deliberate, reversible difference rather than an oversight.

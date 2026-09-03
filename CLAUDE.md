@@ -683,8 +683,10 @@ files already here rather than for incoming ones.
 
 Read paths only, except on the **spare Harmony One**, deliberately and behind two flags: a block written
 back unchanged on 30 August 2026, section 222; a delay byte changed and reverted on 1 September, sections
-236 and 237; and a device added on 3 September, section 242, 25 blocks, after which the television
-answered it. No other remote has been written to, and the spare is the only one that may be. These
+236 and 237; a device added on 3 September, section 242, 25 blocks, after which the television
+answered it; and one power on delay raised the same day, section 247, two blocks, which is the first
+write to use the whole eight step sequence. No other remote has been written to, and the spare is the
+only one that may be. These
 devices are irreplaceable. Note that patching a concordance
 architecture constant to fix the firmware dump also redirects `erase_firmware()` and
 `write_firmware_to_remote(direct=1)`, so a patched build must be treated as read-only.
@@ -739,7 +741,11 @@ document:
   arch 12 (Harmony One) because it executes its configuration in place out of the flash being
   erased; and **restarting the remote** at the end, the escape's `0x02`, which is the battery pull
   this bench performed by hand after every write. Both are implemented behind
-  `assertInvalidateAllowed` and `assertResetAllowed`. Setting the clock over USB, their step 8, is
+  `assertInvalidateAllowed` and `assertResetAllowed`, and **both have been sent**, section 247: a two
+  block write on 3 September 2026 after which the remote left the bus, came back on its own running
+  its application, and showed the ordinary screen rather than asking to be synced. **Which of the two
+  closed that screen is not separated**, since they went in together, and the control is one more
+  write with the invalidate and no restart. Setting the clock over USB, their step 8, is
   deliberately **not** implemented, because our writer stamps the configuration and an arch 12 remote
   reseeds its clock from that stamp at every boot. And a transfer is **3150 bytes**, which is
   Logitech's client's number and concordance's alike, where ours was 32768 until 3 September 2026.

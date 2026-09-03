@@ -90,6 +90,8 @@ const SPARE_DUMPS = new Set([
   // And that state finished, the compare base for the first write to use the whole eight step
   // sequence, section 246.
   'one_spare_plus_lg2_region',
+  // And after that write, section 247, which is the compare base for whatever comes next.
+  'one_spare_denon65_region',
 ]);
 
 /** The lab's name for the unit this may run against. One label, because there is one write target. */
@@ -427,8 +429,11 @@ async function main(): Promise<void> {
     // **Step 7, and it is the last thing this script does on purpose.** concordance ends a config
     // write with a device reset and waits for the remote to come back, which is the battery pull
     // this bench has performed by hand after every write, section 245. Nothing acknowledges a
-    // command that ends in a reset, so there is nothing to wait for here and the handle is finished:
-    // the `finally` below closes it and the close is expected to complain.
+    // command that ends in a reset, so there is nothing to wait for here.
+    // **Measured on the first run that sent it, section 247: the close then succeeded.** This said
+    // the handle was finished and the close was expected to complain, and it is not: on macOS the
+    // handle survives the escape long enough to close cleanly, and the remote leaves the bus
+    // afterwards. The arm below still catches the other case rather than assuming this one.
     say('restarting the remote, which is what a battery pull was doing by hand\n');
     await remote.resetDevice(permission);
     resetSent = true;
@@ -438,9 +443,11 @@ async function main(): Promise<void> {
     try {
       await remote.close();
     } catch (error: unknown) {
-      // After a reset the device has already left the bus, so a close that complains is the expected
-      // outcome rather than a fault, and reporting it as one would teach an operator to ignore the
-      // line when it is real.
+      // A close that complains after a reset is the device having already left the bus, which is a
+      // platform's business rather than a fault. Section 247 measured the opposite on macOS, so this
+      // is the arm for a platform where the handle dies immediately: it says what happened without
+      // calling it a failure, because reporting it as one would teach an operator to ignore the line
+      // when it is real.
       if (resetSent) {
         say(`(the handle was already gone, which is what a restart does)\n`);
       } else {

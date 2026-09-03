@@ -65,6 +65,12 @@ const productId = (candidates[0] as { productId: number }).productId;
 
 const remote = new HarmonyRemote(await openHarmony({ productId }));
 try {
+  // **The first question asked of a remote is the one a previous session's leftovers answer**, which
+  // `write-config.ts` has drained since section 242 and this did not. On 3 September 2026 a region
+  // read straight after a replug failed with no reply to `GET_VERSION` in three polls, and the same
+  // command through `read-identity.ts` answered immediately afterwards, so the pipe was dirty rather
+  // than the remote unwell. Section 247.
+  await remote.drainLeftovers();
   const architecture = architectureFromVersion(await remote.getVersion());
   if (architecture === undefined) fail('the remote did not say which architecture it is');
   const base = CONFIG_REGION_BASE[architecture];

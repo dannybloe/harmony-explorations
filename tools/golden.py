@@ -94,6 +94,8 @@ CONTAINERS = (
     'one_spare_mixed_region',
     # And that mid write state finished, section 246: the fourth region read of this unit.
     'one_spare_plus_lg2_region',
+    # And after the write of section 247, the first to use the whole eight step sequence.
+    'one_spare_denon65_region',
     # The two configs Logitech compiled to a specification we wrote, section 132. They are out of the
     # corpus wide claim lists, deliberately, and they belong here for the same reason the arch 9 safe
     # mode container does: a golden vector is a cheap check between two implementations and costs the

@@ -139,8 +139,16 @@ clock is right, and the other activities unchanged.
 any log was read as the remote doing it to itself, and the firmware says it cannot: the application has
 one route to an external erase and its address arrives in a USB report, while the programming path it
 can use unasked only clears bits. So the erase was ours and the record of it was lost, which is why
-the writer now keeps its own journal beside the configuration, one file per run. What is still open is
-the remote calling itself unprogrammed after a write until its battery comes out.
+the writer now keeps its own journal beside the configuration, one file per run.
+
+**And the other one is closed too, sections 245 to 247.** The remote asking to be synced after every
+write, until its battery came out, was our write sequence being three steps where a working one is
+eight: nothing dropped the remote's cached description of the flash before the erase, and nothing
+restarted it afterwards. Both were read out of Logitech's own client and concordance, the first was
+identified in the firmware before it was ever sent, and a two block write on 3 September 2026 with
+both in place came back to the ordinary screen and re-enumerated on its own. **Which of the two did
+it is not separated**, since they went in together, and the control is one more write with the
+invalidate and no restart.
 
 **The page section 239 found missing was composed the same morning, section 241:** on the
 spare's own configuration every device list menu gains a third page holding one row, on a hit page

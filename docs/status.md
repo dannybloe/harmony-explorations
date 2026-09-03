@@ -439,7 +439,7 @@ finding.
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 246<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 247<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -667,15 +667,27 @@ is erase, write, verify. The invalidate exists so that nothing references the co
 is being replaced, which matters most on the one architecture that executes its configuration in
 place, and the reset is the battery pull that has been done by hand after every write here. The
 transfer size is fixed already: both Logitech's client and concordance cap a write at 3150 bytes and
-ours was sending 32768, ten times longer than anything either has been seen to send. The three
-missing steps are writes and are not implemented yet.
+ours was sending 32768, ten times longer than anything either has been seen to send.
+
+**Two of the three are implemented and both have been sent, sections 246 and 247.** The invalidate
+was identified in the firmware before it was ever put on the wire, which is what stopped this project
+trusting its upstream name: it clears three descriptors in the remote's data memory and reaches no
+flash gate at all, so it is a cache drop rather than the flash operation the name promises. The reset
+is the escape section 97 had already read. A two block write on 3 September 2026 sent both, read back
+byte for byte, and the remote then left the USB bus, came back on its own running its application,
+and showed the ordinary activities screen: **the screen asking for a sync and the battery pull are
+both gone**. Which of the two steps closed the screen is not separated, since they went in together,
+and the control that would separate them is one more write with the invalidate and no restart. The
+third step, setting the clock over USB, is deliberately not implemented: our writer stamps the
+configuration and an arch 12 remote reseeds its clock from that stamp at every boot.
 
 **Phase 9 is done: a device out of Logitech's catalogue is on the spare Harmony One and the television
 answers it, section 242.** The candidate below was written on 3 September 2026, 25 blocks read back
 identical, and Danny switched the LG on and off from the new row. The first attempt broke off halfway
 through its first block and the writer's compare had to learn what a half written block is before the
 rerun would go; the remote showed a status screen asking for a sync until a battery pull, which
-happens after a clean write too and so follows the write rather than the broken one. The page's labels were wrong on
+happens after a clean write too and so follows the write rather than the broken one, and which
+section 247 has since closed. The page's labels were wrong on
 the remote, measured through a stale font table and too long for their pads, and a second
 configuration with readable labels and a save stamp is on the remote since that afternoon: its clock
 is right, which is what the stamping rail exists for. That write took five attempts and three of them
