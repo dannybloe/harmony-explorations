@@ -345,8 +345,21 @@ H525_INSTRUCTION_LENGTH = 3
 #: The underflow bound compares the pointer against the base; the overflow one against the end.
 H525_UNDERFLOW_CHECK, H525_OVERFLOW_CHECK = 0x02524, 0x02562
 H525_WRAPS_UP, H525_WRAPS_DOWN = 0x0201C, 0x01F18
-#: The opcode range that reaches the re-validation, and the two container handlers it can pick.
-H525_REVALIDATE_RANGE = 0xC0
+#: An arch 9 instruction, section 255: operand low, operand high, opcode, staged then copied.
+#:
+#: The format's own `{ u16 operand; u8 opcode }` little endian, read in file order. What identifies
+#: it is the loop head comparing the **third** byte against opcode `0x1F`, which the other two
+#: architectures already read, and the **second** against one of that opcode's sub-command values.
+H525_STAGED = (0x754, 0x755, 0x756)
+H525_WORKING = (0x3D7, 0x3D8, 0x3D9)
+H525_LOOP_HEAD, H525_STAGES_AT = 0x01BA2, 0x01BC8
+H525_KNOWN_OPCODE, H525_SUBCOMMAND_SPECIAL = 0x1F, 0xFC
+#: The fetch, which names both ring constants in one place and steps by a single byte.
+H525_FETCH, H525_PENDING_COUNT = 0x0193A, 0x345
+#: The band that reaches the re-validation is the **operand's high byte**, not the opcode, and the
+#: opcodes that reach the chain at all are a separate range. Section 254 conflated the two.
+H525_OPERAND_BAND = 0xC0
+H525_OPCODE_RANGE = (0x1F, 0x3F)
 H525_REVALIDATE_DISPATCH, H525_REVALIDATE_ENTRY = 0x02044, 0x02432
 H525_ORDER_VARIABLE = 0x3DC
 
@@ -855,17 +868,93 @@ class TheHarmony525ActionRingClosesOnItself(unittest.TestCase):
         where, _ = isa.resolve_file(step.fields['f'], step.fields['a'], H525_RING_POINTER >> 8)
         self.assertEqual(where, H525_RING_POINTER)
 
-    def test_the_revalidation_is_reached_from_an_opcode_range_with_the_order_in_its_low_nibble(self):
+    def test_the_revalidation_is_reached_from_an_operand_band_with_the_order_in_its_low_nibble(self):
+        """An **operand** band, not an opcode one, which is section 255's correction to 254."""
         lab.require('h525_code')
         instrs = dict(_instructions('h525_code', 0x0))
-        # The range test, then the low nibble into the order variable, then the call.
-        self.assertEqual(instrs[0x02030].fields['k'], H525_REVALIDATE_RANGE)
+        # The band test, then the low nibble into the order variable, then the call.
+        self.assertEqual(instrs[0x02030].fields['k'], H525_OPERAND_BAND)
         self.assertEqual(instrs[0x02038].fields['k'], 0x0F)
         order = instrs[0x0203E]
         self.assertEqual(order.mnemonic, 'MOVWF')
         where, _ = isa.resolve_file(order.fields['f'], order.fields['a'], H525_ORDER_VARIABLE >> 8)
         self.assertEqual(where, H525_ORDER_VARIABLE)
         self.assertEqual(instrs[H525_REVALIDATE_DISPATCH].fields['target'], H525_REVALIDATE_ENTRY)
+
+
+
+class AnArch9InstructionIsOperandThenOpcode(unittest.TestCase):
+    """Section 255, and it is what makes section 254's band an operand's rather than an opcode's.
+
+    The identification does not rest on the field order looking familiar. It rests on the loop head
+    comparing the **third** staged byte against `0x1F`, an opcode arch 12 and arch 14 already read,
+    and the **second** against one of that opcode's known sub-command values, which is only coherent
+    if the third byte is the opcode and the second is the operand's high byte.
+    """
+
+    def test_the_loop_head_fetches_three_bytes_and_stages_them_in_order(self):
+        lab.require('h525_code')
+        instrs = dict(_instructions('h525_code', 0x0))
+        for n, staged in enumerate(H525_STAGED):
+            fetch = instrs[H525_LOOP_HEAD + 6 * n]
+            self.assertEqual(fetch.fields['target'], H525_FETCH)
+            store = instrs[H525_LOOP_HEAD + 6 * n + 4]
+            self.assertEqual(store.mnemonic, 'MOVWF')
+            self.assertEqual(store.fields['f'], staged & 0xFF)
+
+    def test_the_third_byte_is_tested_against_an_opcode_the_other_architectures_read(self):
+        """The whole identification, in two instructions."""
+        lab.require('h525_code')
+        instrs = dict(_instructions('h525_code', 0x0))
+        self.assertEqual(instrs[0x01BB4].fields['k'], H525_KNOWN_OPCODE)
+        opcode = instrs[0x01BB6]
+        self.assertEqual(opcode.mnemonic, 'SUBWF')
+        self.assertEqual(opcode.fields['f'], H525_STAGED[2] & 0xFF)
+        # And the second byte against a sub-command value of that same opcode.
+        self.assertEqual(instrs[0x01BBA].fields['k'], H525_SUBCOMMAND_SPECIAL)
+        self.assertEqual(instrs[0x01BBC].fields['f'], H525_STAGED[1] & 0xFF)
+
+    def test_the_staged_triple_is_copied_into_the_working_registers_in_the_same_order(self):
+        lab.require('h525_code')
+        instrs = dict(_instructions('h525_code', 0x0))
+        for n, (staged, working) in enumerate(zip(H525_STAGED, H525_WORKING)):
+            move = instrs[H525_STAGES_AT + 4 * n]
+            self.assertEqual(move.mnemonic, 'MOVFF')
+            self.assertEqual(move.fields['src'], staged)
+            self.assertEqual(move.fields['dst'], working)
+
+    def test_the_band_tested_is_the_operand_high_byte_and_not_the_opcode(self):
+        """The correction itself: the byte the chain masks is the second, not the third."""
+        self.assertEqual(H525_WORKING[1], 0x3D8)
+        lab.require('h525_code')
+        instrs = dict(_instructions('h525_code', 0x0))
+        masked = instrs[0x0203A]
+        self.assertEqual(masked.mnemonic, 'ANDWF')
+        self.assertEqual(masked.fields['f'], H525_WORKING[1] & 0xFF)
+        # And the opcode is narrowed separately, before any of the band tests.
+        low, high = H525_OPCODE_RANGE
+        self.assertEqual(instrs[0x01F6A].fields['k'], low)
+        self.assertEqual(instrs[0x01F72].fields['k'], high)
+        for at in (0x01F6C, 0x01F74):
+            self.assertEqual(instrs[at].fields['f'], H525_WORKING[2] & 0xFF)
+
+    def test_no_bank_select_sits_between_the_resolved_read_and_the_band_tests(self):
+        """The chain of custody that settles the bank, which an inference could not.
+
+        `0x01C8C` sets BSR to 3 and `0x01C8E` reads the opcode resolved. If nothing between there
+        and the mask changes BSR, every banked operand on the path is in bank 3 as a fact rather
+        than as the disassembler's guess, and losing that is what left section 254 open.
+        """
+        lab.require('h525_code')
+        instrs = dict(_instructions('h525_code', 0x0))
+        anchor = instrs[0x01C8C]
+        self.assertEqual((anchor.mnemonic, anchor.fields['k']), ('MOVLB', H525_WORKING[0] >> 8))
+        path = (0x01C8E, 0x01C90, 0x01C92, 0x01F6A, 0x01F6C, 0x01F6E, 0x01F72, 0x01F74, 0x01F76,
+                0x01F78, 0x01F7A, 0x01F7C, 0x01F8E, 0x01F90, 0x01F92, 0x01FD4, 0x01FD6, 0x01FD8,
+                0x02030, 0x02032, 0x02034, 0x02038, 0x0203A)
+        for at in path:
+            self.assertNotEqual(instrs[at].category, isa.BANKSEL,
+                                'a MOVLB at 0x%05X would break the chain of custody' % at)
 
 if __name__ == '__main__':
     unittest.main()

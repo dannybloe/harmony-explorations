@@ -32567,10 +32567,14 @@ is right.
 
 ### The re-validation is one instruction in that list
 
-Opcodes at or above `0xC0` and below `0xD0` reach `0x02044`: the handler takes the byte's **low
-nibble** into `0x3DC` and calls `0x02432`, which re-validates a container and writes the verdict back
-into `0x109`. `0x3DC` holding 2 or 3 chooses the order, `0x024D0` validating container index 1 and
-`0x02508` index 0.
+**This section first said "opcodes at or above `0xC0` and below `0xD0`"**<!--superseded--> and
+section 255 corrects it within the hour: `0xC0` to `0xCF` is a band of the **operand's high byte**,
+not of the opcode, and the opcodes that reach the chain are `0x1F` to `0x3E`. The structure and the
+handler are as described; what was wrong is which of an instruction's three bytes carries the number.
+
+The handler at `0x02044` takes that byte's **low nibble** into `0x3DC` and calls `0x02432`, which
+re-validates a container and writes the verdict back into `0x109`. `0x3DC` holding 2 or 3 chooses the
+order, `0x024D0` validating container index 1 and `0x02508` index 0.
 
 So on a Harmony 525 a configuration can ask the remote to re-check itself. Neither of the other two
 architectures has anything like it: arch 12 (Harmony One) re-checks on a cable transition and arch 14
@@ -32578,7 +32582,7 @@ architectures has anything like it: arch 12 (Harmony One) re-checks on a cable t
 configuration's. **No config in the corpus emits one**, which is the same answer section 118 gave for
 the two flash writing opcodes on arch 14.
 
-### What the dispatched byte's address is, and why it is still open
+### What the dispatched byte's address is: open here, settled in section 255
 
 The chain compares `0xd8` in the banked form, and the bank is unknown on the path in: this project's
 disassembler drops its `BSR` tracking at a control transfer and the branch into the chain is one, and
@@ -32592,9 +32596,98 @@ not where an opcode would sit. Either the buffer is read in an order this readin
 chain switches on something else. Left open rather than resolved by preference, and the cheap next
 step is to follow the fetch routine `0x0193A` and see what the first byte of a triple is stored as.
 
+**That step was taken and both readings were half right, section 255.** It is `0x3D8`, so the chain
+does switch on that byte, and `0x3D8` holds the operand's **high** byte rather than the opcode, so
+the band this section called an opcode range is a band of an operand.
+
 ### Where it lands
 
 * `tests/test_status_screens.py`: the ring's base, end, wrap and pointer, the arithmetic closure
   between them, the equality with `packages/codec`'s own queue constant, and the two bound checks
   being in opposite directions.
 * The open item above, and section 253's pitfall, which this is a second instance of.
+
+## 255. An arch 9 instruction is operand then opcode, and the chain switches on the operand
+
+Section 254 left one thing open, which byte the Harmony 525's interpreter dispatches on, and it named
+the two readings that disagreed. Following the fetch routine settles it, and the answer makes one of
+that section's claims wrong: `0x3D8` **is** the byte, and `0x3D8` holds the operand's **high byte**,
+so the `0xC0` to `0xCF` band is a band of an operand rather than of an opcode.
+
+### The fetch, and the third confirmation of the ring
+
+`0x0193A` returns one byte and is the only way the interpreter reads one:
+
+```
+0193a: FSR0 = 0x3BE, 0x3BF        the read pointer
+01942: 0x700 = INDF0              the byte
+01948: DECF 0x345,F               one fewer byte pending
+0194a: pointer += 1
+01950: compare pointer with 0x03BE
+0195a: pointer = 0x0346           wrap to the base
+01964: return the byte in W
+```
+
+**That is section 254's ring a third time**, from a routine that names both constants in one place:
+base `0x0346`, end `0x03BE`, and a pointer that advances by **one byte** rather than by an
+instruction. It also gives one address that section was missing: the count of bytes pending sits at
+`0x345`, immediately below the ring's base, and the fetch decrements it.
+
+### An instruction is three bytes, operand first
+
+The interpreter's loop head, `0x01BA2`, fetches three bytes into a staging triple and then copies
+them into the working registers:
+
+```
+01ba2: fetch -> 0x754
+01ba8: fetch -> 0x755
+01bae: fetch -> 0x756
+01bb4: MOVLW 0x1f; SUBWF 0x756,W; BNZ    is the third byte 0x1F?
+01bba: MOVLW 0xfc; SUBWF 0x755,W; BNZ    with the second byte 0xFC?
+01bc0: MOVFF 0x754,0x3cf; GOTO 0x01b10   a special case
+01bc8: 0x3D7 = 0x754, 0x3D8 = 0x755, 0x3D9 = 0x756
+```
+
+**The comparison against `0x1F` is what identifies the field order.** `0x1F` is an action list opcode
+this project already reads on arch 12 and arch 14, and `docs/config-format.md` records it carrying a
+sub-command in the operand's **high byte**, `0xFE` to push into a table and `0xFF` to carry an index.
+The loop head tests the **third** byte against it and the **second** byte against a high byte value,
+`0xFC`. So the third byte is the opcode and the second is the operand's high byte, which is exactly
+the format's own `{ u16 operand; u8 opcode }` little endian, read in file order:
+
+| ring byte | staged at | working register | field |
+|---|---|---|---|
+| first | `0x754` | `0x3D7` | operand, low byte |
+| second | `0x755` | `0x3D8` | operand, high byte |
+| third | `0x756` | `0x3D9` | opcode |
+
+`0xFC` is a third value of that sub-command byte and it is new here. What it does is unread: it
+copies the operand's low byte to `0x3CF` and jumps out of the loop.
+
+### So the band is an operand's, and the bank is proven rather than inferred
+
+The outer dispatch is on the opcode. `0x01C8E` compares `0x3D9` against `0x6F` with `MOVLB 0x3` two
+instructions earlier, so that read is resolved, and opcodes below `0x6F` branch to `0x01F6A`. From
+there to the re-validation there is **no `MOVLB` on the path**: `0x01F6A` and `0x01F72` narrow the
+opcode to `[0x1F, 0x3F)`, then `0x01F7A`, `0x01F90`, `0x01FD6` and `0x02032` test the same second
+byte against `0xF0`, `0xE0`, `0xD0` and `0xC0`, and `0x02038` masks its low nibble. The first `MOVLB`
+after the branch is at `0x0203C`, after every one of those tests.
+
+**That is a chain of custody rather than a bank inference**, which matters because losing the bank is
+what left section 254 open and what section 253 recorded as a pitfall. The way to settle it was to
+find the last explicit `MOVLB` before the branch and check that nothing between there and the site
+changes it, and that is worth doing whenever the disassembler prints the banked form.
+
+So the instruction that asks a Harmony 525 to re-validate is an opcode in `0x1F` to `0x3E` with the
+operand's high byte in `0xC0` to `0xCF`, and that high byte's low nibble chooses which container goes
+first. The bands above it, `0xD0`, `0xE0` and `0xF0`, are three more sub-command groups of the same
+operand byte, and what they do is unread.
+
+### Where it lands
+
+* `tests/test_status_screens.py`: the field order with the `0x1F` comparison that proves it, the
+  fetch's wrap naming both ring constants, the pending count below the base, and the opcode band with
+  the operand band kept separate.
+* `docs/config-format.md`: the field order per architecture, and the re-validation restated as an
+  operand band.
+* Section 254, corrected in place, and `reference/superseded.md`.

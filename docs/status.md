@@ -439,7 +439,7 @@ finding.
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 254<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 255<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -753,11 +753,20 @@ nowhere else, showed it had been running for twenty three minutes without a brea
 re-checks the configuration we wrote, by itself, while running.
 
 **And the 525's own answer came with something better attached, section 254.** What asks that remote
-to re-check its configuration is an **instruction in the configuration itself**, opcodes `0xC0` to
-`0xCF`, which no other remote here has: the other two decide to re-check on their own. Reading the
+to re-check its configuration is an **instruction in the configuration itself**, which no other
+remote here has: the other two decide to re-check on their own. Reading the
 interpreter around it also gave the address of the forty slot action queue on that architecture, and
 its three constants close on each other, so the forty that the writer's sequence rail rests on is now
 measured on two architectures with nothing in common.
+
+**And the instruction's own layout came with it, section 255**, which corrected a claim section 254
+had made an hour earlier: the number that selects the re-check sits in the instruction's **operand**
+rather than in its opcode, and an arch 9 instruction turns out to be laid out exactly as the format
+states, operand first and opcode last. What proves it is the interpreter comparing the third byte
+against an opcode the other two remotes already read. The way the bank was finally settled is worth
+repeating: find the last place the firmware sets it explicitly and check that nothing on the path
+changes it, rather than trusting either of our tools, both of which had guessed and one of which had
+guessed a plausible wrong answer.
 
 **And all three architectures were read, sections 252 and 253, so the trap is one remote's.** The
 Harmony 600 has the same machinery and escapes for one reason, the Harmony 525 has different

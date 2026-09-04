@@ -2903,7 +2903,10 @@ exceeds forty is one the remote accepts and silently does less than.
 **Arch 9 carries the same ring and its address is known**, section 254: base `0x0346`, exclusive end
 `0x03BE`, write pointer at `0x03BE` and `0x03BF` immediately past it, and a wrap constant of `0x78`
 added on underflow and subtracted on overflow by two bound checks that name different ends. The base
-plus the wrap is the end, so the three constants close on each other, and `0x78 / 3` is forty. That
+plus the wrap is the end, so the three constants close on each other, and `0x78 / 3` is forty. The
+count of bytes still pending sits at `0x345`, immediately **below** the base, and the fetch routine
+decrements it; that routine names both the base and the end in one place and advances the read
+pointer by **one byte** rather than by an instruction, section 255. That
 figure was derived on arch 12 from the queue's own writer and here from three addresses on an
 architecture with a different SFR map, so it is measured twice with nothing in common.
 
@@ -2912,12 +2915,20 @@ of the corpus. `packages/codec/src/queue.ts` computes it and `assertQueueFits` r
 reports follows `0x7F` only and is therefore a lower bound, since a write to a state variable also
 pushes. `docs/findings.md` section 238.
 
-#### Arch 9 has an opcode that re-validates the configuration, `0xC0` to `0xCF`
+#### Arch 9 re-validates the configuration on opcode `0x1F` to `0x3E` with operand high byte `0xC0` to `0xCF`
 
-**Confirmed on arch 9 only**, from the firmware, section 254. The interpreter's range chain sends a
-byte at or above `0xC0` and below `0xD0` to a handler that takes the **low nibble** as an order
-selector and calls the container re-validation, which validates a container and writes the verdict
-bit the status screens are chosen by. Values 2 and 3 of the nibble choose which container goes first.
+**Confirmed on arch 9 only**, from the firmware, sections 254 and 255. **Section 254 gave this as an
+opcode band `0xC0` to `0xCF`**<!--superseded--> and section 255 corrects it: `0xC0` to `0xCF` is a
+band of the **operand's high byte**, and the opcodes that reach the chain are `0x1F` to `0x3E`. The
+handler takes that high byte's **low nibble** as an order selector and calls the container
+re-validation, which validates a container and writes the verdict bit the status screens are chosen
+by. Nibble values 2 and 3 choose which container goes first.
+
+That is the same shape this document already records for `0x1F` on the other architectures, where the
+operand's high byte carries a sub-command, `0xFE` to push into a table and `0xFF` to carry an index.
+Arch 9 uses the byte the same way and has more bands of it: `0xD0`, `0xE0` and `0xF0` are three
+further groups and what they do is unread, and `0xFC` is a fourth value, special cased in the
+interpreter's loop head before the dispatch even begins.
 
 **Neither other architecture has it.** On arch 12 the re-validation runs from a cable transition and
 on arch 14 from a poll, both the firmware's decision rather than the configuration's, sections 251
@@ -2928,10 +2939,13 @@ itself.
 writing opcodes on arch 14. A writer has no reason to emit it and this is recorded so that a
 disassembly of an arch 9 action list has a name for the opcode rather than a gap.
 
-**Unconfirmed:** which data address the range chain switches on. Two sites inside the same
-interpreter resolve to `0x3D8` with the bank set explicitly, and `0x3D8` is also written as the
-second of three fetched bytes, which is not where an opcode would sit. `docs/findings.md` section 254
-states the disagreement rather than choosing.
+**Confirmed, section 255:** the chain switches on `0x3D8`, and an arch 9 instruction is staged as
+operand low, operand high, opcode, so `0x3D7` is the operand's low byte, `0x3D8` its high byte and
+`0x3D9` the opcode. **That is the format's own field order**, `{ u16 operand; u8 opcode }` little
+endian, read in file order, and what identifies it is the loop head comparing the **third** byte
+against opcode `0x1F` and the **second** against a sub-command value. The bank is established by
+chain of custody, the last explicit `MOVLB` before the branch into the chain plus the absence of any
+other on the path, rather than by the disassembler's inference, which drops at a control transfer.
 
 #### The final run belongs to base slot 8
 
