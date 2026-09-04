@@ -329,6 +329,16 @@ H600_READS_THE_GATE = 0x1544C
 H600_GATE_VARIABLE = 0x6E3
 H600_ARMING_PREDICATE = 0x19486
 H600_ARMS_AT = 0x1545C
+#: The same flags on arch 9, section 253, all three in one byte and no discriminator variable.
+H525_FLAGS, H525_VERDICT_BIT, H525_SELECT_BIT, H525_OTHER_BIT = 0x109, 2, 4, 1
+H525_VALIDATOR, H525_BOOT_VALIDATION, H525_SCREEN_DECISION = 0x04DF0, 0x04C34, 0x04F6A
+H525_INDEX_VARIABLE = 0x2E3
+#: The wrapper whose own MOVLB decides the bank of its caller's masked write, and the caller.
+H525_WRAPPER, H525_WRAPPER_SETS_BSR = 0x02570, 0x02574
+H525_REVALIDATES = 0x024D0
+#: Every call site of the arch 9 validator: two in the boot sequence, one wrapper.
+H525_VALIDATOR_CALLERS = (0x02570, 0x04C42, 0x04C52)
+
 #: Where each architecture jumps past both screen calls when the container select bit is clear.
 SCREEN_GUARDS = {
     'one34_code': (0x20000, 0x2900A, 0x1A4, 3, 0x2906A),
@@ -679,6 +689,97 @@ class TheHarmony600HasThePollAndNotTheLatch(unittest.TestCase):
         self.assertEqual(instrs[0x194C4].mnemonic, 'COMF')
         self.assertEqual((instrs[0x194C8].mnemonic, instrs[0x194C8].fields['k']), ('RETLW', 1))
         self.assertEqual((instrs[0x194D2].mnemonic, instrs[0x194D2].fields['k']), ('RETLW', 0))
+
+
+
+class TheHarmony525HasNoPollAndNoFlag(unittest.TestCase):
+    """Section 253. The latch cannot exist here because nothing arms, which is a third answer.
+
+    Arch 12 arms only while the verdict stands, which is the trap. Arch 14 arms without consulting
+    the verdict, so it escapes. Arch 9 has no arming at all: the validator has three call sites and
+    the only one outside the boot sequence is reached from a request rather than from a loop.
+    """
+
+    def test_the_validator_has_exactly_three_call_sites(self):
+        """A fourth would be somewhere else that re-validates, which is the whole question."""
+        lab.require('h525_code')
+        code = lab.load('h525_code')
+        hits = trace.xrefs(code, 0x0, [H525_VALIDATOR])
+        self.assertEqual(tuple(sorted(x.addr for x in hits[H525_VALIDATOR])),
+                         H525_VALIDATOR_CALLERS)
+
+    def test_the_container_select_bit_is_written_from_the_index_inside_the_validator(self):
+        """Which is arch 9's own arrangement: the caller states an index, the validator publishes it."""
+        lab.require('h525_code')
+        instrs = dict(_instructions('h525_code', 0x0))
+        read = instrs[0x04DF8]
+        self.assertEqual(read.mnemonic, 'MOVF')
+        where, _ = isa.resolve_file(read.fields['f'], read.fields['a'], H525_INDEX_VARIABLE >> 8)
+        self.assertEqual(where, H525_INDEX_VARIABLE)
+        # Bit 0 of the index, shifted left four times, is the select bit's position.
+        self.assertEqual(instrs[0x04DFC].fields['k'], 0x01)
+        shifts = [at for at in range(0x04E00, 0x04E08, 2) if instrs[at].mnemonic == 'RLNCF']
+        self.assertEqual(len(shifts), 4)
+        self.assertEqual(1 << H525_SELECT_BIT, 1 << len(shifts))
+        # Merged in under a mask that clears exactly that bit and nothing else.
+        self.assertEqual(instrs[0x04E08].fields['k'], 0xFF & ~(1 << H525_SELECT_BIT))
+        merge = instrs[0x04E0A]
+        where, _ = isa.resolve_file(merge.fields['f'], merge.fields['a'], H525_FLAGS >> 8)
+        self.assertEqual(where, H525_FLAGS)
+
+    def test_the_boot_validation_records_each_container_in_its_own_bit(self):
+        lab.require('h525_code')
+        instrs = dict(_instructions('h525_code', 0x0))
+        for at, mnemonic, bit in ((0x04C38, 'BCF', H525_OTHER_BIT),
+                                  (0x04C3C, 'BCF', H525_VERDICT_BIT),
+                                  (0x04C4A, 'BSF', H525_OTHER_BIT),
+                                  (0x04C5A, 'BSF', H525_VERDICT_BIT)):
+            instr = instrs[at]
+            self.assertEqual((instr.mnemonic, instr.fields['b']), (mnemonic, bit))
+            where, _ = isa.resolve_file(instr.fields['f'], instr.fields['a'], H525_FLAGS >> 8)
+            self.assertEqual(where, H525_FLAGS)
+        # Index 0 first, then index 1, each followed by its own validation.
+        self.assertEqual(instrs[0x04C40].mnemonic, 'CLRF')
+        self.assertEqual(instrs[0x04C4E].fields['k'], 0x01)
+        for at in (0x04C42, 0x04C52):
+            self.assertEqual(instrs[at].fields['target'], H525_VALIDATOR)
+
+    def test_the_screen_decision_branches_on_the_second_container_and_not_on_a_discriminator(self):
+        """Two architectures pick by which check failed; this one picks by which container did."""
+        lab.require('h525_code')
+        instrs = dict(_instructions('h525_code', 0x0))
+        guard = instrs[0x04F6C]
+        self.assertEqual((guard.mnemonic, guard.fields['b']), ('BTFSC', H525_VERDICT_BIT))
+        pick = instrs[0x04F7E]
+        self.assertEqual((pick.mnemonic, pick.fields['b']), ('BTFSS', H525_OTHER_BIT))
+        for at in (guard, pick):
+            where, _ = isa.resolve_file(at.fields['f'], at.fields['a'], H525_FLAGS >> 8)
+            self.assertEqual(where, H525_FLAGS)
+        # The two screen numbers, 26 then 0, in that order and reached by falling through.
+        self.assertEqual(instrs[0x04F70].fields['k'], 26)
+        self.assertEqual(instrs[0x04F88].mnemonic, 'CLRF')
+        # No discriminator: nothing between the guard and the second screen reads another variable
+        # for the choice, which is what arch 12 and arch 14 both do.
+        self.assertEqual(trace.xrefs(lab.load('h525_code'), 0x0, [0x04F70])[0x04F70], [])
+
+    def test_the_wrapper_sets_the_bank_its_caller_writes_in(self):
+        """The pitfall: the verdict's second writer is invisible to both of our instruments.
+
+        `0x024D0` writes the verdict with a mask rather than with BSF or BCF, so a bit scan misses
+        it, and the bank comes from a MOVLB executed inside this callee, so a linear tracer
+        attributes the write to the wrong bank and reports no contradiction.
+        """
+        lab.require('h525_code')
+        instrs = dict(_instructions('h525_code', 0x0))
+        self.assertEqual(instrs[H525_WRAPPER].fields['target'], H525_VALIDATOR)
+        bank = instrs[H525_WRAPPER_SETS_BSR]
+        self.assertEqual((bank.mnemonic, bank.fields['k']), ('MOVLB', H525_FLAGS >> 8))
+        # The caller then masks the verdict bit out of that bank's byte and ORs the result in.
+        self.assertEqual(instrs[H525_REVALIDATES + 6].fields['target'], H525_WRAPPER)
+        self.assertEqual(instrs[0x024DA].fields['k'], 0xFF & ~(1 << H525_VERDICT_BIT))
+        self.assertEqual(instrs[0x024DC].mnemonic, 'ANDWF')
+        self.assertEqual(instrs[0x024E0].mnemonic, 'MOVWF')
+        self.assertEqual(instrs[0x024E0].fields['f'], H525_FLAGS & 0xFF)
 
 if __name__ == '__main__':
     unittest.main()

@@ -32409,3 +32409,117 @@ hardware evidence for it is the resting state.
   bit being the screen guard on **both** architectures, and the negative that arch 14's arming half
   does not read the verdict bit, with arch 12's arming half as the positive control.
 * Section 250's open item, answered.
+
+## 253. The Harmony 525 re-validates on request, and cannot latch because nothing arms
+
+Sections 250 to 252 read the status screen machinery on arch 12 (Harmony One) and arch 14 (Harmony
+600). This is the third architecture, and it is the one with no hardware half at all: arch 9 answers
+zero for every data memory address, sections 90 and 137, so a connected Harmony 525 corroborates none
+of the below. Everything here is read out of the image.
+
+The short answer is that arch 9 has the same three flags in one byte, no polled re-check, no armed
+flag, and a re-validation driven by a **request** rather than by a loop. So the latch section 250
+found cannot exist, for a different reason than on arch 14: there, arming does not consult the
+verdict; here, nothing arms.
+
+### The same flags, in one byte
+
+| | arch 12 | arch 14 | arch 9 |
+|---|---|---|---|
+| flags byte | `0x1A4` | `0x68B` | `0x109` |
+| verdict bit | 2 | 2 | 2 |
+| container select bit | 3 | 4 | 4 |
+| the other container's verdict | not recorded | not recorded | **bit 1** |
+| discriminator | `0xD04` | `0xD04` | **none** |
+| container validator | `0x28D92` | `0x151C6` | `0x04DF0` |
+| the shower | `0x2871C` | `0x14B3C` | `0x05D38` |
+
+**Arch 9's container select bit is written inside the validator, from an index.** `0x04DF0` reads a
+variable `0x2E3`, masks bit 0, shifts it left four times, and merges it into `0x109` under the mask
+`0xEF`. So the caller states which container it wants as 0 or 1 in a variable, and the validator
+publishes that choice in the bit the rest of the firmware reads. Arch 12 and arch 14 set their bit
+directly around each call instead.
+
+### The boot validation, which is explicit here in a way it is not elsewhere
+
+```
+04c34: BSF  0x109,3      an unrelated flag, set for the duration
+04c38: BCF  0x109,1      clear the other container's verdict
+04c3c: BCF  0x109,2      clear the verdict
+04c40: CLRF 0x2e3        container index 0
+04c42: RCALL 0x04df0     validate
+04c4a: BSF  0x109,1      valid: record it in bit 1
+04c4e: MOVLW 0x01; MOVWF 0x2e3    container index 1
+04c52: RCALL 0x04df0     validate
+04c5a: BSF  0x109,2      valid: record it in the verdict
+04c5e: BCF  0x109,3
+04c62: BTFSC 0x109,2     verdict clear: also clear the select bit
+04c88: RCALL 0x04f6a     the screen decision
+```
+
+### The screen decision is by which container failed, not by which check failed
+
+`0x04F6A`, one caller, and no discriminator variable anywhere in it:
+
+```
+04f6c: BTFSC 0x109,2     verdict set: past both screens
+04f70: screen 26, "Configuration Corrupted"
+04f7e: BTFSS 0x109,1     the other container also bad?
+04f82: BCF 0x109,4       no: clear the select bit and stop
+04f86: screen 0, "Go to Website to update settings"
+```
+
+**So arch 9 raises 26 as its default and downgrades to 0 when both containers failed**, where arch 12
+and arch 14 choose between the same two codes on `0xD04`, which section 249 established as cookie
+failure against checksum failure. Two architectures pick by **which check** failed and this one picks
+by **which container** failed, on the same two screen codes.
+
+That scopes section 249. Its mapping from a code plus a per container base to a record is unaffected,
+since that is about which message a number names, and it was measured on arch 9 as well. What is arch
+12 and arch 14 only is the **condition**: a cookie that does not match gives code 0 and a checksum
+that does not gives code 26. `CLAUDE.md` stated that unscoped and is corrected.
+
+### No poll, no flag, and a re-validation that is asked for
+
+The validator has **three** call sites: the two in the boot sequence above, and `0x02570`, a wrapper
+that masks the result and shifts it left. That wrapper's callers are `0x024D0` and `0x02508`, which
+re-validate one container each and write the result back into `0x109`, and their caller is `0x02432`,
+which has exactly one caller of its own, `0x02044`.
+
+`0x02044` sits in a chain that tests a byte at `0xD8` against `0xC0` and, when it is at or above,
+takes its low nibble into `0x3DC` and calls the re-validation. `0x3DC` holding 2 or 3 selects which
+container is validated first. So the re-validation is reached by **whatever writes that byte**, and it
+is not a loop: there is no timer, no cable test, and no armed flag on this architecture at all.
+
+**Which is why the latch cannot exist here.** Section 250's trap is that a failed validation clears
+the verdict, arming needs the verdict standing, and so the re-check can never arm again. Arch 9 has
+nothing that arms, so the question does not arise: a Harmony 525 re-validates when something asks it
+to and at no other time.
+
+**What writes `0xD8` is deliberately not claimed.** A dispatcher that tests a byte against `0xC0`,
+then `0xF8`, then `0xFF` is shaped like an opcode decoder, and if it is one then re-validation is
+something a configuration can ask for. That is a guess about a range test and it is left as one.
+
+### One pitfall, worth more than the finding
+
+`0x024D0` writes the verdict bit, and **two of this project's own instruments say it does not**. It
+does not use `BSF` or `BCF`, so a scan for bit writes of `0x109` misses it: it reads the byte, masks
+bit 2 out and ORs the result in. And the bank it writes is decided by a `MOVLB 0x1` inside the
+**callee**, `0x02570`, executed after the call and before the return, so `pic18_trace`'s linear bank
+inference attributes the write to bank 2 and reports it against `0x209`, where the tracer finds two
+unrelated accesses and no contradiction.
+
+So a variable can have a writer that neither the bit scan nor the data tracer will show, and the way
+it was found was reading the callers of the validator rather than the writers of the flag. The
+`trace-section` skill already names indirect access through `FSR` as its first dead end; this is a
+second one, and it is worse, because the tracer answers with a **wrong** address rather than with
+silence.
+
+### Where it lands
+
+* `tests/test_status_screens.py`: arch 9's flags byte and its three bits, the select bit being written
+  from the index inside the validator, the boot sequence's order, the screen decision having no
+  discriminator and branching on the second container's verdict, the validator's three call sites, and
+  the wrapper's `MOVLB` that decides the bank of its caller's write.
+* Section 249's condition, scoped to arch 12 and arch 14, and `CLAUDE.md` corrected.
+* `.claude/skills/trace-section/SKILL.md`: the second dead end.

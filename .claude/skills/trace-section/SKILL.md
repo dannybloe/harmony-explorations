@@ -105,6 +105,17 @@ to generate candidates, never as evidence.
 * **Bank tracking is inferential.** The tool follows `MOVLB` and drops to unknown at any
   control transfer, and it marks accesses whose bank it could not establish. Treat those
   differently from confirmed ones; do not quietly promote them.
+* **A callee can set the bank its caller writes in, and then the tracer answers with the wrong
+  address rather than with silence.** This is worse than the `FSR` dead end above and it is the
+  second one, section 253. On the Harmony 525 a routine calls a wrapper and then masks one bit into
+  a flags byte; the `MOVLB` that selects the bank is **inside the wrapper**, after the call and
+  before the return, so a linear reading and the tracer both attribute the write to the caller's
+  own bank. The tracer then reports it against a plausible neighbouring address where it finds
+  unrelated accesses and no contradiction. The same write also uses a mask rather than `BSF` or
+  `BCF`, so a scan for bit writes of that flag misses it too.
+  **So a variable can have a writer neither instrument will show you.** When a flag's writers look
+  too few for what the firmware plainly does with it, read the **callers of the routine that
+  computes it** rather than the writers of the flag, and check what the callee leaves `BSR` at.
 * **A wrong load address produces a plausible listing, not an error.** Bases are `0x9000` for
   arch 14 and `0x20000` for arch 12. For an unexamined image use `loadaddr.find_base` and
   check the margin over the runner-up.

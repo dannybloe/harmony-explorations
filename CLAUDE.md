@@ -751,13 +751,22 @@ document:
   section 249: the firmware raises a status **code**, the same number on every architecture, and the
   two configuration messages are the two arms of one test in the container validator. A cookie that
   does not match gives code 0, "Go to Website to update settings"; cookies that match with a trailer
-  checksum that does not gives code 26, "Configuration Corrupted".
+  checksum that does not gives code 26, "Configuration Corrupted". **That condition is arch 12
+  (Harmony One) and arch 14 (Harmony 600 and 700) only**, section 253, and this stated it unscoped:
+  arch 9 (Harmony 525) has no discriminator variable and picks between the same two codes by **which
+  container** failed, raising 26 for a bad user configuration and 0 when the other container is bad
+  too. The code to record mapping is unaffected and was measured on arch 9 as well.
   **What the invalidate is for is not what section 248 concluded**, section 250: no erase or write
   handler clears the flag a status screen needs to be gone, so a write fires no re-check at all. The
   invalidate is what makes the remote **re-validate** the bytes just written, and without it the
   remote keeps a verdict earned against different bytes. A screen goes up on a **boot** over an
   incomplete configuration, and it stays up because the re-check arms its flag only while that verdict
   stands, so a failed validation is a one way door out of which only a power cycle leads.
+  **The latch is one architecture's**, sections 252 and 253, which is worth knowing before any of it
+  is generalised: arch 14 (Harmony 600) has the same poll, flag and validator and arms **without**
+  consulting the verdict, so a failed validation re-arms; arch 9 (Harmony 525) has no poll and no
+  flag at all and re-validates only when something asks it to. So the screen that stays up until the
+  batteries come out is an arch 12 (Harmony One) fact and not a Harmony fact.
   **Confirmed on hardware on 4 September 2026**, section 250's control: a two block write with neither
   command left the verdict byte, the re-check flag and all three descriptors byte for byte as they
   were, and the ordinary screen off the cable. So section 248's attribution is refuted by experiment
