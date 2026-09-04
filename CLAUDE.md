@@ -836,39 +836,6 @@ and the write protect interlock. Both moved out of this file on 29 August 2026, 
 thousand characters of evidence sat in every session to describe two moments, connecting a remote and
 recovering one. **The rails above did not move**, because they have no moment to hook them to.
 
-## Say nothing about when something happened
-
-**Danny's rule, and the correction that produced it.** Almost every relative time expression this
-assistant produces is wrong, not slightly but completely, and a wrong interval destroys his
-understanding of what is being described rather than blurring it. The first attempt at a fix was to
-demand the absolute date every time, and he rejected it: he does not know or care whether something
-happened on the 5th, he is not going to look it up in a calendar, and **constructing that information
-is not worth a single token**.
-
-So the rule is to leave time out, not to get it right:
-
-* **Do not mention when something happened.** No "yesterday", no "last week", no "a fortnight", no
-  "recently", and equally no date dug out of the log to satisfy a rule. It is almost always irrelevant
-  to what he is being told.
-* **Where the order matters, state the order.** "earlier", "before that", "this was found after the
-  other one". Ordering is usually the thing that actually carries meaning, and it needs no clock.
-* **If exactly when matters, he will ask, or we look it up together.** That is his call to make, not a
-  reason to go and fetch a date pre-emptively.
-* **Never say how long work will take.** Not in days, not in weeks, not as "a ten minute job on the
-  bench". There is no data behind any such figure. Say what the work consists of and let him judge the
-  cost, since he is the one who knows what the bench takes.
-
-**This is about conversation.** The documents are different and stay as they are: a finding written up
-in `docs/findings.md` carries the date it was established because that costs nothing at the moment of
-writing and is provenance rather than narration. What is forbidden is manufacturing an interval, in a
-reply or in a document, from a feeling about how long ago something happened.
-
-**Why the feeling is worthless, since that is what makes this a rule rather than a matter of care.**
-There is no source here for elapsed time. A sense of "recently" comes from where something sits in a
-conversation, and that has no relation to the clock: an afternoon's work can be four messages apart
-and four messages can span a week. So the number is invented, which is why it comes out completely
-wrong instead of nearly right.
-
 ## Never write a bare architecture number in conversation
 
 Say "arch 12 (Harmony One)", not "arch 12". Every time, including the fourth mention in the same
