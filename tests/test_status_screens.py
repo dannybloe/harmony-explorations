@@ -269,12 +269,17 @@ class WhichContainerIsValidatedIsOneBit(unittest.TestCase):
         """Otherwise the two literals could be anything: it is the destination that makes them pages."""
         instrs = _instructions('one34_code', 0x20000)
         pointer = {}
+        # The last literal loaded into W, and None until one has been. A MOVWF of a table pointer
+        # byte before any MOVLW would mean the value came from somewhere this walk cannot see, so it
+        # is asserted rather than defaulted: a 0 there would record a wrong address silently.
+        literal = None
         for address, instr in instrs:
             if not ONE_SELECTOR <= address < 0x2BA76:
                 continue
             if instr.mnemonic == 'MOVLW':
                 literal = instr.fields['k']
             elif instr.mnemonic == 'MOVWF' and instr.fields['f'] in (0xF6, 0xF7, 0xF8):
+                self.assertIsNotNone(literal, 'a table pointer byte is written before any MOVLW')
                 pointer[instr.fields['f']] = literal
             elif instr.mnemonic == 'CLRF' and instr.fields['f'] in (0xF6, 0xF7, 0xF8):
                 pointer[instr.fields['f']] = 0

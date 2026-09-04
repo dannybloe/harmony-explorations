@@ -23,7 +23,7 @@ import zipfile
 
 import lab
 from harmony import ezfile, firmware, gspm
-from harmony.pic18 import loadaddr
+from harmony.pic18 import disasm, loadaddr
 
 #: Straight out of the package's own Description.xml, which is quoted rather than parsed so that a
 #: change in the file shows up here as a failure rather than being silently absorbed.
@@ -241,5 +241,87 @@ class TheFirmwareStatesItsOwnFilesystem(unittest.TestCase):
             if row['index'] != 3:
                 self.assertEqual(row['id'], row['index'])
 
+class TheFirmwareSeeksASectionByTheSameArithmeticEveryArchitectureUses(unittest.TestCase):
+    """Section 259. The instrument that named six of the fifteen slots.
+
+    The claim is not that this routine exists but that it is the **only** way in: its callers load
+    the slot number as a literal, so one scan gives the whole map of which slots the interpreter
+    reads. That is the shape section 35 used on the Harmony 700, and it transfers because the
+    pointer table's arithmetic is one table across architectures, section 20.
+    """
+
+    def test_the_seeker_multiplies_by_four_and_adds_eleven(self):
+        code = _payload()
+        at = SEEKER - DERIVED_BASE
+        # The two literals are the whole claim: a MOVLW of 4 feeding the MULWF, then a MOVLW of
+        # 0x0b feeding the ADDWF, which is section 20's `0x0B + 4 * slot`.
+        self.assertEqual((code[at], code[at + 1]), (0x04, 0x0E), 'the multiplier is not MOVLW 4')
+        self.assertEqual((code[at + 10], code[at + 11]), (0x0B, 0x0E),
+                         'the table does not start at 0x0b')
+        # And the mnemonics between them, so a rewritten routine that happens to keep the two
+        # literals in place still fails.
+        listing = disasm.disassemble(code, DERIVED_BASE, SEEKER, 7)
+        # A listing line is `<addr>: <bytes> MNEMONIC ...`, so the mnemonic is the first token that
+        # is not an address or a hex byte pair.
+        def mnemonic(line):
+            return next(one for one in line.split() if one.isupper() and one.isalpha())
+        self.assertEqual([mnemonic(one) for one in listing][:7],
+                         ['MOVLW', 'MOVLB', 'MULWF', 'MOVFF', 'MOVLW', 'ADDWF', 'MOVFF'])
+
+    def test_every_caller_loads_a_literal_slot_number(self):
+        code = _payload()
+        from harmony.pic18 import trace
+        found = {}
+        for ref in trace.xrefs(code, DERIVED_BASE, [SEEKER]).get(SEEKER, ()):
+            # The two instructions before the call are MOVLW <slot>, MOVWF 0x6dd.
+            at = ref.addr - DERIVED_BASE
+            self.assertEqual(code[at - 3], 0x0E, 'the caller does not load a literal')
+            found[ref.addr] = code[at - 4]
+        self.assertEqual(found, SEEKER_CALLERS)
+        # Raw slots 3 to 12 and no others: 0 and 1 are host side on every architecture and the
+        # interpreter reads neither 2 nor 13 nor 14.
+        self.assertEqual(sorted(set(found.values())), list(range(3, 13)))
+
+    def test_the_marker_offset_is_hardcoded_at_fifteen_slots(self):
+        """The third independent route to section 194's pointer count.
+
+        Section 194 derived 15 twice from the container, from its header word and from where the
+        marker sits. This is the interpreter's own constant: it adds 0x47 to the container base
+        before comparing four bytes with LWJL, and 0x47 is 0x0B + 4 * 15.
+        """
+        code = _payload()
+        at = MARKER_OFFSET_ADD - DERIVED_BASE
+        self.assertEqual(code[at + 1], 0x0E, 'not a MOVLW')
+        self.assertEqual(code[at], 0x47, 'the marker offset is not 0x47')
+        self.assertEqual(0x47, 0x0B + 4 * 15)
+        # And the cookie it checks is GSPM, one MOVLW per letter. The strides are 8 then 6 and 6,
+        # because the first comparison carries the MOVLB that selects the buffer's bank.
+        for addr, letter in zip((0x14AE8, 0x14AF0, 0x14AF6, 0x14AFC), b'GSPM'):
+            self.assertEqual((code[addr - DERIVED_BASE], code[addr - DERIVED_BASE + 1]),
+                             (letter, 0x0E), 'the validator does not compare GSPM')
+
+
+
 if __name__ == '__main__':
     unittest.main()
+
+
+#: The section seeker, section 259: `0x0B + 4 * slot`, the slot number in bank 6 at 0x6DD.
+SEEKER = 0x10BCE
+#: Its callers, each loading a literal slot number. Every one is asserted, so a caller that moves
+#: fails here rather than quietly leaving a slot unaccounted for.
+SEEKER_CALLERS = {
+    0x13BEC: 3, 0x14242: 3,
+    0x173D0: 4,
+    0x11D50: 5,
+    0x1AB3C: 6,
+    0x1AE22: 7,
+    0x169C2: 8, 0x16A8E: 8,
+    0x16E94: 9, 0x17366: 9,
+    0x14496: 10,
+    0x1984A: 11,
+    0x19D68: 12, 0x19DE4: 12,
+}
+#: The container validator: the GSPM comparison, then the LWJL one at a hardcoded offset.
+VALIDATOR = 0x14AE8
+MARKER_OFFSET_ADD = 0x14B10

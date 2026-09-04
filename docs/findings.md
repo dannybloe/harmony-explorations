@@ -25746,6 +25746,11 @@ Whether the Harmony 350's container can be read beyond its framing. It parses, a
 offered. Nothing here maps an arch 16 slot to a base slot, and the same rail applies as for arch 10,
 that a guessed mapping turns refusals into plausible wrong answers.
 
+**Six of the fifteen are named now, section 259**, out of the skin 104 firmware's own section seeker:
+the name tree, the architecture record, the clock, the infrared database, the action list table and the
+parameter block. Nine stay unread and refuse. So the paragraph above is answered in part and the rail
+it asks for is the one that shipped.
+
 `h350_config` is registered as a lab fixture and is deliberately **outside** `CONTAINERS`,
 `ALL_CONTAINERS` and `USER_CONFIGS`, on the precedent the calibration pair set: those populations are
 what every corpus wide total is computed from, and admitting a sixth architecture moves sixteen marked
@@ -33019,3 +33024,123 @@ so both need `relocate.ts` rather than `edit.ts`.
 reading" for the value beside a send in an action list, with 665 zeroes it would have to explain. It is a
 pause in tenths of a second, section 236, and the send count is in the infrared record, so the two
 questions were never the same one.
+
+## 259. Six of the Harmony 350's fifteen slots, named from its own firmware
+
+**4 September 2026.** Section 194 read a Harmony 350's container and stopped at its framing: fifteen
+pointer slots that are **not** the base twenty with insertions, so nothing transfers by index, and it
+recorded that no slot mapping was implied and none was offered. This names six of the fifteen, from the
+interpreter rather than by fitting, and one of the six is the infrared database, which makes section
+258's send count readable on a fifth architecture.
+
+**Single container, and that is the honest limit.** Every identification below rests on one arch 16
+config, `harmony-350-factory`, plus the skin 104 firmware. The firmware is a genuinely independent
+source for which slots exist and which the interpreter reads, so the two are not one sample; what
+nothing here can do is show that a second Harmony 350 lays its slots out the same way. The nine
+unnamed slots are **unconfirmed** in the document's usual sense and the map says so per entry.
+
+### The instrument: the section seeker, and it is the same shape as arch 14's
+
+`0x10BCE` in `350-1.4-Region_2-code-base0x9000.bin`:
+
+```
+10bce: MOVLW 0x04
+10bd0: MOVLB 0x6
+10bd2: MULWF 0x6dd        ; 4 * slot
+10bd4: MOVFF PRODL,0x6dd
+10bd8: MOVLW 0x0b
+10bda: ADDWF 0x6dd,F      ; + 0x0b
+10bdc: MOVFF 0x6dd,0x6dc
+```
+
+That is section 20's own arithmetic, `0x0B + 4 * slot`, and the slot number arrives in `0x6DD`. It has
+**fourteen callers and every one loads a literal**, which is what section 35 used on the Harmony 700:
+
+| raw slot | callers |
+|---|---|
+| 3 | `0x13BEC`, `0x14242` |
+| 4 | `0x173D0` |
+| 5 | `0x11D50` |
+| 6 | `0x1AB3C` |
+| 7 | `0x1AE22` |
+| 8 | `0x169C2`, `0x16A8E` |
+| 9 | `0x16E94`, `0x17366` |
+| 10 | `0x14496` |
+| 11 | `0x1984A` |
+| 12 | `0x19D68`, `0x19DE4` |
+
+So the interpreter reads raw slots **3 to 12** and never 0, 1, 2, 13 or 14. Slots 0 and 1 being host
+side is the rule on every architecture, section 20; slot 2 going unsought matches arch 14, which does
+not seek base slot 2 either.
+
+### The firmware hardcodes fifteen slots, which closes section 194 from a third route
+
+The container validator sits at `0x14AE0`. It reads four bytes into `0xC02` and compares them with
+`0x47`, `0x53`, `0x50`, `0x4D`, which is `GSPM`. Then, at `0x14B04`, it takes the container base out of
+`0x0D6` to `0x0D8`, **adds `0x47`**, reads four more bytes and compares them with `0x4C`, `0x57`,
+`0x4A`, `0x4C`, which is `LWJL`.
+
+`0x47` is `0x0B + 4 * 15`. So the marker offset is a constant in the image and the image is built for
+a fifteen slot table. Section 194 derived that count twice from the file, from the header word and from
+where the marker sits, and said the two are independent because nothing computes one from the other.
+This is a third source with nothing in common with either, and it is the interpreter's own.
+
+### The six
+
+| raw slot | base slot | what named it |
+|---|---|---|
+| 0 | 0 | the `0xFEED` frame, 131 bytes, nodes under `Root`, `State` and `Radio`. Section 194 |
+| 1 | 1 | seven bytes: architecture 16 twice, skin 104, then the constant `0x0d`, section 182's shape exactly. Section 194 |
+| 3 | 3 | the `0xADDF` framed clock record, already checked by the container reader. Section 194 |
+| 4 | 5 | the infrared database, below |
+| 7 | 10 | the action list table: `0x00AB` lists, so a **`u16`** count, each list a `u8` length then three byte instructions. The idiom `xx 00 7f` is section 26's call to another list, and the key table after `LWJL` holds the same instruction against a scan code |
+| 10 | 15 | the parameter block: a `u8` count of 5, each group a `u8` length then that many bytes, which is base slot 15's shape and per architecture by section 44 |
+
+**The infrared identification is the one with a closure.** Raw slot 4 is a `u8` count of 8 and eight
+pointers, each landing on a second array of the base layout's own shape, `u8 spare; u16 count;
+u24 record[]`: 52, 48 and 30 records in three groups and five empty ones, 130 records. A record is then
+the base layout **exactly**, so `packages/codec` reads it with no new code: the pointer bias of 7, a
+group count byte of 2, and three block pointers per group.
+
+What makes it a closure rather than a shape match is what the blocks contain. The first pointer of each
+group opens `-32767 -17233`, which is 50000 microseconds of silence, and section 174 measured that
+every once block Logitech's generator writes opens with exactly that lead in while a held block never
+does, 2032 of 2032 across two generator eras. The second pointer opens on a mark. So once and held are
+in their base positions, and they are in the order a reader would need them to be for the wrong reason
+to be impossible.
+
+The durations themselves are ordinary: 441 microsecond marks against 446 microsecond spaces on one
+group, which is `Microsoft 30 Bit`'s biphase pair in the rhythm table, and 468 against 433 with a
+2662 and 870 lead in on another.
+
+### Section 258 on a fifth architecture
+
+With raw slot 4 named, `irSendsPerPress` answers on a Harmony 350: **106 of its 130 records state a
+send count and every one of them is 3**, across all three non-empty device groups. The other 24 name no
+held block, which is the same reason 1927 of the corpus's 3387 records answer nothing.
+
+So the ratio reading holds on architecture 16 as well, and the value is the one Logitech's own data
+uses. It is one container, so it is a fifth architecture agreeing rather than a fifth measurement of a
+per device setting: a factory configuration has no device the live service can be asked about.
+
+### What is not named, and the rail
+
+Nine slots: raw 2, 5, 6, 8, 9, 11, 12, 13 and 14. Raw 14 is NULL, and raw 11 is one byte and raw 12
+two, which are base slots 16 and 17's widths on a Harmony 600, but a width is not an identification and
+this document has been wrong before by promoting one.
+
+`ARCH16_SLOT_MAP` carries `undefined` for each of them, in both languages, and `archSlot` throws for an
+absent base slot. **That is deliberately the opposite of `ARCH10_SLOT_MAP`**, whose `undefined` entries
+mean the container has no such slot: here they mean nobody has read it. Either way the effect is the
+one section 194 asked for, that a guessed mapping cannot turn a refusal into a plausible wrong answer,
+and the comment in each table says which kind of absence it is stating.
+
+The Harmony 350 now appears in one corpus wide table, the action queue's per sample depth in
+`packages/codec/test/queue.test.ts`, where it **demands 9 of the forty instruction ring**, exactly what
+a Harmony 525 demands. That is a row and not a moved total: arch 16 stays outside `CONTAINERS`,
+`ALL_CONTAINERS` and `USER_CONFIGS`, per section 194, and admitting it remains a decision rather than a
+side effect.
+
+`tests/test_gspm.py` and `packages/codec/test/gspm.test.ts` assert the map and its refusals, and the
+golden vectors compare the two languages' copies of it, which is the only thing standing between one
+stated table and two.

@@ -254,6 +254,46 @@ ARCH10_SLOT_MAP: Tuple[Optional[int], ...] = (
 )
 
 
+# Base slot to raw slot on arch 16 (Harmony 300 and 350), section 259. Partial by design: an entry is
+# None where the slot has not been identified rather than where the container lacks it, which is the
+# opposite of ARCH10_SLOT_MAP above. _arch_slot raises for a None, so an unread slot refuses instead of
+# answering wrongly, and that is the rail this architecture needs most: its fifteen slots are not the
+# base twenty with insertions, so nothing transfers by index.
+#
+# The instrument is the firmware's own section seeker at 0x10BCE in the skin 104 image, computing
+# 0x0B + 4 * slot from a slot number its callers load as a literal. Fourteen callers name raw slots 3
+# to 12, which is the shape section 35 used on arch 14.
+ARCH16_SLOT_MAP: Tuple[Optional[int], ...] = (
+    0,     # 0, the 0xFEED name tree, 131 bytes under Root, State and Radio
+    1,     # 1, seven bytes: architecture 16 twice, skin 104, then the constant 0x0d
+    # 2, unread. Raw slot 2 is eight bytes, the width base slot 2 has everywhere, and the firmware
+    # never seeks it, exactly as arch 14 never seeks base slot 2. Suggestive, not measured.
+    None,
+    3,     # 3, the 0xADDF framed clock record, which the container check already verified
+    None,  # 4, unread
+    # 5, the infrared database. Eight groups, each u8 spare, u16 count, u24 record[], and a record is
+    # the base layout exactly: the pointer bias of 7, a group count byte, then three block pointers
+    # per group. Its once blocks carry the 50 ms lead in silence and its held blocks do not.
+    4,
+    None,  # 6, unread
+    None,  # 7, unread
+    None,  # 8, unread
+    None,  # 9, unread
+    # 10, the action list table. 171 lists, each u8 length then three byte instructions, and the idiom
+    # xx 00 7f is section 26's call to another list, which is what the key table holds too.
+    7,
+    None,  # 11, unread
+    None,  # 12, unread
+    None,  # 13, unread
+    None,  # 14, unread
+    10,    # 15, the parameter block: five groups, each u8 length then that many bytes
+    None,  # 16, unread
+    None,  # 17, unread
+    None,  # 18, unread
+    None,  # 19, unread
+)
+
+
 def _slot_map(architecture: int) -> Tuple[Optional[int], ...]:
     """Base slot to raw slot, derived for the insertion architectures and stated for arch 10.
 
@@ -262,6 +302,8 @@ def _slot_map(architecture: int) -> Tuple[Optional[int], ...]:
     """
     if architecture == 10:
         return ARCH10_SLOT_MAP
+    if architecture == 16:
+        return ARCH16_SLOT_MAP
     if architecture not in INSERTED_SLOTS:
         raise GspmError('slot alignment not established for architecture %s' % architecture)
     inserted = sorted(INSERTED_SLOTS[architecture])

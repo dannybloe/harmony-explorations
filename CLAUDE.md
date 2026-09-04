@@ -846,7 +846,7 @@ architecture numbers are this project's internal handle and map to nothing on th
 | 14 | Harmony 600, or the Harmony 700 for the reference image |
 | 8 | Harmony 880 or 885, contributed configs only |
 | 10 | Harmony 890 or 895, contributed configs only |
-| 16 | Harmony 300 or Harmony 350, on the bench since 27 August 2026, never opened over USB. **Its firmware is in the lab since 28 August 2026**, from Logitech's own update service, section 196 |
+| 16 | Harmony 300 or Harmony 350, on the bench since 27 August 2026, never opened by **this** library, which refuses the file based family; its configuration was read with concordance and is a lab fixture, section 194. **Its firmware is in the lab since 28 August 2026**, from Logitech's own update service, section 196, and **six of its fifteen container slots are named out of it**, section 259 |
 | 17 | the hub family in Logitech's own template map, section 197: 82, 97, 106, 113, 115 |
 | 18 | Harmony Touch, on the bench since 27 August 2026, never opened over USB. **Logitech's specification says 18 and the remote reports 17**, section 197, and that disagreement is unresolved |
 

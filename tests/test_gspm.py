@@ -3183,5 +3183,56 @@ class TheHeaderWordStatesThePointerCount(unittest.TestCase):
         self.assertFalse(bad.checks['format_states_the_pointer_count'])
 
 
+class TestTheHarmony350SlotMapIsPartialAndRefusesTheRest(unittest.TestCase):
+    """Six of arch 16's fifteen slots, section 259.
+
+    The map is deliberately incomplete, so the assertion has two halves and the second is the one
+    that matters: what is named, and that everything unnamed **refuses**. A guessed alignment on this
+    architecture would turn a refusal into a plausible wrong answer, which is the rail section 194
+    asked for, and a map with a hopeful entry in it would pass a test that only checked the six.
+    """
+
+    #: Base slot to raw slot, the six named in section 259 out of the firmware and the container.
+    NAMED = {0: 0, 1: 1, 3: 3, 5: 4, 10: 7, 15: 10}
+    #: Every base slot the map declines to place. Stated rather than derived from NAMED, so that
+    #: adding an entry to the map without naming it here fails.
+    UNREAD = (2, 4, 6, 7, 8, 9, 11, 12, 13, 14, 16, 17, 18, 19)
+
+    def test_the_named_slots_are_exactly_these(self):
+        for base, raw in self.NAMED.items():
+            self.assertEqual(gspm.arch_slot(16, base), raw, 'base slot %d moved' % base)
+
+    def test_every_unread_slot_refuses(self):
+        for base in self.UNREAD:
+            with self.assertRaises(gspm.GspmError, msg='base slot %d answered' % base):
+                gspm.arch_slot(16, base)
+
+    def test_the_two_halves_together_cover_the_base_layout(self):
+        # The control on the pair above: neither list may quietly shrink.
+        self.assertEqual(sorted([*self.NAMED, *self.UNREAD]), list(range(20)))
+
+    def test_the_harmony_350_infrared_table_reads_through_the_map(self):
+        """What the infrared slot buys, which is the reason to name it before the other nine.
+
+        Eight groups of the base layout's own shape and 130 records, read by the reader that was
+        written for four other architectures with no change. The empty groups are asserted too,
+        because a factory configuration having five of them is what the count would otherwise hide.
+        """
+        lab.require('h350_config')
+        c = gspm.parse(lab.load('h350_config'))
+        self.assertEqual(c.architecture, 16)
+        table = c.pointer_array(gspm.arch_slot(16, gspm.IR_TABLE_SLOT))
+        self.assertEqual(len(table or ()), 8)
+        counts = []
+        for address in table or ():
+            off = c.blob_offset_of(address)
+            self.assertIsNotNone(off, 'a group pointer does not resolve')
+            self.assertEqual(c.blob[off], 0, 'the group array has a nonzero spare byte')
+            counts.append(c.blob[off + 1] | c.blob[off + 2] << 8)
+        self.assertEqual(counts, [52, 48, 0, 30, 0, 0, 0, 0])
+        self.assertEqual(sum(counts), 130)
+
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -844,3 +844,38 @@ test('the frame tiles to the next section on every container that has one', skip
   assert.equal(naive, 34, 'the two the sentinel gets wrong are the two empty frames');
   assert.equal(framed - naive, 2, 'and the gap is the two empty frames, whatever the totals are');
 });
+
+/**
+ * Arch 16's map is partial and refuses the rest, section 259.
+ *
+ * **The refusals are the assertion, not the six.** A map with a hopeful entry in it would pass a test
+ * that only checked what is named, and on this architecture a guessed alignment is worse than none:
+ * its fifteen slots are not the base twenty with insertions, so a wrong entry lands on real bytes and
+ * reads as a plausible structure. Same rail as arch 10 above, for the opposite reason: there an
+ * `undefined` means the container has no such slot, here it means nobody has read it.
+ *
+ * No lab, so a fresh clone is protected by this too. The Python mirror is in `tests/test_gspm.py`,
+ * and the golden vectors compare the two copies, which is the only thing keeping them one table.
+ */
+test('arch 16 places six slots and refuses the other fourteen', () => {
+  const named: Record<number, number> = { 0: 0, 1: 1, 3: 3, 5: 4, 10: 7, 15: 10 };
+  for (const [base, raw] of Object.entries(named)) {
+    assert.equal(archSlot(16, Number(base)), raw, `base slot ${base} moved`);
+  }
+  const unread = [2, 4, 6, 7, 8, 9, 11, 12, 13, 14, 16, 17, 18, 19];
+  for (const base of unread) {
+    assert.throws(() => archSlot(16, base), /has no base slot/, `base slot ${base} answered`);
+  }
+  // The control on the pair: neither list may quietly shrink.
+  assert.deepEqual([...Object.keys(named).map(Number), ...unread].sort((a, b) => a - b),
+    Array.from({ length: 20 }, (_unused, i) => i));
+  // Raw slots the container holds that are not base slots: nine of the fifteen, which is the other
+  // direction and the honest count of what section 259 left open.
+  const unnamedRaw = [2, 5, 6, 8, 9, 11, 12, 13, 14];
+  for (const raw of unnamedRaw) {
+    assert.equal(baseSlot(16, raw), undefined, `raw slot ${raw} is claimed by a base slot`);
+  }
+  assert.equal(baseSlot(16, 4), 5, 'raw slot 4 is the infrared database');
+  assert.equal(baseSlot(16, 7), 10, 'raw slot 7 is the action list table');
+  assert.equal(baseSlot(16, 10), 15, 'raw slot 10 is the parameter block');
+});

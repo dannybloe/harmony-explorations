@@ -1479,8 +1479,8 @@ test('a block solves its pads from the total, and refuses what does not come out
  * where its eighteen siblings read as two and one. It is the same record in both reads of that
  * remote, which is why the group count below is 60 of 62 rather than 61 of 62.
  */
-test('a press sends the code as many times as the once block holds copies of the held one', () => {
-  require_(...SECTION_32_CONFIGS);
+test('a press sends the code as many times as the once block holds copies of the held one',
+  skipWithoutLab(), () => {
   let records = 0;
   let withBothBlocks = 0;
   let answered = 0;
@@ -1593,3 +1593,54 @@ test('a block states its copies without being decoded', skipUnless('one_config')
   assert.equal(frameSegments(mergedIntervals(pulsesOfWords(words)), true).length, 2);
   assert.equal(blockCopies(words), 1);
 });
+
+/**
+ * The send count on a fifth architecture, section 259.
+ *
+ * A Harmony 350's infrared slot was unnamed until its firmware's section seeker named it, so nothing
+ * here could read one of its codes at all. With raw slot 4 placed, `irSendsPerPress` answers on 106 of
+ * its 130 records and every one is 3, across all three of its non-empty device groups.
+ *
+ * **One container, so this is a fifth architecture agreeing rather than a fifth measurement.** A
+ * factory configuration names no device the live service can be asked about, so there is no stated
+ * number to score the 3 against, unlike the six device groups of the compiled pair above.
+ */
+test('a Harmony 350 states a send count too, and it is three',
+  skipUnless('h350_config'), () => {
+    const c = mustLoad('h350_config');
+    assert.equal(c.architecture, 16);
+    const groups = irGroups(c) ?? [];
+    assert.equal(groups.length, 8);
+    let records = 0;
+    let answered = 0;
+    const counts = new Map<number, number>();
+    for (const group of groups) {
+      const seen = new Set<number>();
+      for (const record of group.addresses) {
+        records += 1;
+        const sends = irSendsPerPress(c, record);
+        if (sends === undefined) continue;
+        answered += 1;
+        seen.add(sends);
+        counts.set(sends, (counts.get(sends) ?? 0) + 1);
+      }
+      // Per group as well as overall, which is the property that makes it a device setting.
+      if (seen.size > 0) assert.deepEqual([...seen], [3]);
+    }
+    assert.equal(records, 130);
+    assert.equal(answered, 106);
+    assert.deepEqual([...counts], [[3, 106]]);
+    // The blocks that named the slot: the once block opens on 50 ms of silence, section 174, and the
+    // held block opens on a mark. That is what puts once and held in their base positions rather than
+    // a shape match, so it is asserted rather than described.
+    const first = groups[0]!.addresses[0]!;
+    const pointers = irHeaderPointers(c, first);
+    const once = irBlockWords(c, pointers[0]!)!;
+    const held = irBlockWords(c, pointers[1]!)!;
+    assert.equal(once[0], 0x7fff, 'the once block does not open on a maximal space');
+    assert.equal((once[0]! & IR_PULSE_MAX) + (once[1]! & IR_PULSE_MAX), 50000);
+    assert.ok((held[0]! & IR_PULSE_MARK) !== 0, 'the held block does not open on a mark');
+    // And the copies are what the ratio divides: three in the once block, one in the held.
+    assert.equal(blockCopies(once), 3);
+    assert.equal(blockCopies(held), 1);
+  });

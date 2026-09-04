@@ -63,6 +63,10 @@ const PEAKS: Readonly<Record<string, number>> = {
   arch8_config_885: 13,
   arch8_config_880: 13,
   calibration_h600: 12,
+  // The Harmony 350 joined this table when section 259 identified its action list slot, and it
+  // demands exactly what a Harmony 525 does. A row rather than a moved total: arch 16 is outside
+  // every corpus wide population, section 194.
+  h350_config: 9,
   h525_external_firmware: 9,
   h525_config: 9,
   h525_config_2: 9,

@@ -307,6 +307,47 @@ export const ARCH10_SLOT_MAP: readonly (number | undefined)[] = [
 ];
 
 /**
+ * Base slot to raw slot on arch 16 (Harmony 300 and 350), section 259, partial by design.
+ *
+ * **Fifteen slots, and they are not the base twenty with insertions**, so nothing transfers by index
+ * and every entry here is measured. The instrument is the firmware's own section seeker at `0x10BCE`
+ * in the skin 104 image, which computes `0x0B + 4 * slot` from a slot number its callers load as a
+ * literal: fourteen callers naming raw slots 3 to 12, which is the same shape section 35 used on arch
+ * 14. An entry is `undefined` where the slot has not been identified rather than where the container
+ * lacks it, which is the opposite of arch 10's map and is why this comment says so: `archSlot` throws
+ * for an absent base slot, so an unread slot refuses rather than answering wrongly, and that is the
+ * rail this architecture needs most.
+ */
+export const ARCH16_SLOT_MAP: readonly (number | undefined)[] = [
+  0, // 0, the 0xFEED name tree, 131 bytes under Root, State and Radio
+  1, // 1, seven bytes: architecture 16 twice, skin 104, then the constant 0x0d
+  undefined, // 2, unread. Raw slot 2 is eight bytes, the width base slot 2 has everywhere, and the
+  //    firmware never seeks it, exactly as arch 14 never seeks base slot 2. Suggestive, not measured.
+  3, // 3, the 0xADDF framed clock record, which the container check already verified
+  undefined, // 4, unread
+  4, // 5, the infrared database. Eight groups, each `u8 spare; u16 count; u24 record[]`, and a record
+  //    is the base layout exactly: the pointer bias of 7, a group count byte, then three block
+  //    pointers per group. Its once blocks open with the 50 ms lead in silence section 174 measured
+  //    and its held blocks do not, so once and held are in their base positions.
+  undefined, // 6, unread
+  undefined, // 7, unread
+  undefined, // 8, unread
+  undefined, // 9, unread
+  7, // 10, the action list table. 171 lists, each `u8 length` then three byte instructions, and the
+  //    idiom `xx 00 7f` is section 26's call to another list, which is what the key table holds too.
+  undefined, // 11, unread
+  undefined, // 12, unread
+  undefined, // 13, unread
+  undefined, // 14, unread
+  10, // 15, the parameter block. Five groups, each `u8 length` then that many bytes, which is base
+  //     slot 15's shape and per architecture by section 44.
+  undefined, // 16, unread
+  undefined, // 17, unread
+  undefined, // 18, unread
+  undefined, // 19, unread
+];
+
+/**
  * Base slot to raw slot for every architecture whose alignment is established.
  *
  * **The four insertion architectures are derived from `INSERTED_SLOTS` rather than written out**, so
@@ -323,6 +364,7 @@ export const SLOT_MAPS: Readonly<Record<number, readonly (number | undefined)[]>
     })];
   })),
   10: ARCH10_SLOT_MAP,
+  16: ARCH16_SLOT_MAP,
 };
 
 function slotMap(architecture: number): readonly (number | undefined)[] {

@@ -2286,6 +2286,25 @@ word carries at most 32767 us: a gap already spelled over three words can be rai
 without changing the block's length, and anything beyond that lengthens the block and relocates
 everything above it. The sharing rule applies first.
 
+**Arch 16 (Harmony 300 and 350) places six base slots and refuses the rest**, section 259. Fifteen
+slots, and they are not the base twenty with insertions, so nothing transfers by index:
+
+| raw slot | base slot | named by |
+|---|---|---|
+| 0 | 0 | the `0xFEED` frame, 131 bytes |
+| 1 | 1 | seven bytes stating architecture 16 twice, skin 104, then `0x0d` |
+| 3 | 3 | the `0xADDF` framed clock record |
+| 4 | 5 | the infrared database: eight groups, `u8 spare; u16 count; u24 record[]`, records in the base layout exactly |
+| 7 | 10 | the action list table: a `u16` count of 171, each list a `u8` length then three byte instructions |
+| 10 | 15 | the parameter block: a `u8` count of 5, each group a `u8` length then its bytes |
+
+Raw slots 2, 5, 6, 8, 9, 11, 12, 13 and 14 are **unread**, and `archSlot` throws for the base slots
+they would hold, so an unread slot refuses rather than answering wrongly. Single container plus the
+skin 104 firmware, whose section seeker at `0x10BCE` computes `0x0B + 4 * slot` from a literal its
+fourteen callers load, naming raw slots 3 to 12. The firmware also **hardcodes the marker offset at
+`0x47`**, which is `0x0B + 4 * 15`, so the interpreter is a third independent route to section 194's
+pointer count.
+
 **How many times a press sends the code is the ratio of the two blocks**, section 258. The first
 block holds the code as many times as one press sends it and the held block holds exactly one press's
 worth, so the count is the first block's copies divided by the held block's. A copy is a segment of

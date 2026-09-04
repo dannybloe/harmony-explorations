@@ -439,7 +439,7 @@ finding.
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 258<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 259<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -659,6 +659,18 @@ figures common to both carry `fact:` markers, so `make facts` moves every copy t
 cannot drift apart; what a reader should not expect is two independent statements of one measurement.
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
+
+**Six of the Harmony 350's fifteen container slots are named, section 259.** Its configuration has
+been in the lab since 27 August and parsed since section 194, and nothing could be read out of it
+because nobody knew which slot held what. Its own firmware answers: a routine that computes where a
+slot's pointer sits, called from fourteen places each loading the slot number as a literal, which is
+the instrument section 35 used on the Harmony 700. Named so far are the name tree, the architecture
+record, the clock, the infrared database, the action list table and the parameter block; nine slots
+stay unread and refuse rather than guessing. The firmware also hardcodes the marker offset at `0x47`,
+which is `0x0B + 4 * 15`, so it is a third independent route to section 194's reading that the format
+byte is the pointer count. **With the infrared slot named, section 258's send count reads on a fifth
+architecture**: 106 of the Harmony 350's 130 codes state one and every one is 3. One container, so it
+is a fifth architecture agreeing rather than a fifth measurement.
 
 **How many times a press sends a code is read, section 258.** The ratio between an infrared record's
 two blocks: the first holds the code as many times as one press sends it, the second holds exactly one
