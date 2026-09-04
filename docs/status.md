@@ -439,7 +439,7 @@ finding.
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 256<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 257<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -759,7 +759,19 @@ interpreter around it also gave the address of the forty slot action queue on th
 its three constants close on each other, so the forty that the writer's sequence rail rests on is now
 measured on two architectures with nothing in common.
 
-**And then a correction with a lesson in it, section 256.** Half of what those two sections read had
+**And then an audit that found more of the same, section 257.** Running the new check backwards over
+the afternoon found a **second** and larger re-derivation: a finding from 13 August already held the
+Harmony 525's whole instruction map, at the same addresses, including the one consequence I had
+presented as new. What genuinely came out of the afternoon is one table entry in the codec, upgraded
+from "we know where this handler is" to "we know what it does", which is the gap that finding
+explicitly left open. It moves no percentage, because no 525 configuration uses that instruction.
+
+The audit also found a real error next door: a finding had presented one **build's** addresses as its
+whole architecture's. The Harmony 700 turns out to carry the same machinery with not one shared
+address, which was then read and asserted, so that claim now rests on two remotes instead of one and
+is stronger than it was.
+
+**And a correction with a lesson in it, section 256.** Half of what those two sections read had
 already been read here on 9 August, on a different remote, and one of our own library constants
 carries it with the section number in its comment. So an afternoon went on re-deriving a claim the
 repository already held, and got it wrong on the way. The fix is one grep before reading a structure

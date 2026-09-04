@@ -120,6 +120,21 @@ from an address and the prior reading is filed under a different image. `docs/fi
 lines and grepping it costs nothing; re-deriving a claim wrongly costs an afternoon and puts a wrong
 statement in the record.
 
+**A hit on the same architecture counts most, and it happened**, section 257: section 139's entry 23
+already held the Harmony 525's whole band ladder, at the same addresses, and an afternoon re-derived
+it anyway. So this check is not only for cross architecture work.
+
+**The library answers faster than the prose**, and both re-derivations were sitting in it as named
+constants with the section number in the comment: `OPERAND_HIGH_BAND` in `src/harmony/gspm.py` and
+`BANDS_3F_ARCH9` in `packages/codec/src/actions.ts`. Grep `src/harmony/` and `packages/*/src/` first
+for that reason, and read the comment rather than only the value.
+
+**A collision is not a contradiction, and check it anyway.** Two constants in section 257's audit hit
+prior art at the same address in a sibling image, and both were coincidences between two builds. Where
+the value was is in the checking: it found that a finding had presented one build's addresses as its
+architecture's. **An address does not transfer between two builds of the same firmware**, so a table
+of addresses names an image, and a claim that spans an architecture has to be asserted over both.
+
 ## Pitfalls, all of which have cost time here
 
 * **`pic18_trace.py` cannot see indirect access through FSR.** A variable written only via

@@ -32312,7 +32312,13 @@ now, and the resting state of a connected Harmony 600 is measured. The answer is
 flag and the validator all transfer instruction for instruction, and **the one condition the latch
 rests on does not**.
 
-### The same three things, at arch 14's addresses
+### The same three things, at the Harmony 600 build's addresses
+
+**The table below is the 600 image's and this section first gave it as arch 14's**<!--superseded-->,
+which section 257 corrects: the Harmony 700 carries the same structure with **not one shared address**,
+and that section tabulates both. What transfers between the two builds is the verdict bit, the
+container select bit and the discriminator's address. The finding is stronger for it, since the claim
+now rests on two images.
 
 | | arch 12 (Harmony One) | arch 14 (Harmony 600) |
 |---|---|---|
@@ -32532,10 +32538,12 @@ silence.
 
 ## 254. The Harmony 525's re-validation is an instruction, and its action ring closes arithmetically
 
-**Read section 256 first.** Half of what follows re-derives section 72, which read the same
-dispatcher on arch 12 on 9 August 2026 and got it right, and the paragraph below that calls the band
-an opcode range is wrong. What is new here is arch 9's addresses, its band map and the ring; that
-section separates the two.
+**Read sections 256 and 257 first.** Most of what follows re-derives two earlier readings. Section 72
+read the same dispatcher on arch 12 on 9 August 2026 and got it right, and the paragraph below that
+calls the band an opcode range is wrong. **Section 139's entry 23 already held arch 9's whole ladder**,
+at these addresses, including the `0xD0` band's six byte path and the nibble reaching `0x02432`. What
+is new here is the **ring**, its addresses and the pending count; what section 139 left open, what
+`0x02432` does, is closed in section 257 rather than here.
 
 Section 253 left one thing open: the Harmony 525 re-validates its configuration when something asks
 it to, and what asks was unread. The caller sits in a chain that tests a byte against `0xC0`, `0xD0`,
@@ -32614,10 +32622,11 @@ the band this section called an opcode range is a band of an operand.
 
 ## 255. An arch 9 instruction is operand then opcode, and the chain switches on the operand
 
-**Read section 256 first.** This section's headline, that opcodes `0x1F` to `0x3E` dispatch on the
-operand's high byte, is **section 72's**, measured on arch 12 a month earlier and stated in a table
-row there. What this adds is the arch 9 addresses and the proof from that image; the reading was not
-open and should not have been presented as settled here.
+**Read sections 256 and 257 first.** This section's headline, that opcodes `0x1F` to `0x3E` dispatch
+on the operand's high byte, is **section 72's**, measured on arch 12 a month earlier and stated in a
+table row there, and arch 9's own ladder was already in section 139's entry 23. What this adds is the
+staging and working registers and the fetch; the reading was not open and should not have been
+presented as settled here.
 
 Section 254 left one thing open, which byte the Harmony 525's interpreter dispatches on, and it named
 the two readings that disagreed. Following the fetch routine resolves the disagreement on this image
@@ -32759,15 +32768,17 @@ are arch 9 and below that, so the following stands and is marked as the new part
 | the action ring | base `0x0346`, exclusive end `0x03BE`, read pointer `0x03BE`, wrap `0x78`, pending byte count at `0x345` |
 | the interpreter's registers | staging triple `0x754` to `0x756`, working triple `0x3D7` to `0x3D9`, fetch `0x0193A` |
 | forty slots, twice | the same `0x78` as arch 12, out of three addresses rather than out of the queue's writer |
-| band `0xC0` to `0xCF` | **the container re-validation**, low nibble selecting the order. Section 72 did not read this band on any architecture |
-| band `0xD0` and above | **consumes a second three byte group**, the only band that does |
-| band `0xE0` | four sub-commands, `0x00` to `0x03`, decoded with `chains.py` |
-| band `0xF0` | two sub-commands, `0x00` and `0x01` |
+| band `0xC0` to `0xCF` | **what its handler does**, the container re-validation with the low nibble selecting the order. Section 139 located the handler and said it had not been followed; section 257 is where this is properly claimed |
+| band `0xD0` and above | ~~consumes a second three byte group, the only band that does~~<!--superseded--> **Section 139 already called this the six byte path**, at this address, on 13 August 2026. Section 257 |
+| band `0xE0` | ~~four sub-commands~~<!--superseded--> the four **targets** are new; the band and its floor are section 139's |
+| band `0xF0` | ~~two sub-commands~~<!--superseded--> likewise: the two targets, not the band |
 | `0xFC` | **not nothing on arch 9**, where section 72 recorded it as doing nothing on arch 12 |
 
-**The `0xD0` band is the one with a consequence.** It fetches three more bytes from the ring, so a
-list holding one of those instructions holds a six byte instruction, and a disassembler stepping
-uniformly by three would give the operand triple a meaning of its own. A **reader** is unaffected,
+**The `0xD0` band is the one with a consequence, and section 139 said so first.** It fetches three
+more bytes from the ring, so a list holding one of those instructions holds a six byte instruction,
+and a disassembler stepping uniformly by three would give the operand triple a meaning of its own.
+Section 139 named it "the six byte path" at this address three weeks earlier, which section 257 is the
+correction for. A **reader** is unaffected,
 since a list declares its length in entries and the extra triple is one of them, which is why nothing
 in the codec has ever noticed. Section 72's table says the ignored band for this opcode range is "not
 established" on arch 12, so whether the Harmony One does the same is unread.
@@ -32785,3 +32796,102 @@ been checked against the other's image.
   reading it, with this as the case.
 * `tests/test_status_screens.py`: the arch 9 band map as its own test, and the `0xD0` band's second
   fetch, which is the part a codec would need.
+
+## 257. The audit section 256 asked for, and it found a second re-derivation and a scoping error
+
+Section 256 established that sections 254 and 255 had re-derived section 72, and added one grep before
+reading a structure to the `trace-section` skill. The obvious next move was to run that grep backwards
+over the rest of the afternoon's findings rather than assume the one instance was the only one. It was
+not.
+
+**One pass, seventeen constants, four hits, and every one of them mattered.**
+
+### The second re-derivation, and it is worse than the first
+
+`0x0346` came back clean, so the ring is new. **The band ladder did not.** Section 139's entry 23, from
+13 August 2026, states the Harmony 525's ladder in one paragraph: `0x01F78` testing `0xF0`, `0x01F8E`
+testing `0xE0`, `0x01FD4` testing `0xD0` "and handing the six byte path at `0x01FDA` two more fetched
+bytes", and `0x02030` testing `0xC0`, "which masks the low nibble into `0x3DC` and calls `0x02432`". It
+also says that below `0xC0` every arm branches to the dispatcher's exit, that arch 9's lowest floor is
+`0xC0` where the shared table's is `0xB0`, and that **no Harmony 525 config emits an instruction in
+that band at all**.
+
+So section 254's band map, section 255's field order and section 256's own table of what survived were
+all describing a paragraph this repository had held for three weeks. Worse than section 256's case in
+two ways: it is the **same architecture and the same addresses**, so no cross architecture excuse
+applies, and section 256 named "the `0xD0` band consumes a second three byte group" as the one finding
+with a consequence when section 139 had already called it **the six byte path**.
+
+**And it is in the code too**, `BANDS_3F_ARCH9` in `packages/codec/src/actions.ts`, with `bandsFor`
+returning arch 9's own ladder and the comment citing section 139. Section 139's own subject was
+readers that answered plausibly where they should have refused; this ladder was one of the nine it
+fixed.
+
+### The one thing that was genuinely open, and it is now closed
+
+Section 139 wrote of the `0xC0` handler that it "reads a bit of `0x109` and switches on the stored
+nibble, **and it has not been followed further**", and the codec's band entry was `placed` rather than
+`means` for exactly that reason. That is the gap, it is the whole of what this afternoon added to the
+ladder, and it is filled: `0x02432` re-validates the stored configurations and writes the verdict bit
+the status screens are chosen by, with the nibble selecting which container goes first.
+
+The band entry is `means` now, citing this section. **It moves no coverage number**, arch 9 staying at
+95.9%<!--fact:reading_arch9-->, because no arch 9 config emits an instruction in that band, which is
+section 139's own measurement. It is a gap closed rather than a figure improved, and saying so is the
+point: an afternoon produced one upgraded table entry plus a set of addresses, and the honest way to
+report that is not as five findings.
+
+### The scoping error, found by checking a collision that turned out to be innocent
+
+Two constants collided with prior art at the same address in a sibling image:
+
+| | prior art | today |
+|---|---|---|
+| `0x68B` | the 700 saves its current config pointer there, section 34's table | the 600's flags byte, verdict at bit 2 |
+| `0x19486` | the 700's infrared receive timebase | the 600's arming predicate |
+
+**Both are coincidences between two builds and neither is a contradiction**, which the images settle:
+the 700's flags byte is `0x68E`, three bytes along, and its `0x19486` sets `TMR0H` and `TMR0L` where
+the 600's walks 32 words looking for anything other than erased flash.
+
+**But checking them found a real error in section 252**, which presented its addresses as arch 14's.
+They are the **Harmony 600 build's**. The 700 carries the same structure at entirely different
+addresses, read today:
+
+| | Harmony 600, 0.2 | Harmony 700, 2.8 |
+|---|---|---|
+| flags byte | `0x68B` | `0x68E` |
+| the polled re-check | `0x1544A` | `0x1671A` |
+| the gate variable | `0x6E3` | `0x0B0` |
+| the arming predicate | `0x19486` | `0x1ABCE` |
+| armed flag | `0x743` | `0x3A8` |
+| container validator | `0x151C6` | `0x16468` |
+| screen number | `0x0B5`, `0x0B6` | `0xF35`, `0xF36` |
+| discriminator | `0xD04` | `0xD04` |
+
+**That makes section 252's finding stronger rather than weaker.** Its claim, that arch 14 has the same
+poll and arms **without** consulting the verdict, now rests on two images that share not one address,
+and the verdict is absent from the arming half on both. The verdict bit, the container select bit and
+the discriminator's address are the three things that do transfer.
+
+### What the audit says about the method
+
+Section 256 asked for one grep before reading a structure. That grep was run once, after the fact, and
+found a second and larger instance immediately, so **the rule is right and running it late is what
+cost the afternoon**. Two further observations worth keeping.
+
+**A collision worth investigating is not the same as a contradiction**, and both of today's turned out
+innocent. Checking them anyway is what found the scoping error, so the value of the check was not
+where it was aimed.
+
+**And the grep has to cover the library, not just the documents.** Both re-derivations were also
+present as named constants in `src/harmony/gspm.py` and `packages/codec/src/actions.ts`, each with the
+section number in its comment, and either file would have answered faster than 32000 lines of prose.
+
+### Where it lands
+
+* `packages/codec/src/actions.ts`: the arch 9 `0xC0` band from `placed` to `means`.
+* Sections 252, 254 and 255, corrected in place, and `reference/superseded.md`.
+* `tests/test_status_screens.py`: the 700's poll and flags byte, so section 252's claim is asserted
+  over both arch 14 images rather than one.
+* `.claude/skills/trace-section/SKILL.md`: the library half of the grep, and the collision note.

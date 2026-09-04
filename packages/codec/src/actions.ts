@@ -279,8 +279,17 @@ const BANDS_3F_ARCH9: readonly Band[] = [
   BANDS_3F[0] as Band,
   BANDS_3F[1] as Band,
   BANDS_3F[2] as Band,
-  [0xc0, placed('the handler at 0x02432, which reads a bit of 0x109 and switches on the nibble; '
-    + 'not arch 12\'s peripheral handler and not arch 14\'s base slot 8 seeker', 139)],
+  // **Followed at last, section 257**, which is what moved this from `placed` to `means`. Section
+  // 139 located the handler and said in as many words that it had not been followed further, and
+  // that gap is the one genuinely new thing an afternoon of re-deriving this ladder produced.
+  //
+  // `0x02432` re-validates the remote's stored configurations and writes the verdict bit the status
+  // screens are chosen by, `0x109` bit 2, with bit 1 carrying the other container's. The nibble
+  // reaches it as an order selector, 2 and 3 being the two orders. **Arch 9 is the only
+  // architecture where a configuration can ask for this**: arch 12 re-checks on a cable transition
+  // and arch 14 from a poll, sections 251 and 252, and on both it is the firmware's decision.
+  [0xc0, means('re-validate the stored configurations and update the verdict the status screens '
+    + 'are chosen by; the nibble picks which container goes first', 257)],
 ];
 
 const BANDS_1F: readonly Band[] = [

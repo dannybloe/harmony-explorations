@@ -325,6 +325,18 @@ UCON_USBEN, UCON_SUSPND = 3, 1
 #: does not, which is what the negative below is for. `H600_ARMING_PREDICATE` is the routine that
 #: stands where arch 12 reads the verdict bit, and it asks whether a configuration is present.
 H600_FLAGS, H600_VERDICT_BIT, H600_SELECT_BIT = 0x68B, 2, 4
+#: The same structure on the **other** arch 14 image, section 257, sharing not one address.
+#:
+#: Section 252 gave these as arch 14's and they are the Harmony 600 build's. The Harmony 700 has the
+#: poll, the flag and the validator at its own addresses, so the claim rests on two images rather
+#: than one; what transfers is the verdict bit, the select bit and the discriminator's address.
+#: Two of the 600's addresses also collide with unrelated prior art in the 700 image, `0x68B` being
+#: its config pointer save and `0x19486` its infrared receive timebase, which is why the per build
+#: table matters rather than being tidiness.
+H700_FLAGS = 0x68E
+H700_POLL, H700_READS_THE_GATE, H700_ARMS_AT = 0x1671A, 0x1671C, 0x1672C
+H700_GATE_VARIABLE, H700_ARMED_FLAG, H700_VALIDATOR = 0x0B0, 0x3A8, 0x16468
+H700_ARMING_PREDICATE = 0x1ABCE
 H600_POLL, H600_ARMED_FLAG, H600_VALIDATOR = 0x1544A, 0x743, 0x151C6
 #: The poll's entry is a bank select; the gate variable is read on the word after it.
 H600_READS_THE_GATE = 0x1544C
@@ -1015,6 +1027,58 @@ class TheArch9OperandBandsAreFourAndOneTakesASecondGroup(unittest.TestCase):
         lab.require('h525_code')
         cases = chains.xor_chain(lab.load('h525_code'), 0x0, H525_BAND_E0_CHAIN)
         self.assertEqual({c.value: c.target for c in cases}, H525_BAND_E0_CASES)
+
+
+
+class TheHarmony700HasTheSamePollAtItsOwnAddresses(unittest.TestCase):
+    """Section 257, and it is what makes section 252's claim an arch 14 claim rather than a build's.
+
+    Not one address is shared with the Harmony 600 image, so the two readings are independent, and
+    the thing that matters most transfers: the arming half does not consult the verdict on either.
+    """
+
+    def test_the_poll_has_the_same_three_gates_at_the_700s_addresses(self):
+        lab.require('h700_code')
+        instrs = dict(_instructions('h700_code', 0x9000))
+        gate = instrs[H700_READS_THE_GATE]
+        self.assertEqual(gate.mnemonic, 'MOVF')
+        where, _ = isa.resolve_file(gate.fields['f'], gate.fields['a'], H700_GATE_VARIABLE >> 8)
+        self.assertEqual(where, H700_GATE_VARIABLE)
+        self.assertEqual(instrs[0x16720].fields['target'], H700_ARMING_PREDICATE)
+        arm = instrs[H700_ARMS_AT]
+        self.assertEqual(arm.mnemonic, 'MOVWF')
+        self.assertEqual(arm.fields['f'], H700_ARMED_FLAG & 0xFF)
+        # The re-check half: the verdict, then both containers, then the flag cleared.
+        self.assertEqual(instrs[0x16740].fields['k'], 1 << H600_VERDICT_BIT)
+        for at in (0x16746, 0x1674C):
+            self.assertEqual(instrs[at].fields['target'], H700_VALIDATOR)
+
+    def test_the_700s_arming_half_never_reads_the_verdict_either(self):
+        """The claim section 252 rests on, asserted over the second image."""
+        lab.require('h700_code')
+        instrs = dict(_instructions('h700_code', 0x9000))
+        for at in range(H700_POLL, H700_ARMS_AT + 2, 2):
+            instr = instrs.get(at)
+            if instr is None or instr.category not in (isa.FILE_A, isa.FILE_DA, isa.BIT):
+                continue
+            where, _ = isa.resolve_file(instr.fields['f'], instr.fields['a'], H700_FLAGS >> 8)
+            self.assertNotEqual(where, H700_FLAGS,
+                                'the 700 arms without consulting the verdict, 0x%05X' % at)
+
+    def test_the_two_arch14_builds_share_no_address_in_this_machinery(self):
+        """Which is what makes them two measurements rather than one restated.
+
+        Two of the 600's addresses are used for something unrelated in the 700 image, so a reading
+        that assumed an address transfers between builds would have been wrong in both directions.
+        """
+        six = (H600_FLAGS, H600_POLL, H600_GATE_VARIABLE, H600_ARMED_FLAG, H600_VALIDATOR,
+               H600_ARMING_PREDICATE)
+        seven = (H700_FLAGS, H700_POLL, H700_GATE_VARIABLE, H700_ARMED_FLAG, H700_VALIDATOR,
+                 H700_ARMING_PREDICATE)
+        self.assertEqual(set(six) & set(seven), set())
+        # And the three things that do transfer, which is the finding rather than the addresses.
+        self.assertEqual(H600_VERDICT_BIT, 2)
+        self.assertEqual(H600_SELECT_BIT, 4)
 
 if __name__ == '__main__':
     unittest.main()

@@ -762,9 +762,9 @@ document:
   remote keeps a verdict earned against different bytes. A screen goes up on a **boot** over an
   incomplete configuration, and it stays up because the re-check arms its flag only while that verdict
   stands, so a failed validation is a one way door out of which only a power cycle leads.
-  **The latch is one architecture's**, sections 252 and 253, which is worth knowing before any of it
-  is generalised: arch 14 (Harmony 600) has the same poll, flag and validator and arms **without**
-  consulting the verdict, so a failed validation re-arms; arch 9 (Harmony 525) has no poll and no
+  **The latch is one architecture's**, sections 252, 253 and 257, which is worth knowing before any
+  of it is generalised: arch 14 has the same poll, flag and validator on **both** its images, at not
+  one shared address, and arms **without** consulting the verdict, so a failed validation re-arms; arch 9 (Harmony 525) has no poll and no
   flag at all and re-validates only when something asks it to. So the screen that stays up until the
   batteries come out is an arch 12 (Harmony One) fact and not a Harmony fact.
   **Confirmed on hardware on 4 September 2026**, section 250's control: a two block write with neither
