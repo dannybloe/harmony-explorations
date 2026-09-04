@@ -15,6 +15,8 @@ They were read out of four firmware images by looking at call sites, and the nam
 from five containers parsed by a reader that knows nothing about firmware. Five apt names out of a
 table of thirty is not a coincidence a decoder slip could produce.
 """
+import pathlib
+import re
 import unittest
 
 import lab
@@ -336,6 +338,18 @@ H525_INDEX_VARIABLE = 0x2E3
 #: The wrapper whose own MOVLB decides the bank of its caller's masked write, and the caller.
 H525_WRAPPER, H525_WRAPPER_SETS_BSR = 0x02570, 0x02574
 H525_REVALIDATES = 0x024D0
+#: The action ring on arch 9, section 254, and the three routines that between them bound it.
+H525_RING_BASE, H525_RING_END, H525_RING_BYTES = 0x0346, 0x03BE, 0x78
+H525_RING_POINTER = 0x03BE
+H525_INSTRUCTION_LENGTH = 3
+#: The underflow bound compares the pointer against the base; the overflow one against the end.
+H525_UNDERFLOW_CHECK, H525_OVERFLOW_CHECK = 0x02524, 0x02562
+H525_WRAPS_UP, H525_WRAPS_DOWN = 0x0201C, 0x01F18
+#: The opcode range that reaches the re-validation, and the two container handlers it can pick.
+H525_REVALIDATE_RANGE = 0xC0
+H525_REVALIDATE_DISPATCH, H525_REVALIDATE_ENTRY = 0x02044, 0x02432
+H525_ORDER_VARIABLE = 0x3DC
+
 #: Every call site of the arch 9 validator: two in the boot sequence, one wrapper.
 H525_VALIDATOR_CALLERS = (0x02570, 0x04C42, 0x04C52)
 
@@ -780,6 +794,78 @@ class TheHarmony525HasNoPollAndNoFlag(unittest.TestCase):
         self.assertEqual(instrs[0x024DC].mnemonic, 'ANDWF')
         self.assertEqual(instrs[0x024E0].mnemonic, 'MOVWF')
         self.assertEqual(instrs[0x024E0].fields['f'], H525_FLAGS & 0xFF)
+
+
+
+class TheHarmony525ActionRingClosesOnItself(unittest.TestCase):
+    """Section 254. Three constants off three routines, and each is a bound only if the others are.
+
+    The point of asserting the closure rather than the values is that a single wrong constant would
+    still look like a plausible ring. Here the base plus the wrap has to equal the end, and the two
+    bound checks have to compare against different ends in opposite directions.
+    """
+
+    def test_the_base_plus_the_wrap_is_the_end(self):
+        self.assertEqual(H525_RING_BASE + H525_RING_BYTES, H525_RING_END)
+
+    def test_the_ring_holds_forty_three_byte_instructions(self):
+        self.assertEqual(H525_RING_BYTES % H525_INSTRUCTION_LENGTH, 0)
+        self.assertEqual(H525_RING_BYTES // H525_INSTRUCTION_LENGTH, 40)
+
+    def test_the_span_equals_the_codecs_own_queue_constant(self):
+        """Arch 9's ring and arch 12's are the same size, reached with nothing in common.
+
+        Section 34 derived `0x78` on the Harmony One from the queue's own writer. This one falls out
+        of a base address, an end address and two wrap sites on a Harmony 525. The equality is worth
+        an assertion rather than a sentence, because the queue rail that refuses an oversized
+        sequence rests on the number, and either side moving should be a failure rather than a
+        silent divergence. Read out of the TypeScript source, since that is where the codec's copy
+        lives and a second Python copy is exactly what this repository forbids.
+        """
+        source = pathlib.Path(__file__).resolve().parent.parent / 'packages/codec/src/queue.ts'
+        stated = re.search(r'ACTION_QUEUE_BYTES\s*=\s*(0x[0-9a-fA-F]+|\d+)', source.read_text())
+        self.assertIsNotNone(stated, 'the codec still exports ACTION_QUEUE_BYTES')
+        self.assertEqual(int(stated.group(1), 0), H525_RING_BYTES)
+
+    def test_the_underflow_check_compares_the_pointer_against_the_base(self):
+        lab.require('h525_code')
+        instrs = dict(_instructions('h525_code', 0x0))
+        self.assertEqual(instrs[H525_UNDERFLOW_CHECK + 4].fields['k'], H525_RING_BASE & 0xFF)
+        self.assertEqual(instrs[H525_UNDERFLOW_CHECK + 8].fields['k'], H525_RING_BASE >> 8)
+        # And the site that fires on it adds the whole span back.
+        self.assertEqual(instrs[H525_WRAPS_UP].fields['k'], H525_RING_BYTES)
+        self.assertEqual(instrs[H525_WRAPS_UP + 2].mnemonic, 'ADDWF')
+
+    def test_the_overflow_check_compares_against_the_other_end_and_subtracts(self):
+        """Opposite direction, different constant, and neither routine names the other's."""
+        lab.require('h525_code')
+        instrs = dict(_instructions('h525_code', 0x0))
+        self.assertEqual(instrs[H525_OVERFLOW_CHECK + 4].fields['k'], H525_RING_END & 0xFF)
+        self.assertEqual(instrs[H525_OVERFLOW_CHECK + 8].fields['k'], H525_RING_END >> 8)
+        self.assertEqual(instrs[H525_WRAPS_DOWN].fields['k'], H525_RING_BYTES)
+        self.assertEqual(instrs[H525_WRAPS_DOWN + 2].mnemonic, 'SUBWF')
+
+    def test_the_pointer_sits_immediately_past_the_ring_and_moves_by_one_instruction(self):
+        lab.require('h525_code')
+        instrs = dict(_instructions('h525_code', 0x0))
+        self.assertEqual(H525_RING_POINTER, H525_RING_END)
+        self.assertEqual(instrs[0x02012].fields['k'], H525_INSTRUCTION_LENGTH)
+        step = instrs[0x02016]
+        self.assertEqual(step.mnemonic, 'SUBWF')
+        where, _ = isa.resolve_file(step.fields['f'], step.fields['a'], H525_RING_POINTER >> 8)
+        self.assertEqual(where, H525_RING_POINTER)
+
+    def test_the_revalidation_is_reached_from_an_opcode_range_with_the_order_in_its_low_nibble(self):
+        lab.require('h525_code')
+        instrs = dict(_instructions('h525_code', 0x0))
+        # The range test, then the low nibble into the order variable, then the call.
+        self.assertEqual(instrs[0x02030].fields['k'], H525_REVALIDATE_RANGE)
+        self.assertEqual(instrs[0x02038].fields['k'], 0x0F)
+        order = instrs[0x0203E]
+        self.assertEqual(order.mnemonic, 'MOVWF')
+        where, _ = isa.resolve_file(order.fields['f'], order.fields['a'], H525_ORDER_VARIABLE >> 8)
+        self.assertEqual(where, H525_ORDER_VARIABLE)
+        self.assertEqual(instrs[H525_REVALIDATE_DISPATCH].fields['target'], H525_REVALIDATE_ENTRY)
 
 if __name__ == '__main__':
     unittest.main()

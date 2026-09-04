@@ -439,7 +439,7 @@ finding.
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 253<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 254<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -751,6 +751,13 @@ stayed away for six minutes across three reads. The moment the cable came out an
 restored, and the remote's own clock, which it loads from the configuration once per startup and
 nowhere else, showed it had been running for twenty three minutes without a break. So the remote
 re-checks the configuration we wrote, by itself, while running.
+
+**And the 525's own answer came with something better attached, section 254.** What asks that remote
+to re-check its configuration is an **instruction in the configuration itself**, opcodes `0xC0` to
+`0xCF`, which no other remote here has: the other two decide to re-check on their own. Reading the
+interpreter around it also gave the address of the forty slot action queue on that architecture, and
+its three constants close on each other, so the forty that the writer's sequence rail rests on is now
+measured on two architectures with nothing in common.
 
 **And all three architectures were read, sections 252 and 253, so the trap is one remote's.** The
 Harmony 600 has the same machinery and escapes for one reason, the Harmony 525 has different

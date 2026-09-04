@@ -32500,6 +32500,12 @@ to and at no other time.
 then `0xF8`, then `0xFF` is shaped like an opcode decoder, and if it is one then re-validation is
 something a configuration can ask for. That is a guess about a range test and it is left as one.
 
+**Answered the same afternoon, section 254**: it is an opcode decoder, the range is `0xC0` to `0xCF`
+with the order in the low nibble, and the interpreter around it carries an action ring whose base,
+end and wrap constant close on each other and give forty three byte slots, the same figure arch 12
+gives from its own writer. What that byte's **address** is stayed open, and for the same reason twice:
+both instruments lose the bank on the branch into the chain.
+
 ### One pitfall, worth more than the finding
 
 `0x024D0` writes the verdict bit, and **two of this project's own instruments say it does not**. It
@@ -32523,3 +32529,72 @@ silence.
   the wrapper's `MOVLB` that decides the bank of its caller's write.
 * Section 249's condition, scoped to arch 12 and arch 14, and `CLAUDE.md` corrected.
 * `.claude/skills/trace-section/SKILL.md`: the second dead end.
+
+## 254. The Harmony 525's re-validation is an instruction, and its action ring closes arithmetically
+
+Section 253 left one thing open: the Harmony 525 re-validates its configuration when something asks
+it to, and what asks was unread. The caller sits in a chain that tests a byte against `0xC0`, `0xD0`,
+`0xF8` and `0xFF`, which is the shape of an opcode decoder, and that shape was deliberately not
+claimed. It is one, and the surrounding structure carries a closure worth more than the answer.
+
+### The action ring on arch 9, with its address and both bounds
+
+Three constants, each read off a different routine, and they close on each other:
+
+| | value | where |
+|---|---|---|
+| the ring's base | `0x0346` | the bound check at `0x02524`, and two recovery stores at `0x01F24` and `0x01F30` |
+| the ring's exclusive end | `0x03BE` | the bound check at `0x02562` |
+| the wrap constant | `0x78` | `0x0201C` adds it on underflow, `0x01F18` subtracts it on overflow |
+| the write pointer | `0x03BE`, `0x03BF` | `0x02016` decrements it by 3 |
+| an instruction | 3 bytes | the interpreter fetches three at a time through `0x0193A` |
+
+`0x0346 + 0x78 = 0x03BE`, so the wrap constant **is** the span, the pointer sits immediately past the
+ring, and `0x78 / 3` is **40 slots**.
+
+**That is the same forty as arch 12 and it was reached with nothing in common.** Section 34 derived a
+ring of `0x78` bytes holding forty three byte instructions on the Harmony One, and
+`ACTION_QUEUE_BYTES` in `packages/codec/src/queue.ts` is that number. Here the same figure falls out
+of a base address, an end address and two wrap sites on a different architecture whose SFR map even
+disagrees with the other two. So the queue rail that refuses an oversized sequence, and the 35 of 40
+peak that the config which hung a Harmony One reaches, rest on a constant now confirmed twice.
+
+**The two wraps are in opposite directions and that is the second closure.** `0x02524` compares the
+pointer against the **base** after three bytes were subtracted, and adds `0x78` when it went under;
+`0x02562` compares a working copy against the **end** after three were added, and subtracts `0x78`
+when it went over. Neither routine names the other's constant, and each is a bound only if the other's
+is right.
+
+### The re-validation is one instruction in that list
+
+Opcodes at or above `0xC0` and below `0xD0` reach `0x02044`: the handler takes the byte's **low
+nibble** into `0x3DC` and calls `0x02432`, which re-validates a container and writes the verdict back
+into `0x109`. `0x3DC` holding 2 or 3 chooses the order, `0x024D0` validating container index 1 and
+`0x02508` index 0.
+
+So on a Harmony 525 a configuration can ask the remote to re-check itself. Neither of the other two
+architectures has anything like it: arch 12 (Harmony One) re-checks on a cable transition and arch 14
+(Harmony 600) re-checks from a poll, and on both it is the firmware's decision rather than the
+configuration's. **No config in the corpus emits one**, which is the same answer section 118 gave for
+the two flash writing opcodes on arch 14.
+
+### What the dispatched byte's address is, and why it is still open
+
+The chain compares `0xd8` in the banked form, and the bank is unknown on the path in: this project's
+disassembler drops its `BSR` tracking at a control transfer and the branch into the chain is one, and
+`pic18_trace` attributes the sites to bank 2 and finds no contradiction there, which is section 253's
+pitfall a second time in the same afternoon.
+
+Two sites inside the same interpreter do resolve, with `MOVLB 0x3` immediately before them, and they
+give `0x3D8`: a bit 7 test at `0x01EFE` and a low nibble mask at `0x02002`. **That does not settle
+it**, because `0x3D8` is also written as the **second** of three bytes fetched at `0x01FE6`, which is
+not where an opcode would sit. Either the buffer is read in an order this reading has wrong, or the
+chain switches on something else. Left open rather than resolved by preference, and the cheap next
+step is to follow the fetch routine `0x0193A` and see what the first byte of a triple is stored as.
+
+### Where it lands
+
+* `tests/test_status_screens.py`: the ring's base, end, wrap and pointer, the arithmetic closure
+  between them, the equality with `packages/codec`'s own queue constant, and the two bound checks
+  being in opposite directions.
+* The open item above, and section 253's pitfall, which this is a second instance of.
