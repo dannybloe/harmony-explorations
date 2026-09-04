@@ -32136,8 +32136,13 @@ the others, and the fact that a clean write appeared not to help.
 * **What the descriptors are for**, which is now a separate question rather than part of this one:
   three records of five bytes, byte 0 bit 0 marking one live, thirty sites addressing them inside one
   module, and no reader in the validator's path.
-* **Whether arch 14 latches the same way.** Its display routine and its validator have the same
-  shape, and neither its poll nor its flag has been read.
+* **Whether arch 14 latches the same way.** ~~Its display routine and its validator have the same
+  shape, and neither its poll nor its flag has been read.~~ **Answered in the negative, section
+  252**: the poll, the flag and the validator all transfer, and the arming condition does not. Arch
+  14 arms without consulting the verdict, so a failed validation re-arms on the next pass and a
+  Harmony 600 should not have a Harmony One's stuck screen. Read from the image and corroborated by
+  the resting state of a connected Harmony 600; the experiment that would settle it needs a write
+  command and arch 14 has no write target.
 
 ### Where it lands
 
@@ -32298,3 +32303,109 @@ what the permission is protecting here is the **unit**, and that is exactly the 
 * Section 250, corrected in place, and `reference/superseded.md`.
 * `packages/corpus/bin/write-config.ts`, which gains the control and, from the same evening's failed
   write, the recovery of a block an earlier run erased and did not write.
+
+## 252. The Harmony 600 has the same poll and does not have the latch
+
+Section 250 left "whether arch 14 latches the same way" open, on the ground that its display routine
+and its validator have the same shape and neither its poll nor its flag had been read. Both are read
+now, and the resting state of a connected Harmony 600 is measured. The answer is that the poll, the
+flag and the validator all transfer instruction for instruction, and **the one condition the latch
+rests on does not**.
+
+### The same three things, at arch 14's addresses
+
+| | arch 12 (Harmony One) | arch 14 (Harmony 600) |
+|---|---|---|
+| flags byte | `0x1A4` | `0x68B` |
+| verdict bit | 2 | 2 |
+| container select bit | 3 | 4 |
+| container validator | `0x28D92` | `0x151C6` |
+| checksum disagrees, agrees | `0x28FFA`, `0x29006` | `0x153DE`, `0x153EA` |
+| screen number | `0x22F`, `0x230` | `0x0B5`, `0x0B6` |
+| discriminator | `0xD04` | `0xD04` |
+| the polled re-check | `0x2906C` | `0x1544A` |
+| armed flag | `0x318` | `0x743` |
+
+The validator's tail is the same code twice. The checksum's two arms clear or set the verdict bit and
+write 1 to the discriminator on the failing side; then the screen block loads 26 or zero into the
+screen number and calls the shower. Section 249 read that on both images already.
+
+**What section 250 did not notice is that the container select bit is also the screen guard.** On both
+architectures the instruction immediately after the checksum arms is a `BTFSS` of that bit which jumps
+**past** both screen calls when it is clear, `0x2900A` on arch 12 and `0x153F0` on arch 14. So a
+validation of the container the bit does not select shows nothing whatever it finds, which is why
+validating the safe mode container at boot puts no screen up. That is a second guard in front of the
+screens, and section 250 described only the verdict one.
+
+### Measured on the connected Harmony 600
+
+Read over USB on 4 September 2026 from a Harmony 600 running its application, firmware 0.2, skin 71,
+software type 0:
+
+| address | value | reading |
+|---|---|---|
+| `0x68B` | `0x16` | verdict bit set, container select bit set |
+| `0x6E3` | `0x01` | the gate variable, on its arming side |
+| `0x743` | `0x01` | the flag is armed |
+
+So a connected Harmony 600 rests exactly where a connected Harmony One rests, section 251: verdict
+standing, flag armed. **And its verdict is standing**, which says the validator has run over its
+configuration, so whatever section 110 measured about the journal's five variables being zero on a
+connected 600, validating is not the same act as loading.
+
+### The difference, and it is the one that matters
+
+Arch 12's arming half tests the verdict:
+
+```
+2906c: MOVF PORTA,W; ANDLW 0x10; BNZ 0x29082    the cable
+29072: MOVF 0x1a4,W; ANDLW 0x04; BZ  0x29082    the verdict
+2907a: MOVLW 0x01; MOVWF 0x318                  arm
+```
+
+Arch 14's does not:
+
+```
+1544a: MOVF 0x6e3,W;      BZ 0x15460            the gate variable
+15450: CALL 0x19486; IORLW 0x00; BZ 0x15460     a routine
+15458: MOVLW 0x01; MOVWF 0x743                  arm
+```
+
+`0x19486` clears a 24 bit index, and for each of 32 steps of two reads a 16 bit word from `0x01F4`
+plus the index through `0x19C7C`, complements both halves, and **returns one as soon as it finds a
+word that is not `0xFFFF`**, or zero when all 32 are. It asks whether a configuration is **present**,
+not whether one was ever believed, and it does not read `0x68B` at any depth.
+
+**So the latch does not transfer.** Section 250's argument is that a failed validation leaves the
+verdict clear and the flag cleared, and that arming needs the verdict standing, so the arming
+condition can never be met again and only a power cycle validates. On arch 14 the arming condition
+does not mention the verdict, so a failed validation re-arms on the next pass and the re-check runs
+again. A Harmony 600 should therefore not have the stuck screen a Harmony One has, and the battery
+pull three sections recorded is an arch 12 fact rather than a Harmony fact.
+
+### What the gate variable is, deliberately not claimed
+
+Arch 12 reads `PORTA` bit 4 in the poll itself. Arch 14 reads a variable, `0x6E3`, which has one
+`MOVWF` writer and two `CLRF` writers: it is set to 1 at `0x156AC` when a state variable holds 4, and
+cleared at `0x1563C` and at `0x154A6`, the second being inside the routine the re-check itself calls
+after both validations, next to a write of `UCFG`.
+
+That is consistent with it standing for a live USB session, which would give the arch 14 poll the same
+sense as arch 12's corrected one, arm while connected and re-check while not. It is **not asserted**:
+the reading is a comparison with one other architecture plus a state number, and the resting value of
+1 on a connected remote is a measurement of where the remote sits rather than of what the variable
+means.
+
+### Why the arch 14 experiment cannot be run
+
+Section 251's runs turned on sending `WRITE_MISC` selector `0x02` to clear the verdict and watching it
+come back. That is a write command, and **arch 14 has no write target on this bench**, so nothing here
+may clear a Harmony 600's verdict. The structural reading above stands as a reading, and the only
+hardware evidence for it is the resting state.
+
+### Where it lands
+
+* `tests/test_status_screens.py`: the arch 14 poll's three gates and its flag, the container select
+  bit being the screen guard on **both** architectures, and the negative that arch 14's arming half
+  does not read the verdict bit, with arch 12's arming half as the positive control.
+* Section 250's open item, answered.

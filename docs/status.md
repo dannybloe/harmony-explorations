@@ -439,7 +439,7 @@ finding.
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 251<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 252<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -751,6 +751,15 @@ stayed away for six minutes across three reads. The moment the cable came out an
 restored, and the remote's own clock, which it loads from the configuration once per startup and
 nowhere else, showed it had been running for twenty three minutes without a break. So the remote
 re-checks the configuration we wrote, by itself, while running.
+
+**And the Harmony 600 has the same machinery and not the same trap, section 252.** Its poll, its
+armed flag and its validator sit at its own addresses and match the Harmony One instruction for
+instruction, and a connected Harmony 600 rests exactly where a connected Harmony One does, verdict
+standing and flag armed, which is measured. What differs is the one condition the trap rests on: a
+Harmony One arms its re-check only while it still believes its configuration, and a Harmony 600 arms
+whenever a configuration is merely **present**. So the screen that sticks until the batteries come
+out is a Harmony One fact rather than a Harmony fact. The experiment that would prove it needs a
+write command, and there is no arch 14 remote this project may write to.
 
 Two things in section 250 are corrected by it. The re-check fires on the **cable transition** rather
 than while the cable is in, and the cable pin's polarity is the other way round, which came from

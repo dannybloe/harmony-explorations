@@ -317,6 +317,24 @@ CABLE_BIT = 4
 #: `UCON` bit 3 is `USBEN` and bit 1 is `SUSPND`, per the 67J50 map in `isa.PARTS`.
 UCON_USBEN, UCON_SUSPND = 3, 1
 
+#: The same three things on arch 14, section 252, at the Harmony 600 image's own addresses.
+#:
+#: The poll, the flag and the validator transfer instruction for instruction; the **arming condition**
+#: does not, which is what the negative below is for. `H600_ARMING_PREDICATE` is the routine that
+#: stands where arch 12 reads the verdict bit, and it asks whether a configuration is present.
+H600_FLAGS, H600_VERDICT_BIT, H600_SELECT_BIT = 0x68B, 2, 4
+H600_POLL, H600_ARMED_FLAG, H600_VALIDATOR = 0x1544A, 0x743, 0x151C6
+#: The poll's entry is a bank select; the gate variable is read on the word after it.
+H600_READS_THE_GATE = 0x1544C
+H600_GATE_VARIABLE = 0x6E3
+H600_ARMING_PREDICATE = 0x19486
+H600_ARMS_AT = 0x1545C
+#: Where each architecture jumps past both screen calls when the container select bit is clear.
+SCREEN_GUARDS = {
+    'one34_code': (0x20000, 0x2900A, 0x1A4, 3, 0x2906A),
+    'h600_code_complete': (0x9000, 0x153F0, 0x68B, 4, 0x15448),
+}
+
 #: The seeder that loads the clock out of base slot 13, and its one caller in the boot init.
 #:
 #: This is what licenses the remote's clock as an instrument for "did it restart", section 251: the
@@ -572,6 +590,95 @@ class TheClockIsSeededOncePerBoot(unittest.TestCase):
         self.assertTrue(clears_mode,
                         'the mode variable is cleared after the seeder call and before the loop')
         self.assertLess(ONE_SEEDER_CALL, min(clears_mode))
+
+
+
+class TheContainerSelectBitIsAlsoTheScreenGuard(unittest.TestCase):
+    """A second guard in front of both screen calls, which section 250 did not name, section 252.
+
+    A validation of the container the bit does not select displays nothing whatever it finds, which
+    is why validating the safe mode container at boot puts no screen up. Asserted on both
+    architectures, since a guard on one image would be a quirk and on two is the design.
+    """
+
+    def test_both_architectures_jump_past_the_screens_when_the_bit_is_clear(self):
+        for name, (base, at, flags, bit, past) in SCREEN_GUARDS.items():
+            with self.subTest(name):
+                lab.require(name)
+                instrs = dict(_instructions(name, base))
+                guard = instrs[at]
+                self.assertEqual((guard.mnemonic, guard.fields['b']), ('BTFSS', bit))
+                where, _ = isa.resolve_file(guard.fields['f'], guard.fields['a'], flags >> 8)
+                self.assertEqual(where, flags)
+                # Bit clear takes the branch, which lands past both calls to the shower.
+                self.assertEqual(instrs[at + 2].fields['target'], past)
+
+
+class TheHarmony600HasThePollAndNotTheLatch(unittest.TestCase):
+    """Section 250's open item, answered in the negative by section 252.
+
+    The latch rests on one condition: arming needs the verdict standing, so a failed validation can
+    never arm again. Arch 14's arming half does not read the verdict at all, so the argument does not
+    transfer and a Harmony 600 should not have a Harmony One's stuck screen.
+    """
+
+    def test_the_arch14_poll_gates_on_the_variable_the_predicate_and_the_verdict(self):
+        lab.require('h600_code_complete')
+        instrs = dict(_instructions('h600_code_complete', 0x9000))
+        # The arming half: the gate variable, then a routine, then the flag is set to one.
+        gate = instrs[H600_READS_THE_GATE]
+        self.assertEqual(gate.mnemonic, 'MOVF')
+        where, _ = isa.resolve_file(gate.fields['f'], gate.fields['a'], H600_GATE_VARIABLE >> 8)
+        self.assertEqual(where, H600_GATE_VARIABLE)
+        self.assertEqual(instrs[0x15450].fields['target'], H600_ARMING_PREDICATE)
+        arm = instrs[H600_ARMS_AT]
+        self.assertEqual(arm.mnemonic, 'MOVWF')
+        self.assertEqual(arm.fields['f'], H600_ARMED_FLAG & 0xFF)
+        # The re-check half: armed, the gate variable the other way, and the verdict gone.
+        self.assertEqual(instrs[0x1546E].mnemonic, 'MOVF')
+        self.assertEqual(instrs[0x15470].fields['k'], 1 << H600_VERDICT_BIT)
+        # Then both containers, and the flag cleared with no branch protecting it.
+        for at in (0x15476, 0x1547C):
+            self.assertEqual(instrs[at].fields['target'], H600_VALIDATOR)
+        self.assertEqual(instrs[0x15488].mnemonic, 'CLRF')
+        self.assertEqual(instrs[0x15488].fields['f'], H600_ARMED_FLAG & 0xFF)
+
+    def test_the_arch14_arming_half_never_reads_the_verdict_bit(self):
+        """The whole difference, stated as a negative over every instruction of that half."""
+        lab.require('h600_code_complete')
+        instrs = dict(_instructions('h600_code_complete', 0x9000))
+        for at in range(H600_POLL, H600_ARMS_AT + 2, 2):
+            instr = instrs.get(at)
+            if instr is None or instr.category not in (isa.FILE_A, isa.FILE_DA, isa.BIT):
+                continue
+            where, _ = isa.resolve_file(instr.fields['f'], instr.fields['a'], H600_FLAGS >> 8)
+            self.assertNotEqual(where, H600_FLAGS,
+                                'arch 14 arms without consulting the verdict, 0x%05X' % at)
+
+    def test_the_control_is_that_arch12_does_read_it_there(self):
+        """Otherwise the negative above could be a bank the resolver failed to follow."""
+        instrs = dict(_instructions('one34_code', 0x20000))
+        read = instrs[0x29074]
+        self.assertEqual(read.mnemonic, 'MOVF')
+        where, _ = isa.resolve_file(read.fields['f'], read.fields['a'], 1)
+        self.assertEqual(where, 0x1A4)
+        self.assertEqual(instrs[0x29076].fields['k'], 1 << ONE_VERIFIED_BIT)
+
+    def test_the_arming_predicate_looks_for_content_rather_than_a_verdict(self):
+        """It returns one on the first word that is not erased flash, over 32 words."""
+        lab.require('h600_code_complete')
+        instrs = dict(_instructions('h600_code_complete', 0x9000))
+        # The window's base, added into a scratch pair before the read.
+        self.assertEqual(instrs[0x194AA].fields['k'], 0xF4)
+        self.assertEqual(instrs[0x194AE].fields['k'], 0x01)
+        # The count: the index is compared against 0x40 and advances by two.
+        self.assertEqual(instrs[0x19492].fields['k'], 0x40)
+        self.assertEqual(instrs[0x194CA].fields['k'], 0x02)
+        # Both halves complemented, so the test is against 0xFFFF, and a hit returns one.
+        self.assertEqual(instrs[0x194C0].mnemonic, 'COMF')
+        self.assertEqual(instrs[0x194C4].mnemonic, 'COMF')
+        self.assertEqual((instrs[0x194C8].mnemonic, instrs[0x194C8].fields['k']), ('RETLW', 1))
+        self.assertEqual((instrs[0x194D2].mnemonic, instrs[0x194D2].fields['k']), ('RETLW', 0))
 
 if __name__ == '__main__':
     unittest.main()
