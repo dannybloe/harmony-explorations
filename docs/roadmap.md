@@ -47,7 +47,47 @@ bytes and the same state numbers. The restore box in `docs/adding-a-device.md` s
 reason is now a **rehearsal** nobody has run, which is the same shape as M4's own first step rather than
 a reading or a doubt about the hardware.
 
-### The next thing to do, as at 31 August 2026
+### The next thing to do, as at 4 September 2026
+
+**The heading below is kept and is done.** Everything it sequenced has happened: the first write that
+changes something, a power on delay raised on the spare Harmony One, sections 236 and 237; a device
+added, section 242; and the whole eight step write sequence sent, section 247, after which the remote
+restarted itself and asked for nothing. The write path is measured rather than argued, sections 247 to
+251, and the status screen machinery is read on all three architectures, sections 249 to 257.
+
+**The third field FreeHarmony's disabled Settings button waits on is read**, section 258. It is how
+many times a press sends a code, and it is the ratio between an infrared record's two blocks: the first
+holds the code as many times as a press sends it, the second holds one press's worth, and dividing
+removes what the family puts in a press and leaves what the setting does. 1913 of 1913 records that name
+both blocks divide whole, and the two configurations Logitech compiled to our own specification read 3
+on all six of their device groups, where the service states 3 for each of those three devices.
+
+Three routes were listed for it and the order turned out to matter less than checking prior art: both
+halves of the answer were already in this repository, section 127 for what the three blocks are and
+section 228 for Logitech's own statement that the first is the repetition emitted as many times as the
+compiler emits it, and neither had divided one by the other.
+
+* **Route 1, the service's per device field, was already captured** and had never been read: three
+  fields on every device record, `PressMinRepeats`, `DefaultPressMinRepeats` and `HoldMinRepeats`, in
+  replies fetched on 31 August 2026 and earlier. This time the check ran **before** the deriving rather
+  than after it, which is the rule of sections 209 and 213 working instead of failing, and it cost one
+  grep.
+* **Route 2, `UserAccountDirector/GetProtocolList`, had already been tried and refused.** The captured
+  replies are an XML error page and a `502 Bad Gateway`, so that operation does not answer, and this is
+  the first place outside the lab that says so.
+* **Route 3, the configuration, is the one that landed**, because a number read off our own file is what
+  a writer has to emit and a service answer is not.
+
+**So the next thing is writing it.** Reading the send count does not change a block, and changing it
+does: the first block grows or shrinks by a whole copy plus its gap, so it is a length change and goes
+through `relocate.ts` rather than `edit.ts`, and `docs/growing-a-config.md` is the survey of what moves.
+Two shapes exist and only one is general. For a family whose definition we hold, `blockOfDefinition`
+builds the block for any count, which is exact. For a family we have only measured, the block's own copy
+and its gap can be repeated, which is what the ratio measurement already reads and is untested as a
+write. The gate in front of both is that no configuration has ever been written with a section of a
+different length.
+
+### The next thing to do, as at 31 August 2026, done
 
 Written as its own heading because a resuming session should not have to reconstruct it from the
 milestone tables below.
@@ -63,7 +103,9 @@ ignored.
 
 **Two of the three fields FreeHarmony's disabled Settings button waits on are therefore read**, and the
 third, how many repeats a code needs, is not a state variable at all: it is a property of the infrared
-record, base slot 5, and it is open.
+record, base slot 5. **It is read now too, section 258**, as the ratio between a record's two blocks:
+the first holds the code as many times as a press sends it and the second holds one press's worth, so
+dividing gives the count. All three fields have a value to show.
 
 **And a Harmony One states its power on delay too, section 235**, which is what makes the next step
 possible rather than merely desirable. The reading above was arch 14's, and the only remote this
@@ -1009,7 +1051,7 @@ a technical claim about the product belongs on this side of the fence.
 | 2 | Keep your remotes in one place | `packages/corpus`, done. The filing policy is a product decision |
 | 3 | Change something, without touching the remote | M3's codec half, done: `edit.ts` with `FIELD_RULES` for same length edits, `relocate.ts` for length changes, section 172 |
 | 4 | Put it back, changing nothing | **M4, and its name is now literal**: on 30 August 2026 one 64 KiB block of the spare Harmony One's own configuration was erased and written back unchanged, verified over the block and over the whole configuration, section 222. The transfer derived in section 175 is confirmed on hardware and the erase block size is measured rather than believed. What is untried is a write that changes something |
-| 5 | Change what your remote does | M4 again. Its one reading is **done**, section 234: a device's delays are state variables in base slot 13, in tenths of a second, and not in base slot 15 at all. What stays open is how many repeats a code needs |
+| 5 | Change what your remote does | M4 again. Both its readings are **done**: a device's delays are state variables in base slot 13, in tenths of a second, and not in base slot 15 at all, section 234; and how many times a press sends a code is the ratio between an infrared record's two blocks, section 258. What stays open is **writing** the send count, which changes a block's length |
 | 6 | Add and remove devices and activities | M6. Its former blocker, length changing edits, exists: `relocate.ts`, section 172, exercised by `composeDevice` and `composeDeviceScreen`, section 173 |
 | 7 | Teach it a code from your old remote | **M5**, partly built without being scheduled: a code stated as a name and a number becomes pulses, `stated.ts` over 38 families, sections 157 to 169, and the block spelling is the generator's own, section 174. Capture is read, section 98. Open: a learned code's tail shape and storage class |
 | 8 | An application you can install | no M. Decision 4's published packages are its only demand on this repository |

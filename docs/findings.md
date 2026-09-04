@@ -32895,3 +32895,127 @@ section number in its comment, and either file would have answered faster than 3
 * `tests/test_status_screens.py`: the 700's poll and flags byte, so section 252's claim is asserted
   over both arch 14 images rather than one.
 * `.claude/skills/trace-section/SKILL.md`: the library half of the grep, and the collision note.
+
+## 258. How many times a press sends a code is the ratio between a record's two blocks
+
+**4 September 2026.** FreeHarmony's device settings screen waits on three numbers, and two of them were
+read weeks ago: a device's power on delay and its inter device delay, both ordinary state variables in
+tenths of a second. The third is how many times a code has to go out before the device notices, and
+nothing here could read it out of a configuration. It reads now, from any record that names two blocks,
+as a division: 1913 of 1913 such records in the corpus, one value per device group on 60 of 62 groups,
+and 3 on all six device groups of the two configurations Logitech compiled to our own specification,
+where the service states 3 for each of those three devices.
+
+### The structure was already read and the division was not performed
+
+Section 127 read a record's three block pointers as once, held and tail, and section 228 read Logitech's
+own statement of what a block is: "the first block is the start block followed by the repetition as many
+times as the compiler emits it; the held block is one repetition". Both halves of the answer were
+therefore in this repository, in two sections written a fortnight apart, and neither divided one by the
+other. That is worth recording because the roadmap's next step listed three routes to this number and
+all three were about fetching it from Logitech rather than reading it, which is what happens when a
+question is asked of a service before it is asked of the file.
+
+### Why a ratio rather than the first block's copy count
+
+Counting copies in the first block gives the wrong answer for any family that sends more than one code
+word per repetition, and this corpus holds them. The Harmony One's receiver drives two families: a 48
+bit one whose first block holds three copies and whose held block holds one, and a 15 bit Sharp one whose
+blocks hold six and two, because Sharp sends a frame and then its complement. Read as copy counts those
+are 3 and 6 and the same device looks like two devices; read as ratios both are 3. Within the receiver's
+own 125 records the split is 116 at three copies and 9 at six, so the two readings disagree inside one
+device and the ratio is the one that closes.
+
+The held block is what makes the division legitimate rather than arithmetic: it holds exactly one
+press's worth, which is section 127's firmware reading, so dividing by it removes whatever the **family**
+puts in a press and leaves whatever the **setting** does.
+
+### The measurement
+
+`blockCopies` in `packages/codec/src/irframe.ts` counts a block's copies, and `irSendsPerPress` divides.
+A copy is a segment of `frameSegments` holding at least half the pulses of the block's longest segment.
+That floor is the whole of the rule and it is deliberately structural rather than a decode:
+
+* it excludes the short trailing segment the segmenter cuts off a block that ends in a long silence. The
+  television group's first block cuts into two segments of which the second is four pulses and no frame,
+  so without the floor that device would read as sending twice;
+* it counts a biphase family the same way it counts a pulse width one, which matters because the two
+  families here carrying the most copies are one of each. The set top box group is `Kreatel IP 22 Bit`,
+  whose bits are half cells no pulse width reader will touch, and it holds four copies against the
+  receiver's three.
+
+Over the fifteen user configurations, 4147 records, of which 1913 name two blocks and 1913 answer. So no
+ratio in the corpus is fractional, which is the assertion with teeth: the division was allowed to refuse
+and never had to. The four values are 1 on 1420 records, 2 on 36, 3 on 394 and 4 on 63.
+
+**60 of 62 device groups state one value.** The two exceptions are one record, read twice: a 643717
+microsecond block of the Harmony 700's first group that the segmenter finds no boundary in at all, so
+both its blocks read as one copy where its eighteen siblings read as two and one. It is a limit of the
+segmenter rather than a record that disagrees, and it is named rather than tolerated.
+
+### The calibration, and what the corpus cannot decide on its own
+
+The corpus cannot tell a **family's** rule from a **device's** setting, because every device group here
+drives one family, so a count that is constant per group is equally consistent with both. Two things
+outside the corpus decide it.
+
+**Logitech's protocol definitions state a count for 39 of 1368 records**, `pressMinimumRepeats`, and the
+values are 0 once, 1 on 36 and 3 twice, `Sony 12 Bit` and `Zenith 11 Bit Quad`. So the family has a rule
+and it agrees with our own measured blocks on all five of the families that state one, which section 228
+already asserted. `HoldMinimumRepeats` is null on all 684 definitions.
+
+**The live service states a count per device**, three fields on each device record: `PressMinRepeats`,
+`DefaultPressMinRepeats` and `HoldMinRepeats`, on 24 device records captured across two accounts, being
+14 distinct devices since one account was captured twice. The values are 0, 1 and 3 for the first two
+and 0 on all 24 for the third, which is the same value set the protocol definitions use and is why the
+held count never varies. So the number is a per device setting with a per
+family default, and a writer emits the device's.
+
+Scored against the configurations, on the ten device readings where the service states a number for a
+device a configuration here holds:
+
+| what was measured | stated | read |
+|---|---|---|
+| three devices of the calibration account, on both compiled configurations, six groups | 3, 3, 3 | 3 on all six |
+| the receiver, on two Harmony One configurations | 3 | 3 on both |
+| the games console | 0, so the default 1 | 1 |
+| the television and the media player | 1, 1 | 1, 1 |
+| the set top box, on two configurations | 1 | 4 on both |
+
+Nine of ten agree. The tenth is the set top box, and Logitech's own notation for its family is where the
+disagreement lives rather than in the reading: `Kreatel IP 22 Bit`'s definition states
+`(320u,-320u,Code0:22,^100000u)(320u,-320u,Code1:22,^100000u)*`, which is an intro section of one code
+word followed by a repeating section of a **different** one, so its four copies are one intro and three
+repetitions. Its `pressMinimumRepeats` is null and it is one of the families our own table carries no
+block for, so nothing states how many repetitions its compiler emits and the 4 cannot be checked against
+anything. **It stays open**, and the honest statement is that a family with its own intro section is a
+family whose ratio is not the setting.
+
+### Two routes that were tried before this one, recorded so nobody tries them again
+
+**The service's per device field was already in the lab and had never been read.** `PressMinRepeats`,
+`DefaultPressMinRepeats` and `HoldMinRepeats` sit in `GetDevicesInAccount` replies captured on 31 August
+2026 and earlier, 24 device records of them. What is worth recording is the order: this session grepped
+the lab for the field names before deriving anything, per the rule sections 209 and 213 kept restating,
+and got the answer for one command. That is the rule working rather than failing, and it is the first
+time in this document that can be said of it.
+
+**`UserAccountDirector/GetProtocolList` does not answer and had already been tried.** Section 219 named
+it as the operation whose `IrProtocol` carries minimum repeat counts, and it was called in an earlier
+session: the captured replies are an XML error page and a `502 Bad Gateway`. So the live service's per
+protocol statement is unreachable by that route, which matters beyond this number, because the repeat
+count is the only thing standing between a stated rhythm table row and a whole emittable block, section
+228. Recorded here because until now it existed only as two error pages in the lab.
+
+### What it changes
+
+A device's send count is readable, so the third field of FreeHarmony's device settings screen has a
+value to show. Writing it is a separate step and the shape of it follows from section 228: rebuilding
+the first block with a different repetition count is `blockOfDefinition` for a family whose definition we
+hold, and repeating the held block's copy for one we have measured. Neither is a length preserving edit,
+so both need `relocate.ts` rather than `edit.ts`.
+
+**Section 33's open `0x7C` reading is not this number.** That entry left "a repeat count is the obvious
+reading" for the value beside a send in an action list, with 665 zeroes it would have to explain. It is a
+pause in tenths of a second, section 236, and the send count is in the infrared record, so the two
+questions were never the same one.

@@ -463,6 +463,56 @@ export function framesOfSegments(train: readonly Pulse[], headerPairs = 1): IrFr
 }
 
 /**
+ * How many copies of the code a block holds, section 258.
+ *
+ * **A copy is a segment holding at least half the pulses of the block's longest one.** That floor is
+ * what excludes the short trailing gap `frameSegments` cuts as a segment of its own, and it is
+ * deliberately structural rather than a decode: a biphase family is counted the same way an ordinary
+ * one is, which matters because the two families in this corpus that carry the most copies are one of
+ * each.
+ *
+ * **This is not `blockTokensOf` in the rhythm table's generator and must not become it.** That one
+ * reproduces the family's own frame and matches it against the block, which is exact and needs the
+ * family; this one needs nothing but the words. They answer the same question by routes with nothing
+ * in common, and the rhythm table's `tail` rows are where they are compared: a row's copy items are
+ * that count for the families measured off the corpus.
+ */
+export function blockCopies(words: readonly number[]): number {
+  const segments = frameSegments(mergedIntervals(pulses(words)), true);
+  const longest = Math.max(0, ...segments.map((one) => one.length));
+  return segments.filter((one) => one.length * 2 >= longest).length;
+}
+
+/**
+ * How many times a press sends the code, section 258, or undefined where the record cannot say.
+ *
+ * **It is a ratio and not the first block's copy count, and that is the whole finding.** A record's
+ * first block is what one press sends and its second is what repeats while the key is down, section
+ * 127, so the second block holds exactly one press's worth. Dividing removes whatever the **family**
+ * puts in a press: `Sharp 15 Bit` sends a frame and its complement, so its blocks hold six copies and
+ * two, and the ratio is three, which is the same answer `PanasonicV2 48 Bit` gives from three copies
+ * and one. Reading the first block alone would have called those two devices different.
+ *
+ * Undefined where the record names no second block, which is 1927 of the corpus's 3387 records, since
+ * the count is then not stated by anything a reader can divide.
+ */
+export function irSendsPerPress(c: Container, record: number): number | undefined {
+  const pointers = irHeaderPointers(c, record);
+  const once = pointers[0];
+  const held = pointers[1];
+  if (once === undefined || held === undefined || once === 0 || held === 0) return undefined;
+  const onceWords = irBlockWords(c, once);
+  const heldWords = irBlockWords(c, held);
+  if (onceWords === undefined || heldWords === undefined) return undefined;
+  const perPress = blockCopies(heldWords);
+  const sent = blockCopies(onceWords);
+  // A ratio that does not divide is a reading this cannot make rather than a fractional send count.
+  // It happens nowhere in the corpus, so the arm is a refusal and not a fallback.
+  if (perPress === 0 || sent % perPress !== 0) return undefined;
+  return sent / perPress;
+}
+
+/**
  * The durations a frame is built out of, in microseconds, section 152.
  *
  * **Five numbers, and they come off the record rather than out of a protocol table.** That is the

@@ -107,6 +107,16 @@ produce a config the remote accepts and mishandles.
   of an activity and a device it switches on can never show that device's delay. So a writer may
   change the byte, and an interface that calls it a pause in the activity is wrong for a quarter of
   them.
+* **How many times a press sends the code is the ratio between the first two blocks**, section 258, so
+  changing it is not a same length edit. The first block holds the code as many times as a press sends
+  it and the second holds one press's worth, and 1913 of 1913 records that name both divide whole. Two
+  traps. **Reading the first block's copy count alone is wrong for a family that sends more than one
+  code word per repetition**: the Harmony One's receiver stores six copies and two for its Sharp codes
+  and three and one for its 48 bit ones, which is 3 sends both times, and a writer that copied the six
+  would triple a device it meant to leave alone. And a family whose definition states an intro section
+  of a **different** code word has a ratio one higher than the count Logitech states, one family in
+  this corpus, so the ratio is the setting only where the family has no intro.
+
 * **A frame can be written and its tail cannot simply be copied**, section 152. Five durations off a
   record rebuild its frame exactly, and 52 of 58 device groups use one set of timings for every code,
   so a code stated as a bare number elsewhere can be written using a sibling code's timings. What

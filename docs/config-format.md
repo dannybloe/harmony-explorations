@@ -2286,6 +2286,28 @@ word carries at most 32767 us: a gap already spelled over three words can be rai
 without changing the block's length, and anything beyond that lengthens the block and relocates
 everything above it. The sharing rule applies first.
 
+**How many times a press sends the code is the ratio of the two blocks**, section 258. The first
+block holds the code as many times as one press sends it and the held block holds exactly one press's
+worth, so the count is the first block's copies divided by the held block's. A copy is a segment of
+`frameSegments` holding at least half the pulses of the block's longest segment, which is what
+excludes the short trailing segment a block ending in a long silence is cut into. Confirmed: 1913 of
+1913 records that name both blocks divide whole, one value per device group on 60 of 62 groups, and 3
+on all six device groups of the two configurations Logitech compiled to our specification, where the
+service states 3 for each of those devices. The four values in the corpus are 1, 2, 3 and 4.
+`irSendsPerPress` in `packages/codec/src/irframe.ts`.
+
+Dividing is what makes it a device's count rather than a family's spelling: a family sending a frame
+and its complement stores six copies and two, and one sending a single frame stores three and one, and
+both are three sends. **Unconfirmed for a family whose definition states an intro section of a
+different code word**, where the ratio is one more than the count Logitech's service states: one
+family in this corpus, `Kreatel IP 22 Bit`, four copies against a stated 1.
+
+**How many times a press sends the code is also stated twice outside the file**, and both agree with
+the ratio: `pressMinimumRepeats` on 39 of Logitech's 1368 protocol definition records, values 0, 1 and
+3; and `PressMinRepeats` with `DefaultPressMinRepeats` per device on the live service, same values.
+`HoldMinRepeats` is 0 on all 24 device records captured and `HoldMinimumRepeats` is null on all 684
+definitions, which is consistent with the held block always holding exactly one press.
+
 **How Logitech's generator spells a block**, section 174. These are the generator's conventions
 rather than format constraints, since the firmware plays any legal spelling identically; a writer
 that wants byte identity with a compiled config follows them, and `compiledBlockWords` in
@@ -3614,7 +3636,7 @@ arch 8 inserts a NULL at slot 8 and arch 12 inserts that plus a real section at 
 | 2 | the log area: three numbers reserving flash above the config, arch 12 only writer | 47 |
 | 3 | the clock. Starts Timer 1; on arch 12 the epoch the firmware measures elapsed time from | 21, 38, 111, 138 |
 | 4 | the firmware event map | 36, 39 |
-| 5 | the infrared database: one group per device, then records. Class 5 spells a code from a dictionary; a record's three block pointers are once, held and tail | 32, 42, 61, 65, 82, 86, 126, 127 |
+| 5 | the infrared database: one group per device, then records. Class 5 spells a code from a dictionary; a record's three block pointers are once, held and tail, and their copy ratio is how many times a press sends the code | 32, 42, 61, 65, 82, 86, 126, 127, 258 |
 | 6 | the mode table. A record carries a screen program, and its entry an array of pages, each with a tagged list and a copy of it | 37, 52, 53, 66, 68, 69 |
 | 7 | the font table, indexed by screen opcode 16. A glyph code is per config, and the text reads back from the pixels | 46, 63, 112 |
 | 8 | key press bindings: one leading action list, then every mode page's list | 27, 38, 83 |

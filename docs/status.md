@@ -439,7 +439,7 @@ finding.
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 257<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 258<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -659,6 +659,16 @@ figures common to both carry `fact:` markers, so `make facts` moves every copy t
 cannot drift apart; what a reader should not expect is two independent statements of one measurement.
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
+
+**How many times a press sends a code is read, section 258.** The ratio between an infrared record's
+two blocks: the first holds the code as many times as one press sends it, the second holds exactly one
+press's worth, so dividing removes what the protocol family puts in a press and leaves what the setting
+does. 1913 of 1913 records that name both blocks divide whole, one value per device on 60 of 62 device
+groups, and 3 on all six device groups of the two configurations Logitech compiled to our own
+specification, where the service states 3 for each of those three devices. That was the third of the
+three numbers FreeHarmony's device settings screen waits on, so all three have a value to show and what
+is open is **writing** one, which changes a block's length. Both halves of the answer had been in this
+repository since sections 127 and 228 and nobody had divided one by the other.
 
 **Our config write is missing three of a working implementation's steps, section 245.** Read out of
 concordance on 3 September 2026, after two configurations had been written: a working write on a

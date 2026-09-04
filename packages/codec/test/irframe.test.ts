@@ -28,7 +28,8 @@ import {
   irRecordBlocks,
 } from '../src/ir.ts';
 import type { FrameTimings, Pulse } from '../src/irframe.ts';
-import { biphaseFrames, frameKey, frameSegments, framesOfPulses, framesOfSegments, fromFirstMark,
+import { biphaseFrames, blockCopies, frameKey, frameSegments, framesOfPulses, framesOfSegments,
+         fromFirstMark, irSendsPerPress,
          irFrame, irFrames, mergedIntervals, pulsesOfBlock, pulsesOfFrame, pulsesOfBiphaseFrame, pulsesOfLongToggle,
          pulsesOfQuad,
          timingsOfBiphase,
@@ -1461,4 +1462,134 @@ test('a block solves its pads from the total, and refuses what does not come out
   // And a tail may only name a frame the code states.
   assert.throws(() => pulsesOfBlock({ timings: t }, [{ bits: 16, value: 0xC508n }],
     { items: [{ copy: 'full' }, { copy: 'full', at: 1 }] }), /states no frame 1/);
+});
+
+/**
+ * A press's send count is the ratio between a record's two blocks, section 258.
+ *
+ * **Why a ratio and not the first block's copy count.** The first block is what one press sends and
+ * the second is what repeats while the key is down, section 127, so the second holds exactly one
+ * press's worth. Dividing removes what the family puts in a press rather than what the setting does:
+ * the Harmony One receiver carries a 48 bit family whose blocks hold three copies and one, and a
+ * 15 bit Sharp one whose blocks hold six and two, and both come out at three. Reading the first block
+ * alone would have called one device two.
+ *
+ * The exception is named rather than tolerated: one record of the Harmony 700's first group is a
+ * 643717 microsecond block the segmenter finds no boundary in, so both its blocks read as one copy
+ * where its eighteen siblings read as two and one. It is the same record in both reads of that
+ * remote, which is why the group count below is 60 of 62 rather than 61 of 62.
+ */
+test('a press sends the code as many times as the once block holds copies of the held one', () => {
+  require_(...SECTION_32_CONFIGS);
+  let records = 0;
+  let withBothBlocks = 0;
+  let answered = 0;
+  let groups = 0;
+  let oneCount = 0;
+  const counts = new Map<number, number>();
+  for (const name of SECTION_32_CONFIGS) {
+    const c = mustLoad(name);
+    for (const group of irGroups(c) ?? []) {
+      const seen = new Set<number>();
+      for (const record of group.addresses) {
+        records += 1;
+        const pointers = irHeaderPointers(c, record);
+        const once = pointers[0];
+        const held = pointers[1];
+        const both = once !== undefined && held !== undefined && once !== 0 && held !== 0
+          && irBlockWords(c, once) !== undefined && irBlockWords(c, held) !== undefined;
+        if (both) withBothBlocks += 1;
+        const sends = irSendsPerPress(c, record);
+        if (sends === undefined) continue;
+        // Every record that names both blocks answers, so no ratio in the corpus is fractional.
+        assert.ok(both, `0x${record.toString(16)} of ${name} answered without both blocks`);
+        answered += 1;
+        seen.add(sends);
+        counts.set(sends, (counts.get(sends) ?? 0) + 1);
+      }
+      if (seen.size === 0) continue;
+      groups += 1;
+      if (seen.size === 1) oneCount += 1;
+    }
+  }
+  assert.equal(records, 4147);
+  assert.equal(withBothBlocks, 1913);
+  // The claim with teeth: a whole ratio on every record that can state one, none dropped.
+  assert.equal(answered, withBothBlocks);
+  assert.equal(oneCount, 60);
+  assert.equal(groups, 62);
+  // Four values, and they are the four Logitech's own data uses: their per device field reads 0, 1 or
+  // 3 and their protocol definitions state 0, 1 or 3.
+  assert.deepEqual([...counts].sort((a, b) => a[0] - b[0]), [[1, 1420], [2, 36], [3, 394], [4, 63]]);
+});
+
+/**
+ * The calibration, section 258: two configurations Logitech compiled to our own specification.
+ *
+ * **The answer was known before the measurement.** The three devices on that account are the ones
+ * sections 121 and 125 chose in advance, and the live service states `PressMinRepeats` 3 for each of
+ * them. Six device groups over two architectures, every one at three, by a route that shares no code
+ * with the service reply. That is what separates this reading from a coincidence of the corpus, where
+ * every group of a family carries one count and so cannot tell a family's rule from a device's
+ * setting.
+ */
+test('the two configurations compiled to our own specification send every code three times',
+  skipUnless(...CALIBRATION), () => {
+    let groups = 0;
+    let records = 0;
+    for (const name of CALIBRATION) {
+      const c = mustLoad(name);
+      for (const group of irGroups(c) ?? []) {
+        const seen = new Set<number | undefined>();
+        for (const record of group.addresses) {
+          const sends = irSendsPerPress(c, record);
+          if (sends === undefined) continue;
+          records += 1;
+          seen.add(sends);
+        }
+        if (seen.size === 0) continue;
+        groups += 1;
+        assert.deepEqual([...seen], [3], `${name} group ${groups - 1} does not send three times`);
+      }
+    }
+    assert.equal(groups, 6);
+    assert.equal(records, 388);
+  });
+
+/**
+ * `blockCopies` is structural, so it counts a biphase family the same way, section 258.
+ *
+ * The two families in this corpus carrying the most copies are one of each kind, which is why the
+ * count cannot be a decode: the set top box group is `Kreatel IP 22 Bit`, whose bits are half cells no
+ * pulse width reader will touch, and it holds four copies where the receiver's pulse width family
+ * holds three.
+ */
+test('a block states its copies without being decoded', skipUnless('one_config'), () => {
+  const c = mustLoad('one_config');
+  const groups = irGroups(c) ?? [];
+  // Group 4 is the set top box, a biphase family, and group 0 the receiver, a pulse width one.
+  // The first record of a group that names both blocks: about half name only the first, so which one
+  // that is is a property of the sample rather than of the reading.
+  const first = (group: number): number[] => {
+    for (const record of groups[group]!.addresses) {
+      const at = irHeaderPointers(c, record);
+      const once = at[0] === undefined ? undefined : irBlockWords(c, at[0]);
+      const held = at[1] === undefined ? undefined : irBlockWords(c, at[1]);
+      if (once !== undefined && held !== undefined) return [blockCopies(once), blockCopies(held)];
+    }
+    throw new Error(`group ${group} names no record with both blocks`);
+  };
+  assert.deepEqual(first(4), [4, 1]);
+  assert.deepEqual(first(0), [3, 1]);
+  // **The floor is what the count rests on, and here is the record that shows it.** The television's
+  // block ends in a long silence, so `frameSegments` cuts it into two, of which the second is four
+  // pulses and no frame. Without the floor every such block would count one copy too many, and this
+  // group would read as a device that sends twice.
+  const television = groups[2]!.addresses.find((record) => {
+    const at = irHeaderPointers(c, record);
+    return at[0] !== undefined && at[1] !== undefined && irBlockWords(c, at[1]) !== undefined;
+  })!;
+  const words = irBlockWords(c, irHeaderPointers(c, television)[0]!)!;
+  assert.equal(frameSegments(mergedIntervals(pulsesOfWords(words)), true).length, 2);
+  assert.equal(blockCopies(words), 1);
 });
