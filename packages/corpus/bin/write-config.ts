@@ -345,12 +345,21 @@ async function main(): Promise<void> {
       // file. Flash only clears bits and a report lands whole, so an interrupted write leaves every
       // byte either what this file puts there or erased, and nothing else. That state is recognised
       // byte by byte rather than as a prefix, since a byte the file wants at 0xff cannot say which.
+      //
+      // **A block that is entirely erased is the same case and was refused until 4 September 2026**,
+      // when a run failed between the erase and the first data report and left exactly that. The
+      // `some` clause was there to stop an all ones block being read as an interrupted write, on the
+      // reasoning that it says nothing about which file had been going in. That reasoning is wrong
+      // twice over: erased flash is the one state where **nothing** is at risk, since an erase
+      // destroys nothing that is not already gone, and refusing it is what turns a recoverable run
+      // into a restore from the lab. It is reported separately so the operator sees which it was.
+      const erasedWhole = live.every((byte) => byte === 0xff);
       if (differs !== undefined
-          && live.every((byte, k) => byte === plan.content[k] || byte === 0xff)
-          && live.some((byte) => byte !== 0xff)) {
+          && live.every((byte, k) => byte === plan.content[k] || byte === 0xff)) {
         interrupted += 1;
-        say(`0x${plan.block.toString(16)} holds an interrupted write of this file: `
-          + 'this file\'s bytes then erased flash, so what an erase would destroy is known\n');
+        say(`0x${plan.block.toString(16)} holds ${erasedWhole ? 'erased flash, so an earlier run '
+          + 'erased it and wrote nothing' : 'an interrupted write of this file: this file\'s bytes '
+          + 'then erased flash'}, so what an erase would destroy is known\n`);
         continue;
       }
       if (differs !== undefined) {
