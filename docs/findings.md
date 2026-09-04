@@ -32532,6 +32532,11 @@ silence.
 
 ## 254. The Harmony 525's re-validation is an instruction, and its action ring closes arithmetically
 
+**Read section 256 first.** Half of what follows re-derives section 72, which read the same
+dispatcher on arch 12 on 9 August 2026 and got it right, and the paragraph below that calls the band
+an opcode range is wrong. What is new here is arch 9's addresses, its band map and the ring; that
+section separates the two.
+
 Section 253 left one thing open: the Harmony 525 re-validates its configuration when something asks
 it to, and what asks was unread. The caller sits in a chain that tests a byte against `0xC0`, `0xD0`,
 `0xF8` and `0xFF`, which is the shape of an opcode decoder, and that shape was deliberately not
@@ -32609,10 +32614,16 @@ the band this section called an opcode range is a band of an operand.
 
 ## 255. An arch 9 instruction is operand then opcode, and the chain switches on the operand
 
+**Read section 256 first.** This section's headline, that opcodes `0x1F` to `0x3E` dispatch on the
+operand's high byte, is **section 72's**, measured on arch 12 a month earlier and stated in a table
+row there. What this adds is the arch 9 addresses and the proof from that image; the reading was not
+open and should not have been presented as settled here.
+
 Section 254 left one thing open, which byte the Harmony 525's interpreter dispatches on, and it named
-the two readings that disagreed. Following the fetch routine settles it, and the answer makes one of
-that section's claims wrong: `0x3D8` **is** the byte, and `0x3D8` holds the operand's **high byte**,
-so the `0xC0` to `0xCF` band is a band of an operand rather than of an opcode.
+the two readings that disagreed. Following the fetch routine resolves the disagreement on this image
+and refutes one of that section's claims: `0x3D8` **is** the byte, and `0x3D8` holds the operand's
+**high byte**, so the `0xC0` to `0xCF` band is a band of an operand rather than of an opcode. Section
+72 had that on arch 12 already, per the header above.
 
 ### The fetch, and the third confirmation of the ring
 
@@ -32691,3 +32702,86 @@ operand byte, and what they do is unread.
 * `docs/config-format.md`: the field order per architecture, and the re-validation restated as an
   operand band.
 * Section 254, corrected in place, and `reference/superseded.md`.
+
+## 256. Sections 254 and 255 re-derived section 72, and one of them got it wrong doing so
+
+**This section is a correction to the two before it, and its subject is the failure rather than the
+firmware.** Section 254 met a range chain in the Harmony 525's action list interpreter, called it an
+opcode decoder, and published `0xC0` to `0xCF` as an opcode band. Section 255 corrected that an hour
+later by following the fetch routine and establishing that the band is the **operand's high byte**.
+
+Both of those readings were already in this repository, from 9 August 2026.
+
+### What section 72 already said
+
+Section 31 measured that four opcodes never carry an operand below `0xC000`, and section 72 read the
+dispatcher and corrected the interpretation: the operand is **the rest of the opcode**, `0xC000` is
+the bottom of the lowest band the firmware tests, and the five opcode ranges each dispatch on a
+named byte of the operand. Its table states, in a row of its own, that opcodes **`0x1F` to `0x3E`
+dispatch on the operand's high byte**, which is exactly section 255's headline. It also names seven
+sub-commands of that band, `0xF7` through `0xFF`, with what each one does.
+
+**And it is in the code, with the section numbers in the comment.** `OPERAND_HIGH_BAND = 0xC000` and
+`HIGH_BAND_OPCODES = frozenset({0x07, 0x0F, 0x1F, 0x3F})` sit in `src/harmony/gspm.py`, under a
+docstring that says "section 31 read it as a second operand space; section 72 read the dispatcher and
+found it is the opcode continuing into the operand, with `0xC000` the lowest band tested".
+
+So the constant section 254 published as a new opcode band is a constant this project has carried in
+its library for a month, under a comment that states what it actually is.
+
+### How it happened, and what would have caught it
+
+The dig was on arch 9 and the prior reading was on arch 12, so nothing in the arch 9 image announced
+that the structure had been read before. That is exactly the case the four places rule exists for and
+it did not fire, because the reader was working forwards from an address rather than backwards from a
+claim.
+
+**The check that would have found it costs one grep**, and there were three separate strings that
+would have hit: the constant `0xC000`, the phrase "operand's high byte", and the opcode range `0x1F`
+itself, which section 255 quoted from the firmware while section 72's table has it as a row heading.
+`src/harmony/gspm.py` would also have answered, and section 255 cited `docs/config-format.md` for
+`0x1F`'s sub-commands without noticing that the citation implies the dispatcher had been read.
+
+This is the lab's excavation problem inside this repository: `docs/findings.md` is 32000 lines, the
+four places rule makes a claim findable **if you look**, and the failure mode is momentum, the same
+one recorded nine times for the lab. The fix there was a hook rather than another paragraph, and the
+equivalent here is cheap: **before reading a firmware structure, grep the findings for the constants
+it is built out of.** Added to the `trace-section` skill, which is the ritual a dig like this goes
+through.
+
+### What in those two sections is actually new, and it is not nothing
+
+Section 72 read the dispatcher on **arch 12** and read the sub-commands from `0xF7` upwards. These
+are arch 9 and below that, so the following stands and is marked as the new part:
+
+| | new here |
+|---|---|
+| the action ring | base `0x0346`, exclusive end `0x03BE`, read pointer `0x03BE`, wrap `0x78`, pending byte count at `0x345` |
+| the interpreter's registers | staging triple `0x754` to `0x756`, working triple `0x3D7` to `0x3D9`, fetch `0x0193A` |
+| forty slots, twice | the same `0x78` as arch 12, out of three addresses rather than out of the queue's writer |
+| band `0xC0` to `0xCF` | **the container re-validation**, low nibble selecting the order. Section 72 did not read this band on any architecture |
+| band `0xD0` and above | **consumes a second three byte group**, the only band that does |
+| band `0xE0` | four sub-commands, `0x00` to `0x03`, decoded with `chains.py` |
+| band `0xF0` | two sub-commands, `0x00` and `0x01` |
+| `0xFC` | **not nothing on arch 9**, where section 72 recorded it as doing nothing on arch 12 |
+
+**The `0xD0` band is the one with a consequence.** It fetches three more bytes from the ring, so a
+list holding one of those instructions holds a six byte instruction, and a disassembler stepping
+uniformly by three would give the operand triple a meaning of its own. A **reader** is unaffected,
+since a list declares its length in entries and the extra triple is one of them, which is why nothing
+in the codec has ever noticed. Section 72's table says the ignored band for this opcode range is "not
+established" on arch 12, so whether the Harmony One does the same is unread.
+
+**And `0xFC` is a genuine per architecture difference.** Arch 9's loop head tests the third byte for
+`0x1F` and the second for `0xFC` **before** the dispatch begins, and jumps out of the interpreter's
+main path entirely, copying the operand's low byte to `0x3CF`. Section 72's own table has `0xFC` as
+"nothing" on arch 12. Two architectures, one sub-command, opposite answers, and neither reading has
+been checked against the other's image.
+
+### Where it lands
+
+* Sections 254 and 255, corrected in place, and `reference/superseded.md`.
+* `.claude/skills/trace-section/SKILL.md`: grep the findings for a structure's own constants before
+  reading it, with this as the case.
+* `tests/test_status_screens.py`: the arch 9 band map as its own test, and the `0xD0` band's second
+  fetch, which is the part a codec would need.

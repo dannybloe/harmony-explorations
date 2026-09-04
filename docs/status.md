@@ -439,7 +439,7 @@ finding.
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 255<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 256<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -759,8 +759,17 @@ interpreter around it also gave the address of the forty slot action queue on th
 its three constants close on each other, so the forty that the writer's sequence rail rests on is now
 measured on two architectures with nothing in common.
 
-**And the instruction's own layout came with it, section 255**, which corrected a claim section 254
-had made an hour earlier: the number that selects the re-check sits in the instruction's **operand**
+**And then a correction with a lesson in it, section 256.** Half of what those two sections read had
+already been read here on 9 August, on a different remote, and one of our own library constants
+carries it with the section number in its comment. So an afternoon went on re-deriving a claim the
+repository already held, and got it wrong on the way. The fix is one grep before reading a structure
+rather than after, and it is written into the tracing method: look up the constants the structure is
+built out of. What survives as new is the Harmony 525's own addresses, its map of sub-commands, and
+one of them consuming a second instruction's worth of bytes, which matters to anyone writing a
+disassembler for these lists.
+
+**The instruction's own layout, section 255**, which corrected a claim section 254 had made an hour
+earlier: the number that selects the re-check sits in the instruction's **operand**
 rather than in its opcode, and an arch 9 instruction turns out to be laid out exactly as the format
 states, operand first and opcode last. What proves it is the interpreter comparing the third byte
 against an opcode the other two remotes already read. The way the bank was finally settled is worth

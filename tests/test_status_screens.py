@@ -21,7 +21,7 @@ import unittest
 
 import lab
 
-from harmony.pic18 import isa, trace
+from harmony.pic18 import chains, isa, trace
 
 #: image -> (load base, the routine that displays a status screen, its call sites as
 #: {address: screen number}).
@@ -360,6 +360,18 @@ H525_FETCH, H525_PENDING_COUNT = 0x0193A, 0x345
 #: opcodes that reach the chain at all are a separate range. Section 254 conflated the two.
 H525_OPERAND_BAND = 0xC0
 H525_OPCODE_RANGE = (0x1F, 0x3F)
+#: The four bands of that operand byte the chain tests, in the order it tests them, section 256.
+#:
+#: Section 72 read this dispatcher on arch 12 and read the sub-commands from `0xF7` upwards, so the
+#: **map** below is what arch 9 adds rather than the dispatch itself. `0xD0` is the one with a
+#: consequence: it consumes a second three byte group, so a list holding one holds a six byte
+#: instruction and a disassembler stepping uniformly by three would give the operand triple its own
+#: meaning. A reader is unaffected, since a list declares its length in entries.
+H525_BANDS = ((0xF0, 0x01F7A), (0xE0, 0x01F90), (0xD0, 0x01FD6), (0xC0, 0x02032))
+H525_BAND_D0_FETCHES = (0x01FDE, 0x01FE4, 0x01FEA)
+#: Band 0xE0's four sub-commands, decoded with chains.py rather than by reading the literals.
+H525_BAND_E0_CASES = {0x00: 0x01FAA, 0x01: 0x01FB2, 0x02: 0x01FC0, 0x03: 0x01FCA}
+H525_BAND_E0_CHAIN = 0x01F98
 H525_REVALIDATE_DISPATCH, H525_REVALIDATE_ENTRY = 0x02044, 0x02432
 H525_ORDER_VARIABLE = 0x3DC
 
@@ -955,6 +967,54 @@ class AnArch9InstructionIsOperandThenOpcode(unittest.TestCase):
         for at in path:
             self.assertNotEqual(instrs[at].category, isa.BANKSEL,
                                 'a MOVLB at 0x%05X would break the chain of custody' % at)
+
+
+
+class TheArch9OperandBandsAreFourAndOneTakesASecondGroup(unittest.TestCase):
+    """Section 256, and the dispatch itself is section 72's on arch 12: this is the arch 9 map.
+
+    The band worth a test is `0xD0`, which fetches a second three byte group out of the ring. That
+    makes a list entry six bytes wide, which a reader never notices because a list declares its
+    length in entries, and which a disassembler would notice by assigning a meaning to an operand.
+    """
+
+    def test_the_chain_tests_four_bands_in_descending_order(self):
+        lab.require('h525_code')
+        instrs = dict(_instructions('h525_code', 0x0))
+        for band, at in H525_BANDS:
+            self.assertEqual(instrs[at - 2].fields['k'], band)
+            compare = instrs[at]
+            self.assertEqual(compare.mnemonic, 'SUBWF')
+            self.assertEqual(compare.fields['f'], H525_WORKING[1] & 0xFF,
+                             'every band tests the operand high byte, not the opcode')
+        self.assertEqual([b for b, _ in H525_BANDS], sorted((b for b, _ in H525_BANDS),
+                                                            reverse=True))
+
+    def test_the_d0_band_fetches_a_second_three_byte_group(self):
+        """The only band that does, and the reason a uniform three byte walk would mis-assign one."""
+        lab.require('h525_code')
+        instrs = dict(_instructions('h525_code', 0x0))
+        for at in H525_BAND_D0_FETCHES:
+            self.assertEqual(instrs[at].fields['target'], H525_FETCH)
+        self.assertEqual(len(H525_BAND_D0_FETCHES), len(H525_WORKING))
+        # And it stores them over the working triple, so the instruction's own operand is consumed.
+        for n, working in enumerate(H525_WORKING):
+            store = instrs[H525_BAND_D0_FETCHES[n] + 4]
+            self.assertEqual(store.mnemonic, 'MOVWF')
+            self.assertEqual(store.fields['f'], working & 0xFF)
+        # No other band fetches: this is what makes the width per band rather than per architecture.
+        for band, at in H525_BANDS:
+            if band == 0xD0:
+                continue
+            window = [instrs[a] for a in range(at, at + 12, 2) if a in instrs]
+            self.assertFalse([i for i in window if i.fields.get('target') == H525_FETCH],
+                             'band 0x%02X fetches too, so the width is not per band' % band)
+
+    def test_band_e0_has_four_sub_commands_decoded_by_the_chain_tool(self):
+        """Read with chains.py, since an XORLW chain's literals are not its case values."""
+        lab.require('h525_code')
+        cases = chains.xor_chain(lab.load('h525_code'), 0x0, H525_BAND_E0_CHAIN)
+        self.assertEqual({c.value: c.target for c in cases}, H525_BAND_E0_CASES)
 
 if __name__ == '__main__':
     unittest.main()

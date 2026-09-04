@@ -97,6 +97,29 @@ A prior worth having, from the person who designed the format: the table points 
 each of the various subsystems (IR sending, state variables, menus, action lists etc)". Use it
 to generate candidates, never as evidence.
 
+## Before you read: grep the findings for the structure's own constants
+
+**One grep, every time, and it is not optional.** Section 256 is why: a dig into the Harmony 525's
+action list interpreter met a range chain, read it out of the image, published it as an opcode band,
+and had to be corrected an hour later. The correct reading had been in `docs/findings.md` since 9
+August, in section 72, on a different architecture, and the constant was in
+`src/harmony/gspm.py` with that section number in its comment.
+
+Nothing in the image announces that a structure has been read before, and the four places rule only
+makes a claim findable **if somebody looks**. So look, before reading rather than after:
+
+* grep `docs/findings.md` for the **constants** the structure is built out of, in both spellings:
+  `0xC000` and `0xC0`, an address, an opcode value, a length.
+* grep it for the **phrase** you would use to describe what you are about to claim, "operand's high
+  byte", "second copy", "container select".
+* grep `src/harmony/` and `packages/codec/src/` for the same constants. A value that is already a
+  named constant in the library has a section number in its docstring.
+
+**A hit on another architecture counts.** That is the case that fails, because the dig is forwards
+from an address and the prior reading is filed under a different image. `docs/findings.md` is 32000
+lines and grepping it costs nothing; re-deriving a claim wrongly costs an afternoon and puts a wrong
+statement in the record.
+
 ## Pitfalls, all of which have cost time here
 
 * **`pic18_trace.py` cannot see indirect access through FSR.** A variable written only via
