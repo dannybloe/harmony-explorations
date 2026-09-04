@@ -33238,7 +33238,9 @@ adds no dependency: `node:zlib` inflates the entry.
 name from it is published and the tests assert counts rather than strings. The schema half is Logitech's
 and is a fact about the format.
 
-Seven of the Harmony 350's fifteen slots are named now and eight are not: raw 5, 6, 8, 9, 11, 12 and 14,
+**Eight of the Harmony 350's fifteen slots are identified now and seven are not.** The eight are
+raw 0, 1, 2, 3, 4, 7 and 10, which hold base slots, plus raw 13, which holds no base slot. The seven
+are raw 5, 6, 8, 9, 11, 12 and 14,
 of which raw 14 is NULL. Raw 11 is one byte holding zero, which is base slot 16's value on all five other
 architectures, and raw 12 is two bytes, which is what arch 10's map calls base slot 17's own section
 before the picture bank. **Both are candidates and neither is in the map**, because a one byte match
