@@ -19,7 +19,7 @@ import unittest
 
 import lab
 
-from harmony.pic18 import isa
+from harmony.pic18 import isa, trace
 
 #: image -> (load base, the routine that displays a status screen, its call sites as
 #: {address: screen number}).
@@ -306,9 +306,24 @@ ONE_CLEARS_THE_FLAG = 0x290A6
 ONE_VERIFIED_BIT = 2
 VERIFIED_WRITERS = {0x266B8: 'BCF', 0x28AB6: 'BCF', 0x28FFA: 'BCF', 0x29006: 'BSF', 0x2C860: 'BCF'}
 
-#: The routine that answers whether USB is up, and the bit it refuses on.
-ONE_USB_PRESENT = 0x20354
+#: The routine section 250 called "whether USB is up", and the bit it refuses on.
+#:
+#: It answers the **opposite** question, section 251: one only when the bit is set and the USB module
+#: is disabled or suspended, so it asks whether USB is absent and quiet. The name is kept as the
+#: address's label and the test below asserts the whole predicate rather than the first bit test,
+#: because asserting only the bit test is what let section 250's polarity claim pass a green suite.
+ONE_USB_IDLE = 0x20354
 CABLE_BIT = 4
+#: `UCON` bit 3 is `USBEN` and bit 1 is `SUSPND`, per the 67J50 map in `isa.PARTS`.
+UCON_USBEN, UCON_SUSPND = 3, 1
+
+#: The seeder that loads the clock out of base slot 13, and its one caller in the boot init.
+#:
+#: This is what licenses the remote's clock as an instrument for "did it restart", section 251: the
+#: clock is seeded once per boot, before the loop the poll lives in, so a running time that starts
+#: over is a restart and nothing else in the image sets those bytes from the record.
+ONE_CLOCK_SEEDER = 0x2A264
+ONE_SEEDER_CALL = 0x28AE8
 
 
 def _bit_writes(name, base, address, bit):
@@ -437,11 +452,16 @@ class AStatusScreenNeedsTheVerifiedBitAlreadyClear(unittest.TestCase):
 class TheRemoteCanOnlyReCheckWhileItsVerdictStands(unittest.TestCase):
     """Why a status screen stays up until the batteries come out, which nothing here had explained.
 
-    The main loop polls one routine. It **arms** a flag while the cable is out and the configuration
-    counts as verified, and it **re-validates** while the cable is in, the flag is armed and the
+    The main loop polls one routine. It **arms** a flag while the cable is in and the configuration
+    counts as verified, and it **re-validates** while the cable is out, the flag is armed and the
     verdict has gone. The flag is cleared after a re-validation whatever the outcome. So a failed
     validation leaves the verdict clear, the arming condition can never be met again, and the remote
     never looks at its configuration again. A power cycle is the only way out.
+
+    **The two cable states were the other way round until section 251**, which is a correction to the
+    prose and to no assertion: what the tests below check is which bit value takes which branch, and
+    that was always right. The polarity that names one of those values "a cable" is the neighbouring
+    class's subject, and section 250 got it from a routine it had named rather than derived.
     """
 
     def test_the_poll_runs_from_the_main_loop_reached_from_the_reset_vector(self):
@@ -451,9 +471,9 @@ class TheRemoteCanOnlyReCheckWhileItsVerdictStands(unittest.TestCase):
         self.assertEqual(by_address[ONE_ENTRY_POINT].fields['target'], ONE_MAIN)
         self.assertLess(ONE_MAIN, ONE_POLL_CALL, 'the poll is inside that routine')
 
-    def test_arming_needs_the_cable_out_and_the_verdict_standing(self):
+    def test_arming_needs_the_cable_in_and_the_verdict_standing(self):
         instrs = dict(_instructions('one34_code', 0x20000))
-        # cable in -> straight to the re-validation half
+        # The cable bit **set**, which is a cable absent, goes straight to the re-validation half.
         self.assertEqual(instrs[0x29070].fields['target'], ONE_REVALIDATE)
         self.assertEqual(instrs[0x29070].mnemonic, 'BNZ')
         # verdict gone -> the same, so the flag is armed on neither
@@ -477,24 +497,36 @@ class TheRemoteCanOnlyReCheckWhileItsVerdictStands(unittest.TestCase):
 class ThePortBitTheReCheckWaitsOnIsTheCable(unittest.TestCase):
     """Which is what makes the account above about plugging in rather than about an unknown input.
 
-    The routine that answers whether USB is up refuses on this bit before it looks at the USB
-    module's own control register, so the bit set means a cable and clear means none.
+    **The polarity is the reverse of what section 250 stated**, section 251: bit 4 **clear** means a
+    cable is present. Three things say so, and only the first is assertable here: `0x20354` reports
+    one when the bit is **set** and the USB module is disabled or suspended, so it is the predicate
+    for USB being absent rather than present; `PORTA` reads `0x29` on a connected Harmony One, bit 4
+    clear, in section 111 and again on 4 September 2026; and section 99's USB mode loop leaves USB
+    mode when the bit is set.
     """
 
-    def test_the_usb_present_routine_refuses_on_the_bit_before_reading_ucon(self):
+    def test_the_usb_idle_routine_answers_one_when_the_cable_bit_is_set_and_usb_is_quiet(self):
         instrs = dict(_instructions('one34_code', 0x20000))
-        test = instrs[ONE_USB_PRESENT]
+        test = instrs[ONE_USB_IDLE]
         self.assertEqual((test.mnemonic, test.fields['b']), ('BTFSS', CABLE_BIT))
         _, name = isa.resolve_file(test.fields['f'], test.fields['a'], None)
         self.assertEqual(name, 'PORTA')
         # Bit clear takes the branch, which returns zero without looking at the USB module.
-        self.assertEqual(instrs[ONE_USB_PRESENT + 2].fields['target'], 0x20360)
+        self.assertEqual(instrs[ONE_USB_IDLE + 2].fields['target'], 0x20360)
         self.assertEqual(instrs[0x20360].mnemonic, 'RETLW')
         self.assertEqual(instrs[0x20360].fields['k'], 0)
-        # Bit set falls through to two tests of UCON, the USB control register.
-        for at in (0x20358, 0x2035C):
-            _, register = isa.resolve_file(instrs[at].fields['f'], instrs[at].fields['a'], None)
+        # Bit set falls through to two tests of UCON, the USB control register, and **each of them
+        # returns one**. That is the half section 250's test did not assert and the half that carries
+        # the meaning: a routine that answers one for a disabled or suspended module is asking
+        # whether USB is absent, not whether it is up.
+        expected = {0x20358: ('BTFSS', UCON_USBEN), 0x2035C: ('BTFSC', UCON_SUSPND)}
+        for at, (mnemonic, bit) in expected.items():
+            test = instrs[at]
+            self.assertEqual((test.mnemonic, test.fields['b']), (mnemonic, bit))
+            _, register = isa.resolve_file(test.fields['f'], test.fields['a'], None)
             self.assertEqual(register, 'UCON')
+            self.assertEqual(instrs[at + 2].mnemonic, 'RETLW')
+            self.assertEqual(instrs[at + 2].fields['k'], 1)
 
     def test_the_recheck_and_the_usb_routine_read_the_same_bit(self):
         """Otherwise the polarity above would be about some other input."""
@@ -506,6 +538,40 @@ class ThePortBitTheReCheckWaitsOnIsTheCable(unittest.TestCase):
             self.assertEqual(name, 'PORTA')
             self.assertEqual(instrs[at + 2].mnemonic, 'ANDLW')
             self.assertEqual(instrs[at + 2].fields['k'], 1 << CABLE_BIT)
+
+
+
+class TheClockIsSeededOncePerBoot(unittest.TestCase):
+    """Which is what makes a Harmony One's clock evidence about whether it restarted, section 251.
+
+    Section 111 measured that the clock holds base slot 3's stamp plus the uptime and section 138
+    identified it as base slot 13's records 0 to 6. Neither established **when** the seeding happens,
+    and without that a clock reading says nothing about a restart: a value near the stamp could be a
+    fresh boot or a reseed by something else.
+    """
+
+    def test_the_seeder_has_exactly_one_caller(self):
+        """A second caller would be a second way for the clock to go back to the stamp."""
+        code = lab.load('one34_code')
+        hits = trace.xrefs(code, 0x20000, [ONE_CLOCK_SEEDER])
+        self.assertEqual([x.addr for x in hits[ONE_CLOCK_SEEDER]], [ONE_SEEDER_CALL])
+        self.assertEqual([x.mnemonic for x in hits[ONE_CLOCK_SEEDER]], ['CALL'])
+
+    def test_that_caller_sits_in_the_boot_init_before_the_top_level_loop(self):
+        """So the seeding is over before the poll's loop begins, and the poll cannot cause it."""
+        instrs = dict(_instructions('one34_code', 0x20000))
+        # The reset vector calls the main routine, whose initialisation run holds the seeder call.
+        self.assertTrue(any(i.fields.get('target') == ONE_MAIN
+                            for at, i in instrs.items() if at >= ONE_ENTRY_POINT),
+                        'the entry point calls the main routine')
+        self.assertLess(ONE_MAIN, ONE_SEEDER_CALL)
+        # `CLRF 0x315` is the mode reset that immediately precedes the loop, and it comes after.
+        clears_mode = [at for at, i in instrs.items()
+                       if i.mnemonic == 'CLRF' and i.fields.get('f') == 0x15
+                       and ONE_SEEDER_CALL < at < ONE_SEEDER_CALL + 0x40]
+        self.assertTrue(clears_mode,
+                        'the mode variable is cleared after the seeder call and before the loop')
+        self.assertLess(ONE_SEEDER_CALL, min(clears_mode))
 
 if __name__ == '__main__':
     unittest.main()

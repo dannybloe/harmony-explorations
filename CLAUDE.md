@@ -762,6 +762,14 @@ document:
   command left the verdict byte, the re-check flag and all three descriptors byte for byte as they
   were, and the ordinary screen off the cable. So section 248's attribution is refuted by experiment
   and both commands stay for the reason the implementations give rather than for the screen.
+  **And the positive half ran the same day, section 251, with the remote's own clock as the second
+  instrument.** The drop alone, no erase and no write, then the cable out and back: the verdict came
+  back on its own and the clock showed the remote had never restarted, so the re-check is watched
+  rather than inferred. It fires on the **cable transition** and not while the cable is in, which is
+  what section 250 said, and the cable bit's polarity there is inverted: bit 4 **clear** means a
+  cable. The latch is unaffected. The restart the bench sees after a write is the **write's**, since
+  arch 12 (Harmony One) runs its configuration out of the flash an erase clears, and a drop with no
+  write does not restart anything.
   Setting the clock over USB, their step 8, is
   deliberately **not** implemented, because our writer stamps the configuration and an arch 12 remote
   reseeds its clock from that stamp at every boot. And a transfer is **3150 bytes**, which is

@@ -31944,9 +31944,13 @@ read out of the firmware before**. The bit is the same bit the invalidate comman
 
 It runs twice at boot, once per container. It also runs from a **polled re-check** in the main loop,
 and section 250 reads that poll in full: the port bit is the **cable**, the flag is armed while the
-cable is out and the verdict stands, and both containers are validated while the cable is in, the flag
+cable is in and the verdict stands, and both containers are validated while the cable is out, the flag
 is armed and the verdict has gone. This section guessed the cable and left the direction open; the
 direction matters, because it is what makes a failed validation a one way door.
+
+**The two cable states in that sentence were the other way round until section 251**, which measured
+them and corrected the polarity. It is the one sentence here that was copied from a neighbouring
+section rather than derived, which is exactly the drift the four places rule exists for.
 
 **This paragraph read the bench backwards and section 250 corrects it.** It said that after a write
 the verified flag is gone so the re-check fires, and that without the invalidate the failing check
@@ -32028,13 +32032,24 @@ remote's old verdict standing, and the remote goes on believing a configuration 
 ### The latch, which is the part nobody had explained
 
 The main routine, reached from the reset vector, polls one routine in its loop. That routine has two
-halves and they are gated on the cable, which is `PORTA` bit 4: the routine that answers whether USB
-is up refuses on that bit before it even reads the USB control register, so set means a cable and
-clear means none.
+halves and they are gated on the cable, which is `PORTA` bit 4.
 
-* **While the cable is out and the verdict stands**, it arms a flag.
-* **While the cable is in, the flag is armed and the verdict has gone**, it validates both
-  containers, and then clears the flag whatever it found. No branch protects that clear.
+**The two cable states below are the wrong way round and section 251 corrects them.** This said "the
+routine that answers whether USB is up refuses on that bit before it even reads the USB control
+register, so set means a cable and clear means none"<!--superseded-->, and that routine answers the
+opposite question: `0x20354` reports one only when the bit is set **and** the USB module is disabled or
+suspended, so it asks whether USB is absent and quiet. Bit 4 **clear** means a cable, measured on the
+register of a connected remote twice. Section 99 refused to claim this polarity and was right to. Every
+instruction quoted in this section is correct; what was wrong is the name given to a predicate.
+
+* **While the cable is out and the verdict stands**<!--superseded-->, it arms a flag. Corrected: while
+  the cable is **in**.
+* **While the cable is in, the flag is armed and the verdict has gone**<!--superseded-->, it validates
+  both containers, and then clears the flag whatever it found. No branch protects that clear.
+  Corrected: while the cable is **out**.
+
+**The latch below survives the correction intact**, since swapping the two states changes which half
+runs when and changes nothing about a condition that can never be met again.
 
 Put those together and the behaviour follows. A validation that fails leaves the verdict clear and
 the flag cleared, so the arming condition, cable out **and** verdict standing, can never be met
@@ -32046,10 +32061,14 @@ That is the "until a battery pull" that sections 242, 244 and 247 all recorded a
 
 ### So what is the invalidate for
 
-**It is what makes the remote check our work.** Sending it clears the verdict, so the re-check fires
-while the cable is still in, the validator runs over the configuration we just wrote, and a
-configuration that passes gets the verdict set again. Without it the remote keeps a verdict it earned
-against different bytes.
+**It is what makes the remote check our work.** Sending it clears the verdict, the validator runs over
+the configuration we just wrote, and a configuration that passes gets the verdict set again. Without it
+the remote keeps a verdict it earned against different bytes.
+
+**This said the re-check fires "while the cable is still in"**<!--superseded-->, which is refuted by
+measurement in section 251: the verdict sat dropped for six minutes with the cable in and came back the
+moment the cable moved. It fires on the **cable transition**, so on this bench it fires when the operator
+unplugs the remote.
 
 That is a better reason to send it than the one section 248 gave, and it reverses the sign of the
 advice. A write with no invalidate does not avoid the screen by being safer. It avoids the screen by
@@ -32109,11 +32128,11 @@ the others, and the fact that a clean write appeared not to help.
 * **Which of the two failures the bench actually hit**, since a cookie and a checksum are
   distinguishable on the screen but nobody read the screen at each boot. The control above cannot
   answer it either, because it never produced a screen to read.
-* **Whether a write with the invalidate really does re-validate**, which is the positive half and is
-  unrun. The prediction is sharp and reads out of the same three addresses: send the invalidate, watch
-  the verdict byte go from `0x2E` to `0x2A`, and watch it come back to `0x2E` without a power cycle
-  once the re-check has run. If it does not come back, the invalidate leaves the remote with no verdict
-  at all, which would make it worse than useless.
+* **Whether a write with the invalidate really does re-validate.** ~~Unrun.~~ **Run on 4 September
+  2026 and it does**, section 251, and the prediction was right except in one byte and one condition.
+  The verdict does come back to `0x2E` with no power cycle, so the invalidate does not leave the remote
+  without a verdict. It goes to `0x22` rather than the predicted `0x2A`<!--superseded-->, since bit 3
+  goes with bit 2, and it comes back on the **cable transition** rather than while the cable is in.
 * **What the descriptors are for**, which is now a separate question rather than part of this one:
   three records of five bytes, byte 0 bit 0 marking one live, thirty sites addressing them inside one
   module, and no reader in the validator's path.
@@ -32126,7 +32145,156 @@ the others, and the fact that a clean write appeared not to help.
   handlers being outside them, the guard in front of both screen calls, the poll's two halves, the
   unconditional clear of the flag, the cable bit's polarity from the USB routine, and the negative
   that no read helper reaches the descriptor module with the invalidate's executor as its control.
+  **The polarity test asserted the bit test and not the routine's meaning**, which is why it passed
+  while the claim it was named for was wrong; section 251 replaces it with one that asserts the whole
+  predicate, both `UCON` bits included.
   **The control run adds no test**, deliberately: every claim it scores is one of those, and the run
   itself is a hardware observation of three data addresses that this repository stores no fixture for.
   What it changes is the status of the claims, from read to measured.
 * Sections 248 and 249, corrected in place, and `reference/superseded.md`.
+
+## 251. The re-check runs on the cable, and the restart was the write's
+
+Section 250 read the latch out of the firmware and scored one control against it. Three more runs on
+the spare Harmony One on 4 September 2026 settle the mechanism, and two of them refute claims that
+section wrote down the same evening. The re-check is real and has now been watched: a remote whose
+verdict has been dropped re-validates its own configuration, restores the verdict, and does not
+restart to do it.
+
+What makes these runs stronger than the earlier ones is that the remote's **clock** is the second
+instrument. Every earlier observation was a screen, and a screen cannot tell a running remote from
+one that restarted quickly.
+
+### The clock is an instrument, and here is why it may be used as one
+
+Section 111 measured that a connected Harmony One's clock holds base slot 3's stamped time plus its
+uptime, and section 138 identified the clock as base slot 13's records 0 to 6, seeded from each
+record's `first`. What neither established is **when** the seeding happens, which is the whole
+question if a clock reading is going to be evidence about a restart.
+
+`0x2A264` is the seeder's entry, the routine section 138 traced as parsing base slot 13's header
+exactly as `stateTable` does. It has **exactly one caller**, `0x28AE8`, and that call sits in the
+initialisation run of `0x28A0E`, the routine the reset vector at `0x2EA38` calls: eleven calls in a
+row, then `CLRF 0x315` and the top level loop at `0x28B1C`. So the clock is seeded once per boot,
+before the loop the poll lives in ever runs, and nothing else in the image writes those seven bytes
+from the record. Section 111 searched for a direct write and found only the calendar's three; section
+138 explains why a search could not have found the seeder's own store, since `FSR0` is computed from a
+literal 8 and an index rather than loaded.
+
+**Calibrated on the bench before it was used.** Two readings 400 seconds of wall clock apart advanced
+by exactly 400 seconds, with the cable in throughout, so the clock ticks at real rate and it ticks in
+USB mode. A reading of the stamp plus `n` seconds therefore means the remote has been running for `n`
+seconds, and a running time that starts over is a restart.
+
+### The three runs
+
+Base slot 3's stamp in the configuration on the remote is 11:22:35. The verdict is bit 2 of `0x1A4`
+and the armed flag is `0x318`, both as section 250 names them.
+
+| run | verdict going in | what was sent | verdict after | running time after | restarted |
+|---|---|---|---|---|---|
+| A | dropped | the drop, then two 64 KiB blocks written | `0x2E` | 38 s | **yes** |
+| B | `0x2E`, standing | nothing at all | `0x2E` | continuous, 798 s then 900 s | no |
+| C | dropped | the drop alone, no erase and no write | `0x2E` | continuous, 1317 s then 1380 s | no |
+
+Each run is a cable transition: the operator pulls the cable, waits about fifteen seconds, and plugs
+it back in. In runs B and C the operator also read the time off the remote's own screen before pulling
+the cable, and it agreed with the byte both times.
+
+**Run C is the one that separates the two candidate causes**, and it is why it was built. Runs A and B
+differ in two things at once, the drop and the write, so A's restart could belong to either.
+
+### What the runs settle
+
+**1. The re-check exists and it runs on the cable transition, not while connected.** In run C the
+verdict sat dropped for six minutes with the cable in, read three times, and the flag stayed armed.
+The moment the cable moved it was back to `0x2E`, with the clock showing the remote had never stopped.
+Nothing but the poll's re-check can set that bit without a boot: of the five writers section 250
+enumerates, three are on the boot path and one is the drop itself.
+
+**2. Run A's restart was the write's.** Arch 12 executes its configuration in place out of the flash
+an erase clears, which is section 245's whole reason for dropping the descriptors first, so a restart
+during a two block write is unremarkable. Run C sent the same drop with nothing written and the remote
+did not flinch.
+
+**3. Section 250 has the cable states the wrong way round**, which is the next subsection.
+
+### The polarity, and a predicate that was named backwards
+
+Section 250 said the two halves are gated on `PORTA` bit 4, that "the routine that answers whether USB
+is up refuses on that bit before it even reads the USB control register", and concluded that set means
+a cable. The bit test was read correctly and the routine was named backwards. `0x20354` is:
+
+```
+20354: BTFSS PORTA,4     ; bit clear: straight to the zero
+20356: BRA   0x20360
+20358: BTFSS UCON,3      ; USBEN clear, so the module is off: one
+2035a: RETLW 0x01
+2035c: BTFSC UCON,1      ; SUSPND set, so the bus is idle: one
+2035e: RETLW 0x01
+20360: RETLW 0x00
+```
+
+It answers **one** only when the bit is set **and** the USB module is either disabled or suspended,
+which is the opposite predicate: not "is USB up" but "is USB absent and quiet". Its caller is the head
+of the guard chain at `0x28C40` that drives the top level mode to 2, and a chain that a live USB
+session must not enter is a chain whose first question is whether the cable is gone.
+
+So **bit 4 clear means a cable is present**, and three independent things say so:
+
+* `PORTA` reads `0x29` on a connected Harmony One, bit 4 clear, in section 111's register sweep and
+  again on 4 September 2026 while the read itself was travelling over the cable being asked about;
+* section 99's mode 1 loop, which is USB mode, leaves USB mode when the bit is **set**;
+* the three runs above, where the connected state sits in the arming half and the re-check fired only
+  across a transition.
+
+**Section 99 refused to claim this polarity and was right to.** It says so in as many words, on the
+ground that this project has twice recorded a bit sense being inverted in its own notes. Section 250
+claimed it anyway, from a routine whose name it had assigned rather than derived, and the instructive
+part is that **the error travelled in the name of a predicate and not in the reading of a bit**. Every
+instruction section 250 quoted is correct.
+
+### The two halves, restated
+
+* While the cable is **in** and the verdict stands, it arms the flag.
+* While the cable is **out**, the flag is armed and the verdict has gone, it validates both containers
+  and then clears the flag whatever it found. No branch protects that clear.
+
+That reads as a design rather than an accident: a host writes while it is connected, and the remote
+re-validates when it is unplugged, which is what a sync is.
+
+**The latch survives the correction intact**, and that is section 250's real finding. A validation that
+fails leaves the verdict clear and the flag cleared; arming needs the verdict standing; so the arming
+condition can never be met again, and only the boot path validates without an armed flag. Swapping the
+two cable states changes which half runs when and changes nothing about the trap.
+
+### One prediction that was wrong by a bit
+
+Section 250 predicted the drop would take `0x1A4` from `0x2E` to `0x2A`, clearing bit 2 alone. It reads
+`0x22` on all three runs, so bit 3 goes with it: the drop also clears the bit that selects which
+container a read reaches. The re-check clears and sets that same bit around its two validations, which
+is where it comes back from.
+
+### The control, and what it cost to build
+
+`--drop-only` in `packages/corpus/bin/write-config.ts` is run C. It sends the drop and stops: no erase,
+no write, no restart. Two things about its shape are deliberate.
+
+Its precondition is **measured rather than asserted**: it reads the whole container off the remote and
+refuses unless it is the file, byte for byte, before sending anything. That is what makes the run's
+starting state a fact, and it is a stronger statement than the block by block dump comparison an
+ordinary write makes, since on a drop-only run no block differs and that loop measures nothing.
+
+And it presents the **full** write permission for a command that precedes no erase, which
+`assertInvalidateAllowed`'s own docstring calls a decision to take in a commit that says so. This is
+that commit. The drop touches three records in data memory and reaches no flash gate, section 246, so
+what the permission is protecting here is the **unit**, and that is exactly the check worth keeping.
+
+### Where it lands
+
+* `tests/test_status_screens.py`: the seeder's single caller and its position in the boot
+  initialisation, which is what licenses the clock as an instrument; `0x20354`'s real predicate,
+  including the two `UCON` bits it needs; and the poll's two halves with the corrected cable states.
+* Section 250, corrected in place, and `reference/superseded.md`.
+* `packages/corpus/bin/write-config.ts`, which gains the control and, from the same evening's failed
+  write, the recovery of a block an earlier run erased and did not write.

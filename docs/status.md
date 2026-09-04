@@ -439,7 +439,7 @@ finding.
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 250<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 251<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -743,8 +743,21 @@ just wrote and earn a fresh verdict. Section 248's attribution is withdrawn, and
 was performed on 4 September 2026: from a remote whose state was read out of its memory first, a two
 block write with neither command left the verdict, the re-check flag and the cached descriptors
 untouched to the byte, and the screen ordinary off the cable. Two erases and two block writes, and
-the remote's opinion of its configuration did not move at all. What is still unrun is the positive
-half, watching the verdict go away and come back when the invalidate **is** sent. One read settles where the screen comes from: the identity block's
+the remote's opinion of its configuration did not move at all.
+
+**The positive half ran the same day and it is watched now, section 251.** The drop was sent on its
+own, with nothing erased and nothing written, and the remote's verdict went away. With the cable in it
+stayed away for six minutes across three reads. The moment the cable came out and went back it was
+restored, and the remote's own clock, which it loads from the configuration once per startup and
+nowhere else, showed it had been running for twenty three minutes without a break. So the remote
+re-checks the configuration we wrote, by itself, while running.
+
+Two things in section 250 are corrected by it. The re-check fires on the **cable transition** rather
+than while the cable is in, and the cable pin's polarity is the other way round, which came from
+naming a firmware routine rather than deriving what it answers. The latch, that section's real
+finding, is unaffected. And the restart the bench keeps seeing after a write belongs to the **write**:
+a Harmony One runs its configuration straight out of the flash an erase clears, and a drop with no
+write behind it does not restart anything. One read settles where the screen comes from: the identity block's
 software type says 0 running normally and 4 in safe mode, and the container these screens live in
 sits with the bootloader rather than with the configuration.
 

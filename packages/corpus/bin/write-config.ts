@@ -5,6 +5,7 @@
  *   HARMONY_ENABLE_WRITES=1 HARMONY_FIRST_WRITE=1 ... --commit
  *   ... --commit --no-restart      section 247's control: every step but the last
  *   ... --commit --no-invalidate   section 250's control: every step but the first
+ *   ... --commit --drop-only      section 250's isolating control: the drop and nothing else
  *
  * **This is the step `rehearse-block.ts` was the rehearsal for.** That script writes a unit's own
  * dump back, so its correct outcome is known in advance and a difference is a failure. This one
@@ -169,6 +170,29 @@ async function main(): Promise<void> {
   // is what both working implementations do not do, so an ordinary write sends it.
   const invalidate = !process.argv.includes('--no-invalidate');
 
+  // **The isolating control for section 250, added 4 September 2026, and it writes no flash at
+  // all.** That section's mechanism was argued from the firmware and then measured twice with
+  // opposite outcomes: a run whose verdict had been dropped came back from a cable transition with
+  // its clock reseeded, so the remote had restarted, and a run whose verdict stood came back with
+  // its clock still running. One run each side with the **write** present in only one of them, so
+  // the drop and the write are both candidate causes and nothing separates them.
+  //
+  // This sends the drop and stops. The precondition is measured rather than asserted: the whole
+  // container is read off the remote and compared with the file first, so a run that proceeds has
+  // established what the remote holds. Nothing is erased, so there is no dump to restore from and
+  // none is needed.
+  //
+  // **It presents the full write permission for something that precedes no erase**, which
+  // `assertInvalidateAllowed`'s own docstring calls a decision to take in a commit that says so.
+  // This is that commit: the drop touches three records in data memory and no flash gate, section
+  // 246, so what the permission is protecting here is the **unit**, and that is exactly the check
+  // worth keeping.
+  const dropOnly = process.argv.includes('--drop-only');
+  if (dropOnly && !invalidate) {
+    fail('--drop-only and --no-invalidate ask for opposite things: the first sends only the drop '
+      + 'and the second sends everything but');
+  }
+
   if (!SPARE_DUMPS.has(dumpName)) {
     fail(`${dumpName} is not one of the spare Harmony One's own region reads `
       + `(${[...SPARE_DUMPS].join(', ')}). Refusing: the byte compare below can only identify the `
@@ -270,6 +294,42 @@ async function main(): Promise<void> {
         ? ', so there is nothing to compare: this container carries no wrapper\n'
         : `, ${comparison.mismatched.length} disagreeing\n`));
 
+    /**
+     * Read the whole container off the remote and refuse unless it is the file, byte for byte.
+     *
+     * **One derivation with two callers**, which is why it is a local rather than two copies: it is
+     * the post write check that no per block read back can make, and it is `--drop-only`'s
+     * precondition, where its job is to establish what the remote holds before a control changes
+     * anything about it.
+     *
+     * **Through `readConfig` rather than a loop of `readFlash`, and that was learned here.** The
+     * first version read the range itself and the run failed at 24304 bytes with a chunk out of
+     * sequence, which is section 223's transient: HIDAPI's macOS backend holds about 31 input
+     * reports and discards the oldest, so a consumer that stalls loses a run. Both blocks had
+     * already been written and verified, so the write was fine and the verification was not, which
+     * is the worst way round to fail. `readConfig` retries a window, because a read is idempotent.
+     */
+    const containerMatchesTheFile = async (): Promise<void> => {
+      say('reading the configuration back to compare with the file\n');
+      const reread = await readConfig(remote, profileFor(productId));
+      if (reread.retries > 0) {
+        say(`${reread.retries} window(s) had to be asked for again\n`);
+      }
+      const back = reread.bytes;
+      if (back.length !== wanted.length) {
+        throw new Refusal(`the remote now holds ${back.length} bytes and the file is `
+          + `${wanted.length}: a same length edit cannot change a container's length`);
+      }
+      const wrong = firstDifference(back, wanted);
+      if (wrong !== undefined) {
+        throw new Refusal(`the configuration read back differs from ${configPath} at offset `
+          + `0x${wrong.toString(16)}: 0x${back[wrong]!.toString(16)} on the device, `
+          + `0x${wanted[wrong]!.toString(16)} in the file`);
+      }
+      say('the whole configuration reads back byte for byte identical to the file. '
+        + "A config we produced is on the remote.\n");
+    };
+
     /** One erase block, read in transfers the announce's count field can state. */
     const readBlock = async (address: number): Promise<Uint8Array> => {
       const out = new Uint8Array(blockSize);
@@ -294,9 +354,19 @@ async function main(): Promise<void> {
     // with a test, because a boundary read the wrong way erases one block of a pair and leaves the
     // other holding the old byte, and every per block read back would still pass.
     const blocks = blocksDiffering(dump, target, base, blockSize);
-    if (blocks.length === 0) {
+    if (blocks.length === 0 && !dropOnly) {
       say('the config is byte identical to the dump: there is nothing to write\n');
       return;
+    }
+    // **`--drop-only` wants exactly this case**, and that is the point rather than a leniency: the
+    // control sends a command to a remote whose configuration is already the file, so a run with
+    // blocks to write would be measuring the drop and the write together, which is the confusion it
+    // exists to resolve. Everything below then loops over an empty plan and the dump comparison
+    // measures nothing, so the precondition that matters is the container read the branch performs.
+    if (dropOnly && blocks.length !== 0) {
+      throw new Refusal(`--drop-only wants a remote that already holds ${configPath}, and `
+        + `${blocks.length} block(s) differ from ${dumpName}. Write it first, or name the dump and `
+        + 'config that match what is on the device.');
     }
     const changedBytes = [...dump].reduce((n, b, at) => (b === target[at] ? n : n + 1), 0);
     say(`${changedBytes} byte(s) differ from ${dumpName}, in `
@@ -396,7 +466,11 @@ async function main(): Promise<void> {
     const permission = {
       architecture,
       configLength: dump.length,
-      // Measured, block by block, in the loop above.
+      // Measured, block by block, in the loop above. **On a `--drop-only` run there are no blocks
+      // and this is measured by something else**: the config is byte identical to the dump, checked
+      // above, and the branch below reads the whole container off the remote and compares it before
+      // sending anything. That is a stronger statement than the block loop makes, not a weaker one,
+      // and nothing is erased either way.
       originalDumpVerified: true,
       intendedVersion: statedVersion,
       versionBlock: versionBytes,
@@ -409,6 +483,17 @@ async function main(): Promise<void> {
     // attempt to reference it while we're working" in its own words, and arch 12 executes its
     // configuration in place out of the flash the next line is about to erase. It writes no flash and
     // nothing persistent, so a run that fails after this point leaves no marker behind.
+    // The control's precondition, measured before anything is sent: the remote holds the file.
+    if (dropOnly) {
+      await containerMatchesTheFile();
+      say('--drop-only: sending the cache drop and nothing else. No erase, no write, no restart\n');
+      await remote.invalidateCachedRegions(permission);
+      say('the drop is sent. The remote keeps running; its verdict byte is now clear. Read its '
+        + 'clock, pull the cable, plug it back in, and read the clock again: a running time that '
+        + 'starts over is a restart the drop caused with no write anywhere in the chain\n');
+      return;
+    }
+
     if (invalidate) {
       say('dropping the cached region descriptors, so nothing references the config while it '
         + 'changes, and so the remote re-checks what we write\n');
@@ -444,24 +529,7 @@ async function main(): Promise<void> {
     // reports and discards the oldest, so a consumer that stalls loses a run. Both blocks had
     // already been written and verified, so the write was fine and the verification was not, which
     // is the worst way round to fail. `readConfig` retries a window, because a read is idempotent.
-    say(`reading the configuration back to compare with the file\n`);
-    const reread = await readConfig(remote, profileFor(productId));
-    if (reread.retries > 0) {
-      say(`${reread.retries} window(s) had to be asked for again\n`);
-    }
-    const back = reread.bytes;
-    if (back.length !== wanted.length) {
-      throw new Refusal(`the remote now holds ${back.length} bytes and the file is `
-        + `${wanted.length}: a same length edit cannot change a container's length`);
-    }
-    const wrong = firstDifference(back, wanted);
-    if (wrong !== undefined) {
-      throw new Refusal(`the configuration read back differs from ${configPath} at offset `
-        + `0x${wrong.toString(16)}: 0x${back[wrong]!.toString(16)} on the device, `
-        + `0x${wanted[wrong]!.toString(16)} in the file`);
-    }
-    say('the whole configuration reads back byte for byte identical to the file. '
-      + "A config we produced is on the remote.\n");
+    await containerMatchesTheFile();
 
     // **Step 7, and it is the last thing this script does on purpose.** concordance ends a config
     // write with a device reset and waits for the remote to come back, which is the battery pull
