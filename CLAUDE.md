@@ -579,12 +579,15 @@ surveyed with the HID command layer mined and three resource files with it. `mak
 answer to how far anything has been dug, and a count in this file is exactly the kind of thing it
 exists to replace.
 
-**The survey is done since 28 August 2026** and `reference/lab-register.md` is the register: 46
-artefacts, each with a status and its tags, with a test that fails when the lab gains one the register
-does not name. It said 58 for a day, which was a count nothing recomputed, and the row count is
-asserted exactly now. **This said 44 while the test asserted 45**, until 30 August 2026, which is the
-same defect the previous sentence describes and one paragraph away from it: the count is asserted in
-`tests/test_toolchain.py` and restated here, and only one of the two moves when a row is added. So "did we already know this" is a **command** rather than a memory exercise:
+**The survey is done since 28 August 2026** and `reference/lab-register.md` is the register: one row
+per artefact, each with a status and its tags, with a test that fails when the lab gains one the
+register does not name. **The row count deliberately no longer appears here**, and that is the third
+correction of the same defect rather than a style change. It said 58 for a day, which was a count
+nothing recomputed; then 44 while the test asserted 45, until 30 August 2026; then 46 while the test
+asserted 48, until 4 September 2026. Each time the cause was identical, that the count is asserted in
+`tests/test_toolchain.py` and restated here and only one of the two moves when a row is added, and
+each time the fix was to update the copy. So the copy is gone: the number lives in the test, which
+recomputes it, and the register itself is one command away. So "did we already know this" is a **command** rather than a memory exercise:
 `make lab-check PATH_ARG=<path>`, which prints every register row bearing on a path, ancestors and
 descendants both. That is the point: an expensive check gets skipped under momentum, so making it
 cheap is the only structural fix, and section 209 is what finally made it cheap instead of writing a

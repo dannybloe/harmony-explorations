@@ -33245,3 +33245,86 @@ of which raw 14 is NULL. Raw 11 is one byte holding zero, which is base slot 16'
 architectures, and raw 12 is two bytes, which is what arch 10's map calls base slot 17's own section
 before the picture bank. **Both are candidates and neither is in the map**, because a one byte match
 against a zero is not an identification and this document has promoted a width before.
+
+## 261. What connects a key to a stored code on arch 16, and why the names cannot be checked there
+
+**4 September 2026.** Section 260 found a configuration naming its own devices and commands and said
+the join to the records was open. This is the attempt, and it half closes: the **mechanism** that
+connects a pressed key to a stored code is exact on arch 16, and the **naming** cannot be corroborated
+on that container at all, for a reason that is worth more than the join would have been.
+
+### The mechanism was already read, and it holds here
+
+An action list instruction is a `u16` operand and an opcode. Opcode `0x7D` sends an infrared code, and
+section 33 read its reference as one to one; `docs/config-format.md` states that the operand's **high
+byte is the group** and `packages/codec/src/inventory.ts` has split it that way since section 126. So
+this is an extension rather than a reading, and the grep that found the prior art ran before the claim
+was written rather than after, which is the rule sections 209, 213 and 256 kept restating.
+
+On the Harmony 350 it closes exactly. Its 171 action lists hold **130** send instructions with **130**
+distinct operands, against 130 infrared records, and splitting each operand gives:
+
+| high byte | sends | low bytes | records in the group of that index |
+|---|---|---|---|
+| 0 | 52 | 0 to 51, contiguous | 52 |
+| 1 | 48 | 0 to 47, contiguous | 48 |
+| 3 | 30 | 0 to 29, contiguous | 30 |
+
+So every record of every non-empty group is referenced exactly once and nothing else is referenced.
+That is the closure: a count of sends matching a count of records would be a coincidence, and a
+**contiguous cover** of three groups of different sizes is not.
+
+The other opcodes in those lists are the ordinary ones: `0x7C` 136 times, which is the pause section
+236 read, `0x07` 146 times, `0x7F` 30 times, which is section 26's call to another list, and `0x1F` 31
+times.
+
+### The named devices are not in the group order, and the candidate is the obvious one
+
+The archive names devices 0, 1 and 2. The groups holding records are 0, 1 and **3**, with group 2
+empty. So the k-th named device is the k-th **non-empty** group, which fits and is one container's
+worth of evidence. It is not in any code and is recorded as a candidate: what it would take to settle
+is a second container, or a device deleted and the two compared, which is a ten minute job on the
+bench and is why section 259's note about a programmed dump matters.
+
+### Why the command names cannot be checked, and this is the finding
+
+The plan was section 229's route in reverse: identify each group's codeset out of Logitech's catalogue
+by the numbers its records decode to, take the command names from that codeset, and compare them with
+the archive's. It cannot run. **No record of the Harmony 350 decodes to a number at all**, 0 of 130,
+by any of the three readers here: `framesOfPulses`, `framesOfSegments` and `biphaseFrames`.
+
+The reason is what the three groups are. Every one of them is **biphase**, where a bit is which half of
+one cell carries the carrier, and each defeats a different reader:
+
+* **group 1 is `Microsoft 30 Bit`** and is identified with no catalogue at all: its lead in matches that
+  row of the rhythm table on all thirteen pulses, mark for mark and microsecond for microsecond. Our
+  biphase reader still declines it, because that family's double width trailer bit ends the cell run,
+  which `biphaseFrames` documents as deliberate;
+* **group 0** opens `+2662 -870 +468 -866` and matches no row in the table's 681 entries. Its body mixes
+  468, 866, 433, 1335 and 1307 with a 457 and 440 pair further in, so it is biphase at more than one
+  half cell width, which is RC6's shape;
+* **group 3** opens `+900 -900 +1800 -1800` with a 3515 gap, which is a 900 microsecond half cell, and
+  matches no row either.
+
+Three consequences, and the third is the one to carry.
+
+**The archive is the only naming route on that remote.** Everywhere else the catalogue can name a
+command because the record decodes to a number; here it cannot, so a Harmony 350's commands are
+nameless without the archive and fully named with it. That inverts the usual relationship between the
+two sources.
+
+**Two biphase families are unidentified**, and they are the first in this project found in a
+configuration rather than in Logitech's catalogue. Naming them is the ordinary route, which is
+Logitech's own definitions, and the archive checkout holds 684 of those.
+
+**And the archive's names stay unverified**, in the document's usual sense. They are Logitech's word
+and the owner's, with nothing here to check them against, which is exactly the standing of an entry
+taken from the device catalogue under decision 15.
+
+### What it changes
+
+Nothing in `packages/codec` changes: `IR_SEND_OPCODE` and the `operand >>> 8` split in
+`inventory.ts` already state the reading. What is new is the assertion that the split covers a
+container's records **exactly**, which nothing checked before, and the test walks every configuration
+that states an action list table rather than a list of names, so a sixth architecture joins it by
+having its slot mapped rather than by anyone editing a test.

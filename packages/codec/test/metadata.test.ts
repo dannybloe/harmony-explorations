@@ -13,8 +13,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { skipUnless, require_ } from '@harmony/lab';
-import { baseSlot, parse } from '../src/gspm.ts';
-import { irGroups } from '../src/ir.ts';
+import { ACTION_LIST_TABLE_SLOT, archSlot, baseSlot, parse } from '../src/gspm.ts';
+import { irBlockWords, irGroups, irHeaderPointers } from '../src/ir.ts';
+import { framesOfSegments, irFrames, mergedIntervals } from '../src/irframe.ts';
+import { pulsesOfWords } from '../src/irda.ts';
+import { PROTOCOLS } from '../src/protocols.ts';
 import { metadataArchive } from '../src/metadata.ts';
 
 const WITH = ['h350_config', 'h890_config', 'h895_config'];
@@ -101,4 +104,125 @@ test('the names do not line up with the records, and that is the open half',
     const ids = m.devices.map((one) => Number(one.deviceId));
     assert.deepEqual(ids.map((one) => one - ids[0]!), [0, 1, 2]);
     assert.ok(ids[0]! > 1e6, 'the id is inside the catalogue id space after all');
+  });
+
+/**
+ * A send instruction's operand covers its group's records exactly, section 261.
+ *
+ * **The count is not the claim, the cover is.** A configuration whose send instructions merely numbered
+ * the same as its records would prove nothing; what is asserted is that splitting each operand into a
+ * group and an index gives, per group, the indices 0 to n-1 with no gap and no repeat, on groups of
+ * different sizes. That is the mechanism connecting a pressed key to a stored code, and section 33 read
+ * it years of sections ago on other architectures; this is the first check that it **closes**.
+ *
+ * The population is every configuration whose architecture has an action list slot mapped, so a new
+ * architecture joins by having its map filled in rather than by anyone editing this list.
+ */
+test('every send instruction names a record, and together they name all of them', () => {
+  const names = ['one_config', 'h600_config', 'h700_config', 'h525_config', 'arch8_config_885',
+    'h350_config'];
+  require_(...(names as [string]));
+  let containers = 0;
+  let sends = 0;
+  for (const name of names) {
+    const c = parse(require_(name));
+    let table: number[] | undefined;
+    try {
+      table = c.pointerArray(archSlot(c.architecture as number, ACTION_LIST_TABLE_SLOT));
+    } catch { continue; }
+    if (table === undefined) continue;
+    containers += 1;
+    const groups = irGroups(c) ?? [];
+    const seen = new Map<number, Set<number>>();
+    for (const address of table) {
+      const off = c.blobOffsetOf(address);
+      if (off === undefined) continue;
+      const count = c.blob[off] as number;
+      for (let i = 0; i < count; i += 1) {
+        const at = off + 1 + 3 * i;
+        if (at + 2 >= c.blob.length) break;
+        if (c.blob[at + 2] !== 0x7d) continue;
+        const operand = (c.blob[at] as number) | (c.blob[at + 1] as number) << 8;
+        const group = operand >>> 8;
+        const index = operand & 0xff;
+        sends += 1;
+        (seen.get(group) ?? seen.set(group, new Set()).get(group) as Set<number>).add(index);
+      }
+    }
+    for (const [group, indices] of seen) {
+      const records = groups[group]?.addresses.length;
+      assert.ok(records !== undefined && records > 0,
+        `${name} sends group ${group}, which holds no records`);
+      // Every index inside the group, on every architecture. A send naming index 60 of a group of 52
+      // is what an identity mapping between the naming and the records would look like.
+      for (const index of indices) {
+        assert.ok(index < records, `${name} group ${group} index ${index} of ${records}`);
+      }
+      // **The exact cover is arch 16's and is asserted only there**, deliberately. Elsewhere a
+      // device's codeset holds more codes than its activities bind, so a group is referenced in part
+      // and a completeness assertion would be false rather than informative. On the Harmony 350 every
+      // record is referenced exactly once, which is what makes the split a measurement there.
+      if (name !== 'h350_config') continue;
+      assert.deepEqual([...indices].sort((a, b) => a - b),
+        Array.from({ length: records }, (_unused, i) => i),
+        `${name} group ${group} is not covered exactly`);
+    }
+  }
+  assert.equal(containers, 6, 'a container went unwalked');
+  assert.equal(sends, 1701);
+});
+
+/**
+ * No Harmony 350 record decodes to a number, section 261, which shuts the catalogue naming route.
+ *
+ * **A negative with a consequence.** Section 229 names a command by identifying its device's codeset
+ * out of Logitech's catalogue, which needs the record to decode to a number. All three of this
+ * container's device groups are biphase and none of the three readers here reads one, so on this remote
+ * the metadata archive is the **only** naming route, where everywhere else the catalogue is.
+ *
+ * Group 1 is named anyway, and by the cheaper route: its lead in matches `Microsoft 30 Bit` in the
+ * rhythm table on all thirteen pulses. That is asserted because it is the thing that would break if
+ * either the table or the reader moved, and it shows the refusal is the reader's rather than the data
+ * being unreadable.
+ */
+test('the Harmony 350 carries three biphase groups and none of them decodes',
+  skipUnless('h350_config'), () => {
+    const c = parse(require_('h350_config'));
+    const groups = irGroups(c) ?? [];
+    let records = 0;
+    let decoded = 0;
+    for (const group of groups) {
+      for (const address of group.addresses) {
+        records += 1;
+        if (irFrames(c, address).length > 0) decoded += 1;
+        const words = irBlockWords(c, irHeaderPointers(c, address)[0] as number);
+        if (words === undefined) continue;
+        const train = mergedIntervals(pulsesOfWords(words));
+        if (framesOfSegments(train).length > 0) decoded += 1;
+      }
+    }
+    assert.equal(records, 130);
+    assert.equal(decoded, 0, 'a record decoded, so the catalogue route is open after all');
+
+    // The one group the rhythm table does name, on its lead in alone.
+    const first = groups[1]?.addresses[0] as number;
+    const held = irBlockWords(c, irHeaderPointers(c, first)[1] as number) as number[];
+    const train = mergedIntervals(pulsesOfWords(held));
+    const row = PROTOCOLS.find((one) => one.family === 'Microsoft 30 Bit');
+    const lead = row?.biphase?.lead as { mark: boolean; us: number }[];
+    assert.equal(lead.length, 13);
+    for (const [at, one] of lead.entries()) {
+      assert.equal(train[at]?.mark, one.mark, `lead pulse ${at} is the wrong kind`);
+      assert.equal(train[at]?.us, one.us, `lead pulse ${at} is the wrong length`);
+    }
+    // And the other two match no row at all, which is what makes them unidentified rather than unread.
+    for (const at of [0, 3]) {
+      const address = groups[at]?.addresses[0] as number;
+      const words = irBlockWords(c, irHeaderPointers(c, address)[1] as number) as number[];
+      const pulses = mergedIntervals(pulsesOfWords(words));
+      const hit = PROTOCOLS.find((one) => (one.biphase?.lead.length ?? 0) >= 2
+        && (one.biphase as { lead: { mark: boolean; us: number }[] }).lead
+          .every((q, i) => pulses[i]?.mark === q.mark && pulses[i]?.us === q.us));
+      assert.equal(hit, undefined, `group ${at} matches ${hit?.family ?? ''} after all`);
+    }
   });

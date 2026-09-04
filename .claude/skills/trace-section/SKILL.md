@@ -49,6 +49,40 @@ in `docs/findings.md` section 35: the routine `0x10B92` on the Harmony 700 image
 number in a register that callers load with a literal, so one scan produced the whole map. Go
 straight to the consumer for the slot you want and skip steps 2 and 3 below.
 
+### The seeker is the instrument, and finding it is the first move on a new image
+
+**This generalises and it has been used twice**, so it is the method rather than one image's shortcut.
+Every architecture read here computes a slot's pointer position with the same arithmetic, `0x0B + 4 *
+slot`, in **one** routine, and its callers load the slot number as a literal. So finding that one
+routine converts "which slot is which" from nineteen separate digs into one scan of its call sites.
+
+| architecture | the remote | the seeker | slots its callers load |
+|---|---|---|---|
+| 14 | Harmony 700 reference image | `0x10B92` | 3 to 17, section 35 |
+| 16 | Harmony 300 and 350, skin 104 | `0x10BCE` | 3 to 12, from 14 call sites, section 259 |
+
+How to find it on an image nobody has scanned:
+
+1. **Look for the multiply, not the pointer.** The routine's body is a fixed shape: `MOVLW 4`, a
+   `MULWF` of the slot register, then `MOVLW 0x0B` and an `ADDWF`, with `MOVFF` moving the product.
+   Two literals, 4 and `0x0B`, close together and with a multiply between them, is a signature nothing
+   else in these images has.
+2. **The marker offset is the cross check and it is a second literal.** The container validator
+   hardcodes where the marker sits, which is `0x0B + 4 * N` for that architecture's pointer count.
+   `0x47` on arch 16 is `0x0B + 4 * 15`, so it confirms the pointer count independently of the header
+   byte that states it. On the Harmony 350 the validator is at `0x14AE8` and the cookie letters sit
+   just after it, which is how it was found.
+3. **Then trace the callers and read each literal.** The set of literals is the slot map's domain, and
+   a slot **absent** from it is a slot the firmware never seeks, which is itself a finding: base slots
+   0 and 1 are host side for exactly that reason.
+
+Two things to keep straight when this is used again. **The literal set is not the whole map**, because
+a slot can be sought through a variable rather than a literal, so an absent slot is a lead and not a
+proof. And **name only the slots the callers actually reach**: `ARCH16_SLOT_MAP` in
+`packages/codec/src/gspm.ts` leaves thirteen entries `undefined` meaning **unread**, which is the
+opposite of arch 10's map where `undefined` means the slot does not exist. Getting those two senses
+of `undefined` confused would silently claim a slot.
+
 **A section's size is not the distance to the next pointer**, it is an upper bound on it. Base
 slot 4 holds 125 bytes and the gap to slot 5 is up to 1532, because slot 5's infrared group arrays
 live in between. Read the consumer to learn where the section's own data ends. See

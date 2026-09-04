@@ -439,7 +439,7 @@ finding.
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 260<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 261<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -659,6 +659,20 @@ figures common to both carry `fact:` markers, so `make facts` moves every copy t
 cannot drift apart; what a reader should not expect is two independent statements of one measurement.
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
+
+**What connects a pressed key to a stored code is exact on the Harmony 350, and its command names
+cannot be checked at all, section 261.** The instruction that sends a code carries a group and an index
+into the infrared database, which section 33 read years of findings ago; on the Harmony 350 it closes
+completely, 130 send instructions naming 130 records with every record of every group named exactly
+once, which is a much stronger closure than a matching count would be. The attempt that produced it was
+to check section 260's names against Logitech's catalogue, and that route is shut: **none of the
+Harmony 350's 130 codes decodes to a number**, because all three of its device groups are the kind where
+a bit is which half of a beat carries the pulse, and each defeats a different one of our three readers.
+One of the three is identified with no catalogue at all, on thirteen lead in pulses matching a rhythm
+we already had; the other two match none of 681 rhythms and are the first unidentified families this
+project has found in a configuration rather than in Logitech's own data. So on that remote the archive
+is the **only** naming route, which inverts the usual relationship between the two sources, and its
+names stay unverified in the ordinary sense.
 
 **A configuration can name its own devices and commands, and two kinds of remote do, section 260.**
 Everywhere else here a command is a number with no name in the file, which is why identifying one

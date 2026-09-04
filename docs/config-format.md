@@ -3335,8 +3335,16 @@ equals the `0x7D` operand's. So the grouping is shared between the infrared data
 which grew when the population did: an identifier would have to separate the records of a group, the
 largest group here holds 111, and the firmware caps this field at 100. Section 140.
 
+**On arch 16 the cover is exact rather than onto**, section 261, which is the one architecture where
+that can be asserted: the Harmony 350's action lists hold 130 send instructions with 130 distinct
+operands against 130 records, and each of its three non-empty groups is covered contiguously from 0,
+52, 48 and 30 records respectively. Elsewhere a group is covered in part, because a device's codeset
+holds more codes than its activities bind, so the assertion there is that every named `(group, index)`
+exists and not that every record is named. That container is outside every corpus wide population,
+section 194, so the figures above are unaffected by it.
+
 Read with `gspm.ir_reference` and `gspm.ir_references`.
-[findings.md](findings.md) section 33.
+[findings.md](findings.md) sections 33 and 261.
 
 #### The interpreter, from the firmware
 

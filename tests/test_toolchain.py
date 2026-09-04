@@ -1210,7 +1210,9 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
         # spelling ten of them that way cost ten failures before the spelling was the fix.
         # 66 since `units/`, section 226: the identity of each bench remote, which is what the
         # write rails compare the connected unit against and which must not be in this repository.
-        self.assertEqual(len(named), 66, 'lab paths the register names, as at 30 August 2026')
+        # 68 since 4 September 2026 and the two Harmony 350 rows, per the comment on the row count
+        # test below.
+        self.assertEqual(len(named), 68, "lab paths the register names, as at 4 September 2026")
         for path in sorted(named):
             with self.subTest(path=path):
                 if '*' in path:
@@ -1283,7 +1285,7 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
             return module, module['rows'](fh.read())
 
     def test_the_register_parses_into_the_rows_the_document_states(self):
-        """45 artefacts, exact rather than a floor, so a row lost to a formatting change fails.
+        """48 artefacts, exact rather than a floor, so a row lost to a formatting change fails.
 
         The number is here rather than a `fact:` marker because every producer in `tools/facts.py`
         needs a lab and this one needs only the repository. It is also a correction: `CLAUDE.md` said
@@ -1292,8 +1294,12 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
         module, rows = self.rows()
         # 46 since `units/`, section 226: the identity of each bench remote, which the write rails
         # compare the connected unit against and which may not be in a public repository.
-        self.assertEqual(len(rows), 46)
-        self.assertEqual(len(dict(rows)), 46, 'a duplicated path would make a query ambiguous')
+        # 48 since 4 September 2026, when the Harmony 350's configuration and its firmware image each
+        # got a row of their own: both were covered only by their directory's row, which said nothing
+        # about them, and sections 259 to 261 mined both. A row at the granularity of the thing that
+        # was dug is what `make lab-check` can answer with.
+        self.assertEqual(len(rows), 48)
+        self.assertEqual(len(dict(rows)), 48, 'a duplicated path would make a query ambiguous')
         self.assertNotIn('unseen', dict(rows), 'the status legend is not an artefact')
 
     def test_a_query_is_answered_by_ancestors_and_by_descendants(self):
