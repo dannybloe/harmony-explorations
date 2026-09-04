@@ -46,6 +46,11 @@ export * from './queue.ts';
 export * from './growth.ts';
 export * from './relocate.ts';
 export * from './compose.ts';
+// **The metadata archive**, section 260: the ZIP two architectures carry inside the container,
+// which on arch 16 (Harmony 300 and 350) names every device and every command. Exported for the
+// same reason the archive readers below are: FreeHarmony is what wants a command's name, and
+// what it must not do is grow a second reader for a format we already read.
+export * from './metadata.ts';
 // **The infrared archive's two readers**, added 31 August 2026 for the reason the `protocols.ts`
 // comment above records: FreeHarmony is what consumes a device catalogue, and a barrel that does not
 // offer a reader is part of why a second one gets written. `archive.ts` reads Logitech's protocol

@@ -2286,6 +2286,20 @@ word carries at most 32767 us: a gap already spelled over three words can be rai
 without changing the block's length, and anything beyond that lengthens the block and relocates
 everything above it. The sharing rule applies first.
 
+**Two architectures carry a metadata archive inside the container**, section 260: a `u32` length then
+a ZIP holding one file, `MetaData.xml`, deflated with a data descriptor so the compressed length comes
+from the central directory. Each gives it a raw slot of its own and **neither is a base slot**: raw 3
+on arch 10 (Harmony 890 and 895), which sections 178 to 184 left unexplained, and raw 13 on arch 16
+(Harmony 300 and 350). No other architecture carries one.
+
+Arch 10's is 270 bytes and describes one boolean, whether an assistant menu is shown. Arch 16's is 1513
+bytes and holds two things: the **record layout of the log area**, being an infrared event that carries
+a device, a command and a three byte time, and a device selected event; and the **naming layer**, every
+device by name and every command by index and name. The naming half is **not joined to base slot 5**:
+there are more named commands than records, 61 against 52 on one device, and the device index is not
+the group index. `metadataArchive` in `packages/codec/src/metadata.ts`. `DeviceId` there is account
+scoped and **not** a catalogue id.
+
 **Arch 16 (Harmony 300 and 350) places six base slots and refuses the rest**, section 259. Fifteen
 slots, and they are not the base twenty with insertions, so nothing transfers by index:
 
@@ -2294,12 +2308,16 @@ slots, and they are not the base twenty with insertions, so nothing transfers by
 | 0 | 0 | the `0xFEED` frame, 131 bytes |
 | 1 | 1 | seven bytes stating architecture 16 twice, skin 104, then `0x0d` |
 | 3 | 3 | the `0xADDF` framed clock record |
+| 2 | 2 | the log area, and its eight bytes are byte for byte the Harmony 525's, section 260 |
 | 4 | 5 | the infrared database: eight groups, `u8 spare; u16 count; u24 record[]`, records in the base layout exactly |
 | 7 | 10 | the action list table: a `u16` count of 171, each list a `u8` length then three byte instructions |
 | 10 | 15 | the parameter block: a `u8` count of 5, each group a `u8` length then its bytes |
 
-Raw slots 2, 5, 6, 8, 9, 11, 12, 13 and 14 are **unread**, and `archSlot` throws for the base slots
-they would hold, so an unread slot refuses rather than answering wrongly. Single container plus the
+Raw slot 13 holds the **metadata archive**, section 260, which is not a base slot. Raw slots 5, 6, 8,
+9, 11, 12 and 14 are **unread**, raw 14 being NULL, and `archSlot` throws for the base slots they would
+hold, so an unread slot refuses rather than answering wrongly. Raw 11 is one byte holding zero and raw
+12 is two bytes, which are base slots 16 and 17's own widths, and both are candidates rather than
+entries. Single container plus the
 skin 104 firmware, whose section seeker at `0x10BCE` computes `0x0B + 4 * slot` from a literal its
 fourteen callers load, naming raw slots 3 to 12. The firmware also **hardcodes the marker offset at
 `0x47`**, which is `0x0B + 4 * 15`, so the interpreter is a third independent route to section 194's

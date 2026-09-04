@@ -846,7 +846,7 @@ test('the frame tiles to the next section on every container that has one', skip
 });
 
 /**
- * Arch 16's map is partial and refuses the rest, section 259.
+ * Arch 16's map is partial and refuses the rest, sections 259 and 260.
  *
  * **The refusals are the assertion, not the six.** A map with a hopeful entry in it would pass a test
  * that only checked what is named, and on this architecture a guessed alignment is worse than none:
@@ -857,12 +857,12 @@ test('the frame tiles to the next section on every container that has one', skip
  * No lab, so a fresh clone is protected by this too. The Python mirror is in `tests/test_gspm.py`,
  * and the golden vectors compare the two copies, which is the only thing keeping them one table.
  */
-test('arch 16 places six slots and refuses the other fourteen', () => {
-  const named: Record<number, number> = { 0: 0, 1: 1, 3: 3, 5: 4, 10: 7, 15: 10 };
+test('arch 16 places seven slots and refuses the other thirteen', () => {
+  const named: Record<number, number> = { 0: 0, 1: 1, 2: 2, 3: 3, 5: 4, 10: 7, 15: 10 };
   for (const [base, raw] of Object.entries(named)) {
     assert.equal(archSlot(16, Number(base)), raw, `base slot ${base} moved`);
   }
-  const unread = [2, 4, 6, 7, 8, 9, 11, 12, 13, 14, 16, 17, 18, 19];
+  const unread = [4, 6, 7, 8, 9, 11, 12, 13, 14, 16, 17, 18, 19];
   for (const base of unread) {
     assert.throws(() => archSlot(16, base), /has no base slot/, `base slot ${base} answered`);
   }
@@ -871,7 +871,8 @@ test('arch 16 places six slots and refuses the other fourteen', () => {
     Array.from({ length: 20 }, (_unused, i) => i));
   // Raw slots the container holds that are not base slots: nine of the fifteen, which is the other
   // direction and the honest count of what section 259 left open.
-  const unnamedRaw = [2, 5, 6, 8, 9, 11, 12, 13, 14];
+  // Raw 13 stays here: it holds the metadata archive, which no base slot names, section 260.
+  const unnamedRaw = [5, 6, 8, 9, 11, 12, 13, 14];
   for (const raw of unnamedRaw) {
     assert.equal(baseSlot(16, raw), undefined, `raw slot ${raw} is claimed by a base slot`);
   }

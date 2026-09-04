@@ -3184,7 +3184,7 @@ class TheHeaderWordStatesThePointerCount(unittest.TestCase):
 
 
 class TestTheHarmony350SlotMapIsPartialAndRefusesTheRest(unittest.TestCase):
-    """Six of arch 16's fifteen slots, section 259.
+    """Seven of arch 16's fifteen slots, sections 259 and 260.
 
     The map is deliberately incomplete, so the assertion has two halves and the second is the one
     that matters: what is named, and that everything unnamed **refuses**. A guessed alignment on this
@@ -3192,11 +3192,12 @@ class TestTheHarmony350SlotMapIsPartialAndRefusesTheRest(unittest.TestCase):
     asked for, and a map with a hopeful entry in it would pass a test that only checked the six.
     """
 
-    #: Base slot to raw slot, the six named in section 259 out of the firmware and the container.
-    NAMED = {0: 0, 1: 1, 3: 3, 5: 4, 10: 7, 15: 10}
+    #: Base slot to raw slot, named out of the firmware and the container. The log area came
+    #: from section 260 and the other six from section 259.
+    NAMED = {0: 0, 1: 1, 2: 2, 3: 3, 5: 4, 10: 7, 15: 10}
     #: Every base slot the map declines to place. Stated rather than derived from NAMED, so that
     #: adding an entry to the map without naming it here fails.
-    UNREAD = (2, 4, 6, 7, 8, 9, 11, 12, 13, 14, 16, 17, 18, 19)
+    UNREAD = (4, 6, 7, 8, 9, 11, 12, 13, 14, 16, 17, 18, 19)
 
     def test_the_named_slots_are_exactly_these(self):
         for base, raw in self.NAMED.items():

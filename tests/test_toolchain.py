@@ -427,7 +427,7 @@ class ATypeScriptSampleLoopStatesItsPopulation(unittest.TestCase):
         # 59 since `packages/usb/test/blockwrite.test.ts`, section 245: the transfer planner had
         # no test at all while its chunk size was ten times Logitech's own, so the module the
         # write path leans on hardest was the one nothing asserted.
-        self.assertEqual(scanned, 59, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
+        self.assertEqual(scanned, 60, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
         self.assertEqual(
             {name: len(lines) for name, lines in counted.items()},
             TYPESCRIPT_LOOPS_ALLOWED_TO_SKIP_A_SAMPLE,
@@ -552,7 +552,7 @@ class ABoundOnACorpusTotalIsExact(unittest.TestCase):
         # 59 since `packages/usb/test/blockwrite.test.ts`, section 245: the transfer planner had
         # no test at all while its chunk size was ten times Logitech's own, so the module the
         # write path leans on hardest was the one nothing asserted.
-        self.assertEqual(len(scanned), 59, 'TypeScript test files, which moves when one is added')
+        self.assertEqual(len(scanned), 60, 'TypeScript test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):

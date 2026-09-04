@@ -278,7 +278,8 @@ export const ARCH10_SLOT_MAP: readonly (number | undefined)[] = [
   undefined, // 0, absent: no 0xFEED word occurs anywhere in either payload
   0, // 1, the architecture record, which is why arch 10 looked like it stated none
   undefined, // 2, absent: the log area closure holds on no candidate
-  4, // 3, the 0xADDF clock frame
+  4, // 3, the 0xADDF clock frame. Raw slot 3 itself is the metadata archive, section 260, which is
+  //    one of the eight raw slots this map places nothing on
   5, // 4, the event map: 125 bytes holding 30 entries, the same on arch 8 and on both arch 10 configs
   6, // 5, four infrared groups holding all 300 records
   9, // 6, the mode table: every record carries a screen program that decodes, 137/137 and 169/169
@@ -321,8 +322,13 @@ export const ARCH10_SLOT_MAP: readonly (number | undefined)[] = [
 export const ARCH16_SLOT_MAP: readonly (number | undefined)[] = [
   0, // 0, the 0xFEED name tree, 131 bytes under Root, State and Radio
   1, // 1, seven bytes: architecture 16 twice, skin 104, then the constant 0x0d
-  undefined, // 2, unread. Raw slot 2 is eight bytes, the width base slot 2 has everywhere, and the
-  //    firmware never seeks it, exactly as arch 14 never seeks base slot 2. Suggestive, not measured.
+  // 2, the log area, section 260. Eight bytes, and they are byte for byte what the Harmony 525's base
+  //    slot 2 holds, `00 20 00 00 07 00 00 08`, on a different architecture. The archive in raw slot
+  //    13 of the same container states the log's own record layout, an infrared event carrying a
+  //    device and a command and a device selected event, which is a second source with nothing in
+  //    common with the byte match. The firmware never seeks it, exactly as arch 14 never seeks base
+  //    slot 2.
+  2,
   3, // 3, the 0xADDF framed clock record, which the container check already verified
   undefined, // 4, unread
   4, // 5, the infrared database. Eight groups, each `u8 spare; u16 count; u24 record[]`, and a record

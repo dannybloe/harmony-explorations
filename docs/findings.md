@@ -33144,3 +33144,102 @@ side effect.
 `tests/test_gspm.py` and `packages/codec/test/gspm.test.ts` assert the map and its refusals, and the
 golden vectors compare the two languages' copies of it, which is the only thing standing between one
 stated table and two.
+
+## 260. A configuration can name its own devices and commands, and two architectures do
+
+**4 September 2026.** Section 259 named six of the Harmony 350's fifteen slots and left nine. This
+names two more of them and the more interesting one is not a base slot at all: **raw slot 13 holds a
+ZIP archive**, and inside it is a file called `MetaData.xml` in which Logitech names every device on
+the remote and every one of its commands. **The same archive is in the two Harmony 890 and 895
+configurations**, at their own raw slot 3, and has been in this corpus for weeks unread.
+
+That matters beyond the slot map. Everywhere else here a command is a number: a record in base slot 5
+with no name anywhere in the file, which is why section 229 had to identify a device by the numbers its
+records decode to and then look the name up in a 2.2 GB catalogue, and why `reference/button-maps.md`
+had to come out of two test accounts. On these two architectures the file says it.
+
+### The framing, and the correction inside this section
+
+A `u32` length, then the archive, which is a ZIP with one entry deflated using a data descriptor, so
+the local header's sizes are zero and the compressed length comes from the central directory. Both
+architectures are identical in all of that.
+
+**Each gives it a slot and neither slot is a base slot.** Raw 13 on arch 16, which is the last slot
+there with anything in it, and raw **3** on arch 10, which is one of the eight raw slots sections 178
+to 184 placed nothing on and left unexplained. So one of arch 10's eight has a name now.
+
+That was written up as "arch 10 parks it in the implied space after a section" for about an hour, and
+the mistake is worth recording because it is a one line one: the search compared each slot's offset
+against the **ZIP signature** rather than against the length word four bytes in front of it, so every
+slot missed by exactly four. The reader keeps both routes for that reason, the pointer and the search,
+and the search now doubles as a control: it finds the offset the pointer finds.
+
+### What is in it, and only the newer one is worth having
+
+| | arch 10 (Harmony 890 and 895) | arch 16 (Harmony 300 and 350) |
+|---|---|---|
+| size | 270 bytes, identical in both containers | 1513 bytes, 10181 characters of XML |
+| wrapper | a bare `<MetaData>` | `<Section class="com.logitech.harmony.compiler.binarysubsystems.binarizer.pepsi.MetaDataSection" name="BinarizerConstants.SECTION_META_DATA">` |
+| record schema | one class, `HarmonyAssistant`, one record, `AssistantMenu`, one boolean field `Show` | two classes, `Infrared` and `Device`, with records `InfraredEvent` and `DeviceSelected` |
+| names | none | every device and every command |
+
+**The arch 16 schema is the log area's**, and that is what named the other slot. `InfraredEvent`
+carries `StartRecord`, `ClassId`, a three byte `CurrentTime`, a `Device` and a `Command`;
+`DeviceSelected` carries the same preamble and a `DeviceIndex`. So a Harmony 350 logs which command it
+sent to which device and when, and which device the user selected.
+
+`BinarizerConstants` and `binarizer` are Logitech's own words for their compiler's back end, and
+`pepsi` is a codename of theirs. Read as data rather than as instruction, per the standing rule, but
+worth recording: this is the only place in the corpus where a config states a section's name in the
+vendor's vocabulary.
+
+### Raw slot 2 is base slot 2, the log area
+
+Eight bytes, `00 20 00 00 07 00 00 08`, and they are **byte for byte** what the Harmony 525's base slot
+2 holds. That is one measurement across two architectures rather than a width match, which is what the
+last three unnamed slots of section 259 could only offer.
+
+The archive in the same container is the second source and it has nothing in common with the byte
+match: it states the record layout of the very thing base slot 2 reserves room for. Section 47 read
+that section as three numbers reserving flash above the config and named it from its writer in the
+firmware; this is its author describing what gets written.
+
+Neither route is the firmware, and the firmware agrees by omission: raw slot 2 is one of the three the
+Harmony 350's section seeker never asks for, exactly as arch 14 never seeks base slot 2.
+
+### The naming layer is not joined to the records, and that is deliberate
+
+**More names than records, and the device order is not the group order.** The one container with a
+naming half states 3 devices and 165 commands against 8 infrared groups holding 130 records:
+
+| device | commands named | its own index | records in the group of that index |
+|---|---|---|---|
+| first | 61 | 0 | 52 |
+| second | 58 | 1 | 48 |
+| third | 46 | 2 | **0**, and group 3 holds 30 |
+
+A command's index runs from zero contiguously in every device, so nothing is missing from the naming.
+What is missing is the join, in both directions: which record a named command sends, and which group a
+named device owns. Asserting the mismatch is what stops the next reader assuming an identity mapping,
+which is the shape of mistake sections 178 to 184 kept making on arch 10.
+
+**`DeviceId` is not a catalogue id**, and it was written up as one before being checked. The three
+values are consecutive, 83244049 to 83244051, and the public infrared archive's own `globalDeviceId`
+runs from 763 to about 523634, so the number is outside that space entirely and is account scoped. It
+identifies a device on the owner's account and cannot be looked up anywhere.
+
+### What it changes
+
+`metadataArchive` in `packages/codec/src/metadata.ts`, exported from the barrel because FreeHarmony is
+what wants a command's name and a barrel that offers no reader is how a second reader gets written. It
+adds no dependency: `node:zlib` inflates the entry.
+
+**The device half is a real person's equipment**, on both a contributed remote and a bench one, so no
+name from it is published and the tests assert counts rather than strings. The schema half is Logitech's
+and is a fact about the format.
+
+Seven of the Harmony 350's fifteen slots are named now and eight are not: raw 5, 6, 8, 9, 11, 12 and 14,
+of which raw 14 is NULL. Raw 11 is one byte holding zero, which is base slot 16's value on all five other
+architectures, and raw 12 is two bytes, which is what arch 10's map calls base slot 17's own section
+before the picture bank. **Both are candidates and neither is in the map**, because a one byte match
+against a zero is not an identification and this document has promoted a width before.
