@@ -4,6 +4,7 @@
  *   node packages/corpus/bin/write-config.ts --config <file> --dump one_spare_20260901_region
  *   HARMONY_ENABLE_WRITES=1 HARMONY_FIRST_WRITE=1 ... --commit
  *   ... --commit --no-restart      section 247's control: every step but the last
+ *   ... --commit --no-invalidate   section 250's control: every step but the first
  *
  * **This is the step `rehearse-block.ts` was the rehearsal for.** That script writes a unit's own
  * dump back, so its correct outcome is known in advance and a difference is a failure. This one
@@ -152,10 +153,21 @@ async function main(): Promise<void> {
   const commit = process.argv.includes('--commit');
   // **The control for section 247, and it exists because that write proved two things at once.**
   // The invalidate and the restart went in together, so the screen coming back clean could have
-  // been either. This omits the restart and nothing else, which makes the next run the
-  // experiment that separates them: a clean screen afterwards means the invalidate is the fix.
+  // been either. **What that run actually showed is not what section 248 concluded**, section 250:
+  // no write clears the flag a status screen needs to be gone, so neither command was suppressing
+  // anything and the state the remote was already in was doing the work. This flag stays because a
+  // run without the restart is still worth being able to perform deliberately.
   // It only ever **skips** a command, so it needs no rail of its own.
   const restart = !process.argv.includes('--no-restart');
+  // **The control for section 250, which is the counterfactual section 248 never ran.** That
+  // section credited the invalidate with keeping the sync screen away, and reading the firmware
+  // afterwards found that no write clears the flag a status screen needs to be gone, so a write
+  // without the invalidate should be just as quiet, and should leave the remote holding a verdict
+  // it earned against different bytes. This omits the invalidate and nothing else.
+  //
+  // **It is a control and not an option**, and the difference matters: leaving the invalidate out
+  // is what both working implementations do not do, so an ordinary write sends it.
+  const invalidate = !process.argv.includes('--no-invalidate');
 
   if (!SPARE_DUMPS.has(dumpName)) {
     fail(`${dumpName} is not one of the spare Harmony One's own region reads `
@@ -388,8 +400,14 @@ async function main(): Promise<void> {
     // attempt to reference it while we're working" in its own words, and arch 12 executes its
     // configuration in place out of the flash the next line is about to erase. It writes no flash and
     // nothing persistent, so a run that fails after this point leaves no marker behind.
-    say('dropping the cached region descriptors, so nothing references the config while it changes\n');
-    await remote.invalidateCachedRegions(permission);
+    if (invalidate) {
+      say('dropping the cached region descriptors, so nothing references the config while it '
+        + 'changes, and so the remote re-checks what we write\n');
+      await remote.invalidateCachedRegions(permission);
+    } else {
+      say("--no-invalidate: the drop is deliberately not sent, which is section 250's control. "
+        + 'The remote is expected to keep its old verdict, check nothing, and show no screen\n');
+    }
 
     for (const plan of plans) {
       await writeBlock({
@@ -452,7 +470,7 @@ async function main(): Promise<void> {
         + 'give it a few seconds before enumerating again\n');
     } else {
       say('--no-restart: the restart is deliberately not sent, which is section 247\'s control. '
-        + 'Look at the screen: a clean one means the invalidate is what fixes it\n');
+        + 'The remote stays on the bus; a battery pull is the only other way to restart it\n');
     }
   } finally {
     try {

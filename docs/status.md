@@ -739,8 +739,12 @@ half-written configuration. What keeps it up is a latch: the remote only re-chec
 holds a good verdict, so a failed check is a one way door and a power cycle is the only way back,
 which is the battery pull three earlier sections recorded without explaining. The invalidate's real
 job is therefore the opposite of suppressing the screen: it is what makes the remote read the bytes we
-just wrote and earn a fresh verdict. Section 248's attribution is withdrawn and the run that would
-settle it is specified and unrun. One read settles where the screen comes from: the identity block's
+just wrote and earn a fresh verdict. Section 248's attribution is withdrawn, and the run that settles it
+was performed on 4 September 2026: from a remote whose state was read out of its memory first, a two
+block write with neither command left the verdict, the re-check flag and the cached descriptors
+untouched to the byte, and the screen ordinary off the cable. Two erases and two block writes, and
+the remote's opinion of its configuration did not move at all. What is still unrun is the positive
+half, watching the verdict go away and come back when the invalidate **is** sent. One read settles where the screen comes from: the identity block's
 software type says 0 running normally and 4 in safe mode, and the container these screens live in
 sits with the bootloader rather than with the configuration.
 

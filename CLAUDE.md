@@ -758,6 +758,10 @@ document:
   remote keeps a verdict earned against different bytes. A screen goes up on a **boot** over an
   incomplete configuration, and it stays up because the re-check arms its flag only while that verdict
   stands, so a failed validation is a one way door out of which only a power cycle leads.
+  **Confirmed on hardware on 4 September 2026**, section 250's control: a two block write with neither
+  command left the verdict byte, the re-check flag and all three descriptors byte for byte as they
+  were, and the ordinary screen off the cable. So section 248's attribution is refuted by experiment
+  and both commands stay for the reason the implementations give rather than for the screen.
   Setting the clock over USB, their step 8, is
   deliberately **not** implemented, because our writer stamps the configuration and an arch 12 remote
   reseeds its clock from that stamp at every boot. And a transfer is **3150 bytes**, which is

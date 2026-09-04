@@ -31760,10 +31760,10 @@ symptoms have now survived every other write this project has made.
 ## 248. The control separates the two steps, and its conclusion was overturned the same day
 
 **Date:** 3 September 2026. **Status:** measured on the spare Harmony One, arch 12, one write, with
-Danny reading the screen off the cable. **The measurement stands and the conclusion does not**:
+Danny reading the screen off the cable. **The measurement stands and the conclusion is refuted**:
 section 250, read out of the firmware a few hours later, shows that no write clears the flag a status
-screen needs to be gone, so this run cannot be evidence that the invalidate is what suppresses the
-screen. The heading said "it is the cache drop, not the restart"<!--superseded--> and the argument is
+screen needs to be gone, and its control run on 4 September performed the write this section never
+did, without the invalidate, and got the ordinary screen anyway. The heading said "it is the cache drop, not the restart"<!--superseded--> and the argument is
 at the end of this section, kept rather than rewritten, because the recorded mistake is the point.
 
 **Section 247 closed two symptoms with two commands and could not say which did it.** This is the
@@ -31986,10 +31986,12 @@ mean the byte is not the discriminator this says it is.
 
 ## 250. Why the screen stays up until the batteries come out, and what the invalidate is really for
 
-**Date:** 3 September 2026. **Status:** read out of the Harmony One 3.4 application image, with
-`tests/test_status_screens.py` behind every claim. **It corrects section 249's account of the bench
-and section 248's attribution**, both of which were written the same day and both of which read the
-mechanism backwards.
+**Date:** 3 September 2026, with its control run on 4 September. **Status:** read out of the Harmony
+One 3.4 application image, with `tests/test_status_screens.py` behind every claim, and **confirmed on
+hardware**: the control this section specified was run and all three of its predictions held, two of
+them read out of the remote's own memory. **It corrects section 249's account of the bench and section
+248's attribution**, both of which were written the day before and both of which read the mechanism
+backwards.
 
 ### The correction first
 
@@ -32063,11 +32065,35 @@ leaves a remote whose verdict has been re-earned against the bytes on the flash,
 outcome to want. It does not show what a write **without** the invalidate would have done from the
 same starting state, because that was never run.
 
-**The experiment that would separate them is now specified rather than guessed**, and it is one run:
-from a remote power cycled into a verified state, write two blocks with **neither** the invalidate nor
-the restart. This reading predicts **no screen**, because nothing clears the verdict, and it predicts
-the remote is left believing a configuration it has not read. A screen appearing would refute this
-section outright.
+**The experiment that would separate them was specified here and then run**, the same evening, and
+the next subsection is its score.
+
+### The control, run on 4 September 2026, and all three predictions held
+
+Three predictions were written down before the run and two of them are readable out of the remote's
+own memory, which is what makes this more than another look at a screen. From a remote whose state
+was **measured** rather than assumed, write two blocks with neither the invalidate nor the restart:
+
+| | predicted | measured |
+|---|---|---|
+| the verdict byte | unchanged, since no write handler clears it | `0x2E` before, `0x2E` after |
+| the re-check flag | still armed, since no re-check can fire | `0x01` before, `0x01` after |
+| the cached descriptors | untouched | identical, all three records |
+| the screen, off the cable | ordinary | ordinary, no battery pull |
+
+The starting state is worth stating because nothing had ever measured it: the verdict byte read `0x2E`,
+so both containers were verified and the user configuration was selected; the re-check flag read
+`0x01`, armed; and all three descriptors had bit 0 clear, the previous run's invalidate still in
+effect. Two erases and two block writes later, **not one of those bytes had moved**, and the whole
+configuration read back identical to the file.
+
+So the reading above is measured rather than reasoned. A configuration write clears nothing, fires no
+re-check, and leaves the remote holding a verdict it earned against different bytes. And **section
+248's conclusion is refuted by experiment as well as by the firmware**: the screen stays away with the
+invalidate withheld, so the invalidate was never what kept it away.
+
+The log is beside the configuration in the lab, and the remote is left with that device's power on
+delay at 65 tenths again.
 
 ### What the bench episode was, then
 
@@ -32081,7 +32107,13 @@ the others, and the fact that a clean write appeared not to help.
 ### What is still open
 
 * **Which of the two failures the bench actually hit**, since a cookie and a checksum are
-  distinguishable on the screen but nobody read the screen at each boot.
+  distinguishable on the screen but nobody read the screen at each boot. The control above cannot
+  answer it either, because it never produced a screen to read.
+* **Whether a write with the invalidate really does re-validate**, which is the positive half and is
+  unrun. The prediction is sharp and reads out of the same three addresses: send the invalidate, watch
+  the verdict byte go from `0x2E` to `0x2A`, and watch it come back to `0x2E` without a power cycle
+  once the re-check has run. If it does not come back, the invalidate leaves the remote with no verdict
+  at all, which would make it worse than useless.
 * **What the descriptors are for**, which is now a separate question rather than part of this one:
   three records of five bytes, byte 0 bit 0 marking one live, thirty sites addressing them inside one
   module, and no reader in the validator's path.
@@ -32094,4 +32126,7 @@ the others, and the fact that a clean write appeared not to help.
   handlers being outside them, the guard in front of both screen calls, the poll's two halves, the
   unconditional clear of the flag, the cable bit's polarity from the USB routine, and the negative
   that no read helper reaches the descriptor module with the invalidate's executor as its control.
+  **The control run adds no test**, deliberately: every claim it scores is one of those, and the run
+  itself is a hardware observation of three data addresses that this repository stores no fixture for.
+  What it changes is the status of the claims, from read to measured.
 * Sections 248 and 249, corrected in place, and `reference/superseded.md`.

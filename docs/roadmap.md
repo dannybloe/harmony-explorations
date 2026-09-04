@@ -164,8 +164,15 @@ withdrawn. What is true is sharper: a status screen needs the remote's verdict o
 to be already gone, no write clears that verdict, and the remote re-checks only while the verdict
 stands, so a failed check latches until a power cycle. That is the battery pull three earlier
 sections recorded without explaining. The invalidate's job is to make the remote re-validate what we
-wrote rather than to suppress a screen, so section 248's attribution is withdrawn too, and the one
-run that would settle it is specified at the end of section 250 and not yet performed.
+wrote rather than to suppress a screen, so section 248's attribution is withdrawn too.
+
+**That run happened on 4 September 2026 and all three of its predictions held.** Two are read out of
+the remote's own memory rather than off its screen: a two block write with neither command left the
+verdict byte, the re-check flag and all three cached descriptors byte for byte as they were, and the
+screen was ordinary off the cable with no battery pull. So a write really does clear nothing and check
+nothing, and section 248's attribution is refuted by experiment as well as by reading. The positive
+half is unrun and its prediction is equally sharp: send the invalidate and watch the verdict go away
+and come back on its own.
 
 **The page section 239 found missing was composed the same morning, section 241:** on the
 spare's own configuration every device list menu gains a third page holding one row, on a hit page
