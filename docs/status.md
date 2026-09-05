@@ -439,7 +439,7 @@ finding.
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 265<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 266<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -659,6 +659,29 @@ figures common to both carry `fact:` markers, so `make facts` moves every copy t
 cannot drift apart; what a reader should not expect is two independent statements of one measurement.
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
+
+**Every stored code in the corpus can be read now, and 411 of them could not be, section 266.** Some
+appliances send a command by making the pulse long or short, and others by making both halves of each
+step the same length and putting the pulse in the first half or the second. We read both kinds. The
+second reader had a requirement nobody had written down: it needed to be handed a recording with the
+opening silence already cut off, and if the silence was still there it gave up and returned nothing at
+all. Almost every stored code has that opening silence.
+
+Nothing had noticed because the three places in our own tooling that use that reader all cut the silence
+first, so it looked like the normal way to use it rather than a rule. What found it was asking the reader
+a question a different way round, from section 265's work on the Harmony 300.
+
+**The proof it now reads them correctly comes from outside.** The set top box in Danny's living room
+appears in four different remotes' configurations, and its codes now match Logitech's own list of codes
+for that exact box: 44 of 44, 46 of 46, 51 of 51, and 55 of 58. What comes back is a keypad you would
+recognise, the ten digits, the four colour keys, the arrows, Guide, Teletext, Radio, Record, Pause. No
+volume, which is right: a set top box has none, the television has it.
+
+That also takes back something section 261 concluded. Every stored code on one of the Harmony 350s was
+unreadable, and we said the only way to learn what those codes do is the list of names inside the file
+itself. All of them read now. The naming tool still cannot use them, because it only asks the first
+reader, and wiring in the second needs each family's code length from Logitech's data first. That is the
+next obvious piece of work and it is not done.
 
 **Programming that same Harmony 300 refuted the finding before it, and named which stored codes belong
 to which device, section 265.** Danny put four devices on it, one on each of its four device buttons, a

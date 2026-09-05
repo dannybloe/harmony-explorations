@@ -16,7 +16,7 @@ import { skipUnless, require_ } from '@harmony/lab';
 import { ACTION_LIST_TABLE_SLOT, archSlot, baseSlot, clockRecord, CLOCK_RECORD_SLOT, parse }
   from '../src/gspm.ts';
 import { irBlockWords, irGroups, irHeaderPointers } from '../src/ir.ts';
-import { framesOfSegments, irFrames, mergedIntervals } from '../src/irframe.ts';
+import { biphaseFrames, framesOfSegments, irFrames, mergedIntervals } from '../src/irframe.ts';
 import { pulsesOfWords } from '../src/irda.ts';
 import { PROTOCOLS } from '../src/protocols.ts';
 import { metadataArchive } from '../src/metadata.ts';
@@ -213,7 +213,7 @@ test('every send instruction names a record, and together they name all of them'
  * either the table or the reader moved, and it shows the refusal is the reader's rather than the data
  * being unreadable.
  */
-test('the Harmony 350 carries three biphase groups and none of them decodes',
+test('the Harmony 350 carries three biphase groups and no pulse distance reader decodes one',
   skipUnless('h350_config'), () => {
     const c = parse(require_('h350_config'));
     const groups = irGroups(c) ?? [];
@@ -230,7 +230,19 @@ test('the Harmony 350 carries three biphase groups and none of them decodes',
       }
     }
     assert.equal(records, 130);
-    assert.equal(decoded, 0, 'a record decoded, so the catalogue route is open after all');
+    assert.equal(decoded, 0, 'a pulse distance reader decoded one');
+    // **And all 130 read as biphase, which is section 266 and is why this test was renamed.** The two
+    // readers above are the pulse distance ones and the title said "none of them decodes", which read
+    // as a claim about the records and was one about those two readers. `biphaseFrames` refused them
+    // too until it stopped requiring its caller to trim the leading gap, and it reads every one now.
+    let biphase = 0;
+    for (const group of groups) {
+      for (const address of group.addresses) {
+        const words = irBlockWords(c, irHeaderPointers(c, address)[0] as number);
+        if (words !== undefined && biphaseFrames(pulsesOfWords(words)).length > 0) biphase += 1;
+      }
+    }
+    assert.equal(biphase, 130, 'the biphase reader no longer reads every record');
 
     // The one group the rhythm table does name, on its lead in alone.
     const first = groups[1]?.addresses[0] as number;

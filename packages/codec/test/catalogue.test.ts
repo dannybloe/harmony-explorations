@@ -16,7 +16,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { IR_ARCHIVE, load, needing, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
+import { IR_ARCHIVE, load, needing, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
 import {
   catalogueCommands, catalogueDevice, catalogueManufacturers, catalogueModels, codeKey,
   identifyCodeset, DEVICE_TYPE_NAMES,
@@ -25,6 +25,10 @@ import { parse, payloadOf } from '../src/index.ts';
 import { irGroups } from '../src/ir.ts';
 import { devices, keyCodes } from '../src/inventory.ts';
 import { metadataArchive } from '../src/metadata.ts';
+import { archiveProtocols } from '../src/archive.ts';
+import { irHeaderPointers, irBlockWords, irCarrier } from '../src/ir.ts';
+import { biphaseFrames } from '../src/irframe.ts';
+import { pulsesOfWords } from '../src/irda.ts';
 import { irFrame } from '../src/irframe.ts';
 import { statedCode } from '../src/stated.ts';
 
@@ -407,4 +411,101 @@ test('the archive states two fields as null and the reader does not pass either 
     catalogueModels(IR_ARCHIVE!, 'Sony').find((one) => one.model === 'KDL-32W705B')!.file);
   assert.equal(Object.hasOwn(withCodes, 'codeset'), true, 'the reader drops every codeset');
   assert.equal(typeof withCodes.codeset, 'string');
+});
+
+/**
+ * The newly readable biphase records name real commands in Logitech's catalogue, section 266.
+ *
+ * **This is the external answer, and without it the fix in `halfCells` is only self consistent.** A
+ * decoder that starts returning frames is easy to believe and hard to check: the frames could be
+ * arithmetic on the right durations and still not be the numbers the appliance answers to. So the
+ * check is against Logitech's own codeset for the very set top box these configurations drive, on four
+ * remotes across three architectures, and the answer is command names a person would recognise.
+ *
+ * **The width comes from Logitech's own definition and not from the family name.** `biphaseFrames`
+ * returns 23 bits where the family carries 22, which its own docstring predicts: the payload's start
+ * cannot be read off the train, so the reader hands back the longest self consistent alignment and a
+ * caller trims to the width it wants. Their definition states `NumberOfBits` 22 inside the segment's
+ * `Payload`, which `keycodeFields` exposes, so this test asks them rather than parsing "22" out of the
+ * string "Kreatel IP 22 Bit". Section 231 is why that distinction is not pedantry: a width read off a
+ * family name was wrong on the one family whose name was checked against its definition.
+ *
+ * **Not every record matches and the shortfall is asserted.** Three of the Harmony One's 58 do not,
+ * which is honest and unexplained; asserting 55 rather than a floor is what would notice if it became
+ * 20.
+ */
+test('the biphase records of a set top box name commands in Logitech\'s own catalogue',
+  needing(skipWithoutIrArchive(),
+    skipUnless('one_config', 'h600_config', 'h350_programmed_config', 'h300_programmed_config')), () => {
+  // Logitech's stated width for the family, read out of their definition.
+  const family = archiveProtocols(IR_ARCHIVE!).find((one) => one.name === 'Kreatel IP 22 Bit')!;
+  const widths = new Set(Object.values(family.keycodeFields ?? {}).map((one) => one.bits));
+  assert.deepEqual([...widths], [22], 'their definition no longer states one width for this family');
+  const width = 22;
+  // Their carrier, which is what picks this family's records out of a configuration.
+  const periodNs = Math.floor(1e9 / family.carrierHz);
+  assert.equal(periodNs, 17761, 'the carrier moved, so the record filter below is wrong');
+
+  // Every number their catalogue holds for the box, with the command it names.
+  const model = catalogueModels(IR_ARCHIVE!, 'KPN').find((one) => one.model === 'VIP1853')!;
+  const device = catalogueDevice(IR_ARCHIVE!, 'KPN', model.file);
+  const theirs = new Map<string, string>();
+  for (const command of catalogueCommands(IR_ARCHIVE!, device.codeset!)) {
+    for (const value of command.keycode.matchAll(/\(0x([0-9A-Fa-f]+)\)/g)) {
+      const key = codeKey(value[1]!);
+      if (!theirs.has(key)) theirs.set(key, command.name);
+    }
+  }
+  assert.equal(theirs.size, 70, 'their codeset for this box moved');
+
+  /** Named, of the family's records, per configuration. */
+  const expected: Readonly<Record<string, readonly [number, number]>> = {
+    h300_programmed_config: [44, 44],
+    h350_programmed_config: [46, 46],
+    h600_config: [51, 51],
+    one_config: [55, 58],
+  };
+  const named = new Set<string>();
+  let walked = 0;
+  for (const [name, [hits, of]] of Object.entries(expected)) {
+    const c = parse(require_(name));
+    let seen = 0;
+    let matched = 0;
+    for (const group of irGroups(c) ?? []) {
+      for (const record of group.addresses) {
+        if (irCarrier(c, record)?.periodNs !== periodNs) continue;
+        seen += 1;
+        const first = irHeaderPointers(c, record)[0];
+        const words = first === undefined ? undefined : irBlockWords(c, first);
+        if (words === undefined) continue;
+        for (const frame of biphaseFrames(pulsesOfWords(words))) {
+          const value = frame.value & ((1n << BigInt(width)) - 1n);
+          const found = theirs.get(codeKey(value.toString(16)));
+          if (found !== undefined) { matched += 1; named.add(found); break; }
+        }
+      }
+    }
+    assert.equal(seen, of, `${name} holds a different number of this family's records`);
+    assert.equal(matched, hits, `${name} names a different number of them`);
+    walked += 1;
+  }
+  assert.equal(walked, 4, 'a configuration went unwalked');
+
+  // **The names are the point, so the whole set is asserted rather than a count.** A hit count cannot
+  // see the failure mode that matters: a decoder that had found the ten digit keys and nothing else
+  // would score well and mean nothing. This set is a set top box's keypad, which is evidence of a kind
+  // no arithmetic inside this repository can manufacture.
+  //
+  // **There is no volume command in it, and that is right rather than a gap.** A set top box does not
+  // carry volume; the television does, and section 265 identified that group separately. The first
+  // version of this assertion demanded `VolumeUp` on the strength of what a remote usually has, which
+  // is the same habit that cost this project a finding earlier in the session: it was guessed rather
+  // than measured, and the measurement disagreed.
+  assert.deepEqual([...named].sort(), [
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+    'Blue', 'ChannelDown', 'ChannelPrev', 'ChannelUp', 'DVR',
+    'DirectionDown', 'DirectionLeft', 'DirectionRight', 'DirectionUp',
+    'FastForward', 'Green', 'Guide', 'Home', 'Info', 'Menu', 'Pause', 'PowerToggle',
+    'Radio', 'Record', 'Red', 'Rewind', 'Select', 'Stop', 'Teletext', 'Yellow',
+  ], 'the commands named across the four configurations');
 });

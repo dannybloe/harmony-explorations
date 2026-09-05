@@ -2185,7 +2185,19 @@ long, and Logitech's generator writes 443 and 439 in two places where the cell i
 Three unknowns are not derivable from the durations and are settled against Logitech's catalogue instead:
 where the payload starts, which half means a set bit, and the frame's width. What the train does decide
 is the **parity** of the alignment, so `biphaseFrames` returns one reading per parity and a caller trims
-to the width it is looking for. Measured this way, one tuple accounts for every record of each family:
+to the width it is looking for. **The width is stated by Logitech's own definition**, `NumberOfBits`
+inside a segment's `Payload`, which `keycodeFields` exposes; it is not parsed out of a family name,
+section 231. On `Kreatel IP 22 Bit` the reader hands back 23 bits and the trim to 22 is what turns no
+catalogue match at all into 44 of 44, section 266.
+
+**A caller need not trim the leading gap and once had to**, section 266. `halfCells` broke on the first
+interval too long to be a half cell wherever it sat, so a block that opens with a gap returned no frame
+at all: 411 records of 5232 unreadable, including every infrared record of one Harmony 350. It skips a
+leading gap and still closes the frame on a later one. Every caller in `bin/protocols.ts` trims with
+`fromFirstMark` first, which is why the generated rhythm table never showed it and why the report is
+byte identical either way. In practice **one reading is returned rather than two**: 257 of 257 biphase
+records in the corpus population give exactly one, and no record reads as both a biphase frame and a
+pulse distance one, 0 of 3838. Measured this way, one tuple accounts for every record of each family:
 105 of 105 `Magnavox 13 Bit`, 65 of 65 `Microsoft 30 Bit`, 56 of 56 `Kreatel IP 22 Bit`, and all 226
 rebuild their own pulses byte for byte. `Microsoft 30 Bit` reads the polarity the other way up, which is
 RC-6's own convention, and it is confirmed on 48 further records in four contributed configs where

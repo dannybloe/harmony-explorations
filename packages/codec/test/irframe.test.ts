@@ -1644,3 +1644,92 @@ test('a Harmony 350 states a send count too, and it is three',
     assert.equal(blockCopies(once), 3);
     assert.equal(blockCopies(held), 1);
   });
+
+/** The five arch 16 containers, which sit outside every corpus wide population, section 194. */
+const ARCH16 = ['h350_config', 'h350_programmed_config', 'h350_three_devices_config',
+  'h300_config', 'h300_programmed_config'];
+
+/**
+ * `biphaseFrames` gives the same answer whether or not its caller trims the leading gap, section 266.
+ *
+ * **The bug this pins was an undocumented precondition, and that is why the assertion is an
+ * equivalence rather than a count.** `halfCells` collected intervals until one was too long to be a
+ * half cell, and broke on it, whichever end of the train it sat at. So a block that **opens** with a
+ * gap collected nothing at all, failed the minimum bit count and returned empty. Every caller inside
+ * `bin/protocols.ts` passes its train through `fromFirstMark` first and so never met it, which is how
+ * a public reader in this file kept a requirement none of its callers documented and the measured
+ * rhythm table never noticed.
+ *
+ * **411 records read by nothing at all**, including every infrared record of the as found Harmony 350,
+ * which is what section 261 measured as three biphase groups that no reader here reads.
+ *
+ * **Asserting the equivalence is what stops it coming back**, where asserting the count would pass
+ * again the moment somebody reintroduced the break and moved the number. A caller holding raw block
+ * words and a caller holding a trimmed train are the same question, and the reader has to agree with
+ * itself about it.
+ */
+test('the biphase reader does not require its caller to trim the leading gap',
+  skipUnless(...CONTAINERS, ...ARCH16), () => {
+  let records = 0;
+  let read = 0;
+  let openedWithAGap = 0;
+  for (const name of [...CONTAINERS, ...ARCH16]) {
+    const c = mustLoad(name);
+    for (const group of irGroups(c) ?? []) {
+      for (const record of group.addresses) {
+        const first = irHeaderPointers(c, record)[0];
+        const words = first === undefined ? undefined : irBlockWords(c, first);
+        if (words === undefined) continue;
+        records += 1;
+        const raw = pulsesOfWords(words);
+        const trimmed = fromFirstMark(raw);
+        const untrimmed = biphaseFrames(raw);
+        const already = biphaseFrames(trimmed);
+        // The equivalence, per record and on the value rather than on the count, since a reader that
+        // returned a different frame for the same code would be worse than one that returned none.
+        assert.deepEqual(untrimmed.map((one) => `${one.bits}:${one.value.toString(16)}`),
+          already.map((one) => `${one.bits}:${one.value.toString(16)}`),
+          `${name} 0x${record.toString(16)} reads differently untrimmed`);
+        if (untrimmed.length > 0) read += 1;
+        if (raw.length > trimmed.length) openedWithAGap += 1;
+      }
+    }
+  }
+  assert.equal(records, 5232, 'the population moved');
+  // 523 read as biphase, against 112 before the leading gap was skipped, measured over this file's
+  // own container list plus the five arch 16 containers.
+  assert.equal(read, 523);
+  // And the population the fix is about is most of the corpus, which is why the equivalence above is
+  // worth asserting per record: a block opening with a gap is the common case, not the odd one.
+  assert.equal(openedWithAGap, 3871, 'the blocks that open with a gap');
+});
+
+/**
+ * The pulse reader and the biphase reader claim disjoint sets of records, section 266.
+ *
+ * **The control on the fix above.** Skipping a leading gap could only be wrong by making the biphase
+ * reader accept trains it should refuse, and the sharpest evidence against that is that it still
+ * refuses every one of the 2598 records the pulse distance reader reads. A record read by both would
+ * be a code with two self consistent readings and no way to choose, which is exactly what `irFrame`
+ * refuses a two reading record for.
+ */
+test('no record reads as both a pulse distance frame and a biphase one',
+  skipUnless(...CONTAINERS, ...ARCH16), () => {
+  let pulse = 0;
+  let both = 0;
+  for (const name of [...CONTAINERS, ...ARCH16]) {
+    const c = mustLoad(name);
+    for (const group of irGroups(c) ?? []) {
+      for (const record of group.addresses) {
+        if (irFrame(c, record) === undefined) continue;
+        pulse += 1;
+        const first = irHeaderPointers(c, record)[0];
+        const words = first === undefined ? undefined : irBlockWords(c, first);
+        if (words === undefined) continue;
+        if (biphaseFrames(pulsesOfWords(words)).length > 0) both += 1;
+      }
+    }
+  }
+  assert.equal(pulse, 3838, 'the pulse distance population moved');
+  assert.equal(both, 0, 'a record reads as both, so one of the two readers is too permissive');
+});

@@ -1089,10 +1089,24 @@ const HALF_CELL_SLACK = 0.3;
  */
 function halfCells(train: readonly Pulse[]): { base: number; cells: boolean[] } | undefined {
   const inside: Pulse[] = [];
+  let started = false;
   for (const one of train) {
     // A zero closes the block and a one is the marker the emitter leaves; neither is a duration.
     if (one.us <= 1) break;
-    if (one.us > GAP_US) break;
+    // **A leading gap is skipped and a later one closes the frame**, section 266. This broke on the
+    // first interval too long to be a half cell, whichever end it was at, so a block that opens with
+    // one collected nothing and the whole reader returned empty: 411 records of 3989 read by nothing
+    // at all, every infrared record of a Harmony 350 among them. The three callers in
+    // `bin/protocols.ts` all pass a train through `fromFirstMark` first and so never met it, which is
+    // how an undocumented precondition survived in a reader this file exports.
+    //
+    // **Only a genuine gap is skipped, not every leading space**, which is why this is here rather
+    // than a `fromFirstMark` inside `biphaseFrames`: that drops everything before the first mark, and
+    // a biphase frame may legitimately open on a space half cell, as an RC-5 frame's first start bit
+    // does. `GAP_US` is four to twenty five times a half cell in every family measured here, so the
+    // bound separates the two cases without needing to know the family.
+    if (one.us > GAP_US) { if (!started) continue; break; }
+    started = true;
     inside.push(one);
   }
   if (inside.length < 2 * MIN_BIPHASE_BITS) return undefined;

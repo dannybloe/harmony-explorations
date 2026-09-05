@@ -33318,6 +33318,13 @@ device groups of a programmed Harmony 300 decode and are named straight out of t
 shuts the route is the **family** a device speaks, and this unit is one whose three devices all happen
 to speak families this decoder refuses.
 
+**And the refusal was ours, section 266.** All 130 of this container's records read as biphase frames
+once `biphaseFrames` stopped requiring its caller to trim the leading gap. So nothing about these codes
+is unreadable and the claim above holds only of the **pulse distance** readers, which is what the two
+this section measured are. The naming route is not shut, it is unbuilt: `make catalogue` matches numbers
+from the pulse distance reader alone, so it cannot identify a biphase device group, and that is a gap in
+the tool rather than in the data.
+
 **Two biphase families are unidentified**, and they are the first in this project found in a
 configuration rather than in Logitech's catalogue. Naming them is the ordinary route, which is
 Logitech's own definitions, and the archive checkout holds 684 of those.
@@ -33700,12 +33707,16 @@ and both candidate orderings in sections 263 and 264 were answering the wrong qu
 removal experiment was consistent with a reverse ordering because on that remote the reverse ordering
 and the true rule happen to agree.
 
-**Group 1 is identified by its favourite channels rather than by its codes**, which is the honest
-statement: none of its 44 records decodes into a bit frame, so there is nothing to match against the
-catalogue. What names it is the number sender below, whose digit tables send from group 1 and whose
-channels are the ones Danny set up for the set top box. Logitech's catalogue says that box speaks
-`Kreatel IP 22 Bit`, a family whose rhythm the table already carries and whose records this decoder
-still refuses.
+**Group 1 was identified by its favourite channels rather than by its codes**, and the reason given
+here was that "none of its 44 records decodes into a bit frame"<!--superseded-->, so there was nothing
+to match against the catalogue. What named it is the number sender below, whose digit tables send from
+group 1 and whose channels are the ones Danny set up for the set top box.
+
+**The records do decode and the refusal was a defect of ours**, section 266: Logitech's catalogue says
+that box speaks `Kreatel IP 22 Bit`, whose rhythm the table has carried since section 162, and
+`biphaseFrames` was returning nothing for any block that opens with a gap. All 44 read now and, trimmed
+to the width Logitech's own definition states, all 44 name commands in that box's codeset. So this group
+could have been identified from the catalogue like the other three.
 
 **This narrows section 261 rather than confirming it.** That section found no record of the as found
 Harmony 350 decoding, all three of its groups being biphase, and concluded that the catalogue naming
@@ -33753,9 +33764,11 @@ architecture, one number sender record for the one device that takes numbers rat
 channel, and the integer route rather than the spelled out one for all four, which is what section 156
 predicts for values with no leading zero.
 
-**And it still names group 1**, which nothing else can: those four digit tables all send from that
-group, and none of its 44 records decodes into a number, so the channels are the only route to
-identifying the set top box's codes.
+**And it names group 1**, independently of the catalogue: those four digit tables all send from that
+group. This said "**the channels are the only route to identifying the set top box's
+codes**"<!--superseded-->, on the strength of its records not decoding; section 266 fixed the decoder
+and the catalogue names all 44, so there are two independent identifications of one group rather than
+one, which is worth more than either.
 
 ### The model does have activities, in Logitech's own words
 
@@ -33796,3 +33809,109 @@ caught it was the person who had used the client saying so.
 `packages/codec/test/metadata.test.ts`, which asserts the device count, the skin's maximum and raw slot
 8 for all five arch 16 containers, the exact send cover, and the number sender's single record with its
 digit tables pointing at one group.
+
+## 266. The biphase reader required a favour from its caller, and 411 records went unread
+
+The Harmony 300's set top box was the one device group of section 265 that could not be identified in
+Logitech's catalogue, because none of its 44 records decoded into a number. That was read there as the
+family being one this decoder refuses, and it is not: the family's rhythm has been in
+`packages/codec/src/protocols.ts` since section 162, measured, and its codes read perfectly well. What
+refused them was a precondition nothing had written down.
+
+### The mechanism, which is four lines of one function
+
+`halfCells` in `packages/codec/src/irframe.ts` walks a pulse train collecting intervals until it meets
+one too long to be a half cell, and that interval is the gap before the next copy of the code. The loop
+**broke** on such an interval wherever it sat, so a block that **opens** with a gap collected nothing at
+all, fell under the minimum bit count and returned `undefined`, and `biphaseFrames` returned an empty
+list. Not a wrong frame: no frame.
+
+A block opening with a gap is the ordinary case rather than the odd one. Of 5232 infrared records
+across this project's configurations and the five arch 16 ones, **3871 open with one**.
+
+**Every caller inside `bin/protocols.ts` passes its train through `fromFirstMark` first**, all three of
+them, so none ever met this and the generated rhythm table never noticed. That is what let the
+requirement survive in a function this module exports: the reader's own docstring never states it, and
+the only callers were the ones that happened to satisfy it. `make protocols` prints byte for byte the
+same report before and after the fix.
+
+### What it cost
+
+| | reads as a pulse distance frame | reads as biphase | read by nothing |
+|---|---|---|---|
+| before | 3838 | 112 | 1282 |
+| after | 3838 | 523 | 871 |
+
+**411 records moved from unreadable to read**, and the pulse distance count does not move at all, since
+the change is inside a function only the biphase path uses.
+
+**Every infrared record of the as found Harmony 350 is in that 411.** Section 261 measured all 130 of
+them as unreadable and drew a real conclusion from it, that the archive of names inside the container is
+the only route to a command name on that remote where the catalogue is the route everywhere else. All
+130 read now.
+
+### Believing it needed an answer from outside, and the answer is a keypad
+
+A decoder that starts returning frames is easy to believe and hard to check, since the frames could be
+arithmetic on the right durations and still not be what the appliance answers to. So the check is
+Logitech's own codeset for the very set top box these configurations drive, across four remotes and
+three architectures:
+
+| configuration | the family's records | named in the catalogue |
+|---|---|---|
+| Harmony 300, programmed | 44 | 44 |
+| Harmony 350, programmed | 46 | 46 |
+| Harmony 600 | 51 | 51 |
+| Harmony One | 58 | 55 |
+
+The 35 distinct commands are a set top box's keypad: the ten digits, the four colour keys, the
+direction pad, `ChannelUp`, `ChannelPrev`, `Guide`, `Info`, `Menu`, `Home`, `Radio`, `Teletext`, `DVR`,
+`Record`, `Pause`, `Stop`, `Rewind`, `FastForward`, `Select` and `PowerToggle`. **There is no volume
+command and that is correct**, since a set top box does not carry one and the television's group was
+identified separately in section 265. The first version of the test demanded one on the strength of what
+a remote usually has, which is a guess, and the measurement disagreed with it.
+
+Three of the Harmony One's 58 do not match and that is unexplained.
+
+### The width is Logitech's to state, not the name's
+
+`biphaseFrames` returns **23** bits where this family carries 22, and its own docstring predicts
+exactly that: where the payload starts cannot be read off the train, since part of a biphase lead in is
+not transmitted at all, so the reader hands back the longest self consistent alignment and a caller
+trims to the width it is looking for. Trimming to 22 is what turns 0 matches into 44 of 44.
+
+**So a caller needs the width from somewhere, and the somewhere is their definition.** The archive
+states `NumberOfBits` 22 inside the segment's `Payload`, which `keycodeFields` already exposes. It is
+**not** taken from the string "Kreatel IP 22 Bit", and section 231 is why that is not pedantry: a width
+read off a family name was wrong on the one family whose name was checked against its own definition.
+
+### What is deliberately not built
+
+**The catalogue naming pass is still blind to biphase families**, and this section does not change that.
+`numbersOf` in `packages/codec/bin/catalogue.ts` uses `irFrame`, the pulse distance reader, so
+`make catalogue` cannot identify a biphase device group at all. Extending it needs the stated width per
+family before a number can be matched, and a family cannot be assumed while the device is what is being
+identified, so the route is the carrier period to a rhythm table entry to Logitech's stated width. That
+is a design decision with a circularity in it and it is not taken here.
+
+What makes it worth doing is the size of the prize: 36 of 38 device groups are identified today and the
+two that are not are biphase, and every command name on the Harmony 350 currently comes from the
+container's own archive because of this.
+
+### The lesson, which is about the shape of the callers rather than the bug
+
+**A precondition satisfied by every existing caller is invisible.** Three call sites all trimmed first,
+so the requirement read as the natural way to use the function rather than as a constraint, and nothing
+in the module said otherwise. What found it was a **fourth** kind of caller, one holding raw block words
+out of a container, which is also the kind of caller `framesOfPulses` exists for: its docstring records
+that FreeHarmony turned up holding durations and not a file.
+
+So the regression test is an **equivalence** and not a count: `biphaseFrames` must return the same
+frames whether or not its caller trimmed. A count would pass again the moment somebody reintroduced the
+break and updated the number.
+
+### Reproduced by
+
+`packages/codec/test/irframe.test.ts`, the equivalence per record over 5232 records plus the control
+that the two readers stay disjoint, and `packages/codec/test/catalogue.test.ts`, the four
+configurations against Logitech's codeset with the width taken from their definition.
