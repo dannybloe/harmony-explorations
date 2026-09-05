@@ -33454,8 +33454,8 @@ attributed to either. Seven questions were written down and committed before the
 
 | | question | answer |
 |---|---|---|
-| Q1 | raw slot 6 goes from five pointers to four | **yes**, so it is one entry per device |
-| Q2 | raw slot 8 goes from eight to six | **yes**, so it is two per device |
+| Q1 | raw slot 6 goes from five pointers to four | **yes**, and its length is devices **plus one** |
+| Q2 | raw slot 8 goes from eight to six | **yes**, and its length is devices times two |
 | Q3 | the archive names three devices and drops the Playstation | yes |
 | Q4 | one infrared group empties, and which one says who owns what | yes, and the answer refutes an earlier candidate |
 | Q5 | the number sender is untouched | yes, one record, since the favourites are on a device that stayed |
@@ -33489,13 +33489,36 @@ unexplained about a specific device rather than about an unknown assignment.
 
 ### What raw slots 6 and 8 count, and why neither is in the map
 
-Raw 6 moves one for one with the devices, four to five and back to four. Raw 8 moves two for one, six
-to eight and back to six. Those are measurements about **what a slot counts**, and a slot map entry is
-a claim about **which base slot it is**, which is a different question: base slots 6, 7, 8 and 9 are
-all candidates and nothing here separates them. So both stay `undefined` in `ARCH16_SLOT_MAP` and the
+Raw 6 moves one for one with the devices and its length is **devices plus one**, four, five, four
+across the three containers. Raw 8 moves two for one and its length is **devices times two**, six,
+eight, six. The first version of this section said "one entry per device", which is short by one and
+is the kind of error that would make a writer allocate a table too small, so it is corrected here
+rather than quietly.
+
+Those are measurements about **what a slot counts**, and a slot map entry is a claim about **which
+base slot it is**, which is a different question. **The obvious cross architecture route was tried and
+it fails**: no count prefixed base slot in the corpus has a length of devices plus one or devices
+times two on more than three of the thirteen containers that state both counts, and base slot 6, which
+would have been the guess from its name, has a `u24` count and lengths from 75 to 374 rather than a
+`u8` count and lengths of four or five. So both stay `undefined` in `ARCH16_SLOT_MAP` and the
 measurement is recorded in its docstring instead. Naming them wants the firmware, which is the route
 section 259 used and which has fourteen call sites still unattributed.
 
+**What that search did establish is about base slot 5.** Its group count is exactly the device count
+on 13 of 13 containers that state both, on arch 8, 9, 12 and 14. Arch 16 does not do that: all three
+of its containers declare **eight** groups whatever the device count, and eight is the
+`MaxDevicesPerAccount` Logitech's own product table states for that skin. So on this architecture the
+infrared table is allocated at the maximum with the unused groups empty, where every other
+architecture here sizes it to the configuration. That is why the archive naming three devices sits
+beside a table of eight groups, which had looked like a discrepancy.
+
 The Chromecast is worth one line here, because it is the control nobody arranged: it has no infrared
-commands at all and it still occupies an entry everywhere the devices are counted. So raw 6 counts
+commands at all and it still occupies an entry everywhere the devices are counted. So both slots count
 **devices**, and not devices that can send something.
+
+**And this remote can hold only one activity**, which Danny said and which Logitech's own product
+table confirms: skin 104 states `MaxActivities: 1`. Two other fields of that record are worth having
+because both are confirmed by what he did rather than merely stated: `MaxFavoriteChannels: 5`, and he
+added exactly five, and `MaxDevicesPerAccount: 8`, which is the group count above. So the extra entry
+in raw 6 cannot be tested by adding a second activity on this model, and whether it is the activity
+is a question for the firmware or for another architecture.

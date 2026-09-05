@@ -321,9 +321,13 @@ export const ARCH10_SLOT_MAP: readonly (number | undefined)[] = [
  *
  * **Two raw slots have a measured meaning and no base slot, section 263**, and they stay `undefined`
  * for exactly that reason. Removing one device from the bench remote takes raw slot 6 from five
- * pointers to four and raw slot 8 from eight to six, so raw 6 is one entry per device and raw 8 is
- * two. Knowing what a slot counts is not knowing which base slot it is, and a map entry is a claim
- * about the second, so neither is placed here.
+ * pointers to four and raw slot 8 from eight to six. Their lengths are **devices plus one** and
+ * **devices times two**, four, five, four and six, eight, six over the three containers, and the
+ * Chromecast counts in both despite having no infrared commands at all, so both count devices rather
+ * than devices that can send something. Knowing what a slot counts is not knowing which base slot it
+ * is, and a map entry is a claim about the second, so neither is placed here. The cross architecture
+ * route was tried and fails: no count prefixed base slot in the corpus has either length on more than
+ * three of the thirteen containers that state both counts.
  */
 export const ARCH16_SLOT_MAP: readonly (number | undefined)[] = [
   0, // 0, the 0xFEED name tree, 131 bytes under Root, State and Radio

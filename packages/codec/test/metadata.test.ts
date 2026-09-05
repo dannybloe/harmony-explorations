@@ -329,3 +329,50 @@ test('the Harmony 350 states a number sender, and only the programmed one does',
   assert.equal(followed, 30, 'a digit went unfollowed');
   assert.equal(groups.size, 1, 'the digits are spread over more than one device');
 });
+
+/**
+ * What a device costs the Harmony 350's container, section 263.
+ *
+ * **A three container differential, and the arithmetic is the claim.** The factory configuration holds
+ * three devices, the programmed one four, and the third the same four with the Playstation removed. Two
+ * slots move with the device count and their lengths are exact functions of it: raw 6 is devices plus
+ * one and raw 8 is devices times two, on all three.
+ *
+ * **The Chromecast is the control nobody arranged.** It has no infrared commands at all and no group in
+ * the infrared table, and it still counts in both slots, so they count devices rather than devices that
+ * can send something. Without it the two slots would have been indistinguishable from a count of
+ * devices that carry codes.
+ *
+ * Neither slot is placed in `ARCH16_SLOT_MAP`, and this test deliberately does not name a base slot for
+ * either: knowing what a slot counts is not knowing which slot it is. The cross architecture route was
+ * measured and fails, which the section records.
+ *
+ * The infrared group count is asserted alongside, because it is the same shape of claim with the
+ * opposite answer: it does **not** move with the devices. Eight groups in all three containers, which
+ * is the `MaxDevicesPerAccount` Logitech states for this skin, where base slot 5 on every other
+ * architecture here holds exactly one group per device.
+ */
+test('a device costs the Harmony 350 one entry in one slot and two in another',
+  skipUnless('h350_config', 'h350_programmed_config', 'h350_three_devices_config'), () => {
+  const expected: Readonly<Record<string, number>> = {
+    h350_config: 3,
+    h350_programmed_config: 4,
+    h350_three_devices_config: 3,
+  };
+  let walked = 0;
+  for (const [name, devices] of Object.entries(expected)) {
+    const c = parse(require_(name));
+    // The device count comes from the archive's own names, which is the only place this architecture
+    // states it: `deviceCount` reads a base slot this map does not place.
+    assert.equal(metadataArchive(c)?.devices.length, devices, `${name} names a different number`);
+    assert.equal((c.pointerArray(6) ?? []).length, devices + 1, `${name} raw slot 6`);
+    assert.equal((c.pointerArray(8) ?? []).length, devices * 2, `${name} raw slot 8`);
+    // And the one that does not move. Eight is the vendor's stated maximum for this skin.
+    assert.equal((irGroups(c) ?? []).length, 8, `${name} infrared groups`);
+    walked += 1;
+  }
+  assert.equal(walked, 3, 'a container went unwalked');
+  // The claim rests on the counts differing, so assert that they do: two containers with three
+  // devices and one with four. Without this the three equalities above could all be one number.
+  assert.deepEqual([...new Set(Object.values(expected))].sort(), [3, 4]);
+});

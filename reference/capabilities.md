@@ -142,6 +142,23 @@ here has read a file based remote's config: they have no firmware to read, so th
 firmware settles a capability has no entry point on them. What is known is the skin and the product id,
 plus the architecture on the two that were asked for it, which `reference/models.md` carries.
 
+**One of those three has had its configuration read now, and three of its limits are known**, sections
+262 and 263. The Harmony 350, skin 104: Logitech's product record states `MaxActivities: 1`,
+`MaxFavoriteChannels: 5` and `MaxDevicesPerAccount: 8`, and the last two are **confirmed against the
+remote** rather than merely stated, since a configuration Danny put five favourite channels on carries
+exactly five and every one of its containers declares exactly eight infrared groups whatever the device
+count. The activity limit is Danny's own account of the model plus the vendor's field, and no
+configuration here can test it, because the model cannot be given a second activity to compare against.
+It stays out of the table above for the reason the paragraph before this one gives.
+
+**`MaxActivities` is deliberately not adopted into `packages/usb/src/models.ts`, unlike
+`MaxDevicesPerAccount` in section 136**, and the reason is worth recording so nobody re-derives it: read
+across the 35 skins that table does carry, the field is **255 on twenty two of them and absent on the
+other thirteen**, and the thirteen are exactly the later models nobody doubts hold several activities.
+So 255 is a sentinel for no limit and absent means unstated, and the field carries information for
+almost none of the skins here. A real value appears on models like this one, which is where it matters
+and which the table does not cover.
+
 | skin | the record's name | what Logitech sold it as |
 |---|---|---|
 | 98 | Harmony Smart Control | Harmony Smart Control |
