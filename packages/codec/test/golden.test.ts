@@ -136,6 +136,9 @@ const CONTAINERS = [
   'h350_three_devices_config',
   // And a Harmony 300, section 264, the second model on this architecture.
   'h300_config',
+  // And that Harmony 300 programmed, section 265, which is the second before and after pair on one
+  // remote and the first arch 16 container whose infrared table is completely full.
+  'h300_programmed_config',
   // The arch 8 safe mode container, found inside the firmware image itself at blob offset 0xE000
   // rather than in a file of its own. Section 114.
   'arch8_code_880',
@@ -251,8 +254,8 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 58 since the programmed Harmony 350, section 262, the first configuration this project has read
   // off a remote of the file based family.
   // 59 since the one device differential, section 263.
-  // 60 since the Harmony 300, section 264.
-  assert.equal(present.length, 60, 'every vector, which is what `make golden` compares');
+  // 61 since that Harmony 300 was programmed, section 265.
+  assert.equal(present.length, 61, 'every vector, which is what `make golden` compares');
   // 38 since the Harmony 895 landed: its key table reads with the existing reader even though
   // every other arch 10 reader is gated, which is what made section 177's keypad closure possible
   // without any arch 10 progress at all.
@@ -273,7 +276,7 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // insertions and almost nothing else about it transfers by index.
   // 55 since the one device differential, section 263.
   // 56 since the Harmony 300, section 264, whose key table reads with the existing reader.
-  assert.equal(complete, 56, 'the vectors whose container has a key table at all');
+  assert.equal(complete, 57, 'the vectors whose container has a key table at all');
 
   // **The number sender field, and why it needs its own guard.** It is an empty array on 30 vectors
   // and null on 8, with eight carrying a record since 30 August 2026, and this comment said 25 and 9
@@ -332,7 +335,9 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // on any architecture but arch 12, so what had looked like a Harmony One mechanism is not one.
   // 21 since the one device differential, section 263: the favourites are on a device that did
   // not move, so the record survives, which is itself the answer to one of that section's questions.
-  assert.equal(senders.filter((one) => Array.isArray(one) && one.length > 0).length, 21,
+  // 22 since the programmed Harmony 300, section 265, which carries a record for the four favourite
+  // channels Danny entered on it.
+  assert.equal(senders.filter((one) => Array.isArray(one) && one.length > 0).length, 22,
     'the configs that populate base slot 16');
 });
 
@@ -344,7 +349,7 @@ test('the list above covers exactly what the Python side writes a vector for', (
   const block = /^CONTAINERS = \($(.*?)^\)$/ms.exec(source);
   assert.ok(block, 'tools/golden.py has no CONTAINERS tuple in the expected shape');
   const python = [...block[1]!.matchAll(/'([a-z0-9_]+)'/g)].map((m) => m[1] as string);
-  assert.equal(python.length, 60, 'the golden vectors, which is what `make golden` prints');
+  assert.equal(python.length, 61, 'the golden vectors, which is what `make golden` prints');
   assert.deepEqual([...CONTAINERS].sort(), python.sort());
 });
 

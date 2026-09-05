@@ -66,7 +66,7 @@ sets (arch 8, arch 9 and a Harmony 700 pair) were added as controls. Seventeen s
 framing tables, five base addresses and three pointer table lengths, which is the same property the
 format word states rather than a second one, section 194, so it is counted once. All
 consistency checks pass; the wider population of everything in the lab that parses is
-47<!--fact:parseable_containers--> containers over **six** architectures, since arch 10's framing
+48<!--fact:parseable_containers--> containers over **six** architectures, since arch 10's framing
 verifies too and a Harmony 350 arrived on 27 August 2026 bringing arch 16 with it, section 194. It
 turns out to be one format with a per architecture cookie rather than one format per
 architecture, and the **pointer table is one table too**, with a couple of per architecture
@@ -439,7 +439,7 @@ finding.
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 264<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 265<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -660,6 +660,44 @@ cannot drift apart; what a reader should not expect is two independent statement
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
 
+**Programming that same Harmony 300 refuted the finding before it, and named which stored codes belong
+to which device, section 265.** Danny put four devices on it, one on each of its four device buttons, a
+set top box, a DVD player, a television and a video recorder, and eight predictions were written down
+before the read. Six held.
+
+The failure worth having is this. The read before it found one part of the file holding **nothing**
+where the other model holds two entries per device, and that was written up as a difference between the
+two models. It is not: this remote now holds eight entries for four devices, exactly like the other
+one. The file that held nothing was **built in 2011**, fifteen years before every other one here, and it
+was also the only one from the second model, so the model got the blame for the compiler's age. Every
+configuration states the date it was built, so the check was available and nobody made it.
+
+**And a stored code set now has an owner that was measured rather than guessed.** Each set was
+identified independently in Logitech's own catalogue of equipment, by the code numbers in it, and three
+of the four came back as exactly the appliance Danny had assigned. So a device's code set is picked by
+**which of the four buttons** it sits on, and not by its place in any list, which is what the two
+previous readings had both assumed. The list in the file is alphabetical and disagrees with the buttons.
+
+**The remote also carries four favourite channels, and what was first written about them here was
+invented.** This said they were channels **nobody set up for it**,<!--superseded--> and concluded that
+a favourite belongs to the equipment on the account rather than to the remote. Danny set them up on
+this remote himself, and they are exactly the four he entered. He had described the devices he assigned
+and said nothing about favourites, and that silence was read as an absence, which is the same defect as
+the one two paragraphs up with no file to catch it: what somebody did in a client is recoverable only
+by asking.
+
+**What it does buy is a check with a known answer.** Four channels were chosen in advance and the file
+states those four, on a second remote of this generation, which confirms how a favourite channel is
+stored rather than showing anything new about it. The two remotes carry four and five because four and
+five were entered.
+
+**One thing this project had wrong about the product got corrected by Danny mid-read.** The prediction
+document said this model has no activities at all,<!--superseded--> and used that to rule out an explanation for a spare
+entry in the file. He withdrew it: the remote does offer a shortcut that switches several devices on at
+once, without changing what the buttons do, and Logitech's own word for that is a partially set up
+activity. So the explanation is back on the table, and the lesson is the standing one, that a
+measurement over the files answers what a file contains and never what the product does.
+
 **A second model on the same generation turned two readings into rules and killed a third, section
 264.** Everything about that generation rested on one remote until Danny put the Harmony 300 on the
 bench, and Logitech separates the two models where it counts: four devices against eight, no long press
@@ -668,9 +706,10 @@ reserves for equipment is the **model's own maximum**, four on this one and eigh
 every other Harmony here reserves exactly what the configuration uses, so a writer for this generation
 sizes that table by the model. One part of the file holds an entry per device plus one, which now holds
 on two models and on a configuration nobody here wrote, so the spare entry is structural rather than an
-artefact. And a part that looked like two entries per device holds **nothing at all** on the 300, so
-that arithmetic was one model's accident; the two models differ in three declared features and nothing
-here separates them.
+artefact, and section 265 leaves the shortcut button as the live explanation for it. And a part that looked like two entries per device holds **nothing at all** on the 300, which was
+written up as one model's accident and is **wrong**: section 265 above put a current configuration on
+the same remote and it holds two per device like the other model. The odd one out is the 2011 build
+date, not the model, and the three declared features offered as an explanation are withdrawn.
 
 **The remote also disagrees with its own USB descriptor about which model it is.** It says one number
 in its own text and in its configuration, and the descriptor says another, and the two are Logitech's

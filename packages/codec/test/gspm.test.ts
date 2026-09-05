@@ -658,8 +658,11 @@ test('the arch 10 clock record sits one slot later, and reading it is what dated
  * **47 since a Harmony 300**, section 264, the second **model** on arch 16 and a configuration
  * nobody here authored, which is what turned two of that architecture's readings from one model's
  * behaviour into a rule and refuted a third.
+ *
+ * **48 since that Harmony 300 was programmed**, section 265, which refuted the third of those and
+ * showed the refutation had blamed the model for the age of the compiler that built the odd one out.
  */
-const PARSEABLE = 47;
+const PARSEABLE = 48;
 
 function parseable(): { name: string; container: Container }[] {
   const out: { name: string; container: Container }[] = [];
@@ -807,7 +810,8 @@ test('the last section ends at the end marker, not at the declared end',
     // rather than merely making the parser happy.
     // 44 since the one device differential, section 263, whose marker was appended the same way.
     // 45 since the Harmony 300, section 264, whose marker was appended the same way.
-    assert.equal(agree, 45);
+    // 46 since it was programmed, section 265, whose marker was appended the same way again.
+    assert.equal(agree, 46);
     // The two that disagree are the claim and they are unchanged, both being damaged reads of one
     // Harmony 890. Asserted by name rather than by count, because a count would let a **different**
     // container fail while one of these silently started passing.
@@ -860,13 +864,14 @@ test('the frame tiles to the next section on every container that has one', skip
   // 36 and 34 since `one_spare_20260830`, 30 August 2026: it moves both by one and so leaves the
   // gap alone, which is the claim.
   // 38 since the one device differential, section 263.
-  // 39 since the Harmony 300, section 264.
-  assert.equal(framed, 39);
+  // 39 since the Harmony 300, section 264, and 40 since it was programmed, section 265.
+  assert.equal(framed, 40);
   // 33 since the Harmony 350: its frame is non empty, so the naive arithmetic gets it right too and
   // the gap between the two counts stays at exactly two, which is the claim rather than either total.
   // 35 since the programmed Harmony 350, section 262, which has a frame like every other container
   // and so moves this figure and the one above it together.
-  assert.equal(naive, 37, 'the two the sentinel gets wrong are the two empty frames');
+  // 38 since the programmed Harmony 300, section 265, likewise.
+  assert.equal(naive, 38, 'the two the sentinel gets wrong are the two empty frames');
   assert.equal(framed - naive, 2, 'and the gap is the two empty frames, whatever the totals are');
 });
 

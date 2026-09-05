@@ -307,6 +307,13 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // programmed it, so its configuration is a previous owner's and its device names are a stranger's.
   // Outside every corpus wide population, like the three Harmony 350 containers.
   h300_config: 'harmony-300-config.bin',
+  // The same Harmony 300 after Danny put four devices on it through MyHarmony, section 265. It is
+  // the second remote whose before and after this project holds, and what it settles is what the
+  // as-found configuration alone could not: raw slot 8 holds twice the device count here too, so
+  // section 264's refutation was reading the **compiler's** age rather than the model, its one
+  // outlier having been built in 2011. Its own number sender is the other half, since no favourite
+  // channel was chosen for it. Outside every corpus wide population, like the four before it.
+  h300_programmed_config: 'harmony-300-programmed-config.bin',
   phase7_before: 'phase7-before-gspm.bin',
   phase7_after: 'phase7-after-gspm.bin',
   // The account's own command list, captured 13 August 2026: a name and a stated code per command,

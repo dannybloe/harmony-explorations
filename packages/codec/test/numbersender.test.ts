@@ -176,7 +176,7 @@ test('the control declares the section and puts nothing in it, and grows by thre
     assert.equal(after?.length, 4);
   });
 
-test('nine containers declare a method for sending a number, 29 declare none, 7 are unread',
+test('eleven containers declare a method for sending a number, 30 declare none, 7 are unread',
   skipWithoutLab(), () => {
     // Exact, and split three ways, because each column is a different claim and a total would let any
     // of them go to zero unnoticed. The interesting number is the 2: this section stayed unexercised
@@ -235,8 +235,11 @@ test('nine containers declare a method for sending a number, 29 declare none, 7 
     // favourites are on the set top box, which stayed.
     // 47 since the Harmony 300, section 264, and it lands in `declaredEmpty`: its previous owner
     // set no favourite channels, and the slot is a count of zero rather than absent.
-    assert.equal(populated + declaredEmpty + unread, 47, 'every container the lab can parse');
-    assert.equal(populated, 10);
+    assert.equal(populated + declaredEmpty + unread, 48, 'every container the lab can parse');
+    // 11 since the programmed Harmony 300, section 265, which is the one that carries a record for
+    // favourite channels for its set top box, which Danny entered on that remote. An earlier reading
+    // had them travelling from the Harmony 350, which was invented, section 265.
+    assert.equal(populated, 11);
     assert.equal(declaredEmpty, 30);
     // What is left in `unread` is five arch 10 reads plus the two containers found inside arch 8
     // firmware images, which report architecture 0. **The line between the three that answer and the

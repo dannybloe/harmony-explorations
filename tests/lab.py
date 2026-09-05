@@ -296,6 +296,9 @@ IMAGES = {
     # Logitech separates the two skins in the places that count. Its configuration is a previous
     # owner's, so its device names are a stranger's.
     'h300_config': 'harmony-300-config.bin',
+    # The same Harmony 300 with four devices put on it, section 265: the second before and after
+    # pair on arch 16, and what refuted section 264's reading of raw slot 8 as a per model field.
+    'h300_programmed_config': 'harmony-300-programmed-config.bin',
     # The account's own command list, captured 13 August 2026: a name and a stated code per command.
     # Read by the TypeScript side, where the frame decoder lives; named here so the two tables agree.
     'account_commands': 'GetCommands_mine.json',

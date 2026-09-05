@@ -24,6 +24,7 @@ import {
 import { parse, payloadOf } from '../src/index.ts';
 import { irGroups } from '../src/ir.ts';
 import { devices, keyCodes } from '../src/inventory.ts';
+import { metadataArchive } from '../src/metadata.ts';
 import { irFrame } from '../src/irframe.ts';
 import { statedCode } from '../src/stated.ts';
 
@@ -274,4 +275,77 @@ test('a numeric device type is named from Logitech\'s own reply, and it is not o
   assert.equal(values.length, 61);
   assert.deepEqual([values[1], values[4], values[5]], ['Default', 'CableBox', 'CDJukebox']);
   for (const [number, label] of DEVICE_TYPE_NAMES) assert.notEqual(values[number], label);
+});
+
+/**
+ * Which device owns which infrared group on a Harmony 300, identified out of the catalogue, section 265.
+ *
+ * **This is what settled a question two sections could not.** Sections 261 and 263 both proposed that a
+ * group's index is a position in the archive's device list, one forwards and one backwards, and each was
+ * fitted to a container where it could not fail. The catalogue answers it directly: take the numbers a
+ * group's records send, find the codeset that holds them, and read off the appliance. Three of the four
+ * groups come back as exactly the device Danny assigned to the button of that index.
+ *
+ * **The margin is part of the answer and is deliberately not asserted as a single codeset**, per
+ * section 229: Logitech's catalogue holds ranges of near identical codesets, so a group matching 40 of
+ * 40 has runners up at 40 as well and the honest claim is the model range. What is asserted is that the
+ * device Danny assigned is among the best, which is falsifiable and is the claim being made.
+ *
+ * **Group 1 is absent from this test on purpose.** None of its 44 records decodes into a number, so
+ * there is nothing to look up; `metadata.test.ts` names it from the favourite channels instead.
+ */
+test('a Harmony 300 device group is indexed by its device type button',
+  needing(skipWithoutIrArchive(), skipUnless('h300_programmed_config')), () => {
+  const c = parse(payloadOf(load('h300_programmed_config')!));
+  /** The button each index is, in the order they sit on the remote, and what Danny put on it. */
+  const assigned: readonly (readonly [number, string, string, string])[] = [
+    [0, 'TV', 'Panasonic', 'TX-P42GT30E'],
+    [2, 'DVD', 'Panasonic', 'DVD-S35'],
+    [3, 'VCR or Aux', 'Sony', 'SLV-N700'],
+  ];
+  const groups = irGroups(c) ?? [];
+  assert.equal(groups.length, 4, 'the table is not the skin maximum of four');
+  assert.deepEqual(groups.map((g) => g.addresses.length), [50, 44, 25, 35]);
+
+  let checked = 0;
+  for (const [at, button, maker, model] of assigned) {
+    // What Logitech says that appliance sends, from its own catalogue entry.
+    const hit = catalogueModels(IR_ARCHIVE!, maker).find((one) => one.model === model)!;
+    const device = catalogueDevice(IR_ARCHIVE!, maker, hit.file);
+    const theirs = new Set<string>();
+    for (const command of catalogueCommands(IR_ARCHIVE!, device.codeset!)) {
+      for (const value of command.keycode.matchAll(/\(0x([0-9A-Fa-f]+)\)/g)) {
+        theirs.add(codeKey(value[1]!));
+      }
+    }
+    // What the group sends, as this codec decodes it.
+    const ours = new Set<string>();
+    for (const address of groups[at]!.addresses) {
+      const frame = irFrame(c, address);
+      if (frame !== undefined) ours.add(codeKey(frame.value.toString(16)));
+    }
+    assert.ok(ours.size > 0, `group ${at} decodes nothing, so it cannot be identified`);
+    let hits = 0;
+    for (const number of ours) if (theirs.has(number)) hits += 1;
+    assert.equal(hits, ours.size,
+      `group ${at}, the ${button} button, sends numbers the ${maker} ${model} does not hold`);
+    checked += 1;
+  }
+  assert.equal(checked, 3, 'a group went unchecked');
+
+  // **The control that makes it a placement claim rather than three lookups.** The archive names the
+  // four devices in a different order, alphabetically, so a group index is provably not a position in
+  // that list: the set top box is named first and owns group 1.
+  // `devices()` gives one entry per occupied group here and names none of them, which is the state to
+  // assert rather than to work around: on this architecture the name lives in the metadata archive and
+  // nothing joins the two, which is exactly the gap this test fills from outside the file.
+  assert.deepEqual(devices(c).map((one) => one.group), [0, 1, 2, 3]);
+  for (const one of devices(c)) {
+    assert.equal((one as { name?: string }).name, undefined, 'devices() names arch 16 now');
+  }
+  const archive = metadataArchive(c)!.devices.map((one) => one.name);
+  assert.equal(archive.length, 4);
+  assert.deepEqual([...archive].sort(), archive, 'the archive is not in alphabetical order');
+  // The television owns group 0 and is third alphabetically, which is the disagreement itself.
+  assert.equal(archive.findIndex((one) => one.toLowerCase().includes('tv')), 2);
 });

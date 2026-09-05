@@ -13,7 +13,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { skipUnless, require_ } from '@harmony/lab';
-import { ACTION_LIST_TABLE_SLOT, archSlot, baseSlot, parse } from '../src/gspm.ts';
+import { ACTION_LIST_TABLE_SLOT, archSlot, baseSlot, clockRecord, CLOCK_RECORD_SLOT, parse }
+  from '../src/gspm.ts';
 import { irBlockWords, irGroups, irHeaderPointers } from '../src/ir.ts';
 import { framesOfSegments, irFrames, mergedIntervals } from '../src/irframe.ts';
 import { pulsesOfWords } from '../src/irda.ts';
@@ -120,7 +121,8 @@ test('the names do not line up with the records, and that is the open half',
  * architecture joins by having its map filled in rather than by anyone editing this list.
  */
 const SEND_COVER = ['one_config', 'h600_config', 'h700_config', 'h525_config', 'arch8_config_885',
-  'h350_config', 'h350_programmed_config', 'h350_three_devices_config', 'h300_config'];
+  'h350_config', 'h350_programmed_config', 'h350_three_devices_config', 'h300_config',
+  'h300_programmed_config'];
 
 test('every send instruction names a record, and together they name all of them',
   // `skipUnless` up front, not `require_` with a spread inside, which is what stood here and is the
@@ -174,28 +176,37 @@ test('every send instruction names a record, and together they name all of them'
       // as it arrived, built in 2011 by a previous owner, covers 36 of 36 and 43 of 43. That removes
       // the last reading in which the exactness could have been an artefact of how these particular
       // remotes were set up.
-      if (!name.startsWith('h350_') && name !== 'h300_config') continue;
+      if (!name.startsWith('h350_') && !name.startsWith('h300_')) continue;
       assert.deepEqual([...indices].sort((a, b) => a - b),
         Array.from({ length: records }, (_unused, i) => i),
         `${name} group ${group} is not covered exactly`);
     }
   }
-  assert.equal(containers, 9, 'a container went unwalked');
+  assert.equal(containers, 10, 'a container went unwalked');
   // 1843 since the programmed Harmony 350, section 262, whose 142 sends join the 1701 here. Its
   // cover is exact like its factory twin's, which is the point of that section: it was expected to
   // stop being exact once the remote held a real configuration and it does not.
   // 2019 since the Harmony 300, section 264, whose 79 sends join the 1940. Its cover is exact too,
   // on a configuration nobody here authored, which is the strongest form of section 261's claim.
-  assert.equal(sends, 2019);
+  // 2173 since that Harmony 300 was programmed, section 265, whose 154 sends join the 2019. It is
+  // the first arch 16 configuration in which **every** group is occupied, four of four, so the
+  // exactness is now measured on a full table as well as on partly filled ones.
+  assert.equal(sends, 2173);
 });
 
 /**
- * No Harmony 350 record decodes to a number, section 261, which shuts the catalogue naming route.
+ * No Harmony 350 record decodes to a number, section 261, which shuts the catalogue naming route
+ * **on this remote**.
  *
  * **A negative with a consequence.** Section 229 names a command by identifying its device's codeset
  * out of Logitech's catalogue, which needs the record to decode to a number. All three of this
  * container's device groups are biphase and none of the three readers here reads one, so on this remote
  * the metadata archive is the **only** naming route, where everywhere else the catalogue is.
+ *
+ * **The title says the remote and not the architecture, since section 265 separated them**: three of
+ * the four device groups of a programmed Harmony 300 decode and are named out of the catalogue, so what
+ * shuts the route is the family a device speaks. This unit is one whose three devices all speak
+ * families this decoder refuses, which is why it reads as an architecture wide claim and is not one.
  *
  * Group 1 is named anyway, and by the cheaper route: its lead in matches `Microsoft 30 Bit` in the
  * rhythm table on all thirteen pulses. That is asserted because it is the thing that would break if
@@ -338,6 +349,98 @@ test('the Harmony 350 states a number sender, and only the programmed one does',
 });
 
 /**
+ * The two arch 16 remotes' favourite channels, and the claim about them that was withdrawn.
+ *
+ * **This test was written to prove something it cannot.** Its first version was called "the programmed
+ * Harmony 300 carries favourites nobody set up for it" and asserted that "**a favourite channel belongs
+ * to the account's device and not to the remote**",<!--superseded--> the Harmony 300's four being four
+ * of the five set up through the Harmony 350 and truncated by the skin's stated maximum. Danny entered
+ * those four on the Harmony 300 himself. The premise, that no favourite was set up for it, was inferred
+ * from his not having mentioned any, and no assertion in this file could ever have caught that.
+ *
+ * **What it asserts now is a known answer check.** Asked rather than assumed, Danny entered 1, 2, 3 and
+ * 666 on the Harmony 300, which is exactly what the container states, so four channels chosen in
+ * advance produce four here on a second model of this architecture. The stated maxima are 4 and 5 and
+ * neither is doing any work: the two remotes carry four and five because four and five were entered.
+ * All four values have no leading zero and all four take the number sender route, which is what
+ * section 156 predicts and is the claim this half is worth keeping for.
+ *
+ * **The part that carries its own weight is group 1**, which the catalogue cannot name: none of that
+ * group's 44 records decodes into a number, so identifying it against Logitech's codesets is impossible
+ * and what names it is these digits, which all send from group 1 and are the set top box's channels.
+ * That is the one conclusion here independent of who typed the numbers in.
+ */
+test('the two arch 16 remotes state their favourite channels, and group 1 is the set top box',
+  skipUnless('h300_programmed_config', 'h350_programmed_config'), () => {
+  const c = parse(require_('h300_programmed_config'));
+  assert.equal(numberSenders(c)?.records.length, 1, 'no number sender where a favourite is stated');
+
+  const lists = c.pointerArray(archSlot(16, ACTION_LIST_TABLE_SLOT)) as number[];
+  /** Every channel an action list loads into the accumulator and hands to the number sender. */
+  const channels: number[] = [];
+  for (const address of lists) {
+    const off = c.blobOffsetOf(address);
+    if (off === undefined) continue;
+    const count = c.blob[off] as number;
+    let loaded: number | undefined;
+    for (let k = 0; k < count; k += 1) {
+      const at = off + 1 + 3 * k;
+      const operand = (c.blob[at] as number) | (c.blob[at + 1] as number) << 8;
+      // `0x7A` loads the accumulator and `0x1F` hands it on, so a list that does both is one channel.
+      if (c.blob[at + 2] === 0x7a) loaded = operand;
+      else if (c.blob[at + 2] === 0x1f && loaded !== undefined) { channels.push(loaded); break; }
+    }
+  }
+  assert.deepEqual(channels.sort((a, b) => a - b), [1, 2, 3, 666],
+    'the four channels this configuration states');
+
+  // Four here and five there, which is what was entered on each and **not** either skin's stated
+  // maximum doing any work, although both happen to sit at it. Asserted as the counts entered, since
+  // the reading that took the gap for a limit was withdrawn.
+  const other = parse(require_('h350_programmed_config'));
+  const otherLists = other.pointerArray(archSlot(16, ACTION_LIST_TABLE_SLOT)) as number[];
+  let otherChannels = 0;
+  for (const address of otherLists) {
+    const off = other.blobOffsetOf(address);
+    if (off === undefined) continue;
+    const count = other.blob[off] as number;
+    for (let k = 0; k < count; k += 1) {
+      if (other.blob[off + 1 + 3 * k + 2] === 0x7a) { otherChannels += 1; break; }
+    }
+  }
+  assert.equal(otherChannels, 5, 'the Harmony 350 does not state five');
+  assert.equal(channels.length, 4, 'the Harmony 300 does not state four');
+
+  // Every digit of the record's tables sends from one group, and that group is 1, which is the set
+  // top box: the channels are its, and this is the only route that names group 1 at all, since its
+  // records do not decode. This half of the test is unaffected by the withdrawal above.
+  const record = (c.pointerArray(11) as number[])[0] as number;
+  const at = c.blobOffsetOf(record) as number;
+  const u24 = (o: number) => (c.blob[o] as number)
+    | (c.blob[o + 1] as number) << 8 | (c.blob[o + 2] as number) << 16;
+  const groupsSeen = new Set<number>();
+  let digits = 0;
+  for (const table of [u24(at + 0x0e), u24(at + 0x11), u24(at + 0x14)]) {
+    const off = c.blobOffsetOf(table) as number;
+    for (let digit = 0; digit < 10; digit += 1) {
+      const entry = off + 3 * digit;
+      assert.equal(c.blob[entry + 2], 0x7f, `digit ${digit} does not call a list`);
+      const index = (c.blob[entry] as number) | (c.blob[entry + 1] as number) << 8;
+      const listAt = c.blobOffsetOf(lists[index] as number) as number;
+      const count = c.blob[listAt] as number;
+      for (let i = 0; i < count; i += 1) {
+        const ins = listAt + 1 + 3 * i;
+        if (c.blob[ins + 2] !== 0x7d) continue;
+        groupsSeen.add(((c.blob[ins] as number) | (c.blob[ins + 1] as number) << 8) >>> 8);
+      }
+      digits += 1;
+    }
+  }
+  assert.equal(digits, 30, 'a digit went unfollowed');
+  assert.deepEqual([...groupsSeen], [1], 'the digits do not all send from the set top box');
+});
+
+/**
  * What a device costs the Harmony 350's container, section 263.
  *
  * **A three container differential, and the arithmetic is the claim.** The factory configuration holds
@@ -360,45 +463,67 @@ test('the Harmony 350 states a number sender, and only the programmed one does',
  * architecture here holds exactly one group per device.
  */
 test('a device costs an arch 16 container one entry, and the infrared table is sized by the skin',
-  skipUnless('h350_config', 'h350_programmed_config', 'h350_three_devices_config', 'h300_config'),
+  skipUnless('h350_config', 'h350_programmed_config', 'h350_three_devices_config', 'h300_config',
+    'h300_programmed_config'),
   () => {
-  // devices, the skin's stated maximum devices, and raw slot 8's length. The fourth row is a
-  // different **model**, which is what makes the third column a claim rather than a coincidence.
-  const expected: Readonly<Record<string, readonly [number, number, number]>> = {
-    h350_config: [3, 8, 6],
-    h350_programmed_config: [4, 8, 8],
-    h350_three_devices_config: [3, 8, 6],
-    h300_config: [2, 4, 0],
+  // devices, the skin's stated maximum devices, raw slot 8's length, and the date the configuration
+  // states it was built on. Two of the rows are a different **model**, which is what makes the third
+  // column a claim rather than a coincidence, and one is a different **compiler**, which is what
+  // section 265 needed a second read to see.
+  const expected: Readonly<Record<string, readonly [number, number, number, string]>> = {
+    h350_config: [3, 8, 6, '2026-07-20'],
+    h350_programmed_config: [4, 8, 8, '2026-09-04'],
+    h350_three_devices_config: [3, 8, 6, '2026-09-04'],
+    h300_config: [2, 4, 0, '2011-05-03'],
+    h300_programmed_config: [4, 4, 8, '2026-09-04'],
   };
   let walked = 0;
-  for (const [name, [devices, maxDevices, slotEight]] of Object.entries(expected)) {
+  for (const [name, [devices, maxDevices, slotEight, built]] of Object.entries(expected)) {
     const c = parse(require_(name));
     // The device count comes from the archive's own names, which is the only place this architecture
     // states it: `deviceCount` reads a base slot this map does not place.
     assert.equal(metadataArchive(c)?.devices.length, devices, `${name} names a different number`);
     // **Devices plus one, on two models and on a configuration nobody here authored.** That is what
-    // makes it structural rather than an artefact of how the bench remote was set up.
+    // makes it structural rather than an artefact of how the bench remote was set up. The spare entry
+    // is still unexplained: the prediction that retired the activity candidate for it was withdrawn
+    // by Danny, and Logitech's own product record declares `PartiallySetupActivities` on both Harmony
+    // 300 skins, so this model has activities of a kind. Section 265.
     assert.equal((c.pointerArray(6) ?? []).length, devices + 1, `${name} raw slot 6`);
-    // **Raw slot 8 is asserted as data and not as arithmetic**, section 264, because the arithmetic
-    // was wrong: devices times two holds on all three Harmony 350 containers and the Harmony 300
-    // holds zero where it predicts four. The two skins differ in three declared capabilities and
-    // nothing here separates them, so the honest assertion is the measured length.
+    // **Raw slot 8 is twice the device count on every configuration a current compiler built**, and
+    // zero on the one built in 2011, section 265. Section 264 read that zero as a property of the
+    // **model**, since the Harmony 300 was the only second model in the population and also the only
+    // old configuration; a second read off the same remote holds eight and separates them. So the
+    // date is asserted beside the length, because it is the discriminator and without it this table
+    // is five measured numbers rather than a rule that can fail.
+    const section = c.sections[CLOCK_RECORD_SLOT];
+    const at = section === undefined || section.isNull
+      ? undefined : c.blobOffsetOf(section.address);
+    const stamp = at === undefined ? undefined : clockRecord(c.blob, at);
+    assert.equal(stamp?.slice(0, 10), built, `${name} states a different build date`);
     assert.equal((c.pointerArray(8) ?? []).length, slotEight, `${name} raw slot 8`);
+    assert.equal((c.pointerArray(8) ?? []).length, built.startsWith('2011') ? 0 : 2 * devices,
+      `${name} breaks the rule that raw slot 8 is twice the devices once a current compiler built it`);
     // **The infrared table is sized by the skin's maximum and not by the configuration**, which is
     // this architecture's own behaviour: 8 groups on the Harmony 350 and 4 on the Harmony 300,
     // matching each skin's `MaxDevicesPerAccount`, with the unused groups empty. Every other
     // architecture here holds exactly one group per device.
     assert.equal((irGroups(c) ?? []).length, maxDevices, `${name} infrared groups`);
-    assert.ok(devices < maxDevices, `${name} fills its table, so the claim cannot fail on it`);
+    // At most, not fewer than: the programmed Harmony 300 is the first container here that **fills**
+    // its table, four devices in four groups, so the claim rests on the other four rows for its
+    // margin and on this one only for the equality.
+    assert.ok(devices <= maxDevices, `${name} declares fewer groups than it has devices`);
     walked += 1;
   }
-  assert.equal(walked, 4, 'a container went unwalked');
+  assert.equal(walked, 5, 'a container went unwalked');
   // The claims rest on the columns varying, so assert that they do. Without this every equality
   // above could be one number, which is the shape section 32 failed on.
   assert.deepEqual([...new Set(Object.values(expected).map((r) => r[0]))].sort(), [2, 3, 4]);
   assert.deepEqual([...new Set(Object.values(expected).map((r) => r[1]))].sort(), [4, 8]);
   assert.deepEqual([...new Set(Object.values(expected).map((r) => r[2]))].sort((a, b) => a - b),
     [0, 6, 8]);
+  // And that a container fills its table in one row and not in the others, which is what makes the
+  // "sized by the skin" claim distinguishable from "sized by the device count".
+  assert.equal(Object.values(expected).filter((r) => r[0] === r[1]).length, 1);
 });
 
 /**

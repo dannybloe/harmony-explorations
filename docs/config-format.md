@@ -332,7 +332,7 @@ for offset in range(0, len(blob) - 6 - 1, 2):
 ```
 
 An odd trailing byte is not folded in, because the firmware divides the byte count by two and
-counts words, and **25<!--fact:parseable_odd_body--> of the 47<!--fact:parseable_containers-->
+counts words, and **25<!--fact:parseable_odd_body--> of the 48<!--fact:parseable_containers-->
 parseable containers have an odd body**, of which 20<!--fact:odd_body_verifying--> verify their
 stored checksum under that rule. (This said 19 of 33 with 14 verifying, which had drifted through
 two sample additions because it carried no marker; it carries three now.) This said the corpus holds none<!--superseded-->, which made the
@@ -1579,11 +1579,20 @@ width from the count and therefore cannot represent an empty array: it answers `
 of zero. That is a property of the inferring reader and not a merge of the two answers, which section
 262 recorded the wrong way round before measuring it.
 
-**On arch 16 the group count is the model's stated maximum and not the device count**, section 264,
-which is the one place base slot 5 behaves differently here: it is exactly the device count on 13 of 13
-containers on arch 8, 9, 12 and 14, and on arch 16 all three Harmony 350 containers declare eight
-groups and a Harmony 300 declares four, matching each skin's `MaxDevicesPerAccount`, with the unused
-groups empty. So a writer for this architecture allocates the table by the skin.
+**On arch 16 the group count is the model's stated maximum and not the device count**, sections 264 and
+265, which is the one place base slot 5 behaves differently here: it is exactly the device count on 13
+of 13 containers on arch 8, 9, 12 and 14, and on arch 16 all three Harmony 350 containers declare eight
+groups and both Harmony 300 containers declare four, matching each skin's `MaxDevicesPerAccount`, with
+the unused groups empty. So a writer for this architecture allocates the table by the skin.
+
+**Which group a device gets is the device type button it is assigned to**, section 265, measured on the
+programmed Harmony 300 by identifying all four of its groups independently in Logitech's device
+catalogue: the television is group 0, the set top box 1, the DVD player 2 and the video recorder 3,
+which is the order of the four buttons on that remote. It is **not** a position in the archive's name
+list, which is alphabetical and disagrees, and the two orderings sections 261 and 263 proposed were
+both answering the wrong question. Unconfirmed on the Harmony 350, which has no such buttons: there the
+three occupied groups are the reverse of the archive's order, and a device with no infrared codes at
+all takes no group.
 
 **And it is populated by a found configuration now, on arch 16**, section 262, where this said every
 found config in the corpus carries a count of zero. Danny put five favourite channels on the bench
@@ -3360,6 +3369,11 @@ operands against 130 records, and each of its three non-empty groups is covered 
 holds more codes than its activities bind, so the assertion there is that every named `(group, index)`
 exists and not that every record is named. That container is outside every corpus wide population,
 section 194, so the figures above are unaffected by it.
+
+**Five arch 16 containers now, over two models, and one of them fills its table**, sections 262 to 265.
+The exactness holds on all five: on a configuration a previous owner had compiled in 2011, and on the
+programmed Harmony 300 whose four groups are all occupied, 154 sends over 154 records, which is the
+first arch 16 sample where no group is empty.
 
 Read with `gspm.ir_reference` and `gspm.ir_references`.
 [findings.md](findings.md) sections 33 and 261.

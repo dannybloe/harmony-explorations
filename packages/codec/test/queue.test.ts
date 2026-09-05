@@ -74,10 +74,16 @@ const PEAKS: Readonly<Record<string, number>> = {
   // And with one device removed, section 263. Unchanged at 8, so the peak is not simply a
   // function of how many devices the configuration drives.
   h350_three_devices_config: 8,
-  // A Harmony 300, section 264, and its 6 is the lowest of any user configuration here. That is
-  // consistent with the model rather than surprising: four devices at most, no long press, and a
-  // configuration from 2011 that a previous owner kept simple.
+  // A Harmony 300, section 264, and its 6 is the lowest of any user configuration here. That was read
+  // as "consistent with the model rather than surprising: four devices at most, no long press",<!--superseded-->
+  // and section 265 refutes it in the same way it refuted that section's raw slot 8 claim: the **same
+  // remote** with four devices on it peaks at 9, the joint highest here. So what is low is the 2011
+  // configuration a previous owner kept simple, and the model had been given the credit for it. Twice
+  // in one session the same confound, which is why the date is now asserted beside the measurement in
+  // `metadata.test.ts`.
   h300_config: 6,
+  // That Harmony 300 programmed, section 265: four devices, all four groups occupied, and a peak of 9.
+  h300_programmed_config: 9,
   h525_external_firmware: 9,
   h525_config: 9,
   h525_config_2: 9,

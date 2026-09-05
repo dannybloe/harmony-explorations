@@ -1211,8 +1211,9 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
         # 66 since `units/`, section 226: the identity of each bench remote, which is what the
         # write rails compare the connected unit against and which must not be in this repository.
         # 68 since 4 September 2026 and the two Harmony 350 rows, per the comment on the row count
-        # test below. 69 since the programmed Harmony 350 was read, section 262.
-        self.assertEqual(len(named), 71, "lab paths the register names, as at 5 September 2026")
+        # test below. 69 since the programmed Harmony 350 was read, section 262. 72 since the
+        # programmed Harmony 300 was read, section 265.
+        self.assertEqual(len(named), 72, "lab paths the register names, as at 5 September 2026")
         for path in sorted(named):
             with self.subTest(path=path):
                 if '*' in path:
@@ -1300,8 +1301,8 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
         # was dug is what `make lab-check` can answer with.
         # 49 since the programmed Harmony 350 got its own row, section 262, 50 since the one
         # device differential beside it, section 263, and 51 since the Harmony 300, section 264.
-        self.assertEqual(len(rows), 51)
-        self.assertEqual(len(dict(rows)), 51, 'a duplicated path would make a query ambiguous')
+        self.assertEqual(len(rows), 52)
+        self.assertEqual(len(dict(rows)), 52, 'a duplicated path would make a query ambiguous')
         self.assertNotIn('unseen', dict(rows), 'the status legend is not an artefact')
 
     def test_a_query_is_answered_by_ancestors_and_by_descendants(self):

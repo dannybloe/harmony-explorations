@@ -56,7 +56,7 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // 93 since the programmed Harmony 350, section 262.
   // 94 since the one device differential, section 263.
   // 95 since the Harmony 300, section 264.
-  assert.equal(Object.keys(pythonImages()).length, 95, 'every fixture tests/lab.py names');
+  assert.equal(Object.keys(pythonImages()).length, 96, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {

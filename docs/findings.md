@@ -33313,6 +33313,11 @@ command because the record decodes to a number; here it cannot, so a Harmony 350
 nameless without the archive and fully named with it. That inverts the usual relationship between the
 two sources.
 
+**On that remote, and not on this architecture**, which section 265 had to narrow: three of the four
+device groups of a programmed Harmony 300 decode and are named straight out of the catalogue. So what
+shuts the route is the **family** a device speaks, and this unit is one whose three devices all happen
+to speak families this decoder refuses.
+
 **Two biphase families are unidentified**, and they are the first in this project found in a
 configuration rather than in Logitech's catalogue. Naming them is the ordinary route, which is
 Logitech's own definitions, and the archive checkout holds 684 of those.
@@ -33544,7 +33549,7 @@ read, which is why no prediction named one.
 | P2 | it states architecture 16 and skin 78 | **half wrong**, architecture 16 and skin **79** |
 | P3 | its infrared table declares four groups, not eight | **right**, and this is the section's main result |
 | P4 | raw slot 6 holds devices plus one | right, on a second model |
-| P5 | raw slot 8 holds two per device | **wrong**, it holds nothing at all |
+| P5 | raw slot 8 holds two per device | **wrong**, it holds nothing at all, and section 265 says why |
 | P6 | fifteen slots and all fifteen checks | right |
 | P7 | it carries a metadata archive | right, naming two devices |
 
@@ -33559,17 +33564,26 @@ rest: base slot 5's group count is exactly the device count on 13 of 13 containe
 14, and on arch 16 it is the model's stated maximum with the unused groups empty. A writer for this
 architecture allocates the table by the skin and not by the configuration.
 
-### Raw slot 8 is not a function of the device count
+### Raw slot 8 holds nothing here, and the reason given below is wrong
 
-Section 263 measured it at devices times two on all three Harmony 350 containers, six, eight and six.
-The Harmony 300 has two devices and **zero** entries, where that rule predicts four. So the rule is
-refuted by the second model and the slot is driven by something the 350 has and the 300 lacks.
+**Section 265 refutes this subsection and it is left standing rather than deleted**, because the
+mistake in it is worth more than the claim was. What was measured is right: raw slot 8 holds devices
+times two on all three Harmony 350 containers, six, eight and six, and this Harmony 300 has two devices
+and **zero** entries where that rule predicts four.
 
-**Three declared capabilities differ between the two skins** and any of them would explain it:
-`LongPressAction`, `Activities` against `PartiallySetupActivities`, and `SupportsMHAssist`. Long press
-is the one with a shape that suggests two entries per device, and it is a candidate rather than an
-answer, because so is a per device structure that only exists once there is a real activity. Nothing
-here separates them and neither is in the code.
+What was concluded from it, that "**the rule is refuted by the second model and the slot is driven by<!--superseded-->
+something the 350 has and the 300 lacks**", is wrong. The same remote, once Danny had put four devices
+on it, holds **eight**. So the field is devices times two here too, and the outlier is not the model.
+
+The candidate list that followed, that "**three declared capabilities differ between the two skins**<!--superseded-->
+and any of them would explain it", `LongPressAction`, `Activities` against
+`PartiallySetupActivities` and `SupportsMHAssist`, is withdrawn whole. None of them is involved.
+
+**The variable that was not controlled for is the compiler.** This unit's configuration was built in
+2011 and every other arch 16 container here was built by Logitech's current service, which is a fifteen
+year gap sitting in the one sample that disagreed. The model was the difference being looked at, so the
+model is what the difference was attributed to, and a second configuration off the same remote
+separated them in one read. Section 265 has the table.
 
 **Raw slot 6 survives the same test**, three entries for two devices, so devices plus one holds on a
 second model and on a configuration nobody here authored. That makes it structural rather than an
@@ -33604,5 +33618,181 @@ shape every other device here shows, a group slightly smaller than the name list
 
 That is **suggestive and not a measurement**, because nothing was removed from this remote and the
 counts are not an identification. It is recorded because the alternative is to leave a candidate
-standing that a second model quietly disagrees with. Settling it wants one device removed from the
-Harmony 300, which is the same experiment section 263 ran on the other model.
+standing that a second model quietly disagrees with.
+
+**Section 265 answers it and the answer is neither order.** Both readings above assume the group index
+is a position in the device list, and on this model it is the **device type button** the device is
+assigned to. So the doubt recorded here was well placed and its two candidates were both wrong, which
+is what happens when a question about placement is asked with only a length to answer it. The route
+that settled it was not removing a device: it was identifying every group independently in Logitech's
+catalogue.
+
+## 265. The same Harmony 300 programmed, and the variable nobody controlled for
+
+Section 264 read a second hand Harmony 300 exactly as it arrived and got one measurement badly wrong.
+Danny then added the unit to a test account and put four devices on it through Logitech's service, one
+on each of its four device type buttons: a KPN VIP1853 set top box, a Panasonic DVD-S35, a Panasonic
+TX-P42GT30E television and a Sony SLV-N700 video recorder, and set up favourite channels for the set
+top box, 1, 2, 3 and 666. Eight predictions were committed before the read,
+`docs/predictions-arch16-harmony-300-programmed.md`. **One of them rested on an assumption rather than
+on his account of the setup**, and the subsection on the favourites below is what came of that.
+
+This is the **second before and after pair** on one remote that this project holds, and both of its
+results come from the pairing rather than from either read.
+
+| | prediction | outcome |
+|---|---|---|
+| P1 | four groups and all four occupied | right, 50, 44, 25 and 35 records |
+| P2 | raw slot 6 holds five, being devices plus one | right |
+| P3 | raw slot 8 holds nothing, as on the as found read | **wrong**, it holds eight, and that is this section |
+| P4 | the archive names four devices, lengths 3, 13, 12 and 8 | right, all four |
+| P5 | the group index is the device type button | right, and settled rather than suggested |
+| P6 | no number sender, since no favourite was added | **wrong**, one record, and the premise was invented rather than asked |
+| P7 | the exact cover holds | right, 154 sends over 154 records |
+| P8 | larger than the as found 41234 bytes | right, 97474 |
+
+### Raw slot 8 is twice the device count here too, and section 264's reason was the compiler
+
+Section 264 found the Harmony 350 holding twice its device count in raw slot 8 and this Harmony 300
+holding nothing, and concluded the field is driven by something one model has and the other lacks. The
+same remote now holds **eight** for four devices. So the rule holds on both models and the outlier is
+neither model nor capability.
+
+| container | built | devices | raw slot 6 | raw slot 8 | twice the devices |
+|---|---|---|---|---|---|
+| Harmony 350 as found | 2026-07-20 | 3 | 4 | 6 | 6 |
+| Harmony 350, four devices | 2026-09-04 | 4 | 5 | 8 | 8 |
+| Harmony 350, three devices | 2026-09-04 | 3 | 4 | 6 | 6 |
+| Harmony 300 as found | **2011-05-03** | 2 | 3 | **0** | 4 |
+| Harmony 300, four devices | 2026-09-04 | 4 | 5 | 8 | 8 |
+
+**The uncontrolled variable is fifteen years of compiler.** Four of the five configurations were built
+by Logitech's current service and agree; the one that disagrees was built in 2011, and it happened to
+be the only one from the second model, so the model got the blame. One read off the same remote
+separated them.
+
+That is worth more than the field, because the shape recurs: a single counter-example was attributed to
+the property being studied while a second property moved with it silently. The general rule is that a
+sample from a **different generation of the producer** is not a sample of the same population, and a
+configuration states its own build date, so the check is available in every container this project
+holds.
+
+**What raw slot 8 is remains unknown**, and that is unchanged. The reading is now that it holds two
+entries per device on every arch 16 configuration a current compiler produced, over five containers and
+two models, with a fifteen year old one holding none.
+
+### The group index is the device type button
+
+This is the section's main result and it settles the question sections 263 and 264 left open, by a route
+neither of them used: **every group was identified independently in Logitech's own device catalogue**,
+by the code numbers its records send.
+
+| button | group | records | identified as | numbers matched |
+|---|---|---|---|---|
+| TV | 0 | 50 | Panasonic TX-P42GT30E | 40 of 40 |
+| Cable or Satellite | 1 | 44 | the KPN set top box | by its favourite channels, see below |
+| DVD | 2 | 25 | Panasonic DVD-S35 | 25 of 25 |
+| VCR or Aux | 3 | 35 | Sony SLV-N700 | 22 of 22 |
+
+The group order is exactly the order of the four buttons on the remote. **The name archive's order is
+different**, being the four names alphabetically, so a group index was never a position in that list,
+and both candidate orderings in sections 263 and 264 were answering the wrong question. Section 263's
+removal experiment was consistent with a reverse ordering because on that remote the reverse ordering
+and the true rule happen to agree.
+
+**Group 1 is identified by its favourite channels rather than by its codes**, which is the honest
+statement: none of its 44 records decodes into a bit frame, so there is nothing to match against the
+catalogue. What names it is the number sender below, whose digit tables send from group 1 and whose
+channels are the ones Danny set up for the set top box. Logitech's catalogue says that box speaks
+`Kreatel IP 22 Bit`, a family whose rhythm the table already carries and whose records this decoder
+still refuses.
+
+**This narrows section 261 rather than confirming it.** That section found no record of the as found
+Harmony 350 decoding, all three of its groups being biphase, and concluded that the catalogue naming
+route is shut on this architecture and the metadata archive is the only one. Three of this
+configuration's four groups decode and are named out of the catalogue, so the route is open on arch 16
+and what shuts it is the **family**, not the architecture. The as found Harmony 350 is a remote whose
+three devices all happen to speak a family this decoder refuses.
+
+**Records that refuse to decode are an ordinary population.** This configuration decodes 110 of 154
+where a Harmony 600 configuration decodes 134 of 186, so the rate is unremarkable, and the outlier
+stays the as found Harmony 350 at none of 130.
+
+### The favourite channels: a known answer sample, and a claim about them that was invented
+
+**What is measured.** The configuration carries a number sender record with three digit tables whose
+thirty entries all call action lists that send from group 1, and four action lists load an accumulator
+and hand it to that record, carrying 1, 2, 3 and 666. Skin 104, the Harmony 350, declares
+`MaxFavoriteChannels` 5 and skin 79, the Harmony 300 EMEA, declares **4**. The Harmony 350's own
+configuration carries five.
+
+**What was written here and is withdrawn.** This subsection said "**no favourite was set up for this
+remote**"<!--superseded--> and concluded from it that "**a favourite channel belongs to the account's
+device and not to the remote**"<!--superseded-->, with Logitech's stated maximum truncating five to
+four on the way. **Danny set the favourites up on the Harmony 300 himself.** So the premise was never
+his statement: he had described the four devices he assigned and said nothing about favourites, and the
+silence was read as an absence. Nothing about a favourite travelling between remotes is demonstrated by
+this container, and the mechanism claimed for it is not in evidence anywhere.
+
+**The rule this breaks is the one this section is otherwise about.** Two subsections above document a
+cause attributed to an uncontrolled variable, and an assumption about how a remote was set up is an
+uncontrolled variable with a sentence built on it. The difference is that a compiler's date is
+recoverable from the file and what somebody did in a client is recoverable only by asking, so this one
+had no way to be caught later.
+
+**Asked and answered: Danny entered 1, 2, 3 and 666 on this remote**, which is exactly what the
+configuration states. So there is nothing left to explain. The two remotes carry different counts
+because different counts were entered, the stated maxima of 4 and 5 are not doing any work, and no
+list is being truncated by anything.
+
+**What that leaves is a known answer sample, which is the one thing worth having here.** Four channels
+were chosen in advance and the container states four, with the values matching, on a **second** arch 16
+model. That is the same shape as the calibration containers of sections 121 and 125: a configuration
+whose contents were written down before the file was read. It confirms sections 154 and 156 on this
+architecture, one number sender record for the one device that takes numbers rather than one per
+channel, and the integer route rather than the spelled out one for all four, which is what section 156
+predicts for values with no leading zero.
+
+**And it still names group 1**, which nothing else can: those four digit tables all send from that
+group, and none of its 44 records decodes into a number, so the channels are the only route to
+identifying the set top box's codes.
+
+### The model does have activities, in Logitech's own words
+
+`docs/predictions-arch16-harmony-300-programmed.md` asserted that this model "has no activities at
+all", on the strength of what its client offers, and used that to retire section 263's candidate for the
+spare entry in raw slot 6. **Danny withdrew the premise**: the client does offer something
+activity shaped and he had missed it.
+
+Logitech's product record agrees with him rather than with the prediction. Skin 78 and skin 79 both
+declare the capability `PartiallySetupActivities`, where skin 104 declares `Activities` and a
+`MaxActivities` of 1. So the difference between the two models is the **kind** of activity and not its
+presence, and `PartiallySetupActivities` is the vendor's own name for the thing the prediction denied.
+
+**And Danny's description of it matches that name closely enough to be worth recording**: on this model
+it is "not really an activity, more like a shortcut button to turn on multiple devices at once". That is
+an activity with its switch on step and without its keypad map, which is what a partially set up one
+would be, and it is the distinction `docs/how-a-harmony-works.md` draws between the two things an
+activity does. The vendor's word and the user's account are independent and agree.
+
+**So the spare entry in devices plus one is a live candidate again, and the activity reading is the
+better one.** It holds on five containers over two models, and each of those configurations holds
+exactly one activity shaped object: a real activity on the Harmony 350, a power on shortcut on the
+Harmony 300. What would falsify it is an arch 16 configuration holding none or two, and the stated
+maximum of one on the model that declares a maximum suggests neither is easy to build.
+
+**Nothing in the code can count them, which is why this stays a candidate.** `activities()` returns
+zero for all five of these containers, so the activity reader does not reach arch 16 and the count above
+is Logitech's statement plus Danny's account rather than a measurement off the file. Reading it is what
+would turn devices plus one into devices plus activities.
+
+**The lesson is the one this repository keeps relearning in a new place.** A capability is a statement
+about the product, a container is a statement about a file, and a screen somebody looked at once is
+neither. The prediction reasoned from the third and would have retired a real candidate on it, and what
+caught it was the person who had used the client saying so.
+
+### Reproduced by
+
+`packages/codec/test/metadata.test.ts`, which asserts the device count, the skin's maximum and raw slot
+8 for all five arch 16 containers, the exact send cover, and the number sender's single record with its
+digit tables pointing at one group.
