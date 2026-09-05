@@ -138,6 +138,8 @@ CONTAINERS = (
     'h350_programmed_config',
     # And the same remote with one device removed, section 263, the third arch 16 container.
     'h350_three_devices_config',
+    # And a Harmony 300, section 264, the second model on this architecture.
+    'h300_config',
     # The arch 8 safe mode container, which is **inside** the firmware image rather than in a file
     # of its own: `gspm.parse` finds it at blob offset 0xE000, flash 0x01E000, and every check
     # passes. The two images carry it identically, since they differ only in the skin byte, so the

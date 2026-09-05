@@ -33455,7 +33455,7 @@ attributed to either. Seven questions were written down and committed before the
 | | question | answer |
 |---|---|---|
 | Q1 | raw slot 6 goes from five pointers to four | **yes**, and its length is devices **plus one** |
-| Q2 | raw slot 8 goes from eight to six | **yes**, and its length is devices times two |
+| Q2 | raw slot 8 goes from eight to six | **yes**, and its length is devices times two **on this model**, which section 264 refutes as a general rule |
 | Q3 | the archive names three devices and drops the Playstation | yes |
 | Q4 | one infrared group empties, and which one says who owns what | yes, and the answer refutes an earlier candidate |
 | Q5 | the number sender is untouched | yes, one record, since the favourites are on a device that stayed |
@@ -33480,6 +33480,8 @@ three surviving names are unambiguous by length:
 candidate on one container's worth of evidence and which this refutes. The order is the **reverse**:
 the devices that carry codes, in the order the archive names them, own groups 2, 1 and 0. That is
 three points on one remote, so it is a better candidate than the one it replaces and not a rule.
+**And a second model disagrees with it on the counts**, section 264, which is why it stays a candidate:
+a Harmony 300's two devices pair far more tightly with their groups under the forward order.
 
 **And the anomaly section 262 reported survives the mapping being settled.** The set top box is named
 with 38 commands and its group holds 46 records. Every other device here is named with more commands
@@ -33493,7 +33495,9 @@ Raw 6 moves one for one with the devices and its length is **devices plus one**,
 across the three containers. Raw 8 moves two for one and its length is **devices times two**, six,
 eight, six. The first version of this section said "one entry per device", which is short by one and
 is the kind of error that would make a writer allocate a table too small, so it is corrected here
-rather than quietly.
+rather than quietly. **The raw 8 arithmetic is this model's and not the architecture's**, section 264:
+a Harmony 300 with two devices holds **zero** entries there where it predicts four, so it was an
+artefact of the one model it was measured on. Raw 6 survives that test.
 
 Those are measurements about **what a slot counts**, and a slot map entry is a claim about **which
 base slot it is**, which is a different question. **The obvious cross architecture route was tried and
@@ -33522,3 +33526,83 @@ because both are confirmed by what he did rather than merely stated: `MaxFavorit
 added exactly five, and `MaxDevicesPerAccount: 8`, which is the group count above. So the extra entry
 in raw 6 cannot be tested by adding a second activity on this model, and whether it is the activity
 is a question for the firmware or for another architecture.
+
+## 264. A Harmony 300, and what a second model on the same architecture is worth
+
+Everything in sections 262 and 263 rests on one remote. The bench has a Harmony 300 as well, and
+Logitech's own product table separates the two models exactly where it is useful: four devices against
+eight, no long press against long press, no stated activity maximum against one. Seven predictions were
+committed before the read, `docs/predictions-arch16-harmony-300.md`.
+
+**Nobody here programmed this unit.** It is second hand, its configuration was built in 2011 by its own
+timestamp, and its two device names are a previous owner's. So the device count was unknown before the
+read, which is why no prediction named one.
+
+| | prediction | outcome |
+|---|---|---|
+| P1 | the read works with no new code | right |
+| P2 | it states architecture 16 and skin 78 | **half wrong**, architecture 16 and skin **79** |
+| P3 | its infrared table declares four groups, not eight | **right**, and this is the section's main result |
+| P4 | raw slot 6 holds devices plus one | right, on a second model |
+| P5 | raw slot 8 holds two per device | **wrong**, it holds nothing at all |
+| P6 | fifteen slots and all fifteen checks | right |
+| P7 | it carries a metadata archive | right, naming two devices |
+
+### The infrared table is allocated at the model's maximum
+
+All three Harmony 350 containers declare eight groups whatever the device count, and eight is that
+skin's `MaxDevicesPerAccount`. The Harmony 300 declares **four**, and four is its. Its two devices sit
+in groups 0 and 1 with 36 and 43 records and the other two groups are empty.
+
+So this is a rule across two models rather than one model's constant, and it separates arch 16 from the
+rest: base slot 5's group count is exactly the device count on 13 of 13 containers on arch 8, 9, 12 and
+14, and on arch 16 it is the model's stated maximum with the unused groups empty. A writer for this
+architecture allocates the table by the skin and not by the configuration.
+
+### Raw slot 8 is not a function of the device count
+
+Section 263 measured it at devices times two on all three Harmony 350 containers, six, eight and six.
+The Harmony 300 has two devices and **zero** entries, where that rule predicts four. So the rule is
+refuted by the second model and the slot is driven by something the 350 has and the 300 lacks.
+
+**Three declared capabilities differ between the two skins** and any of them would explain it:
+`LongPressAction`, `Activities` against `PartiallySetupActivities`, and `SupportsMHAssist`. Long press
+is the one with a shape that suggests two entries per device, and it is a candidate rather than an
+answer, because so is a per device structure that only exists once there is a real activity. Nothing
+here separates them and neither is in the code.
+
+**Raw slot 6 survives the same test**, three entries for two devices, so devices plus one holds on a
+second model and on a configuration nobody here authored. That makes it structural rather than an
+artefact of how the 350 was set up, and it leaves the spare entry unexplained on both.
+
+### The skin the unit states is not the skin its descriptor states
+
+`/sys/sysinfo` reports `skin 0x4F`, which is 79, and the configuration's own version word reports 79
+as well. `bcdDevice` reports `0x1078`, which is 78, and section 195 recorded 78 from that field.
+
+Both are a Harmony 300 in Logitech's table and they are its two regional variants, 78 region 1 and 79
+region 2. The unit is Danny's, in Europe. So **the descriptor names the family's base skin and the
+remote names its own regional variant**, and a reader that takes the skin from `bcdDevice` gets the
+region wrong.
+
+The consistency check is the other model: the Harmony 350 is the only skin in its family, and there the
+two sources agree, 104 both ways. So the two agree where there is no pair and disagree where there is
+one, which is two units rather than a population and is the right shape.
+
+**This bears on section 131's open question**, which is what selects one of a regional pair. It does not
+answer it, since nothing here says what put 79 rather than 78 on this unit. What it does give is a
+route: the remote states its own answer, and section 195's reading of `bcdDevice` was the wrong place
+to look for it.
+
+### And it puts the device order candidate back in doubt
+
+Section 263 established, by removing a device, that the Harmony 350's devices are named in the reverse
+of their group order. The Harmony 300's two devices are named with 34 and 42 commands against groups of
+36 and 43 records. Under the reverse order that pairs 34 names with 43 records and 42 with 36; under
+the forward order it pairs 34 with 36 and 42 with 43, which is the tighter fit by a long way and is the
+shape every other device here shows, a group slightly smaller than the name list.
+
+That is **suggestive and not a measurement**, because nothing was removed from this remote and the
+counts are not an identification. It is recorded because the alternative is to leave a candidate
+standing that a second model quietly disagrees with. Settling it wants one device removed from the
+Harmony 300, which is the same experiment section 263 ran on the other model.

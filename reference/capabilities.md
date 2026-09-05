@@ -142,7 +142,15 @@ here has read a file based remote's config: they have no firmware to read, so th
 firmware settles a capability has no entry point on them. What is known is the skin and the product id,
 plus the architecture on the two that were asked for it, which `reference/models.md` carries.
 
-**One of those three has had its configuration read now, and three of its limits are known**, sections
+**Two of those three have had their configuration read now**, sections 262 to 264, and the second one
+carries a correction about skins in general: **a unit's own skin is not the one its USB descriptor
+states**. The bench Harmony 300 reports skin 79 in its own `/sys/sysinfo` and in its configuration's
+version word, and `bcdDevice` reports 78. Both are a Harmony 300 in Logitech's table, 78 for one region
+and 79 for the other, so the descriptor names the family's base skin and the remote names its own
+regional variant. The Harmony 350 is the only skin in its family and there the two agree, which is the
+control. Section 195 read that field for the 300 and recorded 78.
+
+**Three of the Harmony 350's limits are known**, sections
 262 and 263. The Harmony 350, skin 104: Logitech's product record states `MaxActivities: 1`,
 `MaxFavoriteChannels: 5` and `MaxDevicesPerAccount: 8`, and the last two are **confirmed against the
 remote** rather than merely stated, since a configuration Danny put five favourite channels on carries

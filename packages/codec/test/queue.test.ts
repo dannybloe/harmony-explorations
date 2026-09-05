@@ -74,6 +74,10 @@ const PEAKS: Readonly<Record<string, number>> = {
   // And with one device removed, section 263. Unchanged at 8, so the peak is not simply a
   // function of how many devices the configuration drives.
   h350_three_devices_config: 8,
+  // A Harmony 300, section 264, and its 6 is the lowest of any user configuration here. That is
+  // consistent with the model rather than surprising: four devices at most, no long press, and a
+  // configuration from 2011 that a previous owner kept simple.
+  h300_config: 6,
   h525_external_firmware: 9,
   h525_config: 9,
   h525_config_2: 9,

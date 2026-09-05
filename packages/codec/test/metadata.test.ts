@@ -120,7 +120,7 @@ test('the names do not line up with the records, and that is the open half',
  * architecture joins by having its map filled in rather than by anyone editing this list.
  */
 const SEND_COVER = ['one_config', 'h600_config', 'h700_config', 'h525_config', 'arch8_config_885',
-  'h350_config', 'h350_programmed_config', 'h350_three_devices_config'];
+  'h350_config', 'h350_programmed_config', 'h350_three_devices_config', 'h300_config'];
 
 test('every send instruction names a record, and together they name all of them',
   // `skipUnless` up front, not `require_` with a spread inside, which is what stood here and is the
@@ -167,19 +167,26 @@ test('every send instruction names a record, and together they name all of them'
       }
       // **The exact cover is arch 16's and is asserted only there**, deliberately. Elsewhere a
       // device's codeset holds more codes than its activities bind, so a group is referenced in part
-      // and a completeness assertion would be false rather than informative. On the Harmony 350 every
-      // record is referenced exactly once, which is what makes the split a measurement there.
-      if (!name.startsWith('h350_')) continue;
+      // and a completeness assertion would be false rather than informative. On arch 16 every record
+      // is referenced exactly once, which is what makes the split a measurement there.
+      //
+      // **Both models and a configuration nobody here authored**, section 264: the Harmony 300 read
+      // as it arrived, built in 2011 by a previous owner, covers 36 of 36 and 43 of 43. That removes
+      // the last reading in which the exactness could have been an artefact of how these particular
+      // remotes were set up.
+      if (!name.startsWith('h350_') && name !== 'h300_config') continue;
       assert.deepEqual([...indices].sort((a, b) => a - b),
         Array.from({ length: records }, (_unused, i) => i),
         `${name} group ${group} is not covered exactly`);
     }
   }
-  assert.equal(containers, 8, 'a container went unwalked');
+  assert.equal(containers, 9, 'a container went unwalked');
   // 1843 since the programmed Harmony 350, section 262, whose 142 sends join the 1701 here. Its
   // cover is exact like its factory twin's, which is the point of that section: it was expected to
   // stop being exact once the remote held a real configuration and it does not.
-  assert.equal(sends, 1940);
+  // 2019 since the Harmony 300, section 264, whose 79 sends join the 1940. Its cover is exact too,
+  // on a configuration nobody here authored, which is the strongest form of section 261's claim.
+  assert.equal(sends, 2019);
 });
 
 /**
@@ -352,27 +359,78 @@ test('the Harmony 350 states a number sender, and only the programmed one does',
  * is the `MaxDevicesPerAccount` Logitech states for this skin, where base slot 5 on every other
  * architecture here holds exactly one group per device.
  */
-test('a device costs the Harmony 350 one entry in one slot and two in another',
-  skipUnless('h350_config', 'h350_programmed_config', 'h350_three_devices_config'), () => {
-  const expected: Readonly<Record<string, number>> = {
-    h350_config: 3,
-    h350_programmed_config: 4,
-    h350_three_devices_config: 3,
+test('a device costs an arch 16 container one entry, and the infrared table is sized by the skin',
+  skipUnless('h350_config', 'h350_programmed_config', 'h350_three_devices_config', 'h300_config'),
+  () => {
+  // devices, the skin's stated maximum devices, and raw slot 8's length. The fourth row is a
+  // different **model**, which is what makes the third column a claim rather than a coincidence.
+  const expected: Readonly<Record<string, readonly [number, number, number]>> = {
+    h350_config: [3, 8, 6],
+    h350_programmed_config: [4, 8, 8],
+    h350_three_devices_config: [3, 8, 6],
+    h300_config: [2, 4, 0],
   };
   let walked = 0;
-  for (const [name, devices] of Object.entries(expected)) {
+  for (const [name, [devices, maxDevices, slotEight]] of Object.entries(expected)) {
     const c = parse(require_(name));
     // The device count comes from the archive's own names, which is the only place this architecture
     // states it: `deviceCount` reads a base slot this map does not place.
     assert.equal(metadataArchive(c)?.devices.length, devices, `${name} names a different number`);
+    // **Devices plus one, on two models and on a configuration nobody here authored.** That is what
+    // makes it structural rather than an artefact of how the bench remote was set up.
     assert.equal((c.pointerArray(6) ?? []).length, devices + 1, `${name} raw slot 6`);
-    assert.equal((c.pointerArray(8) ?? []).length, devices * 2, `${name} raw slot 8`);
-    // And the one that does not move. Eight is the vendor's stated maximum for this skin.
-    assert.equal((irGroups(c) ?? []).length, 8, `${name} infrared groups`);
+    // **Raw slot 8 is asserted as data and not as arithmetic**, section 264, because the arithmetic
+    // was wrong: devices times two holds on all three Harmony 350 containers and the Harmony 300
+    // holds zero where it predicts four. The two skins differ in three declared capabilities and
+    // nothing here separates them, so the honest assertion is the measured length.
+    assert.equal((c.pointerArray(8) ?? []).length, slotEight, `${name} raw slot 8`);
+    // **The infrared table is sized by the skin's maximum and not by the configuration**, which is
+    // this architecture's own behaviour: 8 groups on the Harmony 350 and 4 on the Harmony 300,
+    // matching each skin's `MaxDevicesPerAccount`, with the unused groups empty. Every other
+    // architecture here holds exactly one group per device.
+    assert.equal((irGroups(c) ?? []).length, maxDevices, `${name} infrared groups`);
+    assert.ok(devices < maxDevices, `${name} fills its table, so the claim cannot fail on it`);
     walked += 1;
   }
-  assert.equal(walked, 3, 'a container went unwalked');
-  // The claim rests on the counts differing, so assert that they do: two containers with three
-  // devices and one with four. Without this the three equalities above could all be one number.
-  assert.deepEqual([...new Set(Object.values(expected))].sort(), [3, 4]);
+  assert.equal(walked, 4, 'a container went unwalked');
+  // The claims rest on the columns varying, so assert that they do. Without this every equality
+  // above could be one number, which is the shape section 32 failed on.
+  assert.deepEqual([...new Set(Object.values(expected).map((r) => r[0]))].sort(), [2, 3, 4]);
+  assert.deepEqual([...new Set(Object.values(expected).map((r) => r[1]))].sort(), [4, 8]);
+  assert.deepEqual([...new Set(Object.values(expected).map((r) => r[2]))].sort((a, b) => a - b),
+    [0, 6, 8]);
+});
+
+/**
+ * A unit's own skin is not the one its USB descriptor states, section 264.
+ *
+ * **The part that can be tested off a file is the configuration's half**, and it is the half that
+ * matters: the bench Harmony 300's container states skin 79 in its version word, where section 195
+ * recorded 78 for that unit from `bcdDevice`. Both are a Harmony 300 in Logitech's product table, 78
+ * for one region and 79 for the other, so the descriptor names the family's base skin and the remote
+ * names its own regional variant. A reader that takes the skin from the descriptor gets the region
+ * wrong.
+ *
+ * **The control is the other model.** The Harmony 350 is the only skin in its family and its
+ * descriptor and its container agree, 104 both ways, so the two sources agree where there is no
+ * regional pair and disagree where there is one. The descriptor values themselves are hardware
+ * readings and live in `docs/findings.md`; what is asserted here is what the files say.
+ *
+ * Section 81 is the reason this is worth a test rather than a note: the version word is per config
+ * rather than per model, an editor copies it rather than computing it, and it has already been seen
+ * naming a skin the remote does not report. So this pair could have drifted for that reason instead,
+ * and the thing that rules it out is the remote's own `/sys/sysinfo` agreeing with the container.
+ */
+test('the arch 16 containers state their own skin, and the Harmony 300 states the European one',
+  skipUnless('h300_config', 'h350_config', 'h350_programmed_config', 'h350_three_devices_config'),
+  () => {
+  // Low byte of the version word is the skin, section 81.
+  const skinOf = (name: string) => (parse(require_(name)).versionWord as number) & 0xff;
+  assert.equal(skinOf('h300_config'), 79, 'the Harmony 300 no longer states the European skin');
+  for (const name of ['h350_config', 'h350_programmed_config', 'h350_three_devices_config']) {
+    assert.equal(skinOf(name), 104, `${name} states a different skin`);
+  }
+  // The two skins are different numbers, which is what makes the line above a claim: a reader that
+  // returned a constant would pass one of these two assertions and not both.
+  assert.notEqual(skinOf('h300_config'), skinOf('h350_config'));
 });

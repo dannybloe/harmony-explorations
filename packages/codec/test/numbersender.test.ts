@@ -233,9 +233,11 @@ test('nine containers declare a method for sending a number, 29 declare none, 7 
     // somebody chose in advance.
     // 46 since the one device differential, section 263, and it lands in `populated`: the five
     // favourites are on the set top box, which stayed.
-    assert.equal(populated + declaredEmpty + unread, 46, 'every container the lab can parse');
+    // 47 since the Harmony 300, section 264, and it lands in `declaredEmpty`: its previous owner
+    // set no favourite channels, and the slot is a count of zero rather than absent.
+    assert.equal(populated + declaredEmpty + unread, 47, 'every container the lab can parse');
     assert.equal(populated, 10);
-    assert.equal(declaredEmpty, 29);
+    assert.equal(declaredEmpty, 30);
     // What is left in `unread` is five arch 10 reads plus the two containers found inside arch 8
     // firmware images, which report architecture 0. **The line between the three that answer and the
     // five that do not is exactly the trailer checksum**, which is worth stating because nothing made

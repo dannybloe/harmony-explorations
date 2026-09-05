@@ -1212,7 +1212,7 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
         # write rails compare the connected unit against and which must not be in this repository.
         # 68 since 4 September 2026 and the two Harmony 350 rows, per the comment on the row count
         # test below. 69 since the programmed Harmony 350 was read, section 262.
-        self.assertEqual(len(named), 70, "lab paths the register names, as at 5 September 2026")
+        self.assertEqual(len(named), 71, "lab paths the register names, as at 5 September 2026")
         for path in sorted(named):
             with self.subTest(path=path):
                 if '*' in path:
@@ -1285,7 +1285,7 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
             return module, module['rows'](fh.read())
 
     def test_the_register_parses_into_the_rows_the_document_states(self):
-        """50 artefacts, exact rather than a floor, so a row lost to a formatting change fails.
+        """51 artefacts, exact rather than a floor, so a row lost to a formatting change fails.
 
         The number is here rather than a `fact:` marker because every producer in `tools/facts.py`
         needs a lab and this one needs only the repository. It is also a correction: `CLAUDE.md` said
@@ -1298,10 +1298,10 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
         # got a row of their own: both were covered only by their directory's row, which said nothing
         # about them, and sections 259 to 261 mined both. A row at the granularity of the thing that
         # was dug is what `make lab-check` can answer with.
-        # 49 since the programmed Harmony 350 got its own row, section 262, and 50 since the one
-        # device differential beside it, section 263.
-        self.assertEqual(len(rows), 50)
-        self.assertEqual(len(dict(rows)), 50, 'a duplicated path would make a query ambiguous')
+        # 49 since the programmed Harmony 350 got its own row, section 262, 50 since the one
+        # device differential beside it, section 263, and 51 since the Harmony 300, section 264.
+        self.assertEqual(len(rows), 51)
+        self.assertEqual(len(dict(rows)), 51, 'a duplicated path would make a query ambiguous')
         self.assertNotIn('unseen', dict(rows), 'the status legend is not an artefact')
 
     def test_a_query_is_answered_by_ancestors_and_by_descendants(self):

@@ -50,3 +50,21 @@ byte end marker appended the way section 262 established, since the file's state
 states no maximum rather than stating zero, and `PartiallySetupActivities` is a capability nothing here
 has read. That is a question for Logitech's client or for the firmware, and the firmware is the same
 image for both models.
+
+## Scored
+
+Five right, one half wrong and one wrong, in `docs/findings.md` section 264.
+
+P3 came out the way this document hoped: **four groups**, the model's stated maximum, so the infrared
+table is allocated by the skin across two models rather than being one model's constant.
+
+P2 was half wrong in an interesting direction. The unit states skin **79** and not 78, and both are a
+Harmony 300, 78 for one region and 79 for the other. Its `bcdDevice` says 78, which is where section
+195 read it, so the descriptor names the family's base skin and the remote names its own variant.
+
+P5 was wrong and is the useful failure: raw slot 8 holds **nothing** where devices times two predicted
+four, so that arithmetic was an artefact of the one model it was measured on.
+
+P4 held, so devices plus one is structural. What this document hoped it might settle, whether the spare
+entry is the activity, it does not: the answer would have been informative only if the arithmetic had
+broken.

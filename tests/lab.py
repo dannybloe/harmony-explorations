@@ -292,6 +292,10 @@ IMAGES = {
     # The same remote with the Playstation 3 removed and nothing else changed, section 263: a one
     # device differential, which named raw slot 6 and settled the device to group mapping.
     'h350_three_devices_config': 'harmony-350-three-devices-config.bin',
+    # A second hand Harmony 300 read as it arrived, section 264: the second model on arch 16, and
+    # Logitech separates the two skins in the places that count. Its configuration is a previous
+    # owner's, so its device names are a stranger's.
+    'h300_config': 'harmony-300-config.bin',
     # The account's own command list, captured 13 August 2026: a name and a stated code per command.
     # Read by the TypeScript side, where the frame decoder lives; named here so the two tables agree.
     'account_commands': 'GetCommands_mine.json',

@@ -66,7 +66,7 @@ sets (arch 8, arch 9 and a Harmony 700 pair) were added as controls. Seventeen s
 framing tables, five base addresses and three pointer table lengths, which is the same property the
 format word states rather than a second one, section 194, so it is counted once. All
 consistency checks pass; the wider population of everything in the lab that parses is
-46<!--fact:parseable_containers--> containers over **six** architectures, since arch 10's framing
+47<!--fact:parseable_containers--> containers over **six** architectures, since arch 10's framing
 verifies too and a Harmony 350 arrived on 27 August 2026 bringing arch 16 with it, section 194. It
 turns out to be one format with a per architecture cookie rather than one format per
 architecture, and the **pointer table is one table too**, with a couple of per architecture
@@ -439,7 +439,7 @@ finding.
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 263<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 264<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -659,6 +659,29 @@ figures common to both carry `fact:` markers, so `make facts` moves every copy t
 cannot drift apart; what a reader should not expect is two independent statements of one measurement.
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
+
+**A second model on the same generation turned two readings into rules and killed a third, section
+264.** Everything about that generation rested on one remote until Danny put the Harmony 300 on the
+bench, and Logitech separates the two models where it counts: four devices against eight, no long press
+against long press. Reading it, with no new code, settled three things. The room a configuration
+reserves for equipment is the **model's own maximum**, four on this one and eight on the other, where
+every other Harmony here reserves exactly what the configuration uses, so a writer for this generation
+sizes that table by the model. One part of the file holds an entry per device plus one, which now holds
+on two models and on a configuration nobody here wrote, so the spare entry is structural rather than an
+artefact. And a part that looked like two entries per device holds **nothing at all** on the 300, so
+that arithmetic was one model's accident; the two models differ in three declared features and nothing
+here separates them.
+
+**The remote also disagrees with its own USB descriptor about which model it is.** It says one number
+in its own text and in its configuration, and the descriptor says another, and the two are Logitech's
+two regional versions of the same remote, one European. So a reader that asks the descriptor gets the
+region wrong, and the earlier reading that took it from there is corrected. The control is the other
+model, which has no regional twin and where the two sources agree.
+
+**Its configuration is a previous owner's**, built in 2011, and that makes one earlier claim much
+stronger: every stored code is pointed at by exactly one key with no gaps, on a file nobody here
+authored. That was the last reading where the tidiness could have been an artefact of how these
+particular remotes were set up.
 
 **Removing one device from the Harmony 350 said which stored codes belong to which device, section
 263.** Danny took the Playstation off it and changed nothing else, so the two files differ by one

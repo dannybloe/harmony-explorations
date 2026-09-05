@@ -301,6 +301,12 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // together: this is what named raw slot 6 as one entry per device and settled which infrared group
   // each device owns, since exactly one group empties. Outside every corpus wide population.
   h350_three_devices_config: 'harmony-350-three-devices-config.bin',
+  // A second hand **Harmony 300** read as it arrived, section 264. The second model on arch 16, where
+  // everything before it rested on one remote, and Logitech separates the two skins in the places
+  // that count: four devices against eight and no long press against long press. Nobody here
+  // programmed it, so its configuration is a previous owner's and its device names are a stranger's.
+  // Outside every corpus wide population, like the three Harmony 350 containers.
+  h300_config: 'harmony-300-config.bin',
   phase7_before: 'phase7-before-gspm.bin',
   phase7_after: 'phase7-after-gspm.bin',
   // The account's own command list, captured 13 August 2026: a name and a stated code per command,
