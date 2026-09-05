@@ -332,8 +332,8 @@ for offset in range(0, len(blob) - 6 - 1, 2):
 ```
 
 An odd trailing byte is not folded in, because the firmware divides the byte count by two and
-counts words, and **24<!--fact:parseable_odd_body--> of the 45<!--fact:parseable_containers-->
-parseable containers have an odd body**, of which 19<!--fact:odd_body_verifying--> verify their
+counts words, and **25<!--fact:parseable_odd_body--> of the 46<!--fact:parseable_containers-->
+parseable containers have an odd body**, of which 20<!--fact:odd_body_verifying--> verify their
 stored checksum under that rule. (This said 19 of 33 with 14 verifying, which had drifted through
 two sample additions because it carried no marker; it carries three now.) This said the corpus holds none<!--superseded-->, which made the
 behaviour read as untested when more than half the corpus tests it.

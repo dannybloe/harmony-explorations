@@ -296,6 +296,11 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // configuration is what named the number sender, since only one slot goes from a count of zero to
   // a count of one. Outside every corpus wide population, like its factory twin.
   h350_programmed_config: 'harmony-350-programmed-config.bin',
+  // The same remote again with the **Playstation 3 removed and nothing else changed**, section 263.
+  // A one device differential, where the pair before it moved the device count and the favourites
+  // together: this is what named raw slot 6 as one entry per device and settled which infrared group
+  // each device owns, since exactly one group empties. Outside every corpus wide population.
+  h350_three_devices_config: 'harmony-350-three-devices-config.bin',
   phase7_before: 'phase7-before-gspm.bin',
   phase7_after: 'phase7-after-gspm.bin',
   // The account's own command list, captured 13 August 2026: a name and a stated code per command,

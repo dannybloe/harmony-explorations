@@ -71,6 +71,9 @@ const PEAKS: Readonly<Record<string, number>> = {
   // is the same direction as everything else about the pair: a real configuration of four devices
   // asks less of the queue than a factory one carrying codes for equipment nobody owns.
   h350_programmed_config: 8,
+  // And with one device removed, section 263. Unchanged at 8, so the peak is not simply a
+  // function of how many devices the configuration drives.
+  h350_three_devices_config: 8,
   h525_external_firmware: 9,
   h525_config: 9,
   h525_config_2: 9,

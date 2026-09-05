@@ -318,6 +318,12 @@ export const ARCH10_SLOT_MAP: readonly (number | undefined)[] = [
  * lacks it, which is the opposite of arch 10's map and is why this comment says so: `archSlot` throws
  * for an absent base slot, so an unread slot refuses rather than answering wrongly, and that is the
  * rail this architecture needs most.
+ *
+ * **Two raw slots have a measured meaning and no base slot, section 263**, and they stay `undefined`
+ * for exactly that reason. Removing one device from the bench remote takes raw slot 6 from five
+ * pointers to four and raw slot 8 from eight to six, so raw 6 is one entry per device and raw 8 is
+ * two. Knowing what a slot counts is not knowing which base slot it is, and a map entry is a claim
+ * about the second, so neither is placed here.
  */
 export const ARCH16_SLOT_MAP: readonly (number | undefined)[] = [
   0, // 0, the 0xFEED name tree, 131 bytes under Root, State and Radio

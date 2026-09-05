@@ -289,6 +289,9 @@ IMAGES = {
     # section 262: four devices, one activity and five favourite channels chosen before the read.
     # Its pair with the factory configuration is what named the number sender.
     'h350_programmed_config': 'harmony-350-programmed-config.bin',
+    # The same remote with the Playstation 3 removed and nothing else changed, section 263: a one
+    # device differential, which named raw slot 6 and settled the device to group mapping.
+    'h350_three_devices_config': 'harmony-350-three-devices-config.bin',
     # The account's own command list, captured 13 August 2026: a name and a stated code per command.
     # Read by the TypeScript side, where the frame decoder lives; named here so the two tables agree.
     'account_commands': 'GetCommands_mine.json',

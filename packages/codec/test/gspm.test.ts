@@ -651,8 +651,11 @@ test('the arch 10 clock record sits one slot later, and reading it is what dated
  * project has read off a remote of the file based family. It joins for the same reason as the fourth
  * spare state above, being a name in `IMAGES` that parses, and it stays outside every corpus wide
  * total like its factory twin.
+ *
+ * **46 since the same remote with one device removed**, section 263, the third arch 16 container
+ * and the one that settled which infrared group each device owns.
  */
-const PARSEABLE = 45;
+const PARSEABLE = 46;
 
 function parseable(): { name: string; container: Container }[] {
   const out: { name: string; container: Container }[] = [];
@@ -717,7 +720,7 @@ test('the format word has nothing in its high half, and a byte there would be re
     assert.equal(bad.checks['format_high_half_is_zero'], false);
   });
 
-test('24 of the parseable containers have an odd body and 19 of those verify',
+test('25 of the parseable containers have an odd body and 20 of those verify',
   skipWithoutLab(), () => {
     // The comment above `trailerChecksum` said no container in the corpus has an odd body,<!--superseded--> and
     // invited a reader to fold the trailing byte in on the grounds that nothing would catch it.
@@ -737,9 +740,11 @@ test('24 of the parseable containers have an odd body and 19 of those verify',
     // moves both, the same way the Harmony 895 did. Predicted from `tools/facts.py` recomputing the
     // marked numbers in the documents before this test was touched, which is the two halves of
     // `make facts` agreeing with each other for once rather than one correcting the other.
-    assert.equal(odd.length, 24);
+    // 25 and 20 since the one device differential, section 263: its body is 68985 bytes, which is
+    // odd, and its checksum recomputes, so it moves both figures the way the Harmony 895 did.
+    assert.equal(odd.length, 25);
     const verifying = odd.filter(({ container }) => container.checks['trailer_checksum_recomputes']);
-    assert.equal(verifying.length, 19);
+    assert.equal(verifying.length, 20);
     // Every one of the eighteen recomputes under the loop as written, which is what makes the
     // behaviour tested rather than assumed. Folding the trailing byte in would break the three whose
     // trailing byte is not zero, and be invisible on the other fifteen: so the comment was inviting
@@ -796,7 +801,8 @@ test('the last section ends at the end marker, not at the declared end',
     // container's own declared end and pads with zeros past it. The marker was appended from the
     // family table, so this assertion is what says the append landed where `endAddr` says it should
     // rather than merely making the parser happy.
-    assert.equal(agree, 43);
+    // 44 since the one device differential, section 263, whose marker was appended the same way.
+    assert.equal(agree, 44);
     // The two that disagree are the claim and they are unchanged, both being damaged reads of one
     // Harmony 890. Asserted by name rather than by count, because a count would let a **different**
     // container fail while one of these silently started passing.
@@ -848,12 +854,13 @@ test('the frame tiles to the next section on every container that has one', skip
   // 35 since the Harmony 350, section 194: its slot 0 frame tiles to the next section too.
   // 36 and 34 since `one_spare_20260830`, 30 August 2026: it moves both by one and so leaves the
   // gap alone, which is the claim.
-  assert.equal(framed, 37);
+  // 38 since the one device differential, section 263.
+  assert.equal(framed, 38);
   // 33 since the Harmony 350: its frame is non empty, so the naive arithmetic gets it right too and
   // the gap between the two counts stays at exactly two, which is the claim rather than either total.
   // 35 since the programmed Harmony 350, section 262, which has a frame like every other container
   // and so moves this figure and the one above it together.
-  assert.equal(naive, 35, 'the two the sentinel gets wrong are the two empty frames');
+  assert.equal(naive, 36, 'the two the sentinel gets wrong are the two empty frames');
   assert.equal(framed - naive, 2, 'and the gap is the two empty frames, whatever the totals are');
 });
 

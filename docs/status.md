@@ -66,7 +66,7 @@ sets (arch 8, arch 9 and a Harmony 700 pair) were added as controls. Seventeen s
 framing tables, five base addresses and three pointer table lengths, which is the same property the
 format word states rather than a second one, section 194, so it is counted once. All
 consistency checks pass; the wider population of everything in the lab that parses is
-45<!--fact:parseable_containers--> containers over **six** architectures, since arch 10's framing
+46<!--fact:parseable_containers--> containers over **six** architectures, since arch 10's framing
 verifies too and a Harmony 350 arrived on 27 August 2026 bringing arch 16 with it, section 194. It
 turns out to be one format with a per architecture cookie rather than one format per
 architecture, and the **pointer table is one table too**, with a couple of per architecture
@@ -439,7 +439,7 @@ finding.
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 262<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 263<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -659,6 +659,17 @@ figures common to both carry `fact:` markers, so `make facts` moves every copy t
 cannot drift apart; what a reader should not expect is two independent statements of one measurement.
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
+
+**Removing one device from the Harmony 350 said which stored codes belong to which device, section
+263.** Danny took the Playstation off it and changed nothing else, so the two files differ by one
+device, where the pair before moved two things at once. Seven questions were written down before the
+read and six are yes. Exactly one set of stored codes empties, which gives the owner of every set on
+that remote, and the answer **refutes** what the earlier read had suggested: the devices are listed in
+the file in the opposite order to their code sets. That candidate had been fitted to a file where it
+could not fail. Two more parts of the configuration now have a measured meaning: one holds an entry per
+device, and it counts the Chromecast too, which has no infrared codes at all, so it counts devices
+rather than devices that can send something. Neither is placed on the slot map, because knowing what a
+part counts is not knowing which part it is, and that wants the firmware.
 
 **This library reads a Harmony 350's configuration off the remote now, and the read is four bytes
 short of a container, section 262.** That family keeps its configuration in a named file rather than

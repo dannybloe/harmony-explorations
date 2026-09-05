@@ -33374,7 +33374,7 @@ architecture.
 | P1 | larger than the factory configuration | **wrong**, 83840 bytes against 121251 |
 | P2 | the archive names four devices | right, and the name lengths are 2, 3, 11 and 2, which is his four names in his order |
 | P3 | the Playstation and the Chromecast carry no codes | **half right**: the Chromecast has 0 commands, the Playstation has 59 |
-| P4 | the k-th named device is the k-th non-empty group | supported and not settled, below |
+| P4 | the k-th named device is the k-th non-empty group<!--superseded--> | supported and not settled, below, and **refuted** by section 263 |
 | P5 | one activity | not answerable, `activityCount` returns nothing on this architecture |
 | P6 | the favourites go through the number sender | right, and this is the section's subject |
 | P7 | the exact cover of section 261 breaks | **wrong**, and this is the strongest result |
@@ -33443,3 +33443,59 @@ two lists is unknown rather than approximately known.
 **Raw slots 6 and 8 both grew**, 4 to 5 pointers and 6 to 8. Raw 6 tracking the device count exactly,
 three devices to four, is a lead and nothing more: it is one pair, and a count that moves with the
 devices could be several things. Neither is in the map.
+
+## 263. One device removed, and which infrared group belongs to which device
+
+Danny took the Playstation 3 off the bench Harmony 350 and changed nothing else, so this container and
+section 262's differ by exactly one device. That is what the previous pair could not offer: it moved
+the device count and the favourite channels together, so two slots grew and neither could be
+attributed to either. Seven questions were written down and committed before the read,
+`docs/predictions-arch16-programmed.md`, and six are answered yes.
+
+| | question | answer |
+|---|---|---|
+| Q1 | raw slot 6 goes from five pointers to four | **yes**, so it is one entry per device |
+| Q2 | raw slot 8 goes from eight to six | **yes**, so it is two per device |
+| Q3 | the archive names three devices and drops the Playstation | yes |
+| Q4 | one infrared group empties, and which one says who owns what | yes, and the answer refutes an earlier candidate |
+| Q5 | the number sender is untouched | yes, one record, since the favourites are on a device that stayed |
+| Q6 | the file is smaller again | yes, 68985 bytes against 83840 and the factory 121251 |
+| Q7 | the exact cover still holds | yes, 51 of 51 and 46 of 46 |
+
+### The mapping, and section 261's candidate is dead
+
+The three groups holding records were 51, 46 and 45. After the removal they are 51, 46 and **nothing**,
+with no renumbering, so the Playstation owned group 2. The digit tables of section 262 already put the
+set top box on group 1. So, with the archive's own device order read off the shorter file, where the
+three surviving names are unambiguous by length:
+
+| archive device | its commands | its group | that group's records |
+|---|---|---|---|
+| 0, the Playstation | 59 | 2 | 45 |
+| 1, the set top box | 38 | 1 | 46 |
+| 2, the Chromecast | 0 | none | |
+| 3, the television | 63 | 0 | 51 |
+
+**So the k-th named device is not the k-th non-empty group**, which section 261 recorded as a
+candidate on one container's worth of evidence and which this refutes. The order is the **reverse**:
+the devices that carry codes, in the order the archive names them, own groups 2, 1 and 0. That is
+three points on one remote, so it is a better candidate than the one it replaces and not a rule.
+
+**And the anomaly section 262 reported survives the mapping being settled.** The set top box is named
+with 38 commands and its group holds 46 records. Every other device here is named with more commands
+than its group holds records, 59 against 45 and 63 against 51, which is what a codeset larger than what
+an activity binds looks like. One device having it the other way round is unexplained, and it is now
+unexplained about a specific device rather than about an unknown assignment.
+
+### What raw slots 6 and 8 count, and why neither is in the map
+
+Raw 6 moves one for one with the devices, four to five and back to four. Raw 8 moves two for one, six
+to eight and back to six. Those are measurements about **what a slot counts**, and a slot map entry is
+a claim about **which base slot it is**, which is a different question: base slots 6, 7, 8 and 9 are
+all candidates and nothing here separates them. So both stay `undefined` in `ARCH16_SLOT_MAP` and the
+measurement is recorded in its docstring instead. Naming them wants the firmware, which is the route
+section 259 used and which has fourteen call sites still unattributed.
+
+The Chromecast is worth one line here, because it is the control nobody arranged: it has no infrared
+commands at all and it still occupies an entry everywhere the devices are counted. So raw 6 counts
+**devices**, and not devices that can send something.

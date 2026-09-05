@@ -120,7 +120,7 @@ test('the names do not line up with the records, and that is the open half',
  * architecture joins by having its map filled in rather than by anyone editing this list.
  */
 const SEND_COVER = ['one_config', 'h600_config', 'h700_config', 'h525_config', 'arch8_config_885',
-  'h350_config', 'h350_programmed_config'];
+  'h350_config', 'h350_programmed_config', 'h350_three_devices_config'];
 
 test('every send instruction names a record, and together they name all of them',
   // `skipUnless` up front, not `require_` with a spread inside, which is what stood here and is the
@@ -175,11 +175,11 @@ test('every send instruction names a record, and together they name all of them'
         `${name} group ${group} is not covered exactly`);
     }
   }
-  assert.equal(containers, 7, 'a container went unwalked');
+  assert.equal(containers, 8, 'a container went unwalked');
   // 1843 since the programmed Harmony 350, section 262, whose 142 sends join the 1701 here. Its
   // cover is exact like its factory twin's, which is the point of that section: it was expected to
   // stop being exact once the remote held a real configuration and it does not.
-  assert.equal(sends, 1843);
+  assert.equal(sends, 1940);
 });
 
 /**
@@ -230,9 +230,14 @@ test('the Harmony 350 carries three biphase groups and none of them decodes',
       const address = groups[at]?.addresses[0] as number;
       const words = irBlockWords(c, irHeaderPointers(c, address)[1] as number) as number[];
       const pulses = mergedIntervals(pulsesOfWords(words));
-      const hit = PROTOCOLS.find((one) => (one.biphase?.lead.length ?? 0) >= 2
-        && (one.biphase as { lead: { mark: boolean; us: number }[] }).lead
-          .every((q, i) => pulses[i]?.mark === q.mark && pulses[i]?.us === q.us));
+      // Narrowed rather than cast. The cast that stood here asserted a mutable `lead` over the
+      // table's readonly one, which `node --test` accepts and `tsc --build` refuses, so it passed
+      // every test run and failed the typecheck.
+      const hit = PROTOCOLS.find((one) => {
+        const lead = one.biphase?.lead;
+        return lead !== undefined && lead.length >= 2
+          && lead.every((q, i) => pulses[i]?.mark === q.mark && pulses[i]?.us === q.us);
+      });
       assert.equal(hit, undefined, `group ${at} matches ${hit?.family ?? ''} after all`);
     }
   });

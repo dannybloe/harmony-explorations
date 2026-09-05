@@ -136,6 +136,8 @@ CONTAINERS = (
     # reason as its factory twin, and the pair is what put base slot 16 on this architecture's map,
     # so the two codecs have to agree about a slot only these two containers populate.
     'h350_programmed_config',
+    # And the same remote with one device removed, section 263, the third arch 16 container.
+    'h350_three_devices_config',
     # The arch 8 safe mode container, which is **inside** the firmware image rather than in a file
     # of its own: `gspm.parse` finds it at blob offset 0xE000, flash 0x01E000, and every check
     # passes. The two images carry it identically, since they differ only in the skin byte, so the

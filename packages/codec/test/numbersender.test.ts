@@ -231,8 +231,10 @@ test('nine containers declare a method for sending a number, 29 declare none, 7 
     // `unread` for `declaredEmpty` and the programmed one lands in `populated`. That makes it the
     // second container read off a remote to populate this section and the first whose channels
     // somebody chose in advance.
-    assert.equal(populated + declaredEmpty + unread, 45, 'every container the lab can parse');
-    assert.equal(populated, 9);
+    // 46 since the one device differential, section 263, and it lands in `populated`: the five
+    // favourites are on the set top box, which stayed.
+    assert.equal(populated + declaredEmpty + unread, 46, 'every container the lab can parse');
+    assert.equal(populated, 10);
     assert.equal(declaredEmpty, 29);
     // What is left in `unread` is five arch 10 reads plus the two containers found inside arch 8
     // firmware images, which report architecture 0. **The line between the three that answer and the

@@ -34,7 +34,7 @@ likely to be wrong**, because Logitech does sell an infrared adapter for a Plays
 catalogue carries codesets for it, so the device may well arrive with a full codeset that nothing on
 this remote can usefully send.
 
-**P4. The k-th named device is the k-th non-empty group.** This is the candidate section 261 recorded
+**P4. The k-th named device is the k-th non-empty group.**<!--superseded--> This is the candidate section 261 recorded
 and could not settle, and this configuration is the case that settles it: if two groups are empty and
 the naming still lines up by skipping them, the rule holds against a real test rather than against a
 file where it could not fail.
@@ -109,3 +109,11 @@ that device did not move.
 **Q6. The file is smaller again**, by roughly the size of a codeset, since 51 or 45 records leave.
 
 **Q7. The exact cover still holds** on whatever groups remain.
+
+### Scored
+
+Six of the seven yes, in `docs/findings.md` section 263. Q4 was the open one and it is answered: the
+Playstation owned group 2, so the devices that carry codes own groups 2, 1 and 0 in the order the
+archive names them, which is the **reverse** of the order section 261 proposed as a candidate. That
+candidate is refuted rather than confirmed, which is the more useful outcome: it was fitted to a
+container where it could not fail.
