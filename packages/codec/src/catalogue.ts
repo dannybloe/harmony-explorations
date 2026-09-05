@@ -42,7 +42,13 @@ export interface CatalogueManufacturer {
 
 /** One model of one manufacturer, as its manufacturer's own index states it. */
 export interface CatalogueModel {
-  readonly model: string;
+  /**
+   * **Null for the three devices that state no model name**, of 276236: one each under Thomson,
+   * Gemini and Sony, whose only identity is `globalDeviceId` and whose file is named for it. This
+   * field was typed `string` until it was measured, so a caller reaching for a string method on it
+   * threw on Sony, which is a manufacturer the tests here already walk.
+   */
+  readonly model: string | null;
   /** The file inside `devices/<slug>/`, which is not always the model name: two models may collide. */
   readonly file: string;
   /** Logitech's own id for the device, which is what their live service takes as a key. */
@@ -52,7 +58,8 @@ export interface CatalogueModel {
 /** One device: what it is, and where its codes live. */
 export interface CatalogueDevice {
   readonly manufacturer: string;
-  readonly model: string;
+  /** Null for the same three devices, and for the same reason. See `CatalogueModel.model`. */
+  readonly model: string | null;
   /**
    * Logitech's own numeric device type. **Not an index into the `DeviceType` enum** in
    * `docs/myharmony/model.json`, which is serialised alphabetically, so its index 1 is `Default` and
@@ -60,7 +67,16 @@ export interface CatalogueDevice {
    */
   readonly deviceType: number;
   readonly globalDeviceId: number;
-  /** The codeset path relative to the archive root, or undefined for the 18516 devices with no codes. */
+  /**
+   * The codeset path relative to the archive root, absent for the 18516 devices with no codes.
+   *
+   * **The archive spells that absence as `null` and this field is normalised to omit it**, which is
+   * the point of the normalising: the count in this comment was right and the type was wrong about
+   * exactly those rows, since all 18516 carry the key with a null value and **not one** of the
+   * 276236 device files omits it. So a `=== undefined` guard was never true once, and every codeless
+   * device came back with a null typed as `string | undefined`, which threw a path error deep in
+   * `catalogueCommands` rather than reporting no codes.
+   */
   readonly codeset?: string;
 }
 
@@ -114,8 +130,11 @@ export function catalogueManufacturers(root: string): CatalogueManufacturer[] {
 export function catalogueModels(root: string, slug: string): CatalogueModel[] {
   const path = join(root, 'devices', slug, 'index.json');
   if (!existsSync(path)) throw new ArchiveError(`no such manufacturer: ${slug}`);
-  const rows = JSON.parse(readFileSync(path, 'utf8')) as { f: string; id: number; m: string }[];
-  return rows.map((one) => ({ model: one.m, file: one.f, globalDeviceId: one.id }));
+  // `m` is null on three rows of the whole archive, so the cast says so rather than the interface
+  // carrying the lie: a cast is where a reader decides what it believes about somebody else's data.
+  type Row = { f: string; id: number; m: string | null };
+  const rows = JSON.parse(readFileSync(path, 'utf8')) as Row[];
+  return rows.map((one) => ({ model: one.m ?? null, file: one.f, globalDeviceId: one.id }));
 }
 
 /** One device by its manufacturer slug and its file name, as `catalogueModels` gives them. */
@@ -123,11 +142,17 @@ export function catalogueDevice(root: string, slug: string, file: string): Catal
   const path = join(root, 'devices', slug, file.endsWith('.json') ? file : `${file}.json`);
   if (!existsSync(path)) throw new ArchiveError(`no such device: ${slug}/${file}`);
   const one = JSON.parse(readFileSync(path, 'utf8')) as {
-    manufacturer: string; model: string; deviceType: number; globalDeviceId: number; codeset?: string;
+    manufacturer: string; model: string | null; deviceType: number; globalDeviceId: number;
+    codeset?: string | null;
   };
   return {
-    manufacturer: one.manufacturer, model: one.model, deviceType: one.deviceType,
-    globalDeviceId: one.globalDeviceId, ...(one.codeset === undefined ? {} : { codeset: one.codeset }),
+    manufacturer: one.manufacturer, model: one.model ?? null, deviceType: one.deviceType,
+    globalDeviceId: one.globalDeviceId,
+    // `== null` deliberately, since the archive states both spellings across its own files and the
+    // declared type promises the field is absent when there are no codes. Omitting rather than
+    // passing the null through is what makes `codeset ?? fail(...)` and `codeset!` behave as the
+    // callers here already assume they do.
+    ...(one.codeset === undefined || one.codeset === null ? {} : { codeset: one.codeset }),
   };
 }
 

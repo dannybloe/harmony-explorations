@@ -349,3 +349,62 @@ test('a Harmony 300 device group is indexed by its device type button',
   // The television owns group 0 and is third alphabetically, which is the disagreement itself.
   assert.equal(archive.findIndex((one) => one.toLowerCase().includes('tv')), 2);
 });
+
+/**
+ * The two fields Logitech's archive spells as null, which our reader typed as absent.
+ *
+ * **Both were latent and one was reachable.** `codeset` was declared `string | undefined` with a
+ * comment naming the 18516 devices that have no codes; all 18516 state the key with a **null** value
+ * and not one of the 276236 device files omits it, so the `=== undefined` guard inside
+ * `catalogueDevice` was never true once and every codeless device came back carrying a null typed as a
+ * string. A caller then got a path error out of `catalogueCommands` instead of an honest "no codes".
+ * `model` was declared `string` and is null on three rows, one of them under Sony, so reaching for a
+ * string method on a model name threw on a manufacturer these tests already walk.
+ *
+ * **Found by using the reader rather than by reading it**, while identifying arch 16 device groups in
+ * section 265: the Chromecast has no infrared codes at all, and asking the catalogue about it crashed.
+ *
+ * **The fix is that the declared type is now true**: `codeset` is omitted rather than null, which is
+ * what makes `codeset ?? fail(...)` in `bin/compose-device.ts` and `codeset!` elsewhere behave the way
+ * their callers already assume, and `model` says it can be null.
+ */
+test('the archive states two fields as null and the reader does not pass either through',
+  needing(skipWithoutIrArchive()), () => {
+  // The nameless three, over every index in the archive. Under a second, so it is counted rather
+  // than asserted on the three names, which would pass if a fourth appeared.
+  let rows = 0;
+  const nameless: { maker: string; file: string; id: number }[] = [];
+  for (const maker of catalogueManufacturers(IR_ARCHIVE!)) {
+    for (const one of catalogueModels(IR_ARCHIVE!, maker.slug)) {
+      rows += 1;
+      if (one.model === null) nameless.push({ maker: maker.slug, file: one.file, id: one.globalDeviceId });
+    }
+  }
+  assert.equal(rows, 276236, 'the manufacturer indexes do not cover the archive');
+  assert.equal(nameless.length, 3, 'a device with no model name appeared or went away');
+  // Named by their own ids, which is what the archive itself falls back to for the file name, so a
+  // caller wanting something to display has that rather than needing the reader to invent one.
+  assert.deepEqual(nameless.map((one) => one.maker).sort(), ['Gemini', 'Sony', 'Thomson']);
+  for (const one of nameless) {
+    assert.equal(one.file, `device-${one.id}.json`, 'the file is not named for the id');
+  }
+
+  // And the device file agrees with its index row, which is the half that would break a caller that
+  // went straight to the device: model null, and codeset **absent** rather than null.
+  const sony = nameless.find((one) => one.maker === 'Sony')!;
+  const device = catalogueDevice(IR_ARCHIVE!, 'Sony', sony.file);
+  assert.equal(device.model, null, 'the device file states a model name');
+  assert.equal(device.manufacturer, 'Sony');
+  assert.equal(device.globalDeviceId, sony.id);
+  // The claim: not `=== undefined` by accident of a null comparing loosely, but the key gone, so
+  // `'codeset' in device` is false and the declared optional field is honestly optional.
+  assert.equal(Object.hasOwn(device, 'codeset'), false, 'a null codeset was passed through');
+  assert.equal(device.codeset, undefined);
+
+  // **The control, because absence has to be distinguishable from a reader that drops the field.**
+  // A device that does state a codeset still carries it.
+  const withCodes = catalogueDevice(IR_ARCHIVE!, 'Sony',
+    catalogueModels(IR_ARCHIVE!, 'Sony').find((one) => one.model === 'KDL-32W705B')!.file);
+  assert.equal(Object.hasOwn(withCodes, 'codeset'), true, 'the reader drops every codeset');
+  assert.equal(typeof withCodes.codeset, 'string');
+});
