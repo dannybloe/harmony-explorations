@@ -996,6 +996,12 @@ docs/review-before-first-write.md
                                 may see
 docs/predictions-number-sender.md
                                 predictions written down before base slot 16 was read, then scored
+docs/predictions-arch16-programmed.md
+                                eight predictions about a Harmony 350 written before Danny programmed
+                                it and it was read, then scored in the same document. Five right or
+                                partly so, and the two most useful were wrong: a real configuration is
+                                **smaller** than the factory one, and the exact record cover holds on
+                                a programmed remote rather than breaking
 docs/predictions-sequence-delay.md
                                 the same for how a sequence states its delays. **Scored on
                                 29 August 2026 and its headline prediction was wrong**: the pause is

@@ -131,6 +131,11 @@ CONTAINERS = (
     # from. Section 194 came out of comparing it, so excluding it would have left the corpus
     # agreeing with itself about a field only a sixth architecture could contradict.
     'h350_config',
+    # And the same remote programmed, section 262: four devices, one activity and five favourite
+    # channels, read off it by this library rather than by concordance. It is here for the same
+    # reason as its factory twin, and the pair is what put base slot 16 on this architecture's map,
+    # so the two codecs have to agree about a slot only these two containers populate.
+    'h350_programmed_config',
     # The arch 8 safe mode container, which is **inside** the firmware image rather than in a file
     # of its own: `gspm.parse` finds it at blob offset 0xE000, flash 0x01E000, and every check
     # passes. The two images carry it identically, since they differ only in the skin byte, so the

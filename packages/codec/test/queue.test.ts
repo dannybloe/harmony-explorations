@@ -67,6 +67,10 @@ const PEAKS: Readonly<Record<string, number>> = {
   // demands exactly what a Harmony 525 does. A row rather than a moved total: arch 16 is outside
   // every corpus wide population, section 194.
   h350_config: 9,
+  // The same remote programmed, section 262. Its peak is one lower than the factory file's, which
+  // is the same direction as everything else about the pair: a real configuration of four devices
+  // asks less of the queue than a factory one carrying codes for equipment nobody owns.
+  h350_programmed_config: 8,
   h525_external_firmware: 9,
   h525_config: 9,
   h525_config_2: 9,

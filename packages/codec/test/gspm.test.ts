@@ -646,8 +646,13 @@ test('the arch 10 clock record sits one slot later, and reading it is what dated
  * does, since the checks below are properties of the parser and this is a container nothing here has
  * ever parsed. It is **not** in `CONTAINERS`, so no corpus wide total moves: that list is stated
  * rather than discovered, exactly so a new dump cannot quietly change every accounting figure.
+ *
+ * **45 since the programmed Harmony 350**, section 262, and it is the first configuration this
+ * project has read off a remote of the file based family. It joins for the same reason as the fourth
+ * spare state above, being a name in `IMAGES` that parses, and it stays outside every corpus wide
+ * total like its factory twin.
  */
-const PARSEABLE = 44;
+const PARSEABLE = 45;
 
 function parseable(): { name: string; container: Container }[] {
   const out: { name: string; container: Container }[] = [];
@@ -786,7 +791,12 @@ test('the last section ends at the end marker, not at the declared end',
     // 42 since `one_spare_20260830`, read on 30 August 2026 because the write rehearsal refused
     // against all three earlier dumps of that unit: its declared end and its end marker agree, as
     // every arch 12 container here does.
-    assert.equal(agree, 42);
+    // 43 since the programmed Harmony 350, section 262, **and this one is worth the line**: the four
+    // byte end marker is not in what the remote hands over, since it reports the file's length as the
+    // container's own declared end and pads with zeros past it. The marker was appended from the
+    // family table, so this assertion is what says the append landed where `endAddr` says it should
+    // rather than merely making the parser happy.
+    assert.equal(agree, 43);
     // The two that disagree are the claim and they are unchanged, both being damaged reads of one
     // Harmony 890. Asserted by name rather than by count, because a count would let a **different**
     // container fail while one of these silently started passing.
@@ -838,10 +848,12 @@ test('the frame tiles to the next section on every container that has one', skip
   // 35 since the Harmony 350, section 194: its slot 0 frame tiles to the next section too.
   // 36 and 34 since `one_spare_20260830`, 30 August 2026: it moves both by one and so leaves the
   // gap alone, which is the claim.
-  assert.equal(framed, 36);
+  assert.equal(framed, 37);
   // 33 since the Harmony 350: its frame is non empty, so the naive arithmetic gets it right too and
   // the gap between the two counts stays at exactly two, which is the claim rather than either total.
-  assert.equal(naive, 34, 'the two the sentinel gets wrong are the two empty frames');
+  // 35 since the programmed Harmony 350, section 262, which has a frame like every other container
+  // and so moves this figure and the one above it together.
+  assert.equal(naive, 35, 'the two the sentinel gets wrong are the two empty frames');
   assert.equal(framed - naive, 2, 'and the gap is the two empty frames, whatever the totals are');
 });
 
@@ -857,12 +869,12 @@ test('the frame tiles to the next section on every container that has one', skip
  * No lab, so a fresh clone is protected by this too. The Python mirror is in `tests/test_gspm.py`,
  * and the golden vectors compare the two copies, which is the only thing keeping them one table.
  */
-test('arch 16 places seven slots and refuses the other thirteen', () => {
-  const named: Record<number, number> = { 0: 0, 1: 1, 2: 2, 3: 3, 5: 4, 10: 7, 15: 10 };
+test('arch 16 places eight slots and refuses the other twelve', () => {
+  const named: Record<number, number> = { 0: 0, 1: 1, 2: 2, 3: 3, 5: 4, 10: 7, 15: 10, 16: 11 };
   for (const [base, raw] of Object.entries(named)) {
     assert.equal(archSlot(16, Number(base)), raw, `base slot ${base} moved`);
   }
-  const unread = [4, 6, 7, 8, 9, 11, 12, 13, 14, 16, 17, 18, 19];
+  const unread = [4, 6, 7, 8, 9, 11, 12, 13, 14, 17, 18, 19];
   for (const base of unread) {
     assert.throws(() => archSlot(16, base), /has no base slot/, `base slot ${base} answered`);
   }
@@ -872,11 +884,12 @@ test('arch 16 places seven slots and refuses the other thirteen', () => {
   // Raw slots the container holds that are not base slots: nine of the fifteen, which is the other
   // direction and the honest count of what section 259 left open.
   // Raw 13 stays here: it holds the metadata archive, which no base slot names, section 260.
-  const unnamedRaw = [5, 6, 8, 9, 11, 12, 13, 14];
+  const unnamedRaw = [5, 6, 8, 9, 12, 13, 14];
   for (const raw of unnamedRaw) {
     assert.equal(baseSlot(16, raw), undefined, `raw slot ${raw} is claimed by a base slot`);
   }
   assert.equal(baseSlot(16, 4), 5, 'raw slot 4 is the infrared database');
   assert.equal(baseSlot(16, 7), 10, 'raw slot 7 is the action list table');
+  assert.equal(baseSlot(16, 11), 16, 'raw slot 11 is the number sender, section 262');
   assert.equal(baseSlot(16, 10), 15, 'raw slot 10 is the parameter block');
 });

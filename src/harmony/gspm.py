@@ -289,7 +289,11 @@ ARCH16_SLOT_MAP: Tuple[Optional[int], ...] = (
     None,  # 13, unread
     None,  # 14, unread
     10,    # 15, the parameter block: five groups, each u8 length then that many bytes
-    None,  # 16, unread
+    # 16, the number sender, section 262. Named by a differential rather than by a shape: raw slot 11
+    # holds a count of zero in the factory configuration and a count of one in the programmed one,
+    # whose owner put five favourite channels on exactly one device, and its record is base slot 16's
+    # layout byte for byte.
+    11,
     None,  # 17, unread
     None,  # 18, unread
     None,  # 19, unread

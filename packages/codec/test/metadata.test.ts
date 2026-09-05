@@ -19,6 +19,7 @@ import { framesOfSegments, irFrames, mergedIntervals } from '../src/irframe.ts';
 import { pulsesOfWords } from '../src/irda.ts';
 import { PROTOCOLS } from '../src/protocols.ts';
 import { metadataArchive } from '../src/metadata.ts';
+import { numberSenders } from '../src/tables.ts';
 
 const WITH = ['h350_config', 'h890_config', 'h895_config'];
 const WITHOUT = ['one_config', 'h600_config', 'h700_config', 'h525_config', 'arch8_config_885'];
@@ -118,10 +119,16 @@ test('the names do not line up with the records, and that is the open half',
  * The population is every configuration whose architecture has an action list slot mapped, so a new
  * architecture joins by having its map filled in rather than by anyone editing this list.
  */
-test('every send instruction names a record, and together they name all of them', () => {
-  const names = ['one_config', 'h600_config', 'h700_config', 'h525_config', 'arch8_config_885',
-    'h350_config'];
-  require_(...(names as [string]));
+const SEND_COVER = ['one_config', 'h600_config', 'h700_config', 'h525_config', 'arch8_config_885',
+  'h350_config', 'h350_programmed_config'];
+
+test('every send instruction names a record, and together they name all of them',
+  // `skipUnless` up front, not `require_` with a spread inside, which is what stood here and is the
+  // shape `CLAUDE.md` warns about twice: `require_` takes one name, so the spread checked the first
+  // and the other five went unguarded. With no lab at all it threw instead of skipping, and
+  // `make test-nolab` is what caught it.
+  skipUnless(...SEND_COVER), () => {
+  const names = SEND_COVER;
   let containers = 0;
   let sends = 0;
   for (const name of names) {
@@ -162,14 +169,17 @@ test('every send instruction names a record, and together they name all of them'
       // device's codeset holds more codes than its activities bind, so a group is referenced in part
       // and a completeness assertion would be false rather than informative. On the Harmony 350 every
       // record is referenced exactly once, which is what makes the split a measurement there.
-      if (name !== 'h350_config') continue;
+      if (!name.startsWith('h350_')) continue;
       assert.deepEqual([...indices].sort((a, b) => a - b),
         Array.from({ length: records }, (_unused, i) => i),
         `${name} group ${group} is not covered exactly`);
     }
   }
-  assert.equal(containers, 6, 'a container went unwalked');
-  assert.equal(sends, 1701);
+  assert.equal(containers, 7, 'a container went unwalked');
+  // 1843 since the programmed Harmony 350, section 262, whose 142 sends join the 1701 here. Its
+  // cover is exact like its factory twin's, which is the point of that section: it was expected to
+  // stop being exact once the remote held a real configuration and it does not.
+  assert.equal(sends, 1843);
 });
 
 /**
@@ -226,3 +236,91 @@ test('the Harmony 350 carries three biphase groups and none of them decodes',
       assert.equal(hit, undefined, `group ${at} matches ${hit?.family ?? ''} after all`);
     }
   });
+
+/**
+ * Arch 16's number sender, named by a differential rather than by a shape, section 262.
+ *
+ * **The pair is the instrument.** The bench Harmony 350 was read twice by this library, once holding
+ * the factory configuration and once after Danny put four devices, one activity and five favourite
+ * channels on it through Logitech's service. Exactly one slot goes from a count of zero to a count of
+ * one across that pair, and base slot 16 is defined as one record per device that takes a number
+ * rather than one per channel, so five channels on one device is precisely the count of one it
+ * predicts. A shape based search would have had four count prefixed arrays to choose between.
+ *
+ * The record then reads as base slot 16's layout with nothing adjusted: fourteen bytes of header,
+ * every field zero, then three digit table pointers, and each table's ten entries call a list whose
+ * send names the group the same device's own digits belong to. So section 154's mechanism is
+ * unchanged on this architecture, which is worth asserting because this container's fifteen slots are
+ * not the base twenty with insertions and nothing else transfers by index.
+ *
+ * **What is deliberately not asserted** is which channel numbers are stored. They are on Danny's own
+ * remote and this repository publishes no configuration contents; what makes them evidence is that he
+ * chose them before the read, and that argument lives in `docs/findings.md`.
+ */
+test('the Harmony 350 states a number sender, and only the programmed one does',
+  skipUnless('h350_config', 'h350_programmed_config'), () => {
+  const factory = parse(require_('h350_config'));
+  const programmed = parse(require_('h350_programmed_config'));
+
+  // Base slot 16 is raw slot 11 here, and **both** containers declare it. The factory one gives it a
+  // single byte holding a count of zero, which `docs/config-format.md` is explicit is not the same
+  // answer as a NULL slot, and that is what makes this a differential rather than a slot appearing.
+  assert.equal(archSlot(16, 16), 11);
+  assert.equal(factory.sectionLength(11), 1, 'the factory configuration does not declare the slot');
+  assert.equal(numberSenders(factory)?.records.length, 0, 'the factory sends no numbers');
+  assert.equal(numberSenders(programmed)?.records.length, 1,
+    'one record per device that takes a number, not one per channel');
+  // **`pointerArray` answers `undefined` for the empty one and that is not a defect**, which took a
+  // measurement to establish rather than a reading: it infers the array's width from the count, and a
+  // count of zero fits both widths, so it cannot represent an empty array at all. `countedPointers`
+  // is the reader for a slot whose width is known and `numberSenders` uses it, which is why the two
+  // lines above answer where this one cannot. Asserted so the difference is deliberate rather than
+  // something the next reader trips over.
+  assert.equal(factory.pointerArray(11), undefined, 'pointerArray now infers a zero count');
+  const records = programmed.pointerArray(11) as number[];
+  assert.equal(records.length, 1, 'one record per device that takes a number, not one per channel');
+
+  const at = programmed.blobOffsetOf(records[0] as number) as number;
+  const u24 = (o: number) => (programmed.blob[o] as number)
+    | (programmed.blob[o + 1] as number) << 8 | (programmed.blob[o + 2] as number) << 16;
+  // The fourteen byte header, every field zero: no flags, no base added, no digit floor, and none of
+  // the three queued instructions. The one arch 12 sample declares flags 0x04 and this declares 0, so
+  // the field is read here as present and unset rather than as absent.
+  for (let o = 0; o < 14; o += 1) {
+    assert.equal(programmed.blob[at + o], 0, `header byte ${o} is not zero`);
+  }
+  const tables = [u24(at + 0x0e), u24(at + 0x11), u24(at + 0x14)];
+  assert.equal(new Set(tables).size, 3, 'the three digit tables share an address');
+  // Thirty bytes apart, which is ten three byte entries, so the tables tile without a gap.
+  assert.deepEqual([tables[1]! - tables[0]!, tables[2]! - tables[1]!], [30, 30]);
+
+  // Every digit of every table calls a list, and every one of those lists sends a code from one
+  // group. That group is the device the favourites are on, and it is the same for all thirty
+  // entries, which is what makes this a number sender for one device rather than a table of codes.
+  const lists = programmed.pointerArray(archSlot(16, ACTION_LIST_TABLE_SLOT)) as number[];
+  const groups = new Set<number>();
+  let followed = 0;
+  for (const table of tables) {
+    const off = programmed.blobOffsetOf(table) as number;
+    for (let digit = 0; digit < 10; digit += 1) {
+      const entry = off + 3 * digit;
+      assert.equal(programmed.blob[entry + 2], 0x7f, `digit ${digit} does not call a list`);
+      const index = (programmed.blob[entry] as number)
+        | (programmed.blob[entry + 1] as number) << 8;
+      const listAt = programmed.blobOffsetOf(lists[index] as number) as number;
+      const count = programmed.blob[listAt] as number;
+      let sends = 0;
+      for (let i = 0; i < count; i += 1) {
+        const ins = listAt + 1 + 3 * i;
+        if (programmed.blob[ins + 2] !== 0x7d) continue;
+        sends += 1;
+        groups.add(((programmed.blob[ins] as number)
+          | (programmed.blob[ins + 1] as number) << 8) >>> 8);
+      }
+      assert.equal(sends, 1, `the list for digit ${digit} sends ${sends} codes, not one`);
+      followed += 1;
+    }
+  }
+  assert.equal(followed, 30, 'a digit went unfollowed');
+  assert.equal(groups.size, 1, 'the digits are spread over more than one device');
+});

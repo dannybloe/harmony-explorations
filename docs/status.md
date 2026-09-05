@@ -66,7 +66,7 @@ sets (arch 8, arch 9 and a Harmony 700 pair) were added as controls. Seventeen s
 framing tables, five base addresses and three pointer table lengths, which is the same property the
 format word states rather than a second one, section 194, so it is counted once. All
 consistency checks pass; the wider population of everything in the lab that parses is
-44<!--fact:parseable_containers--> containers over **six** architectures, since arch 10's framing
+45<!--fact:parseable_containers--> containers over **six** architectures, since arch 10's framing
 verifies too and a Harmony 350 arrived on 27 August 2026 bringing arch 16 with it, section 194. It
 turns out to be one format with a per architecture cookie rather than one format per
 architecture, and the **pointer table is one table too**, with a couple of per architecture
@@ -439,7 +439,7 @@ finding.
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 261<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 262<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -659,6 +659,32 @@ figures common to both carry `fact:` markers, so `make facts` moves every copy t
 cannot drift apart; what a reader should not expect is two independent statements of one measurement.
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
+
+**This library reads a Harmony 350's configuration off the remote now, and the read is four bytes
+short of a container, section 262.** That family keeps its configuration in a named file rather than
+at an address, and the path was already on the list of things this library will open, so the read is
+four ordinary commands and none of them writes. The remote also states what it is, architecture 16 and
+skin 104, which had only ever been read out of a configuration file before. **The four bytes are the
+container's closing marker**: the remote reports the file's length as the configuration's own declared
+end, which stops just before the marker, and past that length it serves zeros. The marker is a
+constant for the family, so putting it back is a fix rather than a guess, and the result is byte for
+byte the copy concordance produced and passes all fifteen structure checks. So that remote no longer
+needs a third party tool to be read.
+
+**Then it was programmed, and its favourites named another slot.** Four devices, one activity and five
+favourite channels, all chosen and written down before the read. Eight predictions, three wrong. The
+one worth keeping is that a real configuration is **smaller** than the factory one, 83840 bytes against
+121251, because a factory file carries codes for equipment nobody owns. The strongest result is a
+prediction that failed: every stored code is still pointed at by exactly one key with no gaps, which
+was expected to break on a programmed remote and does not, so that is a property of this architecture
+rather than of an unexercised file. And the five channels are stored as five two step programs that
+load a number and hand it to the number sender, which is the mechanism already measured on the Harmony
+One; comparing the two reads shows exactly one slot going from empty to one entry, which is what names
+it. Eight of the fifteen slots are placed now. **One apparent bug turned out not to be one**, and the
+correction is recorded: a reader looked like it confused "this list is empty" with "I cannot read
+this", and measuring it showed a second reader three files away answers correctly, with the rule
+written in its own docstring. The conclusion had been drawn before anybody asked whether that reader
+existed.
 
 **What connects a pressed key to a stored code is exact on the Harmony 350, and its command names
 cannot be checked at all, section 261.** The instruction that sends a code carries a group and an index

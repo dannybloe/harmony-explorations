@@ -129,6 +129,9 @@ const CONTAINERS = [
   // The Harmony 350, arch 16. Here so both codecs are compared on an architecture neither was
   // written for, and deliberately not in any corpus wide population, section 194.
   'h350_config',
+  // And the same remote programmed, section 262, whose pair with the one above named base slot 16
+  // on this architecture. It is the only container here whose contents somebody chose in advance.
+  'h350_programmed_config',
   // The arch 8 safe mode container, found inside the firmware image itself at blob offset 0xE000
   // rather than in a file of its own. Section 114.
   'arch8_code_880',
@@ -241,7 +244,9 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 56 since the write of section 247, whose vector differs from the one above in the one delay
   // the write raised, which is the only field a vector carries that the edit touched.
   // 57 since the revert of section 248.
-  assert.equal(present.length, 57, 'every vector, which is what `make golden` compares');
+  // 58 since the programmed Harmony 350, section 262, the first configuration this project has read
+  // off a remote of the file based family.
+  assert.equal(present.length, 58, 'every vector, which is what `make golden` compares');
   // 38 since the Harmony 895 landed: its key table reads with the existing reader even though
   // every other arch 10 reader is gated, which is what made section 177's keypad closure possible
   // without any arch 10 progress at all.
@@ -257,7 +262,10 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // check our own output rather than Logitech's.
   // 51 since that mid write state finished, section 246, which carries the same key table.
   // 52 since section 247, which changed a delay and no key binding.
-  assert.equal(complete, 53, 'the vectors whose container has a key table at all');
+  // 54 since the programmed Harmony 350, section 262. Its key table reads with the existing reader,
+  // which is worth a line because that architecture's fifteen slots are not the base twenty with
+  // insertions and almost nothing else about it transfers by index.
+  assert.equal(complete, 54, 'the vectors whose container has a key table at all');
 
   // **The number sender field, and why it needs its own guard.** It is an empty array on 30 vectors
   // and null on 8, with eight carrying a record since 30 August 2026, and this comment said 25 and 9
@@ -276,9 +284,15 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // images, which report architecture 0 and have no alignment at all.
   // 8 since the Harmony 350, section 194: arch 16 has no slot mapping, so base slot 16 is not
   // readable on it, which is the same gate arch 10 sat behind before section 184.
-  assert.equal(senders.filter((one) => one === null).length, 8, 'the containers with no readable slot');
+  // **Back to 7 since section 262**, and the gate opened the same way arch 10's did: base slot 16 is
+  // on arch 16's map, so both its containers answer instead of refusing, and neither of the two
+  // arriving cancels the one leaving. What is left is the five damaged arch 10 reads and the two
+  // containers found inside arch 8 firmware images.
+  assert.equal(senders.filter((one) => one === null).length, 7, 'the containers with no readable slot');
   // 30 since section 215's pair, both of which declare none, like the two vectors they duplicate.
-  assert.equal(senders.filter((one) => Array.isArray(one) && one.length === 0).length, 30);
+  // 31 since the factory Harmony 350, section 262: it left the unreadable column above rather than
+  // arriving, since arch 16's base slot 16 is mapped now, and the answer it gives is a count of zero.
+  assert.equal(senders.filter((one) => Array.isArray(one) && one.length === 0).length, 31);
   // **Four since the second compiled sample**, and the reason is the account rather than the request:
   // every configuration compiled from the account that carries favourite channels carries the sender
   // record too, whichever appliances are on it that day. Three of them were made deliberately for base
@@ -305,7 +319,9 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // Seventeen since that state finished, section 246: a third erase and write of the composed
   // configuration's blocks and those records still read the same.
   // Eighteen since section 247, a fourth erase and write of those blocks with the records intact.
-  assert.equal(senders.filter((one) => Array.isArray(one) && one.length > 0).length, 19,
+  // 20 since the programmed Harmony 350, section 262, and it is the first to populate this section
+  // on any architecture but arch 12, so what had looked like a Harmony One mechanism is not one.
+  assert.equal(senders.filter((one) => Array.isArray(one) && one.length > 0).length, 20,
     'the configs that populate base slot 16');
 });
 
@@ -317,7 +333,7 @@ test('the list above covers exactly what the Python side writes a vector for', (
   const block = /^CONTAINERS = \($(.*?)^\)$/ms.exec(source);
   assert.ok(block, 'tools/golden.py has no CONTAINERS tuple in the expected shape');
   const python = [...block[1]!.matchAll(/'([a-z0-9_]+)'/g)].map((m) => m[1] as string);
-  assert.equal(python.length, 57, 'the golden vectors, which is what `make golden` prints');
+  assert.equal(python.length, 58, 'the golden vectors, which is what `make golden` prints');
   assert.deepEqual([...CONTAINERS].sort(), python.sort());
 });
 

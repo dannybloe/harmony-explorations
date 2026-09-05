@@ -347,7 +347,14 @@ export const ARCH16_SLOT_MAP: readonly (number | undefined)[] = [
   undefined, // 14, unread
   10, // 15, the parameter block. Five groups, each `u8 length` then that many bytes, which is base
   //     slot 15's shape and per architecture by section 44.
-  undefined, // 16, unread
+  // 16, the number sender, section 262, and the **differential** is what names it rather than a
+  //     shape: raw slot 11 is a count of zero in the factory configuration and a count of one in the
+  //     programmed one, whose owner put five favourite channels on exactly one device. Its record is
+  //     base slot 16's layout byte for byte, fourteen bytes of header then three digit table
+  //     pointers, and each table's ten entries call a list that sends a code from the group the same
+  //     device's own digits belong to. So the mechanism section 154 measured on arch 12 is unchanged
+  //     here, which is not true of every slot on this architecture.
+  11,
   undefined, // 17, unread
   undefined, // 18, unread
   undefined, // 19, unread

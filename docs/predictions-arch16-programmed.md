@@ -58,3 +58,25 @@ being complete, which is what every other architecture does.
 
 **P8. At least one of the nine unread slots is no longer empty.** The factory file cannot say whether
 a slot is unread or simply unused, and this is the file that can.
+
+## Scored
+
+Scored in `docs/findings.md` section 262 and repeated here so the document carries its own verdict.
+Five right or partly right, three wrong.
+
+| | outcome |
+|---|---|
+| P1, larger than the factory file | **wrong**. 83840 bytes against 121251. A factory configuration carries codes for equipment nobody owns |
+| P2, four devices named | right, and the name lengths are his four names in his order |
+| P3, two devices with no codes | **half right**. The Chromecast has none, the Playstation has 59, which is the half this document flagged as most likely wrong |
+| P4, the k-th device is the k-th non-empty group | supported and not settled. The digit tables put the set top box on the group its position predicts, and the other three are unresolved |
+| P5, one activity | not answerable. No reader here reports an activity count on this architecture |
+| P6, the number sender rather than digit by digit | right, including the risk it named: the architecture does have the slot, and finding **which** slot is what the read bought |
+| P7, the exact cover breaks | **wrong**, and the most useful of the three. It holds on a programmed configuration, so it is a property of this architecture |
+| P8, a slot goes from empty to occupied | wrong in the letter, since every slot was already occupied, and right in substance: one went from a count of zero to a count of one, which is what named it |
+
+**What the wrong ones bought.** P1 and P7 were both wrong in the direction of expecting this
+architecture to behave like the others, and both corrections are facts about arch 16 that no amount
+of reading the factory file would have produced. P3's wrong half is the reminder that a device's
+codeset is Logitech's business and not the remote's: a Playstation that cannot be driven by infrared
+still arrives with 59 infrared commands.

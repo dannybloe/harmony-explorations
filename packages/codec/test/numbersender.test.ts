@@ -176,7 +176,7 @@ test('the control declares the section and puts nothing in it, and grows by thre
     assert.equal(after?.length, 4);
   });
 
-test('eight containers declare a method for sending a number, 28 declare none, 8 are unread',
+test('nine containers declare a method for sending a number, 29 declare none, 7 are unread',
   skipWithoutLab(), () => {
     // Exact, and split three ways, because each column is a different claim and a total would let any
     // of them go to zero unnoticed. The interesting number is the 2: this section stayed unexercised
@@ -226,9 +226,14 @@ test('eight containers declare a method for sending a number, 28 declare none, 8
     // live on the account and every compile of one that has them brings the section along, and it
     // makes this the first container **read off a remote** to populate base slot 16, where the three
     // that did it before were files the service compiled and handed over.
-    assert.equal(populated + declaredEmpty + unread, 44, 'every container the lab can parse');
-    assert.equal(populated, 8);
-    assert.equal(declaredEmpty, 28);
+    // 45 since the **programmed** Harmony 350, section 262, and the arch 16 pair moved two columns
+    // at once: base slot 16 is on that architecture's map now, so its factory container leaves
+    // `unread` for `declaredEmpty` and the programmed one lands in `populated`. That makes it the
+    // second container read off a remote to populate this section and the first whose channels
+    // somebody chose in advance.
+    assert.equal(populated + declaredEmpty + unread, 45, 'every container the lab can parse');
+    assert.equal(populated, 9);
+    assert.equal(declaredEmpty, 29);
     // What is left in `unread` is five arch 10 reads plus the two containers found inside arch 8
     // firmware images, which report architecture 0. **The line between the three that answer and the
     // five that do not is exactly the trailer checksum**, which is worth stating because nothing made
@@ -238,7 +243,10 @@ test('eight containers declare a method for sending a number, 28 declare none, 8
     // none" are different answers, and a total would hide the first inside the second.
     // Eight since the Harmony 350, section 194: five arch 10 reads, the two containers found inside
     // arch 8 firmware images, and now an arch 16 container whose slots are not mapped.
-    assert.equal(unread, 8);
+    // **Back to seven since section 262**, the same way arch 10 came off this list in section 184:
+    // base slot 16 is on arch 16's map, so both its containers answer the question instead of
+    // refusing it, and the second one arriving does not offset the first one leaving.
+    assert.equal(unread, 7);
   });
 
 test('the accounting claims the record and its tables, and 113 is the closure',

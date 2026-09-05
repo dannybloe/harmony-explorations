@@ -289,6 +289,13 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // the file based family, section 193. Named here so the golden comparison can load it; it is
   // deliberately outside every corpus wide population, section 194.
   h350_config: 'harmony-350-config.bin',
+  // The **programmed** Harmony 350, read off the remote by this library rather than by concordance,
+  // section 262. Danny put four devices, one activity and five favourite channels on it through
+  // Logitech's service, so it is a known answer sample of the same kind as the two compiled ones:
+  // what is on the remote was chosen before the file was read. Its pair with the factory
+  // configuration is what named the number sender, since only one slot goes from a count of zero to
+  // a count of one. Outside every corpus wide population, like its factory twin.
+  h350_programmed_config: 'harmony-350-programmed-config.bin',
   phase7_before: 'phase7-before-gspm.bin',
   phase7_after: 'phase7-after-gspm.bin',
   // The account's own command list, captured 13 August 2026: a name and a stated code per command,

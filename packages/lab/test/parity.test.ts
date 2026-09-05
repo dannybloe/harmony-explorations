@@ -53,7 +53,8 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // 90 since the fourth region read of the spare Harmony One, section 246.
   // 91 since the read taken after the write of section 247.
   // 92 since the read taken after the revert of section 248.
-  assert.equal(Object.keys(pythonImages()).length, 92, 'every fixture tests/lab.py names');
+  // 93 since the programmed Harmony 350, section 262.
+  assert.equal(Object.keys(pythonImages()).length, 93, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {

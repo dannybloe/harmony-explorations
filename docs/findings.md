@@ -33328,3 +33328,118 @@ Nothing in `packages/codec` changes: `IR_SEND_OPCODE` and the `operand >>> 8` sp
 container's records **exactly**, which nothing checked before, and the test walks every configuration
 that states an action list table rather than a list of names, so a sixth architecture joins it by
 having its slot mapped rather than by anyone editing a test.
+
+## 262. A Harmony 350 read by this library, and the slot its favourites named
+
+Two things, and they arrived together because the second needed the first. This library can now read
+a configuration off a remote of the **file based** family, which it has never done, and Danny then
+programmed the bench Harmony 350 through Logitech's service and it was read again. The pair is what
+names another slot.
+
+### The read, and the four bytes the remote will not give you
+
+`/cfg/usercfg` is already on `INERT_PATHS`, so no named door is involved and every command is a read:
+ping, open for reading, read, close. The Harmony 350 answers, and answers first with its own identity,
+`arch 0x10` and `skin 0x68`. **That is the first time this architecture and skin have been read off
+the hardware** rather than out of a configuration file, and it agrees with section 194 and with
+section 197's map.
+
+The configuration comes back and it is **four bytes short of a container**. The remote states the
+file's size as 121247, our own parser refuses the result outright with `no PTYY end marker found
+after GSPM`, and the concordance copy already in the lab is 121251 bytes ending in exactly that
+marker. The stated size is not arbitrary: it is `end_addr - flash_base` computed off the
+configuration's own header, so **the length the filesystem reports is the container's declared end**
+and the four byte end marker sits past it.
+
+Asking for more does not recover them. A read of `size + 4096` returns 121272 bytes, of which
+everything past 121247 is NUL, so the file interface pads rather than serving what is behind. The
+marker is a **constant per family**, so appending it is a fix and not a guess, and the result is byte
+for byte identical to the concordance copy and passes all fifteen container checks.
+
+**What this changes** is that concordance is no longer needed for this family, and that a reader of
+one of these remotes must restore the marker. A reader that does not gets a file that fails its
+checksum the way a bad read does rather than the way a bad reader does, which is the failure mode
+section 122 warns about in the other direction.
+
+### The programmed remote, and eight predictions scored
+
+`docs/predictions-arch16-programmed.md` was written and committed **before** the read. Danny put four
+devices on it, a Playstation 3, a KPN set top box, a Chromecast and a Panasonic television, one
+activity, and five favourite channels on the set top box. So this is a known answer sample of the
+same kind as the two compiled configurations of sections 121 and 125, and the first one on this
+architecture.
+
+| | prediction | outcome |
+|---|---|---|
+| P1 | larger than the factory configuration | **wrong**, 83840 bytes against 121251 |
+| P2 | the archive names four devices | right, and the name lengths are 2, 3, 11 and 2, which is his four names in his order |
+| P3 | the Playstation and the Chromecast carry no codes | **half right**: the Chromecast has 0 commands, the Playstation has 59 |
+| P4 | the k-th named device is the k-th non-empty group | supported and not settled, below |
+| P5 | one activity | not answerable, `activityCount` returns nothing on this architecture |
+| P6 | the favourites go through the number sender | right, and this is the section's subject |
+| P7 | the exact cover of section 261 breaks | **wrong**, and this is the strongest result |
+| P8 | a slot goes from empty to occupied | wrong in the letter and right in substance, below |
+
+**P1 is worth keeping.** A factory configuration is not a small one: it carries 130 codes over three
+groups for equipment nobody owns, where four real devices need 142 codes over three groups in a file
+two thirds the size.
+
+**P7 is the one to carry.** Section 261 measured every infrared record of the factory file referenced
+by exactly one send instruction, contiguously from zero within its group, and recorded the obvious
+expectation that a programmed configuration would break it, since a device's codeset holds more codes
+than any activity binds. It does not break: 51 of 51, 46 of 46 and 45 of 45, still exact. So this
+architecture stores precisely the codes some list can send and nothing else, which is not what the
+others do, and the exact cover is a property of arch 16 rather than of an unexercised file.
+
+### Base slot 16 is raw slot 11, and a differential is what named it
+
+The five favourites are five action lists of two instructions, `0x7A n` then `0x1F` with operand
+`0xF300`. That is section 154's mechanism exactly: `0x7A` loads the accumulator and `0xF3` is the band
+that hands it to base slot 16. **The prior art was found by the grep this project requires before
+deriving**, `docs/findings.md` already holding those two instructions side by side.
+
+Which slot is base slot 16 then follows from the pair rather than from a shape. Comparing the two
+containers slot by slot, **raw slot 11 goes from a count of zero to a count of one** and no other slot
+changes in that way. Base slot 16 is defined as one record per device that takes a number rather than
+one per channel, so five channels on one device predicts exactly the count of one that is there. Four
+count prefixed arrays would have fitted on shape alone.
+
+The record then reads as the documented layout with nothing adjusted: fourteen bytes of header, every
+field zero, then three digit table pointers, thirty bytes apart and distinct, which is ten three byte
+entries each. Every one of the thirty entries calls an action list, each of those lists sends exactly
+one code, and all thirty codes come from **one** group. That group is therefore the set top box, which
+also settles one device to group assignment on this architecture and is consistent with P4 without
+settling it.
+
+**The one arch 12 sample declares `flags` `0x04` and this declares 0**, so the field is read here as
+present and unset rather than as absent.
+
+### A reader defect that turned out not to be one
+
+`pointerArray` answers `undefined` for the factory container's empty base slot 16, which looks exactly
+like the conflation `docs/config-format.md` forbids, and was written up here as a defect before it was
+measured. It is not one. **`pointerArrayAt` infers the array's width** from which of one and two bytes
+makes `width + 3 * count` equal the section length, and a count of zero satisfies neither uniquely, so
+that reader cannot represent an empty array at all. `countedPointers` is the reader for a slot whose
+width is known, `numberSenders` uses it, and it answers correctly: the factory container reads as a
+table with zero records and the programmed one as a table with one.
+
+Two things are worth keeping from the wrong version. The measurement that would have been the fix:
+accepting a zero count in the inferring reader would change 44 slots across 21 containers, almost all
+of them this same empty base slot 16 on the other architectures plus raw slots 17 and 18 on arch 8 and
+arch 12. And the correction itself, recorded in place per this repository's standard, because the
+sequence is the lesson: a document said a reader must not merge two answers, a reader appeared to
+merge them, and the conclusion was written before anybody asked whether a second reader existed. It
+did, three files away, with the rule in its own docstring.
+
+### What is still open
+
+**Which device owns which group**, beyond the set top box. The archive names 59, 38, 0 and 63
+commands for the four devices and the groups hold 51, 46 and 45 records, so the set top box is named
+with **fewer** commands than its group holds records. Section 260 read the factory file as naming more
+commands than there are records, and that no longer holds in general, so the relationship between the
+two lists is unknown rather than approximately known.
+
+**Raw slots 6 and 8 both grew**, 4 to 5 pointers and 6 to 8. Raw 6 tracking the device count exactly,
+three devices to four, is a lead and nothing more: it is one pair, and a count that moves with the
+devices could be several things. Neither is in the map.

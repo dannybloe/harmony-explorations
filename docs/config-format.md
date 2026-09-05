@@ -332,7 +332,7 @@ for offset in range(0, len(blob) - 6 - 1, 2):
 ```
 
 An odd trailing byte is not folded in, because the firmware divides the byte count by two and
-counts words, and **24<!--fact:parseable_odd_body--> of the 44<!--fact:parseable_containers-->
+counts words, and **24<!--fact:parseable_odd_body--> of the 45<!--fact:parseable_containers-->
 parseable containers have an odd body**, of which 19<!--fact:odd_body_verifying--> verify their
 stored checksum under that rule. (This said 19 of 33 with 14 verifying, which had drifted through
 two sample additions because it carried no marker; it carries three now.) This said the corpus holds none<!--superseded-->, which made the
@@ -1573,7 +1573,19 @@ appliances that take a number, not the number of channels.
 
 **A count of zero is not a NULL slot.** A config with no channels still declares this section and
 gives it one byte; the one that has them gives it four. So an empty record list and an unreadable slot
-are different answers and a reader must not merge them.
+are different answers and a reader must not merge them. **Read this section with `numberSenders`,
+which uses `countedPointers` and is told the width**, and not with `pointerArray`, which infers the
+width from the count and therefore cannot represent an empty array: it answers `undefined` for a count
+of zero. That is a property of the inferring reader and not a merge of the two answers, which section
+262 recorded the wrong way round before measuring it.
+
+**And it is populated by a found configuration now, on arch 16**, section 262, where this said every
+found config in the corpus carries a count of zero. Danny put five favourite channels on the bench
+Harmony 350's set top box through Logitech's service and the remote was read before and after: raw
+slot 11 goes from a count of zero to a count of one and no other slot changes that way, which is what
+**names** base slot 16 on that architecture. The record is this layout with nothing adjusted, its
+three digit tables are distinct and thirty bytes apart, and all thirty entries call lists that send
+codes from one group. `flags` is 0 there against the arch 12 sample's `0x04`.
 
 ```
 +0x00  u8   count
