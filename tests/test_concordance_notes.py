@@ -396,5 +396,115 @@ class TestTheFrontPageOnlyTellsStrangersToRead(unittest.TestCase):
         self.assertNotIn('--binary-only', _read_repo('README.md'))
 
 
+
+@skipWithoutSource
+class TheArch9EraseNumbersAgreeWithConcordance(unittest.TestCase):
+    """Section 267's numbers, checked against the one other implementation that writes a Harmony 525.
+
+    Section 267 derived the erase block size from the 525's own firmware: the driver sends the SPI
+    opcode `0xD8` and the address classifier accepts eight window tags, so eight 64 KiB blocks. That
+    is one source. concordance is the second and it arrives from an entirely different direction, a
+    table keyed by the JEDEC identity the remote reports, and the two agree.
+
+    **This is the check decision 2 asks for and section 267 was written without it.** Section 245
+    records the same failure one architecture earlier, so the test is here to make the agreement
+    executable rather than to make the point again.
+    """
+
+    def _flash_row(self, name):
+        """The sector table a named chip in concordance's `FlashList` points at."""
+        header = _read('libconcord', 'remote_info.h')
+        row = re.search(
+            r'\{\s*(0x[0-9A-Fa-f]+),\s*(0x[0-9A-Fa-f]+),\s*(\d+),\s*(\d+),\s*'
+            r'(sectors\d+),\s*"' + re.escape(name) + r'"\s*\}', header)
+        self.assertIsNotNone(row, 'no FlashList row for %s' % name)
+        table = re.search(r'static const uint32_t %s\[\]=\{(.*?)\};' % row.group(5), header, re.S)
+        self.assertIsNotNone(table, 'no sector table %s' % row.group(5))
+        values = [int(v, 16) for v in re.findall(r'0x[0-9A-Fa-f]+', table.group(1))]
+        return row, values
+
+    def test_the_525s_flash_id_is_a_512_KiB_part_of_eight_uniform_64_KiB_sectors(self):
+        # `0xFF:0x12` is what the bench 525 reports, `docs/memory-map-525.md`. concordance names it
+        # a 25F040 of 512 KiB, and its sector table is eight boundaries a block apart. So the
+        # granularity section 267 read off the opcode is stated here by a table nobody derived from
+        # that opcode.
+        row, sectors = self._flash_row('25F040')
+        self.assertEqual((int(row.group(1), 16), int(row.group(2), 16)), (0xFF, 0x12))
+        self.assertEqual(int(row.group(3)), 512, 'the size concordance states, in KiB')
+        self.assertEqual(sectors, [0x010000, 0x020000, 0x030000, 0x040000,
+                                   0x050000, 0x060000, 0x070000, 0x080000])
+        steps = {b - a for a, b in zip(sectors, sectors[1:])}
+        self.assertEqual(steps, {0x10000}, 'uniform, and the step is the erase block size')
+        self.assertEqual(sectors[-1], 512 * 1024, 'the table covers the whole part')
+
+    def test_the_arch_9_addresses_agree_with_the_rail_and_the_memory_map(self):
+        # `CONFIG_REGION_BASE[9]` is `0x820000` and section 267 landed it. concordance states the
+        # same number as `config_base`, with the application firmware one block below it, which is
+        # the neighbour that makes the arch 9 rail the tighter one.
+        header = _read('libconcord', 'remote_info.h')
+        block = re.search(r'/\* arch 9:.*?\n\t\{(.*?)\n\t\},', header, re.S)
+        self.assertIsNotNone(block, 'no arch 9 entry in ArchList')
+        fields = dict(
+            (name, int(value, 16))
+            for value, name in re.findall(r'(0x[0-9A-Fa-f]+),\s*//\s*(\w+)', block.group(1)))
+        self.assertEqual(fields['flash_base'], 0x800000)
+        self.assertEqual(fields['firmware_base'], 0x810000)
+        self.assertEqual(fields['config_base'], 0x820000)
+        self.assertIn('PIC18LF4550', block.group(1),
+                      'the part the disassembler is pointed at with --part 4550')
+        # And the rail carries the same figure, so the two cannot drift.
+        rails = os.path.join(_HERE, '..', 'packages', 'usb', 'src', 'rails.ts')
+        with open(rails, encoding='utf-8') as fh:
+            text = fh.read()
+        table = re.search(r'CONFIG_REGION_BASE[^=]*= \{(.*?)\};', text, re.S)
+        self.assertIsNotNone(table, 'no config region table in rails.ts')
+        self.assertEqual(dict(re.findall(r'(\d+):\s*(0x[0-9a-f]+)', table.group(1)))['9'],
+                         '0x820000')
+
+    def test_our_ceiling_is_deliberately_tighter_than_concordances_table(self):
+        # concordance's table ends at the top of the part, `0x880000` once the flash base is added,
+        # so nothing in it would refuse an erase of the log area. `WRITABLE_CEILING[9]` stops at
+        # `0x870000` instead. The difference is ours and it is on purpose, which is worth an
+        # assertion because a later reader comparing the two would otherwise call it a discrepancy.
+        _, sectors = self._flash_row('25F040')
+        block = re.search(r'/\* arch 9:.*?\n\t\{(.*?)\n\t\},',
+                          _read('libconcord', 'remote_info.h'), re.S)
+        flash_base = dict(
+            (name, int(value, 16))
+            for value, name in re.findall(r'(0x[0-9A-Fa-f]+),\s*//\s*(\w+)',
+                                          block.group(1)))['flash_base']
+        self.assertEqual(flash_base + sectors[-1], 0x880000)
+        rails = os.path.join(_HERE, '..', 'packages', 'usb', 'src', 'rails.ts')
+        with open(rails, encoding='utf-8') as fh:
+            text = fh.read()
+        table = re.search(r'WRITABLE_CEILING[^=]*= \{(.*?)\};', text, re.S)
+        ours = int(dict(re.findall(r'(\d+):\s*(0x[0-9a-f]+)', table.group(1)))['9'], 16)
+        self.assertEqual(ours, 0x870000)
+        self.assertLess(ours, flash_base + sectors[-1])
+
+    def test_the_erase_walk_starts_at_a_boundary_rather_than_at_the_address(self):
+        # The behaviour `assertEraseAllowed` demands block alignment for: concordance skips to the
+        # first boundary **at or after** the address, so the block containing an unaligned address
+        # is never erased and the caller gets neither what it asked for nor an error.
+        remote = _read('libconcord', 'remote.cpp')
+        walk = re.search(r'// skip to where we need to start writing(.*?)num_sectors = n;',
+                         remote, re.S)
+        self.assertIsNotNone(walk, 'no sector walk in EraseFlash')
+        self.assertIn('n++', walk.group(1))
+        self.assertIn('// start on the NEXT one', walk.group(1))
+
+    def test_a_525_config_update_is_listed_as_working(self):
+        # Relevant to a standing question rather than to the rail: what stops a 525 being programmed
+        # is not that nothing can write one. concordance says arch 9 config update works. What is
+        # missing is a **source** of a configuration, since Logitech's service reports the skin
+        # disabled and refuses to compile for it, section 145.
+        table = _read('SupportedModels.md')
+        row = re.search(r'^\| 9 \|(.*)$', table, re.M)
+        self.assertIsNotNone(row, 'no arch 9 row in SupportedModels.md')
+        self.assertIn('52x', row.group(1))
+        self.assertEqual(row.group(1).split('|')[1].strip(), 'Working',
+                         'the config update column')
+
+
 if __name__ == '__main__':
     unittest.main()

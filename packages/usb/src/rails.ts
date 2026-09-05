@@ -145,21 +145,29 @@ export const WRITABLE_CEILING: Readonly<Record<number, number>> = {
  * architecture in this table, if one is ever added, is back to the client's word.
  *
  * **That last sentence held for one architecture's worth of time**, section 267: arch 9 (Harmony
- * 525) was added on 5 September 2026 off its own **firmware**, which is neither the client's word
- * nor a hardware measurement but a third thing, and a better one than the first. The rule to carry
- * is that a row states its source, which the comments inside the table now do.
+ * 525) was added on 5 September 2026 off its own **firmware** and off concordance's chip table,
+ * which are two sources and neither is the client's. The rule to carry is that a row states its
+ * source, which the comments inside the table now do.
  */
 export const ERASE_BLOCK_SIZE: Readonly<Record<number, number>> = {
-  // **Arch 9 (Harmony 525) is read off the firmware rather than off the client or the part**,
-  // section 267: the external flash driver at `0x07576` sends `0xD8`, which is a 64 KiB block
+  // **Arch 9 (Harmony 525) has two independent sources**, section 267. The firmware is the first:
+  // the external flash driver at `0x07576` sends `0xD8`, which is a 64 KiB block
   // erase. **Nothing rounds the address down to a boundary**: the classifier has already taken the
   // window tag off it and `0x03500` copies the three bytes that remain straight into the address
   // the part is handed, so the block is whatever the part does with that opcode and an unaligned
   // erase is the part's business rather than the firmware's. The closure is that the command's
   // accepted window tags, `0x80` to `0x87`, are exactly eight of these blocks and the part is
-  // 512 KiB. That is a stronger source
-  // than the client's table and a weaker one than arch 12's row below, which was measured by
-  // erasing a block on a remote and reading its neighbours.
+  // 512 KiB.
+  //
+  // concordance is the second and it never reads that opcode: it looks the sector table up from the
+  // JEDEC identity the remote reports, and `0xFF:0x12` gives a 25F040 of 512 KiB whose boundaries
+  // run `0x010000` to `0x080000` a block apart. Eight uniform 64 KiB sectors, stated rather than
+  // derived. So this row is better supported than the client's word and still weaker than arch 12's
+  // below, which was measured by erasing a block on a remote and reading its neighbours.
+  //
+  // **An erase block belongs to a part and not to an architecture**, which concordance's shape makes
+  // plain and this table's shape hides. Each architecture here happens to have one part; section 221
+  // is the case where that stopped being true, three parts against arch 12 (Harmony One).
   9: 0x10000,
   12: 0x10000,
 };

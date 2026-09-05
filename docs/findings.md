@@ -34110,8 +34110,52 @@ address, it is a general flash erase whose window is chosen by the address. And 
 the EEPROM, is a no operation that reports success**, which is the honest behaviour for a byte
 writable part and is worth knowing before reading a success as evidence that something was erased.
 
+### concordance says the same numbers, and it was consulted afterwards rather than first
+
+**Added on Danny's question, the same day.** Everything above was derived from the firmware alone,
+and decision 2 says to read their code **and** the image, both, before deriving anything. concordance
+has been checked out beside this repository the whole time and writes a Harmony 525 today. So this
+subsection is a second source arriving late, which is the exact failure section 245 records one
+architecture earlier: the knowledge was here and nothing reached for it.
+
+It agrees, and by a route with nothing in common. concordance does not read the erase opcode at all.
+It keeps a table keyed by the JEDEC identity the remote reports, `FlashList` in
+`libconcord/remote_info.h`, and walks that chip's sector boundaries:
+
+| what | concordance states | section 267 derived |
+|---|---|---|
+| the part behind flash id `0xFF:0x12` | `25F040`, 512 KiB | 512 KiB, from eight accepted window tags |
+| its sector boundaries | `0x010000` to `0x080000`, a block apart | 64 KiB, from the opcode `0xD8` |
+| how many sectors | eight, uniform | eight |
+| `config_base` on arch 9 | `0x820000` | `0x820000`, `docs/memory-map-525.md` |
+| `firmware_base` on arch 9 | `0x810000` | `0x810000` |
+| `flash_base` on arch 9 | `0x800000` | `0x800000`, the window tag `0x80` |
+| the part | `PIC18LF4550` | the `--part 4550` map this listing was read with |
+
+**Its erase is per chip and not per architecture**, which is the reading to carry rather than the
+agreement: `CRemote::EraseFlash` looks the sector table up from the reported identity and sends one
+`ERASE_FLASH` per boundary, so an architecture does not have an erase block size, a **part** does.
+Our table is keyed by architecture because each architecture here has exactly one part, and that is a
+convenience rather than a fact about the format. Section 221 already made this point for arch 12
+(Harmony One), where three parts appear against one architecture and the bench remotes' part is not
+the one the documents had quoted.
+
+**Two places where we are deliberately narrower.** concordance's table ends at the top of the part,
+`0x880000` with the flash base added, so nothing in it refuses an erase of the log area;
+`WRITABLE_CEILING[9]` stops at `0x870000`. And concordance starts erasing at the first boundary **at
+or after** the address it is given, which silently skips the block an unaligned address is in, where
+`assertEraseAllowed` refuses an unaligned address outright.
+
+**And a standing question is answered on the way past**, which is worth more than the corroboration:
+`SupportedModels.md` lists arch 9 config update as **Working**. So what stops a Harmony 525 being
+programmed is not that nothing can write one. It is that nothing can **produce** one: Logitech's
+service reports the skin disabled and refuses to compile for it, section 145. A writer and a compiler
+are different missing pieces and only one of them is missing.
+
 ### Reproduced by
 
 `packages/usb/test/rails.test.ts`, the arch 9 entries and the assertion that a write target still
-requires more than a pair of constants, and `tests/test_harmony_525_flash.py`, which asserts the
-opcodes, the chip select, the interlock and the classifier's normalisation against the image.
+requires more than a pair of constants; `tests/test_harmony_525_flash.py`, which asserts the
+opcodes, the chip select, the interlock and the classifier's normalisation against the image; and
+`tests/test_concordance_notes.py`, which asserts the sector table, the arch 9 addresses, the two
+places we are narrower and the support table against the checkout, skipping cleanly without one.

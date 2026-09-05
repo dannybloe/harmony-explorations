@@ -141,7 +141,10 @@ space the container's own pointers use.
 `0x07576` sends the SPI opcode `0xD8`, and the classifier subtracts `0x80` out of the address, so
 the accepted tags `0x80` to `0x87` are exactly eight blocks of that size. That closes against the
 512 KiB below, from a direction with nothing in common: one figure comes from the log area's limit
-and the contributor's report, the other from an opcode and a range check. `ERASE_BLOCK_SIZE[9]` in
+and the contributor's report, the other from an opcode and a range check. **And concordance states it outright**, from a third
+direction: its chip table maps the flash id this remote reports, `0xFF:0x12`, to a 25F040 of 512 KiB
+whose sector boundaries run `0x010000` to `0x080000` a block apart, and its arch 9 entry carries the
+same `0x820000`, `0x810000` and `0x800000` this page does. `ERASE_BLOCK_SIZE[9]` in
 `packages/usb/src/rails.ts` is the executable form, and a write to this model is still refused, by
 `ARCHITECTURES_WITH_A_WRITE_TARGET`, which is `[12]`.
 

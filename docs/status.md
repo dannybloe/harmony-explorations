@@ -664,7 +664,9 @@ accounting table** here, which was a real duplicate with nothing added and has b
 267.** The remote stores its settings on a small memory chip, and a chip like that cannot be changed a
 byte at a time: to alter anything you first wipe a whole block of it clean. Nobody here knew how big
 that block was, so nothing could be written to a 525 at all. Reading the remote's own program answers
-it: the block is 64 kilobytes, and the chip holds exactly eight of them.
+it: the block is 64 kilobytes, and the chip holds exactly eight of them. The open source tool that
+already writes these remotes says the same thing, from a completely different place in its code, so
+the number has two sources rather than one.
 
 The warning is what sits in the other blocks. Two of the eight hold the remote's own operating
 software, one of them the emergency copy that is the only way to put the other back. **The remote
