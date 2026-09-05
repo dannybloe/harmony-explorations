@@ -80,3 +80,32 @@ architecture to behave like the others, and both corrections are facts about arc
 of reading the factory file would have produced. P3's wrong half is the reminder that a device's
 codeset is Logitech's business and not the remote's: a Playstation that cannot be driven by infrared
 still arrives with 59 infrared commands.
+
+## A second differential: the Playstation removed
+
+Danny then took the Playstation 3 off the remote, leaving the set top box, the Chromecast and the
+television. Written before this read too, and the point of it is narrow: the previous pair moved two
+things at once, the device count and the favourites, so raw slots 6 and 8 both grew and neither could
+be attributed. This pair moves **one** thing.
+
+**Q1. Raw slot 6 goes from five pointers to four.** It went from four to five when the devices went
+from three to four, so if it is one entry per device this is the read that says so. If it does not
+move, it tracks something else that happened to change with the devices, and the candidate is dead.
+
+**Q2. Raw slot 8 goes from eight pointers to six.** It moved by two when one device arrived, so two
+per device is the arithmetic to test. This is the weaker of the two, since a device that carries no
+codes may cost nothing here and the Playstation carried 59.
+
+**Q3. The archive names three devices**, and the one it drops is the Playstation.
+
+**Q4. One infrared group empties**, and it is group 0 or group 2. Group 1 is the set top box, which
+the digit tables settled, and the Chromecast has no codes at all, so the Playstation owns one of the
+other two and the television owns the other. **This is the read that says which**, and with it the
+device to group mapping for every device on the remote.
+
+**Q5. The number sender is untouched**, one record, since the favourites are on the set top box and
+that device did not move.
+
+**Q6. The file is smaller again**, by roughly the size of a codeset, since 51 or 45 records leave.
+
+**Q7. The exact cover still holds** on whatever groups remain.
