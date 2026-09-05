@@ -33937,3 +33937,181 @@ break and updated the number.
 `packages/codec/test/irframe.test.ts`, the equivalence per record over 5232 records plus the control
 that the two readers stay disjoint, and `packages/codec/test/catalogue.test.ts`, the four
 configurations against Logitech's codeset with the width taken from their definition.
+
+## 267. The Harmony 525's flash erase and write, and the two numbers arch 9 was missing
+
+`CONFIG_REGION_BASE` in `packages/usb/src/rails.ts` carries no arch 9 entry, and its comment says
+why: the configuration's address is measured, `0x820000`, but "a floor alone does not make arch 9
+writable and a half filled table invites a caller to think it does: the erase block size is the
+other half and is unmeasured. Both land together or neither does." This is the other half, read out
+of the application image rather than measured on a remote.
+
+Image `20260808-harmony-525-internal-0x0000.bin`, base `0x0000`, `--part 4550`.
+
+### The command dispatch, and an erase handler with a selector
+
+The USB command chain starts at `0x02F12` and decodes with `chains.xor_chain` to seven entries:
+
+| byte | command | handler |
+|---|---|---|
+| `0x10` | GET_VERSION | `0x02F32` |
+| `0x30` | WRITE_FLASH | `0x02F3A` |
+| `0x50` | READ_FLASH | `0x02F40` |
+| `0x70` | START_IRCAP | `0x02F56` |
+| `0xA0` | WRITE_MISC | `0x02FB4` |
+| `0xB0` | READ_MISC | `0x03090` |
+| `0xD0` | ERASE_FLASH | `0x02F72` |
+
+Four of those seven match `docs/usb-protocol.md`'s existing table exactly, which is the calibration:
+the chain was decoded here without consulting it.
+
+ERASE_FLASH sets state 8 through `RCALL 0x0355E` rather than the inline `MOVWF 0x278` the other
+architectures use, which is why a byte pattern search for the state write does not find it. It then
+switches on `0x27F`, and **that is a selector arch 12 has no equivalent of**:
+
+```
+02f7c: ac 0e       MOVLW 0xac
+02f7e: 05 6f       MOVWF 0x105        ; arm the interlock, see below
+02f82: 7f 51       MOVF 0x27f,W
+02f84: 20 0a       XORLW 0x20
+02f86: 0e e0       BZ 0x02fa4         ; selector 0x20: straight to the success tail
+02f88: a0 0a       XORLW 0xa0
+02f8a: 09 e0       BZ 0x02f9e         ; selector 0x80: the external flash arm
+02f8c: 80 0a       XORLW 0x80
+02f8e: 0d e1       BNZ 0x02faa        ; anything else: the failure tail
+02f90: 79 c2 5f f2 MOVFF 0x279,0x25f  ; selector 0x00 falls through to here
+02f98: c7 ec 3e f0 CALL 0x07d8e       ; the internal program flash erase
+```
+
+Read literally the literals are not the cases, per the standing rule: the running XOR gives `0x20`,
+`0x80` and `0x00`.
+
+**`0x27F` is not the address's top byte, it is the window tag the classifier assigns.** `0x02E14`,
+called by every one of the flash handlers, is `ARCH9_WINDOWS` in executable form and was already
+read in section 119; what is new is that the erase dispatches on its output. Each arm bounds the
+16 bit offset against its window's size, `0x8000` for internal program flash, `0x0100` for the
+EEPROM, `0x0008` for the tag 30 window and `0x0800` for data memory, and the external flash arm
+tests the top byte against `0x80` and `0x88`. It accepts with `RETLW 0x01` and refuses with
+`RETLW 0x00`.
+
+The external arm does one more thing, and it is the closure:
+
+```
+02e92: 80 0e       MOVLW 0x80
+02e94: 7f 6f       MOVWF 0x7f,B       ; selector := 0x80, so 0x80 to 0x87 all land on one arm
+02e96: 7b 5f       SUBWF 0x7b,B,F     ; and the top byte has 0x80 subtracted out of it
+```
+
+So the chip is handed `(top - 0x80) << 16 | offset`, a clean `0x000000` to `0x07FFFF`. The accepted
+tag range is therefore exactly the 512 KiB part, in eight 64 KiB pieces, one per tag value. That
+number is arrived at twice here from unrelated directions: `docs/memory-map-525.md` fixes the part
+at 512 KiB from the log area's limit and the contributor's own report, and the erase opcode below
+divides it into eight.
+
+### The SPI NOR driver, which is the Harmony 700's with one pin changed
+
+Section 13 read the same driver on the Harmony 700: hardware MSSP in SPI mode, `TBLPTR` abused as a
+24 bit address counter, `0xD8` for the block erase and `0x05` for the status poll. Arch 9 has the
+same driver and it is worth stating what is identical and what is not, because only one thing is.
+
+| | arch 14 (Harmony 700) | arch 9 (Harmony 525) |
+|---|---|---|
+| chip select | `LATF` bit 7 | **`LATE` bit 2** |
+| address shifted out from | `TBLPTRU`, `TBLPTRH`, `TBLPTRL` | the same, `0x07618` |
+| block erase | `0xD8` | `0xD8`, at `0x0757A` |
+| status poll | `0x05`, loop on bit 0 | `0x05`, `0x07536`, loop on bit 0 |
+
+The rest of the command set is at fixed addresses: `0x06` write enable at `0x0752A`, `0x04` write
+disable at `0x07530`, `0x03` read at `0x0756A`, `0x02` page program at `0x07642`, and `0xAB` release
+from deep power down at `0x0764C`.
+
+**The erase is `0xD8` and nothing masks the address**, so the granularity is the part's, and `0xD8`
+on an SPI NOR is a 64 KiB block. `ERASE_BLOCK_SIZE` for arch 9 is `0x10000`, the same figure arch 12
+carries.
+
+### The write is one whole transaction per byte
+
+`0x031CE` is the data phase. It loads `TBLPTR` from the request address through `0x03500`, points
+FSR0 at the report buffer at `0x010A`, takes the count from `0x282`, and calls the loop at `0x0652E`,
+which for each byte calls `0x0758E`:
+
+```
+0758e: cd df       RCALL 0x0752a      ; 0x06, write enable
+07590: 57 d8       RCALL 0x07640      ; chip select pulse, 0x02, then three address bytes
+07592: b0 c2 f3 f3 MOVFF 0x2b0,0x3f3  ; one data byte
+0759a: 4a d8       RCALL 0x07630      ; end the transaction
+0759c: cc df       RCALL 0x07536      ; 0x05, read status
+0759e: 01 0b       ANDLW 0x01
+075a0: fd e1       BNZ 0x0759c        ; wait for write in progress to clear
+075a4: 98 ef 3a f0 GOTO 0x07530       ; 0x04, write disable
+```
+
+then `TBLRD*+` to step the address. So **every byte gets its own write enable, its own three byte
+address, its own busy wait and its own write disable.** Two consequences for a writer. There is no
+page boundary to respect and no page buffer to fill, so a write of any length at any alignment is
+the same operation repeated, which is the opposite of what a page programmed part usually demands.
+And it is slow by construction: a full status register round trip per byte.
+
+**A routine that hoists the write enable out of that loop exists at `0x075A8` and nothing calls
+it.** No `GOTO`, `CALL`, `BRA` or `RCALL` in the image reaches it. It is recorded here because it
+reads as the obvious implementation and a later session finding it should know it is not the live
+path, and because on a standard part it would not work: a program cycle clears the write enable
+latch, so only its first byte would land.
+
+### The interlock protects the firmware, and only the firmware
+
+`0x06500` is the guard:
+
+```
+06500: ac 0e       MOVLW 0xac
+06504: 05 5d       SUBWF 0x105,W
+06506: 01 e0       BZ 0x0650a
+06508: ff 00       RESET
+0650a: 12 00       RETURN
+```
+
+It is called by `0x07D8E` and `0x07DB2`, the internal program flash erase and write, and by nothing
+else. Those two are ordinary PIC18 self programming: `EECON1` set to `0x94`, which is EEPGD with
+FREE and WREN, for the row erase, and `0x84` for the write, with the `0x55` and `0xAA` unlock at
+`0x07D5C`. `0x105` is armed to `0xAC` by the handler and cleared on the way out, at `0x02FAC` for
+the erase and `0x031F0` for the write, so a self programming call reached by any other route resets
+the processor.
+
+**No such guard sits on the external flash path.** `0x0655C` goes straight to the erase and
+`0x0652E` straight to the write, and neither consults `0x105`. This is the finding with a
+consequence.
+
+### What that means for a write to a Harmony 525
+
+**The firmware's only bound on an external flash erase is the chip.** That is a negative claim, so
+what was read to support it: the whole handler, `0x02F72` to `0x02FB2`, which holds the arming, the
+selector switch and both tails and tests nothing else; the classifier it calls, every arm; and the
+command dispatch above it at `0x02F0E`, which is a bare chain on the command byte with no flag in
+it. What has **not** been read is the whole USB callback, so a gate further upstream would not have
+been seen. Every one of the eight blocks is reachable, and three of them are not the configuration:
+
+| block | what is in it | what an erase there costs |
+|---|---|---|
+| `0x800000` | the safe mode application | the recovery image, and section 118 measured that entering safe mode on arch 9 destroys the application, so this is the copy that puts it back |
+| `0x810000` | the application firmware | the image the bootloader installs |
+| `0x820000` to `0x860000` | the user configuration | the configuration |
+| `0x870000` | the log area | the log |
+
+On arch 12 the firmware itself refuses part of this, section 192's classifier ceiling and section
+175's bit. On arch 9 it refuses nothing below the part, so **our own rail is the only thing between
+a wrong address and a remote with neither of its firmware images.** That argues for the arch 9 rail
+being tighter than arch 12's rather than the same, and it is the concrete reason `ARCHITECTURES_WITH_A_WRITE_TARGET`
+should not gain a 9 on the strength of this section: the three constants a write needs now exist,
+the floor, the ceiling and the block size, and the demonstration that a write works does not.
+
+Two smaller readings from the same chain. **Selector `0x00` erases the running firmware's own
+program memory**, so ERASE_FLASH on arch 9 is not a configuration command that happens to take an
+address, it is a general flash erase whose window is chosen by the address. And **selector `0x20`,
+the EEPROM, is a no operation that reports success**, which is the honest behaviour for a byte
+writable part and is worth knowing before reading a success as evidence that something was erased.
+
+### Reproduced by
+
+`packages/usb/test/rails.test.ts`, the arch 9 entries and the assertion that a write target still
+requires more than a pair of constants, and `tests/test_harmony_525_flash.py`, which asserts the
+opcodes, the chip select, the interlock and the classifier's normalisation against the image.

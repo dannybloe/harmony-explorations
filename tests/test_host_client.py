@@ -1962,8 +1962,18 @@ class TheEraseBlockAtTheRehearsalAddressIsSixtyFourKiB(unittest.TestCase):
             text = fh.read()
         table = re.search(r'ERASE_BLOCK_SIZE[^=]*= \{(.*?)\};', text, re.S)
         self.assertIsNotNone(table, 'no erase block table in rails.ts')
-        self.assertEqual(re.findall(r'(\d+):\s*(0x[0-9a-f]+)', table.group(1)),
-                         [('12', '0x10000')])
+        rows = dict(re.findall(r'(\d+):\s*(0x[0-9a-f]+)', table.group(1)))
+        # **This asserted the whole table was one row until 5 September 2026.** Arch 9 (Harmony 525)
+        # gained one in section 267, so the equality failed for a reason that is not this claim: the
+        # ledger's rule is that a **client sourced** number is checked against the code that uses it,
+        # and arch 9's number is not client sourced at all. It was read out of the 525's own firmware,
+        # which the client's block table says nothing about, so this test deliberately does not judge
+        # it. `tests/test_harmony_525_flash.py` is what holds arch 9's row up, against the image.
+        #
+        # The row list is still pinned rather than only the arch 12 entry, because a row appearing
+        # from nowhere should make somebody look. It is the population that moved, not the claim.
+        self.assertEqual(sorted(rows), ['12', '9'])
+        self.assertEqual(rows['12'], '0x10000')
         geometry = flash_geometry(self.source, *BENCH_ONE_FLASH)
         self.assertEqual(block_at(geometry, REHEARSAL_BLOCK)[1], 0x10000)
 

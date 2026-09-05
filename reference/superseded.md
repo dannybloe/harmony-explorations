@@ -424,3 +424,17 @@ and leave this table alone.
 | `none of its 44 records decodes into a bit frame` | section 266 | of the Harmony 300's set top box group. They all decode: `biphaseFrames` broke on a leading gap instead of skipping it, so any block opening with one returned no frame at all, and 411 records of 5232 were unreadable for that reason. Trimmed to the width Logitech's own definition states, all 44 name commands in that box's codeset |
 | `the channels are the only route to identifying the set top box's codes` | section 266 | of the same group. The catalogue names all 44 of its records once the decoder is fixed, so there are two independent identifications rather than one |
 | `36 of 38 device groups are identified today and the two that are not are biphase` | section 266, corrected the same day | of `make catalogue`'s own headline. The accounting population holds 51 occupied device groups: the pulse distance reader yields numbers for 38, of which 36 are identified, and the other 13 are skipped **before** being counted, so they are absent from the total rather than counted as failures. The honest figure is 36 of 51, and the two counted failures are groups the reader does read and no codeset matches. Of the 13 invisible ones, 5 read as biphase and 8 read as nothing |
+| `The spare Harmony One is the only write target` | Danny's decision of 5 September 2026 | of which units may be written to. Two may: the spare Harmony One and the Harmony 525. His everyday Harmony One and the Harmony 600 stay refused, the 600 because it is the only arch 14 remote in existence here. The rail still refuses arch 9, because permission is not capability: section 267 supplied every constant it needs the same day and `ARCHITECTURES_WITH_A_WRITE_TARGET` is still `[12]` |
+
+## The Harmony 525's erase block size is unmeasured, so arch 9 gets no rail entry
+
+**Killed by section 267**, 5 September 2026. `CONFIG_REGION_BASE` in `packages/usb/src/rails.ts`
+carried no arch 9 row and said the erase block size "is the other half and is unmeasured. Both land
+together or neither does." It is read now, out of the Harmony 525's own application image: the
+external flash driver sends the SPI opcode `0xD8`, a 64 KiB block erase, so `ERASE_BLOCK_SIZE` for
+arch 9 is `0x10000`. All three tables gained a row, which is what that sentence asked for.
+
+**What did not change is the write target.** `ARCHITECTURES_WITH_A_WRITE_TARGET` is still `[12]`, so
+no document may say that the Harmony 525 became writable. Section 267 argues the opposite: the
+firmware bounds an erase to the flash part and nowhere finer, so both firmware images sit inside the
+reachable range and our own rail is the only thing in the way.

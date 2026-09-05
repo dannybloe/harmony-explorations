@@ -528,8 +528,17 @@ image is a second sample rather than a stand in. Other models are iterated on la
    base slot 15 and is executing, so some derived state is there to see. Even on arch 12 the remote is
    in USB mode, so its interface cannot be driven and its analogue sampler is stopped, which is not
    what activity semantics would need. The decision stands on the first three.
-6. **Safety rails are absolute.** Firmware is never written. The spare Harmony One
-   is the only write target. Details below.
+6. **Safety rails are absolute.** Firmware is never written. **Two units may be written to**, the
+   spare Harmony One and the Harmony 525, Danny's decision of 5 September 2026, which replaces "the
+   spare Harmony One is the only write target"<!--superseded-->. His everyday Harmony One and the
+   Harmony 600 stay refused, the 600 because it is the only arch 14 remote here. **The 525 is
+   permitted and the rail still refuses it**, because permission is not capability. That was first
+   written as arch 9 having "no `CONFIG_REGION_BASE` entry and no `ERASE_BLOCK_SIZE`"<!--superseded-->
+   and section 267 supplied all three constants the same day, off the 525's own firmware, so the
+   refusal now rests on the absence of a demonstration rather than of a number. **The reason to be
+   careful got stronger rather than weaker**: its application firmware sits one 64 KiB step below its
+   configuration and the safe mode image below that, and the firmware bounds an erase to the flash
+   part and nowhere finer, so both images are inside what the remote will accept. Details below.
 7. **Heads down on our own derivation.** The findings in harmony-decompiler discussion #1 are
    treated as hypotheses to test, not as facts to adopt. The original format designer
    (`glenharris`) is active there and is a privileged source, but asking is held in reserve for

@@ -439,7 +439,7 @@ finding.
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 266<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 267<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -659,6 +659,23 @@ figures common to both carry `fact:` markers, so `make facts` moves every copy t
 cannot drift apart; what a reader should not expect is two independent statements of one measurement.
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
+
+**We now know how a Harmony 525 erases and writes its memory, and the news is a warning, section
+267.** The remote stores its settings on a small memory chip, and a chip like that cannot be changed a
+byte at a time: to alter anything you first wipe a whole block of it clean. Nobody here knew how big
+that block was, so nothing could be written to a 525 at all. Reading the remote's own program answers
+it: the block is 64 kilobytes, and the chip holds exactly eight of them.
+
+The warning is what sits in the other blocks. Two of the eight hold the remote's own operating
+software, one of them the emergency copy that is the only way to put the other back. **The remote
+will happily wipe either if it is asked to.** It checks that the address is somewhere on the chip and
+checks nothing else, so a wrong number is not refused by anything in the remote. On a Harmony One the
+remote itself stops you; on a 525 the only thing between a mistake and a dead remote is our own code.
+That is now written down as a hard limit, and a 525 still refuses every write until one has actually
+been demonstrated.
+
+Writing turns out to be slow but simple: the remote sends a complete instruction to the chip for
+every single byte, so there are no awkward boundaries to line up, just a lot of round trips.
 
 **Every stored code in the corpus can be read now, and 411 of them could not be, section 266.** Some
 appliances send a command by making the pulse long or short, and others by making both halves of each

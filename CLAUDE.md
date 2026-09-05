@@ -706,14 +706,42 @@ document:
 * **Firmware is never written.** `WRITE_FLASH` is restricted to the config region for the detected
   architecture (One `0x040000`, 600/700 `0x030000`) and a write outside it is refused by the
   library, not by the user interface.
-* **The spare Harmony One is the only write target**, until a write has been demonstrated repeatable
-  on it. **Seven remotes are on the bench**: a programmed Harmony One, a Harmony 600, the spare Harmony
+* **Two units may be written to and no others**, Danny's decision of 5 September 2026: the **spare
+  Harmony One** and the **Harmony 525**. The exclusions are the point: his everyday Harmony One, and
+  the Harmony 600, which is the only arch 14 remote in existence here.
+  **The 525 is permitted and not yet possible**, which is a distinction to keep rather than collapse.
+  `ARCHITECTURES_WITH_A_WRITE_TARGET` is still `[12]`, and what is missing is now a demonstration
+  rather than a number. **All three constants landed on 5 September 2026, section 267**, read out of
+  the 525's own application image: the configuration is at `0x820000`, the ceiling is `0x870000` where
+  the log area starts, and the erase block is 64 KiB, because the driver sends the SPI opcode `0xD8`
+  and the classifier accepts exactly eight tags, which is the whole 512 KiB part. This bullet said
+  arch 9 had "no `CONFIG_REGION_BASE` entry ... and no `ERASE_BLOCK_SIZE` at all"<!--superseded--> for
+  a few hours, and the dig that closed it is the same one that found the reason to be more careful
+  rather than less.
+  **The firmware bounds an erase to the part and nowhere finer**, which is the hazard and it is worse
+  than the one this bullet used to name. The 525's **application firmware sits one 64 KiB step below
+  its configuration**, at `0x810000`, with the safe mode image below that at `0x800000`, and both are
+  inside what an `ERASE_FLASH` will accept: the handler classifies the address into a window, and the
+  external flash arm erases without consulting anything else. There is an interlock in the image and
+  it guards the **internal** program flash only. On arch 12 (Harmony One) a wrong address meets
+  section 192's ceiling and section 175's bit in the remote; on arch 9 it meets `rails.ts` or nothing.
+  Its configuration also lives on a serial chip where the Harmony One's is parallel memory executed in
+  place, so section 192's programmer reading does not transfer.
+  **And nothing can compile a configuration for a 525**: Logitech's service reports the skin disabled
+  and their compiles fail, section 145, so there is no vendor built file to check ours against, which
+  every Harmony One write so far has had. The first 525 write is therefore the same shape as the
+  Harmony One's first: its own bytes written back unchanged, which needs no compiler.
+  **The old wording said the spare Harmony One was the only write target**<!--superseded--> and that
+  arch 9 had none either. **Seven remotes are on the bench**: a programmed Harmony One, a Harmony 600, the spare Harmony
   One, a Harmony 525, and since 27 August 2026 a Harmony Touch, a Harmony 350 and a Harmony 300.
   This said four until 29 August 2026, twelve lines above an architecture table that dates the other
   three. None of the three changes the write argument, since none is arch 12 (Harmony One) and
   `openHarmony` refuses all three, which is why the stale count survived. **Arch 14 (Harmony 600) has no write target at all** and writing to it
-  stays blocked until a second arch 14 remote exists; **arch 9 (Harmony 525) has none either.**
-  Reading arch 14 is unaffected. The spare is no longer blank, so anything wanting a virgin arch 12
+  stays blocked until a second arch 14 remote exists. **Arch 9 (Harmony 525) is a permitted target
+  since 5 September 2026 and the rail still refuses it**, per the bullet above: permission is not
+  capability, and having every constant a write needs is not capability either, which section 267
+  made concrete by supplying them. This said arch 9 "has none
+  either"<!--superseded-->. Reading arch 14 is unaffected. The spare is no longer blank, so anything wanting a virgin arch 12
   remote wants its lab dump rather than the unit.
   **Which unit is on the cable is read off the unit since section 226**, rather than asserted by the
   caller: one `READ_FLASH` of the 64 byte identity block in the remote's own program memory, whose

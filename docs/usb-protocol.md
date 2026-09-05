@@ -464,6 +464,23 @@ region rules below apply to writes too.
 hardware sector size is, not something the host chooses. That matters for the write rails: an
 erase cannot be scoped by the caller, so scoping has to come from refusing addresses.
 
+**On arch 9 the granularity is 64 KiB and the sector size is not the only thing the host does not
+choose**, section 267. The handler at `0x02F72` switches on the window tag the address classifier
+assigns, so one command byte erases three different media: tag `0x00` erases the running firmware's
+own internal program flash through `EECON1`, tag `0x20` is a no operation on the EEPROM that
+reports success, and tag `0x80` reaches the serial flash and sends the SPI opcode `0xD8`, a 64 KiB
+block erase. **Nothing bounds the external arm below the part.** The classifier accepts tags `0x80`
+to `0x87` and subtracts `0x80` out of the address, which is exactly the 512 KiB the Harmony 525
+carries in eight blocks, so an erase can reach the safe mode image at `0x800000` and the application
+firmware at `0x810000` as easily as the configuration. Arch 12 has section 192's classifier ceiling
+and section 175's bit doing part of this work in the remote; arch 9 has neither, and
+`packages/usb/src/rails.ts` is the only thing in the way.
+
+**Arch 9's WRITE_FLASH data phase is one whole SPI transaction per byte**, `0x031CE` through
+`0x0758E`: a write enable, a three byte address, one data byte, a status poll and a write disable,
+repeated. So there is no page boundary for a caller to respect and no partially filled page to
+flush, and the cost is a round trip to the part for every byte written.
+
 ### GET_VERSION
 
 **Request: `0x10 | length nibble`.** The parser is inline in the USB callback at `0x0BDFE`

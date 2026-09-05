@@ -286,9 +286,12 @@ test('arch 14 has no write target on the bench', () => {
 });
 
 test('the writable range needs both a region and a ceiling, and a hole in either refuses', () => {
-  // Arch 12 (Harmony One) is the only architecture with both, and it is also the only one in
-  // `ARCHITECTURES_WITH_A_WRITE_TARGET`, which is not a coincidence: the tables are what a write
-  // target means.
+  // **Arch 12 (Harmony One) was the only architecture with both until section 267**, and that
+  // sentence used to end "which is not a coincidence: the tables are what a write target means".
+  // It is arch 12 and arch 9 (Harmony 525) now, and the write target list is still `[12]`, so the
+  // tables are emphatically **not** what a write target means: they say where a write would be
+  // bounded and the list says whether anything may write. Keeping the two separate is what lets a
+  // region be recorded before a remote has ever been written to.
   assert.deepEqual(writableRange({ ...IDEAL, architecture: 12, versionBlock: blockFor(12) }), {
     start: 0x040000,
     end: 0x041000,
@@ -300,8 +303,14 @@ test('the writable range needs both a region and a ceiling, and a hole in either
   // the old answer was an unbounded write range for an architecture nothing has measured a ceiling
   // for. It has no write target either, so nothing could reach it; adding one would have.
   assert.throws(() => writableRange({ ...IDEAL, architecture: 14, versionBlock: blockFor(14) }), RailError);
-  // And arch 9 (Harmony 525) has neither, so it refuses on the first of the two.
-  assert.throws(() => writableRange({ ...IDEAL, architecture: 9, versionBlock: blockFor(9) }), RailError);
+  // And arch 9 (Harmony 525) has both since section 267, so it answers. The configuration sits at
+  // `0x820000` with the safe mode image and the application firmware in the two blocks below it,
+  // which is why the floor matters here more than it does on arch 12: the firmware bounds an erase
+  // to the flash part and nowhere finer, so both images are inside what the remote accepts.
+  assert.deepEqual(writableRange({ ...IDEAL, architecture: 9, versionBlock: blockFor(9) }), {
+    start: 0x820000,
+    end: 0x821000,
+  });
 });
 
 test('the two rails read the same table hole the same way', () => {
@@ -334,7 +343,12 @@ test('an erase refuses an architecture with no recorded block size', () => {
   // entries. The rail nobody can trigger is the rail nobody has tested, and `rails.test.ts` was
   // checking the table's shape in its place. The lookup is exported now so the refusal has a caller.
   assert.deepEqual(eraseBoundsFor(12), { block: 0x10000, ceiling: 0x3d0000 });
-  for (const architecture of [8, 9, 10, 14]) {
+  // **Arch 9 (Harmony 525) moved out of the refusing list in section 267** and into the answering
+  // one, because its block size is read now. It answers and it is still not a write target: the
+  // gate for that is `ARCHITECTURES_WITH_A_WRITE_TARGET`, which this bounds lookup deliberately does
+  // not consult, so a bound here is arithmetic about a region and never a permission.
+  assert.deepEqual(eraseBoundsFor(9), { block: 0x10000, ceiling: 0x870000 });
+  for (const architecture of [8, 10, 14]) {
     assert.throws(() => eraseBoundsFor(architecture), RailError, `architecture ${architecture}`);
   }
 });
@@ -552,9 +566,16 @@ test('with writing enabled, an erase must name a whole block inside the writable
 test('an architecture with no recorded block size is refused rather than loosely allowed', () => {
   // The failure mode worth naming: adding a read profile for a new architecture must not quietly
   // hand it the old address-only erase check. There is no fallback.
+  //
+  // Arch 14 (Harmony 600 and 700) is the subject and stays the subject. **The key list was `['12']`
+  // until section 267** and is `['9', '12']` now, because the Harmony 525's block size was read out
+  // of its firmware; that is a row landing, not this claim weakening, and arch 14 still has neither
+  // entry. Pinning the whole key list is deliberate even so: it is what makes adding a row a
+  // decision somebody takes on purpose rather than a side effect, and the arch 9 row proved it
+  // works by failing here first.
   assert.equal(ERASE_BLOCK_SIZE[14], undefined);
   assert.equal(WRITABLE_CEILING[14], undefined);
-  assert.deepEqual(Object.keys(ERASE_BLOCK_SIZE), ['12']);
+  assert.deepEqual(Object.keys(ERASE_BLOCK_SIZE), ['9', '12']);
 });
 
 test('the session end escape is refused in the shipped state, and only for the right reason', () => {
@@ -791,4 +812,41 @@ test('the only function returning a path to real hardware returns a guarded tran
   const body = source.slice(source.indexOf('export async function openHarmony'));
   assert.match(body, /return guardMutations\(transportOver\(/,
     'openHarmony must return a guarded transport');
+});
+
+test('arch 9 has every constant a write needs and is still not a write target', () => {
+  // Section 267 read the Harmony 525's flash erase and write out of its own application image, so
+  // the three tables gained a row each. `CONFIG_REGION_BASE`'s comment had asked for exactly that,
+  // having refused a floor without a block size on the ground that a half filled table invites a
+  // caller to think an architecture is writable.
+  //
+  // **This test exists because the tables are now complete and the answer is still no.** That is
+  // the distinction the whole module rests on: a number says where a write would be allowed to go,
+  // and the list says whether anything may write at all. Nothing about the Harmony 525 has been
+  // demonstrated, so it is not on the list, and a future session reading three populated rows
+  // should find this rather than infer permission from them.
+  assert.equal(CONFIG_REGION_BASE[9], 0x820000);
+  assert.equal(WRITABLE_CEILING[9], 0x870000);
+  assert.equal(ERASE_BLOCK_SIZE[9], 0x10000);
+  assert.ok(!ARCHITECTURES_WITH_A_WRITE_TARGET.includes(9),
+    'a complete set of constants is not a write target');
+  assert.deepEqual([...ARCHITECTURES_WITH_A_WRITE_TARGET], [12]);
+});
+
+test('the arch 9 ceiling stops below the log area, and the region is five of the part\'s eight blocks', () => {
+  // The ceiling is `0x870000` because `docs/memory-map-525.md` puts the log area there, not because
+  // the part ends: it ends at `0x880000`. Both numbers are real and taking the larger one would put
+  // the log inside a writable range for no gain.
+  const start = CONFIG_REGION_BASE[9] as number;
+  const ceiling = WRITABLE_CEILING[9] as number;
+  const block = ERASE_BLOCK_SIZE[9] as number;
+  assert.equal((ceiling - start) % block, 0, 'the region is a whole number of erase blocks');
+  assert.equal((ceiling - start) / block, 5);
+  // And the neighbours the rail is protecting, which is why arch 9's is tighter than arch 12's:
+  // the firmware bounds an erase to the part and nowhere finer, section 267, so the safe mode image
+  // and the application firmware are inside what the remote will accept and outside what this
+  // module permits.
+  for (const firmware of [0x800000, 0x810000]) {
+    assert.ok(firmware < start, `0x${firmware.toString(16)} is below the writable floor`);
+  }
 });

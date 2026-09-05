@@ -84,7 +84,7 @@ re-implementing a PIC18 decoder is not the exercise. The line runs between tools
 - `tools/pic18_disasm.py`, `tools/pic18_trace.py`, `tools/pic18_xref.py`, `tools/usbdesc.py`
 - `src/harmony/pic18/`, the opcode table, the disassembler, the tracer, the switch chain decoder
 - `src/harmony/firmware.py`, `src/harmony/usbdesc.py`
-- the five `docs/memory-map*.md` documents, and `reference/checksums.md`
+- `docs/memory-map.md`, `docs/memory-map-one.md`, `docs/memory-map-600.md`, `docs/memory-map-700.md`, and `reference/checksums.md`. **The five memory maps were named here by a glob until 5 September 2026** and the 525's came off the list, per the row for it in the withhold table below. They are spelled out one by one now, because a glob quietly re-admits whatever is written next
 - the Microchip headers the project already relies on, `p18f87j50.inc` and `p18f67j50.inc`
 
 **Must not be read.** This list was built by inventorying the tree rather than from memory, and that
@@ -111,6 +111,7 @@ that could have leaked.
 | `tests/`, `packages/bench/test/` | the regression tests pin the claims |
 | `packages/corpus/bin/write-config.ts` | **added 1 September 2026, section 237.** The write path grew a second caller, in a package the earlier list did not cover at all because nothing there wrote. It states the erase and write sequence by driving it, names the first write door, and says which blocks an edit touches |
 | `.claude/skills/recovering-a-remote/SKILL.md`, `.agents/skills/recovering-a-remote` | **added 29 August 2026 and the reason is question 4.** It states the classifying routine, its three callers, what each top byte selects, the ceiling per architecture and the polarity in the words "it rests at refuse", which is the whole of the highest value question in this review. It is reachable both as a skill Codex discovers on its own and as a tracked file |
+| `docs/memory-map-525.md` | **added 5 September 2026, section 267, and it is the third time the sweep has found a leak rather than a person.** It was on the may read list as one of the five memory maps, and it acquired the Harmony 525's erase and write mechanism: the opcode, the granularity, the window classifier that decides which medium an address means, and an interlock whose failure mode is a processor reset. Question 4 asks for the write protect interlock and this answers it on arch 9, which is a different architecture and the same question. The other four memory maps stay readable |
 | `tools/ghidra/seed_code.txt`, `tools/ghidra/seed_funcs.txt` | machine generated branch target seeds |
 | the `concordance` checkout | `specs/protocol.txt` documents the protocol independently |
 

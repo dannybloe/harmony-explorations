@@ -215,7 +215,7 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # Exact, since a test file is added deliberately and rarely, unlike a test function.
         # 34 since `tests/test_write_sequence.py`, section 247.
         # 35 since `tests/test_status_screens.py`, section 249.
-        self.assertEqual(len(files), 35, 'the Python test files')
+        self.assertEqual(len(files), 36, 'the Python test files')
         with_block = 0
         for path in files:
             with open(path, encoding='utf-8') as handle:
@@ -232,7 +232,7 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
                              % (os.path.basename(path), at[0] + 1, len(hidden), ', '.join(hidden)))
         # And the check has teeth only if most files actually carry a block. Exact: all but two do,
         # and the two that do not are named in the comment above rather than left to a tolerance.
-        self.assertEqual(with_block, 33,
+        self.assertEqual(with_block, 34,
                          'files carrying a __main__ block, of %d' % len(files))
 
 
@@ -657,7 +657,7 @@ class APythonBoundOnACorpusTotalIsExact(unittest.TestCase):
 
     def test_the_pattern_still_matches_a_known_bound(self):
         found, scanned = self._bounds()
-        self.assertEqual(len(scanned), 35, 'Python test files, which moves when one is added')
+        self.assertEqual(len(scanned), 36, 'Python test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):
@@ -1500,7 +1500,11 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         text = self._document()
         may = self._paths_between(text, '**May be read and used.**', '**Must not be read.**')
         must = self._paths_between(text, '**Must not be read.**', '\n## ')
-        self.assertEqual(len(may), 13, 'the may read list should resolve to 13 paths, got %s'
+        # 12 since 5 September 2026, section 267: `docs/memory-map-525.md` moved to the withhold
+        # list, and the four remaining memory maps are spelled out one by one where a glob used to
+        # stand for all five. The glob is what let the 525's document acquire the erase mechanism
+        # and stay on the readable side, so naming them is part of the fix rather than tidying.
+        self.assertEqual(len(may), 12, 'the may read list should resolve to 12 paths, got %s'
                          % sorted(may))
         # The AGENTS.md row remains reserved, but the file is deliberately absent. Its place in the
         # resolved population is taken by the Codex config named in that row.
@@ -1508,7 +1512,10 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # 19 since 29 August 2026: the `recovering-a-remote` skill went on the list, as both its
         # real path and the `.agents/` symlink a second agent discovers it through. It states the
         # interlock, which is question 4.
-        self.assertEqual(len(must), 20, 'the withhold list should resolve to 20 paths, got %s'
+        # 21 since 5 September 2026: `docs/memory-map-525.md`, which now states the Harmony 525's
+        # erase handler, its window classifier, the block size and an interlock. That is question 4
+        # on another architecture, and this sweep found it rather than a person.
+        self.assertEqual(len(must), 21, 'the withhold list should resolve to 21 paths, got %s'
                          % sorted(must))
 
     def test_every_may_read_path_is_clean_of_the_write_path(self):
@@ -1585,7 +1592,13 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # write handlers, in a negative asserting they do not touch the validator's flag. `tests/`
         # is withheld whole, so nothing widens. The list was re-read against all 32 before this
         # number moved.
-        self.assertEqual(len(stating), 32,
+        #
+        # **33 since 5 September 2026, section 267**, and the new one is `docs/memory-map-525.md`,
+        # which acquired the Harmony 525's erase and write mechanism. It was on the **may read**
+        # list at the time, as one of five memory maps named by a glob, so this is the sweep catching
+        # a widening rather than counting a new file: the companion test failed first and this number
+        # moved only after that file was withheld and the glob replaced by four explicit names.
+        self.assertEqual(len(stating), 33,
                          'the number of files stating the write path moved, so re-read the withhold '
                          'list before restamping this: %s' % stating)
 

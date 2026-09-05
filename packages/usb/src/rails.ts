@@ -38,8 +38,28 @@ export class RailError extends Error {}
  * than reasons.
  */
 export const CONFIG_REGION_BASE: Readonly<Record<number, number>> = {
+  9: 0x820000, // Harmony 525
   12: 0x040000, // Harmony One
   14: 0x030000, // Harmony 600 and 700
+  // **The arch 9 row landed on 5 September 2026, section 267.** This carried no entry and said the
+  // erase block size "is the other half and is unmeasured. Both land together or neither does."<!--superseded-->
+  // The block size is read now, out of the 525's own application image: its external flash driver
+  // sends the SPI opcode `0xD8`, a 64 KiB block erase, and nothing masks the address, so the
+  // granularity is the part's. All three tables gained a row in the same commit, which is what that
+  // sentence asked for.
+  //
+  // **A Harmony 525 keeps its configuration at `0x820000`** with the application firmware at
+  // `0x810000` and the safe mode image at `0x800000` directly below it, `docs/memory-map-525.md`.
+  // Those neighbours are the reason the arch 9 rail matters more than arch 12's rather than the
+  // same: section 267 read the erase and write handlers and **the firmware bounds them to the flash
+  // part and nowhere finer**, so every one of the eight blocks is reachable, including both firmware
+  // images. Arch 12 (Harmony One) has section 192's classifier ceiling and section 175's bit doing
+  // some of this work in the remote; arch 9 (Harmony 525) has nothing there, and this table is the
+  // only thing in the way.
+  //
+  // **Three constants are still not a write target.** `ARCHITECTURES_WITH_A_WRITE_TARGET` is `[12]`
+  // and this commit does not change it: what these rows buy is that a refusal for arch 9 now names
+  // the missing demonstration rather than a missing number.
 };
 
 /**
@@ -79,6 +99,12 @@ export const ARCHITECTURES_WITH_A_WRITE_TARGET: readonly number[] = [12];
  * refuses, and the thing it was hiding here is the reason this constant exists.
  */
 export const WRITABLE_CEILING: Readonly<Record<number, number>> = {
+  // **The log area is the ceiling on arch 9 (Harmony 525)**, not the top of the part. The
+  // configuration starts at `0x820000` and `docs/memory-map-525.md` puts the log area at
+  // `0x870000`, so this stops one block below it. The part itself ends at `0x880000` and the
+  // contributor's own "384 KiB" figure counts that whole span; taking the larger number would put
+  // the log inside the writable range for no gain, since no configuration here comes near it.
+  9: 0x870000,
   12: 0x3d0000,
 };
 
@@ -117,8 +143,24 @@ export const WRITABLE_CEILING: Readonly<Record<number, number>> = {
  * client's table and section 221's row for the part agree with the measurement, which is a closure
  * between a vendor table and a remote rather than a second opinion about one of them. Every other
  * architecture in this table, if one is ever added, is back to the client's word.
+ *
+ * **That last sentence held for one architecture's worth of time**, section 267: arch 9 (Harmony
+ * 525) was added on 5 September 2026 off its own **firmware**, which is neither the client's word
+ * nor a hardware measurement but a third thing, and a better one than the first. The rule to carry
+ * is that a row states its source, which the comments inside the table now do.
  */
 export const ERASE_BLOCK_SIZE: Readonly<Record<number, number>> = {
+  // **Arch 9 (Harmony 525) is read off the firmware rather than off the client or the part**,
+  // section 267: the external flash driver at `0x07576` sends `0xD8`, which is a 64 KiB block
+  // erase. **Nothing rounds the address down to a boundary**: the classifier has already taken the
+  // window tag off it and `0x03500` copies the three bytes that remain straight into the address
+  // the part is handed, so the block is whatever the part does with that opcode and an unaligned
+  // erase is the part's business rather than the firmware's. The closure is that the command's
+  // accepted window tags, `0x80` to `0x87`, are exactly eight of these blocks and the part is
+  // 512 KiB. That is a stronger source
+  // than the client's table and a weaker one than arch 12's row below, which was measured by
+  // erasing a block on a remote and reading its neighbours.
+  9: 0x10000,
   12: 0x10000,
 };
 

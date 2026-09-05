@@ -137,6 +137,17 @@ space the container's own pointers use.
 | `0x820000` onward | 51195 on the bench unit, 78486 in the published sample | the **user config**, an `AHCM` container | measured |
 | `0x870000` to `0x880000` | 65536 | the **log area** | base slot 2, `capacity 8192` at a stride of 8 |
 
+**The erase granularity is 64 KiB and it is read off the firmware**, section 267: the driver at
+`0x07576` sends the SPI opcode `0xD8`, and the classifier subtracts `0x80` out of the address, so
+the accepted tags `0x80` to `0x87` are exactly eight blocks of that size. That closes against the
+512 KiB below, from a direction with nothing in common: one figure comes from the log area's limit
+and the contributor's report, the other from an opcode and a range check. `ERASE_BLOCK_SIZE[9]` in
+`packages/usb/src/rails.ts` is the executable form, and a write to this model is still refused, by
+`ARCHITECTURES_WITH_A_WRITE_TARGET`, which is `[12]`.
+
+**Writing is a byte at a time**, same section: every byte gets its own write enable, its own three
+byte address, its own status poll and its own write disable, so nothing here has a page boundary.
+
 **The flash is 512 KiB, far below either of the other architectures**, and the chip is a 25F040.
 Arch 12's is 4 MiB and arch 14's is 2 MiB, both fixed by their own address validators,
 `docs/findings.md` section 88.
@@ -302,3 +313,17 @@ still compiles configs. **That is not the service this remote used.** The 5xx se
 classic platform, whose site now serves a discontinuation notice, so there is no path that would put
 a working config back on a 525 if one were destroyed. The remote is read only, the same as every
 other, and the fallback that exists for a Harmony One does not exist for this one.
+
+**The firmware helps less here than on either other architecture**, section 267, and that is the
+second reason. An `ERASE_FLASH` is bounded to the flash part and nowhere finer: every one of the
+eight blocks is reachable, including `0x800000`, the safe mode application, and `0x810000`, the
+application firmware. There is an interlock in the image, `0x105` holding `0xAC`, and its failure
+mode is a processor reset rather than a refusal, but it guards the **internal** program flash
+routines and nothing on the external path consults it. So on a Harmony One a wrong address meets a
+ceiling in the remote and here it meets nothing, which is why the arch 9 entry in
+`packages/usb/src/rails.ts` stops below the log area rather than at the top of the part.
+
+**The pair of images is what makes that matter.** Section 118 measured that entering safe mode on
+this model destroys the application firmware and that a power cycle does not leave it, so the copy
+at `0x810000` is what puts it back. An erase that took both blocks would leave a remote with no
+route to either.
