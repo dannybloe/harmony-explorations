@@ -33850,12 +33850,20 @@ them as unreadable and drew a real conclusion from it, that the archive of names
 the only route to a command name on that remote where the catalogue is the route everywhere else. All
 130 read now.
 
-### Believing it needed an answer from outside, and the answer is a keypad
+### Believing it needed an answer from outside, and the method is section 162's
 
 A decoder that starts returning frames is easy to believe and hard to check, since the frames could be
 arithmetic on the right durations and still not be what the appliance answers to. So the check is
 Logitech's own codeset for the very set top box these configurations drive, across four remotes and
-three architectures:
+three architectures.
+
+**The method is not new and this section first claimed it was.** Section 162 established all three
+unknowns a biphase reader cannot get from the durations, where the payload starts, which half means a
+set bit and how wide the frame is, and settled all three against the catalogue: it measured this
+family's width as 22 and its polarity as mark first, and matched **56 of 56** of its records to the
+numbers Logitech states for those commands. So what follows is that measurement repeated on a different
+population, four real remotes rather than a compiled sample, and it is a **confirmation** rather than a
+first. Section 162 never met the defect above because it worked on trains that had been trimmed.
 
 | configuration | the family's records | named in the catalogue |
 |---|---|---|
@@ -33880,23 +33888,37 @@ exactly that: where the payload starts cannot be read off the train, since part 
 not transmitted at all, so the reader hands back the longest self consistent alignment and a caller
 trims to the width it is looking for. Trimming to 22 is what turns 0 matches into 44 of 44.
 
-**So a caller needs the width from somewhere, and the somewhere is their definition.** The archive
-states `NumberOfBits` 22 inside the segment's `Payload`, which `keycodeFields` already exposes. It is
-**not** taken from the string "Kreatel IP 22 Bit", and section 231 is why that is not pedantry: a width
-read off a family name was wrong on the one family whose name was checked against its own definition.
+**So a caller needs the width from somewhere, and there are two somewheres.** Section 162 measured it,
+22, and the archive states it, `NumberOfBits` inside the segment's `Payload`, which `keycodeFields`
+exposes. The two agree. Either way it is **not** taken from the string "Kreatel IP 22 Bit", and section
+231 is why that is not pedantry: a width read off a family name was wrong on the one family whose name
+was checked against its own definition.
+
+**The measured width is not in the code, and that is the finding here.** `BiphaseTimings` in
+`packages/codec/src/protocols.ts` carries the half cell, the lead in and the polarity and **no width**,
+so section 162's three widths live in that section's table in this document and nowhere executable. A
+number in prose with no field behind it is the state this project's four places rule exists to prevent,
+and it is why a caller has to reach for the archive for something already measured.
 
 ### What is deliberately not built
 
 **The catalogue naming pass is still blind to biphase families**, and this section does not change that.
 `numbersOf` in `packages/codec/bin/catalogue.ts` uses `irFrame`, the pulse distance reader, so
-`make catalogue` cannot identify a biphase device group at all. Extending it needs the stated width per
-family before a number can be matched, and a family cannot be assumed while the device is what is being
-identified, so the route is the carrier period to a rhythm table entry to Logitech's stated width. That
-is a design decision with a circularity in it and it is not taken here.
+`make catalogue` cannot identify a biphase device group at all.
 
-What makes it worth doing is the size of the prize: 36 of 38 device groups are identified today and the
-two that are not are biphase, and every command name on the Harmony 350 currently comes from the
-container's own archive because of this.
+**And its own headline number hides that, which this section got wrong before measuring it.** It was
+written here that "**36 of 38 device groups are identified today and the two that are not are
+biphase**"<!--superseded-->. Both halves are false. The accounting population holds **51** occupied
+device groups; the pulse distance reader yields numbers for 38 of them, of which 36 are identified, and
+the other **13 are omitted from the total altogether** rather than counted as failures, because the pass
+skips a group before counting it when it has no numbers. So the honest figure is 36 of 51. The two that
+are counted and unidentified are groups the reader **does** read and no codeset matches, which is a
+different thing entirely.
+
+Of those 13 invisible groups, **5 read as biphase now**, 199 records, and 8 read as nothing at all. So
+the prize is 5 groups and the first step is smaller than a design decision: put the width into
+`BiphaseTimings` beside the polarity, where section 162's measurement belongs, and give the pass a
+denominator that counts every occupied group.
 
 ### The lesson, which is about the shape of the callers rather than the bug
 

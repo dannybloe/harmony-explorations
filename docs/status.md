@@ -679,9 +679,19 @@ volume, which is right: a set top box has none, the television has it.
 
 That also takes back something section 261 concluded. Every stored code on one of the Harmony 350s was
 unreadable, and we said the only way to learn what those codes do is the list of names inside the file
-itself. All of them read now. The naming tool still cannot use them, because it only asks the first
-reader, and wiring in the second needs each family's code length from Logitech's data first. That is the
-next obvious piece of work and it is not done.
+itself. All of them read now.
+
+**The naming tool still cannot use them, and checking why turned up a number that was flattering
+itself.** It reports identifying 36 of 38 sets of codes. There are **51** sets in the files it walks:
+it reads 38 of them, and the other 13 it skips before counting, so they never appear as failures. The
+honest score is 36 of 51. Five of the thirteen are readable now, and the missing piece is small rather
+than deep: how many bits each family's codes carry was measured a while back and written into a
+document instead of into the code, so the tool has nowhere to look it up.
+
+**And the check that led to this was not new either.** Matching these codes against Logitech's own list
+was done before, on a different set of files, and it is what established how wide this family's codes are
+in the first place. The write up first presented it as fresh, which it was not: what is new is the reader
+defect.
 
 **Programming that same Harmony 300 refuted the finding before it, and named which stored codes belong
 to which device, section 265.** Danny put four devices on it, one on each of its four device buttons, a

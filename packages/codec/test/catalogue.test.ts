@@ -18,7 +18,7 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { IR_ARCHIVE, load, needing, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
 import {
-  catalogueCommands, catalogueDevice, catalogueManufacturers, catalogueModels, codeKey,
+  catalogueCommands, catalogueDevice, catalogueManufacturers, catalogueModels, codeIndex, codeKey,
   identifyCodeset, DEVICE_TYPE_NAMES,
 } from '../src/catalogue.ts';
 import { parse, payloadOf } from '../src/index.ts';
@@ -26,6 +26,7 @@ import { irGroups } from '../src/ir.ts';
 import { devices, keyCodes } from '../src/inventory.ts';
 import { metadataArchive } from '../src/metadata.ts';
 import { archiveProtocols } from '../src/archive.ts';
+import { CONTAINERS as CATALOGUE_CORPUS } from '../bin/corpus.ts';
 import { irHeaderPointers, irBlockWords, irCarrier } from '../src/ir.ts';
 import { biphaseFrames } from '../src/irframe.ts';
 import { pulsesOfWords } from '../src/irda.ts';
@@ -508,4 +509,62 @@ test('the biphase records of a set top box name commands in Logitech\'s own cata
     'FastForward', 'Green', 'Guide', 'Home', 'Info', 'Menu', 'Pause', 'PowerToggle',
     'Radio', 'Record', 'Red', 'Rewind', 'Select', 'Stop', 'Teletext', 'Yellow',
   ], 'the commands named across the four configurations');
+});
+
+/**
+ * `make catalogue`'s own denominator omits every group its reader cannot read, section 266.
+ *
+ * **The number it prints is 36 of 38 and the population is 51.** `bin/catalogue.ts` builds a group's
+ * numbers with `irFrame`, the pulse distance reader, and then `continue`s past the group **before**
+ * incrementing its counter when that yields nothing. So a group the reader cannot read is absent from
+ * the total rather than present as a failure, and the score flatters itself by 13 groups.
+ *
+ * **This test exists because a ratio with a moving denominator cannot be checked by reading it.** The
+ * two counted failures are groups the reader does read and no codeset matches, which is a real and
+ * interesting category; the 13 are a different one and were being reported as neither. Asserting all
+ * three counts is what makes the distinction survive somebody improving the reader, since the right
+ * outcome of that is 13 falling and 38 rising.
+ */
+test('the catalogue pass counts only the groups its reader can read',
+  needing(skipWithoutIrArchive(), skipUnless(...CATALOGUE_CORPUS)), () => {
+  const index = codeIndex(IR_ARCHIVE!);
+  let occupied = 0;
+  let withNumbers = 0;
+  let identified = 0;
+  let noNumbers = 0;
+  let biphaseGroups = 0;
+  let biphaseRecords = 0;
+  for (const name of CATALOGUE_CORPUS) {
+    const c = parse(require_(name));
+    for (const group of irGroups(c) ?? []) {
+      if (group.addresses.length === 0) continue;
+      occupied += 1;
+      const numbers: string[] = [];
+      let biphase = 0;
+      for (const record of group.addresses) {
+        const frame = irFrame(c, record);
+        if (frame !== undefined) { numbers.push(codeKey(frame.value.toString(16))); continue; }
+        const first = irHeaderPointers(c, record)[0];
+        const words = first === undefined ? undefined : irBlockWords(c, first);
+        if (words !== undefined && biphaseFrames(pulsesOfWords(words)).length > 0) biphase += 1;
+      }
+      if (numbers.length === 0) {
+        noNumbers += 1;
+        if (biphase > 0) { biphaseGroups += 1; biphaseRecords += biphase; }
+        continue;
+      }
+      withNumbers += 1;
+      if (identifyCodeset(index, numbers) !== undefined) identified += 1;
+    }
+  }
+  assert.equal(occupied, 51, 'the occupied device groups, which is the honest denominator');
+  assert.equal(withNumbers, 38, 'the groups the pulse distance reader gives numbers for');
+  assert.equal(identified, 36, 'and the ones a codeset matches, which is the number the tool prints');
+  assert.equal(noNumbers, 13, 'the groups omitted from that total altogether');
+  // The reachable share of the omitted, which is what an extension would win: 5 groups rather than
+  // the "two that are not are biphase" this was first written up as.
+  assert.equal(biphaseGroups, 5);
+  assert.equal(biphaseRecords, 199);
+  // The three buckets have to account for the population, or one of them is being counted twice.
+  assert.equal(withNumbers + noNumbers, occupied, 'a group fell into neither bucket');
 });
