@@ -34425,3 +34425,104 @@ range, measured against the range rather than implied by a refusal upstream.
 permission, which is the claim that survives the two lists coinciding. `tests/test_harmony_525_flash.py`:
 the neighbour the arch 9 rehearsal has to check is the application firmware, so a wrong block size
 would be a firmware erase.
+
+## 270. The Harmony 525's configuration region past the end of its configuration, and why two of five blocks are worth rehearsing
+
+Section 269 needed one erase block of the bench Harmony 525 and read one. The other four blocks of
+its configuration region were read the same day, so the region is complete in the lab rather than
+just the block a write had already needed. What they hold was not the expected answer.
+
+| block | bytes that are not `0xff` | where they stop |
+|---|---|---|
+| `0x820000` | 50307 | offset `0xc7fa`, which is byte 51194, the configuration's last |
+| `0x830000` | 6848 | offset `0x1dcd`, so 6848 written bytes inside a span of 7630 |
+| `0x840000` | 1781 | offset `0x6f4`, so the span is 1781 too and nothing inside it is erased |
+| `0x850000` | 0 | erased throughout |
+| `0x860000` | 0 | erased throughout, and byte identical to the block below |
+
+The first row is the closure worth noting on its own: the configuration is 51195 bytes and the last
+byte of the block that is not `0xff` is its 51195th. So the container ends exactly where its own
+length field says, measured against the flash rather than against the parser.
+
+### Section 215's finding on a second architecture
+
+The current configuration ends at flash `0x82C7FB` and **8629 bytes above it are not erased**, spread
+over a span of 9411 bytes measured from each block's start to its last written byte. Those are two
+different figures and this section stated the span as the count when it was first written; the
+difference is 782 erased bytes inside the runs, and 8629 is the one to compare with anything else.
+
+That is the same phenomenon section 215 measured on the spare Harmony One, where 408034 bytes
+of a previous configuration sit past the end of the current one: **flash is erased only where a write
+needs the room**, so a configuration shorter than its predecessor leaves the predecessor's tail in
+the blocks it did not have to touch. Arch 12 and arch 9 are different parts, different chips and
+different write paths, and it happens on both, which makes it a property of writing to flash rather
+than of either implementation.
+
+The shape supports it beyond the byte counts. Each of the two runs starts at its block's first byte
+and stops partway, which is what a tail looks like and not what a structure written on purpose looks
+like. `0x830000`'s run holds 35 printable strings of four characters or more, consistent with a
+container's on screen text, and one internal run of 768 erased bytes, which is ordinary inside a
+container.
+
+**That these are two earlier configurations rather than one is a reading and not a measurement.** The
+argument for it: `0x830000` is `0xff` for 57906 bytes after its content stops, so one configuration
+producing both tails would have to carry a 57906 byte erased run in its middle, where the largest
+internal run actually observed is 768. That is an argument from character and it can be wrong. What is
+measured is the table.
+
+**No inference is drawn here about how this remote came to hold them.** What was configured on it, by
+whom and how often is not something the flash can say and is not being guessed at.
+
+### The practical consequence, which is which blocks are worth writing to
+
+`H525_DUMPS` in `rehearse-block.ts` names all five blocks now, and two of them are poor rehearsal
+targets for a reason that is easy to miss:
+
+**`0x850000` and `0x860000` are erased throughout.** A rehearsal there erases a block to `0xff` and
+then writes `0xff` back into it, so the read back cannot distinguish a working write path from one
+that sent nothing at all. It would pass on a write path that silently dropped every transfer. So a
+rehearsal on a blank block is not a weaker test than one on `0x820000`, it is a test of nothing, and
+the comment in the allow list says so where an operator picks a block.
+
+**`0x830000` and `0x840000` are the two that add something.** Both hold content, so a read back that
+matches is evidence, and both are content the lab now holds, so writing them back is a write whose
+correct outcome is known in advance, exactly as `0x820000` was. Rehearsing either exercises a second
+and third address on this architecture, which is what the region reads were for.
+
+They are also somebody's earlier configuration rather than spare space, which does not make them
+unsafe to write back unchanged and is worth knowing before treating them as scratch.
+
+### Why the region stops at five blocks
+
+`WRITABLE_CEILING[9]` is `0x870000`, where `docs/memory-map-525.md` puts the log area, and
+`CONFIG_REGION_BASE[9]` is `0x820000`. Five 64 KiB blocks, which is what the rehearsal's allow list
+now states as a population rather than as a count: the test derives the expected list from those
+three constants, so a sixth entry fails whether it names a block outside the region or the same block
+twice.
+
+The part holds eight blocks and the three below the region are the safe mode image, the safe mode
+configuration and the application firmware. None was read here and none belongs in a list a write
+picks from.
+
+### What this does not establish
+
+The two content bearing blocks have **not** been rehearsed, with or without `--commit`. Only
+`0x820000` has, section 269.
+
+Nothing was parsed. None of the four new reads begins at a container, each starting in the middle of
+one or nowhere, so they are absent from the parseable and golden populations that `h525_region_820000`
+is in. They are bytes at addresses, which is all a rehearsal needs them to be.
+
+### Sources checked before the run
+
+Section 215 for the same phenomenon on arch 12, which is what made the non blank blocks recognisable
+rather than surprising. Section 269 for the block that was already in hand. `docs/memory-map-525.md`
+for the region's bounds and what sits below them.
+
+### The tests
+
+`packages/usb/test/rehearsal.test.ts`: the allow list derived from the three rail constants rather
+than counted, and the erased pair called out where a block is chosen.
+`packages/lab/test/parity.test.ts`: the fixture count, which is the check that fails in a fresh clone
+when a registration is left half done. `tests/test_harmony_525_region.py`: the table above, byte for
+byte, including the closure between the container's stated length and where the flash stops.

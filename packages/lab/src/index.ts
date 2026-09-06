@@ -112,6 +112,19 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // are identical to `h525_config_2` read a month earlier by a different code path, and the rest
   // is 0xFF.
   h525_region_820000: '20260906T0917Z-h525-region-820000-region.bin',
+  // The other four blocks of that region, read the same day, so the whole of the 525's
+  // configuration region is in hand rather than the one block the rehearsal needed. **Two are not
+  // blank**, section 270: the configuration ends at flash 0x82C7FA and 7630 bytes sit at the start
+  // of 0x830000 with 1780 at the start of 0x840000, which is section 215's finding on a second
+  // architecture. Flash is erased only where a write needs the room, so a shorter configuration
+  // leaves the tail of a longer one behind it. The top two are 0xFF throughout and identical.
+  //
+  // None of the four parses, each beginning in the middle of a container rather than at one, so
+  // they are absent from the parseable and golden populations where the block above is in both.
+  h525_region_830000: '20260906T1100Z-h525-region-830000-region.bin',
+  h525_region_840000: '20260906T1100Z-h525-region-840000-region.bin',
+  h525_region_850000: '20260906T1100Z-h525-region-850000-region.bin',
+  h525_region_860000: '20260906T1100Z-h525-region-860000-region.bin',
   // The arch 9 safe mode container, cut out of the 525's own firmware region at flash 0x818000 on
   // 8 August 2026. Section 76 kept it out of the corpus because it contradicted six corpus claims;
   // section 77 read one of them and section 78 read four more, so what is left is base slot 1's

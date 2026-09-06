@@ -59,7 +59,10 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // 97 since the Harmony 525's erase block, section 268: the first **region** read of a remote other
   // than the spare Harmony One, and the first added because a configuration read was the wrong
   // shape rather than out of date.
-  assert.equal(Object.keys(pythonImages()).length, 97, 'every fixture tests/lab.py names');
+  // 101 since the other four blocks of that region, section 270, which completes it: five blocks
+  // from `0x820000` to `0x870000`, of which two hold the tail of an earlier configuration and two
+  // are erased throughout.
+  assert.equal(Object.keys(pythonImages()).length, 101, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {

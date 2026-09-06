@@ -443,7 +443,7 @@ finding.
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 269<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 270<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -663,6 +663,20 @@ figures common to both carry `fact:` markers, so `make facts` moves every copy t
 cannot drift apart; what a reader should not expect is two independent statements of one measurement.
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
+
+**The rest of the 525's settings area is now read, and two thirds of it is not empty, section 270.**
+The area set aside for settings is five blocks of 64 kilobytes and the settings themselves fill less
+than one. Reading the other four found the tail end of an **earlier** set of settings sitting in two
+of them, 8629 bytes that were never wiped. The reason is how flash memory works: it can only be
+cleared a whole block at a time, so writing something shorter than what was there leaves the far end
+of the old one untouched. We already measured exactly this on the Harmony One, where it is 408034
+bytes, so it is how writing to flash behaves rather than a quirk of either remote.
+
+Two consequences. A dump of that whole area carries settings nobody meant to hand over, which is why
+it stays in the private lab and never in the repository. And the two blocks at the top **are** empty,
+which makes them useless for practising a write: clearing a block already fills it with the same
+value, so writing that value back proves nothing. The two blocks with old data in them are the ones
+worth using.
 
 **The Harmony 525 has been written to, section 269.** One block of its own configuration, 64 kilobytes,
 erased and put straight back, so the remote ended up holding exactly what it held before. That is the

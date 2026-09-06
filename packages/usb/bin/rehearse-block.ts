@@ -194,10 +194,29 @@ const SPARE_DUMPS = new Set([
  * unit, section 226, and this catches the different slip of naming some other 525 era image.
  */
 const H525_DUMPS = new Set<string>([
-  // One erase block, flash 0x820000 to 0x830000, read on 6 September 2026. It covers exactly one
-  // block, so 0x820000 is the only address a 525 rehearsal can name today; another block needs
-  // another region read.
+  // The whole configuration region, one entry per erase block, read on 6 September 2026. The first
+  // was read for the rehearsal that became this project's first arch 9 write, section 269, and the
+  // other four the same day so that every block of the region can be named rather than only the one
+  // a write had already needed. Each covers exactly one block, which is what `--block` takes.
   'h525_region_820000',
+  'h525_region_830000',
+  'h525_region_840000',
+  'h525_region_850000',
+  'h525_region_860000',
+  // **Two of these blocks are not spare space and one pair is not worth rehearsing**, section 270,
+  // and both facts belong here rather than in a document, because this is the list an operator
+  // picks a block from.
+  //
+  // `0x830000` and `0x840000` hold the tail of a longer configuration that was on this remote
+  // before the current one, 7630 bytes and 1780 bytes at the start of each. Rehearsing them is
+  // safe, since the dump holds those bytes and they go back unchanged, but they are somebody's
+  // data and not padding.
+  //
+  // `0x850000` and `0x860000` are `0xFF` throughout and byte identical to each other. A rehearsal
+  // there proves less than one anywhere else: writing `0xFF` into a block the erase has just filled
+  // with `0xFF` cannot be told apart from not writing at all, so the read back would pass on a
+  // write path that did nothing. They are registered because the region should be complete and a
+  // gap invites a region read nobody needs, not because they are good targets.
 ]);
 
 /** A remote this script may run against, per architecture. */

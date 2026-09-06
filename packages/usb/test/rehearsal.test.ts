@@ -22,7 +22,12 @@ import {
   failureLine,
   neighbourBlocks,
 } from '../src/rehearsal.ts';
-import { ARCHITECTURES_WITH_A_WRITE_TARGET } from '../src/rails.ts';
+import {
+  ARCHITECTURES_WITH_A_WRITE_TARGET,
+  CONFIG_REGION_BASE,
+  ERASE_BLOCK_SIZE,
+  WRITABLE_CEILING,
+} from '../src/rails.ts';
 
 const ONE = 12;
 const BLOCK = 0x10000;
@@ -216,16 +221,36 @@ test('a dry run asks for no write permission, whether or not the target has one'
             'the dry run must return before anything asks for write permission');
 });
 
-test('the Harmony 525 has exactly one registered block, so only that address can be rehearsed', () => {
-  // **This test asserted the set was empty and it failed on 6 September 2026**, which is what it was
-  // for: the entry is added by hand with the filename the region read produced, so adding one is a
-  // decision somebody takes rather than a drift. It now pins the other end, that there is one block
-  // and therefore one address, because a dump covering one block makes every other block a refusal
-  // and that is easy to mistake for a broken script.
+test("the Harmony 525's registered blocks are its config region and nothing else", () => {
+  // **This test has failed twice and both times that was its job**, because every entry in the set
+  // is added by hand with the filename a region read produced, so the set growing is a decision
+  // somebody took rather than a drift. It asserted the set was empty until 6 September 2026, then
+  // that it held one block and therefore one rehearsable address, which is worth pinning because a
+  // dump covering one block makes every other block refuse and that reads like a broken script.
+  //
+  // It is the whole region now, section 270, so the claim moves up a level: the set is exactly the
+  // blocks between the architecture's config base and its writable ceiling, each named once. That
+  // states the population instead of counting it, so a sixth entry fails here whether it is a block
+  // outside the region or the same block twice.
   const text = rehearsalScript();
-  assert.match(text, /const H525_DUMPS = new Set<string>\(\[\n[\s\S]*?'h525_region_820000',\n\]\);/);
-  assert.equal((text.match(/'h525_region_[0-9a-f]+'/g) ?? []).length, 1,
-               'one registered block, so one rehearsable address');
+  // The capture group, not a strip of non-hex characters: `region` is itself four hex digits, so
+  // stripping gave a number four hundred thousand times too large and the failure looked like a
+  // wrong table. Worth the comment because the wrong version failed rather than passing.
+  const named = [...text.matchAll(/'h525_region_([0-9a-f]+)'/g)]
+    .map((one) => Number.parseInt(one[1]!, 16));
+  const base = CONFIG_REGION_BASE[9] as number;
+  const ceiling = WRITABLE_CEILING[9] as number;
+  const block = ERASE_BLOCK_SIZE[9] as number;
+  const expected: number[] = [];
+  for (let at = base; at + block <= ceiling; at += block) expected.push(at);
+  assert.deepEqual(named, expected,
+    'every block of the arch 9 config region, in order, and no block outside it');
+  assert.equal(named.length, 5, "five 64 KiB blocks from 0x820000 to the log area at 0x870000");
+  // The refusal's wording still has to work for an architecture whose set is empty, which is the
+  // state arch 9 was in for a day and the state any new architecture starts in.
   assert.match(text, /none are registered for it yet/,
                'the refusal still has to say what is missing when a set is empty');
+  // And the two blocks that are erased throughout are called out where an operator chooses one,
+  // since a rehearsal there cannot distinguish a working write path from one that writes nothing.
+  assert.match(text, /cannot be told apart from not writing at all/);
 });

@@ -130,6 +130,20 @@ IMAGES = {
     # month earlier by a different code path, and the 14341 bytes past the configuration are all
     # 0xFF. Not in CONTAINERS: it is not a container, it is a block that happens to start with one.
     'h525_region_820000': '20260906T0917Z-h525-region-820000-region.bin',
+    # The other four blocks of the same region, read the same day so the whole of the 525's
+    # configuration region is in hand rather than the one block a rehearsal had already needed.
+    # **Two of them are not blank**, section 270: the current configuration ends at 0x82C7FA and
+    # yet 7630 bytes sit at the start of 0x830000 and 1780 at the start of 0x840000, which is
+    # section 215's finding on a second architecture. Flash is erased only where a write needs the
+    # room, so a shorter configuration leaves the tail of a longer one behind. The top two blocks
+    # are 0xFF throughout and byte identical to each other.
+    #
+    # None of the four parses as a container, because each begins in the middle of one, so unlike
+    # h525_region_820000 above they need no place in the parseable or golden populations.
+    'h525_region_830000': '20260906T1100Z-h525-region-830000-region.bin',
+    'h525_region_840000': '20260906T1100Z-h525-region-840000-region.bin',
+    'h525_region_850000': '20260906T1100Z-h525-region-850000-region.bin',
+    'h525_region_860000': '20260906T1100Z-h525-region-860000-region.bin',
     # The arch 9 safe mode container, cut out of the 525's firmware region at flash 0x818000.
     # Deliberately not in CONTAINERS: it is the sample the corpus wide claims are re-derived
     # against, and two of them are still open, base slot 1's extent and the log area's range.
