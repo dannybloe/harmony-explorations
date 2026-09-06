@@ -34646,10 +34646,23 @@ code populations do not intersect anywhere in the corpus: 0 shared scan codes in
 user configurations, on all four architectures. That is section 128's disjointness seen from a third
 side, and it is what makes the split between the two halves structural rather than a convention.
 
-**The screen is the bigger half, measured.** Over the 62 maps, 1609 keypad bindings against 1818
-screen bindings, so 53% of what device mode offers is on the display. Section 151 argued that from the
-product side, that an old remote has more buttons than a Harmony and the overflow goes on the screen.
-It is now a count.
+**The two halves are comparable in size and which is larger varies per configuration.** Over the 62
+maps, 1609 keypad bindings against 1818 screen bindings. **That corpus total must not be read as "the
+screen is the bigger half"**, which is how it was first written up: per configuration the screen half
+is larger in 8 and the keypad half in 7, and on the programmed Harmony One the keypad half is nearly
+twice the size, 157 against 81. Per device the keypad runs from 1 to 38 bindings and the screen from
+1 to 109.
+
+**Nothing here explains the variation**, and one explanation was offered and withdrawn the same
+afternoon: that a screen budget is shared out, since a configuration driving one device gives it 50 to
+81 screen buttons and one driving five gives each about 16. It is not monotone. Mean screen buttons per
+device against the number of devices the configuration drives: 61, 33, 21, 16, 28, 30 for one, three,
+four, five, six and seven devices. The story fitted the first four points and the corpus had the other
+two.
+
+Section 151 argued from the product side that an old remote has more buttons than a Harmony and the
+overflow goes on the screen. That argument is about what people build and is untouched by these
+counts; what these counts refute is only the byte level restatement of it.
 
 ### The consequence: a reconstructed device map is wrong, and section 151's own nine reappear
 

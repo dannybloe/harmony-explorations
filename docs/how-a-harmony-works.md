@@ -403,9 +403,12 @@ has exactly one such record, 62 of 62 across all four kinds of remote here, and 
 And on a Harmony One the device list drawn on the screen sends you to exactly that record, 8 times out
 of 8, which is a second route to the same answer that shares no code with the first.
 
-**The screen is the larger half, measured**: 1818 buttons on the pages against 1609 on the keypad. This
-document argued that from the way people use the feature, that an old remote has more buttons than a
-Harmony and the overflow goes on the display. It is now a count.
+**Both halves matter and neither dominates.** Added up across every configuration here, 1818 buttons on
+the pages against 1609 on the keypad, but that total hides the spread: on eight remotes the screen half
+is the larger one and on seven the keypad half is, and on the programmed Harmony One the keypad half is
+nearly twice the size. This document argues elsewhere that an old remote has more buttons than a Harmony
+and the overflow goes on the display, which is about what people build; it is not the same claim as
+these counts, and these counts do not support the stronger version.
 
 ### What this section said before, and why it was wrong
 

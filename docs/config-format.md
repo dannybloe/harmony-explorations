@@ -624,8 +624,10 @@ maps are largest for that group is unique, exists, and sends **only** that devic
 | keypad bindings across the 62 | 1609 |
 | screen bindings across the 62 | 1818 |
 
-So the screen is the larger half, 53%, and the two are disjoint populations: no scan code appears in
-both halves in any of the fifteen user configs. On arch 12 (Harmony One) the drawn device list's own
+The two halves are comparable in size and **which is larger varies**: the screen half is larger in 8 of
+the fifteen configurations and the keypad half in 7, so the corpus total is not a statement that device
+mode is mostly screen. They are disjoint populations: no scan code appears in both halves in any of the
+fifteen. On arch 12 (Harmony One) the drawn device list's own
 row enters exactly this mode, 8 of 8, which is the closure, since that route reads the screen and
 never an infrared group.
 

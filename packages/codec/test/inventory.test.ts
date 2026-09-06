@@ -1551,9 +1551,23 @@ test('a device mode map addresses exactly one device, and every device with code
   // it. The exclusion is the population's rather than the reader's.
   assert.equal(mapped, 62);
   assert.equal(impure, 0);
-  // The screen is the bigger half, which section 151 argued from the product side and could not count.
   assert.equal(keypad, 1609);
   assert.equal(screen, 1818);
+  // **The two totals are not a claim that device mode is mostly screen**, and they were written up as
+  // one for an afternoon. Per configuration the larger half is the screen on 8 and the keypad on 7, so
+  // the corpus figures are close by coincidence rather than because one half dominates. Asserted here
+  // beside them so the totals cannot be quoted as the stronger claim again.
+  let screenLarger = 0;
+  let keypadLarger = 0;
+  for (const name of USER_CONFIGS) {
+    const maps = deviceModeMaps(parse(require_(name)));
+    const here = maps.reduce((a, one) => a + one.keypad.length, 0);
+    const there = maps.reduce((a, one) => a + one.screen.length, 0);
+    if (there > here) screenLarger += 1;
+    else keypadLarger += 1;
+  }
+  assert.equal(screenLarger, 8);
+  assert.equal(keypadLarger, 7);
 });
 
 test('the drawn device list enters the same mode the infrared groups pick', skipUnless(
