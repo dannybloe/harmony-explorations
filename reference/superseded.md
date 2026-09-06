@@ -433,6 +433,7 @@ and leave this table alone.
 | `that agreement is the device's answer` | section 271, corrected 6 September 2026 | the stated map differs from it on 136 of the 1032 pairs where every activity agrees, and binds 568 keys no activity binds |
 | `devices and activities together is the reading the counts support` | section 272, corrected 6 September 2026 | a device never has an entry: it is a per model prefix nothing selects, plus one per activity, plus exactly one more |
 | `the screen is the larger half` | the per configuration split, 6 September 2026 | over the corpus 1818 against 1609, but the screen half is larger on 8 remotes and the keypad half on 7, so neither dominates |
+| `399 of 411` | the reconciliation of 6 September 2026 | 424 sends through a state transition and 12 inline. The first pair came from a walk of its own that stopped one level shallower than `activityStartSteps`, which follows a write made by a transition it has already entered |
 
 ## The Harmony 525's erase block size is unmeasured, so arch 9 gets no rail entry
 

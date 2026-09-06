@@ -16,7 +16,7 @@ sequence. The reasoning it held is `docs/plans/002-the-roadmap.md`, its decision
 
 Plan: [003-how-an-activity-is-built.md](docs/plans/003-how-an-activity-is-built.md)
 
-- [ ] 1.1 Establish how an activity is built, read off the factory configuration.
+- [x] 1.1 Establish how an activity is built, read off the factory configuration.
       Anatomy: [how-an-activity-is-built.md](docs/how-an-activity-is-built.md)
   - [x] 1.1.1 Which sections it occupies, and which it shares with a device
   - [x] 1.1.2 The keypad map: bindings, and the enter and leave lists
@@ -25,7 +25,7 @@ Plan: [003-how-an-activity-is-built.md](docs/plans/003-how-an-activity-is-built.
   - [x] 1.1.5 The state variable it sets
   - [x] 1.1.6 What an entry in the activity switching table corresponds to: a per model prefix, one per activity, one more (section 272)
   - [x] 1.1.7 Where device mode's own keypad map comes from: the device's own screen record (section 271)
-  - [ ] 1.1.8 Score the write up against a second and third specimen, and record what it got wrong
+  - [x] 1.1.8 Scored against one_config and h600_config: seven of nine right, P6 incomplete, P7 wrong
 - [ ] 1.2 Compose an activity, the counterpart of `composeDevice`
 - [ ] 1.3 Write one to the spare Harmony One and watch the television
 

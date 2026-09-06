@@ -679,7 +679,12 @@ const SHORTEST_USEFUL_LABEL = 2;
  * The group is the device, section 86, so this instruction is the only place in the format where an
  * action says **which device** it is talking to.
  */
-const SEND_INFRARED = 0x7d;
+export const SEND_INFRARED = 0x7d;
+// **One constant, not two.** This file declared `SEND_INFRARED` here and `IR_SEND_OPCODE` nine
+// hundred lines below, both `0x7d`, both correct, until 6 September 2026. Two right copies is the
+// state that precedes two diverging ones and no test can see it, which is exactly what `CLAUDE.md`'s
+// oldest rule is about. Exported because a test of the activity anatomy needs to name the send.
+
 /** The high byte of `0x7D`'s operand: the base slot 5 group. */
 const INFRARED_GROUP_SHIFT = 8;
 
@@ -2096,9 +2101,6 @@ export function powerOnInstructions(c: Container): Map<number, PowerOnInstructio
   return out;
 }
 
-/** The infrared send, the companion of `IR_QUANTITY_OPCODE` and one bit away from it. Section 70. */
-const IR_SEND_OPCODE = 0x7d;
-
 /**
  * The handler set entry that runs an activity's start sequence.
  *
@@ -2161,7 +2163,7 @@ export function activityStartSteps(c: Container, set: number): QueuedStep[] {
           if (value.to !== instruction.operand) continue;
           walk(value.operand, new Set(), depth + 1);
         }
-      } else if (instruction.opcode === IR_SEND_OPCODE) {
+      } else if (instruction.opcode === SEND_INFRARED) {
         steps.push({ kind: 'send', group: instruction.operand >>> 8, value: instruction.operand & 0xff });
       } else if (instruction.opcode === IR_QUANTITY_OPCODE) {
         steps.push({ kind: 'delay', group: instruction.operand >>> 8, value: instruction.operand & 0xff });

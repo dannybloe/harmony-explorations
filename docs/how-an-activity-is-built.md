@@ -58,8 +58,14 @@ moves.
 
 ### 3. Three lifecycle handlers on that entry
 
-Tags below `0x80` are not keys. The factory activity carries three and every activity in the corpus
-carries the same three:
+**A tag below `0x80` is not automatically a lifecycle handler**, and this section said "tags below
+`0x80` are not keys"<!--superseded--> until the scoring. That is false: a tag carries an event type in
+its top two bits and a scan code in the rest, so a **release** of scan 3 is `0x43` and sits below
+`0x80` looking exactly like a handler. Every activity on a Harmony 600, and on the Harmony 700 reference image, carries one. What
+separates the two is the event type, not the size: a lifecycle handler has event type **0**.
+
+The factory activity carries three handlers of event type 0, and every activity in the corpus carries
+the same three:
 
 | tag | what it is |
 |---|---|
@@ -93,8 +99,16 @@ power code, a ten second delay, then the input code three times with a two secon
 None of those six things is written in the activity.
 
 *The check that can fail*: walk the enter list following only the nested calls and count the sends;
-walk it again following a state write into its transition and count again. Over the whole corpus,
-**399 of 411** sends are found only the second way and 12 the first.
+count again with `activityStartSteps`, which follows a state write into the transition it triggers.
+Over the whole corpus, **424** sends are found the second way and **12** the first.
+
+**Those numbers were 399 and 411 when this section was written**<!--superseded--> and the correction is
+worth more than the figures. The first version walked the transitions with a walk of its own, and that
+walk stopped one level shallower: it followed a state write into its transition and then did not follow
+a write that transition itself made. The library's reader does, has a test, and carries a comment about
+bounding depth and revisits for exactly this reason. Two copies of one derivation is the state this
+project's oldest rule forbids, and here one of them reached a document before anything compared them.
+What compared them was writing the test.
 
 **P4.** A composer produces an activity by deciding the target state of each device it drives, and the
 codes follow from the transitions the device already has. It never emits a send instruction of its own.
@@ -171,6 +185,62 @@ already put there.
 
 ## Scoring
 
-Not yet performed. The specimens are an activity in `one_config`, which is the same architecture with
-eight activities rather than one, and one in `h600_config`, which is a different architecture. What
-each prediction got wrong lands here, in this document, whatever it says.
+**Scored on 6 September 2026** against `one_config`, the same architecture with eight activities rather
+than one, and `h600_config`, a different architecture with three. Where a prediction failed, the wider
+corpus was then consulted to say how badly, which is why some rows below quote more than two specimens.
+
+| | prediction | verdict |
+|---|---|---|
+| P1 | one value on the activity counter, written from one place | **right**: 8 activities and 8 writers, 3 and 3 |
+| P2 | one key map entry per activity, the prefix never moves | **right**: 16 = 7 + 8 + 1 and 9 = 5 + 3 + 1 |
+| P3 | three lifecycle handlers on every activity | **right**, and the supporting sentence was false, corrected above |
+| P4 | a composer emits no send instruction of its own | **right**: 0 inline sends on both specimens, 424 through a transition across the corpus |
+| P5 | some inline sends exist and are not explained | **right**, and they are elsewhere: 1 on arch 9, 4 on arch 8, 0 on both specimens |
+| P6 | the delay belongs to the device, the activity inherits it | **incomplete**, see below |
+| P7 | one row on **the** activity menu page | **wrong**, see below |
+| P8 | the name resolves and needs no new encoder | **right**: 8 of 8 and 3 of 3 |
+| P9 | 10 to 29 action lists of its own | **right** across the corpus |
+
+Seven right, one incomplete, one wrong. The two that failed are both places where a single specimen
+could not have shown the answer, which is the argument for this document's shape rather than against it.
+
+### P7 was wrong: an activity menu is several pages
+
+The factory configuration has one activity and therefore one menu page, and the prediction took that
+for the structure. It is not. The eight activities of `one_config` sit on **three** pages, 3 and 3 and
+2; the Harmony 600's three sit on two, 2 and 1; and the nine of an arch 8 container sit on 1 and 8.
+**5 of the fifteen user configurations spread their activities over more than one page** and 10 use a
+single page, with three the most any of them uses.
+
+*This paragraph said 8 of fifteen spread and 7 did not*<!--superseded-->, which was a guess written
+beside three real examples rather than a count, and the test refuted it on its first run.
+
+**So a composer adding an activity may have to add a page**, and that is a screen edit rather than a
+tagged list entry: a new page record, its own tagged list, its own screen program, and the navigation
+that reaches it. It is the same problem section 239 hit from the other side, where a seventh device
+needed a third page on the device list and that was what blocked the goal.
+
+**What decides when a page fills is not read here.** Three pages of 3, 3 and 2 is not a full page
+followed by a remainder, so the generator is not simply packing them.
+
+### P6 was incomplete: arch 14 has no delay to inherit
+
+The prediction is right on the architecture it was written from and says nothing about the one it was
+scored against. Arch 14 (Harmony 600 and 700) keeps a power on delay in a **state variable** rather
+than inline in the action list, section 236, so `powerOnInstructions` is empty there and so is the
+reach report. A composer for a Harmony 600 does something different from a composer for a Harmony One,
+and this document had no way to know that from its own specimen.
+
+### One caution the predictions did not state at all
+
+**How much of a device's map an activity reuses varies enormously**, and the factory configuration is
+at one extreme. Its single activity shares all 24 of its code sending keys with the device's own map.
+Across the eight activities of `one_config` the share runs from **35 of 35** down to **4 of 29**. So
+"reference what the devices already put there" is right about the corpus as a whole and would leave a
+composer badly wrong about an activity like that one, which is mostly its own bindings.
+
+### What this leaves open
+
+* what tag 5 is for, which no specimen answered
+* what decides when an activity menu page fills
+* the 12 inline sends, now located on arch 8 and arch 9 and still unexplained

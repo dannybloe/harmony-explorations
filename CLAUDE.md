@@ -1082,8 +1082,8 @@ docs/how-an-activity-is-built.md
                                 the anatomy of an activity, written from the factory Harmony One's
                                 single activity and then scored against a second and third specimen.
                                 Its load bearing claim is that an activity **sets a device's state
-                                variables** rather than listing codes, so 399 of 411 sends in the
-                                corpus are reached only through a transition. The spec of the
+                                variables** rather than listing codes, so 424 sends in the corpus
+                                are reached through a transition against 12 written inline. The spec of the
                                 composer chapter 1.2 asks for
 docs/adding-a-device.md         THE checklist for one goal: pick an appliance out of Logitech's
                                 catalogue, put it on a Harmony One, press the button and have the

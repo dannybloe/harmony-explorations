@@ -29,6 +29,8 @@ import {
   ACTIVITY_STATE_NAME,
   activities,
   deviceModeMaps,
+  EVENT_MASK,
+  SEND_INFRARED,
   handlerSetRoles,
   deviceModeTitles,
   deviceVariables,
@@ -1707,6 +1709,109 @@ test('reconstructing a device map from the activity maps is wrong and blind',
   // Section 151's own nine, over a population counted differently, which is what says the two
   // measurements are of the same thing.
   assert.equal(activitiesDisagree, 9);
+});
+
+test('an activity states the room it wants and the codes come out of the transitions',
+     skipUnless(...USER_CONFIGS), () => {
+  // **The load bearing claim of `docs/how-an-activity-is-built.md`**, and it is the opposite of the
+  // obvious design: an activity's enter list does not name the codes it sends. It writes the DEVICE's
+  // state variables, and the code goes out because that variable's transition runs a list that sends
+  // it. A composer therefore states a target state and emits no send instruction of its own.
+  //
+  // **The count with transitions is `activityStartSteps` and deliberately not a walk of this test's
+  // own.** A second walk was written here first and disagreed, 399 against 424, because it stopped
+  // one level shallower: it followed a state write into its transition and then did not follow a
+  // write that transition itself made. Two copies of one derivation is the state this repository's
+  // oldest rule forbids, and this one had already produced a wrong number in a document. The control
+  // below is a walk, because it has to be: it is the count that must NOT follow a transition.
+  let inline = 0;
+  let throughATransition = 0;
+  let activityBindingsSeen = 0;
+  for (const name of USER_CONFIGS) {
+    const c = parse(require_(name));
+    const lists = c.actionLists() ?? [];
+    const sets = handlerSets(c);
+    for (const binding of activityBindings(c)) {
+      activityBindingsSeen += 1;
+      throughATransition += activityStartSteps(c, binding.set)
+        .filter((one) => one.kind === 'send').length;
+
+      const entries = taggedList(c, sets?.addresses[binding.set] as number)?.entries ?? [];
+      const enter = entries.find(
+        (one) => one.tag === ACTIVITY_START_TAG && one.opcode === ACTION_LIST_INDEX_OPCODE);
+      if (enter === undefined) continue;
+      // A fresh visited set, never shared with anything: section 126's defect is a walk that
+      // memoises across branches, and `infraredCodesPerList` carries the same comment.
+      const seen = new Set<number>();
+      const walk = (index: number, depth: number): void => {
+        if (seen.has(index) || depth > 8) return;
+        seen.add(index);
+        for (const one of lists[index] ?? []) {
+          if (one.opcode === SEND_INFRARED) inline += 1;
+          else if (one.opcode === ACTION_LIST_INDEX_OPCODE) walk(one.operand, depth + 1);
+        }
+      };
+      walk(enter.operand, 0);
+    }
+  }
+  assert.equal(activityBindingsSeen, 63);
+  assert.equal(throughATransition, 424);
+  // **The control, and it is not zero on purpose.** P5 of that document says inline sends exist and
+  // does not explain them; a test asserting zero here would assert something false. They are on
+  // arch 8 and arch 9 and on neither of the two containers the document was scored against.
+  assert.equal(inline, 12, 'sends written into an activity rather than reached through a transition');
+});
+
+test('every activity carries the same three lifecycle handlers, and a release is not one',
+     skipUnless(...USER_CONFIGS), () => {
+  // P3 of `docs/how-an-activity-is-built.md`, with the correction its scoring produced. The document
+  // said a tag below 0x80 is not a key, which is false: a tag is an event type plus a scan code, so a
+  // **release** of scan 3 is 0x43 and sits below 0x80 looking exactly like a handler. Every activity
+  // on arch 14 carries one. What separates them is the event type.
+  let activitiesSeen = 0;
+  let withAllThree = 0;
+  let releasesMistakableForHandlers = 0;
+  for (const name of USER_CONFIGS) {
+    const c = parse(require_(name));
+    const sets = handlerSets(c);
+    for (const binding of activityBindings(c)) {
+      activitiesSeen += 1;
+      const entries = taggedList(c, sets?.addresses[binding.set] as number)?.entries ?? [];
+      const handlers = new Set(entries
+        .filter((one) => (one.tag & EVENT_MASK) === 0)
+        .map((one) => one.tag));
+      if ([1, 2, 5].every((tag) => handlers.has(tag))) withAllThree += 1;
+      releasesMistakableForHandlers += entries
+        .filter((one) => one.tag < 0x80 && (one.tag & EVENT_MASK) !== 0).length;
+    }
+  }
+  assert.equal(activitiesSeen, 63);
+  assert.equal(withAllThree, 63, 'tags 1, 2 and 5 are on every activity in the corpus');
+  // The control for the correction: a bare "below 0x80" test would have called these handlers.
+  assert.equal(releasesMistakableForHandlers, 26);
+});
+
+test('an activity menu is several pages, which one specimen could not have shown',
+     skipUnless(...USER_CONFIGS), () => {
+  // P7 of `docs/how-an-activity-is-built.md` was **wrong** and this is what it should have said. The
+  // factory configuration has one activity and therefore one menu page, and the prediction took that
+  // for the structure. Adding an activity may mean adding a page, which is the problem section 239
+  // hit from the other side with a seventh device needing a third row of the device list.
+  let containersWithOnePage = 0;
+  let containersWithSeveral = 0;
+  let mostPages = 0;
+  for (const name of USER_CONFIGS) {
+    const c = parse(require_(name));
+    const pages = new Set(activityNames(c).map((one) => one.page));
+    if (pages.size === 0) continue;
+    if (pages.size === 1) containersWithOnePage += 1; else containersWithSeveral += 1;
+    mostPages = Math.max(mostPages, pages.size);
+  }
+  // 5 and 10, not the 8 and 7 first written here, which were a guess rather than a count and were
+  // refuted the first time this test ran.
+  assert.equal(containersWithSeveral, 5, 'containers whose activities span more than one menu page');
+  assert.equal(containersWithOnePage, 10);
+  assert.equal(mostPages, 3);
 });
 
 /** The base slot 9 prefix no configuration selects, per architecture. Section 272. */
