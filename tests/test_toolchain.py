@@ -14,6 +14,7 @@ file no project claims does not announce itself, which is exactly the shape a te
 """
 import ast
 import glob
+import importlib.util
 import io
 import json
 import os
@@ -1703,6 +1704,126 @@ class TheLabRegisterHookRunsWithoutBeingRemembered(unittest.TestCase):
                 matchers = [entry['matcher'] for entry in data['hooks']['PreToolUse']
                             if any('lab-register-hook.py' in h['command'] for h in entry['hooks'])]
                 self.assertTrue(any('Read' in m and 'Grep' in m for m in matchers), matchers)
+
+
+class TheFindingGateHookFires(unittest.TestCase):
+    """The finding skill is invoked by judgement, and judgement has a blind spot.
+
+    Added 6 September 2026. The four places do land, measured over the last 33 commits that added a
+    findings section: every one of them touched a test. What the convention cannot reach is a
+    **passenger**, a sentence written beside a finding and never itself put to any check. Section 271
+    passed its own gate honestly and carried one anyway, a corpus total quoted as a fact about one
+    remote, and it took a person asking what the number counted.
+
+    Same shape as the lab register hook and for the same recorded reason: a check that has to be
+    remembered is a check that gets skipped under momentum.
+    """
+
+    HOOK = os.path.join(ROOT, 'bin', 'finding-gate-hook.py')
+
+    def _run(self, payload, session):
+        body = dict(payload)
+        body['session_id'] = session
+        done = subprocess.run([sys.executable, self.HOOK, '--hook'],
+                              input=json.dumps(body), capture_output=True, text=True, cwd=ROOT)
+        return done.returncode, done.stderr
+
+    def setUp(self):
+        self.session = 'finding-gate-test-%d' % os.getpid()
+
+    def test_a_new_section_interrupts_once_and_the_retry_goes_through(self):
+        payload = {'tool_input': {'file_path': 'docs/findings.md',
+                                  'new_string': '\n## 999. Something established\n\nbody\n'}}
+        code, err = self._run(payload, self.session)
+        self.assertEqual(code, 2, 'a new section has to be impossible to scroll past')
+        # The two things the gate above does not cover on its own, which is why the hook says more
+        # than "run the skill".
+        self.assertIn('reviewers', err)
+        self.assertIn('WHOLE DIFF', err)
+        again, _ = self._run(payload, self.session)
+        self.assertEqual(again, 0, 'the retry must succeed or the hook is a wall')
+
+    def test_it_stays_out_of_the_way_of_everything_else(self):
+        """It fires on one edit and no other, or it becomes noise and gets disabled."""
+        for name, payload in (
+            ('an ordinary edit to findings.md',
+             {'tool_input': {'file_path': 'docs/findings.md', 'new_string': 'a corrected sentence'}}),
+            ('a heading in another document',
+             {'tool_input': {'file_path': 'docs/status.md', 'new_string': '\n## 999. A thing\n'}}),
+            ('no tool input', {}),
+            ('a field of the wrong type', {'tool_input': {'file_path': 17}}),
+        ):
+            with self.subTest(case=name):
+                code, _ = self._run(payload, self.session + name)
+                self.assertEqual(code, 0)
+        done = subprocess.run([sys.executable, self.HOOK, '--hook'],
+                              input='not json at all', capture_output=True, text=True, cwd=ROOT)
+        self.assertEqual(done.returncode, 0, 'a reminder that breaks a session is worse than none')
+
+    def test_it_finds_a_section_however_the_edit_spells_its_content(self):
+        """Edit, Write and the multi-edit form name the new text differently.
+
+        A missed spelling is a missed reminder and nothing would ever say so, which is the failure
+        mode this whole class exists to avoid.
+        """
+        section = '\n## 999. Something established\n'
+        for name, tool_input in (
+            ('Write', {'file_path': 'docs/findings.md', 'content': section}),
+            ('Edit', {'file_path': 'docs/findings.md', 'new_string': section}),
+            ('MultiEdit', {'file_path': 'docs/findings.md',
+                           'edits': [{'old_string': 'x', 'new_string': section}]}),
+        ):
+            with self.subTest(tool=name):
+                code, _ = self._run({'tool_input': tool_input}, self.session + name)
+                self.assertEqual(code, 2, '%s spells its content differently and must still fire' % name)
+
+    def test_it_agrees_with_facts_about_what_a_section_is(self):
+        """Two readers of one heading shape is the state this repository's oldest rule forbids.
+
+        `tools/facts.py` counts findings sections and this hook fires on one, so a disagreement would
+        show as the hook going quiet while the section count still moved.
+        """
+        with open(os.path.join(ROOT, 'docs', 'findings.md'), encoding='utf-8') as handle:
+            text = handle.read()
+        spec = importlib.util.spec_from_file_location('finding_gate_hook', self.HOOK)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        self.assertEqual(len(module.SECTION.findall(text)),
+                         len(re.findall(r'^## \d+\.', text, re.MULTILINE)))
+        # And the hook fires on a heading taken out of the document itself, so neither reader can
+        # agree with the other by both matching nothing. Deliberately not a count: the number of
+        # sections moves with every finding, so a bound on it would be a fossil and an equality
+        # would be a line to edit on every commit.
+        headings = re.findall(r'^## \d+\..*$', text, re.MULTILINE)
+        self.assertTrue(headings, 'docs/findings.md states no sections at all')
+        code, _ = self._run({'tool_input': {'file_path': 'docs/findings.md',
+                                            'new_string': '\n%s\n' % headings[-1]}},
+                            self.session + 'real')
+        self.assertEqual(code, 2, 'the hook does not fire on a heading out of the document')
+
+    def test_both_agents_are_wired_to_it(self):
+        """A guard installed for one agent is a guard the other walks past."""
+        for settings in ('.claude/settings.json', '.codex/hooks.json'):
+            with self.subTest(file=settings):
+                with open(os.path.join(ROOT, settings), encoding='utf-8') as handle:
+                    data = json.load(handle)
+                commands = [h['command']
+                            for entry in data['hooks']['PreToolUse'] for h in entry['hooks']]
+                self.assertTrue(any('finding-gate-hook.py' in c for c in commands),
+                                '%s does not run the finding gate hook' % settings)
+                # It has to be on the tools that write a document. Bash alone would miss every
+                # ordinary edit, which is how a findings section is actually added here.
+                matchers = [entry['matcher'] for entry in data['hooks']['PreToolUse']
+                            if any('finding-gate-hook.py' in h['command'] for h in entry['hooks'])]
+                self.assertTrue(any('Edit' in m and 'Write' in m for m in matchers), matchers)
+
+    def test_the_skill_carries_the_two_reviewers(self):
+        """The hook points at the skill, so the skill has to hold what the hook promises."""
+        with open(os.path.join(ROOT, '.claude', 'skills', 'finding', 'SKILL.md'),
+                  encoding='utf-8') as handle:
+            skill = handle.read()
+        for wanted in ('Reviewer 1', 'Reviewer 2', 'blind', 'granularity', 'whole diff'):
+            self.assertIn(wanted, skill, 'the finding skill no longer describes %r' % wanted)
 
 
 if __name__ == '__main__':

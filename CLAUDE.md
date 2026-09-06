@@ -1151,6 +1151,11 @@ bin/lab-register-hook.py        prints the lab register's rows for a path at the
                                 opened, and interrupts the first touch of each directory so it cannot
                                 be scrolled past. The structural fix for a rule written down three
                                 times and broken eight, section 213. Fails open by design
+bin/finding-gate-hook.py       the same shape for the `finding` skill: interrupts once per session
+                                when docs/findings.md gains a section, and points at the two
+                                reviewers. Added 6 September 2026 because the gate covers the claim
+                                a session knows it is making and not the sentences beside it, which
+                                is how section 271 landed a wrong one. Fails open by design
 pyrightconfig.json              what pyright checks and, at length, what it deliberately does not
 .agents/skills/                 the project skills, as relative symlinks into .claude/skills/, so a
                                 second agent runs the same rituals rather than a copy of them. All
@@ -1160,11 +1165,12 @@ pyrightconfig.json              what pyright checks and, at length, what it deli
                                 maintained second copy of files that point into node_modules, so
                                 they are the shape this repository refuses everywhere else and the
                                 reason given for excluding them was sound
-.codex/hooks.json               the publication check and the lab register hook, wired into Codex's
-                                pre-tool hooks. The git hook cannot see a tool call, so the first is
-                                the same guard at the other end; the second is the eight occurrence
-                                rule made mechanical, and tests/test_toolchain.py fails if either
-                                agent's file loses it
+.codex/hooks.json               the publication check, the lab register hook and the finding gate,
+                                wired into Codex's pre-tool hooks. The git hook cannot see a tool
+                                call, so the first is the same guard at the other end; the second
+                                is the eight occurrence rule made mechanical and the third is the
+                                passenger rule; tests/test_toolchain.py fails if either agent's
+                                file loses any of them
 samples/                        empty by policy
 ```
 
@@ -1638,6 +1644,11 @@ because the guidance was too long to keep in this file:
 * **`finding`**, the verification gate plus the four places a confirmed fact must land, the
   convention for correcting an earlier claim in place, and since 29 August 2026 the three rules
   about the shape of an assertion that used to sit under "Verification standard" here.
+  **Since 6 September 2026 it also carries two reviewers**, run on the whole diff before the commit:
+  one re-measures blind without our answer, the other audits every figure's granularity and every
+  comparative word against the corpus. The second is the one that earns its keep, because the gate
+  covers the claim a session knows it is making and the errors ride alongside it.
+  `bin/finding-gate-hook.py` is what makes the skill fire without being remembered.
 * **`probe-remote`**, how to measure a connected remote read only: the rails, which enumeration
   commands actually work on this machine, and where a hardware number has to land. **It also holds the
   gate in front of an experiment**: before sending a packet to learn a format rather than to check one,

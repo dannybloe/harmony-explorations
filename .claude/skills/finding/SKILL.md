@@ -193,6 +193,73 @@ sentence beside the number and the heading above it.
   figure in them, so nothing mechanical will ever catch them. Kill them through
   `reference/superseded.md` like any other dead claim.
 
+## Two reviewers, before the commit and after the diff exists
+
+**Added on 6 September 2026, after Danny caught a wrong sentence that every existing check passed.**
+Section 271 went through the gate above honestly: two architectures, an independent closure, a
+calibration case, a falsification clause. Beside it sat "the screen is the bigger half, 1609 keypad
+bindings against 1818 screen", which is a corpus total read as a property of one remote. Per
+configuration the screen half is larger on 8 and the keypad half on 7. It reached four documents and
+a test assertion, and what caught it was a person asking "1818 buttons? On one remote or from all the
+dumps?".
+
+**The lesson is about what the gate covers.** The gate covers the claim you know you are making. That
+sentence was a **passenger**: true-sounding, adjacent, and never itself put to any test. So the
+reviewers below see the **whole diff**, never a summary of the headline claim, because a summary is
+exactly what drops the passengers.
+
+Run both, in parallel, once the finding is written and before `make prose facts lint test`. They are
+two different jobs and giving them the same brief wastes one: two agents asked to "review this" return
+the same answer.
+
+### Reviewer 1: re-measure, blind
+
+Give it the **question** and the corpus, and **not our answer**. No section text, no counts, no
+`docs/findings.md`. It computes its own numbers and reports them.
+
+*Independence is the whole value*, which `docs/review-before-first-write.md` argues at length: a
+reviewer that reads our answer first returns it in different words, and a rubber stamp reads as
+evidence. Blind is free before the brief is handed over and impossible afterwards.
+
+What it catches: a wrong population, a walk that memoises when it must not, an off by one in a census,
+a reader picked for the wrong reason.
+
+What it does **not** catch is the failure that prompted this section. It would have measured 1818 too.
+
+### Reviewer 2: audit the sentences against the numbers
+
+Give it the **whole diff** and the corpus, and let it run anything. Its only job is the prose, and its
+brief is these questions, in this order:
+
+1. **For every figure, at what granularity was it measured, and is the sentence beside it true at that
+   granularity?** A corpus total is not a per remote fact, a per remote total is not a per device fact,
+   and a per device total is not a per key fact. **Re-run the measurement one level down** and say
+   whether the claim survives.
+2. **For every comparative or absolute word**, "bigger", "most", "always", "never", "every", "only",
+   "the larger half": does it hold **per member**, or only on the aggregate? Report the split.
+3. **Does the test assert what its title claims?** Four titles in one sweep named more than their
+   bodies carried, and a test that overclaims passes.
+4. **Is any rule fitted to the evidence it came from?** Score it against the rest of the corpus and
+   give the count both ways. Section 272's dead reading fitted 2 of 15, both of them the one
+   installation it was derived from.
+5. **Is any explanation offered for a variation fitted to a subset?** Extend it to every point. The
+   screen budget story fitted four points of six.
+
+**This is the reviewer that earns its keep**, because every one of those five is a shape this project
+has actually produced, and three of them were produced in the single session that wrote this section.
+
+### What to do with a disagreement
+
+**Resolve it before the finding lands, and measure before touching either side.** That is the standing
+rule in `CLAUDE.md` about two derivations disagreeing, and it applies here: reproduce the disagreement
+on the same inputs, find the external answer, say which side was wrong **and why**. A reviewer that is
+overruled is worth recording in the section when its objection was reasonable, because the recorded
+mistakes are how a reader calibrates the rest.
+
+**A reviewer's report is a hypothesis, not a verdict.** It is text produced by an agent and takes the
+same route as any other claim here: check it before acting on it. What it must never do is loosen a
+rail or shorten the gate above.
+
 ## Finishing
 
 ```sh

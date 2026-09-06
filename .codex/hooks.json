@@ -22,6 +22,17 @@
             "statusMessage": "Asking the lab register about that path"
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$(git rev-parse --show-toplevel)/bin/finding-gate-hook.py\" --hook",
+            "timeout": 15,
+            "statusMessage": "Checking whether the finding gate applies"
+          }
+        ]
       }
     ]
   }
