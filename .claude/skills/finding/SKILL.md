@@ -167,8 +167,10 @@ Say when that happened.
 * Choose a phrase that is dead in **every** context, not just the one that prompted it. A figure
   that stays correct under a narrower scope does not belong in that table; mark the live value
   with a `fact:` marker instead.
-* Grep the summaries yourself as well: `README.md`, `CLAUDE.md`, `docs/plans/002-the-roadmap.md`,
-  `docs/config-format.md` and the memory maps. The table only catches the exact wording you
+* Grep the summaries yourself as well: `README.md`, `CLAUDE.md`, `docs/status.md`, `todo.md`,
+  `docs/config-format.md` and the memory maps. **`docs/plans/` is deliberately not on that list**:
+  a plan is a record of what was decided at the time, so a dead claim inside one stays as written
+  and the correction goes in the live document. A superseded phrase in a plan is not drift. The table only catches the exact wording you
   thought to record.
 * If the finding moves a corpus total, the value carries a `<!--fact:name-->` marker wherever it
   is quoted, and `make facts-write` updates every copy. Add the fact to `tools/facts.py` if it is
@@ -178,7 +180,7 @@ Say when that happened.
 rewrote; read that list against the diff, because the two things a marker cannot see are the
 sentence beside the number and the heading above it.
 
-* **A marker is a claim about now, never about the past.** `docs/plans/002-the-roadmap.md` carries a coverage
+* **A marker is a claim about now, never about the past.** `docs/status.md` carries a coverage
   table with one column per finding that moved the number. History columns carry a plain number
   and **no marker**. A new finding **adds a column**; it does not overwrite the live one, because
   the live column's heading names the finding that produced it and `facts-write` cannot update a

@@ -2,9 +2,10 @@
 
 Reverse engineering the Logitech Harmony config format so configs can be generated again.
 Read `README.md` first for orientation, then `docs/status.md` for where the work stands,
-`docs/plans/002-the-roadmap.md` for the sequence and `docs/findings.md` for the technical detail. `docs/glossary.md` defines the vocabulary all three
-use, and says per term whether it is Logitech's word, this project's invention or a standard one,
-which is a distinction the other documents assume rather than state.
+`todo.md` for the sequence and `docs/findings.md` for the technical detail. `docs/glossary.md`
+defines the vocabulary all three use, and says per term whether it is Logitech's word, this
+project's invention or a standard one, which is a distinction the other documents assume rather
+than state.
 
 **The end goal is an application**: local, cross-platform, self-contained, which reads a config
 off a remote, edits devices and activities, learns new IR codes and writes the result back. The
@@ -98,6 +99,38 @@ ritual that makes it get read. **The rule behind both**: a measurement over the 
 these files contain" and never "what does the product do". The corpus will agree with itself about a
 feature it holds no bytes for. When the product answer is not written down here, ask Danny rather than
 designing around its absence.
+
+## How planning works, one job per document
+
+Decided on 6 September 2026, after `docs/roadmap.md` was retired for doing four jobs at once: it
+stated what the project is, held the fifteen decisions, sequenced the work and carried the evidence
+gathered while planning. Reading it to find out what happens next meant reading all four, so nobody
+did, and the sequence ended up restated in this file and in `docs/status.md` as well. **1121 of its
+2404 lines were three separate accounts of what to do next.**
+
+Four documents now, and the rule is one job each.
+
+* **`todo.md` is the sequence and the only place it lives.** Six numbered chapters as markdown
+  checkboxes, sub-items indented, **one line each**. Either of us adds, ticks or removes an item
+  without ceremony. **Do not restate the sequence anywhere else**, which is the failure being
+  corrected: a summary of the plan is a copy with no test behind it, so it rots the way section 4
+  of the four places warns about and nothing catches it.
+* **A worked out plan goes in `docs/plans/NNN-slug.md`**, one per planning session, numbered in the
+  order written, opening with a status line of open, done or superseded. `todo.md` links to it. The
+  date lives inside the document rather than in the filename, since a date in a filename is wrong
+  the moment a plan is revised.
+* **A plan is a record of what was decided at the time, so it is not swept.** This is the one
+  exception to step 4 of the four places: when a finding kills a claim, the live documents get
+  corrected and a plan keeps what it said, because its value is the reasoning of that session. The
+  `finding` skill's list of summaries to grep deliberately excludes `docs/plans/` for that reason.
+  A plan whose whole approach is dead gets `status: superseded` and stays.
+* **A decision goes in `docs/decisions.md` and keeps its number forever.** The numbers are cited
+  from this file, from `docs/findings.md` and from code comments, so a decision that turns out wrong
+  is corrected in place rather than renumbered or removed.
+
+`docs/status.md` is unchanged by any of this and still answers the other question, where the work
+stands: what reads, what the corpus holds, and the headline numbers. **Status is not sequence**, and
+keeping those two apart is most of what the split bought.
 
 ## Decisions already taken, do not relitigate
 
@@ -1612,7 +1645,7 @@ because the guidance was too long to keep in this file:
 * **`how-a-harmony-works`**, the operating concept of the product, and the rule that a corpus
   measurement cannot answer a question about behaviour. Read before designing anything.
 * **`status-report`**, how to say where the work stands: short, plain, one concrete example
-  with real numbers, where that puts us in `docs/plans/002-the-roadmap.md`, and one next step so that "doe maar" is a
+  with real numbers, where that puts us in `todo.md`, and one next step so that "doe maar" is a
   complete answer. It carries a good example and a bad one, because the bad one is what gets written by
   default.
 * **`writing-a-config`**, every rail a config writer must respect and the evidence behind each,
