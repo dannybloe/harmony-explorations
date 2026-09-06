@@ -18374,6 +18374,11 @@ read for it.**
 The instructive part is that nothing new had to be found to see it. Three sections already held the
 pieces and none of them looked at the other two.
 
+**Everything below is arch 12 and this section did not say so.** Section 274 checked the other two
+images: the mechanism is the same on arch 14 (Harmony 600 and 700) and on arch 9 (Harmony 525), and
+arch 9 differs in two ways, having no `0xFEFE` marker and guarding the firmware's own thirteen
+variables by index rather than guarding the whole loop.
+
 * Section 73 read `0x80 | n` and recorded that a narrow state variable lives at RAM `0x108 + index` on
   arch 12 and `0x900 + index` on arch 14, with the width taken from base slot 13's own `narrow` count.
 * Section 111 measured the clock at `0x108` to `0x10E` on a Harmony One (arch 12) and never noticed that
@@ -35001,3 +35006,90 @@ recover an activity's number.
 * `packages/codec/test/inventory.test.ts`: the numbering table, the position result with its own
   count since that one is a licence rather than a constraint, the arch 14 binding split with its
   event type control, the handler shapes, and the four hop reader against a two hop walk.
+
+## 274. The state variable seeder on three architectures, and where arch 9 differs
+
+**Danny asked whether section 138's seeder was checked against the other firmwares**, after the
+question of how a remote knows which activity value means "nothing is running" was answered with
+"it does not work it out, the record states it and the firmware seeds the variable from it". That
+answer was read on the Harmony One (arch 12) alone and the section did not say so.
+
+It holds on all three architectures whose firmware is in hand. **Arch 9 gets there differently in
+two ways**, and one of them is a behavioural difference rather than a spelling.
+
+### The shape, which is common to all three
+
+Each firmware, at boot, asks its section seeker for **raw slot 13**, reads the header, and walks the
+records writing each one's `first` into the state variable it belongs to. The store is the same rule
+everywhere: below the table's own `narrow` count one byte, at or above it `index -= narrow`, doubled,
+`+= narrow`, two bytes.
+
+| | arch 12 (Harmony One) | arch 14 (Harmony 700 reference image) | arch 9 (Harmony 525) |
+|---|---|---|---|
+| section seeker | `0x2BA76` | `0x10B92` | `0x066A8` |
+| the seeding loop | `0x2A2DE` | `0x179F0` | `0x047D6` |
+| the store | `0x2A6A2` | `0x17DD8` | `0x04B40` |
+| header fields read | count, narrow, wide | count, narrow, wide | count, narrow, wide, narrowAgain |
+
+### The closure, and it is a census rather than an argument
+
+A seeker takes its raw slot in a register that every caller loads with a literal, so one scan of an
+image names every slot that firmware ever fetches. Scanned independently here, and the two published
+site counts come back exactly:
+
+| architecture | call sites | slots fetched |
+|---|---|---|
+| 12 | 24 | 2 to 19 **except 8** |
+| 14 | 19 | 3 to 17 |
+| 9 | 17 | 2 to 17 |
+
+Three things follow. Slot 13 is on all three lists, which is what makes the loops above the state
+table's readers rather than something that resembles one. **Raw slots 0 and 1 are on none of them**,
+so section 47's finding that the name tree and the architecture record are host side is reproduced on
+a third architecture by a route that had nothing to do with it. And arch 12's hole at raw slot 8 is
+its **NULL** slot, which the published range wording hid; a range is the wrong shape for this claim
+and the test asserts the set.
+
+### The first difference: arch 9 has no "no initial value" marker
+
+Arch 12 and arch 14 compare the record's `first` against `0xFEFE`, a byte at a time, and skip the
+store when it matches. That is how a record says the variable has no initial value.
+
+Arch 9's loop has no such comparison. It fills the array's unused tail with `0xFE` **after** the loop
+instead, from the real size, `narrow + 2 * wide`, up to 64, and there is a second entry that fills
+from 13 up to 64 when there is nothing to seed from. So `0xFE` is the same "no value" convention on
+all three and arch 9 applies it as a default rather than testing for it.
+
+### The second difference: the guard is per variable on arch 9 and all or nothing elsewhere
+
+Arch 12 and arch 14 carry one byte which, when nonzero, skips the store for **every** variable. On
+arch 12 section 138 traced what sets it: a checksum over 109 bytes of data memory, so a warm start
+preserves every variable including the clock and a power cycle reseeds them all.
+
+Arch 9's loop reads its guard and, when it is **nonzero**, stores unconditionally. When it is zero it
+compares the index against a literal **13** and skips everything below it. Thirteen is the count of
+variables the firmware owns, section 138, the clock among them. So on that architecture the two paths
+are "seed everything" and "seed the configuration's variables but leave the firmware's alone", where
+on the other two they are "seed everything" and "seed nothing".
+
+**What sets arch 9's guard is not traced and this section does not claim it.** Which of its paths is
+the cold boot is therefore open, and the difference above is stated as the shape of the code rather
+than as a statement about what a Harmony 525 does when its batteries come out.
+
+### What it means for the question that prompted it
+
+Nothing changes. The value meaning "no activity is running" is the activity counter's `first`, it is
+stated rather than inferred, and every architecture in hand seeds the variable from it. Section 273's
+numbering rule rests on the field and not on the seeder, so it is unaffected either way.
+
+### What would falsify it
+
+An image whose slot 13 fetch is absent from its seeker census. A store that reads a width from
+anywhere but the table's own `narrow`. An arch 9 path that compares a record against `0xFEFE`, or an
+arch 12 or arch 14 loop that compares an index against 13.
+
+### Where it lands
+
+* `docs/config-format.md`, base slot 13's record, beside `first`.
+* `tests/test_state_seeder.py`, which pins the census, the site counts, the marker on the two that
+  have it and the index rule on the one that does not.

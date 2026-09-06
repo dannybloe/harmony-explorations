@@ -2672,6 +2672,14 @@ the second is a second key and not the first key's release, and a writer for a H
 one binding per activity leaves half its menu dead. Which physical keys the four scan codes involved
 are is not established, since a scan code does not transfer between skins.
 
+**`first` is what the firmware seeds the variable with at boot, on all three architectures whose
+firmware is in hand**, section 274: each one asks its section seeker for raw slot 13, reads the header
+and walks the records, writing each `first` into its variable. So an initial value is **stated** and
+nothing infers it. Two differences on arch 9 (Harmony 525): it carries no `0xFEFE` "no initial value"
+marker, filling the array's unused tail with `0xFE` instead, and its guard is per variable rather than
+all or nothing, skipping indices 0 to 12 where arch 12 (Harmony One) and arch 14 (Harmony 600 and 700)
+either seed everything or nothing.
+
 **The idle value is the record's `first` field**, base slot 13 at +0x00, which section 60 read as an
 initial value and marked unconfirmed. No binding writes it, in fifteen of fifteen user configs. The
 arch 9 safe mode container is the one place a list writes the idle value, and it is the one with zero
