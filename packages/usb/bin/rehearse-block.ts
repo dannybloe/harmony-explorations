@@ -2,6 +2,12 @@
  * The write rehearsal: put one erase block of a remote's own configuration back, unchanged, or with
  * named bytes changed.
  *
+ * **Two units, since 6 September 2026**, and which one is decided by the architecture read off the
+ * remote rather than by an argument: the spare Harmony One and the Harmony 525, per Danny's decision
+ * of 5 September. Only the first may be written to. The 525 can be read and compared, which is the
+ * step that has to happen first anyway, and `--commit` on one is refused by `writeBlock` because
+ * `ARCHITECTURES_WITH_A_WRITE_TARGET` is `[12]`. See `TARGETS` below for what a 525 run still needs.
+ *
  *   node packages/usb/bin/rehearse-block.ts --dump one_spare_myharmony --block 0x040000
  *   HARMONY_ENABLE_WRITES=1 HARMONY_FIRST_WRITE=1 node packages/usb/bin/rehearse-block.ts \
  *     --dump one_spare_myharmony --block 0x040000 --commit
@@ -154,23 +160,86 @@ const SPARE_DUMPS = new Set([
 ]);
 
 /**
- * The lab's name for the unit this may run against.
+ * The lab images that are the **Harmony 525's** own configuration region, and it is empty.
  *
- * One label, because there is one write target. `../lab/units/<label>.txt` holds the identity as hex,
- * which is what `unitIdentityText` produces off a live remote, and the lab is where it lives because a
- * unit identity is that remote's hardware identity and this repository is public. Section 226.
+ * Deliberately empty rather than absent, so that a run against a 525 refuses with a sentence saying
+ * what is missing instead of falling off the end of a table. Two things have to happen before it can
+ * hold anything, both needing the remote on the cable and neither writing to it:
+ *
+ * 1. a **region** read. What the lab has of this unit is its configuration, 51195 bytes, which is
+ *    smaller than one 64 KiB erase block, so no block is covered and the compare below has nothing
+ *    to compare a whole block against. `packages/corpus/bin/read-region.ts` is what takes one.
+ * 2. the read's filename registered in `packages/lab/src/index.ts` and `tests/lab.py`. The name is
+ *    timestamped, so it cannot be written here in advance, which is why this is empty rather than
+ *    holding a guess.
+ *
+ * **The allow list does less here than it does above, and that is worth stating rather than quietly
+ * relying on.** Its argument on arch 12 (Harmony One) is that two of them enumerate identically, so
+ * naming the programmed unit's dump had to be a refusal. There is one Harmony 525 on the bench, so
+ * that specific slip is not available. It stays because the identity check is what identifies the
+ * unit, section 226, and this catches the different slip of naming some other 525 era image.
  */
-const PERMITTED_UNIT_LABEL = 'one_spare';
+const H525_DUMPS = new Set<string>([]);
 
-/** The recorded identity, or a refusal: with no record there is nothing to compare against. */
-function permittedUnit(): Uint8Array {
-  const stored = unitIdentity(PERMITTED_UNIT_LABEL);
+/** A remote this script may run against, per architecture. */
+interface Target {
+  /** How to say which remote, in a refusal an operator reads. */
+  readonly model: string;
+  /** The lab's label for the unit's recorded identity, `../lab/units/<label>.txt`. */
+  readonly unitLabel: string;
+  /** The dumps `--dump` accepts for it. */
+  readonly dumps: ReadonlySet<string>;
+}
+
+/**
+ * The units this may run against, keyed by the architecture read **off the remote**.
+ *
+ * **This was one hardcoded unit until 6 September 2026** and the constants were called
+ * `SPARE_DUMPS` and `PERMITTED_UNIT_LABEL`, singular, with a docstring saying "one label, because
+ * there is one write target". Danny's decision of 5 September made it two, the spare Harmony One and
+ * the Harmony 525, and section 267 supplied the three constants arch 9 needs, so the script can now
+ * read one and it still cannot write it.
+ *
+ * **Keyed by architecture rather than taken as an argument**, because the architecture comes off the
+ * device and an argument comes off a keyboard. An operator who names the wrong unit gets a refusal
+ * from the identity check rather than a wrong comparison, and there is no spelling of the command
+ * line that points the Harmony One's allow list at a 525.
+ *
+ * **Being in this table is not permission to write.** `ARCHITECTURES_WITH_A_WRITE_TARGET` is `[12]`
+ * and `--commit` goes through `writeBlock`, which refuses arch 9 there. What this table decides is
+ * which remotes may be **read** and compared, which is the half that has to happen first anyway.
+ */
+const TARGETS: Readonly<Record<number, Target>> = {
+  9: { model: 'the Harmony 525', unitLabel: 'h525', dumps: H525_DUMPS },
+  12: { model: 'the spare Harmony One', unitLabel: 'one_spare', dumps: SPARE_DUMPS },
+};
+
+/** Every dump name any target accepts, for the cheap check before the device is opened. */
+const EVERY_DUMP = new Set<string>(
+  Object.values(TARGETS).flatMap((t) => [...t.dumps]),
+);
+
+/**
+ * The recorded identity of a target's unit, or a refusal: with no record there is nothing to
+ * compare against.
+ *
+ * `../lab/units/<label>.txt` holds the identity as hex, which is what `unitIdentityText` produces off
+ * a live remote, and the lab is where it lives because a unit identity is that remote's hardware
+ * identity and this repository is public. Section 226.
+ *
+ * **This said "one label, because there is one write target" until 6 September 2026.** There are two
+ * permitted units now and the label comes from `TARGETS`, so a missing record refuses for the unit
+ * actually on the cable rather than for whichever one was hardcoded.
+ */
+function permittedUnit(target: Target): Uint8Array {
+  const stored = unitIdentity(target.unitLabel);
   if (stored === undefined) {
     throw new Refusal(
-      `the lab has no recorded identity for ${PERMITTED_UNIT_LABEL}, so nothing can say whether the `
-        + 'remote on the cable is the one this may write to. Two Harmony Ones enumerate identically. '
+      `the lab has no recorded identity for ${target.unitLabel}, so nothing can say whether the `
+        + `remote on the cable is ${target.model}. Two Harmony Ones enumerate identically, and a `
+        + 'read that identifies nothing is worth less than a refusal. '
         + `Write the unit's identity, as printed by read-identity.ts, to `
-        + `${unitIdentityPath(PERMITTED_UNIT_LABEL)}`,
+        + `${unitIdentityPath(target.unitLabel)}`,
     );
   }
   return unitIdentityFromText(stored);
@@ -264,11 +333,15 @@ async function main(): Promise<void> {
   const commit = process.argv.includes('--commit');
   const changes = byteChanges();
 
-  if (!SPARE_DUMPS.has(dumpName)) {
-    fail(`${dumpName} is not one of the spare Harmony One's own dumps `
-      + `(${[...SPARE_DUMPS].join(', ')}). Refusing: the byte compare below can only identify the `
-      + 'unit if the dump belongs to the unit that may be written to, and two Harmony Ones cannot '
-      + 'be told apart any other way. Nothing here may be written to any other remote.');
+  // **Two checks, and they answer different questions.** This one is spelling: is the name a dump
+  // any permitted unit accepts. It runs before the device is opened so a typo costs nothing. The
+  // one that matters is per unit and cannot happen yet, because which unit this is comes off the
+  // remote rather than out of an argument, so it sits below with the architecture.
+  if (!EVERY_DUMP.has(dumpName)) {
+    fail(`${dumpName} is not a dump of any unit this may run against `
+      + `(${[...EVERY_DUMP].join(', ') || 'none are registered'}). Refusing: the byte compare below `
+      + 'can only identify content if the dump belongs to a permitted unit, and two Harmony Ones '
+      + 'cannot be told apart by enumeration. Nothing here may be written to any other remote.');
   }
   const path = imagePath(dumpName);
   if (path === undefined) fail(`no lab image called ${dumpName}`);
@@ -314,17 +387,38 @@ async function main(): Promise<void> {
     // memory, no write, and the comparison is against what the lab recorded rather than against a
     // boolean. Printed as the first few characters only: the whole value identifies a specific piece
     // of somebody's hardware and belongs in the lab, not in a terminal log that gets pasted about.
-    const permitted = permittedUnit();
+    const target = TARGETS[architecture];
+    if (target === undefined) {
+      throw new Refusal(
+        `architecture ${architecture} is not a unit this may run against `
+          + `(${Object.entries(TARGETS).map(([a, t]) => `${a}: ${t.model}`).join(', ')})`,
+      );
+    }
+    if (!target.dumps.has(dumpName)) {
+      throw new Refusal(
+        `${dumpName} is not one of ${target.model}'s own dumps `
+          + `(${[...target.dumps].join(', ') || 'none are registered for it yet'}). The remote on `
+          + `the cable is architecture ${architecture}, so that is the unit whose dumps apply, and `
+          + 'comparing it against another unit\'s bytes would say nothing about either.',
+      );
+    }
+    const permitted = permittedUnit(target);
     const identityBlock = await remote.readUnitIdentity();
     assertUnitIsPermitted({ identityBlock, permittedUnit: permitted });
     process.stdout.write(`unit identity ${unitIdentityText(identityBlock).slice(0, 8)}..., which `
-      + `matches the recorded ${PERMITTED_UNIT_LABEL}\n`);
+      + `matches the recorded ${target.unitLabel}\n`);
     const base = CONFIG_REGION_BASE[architecture];
     const blockSize = ERASE_BLOCK_SIZE[architecture];
     const ceiling = WRITABLE_CEILING[architecture];
     if (base === undefined || blockSize === undefined || ceiling === undefined) {
+      // **This said "has no write target" until 6 September 2026** and the condition never meant
+      // that: it is the three constants, and arch 9 (Harmony 525) gained all three in section 267
+      // while remaining outside `ARCHITECTURES_WITH_A_WRITE_TARGET`. Conflating the two is what the
+      // rails call permission against capability, and a message that names the wrong one sends an
+      // operator to change the wrong thing.
       throw new Refusal(
-        `architecture ${architecture} has no write target, so there is nothing to rehearse`,
+        `architecture ${architecture} has no config region, erase block size or ceiling recorded, `
+          + 'so there is nothing to read back and compare',
       );
     }
     if (block % blockSize !== 0) {

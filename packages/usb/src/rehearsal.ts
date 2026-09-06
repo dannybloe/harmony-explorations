@@ -22,6 +22,15 @@
  * `0x3D0000` because the stored application firmware sits below the top.
  */
 export const NOMINAL_FLASH_SIZE: Readonly<Record<number, number>> = {
+  // **Arch 9 (Harmony 525)'s address space does not start at zero**, which matters for how
+  // `neighbourBlocks` reads this number. Its flash is addressed `0x800000` to `0x880000`, eight
+  // 64 KiB blocks, section 267 and concordance's own chip table. So the bottom of the part is
+  // `0x800000` and not `0`, and the `block - blockSize >= 0` floor below is therefore not the real
+  // floor for this architecture. It is never binding, because the configuration starts at
+  // `0x820000`, two blocks above the bottom, and `rehearse-block.ts` refuses a block below that. If
+  // an architecture ever appears whose region begins at the very bottom of its part, this needs a
+  // floor rather than a size.
+  9: 0x880000,
   12: 0x400000,
 };
 

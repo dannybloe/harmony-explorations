@@ -17,6 +17,8 @@ import {
   describe,
   fileNames,
   fileRead,
+  fileRegion,
+  regionFileNames,
   FileError,
   profileFor,
   readConfig,
@@ -101,4 +103,57 @@ test('a read lands as two files and refuses to overwrite an earlier one', skipUn
   // Two reads in the same minute would otherwise replace each other silently, and the survivor is
   // the one you were not comparing against.
   assert.throws(() => fileRead(root, read, 'H600', WHEN), FileError);
+});
+
+test('a region read is filed under its own suffix so nothing mistakes it for a config', () => {
+  // The two artefacts are different and a corpus that cannot tell them apart has wrong totals: a
+  // configuration read stops where the container says, a region read stops where the caller says.
+  // On the Harmony 525 that is the difference between 51195 bytes and a 64 KiB erase block.
+  const config = fileNames('h525', WHEN);
+  const region = regionFileNames('h525', WHEN);
+  assert.ok(config.config.endsWith('-config.bin'));
+  assert.ok(region.config.endsWith('-region.bin'));
+  assert.ok(region.sidecar.endsWith('-region.json'));
+  assert.notEqual(config.config, region.config);
+  // Same base, so the two sort together for one unit read on one day.
+  assert.equal(config.config.slice(0, config.config.indexOf('-config')),
+               region.config.slice(0, region.config.indexOf('-region')));
+});
+
+test('a region sidecar records the range, which the blob cannot state itself', (t) => {
+  const root = mkdtempSync(join(tmpdir(), 'harmony-region-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+
+  const bytes = new Uint8Array(0x10000).fill(0xab);
+  const filed = fileRegion(root, {
+    bytes,
+    address: 0x820000,
+    versionBlock: Uint8Array.from([1, 2, 3]),
+    productId: 0xc11f,
+    architecture: 9,
+    model: 'Harmony 525',
+    durationMs: 1234,
+  }, 'h525-region', WHEN);
+
+  assert.deepEqual(readdirSync(filed.directory).sort(), [filed.config, filed.sidecar].sort());
+  assert.deepEqual([...readFileSync(join(filed.directory, filed.config))], [...bytes]);
+  const meta = JSON.parse(readFileSync(join(filed.directory, filed.sidecar), 'utf8'));
+  // A container states its own length and a region does not, so these three fields are the whole
+  // reason the sidecar exists rather than a convenience.
+  assert.equal(meta.kind, 'region');
+  assert.equal(meta.address, '0x820000');
+  assert.equal(meta.length, 0x10000);
+  assert.equal(meta.end, '0x830000');
+  assert.equal(meta.remote.architecture, 9);
+
+  // Same refusal as a config read: two in one minute would replace each other silently.
+  assert.throws(() => fileRegion(root, {
+    bytes,
+    address: 0x820000,
+    versionBlock: Uint8Array.from([1, 2, 3]),
+    productId: 0xc11f,
+    architecture: 9,
+    model: 'Harmony 525',
+    durationMs: 1234,
+  }, 'h525-region', WHEN), FileError);
 });

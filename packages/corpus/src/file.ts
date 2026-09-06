@@ -102,3 +102,79 @@ export function fileRead(labRoot: string, read: ConfigRead, label: string, when:
   }
   return { ...names, directory };
 }
+
+/**
+ * The two filenames for a **region** read: a stated address range rather than a configuration.
+ *
+ * A separate suffix from `fileNames` above, `-region` against `-config`, because the two are
+ * different artefacts and a corpus that cannot tell them apart is a corpus whose totals are wrong.
+ * A configuration read stops at the length the container states; a region read stops where the
+ * caller said, which is how a whole erase block is obtained.
+ */
+export function regionFileNames(label: string, when: Date): FileNames {
+  const base = `${stamp(when)}-${slug(label)}`;
+  return { config: `${base}-region.bin`, sidecar: `${base}-region.json` };
+}
+
+/** What a region read carries. Deliberately not a `ConfigRead`: there is no container to parse. */
+export interface RegionRead {
+  readonly bytes: Uint8Array;
+  /** The flash address the first byte came from, in the space `READ_FLASH` names. */
+  readonly address: number;
+  readonly versionBlock: Uint8Array;
+  readonly productId: number;
+  readonly architecture: number;
+  readonly model: string;
+  readonly durationMs: number;
+}
+
+/**
+ * File a region read into the lab, bytes plus a sidecar.
+ *
+ * **This is a heavier artefact than a configuration and the difference is not size**, section 215:
+ * past the end of the current configuration on the spare Harmony One sit 408034 bytes of a previous
+ * one, because flash is only erased where a write needs the room. So a region carries configurations
+ * nobody meant to hand over, which is why it lands in the lab like everything else here and why the
+ * refusal to publish one is stronger than the refusal to publish a config rather than the same.
+ *
+ * The sidecar exists for the reason the one above does: a blob with no provenance is a blob nobody
+ * can use later, and this one additionally has to record **which range** it is, since unlike a
+ * container it cannot say so itself.
+ */
+export function fileRegion(
+  labRoot: string,
+  read: RegionRead,
+  label: string,
+  when: Date,
+): FiledRead {
+  const directory = join(labRoot, READS_DIR);
+  mkdirSync(directory, { recursive: true });
+  const names = regionFileNames(label, when);
+  const sidecar = {
+    label,
+    kind: 'region',
+    read_at: when.toISOString(),
+    address: `0x${read.address.toString(16)}`,
+    length: read.bytes.length,
+    end: `0x${(read.address + read.bytes.length).toString(16)}`,
+    duration_ms: Math.round(read.durationMs),
+    remote: {
+      product_id: `0x${read.productId.toString(16)}`,
+      model: read.model,
+      architecture: read.architecture,
+      version_block: Buffer.from(read.versionBlock).toString('hex'),
+    },
+  };
+  try {
+    writeFileSync(join(directory, names.config), read.bytes, { flag: 'wx' });
+    writeFileSync(join(directory, names.sidecar), `${JSON.stringify(sidecar, null, 2)}\n`, {
+      flag: 'wx',
+    });
+  } catch (err) {
+    if (err instanceof Error && 'code' in err && err.code === 'EEXIST') {
+      throw new FileError(`${names.config} already exists; a read from this minute is already filed`);
+    }
+    throw err;
+  }
+  return { ...names, directory };
+}

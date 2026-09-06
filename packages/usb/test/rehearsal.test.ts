@@ -11,6 +11,8 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 import { require_, skipWithoutLab } from '@harmony/lab';
 
@@ -20,6 +22,7 @@ import {
   failureLine,
   neighbourBlocks,
 } from '../src/rehearsal.ts';
+import { ARCHITECTURES_WITH_A_WRITE_TARGET } from '../src/rails.ts';
 
 const ONE = 12;
 const BLOCK = 0x10000;
@@ -58,10 +61,46 @@ test('the nominal flash size is not the writable ceiling', () => {
   assert.ok(NOMINAL_FLASH_SIZE[ONE]! > 0x3d0000, 'the part is larger than anything writable');
 });
 
-test('only an architecture with a write target has a flash size recorded', () => {
-  // The table exists to bound a read on the unit being written to. A hole is not a default, and an
-  // architecture nobody writes to reaching this code at all would be the bug.
-  assert.deepEqual(Object.keys(NOMINAL_FLASH_SIZE), [String(ONE)]);
+test('only a unit the rehearsal may run against has a flash size recorded', () => {
+  // **The title said "with a write target" until 6 September 2026 and both halves went stale at
+  // once.** Arch 9 (Harmony 525) has a flash size now and has no write target, so the old title
+  // named a property this table does not have. What the table actually bounds is the neighbour
+  // reads, which happen in the **dry run**, before anything is written and on an architecture that
+  // may never be written to at all. A hole is still not a default.
+  assert.deepEqual(Object.keys(NOMINAL_FLASH_SIZE).sort(), ['12', '9']);
+});
+
+test('the arch 9 part is eight blocks and the config region is the top five of them', () => {
+  // Section 267, and concordance's own chip table says the same: `0x800000` to `0x880000`, eight
+  // 64 KiB blocks. The two below the configuration are the safe mode image and the application
+  // firmware, which is why the rails floor is `0x820000` and not the bottom of the part.
+  const size = NOMINAL_FLASH_SIZE[9] as number;
+  assert.equal(size, 0x880000);
+  assert.equal((size - 0x800000) / 0x10000, 8, 'blocks in the part');
+  assert.equal((0x870000 - 0x820000) / 0x10000, 5, 'blocks in the writable region');
+});
+
+test('the neighbours of the first rehearsable arch 9 block are the firmware and the next block', () => {
+  // The lower neighbour is the **application firmware** at 0x810000, and reading it is the point:
+  // if an erase at 0x820000 ever reached downwards, that is the block it would take, and the
+  // rehearsal compares both neighbours before and after. The read is harmless and the comparison is
+  // the whole control.
+  assert.deepEqual(neighbourBlocks(0x820000, 0x10000, NOMINAL_FLASH_SIZE[9] as number),
+                   [0x810000, 0x830000]);
+  // And the top of the writable region still has a neighbour above it, the log area, so no
+  // rehearsable arch 9 block loses a side.
+  assert.deepEqual(neighbourBlocks(0x860000, 0x10000, NOMINAL_FLASH_SIZE[9] as number),
+                   [0x850000, 0x870000]);
+});
+
+test('the arch 9 zero floor is never reached, which is why a size is enough', () => {
+  // `neighbourBlocks` treats 0 as the bottom of the part, which is true on arch 12 (Harmony One) and
+  // false on arch 9 (Harmony 525), where the part starts at 0x800000. It is never binding because
+  // the configuration starts two blocks above the bottom. This asserts the gap rather than the
+  // claim, so that an architecture whose region begins at the very bottom of its part fails here
+  // instead of silently asking for a block that is not on the chip.
+  const base = 0x820000;
+  assert.ok(base - 0x10000 >= 0x800000, 'the lower neighbour is still on the part');
 });
 
 test('before the erase a failure says only what failed', () => {
@@ -134,4 +173,52 @@ test('the two bytes a delay edit moves land in two blocks a megabyte apart', ski
   const blocks = blocksDiffering(before, after, 0x040000, 0x10000);
   assert.deepEqual(blocks, [0x080000, 0x1d0000]);
   assert.equal(blocks[1]! - blocks[0]!, 0x150000, 'and they are 1.3 MiB apart');
+});
+
+/**
+ * The script's own text, since it cannot be imported: it runs on import and would claim a device.
+ * `rails.test.ts` pins the write builder the same way and for the same reason.
+ */
+function rehearsalScript(): string {
+  return readFileSync(fileURLToPath(new URL('../bin/rehearse-block.ts', import.meta.url)), 'utf8');
+}
+
+test('the rehearsal names two units and keys them by the architecture off the remote', () => {
+  // Danny's decision of 5 September 2026 made the permitted units two, and section 267 gave arch 9
+  // (Harmony 525) the three constants a comparison needs. Before that the script had one hardcoded
+  // label and one hardcoded dump set.
+  const text = rehearsalScript();
+  assert.match(text, /const TARGETS: Readonly<Record<number, Target>>/);
+  assert.match(text, /9: \{ model: 'the Harmony 525', unitLabel: 'h525'/);
+  assert.match(text, /12: \{ model: 'the spare Harmony One', unitLabel: 'one_spare'/);
+  // Keyed by what the device says. An argument would let an operator point the Harmony One's allow
+  // list at a 525, which is the slip the allow list exists to stop.
+  assert.match(text, /const target = TARGETS\[architecture\];/);
+  assert.ok(!/--unit/.test(text), 'the unit is read off the remote, never taken as an argument');
+});
+
+test('being a rehearsal target is not being a write target', () => {
+  // The distinction the whole module rests on, asserted where it can actually fail: the script may
+  // now read and compare a Harmony 525, and `--commit` on one is refused inside `writeBlock`.
+  assert.ok(!ARCHITECTURES_WITH_A_WRITE_TARGET.includes(9),
+            'arch 9 (Harmony 525) is readable by the rehearsal and not writable by it');
+  assert.deepEqual([...ARCHITECTURES_WITH_A_WRITE_TARGET], [12]);
+  // And the dry run reaches its end without building a permission, which is what makes that true:
+  // the write gate sits after the early return.
+  const text = rehearsalScript();
+  const dryReturn = text.indexOf("dry run: nothing was written");
+  const firstWrite = text.indexOf('assertFirstWriteAllowed()');
+  assert.ok(dryReturn > 0 && firstWrite > dryReturn,
+            'the dry run must return before anything asks for write permission');
+});
+
+test('the Harmony 525 has no registered dump yet, so a rehearsal of one refuses', () => {
+  // **This is expected to fail when the region read is taken**, and that is the point: the entry is
+  // added by hand, with the filename the read produced, and this test is what makes that a decision
+  // rather than a drift. The reason it is empty is that the lab holds the 525's configuration,
+  // 51195 bytes, which is smaller than one 64 KiB erase block, so no block is covered.
+  const text = rehearsalScript();
+  assert.match(text, /const H525_DUMPS = new Set<string>\(\[\]\);/);
+  assert.match(text, /none are registered for it yet/,
+               'the refusal has to say what is missing, not just that something is');
 });

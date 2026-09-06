@@ -1515,7 +1515,9 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # 21 since 5 September 2026: `docs/memory-map-525.md`, which now states the Harmony 525's
         # erase handler, its window classifier, the block size and an interlock. That is question 4
         # on another architecture, and this sweep found it rather than a person.
-        self.assertEqual(len(must), 21, 'the withhold list should resolve to 21 paths, got %s'
+        # 22 since 6 September 2026: `packages/corpus/bin/read-region.ts`, a read only script that
+        # names `rehearse-block.ts`. The mildest entry on the list and the cheapest to withhold.
+        self.assertEqual(len(must), 22, 'the withhold list should resolve to 22 paths, got %s'
                          % sorted(must))
 
     def test_every_may_read_path_is_clean_of_the_write_path(self):
@@ -1598,7 +1600,11 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # list at the time, as one of five memory maps named by a glob, so this is the sweep catching
         # a widening rather than counting a new file: the companion test failed first and this number
         # moved only after that file was withheld and the glob replaced by four explicit names.
-        self.assertEqual(len(stating), 33,
+        #
+        # **34 since 6 September 2026**: `packages/corpus/bin/read-region.ts`, added so a Harmony 525
+        # rehearsal has a whole erase block to compare against. It states none of the sequence and
+        # matched on naming `rehearse-block.ts`, which is the sweep being deliberately broad.
+        self.assertEqual(len(stating), 34,
                          'the number of files stating the write path moved, so re-read the withhold '
                          'list before restamping this: %s' % stating)
 

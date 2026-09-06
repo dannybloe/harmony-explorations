@@ -1109,7 +1109,8 @@ packages/usb/                   TS: the command protocol and the write rails, re
                                 implementation, `writeBlock`, and a caller in this workspace reaches
                                 it through the `@harmony/usb/write` subpath rather than the barrel,
                                 so that a third write caller is a decision visible in a diff
-packages/corpus/                TS: read a config off a remote and file it, **and put one back**:
+packages/corpus/                TS: read a config off a remote and file it, read a **stated range**
+                                and file that, **and put one back**:
                                 since section 237 it also holds the config writer, which is here
                                 rather than in packages/usb because it needs the container parser
                                 to check the one field the remote itself checks. It is the write
@@ -1752,6 +1753,17 @@ node packages/usb/bin/read-file.ts --file <path> [--product 0xc12b] [--device <p
 node packages/corpus/bin/read-config.ts --label <name> [--product 0xc121]
                        reads the whole config off a remote and files it in the lab.
                        Opens the device, unlike the two above, so reach for it deliberately.
+node packages/corpus/bin/read-region.ts --label <name> --address 0x820000 [--count 0x10000]
+                       reads a **stated range** of flash and files it in the lab, which is the only
+                       way to obtain a whole erase block. All reads. The two come apart on the
+                       Harmony 525, whose configuration is 51195 bytes against a 64 KiB block, so a
+                       config read covers no block and the rehearsal has nothing to compare against;
+                       on a Harmony One the configuration is 1.6 MB and a config read happened to be
+                       a region read too. **A region is more sensitive than a config, not less**,
+                       section 215: past the end of the current configuration sit the remains of a
+                       previous one, so it never leaves the lab. Refuses a range outside the config
+                       region unless `--anywhere`, which is about what the artefact gets filed as
+                       rather than about what is safe to read. Opens the device.
 node packages/probe/bin/probe.ts [--product 0xc122] [--file <config>]
                        the contribution probe: a few kilobytes of JSON describing a config's
                        shape and nothing of its contents, meant to be published. Opens the
@@ -1769,7 +1781,12 @@ HARMONY_ODD_READ_EXPERIMENT=1 node packages/usb/bin/idle-flags-after-hang.ts
                        holds its three predictions. Take the batteries out afterwards.
 node packages/usb/bin/rehearse-block.ts --dump <image> --block 0x040000 [--commit]
                        the write rehearsal, M4: read one 64 KiB erase block off a remote, compare it
-                       with the lab dump, and print what a write would send. **Without `--commit` it
+                       with the lab dump, and print what a write would send. **Two units since
+                       6 September 2026**, chosen by the architecture read off the remote rather than
+                       by an argument: the spare Harmony One and the Harmony 525. Only the first may
+                       be written; a 525 can be read and compared and `--commit` on one is refused.
+                       A 525 run needs two things first, both reads: a region read covering a whole
+                       block, and that filename plus the unit's identity registered in the lab. **Without `--commit` it
                        writes nothing**, and that half is worth running on its own, because the
                        compare is what turns `originalDumpVerified` from a caller's assertion into a
                        measurement for the range about to be written. `--commit` needs
