@@ -34779,3 +34779,167 @@ configurations of one architecture.
 * `packages/codec/src/inventory.ts`: `handlerSetRoles`, with `HandlerSetRole`.
 * `packages/codec/test/inventory.test.ts`: the three counts, the prefix lengths per architecture, and
   the score of the old reading against the new one, which is what stops it being written again.
+
+## 273. How an activity is numbered, where its entry goes, and how many keys it needs
+
+**Written because a composer has to choose a number for an activity it is adding**, and the rule this
+project had recorded was a description of twelve containers with the other three treated as oddities.
+Four further things a composer needs came out of checking it, which is why the heading is wider than
+the question: how many keys an activity is bound by, where its base slot 9 entry may go, how the
+leftover entry is told apart, and what a leave handler is allowed to be.
+`packages/codec/src/inventory.ts` said the idle value "happens to equal `second` in ten of the eleven<!--superseded-->
+containers and is 7 where the highest is 8 in the other", and `docs/config-format.md` said the same in
+its own words. **That was true of the eleven containers that existed when it was written and it is
+false of the corpus now**: three containers have the idle value inside the run, not one.
+
+**And the three were treated three different ways, which is the part worth recording.** `one_config`
+was named and called the exception. `arch8_config_880` was recorded in `docs/config-format.md` as
+**corroboration** for exactly this reading, "the second container to show that the idle value is
+`first` and not the highest", which is the opposite of calling it odd. `arch8_config_885` appears
+nowhere at all. So the shape was not one anomaly beside a rule: it was a second rule that half the
+evidence already supported and nobody had counted.
+
+### The rule, and it holds everywhere
+
+The variable named `CurrentActivityState` takes the values `0` to its record's `second`. Over the
+fifteen user configurations on four architectures:
+
+| | count |
+|---|---|
+| the values `0` to `second` are **exactly** the activities plus the idle value, with no gap and nothing spare | **15 of 15** |
+| `second` **equals the activity count** | **15 of 15** |
+| the idle value is never itself an activity value | 15 of 15 |
+| base slot 9 holds **one** activity entry per activity value, no duplicate and no spare | 15 of 15 |
+| the idle value is the maximum | 12 of 15 |
+| the idle value sits **inside** the run and an activity holds the maximum | 3 of 15 |
+
+So there is one rule and not twelve cases plus three: the variable has one value per activity **plus
+one**, and exactly one of those values means idle. Where that one sits is the part that varies.
+
+**Two of those rows are one claim counted twice and the blind reviewer said so**, which is worth
+recording because the table reads as more independent than it is: given that `second` equals the
+activity count, that the idle value is not an activity, and that every value lies in `0` to `second`,
+the first row follows by arithmetic. Both were measured directly rather than derived, so the table is
+honest about what was run; it is not honest about how much evidence it represents unless this
+paragraph is beside it. **And "the idle value" is not a second measurement either**: it is the
+record's own `first` field, read and not derived, so a table column headed idle and a column headed
+`first` would print one number twice.
+
+The three with the idle value inside the run are `one_config`, `arch8_config_880` and
+`arch8_config_885`. In each, the value below the idle one and the value above it are both activities:
+0 to 6 and 8 with 7 idle; 0, 1, 2 and 4 with 3 idle; 0 to 7 and 9 with 8 idle.
+
+### What a composer does with it
+
+**Adding an activity raises `second` by one and gives the new activity the new maximum.** The idle
+value does not move. **That is an inference and not a measurement**, and it has to be said in the same
+breath, because nothing here watched an activity being added: it is the cheapest rule consistent with
+all fifteen, and it is what would turn a container of the twelve shape into one of the three shape.
+What the corpus states is the shape of the fifteen, not the operation that produced any of them.
+
+**What a composer must not do is take `second + 1` for granted as unused, or assume idle is the
+highest.** Both are true of twelve containers and false of three. **The three are the everyday Harmony
+One and two contributed arch 8 configurations, and neither configuration of the spare shows the case**,
+both having one activity with the idle value at the maximum. So the remote this project is allowed to
+write to gives a composer no warning of it, which is the reason to state the rule rather than to test
+against the bench unit.
+
+### A hypothesis about the three, which this corpus cannot decide
+
+The obvious reading is that the three are configurations somebody **added an activity to** after the
+first was built, and the twelve were each generated in one pass.
+
+**The corpus neither confirms nor refutes it.** `h700_config` has five activities numbered 0 to 4 with
+the idle value at 5, and a five activity configuration that grew one activity at a time would show a
+hole; but that is equally what a container generated in one pass looks like, which is what the
+hypothesis says about it. So either those were authored together, or Logitech's generator renumbers on
+a full compile, and nothing here distinguishes the two. Deciding it needs a container watched while an
+activity is added, which is the same instrument section 58 used for the timestamp.
+
+**"They are strangers' working configurations" is not evidence and was fitted to the three that
+suggested it.** `arch8_config_a` to `d` are contributed working configurations too and all four have
+the idle value at the maximum. Per architecture the split is arch 8 4 of 6, arch 12 3 of 4, arch 9 2 of
+2 and arch 14 3 of 3, so provenance carries no discriminating power at all.
+
+**The rule above does not depend on the answer**, which is why it is stated separately.
+
+### The other half a composer needs: position says nothing
+
+**An entry's position in base slot 9 does not track its activity number**, so a composer may append.
+The sharp number is **0 of 10**: of the ten containers holding two or more activities, not one has its
+entries in value order. Counting a single activity container as vacuously ascending gives 5 of 15, and
+all five of those are exactly the single activity ones, so the two figures are the same result stated
+at two strengths. `one_config`'s eight entries read 2, 0, 3, 4, 6, 8, 1, 5, and
+`arch8_config_885`'s nine read 4, 9, 0, 6, 7, 2, 3, 1, 5.
+
+The number is carried by the **write in the enter list**, section 120's fourth hop, and by nothing
+structural. So the composer's freedom here is real: append the entry after the ones that exist, per
+section 272's prefix rule, and the value is whatever the enter list says it is.
+
+### A composer emits two bindings on arch 14 and one everywhere else
+
+This came out of checking the blind reviewer's claim that base slot 9 holds one entry per activity,
+which is true and which `activityBindings` appears to contradict: it returns six rows for the Harmony
+600's three activities. It is not a defect and the reader's own name says why, since it reports
+**button bindings** and not entries. On the three arch 14 containers every activity is bound by **two
+different keys**, on the same page, and on the twelve containers of the other three architectures by
+exactly one.
+
+**The control is the event bits**: all 63 bindings in the corpus carry a press, and so do all 26 on
+arch 14, so the second row of a pair is a second key rather than the same key being released. Had it been a release, a
+composer would need one binding and would have been wrong on nothing; as it stands, a composer that
+emits one binding on a Harmony 600 leaves half the menu dead.
+
+The Harmony 600 puts **up to** two activities on a page, three activities over two pages, and the
+Harmony 700 reference image puts five over three. Activity 2 sits on scans 9 and 34 and activity 0 on
+scans 8 and 2, and the same four scans carry every activity on all three arch 14 containers. **Which
+physical key each of the four is, is not established here**: `reference/button-maps.md` names those
+numbers for other models and a scan code does not transfer between skins.
+
+### The extra entry can be recognised from its own bytes
+
+Section 272 identified base slot 9's one leftover entry by **exclusion**, as the selected entry no
+activity binding names. That is a definition and not a description, so it cannot be checked against
+anything. It has an independent property: **it carries the enter handler and the third handler and no
+leave handler**, tags 1 and 5 with no tag 2, on 15 of 15, where all 50 activity entries carry exactly
+tags 1, 2 and 5. So a reader can pick the extra entry out without knowing which entries the activities
+claim, and the two routes agree everywhere.
+
+**And a leave handler may be a null instruction**, which a composer needs to know before it invents
+one: 21 of the 50 carry opcode 0 with operand 0, all 21 on arch 8 and arch 9, against 29 that run a
+list. So emitting tag 2 is required and giving it something to run is not.
+
+### An independent closure on the reader itself
+
+`activityBindings` reaches an activity's number in four hops, and every count above rests on it, so a
+defect in hop three or hop four would move all of them together. It was re-derived blind: the base
+slot 9 index to activity value mapping recomputed from the handler set addresses, each entry's tagged
+list, the action lists, and the state write opcode's own base, without touching the two later hops.
+**The two agree exactly on all fifteen containers**, the same 50 pairs, so no activity entry is
+invisible to the reader and none is reported that a direct walk does not find. The 50 is worth stating
+beside the agreement, since agreement about nothing agrees too, and it is also what reconciles this
+section's two populations: `activityBindings` returns **63** rows for 50 activities, the difference
+being exactly the 13 arch 14 activities that are bound twice.
+
+### Sources checked before this was derived
+
+`docs/findings.md` sections 120, 151 and 272, `packages/codec/src/inventory.ts`, and the state
+variable table in `docs/config-format.md`. **Logitech's own client was not consulted and this is a
+corpus measurement rather than a firmware reading**, which is the honest scope: it says what fifteen
+configurations their compiler produced look like, and it does not say what their compiler would refuse.
+That distinction bites on the composer rule below, which is the one part of this section that is
+inference rather than measurement.
+
+### What would falsify it
+
+A user configuration where the values `0` to `second` are not exactly the activities plus one idle
+value; where `second` is not the activity count; or where a reader has to use an entry's position to
+recover an activity's number.
+
+### Where it lands
+
+* `docs/config-format.md`, base slot 13's activity variable.
+* `docs/how-an-activity-is-built.md`, which is what a composer reads.
+* `packages/codec/test/inventory.test.ts`: the numbering table, the position result with its own
+  count since that one is a licence rather than a constraint, the arch 14 binding split with its
+  event type control, the handler shapes, and the four hop reader against a two hop walk.

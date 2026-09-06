@@ -67,12 +67,18 @@ def edited_text(payload: dict) -> str:
     Every field is concatenated rather than picked, because Edit, Write and their multi-edit
     variants spell the new content differently and a missed spelling is a missed reminder. A false
     positive costs one interruption that a session was going to want anyway.
+
+    **`command` is in the list and that is not an afterthought.** This hook shipped matching the
+    file writing tools alone and missed the first finding written after it, because a session under
+    the shell-first instruction appends to a document with a heredoc rather than with Edit. The lab
+    register hook has carried `command` since it was written and for the same reason. A shell
+    command is scanned as free text: the heredoc body is in it, so the heading is too.
     """
     tool_input = payload.get('tool_input')
     if not isinstance(tool_input, dict):
         return ''
     parts: list[str] = []
-    for field in ('content', 'new_string', 'new_str'):
+    for field in ('content', 'new_string', 'new_str', 'command'):
         value = tool_input.get(field)
         if isinstance(value, str):
             parts.append(value)
@@ -84,19 +90,33 @@ def edited_text(payload: dict) -> str:
     return '\n'.join(parts)
 
 
+#: How `docs/findings.md` is named in a shell command. Deliberately loose, on the lab register
+#: hook's reasoning: a false positive costs one lookup that prints nothing and a false negative
+#: costs the reminder this whole file exists to deliver.
+FINDINGS_IN_A_COMMAND = re.compile(r'findings\.md')
+
+
 def targets_findings(payload: dict) -> bool:
-    """Whether the file being written is `docs/findings.md`, by real path rather than by string."""
+    """Whether this call writes `docs/findings.md`, by real path or, for a shell, by name.
+
+    Two routes because there are two ways a document gets written here. A file writing tool names
+    the path, and that is resolved through `realpath` so a relative name, an absolute one and a
+    symlink all answer the same. A shell command names it inside whatever pipeline it is running,
+    where there is no path to resolve, so it is matched as text.
+    """
     tool_input = payload.get('tool_input')
     if not isinstance(tool_input, dict):
         return False
     named = tool_input.get('file_path') or tool_input.get('path')
-    if not isinstance(named, str):
-        return False
-    path = named if os.path.isabs(named) else os.path.join(os.getcwd(), named)
-    try:
-        return os.path.realpath(path) == os.path.realpath(os.path.join(REPO, 'docs', 'findings.md'))
-    except OSError:
-        return False
+    if isinstance(named, str):
+        path = named if os.path.isabs(named) else os.path.join(os.getcwd(), named)
+        try:
+            if os.path.realpath(path) == os.path.realpath(os.path.join(REPO, 'docs', 'findings.md')):
+                return True
+        except OSError:
+            return False
+    command = tool_input.get('command')
+    return isinstance(command, str) and FINDINGS_IN_A_COMMAND.search(command) is not None
 
 
 def already_fired(payload: dict) -> bool:

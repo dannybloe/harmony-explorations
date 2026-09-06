@@ -42,6 +42,17 @@ activities. `activityWriterCount` against `activityCount`.
 **P1.** A composer adding an activity adds one value to this variable's range and writes that value
 from exactly one place.
 
+**Section 273 says which value, and it is the part the factory specimen could not show**, having one
+activity. The rule over all fifteen user configurations: the variable takes `0` to its record's
+`second`, those values are **exactly** the activities plus the idle one with no gap and nothing spare,
+and `second` **is** the activity count. Where the idle value sits varies, the maximum on 12 and inside
+the run on 3, so **a composer must not assume the idle value is the highest** and must not take
+`second + 1` for granted as unused without checking the record.
+
+The rule for adding one, which is inference rather than measurement since nothing here watched an
+addition: raise `second` by one, give the new activity the new maximum, leave the idle value where it
+is. That turns a container of the twelve shape into one of the three shape.
+
 ### 2. One entry in the key map table
 
 Base slot 9. The activity's own keypad map, and section 272 says what the table is: a fixed per model
@@ -55,6 +66,11 @@ the Devices key, one for a help screen, and 24 keys that send an infrared code.
 
 **P2.** A composer adds exactly one entry here per activity, after the prefix, and the prefix never
 moves.
+
+**Appending is safe and section 273 is why**: an entry's position in this table does not encode its
+activity number. Of the ten user configurations with more than one activity, not one has its entries
+in value order, and `one_config`'s eight read 2, 0, 3, 4, 6, 8, 1, 5. The number is carried by the
+write inside the enter list and by nothing structural.
 
 ### 3. Three lifecycle handlers on that entry
 
@@ -77,6 +93,16 @@ the same three:
 
 **P3.** Tag 5 is present on every activity on every architecture, and a composer must emit it. What it
 is **for** is not established here and is the largest hole in this document.
+
+**Two things section 273 adds, and both change what a composer emits.** The extra base slot 9 entry,
+the one section 272 could only define by exclusion, carries tags 1 and 5 and **no leave handler**, on
+15 of 15, where all 50 activity entries carry exactly tags 1, 2 and 5. So the leftover entry is
+recognisable from its own bytes and a composer must not give it a tag 2.
+
+And **a leave handler may be a null instruction**: 21 of the 50 carry opcode 0 with operand 0, all of
+them on arch 8 and arch 9, against 29 that run a list. Emitting the tag is required; giving it
+something to run is not, so a composer with nothing to undo may emit the null form rather than
+inventing a list.
 
 ### 4. The start sequence, which sets state rather than sending codes
 
@@ -142,10 +168,15 @@ Four hops from a key press to an activity, section 120, and the reason it takes 
 the format names an activity directly.
 
 *The check that can fail*: every activity is reachable from a key, and all of one activity's keys are
-on one page.
+on one page. On arch 14 an activity has **two** keys, section 273, and both are on that page.
 
 **P7.** A composer adds one row to the activity menu page per activity, which is a screen edit and a
 tagged list entry, and the rows of one menu are a contiguous run of action list indices.
+
+**How many key bindings a row costs is per architecture**, section 273: **two** on arch 14 and one on
+arch 8, arch 9 and arch 12, on 15 of 15. Both of an arch 14 pair are presses of different keys on the
+same page, so the second is not the first key's release, and a writer for a Harmony 600 that emits one
+binding per activity leaves half its menu dead.
 
 ### 7. A drawn name, and the screens the activity enters
 
@@ -244,3 +275,6 @@ composer badly wrong about an activity like that one, which is mostly its own bi
 * what tag 5 is for, which no specimen answered
 * what decides when an activity menu page fills
 * the 12 inline sends, now located on arch 8 and arch 9 and still unexplained
+* which physical keys the four arch 14 activity scan codes are, and why that architecture binds two
+* whether Logitech's generator renumbers activities on a full compile, which is what would decide
+  between the two readings section 273 leaves standing for its three odd containers

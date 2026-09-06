@@ -182,8 +182,10 @@ export interface ActivityBinding {
    *
    * **Zero is an activity like any other**, which corrects the reading section 86 gave: it said value<!--superseded-->
    * 0 is "no activity running" and the rest are the activities. The idle value is the record's own
-   * `first`, which happens to equal `second` in ten of the eleven containers and is 7 where the
-   * highest is 8 in the other. `idleActivityValue` is that number, and no binding here ever writes it.
+   * `first`, and section 273 replaced the description that used to sit here with a rule: the variable
+   * takes `0` to `second`, those values are exactly the activities plus the idle one, and `second` is
+   * the activity count, on 15 of 15 user configs. **Where the idle one sits is what varies**, the
+   * maximum on 12 and inside the run on 3. `idleActivityValue` is that number and no binding writes it.
    */
   activity: number;
   /** Index into `modePages`, which is the screen the button belongs to. */
@@ -290,9 +292,10 @@ export function activityWriterCount(c: Container): number | undefined {
  *
  * Base slot 13's record states it, at +0x00, the field section 60 read as an initial value and marked
  * **unconfirmed** because nothing had been traced to it. This is the confirmation, and it comes from
- * the other side: it is exactly the value no activity binding writes, in all eleven containers of the
- * corpus that name the variable. Ten of them have it equal to the highest value and one has 7 where
- * the highest is 8, so the agreement is not arithmetic.
+ * the other side: it is exactly the value no activity binding writes, in all 15 user configs. The
+ * agreement is not arithmetic, because on 3 of the 15 the idle value sits **inside** the run and an
+ * activity holds the maximum, so no rule of the form "the top value is idle" can fit. Section 273
+ * states the whole numbering rule, of which this is one row.
  *
  * The arch 9 safe mode container is the single case where a list **does** write it, and that is why
  * it reports zero activities: its one list returns the remote to idle rather than starting anything.

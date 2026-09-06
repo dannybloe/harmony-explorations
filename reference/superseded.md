@@ -434,6 +434,8 @@ and leave this table alone.
 | `devices and activities together is the reading the counts support` | section 272, corrected 6 September 2026 | a device never has an entry: it is a per model prefix nothing selects, plus one per activity, plus exactly one more |
 | `the screen is the larger half` | the per configuration split, 6 September 2026 | over the corpus 1818 against 1609, but the screen half is larger on 8 remotes and the keypad half on 7, so neither dominates |
 | `399 of 411` | the reconciliation of 6 September 2026 | 424 sends through a state transition and 12 inline. The first pair came from a walk of its own that stopped one level shallower than `activityStartSteps`, which follows a write made by a transition it has already entered |
+| `happens to equal `second` in ten of the eleven` | section 273, 6 September 2026 | a description of the eleven containers that existed then. The rule is that the values `0` to `second` are exactly the activities plus one idle value, on 15 of 15, and the idle one is the maximum on 12 and inside the run on 3 |
+| `Ten of them have it equal to the highest value` | section 273, 6 September 2026 | same claim in the reader's own docstring, and the same correction: 12 of 15 now, and the point is that the position varies rather than that one container is odd |
 
 ## The Harmony 525's erase block size is unmeasured, so arch 9 gets no rail entry
 

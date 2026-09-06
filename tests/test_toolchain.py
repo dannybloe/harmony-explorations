@@ -1760,6 +1760,43 @@ class TheFindingGateHookFires(unittest.TestCase):
                               input='not json at all', capture_output=True, text=True, cwd=ROOT)
         self.assertEqual(done.returncode, 0, 'a reminder that breaks a session is worse than none')
 
+    def test_it_sees_a_document_written_through_the_shell(self):
+        """The hole this hook shipped with, found by the first finding written after it.
+
+        It matched the file writing tools alone, and a session under the shell-first instruction
+        appends to a document with a heredoc. So the section landed and the reminder did not. The lab
+        register hook has carried `command` since it was written, for the same reason and with the
+        same loose text match: there is no path to resolve inside a pipeline.
+        """
+        heredoc = 'cat >> docs/findings.md <<EOF\n\n## 999. Something established\n\nbody\nEOF'
+        code, err = self._run({'tool_input': {'command': heredoc}}, self.session + 'shell')
+        self.assertEqual(code, 2, 'a heredoc that appends a section has to fire it')
+        self.assertIn('reviewers', err)
+        # Two controls, and they are different claims, which the sentence audit of 6 September 2026
+        # separated. The first two name the document and carry no section heading, so they reach the
+        # section check and it says no: reading and grepping are not writing. The third names no file
+        # at all, so it is refused one step earlier, by the name match. Both matter, because the name
+        # match is deliberately loose text and cannot resolve a path inside a pipeline: any command
+        # that both mentions the document and carries a `## N.` line fires, whatever it writes.
+        for name, command in (
+            ('reading it', 'sed -n 1,40p docs/findings.md'),
+            ('grepping it', 'grep -n "## 151" docs/findings.md'),
+            ('naming no file', 'make prose facts'),
+        ):
+            with self.subTest(case=name):
+                quiet, _ = self._run({'tool_input': {'command': command}}, self.session + name)
+                self.assertEqual(quiet, 0)
+
+    def test_both_agents_reach_it_through_the_shell_as_well(self):
+        """The matcher half of the hole above: widening the script and not the matcher fixes nothing."""
+        for settings in ('.claude/settings.json', '.codex/hooks.json'):
+            with self.subTest(file=settings):
+                with open(os.path.join(ROOT, settings), encoding='utf-8') as handle:
+                    data = json.load(handle)
+                matchers = [entry['matcher'] for entry in data['hooks']['PreToolUse']
+                            if any('finding-gate-hook.py' in h['command'] for h in entry['hooks'])]
+                self.assertTrue(any('Bash' in m for m in matchers), matchers)
+
     def test_it_finds_a_section_however_the_edit_spells_its_content(self):
         """Edit, Write and the multi-edit form name the new text differently.
 

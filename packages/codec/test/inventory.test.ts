@@ -317,9 +317,10 @@ test('the activity variable is written as many times as it has values', skipWith
 
 test('the idle value is the one the corpus does not write, and it is not always the top',
   skipUnless('one_config'), () => {
-    // The closure that makes the idle reading a finding rather than a guess. In ten of the eleven
-    // containers `first` equals the highest value, so any rule of the form "the top value is idle"
-    // fits them all. `one_config` is the counterexample: eight activities, values 0 to 8, `first` of
+    // The closure that makes the idle reading a finding rather than a guess. On 12 of the 15 user
+    // configs `first` equals the highest value, so any rule of the form "the top value is idle" fits
+    // most of them. `one_config` is one of the three counterexamples, and section 273 measures the
+    // other two: eight activities, values 0 to 8, `first` of
     // 7, and the value **8** is bound to a key while 7 is bound to nothing. So the field states it.
     const c = parse(load('one_config') as Uint8Array);
     assert.equal(activityCount(c), 8);
@@ -1762,8 +1763,13 @@ test('an activity states the room it wants and the codes come out of the transit
   assert.equal(inline, 12, 'sends written into an activity rather than reached through a transition');
 });
 
-test('every activity carries the same three lifecycle handlers, and a release is not one',
+test('every activity binding reaches all three lifecycle handlers, and a release is not one',
      skipUnless(...USER_CONFIGS), () => {
+  // **The title says binding rather than activity on purpose.** The loop walks `activityBindings`,
+  // which reports one row per **button**, so its 63 is not the corpus's 50 activities: arch 14 binds
+  // each activity twice. The claim about activities is the test above, which walks base slot 9's
+  // entries and counts 50 of 50. Both are worth having, since this one also proves that every route
+  // in reaches the handlers and that one is not a stray.
   // P3 of `docs/how-an-activity-is-built.md`, with the correction its scoring produced. The document
   // said a tag below 0x80 is not a key, which is false: a tag is an event type plus a scan code, so a
   // **release** of scan 3 is 0x43 and sits below 0x80 looking exactly like a handler. Every activity
@@ -1785,8 +1791,8 @@ test('every activity carries the same three lifecycle handlers, and a release is
         .filter((one) => one.tag < 0x80 && (one.tag & EVENT_MASK) !== 0).length;
     }
   }
-  assert.equal(activitiesSeen, 63);
-  assert.equal(withAllThree, 63, 'tags 1, 2 and 5 are on every activity in the corpus');
+  assert.equal(activitiesSeen, 63, 'bindings, not activities: 50 activities and 13 bound twice');
+  assert.equal(withAllThree, 63, 'every binding reaches an entry carrying tags 1, 2 and 5');
   // The control for the correction: a bare "below 0x80" test would have called these handlers.
   assert.equal(releasesMistakableForHandlers, 26);
 });
@@ -1812,6 +1818,219 @@ test('an activity menu is several pages, which one specimen could not have shown
   assert.equal(containersWithSeveral, 5, 'containers whose activities span more than one menu page');
   assert.equal(containersWithOnePage, 10);
   assert.equal(mostPages, 3);
+});
+
+test('the activity variable has one value per activity plus one, and one of them is idle',
+     skipUnless(...USER_CONFIGS), () => {
+  // Section 273, and it replaces a description with a rule. This project had recorded that the idle
+  // value happened to equal the highest on most containers, and called the rest an oddity.
+  // There is one rule: the variable takes 0 to `second`, those values are exactly the activities plus
+  // the idle one, and where the idle one sits is what varies.
+  let exact = 0;
+  let secondIsTheCount = 0;
+  let idleIsTheMaximum = 0;
+  let idleInsideTheRun = 0;
+  let idleIsNotAnActivity = 0;
+  let oneEntryEach = 0;
+  for (const name of USER_CONFIGS) {
+    const c = parse(require_(name));
+    const used = [...new Set(activityBindings(c).map((one) => one.activity))].sort((a, b) => a - b);
+    const idle = idleActivityValue(c);
+    const record = stateVariables(c)
+      .find((one) => one.label.startsWith(ACTIVITY_STATE_NAME))?.record;
+    assert.ok(record !== undefined, `${name}: no activity variable record`);
+    assert.ok(idle !== undefined && used.length > 0, `${name}: no activities`);
+
+    const every = [...Array(record.second + 1).keys()];
+    const filled = [...used, idle].sort((a, b) => a - b);
+    if (JSON.stringify(every) === JSON.stringify(filled)) exact += 1;
+    if (record.second === used.length) secondIsTheCount += 1;
+    if (idle === record.second) idleIsTheMaximum += 1; else idleInsideTheRun += 1;
+    if (!used.includes(idle)) idleIsNotAnActivity += 1;
+    if (new Set(activityBindings(c).map((one) => one.set)).size === used.length) oneEntryEach += 1;
+  }
+  // **The two that carry the rule**, and they are the reason a composer can number an activity at all.
+  assert.equal(exact, 15, 'the values 0 to second are the activities plus idle, with no gap or spare');
+  assert.equal(secondIsTheCount, 15);
+  // **And the split that says the rule is not "idle is the highest".** Stated as both counts rather
+  // than as a share, so it is visible which side moves.
+  assert.equal(idleIsTheMaximum, 12);
+  assert.equal(idleInsideTheRun, 3);
+  // **The two the blind re-measure added.** The first is what makes the row above a partition rather
+  // than a coincidence; the second is what a composer needs, that an activity value is not shared.
+  assert.equal(idleIsNotAnActivity, 15);
+  assert.equal(oneEntryEach, 15);
+});
+
+test('the four hop reader agrees with a direct walk of the first two hops',
+     skipUnless(...USER_CONFIGS), () => {
+  // Section 273's closure, and it was prose with no body until the sentence audit said so. Every count
+  // in that section rests on `activityBindings`, which reaches an activity's number in four hops, so a
+  // defect in the last two would move all of them together and nothing would notice.
+  //
+  // This walk stops after hop two: which base slot 10 lists write the activity variable and to what
+  // value, then which base slot 9 entries run one of those. It never asks which list selects a set or
+  // which page binding runs that list, which is where the reader spends its other two hops.
+  let containers = 0;
+  let agreeing = 0;
+  let pairs = 0;
+  for (const name of USER_CONFIGS) {
+    const c = parse(require_(name));
+    const variable = stateVariables(c).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME));
+    const lists = c.actionLists();
+    const sets = handlerSets(c);
+    assert.ok(variable !== undefined && lists !== undefined && sets !== undefined, name);
+    const writeOpcode = STATE_WRITE_BASE + variable.index;
+
+    const writes = new Map<number, number>();
+    lists.forEach((list, index) => {
+      const found = list.find((one) => one.opcode === writeOpcode);
+      if (found !== undefined) writes.set(index, found.operand);
+    });
+    const direct = new Map<number, number>();
+    sets.addresses.forEach((address, index) => {
+      for (const entry of taggedList(c, address)?.entries ?? []) {
+        if (entry.opcode !== ACTION_LIST_INDEX_OPCODE) continue;
+        const activity = writes.get(entry.operand);
+        if (activity !== undefined) direct.set(index, activity);
+      }
+    });
+
+    // The reader's own answer, deduplicated to entries because it reports **bindings**, which the
+    // test above measures: on arch 14 two rows carry the same pair.
+    const reader = new Map(activityBindings(c).map((one) => [one.set, one.activity]));
+    containers += 1;
+    pairs += reader.size;
+    const same = reader.size === direct.size
+      && [...reader].every(([set, activity]) => direct.get(set) === activity);
+    if (same) agreeing += 1;
+  }
+  assert.equal(containers, 15);
+  assert.equal(agreeing, 15, 'the same pairs by a route that skips the last two hops');
+  // **The magnitude, so the agreement is not agreement about nothing.** Fifty is the corpus activity
+  // count, which is also what `activityCount` reports and what the 63 bindings collapse to.
+  assert.equal(pairs, 50);
+});
+
+test('the entry that is neither prefix nor activity is the one without a leave handler',
+     skipUnless(...USER_CONFIGS), () => {
+  // Section 273. Section 272 identified the extra base slot 9 entry by **exclusion**, as the selected
+  // one no activity binding names, which is a definition rather than a description. This is the
+  // independent property: it carries tags 1 and 5 and no tag 2, where every activity carries all
+  // three. So the extra entry can be recognised from its own bytes.
+  let activities = 0;
+  let activitiesWithAllThree = 0;
+  let extras = 0;
+  let extrasWithoutALeaveHandler = 0;
+  let nullLeaveHandlers = 0;
+  let realLeaveHandlers = 0;
+  for (const name of USER_CONFIGS) {
+    const c = parse(require_(name));
+    const sets = handlerSets(c);
+    assert.ok(sets !== undefined, name);
+    const roles = handlerSetRoles(c);
+    sets.addresses.forEach((address, index) => {
+      if (roles[index] === 'unselected') return;
+      const handlers = new Map((taggedList(c, address)?.entries ?? [])
+        .filter((one) => (one.tag & EVENT_MASK) === 0)
+        .map((one) => [one.tag, one]));
+      const tags = [...handlers.keys()].sort((a, b) => a - b).join(',');
+      if (roles[index] === 'activity') {
+        activities += 1;
+        if (tags === '1,2,5') activitiesWithAllThree += 1;
+        const leave = handlers.get(2);
+        if (leave !== undefined && leave.opcode === 0 && leave.operand === 0) nullLeaveHandlers += 1;
+        else realLeaveHandlers += 1;
+      } else {
+        extras += 1;
+        if (tags === '1,5') extrasWithoutALeaveHandler += 1;
+      }
+    });
+  }
+  assert.equal(activities, 50);
+  assert.equal(activitiesWithAllThree, 50, 'exactly tags 1, 2 and 5, no more and no fewer');
+  assert.equal(extras, 15, 'one extra entry per container, which is section 272');
+  assert.equal(extrasWithoutALeaveHandler, 15);
+  // **And a leave handler may be a null instruction**, which a composer needs: 21 of the 50 carry
+  // opcode 0 with operand 0, all of them on arch 8 and arch 9. So emitting the tag is required and
+  // giving it something to run is not.
+  assert.equal(nullLeaveHandlers, 21);
+  assert.equal(realLeaveHandlers, 29);
+});
+
+test('an activity is bound by two keys on arch 14 and by one everywhere else',
+     skipUnless(...USER_CONFIGS), () => {
+  // Found while checking a blind reviewer's claim that base slot 9 holds one entry per activity: it
+  // does, and `activityBindings` still returns **six** rows for three activities on a Harmony 600,
+  // because it reports **button bindings** rather than entries, as its own name says. The duplicate
+  // rows are two different keys on the same page, both a press, so this is a real property of the
+  // model rather than a reader emitting a row twice.
+  //
+  // **A composer has to know it**: on arch 14 (Harmony 600, or the Harmony 700 for the reference
+  // image) an activity needs two bindings and on the other three architectures one.
+  const ARCH_14 = ['h600_config', 'h700_config', 'h700_config_2'];
+  let twoEach = 0;
+  let oneEach = 0;
+  let bothEventsArePresses = 0;
+  for (const name of USER_CONFIGS) {
+    const c = parse(require_(name));
+    const perActivity = new Map<number, number>();
+    let presses = 0;
+    let rows = 0;
+    for (const one of activityBindings(c)) {
+      perActivity.set(one.activity, (perActivity.get(one.activity) ?? 0) + 1);
+      rows += 1;
+      // `KEY_EVENT_PRESS` is the event **number**, 2, not the masked byte 0x80.
+      if (((one.tag & EVENT_MASK) >> 6) === KEY_EVENT_PRESS) presses += 1;
+    }
+    const counts = new Set(perActivity.values());
+    if (counts.size === 1 && counts.has(2)) twoEach += 1;
+    if (counts.size === 1 && counts.has(1)) oneEach += 1;
+    if (presses === rows) bothEventsArePresses += 1;
+  }
+  assert.equal(twoEach, ARCH_14.length);
+  assert.equal(oneEach, USER_CONFIGS.length - ARCH_14.length);
+  // **The control that says the pair is not a press and a release.** Had it been, the second row
+  // would have been the same key leaving and a composer would need one binding, not two.
+  assert.equal(bothEventsArePresses, 15);
+});
+
+test('a base slot 9 entry\'s position does not say which activity it starts',
+     skipUnless(...USER_CONFIGS), () => {
+  // The other half of section 273, and it is a licence rather than a constraint: a composer may
+  // append its entry, because the activity's number is carried by the write in the enter list and by
+  // nothing structural. Asserted as a count because the claim is that the order is NOT meaningful,
+  // and a test that simply required disorder would fail on a container with one activity.
+  let ascending = 0;
+  let containers = 0;
+  let ascendingWithSeveral = 0;
+  let several = 0;
+  for (const name of USER_CONFIGS) {
+    const c = parse(require_(name));
+    const roles = handlerSetRoles(c);
+    const byIndex = new Map(activityBindings(c).map((one) => [one.set, one.activity]));
+    const sequence = roles
+      .map((role, index) => (role === 'activity' ? byIndex.get(index) : undefined))
+      .filter((one): one is number => one !== undefined);
+    if (sequence.length === 0) continue;
+    containers += 1;
+    if (sequence.length > 1) several += 1;
+    const rises = sequence.every((one, k) => k === 0 || one > (sequence[k - 1] as number));
+    if (rises) {
+      ascending += 1;
+      if (sequence.length > 1) ascendingWithSeveral += 1;
+    }
+  }
+  assert.equal(containers, 15);
+  assert.equal(ascending, 5);
+  // **The sharper statement of the same result**, and it is the one the finding quotes: of the ten
+  // containers that hold more than one activity, none is in value order. The 5 above counts the five
+  // single activity containers, where a one element sequence ascends vacuously.
+  assert.equal(several, 10);
+  // **The assertion that carries the claim.** All five are containers with a single activity, where
+  // there is no order to get wrong: no container with two or more has its entries in value order, so
+  // a reader that recovered a number from a position would be wrong on every one that could tell.
+  assert.equal(ascendingWithSeveral, 0);
 });
 
 /** The base slot 9 prefix no configuration selects, per architecture. Section 272. */

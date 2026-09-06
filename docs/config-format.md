@@ -2649,12 +2649,42 @@ screen. An activity page's `0x7F` operands are a **contiguous ascending run** of
 the tagged list's own order, on 16 of 16 activity pages against under half of pages generally, so a
 fresh run of action lists per activity menu is how the generator lays one out.
 
+**The extra entry has no leave handler**, section 273, which is what lets it be recognised rather than
+only defined: it carries tags 1 and 5 on 15 of 15, where all 50 activity entries carry exactly 1, 2 and
+5. A leave handler may itself be a null instruction, opcode 0 operand 0, on 21 of the 50 and all of
+those on arch 8 and arch 9.
+
+**How many keys is per architecture**, section 273: an activity is bound by **two** keys on arch 14 and
+by exactly one on arch 8, 9 and 12, in 15 of 15 user configs. Both of an arch 14 pair are presses, so
+the second is a second key and not the first key's release, and a writer for a Harmony 600 that emits
+one binding per activity leaves half its menu dead. Which physical keys the four scan codes involved
+are is not established, since a scan code does not transfer between skins.
+
 **The idle value is the record's `first` field**, base slot 13 at +0x00, which section 60 read as an
-initial value and marked unconfirmed. No binding writes it, in eleven of eleven containers. Ten of them
-have `first` equal to the highest value and `one_config` has 7 where its highest is 8, with **8** bound
-to a key and 7 bound to nothing, so the agreement is not arithmetic. The arch 9 safe mode container is
-the one place a list writes the idle value, and it is the one with zero activities: that list returns
-the remote to idle rather than starting anything.
+initial value and marked unconfirmed. No binding writes it, in fifteen of fifteen user configs. The
+arch 9 safe mode container is the one place a list writes the idle value, and it is the one with zero
+activities: that list returns the remote to idle rather than starting anything.
+
+**How an activity is numbered**, section 273, which replaced a description of twelve containers with a
+rule that covers all fifteen. The variable takes the values `0` to its record's `second` and:
+
+| | measured |
+|---|---|
+| those values are **exactly** the activity values plus the idle value, no gap and nothing spare | 15 of 15 |
+| `second` equals the **activity count** | 15 of 15 |
+| the idle value is never itself an activity value | 15 of 15 |
+| base slot 9 holds one activity entry per activity value, no duplicate and no spare | 15 of 15 |
+| the idle value is the maximum | 12 of 15 |
+| the idle value sits **inside** the run, an activity holding the maximum | 3 of 15 |
+
+The first row follows arithmetically from the second and third and is measured rather than derived, so
+the table states what was run rather than six independent results. The three with the idle value inside
+the run are `one_config`, `arch8_config_880` and `arch8_config_885`.
+
+**An entry's position in base slot 9 does not encode its activity number.** Of the ten user configs
+holding more than one activity, none has its activity entries in value order; the five that are in
+order are exactly the five holding a single activity. `one_config`'s eight read 2, 0, 3, 4, 6, 8, 1, 5.
+The number is carried by the write in step 4 above and by nothing structural, so a writer may append.
 
 **A drawn name is attributed to an activity through the modes the chain enters**, not through geometry.
 An activity's action lists also carry opcode `0x7E`, entering base slot 6 modes, and those modes' pages
