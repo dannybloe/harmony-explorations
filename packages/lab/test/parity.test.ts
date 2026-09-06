@@ -56,7 +56,10 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // 93 since the programmed Harmony 350, section 262.
   // 94 since the one device differential, section 263.
   // 95 since the Harmony 300, section 264.
-  assert.equal(Object.keys(pythonImages()).length, 96, 'every fixture tests/lab.py names');
+  // 97 since the Harmony 525's erase block, section 268: the first **region** read of a remote other
+  // than the spare Harmony One, and the first added because a configuration read was the wrong
+  // shape rather than out of date.
+  assert.equal(Object.keys(pythonImages()).length, 97, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {
@@ -66,7 +69,14 @@ test('the two sides exclude the same fixtures from the parseable population', ()
   const source = readFileSync(join(REPO_ROOT, 'tests', 'lab.py'), 'utf8');
   const block = /^PARSEABLE_EXCLUDED = \((.*?)\)$/ms.exec(source);
   assert.ok(block, 'tests/lab.py has no PARSEABLE_EXCLUDED tuple in the expected shape');
-  const names = [...block[1]!.matchAll(/'([^']+)'/g)].map((m) => m[1]!);
+  // **Comments are stripped before the names are read out, and that is not tidiness.** The first
+  // version pulled quoted tokens straight out of the tuple, and an apostrophe in a comment inside it
+  // silently re-paired every quote after it: `525's` opened a string that closed on the next real
+  // name, so the last entry vanished and the two lists "disagreed" about a name both of them had.
+  // That cost a confusing failure on 6 September 2026. A parser reading a language it does not
+  // understand has to at least remove the parts of it that are prose.
+  const withoutComments = block[1]!.replaceAll(/#[^\n]*/g, '');
+  const names = [...withoutComments.matchAll(/'([^']+)'/g)].map((m) => m[1]!);
   assert.deepEqual([...PARSEABLE_EXCLUDED].sort(), names.sort());
   // Eight since 1 September 2026. Three are byte for byte duplicates of a container already counted;
   // two are the reads taken after the writes that **changed** something, each that same container
@@ -86,5 +96,10 @@ test('the two sides exclude the same fixtures from the parseable population', ()
   // The eleventh is that same unit after the write of section 247, which is that container plus
   // one delay operand and the checksum that follows from it.
   // The twelfth is the revert of section 248, which is byte for byte the ninth again.
-  assert.equal(names.length, 13, 'each one a container already counted, or that container plus a known edit');
+  // The fourteenth is the Harmony 525's erase block, section 268, and it is the first entry here
+  // that is not a Harmony One at all. It is also the first added because a configuration read was
+  // the wrong **shape** rather than out of date: a rehearsal compares a whole 64 KiB block and that
+  // remote's configuration is 51195 bytes, so a region read was the only way to cover one. Its
+  // first 51195 bytes are `h525_config_2` exactly.
+  assert.equal(names.length, 14, 'each one a container already counted, or that container plus a known edit');
 });

@@ -11,7 +11,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { decodePayload } from '@harmony/codec';
-import { load, skipUnless } from '@harmony/lab';
+import { load, require_, skipUnless } from '@harmony/lab';
 
 import {
   describe,
@@ -157,3 +157,29 @@ test('a region sidecar records the range, which the blob cannot state itself', (
     durationMs: 1234,
   }, 'h525-region', WHEN), FileError);
 });
+
+test('the 525 region read agrees with the config read taken a month earlier',
+  skipUnless('h525_region_820000', 'h525_config_2'), () => {
+    // **Two reads of one remote, a month apart, by different code paths**, and the agreement is what
+    // makes the region read worth putting in front of a write. `read-config.ts` parses the
+    // container header and stops at the length the container states; `read-region.ts` reads a stated
+    // range and knows nothing about containers. If either had a bug in how it walks windows, this is
+    // where it would show, because the only thing the two share is the transport.
+    const region = require_('h525_region_820000');
+    const config = require_('h525_config_2');
+    assert.equal(region.length, 0x10000, 'one erase block');
+    assert.equal(config.length, 51195);
+    assert.equal(String.fromCharCode(...region.subarray(0, 4)), 'AHCM', "arch 9's container cookie");
+    assert.deepEqual([...region.subarray(0, config.length)], [...config],
+                     'the block starts with exactly the configuration that was read in August');
+
+    // **And the rest of the block is erased flash**, which is worth an assertion rather than a
+    // shrug: on the spare Harmony One the equivalent tail holds 408034 bytes of a previous
+    // configuration, section 215, because flash is only erased where a write needs the room. This
+    // unit's does not, so this particular region carries nothing its owner did not mean to hand
+    // over. It stays in the lab regardless, since that is a property of this read and not of
+    // regions.
+    const tail = region.subarray(config.length);
+    assert.equal(tail.length, 14341);
+    assert.ok(tail.every((b) => b === 0xff), 'every byte past the configuration is erased flash');
+  });

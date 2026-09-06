@@ -52,6 +52,68 @@ export const IDENTITY_PAGE = 0xff;
 export const IDENTITY_OFFSET = 0xf400;
 
 /**
+ * Where the block sits, per architecture, because it is **not** in the same kind of memory on all of
+ * them.
+ *
+ * **Found on hardware on 6 September 2026 and it was a refusal, not a wrong answer.** Everything
+ * above was written for arch 12 (Harmony One) and arch 14, where the block is in internal program
+ * memory at page `0xFF` offset `0xF400`. Asking a Harmony 525 for it threw from the address
+ * validator: arch 9 has no `0xFF` window at all, its internal program flash is 32 KiB at top byte
+ * `0x00`, so the address this module hardcoded does not exist on that remote. The rail caught it,
+ * which is the good outcome, and the value of the refusal is that a wrong read would have produced
+ * 64 bytes of something and a confident comparison against it.
+ *
+ * **concordance states it per architecture and that is where these come from**, `ArchList` in
+ * `libconcord/remote_info.h`: a `serial_location` and a `serial_address`. Arch 12 is
+ * `SERIAL_LOCATION_FLASH` at `0xFFF400`, which is exactly what this module already did, so the arch
+ * 12 row is a second source for an address predicted here and confirmed on three remotes. Arch 9 is
+ * `SERIAL_LOCATION_FLASH` at `0x200010`, and the interesting part is the top byte: `0x20` is the
+ * **on chip EEPROM** window in arch 9's address map, section 119, so a 525 keeps its identity in
+ * EEPROM where a Harmony One keeps it in program memory. Both are reached by the same `READ_FLASH`
+ * command, which is why concordance calls both locations "flash" and why one address table is enough.
+ *
+ * **The EEPROM is 256 bytes and byte 0 is the bootloader's image selector**, section 119, so the
+ * identity shares a page with the thing that decides which firmware image boots. Reading it is a
+ * read; nothing here goes near writing it.
+ *
+ * A hole refuses. An architecture whose identity address nobody has is an architecture where
+ * `readUnitIdentity` must say so rather than guess a page.
+ */
+export const IDENTITY_ADDRESS: Readonly<Record<number, number>> = {
+  9: 0x200010, // Harmony 525, the on chip EEPROM at offset 0x10
+  12: (IDENTITY_PAGE << 16) | IDENTITY_OFFSET, // Harmony One, internal program memory
+  14: (IDENTITY_PAGE << 16) | IDENTITY_OFFSET, // Harmony 600 and 700, the same place
+};
+
+/**
+ * The identity address for an architecture, or a refusal naming it.
+ *
+ * **`0x10 + 64` is `0x50`, inside the 256 byte EEPROM**, so arch 9 can be read at the same length as
+ * the others and the stored form stays one format across architectures. What lands in bytes `0x40`
+ * to `0x50` there is unread and cannot affect anything: the discriminator is the two GUID fields at
+ * `0x10` and `0x20`, so those sixteen bytes are carried and never compared. concordance reads 48
+ * bytes and stops at the trailer; reading 64 costs one window and keeps `unitDiscriminator`'s two
+ * accepted lengths, which is worth more than the sixteen bytes.
+ */
+export function identityAddress(architecture: number | undefined): number {
+  if (architecture === undefined) {
+    throw new UnitIdentityError(
+      'the architecture is unknown, and the identity block is in a different kind of memory on '
+        + 'each one; call getVersion() first, or pass architecture to the constructor',
+    );
+  }
+  const address = IDENTITY_ADDRESS[architecture];
+  if (address === undefined) {
+    throw new UnitIdentityError(
+      `no identity block address is known for architecture ${architecture}, so nothing here can `
+        + 'say which unit is on the cable. Adding one means reading it out of the remote or out of '
+        + "concordance's ArchList, never guessing a page",
+    );
+  }
+  return address;
+}
+
+/**
  * Four 16 byte fields, and the count is even, which matters.
  *
  * An internal read of an **odd** count never terminates and hangs the remote, section 94, so a

@@ -170,8 +170,14 @@ const SPARE_DUMPS = new Set([
  *    smaller than one 64 KiB erase block, so no block is covered and the compare below has nothing
  *    to compare a whole block against. `packages/corpus/bin/read-region.ts` is what takes one.
  * 2. the read's filename registered in `packages/lab/src/index.ts` and `tests/lab.py`. The name is
- *    timestamped, so it cannot be written here in advance, which is why this is empty rather than
+ *    timestamped, so it cannot be written here in advance, which is why this was empty rather than
  *    holding a guess.
+ *
+ * **Both were done on 6 September 2026** and the set holds one entry. What made the region read
+ * worth trusting is that its first 51195 bytes are byte for byte identical to the configuration read
+ * off the same unit a month earlier, by a different code path, so two independent reads agree; and
+ * the 14341 bytes past the configuration are all `0xFF`, erased, which is worth knowing because on
+ * the spare Harmony One the equivalent tail holds 408034 bytes of a previous configuration.
  *
  * **The allow list does less here than it does above, and that is worth stating rather than quietly
  * relying on.** Its argument on arch 12 (Harmony One) is that two of them enumerate identically, so
@@ -179,7 +185,12 @@ const SPARE_DUMPS = new Set([
  * that specific slip is not available. It stays because the identity check is what identifies the
  * unit, section 226, and this catches the different slip of naming some other 525 era image.
  */
-const H525_DUMPS = new Set<string>([]);
+const H525_DUMPS = new Set<string>([
+  // One erase block, flash 0x820000 to 0x830000, read on 6 September 2026. It covers exactly one
+  // block, so 0x820000 is the only address a 525 rehearsal can name today; another block needs
+  // another region read.
+  'h525_region_820000',
+]);
 
 /** A remote this script may run against, per architecture. */
 interface Target {

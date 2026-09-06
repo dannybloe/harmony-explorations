@@ -64,7 +64,7 @@ import {
   writeMiscRequest,
 } from './writes.ts';
 import { authoriseReport } from './authorise.ts';
-import { IDENTITY_BYTES, IDENTITY_OFFSET, IDENTITY_PAGE } from './identity.ts';
+import { IDENTITY_BYTES, IDENTITY_PAGE, identityAddress } from './identity.ts';
 import type { Transport } from './transport.ts';
 
 /**
@@ -484,8 +484,14 @@ export class HarmonyRemote {
   /**
    * The unit's own 64 byte identity block, which is what says **which** remote this is.
    *
-   * One `READ_FLASH` of internal page `0xFF` at `0xF400`, so no new protocol and no write. The
-   * address was predicted before it was read and confirmed on three remotes across two
+   * One `READ_FLASH`, so no new protocol and no write. **Where it reads is per architecture**, and
+   * that was found on hardware on 6 September 2026: this method sent internal page `0xFF` offset
+   * `0xF400` for every remote, which is right for arch 12 (Harmony One) and arch 14 and is an
+   * address arch 9 (Harmony 525) does not have. A 525 threw from the address validator rather than
+   * answering, so the rail caught it; `IDENTITY_ADDRESS` in `identity.ts` carries the location per
+   * architecture and where each one came from, and on a 525 the block is in the on chip EEPROM.
+   *
+   * The arch 12 address was predicted before it was read and confirmed on three remotes across two
    * architectures, `docs/usb-protocol.md`, and the closure is that all three GUIDs `concordance -i`
    * prints for one exact unit appear in it in the same order.
    *
@@ -499,7 +505,15 @@ export class HarmonyRemote {
    * FreeHarmony.
    */
   async readUnitIdentity(): Promise<Uint8Array> {
-    return this.readInternalMemory(IDENTITY_PAGE, IDENTITY_OFFSET, IDENTITY_BYTES);
+    const address = identityAddress(this.architecture);
+    // Arch 12 (Harmony One) and arch 14 keep going through `readInternalMemory`, which is the path
+    // carrying section 94's odd count refusal, so that rail is untouched for the memory it protects.
+    // Arch 9 (Harmony 525) reads the EEPROM window instead, where that hazard does not live: the
+    // runaway is the internal program memory fetch loop, and 64 is even in any case.
+    if ((address >>> 16) === IDENTITY_PAGE) {
+      return this.readInternalMemory(IDENTITY_PAGE, address & 0xffff, IDENTITY_BYTES);
+    }
+    return this.readFlash(address, IDENTITY_BYTES);
   }
 
   async readInternalMemory(subSelector: 0xfe | 0xff, offset: number, count: number): Promise<Uint8Array> {

@@ -439,7 +439,7 @@ finding.
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 267<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 268<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -659,6 +659,28 @@ figures common to both carry `fact:` markers, so `make facts` moves every copy t
 cannot drift apart; what a reader should not expect is two independent statements of one measurement.
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
+
+**The Harmony 525 is now ready to be written to, and it still refuses, section 268.** Before anything
+can be written safely we have to be able to answer two questions: which remote is on the cable, and
+what is currently in the part of its memory we would change. Both are answered now.
+
+Telling remotes apart was the interesting one. Every Harmony stores a serial number of sorts, and our
+code looked for it in one fixed place. The 525 does not have that place at all, and instead of giving
+us the wrong bytes it flatly refused, which is the best possible outcome: a wrong answer would have
+been compared against with confidence. It keeps its identity in a small separate memory chip on the
+processor, and the open source tool for these remotes had that written down all along.
+
+The second question needed a new kind of read. We had the remote's settings, 51195 bytes, but memory
+is changed a whole 64 kilobyte block at a time and the settings do not fill one block. So there is now
+a tool that reads a stated stretch of memory rather than a settings file. What makes the result
+trustworthy is that its first 51195 bytes are identical, byte for byte, to a reading taken off the
+same remote a month earlier by completely separate code.
+
+The rehearsal then ran on the remote and reported that writing the block back would change nothing,
+which is exactly what a first write should be. **Nothing was written.** Whether writing is refused was
+checked in a test rather than on the remote, deliberately: doing it on the hardware would mean turning
+the write switch on for a remote nothing has ever written to, and if the safety check failed we would
+find out by damaging it.
 
 **We now know how a Harmony 525 erases and writes its memory, and the news is a warning, section
 267.** The remote stores its settings on a small memory chip, and a chip like that cannot be changed a

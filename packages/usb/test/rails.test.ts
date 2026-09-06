@@ -850,3 +850,54 @@ test('the arch 9 ceiling stops below the log area, and the region is five of the
     assert.ok(firmware < start, `0x${firmware.toString(16)} is below the writable floor`);
   }
 });
+
+test('with writing enabled a Harmony 525 is still refused, and it is the architecture that refuses', () => {
+  // **The control for 6 September 2026's dry run, and it is here rather than on the remote.** The
+  // rehearsal read a 525's block and compared it, which is what `originalDumpVerified` needed. The
+  // obvious next check is whether `--commit` on one is refused, and running that on the remote
+  // would mean turning the write flags on against an architecture no write has ever been
+  // demonstrated on: if the gate held, nothing happens, and if it did not, an undemonstrated write
+  // path erases a block of an irreplaceable remote. A subprocess answers the same question for free.
+  //
+  // Arch 9 (Harmony 525) is a **permitted** unit, Danny's decision of 5 September, and it has every
+  // constant a write needs since section 267. Neither is capability, and this is where that is
+  // asserted with the flag actually on.
+  const output = withWritesEnabled(`
+    ${IDEAL_SOURCE}
+    const permission = {
+      ...IDEAL,
+      architecture: 9,
+      versionBlock: rails.encodeVersionBlock({
+        firmware: 0x30,
+        hardware: 0x25,
+        flash: [0xff, 0x12],
+        architecture: 9,
+        softwareType: 0,
+        skin: 22,
+        platform: 0x09,
+      }),
+    };
+    const rows = [];
+    const check = (name, fn) => {
+      try { fn(); rows.push(name + ': ALLOWED'); }
+      catch (error) { rows.push(name + ': refused by ' + error.constructor.name); }
+    };
+    // The three constants arch 9 does have, so none of these is what refuses.
+    rows.push('config base: 0x' + rails.CONFIG_REGION_BASE[9].toString(16));
+    rows.push('erase block: 0x' + rails.ERASE_BLOCK_SIZE[9].toString(16));
+    rows.push('ceiling: 0x' + rails.WRITABLE_CEILING[9].toString(16));
+    check('a write inside the region', () =>
+      rails.assertFlashWriteAllowed(permission, 0x820000, 0x1000));
+    check('an erase of the first block', () =>
+      rails.assertEraseAllowed(permission, 0x820000));
+    console.log(JSON.stringify(rows));
+  `);
+  assert.deepEqual(JSON.parse(output), [
+    // Every number a write needs is present, which is the point: the refusal below is not a hole.
+    'config base: 0x820000',
+    'erase block: 0x10000',
+    'ceiling: 0x870000',
+    'a write inside the region: refused by RailError',
+    'an erase of the first block: refused by RailError',
+  ]);
+});

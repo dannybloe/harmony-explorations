@@ -10,12 +10,14 @@ import assert from 'node:assert/strict';
 
 import {
   DISCRIMINATOR_BYTES,
+  IDENTITY_ADDRESS,
   IDENTITY_BYTES,
   IDENTITY_FIELDS,
   IDENTITY_OFFSET,
   IDENTITY_PAGE,
   UnitIdentityError,
   identifiesAUnit,
+  identityAddress,
   sameUnit,
   unitDiscriminator,
   unitIdentityFromText,
@@ -123,4 +125,39 @@ test('the block is read from the page and offset three remotes confirmed', () =>
   // And the count is even. An internal read of an odd count never terminates and hangs the remote,
   // section 94, so this is a rail and not a preference.
   assert.equal(IDENTITY_BYTES % 2, 0);
+});
+
+test('the identity block is in a different kind of memory on the Harmony 525', () => {
+  // Found on hardware on 6 September 2026, as a refusal: `readUnitIdentity` sent arch 12 (Harmony
+  // One)'s address to a Harmony 525 and the address validator threw, because arch 9 has no 0xFF
+  // window at all. concordance states the location per architecture in its own ArchList, and the
+  // arch 12 row there is 0xFFF400, which is a second source for the address this project predicted
+  // and confirmed on three remotes.
+  assert.equal(IDENTITY_ADDRESS[12], 0xfff400);
+  assert.equal(IDENTITY_ADDRESS[14], 0xfff400);
+  // The 525's top byte is 0x20, which is the on chip EEPROM window in arch 9's address map, not
+  // program memory. That is the whole finding: the two architectures keep the same block in
+  // different media and one READ_FLASH reaches both.
+  assert.equal(IDENTITY_ADDRESS[9], 0x200010);
+  assert.equal(IDENTITY_ADDRESS[9]! >>> 16, 0x20, 'the EEPROM window');
+  // And it fits: the EEPROM is 256 bytes, so 0x10 plus a 64 byte block ends at 0x50. That is why
+  // arch 9 can be read at the same length as the others and the stored form stays one format.
+  assert.ok((IDENTITY_ADDRESS[9]! & 0xffff) + IDENTITY_BYTES <= 0x100,
+            'the whole block is inside the 256 byte EEPROM');
+});
+
+test('an architecture with no recorded identity address refuses rather than guessing a page', () => {
+  // The failure this replaces was silent in the other direction: one hardcoded address, sent to
+  // every remote. A remote that answered it with 64 bytes of something else would have been
+  // compared confidently against the wrong bytes.
+  assert.equal(identityAddress(12), 0xfff400);
+  assert.equal(identityAddress(9), 0x200010);
+  for (const architecture of [8, 10, 16, 18]) {
+    assert.throws(() => identityAddress(architecture), UnitIdentityError,
+                  `architecture ${architecture}`);
+  }
+  // And an unknown architecture is its own refusal, with its own sentence, because the caller's fix
+  // is different: read the version block first rather than add a table row.
+  assert.throws(() => identityAddress(undefined), UnitIdentityError);
+  assert.deepEqual(Object.keys(IDENTITY_ADDRESS).sort(), ['12', '14', '9']);
 });

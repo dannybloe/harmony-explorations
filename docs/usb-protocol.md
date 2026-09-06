@@ -1337,6 +1337,15 @@ and `firmware.parse_header` reads all three without complaint:
 The `0xFF` `+0xE000` one opens with a run of `BRA` instructions, which is a jump table, so it is a
 callable library rather than a standalone program.
 
+**That is arch 12 and arch 14 only, and arch 9 keeps the same block somewhere else**, section 268.
+A Harmony 525 has no `0xFF` window at all, so this address does not merely return something wrong
+there, it is refused by the address validator. concordance states the location per architecture in
+its own `ArchList`: `0xFFF400` for arch 12, which is a second source for the address below, and
+`0x200010` for arch 9, whose top byte `0x20` is the **on chip EEPROM** window. `IDENTITY_ADDRESS` in
+`packages/usb/src/identity.ts` carries the table and refuses an architecture with no row rather than
+guessing a page. Measured on the bench 525 on 6 September 2026: the block there passes
+`identifiesAUnit`, so the EEPROM location really does carry a per unit value.
+
 **The `0xFF` page holds a 64 byte identity block at `+0xF400`**, confirmed on three remotes across
 both architectures, and everything else from `0xF000` to
 the `0xFFC0` bound is erased apart from four bytes at `+0xF580` and an eleven byte record at

@@ -34159,3 +34159,115 @@ requires more than a pair of constants; `tests/test_harmony_525_flash.py`, which
 opcodes, the chip select, the interlock and the classifier's normalisation against the image; and
 `tests/test_concordance_notes.py`, which asserts the sector table, the arch 9 addresses, the two
 places we are narrower and the support table against the checkout, skipping cleanly without one.
+
+## 268. A Harmony 525 keeps its identity in EEPROM, and the rehearsal now reads one
+
+**Date:** 6 September 2026. **Status:** measured on the bench Harmony 525 over USB, all reads, with
+concordance as a second source for the address. The write path was **not** exercised and arch 9
+remains outside `ARCHITECTURES_WITH_A_WRITE_TARGET`.
+
+The goal was the read only half of a write rehearsal: read one erase block off the remote and
+compare it with the lab, which is what turns `originalDumpVerified` from a caller's assertion into a
+measurement. Three things had to be true first and only one of them was.
+
+### The identity block is not in the same kind of memory on every architecture
+
+`readUnitIdentity` sent internal page `0xFF` offset `0xF400` for every remote. That is right for arch
+12 (Harmony One) and arch 14, where the address was predicted before it was read and confirmed on
+three remotes, and **arch 9 does not have that window at all**: its internal program flash is 32 KiB
+at top byte `0x00`, so the read threw from the address validator.
+
+```
+ProtocolError: arch 9 rejects 0xff as a top address byte; its flash is at 0x80 to 0x87
+and its other windows are 0x00, 0x20, 0x30 and 0x40
+```
+
+**The rail refusing is the whole reason this is a finding rather than a wrong answer.** A remote that
+had answered that address with 64 bytes of something would have been compared, confidently, against
+bytes that identify nothing.
+
+concordance states the location per architecture, `ArchList` in `libconcord/remote_info.h`, as a
+`serial_location` and a `serial_address`:
+
+| architecture | concordance says | what the top byte means there |
+|---|---|---|
+| 12 (Harmony One) | `SERIAL_LOCATION_FLASH`, `0xFFF400` | internal program memory, and it is the address this project already used |
+| 9 (Harmony 525) | `SERIAL_LOCATION_FLASH`, `0x200010` | `0x20` is the **on chip EEPROM** window, section 119 |
+
+So the arch 12 row is a second source for an address derived here independently, and the arch 9 row
+is new information. Both are reached by the same `READ_FLASH` command, which is why concordance calls
+both "flash" and why one address table is enough. concordance reads 48 bytes; `IDENTITY_ADDRESS`
+reads the same 64 as everywhere else, which fits because `0x10 + 64` is `0x50` inside a 256 byte
+EEPROM, and it keeps one stored format across architectures.
+
+**Confirmed on the remote**: the 525's block passes `identifiesAUnit`, so the two GUID fields are not
+uniform filler and the EEPROM location really does carry a per unit value. The value is in the lab,
+`units/h525.txt`, and never here.
+
+**Worth noting where it lives.** The identity shares its 256 byte EEPROM with the byte the bootloader
+uses to choose which firmware image to install, section 119. Nothing here goes near writing it.
+
+### The 525's configuration does not fill an erase block, and that was the real blocker
+
+A rehearsal compares a whole 64 KiB erase block. What the lab held of this unit was its
+**configuration**, 51195 bytes, so no block was covered and the compare had nothing to work with. On
+a Harmony One the question never arose: its configuration is 1.6 MB and covers 25 blocks, so a
+configuration read happened to be a region read as well.
+
+`packages/corpus/bin/read-region.ts` reads a stated range instead. One block off the 525, `0x820000`
+to `0x830000`, 65536 bytes in 2.1 seconds. Two things came out of comparing it:
+
+* **its first 51195 bytes are byte for byte identical to the configuration read off the same unit on
+  8 August 2026**, by a different code path whose only shared component is the transport. One reader
+  parses a container header and stops where it says; the other knows nothing about containers. That
+  is the strongest check either reader has had on this architecture.
+* **the 14341 bytes past the configuration are all `0xFF`**, erased. That is a **counter example to
+  section 215**, where the equivalent tail on the spare Harmony One holds 408034 bytes of a previous
+  configuration because flash is only erased where a write needs the room. So the hazard is real and
+  it is per unit and per history, not a property of regions. This read carries nothing its owner did
+  not mean to hand over, and it stays in the lab anyway, because that reasoning is about this read
+  rather than about the next one.
+
+### The rehearsal ran, and it refuses to write
+
+`rehearse-block.ts` had one hardcoded unit. It now has a table keyed by the architecture read **off
+the remote**, so there is no spelling of the command line that points the Harmony One's dump allow
+list at a 525. The dry run against the connected 525:
+
+```
+firmware 3.0, flash id FF:12, architecture 9, skin 22
+unit identity 7f2d51a9..., which matches the recorded h525
+the block matches h525_region_820000 byte for byte, so writing it back is a write that changes nothing
+the erase span will be checked against the neighbouring blocks 0x810000 and 0x830000
+plan: ... erase 0x10000 bytes at 0x820000, then 21 transfer(s) ... 1084 reports in total
+```
+
+**The lower neighbour is `0x810000`, the application firmware.** That is deliberate and it is section
+267's point made concrete: the firmware bounds an erase to the flash part and nowhere finer, so if an
+erase at `0x820000` ever reached downwards that is the block it would take, and the rehearsal reads
+both neighbours before and after precisely to catch it.
+
+**Also confirmed: the flash id is `FF:12` on this unit.** That is the JEDEC identity concordance's
+chip table maps to a 25F040 of 512 KiB with eight uniform 64 KiB sectors, so section 267's erase
+block size is now tied to the part in **this** remote rather than to a table row that might apply.
+
+**Whether `--commit` is refused was checked in a subprocess and deliberately not on the remote.**
+Running it there would mean turning the write flags on against an architecture no write has been
+demonstrated on: if the gate holds nothing happens, and if it does not, an unexercised write path
+erases a block of an irreplaceable remote. With the flag on, arch 9 has all three constants,
+`0x820000`, `0x10000` and `0x870000`, and both a write inside its region and an erase of its first
+block are refused. So the refusal is the architecture gate and not a missing number, which is the
+distinction section 267 asked to be kept.
+
+### What a 525 write would still need
+
+A demonstration, in the shape the Harmony One's first write had: its own bytes back unchanged. Every
+input for that now exists and the gate is what stands in the way, which is the correct order.
+
+### Reproduced by
+
+`packages/usb/test/identity.test.ts`, the address per architecture and the refusal for one with no
+row; `packages/usb/test/rails.test.ts`, the arch 9 refusal with writing enabled in a subprocess;
+`packages/usb/test/rehearsal.test.ts`, the target table and the one registered block;
+`packages/corpus/test/file.test.ts`, the region against the August configuration read and the erased
+tail.

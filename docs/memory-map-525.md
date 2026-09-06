@@ -170,6 +170,14 @@ the contributor's "77 of 384 KiB" is the same arithmetic from the other side.
 Where the application firmware sits in flash is **not predicted at all**. On arch 12 it is external
 and on arch 14 internal, and arch 9 has never been examined either way.
 
+**The unit identity is in the EEPROM here, where a Harmony One keeps it in program memory**,
+section 268. `0x200010`, 48 bytes by concordance's reckoning and read as 64 here, holding the same
+three fields: a serial field nobody writes and two GUIDs that do differ between units. Two things
+follow. Asking a 525 for the Harmony One's address, internal page `0xFF` offset `0xF400`, is refused
+by the address validator rather than answered, which is how this was found. And the identity shares
+its 256 byte page with the byte that decides which firmware image the bootloader installs, so the
+same window carries the least and the most consequential things on the remote.
+
 ## Internal memory
 
 Nothing was predicted, and the answer is that **there is no `0xFE` window here at all**. Internal
@@ -185,7 +193,7 @@ believed as a whole rather than window by window.
 | top byte | offset below | what it is | what is at the bottom of it |
 |---|---|---|---|
 | `0x00` | `0x8000` | internal program flash, 32 KiB | the reset vector above |
-| `0x20` | `0x0100` | on chip EEPROM, 256 bytes | byte 0 is the bootloader's image selector |
+| `0x20` | `0x0100` | on chip EEPROM, 256 bytes | byte 0 is the bootloader's image selector, and `0x10` onwards is the **unit identity**, section 268 |
 | `0x30` | `0x0008` | eight bytes, read arm fetches nothing | unread |
 | `0x40` | `0x0800` | data memory, 2048 bytes | the window answers zeros whatever is there, section 137 |
 | `0x80` to `0x87` | the block | the serial flash chip, 512 KiB | everything in the table above |

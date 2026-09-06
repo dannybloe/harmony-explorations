@@ -1604,7 +1604,11 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # **34 since 6 September 2026**: `packages/corpus/bin/read-region.ts`, added so a Harmony 525
         # rehearsal has a whole erase block to compare against. It states none of the sequence and
         # matched on naming `rehearse-block.ts`, which is the sweep being deliberately broad.
-        self.assertEqual(len(stating), 34,
+        #
+        # **35 since 6 September 2026**: `tests/lab.py`, whose comment on the excluded 525 region now
+        # explains that a rehearsal compares a whole erase block. `tests/` is withheld whole, so
+        # nothing widens and this is the sweep counting a marker rather than finding a leak.
+        self.assertEqual(len(stating), 35,
                          'the number of files stating the write path moved, so re-read the withhold '
                          'list before restamping this: %s' % stating)
 

@@ -81,6 +81,9 @@ const CONTAINERS = [
   // And the same unit read as a flash region, which parses to the same container again. Identical
   // for the third time, and that is what it is here to say.
   'one_spare_20260901_region',
+  // The Harmony 525's erase block, section 268. Here and not in the corpus population, the same
+  // split every region above takes.
+  'h525_region_820000',
   // And the first container the codec itself produced, which a remote accepted and handed back
   // unchanged. Identical again, for the same reason.
   'one_spare_written_by_us',
@@ -255,7 +258,9 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // off a remote of the file based family.
   // 59 since the one device differential, section 263.
   // 61 since that Harmony 300 was programmed, section 265.
-  assert.equal(present.length, 61, 'every vector, which is what `make golden` compares');
+  // 62 since the Harmony 525's erase block, section 268, the first region read of a remote other
+  // than the spare Harmony One.
+  assert.equal(present.length, 62, 'every vector, which is what `make golden` compares');
   // 38 since the Harmony 895 landed: its key table reads with the existing reader even though
   // every other arch 10 reader is gated, which is what made section 177's keypad closure possible
   // without any arch 10 progress at all.
@@ -304,7 +309,11 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 31 since the factory Harmony 350, section 262: it left the unreadable column above rather than
   // arriving, since arch 16's base slot 16 is mapped now, and the answer it gives is a count of zero.
   // 32 since the Harmony 300, section 264: its previous owner set no favourite channels.
-  assert.equal(senders.filter((one) => Array.isArray(one) && one.length === 0).length, 32);
+  // 33 since the Harmony 525's erase block, section 268, and this one says nothing new about any
+  // remote: the block's first 51195 bytes are `h525_config_2` exactly, so it necessarily declares
+  // whatever that container declares. It is in the golden population because the two codecs should
+  // be compared wherever they can be, not because it is a second sample.
+  assert.equal(senders.filter((one) => Array.isArray(one) && one.length === 0).length, 33);
   // **Four since the second compiled sample**, and the reason is the account rather than the request:
   // every configuration compiled from the account that carries favourite channels carries the sender
   // record too, whichever appliances are on it that day. Three of them were made deliberately for base
@@ -349,7 +358,11 @@ test('the list above covers exactly what the Python side writes a vector for', (
   const block = /^CONTAINERS = \($(.*?)^\)$/ms.exec(source);
   assert.ok(block, 'tools/golden.py has no CONTAINERS tuple in the expected shape');
   const python = [...block[1]!.matchAll(/'([a-z0-9_]+)'/g)].map((m) => m[1] as string);
-  assert.equal(python.length, 61, 'the golden vectors, which is what `make golden` prints');
+  // 62 since the Harmony 525's erase block, section 268. A region read belongs in the golden
+  // population and not in the corpus one, which is the split every region here takes: the vectors
+  // exist to make the two codecs disagree if they can, and the corpus totals count each
+  // configuration once.
+  assert.equal(python.length, 62, 'the golden vectors, which is what `make golden` prints');
   assert.deepEqual([...CONTAINERS].sort(), python.sort());
 });
 

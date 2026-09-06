@@ -106,6 +106,12 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // The bench 525's own config, read over USB on 8 August 2026. The corpus's second arch 9 sample
   // and the first not published by a stranger, which is where the two sample standard starts.
   h525_config_2: '20260808T1645Z-harmony-525-config.bin',
+  // One 64 KiB **erase block** of the bench 525, flash 0x820000 to 0x830000, read on 6 September
+  // 2026. A region and not a config: the configuration is 51195 bytes, which does not fill a
+  // block, so the rehearsal had nothing to compare a whole block against. Its first 51195 bytes
+  // are identical to `h525_config_2` read a month earlier by a different code path, and the rest
+  // is 0xFF.
+  h525_region_820000: '20260906T0917Z-h525-region-820000-region.bin',
   // The arch 9 safe mode container, cut out of the 525's own firmware region at flash 0x818000 on
   // 8 August 2026. Section 76 kept it out of the corpus because it contradicted six corpus claims;
   // section 77 read one of them and section 78 read four more, so what is left is base slot 1's
@@ -392,7 +398,13 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
     'one_spare_20260901_delay', 'one_spare_20260901_denon', 'one_spare_20260901_region',
     'one_spare_written_by_us', 'one_spare_written_region', 'one_spare_plus_lg_region',
     'one_spare_mixed_region', 'one_spare_plus_lg2_region', 'one_spare_denon65_region',
-    'one_spare_reverted_region'];
+    'one_spare_reverted_region',
+    // The Harmony 525's erase block, added 6 September 2026, and it is the first entry here that is
+    // not a Harmony One's. It parses because its first 51195 bytes are `h525_config_2` exactly, so
+    // counting it would add a configuration that does not exist. Same reason as
+    // `vendor_region_user_config` above and the same shape: a region whose container is already
+    // counted under the read it came from.
+    'h525_region_820000'];
 
 const cache = new Map<string, string[]>();
 

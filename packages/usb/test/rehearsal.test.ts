@@ -212,13 +212,16 @@ test('being a rehearsal target is not being a write target', () => {
             'the dry run must return before anything asks for write permission');
 });
 
-test('the Harmony 525 has no registered dump yet, so a rehearsal of one refuses', () => {
-  // **This is expected to fail when the region read is taken**, and that is the point: the entry is
-  // added by hand, with the filename the read produced, and this test is what makes that a decision
-  // rather than a drift. The reason it is empty is that the lab holds the 525's configuration,
-  // 51195 bytes, which is smaller than one 64 KiB erase block, so no block is covered.
+test('the Harmony 525 has exactly one registered block, so only that address can be rehearsed', () => {
+  // **This test asserted the set was empty and it failed on 6 September 2026**, which is what it was
+  // for: the entry is added by hand with the filename the region read produced, so adding one is a
+  // decision somebody takes rather than a drift. It now pins the other end, that there is one block
+  // and therefore one address, because a dump covering one block makes every other block a refusal
+  // and that is easy to mistake for a broken script.
   const text = rehearsalScript();
-  assert.match(text, /const H525_DUMPS = new Set<string>\(\[\]\);/);
+  assert.match(text, /const H525_DUMPS = new Set<string>\(\[\n[\s\S]*?'h525_region_820000',\n\]\);/);
+  assert.equal((text.match(/'h525_region_[0-9a-f]+'/g) ?? []).length, 1,
+               'one registered block, so one rehearsable address');
   assert.match(text, /none are registered for it yet/,
-               'the refusal has to say what is missing, not just that something is');
+               'the refusal still has to say what is missing when a set is empty');
 });

@@ -123,6 +123,13 @@ IMAGES = {
     'h525_config': 'config.EZHex',
     # The bench 525's own config, read over USB on 8 August 2026. findings.md section 76.
     'h525_config_2': '20260808T1645Z-harmony-525-config.bin',
+    # One 64 KiB **erase block** of the bench 525, flash 0x820000 to 0x830000, read over USB on
+    # 6 September 2026. Deliberately a region rather than a config: the configuration is 51195
+    # bytes and does not fill a block, so `rehearse-block.ts` had nothing to compare a whole block
+    # against. Its first 51195 bytes are byte for byte identical to h525_config_2 above, read a
+    # month earlier by a different code path, and the 14341 bytes past the configuration are all
+    # 0xFF. Not in CONTAINERS: it is not a container, it is a block that happens to start with one.
+    'h525_region_820000': '20260906T0917Z-h525-region-820000-region.bin',
     # The arch 9 safe mode container, cut out of the 525's firmware region at flash 0x818000.
     # Deliberately not in CONTAINERS: it is the sample the corpus wide claims are re-derived
     # against, and two of them are still open, base slot 1's extent and the log area's range.
@@ -407,7 +414,13 @@ PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_confi
                       'one_spare_written_by_us', 'one_spare_written_region',
                       'one_spare_plus_lg_region', 'one_spare_mixed_region',
                       'one_spare_plus_lg2_region', 'one_spare_denon65_region',
-                      'one_spare_reverted_region')
+                      'one_spare_reverted_region',
+                      # The erase block of the Harmony 525, added 6 September 2026. It parses,
+                      # because it starts with the container `h525_config_2` already counts, byte
+                      # for byte for all 51195 of it. Counting it again would inflate every corpus
+                      # wide total by one configuration that does not exist, which is precisely
+                      # what this list is for. Section 268.
+                      'h525_region_820000')
 
 CONTAINERS = (
     'h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'h525_config_2', 'one_config',

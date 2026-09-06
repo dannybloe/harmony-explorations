@@ -79,6 +79,11 @@ CONTAINERS = (
     # And the same unit as a flash region, which parses to the same container as one_spare_20260830.
     # Here for the same reason as the two rows above: a vector identical to theirs is the claim.
     'one_spare_20260901_region',
+    # The Harmony 525's erase block, section 268, flash 0x820000 to 0x830000. It is here and **not**
+    # in `lab.CONTAINERS`, the same split every region above takes: this list is every sample that
+    # parses, so the two codecs are compared on it, while the corpus population counts each
+    # configuration once and its first 51195 bytes are `h525_config_2` exactly.
+    'h525_region_820000',
     # And the first container the codec produced and a remote accepted. Its vector differs from
     # the others' in nothing a vector carries, an action list operand not being one of them.
     'one_spare_written_by_us',
