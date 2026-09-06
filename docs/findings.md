@@ -1644,7 +1644,7 @@ generated within about half an hour of each other differ in 73 to 84 percent of 
 **Logitech's
 generator does not emit minimal diffs.** A pair like this one narrows the search enormously
 compared to two unrelated configs, but it does not hand over a small edit. The consequence for the
-application is the one already in `docs/roadmap.md`: an editor here must make minimal diffs against
+application is the one already in `docs/plans/002-the-roadmap.md`: an editor here must make minimal diffs against
 an existing config, because reproducing what Logitech's generator would have emitted is not
 achievable.
 
@@ -1750,7 +1750,7 @@ itself.
 ## 17. Key codes carry an event type, and slot 10 holds the action lists
 
 Both of these started as claims in harmony-decompiler discussions 5 and 6, which by decision 7 of
-`docs/roadmap.md` are hypotheses rather than facts to adopt. Both were tested against our own
+`docs/plans/002-the-roadmap.md` are hypotheses rather than facts to adopt. Both were tested against our own
 corpus with our own parser, and both survive. Neither is quoted here as evidence: the numbers
 below are ours, and where upstream reports a figure it is noted as an independent second opinion
 rather than as the source.
@@ -1834,7 +1834,7 @@ given one has a touchscreen and the other does not.
 The lesson is the one this project's own doctrine already states and I still walked past: the
 answer was in this document, 500 lines above, in a disassembly listing that had been sitting there
 since the first Ghidra pass. Reaching for an upstream analogy before re-reading our own code is
-exactly the failure decision 7 of `docs/roadmap.md` exists to prevent. The scan codes are
+exactly the failure decision 7 of `docs/decisions.md` exists to prevent. The scan codes are
 unaffected either way, since those are the scanner's linear index in both readings.
 
 ### Base slot 10 is the action list address table
@@ -2073,7 +2073,7 @@ The dispatch is itself gated on the state, so the table above is the **idle** ta
 WRITE_FLASH_DATA. WRITE_FLASH sets state 2 as its first instruction.
 
 So the firmware accepts flash data only after it has agreed to a write. That is worth stating
-plainly because the write rails in `docs/roadmap.md` are host side, and it is useful to know
+plainly because the write rails in `CLAUDE.md` are host side, and it is useful to know
 which of them the device also enforces. This one it does. It does not follow that any other
 rail is enforced, and nothing here has been tested against hardware.
 
@@ -2232,7 +2232,7 @@ three of them close open questions.
 `0x07` **writes** an arbitrary data address, exactly mirroring the read:
 `MOVFF 0xd5e,FSR0L`, `MOVFF 0xd5f,FSR0H`, `MOVFF 0xd61,INDF0`. Volatile, so it cannot brick a
 remote, but it is a write to a live device and it is now in the safety rails in
-`docs/roadmap.md` and `CLAUDE.md` rather than in the toolkit.
+`docs/plans/002-the-roadmap.md` and `CLAUDE.md` rather than in the toolkit.
 
 `0x09` sets the packet-handled flag and branches out, doing nothing. `0x03` is not in the chain
 at all. libconcord names those `MISC_QUEUE_EVENT` and `MISC_QUEUE_ACTION`, so on that naming
@@ -2271,7 +2271,7 @@ ordinary flash address. `0xFE` and `0xFF` select something else, with the low bi
 sub-selector and the remaining 16 bits bounded to `0xFFC0`, exactly 64 short of the end of a
 64 KiB window. Anything else is refused.
 
-**What that does not settle**, and the distinction matters because `docs/roadmap.md` asks the
+**What that does not settle**, and the distinction matters because `docs/plans/002-the-roadmap.md` asks the
 question in terms of four named regions: one sub-selector bit gives two regions, not four, and
 the routine those reads go to has not been read. So the shape of the region mechanism is
 established and the mapping onto `MCU_FLASH`, `MCU_EEPROM`, `MCU_ID` and `EXT_FLASH` is not.
@@ -2367,7 +2367,7 @@ likely explanation. Fields 8 and 9 are unexplained.
 **Two negative results, which are worth as much as the positives here.** A read of internal program
 memory reaches the first 64 KiB only, because the top address byte is spent on the region selector and
 the firmware bounds the rest to `0xFFC0`, while a PIC18 keeps its device id at `0x3FFFFE`. So the
-route to `MCU_ID` that `docs/roadmap.md` wanted does not exist, and the arch 12 part number stays
+route to `MCU_ID` that `docs/plans/002-the-roadmap.md` wanted does not exist, and the arch 12 part number stays
 inferred until another route is found. And a 63 byte read of that same region **restarted a remote**:
 it left the USB bus, re-enumerated by itself, and came back healthy with its config still
 byte-identical to its dump. The owner watched it restart, so it is the device resetting rather than a
@@ -3081,7 +3081,7 @@ mostly four and five bytes with a long tail out to twenty two, so slot 8 holds v
 records rather than a table. Which is a useful thing to know before anyone tries to read it as one.
 
 Slot 8 was already the section worth looking at. Section 16 records it as the only section whose
-size changed under the one documented edit in the 700 pair, and `docs/roadmap.md` names it as the
+size changed under the one documented edit in the 700 pair, and `docs/decisions.md` names it as the
 second target of step 6. It is now also the section that owns 381 action lists.
 
 ### Two structural facts about operands, whatever the opcodes mean
@@ -3176,7 +3176,7 @@ population as well.
 ### Not claimed
 
 Which physical buttons those scan codes are. The mapping from scan code to a button somebody can
-point at is the experiment in `docs/roadmap.md` step 6, and it needs a remote and a finger.
+point at is the experiment in `docs/plans/002-the-roadmap.md` step 6, and it needs a remote and a finger.
 
 What a record corresponds to. 354 of them on the 700 against 6 devices and a handful of activities
 means a record is something finer, and "a screen of soft buttons" is a guess that fits the counts
@@ -3578,7 +3578,7 @@ Counting only records that frame: 347 of 350 on the 700, 271 of 328 on the One, 
 
 ### What this unblocks
 
-An infrared database extractor, which `docs/roadmap.md` names as the first visible payoff of step 6.
+An infrared database extractor, which `docs/decisions.md` names as the first visible payoff of step 6.
 Every config anybody owns carries the codes for their equipment, in microseconds, and those are
 exactly the codes people cannot recreate without Logitech, and cannot recreate at all once the
 service goes. Section 56 corrects an earlier claim that it already had. `gspm.ir_groups`, `ir_pulses`
@@ -6332,7 +6332,7 @@ corpus is never.
 
 This project opened four of its documents with a sentence that is not true. `README.md` said
 "Logitech's servers are gone, so a config already on a remote can be read off it, but nobody can
-generate a new one". `CLAUDE.md`, `docs/roadmap.md` and the `probe-remote` skill each carried a
+generate a new one". `CLAUDE.md`, `docs/plans/002-the-roadmap.md` and the `probe-remote` skill each carried a
 version of the same clause, and section 32 used it to explain why an infrared extractor is worth
 building. Nobody here had ever checked it. It was inherited from the general knowledge that Harmony
 was discontinued, repeated until it read like a measured fact, and then reasoned from.
@@ -6409,7 +6409,7 @@ however many documents repeat it. This section exists as much to record that as 
 
 ### Where it lands
 
-* `README.md`, `CLAUDE.md`, `docs/roadmap.md` and `.claude/skills/probe-remote/SKILL.md`, each
+* `README.md`, `CLAUDE.md`, `docs/plans/002-the-roadmap.md` and `.claude/skills/probe-remote/SKILL.md`, each
   corrected in place with the old wording quoted rather than deleted.
 * Section 32 of this document, whose "once the servers are gone" is narrowed to what it can support.
 * **No regression test, deliberately.** The three-part rule wants one and it is the wrong tool here:
@@ -7785,7 +7785,7 @@ meaning does not, and a byte comparison cannot tell those apart. Section 69.
 
 **Both target architectures are at 100.0%**, with 24 bytes unattributed in a 1.63 MB Harmony One
 config and 41 in a Harmony 600. Zero overlaps in all seventeen containers. That is the first of the
-three parts of milestone M2 in `docs/roadmap.md` complete for arch 12 and arch 14: an emitter can
+three parts of milestone M2 in `docs/plans/002-the-roadmap.md` complete for arch 12 and arch 14: an emitter can
 now rebuild essentially all of a config rather than copying a residue.
 
 Arch 8 and arch 9 are not there, and both remainders are infrared: 9864 bytes of duration blocks on
@@ -8754,7 +8754,7 @@ than config structure, which is what the rest of the remainder is too.
 
 > **This table is where the section stood, and two things about it are worth a reader's caution.**
 > Section 103 moved arch 12 by reading the band above, so the live figures are the marked ones in
-> `CLAUDE.md` and `docs/roadmap.md` and `make reading` prints them. And the population these
+> `CLAUDE.md` and `docs/plans/002-the-roadmap.md` and `make reading` prints them. And the population these
 > percentages were taken over was never written down: on 10 August 2026 no sample list reproduced
 > 97537, so the shares here are sound relative to each other and the denominator is not recoverable.
 > That is the reason `packages/codec/bin/reading.ts` exists.
@@ -10878,7 +10878,7 @@ offer one.
 ## 90. `READ_MISC` selector `0x07` answers on arch 9 and returns zero for every address
 
 Live RAM of a running remote is readable over USB. That is section 48's instrument, it is the
-capability `docs/roadmap.md` accepted in place of the deferred emulator, and it was derived on arch
+capability `docs/plans/002-the-roadmap.md` accepted in place of the deferred emulator, and it was derived on arch
 14 and confirmed on arch 12. **It is not true on arch 9**, and this section is the measurement,
 taken on the bench Harmony 525 on 9 August 2026.
 
@@ -10942,7 +10942,7 @@ not located yet, so this section is a measurement and not yet a reading.
 * **`docs/usb-protocol.md`'s RAM read is an arch 12 and arch 14 fact**, and its own text left room
   for this: "Whether the upstream number is right for another architecture is not established." It
   is established now, in the negative, for the number and for the capability together.
-* The emulator argument is per architecture. Decision 5 in `docs/roadmap.md` deferred the emulator
+* The emulator argument is per architecture. Decision 5 in `docs/decisions.md` deferred the emulator
   partly on live RAM polling, and on arch 9 that leg is missing.
 
 ### The instrument this needed and did not have
@@ -17576,7 +17576,7 @@ about before its numbers are copied.
 
 Section 56 measured `svcs.myharmony.com` alive and section 58 watched it compile a config for a
 device chosen that day. Neither established what is reachable, on what terms, or in what form, and
-`docs/roadmap.md` decision 11 rests on all three. This is that measurement, made on 12 and 13 August
+`docs/decisions.md` decision 11 rests on all three. This is that measurement, made on 12 and 13 August
 2026 from the bench machine.
 
 **The brands named below are ours.** Three devices were picked out of Logitech's public catalogue to
@@ -19768,7 +19768,7 @@ where the honest one was available.
 **Five documents quoted "the ten container checks" and there are fifteen.** A count of checks is a
 number about the code rather than about the format, so it moves whenever somebody adds one and no
 test about a config can see it. Entry 21 took it from ten to fourteen and entry 22 to fifteen, in
-`docs/roadmap.md` three times, `docs/memory-map-525.md` and `docs/memory-map-600.md`, with nothing to
+`docs/plans/002-the-roadmap.md` three times, `docs/memory-map-525.md` and `docs/memory-map-600.md`, with nothing to
 notice. It carries a `fact:` marker now, which is what `CLAUDE.md` requires of a number in prose and
 what nobody had applied to this one.
 
@@ -19786,7 +19786,7 @@ properly attached uses of one fact in a document collapsed to a single entry and
 reported as detached while the real offender elsewhere in the same file went unnamed. It fires only
 when a document uses one fact twice **and** carries a genuinely detached marker, which is why it had
 never been seen: the second condition is rare and the message is believed. Adding
-`container_checks` supplied the detached marker, `docs/roadmap.md` already used `text_glyphs` twice,
+`container_checks` supplied the detached marker, `docs/plans/002-the-roadmap.md` already used `text_glyphs` twice,
 and the tool reported `text_glyphs`. A `collections.Counter` now.
 
 **The checker's rule turned out to be stricter than it reads, and that is right.** It wants a
@@ -25676,7 +25676,7 @@ about architecture: they both have 20 slots.
 
 The container's validated span was written as "four architectures, five base addresses, three format
 versions and three pointer table lengths"<!--superseded--> in `CLAUDE.md`, `docs/status.md`,
-`docs/roadmap.md` and `docs/config-format.md`. The last two entries are **one property counted twice**.
+`docs/plans/002-the-roadmap.md` and `docs/config-format.md`. The last two entries are **one property counted twice**.
 A span is a claim about independent dimensions, so a redundant entry inflates it, and the container is
 therefore validated across one dimension fewer than this project has been saying since section 143
 tightened those very numbers. Corrected in all four.
@@ -26791,7 +26791,7 @@ and a remote and has no idea what is inside them, which is exactly what an execu
 the inside and is not something a builder could be missing.
 
 **What it settles.** The configuration compiler is not a recovery target. It cannot be extracted,
-ported or coaxed out of the surviving software, because it was never in it. `docs/roadmap.md` already
+ported or coaxed out of the surviving software, because it was never in it. `docs/plans/002-the-roadmap.md` already
 proceeded on that assumption and now has evidence for it; the excavation's `compiler` tag closes as a
 recovery question and stays open only as a thing to build.
 
@@ -28096,7 +28096,7 @@ was inferred from bytes rather than read off a schema. This section recovers the
 `docs/myharmony/model.json` is the model and `docs/myharmony/model.md` is the reading of it.
 Danny decided on 30 August 2026 that this knowledge moves into this repository whole, rather than
 staying in the lab as a note, so that the readers and FreeHarmony can both use it; decision 14 in
-`docs/roadmap.md` records the decision and its licence reasoning.
+`docs/decisions.md` records the decision and its licence reasoning.
 
 ### Where it comes from
 
@@ -29011,7 +29011,7 @@ that for every entry the generator produces.
 
 `../logitech-harmony-ir-archive`, a third party's checkout of Logitech's infrared database, pinned at
 commit `d84df0b`: 684 protocol definitions in Logitech's own `IrProtocol` shape, each stating its carrier
-and its durations in microseconds. Decision 15 in `docs/roadmap.md` governs what may cross into this
+and its durations in microseconds. Decision 15 in `docs/decisions.md` governs what may cross into this
 repository from it, which is durations and names through our own converter and never a file of its own.
 `packages/codec/src/archive.ts` is that converter and `packages/codec/test/archive.test.ts` its tests,
 which skip without a checkout exactly as the corpus tests skip without a lab.
@@ -30114,7 +30114,7 @@ stands, and only a definition learned from hardware may go into a community data
 
 ## 234. A device's delays are not in base slot 15, and the screen is what says whose they are
 
-`docs/roadmap.md` carried "which base slot 15 group holds a device's delays" as the last reading<!--superseded-->
+`docs/plans/002-the-roadmap.md` carried "which base slot 15 group holds a device's delays" as the last reading<!--superseded-->
 before the first write that changes something, and the premise is wrong: no group holds them. They
 are ordinary state variables in base slot 13, they are stated in tenths of a second, and the device
 each one belongs to is joined to that device's infrared group through a page of the remote's own

@@ -167,7 +167,7 @@ Say when that happened.
 * Choose a phrase that is dead in **every** context, not just the one that prompted it. A figure
   that stays correct under a narrower scope does not belong in that table; mark the live value
   with a `fact:` marker instead.
-* Grep the summaries yourself as well: `README.md`, `CLAUDE.md`, `docs/roadmap.md`,
+* Grep the summaries yourself as well: `README.md`, `CLAUDE.md`, `docs/plans/002-the-roadmap.md`,
   `docs/config-format.md` and the memory maps. The table only catches the exact wording you
   thought to record.
 * If the finding moves a corpus total, the value carries a `<!--fact:name-->` marker wherever it
@@ -178,7 +178,7 @@ Say when that happened.
 rewrote; read that list against the diff, because the two things a marker cannot see are the
 sentence beside the number and the heading above it.
 
-* **A marker is a claim about now, never about the past.** `docs/roadmap.md` carries a coverage
+* **A marker is a claim about now, never about the past.** `docs/plans/002-the-roadmap.md` carries a coverage
   table with one column per finding that moved the number. History columns carry a plain number
   and **no marker**. A new finding **adds a column**; it does not overwrite the live one, because
   the live column's heading names the finding that produced it and `facts-write` cannot update a
@@ -209,6 +209,6 @@ The publication gate runs automatically before any commit, or by hand:
 python3 bin/check-publishable.py
 ```
 
-If the finding changes what the project should do next, `docs/roadmap.md` is the plan of record
+If the finding changes what the project should do next, `todo.md` is the plan of record
 and needs the edit too. If it changes a load-bearing fact, so does `CLAUDE.md`, which is what a
 future session reads first.

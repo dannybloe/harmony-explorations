@@ -340,7 +340,7 @@ watch-columns:
 # The bench instrument. Not part of `all`: it is a long running server, not a check.
 #
 # It binds to 127.0.0.1 only. That is a concession this project makes for a bench tool and refuses
-# for the product; FreeHarmony gets a content security policy instead. See docs/roadmap.md step 5.
+# for the product; FreeHarmony gets a content security policy instead. See docs/decisions.md.
 bench:
 	@node packages/bench/bin/bench.ts --port $(BENCH_PORT)
 

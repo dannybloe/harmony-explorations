@@ -1,6 +1,21 @@
-# Plan: from here to generating configs
+# Plan 001: from here to generating configs
 
-**Superseded by [roadmap.md](roadmap.md), which is the plan of record.** This document is the
+**Status: superseded.** Written in August 2026 and extracted from the write up posted to
+harmony-decompiler discussion #7. It was the project's first plan, was replaced by a roadmap, and that
+roadmap was itself retired on 6 September 2026 in favour of `todo.md` plus this folder.
+
+**Kept for its arguments, which still hold**, and they are the reason to open it at all: the firmware
+is the specification, read the architecture whose code can be followed before the one everybody owns,
+and extract before generating. Where it disagrees with anything current, it loses.
+
+Its one substantive difference from everything after it is where the application sits. This document
+treats the user facing application as the last phase; every plan since treats it as the goal each
+phase reports to.
+
+---
+
+
+**Superseded by [../../todo.md](../../todo.md), which is the plan of record.** This document is the
 earlier proposal, extracted from the write-up posted to harmony-decompiler discussion #7, and it
 is kept because its arguments are still the reasoning behind the sequence: the firmware is the
 spec, arch 14 first, extract before you generate. Where the two differ, the roadmap wins. The

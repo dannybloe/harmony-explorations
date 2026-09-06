@@ -15,7 +15,7 @@ Three things the hardware corrected are marked in place rather than quietly fixe
 did was not expected: a read of internal program memory whose final chunk is one byte **restarted a
 remote**. Section 4 says what is known about that and `packages/usb` refuses that exact case.
 
-This document is the deliverable of step 3 of `docs/roadmap.md`, and it was written as each part was
+This document is the deliverable of step 3 of `docs/plans/002-the-roadmap.md`, and it was written as each part was
 established rather than at the end.
 
 Scope: the Harmony One 3.4 image (architecture 12) and the Harmony 700 2.8 image
@@ -171,7 +171,7 @@ what is BCD is the USB field, following the specification's own convention for `
 
 This is more useful than it sounds. **The 600 and the 700 share product id `0xC122`**, so the
 product id does not identify an arch 14 model, and the skin does, before a single config byte
-is read. It is directly load bearing for the write rails in `docs/roadmap.md`, where a write
+is read. It is directly load bearing for the write rails in `CLAUDE.md`, where a write
 must refuse to proceed unless the config's `INTENDEDVERSION` matches the connected remote's
 skin.
 
@@ -626,7 +626,7 @@ project has asked no remote for either value yet.
 
 The 16-bit parameter becomes `FSR0` and the byte at that data address is what comes back. So
 **live RAM of a running remote is readable over USB**, which is the capability
-`docs/roadmap.md` wants in place of the deferred emulator.
+`docs/plans/002-the-roadmap.md` wants in place of the deferred emulator.
 
 **What it is actually good for is narrower than this section first claimed**, and it took two
 measurements to bound. A remote on USB is in USB mode, so its interface cannot be driven by hand and
@@ -684,7 +684,7 @@ chain is at `0x0C3AA`.
 So an arbitrary byte can be written into the data memory of a running remote over USB. It is not
 a flash write and nothing survives a power cycle, but it is a write to a live device and this
 project is read only, so it belongs in the rails rather than in the toolkit. See
-`docs/roadmap.md`.
+`docs/plans/002-the-roadmap.md`.
 
 **Selector `0x09` is accepted and does nothing:**
 
@@ -830,7 +830,7 @@ the same address setup: `0x1B50A` sets `EECON1` to `FREE | WREN` and erases, `0x
 
 That is worth having for a reason beyond completeness. On a PIC18 J-series part the device id
 words and the configuration words live at the top of program memory and are reachable only by
-table read, which makes this the route to the **`MCU_ID`** that `docs/roadmap.md` wants in order to
+table read, which makes this the route to the **`MCU_ID`** that `docs/plans/002-the-roadmap.md` wants in order to
 measure the arch 12 part number rather than infer it.
 
 Two things were not established from the images: which of `0xFE` and `0xFF` is which, since the

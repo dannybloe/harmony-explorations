@@ -217,7 +217,7 @@ Two dynamic routes exist, both read-only:
   **This entry said "a remote on USB has not loaded its config" flat, for one day**<!--superseded-->, on the strength
   of one architecture. That is the mistake the pitfall about arch 14 at the end of this file warns
   about, made in the dynamic route rather than the static one.
-* **The emulator**, deferred by decision 5 in `docs/roadmap.md`. If a question genuinely needs
+* **The emulator**, deferred by decision 5 in `docs/decisions.md`. If a question genuinely needs
   an ordered trace of every config byte read, that is the argument for building it, and it
   should be made explicitly rather than by drifting into it.
 

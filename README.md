@@ -62,7 +62,7 @@ refuses to write at all unless somebody deliberately turns that on.
 | [docs/status.md](docs/status.md) | where the work stands today |
 | [docs/findings.md](docs/findings.md) | every finding, numbered, with the evidence for it |
 | [docs/config-format.md](docs/config-format.md) | the file format written up as a specification |
-| [docs/roadmap.md](docs/roadmap.md) | the plan, and the decisions behind it |
+| [todo.md](todo.md) | the plan, and the decisions behind it |
 
 The analysis was produced by an AI and is published as such, so all of it is written to be checked
 rather than trusted: every conclusion carries a test that fails if it stops being true, and the mistakes

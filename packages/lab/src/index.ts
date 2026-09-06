@@ -639,7 +639,7 @@ export function unitIdentityPath(label: string): string {
  * rules about what may be copied out of each are opposite, so nothing here should read as though one
  * locator served both.
  *
- * Decision 15 in `docs/roadmap.md` is what may cross into this repository from it: durations and
+ * Decision 15 in `docs/decisions.md` is what may cross into this repository from it: durations and
  * names, through our own converter, and never a file of the archive's own.
  */
 function defaultIrArchive(): string | undefined {

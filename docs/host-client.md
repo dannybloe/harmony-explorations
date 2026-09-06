@@ -50,7 +50,7 @@ wider than "we may not look".
 
 Changing this repository's licence would not help here and is not the lever it looks like.
 Copying from unlicensed proprietary code is an infringement whatever licence the result carries;
-MIT is not the obstacle. See `docs/roadmap.md` decision 1 for what the licence question is
+MIT is not the obstacle. See `docs/decisions.md` decision 1 for what the licence question is
 actually about, which is libconcord and harmony-decompiler.
 
 ## The rule
@@ -186,7 +186,7 @@ time, which is the same argument the write rails rest on.
 Added 12 August 2026. Everything above mines this client for the **USB** layer: what a packet looks
 like, what an operation sends to a remote. This section is the other half, the **service** the client
 talks to, and it was never looked at until a product decision needed it. Decision 11 in
-`docs/roadmap.md` says FreeHarmony works offline and may optionally take Logitech's device data while
+`docs/decisions.md` says FreeHarmony works offline and may optionally take Logitech's device data while
 that service is alive. The question that decision left open was whether the device database is its own
 call or only a side effect of compiling a config. **It is its own call.**
 

@@ -2,14 +2,14 @@
 
 Reverse engineering the Logitech Harmony config format so configs can be generated again.
 Read `README.md` first for orientation, then `docs/status.md` for where the work stands,
-`docs/roadmap.md` for the sequence and `docs/findings.md` for the technical detail. `docs/glossary.md` defines the vocabulary all three
+`docs/plans/002-the-roadmap.md` for the sequence and `docs/findings.md` for the technical detail. `docs/glossary.md` defines the vocabulary all three
 use, and says per term whether it is Logitech's word, this project's invention or a standard one,
 which is a distinction the other documents assume rather than state.
 
 **The end goal is an application**: local, cross-platform, self-contained, which reads a config
 off a remote, edits devices and activities, learns new IR codes and writes the result back. The
-reverse engineering is the cost of that application. `docs/roadmap.md` is the plan of record and
-sequences the format work by what the application needs next; `docs/plan.md` is the earlier
+reverse engineering is the cost of that application. `todo.md` is the plan of record and
+sequences the format work by what the application needs next; `docs/plans/001-generating-configs.md` is the earlier
 proposal, kept for its arguments.
 
 **That application is a separate repository.** It is called
@@ -116,7 +116,7 @@ designing around its absence.
    per fact and may still be acted on. **What may be copied does not change**: their code stays in
    the private lab, and no identifier, comment or structure of theirs travels into this repository.
    The argument, the measured cost of the old ordering and the legal basis are decision 9 in
-   `docs/roadmap.md`; the ledger of what is believed on the client's word alone is
+   `docs/plans/002-the-roadmap.md`; the ledger of what is believed on the client's word alone is
    `docs/host-client.md`.
 3. **TypeScript owns the config codec, Python stays reverse engineering only.** One codec, in
    the application's language, for the same reason there is one opcode table.
@@ -153,7 +153,7 @@ designing around its absence.
 9. **`docs/findings.md` stays one file.** Splitting it is the obvious idea at 27000 lines and it was
    measured and rejected on 8 August 2026, so do not re-derive it. It costs no tokens, since it is
    never loaded whole, only grepped and read in ranges. The measurement, the two candidate cutting
-   lines and the one condition that would reopen it are decision 13 in `docs/roadmap.md`.
+   lines and the one condition that would reopen it are decision 13 in `docs/decisions.md`.
 
 ## The two repositories
 
@@ -176,12 +176,12 @@ lands as a structured fact, a written argument and a regression test only works 
 implementing it sits next to the documents. Move the codec out and a finding can land in `docs/`
 and never reach the code.
 
-**FreeHarmony has its own plan of record now**, its `docs/roadmap.md`, written on 14 August 2026 after
+**FreeHarmony has its own plan of record now**, its `docs/plans/002-the-roadmap.md`, written on 14 August 2026 after
 its first code existed, and it carries the product as **eight numbered steps written for a reader rather
 than for a builder**: no section numbers, no architecture numbers, no code, and every step something a
 person can watch appear. That register was asked for on 14 August 2026 after a first version read as a
 dependency graph, so **the technical half of the product plan stays here**, as a step to milestone table
-in `docs/roadmap.md`. Its M numbers name the step they feed. The product questions it used to imply
+in `docs/plans/002-the-roadmap.md`. Its M numbers name the step they feed. The product questions it used to imply
 belong there: which version writes, what an interface offers, and which shell, that last one never having
 been decided.
 
@@ -268,7 +268,7 @@ needs all of theirs. Nothing about this repository moves: `packages/*` stay MIT,
 untroubled in the one direction it has to be.
 
 **Logitech's device database is archived by a third party and it is a source now**, decision 15 in
-`docs/roadmap.md`, checked out as `../logitech-harmony-ir-archive`: 276236 devices and **Logitech's own
+`docs/plans/002-the-roadmap.md`, checked out as `../logitech-harmony-ir-archive`: 276236 devices and **Logitech's own
 protocol definitions for 685 families, verbatim**, where this project has measured 37. It was tested
 before it was believed, and 33 of 33 comparable families agree with our own measurements off their
 compiler; the three that disagree are ours, being the three fitted to the corpus rather than measured.
@@ -292,7 +292,7 @@ often has a runner up at 105 and the honest answer is a model range. `make catal
 `packages/codec/src/catalogue.ts` the reader, and every reader in it is lazy except the code index,
 because the catalogue is 2.2 GB.
 
-**A community device database is a direction now, decision 11 in `docs/roadmap.md`, and almost all of
+**A community device database is a direction now, decision 11 in `docs/decisions.md`, and almost all of
 it is still undecided**: its shape, its licence, where it lives, how an upload is reviewed. That is
 deliberate and it gets worked out when FreeHarmony needs it.
 
@@ -569,7 +569,7 @@ inline, where the call in the condition is what raises.
 
 That directory has its own `CLAUDE.md`. Analysis happens there, only shareable output lands here.
 
-**Treat the lab as an archaeology site, not as a drawer**, decision 12 in `docs/roadmap.md`, taken on
+**Treat the lab as an archaeology site, not as a drawer**, decision 12 in `docs/decisions.md`, taken on
 28 August 2026 after the fourth time a session worked out something the lab already had written down.
 **Before deriving anything, ask whether the site already answers it.** The site is 12506 files and
 2.3 GB, of which `software/classic/` is 4809 files and `work/myharmony/` another 3465. **Neither is
@@ -664,7 +664,7 @@ That same notes file said thirty lines earlier that the files had never been fet
 Two consequences for a session working here. A find in the lab is **not** landed until it has taken the
 ordinary route into this repository, and saying so in a lab note is the state the decision forbids. And
 an artefact whose value is not yet apparent is the one most worth cataloguing, because whoever needs it
-later will not know to go looking. Step 9 in `docs/roadmap.md` is the excavation and the register it
+later will not know to go looking. the excavation in `docs/lab-excavation.md` is the excavation and the register it
 produces, and `docs/lab-excavation.md` is the method.
 
 **A catalogue is not a claim, and only a claim needs a test.** Taken by Danny on 28 August 2026,
@@ -679,7 +679,7 @@ useful row and an unmarked one is not.
 description recorded. A dump whose contributor has moved on is far harder to label later than one
 described on arrival, and section 124 is what that is worth: the one config with a written description
 beside it is the only place two readers here have ever been checked against something outside the code.
-**No new dumps are being solicited**, decision 10 in `docs/roadmap.md`, so the column matters for the
+**No new dumps are being solicited**, decision 10 in `docs/decisions.md`, so the column matters for the
 files already here rather than for incoming ones.
 
 ## Never write to a remote
@@ -947,7 +947,7 @@ each of those says something useful about how to fix it, where "lied" says nothi
 
 **This is about conversation, not about the documents.** `docs/findings.md` and its neighbours stay
 technical, because their reader is whoever is building this. The distinction is the same one that
-`docs/roadmap.md` in FreeHarmony already makes for itself.
+`docs/plans/002-the-roadmap.md` in FreeHarmony already makes for itself.
 
 ## Documents must not contain em-dashes or en-dashes
 
@@ -966,14 +966,29 @@ All current documents report zero.
                                 Logitech's software rather than for a contributor: what the problem
                                 is, what FreeHarmony will be, where the work stands in plain words,
                                 and links out for the detail. No architecture numbers, no licence
-                                argument, no call for dumps, per decision 10 in docs/roadmap.md
+                                argument, no call for dumps, per decision 10 in docs/decisions.md
 docs/status.md                  where the work stands: what reads, what the corpus holds per
                                 architecture, the headline findings, what is still open, and what
                                 moved most recently. A snapshot, not the plan. The last three
                                 sections moved out of this file on 29 August 2026, because carrying
                                 them here cost about 12600 tokens in every session to restate
                                 claims that live in docs/findings.md with a test each
-docs/roadmap.md                 THE plan of record: decisions, milestones, sequence
+todo.md                         THE sequence, and the only place it lives: six numbered chapters
+                                as markdown checkboxes, sub-items indented, one line each. Either
+                                of us adds, ticks or removes an item. It replaced docs/roadmap.md
+                                on 6 September 2026, which was doing four jobs and carried 1121 of
+                                its 2404 lines as three separate accounts of what to do next
+docs/decisions.md               the fifteen numbered decisions, plus what this project is and its
+                                context. **The numbers are cited from here, from findings.md and
+                                from code comments, so they never change**; a decision that turns
+                                out wrong is corrected in place
+docs/plans/                     one worked out plan per planning session, NNN-slug.md, each opening
+                                with a status line of open, done or superseded. The number is the
+                                order it was written and the date lives inside the document, since
+                                a date in a filename is wrong the moment a plan is revised.
+                                001 is the first proposal, 002 the retired roadmap, kept for the
+                                reasoning behind every step taken, and 003 the live plan for
+                                chapter 1
 docs/findings.md                authoritative technical reference, narrative
 docs/config-format.md           the config format spec, structured, for tools to track, ending
                                 with the per base slot summary that used to sit in this file
@@ -990,7 +1005,7 @@ docs/myharmony/             everything about the vendor platform, one subject in
   model.md                      THE reading: what an account holds, every field name, what an
                                 activity does, and the vocabularies. **Consult it before naming a
                                 field or designing anything about devices, activities or remotes**,
-                                here and in FreeHarmony. Decision 14 in docs/roadmap.md is why it is
+                                here and in FreeHarmony. Decision 14 in docs/decisions.md is why it is
                                 here rather than in the lab, and section 218 is the evidence
   model.json                    the schema as data, for a tool to read: 1352 types, 470 service
                                 contracts, 366 references, 1291 enum values. Schema only and
@@ -1060,7 +1075,7 @@ docs/predictions-sequence-delay.md
                                 compiles away, and the unit is tenths of a second. Neither document
                                 was named in this map until then, which is how one of them sat
                                 unscored for six days after the measurement
-docs/plan.md                    the earlier proposal, superseded, kept for its arguments
+docs/plans/001-generating-configs.md                    the earlier proposal, superseded, kept for its arguments
 docs/emulator-design.md         design for the emulator harness, deferred, not built
 src/harmony/                    the research library, see below
 tools/                          thin command line wrappers, no logic of their own
@@ -1114,7 +1129,7 @@ pyrightconfig.json              what pyright checks and, at length, what it deli
 samples/                        empty by policy
 ```
 
-The TypeScript workspace, per `docs/roadmap.md` step 4:
+The TypeScript workspace, per `docs/plans/002-the-roadmap.md` step 4:
 
 ```packages/codec/                 TS: the one config codec, container through compiler. Reading and
                                 writing a container, the byte accounting behind M2, the emitter that
@@ -1597,7 +1612,7 @@ because the guidance was too long to keep in this file:
 * **`how-a-harmony-works`**, the operating concept of the product, and the rule that a corpus
   measurement cannot answer a question about behaviour. Read before designing anything.
 * **`status-report`**, how to say where the work stands: short, plain, one concrete example
-  with real numbers, where that puts us in `docs/roadmap.md`, and one next step so that "doe maar" is a
+  with real numbers, where that puts us in `docs/plans/002-the-roadmap.md`, and one next step so that "doe maar" is a
   complete answer. It carries a good example and a bad one, because the bad one is what gets written by
   default.
 * **`writing-a-config`**, every rail a config writer must respect and the evidence behind each,

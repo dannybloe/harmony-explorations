@@ -9,7 +9,7 @@
  * See `packages/codec/src/actions.ts` for why the distinction exists.
  *
  * **This exists because the number it prints was quoted in prose with nothing recomputing it.**
- * `CLAUDE.md`, `docs/roadmap.md` and `docs/findings.md` all said "97537 instructions" and "97.9%",
+ * `CLAUDE.md`, `docs/plans/002-the-roadmap.md` and `docs/findings.md` all said "97537 instructions" and "97.9%",
  * and on 10 August 2026, changing the figure for the first time since, none of it reproduced: the
  * population was never written down and no sample list gives 97537. That is precisely the failure
  * `tools/facts.py` was built to stop, in the one number the project quotes most often. So the

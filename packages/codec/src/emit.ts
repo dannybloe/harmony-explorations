@@ -22,7 +22,7 @@
  *
  * **What it is not.** Nothing here goes near a remote. It produces bytes; writing them to hardware
  * is a later milestone behind `packages/usb/src/rails.ts`, and version 1 of the application is
- * read only. `docs/roadmap.md`, milestone M2.
+ * read only. `docs/plans/002-the-roadmap.md`, milestone M2.
  *
  * **And it is not a save path**, which is worth saying in code rather than leaving to be inferred.
  * This rebuilds a container to be **byte identical to its input**, which is the whole measurement:

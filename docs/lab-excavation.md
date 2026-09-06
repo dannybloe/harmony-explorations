@@ -1,6 +1,6 @@
 # Excavating the lab: what we are looking for, how it gets logged, and how the digging runs
 
-The plan for step 9 in `docs/roadmap.md`, which is the step, and decision 12, which is the argument.
+The plan for step 9 in `todo.md`, which is the step, and decision 12, which is the argument.
 This document is the method. It exists because the same failure has now happened **six** times, most
 recently section 209, where the check was run correctly on the square the dig started in and the dig
 then wandered into one it had not checked. This opening said four until 29 August 2026, while the
@@ -38,7 +38,7 @@ is not.
 **Written on 29 August 2026 because this document had no answer to "where are we".** It carried the
 method and the want list and no progress at all, so the only way to answer was to write a script over
 the register, which means nobody could answer it by reading. It also has no step numbers of its own:
-"step 9" is `docs/roadmap.md`'s numbering for the whole excavation, and the only numbering here is the
+"step 9" is `todo.md`’s own numbering for the whole excavation, and the only numbering here is the
 per square loop below.
 
 **The numbers are a command rather than a paragraph**, `make lab-progress`, which recomputes them from
@@ -308,3 +308,195 @@ Two practical consequences for a dig:
   Three rows have now been corrected in that direction, `reports/`, `tools/` and `dist/`, and in each
   case the row's description of the artefact as Logitech's is what made the square look expensive and
   kept it unopened.
+
+## The grid, and where the excavation stands
+
+*Moved out of `docs/plans/002-the-roadmap.md`'s work sequence on 6 September 2026, when that document was retired.
+It belongs beside the method rather than in a plan: `tests/test_toolchain.py` holds the paths named
+below against the lab itself, so this is the map the check reads.*
+
+**Decision 12 is the argument; this is the job.** The lab holds 12506 files in 2.3 GB, measured on
+28 August 2026, and the knowledge in it is a superset of the knowledge in this repository by an
+unknown margin. That margin is the problem: nobody can say how large it is, which is why the answer
+is an exhaustive walk rather than a search.
+
+The grid, with the two squares that matter marked. File counts are what to plan against, not bytes:
+
+| square | size | files | what is known about it |
+|---|---|---|---|
+| `software/classic/` | 700M | 4809 | the 7.x generation's own software, and the square where most of the want list still points. Sections 204 to 209 worked it: `PROTOCOL-CONSTANTS.md` and `SERVER-DEPENDENCY.md` are mined, `LEARN-IR.md` is catalogued, and `src/` and `res/` are surveyed with the HID command layer and three resource files mined. `reports/` is mined as section 210, and `tools/` and `dist/` were dug on 29 August 2026 and are **ours rather than Logitech's**, sections 214 and 215: two decompilers and a JDK, and our own abandoned rebuild of their application. **Nothing under this square is unopened now.** This row said one file had been read and the other 4808 were unexamined |
+| `work/myharmony/` | 234M | 3458 | the service client and its captured replies, plus what looks like a decompiled web application source tree that nothing here has ever opened |
+| `software/harmony-remote-software-8.0/` | 7.8M | 1018 | unexamined |
+| `software/MyHarmony/` | 183M | 317 | the Silverlight client. Section 132 concluded it holds no protocol; that conclusion predates knowing the recovery tool is reached from it |
+| `software/LogitechHarmonyRemoteSoftware.app/` | 202M | 208 | catalogued 29 August 2026, section 214: the **pristine vendor build**, and the copy to compare it against is our repack rather than the unpacked original, which is what its register row had guessed |
+| `software/desktop-webapp/` | 21M | 370 | **section 197's square**, and the one that proves the point |
+| `reference/logitech-icons/` | 20M | 1560 | opened 30 August 2026, section 216, and it was **ours**: an extraction of every graphic resource in Logitech's software. It was a third complete and is finished now, 1554 distinct images. The artwork stays in the lab; the category names crossed |
+| `Docs/` | 20M | 7 | user manuals, the source `docs/how-a-harmony-works.md` rests on |
+| `dumps/`, `firmware/`, `reads/`, `golden/`, `ghidra/`, `reviews/`, `units/`, `bin/` | 172M | 258 | the well worked areas, and still to be registered rather than assumed. `units/` is the newest and the smallest, one hex line per bench remote: which unit is on the cable, which is what the write rails compare against and what may not be in a public repository, section 226 |
+
+**`docs/lab-excavation.md` is the method**, written on 28 August 2026 with Danny: the seventeen
+things we are looking for as greppable tags, the register's schema, the five statuses, and the loop
+per square. Three decisions in it are worth knowing without opening it.
+
+**The unit is the artefact**, one mirrored client or one firmware package or one contributor's dump,
+and both alternatives were rejected by measurement: per file is 12506 rows and unfinishable, and per
+top level directory is the nine row grid above, which is useless, since section 197's own square was
+already named in it.
+
+**A catalogue is not a claim, and only a claim needs a test.** This is a relaxation of this project's
+own instincts, taken by Danny on 28 August 2026, and the reason is that the alternative is what keeps
+the site unexcavated: if writing down "their client calls these 308 operations, this one probably
+feeds the device wizard" costs a finding and a regression test, nobody writes it and the knowledge
+stays in the lab. A catalogue can only be incomplete, not wrong, and a marked guess is a useful row.
+What is unchanged is that a claim this project **depends on** still takes the four places.
+
+**Six of the seventeen targets are FreeHarmony's**, and the reason is stronger than product
+inspiration: their interface is a labelled view of the config format, so an inventory of their
+settings is a semantic key for bytes already read and not yet named.
+
+**The deliverable is a register in this repository**, `reference/lab-register.md`, one row per
+artefact: what it is, where it came from, what is inside, and a status. **It exists**, 44 rows, with
+`TheLabRegisterCoversTheSiteAtArtefactLevel` asserting that every artefact in the lab has one. This
+sentence said it did not exist for as long as the paragraph eleven lines below said it did.
+`reference/checksums.md` is the model for the tone and `tools/corpus.py` for the idea, since it
+already reports which dumps have no description recorded. The register covers the whole site, not
+the binaries, and the catalogue pages beside it hold the substance.
+
+**Definition of done, so this cannot be declared finished by feeling.** Every path in the lab appears
+in the register with a status; a test walks the lab and fails on an unregistered artefact, skipping
+cleanly where there is no lab, exactly as every other lab backed test does. That test is what makes
+the mechanism survive the session that builds it, and it is the half that would have caught section
+197 nineteen days earlier.
+
+**The survey pass is done, 28 August 2026**, and `reference/lab-register.md` is the register: 44
+artefacts across the eleven squares, each with a status and the want list tags it might answer, and
+`TheLabRegisterCoversTheSiteAtArtefactLevel` is the test, controlled by creating an unregistered
+directory and watching exactly one test name it.
+
+**So the stated definition of done is met and has been since the survey**, and saying only that would be
+a declaration by wording rather than by feeling. The digging the paragraph above left behind is what is
+actually outstanding, and as at 30 August 2026 it is this:
+
+* **Nothing is unopened.** The last artefact at `unseen` was dug on 30 August 2026, section 216, and
+  like the two before it, it held our own work rather than Logitech's. So the phrase "the rows at status
+  `unseen`" now names an empty set, down from five in two days.
+* **That pass was done on 30 August 2026**, section 217, and it moved fourteen rows without opening
+  anything: 36 of the 44 are written up here now, against 22 two days earlier. The rule it applied is
+  in `docs/lab-excavation.md` beside the status definitions, so the next one is repeatable.
+* **Eight rows are genuinely outstanding**, and they are the reading work this step has left: the
+  Silverlight packages at 170 MB, MyHarmony's decompiled source where one flow of 2643 files has been
+  read, the classic client's `src` and `res`, the 8.0 generation, our own read session notes, the draft
+  material, and the classic client's parent row whose children carry the detail.
+* **Three of the seventeen targets are closed**, `intermediate`, `packages` and `scan-codes`, the last
+  of them by the status pass, and it closed because its one artefact was already written up rather than
+  because anything new was found. A tag can close that way, which is a result and not a gap. **Three cannot be closed
+  from this site**: `compiler`, because the configuration compiler was server side and is gone;
+  `fh-failures`, which no artefact carries; and `fh-limits`, which section 207 judged unlikely here
+  because this client is an executor whose interface never named a device.
+
+The honest summary is that the excavation is **past its discovery phase and into its reading phase**:
+finding squares nobody has touched is **finished**, and what remains is reading squares that have been
+surveyed. Those are worth doing in tag order and none of them is urgent, since the two squares that
+carried the highest value tags are both dug.
+
+**The survey paid for itself on its first square**, which is the argument for having done it before
+digging anywhere. `software/classic/SERVER-DEPENDENCY.md` is 278 lines written on 7 August 2026 and
+never crossed, and it says the client is an **executor and not a builder**: reading, writing, learning
+and firmware update are all local and work today, and the device database, the interface and the
+**configuration compiler** were server side and are gone.
+
+**Three squares dug on 28 August 2026, and the third is a warning.** Section 206 went into the same
+client's HID layer, extracted its seven per architecture constant tables, and found that all of them
+had been extracted on 9 August and that `docs/host-client.md` is built on them. The register said so,
+on its own row, and was not read. So the excavation's own instrument works and the discipline of using
+it does not yet, which is the **fifth** time this project has re-derived something the lab already
+held: decision 12 was itself taken after the fourth, and section 209 later made a sixth. This said
+fourth, which made the next paragraph's "a sixth time" skip a number.
+The register's rows now point at the extraction from both directions, and what the afternoon did buy
+is worth having: the ledger of client sourced numbers had **no executable check at all** and has one
+now, and three of its rows moved, two arch 12 regions explained from internal pages already in the lab
+and the arch 14 logging region corroborated by every arch 14 safe mode container in the corpus.
+
+**The `reports/` square, dug on 29 August 2026, and it is the excavation's best return so far.**
+Section 210. It was catalogued as "run logs from the application" and the files turn out to be
+**ours**: the 7 August session decompiled the classic client, rebuilt 827 of its 829 classes from the
+recovered source, and **ran it against a Harmony One** with a local stand-in for the dead server. So
+the site holds a working copy of Logitech's own executor, which nothing had recorded. What it left
+behind is 69344 packets of that client reading a remote, and that is the first thing this project has
+ever had to check its own USB code against something other than itself: our encoder reproduces all
+1312 of its requests byte for byte, and its replies confirm the non-linear length nibble
+arithmetically, 1310 reads out of 1310. Two other things fall out. Reading a remote takes exactly the
+three commands our allow list holds, and **the client's first command of every session is the
+`0xE0 0x01` that `end-session-experiment.ts` has never dared send**. The `fh-failures` tag loses its
+only candidate, since the failures in these logs are our own.
+
+**And the square next door, section 211**, which the first one led into: the three single byte
+memory services, in no note and in no document. Every write the client makes there is read back and
+compared, with no unverified variant anywhere, which is the rail this project imposes on itself
+arrived at independently and applied where it costs the most. Its own address bounds are sixteen times
+tighter than ours for RAM, and they are Java assertions that do not run in a shipped build, so they
+are an intent rather than a limit and the rail is left alone. The register's row for that directory
+was corrected on the way, from a blanket "not mined" to one status per subdirectory, since the blanket
+sent a dig at a subdirectory that is extracted whole. `system/` is the next square and section 211
+says what is in it.
+
+**And the third square that day, section 212, the client's system service.** It closes an open row
+in this project's own USB spec: one of the four things `READ_MISC` services had never been read, and it
+is a hardware feature read whose detail 1 is the battery gauge. The client named it in a line and the
+firmware confirmed it on all three images, including the part the client cannot tell you, that a detail
+above 1 returns stale bytes rather than an error. Its region numbering then places version block fields
+8 and 9, one of which our own test comment flags as its weakest placement, by a route with nothing in
+common with ours. The correction in it is the lesson: section 211 had said one of its calls asks the
+remote for a region list, from the method's name, and it does not ask the remote at all.
+
+**The last of the client's HID services, section 213, and it is two things at once.** The dig
+finished the directory and its best return is a lead about this bench rather than about their software:
+their liveness ping, sent after every single operation, is **macOS only**, and macOS is where this
+project's two unexplained intermittent faults live, a Harmony One dropping the first command of a
+session and a Harmony One stranding after idle. That is cheap to try and it has a control. The section
+also confirms section 175's write transfer from an implementation with nothing in common, records the
+identity block erase as a write path nothing here had described, and finds the arch 9 two address space
+split stated as the vendor's own arithmetic.
+
+**And it is the seventh and eighth times a dig re-derived the lab, in the same session that fixed the
+instrument for it.** Section 212's provenance is corrected in place: the client's name for the selector
+it read was already in a lab note, unfollowed for twenty days. This dig then followed a method into
+`core/flash`, whose register row says mined, and got `PROTOCOL-CONSTANTS.md` back. Both are section
+209's failure exactly, whose stated fix, that the trigger is the path and not the dig, was written four
+sections earlier by this same project and did not fire.
+
+**Two more squares on 29 August 2026, and the second is the same warning a sixth time.** Section 208
+is the good one: a third resource file in the same client, the **teaching pictures**, keys its drawings
+by architecture and skin, which fills eight of the eleven gaps section 207's platform join left and
+agrees with concordance on nine of nine models. Section 209 is the warning, and its subject is the dig
+that produced it. The register was checked for the square the dig started in, correctly, and the dig
+then followed a resource key into `hid/commands/`, whose own row says it is mined. Everything read
+there was already in the lab. **So the trigger is the path and not the dig**, and the fix is finally an
+instrument rather than a paragraph: `make lab-check PATH_ARG=<path>` prints every register row bearing
+on a path. What the dig did buy is one thing, the clock service, which reads and writes base slot 13's
+first seven records over USB by name and disagrees with our measurement of two of the fields.
+
+**Two more squares dug on 28 August 2026.** Section 204 is the first and section 205 the second, which
+takes the `ir-learn` tag as far as this client goes: the host measures a capture, merges it and uploads
+it, and the only test it applies is that the signal lasts between 10 milliseconds and 1 second.
+Everything else, including whether to keep the capture and how to store it, came back from the server.
+So what a local learn has to build is narrower than section 42 implied and it is a judgement rather
+than a decoder.
+
+Section 204's own square, and the claim held with a stronger argument than its
+own: no container cookie appears anywhere in the client's 642 files, so it never parses a
+configuration, let alone composes one. **So the `compiler` tag closes as a recovery target**, and
+writing our own is the only route, which this document had been assuming with nothing behind it. What
+the square still holds is the note's second half, a route it calls editing instead of building, and
+the 642 files themselves, which have now been searched but not read.
+
+**Two things to expect and neither is a reason to stop.** Most of it will be worth nothing, and the
+value is in being able to say so with a row rather than a shrug. And some of it will answer a
+question currently listed as open, which is the outcome the decision was taken for; **that** kind of
+answer takes the ordinary route, a hypothesis under decision 7 and then the four places, where a
+catalogue row does not.
+
+**One rail is unchanged.** Reading Logitech's code and firmware is what `docs/host-client.md`'s rule
+already governs: a fact from it is marked as client sourced, the firmware stays the authority where
+it can settle something, and nothing from the site is committed but our own description of it.
+

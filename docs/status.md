@@ -4,7 +4,7 @@ The current state of the reverse engineering: what reads, what is measured, what
 A snapshot, dated by its commit, and it is the document [README.md](../README.md) points a reader at
 who wants more than the front page.
 
-**This is not the plan.** [roadmap.md](roadmap.md) is the plan of record: the decisions, the
+**This is not the plan.** [../todo.md](../todo.md) is the plan of record: the decisions, the
 milestones and the sequence, and what gets answered next and why that one. The line between them is
 worth stating because this project has already been bitten by the other arrangement, on 8 August 2026,
 when an audit found eleven places where the documents contradicted the code and every one of them was
@@ -146,13 +146,81 @@ bank. The byte accounting is the measure of it: the fraction of a config attribu
 structure the codec understands, with any two structures claiming the same byte reported as the
 defect it is.
 
-| | at the start | now |
-|---|---|---|
-| Harmony 700 | 11.4% | **100.0%<!--fact:coverage_h700_config-->** |
-| Harmony 600 | 9.5% | **100.0%<!--fact:coverage_h600_config-->** |
-| Harmony One | 3.2% | **100.0%<!--fact:coverage_one_config-->** |
-| 880, arch 8 | 3.6% | **100.0%<!--fact:coverage_arch8_config_a-->** |
-| 525, arch 9 | 7.2% | 100.0%<!--fact:coverage_h525_config--> |
+*The table below replaced a five row summary of itself on 6 September 2026. That summary lived here
+while the full history lived in the roadmap that was retired that day, and it was a strict subset:
+the same measurement
+with two samples missing and every intermediate column dropped. Two copies of one measurement in two
+documents is what the retirement of that document was for, so the full one moved here and the summary
+went. `tests/test_documents.py` holds this table's shape.*
+
+**Measuring it first changed what it is.** The obvious reading of M2 is "write an emitter", and it
+is wrong: an emitter can only rebuild what a reader can attribute, so the first question is what
+fraction of a config is attributed at all. `packages/codec/src/coverage.ts` answers it and
+`make coverage` prints it. Where it started on 7 August 2026, and where the first two ports took
+it the same day:
+
+| sample | at the start | readers ported | mode records, 53 | opcode 23, 54 | the bank, 55 | infrared, 61 | arch 9, 63 to 65 | pages, 66 | slot 9, 67 | the pool, 67 | header groups, 75 | class 5, 82 | the residue, 83 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Harmony 700 | 11.4% | 26.3% | 59.3% | 87.8% | 91.9% | 98.1% | 98.1% | 99.5% | 99.6% | 100.0% | 100.0% | 100.0% | **100.0%<!--fact:coverage_h700_config-->** |
+| Harmony 600 | 9.5% | 24.8% | 57.5% | 86.4% | 87.4% | 98.7% | 98.7% | 99.6% | 99.7% | 100.0% | 100.0% | 100.0% | **100.0%<!--fact:coverage_h600_config-->** |
+| Harmony One | 3.2% | 8.0% | 8.6% | 47.9% | 90.0% | 98.0% | 98.0% | 99.6% | 99.8% | 100.0% | 100.0% | 100.0% | **100.0%<!--fact:coverage_one_config-->** |
+| Harmony One, spare | 3.2% | 7.5% | 7.9% | 54.5% | 97.0% | 98.6% | 98.6% | 99.8% | 99.8% | 100.0% | 100.0% | 100.0% | **100.0%<!--fact:coverage_one_config_unprogrammed-->** |
+| 880, arch 8 | 3.6% | 16.4% | 50.6% | 80.2% | 82.2% | 94.4% | 94.4% | 97.0% | 97.2% | 97.7% | 100.0% | 100.0% | **100.0%<!--fact:coverage_arch8_config_a-->** |
+| Harmony 525, arch 9 | 7.2% | 10.4% | 14.1% | 14.1% | 14.1% | 14.6% | 55.1% | 64.1% | 65.1% | 66.4% | 67.1% | 99.9% | **100.0%<!--fact:coverage_h525_config-->** |
+| the three safe mode containers | 4.2% | 70.2% | 89.5% | 89.5% | 89.5% | 91.8% | 91.8% | 98.2% | 98.4% | 99.4% | 99.4% | 99.4% | **100.0%<!--fact:coverage_h700_gspm-->** |
+
+**Only the last column carries a `fact:` marker**, and that is the rule rather than an accident: a
+historical column is a fixed number and the live one is recomputed from the corpus. Putting a marker
+on a history column makes `make facts-write` rewrite the past, which is exactly what happened to
+this table for one commit.
+
+The sixth column is two readers landing the same day: base slot 13's records, found by asking the
+deliberately built config pair of section 58 one question, and the infrared records, whose header
+points **backwards** at duration blocks below it. Its length was read as a flat 21 bytes and is
+`12 + 9 * count`, section 75, which is the last column.
+
+**The header groups column is one byte.** An infrared header states how many nine byte pointer
+groups it carries, and 37 records a config on arch 8 carry two. That closed arch 8 outright, from
+97.7% to 100.0%, and moved arch 9 as well, and it needed no firmware: the reading came from the
+corpus, out of three gap families whose counts were all 37. Section 75.
+
+**The class 5 column is arch 9's infrared**, and unlike the one before it, it needed the firmware.
+Class 5 spells a code as indices into a shared table of pulse blocks, section 82, so 25776 of the
+25819 bytes the 525 had left were three structures nobody could size without the code that reads
+them. It closed the last architecture sized hole in the accounting.
+
+**The last column is the residue**, sections 83 and 84, and it is where one decimal place stops
+being enough. Section 83 read three shapes, that base slot 0's frame is two bytes longer than the
+length it states, that an empty counted array is still an array, and that the bytes above base slot
+7's table are base slot 8's leading action list, which took every user config to 100.0% with 4 to 68
+bytes left in each. Section 84 read those: a screen program carries a terminator even where a jump
+means nothing reaches it, base slot 3's section is three bytes longer than the clock record, base
+slot 17's is two where it names the picture bank, the key table's extent is its mode record's, and
+twelve arch 12 bytes belong to base slot 15 and to no group. **The column reads the same either way
+and the difference is the whole milestone**, so it is stated in bytes rather than in percent: no
+container in this table has an unaccounted byte left.
+
+**The seventh column is where "arch 9 barely moves" stopped being true**, which this table asserted
+for a day. Three findings on 7 and 8 August: its glyphs are two bits a pixel rather than two bytes,
+one missing operand count was hiding every one of its mode programs, and its infrared records share
+class 1's header. Nothing else moved in that column, and the reading at the time was that the other
+architectures were at the ceiling. **They were not**, which the eighth column says: base slot 6's
+entry had a page count and an array of pages nobody had read, and following them moved every
+architecture at once. What looked like a ceiling was one unread field.
+
+Neither the fourth nor the fifth column is a reader. Section 53 is one rule, that a mode record
+carries its own screen program, and section 54 is two corrections: opcode 23 takes no operand, which
+is what was holding arch 12 shut, and a picture's `stride` is in pixels rather than bytes, which had
+halved every raw extent. Together they take the region from an unknown to **98% pictures on a
+Harmony 600, 93% on a 700 and 97% on arch 8**, with the Harmony One at 48% and left as the open
+item. Section 66 closed that one: every picture in an arch 12 bank is drawn by a program that can be
+reached, 98 of 98 and 70 of 70.
+
+Lower than the sixteen named sections suggest, and the reason is the shape of the file rather than
+a gap in the analysis. Most of a config is a **pooled data region** that the sections index into,
+and the readers return values without returning the bytes they consumed. Every screen program in
+the corpus decodes with nothing left over, section 40, and not one of them can yet say which bytes
+it occupied.
 
 Zero overlapping claims anywhere. `make coverage` prints it. **Every user config is accounted for
 to the byte**, not to a rounded percentage: a 1.63 MB Harmony One config has nothing unattributed
@@ -188,8 +256,56 @@ and whether the USB peripheral can accept a report before the firmware has servi
 which is a buffer descriptor nobody here has read. The firmware's own answer on pacing is that it
 asks for none. What keeps a write from happening is the rails and the unopened door, not an open
 question. See
-[docs/findings.md](docs/findings.md) for detail and
-[docs/config-format.md](docs/config-format.md) for the spec as it firms up.
+[findings.md](findings.md) for detail and
+[config-format.md](config-format.md) for the spec as it firms up.
+
+## Coverage, and why it is a problem
+
+Everything here is derived from two remotes on a bench and a handful of files. Logitech shipped
+rather more than that.
+
+| | count |
+|---|---|
+| models listed on the harmony-remote-forum comparison page | 42 |
+| named models in concordance's skin table | 71, in 120 table positions |
+| architectures concordance knows models for | 11 (arch 2, 3, 7, 8, 9, 10, 12, 14, 15, 16, 17) |
+| architectures with hardware on this bench | **3** (arch 9, arch 12 and arch 14) |
+| architectures with sample files only | **2** (arch 8 and arch 10) |
+| architectures with firmware in the lab | **4** (arch 8, 9, 12 and 14) |
+
+So the container claims are validated across **five** architectures and the USB claims across
+**three**, out of at least eleven. The fifth arrived on 10 August 2026 with the kkong42 contribution,
+which also brought the first arch 8 firmware: sections 113 to 115. **Arch 10 parses and nothing reads
+it**, and section 117 turned that from an absent derivation into a result: arch 10's 23 slots are not
+the base twenty with three inserted, because five readers are satisfied by none of the 1330 possible
+placements. Every codec reader stayed gated at that point. **The mapping was adopted on 26 August 2026, on
+Danny's call, and this paragraph told a reader not to add one until 29 August**: `SLOT_MAPS` in
+`packages/codec/src/gspm.ts` is a table per architecture now, section 184, the standing figures are
+fifteen base slots present and five absent, and the byte accounting reaches 99.3% and 97.2% on the two
+890 configs. The live account is further down this document under decision 11's neighbourhood; what
+is preserved here is why the mapping had to be stated rather than derived, which is that none of the
+1330 possible placements satisfies five readers at once.
+That section also corrected the container's base recovery, which had been circular since the first
+day and was wrong on one of the two 890 configs. **Arch 8 has firmware and is still a control**, and what the
+images bought was three counterexamples: the skin rule, `GET_VERSION` field 6's fourth value, and the
+discovery that a firmware image can parse as a container, which had quietly admitted a program image
+to a corpus wide percentage. The third arrived on 8 August 2026 and cost three changes to `packages/usb`,
+every one of them an arch 12 assumption written as a universal: section 76. One boundary is already visible without owning anything: the 900, 1000 and 1100
+are arch 15 and enumerate as a network class rather than plain HID, so the transport here cannot
+reach them at all, never mind parse them.
+
+There is a sharper version of the same point. Logitech's own discontinuation notice of 28 May 2025
+names forty models whose accounts it closed, and **not one of them is arch 12 or arch 14**; they
+are the older EasyZapper platform, spanning at least six architectures, while the bench holds two
+remotes from the platform that came after. `reference/models.md` has the list and the mapping.
+
+That gap is what step 8 exists for, and **as of 12 August 2026 it is not what the project spends its
+time on**: decision 10 below puts the application first and stops soliciting dumps. The gap is real, the
+table above stays honest about it, and closing it is not the next job.
+
+*Moved out of `docs/plans/002-the-roadmap.md` on 6 September 2026 when that document was retired. It is a
+measurement of where the reading stands, which is this document's job, and `tests/test_documents.py`
+holds the table's shape.*
 
 ## What the corpus holds
 
@@ -276,7 +392,7 @@ the wrong flash region. On arch 14 it returns real code, silently truncated to 6
 image is larger. Both read `flash_base` = 0. It is an architecture table entry rather than the
 tool, though, and on **arch 8 and arch 9 the same command returns the whole firmware region**, so
 it stays the way to obtain an image for a model nobody here owns. See
-[reference/concordance-notes.md](reference/concordance-notes.md).
+[../reference/concordance-notes.md](../reference/concordance-notes.md).
 
 **It is a Microchip PIC18, and it disassembles cleanly** once you have the right file at the
 right load address. 87% of the Harmony 700 image resolves into 521 functions.
@@ -441,7 +557,7 @@ finding.
 
 *Moved out of `CLAUDE.md` on 29 August 2026, where it was a second copy of this document's own subject.*
 
-`docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
+`todo.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
 summary of what is known**: that is `docs/findings.md`, 270<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
@@ -651,6 +767,50 @@ this project's oldest rule is about. Two right copies are what precede two diver
   a wiring decision and a test asserts it cannot be recovered.
 * **`MCU_ID` is unreachable by construction**, not a task: a PIC18 keeps its device id at `0x3FFFFE`
   and the internal read window is two 64 KiB pages. The arch 12 part number stays inferred.
+
+## Known unknowns
+
+*Moved out of `docs/plans/002-the-roadmap.md` on 6 September 2026. It sat there as a second list of open questions
+beside "What is still open" above, both with corrections written in place, and neither knowing about
+the other. They are deliberately **not** merged into one list: the section above is about what a
+reader or a writer cannot yet do, and this one is about what the firmware has not told us. Where they
+overlap, the overlap is the interesting part.*
+
+The heading said "unchanged" until 25 August 2026, and by then five of its entries were answered in
+this document's own body, which is the drift `make facts` cannot see: a list of open questions has no
+number to recompute. Answered entries are corrected in place below rather than deleted.
+
+* Three of the four IR encoding classes at the dispatcher `0x12F08`. No config in the corpus
+  carries one, section 42, so the firmware is the only evidence there will be.
+* The encoder from raw learned timings to a config IR record. This ran on Logitech's servers, so
+  nobody had it. **Mostly built since**: a code stated as a name and a number becomes pulses through
+  the rhythm table, sections 157 to 169, and the block spelling matches Logitech's own generator byte
+  for byte, section 174. What learning still needs is the tail shape, section 152, and the storage
+  class choice, section 42.
+* Activity semantics. **Closed**: the accumulator machine is read, section 34, the screen
+  interpreter is read, section 40, and a binding table entry is an activity's handler set in the four
+  hop chain that starts it, sections 120 and 121, all fifty activities named.
+* The LWJL difference between architectures. The other half of this entry, the translation from
+  the scanner's linear index to config event codes, is answered: the codes carry the index directly,
+  section 89 and the step 6 narrative above.
+* Whether the firmware implements event injection over USB. **Answered no on arch 14**, in this
+  document's own step 6 narrative; arch 12 unexamined and nothing wants it.
+* **What the log area holds.** Base slot 2 is named, section 47, so the pointer table is complete.
+  **One of the five append cases is read**, section 111: case 3's six bytes are the clock's own fields
+  copied in descending significance, so its record is a timestamp. What remains is the other four, and
+  why the region is measured in eight byte units on the three architectures whose firmware never reads
+  it. Nothing in the corpus appends, so this is a firmware only question, like the three unused IR
+  classes above, and on **arch 12 it is worse than unused**: both bench Harmony Ones already have the
+  declared region written, so the appender disarms itself at the first attempt, section 111.
+* **Which activity a drawn name belongs to.** **Closed**, sections 120, 121, 124 and 125: all
+  50<!--fact:activities_total--> activities in the corpus carry their drawn name, through the modes an
+  activity's chain enters on three architectures and through the hit map on the Harmony One, and
+  `make activities` prints it. The sentence that used to stand here, that the tie from a name to an
+  activity number was not read, was already contradicted by the M3 section above when the list's
+  heading said "unchanged". A **writer** still has to build a font set and number
+  it rather than look a character up, since the codes are assigned per config in the order characters
+  first appear in the generator's string list.
+
 
 ## What moved most recently
 
@@ -1579,7 +1739,7 @@ their pixels**: the encoder chose where to skip and where to emit literals and s
 draw the same image. **Do not treat moving those bytes as the obvious next job**: what a picture
 means is already read, so framing the body would move the number 60 to 80 points without anything
 becoming clearer. What it would buy is the ability to **change** an image rather than reproduce
-one, which is a product question. `docs/roadmap.md`, milestone M2.
+one, which is a product question. `docs/plans/002-the-roadmap.md`, milestone M2.
 
 **Base slot 0 is read**, section 77, and it was the emitter that found it worth reading: it was the
 one section whose bytes the accounting counted while nothing inside it had ever been named, because

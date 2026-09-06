@@ -4,7 +4,7 @@
  * **Bound to the loopback address, deliberately and not by default.** A listening port is a
  * concession this project makes for a bench tool and refuses for the product; FreeHarmony gets a
  * content security policy that makes network access structurally impossible. Writing the difference
- * down beat stretching the product rule quietly. See `docs/roadmap.md` step 5.
+ * down beat stretching the product rule quietly. See `docs/plans/002-the-roadmap.md` step 5.
  *
  * The route table below is the whole surface. There is no generic "send this command" endpoint,
  * which is the same rail as the reader interface in `@harmony/corpus`: a page that is broken, or

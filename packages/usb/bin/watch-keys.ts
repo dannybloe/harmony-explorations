@@ -5,7 +5,7 @@
  *   node packages/usb/bin/watch-keys.ts --product 0xc121 --address 0x2fb,0x202
  *   node packages/usb/bin/watch-keys.ts --product 0xc121 --address 0xf81 --mask 0xf3
  *
- * This is the button mapping experiment of `docs/roadmap.md` step 6, and the reason the emulator
+ * This is the button mapping experiment of `docs/plans/002-the-roadmap.md` step 6, and the reason the emulator
  * could be deferred: `READ_MISC` selector `0x07` reads one byte of the data memory of a running
  * remote, so the scanner's own variable can be watched from the host while a human works the
  * keypad. Nothing is written and nothing is queued; see `packages/usb/src/rails.ts`.

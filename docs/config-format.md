@@ -378,7 +378,7 @@ the arch 9 device clone under [findings.md](findings.md) section 117.
 slots 2 to 17 are sixteen named sections, and 18 and 19 are NULL in every sample.
 
 The method that named them is described in
-[roadmap.md](roadmap.md) step 6: the firmware copies each config pointer into a per-subsystem RAM
+[../todo.md](../todo.md) step 6: the firmware copies each config pointer into a per-subsystem RAM
 variable, so finding the consumer of that variable labels the section by function. The infrared
 section was identified exactly this way, and every slot from 2 to 19 now has a located consumer.
 

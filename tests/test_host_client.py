@@ -2,7 +2,7 @@
 """The service API surface of Logitech's own client, recomputed rather than transcribed.
 
 `docs/host-client.md` documents which services Harmony Desktop talks to and which operations it
-declares on each. That is the answer to a product question, decision 11 in `docs/roadmap.md`: whether
+declares on each. That is the answer to a product question, decision 11 in `docs/decisions.md`: whether
 Logitech's device database is reachable as its own call or only as a side effect of compiling a config.
 It is reachable as its own call, and the list below is why we believe that.
 

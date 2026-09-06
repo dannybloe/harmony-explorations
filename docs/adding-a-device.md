@@ -38,7 +38,7 @@ the first part without waiting on the second.
 **Why this document exists.** Every part of this has been started at some point and none of it has been
 finished, because each session picked a piece and the goal went out of sight. This is the plan of record
 for that goal and nothing else. It is a checklist rather than an argument: an item is either done or it
-is not, and every phase ends in a check that can fail. `docs/roadmap.md` stays the plan of record for
+is not, and every phase ends in a check that can fail. `docs/plans/002-the-roadmap.md` stays the plan of record for
 the project as a whole and points here for this goal.
 
 **How to use it.** Work top to bottom. Tick an item only when its check is a test in the repository, not

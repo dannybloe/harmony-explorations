@@ -1,6 +1,6 @@
 # The lab register: every artefact on the site, what it is, and how deep anybody has been
 
-The deliverable of step 9 in `docs/roadmap.md`, and `docs/lab-excavation.md` is the method. **This is a
+The deliverable of step 9 in `docs/plans/002-the-roadmap.md`, and `docs/lab-excavation.md` is the method. **This is a
 catalogue, not a set of claims**, so it carries no tests and a marked guess is a legitimate row. What it
 is for is turning "did we already know this" from a memory exercise into a search.
 
@@ -114,7 +114,7 @@ Recorded here rather than in a finding, because it is about the site and not abo
 `software/classic/SERVER-DEPENDENCY.md`, 278 lines, written 7 August 2026: the client is an executor
 and not a builder, and the configuration compiler was server side and is gone. If that holds it closes
 the `compiler` tag as a **recovery** target and makes writing our own the only route, which is what
-`docs/roadmap.md` already assumes on no evidence. It takes the ordinary route from here, since it is a
+`docs/plans/002-the-roadmap.md` already assumes on no evidence. It takes the ordinary route from here, since it is a
 claim. **Done on 28 August 2026, section 204**, and the claim held: the register paid for itself
 here, because the column said uncrossed and nobody had to remember.
 

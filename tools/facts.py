@@ -25,7 +25,7 @@ shape as `tools/golden.py --write`, and **prints every value it changes**, becau
 of twelve numbers across six files is not something anyone reviews.
 
 **A marker is a claim about now, never about the past.** That distinction cost a commit on
-8 August 2026. `docs/roadmap.md` carries a coverage table with one column per finding that moved
+8 August 2026. `docs/plans/002-the-roadmap.md` carries a coverage table with one column per finding that moved
 the number, and the live column's heading names that finding. Marking a historical column makes
 this tool rewrite history the next time anything moves, and marking the live column is right until
 a new finding lands, at which point the number changes and the heading does not. So:

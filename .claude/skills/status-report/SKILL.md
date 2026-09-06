@@ -27,7 +27,7 @@ Five parts, in this order, and every one of them short.
 3. **One concrete example with real numbers.** This is the part that makes it real, and it is the part
    most often left out. "Er stond dat er meer dan 65.000 lettertekens uit de configs moeten komen,
    terwijl het er 170.922 zijn" lands where a percentage does not.
-4. **Where that puts us in the plan.** Name the milestone or step from `docs/roadmap.md` and say whether
+4. **Where that puts us in the plan.** Name the milestone or step from `docs/plans/002-the-roadmap.md` and say whether
    it moved. **Read the roadmap before writing this, do not recall it**: the milestones carry their own
    status and it changes under you. If nothing moved, "M2 staat waar het stond, dit was onderhoud" is a
    complete and useful answer.
@@ -81,7 +81,7 @@ clause, a bare architecture number, and a next step hedged with "possibly".
 ## Before sending
 
 * Does it contain one concrete example with real numbers?
-* Does it say where we are in the plan, checked against `docs/roadmap.md` rather than remembered?
+* Does it say where we are in the plan, checked against `docs/plans/002-the-roadmap.md` rather than remembered?
 * Is there exactly one next step, and would "doe maar" be a complete answer to it?
 * Would somebody who has never opened this repository understand every sentence?
 * Is every architecture number accompanied by the remote it means?

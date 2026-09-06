@@ -1,5 +1,5 @@
 # Libraries only. The application is a separate repository, FreeHarmony, which consumes these.
-# See decision 4 in docs/roadmap.md for why the line runs between library and product rather than
+# See decision 4 in docs/decisions.md for why the line runs between library and product rather than
 # between documents and code.
 packages:
   - 'packages/*'

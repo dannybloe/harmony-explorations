@@ -1769,7 +1769,7 @@ test('a device delay is a tenth of a second, which the config draws 451 of', ski
 });
 
 test('base slot 15 is per model and states nothing about a device', skipWithoutLab(), () => {
-  // **The refutation.** `docs/roadmap.md` carried "which base slot 15 group holds a device's delays"<!--superseded-->
+  // **The refutation.** `docs/plans/002-the-roadmap.md` carried "which base slot 15 group holds a device's delays"<!--superseded-->
   // as the last reading before the first write that changes something, and the answer is that no
   // group does. Two controls make that a measurement rather than an absence: the group lengths are
   // identical within an architecture across containers holding 0 to 7 devices, and the values are

@@ -4,7 +4,7 @@
  * **What the archive is.** A third party's checkout of Logitech's infrared database,
  * `github.com/pickysysadmin/logitech-harmony-ir-archive`, holding **Logitech's own definition for 684
  * protocol families, verbatim**, where this project has measured the timings for 37. Decision 15 in
- * `docs/roadmap.md` is what may cross from it into this repository: durations and names, through this
+ * `docs/plans/002-the-roadmap.md` is what may cross from it into this repository: durations and names, through this
  * converter, and never a file of the archive's own.
  *
  * **Why a converter and not a table.** Their definition states a family's rhythm in its own vocabulary,

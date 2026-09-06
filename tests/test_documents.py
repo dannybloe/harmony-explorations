@@ -3,7 +3,7 @@
 
 `make facts` compares every marked number against the corpus, which makes it authoritative about
 values and blind to where a marker sits. That blindness cost a commit on 8 August 2026: the
-coverage table in `docs/roadmap.md` has one column per finding that moved the number, and
+coverage table in `docs/status.md` has one column per finding that moved the number, and
 `facts-write` rewrote the historical columns too, so section 66's figures ended up under section
 65's heading.
 
@@ -48,9 +48,9 @@ def table_rows(path, first_cell):
 
 
 class TestTheCoverageTable(unittest.TestCase):
-    """`docs/roadmap.md`: one column per finding, and only the last one is a claim about now."""
+    """`docs/plans/002-the-roadmap.md`: one column per finding, and only the last one is a claim about now."""
 
-    PATH = os.path.join(ROOT, 'docs', 'roadmap.md')
+    PATH = os.path.join(ROOT, 'docs', 'status.md')
 
     def setUp(self):
         self.rows = table_rows(self.PATH, 'Harmony 700')
@@ -185,7 +185,7 @@ class TestTheDetachedMarkerDiagnostic(unittest.TestCase):
     the same file went unnamed. It needs a document that uses one fact twice **and** carries a
     genuinely detached marker, which is why it survived: the second condition is rare and the
     message is believed. Found on 14 August 2026 while adding `container_checks`, which supplied
-    the detached marker to `docs/roadmap.md`, where `text_glyphs` appears twice.
+    the detached marker to `docs/plans/002-the-roadmap.md`, where `text_glyphs` appears twice.
     """
 
     def complaints(self, text):

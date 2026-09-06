@@ -101,7 +101,7 @@ export function profileFor(productId: number): RemoteProfile {
     const known = PROFILES.map((p) => `0x${p.productId.toString(16)} ${p.model}`).join(', ');
     throw new ReadError(
       `no config base known for product id 0x${productId.toString(16)}. Known: ${known}. ` +
-        'Other models exist and are not covered yet; see the coverage section of docs/roadmap.md.',
+        'Other models exist and are not covered yet; see the coverage section of docs/status.md.',
     );
   }
   return found;

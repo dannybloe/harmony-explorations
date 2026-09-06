@@ -11,7 +11,7 @@
  * **The keycode is character for character what the live service returns**, `G:Toshiba 32 Bit:(0x20DF9E61)(Repeat)():3`,
  * so `statedCode` parses it with no adapter and the archive is a drop-in for the live device fetch.
  *
- * **Decision 15 in `docs/roadmap.md` governs what may cross.** Names and durations come through our own
+ * **Decision 15 in `docs/decisions.md` governs what may cross.** Names and durations come through our own
  * readers; the archive's own JSON never enters this repository, and neither does its 13.29 million
  * rendered waveforms. **And decision 11**: a definition taken from here is Logitech's data, so it may
  * never be shared through a community device database, whatever else is done with it.

@@ -1,6 +1,6 @@
 # Design: a PIC18 emulator harness
 
-**Status: design only, not built, and deferred by decision 5 in `docs/roadmap.md`.** Hardware in the
+**Status: design only, not built, and deferred by decision 5 in `docs/decisions.md`.** Hardware in the
 loop came first, on the argument that round trip equality, read back and diff, cross learning and live
 RAM polling do most of what this was wanted for at a fraction of the build. This document said it was
 "the next substantial piece of work"<!--superseded--> until 29 August 2026, which was true when it was

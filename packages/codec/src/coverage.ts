@@ -1,7 +1,7 @@
 /**
  * Byte accounting: which bytes of a container belong to a structure this codec understands.
  *
- * This is the progress measure for milestone M2 in `docs/roadmap.md`, and it comes before the
+ * This is the progress measure for milestone M2 in `docs/status.md`, and it comes before the
  * emitter on purpose. A round trip that rebuilds a config byte for byte can only rebuild what it
  * can attribute, so "what fraction is attributed" is the number that has to reach 100 first, and
  * it is a number that can only go up as readers land.

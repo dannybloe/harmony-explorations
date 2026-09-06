@@ -1121,13 +1121,16 @@ class TheLabExcavationGridCoversTheWholeSite(unittest.TestCase):
     of the two and fails with a clearer message when a whole square appears.
     """
 
-    GRID_HEADING = '### Step 9: excavate the lab'
+    # **The grid moved out of the retired roadmap on 6 September 2026** and this said
+    # `### Step 9: excavate the lab`, which was the plan's numbering for it. It lives beside its own
+    # method now, and "step 9" is a dead name: `todo.md` carries the work as L2.
+    GRID_HEADING = '## The grid, and where the excavation stands'
 
     def _grid_paths(self):
-        with io.open(os.path.join(ROOT, 'docs', 'roadmap.md'), encoding='utf-8') as fh:
+        with io.open(os.path.join(ROOT, 'docs', 'lab-excavation.md'), encoding='utf-8') as fh:
             text = fh.read()
         start = text.find(self.GRID_HEADING)
-        self.assertNotEqual(start, -1, 'step 9 is no longer in the roadmap')
+        self.assertNotEqual(start, -1, 'the grid is no longer in docs/lab-excavation.md')
         end = text.find('\n## ', start)
         section = text[start:end if end > 0 else len(text)]
         # Every backticked path in the section, which is how the table names a square.
@@ -1520,7 +1523,10 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # on another architecture, and this sweep found it rather than a person.
         # 22 since 6 September 2026: `packages/corpus/bin/read-region.ts`, a read only script that
         # names `rehearse-block.ts`. The mildest entry on the list and the cheapest to withhold.
-        self.assertEqual(len(must), 22, 'the withhold list should resolve to 22 paths, got %s'
+        # 24 later the same day, and it is one withheld document becoming three rather than two new
+        # leaks: `docs/roadmap.md` was retired, its decisions became `docs/decisions.md`, its
+        # reasoning `docs/plans/002-the-roadmap.md`, and the sequence it carried is `todo.md`.
+        self.assertEqual(len(must), 24, 'the withhold list should resolve to 24 paths, got %s'
                          % sorted(must))
 
     def test_every_may_read_path_is_clean_of_the_write_path(self):
@@ -1611,7 +1617,11 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # **35 since 6 September 2026**: `tests/lab.py`, whose comment on the excluded 525 region now
         # explains that a rehearsal compares a whole erase block. `tests/` is withheld whole, so
         # nothing widens and this is the sweep counting a marker rather than finding a leak.
-        self.assertEqual(len(stating), 35,
+        #
+        # **36 later the same day**, when `docs/roadmap.md` was retired: its numbered decisions became
+        # `docs/decisions.md` and the rest of it `docs/plans/002-the-roadmap.md`, so one withheld file
+        # became two. No new writing, and both are on the list.
+        self.assertEqual(len(stating), 36,
                          'the number of files stating the write path moved, so re-read the withhold '
                          'list before restamping this: %s' % stating)
 

@@ -1,6 +1,28 @@
-# Roadmap: from reverse engineering to a Harmony configuration app
+# Plan 002: the roadmap, as it stood when it was retired
 
-This is the authoritative sequence. [plan.md](plan.md) is the earlier proposal this grew out of
+**Status: superseded, and kept for its reasoning rather than its sequence.** This was the plan of
+record from August 2026 until 6 September 2026. It was retired because it was doing four jobs at once
+and 1121 of its 2404 lines were three separate accounts of what to do next, at three levels of detail,
+written at different times. Three copies of one sequence is the state this project's oldest rule
+forbids, and adding a fourth in `todo.md` would have made it worse rather than better.
+
+**What went where.** The numbered decisions are `docs/decisions.md`, unchanged and still cited by
+number. The coverage measurement and the known unknowns are in `docs/status.md`. The lab excavation's
+grid is in `docs/lab-excavation.md`, which is where its method already lived. The sequence is
+`todo.md`. Everything below is what was left: the milestones, the eight steps of the work sequence and
+their reasoning, and three sections that had been overtaken by `CLAUDE.md`.
+
+**Two of those three sections are stale and are kept only as a record.** "Hardware safety rails" and
+"Verification" describe an earlier state of both: the rails are `CLAUDE.md`'s "Never write to a
+remote" and `packages/usb/src/rails.ts`, and the rail text below still says arch 12 is the only
+architecture with a base and a ceiling, which section 267 changed. **Read `CLAUDE.md` for either, never
+this.**
+
+---
+
+
+This was the authoritative sequence. [001-generating-configs.md](001-generating-configs.md) is the
+earlier proposal this grew out of
 and is kept for its arguments, not as the plan of record.
 
 Status, 2026-08-25: steps 1, 2, 4, 5 and 8 are done, and step 3 is done as far as the firmware images can
@@ -47,7 +69,14 @@ bytes and the same state numbers. The restore box in `docs/adding-a-device.md` s
 reason is now a **rehearsal** nobody has run, which is the same shape as M4's own first step rather than
 a reading or a doubt about the hardware.
 
-### The next thing to do, as at 4 September 2026
+
+### The next thing to do, as at 4 September 2026, overtaken and not done
+
+**Overtaken on 6 September 2026 by the section above**, and it is worth saying which half moved. What
+this section sequenced towards, writing the send count, is a length changing edit to an existing
+configuration. The goal is now a configuration built from a model, and that subsumes it: a builder
+that decides an infrared record's blocks decides the send count by construction, so this stops being
+a step of its own. It is **not done**, and nothing here is marked as such.
 
 **The heading below is kept and is done.** Everything it sequenced has happened: the first write that
 changes something, a power on delay raised on the spare Harmony One, sections 236 and 237; a device
@@ -381,648 +410,6 @@ Decision 4 has been revised: the product lives in
 Read the next section before the milestones, because that revision changed what this repository is
 for and the milestone list was written when it was going to hold everything.
 
-## What this project is
-
-Three things, and the third one is easy to lose sight of.
-
-**The API.** `packages/usb` against the hardware: connect, identify, read, and one day write behind
-the flag. `packages/codec` against the format: take a config apart, and eventually put one back
-together. That pair is what FreeHarmony imports, and it is the reason the libraries stay here rather
-than moving to the product: they are the specification in executable form.
-
-**The evidence that the API is right.** The documents, the corpus, the golden vectors and one
-regression test per documented finding. Analysis here is AI-produced and published as such, so a
-claim that is not executable is only an assertion.
-
-**A bench instrument that drives the API.** Rough on purpose, and not a product. It exists because
-an API nobody has used interactively is an API nobody knows is usable, and because step 6 cannot be
-done without one: polling a running remote's RAM while a human presses every key is not a script you
-run once, it is a screen with values moving on it. The first write to the spare remote wants a
-finger on a button too, not a test runner.
-
-FreeHarmony is the product built on top: the polished interface, the packaging, and whatever it
-grows into. Nothing in this repository waits for it.
-
-## Coverage, and why it is a problem
-
-Everything here is derived from two remotes on a bench and a handful of files. Logitech shipped
-rather more than that.
-
-| | count |
-|---|---|
-| models listed on the harmony-remote-forum comparison page | 42 |
-| named models in concordance's skin table | 71, in 120 table positions |
-| architectures concordance knows models for | 11 (arch 2, 3, 7, 8, 9, 10, 12, 14, 15, 16, 17) |
-| architectures with hardware on this bench | **3** (arch 9, arch 12 and arch 14) |
-| architectures with sample files only | **2** (arch 8 and arch 10) |
-| architectures with firmware in the lab | **4** (arch 8, 9, 12 and 14) |
-
-So the container claims are validated across **five** architectures and the USB claims across
-**three**, out of at least eleven. The fifth arrived on 10 August 2026 with the kkong42 contribution,
-which also brought the first arch 8 firmware: sections 113 to 115. **Arch 10 parses and nothing reads
-it**, and section 117 turned that from an absent derivation into a result: arch 10's 23 slots are not
-the base twenty with three inserted, because five readers are satisfied by none of the 1330 possible
-placements. Every codec reader stayed gated at that point. **The mapping was adopted on 26 August 2026, on
-Danny's call, and this paragraph told a reader not to add one until 29 August**: `SLOT_MAPS` in
-`packages/codec/src/gspm.ts` is a table per architecture now, section 184, the standing figures are
-fifteen base slots present and five absent, and the byte accounting reaches 99.3% and 97.2% on the two
-890 configs. The live account is further down this document under decision 11's neighbourhood; what
-is preserved here is why the mapping had to be stated rather than derived, which is that none of the
-1330 possible placements satisfies five readers at once.
-That section also corrected the container's base recovery, which had been circular since the first
-day and was wrong on one of the two 890 configs. **Arch 8 has firmware and is still a control**, and what the
-images bought was three counterexamples: the skin rule, `GET_VERSION` field 6's fourth value, and the
-discovery that a firmware image can parse as a container, which had quietly admitted a program image
-to a corpus wide percentage. The third arrived on 8 August 2026 and cost three changes to `packages/usb`,
-every one of them an arch 12 assumption written as a universal: section 76. One boundary is already visible without owning anything: the 900, 1000 and 1100
-are arch 15 and enumerate as a network class rather than plain HID, so the transport here cannot
-reach them at all, never mind parse them.
-
-There is a sharper version of the same point. Logitech's own discontinuation notice of 28 May 2025
-names forty models whose accounts it closed, and **not one of them is arch 12 or arch 14**; they
-are the older EasyZapper platform, spanning at least six architectures, while the bench holds two
-remotes from the platform that came after. `reference/models.md` has the list and the mapping.
-
-That gap is what step 8 exists for, and **as of 12 August 2026 it is not what the project spends its
-time on**: decision 10 below puts the application first and stops soliciting dumps. The gap is real, the
-table above stays honest about it, and closing it is not the next job.
-
-## Context
-
-`docs/plan.md` is the roadmap that came out of the harmony-decompiler discussion. It treats the
-user-facing tool as Phase 6, last, because it was written as an argument for how to reverse
-engineer the format. The actual goal here is the opposite way round: a local,
-cross-platform, fully self-contained application that reads a Harmony config off a remote,
-edits devices and activities, learns new IR codes and writes the result back. The reverse
-engineering is the cost of that application, not the deliverable.
-
-This plan re-sequences the work so that every stage produces something usable, and so that the
-format questions get answered in the order the application needs them. It also records eight
-decisions taken in the planning session, because several of them are one-way doors.
-
-Scope for now is deliberately narrow: the Harmony One (arch 12) and the Harmony 600 (arch 14),
-both of which are on the desk. The Harmony 700 2.8 image was the arch 14 reference while
-the 600 dump was truncated; the 600's own image is complete now, read off the remote, so the 700
-image is a second sample rather than a stand in. Other models are iterated on later.
-
-## Decisions taken
-
-1. **Licence stays MIT.** libconcord and harmony-decompiler are both GPLv3, so their code cannot
-   be copied or ported into this repository without relicensing it, which cannot be undone.
-   Running concordance as a separate program has no licensing consequence at all, and protocol
-   facts (command bytes, length nibble mappings) are not copyrightable expression.
-2. **The USB protocol is derived clean-room from the firmware**, which is also what the project
-   doctrine already demands: the firmware is the spec. `concordance/specs/protocol.txt` serves as
-   corroboration of facts, and concordance itself stays in use as a cross-check oracle and as the
-   tool that produces corpus dumps. There are technical reasons beyond the licence: concordance
-   has two documented defects on these two architectures, `--dump-firmware` was silently wrong
-   for years, and arch 14 IR learning is listed upstream as "believed working" rather than
-   confirmed.
-3. **TypeScript owns the config codec, Python stays reverse engineering only.** The app-relevant
-   Python code is 461 lines today (`ezfile.py` 168, `gspm.py` 180, `firmware.py` 113) and will be
-   five times larger in six months, so this is the cheapest moment to move it. The PIC18 tooling
-   (`isa.py`, `disasm.py`, `trace.py`, `loadaddr.py`, 694 lines) and the eventual emulator are
-   research tools the app never calls. The repository doctrine "never a second opcode table"
-   applies equally to config codecs: there will be exactly one, in TypeScript.
-4. **Spec and libraries together, product apart.** *Revised. This decision originally read
-   "monorepo" and put the application here as well.* The documents, the research tooling, the
-   TypeScript libraries and the tests stay in one repository, because a codec in a second one drifts
-   away from `docs/config-format.md`, and the rule that a confirmed fact must land as a regression
-   test only bites while the code sits next to the documents. The **application** is a separate
-   repository, [FreeHarmony](https://github.com/dannybloe/FreeHarmony), GPLv3, consuming these
-   libraries. The line runs between library and product, not between documents and code. See "The two
-   repositories" in `CLAUDE.md`.
-
-   **Its licence is GPLv3 and that is a reversal**, decided on 12 August 2026 while FreeHarmony was
-   still a placeholder with a single author. The Affero variant was chosen here for its network
-   clause and dropped for two better reasons: that clause fires when a program is **offered to users
-   over a network**, which a desktop application is not and a network client never becomes, and Affero
-   is a one way door with concordance and harmony-decompiler, whose GPLv3 code can come here while
-   nothing of ours could ever go back. If a shared server is ever built, the clause belongs to that
-   server. Note what the argument deliberately does **not** rest on: whether the application itself
-   ever uses the network, which is a product question and is open. `CLAUDE.md` carries both.
-
-   **How it consumes them was decided on 12 August 2026 and it is not a git dependency.** *This
-   decision said "as a pinned git dependency" until that was tried and failed twice: a git install of
-   this repository resolves no `@harmony/*` package, and Node refuses to strip types for any file
-   inside `node_modules`, so `exports` pointing at `src/index.ts` cannot work for a consumer on any
-   version.* The endpoint is **published packages**, on the answer to the only question that
-   changes anything: somebody who does not have this repository has to be able to build the
-   application. Until the API stops moving, FreeHarmony declares a **path dependency on the sibling
-   checkout**, which is measured working today where the git route cannot work at all. What publishing
-   needs, an `exports` map and possibly a build, waits on a FreeHarmony decision: a bundler compiles
-   these sources itself and wants no `dist`, an unbundled Electron main process wants one.
-
-   **A hand maintained copy of the codec in FreeHarmony is refused**, by the rule this repository is
-   built on rather than by preference: two copies of a derivation stay two copies until one moves, it
-   has happened here twice, and both times a test could see both copies. Across a repository boundary
-   nothing can. A **generated** vendor copy with a check against a commit is acceptable if
-   distribution ever demands it.
-5. **Hardware in the loop first, emulator deferred.** The emulator remains the right tool for
-   activity semantics, but it is the largest single build in the plan and the app would sit
-   behind it for months. The cheap substitutes are a byte-identical round trip, a read back and
-   diff after every write, IR cross learning between the two remotes, and live RAM polling over
-   USB. **The last of those is weaker than it reads and it is per architecture**, sections 110 and
-   111: on arch 14 the config loader's own variables read zero on a connected 600, so RAM polling sees
-   hardware state and not a config being interpreted; on arch 12 a connected Harmony One has read its
-   base slot 15 and is executing, so some derived state is there to see. Even on arch 12 the remote is
-   in USB mode, so its interface cannot be driven and its analogue sampler is stopped, which is not
-   what activity semantics would need. The decision stands on the first three.
-6. **Safety rails are absolute.** Firmware is never written. **Two units may be written to**, the
-   spare Harmony One and the Harmony 525, Danny's decision of 5 September 2026, which replaces "the
-   spare Harmony One is the only write target"<!--superseded-->. His everyday Harmony One and the
-   Harmony 600 stay refused, the 600 because it is the only arch 14 remote here. **The 525 became a write
-   target on 6 September 2026**, when the demonstration was authorised and performed, section 269.
-   Before that it was "permitted and the rail still refuses it"<!--superseded-->, because permission
-   is not capability, which had itself replaced arch 9 having "no `CONFIG_REGION_BASE` entry and no
-   `ERASE_BLOCK_SIZE`"<!--superseded-->: section 267 supplied all three constants off the 525's own
-   firmware, leaving the refusal resting on the absence of a demonstration rather than of a number.
-   **Adding it to the list opened two further paths and the suite refused them**, which is the lesson
-   worth more than the permission: the reset escape and the RAM write have lists of their own now, so
-   a demonstration buys the path it demonstrated and nothing beside it. **The reason to be
-   careful got stronger rather than weaker**: its application firmware sits one 64 KiB step below its
-   configuration and the safe mode image below that, and the firmware bounds an erase to the flash
-   part and nowhere finer, so both images are inside what the remote will accept. Details below.
-7. **Heads down on our own derivation.** The findings in harmony-decompiler discussion #1 are
-   treated as hypotheses to test, not as facts to adopt. The original format designer
-   (`glenharris`) is active there and is a privileged source, but asking is held in reserve for
-   when we are genuinely stuck.
-8. **Version 1 of the app is read only.** Detect the remote, read the config, show the container
-   and the labelled sections, export IR codes. The write rails, the erase scoping and the request
-   encoders are written and sit behind a flag that is off in release builds. The `WRITE_FLASH` data
-   path was read on 25 August 2026, section 175, so the packets are known and `writeFlash` sends
-   them, behind the flag and behind a second named door for the first write. What is still unsettled
-   is **the silicon half of pacing**: whether the USB peripheral can accept a second report before
-   the first is serviced, which is the endpoint's buffer descriptor and its ownership bit, and which
-   nothing here has read. The **firmware** half was answered by reading the same day, and the two
-   halves must not be collapsed, which is what `reference/superseded.md` records and what this
-   paragraph did by saying "one thing rather than two"<!--superseded--> until 29 August 2026. Erase
-   before program is closed on both bench architectures since sections 186 and 191, and it was moot
-   anyway for a caller that erases first.
-9. **Logitech's own client is read alongside the firmware, not as a fallback.** *Taken 9 August 2026
-   as a fallback, and reordered by Danny on 28 August 2026.* Before deriving anything about how a
-   remote is driven, what a packet looks like or which call to make, **look in their code and in the
-   image**. Neither is junior: the firmware is as important as the client and often more, and what
-   the client offers is that it is cheap and legible, so it is the fastest way to find out whether an
-   answer exists at all. The old wording made it a fallback
-   admitted only "where the firmware genuinely cannot settle something"<!--superseded-->, which put
-   the expensive work first by default; the measured cost of that ordering is sections 197, 200 and
-   202. The client to read is **MyHarmony**, decompiled to C# in the lab, and not Harmony Desktop's
-   web application.
-   **The firmware is still the preferred evidence and still wins a disagreement**, because it says
-   what the remote does where the client only says what one host believed, and where neither firmware
-   nor hardware can answer the fact is marked as client-sourced wherever it appears. Where a lead
-   comes from and what confirms it are two questions, and the old rule collapsed them. What travels is
-   the mechanism: addresses, command numbers, field widths, the order of operations. What does not
-   travel is expression: names, comments, code, structure. Everything here is implemented our own
-   way from a description of the behaviour, never by transcribing theirs. The reason the balance
-   moved is that discarding facts nobody can recover another way means remotes that stay
-   unrepairable, and that cost is real where an unqualified clean room claim is a comfort. The
-   basis is the interoperability exception in the Software Directive and article 45m of the Dutch
-   Auteurswet, which permits obtaining the information and does not permit republishing the code,
-   which is why the decompiled source stays in the private lab. **A licence change is not the
-   lever**: copying unlicensed proprietary code infringes whatever licence the result carries, so
-   MIT is not the obstacle and moving to GPL would not create a permission. The rule, the legal
-   argument and the ledger of everything currently believed on the client's word alone are in
-   `docs/host-client.md`.
-
-10. **The application comes before a wider corpus.** *Taken 12 August 2026, and it reverses the
-   posture the front page had carried.* No general call for dumps goes out, and the eight unseen models
-   and the arch 10 firmware stop being wanted things. The reasoning is the shape of the cost rather than
-   the value: broadening the corpus answers questions about hardware nobody here owns, each answer costs
-   a firmware read or a bench session, and none of it is on the path to an application that works on the
-   four remotes already here. The realistic alternative was several more months of analysis and still no
-   FreeHarmony. **What replaces it**: the two people already contributing, who have both offered, are
-   asked for a specific measurement when a specific question needs one, which is how sections 90, 101,
-   122 and 123 were settled anyway. The contribution probe of step 8 stays built and stays unadvertised.
-   **What this does not license** is loosening any rail, since the write target is still one spare
-   Harmony One, or quietly narrowing a claim to the bench: a reading that only holds on arch 12 and arch
-   14 still says so.
-
-11. **Offline is the floor, Logitech's live service is an optional import, and provenance decides what
-   may be shared.** *Taken 12 August 2026, and it is the first decision here about the
-   product rather than about the format.* Three parts, in the order they constrain each other.
-
-   **FreeHarmony works with no server and, ideally, with no network at all.** Not a preference: it is
-   the entire reason the project exists, since Logitech's software needed a server for everything and
-   then the server went. So nothing may become a runtime dependency on anything remote. No account is
-   ever required, and a build with the network unplugged reads a remote, shows a config and edits it.
-
-   **While Logitech's service is alive, taking its device data is worth doing, optionally and by the
-   user's own hand.** Section 56 measured it answering and section 58 watched it compile a config for a
-   device chosen that day, so the data is reachable **now** and will not be one day. The user decides,
-   supplies their own credentials if it needs them, and sees what is fetched; the application must work
-   identically for somebody who never touches it. What arrives is converted into **our** device
-   definition format and stored locally, which is what makes it survive the service.
-
-   **There are two routes to that data and the cheap one already exists.** Reading it out of a config
-   Logitech compiled needs no new protocol work at all: base slot 5 is fully read on four
-   architectures, so a synced remote can be read and its infrared records converted with today's code.
-   The expensive route is a direct client against `svcs.myharmony.com`.
-
-   **The reconnaissance on that second route is done, the same day, and it changes the picture.** This
-   decision said nobody here had looked at what the service serves, which was true for an hour. It is
-   mapped now, offline, out of the client already mirrored in the lab and with no request made to
-   Logitech: fourteen services, 78 operations, JSON over HTTP rather than SOAP, and **the device
-   database is its own call**, `deviceManager.SearchGlobalDevices` with `GetCommands` beside it and a
-   REST form of the search on another service. So the expensive route is real rather than hypothetical.
-   `docs/host-client.md` has the map and `tests/test_host_client.py` recomputes it.
-
-   **One operation on that list is worth more to this repository than to the application**:
-   `downloadManager.RemoteConfigurationInJson`, a configuration described in JSON by the people who
-   wrote the format, for a remote whose bytes we already read to the last one. A vendor authored second
-   view of the same object would confirm `docs/config-format.md` or name the field that is wrong, which
-   is a stronger check than anything available here.
-
-   **The requests were made on 13 August 2026, with authorisation and a throwaway account,
-   and the route works end to end.** Section 132. What the paragraph above listed as unknown is
-   measured now, and four things follow for this decision.
-
-   The database needs **a plain Logitech login and nothing else**: no registered remote, no Harmony
-   account record. That is what makes the import worth building, because the user it is for is the
-   second hand buyer, and Harmony Desktop refuses to register a Harmony 525 at all. The chain is
-   `SearchGlobalDevices` then `GetGlobalLanguageCommands`; `GetCommands` is a dead end that reads the
-   caller's own devices.
-
-   **The cost this decision was afraid of is not there, and section 152 is why.** It read: the expensive
-   route acquired a cost nobody had priced, an infrared encoder, because Logitech stores a protocol name
-   and a frame value and not pulses, so converting a catalogue device into our format means implementing
-   the protocol families, of which six devices gave nine. What that missed is that **a stored record
-   states its own timings**. Five durations read off any code of the same appliance rebuild a frame
-   exactly, on 3502 of 3502 records in the corpus, and 52 of 58 device groups use one set of timings for
-   every code they carry. So a command fetched from the catalogue is written using the timings a config
-   already holds, and the nine families are nine names rather than nine encoders.
-
-   **What is genuinely unpriced is everything after the frame.** A block repeats the frame and then goes
-   quiet, and that tail is 140 distinct shapes across the corpus, with a per family rule for 29<!--fact:protocol_tails--> of the
-   rhythm table's 37<!--fact:protocol_measured--> measured entries since section 171, plus 33<!--fact:protocol_tails_stated--> derived from Logitech's own
-   statement of it since section 228, and none for the remaining 541, so it is emitted where there is a
-   rule and copied
-   from a record of the same appliance rather than computed. That is a smaller job and a different one:
-   it needs a record to copy from, which means the catalogue import wants a configuration beside it
-   rather than standing alone. **The cheap route** still reads base slot 5 out of a compiled config and
-   needs neither, so it stays the first version, but no longer because the other one is expensive.
-
-   `downloadManager.RemoteConfigurationInJson` **was called, and it is less than this decision hoped.**
-   Discovery does not advertise the service; the URL comes back from a compile. What it returns is a ZIP
-   holding a bare `GSPM` container and a manifest, so the vendor authored second view is the manifest
-   rather than a described configuration. The manifest does corroborate the trailer checksum, seed and
-   algorithm, from its author.
-
-   **And the compile itself is the useful surprise.** It runs server side with the remote unplugged and
-   hands back a file, so this project can have Logitech compile a configuration **to its own
-   specification** and never write to hardware. Two of those exist, one per bench architecture, and they
-   are the corpus's first known answer samples: three devices and two activities chosen in advance,
-   read back correctly by four readers that had only ever been checked against configs found in the
-   wild. `packages/codec/test/calibration.test.ts`.
-
-   What is still unknown, and smaller than what was: which member of a regional skin pair a compile
-   produces, section 131, and whether the protocol timings are reachable, since the endpoint that would
-   plausibly carry them returns 502 on an account with content. The **value still decays**, so a
-   measurement that is worth having is worth making now.
-
-   **A community database is a direction now rather than an idea, and it has one hard rule**: a
-   definition carries its **provenance**, and only a definition learned from hardware may be shared.
-   Anything derived from Logitech's data stays on the machine that fetched it. That is the same
-   copyright reasoning that keeps configs out of this repository, and the reason to record it before a
-   line of the format is written: provenance has to be a field in the definition from the first
-   version, because retrofitting it means auditing a database whose origins nobody kept.
-
-12. **The lab is an archaeology site, and its knowledge is not knowledge until it is in this
-   repository.** *Taken 28 August 2026, by Danny, after the fourth time a session discovered that
-   something it was working out had already been established in the lab and written down there.*
-
-   **The failure is structural, not carelessness.** Every rule this project has for keeping facts
-   straight operates on the repository: `make facts` recomputes marked numbers and refuses dead
-   phrasings, `reference/superseded.md` kills old wording, a finding needs a regression test, and
-   the four places rule makes a fact land in all of them or none. The lab is **deliberately outside
-   all of it**, because it holds unlicensed firmware, contributors' configs and Logitech's own
-   client code, and that is the right decision for what may be published. The consequence is that a
-   fact recorded only in a lab `META.md` is invisible to every check here, and no amount of care
-   inside the repository can see it.
-
-   Section 197 is the case that forced this. Logitech's own per model protocol specification was
-   mirrored on 9 August 2026 and **read**: the lab notes beside it carry the architecture map, the
-   vendor's codenames and the Harmony One's entire infrared learn session, which is section 91's
-   open question. None of it crossed into a finding, a structured fact, a test or a line of code
-   for nineteen days. The same notes file also stated, thirty lines above that description, that
-   those files had not been fetched at all. One file, two paragraphs, contradicting each other,
-   with nothing able to notice.
-
-   **So the site gets excavated once, as a grid, and every find gets registered.** Not searched for
-   what is wanted this week, which is exactly how a folder nobody had a reason to open stays shut:
-   walked exhaustively, square by square, with each find recorded whether or not it is useful now.
-   An artefact whose value is not yet apparent is the one most worth cataloguing, because the
-   session that needs it will not know to go looking.
-
-   **The register is the deliverable and it lives here, not there.** Names, provenance, what an
-   artefact is, what has been extracted from it and what has not: our own text about what exists,
-   so it is publishable, where the artefacts themselves never are. A find with no register row is
-   the state this decision exists to forbid.
-
-   **Afterwards it is per arrival.** Anything new in the lab gets its row in the session that puts
-   it there, the same way a confirmed fact gets its four places.
-
-13. **`docs/findings.md` stays one file.** Splitting it is the obvious idea at 27175 lines and it was
-   measured and rejected on 8 August 2026, so do not re-derive this. It **costs no tokens**, because
-   it is never loaded whole, only grepped and read in ranges; the per-session cost was `CLAUDE.md`
-   and that has been cut. **No cutting line is better than another**: 140 references run between
-   sections and both an era split and a subject split push about 40% of them across a file boundary,
-   so the correction chains that give the document its value do not survive either. And it is **the
-   one document that has never drifted**, because every section in it carries a regression test,
-   where the eleven contradictions the audit found were all in summaries. What would reopen it is
-   size alone, at roughly 8060 bytes a section over 209 sections: if it outgrows rendering, split by era, keep section
-   numbers global, and keep the index at `docs/findings.md` so the 159 references that name that
-   path stay correct.
-14. **The vendor's data model moves into this repository whole.** *Taken by Danny on 30 August 2026,
-   overruling a narrower reading of decision 9 that this assistant had raised.* The platform's schema,
-   what an account holds and what every field is called, is recovered in `docs/myharmony/model.json`
-   with `docs/myharmony/model.md` as its reading, and **it is to be consulted before naming a field or
-   designing anything about devices, activities or remotes**, in this repository and in FreeHarmony
-   both. The concern raised was decision 9's boundary, that Logitech's code stays in the lab. It does:
-   what crosses is a **schema**, names of types and fields and the references between them, which is
-   the same class of thing as a command byte or a length nibble, and decision 1 already records that
-   such facts are not copyrightable expression. No source, no comment and no structure of theirs
-   travels, the extractor stays in the lab, and `TheModelCarriesSchemaAndNoInstances` asserts that no
-   instance, account or identifier came with it. The argument for moving it rather than citing it from
-   the lab is decision 12's, in one sentence: a fact recorded only in the lab is invisible to every
-   check this project has, and this one is too useful to leave there. Section 218.
-
-15. **A third party's archive of Logitech's device database is a source, on the same footing as the
-   live service.** *Taken by Danny on 31 August 2026, after Eric Schewe wrote to say he had archived
-   it and concordance pointed him here.* It is checked out as a sibling,
-   `../logitech-harmony-ir-archive`, and it holds 276236 devices from 7889 manufacturers, 257720 of
-   them with codes, and **Logitech's own protocol definitions for 685 families, verbatim**, down to
-   the internal type marker their software stamps on them. The keycode strings are character for
-   character what `GetGlobalLanguageCommands` returns on the live service.
-
-   **It was tested before it was believed, per decision 7.** We hold measured rhythms for 37 families,
-   35 of them read off Logitech's own compiler by having their service build configurations to our
-   specification, so this project could check the archive rather than admire it. **33 of 33 fully
-   comparable families agree on every field compared**: carrier, lead mark and gap, both bit
-   durations, the unit pulse and the frame length. Two more agree on carrier where our shape is a quad
-   or long toggle form the comparison does not model. The three that disagree are **ours**, and they
-   are exactly the three we fitted to the corpus instead of measuring off the compiler.
-
-   **What crosses into this repository is durations and names in our own schema, through our own
-   converter.** Not his JSON, not his 13.3 million rendered waveforms, and not the 685 definition
-   files. Decision 1 is the basis and it already covers our existing 37: protocol facts are not
-   copyrightable expression. The **selection and arrangement** of a database is a different thing from
-   a duration, so bulk vendoring is refused and is also unnecessary, since the archive is a sibling
-   checkout that anybody can clone.
-
-   **His own position is worth recording**, since it is the reason this needed a decision at all: he
-   releases his conversions and schema under CC0 and says outright that the underlying codes and
-   definitions originate with Logitech and that he makes no representation about their copyright
-   status. So the archive does not launder anything, and our position rests on decision 1 rather than
-   on his licence.
-
-   **Every entry taken from it enters marked, and this is the load bearing part.** Our corpus cannot
-   verify the other 648 families: it holds 3017 infrared codes and every one belongs to the 37 we
-   already have. So a converted entry arrives as **stated by Logitech and unverified**, with its
-   exact and spread counts at zero, beside the 35 we can stand behind, and any family that matters is
-   upgraded to measured later by the route that produced those 35. The check that **is** free is our
-   conversion against his own rendered waveforms, which tests our reading of his format rather than
-   the definition's truth, over millions of commands instead of 37 families.
-
-   **It interacts with decision 11 and the interaction is a refusal.** That decision's hard rule is
-   that only a device definition **learned from hardware** may ever be shared, and nothing out of this
-   archive is. So an archive sourced definition is usable locally and is **never** uploadable to a
-   community database, and its provenance field has to say so from the first version rather than being
-   audited in later. Without this paragraph the archive would quietly contaminate the shareable pool,
-   which is the exact failure decision 11 exists to prevent.
-
-Scope is the Harmony One (arch 12) and the Harmony 600 (arch 14), the remotes on the bench, with
-the 700 2.8 image as the arch 14 reference. **Arch 9 is a target**: the Harmony 525 arrived on 8
-August 2026, its config and its firmware are in the lab, and `docs/memory-map-525.md` records what
-was predicted before it was connected against what it measured. **It will not get a known answer sample**,
-sections 135 and 136: the live service accepts a skin 22 remote record and names it a Harmony 525, so
-Harmony Desktop's refusal to see one is the client's, but the compile is accepted and then ends in a bare
-`status='Error'`. **The reason is confirmed and it is a policy field**, section 145: a stated per product
-`IsEnabled` flag, false for skin 22, whose true set is exactly the client's own supported list, 19 skins
-of 120 with no exception in either direction. The earlier reading added "minus the two hubs"<!--superseded-->,
-which was an artefact of comparing 27 records against 19 skins rather than skins against skins. **And no other model can be
-tried**, because `ValidateRemote` refuses a synthetic serial, so registering a remote nobody here owns is
-not possible: an 880 or an 890 needs the hardware, and the contributed dumps carry no serial. Other models are iterated on later.
-
-**Arch 8 has firmware now and is still not a target**, sections 113, 114 and 116: two application
-images of one build, an 880 and an 885, contributed on 10 August 2026, plus **two bootloaders**, plus
-eleven configs and an arch 8 safe mode container found inside the application firmware itself. The
-bootloaders carry the reset vector and hand both interrupt vectors to the application, so arch 8 is
-the only architecture here whose whole program flash is accounted for. It stays a control for container claims, and what the
-images bought is a **counterexample supply**: they broke the skin rule, they gave `GET_VERSION` field 6
-its fourth value, and they showed that "whatever in the lab table parses as a container" is not a
-corpus. Reach for them when a claim holds on every architecture here, because a claim that nothing can
-contradict is the failure mode this file warns about throughout.
-
-**Arch 10 has a known answer now and still nothing reads it**, sections 115, 117 and 178. A Harmony
-895 arrived on 26 August 2026 with its contents stated by its owner, six devices, which is the
-calibration case the slot mapping search never had. It **refutes** the insertion model, though **not for the reason section 178 gave**, sections 181
-and 182: that argument needed the Harmony 895's base slot 5 to hold six entries because its owner
-states six devices, and the 895 turns out to have **no infrared records at all**, so the premise fails.
-The real reason is that arch 10 carries **nineteen** base slots and four insertions rather than twenty
-and three, because **base slot 0 is absent**: raw slot 0 holds the architecture record, `0a 0a` plus
-the skin, so **an arch 10 config does state its architecture and it is 10**, skin 19 for a Harmony 890
-and 23 for a Harmony 895. Seven base slots are anchored by content, base 1 to raw 0, 3 to 4, 5 to 6,
-7 to 10, 17 to 20 and 18 and 19 to the trailing NULLs, and **the mapping is determined since section 183**
-and corrected in section 184: fifteen base slots are present, five are absent and eight raw slots are
-not base slots at all, per the paragraph below. The anchor that closed it is base slot 10's **packing closure**, that consecutive table entries
-sit `1 + 3 * count` apart with the addresses coming from the table and the counts from the lists: on both
-arch 10 containers exactly one slot scores like arch 8's, raw 12, with the same four breaks, where every
-other array scores near zero. That forced base slot 9 onto raw 11, twelve tagged lists and 323 bindings
-against the Harmony 880's twelve and 322, and left base slot 8 nowhere to go. **Section 182's own
-arithmetic was wrong about five slots** and the lesson is the instrument: it assumed a shape for the
-difference, insertions only, and one free parameter against seven constraints looked conclusive and was
-not. **The mapping is adopted since section 184**, on Danny's call of 26 August 2026, and the two objections
-it waited on were both settled: `SLOT_MAPS` is a table per architecture now, so a base slot can be
-**absent**, with the four insertion architectures still derived from `INSERTED_SLOTS` so their alignment
-is stated once. `archSlot` **throws** for an absent base slot rather than returning a number, which is
-the section 178 rail relocated rather than removed, since a number would hand a reader the neighbouring
-section. `INSERTED_SLOTS` still gets no arch 10 entry and never will.
-
-**Switching it on corrected the mapping it adopted, and the four rows placed by order were the risk in
-exactly the way section 183 named**: base slots 4 and 6 confirmed on content, base slots **13 and 14
-refuted and absent**. So the standing figures are **fifteen** base slots present, **five** absent, 0, 2,
-8, 13 and 14, and **eight** raw slots that are not base slots. Base slot 13's refutation is the strong
-one, because section 130 gives it the best closure in the container: its first seven records hold the
-build timestamp's own fields, and no run of pointers in either payload has targets carrying those seven
-values, at any field offset and either width, where an arch 8 container hits exactly once. **The lesson
-is section 183's own sentence turned around**: a slot with only one home under a monotone mapping is not
-thereby a slot that is there, and the argument that placed four rows equally permitted the two absences.
-What separated 4 and 6 from 13 and 14 was reading the bytes.
-
-**What it bought**: the screens, the button bindings, the mode pages, the action lists with arch 8's
-exact packing signature of four breaks, and the **drawn text**, 5634 of 5634 glyphs on the Harmony 890
-and 6486 of 6490 on the Harmony 895, which name the same four activities and four appliances as the
-arch 8 Harmony 880 from the same household. **What it did not buy is the device names and the activity
-count**, and that is structural rather than pending: both routes need base slot 0's name tree, which
-arch 10 has no slot for, or base slot 13's transitions, which is the slot just refuted.
-
-**The byte accounting sits at 99.3% and 97.2% with zero overlaps**, where the corpus is at 100%. Section
-185 read the biggest remaining family, 18 runs of 111 bytes and 21, and they were **mode page screen
-programs** blocked by one table entry: screen opcode 22 is the one opcode whose operand width is per
-architecture and arch 10 had none, so 49 and 34 programs were abandoned unread along with a fifth of the
-drawn text. **The instrument is the thing to carry from it, not the width**: measured off the coverage
-percentage, width 2 gives the Harmony 895 a clean 100.00% and is wrong, because a program read short
-overruns and claims what follows, 308344 bytes of overlap. Measured per program, asking whether a decode
-lands exactly on the run's own end, width 3 gets 49 of 49 and 34 of 34 and the others get 0 and 1. A
-percentage is a sum, and a sum cannot be falsified by one term being wrong in the generous direction.
-What is left is runs with no family, the largest a single 7187 bytes on the Harmony 895, plus the eight
-raw slots that are no base slot, of which three are the same size on both containers and therefore
-fixed structures.
-
-**The unprompted confirmation is the best evidence the mapping is right**, and nothing was looking for
-it: with the clock routed through the map, three of one contributor's configurations, two remotes and
-two architectures, were built inside fifteen minutes of one afternoon, the Harmony 880 at 21:25:34 and
-the two Harmony 890 reads at 21:37:44 and 21:40:26. The arch 8 date was already believed and the arch 10
-ones come out of a slot the arch 8 map does not use. What does read on arch 10 without any mapping at
-all is everything the header
-or the marker locates rather than a pointer slot: the framing, the checksum, the base anchor, the
-key table, which is how section 177 matched a hand probed circuit board without any mapping at all,
-and since sections 179, 180 and 181 the **picture bank**, the **font sets** and the **infrared
-records**. Those two were section
-178's own prediction and it paid off the same day: the bank is found from the trailer's position alone,
-so a Harmony 890 and a Harmony 895 now state their display, **128 by 160**, the same as a Harmony 885,
-with the same ten distinct picture sizes where a Harmony 600 and a Harmony One share none of them; and
-their eight font sets are found by requiring every pointer to decode into a glyph that tiles exactly,
-which names 213 of 237 glyph shapes against the arch 8 alphabet and **0** against the Harmony One's.
-A Harmony 890's whole
-infrared database reads, 300 codes with every duration block decoding, and a Harmony 895 turns out to
-have **none**, which is proven rather than unfound. **The common mechanism is the thing to reach for,
-not the four results**: a structure that refuses to decode when misread can be located by trying every
-offset, so it needs no pointer slot, and a record is the cleanest case because it **states its own
-address**. The shape filter around a hit is not optional: an ascending pointer table crosses the self
-pointer line dozens of times, which is the misaligned ascending table pitfall again, and 198 such hits
-in the Harmony 895 look exactly like a result. It is also
-**not** progress towards the mapping, and the alphabet was not the words either, since a string's address
-comes out of a screen program: that stood until the mapping was switched on and it is dead now, per the
-paragraph above. Section 179's own next step was **wrong** and
-measuring it cost nothing: the font table is not at the bank's lower edge, it is 1918 to 48385 bytes
-below it.
-The earlier state of this entry, and the two Harmony 890 samples it describes: two Harmony 890
-configs, format 1.7, 23 pointer slots, both based at flash `0x030000`. The container framing
-verifies and **the slot mapping is not a relabelling of the twenty**, which is stronger than the
-"unknown" this said for a day: all 1330 placements of three insertions were scored against
-seventeen readers and the best reaches 34 of 47 where arch 8, 9 and 14 each score 47 uniquely, with
-five readers satisfied by no mapping at all. So every reader stays gated, and **adding an entry to
-`INSERTED_SLOTS` to ungate them is the one thing not to do**: a guessed mapping turns twenty
-refusals into twenty plausible wrong answers. Two things the samples do say: the clock record is raw
-slot 4's target, so arch 10 inserts a slot below base slot 3, and no `0xFEED` frame validates
-anywhere in either payload, so an 890 is not known to name its devices and activities at all.
-
-**The container's base address is anchored on the clock record, not on the end marker**, section
-117, and that correction is the instructive one in this file. The old
-`base = end_addr - offset_of_end_marker` was right on 23 of 24 containers and 864 bytes wrong on the
-second 890, and it was **circular**: `end_addr_points_at_end_marker` tested the assumption the base
-had just been computed from, so no input could fail it. A wrong base does not error, it reads the
-neighbouring bytes. The anchor is one candidate per pointer, filtered by `0x1000` alignment, and
-exactly one survives on 26 of the 27 containers here. `packages/probe` had a second copy of the old
-reading, which is the two-diverging-derivations state this file warns about below, and it now calls
-the codec's.
-
-**The 27th is where the anchor refuses, and that is the behaviour to keep**, section 122: a second
-read of the same 890 has its clock record 54 bytes off its pointer, so no candidate is aligned and
-none survives. The fallback then returns an unaligned base and the circular check pronounces the file
-consistent. So the refusal is the finding and the fallback is the warning, and **why that file is
-damaged is now read**: an arch 10 read duplicates whole 54 byte chunks, 16 in the first read of that
-remote and 2 in the second, which is what section 117 measured as a generator error.
-
-    *Moved here from `CLAUDE.md` on 29 August 2026, where thirteen thousand characters
-    of it sat in every session to argue a question that arises once a year. It is the plan
-    of record that holds decisions, and this is one.*
-
-## Facts established during planning
-
-* Arch 12 and arch 14 both use the plain non-z-wave HID class in libconcord, 64-byte reports in
-  both directions. `node-hid` and Python `hidapi` both cover Windows, macOS and Linux. Linux
-  needs a udev rule either way.
-* The command set is small: `GET_VERSION 0x10`, `WRITE_FLASH 0x30`, `WRITE_FLASH_DATA 0x40`,
-  `READ_FLASH 0x50`, `START_IRCAP 0x70`, `STOP_IRCAP 0x80`, `WRITE_MISC 0xA0`, `READ_MISC 0xB0`,
-  `ERASE_FLASH 0xD3`, `RESET 0xE1`, plus a length nibble whose mapping is non-linear and differs
-  between mode 0 (safe mode) and the other modes.
-  **Now derived from the firmware**, with two differences from the list above: the dispatch is on
-  the high nibble, so `ERASE_FLASH` is `0xD0` and `RESET` is `0xE0` with a sub-command byte, and
-  `STOP_IRCAP 0x80` is not dispatched at all in the idle table. The mapping is `0` to `7`
-  literally, then `8`, `9` and `A` to 15, 31 and 63. Safe mode is a separate firmware and
-  unchecked. **`STOP_IRCAP`'s absence is not an omission**, section 91: it has its own one entry
-  dispatch that only exists while a learning session is open, and anything else sent during one
-  ends the session silently.
-* `READ_MISC`/`WRITE_MISC` carry a `MISC_RAM 0x06` sub-command, exposed upstream as
-  `ReadRam`/`WriteRam`. **Live RAM of a running remote is readable over USB.** The header also
-  defines `MISC_QUEUE_ACTION 0x03` and `MISC_QUEUE_EVENT 0x09`, which concordance never uses;
-  whether the firmware services them is an open question worth answering, because event
-  injection would let us drive the remote from the host.
-  **Superseded in part.** The RAM read is confirmed on arch 14 and **its selector is `0x07`, not
-  `0x06`**: see `docs/usb-protocol.md`. Read `0x06` above as the upstream claim it was, not as a
-  fact about these remotes. The queue sub-commands are still open.
-* Our parsers reject the two extra sample sets: `gspm.parse` and `ezfile.decode_payload` hardcode
-  the `GSPM` magic, so `AHCM` (arch 9, Harmony 525) and `TPTP` (arch 8, 720/785/88x) both fail.
-  The claim in `docs/config-format.md` that the container is shared across architectures is
-  therefore currently untested against the two architectures that would best prove it.
-  **Done in step 2.** The container is now general and the claim held.
-* Five extra config samples are available in the sibling `harmony-decompiler/samples` checkout,
-  already published with permission, `UserId` 0, no account data: four arch 8 and one arch 9.
-* Three of the four arch 8 configs were generated within about half an hour of each other, per
-  their own build timestamps, and still differ in 73 to 84 percent of their bytes, first
-  difference at offset `0x000004`. **A small logical change
-  reshuffles the whole image.** Consequence for the app: byte-identical round tripping is
-  achievable, but reproducing what Logitech's generator would have emitted is not, so the editor
-  must make minimal diffs against an existing config rather than regenerate one.
-* The keypad scanner at `0x190A6` returns a linear index, 1 to 56, rows active low. Polling the
-  RAM variable that receives that index, over USB, while a human presses each key, is a route to
-  the button mapping that upstream's three failed attempts did not try. Supporting evidence that
-  the scanner keeps running while USB is attached: upstream observed a key press toggling a
-  backlight boolean. **Update since:** the experiment got cheaper, because the config's key codes
-  turn out to carry that linear index directly, so there is no translation layer to find first.
-* Upstream reports a config interpreter in firmware, an accumulator machine at `0x01C86` to
-  `0x02401` on their architecture, so action lists are bytecode rather than data. Their claimed
-  key chain is physical button, scan code, event code, key table, action list, IR command, with
-  event type in the top bits (`0x80` press, `0x40` release, `0xC0` repeat). **The event type part
-  is confirmed on arch 12 and 14**, section 17, and it replaced our own wrong reading of the code
-  as a matrix address. The key table is **not** the link to the action list, though: it is byte
-  identical across a pair of configs whose buttons were reassigned, section 16. Action lists
-  themselves are found, at base slot 10; their opcodes are not.
-* The format's designer stated the pointer table "is probably pointing to data for each of the
-  various subsystems (IR sending, state variables, menus, action lists etc)". Treat as a prior
-  for section labelling, not as an answer.
-
-## Target repository shape
-
-```
-src/harmony/            unchanged: PIC18 disassembler, tracer, load address, emulator later
-tools/                  unchanged: reverse engineering command line
-packages/codec/         TS: EZHex container, GSPM/AHCM/TPTP, records, round trip compiler
-packages/lab/           TS: locates the private lab directory, so TS tests can skip cleanly
-packages/usb/           TS: HID transport plus the Harmony command protocol
-tests/                  Python reverse engineering tests stay; TS tests live with their package
-docs/                   plus docs/usb-protocol.md and this roadmap
-```
-
-No `apps/` directory. This plan named `apps/studio` when the application was going to live here;
-per the revision to decision 4 it is FreeHarmony, a separate repository, and the `apps/*` glob is
-out of `pnpm-workspace.yaml`.
-
-Conventions: pnpm workspaces, `.nvmrc`, TypeScript strict, and **Node's own test runner rather
-than `vitest`**, which this plan named until the dependency tree was actually looked at. `vitest`
-installs 71 packages including `vite`, `rolldown`, `lightningcss` and `postcss`, a CSS toolchain,
-to run tests that read bytes out of firmware images. Node 24 runs TypeScript test files directly
-by stripping the types, so the whole tree is the compiler and its type definitions: three
-packages, and `make audit` reports on them. The cost is real but small: type stripping cannot
-erase enums, namespaces or parameter properties, so `erasableSyntaxOnly` is on and the compiler
-refuses them, and `node:test` has no skip-from-inside-the-test, so `packages/lab` returns a skip
-option instead. Revisit if FreeHarmony wants a browser-side runner; that is a decision for the
-repository that needs it, not for this workspace.
-
-TS tests that need real dumps resolve `../lab` or `HARMONY_LAB` and skip cleanly when absent,
-mirroring `tests/lab.py`. The two fixture tables are asserted equal, because a golden vector the
-other suite cannot find is a test that passes without checking anything. Fixtures never enter
-git; checksums go in `reference/checksums.md`.
-
-**Every dependency is pinned to an exact version**, with no `^` or `~` anywhere, and
-`pnpm-lock.yaml` is committed on top of that. A range hands the choice of which bytes get
-installed to whoever published most recently; a lock file narrows that but does not close it,
-because any `pnpm add` moves the range. Pinning makes a dependency update a reviewable diff. No
-dependency is added without looking at what it pulls in: that is what rejected `vitest`.
 
 ## Milestones
 
@@ -1065,7 +452,7 @@ a technical claim about the product belongs on this side of the fence.
 | 3 | Change something, without touching the remote | M3's codec half, done: `edit.ts` with `FIELD_RULES` for same length edits, `relocate.ts` for length changes, section 172 |
 | 4 | Put it back, changing nothing | **M4, and its name is now literal**: on 30 August 2026 one 64 KiB block of the spare Harmony One's own configuration was erased and written back unchanged, verified over the block and over the whole configuration, section 222. The transfer derived in section 175 is confirmed on hardware and the erase block size is measured rather than believed. What is untried is a write that changes something |
 | 5 | Change what your remote does | M4 again. Both its readings are **done**: a device's delays are state variables in base slot 13, in tenths of a second, and not in base slot 15 at all, section 234; and how many times a press sends a code is the ratio between an infrared record's two blocks, section 258. What stays open is **writing** the send count, which changes a block's length |
-| 6 | Add and remove devices and activities | M6. Its former blocker, length changing edits, exists: `relocate.ts`, section 172, exercised by `composeDevice` and `composeDeviceScreen`, section 173 |
+| 6 | Add and remove devices and activities | M6. Its former blocker, length changing edits, exists: `relocate.ts`, section 172, exercised by `composeDevice` and `composeDeviceScreen`, section 173. **Its current blocker is the activity**, since 6 September 2026: the device half composes and has driven a television, and nothing here records what an activity is made of. See "The next thing to do" at the top |
 | 7 | Teach it a code from your old remote | **M5**, partly built without being scheduled: a code stated as a name and a number becomes pulses, `stated.ts` over 38 families, sections 157 to 169, and the block spelling is the generator's own, section 174. Capture is read, section 98. Open: a learned code's tail shape and storage class |
 | 8 | An application you can install | no M. Decision 4's published packages are its only demand on this repository |
 
@@ -1160,74 +547,10 @@ day later, and `emit.test.ts` now asserts the leftover set is **empty**. The les
 past this one section: an accounting that counts bytes cannot tell a read structure from a measured
 one, and an emitter can.
 
-**Measuring it first changed what it is.** The obvious reading of M2 is "write an emitter", and it
-is wrong: an emitter can only rebuild what a reader can attribute, so the first question is what
-fraction of a config is attributed at all. `packages/codec/src/coverage.ts` answers it and
-`make coverage` prints it. Where it started on 7 August 2026, and where the first two ports took
-it the same day:
-
-| sample | at the start | readers ported | mode records, 53 | opcode 23, 54 | the bank, 55 | infrared, 61 | arch 9, 63 to 65 | pages, 66 | slot 9, 67 | the pool, 67 | header groups, 75 | class 5, 82 | the residue, 83 |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Harmony 700 | 11.4% | 26.3% | 59.3% | 87.8% | 91.9% | 98.1% | 98.1% | 99.5% | 99.6% | 100.0% | 100.0% | 100.0% | **100.0%<!--fact:coverage_h700_config-->** |
-| Harmony 600 | 9.5% | 24.8% | 57.5% | 86.4% | 87.4% | 98.7% | 98.7% | 99.6% | 99.7% | 100.0% | 100.0% | 100.0% | **100.0%<!--fact:coverage_h600_config-->** |
-| Harmony One | 3.2% | 8.0% | 8.6% | 47.9% | 90.0% | 98.0% | 98.0% | 99.6% | 99.8% | 100.0% | 100.0% | 100.0% | **100.0%<!--fact:coverage_one_config-->** |
-| Harmony One, spare | 3.2% | 7.5% | 7.9% | 54.5% | 97.0% | 98.6% | 98.6% | 99.8% | 99.8% | 100.0% | 100.0% | 100.0% | **100.0%<!--fact:coverage_one_config_unprogrammed-->** |
-| 880, arch 8 | 3.6% | 16.4% | 50.6% | 80.2% | 82.2% | 94.4% | 94.4% | 97.0% | 97.2% | 97.7% | 100.0% | 100.0% | **100.0%<!--fact:coverage_arch8_config_a-->** |
-| Harmony 525, arch 9 | 7.2% | 10.4% | 14.1% | 14.1% | 14.1% | 14.6% | 55.1% | 64.1% | 65.1% | 66.4% | 67.1% | 99.9% | **100.0%<!--fact:coverage_h525_config-->** |
-| the three safe mode containers | 4.2% | 70.2% | 89.5% | 89.5% | 89.5% | 91.8% | 91.8% | 98.2% | 98.4% | 99.4% | 99.4% | 99.4% | **100.0%<!--fact:coverage_h700_gspm-->** |
-
-**Only the last column carries a `fact:` marker**, and that is the rule rather than an accident: a
-historical column is a fixed number and the live one is recomputed from the corpus. Putting a marker
-on a history column makes `make facts-write` rewrite the past, which is exactly what happened to
-this table for one commit.
-
-The sixth column is two readers landing the same day: base slot 13's records, found by asking the
-deliberately built config pair of section 58 one question, and the infrared records, whose header
-points **backwards** at duration blocks below it. Its length was read as a flat 21 bytes and is
-`12 + 9 * count`, section 75, which is the last column.
-
-**The header groups column is one byte.** An infrared header states how many nine byte pointer
-groups it carries, and 37 records a config on arch 8 carry two. That closed arch 8 outright, from
-97.7% to 100.0%, and moved arch 9 as well, and it needed no firmware: the reading came from the
-corpus, out of three gap families whose counts were all 37. Section 75.
-
-**The class 5 column is arch 9's infrared**, and unlike the one before it, it needed the firmware.
-Class 5 spells a code as indices into a shared table of pulse blocks, section 82, so 25776 of the
-25819 bytes the 525 had left were three structures nobody could size without the code that reads
-them. It closed the last architecture sized hole in the accounting.
-
-**The last column is the residue**, sections 83 and 84, and it is where one decimal place stops
-being enough. Section 83 read three shapes, that base slot 0's frame is two bytes longer than the
-length it states, that an empty counted array is still an array, and that the bytes above base slot
-7's table are base slot 8's leading action list, which took every user config to 100.0% with 4 to 68
-bytes left in each. Section 84 read those: a screen program carries a terminator even where a jump
-means nothing reaches it, base slot 3's section is three bytes longer than the clock record, base
-slot 17's is two where it names the picture bank, the key table's extent is its mode record's, and
-twelve arch 12 bytes belong to base slot 15 and to no group. **The column reads the same either way
-and the difference is the whole milestone**, so it is stated in bytes rather than in percent: no
-container in this table has an unaccounted byte left.
-
-**The seventh column is where "arch 9 barely moves" stopped being true**, which this table asserted
-for a day. Three findings on 7 and 8 August: its glyphs are two bits a pixel rather than two bytes,
-one missing operand count was hiding every one of its mode programs, and its infrared records share
-class 1's header. Nothing else moved in that column, and the reading at the time was that the other
-architectures were at the ceiling. **They were not**, which the eighth column says: base slot 6's
-entry had a page count and an array of pages nobody had read, and following them moved every
-architecture at once. What looked like a ceiling was one unread field.
-
-Neither the fourth nor the fifth column is a reader. Section 53 is one rule, that a mode record
-carries its own screen program, and section 54 is two corrections: opcode 23 takes no operand, which
-is what was holding arch 12 shut, and a picture's `stride` is in pixels rather than bytes, which had
-halved every raw extent. Together they take the region from an unknown to **98% pictures on a
-Harmony 600, 93% on a 700 and 97% on arch 8**, with the Harmony One at 48% and left as the open
-item. Section 66 closed that one: every picture in an arch 12 bank is drawn by a program that can be
-reached, 98 of 98 and 70 of 70.
-
-Lower than the sixteen named sections suggest, and the reason is the shape of the file rather than
-a gap in the analysis. Most of a config is a **pooled data region** that the sections index into,
-and the readers return values without returning the bytes they consumed. Every screen program in
-the corpus decodes with nothing left over, section 40, and not one of them can yet say which bytes
-it occupied.
+**The coverage table and its column by column reasoning moved to `docs/status.md` on 6 September
+2026**, where the five row summary of it already lived. It is a live progress measure with a rule
+attached, that only the last column carries a `fact:` marker, and a test polices it, so it had no
+business in an archive.
 
 So M2 is three things in order, and only the third is the emitter:
 
@@ -1435,13 +758,20 @@ Logitech's own service used to make, which is why three of the four encoding cla
 config anybody has.
 
 **M6 Authoring. FreeHarmony's step 6**, on top of the action list bytecode, which is M2 territory and comes from
-here. The one part of it that could not be deferred is a **field**: a device definition carries its
+here. **What it consists of is settled since 6 September 2026** and is sequenced in "The next thing to
+do" at the top of this document: a device can be composed and has been written to a remote, an
+activity cannot, and the blocker is that nothing here records what an activity is made of. Two of that
+reading's questions are marked not established in `docs/config-format.md` rather than merely unwritten,
+so this milestone starts with firmware reading and not with code. The one part of it that could not be deferred is a **field**: a device definition carries its
 provenance from the first version of the format, because retrofitting it means auditing a database
 whose origins nobody kept. Decision 11 and FreeHarmony's `CLAUDE.md`.
 
 **Packaging has no M and that is correct.** It is FreeHarmony's step 8 outright, and the only thing it demands of
 this repository is that `packages/*` become installable by somebody who does not have this checkout,
 which is what decision 4 defers until the API stops moving.
+
+
+## Work sequence
 
 ## Work sequence
 
@@ -1954,192 +1284,104 @@ else's remote, which is the thing this step is trying to arrange. What is verifi
 produces a correct report for every sample in the corpus, spanning four architectures, and that it
 still produces the shape when the cookie is rewritten to a magic no family claims.
 
-### Step 9: excavate the lab. Discovery done, nothing unopened, reading phase left
 
-**Decision 12 is the argument; this is the job.** The lab holds 12506 files in 2.3 GB, measured on
-28 August 2026, and the knowledge in it is a superset of the knowledge in this repository by an
-unknown margin. That margin is the problem: nobody can say how large it is, which is why the answer
-is an exhaustive walk rather than a search.
+**Step 9, excavating the lab, moved to `docs/lab-excavation.md` on 6 September 2026**, which
+already held its method. Its grid is what `tests/test_toolchain.py` holds against the lab, so
+keeping a second copy here would be two lists nobody compares.
 
-The grid, with the two squares that matter marked. File counts are what to plan against, not bytes:
+## Facts established during planning
 
-| square | size | files | what is known about it |
-|---|---|---|---|
-| `software/classic/` | 700M | 4809 | the 7.x generation's own software, and the square where most of the want list still points. Sections 204 to 209 worked it: `PROTOCOL-CONSTANTS.md` and `SERVER-DEPENDENCY.md` are mined, `LEARN-IR.md` is catalogued, and `src/` and `res/` are surveyed with the HID command layer and three resource files mined. `reports/` is mined as section 210, and `tools/` and `dist/` were dug on 29 August 2026 and are **ours rather than Logitech's**, sections 214 and 215: two decompilers and a JDK, and our own abandoned rebuild of their application. **Nothing under this square is unopened now.** This row said one file had been read and the other 4808 were unexamined |
-| `work/myharmony/` | 234M | 3458 | the service client and its captured replies, plus what looks like a decompiled web application source tree that nothing here has ever opened |
-| `software/harmony-remote-software-8.0/` | 7.8M | 1018 | unexamined |
-| `software/MyHarmony/` | 183M | 317 | the Silverlight client. Section 132 concluded it holds no protocol; that conclusion predates knowing the recovery tool is reached from it |
-| `software/LogitechHarmonyRemoteSoftware.app/` | 202M | 208 | catalogued 29 August 2026, section 214: the **pristine vendor build**, and the copy to compare it against is our repack rather than the unpacked original, which is what its register row had guessed |
-| `software/desktop-webapp/` | 21M | 370 | **section 197's square**, and the one that proves the point |
-| `reference/logitech-icons/` | 20M | 1560 | opened 30 August 2026, section 216, and it was **ours**: an extraction of every graphic resource in Logitech's software. It was a third complete and is finished now, 1554 distinct images. The artwork stays in the lab; the category names crossed |
-| `Docs/` | 20M | 7 | user manuals, the source `docs/how-a-harmony-works.md` rests on |
-| `dumps/`, `firmware/`, `reads/`, `golden/`, `ghidra/`, `reviews/`, `units/`, `bin/` | 172M | 258 | the well worked areas, and still to be registered rather than assumed. `units/` is the newest and the smallest, one hex line per bench remote: which unit is on the cable, which is what the write rails compare against and what may not be in a public repository, section 226 |
+* Arch 12 and arch 14 both use the plain non-z-wave HID class in libconcord, 64-byte reports in
+  both directions. `node-hid` and Python `hidapi` both cover Windows, macOS and Linux. Linux
+  needs a udev rule either way.
+* The command set is small: `GET_VERSION 0x10`, `WRITE_FLASH 0x30`, `WRITE_FLASH_DATA 0x40`,
+  `READ_FLASH 0x50`, `START_IRCAP 0x70`, `STOP_IRCAP 0x80`, `WRITE_MISC 0xA0`, `READ_MISC 0xB0`,
+  `ERASE_FLASH 0xD3`, `RESET 0xE1`, plus a length nibble whose mapping is non-linear and differs
+  between mode 0 (safe mode) and the other modes.
+  **Now derived from the firmware**, with two differences from the list above: the dispatch is on
+  the high nibble, so `ERASE_FLASH` is `0xD0` and `RESET` is `0xE0` with a sub-command byte, and
+  `STOP_IRCAP 0x80` is not dispatched at all in the idle table. The mapping is `0` to `7`
+  literally, then `8`, `9` and `A` to 15, 31 and 63. Safe mode is a separate firmware and
+  unchecked. **`STOP_IRCAP`'s absence is not an omission**, section 91: it has its own one entry
+  dispatch that only exists while a learning session is open, and anything else sent during one
+  ends the session silently.
+* `READ_MISC`/`WRITE_MISC` carry a `MISC_RAM 0x06` sub-command, exposed upstream as
+  `ReadRam`/`WriteRam`. **Live RAM of a running remote is readable over USB.** The header also
+  defines `MISC_QUEUE_ACTION 0x03` and `MISC_QUEUE_EVENT 0x09`, which concordance never uses;
+  whether the firmware services them is an open question worth answering, because event
+  injection would let us drive the remote from the host.
+  **Superseded in part.** The RAM read is confirmed on arch 14 and **its selector is `0x07`, not
+  `0x06`**: see `docs/usb-protocol.md`. Read `0x06` above as the upstream claim it was, not as a
+  fact about these remotes. The queue sub-commands are still open.
+* Our parsers reject the two extra sample sets: `gspm.parse` and `ezfile.decode_payload` hardcode
+  the `GSPM` magic, so `AHCM` (arch 9, Harmony 525) and `TPTP` (arch 8, 720/785/88x) both fail.
+  The claim in `docs/config-format.md` that the container is shared across architectures is
+  therefore currently untested against the two architectures that would best prove it.
+  **Done in step 2.** The container is now general and the claim held.
+* Five extra config samples are available in the sibling `harmony-decompiler/samples` checkout,
+  already published with permission, `UserId` 0, no account data: four arch 8 and one arch 9.
+* Three of the four arch 8 configs were generated within about half an hour of each other, per
+  their own build timestamps, and still differ in 73 to 84 percent of their bytes, first
+  difference at offset `0x000004`. **A small logical change
+  reshuffles the whole image.** Consequence for the app: byte-identical round tripping is
+  achievable, but reproducing what Logitech's generator would have emitted is not, so the editor
+  must make minimal diffs against an existing config rather than regenerate one.
+* The keypad scanner at `0x190A6` returns a linear index, 1 to 56, rows active low. Polling the
+  RAM variable that receives that index, over USB, while a human presses each key, is a route to
+  the button mapping that upstream's three failed attempts did not try. Supporting evidence that
+  the scanner keeps running while USB is attached: upstream observed a key press toggling a
+  backlight boolean. **Update since:** the experiment got cheaper, because the config's key codes
+  turn out to carry that linear index directly, so there is no translation layer to find first.
+* Upstream reports a config interpreter in firmware, an accumulator machine at `0x01C86` to
+  `0x02401` on their architecture, so action lists are bytecode rather than data. Their claimed
+  key chain is physical button, scan code, event code, key table, action list, IR command, with
+  event type in the top bits (`0x80` press, `0x40` release, `0xC0` repeat). **The event type part
+  is confirmed on arch 12 and 14**, section 17, and it replaced our own wrong reading of the code
+  as a matrix address. The key table is **not** the link to the action list, though: it is byte
+  identical across a pair of configs whose buttons were reassigned, section 16. Action lists
+  themselves are found, at base slot 10; their opcodes are not.
+* The format's designer stated the pointer table "is probably pointing to data for each of the
+  various subsystems (IR sending, state variables, menus, action lists etc)". Treat as a prior
+  for section labelling, not as an answer.
 
-**`docs/lab-excavation.md` is the method**, written on 28 August 2026 with Danny: the seventeen
-things we are looking for as greppable tags, the register's schema, the five statuses, and the loop
-per square. Three decisions in it are worth knowing without opening it.
+## Target repository shape
 
-**The unit is the artefact**, one mirrored client or one firmware package or one contributor's dump,
-and both alternatives were rejected by measurement: per file is 12506 rows and unfinishable, and per
-top level directory is the nine row grid above, which is useless, since section 197's own square was
-already named in it.
+```
+src/harmony/            unchanged: PIC18 disassembler, tracer, load address, emulator later
+tools/                  unchanged: reverse engineering command line
+packages/codec/         TS: EZHex container, GSPM/AHCM/TPTP, records, round trip compiler
+packages/lab/           TS: locates the private lab directory, so TS tests can skip cleanly
+packages/usb/           TS: HID transport plus the Harmony command protocol
+tests/                  Python reverse engineering tests stay; TS tests live with their package
+docs/                   plus docs/usb-protocol.md and this roadmap
+```
 
-**A catalogue is not a claim, and only a claim needs a test.** This is a relaxation of this project's
-own instincts, taken by Danny on 28 August 2026, and the reason is that the alternative is what keeps
-the site unexcavated: if writing down "their client calls these 308 operations, this one probably
-feeds the device wizard" costs a finding and a regression test, nobody writes it and the knowledge
-stays in the lab. A catalogue can only be incomplete, not wrong, and a marked guess is a useful row.
-What is unchanged is that a claim this project **depends on** still takes the four places.
+No `apps/` directory. This plan named `apps/studio` when the application was going to live here;
+per the revision to decision 4 it is FreeHarmony, a separate repository, and the `apps/*` glob is
+out of `pnpm-workspace.yaml`.
 
-**Six of the seventeen targets are FreeHarmony's**, and the reason is stronger than product
-inspiration: their interface is a labelled view of the config format, so an inventory of their
-settings is a semantic key for bytes already read and not yet named.
+Conventions: pnpm workspaces, `.nvmrc`, TypeScript strict, and **Node's own test runner rather
+than `vitest`**, which this plan named until the dependency tree was actually looked at. `vitest`
+installs 71 packages including `vite`, `rolldown`, `lightningcss` and `postcss`, a CSS toolchain,
+to run tests that read bytes out of firmware images. Node 24 runs TypeScript test files directly
+by stripping the types, so the whole tree is the compiler and its type definitions: three
+packages, and `make audit` reports on them. The cost is real but small: type stripping cannot
+erase enums, namespaces or parameter properties, so `erasableSyntaxOnly` is on and the compiler
+refuses them, and `node:test` has no skip-from-inside-the-test, so `packages/lab` returns a skip
+option instead. Revisit if FreeHarmony wants a browser-side runner; that is a decision for the
+repository that needs it, not for this workspace.
 
-**The deliverable is a register in this repository**, `reference/lab-register.md`, one row per
-artefact: what it is, where it came from, what is inside, and a status. **It exists**, 44 rows, with
-`TheLabRegisterCoversTheSiteAtArtefactLevel` asserting that every artefact in the lab has one. This
-sentence said it did not exist for as long as the paragraph eleven lines below said it did.
-`reference/checksums.md` is the model for the tone and `tools/corpus.py` for the idea, since it
-already reports which dumps have no description recorded. The register covers the whole site, not
-the binaries, and the catalogue pages beside it hold the substance.
+TS tests that need real dumps resolve `../lab` or `HARMONY_LAB` and skip cleanly when absent,
+mirroring `tests/lab.py`. The two fixture tables are asserted equal, because a golden vector the
+other suite cannot find is a test that passes without checking anything. Fixtures never enter
+git; checksums go in `reference/checksums.md`.
 
-**Definition of done, so this cannot be declared finished by feeling.** Every path in the lab appears
-in the register with a status; a test walks the lab and fails on an unregistered artefact, skipping
-cleanly where there is no lab, exactly as every other lab backed test does. That test is what makes
-the mechanism survive the session that builds it, and it is the half that would have caught section
-197 nineteen days earlier.
+**Every dependency is pinned to an exact version**, with no `^` or `~` anywhere, and
+`pnpm-lock.yaml` is committed on top of that. A range hands the choice of which bytes get
+installed to whoever published most recently; a lock file narrows that but does not close it,
+because any `pnpm add` moves the range. Pinning makes a dependency update a reviewable diff. No
+dependency is added without looking at what it pulls in: that is what rejected `vitest`.
 
-**The survey pass is done, 28 August 2026**, and `reference/lab-register.md` is the register: 44
-artefacts across the eleven squares, each with a status and the want list tags it might answer, and
-`TheLabRegisterCoversTheSiteAtArtefactLevel` is the test, controlled by creating an unregistered
-directory and watching exactly one test name it.
-
-**So the stated definition of done is met and has been since the survey**, and saying only that would be
-a declaration by wording rather than by feeling. The digging the paragraph above left behind is what is
-actually outstanding, and as at 30 August 2026 it is this:
-
-* **Nothing is unopened.** The last artefact at `unseen` was dug on 30 August 2026, section 216, and
-  like the two before it, it held our own work rather than Logitech's. So the phrase "the rows at status
-  `unseen`" now names an empty set, down from five in two days.
-* **That pass was done on 30 August 2026**, section 217, and it moved fourteen rows without opening
-  anything: 36 of the 44 are written up here now, against 22 two days earlier. The rule it applied is
-  in `docs/lab-excavation.md` beside the status definitions, so the next one is repeatable.
-* **Eight rows are genuinely outstanding**, and they are the reading work this step has left: the
-  Silverlight packages at 170 MB, MyHarmony's decompiled source where one flow of 2643 files has been
-  read, the classic client's `src` and `res`, the 8.0 generation, our own read session notes, the draft
-  material, and the classic client's parent row whose children carry the detail.
-* **Three of the seventeen targets are closed**, `intermediate`, `packages` and `scan-codes`, the last
-  of them by the status pass, and it closed because its one artefact was already written up rather than
-  because anything new was found. A tag can close that way, which is a result and not a gap. **Three cannot be closed
-  from this site**: `compiler`, because the configuration compiler was server side and is gone;
-  `fh-failures`, which no artefact carries; and `fh-limits`, which section 207 judged unlikely here
-  because this client is an executor whose interface never named a device.
-
-The honest summary is that the excavation is **past its discovery phase and into its reading phase**:
-finding squares nobody has touched is **finished**, and what remains is reading squares that have been
-surveyed. Those are worth doing in tag order and none of them is urgent, since the two squares that
-carried the highest value tags are both dug.
-
-**The survey paid for itself on its first square**, which is the argument for having done it before
-digging anywhere. `software/classic/SERVER-DEPENDENCY.md` is 278 lines written on 7 August 2026 and
-never crossed, and it says the client is an **executor and not a builder**: reading, writing, learning
-and firmware update are all local and work today, and the device database, the interface and the
-**configuration compiler** were server side and are gone.
-
-**Three squares dug on 28 August 2026, and the third is a warning.** Section 206 went into the same
-client's HID layer, extracted its seven per architecture constant tables, and found that all of them
-had been extracted on 9 August and that `docs/host-client.md` is built on them. The register said so,
-on its own row, and was not read. So the excavation's own instrument works and the discipline of using
-it does not yet, which is the **fifth** time this project has re-derived something the lab already
-held: decision 12 was itself taken after the fourth, and section 209 later made a sixth. This said
-fourth, which made the next paragraph's "a sixth time" skip a number.
-The register's rows now point at the extraction from both directions, and what the afternoon did buy
-is worth having: the ledger of client sourced numbers had **no executable check at all** and has one
-now, and three of its rows moved, two arch 12 regions explained from internal pages already in the lab
-and the arch 14 logging region corroborated by every arch 14 safe mode container in the corpus.
-
-**The `reports/` square, dug on 29 August 2026, and it is the excavation's best return so far.**
-Section 210. It was catalogued as "run logs from the application" and the files turn out to be
-**ours**: the 7 August session decompiled the classic client, rebuilt 827 of its 829 classes from the
-recovered source, and **ran it against a Harmony One** with a local stand-in for the dead server. So
-the site holds a working copy of Logitech's own executor, which nothing had recorded. What it left
-behind is 69344 packets of that client reading a remote, and that is the first thing this project has
-ever had to check its own USB code against something other than itself: our encoder reproduces all
-1312 of its requests byte for byte, and its replies confirm the non-linear length nibble
-arithmetically, 1310 reads out of 1310. Two other things fall out. Reading a remote takes exactly the
-three commands our allow list holds, and **the client's first command of every session is the
-`0xE0 0x01` that `end-session-experiment.ts` has never dared send**. The `fh-failures` tag loses its
-only candidate, since the failures in these logs are our own.
-
-**And the square next door, section 211**, which the first one led into: the three single byte
-memory services, in no note and in no document. Every write the client makes there is read back and
-compared, with no unverified variant anywhere, which is the rail this project imposes on itself
-arrived at independently and applied where it costs the most. Its own address bounds are sixteen times
-tighter than ours for RAM, and they are Java assertions that do not run in a shipped build, so they
-are an intent rather than a limit and the rail is left alone. The register's row for that directory
-was corrected on the way, from a blanket "not mined" to one status per subdirectory, since the blanket
-sent a dig at a subdirectory that is extracted whole. `system/` is the next square and section 211
-says what is in it.
-
-**And the third square that day, section 212, the client's system service.** It closes an open row
-in this project's own USB spec: one of the four things `READ_MISC` services had never been read, and it
-is a hardware feature read whose detail 1 is the battery gauge. The client named it in a line and the
-firmware confirmed it on all three images, including the part the client cannot tell you, that a detail
-above 1 returns stale bytes rather than an error. Its region numbering then places version block fields
-8 and 9, one of which our own test comment flags as its weakest placement, by a route with nothing in
-common with ours. The correction in it is the lesson: section 211 had said one of its calls asks the
-remote for a region list, from the method's name, and it does not ask the remote at all.
-
-**The last of the client's HID services, section 213, and it is two things at once.** The dig
-finished the directory and its best return is a lead about this bench rather than about their software:
-their liveness ping, sent after every single operation, is **macOS only**, and macOS is where this
-project's two unexplained intermittent faults live, a Harmony One dropping the first command of a
-session and a Harmony One stranding after idle. That is cheap to try and it has a control. The section
-also confirms section 175's write transfer from an implementation with nothing in common, records the
-identity block erase as a write path nothing here had described, and finds the arch 9 two address space
-split stated as the vendor's own arithmetic.
-
-**And it is the seventh and eighth times a dig re-derived the lab, in the same session that fixed the
-instrument for it.** Section 212's provenance is corrected in place: the client's name for the selector
-it read was already in a lab note, unfollowed for twenty days. This dig then followed a method into
-`core/flash`, whose register row says mined, and got `PROTOCOL-CONSTANTS.md` back. Both are section
-209's failure exactly, whose stated fix, that the trigger is the path and not the dig, was written four
-sections earlier by this same project and did not fire.
-
-**Two more squares on 29 August 2026, and the second is the same warning a sixth time.** Section 208
-is the good one: a third resource file in the same client, the **teaching pictures**, keys its drawings
-by architecture and skin, which fills eight of the eleven gaps section 207's platform join left and
-agrees with concordance on nine of nine models. Section 209 is the warning, and its subject is the dig
-that produced it. The register was checked for the square the dig started in, correctly, and the dig
-then followed a resource key into `hid/commands/`, whose own row says it is mined. Everything read
-there was already in the lab. **So the trigger is the path and not the dig**, and the fix is finally an
-instrument rather than a paragraph: `make lab-check PATH_ARG=<path>` prints every register row bearing
-on a path. What the dig did buy is one thing, the clock service, which reads and writes base slot 13's
-first seven records over USB by name and disagrees with our measurement of two of the fields.
-
-**Two more squares dug on 28 August 2026.** Section 204 is the first and section 205 the second, which
-takes the `ir-learn` tag as far as this client goes: the host measures a capture, merges it and uploads
-it, and the only test it applies is that the signal lasts between 10 milliseconds and 1 second.
-Everything else, including whether to keep the capture and how to store it, came back from the server.
-So what a local learn has to build is narrower than section 42 implied and it is a judgement rather
-than a decoder.
-
-Section 204's own square, and the claim held with a stronger argument than its
-own: no container cookie appears anywhere in the client's 642 files, so it never parses a
-configuration, let alone composes one. **So the `compiler` tag closes as a recovery target**, and
-writing our own is the only route, which this document had been assuming with nothing behind it. What
-the square still holds is the note's second half, a route it calls editing instead of building, and
-the 642 files themselves, which have now been searched but not read.
-
-**Two things to expect and neither is a reason to stop.** Most of it will be worth nothing, and the
-value is in being able to say so with a row rather than a shrug. And some of it will answer a
-question currently listed as open, which is the outcome the decision was taken for; **that** kind of
-answer takes the ordinary route, a hypothesis under decision 7 and then the four places, where a
-catalogue row does not.
-
-**One rail is unchanged.** Reading Logitech's code and firmware is what `docs/host-client.md`'s rule
-already governs: a fact from it is marked as client sourced, the firmware stays the authority where
-it can settle something, and nothing from the site is committed but our own description of it.
 
 ## Hardware safety rails
 
@@ -2204,39 +1446,3 @@ Not optional, and they belong in the code rather than in a document:
 * End to end for M1: plug in the Harmony 600, run the app, read the config, confirm the container
   summary matches `python3 tools/gspm_parse.py` on the same file.
 
-## Known unknowns
-
-The heading said "unchanged" until 25 August 2026, and by then five of its entries were answered in
-this document's own body, which is the drift `make facts` cannot see: a list of open questions has no
-number to recompute. Answered entries are corrected in place below rather than deleted.
-
-* Three of the four IR encoding classes at the dispatcher `0x12F08`. No config in the corpus
-  carries one, section 42, so the firmware is the only evidence there will be.
-* The encoder from raw learned timings to a config IR record. This ran on Logitech's servers, so
-  nobody had it. **Mostly built since**: a code stated as a name and a number becomes pulses through
-  the rhythm table, sections 157 to 169, and the block spelling matches Logitech's own generator byte
-  for byte, section 174. What learning still needs is the tail shape, section 152, and the storage
-  class choice, section 42.
-* Activity semantics. **Closed**: the accumulator machine is read, section 34, the screen
-  interpreter is read, section 40, and a binding table entry is an activity's handler set in the four
-  hop chain that starts it, sections 120 and 121, all fifty activities named.
-* The LWJL difference between architectures. The other half of this entry, the translation from
-  the scanner's linear index to config event codes, is answered: the codes carry the index directly,
-  section 89 and the step 6 narrative above.
-* Whether the firmware implements event injection over USB. **Answered no on arch 14**, in this
-  document's own step 6 narrative; arch 12 unexamined and nothing wants it.
-* **What the log area holds.** Base slot 2 is named, section 47, so the pointer table is complete.
-  **One of the five append cases is read**, section 111: case 3's six bytes are the clock's own fields
-  copied in descending significance, so its record is a timestamp. What remains is the other four, and
-  why the region is measured in eight byte units on the three architectures whose firmware never reads
-  it. Nothing in the corpus appends, so this is a firmware only question, like the three unused IR
-  classes above, and on **arch 12 it is worse than unused**: both bench Harmony Ones already have the
-  declared region written, so the appender disarms itself at the first attempt, section 111.
-* **Which activity a drawn name belongs to.** **Closed**, sections 120, 121, 124 and 125: all
-  50<!--fact:activities_total--> activities in the corpus carry their drawn name, through the modes an
-  activity's chain enters on three architectures and through the hit map on the Harmony One, and
-  `make activities` prints it. The sentence that used to stand here, that the tie from a name to an
-  activity number was not read, was already contradicted by the M3 section above when the list's
-  heading said "unchanged". A **writer** still has to build a font set and number
-  it rather than look a character up, since the codes are assigned per config in the order characters
-  first appear in the generator's string list.
