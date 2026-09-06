@@ -16085,9 +16085,12 @@ it. Three regions became readable and **nothing became writable**: the write pat
 
 The recovery is understood rather than attempted. One byte, into 256 bytes of on chip EEPROM, at an
 address the firmware bounds to that size, served by the image the remote is actually running, into a
-cell whose five states are read. What remains is that this project does not perform it: arch 9 has no
-write target, nothing here has ever written to a remote, and a first write should not be the one that
-installs firmware. The script that does it lives in the private lab.
+cell whose five states are read. What remains is that this project does not perform it, and the reason has moved
+since. This said "arch 9 has no write target" and that "nothing here has ever written to a remote"<!--superseded-->
+and both halves are dead, sections 222 and 269. What refuses it now is the
+writable range, which starts at the configuration and stops below the log area, so the EEPROM is
+outside it, and the judgment that a write path this young should not be the thing that installs
+firmware. The script that does it lives in the private lab.
 
 ## 120. Which key starts which activity: four hops, and the field that says what idle means
 
@@ -34271,3 +34274,154 @@ row; `packages/usb/test/rails.test.ts`, the arch 9 refusal with writing enabled 
 `packages/usb/test/rehearsal.test.ts`, the target table and the one registered block;
 `packages/corpus/test/file.test.ts`, the region against the August configuration read and the erased
 tail.
+
+## 269. The first write to a Harmony 525, and what an architecture that does not execute its config in place does differently
+
+On 6 September 2026 this project wrote to a Harmony 525 for the first time. One 64 KiB erase block at
+`0x820000`, containing that remote's own bytes, unchanged. Danny authorised it after the dry run
+passed and after being told what the write would consist of. `rehearse-block.ts --commit` performed
+it, behind `HARMONY_ENABLE_WRITES=1` and `HARMONY_FIRST_WRITE=1`.
+
+It succeeded. The configuration on the remote afterwards is what it was before, and the remote is
+running its application.
+
+This is the second architecture this project has written to and the shape is section 222's
+deliberately: a write whose correct outcome is known before it starts, so the only question it asks
+is whether the write landed. What makes it worth a section of its own is that arch 9 differs from
+arch 12 in three ways that all showed up in one run, and one of them was predicted by the existing
+model rather than discovered.
+
+### The verification collapses into one level here, and that is a property of the part
+
+Section 222 checked at two levels on arch 12, the block read back by the script and then the whole
+1665900 byte configuration read again and hashed, because a block level compare cannot see damage
+elsewhere and an erase with no count is exactly the command that could cause some.
+
+**On this remote the two are the same check.** The configuration is 51195 bytes and the block is
+65536, so the whole container including its trailer checksum, which sits at offset 6, is inside the
+one block being rewritten. The remaining 14341 bytes of the block were already `0xff` before the
+erase and are `0xff` after it. So the block compare covers every byte of the configuration, which is
+the opposite of arch 12, where one same length edit costs two erase blocks because the checksum sits
+72 to 214 KiB from the edit, section 187.
+
+The second level was performed anyway, through a different code path, and it is the stronger
+statement: `read-config.ts` read all 51195 bytes off the remote afterwards, in 1.7 seconds with no
+window retried, and its SHA-256 is identical to that of the configuration read off the same unit in
+August, `a5bdb588638d81fb0b491eb47a90cfd2f9e9a4bd1ca374ad16550af0e0910ffb`. Different reader,
+different chunk size, and the container's own checksums validated on the way past, so it is not the
+write path agreeing with itself.
+
+### The erase granularity was predicted from the firmware and is measured now
+
+`ERASE_FLASH` carries no count, so the only way to learn what an erase destroyed is to read either
+side of it. Section 267 read the 525's own external flash driver and found it sends the SPI opcode
+`0xD8`, a 64 KiB block erase, with nothing masking the address, and concordance's chip table says the
+same for the flash id `FF:12` this unit reports. Both are predictions. The measurement:
+
+| block | what it holds | before and after the erase |
+|---|---|---|
+| `0x810000` | the application firmware, byte identical to internal `0x1000` onward | identical |
+| `0x820000` | the user configuration | all `0xff`, then the dump's own bytes |
+| `0x830000` | the tail of the configuration region | identical |
+
+So the constant is measured on this part rather than believed, and the reason it matters more here
+than on arch 12 is the first row. Section 267 established that **the firmware bounds an erase to the
+flash part and nowhere finer** on arch 9: the handler classifies the address into a window and the
+external flash arm erases without consulting anything else, and the interlock that does exist guards
+the internal program flash only. The running firmware sits one 64 KiB step below the configuration
+and is inside what an `ERASE_FLASH` will accept. Arch 12 has section 192's classifier ceiling and
+section 175's bit doing some of that work in the remote; arch 9 has `rails.ts` and nothing else, so
+this table is the first evidence that a 64 KiB request is a 64 KiB erase on the one architecture where
+being wrong reaches the firmware.
+
+### The remote did not restart, and the model already said it would not
+
+**On arch 12 a write restarts the remote.** Section 247 watched it leave the bus after a two block
+write, come back on its own running its application, and show the ordinary screen. That is not the
+reset command, which was withheld in section 250's control and made no difference: it is that arch 12
+executes its configuration in place out of the parallel flash an erase clears, so erasing the block
+it is running from restarts it.
+
+**Arch 9 kept the handle open through the whole sequence.** The erase, the neighbour re-reads, 21
+transfers and the read back all went over one connection, and the read back is what proves it: a
+remote that had restarted could not have answered it. Its configuration lives on a serial chip that
+is not memory mapped, so nothing was executing out of the block being erased.
+
+That was implied by the key facts table before anybody wrote to one, which is the useful part. The
+distinction it draws for arch 14 is the same one and it holds for arch 9, so the restart on arch 12 is
+a consequence of that architecture's storage rather than a Harmony behaviour. Anything reasoning about
+what a remote does after a write has to ask which of the two it is looking at.
+
+### Nothing was sent that has not been read
+
+Three commands went to the remote: `READ_FLASH`, `ERASE_FLASH`, `WRITE_FLASH`. **The cache drop and
+the restart of section 245's eight step sequence were not sent**, and not by omission: `writeBlock`
+implements erase, write and verify, and the sequence with its `WRITE_MISC` selector `0x02` and its
+escape `0x02` lives in `packages/corpus`. Neither is needed here. The cache drop matters on arch 12
+because that remote executes from the flash being erased, and the restart is what section 248 called
+a convenience. On arch 9 there is no re-check flag to clear at all, section 253: it has no poll and no
+latch and re-validates only when something asks it to, so a stale verdict cannot pin a status screen
+up the way it does on arch 12.
+
+**Arch 9's escape dispatcher has never been read**, which is why sending one would have been a command
+nobody here has traced. `assertResetAllowed` refuses it, and that refusal had to be put back for this
+commit: see below.
+
+### The rail that fired, and why a correct argument expired
+
+`ARCHITECTURES_WITH_A_WRITE_TARGET` went from `[12]` to `[9, 12]`, which is the whole of the
+permission change. Adding one number to one list opened two paths nobody had authorised, and the
+suite caught both.
+
+**The reset escape.** `assertResetAllowed` used to check `ESCAPE_SUB_COMMANDS` at runtime and the
+check was removed as unreachable, correctly: the shared gate refused every architecture outside the
+write target list, that list was `[12]`, and arch 12 dispatches the reset. An unreachable guard reads
+as protection and is worse than none, so the claim became a test comparing the two tables. **Adding
+arch 9 made the guard reachable in the same commit, and the test failed**, which is exactly the
+service it was there for. The runtime check is back. The shape worth carrying: a guard justified by
+another table's contents needs re-deriving whenever that table moves, and nothing mechanical will
+notice, because the guard's own code is still correct.
+
+**The RAM write.** `WRITE_MISC` selector `0x07` was gated on the same list, on the stated ground that
+the reason is the same. The reason is the same and the list is not: arch 9's selector 7 executor is
+unread, and its part is a PIC18F4550 whose registers start at `0xF60` where `SFR_PAGE_START` is the
+`0xF40` of the two J series parts, with only 2048 bytes of data memory below that, so the bound would
+have passed an address that is neither memory nor a register on that part.
+`ARCHITECTURES_WITH_A_RAM_WRITE_TARGET` is `[12]` and separate now. **One list per path**, and each
+one moves when that path's own evidence does, rather than a flash demonstration silently buying a RAM
+write.
+
+### What it does not establish
+
+One unit, one block, one run. **The transfer path is exercised on arch 9 for the first time** and 21
+transfers of 3150 bytes plus a tail of 2536 all landed, 1084 reports, which says the arrangement works
+and not how close it is to not working. No pacing was needed, as on arch 12.
+
+**Nothing has compiled a configuration for a Harmony 525**, section 145: Logitech's service reports the
+skin disabled and their compiles fail, so there is no vendor built file to check one of ours against.
+Every Harmony One write so far has had one. That is why this write had to be the remote's own bytes and
+why the next arch 9 step is not an edit.
+
+**Only one block of this unit has a dump**, so only `0x820000` can be rehearsed at all. A second block
+needs `read-region.ts` first.
+
+### Sources checked before the run
+
+Section 267, this project's own reading of the 525's erase and write handlers out of its application
+image, for the three constants and the erase opcode. concordance's `libconcord/remote.cpp` and its chip
+table, which agree on all three. Logitech's classic client's per architecture constants, through
+section 267. Section 222 for the shape of a first write, sections 245 to 253 for what a full write
+sequence contains and which parts of it are one architecture's. `docs/memory-map-525.md` for what the
+neighbouring blocks hold.
+
+### The tests
+
+`packages/usb/test/rails.test.ts`: the write target list stated as a population rather than by
+exclusion, the reset escape refused with writing enabled in a subprocess, the RAM write list held at
+`[12]` beside a write target list that is not, and the three arch 9 constants asserted unchanged by
+the permission moving. `packages/usb/test/protocol.test.ts`: the arch 9 windows outside the writable
+range, measured against the range rather than implied by a refusal upstream.
+`packages/usb/test/rehearsal.test.ts`: a dry run reaching its end before anything asks for write
+permission, which is the claim that survives the two lists coinciding. `tests/test_harmony_525_flash.py`:
+the neighbour the arch 9 rehearsal has to check is the application firmware, so a wrong block size
+would be a firmware erase.

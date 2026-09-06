@@ -4,9 +4,17 @@
  *
  * **Two units, since 6 September 2026**, and which one is decided by the architecture read off the
  * remote rather than by an argument: the spare Harmony One and the Harmony 525, per Danny's decision
- * of 5 September. Only the first may be written to. The 525 can be read and compared, which is the
- * step that has to happen first anyway, and `--commit` on one is refused by `writeBlock` because
- * `ARCHITECTURES_WITH_A_WRITE_TARGET` is `[12]`. See `TARGETS` below for what a 525 run still needs.
+ * of 5 September. **Both may be written to**, the 525 since Danny authorised its demonstration on 6
+ * September. This said "only the first may be written to" and that `--commit` on a 525 "is refused by
+ * `writeBlock` because `ARCHITECTURES_WITH_A_WRITE_TARGET` is `[12]`"<!--superseded--> for the few
+ * hours in between, which was the state the rehearsal was built for: the read and compare had to
+ * happen first anyway, and it did.
+ *
+ * **What arch 9 does not get with it** is a reset at the end, since nothing has read the Harmony
+ * 525's escape dispatcher, and this script sends none: `writeBlock` erases, writes and verifies, and
+ * the eight step sequence with its cache drop and its restart lives in `packages/corpus`. Nothing
+ * here depends on the remote rebooting, and on arch 9 nothing has to: it has no re-check flag to
+ * clear, section 253.
  *
  *   node packages/usb/bin/rehearse-block.ts --dump one_spare_myharmony --block 0x040000
  *   HARMONY_ENABLE_WRITES=1 HARMONY_FIRST_WRITE=1 node packages/usb/bin/rehearse-block.ts \
@@ -216,9 +224,13 @@ interface Target {
  * from the identity check rather than a wrong comparison, and there is no spelling of the command
  * line that points the Harmony One's allow list at a 525.
  *
- * **Being in this table is not permission to write.** `ARCHITECTURES_WITH_A_WRITE_TARGET` is `[12]`
- * and `--commit` goes through `writeBlock`, which refuses arch 9 there. What this table decides is
- * which remotes may be **read** and compared, which is the half that has to happen first anyway.
+ * **Being in this table is still not permission to write**, and that is worth keeping now that both
+ * rows happen to have it. This table decides which remotes may be **read** and compared;
+ * `ARCHITECTURES_WITH_A_WRITE_TARGET` decides whether anything may be written, and `--commit` goes
+ * through `writeBlock` and the rails either way. The two lists coincided on 6 September 2026 and a
+ * third remote arriving here would put them back out of step, which is the ordinary case rather than
+ * the exception: reading and comparing is the step that has to happen before a write is authorised at
+ * all.
  */
 const TARGETS: Readonly<Record<number, Target>> = {
   9: { model: 'the Harmony 525', unitLabel: 'h525', dumps: H525_DUMPS },

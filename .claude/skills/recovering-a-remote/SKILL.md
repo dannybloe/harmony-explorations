@@ -82,9 +82,14 @@ wrong or is about to.
   restored including two offsets that were erased flash while it was stranded, and its config intact.
   Its screen said the upgrade was complete, which was observed **before** the firmware path that emits
   that message had been found, and looking for what emitted it is what completed the state machine.
-  **This project must still not be what performs the write**: its one write was to arch 12 and changed
-  nothing, section 222, arch 9
-  has no write target, and a first write should not install firmware on an irreplaceable unit.
+  **This project must still not be what performs the write**, and the reason changed on 6 September
+  2026 without the conclusion changing. It used to be that "arch 9 has no write
+  target"<!--superseded-->; arch 9 has one now, section 269, and what refuses this write is the
+  **range**: the writable window runs from the configuration at `0x820000` to the log area at
+  `0x870000`, so the EEPROM at `0x200000` and both firmware images below `0x820000` are outside it.
+  Two writes have been performed, both a block of a remote's own bytes put back unchanged, and neither
+  installed anything. **Installing firmware on an irreplaceable unit is not what a write path this
+  young should be doing**, which is the argument that never rested on the rail.
   **Safe mode has a published entry procedure and it is a cold boot key test**, section 118: charge,
   pull the battery, hold Off, insert the battery while still holding, up to 30 seconds. So it involves
   no config, no host and no USB command, which is why searching the running firmware for it failed.

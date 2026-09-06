@@ -531,11 +531,15 @@ image is a second sample rather than a stand in. Other models are iterated on la
 6. **Safety rails are absolute.** Firmware is never written. **Two units may be written to**, the
    spare Harmony One and the Harmony 525, Danny's decision of 5 September 2026, which replaces "the
    spare Harmony One is the only write target"<!--superseded-->. His everyday Harmony One and the
-   Harmony 600 stay refused, the 600 because it is the only arch 14 remote here. **The 525 is
-   permitted and the rail still refuses it**, because permission is not capability. That was first
-   written as arch 9 having "no `CONFIG_REGION_BASE` entry and no `ERASE_BLOCK_SIZE`"<!--superseded-->
-   and section 267 supplied all three constants the same day, off the 525's own firmware, so the
-   refusal now rests on the absence of a demonstration rather than of a number. **The reason to be
+   Harmony 600 stay refused, the 600 because it is the only arch 14 remote here. **The 525 became a write
+   target on 6 September 2026**, when the demonstration was authorised and performed, section 269.
+   Before that it was "permitted and the rail still refuses it"<!--superseded-->, because permission
+   is not capability, which had itself replaced arch 9 having "no `CONFIG_REGION_BASE` entry and no
+   `ERASE_BLOCK_SIZE`"<!--superseded-->: section 267 supplied all three constants off the 525's own
+   firmware, leaving the refusal resting on the absence of a demonstration rather than of a number.
+   **Adding it to the list opened two further paths and the suite refused them**, which is the lesson
+   worth more than the permission: the reset escape and the RAM write have lists of their own now, so
+   a demonstration buys the path it demonstrated and nothing beside it. **The reason to be
    careful got stronger rather than weaker**: its application firmware sits one 64 KiB step below its
    configuration and the safe mode image below that, and the firmware bounds an erase to the flash
    part and nowhere finer, so both images are inside what the remote will accept. Details below.

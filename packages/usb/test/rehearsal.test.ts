@@ -197,14 +197,18 @@ test('the rehearsal names two units and keys them by the architecture off the re
   assert.ok(!/--unit/.test(text), 'the unit is read off the remote, never taken as an argument');
 });
 
-test('being a rehearsal target is not being a write target', () => {
-  // The distinction the whole module rests on, asserted where it can actually fail: the script may
-  // now read and compare a Harmony 525, and `--commit` on one is refused inside `writeBlock`.
-  assert.ok(!ARCHITECTURES_WITH_A_WRITE_TARGET.includes(9),
-            'arch 9 (Harmony 525) is readable by the rehearsal and not writable by it');
-  assert.deepEqual([...ARCHITECTURES_WITH_A_WRITE_TARGET], [12]);
-  // And the dry run reaches its end without building a permission, which is what makes that true:
-  // the write gate sits after the early return.
+test('a dry run asks for no write permission, whether or not the target has one', () => {
+  // **This was "being a rehearsal target is not being a write target"<!--superseded--> until 6
+  // September 2026**, and it asserted the two lists differing: the script could read and compare a
+  // Harmony 525 while `--commit` on one was refused inside `writeBlock`. Danny authorised the
+  // demonstration that day, so arch 9 (Harmony 525) is on both lists and the two now coincide.
+  //
+  // The claim that survives is the one that never depended on the lists, and it is the half that
+  // protects an operator: a run without `--commit` reaches its own end before anything asks for
+  // write permission, so a dry run on a permitted target is still a read. That is a property of the
+  // script's shape and it can fail on any refactor, where the old assertion could only fail on a
+  // decision.
+  assert.deepEqual([...ARCHITECTURES_WITH_A_WRITE_TARGET], [9, 12]);
   const text = rehearsalScript();
   const dryReturn = text.indexOf("dry run: nothing was written");
   const firstWrite = text.indexOf('assertFirstWriteAllowed()');

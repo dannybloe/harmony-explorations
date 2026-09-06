@@ -424,7 +424,9 @@ and leave this table alone.
 | `none of its 44 records decodes into a bit frame` | section 266 | of the Harmony 300's set top box group. They all decode: `biphaseFrames` broke on a leading gap instead of skipping it, so any block opening with one returned no frame at all, and 411 records of 5232 were unreadable for that reason. Trimmed to the width Logitech's own definition states, all 44 name commands in that box's codeset |
 | `the channels are the only route to identifying the set top box's codes` | section 266 | of the same group. The catalogue names all 44 of its records once the decoder is fixed, so there are two independent identifications rather than one |
 | `36 of 38 device groups are identified today and the two that are not are biphase` | section 266, corrected the same day | of `make catalogue`'s own headline. The accounting population holds 51 occupied device groups: the pulse distance reader yields numbers for 38, of which 36 are identified, and the other 13 are skipped **before** being counted, so they are absent from the total rather than counted as failures. The honest figure is 36 of 51, and the two counted failures are groups the reader does read and no codeset matches. Of the 13 invisible ones, 5 read as biphase and 8 read as nothing |
-| `The spare Harmony One is the only write target` | Danny's decision of 5 September 2026 | of which units may be written to. Two may: the spare Harmony One and the Harmony 525. His everyday Harmony One and the Harmony 600 stay refused, the 600 because it is the only arch 14 remote in existence here. The rail still refuses arch 9, because permission is not capability: section 267 supplied every constant it needs the same day and `ARCHITECTURES_WITH_A_WRITE_TARGET` is still `[12]` |
+| `The spare Harmony One is the only write target` | Danny's decision of 5 September 2026 | of which units may be written to. Two may: the spare Harmony One and the Harmony 525. His everyday Harmony One and the Harmony 600 stay refused, the 600 because it is the only arch 14 remote in existence here. The rail refused arch 9 for one day, because permission is not capability; section 269 performed the demonstration and `ARCHITECTURES_WITH_A_WRITE_TARGET` is `[9, 12]` |
+| `the spare is the only one that may be` | section 269, 6 September 2026 | of which remotes have been written to. Two have: the spare Harmony One, four times from 30 August, and the Harmony 525 once on 6 September |
+| `arch 9 has no write target` | section 269, 6 September 2026 | of the write rails. It has one. What it does not have is a RAM write target or a traced reset escape, and each of those is refused by a check of its own rather than by the flash list being short |
 
 ## The Harmony 525's erase block size is unmeasured, so arch 9 gets no rail entry
 
@@ -434,7 +436,32 @@ together or neither does." It is read now, out of the Harmony 525's own applicat
 external flash driver sends the SPI opcode `0xD8`, a 64 KiB block erase, so `ERASE_BLOCK_SIZE` for
 arch 9 is `0x10000`. All three tables gained a row, which is what that sentence asked for.
 
-**What did not change is the write target.** `ARCHITECTURES_WITH_A_WRITE_TARGET` is still `[12]`, so
-no document may say that the Harmony 525 became writable. Section 267 argues the opposite: the
-firmware bounds an erase to the flash part and nowhere finer, so both firmware images sit inside the
-reachable range and our own rail is the only thing in the way.
+**What did not change on that day is the write target**, and this paragraph said so in words that
+have since expired: `ARCHITECTURES_WITH_A_WRITE_TARGET` "is still `[12]`, so no document may say that
+the Harmony 525 became writable"<!--superseded-->. That was correct for one day and is the shape this
+file exists to catch, a prohibition written as though it were permanent. **The Harmony 525 became a
+write target on 6 September 2026**, section 269, when Danny authorised the demonstration and it was
+performed: one block of its own bytes, the neighbours byte identical either side of the erase, the
+configuration read back through a different reader with the same SHA-256. The list is `[9, 12]`.
+
+**Section 267's actual argument is unaffected and is the half to keep**: the firmware bounds an erase
+to the flash part and nowhere finer, so both firmware images sit inside the reachable range and our
+own rail is the only thing in the way. The 6 September measurement makes that more load bearing rather
+than less, because it is the first evidence that a 64 KiB request really is a 64 KiB erase on the one
+architecture where being wrong reaches the running firmware.
+
+## The Harmony 525 is a permitted write target and the rail still refuses it
+
+**Killed by section 269**, 6 September 2026, and it was true for one day. Permission arrived on
+5 September with Danny's decision, the three constants arrived the same day with section 267, and
+neither is capability: what was missing was a demonstration. It was authorised and performed, so
+`ARCHITECTURES_WITH_A_WRITE_TARGET` is `[9, 12]` and no document may say the rail refuses arch 9.
+
+**Two paths did not come with it, and a document that treats the flash permission as covering them is
+restating a dead claim.** `assertRamWriteAllowed` consults
+`ARCHITECTURES_WITH_A_RAM_WRITE_TARGET`, which is `[12]`, because arch 9's `WRITE_MISC` selector 7
+executor is unread and its part's register page sits above the bound this project uses. And
+`assertResetAllowed` refuses arch 9 outright, because nothing has read that architecture's escape
+dispatcher. The runtime check for the second had been removed as unreachable, correctly, on the
+argument that the shared gate refused every architecture outside a list of `[12]`; adding arch 9 made
+it reachable in the same commit and the test comparing the two tables is what caught it.

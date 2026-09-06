@@ -35,13 +35,17 @@ appear throughout this page as firmware images or contributed configurations, an
 the one that gets mistaken for hardware, because it is the best mapped arch 14 image and is quoted
 constantly. There has never been a Harmony 700 here.
 
-* **arch 12** ("Gin"), the Harmony One, and the spare Harmony One that is the only unit anything
-  may ever be written to
+* **arch 12** ("Gin"), the Harmony One, and the spare Harmony One, one of the **two** units anything
+  may be written to. This said it was "the only unit anything may ever be written
+  to"<!--superseded--> until 5 September 2026
 * **arch 14**, the Harmony 600. The Harmony 700 belongs to this architecture and is a **reference
   image**: two configurations and a firmware image, no remote
 * **arch 9**, the Harmony 525, connected on 8 August 2026 and a target since: its config and its
   firmware are in the lab, and its class 5 infrared, which was the last big gap in the byte
-  accounting, is read. It has no write target and will not get one.
+  accounting, is read. **It is the second unit that may be written to**, Danny's decision of 5
+  September 2026, and the second architecture this project has written to: one block of its own bytes
+  put back unchanged on 6 September, section 269. This said it "has no write target and will not get
+  one"<!--superseded-->.
 
 **Firmware is held for four architectures**, 8, 9, 12 and 14, **plus a fifth, architecture 16**: Logitech's own software update service serves the Harmony 300 and Harmony 350
 image to an anonymous request, section 196. It is the first firmware here to come from the vendor
@@ -439,7 +443,7 @@ finding.
 
 `docs/roadmap.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 268<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 269<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -660,7 +664,28 @@ cannot drift apart; what a reader should not expect is two independent statement
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
 
-**The Harmony 525 is now ready to be written to, and it still refuses, section 268.** Before anything
+**The Harmony 525 has been written to, section 269.** One block of its own configuration, 64 kilobytes,
+erased and put straight back, so the remote ended up holding exactly what it held before. That is the
+same first step the Harmony One got: a write whose right answer is known before it starts, so the only
+question it asks is whether the write landed at all. It did, and the whole configuration read back
+afterwards matches the copy taken in August byte for byte.
+
+Two things came out of it that are worth more than the write. **The erase really does clear 64
+kilobytes and no more**, which until now was something the firmware said rather than something anyone
+had checked. That matters on this remote more than on the Harmony One, because the block immediately
+below the settings is the remote's own operating software, and nothing inside the remote would refuse
+an instruction to wipe it. And **the remote did not restart**, where a Harmony One always does: the
+Harmony One runs its settings directly out of the memory being erased, and the 525 keeps them on a
+separate chip. That was what the existing model predicted, so it is a small confirmation that the
+model is right rather than a surprise.
+
+**One number in the safety code turned out to open three doors, not one.** Allowing writes to this
+remote meant adding it to a list, and that same list was also what kept two unrelated commands away
+from it: restarting the remote, and writing to its working memory. Neither has ever been examined on
+this model. A test noticed immediately, which is what it was written for, and the three now have a
+list each, so permission to do one thing no longer quietly grants the other two.
+
+**Before that, the Harmony 525 became ready to be written to, section 268.** Before anything
 can be written safely we have to be able to answer two questions: which remote is on the cable, and
 what is currently in the part of its memory we would change. Both are answered now.
 

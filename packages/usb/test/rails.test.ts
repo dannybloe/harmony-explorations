@@ -18,6 +18,7 @@ import { fileURLToPath } from 'node:url';
 import { readFile } from 'node:fs/promises';
 
 import {
+  ARCHITECTURES_WITH_A_RAM_WRITE_TARGET,
   ARCHITECTURES_WITH_A_WRITE_TARGET,
   CONFIG_REGION_BASE,
   ERASE_BLOCK_SIZE,
@@ -241,20 +242,71 @@ test('with writing disabled, every write path refuses even with everything else 
   assert.throws(() => assertResetAllowed(IDEAL), RailError);
 });
 
-test('the only architecture with a write target is one whose reset escape has been read', () => {
+test('a write target either dispatches the reset escape or is refused one', () => {
   // `assertResetAllowed` used to check this at runtime and could never fire, since the shared gate
-  // refuses every architecture outside the list below. The claim is real all the same and this is the
-  // shape that can fail: two tables that nobody compares drift apart, and widening the write target
-  // list to an architecture whose escape is unread would make the writer send a reboot nobody has
-  // traced. Section 246.
-  assert.deepEqual([...ARCHITECTURES_WITH_A_WRITE_TARGET], [12]);
+  // refused every architecture outside the list below. The claim is real all the same and this was
+  // the shape that can fail: two tables that nobody compares drift apart, and widening the write
+  // target list to an architecture whose escape is unread would make the writer send a reboot nobody
+  // has traced. Section 246.
+  //
+  // **It fired on 6 September 2026, which is what it was for.** Arch 9 (Harmony 525) joined the write
+  // target list for the block rehearsal and has no escape row at all, so the old title, "the only
+  // architecture with a write target is one whose reset escape has been read"<!--superseded-->, became
+  // false in the same commit. The response was to put the runtime check back into
+  // `assertResetAllowed` rather than to widen the claim, so this now states the pair: an architecture
+  // may be written to and refused a reboot, and which arm it is in is asserted for each one rather
+  // than assumed.
+  assert.deepEqual([...ARCHITECTURES_WITH_A_WRITE_TARGET], [9, 12]);
+  const traced: number[] = [];
+  const refused: number[] = [];
   for (const architecture of ARCHITECTURES_WITH_A_WRITE_TARGET) {
     const dispatched = ESCAPE_SUB_COMMANDS[architecture];
-    assert.notEqual(dispatched, undefined,
-      `architecture ${architecture} may be written to and its escape is unread`);
-    assert.ok(dispatched!.includes(ESCAPE_RESET),
-      `architecture ${architecture} may be written to and does not dispatch the reset`);
+    if (dispatched !== undefined && dispatched.includes(ESCAPE_RESET)) traced.push(architecture);
+    else refused.push(architecture);
   }
+  // The populations, stated rather than bounded: 12 has section 97's reading behind it and 9 has
+  // nothing behind it, so a third architecture arriving on the write target list lands in neither
+  // and fails here.
+  assert.deepEqual(traced, [12]);
+  assert.deepEqual(refused, [9]);
+});
+
+test('the reset escape is refused on a write target whose escape is unread', () => {
+  // The runtime half of the pair above, and it needs the flag on: with writes disabled
+  // `assertResetAllowed` throws at its first line for every architecture, so asserting a throw here
+  // would say nothing about which condition fired. The message is what distinguishes them.
+  //
+  // Arch 9 (Harmony 525) may have a flash block written to it since 6 September 2026 and its escape
+  // dispatcher is unread, so it is the one architecture where these two answers differ. Arch 12
+  // (Harmony One) is the control: same call, same shape of permission, and it returns.
+  const output = withWritesEnabled(`
+    ${IDEAL_SOURCE}
+    const say = (name, permission) => {
+      try {
+        rails.assertResetAllowed(permission);
+        return name + ': allowed';
+      } catch (error) {
+        return name + ': ' + error.constructor.name
+          + (/reset escape/.test(error.message) ? ' for the unread escape' : ' for something else');
+      }
+    };
+    console.log(JSON.stringify([
+      say('arch 12', IDEAL),
+      // An empty intendedVersion because a config read off a remote states none of the six fields,
+      // which is the rehearsal's own case: section 225's gate reports nothing to compare rather than
+      // a match, so this reaches the escape check instead of stopping at a skin that disagrees.
+      say('arch 9', {
+        ...IDEAL,
+        architecture: 9,
+        intendedVersion: {},
+        versionBlock: rails.encodeVersionBlock({architecture: 9}),
+      }),
+    ]));
+  `);
+  assert.deepEqual(JSON.parse(output), [
+    'arch 12: allowed',
+    'arch 9: RailError for the unread escape',
+  ]);
 });
 
 test('the SFR page is where the RAM write bound comes from, and it is the documented one', () => {
@@ -266,6 +318,14 @@ test('the SFR page is where the RAM write bound comes from, and it is the docume
   // the provenance for both. It is 0xF60 on the PIC18F4550 that arch 9 is, and the lower of the two is
   // what to bound against.
   assert.equal(SFR_PAGE_START, 0xf40);
+  // **And the RAM write is on its own list since 6 September 2026**, which is why the paragraph above
+  // can go on treating this as an arch 12 and arch 14 number: arch 9 joined the flash write target
+  // list that day and did not join this one, so no call can reach the bound with a PIC18F4550's
+  // memory map in mind. The gap that would otherwise be open is `0x800` to `0xF40`, which on that
+  // part is neither data memory nor a register.
+  assert.deepEqual([...ARCHITECTURES_WITH_A_RAM_WRITE_TARGET], [12]);
+  assert.ok(ARCHITECTURES_WITH_A_WRITE_TARGET.includes(9));
+  assert.ok(!ARCHITECTURES_WITH_A_RAM_WRITE_TARGET.includes(9));
   // The registers the bound exists for, so the reason survives a refactor of the message.
   for (const register of [0xfa6, 0xfa7, 0xff5, 0xff6, 0xff8]) {
     assert.ok(register >= SFR_PAGE_START, `0x${register.toString(16)} is inside the SFR page`);
@@ -278,10 +338,15 @@ test('firmware is never written, and there is no argument that changes that', ()
 });
 
 test('arch 14 has no write target on the bench', () => {
-  // The spare unprogrammed remote is a Harmony One, so there is nothing on arch 14 that a mistake
-  // could be made on. Reading arch 14 is unaffected, which is why this lives in the rails and not
-  // in the transport.
-  assert.deepEqual(ARCHITECTURES_WITH_A_WRITE_TARGET, [12]);
+  // The two permitted units are a Harmony One and a Harmony 525, so there is nothing on arch 14 that
+  // a mistake could be made on: the Harmony 600 here is the only arch 14 remote in existence on this
+  // bench and Danny excluded it by name on 5 September 2026. Reading arch 14 is unaffected, which is
+  // why this lives in the rails and not in the transport.
+  //
+  // The list moved from `[12]` to `[9, 12]` on 6 September 2026 and this test's own claim did not,
+  // which is the point of stating the population rather than the one member: 14 is absent either way
+  // and a commit that added it would fail here rather than passing a `!includes` that had drifted.
+  assert.deepEqual([...ARCHITECTURES_WITH_A_WRITE_TARGET], [9, 12]);
   assert.ok(!ARCHITECTURES_WITH_A_WRITE_TARGET.includes(14));
 });
 
@@ -814,23 +879,30 @@ test('the only function returning a path to real hardware returns a guarded tran
     'openHarmony must return a guarded transport');
 });
 
-test('arch 9 has every constant a write needs and is still not a write target', () => {
+test('arch 9 has every constant a write needs, and the constants were never what let it write', () => {
   // Section 267 read the Harmony 525's flash erase and write out of its own application image, so
   // the three tables gained a row each. `CONFIG_REGION_BASE`'s comment had asked for exactly that,
   // having refused a floor without a block size on the ground that a half filled table invites a
   // caller to think an architecture is writable.
   //
-  // **This test exists because the tables are now complete and the answer is still no.** That is
-  // the distinction the whole module rests on: a number says where a write would be allowed to go,
-  // and the list says whether anything may write at all. Nothing about the Harmony 525 has been
-  // demonstrated, so it is not on the list, and a future session reading three populated rows
-  // should find this rather than infer permission from them.
+  // **This test's title was "and is still not a write target"<!--superseded--> until 6 September
+  // 2026**, when Danny authorised the block rehearsal on the Harmony 525 and arch 9 joined the list.
+  // What it tested is unchanged and is the distinction the whole module rests on: a number says where
+  // a write would be allowed to go, and the list says whether anything may write at all. The three
+  // rows sat here complete and refused for a day, which is the evidence that the two are separate,
+  // and this now asserts the second half from the other side: the constants did not move when the
+  // permission did.
   assert.equal(CONFIG_REGION_BASE[9], 0x820000);
   assert.equal(WRITABLE_CEILING[9], 0x870000);
   assert.equal(ERASE_BLOCK_SIZE[9], 0x10000);
-  assert.ok(!ARCHITECTURES_WITH_A_WRITE_TARGET.includes(9),
-    'a complete set of constants is not a write target');
-  assert.deepEqual([...ARCHITECTURES_WITH_A_WRITE_TARGET], [12]);
+  assert.ok(ARCHITECTURES_WITH_A_WRITE_TARGET.includes(9));
+  // And what the permission covers is one path, not the architecture: the demonstration was a flash
+  // block, so the RAM write and the reset escape stayed behind. A commit that widens either of those
+  // on the strength of this one fails here.
+  assert.ok(!ARCHITECTURES_WITH_A_RAM_WRITE_TARGET.includes(9),
+    'the flash demonstration is not a RAM write demonstration');
+  assert.equal(ESCAPE_SUB_COMMANDS[9], undefined,
+    'arch 9 has no escape read from its firmware, so assertResetAllowed refuses it');
 });
 
 test('the arch 9 ceiling stops below the log area, and the region is five of the part\'s eight blocks', () => {

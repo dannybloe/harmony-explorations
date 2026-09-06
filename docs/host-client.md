@@ -1248,8 +1248,10 @@ client.** Two of the three would put the wrong date on a remote's screen.
   bounded to 256 bytes, which is why `0x200010` is the serial and why section 88's rule described only
   the default arm. The bootloader reads EEPROM byte 0 at every boot and `0x02` is the value that makes
   it install the application. So the client was right, and it was right about something it had no way
-  to explain. What has **not** changed is the action: this project does not perform that write, arch 9
-  has no write target, and **no concordance command line reaches that step alone**, section 118, so it
+  to explain. What has **not** changed is the action: this project does not perform that write. The reason is no
+  longer that "arch 9 has no write target"<!--superseded-->, since section 269 gave it one; it is that
+  the EEPROM sits outside the writable range, which covers the configuration alone, and that
+  **no concordance command line reaches that step alone**, section 118, so it
   is reachable only as four library calls that belong in the private lab and never in this MIT
   repository since they call into GPLv3 code.
 

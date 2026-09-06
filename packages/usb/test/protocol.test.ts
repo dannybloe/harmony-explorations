@@ -48,6 +48,8 @@ import {
   regionOf,
   ARCH9_WINDOWS,
   ARCHITECTURES_WITH_A_WRITE_TARGET,
+  CONFIG_REGION_BASE,
+  WRITABLE_CEILING,
   FLASH_TOP_BYTE_BOUND,
   validateRegionByte,
 } from '../src/index.ts';
@@ -219,10 +221,28 @@ test('the arch 9 windows are readable and none of them becomes writable', () => 
   // The rail that matters about the change above. Reading a region and writing it are decided by
   // different tables on purpose: the write path goes through CONFIG_REGION_BASE and
   // ARCHITECTURES_WITH_A_WRITE_TARGET, neither of which knows what regionOf answers. So naming the
-  // EEPROM did not make the EEPROM a write target, and arch 9 has no write target at all.
+  // EEPROM did not make the EEPROM a write target.
+  //
+  // **The title's claim got stronger on 6 September 2026, not weaker.** This used to rest on arch 9
+  // having no write target at all, which made it a claim about the architecture: it asserted
+  // `!includes(9)` and the list being `[12]`. Arch 9 (Harmony 525) is a write target now, so the
+  // separation between the two tables is the only thing left holding the title up, which is what it
+  // was always supposed to be testing. The window addresses are still outside the writable range,
+  // and that is now measured rather than implied by a refusal upstream.
   assert.equal(regionOf(0x200000, 9), 'eeprom');
-  assert.ok(!ARCHITECTURES_WITH_A_WRITE_TARGET.includes(9));
-  assert.deepEqual([...ARCHITECTURES_WITH_A_WRITE_TARGET], [12]);
+  assert.ok(ARCHITECTURES_WITH_A_WRITE_TARGET.includes(9));
+  const start = CONFIG_REGION_BASE[9] as number;
+  const ceiling = WRITABLE_CEILING[9] as number;
+  // Every window arch 9 serves except the external flash the configuration lives on. The EEPROM
+  // holds the bootloader's image select byte, section 119, so a stray write there is what picks safe
+  // mode on the one architecture where entering safe mode destroys the application firmware.
+  for (const address of [0x000000, 0x004000, 0x200000, 0x200010, 0x300000, 0x400000]) {
+    assert.ok(address < start || address >= ceiling,
+      `0x${address.toString(16)} is outside the arch 9 writable range`);
+  }
+  // And the configuration's own region is inside it, so the loop above is not passing by being empty
+  // of the case that matters.
+  assert.ok(start >= 0x800000 && start < ceiling);
 });
 
 test('each architecture refuses the other one is allowed', () => {

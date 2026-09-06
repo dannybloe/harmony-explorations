@@ -9,9 +9,14 @@ The one exception is the last test, which scans the image rather than reading on
 the claim it pins is a negative: that a routine which looks like the write path has no caller.
 """
 
+import pathlib
 import unittest
 
 import lab
+
+# The repository root, for the tests at the bottom that read a rail and a document rather than the
+# image: those two claims are about what this project decided, so their source is this checkout.
+ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 # file offset -> the two bytes that must be there, and what they mean
 ERASE_AND_WRITE_OPCODES = {
@@ -153,6 +158,58 @@ class TheRoutineThatHoistsWriteEnableIsDead(unittest.TestCase):
                 if offset + 2 + 2 * delta == target:
                     callers.append(offset)
         self.assertEqual(callers, [], 'section 267 says this routine is unreachable')
+
+
+class TheBlockBelowTheConfigurationIsTheFirmware(unittest.TestCase):
+    """What the arch 9 rehearsal's neighbour check is actually protecting, section 269.
+
+    The first write to a Harmony 525 was performed on 6 September 2026, one block at 0x820000 holding
+    the remote's own bytes, and it read the blocks either side before the erase and again after it.
+    Both were byte identical, so the 64 KiB granularity the firmware states is measured on the part.
+
+    **This test is the reason that check is not ceremony**, and it is the half a hardware measurement
+    cannot leave behind: the block one erase step below the configuration holds the running
+    application firmware. The classifier accepts every tag of the part and the external arm consults
+    nothing else, section 267, so an erase one block low on this architecture is a firmware erase, and
+    nothing in the remote refuses it. On arch 12 (Harmony One) the same mistake meets section 192's
+    ceiling and section 175's bit.
+
+    Asserted against `packages/usb/src/rails.ts` and `packages/usb/src/rehearsal.ts` rather than
+    against a comment, so a change to either constant fails here.
+    """
+
+    CONFIG_BASE = 0x820000
+    APPLICATION = 0x810000
+    SAFE_MODE = 0x800000
+    BLOCK = 0x10000
+
+    def setUp(self):
+        self.rails = (ROOT / 'packages' / 'usb' / 'src' / 'rails.ts').read_text()
+
+    def test_the_rails_carry_the_addresses_this_reasoning_uses(self):
+        # The three constants section 267 read out of the image. If any of them moves, the arithmetic
+        # below stops describing the remote and this test has to be re-derived rather than adjusted.
+        self.assertIn('9: 0x820000', self.rails)
+        self.assertIn('9: 0x870000', self.rails)
+        self.assertIn('9: 0x10000', self.rails)
+
+    def test_one_erase_block_below_the_configuration_is_the_application_firmware(self):
+        self.assertEqual(self.CONFIG_BASE - self.BLOCK, self.APPLICATION)
+        # And two below is the safe mode image, which is the one that cannot be re-entered as an
+        # experiment because entering safe mode on arch 9 destroys the application, section 118.
+        self.assertEqual(self.CONFIG_BASE - 2 * self.BLOCK, self.SAFE_MODE)
+
+    def test_the_memory_map_agrees_about_what_that_block_holds(self):
+        # A second source for the row above, from a document written before any of this: the map was
+        # derived by loadaddr.find_base and confirmed against the internal copy byte for byte.
+        text = (ROOT / 'docs' / 'memory-map-525.md').read_text()
+        self.assertIn('| `0x810000` | 65536 | the **application firmware**', text)
+
+    def test_the_firmware_is_below_the_config_region_floor_and_so_is_refused(self):
+        # The rail that does the work, stated as the comparison rather than as a constant: the floor
+        # is what keeps an erase off the firmware, since the remote will not.
+        self.assertLess(self.APPLICATION, self.CONFIG_BASE)
+        self.assertLess(self.SAFE_MODE, self.CONFIG_BASE)
 
 
 if __name__ == '__main__':

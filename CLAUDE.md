@@ -684,12 +684,16 @@ files already here rather than for incoming ones.
 
 ## Never write to a remote
 
-Read paths only, except on the **spare Harmony One**, deliberately and behind two flags: a block written
-back unchanged on 30 August 2026, section 222; a delay byte changed and reverted on 1 September, sections
-236 and 237; a device added on 3 September, section 242, 25 blocks, after which the television
-answered it; and one power on delay raised the same day, section 247, two blocks, which is the first
-write to use the whole eight step sequence. No other remote has been written to, and the spare is the
-only one that may be. These
+Read paths only, except on **two units**, deliberately and behind two flags. On the **spare Harmony
+One**: a block written back unchanged on 30 August 2026, section 222; a delay byte changed and
+reverted on 1 September, sections 236 and 237; a device added on 3 September, section 242, 25 blocks,
+after which the television answered it; and one power on delay raised the same day, section 247, two
+blocks, which is the first write to use the whole eight step sequence. On the **Harmony 525**: one
+block written back unchanged on 6 September, section 269, which is the second architecture written to
+and needed no compiler, since nothing can compile a configuration for that model. **No other remote
+has been written to and no other may be**, which said "the spare is the only one that may
+be"<!--superseded--> until 6 September 2026. His everyday Harmony One and the Harmony 600 are excluded
+by name. These
 devices are irreplaceable. Note that patching a concordance
 architecture constant to fix the firmware dump also redirects `erase_firmware()` and
 `write_firmware_to_remote(direct=1)`, so a patched build must be treated as read-only.
@@ -729,19 +733,32 @@ document:
   place, so section 192's programmer reading does not transfer.
   **And nothing can compile a configuration for a 525**: Logitech's service reports the skin disabled
   and their compiles fail, section 145, so there is no vendor built file to check ours against, which
-  every Harmony One write so far has had. The first 525 write is therefore the same shape as the
-  Harmony One's first: its own bytes written back unchanged, which needs no compiler.
+  every Harmony One write so far has had. The first 525 write was therefore the same shape as the
+  Harmony One's first: its own bytes written back unchanged, which needs no compiler. **It was
+  performed on 6 September 2026 and it worked**, section 269: one block at `0x820000`, the blocks
+  either side byte identical before and after, and the whole configuration read back afterwards
+  through a different reader with the same SHA-256 as the August read. So the 64 KiB granularity is
+  measured on this part now rather than firmware sourced, and that matters more here than on arch 12
+  because the block one step below is the running application firmware. **The remote did not restart**,
+  which the existing model predicted: it keeps its configuration on a serial chip and executes nothing
+  out of the block being erased, where arch 12 does and does restart, section 247.
   **The old wording said the spare Harmony One was the only write target**<!--superseded--> and that
   arch 9 had none either. **Seven remotes are on the bench**: a programmed Harmony One, a Harmony 600, the spare Harmony
   One, a Harmony 525, and since 27 August 2026 a Harmony Touch, a Harmony 350 and a Harmony 300.
   This said four until 29 August 2026, twelve lines above an architecture table that dates the other
   three. None of the three changes the write argument, since none is arch 12 (Harmony One) and
   `openHarmony` refuses all three, which is why the stale count survived. **Arch 14 (Harmony 600) has no write target at all** and writing to it
-  stays blocked until a second arch 14 remote exists. **Arch 9 (Harmony 525) is a permitted target
-  since 5 September 2026 and the rail still refuses it**, per the bullet above: permission is not
-  capability, and having every constant a write needs is not capability either, which section 267
-  made concrete by supplying them. This said arch 9 "has none
-  either"<!--superseded-->. Reading arch 14 is unaffected. The spare is no longer blank, so anything wanting a virgin arch 12
+  stays blocked until a second arch 14 remote exists. **Arch 9 (Harmony 525) is a write target since
+  6 September 2026**, on Danny's word, and `ARCHITECTURES_WITH_A_WRITE_TARGET` is `[9, 12]`. It was
+  permitted from 5 September and refused by the rail until the demonstration was authorised, which is
+  the distinction the module rests on: permission is not capability, and having every constant a write
+  needs is not capability either, which section 267 made concrete by supplying them. This said arch 9
+  "has none either"<!--superseded--> and then that the rail "still refuses it"<!--superseded-->.
+  **Adding one number to that list opened two paths nobody had authorised and the suite caught both**,
+  section 269, which is the part to carry rather than the permission: the reset escape, whose runtime
+  check had been removed as unreachable and became reachable in the same commit, and the RAM write,
+  now on `ARCHITECTURES_WITH_A_RAM_WRITE_TARGET` and still `[12]` because arch 9's selector 7 executor
+  is unread. **One list per path**, and a flash demonstration buys nothing else. Reading arch 14 is unaffected. The spare is no longer blank, so anything wanting a virgin arch 12
   remote wants its lab dump rather than the unit.
   **Which unit is on the cable is read off the unit since section 226**, rather than asserted by the
   caller: one `READ_FLASH` of the 64 byte identity block in the remote's own program memory, whose
@@ -840,13 +857,19 @@ document:
 * **Flash is not the only write path.** `WRITE_MISC` selector `0x07` writes a byte into the data
   memory of a running remote, and its address reaches the special function registers, which on this
   MCU family are a PIC18's self programming path; `assertRamWriteAllowed` bounds it below that page
-  and checks the architecture. `ERASE_FLASH` takes an address and **no** count, so an erase cannot be
-  scoped by the caller, only refused: 64 KiB goes on arch 12, so the rail requires a block aligned
-  address and a whole block inside the region, with the ceiling at `0x3D0000` because the stored
-  application firmware sits inside the nominally writable region.
+  and checks the architecture, against `ARCHITECTURES_WITH_A_RAM_WRITE_TARGET` and **not** the flash
+  list since section 269: arch 9 (Harmony 525) may have a block written and its selector 7 executor is
+  unread, and its part puts its registers 32 bytes above where that bound sits with only 2048 bytes of
+  memory below. `ERASE_FLASH` takes an address and **no** count, so an erase cannot be
+  scoped by the caller, only refused: 64 KiB goes on arch 12 and on arch 9, measured on both, so the
+  rail requires a block aligned address and a whole block inside the region, with the ceiling at
+  `0x3D0000` on arch 12 because the stored application firmware sits inside the nominally writable
+  region and at `0x870000` on arch 9 because the log area starts there.
 * **A new architecture refuses writes by construction**, because the gate is
-  `ARCHITECTURES_WITH_A_WRITE_TARGET` in `packages/usb/src/rails.ts` and it is `[12]`. Adding a read
-  profile does not add a write target and must not.
+  `ARCHITECTURES_WITH_A_WRITE_TARGET` in `packages/usb/src/rails.ts` and it names the architectures a
+  demonstration has been performed on, `[9, 12]`. Adding a read profile does not add a write target
+  and must not. **Nor does adding one path add another**: the reset escape and the RAM write have
+  lists of their own, because arch 9 arriving on this one would otherwise have taken both with it.
 
 **Read only is not the same as harmless, and the two hazards are enforced in code.** An internal
 program memory read of an **odd count** never terminates and hangs the remote, so `packages/usb`
@@ -1783,10 +1806,13 @@ node packages/usb/bin/rehearse-block.ts --dump <image> --block 0x040000 [--commi
                        the write rehearsal, M4: read one 64 KiB erase block off a remote, compare it
                        with the lab dump, and print what a write would send. **Two units since
                        6 September 2026**, chosen by the architecture read off the remote rather than
-                       by an argument: the spare Harmony One and the Harmony 525. Only the first may
-                       be written; a 525 can be read and compared and `--commit` on one is refused.
+                       by an argument: the spare Harmony One and the Harmony 525. **Both may be
+                       written since 6 September 2026**, which said "only the first may be
+                       written"<!--superseded--> for the few hours before the demonstration ran.
                        A 525 run needs two things first, both reads: a region read covering a whole
-                       block, and that filename plus the unit's identity registered in the lab. **Without `--commit` it
+                       block, and that filename plus the unit's identity registered in the lab. Only
+                       block `0x820000` is registered, so no other 525 block can be rehearsed until a
+                       region read covers it. **Without `--commit` it
                        writes nothing**, and that half is worth running on its own, because the
                        compare is what turns `originalDumpVerified` from a caller's assertion into a
                        measurement for the range about to be written. `--commit` needs
@@ -1794,13 +1820,17 @@ node packages/usb/bin/rehearse-block.ts --dump <image> --block 0x040000 [--commi
                        the dump's own bytes back, and reads them back to compare, so a success changes
                        nothing on the remote. It also reads the block **either side** before the erase
                        and again after it, because `ERASE_FLASH` carries no count and the 64 KiB block
-                       size is Logitech's client's word: without that, a larger sector would destroy a
-                       neighbouring block and the run would report success. **Run with `--commit` on
+                       size was Logitech's client's word: without that, a larger sector would destroy
+                       a neighbouring block and the run would report success. **Run with `--commit` on
                        30 August 2026 and it succeeded**, which is this project's first write: the
                        erase stayed inside its block on both sides, so the block size is measured now
                        rather than believed, and the whole configuration reads back identical.
-                       Sections 175, 221 and 222, plus the job 3 review in
-                       docs/review-before-first-write.md
+                       **Run on the Harmony 525 on 6 September 2026 and it succeeded there too**,
+                       section 269, so the block size is measured on both parts. That neighbour check
+                       earns more on arch 9 than on arch 12, because the block one step below the
+                       configuration is the running application firmware and nothing in that remote
+                       refuses an erase of it. Sections 175, 221, 222, 267 and 269, plus the job 3
+                       review in docs/review-before-first-write.md
 HARMONY_ENABLE_WRITES=1 node packages/usb/bin/end-session-experiment.ts
                        THE ONLY SCRIPT HERE THAT SENDS A COMMAND WHICH IS NOT A READ, one
                        `0xE0 0x01`, which zeroes one variable and touches no storage. Refuses

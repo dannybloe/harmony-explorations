@@ -145,8 +145,12 @@ and the contributor's report, the other from an opcode and a range check. **And 
 direction: its chip table maps the flash id this remote reports, `0xFF:0x12`, to a 25F040 of 512 KiB
 whose sector boundaries run `0x010000` to `0x080000` a block apart, and its arch 9 entry carries the
 same `0x820000`, `0x810000` and `0x800000` this page does. `ERASE_BLOCK_SIZE[9]` in
-`packages/usb/src/rails.ts` is the executable form, and a write to this model is still refused, by
-`ARCHITECTURES_WITH_A_WRITE_TARGET`, which is `[12]`.
+`packages/usb/src/rails.ts` is the executable form. **And it is measured on the part since 6
+September 2026**, section 269: one block at `0x820000` was erased and rewritten on the bench unit and
+the blocks either side, `0x810000` and `0x830000`, are byte identical before and after, so a fourth
+direction agrees and it is the only one that asked the hardware. A write to this model was refused by
+`ARCHITECTURES_WITH_A_WRITE_TARGET`, "which is `[12]`"<!--superseded-->, until that run; it is
+`[9, 12]` now.
 
 **Writing is a byte at a time**, same section: every byte gets its own write enable, its own three
 byte address, its own status poll and its own write disable, so nothing here has a page boundary.

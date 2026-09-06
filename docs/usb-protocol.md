@@ -476,6 +476,22 @@ firmware at `0x810000` as easily as the configuration. Arch 12 has section 192's
 and section 175's bit doing part of this work in the remote; arch 9 has neither, and
 `packages/usb/src/rails.ts` is the only thing in the way.
 
+**The arch 9 granularity is measured on hardware since 6 September 2026**, section 269, where it was
+firmware sourced and corroborated by concordance's chip table before that. One block at `0x820000` was
+erased and rewritten on the bench Harmony 525 and the blocks either side, `0x810000` and `0x830000`,
+are byte identical before and after. So a 64 KiB request is a 64 KiB erase on this part, which is the
+claim the paragraph above needed and could not make: the first of those neighbours is the running
+application firmware, so on arch 9 the block size being right is what stands between a config erase
+and a firmware erase.
+
+**The full write sequence was not sent and does not have to be on this architecture.** Section 245's
+eight steps include dropping the remote's cached region descriptors before the erase and restarting it
+afterwards. Neither was sent here. The cache drop matters on arch 12 because that remote executes its
+configuration in place out of the flash being erased; arch 9 keeps its configuration on a serial chip
+that is not memory mapped, and the remote stayed on the bus through the whole sequence, which the read
+back over the same connection is what proves. The restart is refused anyway, because arch 9 has no
+`ESCAPE_SUB_COMMANDS` row: nothing has read its escape dispatcher.
+
 **Arch 9's WRITE_FLASH data phase is one whole SPI transaction per byte**, `0x031CE` through
 `0x0758E`: a write enable, a three byte address, one data byte, a status poll and a write disable,
 repeated. So there is no page boundary for a caller to respect and no partially filled page to

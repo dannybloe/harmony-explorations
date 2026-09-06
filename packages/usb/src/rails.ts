@@ -14,7 +14,7 @@
  * the answer is no unless every condition is met.
  */
 
-import { ESCAPE_END_SESSION, ESCAPE_SUB_COMMANDS, readVersion } from './protocol.ts';
+import { ESCAPE_END_SESSION, ESCAPE_RESET, ESCAPE_SUB_COMMANDS, readVersion } from './protocol.ts';
 import { compareIntendedVersion } from './compatible.ts';
 import { sameUnit } from './identity.ts';
 import type { Compatibility, StatedVersion } from './compatible.ts';
@@ -57,24 +57,72 @@ export const CONFIG_REGION_BASE: Readonly<Record<number, number>> = {
   // some of this work in the remote; arch 9 (Harmony 525) has nothing there, and this table is the
   // only thing in the way.
   //
-  // **Three constants are still not a write target.** `ARCHITECTURES_WITH_A_WRITE_TARGET` is `[12]`
-  // and this commit does not change it: what these rows buy is that a refusal for arch 9 now names
-  // the missing demonstration rather than a missing number.
+  // **Three constants were still not a write target**, and that held for exactly one day. This said
+  // `ARCHITECTURES_WITH_A_WRITE_TARGET` "is `[12]` and this commit does not change
+  // it"<!--superseded-->, on the ground that what these rows buy is a refusal naming the missing
+  // demonstration rather than a missing number. Section 269 performed the demonstration on 6
+  // September 2026 and the list is `[9, 12]`. The distinction the wording was drawing is still the
+  // right one and is easier to see now that both halves have happened: the rows say where a write
+  // would be bounded, the list says whether anything may write, and the rows did not move when the
+  // permission did.
+  //
+  // **The erase granularity is measured on the part since that run**, which is what the rows above
+  // could only predict: the blocks either side of `0x820000` were read before the erase and again
+  // after it and are byte identical, so a 64 KiB request is a 64 KiB erase on this chip.
 };
 
 /**
  * Architectures that have a write target at all.
  *
- * Seven remotes are on the bench: a programmed Harmony One, a Harmony 600, a spare Harmony One,
- * a Harmony 525, which is arch 9 and has no write target either, and since 27 August 2026 a Harmony
- * Touch, a Harmony 350 and a Harmony 300, none of which this library can even open. The spare is the only unit
- * anything may be written to, and it is arch 12. It is no longer unprogrammed: Logitech's own
- * software synced a config to it on 7 August 2026, section 58, and its original contents are
- * verified in the lab. **So arch 14 has no write target**, and writing to it stays refused until a second
- * arch 14 remote exists. Reading arch 14 is unaffected, which is the point of keeping this
- * separate from the read paths.
+ * Seven remotes are on the bench: a programmed Harmony One, a Harmony 600, a spare Harmony One, a
+ * Harmony 525, and since 27 August 2026 a Harmony Touch, a Harmony 350 and a Harmony 300, none of
+ * which this library can even open. **Two units may be written to**, Danny's decision of 5 September
+ * 2026: the spare Harmony One, which is arch 12, and the Harmony 525, which is arch 9. His everyday
+ * Harmony One and the Harmony 600 are excluded by name, the 600 because it is the only arch 14
+ * remote in existence here. **So arch 14 has no write target**, and writing to it stays refused
+ * until a second arch 14 remote exists. Reading arch 14 is unaffected, which is the point of keeping
+ * this separate from the read paths.
+ *
+ * **Arch 9 was added on 6 September 2026, on Danny's word, for the block rehearsal.** It had been
+ * permitted since 5 September and refused by this list, which is the distinction the module rests
+ * on: permission is not capability, and section 267 supplying every constant a write needs did not
+ * change the answer either. What changed is that the demonstration was authorised, and it is the
+ * same shape as arch 12's first write, section 222: one erase block of the remote's own bytes,
+ * written back unchanged, against a region dump read off that unit and compared byte for byte first.
+ *
+ * **Two things this list used to gate that it deliberately no longer does, because adding arch 9
+ * would have opened them unasked.** Both are now refused by a check of their own rather than by this
+ * list being short, so the widening does not travel:
+ *
+ * * the **reset escape**, `0x02`, which reboots the remote. `assertResetAllowed` checks
+ *   `ESCAPE_SUB_COMMANDS` at runtime, and arch 9 has no row there because nothing has read its
+ *   escape dispatcher. That check had been removed as unreachable, which it was while this list was
+ *   `[12]`; it is reachable now, which is exactly why it is back.
+ * * the **RAM write**, `WRITE_MISC` selector `0x07`, which goes through
+ *   `ARCHITECTURES_WITH_A_RAM_WRITE_TARGET` instead. Arch 9's selector 7 executor is unread.
+ *
+ * So an architecture arriving on this list gets the flash block path and nothing else, and each
+ * further path is a decision with its own evidence rather than a side effect of this line.
  */
-export const ARCHITECTURES_WITH_A_WRITE_TARGET: readonly number[] = [12];
+export const ARCHITECTURES_WITH_A_WRITE_TARGET: readonly number[] = [9, 12];
+
+/**
+ * Architectures whose data memory may be written, which is not the same list and is deliberately
+ * narrower.
+ *
+ * `WRITE_MISC` selector `0x07` writes a byte into the data memory of a running remote. Its executor
+ * has been read on arch 12 (Harmony One) and on **no other architecture**, so a RAM write elsewhere
+ * is a command whose effect nobody here can state. That was covered by
+ * `ARCHITECTURES_WITH_A_WRITE_TARGET` being `[12]` until 6 September 2026, when arch 9 (Harmony 525)
+ * joined it for the flash rehearsal and would have taken the RAM path with it.
+ *
+ * **The bound above it is the other reason.** `SFR_PAGE_START` is `0xF40`, which is the PIC18F67J50
+ * and 87J50 figure that arch 12 and arch 14 are; the PIC18F4550 that arch 9 is puts its registers at
+ * `0xF60`, and arch 9's data memory is 2048 bytes, so an address between `0x800` and `0xF40` is
+ * neither memory nor a register on that part and this rail would pass it. The lower bound is the
+ * conservative one for the page, and it is not the whole story on a part with less RAM.
+ */
+export const ARCHITECTURES_WITH_A_RAM_WRITE_TARGET: readonly number[] = [12];
 
 /**
  * The highest address a write or an erase may reach, per architecture.
@@ -496,12 +544,20 @@ export function assertRamWriteAllowed(
   assertUnitIsPermitted(p);
   // An architecture check, like every other write rail here. It had none, so a caller passing
   // `targetIsTheSpareRemote` reached `WRITE_MISC` on a Harmony 600 or a Harmony 525, whose selector 7
-  // executors nobody has read. `ARCHITECTURES_WITH_A_WRITE_TARGET` is the same list flash uses and the
-  // reason is the same: a read profile is not a write profile. Section 139.
-  if (p.architecture === undefined || !ARCHITECTURES_WITH_A_WRITE_TARGET.includes(p.architecture)) {
+  // executors nobody has read. Section 139.
+  //
+  // **The list was `ARCHITECTURES_WITH_A_WRITE_TARGET` until 6 September 2026**, on the stated
+  // ground that it "is the same list flash uses and the reason is the same"<!--superseded-->. The
+  // reason is the same and the list is not: arch 9 joined the flash list that day for the block
+  // rehearsal, and its selector 7 executor is still unread, so sharing one list would have opened a
+  // RAM write on the strength of a flash demonstration. One list per path, and each path's list
+  // moves when that path's own evidence does.
+  if (p.architecture === undefined
+      || !ARCHITECTURES_WITH_A_RAM_WRITE_TARGET.includes(p.architecture)) {
     throw new RailError(
-      `architecture ${p.architecture ?? 'unknown'} has no write target, so no RAM write either; ` +
-        `only ${ARCHITECTURES_WITH_A_WRITE_TARGET.join(', ')} has one`,
+      `architecture ${p.architecture ?? 'unknown'} has no RAM write target; only `
+        + `${ARCHITECTURES_WITH_A_RAM_WRITE_TARGET.join(', ')} has one, and being allowed to write `
+        + 'flash there is a different question with different evidence behind it',
     );
   }
   if (!Number.isInteger(dataAddress) || dataAddress < 0 || dataAddress >= SFR_PAGE_START) {
@@ -529,8 +585,10 @@ export function assertRamWriteAllowed(
  *
  * The same constant as `SFR_PAGE_START` in `src/harmony/pic18/isa.py`, and the same provenance,
  * Microchip's own `p18f87j50.inc`. It is 0xF60 on the PIC18F4550 that arch 9 is, which does not matter
- * here because arch 9 has no write target: the lower of the two is the safe one to bound against
- * either way, and a test says so rather than leaving it to be re-derived.
+ * here because arch 9 has no **RAM** write target. That used to read "because arch 9 has no write
+ * target"<!--superseded-->, which stopped being true on 6 September 2026 when the flash rehearsal was
+ * authorised, and is why the RAM path has a list of its own: the lower of the two pages is the safe
+ * one to bound against either way, and a test says so rather than leaving it to be re-derived.
  */
 export const SFR_PAGE_START = 0xf40;
 
@@ -623,16 +681,35 @@ export function assertInvalidateAllowed(p: WritePermission): void {
  * to is exactly what the unit check exists to prevent, and `assertSessionEndAllowed` keeps the
  * lighter gate because `0x01` writes nothing and changes one variable.
  *
- * **It deliberately does not re-check that the architecture dispatches the escape.** The first
- * version did, copying `assertSessionEndAllowed`, and that check could never fire: the shared gate
- * above refuses every architecture outside `ARCHITECTURES_WITH_A_WRITE_TARGET`, which is `[12]`, and
- * arch 12 does dispatch `0x02`. An unreachable guard is worse than none because it reads as
- * protection, so the claim is a test instead, `TheOnlyWriteTargetDispatchesTheReset`, which compares
- * the two tables. The session end rail keeps its own copy because it takes the lighter permission and
- * really can be reached with any architecture.
+ * **It re-checks that the architecture dispatches the escape, and that check was absent for a
+ * fortnight because it was genuinely unreachable.** This said it "deliberately does not re-check
+ * that the architecture dispatches the escape"<!--superseded--> until 6 September 2026, on a sound
+ * argument: the shared gate refuses every architecture outside
+ * `ARCHITECTURES_WITH_A_WRITE_TARGET`, that list was `[12]`, arch 12 dispatches `0x02`, and an
+ * unreachable guard is worse than none because it reads as protection. The claim lived in a test
+ * instead, comparing the two tables.
+ *
+ * **Adding arch 9 to that list made it reachable in the same commit**, and the test caught it, which
+ * is what the test was for. Arch 9 has no `ESCAPE_SUB_COMMANDS` row at all, because nothing has read
+ * its escape dispatcher, so without this the rehearsal's widening would have handed the config
+ * writer a reboot nobody has traced, on a remote nobody has written to. The reasoning that removed
+ * the check was right about the code and its premise expired, which is the shape worth remembering:
+ * a guard justified by another table's contents needs re-deriving whenever that table moves.
+ *
+ * The test stays as well, since the two claims differ: this refuses at runtime, and the test says
+ * the tables have not drifted. The session end rail keeps its own copy because it takes the lighter
+ * permission and always could be reached with any architecture.
  */
 export function assertResetAllowed(p: WritePermission): void {
   assertPermissionIsUsable(p);
+  const dispatched = ESCAPE_SUB_COMMANDS[p.architecture];
+  if (dispatched === undefined || !dispatched.includes(ESCAPE_RESET)) {
+    throw new RailError(
+      `architecture ${p.architecture} has no reset escape read from its firmware, so restarting it `
+        + 'is refused: the reboot would be a command nobody here has traced. Section 97 is what was '
+        + 'read for arch 12, and the equivalent for this architecture is unread.',
+    );
+  }
 }
 
 /**
