@@ -636,6 +636,12 @@ export function taggedListPools(c: Container): TaggedListPool[] {
  *
  * Named here rather than in the opcode inventory because it is the one field a page list and its
  * copy are allowed to disagree on, and a test that hard codes `0x7f` reads like a magic number.
+ *
+ * **This is the only name for that opcode and the others are gone.** On 6 September 2026 it had
+ * three: this, `ACTION_LIST_INDEX` in `inventory.ts` and `RUN_ACTION_LIST` in `compose.ts`, all
+ * `0x7f`, all correct, and none of them able to see the others. Three right copies is the state
+ * that precedes three disagreeing ones and no test can catch it, which is `isa.py`'s rule applied
+ * to a constant. Import this one.
  */
 export const ACTION_LIST_INDEX_OPCODE = 0x7f;
 

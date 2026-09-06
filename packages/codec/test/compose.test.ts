@@ -20,8 +20,17 @@ import {
   blockOfStatedCode,
   blockWordsOf,
   composeDevice,
+  composeActivity,
   composeIrGroup,
   coverage,
+  EVENT_MASK,
+  SCAN_MASK,
+  ACTIVITY_STATE_NAME,
+  nameNodes,
+  handlerSetRoles,
+  handlerSets,
+  activityWriterCount,
+  activityCount,
   frameKey,
   framesOfSegments,
   fromFirstMark,
@@ -716,4 +725,164 @@ test('a device list page binds exactly its hit page room, and only the last page
     shapes[name] = widest;
   }
   assert.deepEqual(shapes, MENU_PAGE_SHAPES);
+});
+
+/**
+ * The four containers the activity composer is exercised on, one per architecture.
+ *
+ * A per architecture list rather than the whole corpus, because what is being checked is that the
+ * five insertions land in a container of each shape: base slot 9 is at a different raw slot on each,
+ * and arch 12 is the one with the extra section that shifts every index above 18.
+ */
+const ACTIVITY_HOSTS = ['one_config_unprogrammed', 'h600_config', 'h525_config', 'arch8_config_b'];
+
+/** A variable a test may point an activity at: not the firmware's, and not the counter itself. */
+function aDeviceVariable(c: ReturnType<typeof parse>): number {
+  const counter = stateVariables(c).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME));
+  const found = stateVariables(c)
+    .find((one) => one.index > FIRMWARE_STATE_VARIABLE_MAX && one.index !== counter?.index);
+  assert.ok(found !== undefined, 'the container has no variable an activity could write');
+  return found.index;
+}
+
+test('composing an activity adds one to the counter and one entry to the key map table',
+     skipUnless(...ACTIVITY_HOSTS), () => {
+  // Section 273 turned into an insertion. Each assertion is one of the rules that section states,
+  // so a change to any of them fails here rather than producing a container that merely parses.
+  let hosts = 0;
+  let growth = new Set<number>();
+  for (const name of ACTIVITY_HOSTS) {
+    const c = parse(require_(name));
+    const before = stateVariables(c).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME));
+    const sets = handlerSets(c);
+    assert.ok(before?.record !== undefined && sets !== undefined, name);
+
+    const out = composeActivity(c, {
+      label: 'Test',
+      targets: [{ variable: aDeviceVariable(c), value: 1 }],
+      keys: [{ scan: 20, list: 0 }],
+    });
+    const after = parse(out.bytes);
+    hosts += 1;
+    growth.add(out.bytes.length - c.blob.length);
+
+    // The number: one more value, and it is the new maximum, leaving the idle value where it was.
+    const raised = stateVariables(after).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME));
+    assert.ok(raised?.record !== undefined, `${name}: the counter stopped reading`);
+    assert.equal(out.activity, before.record.second + 1);
+    assert.equal(raised.record.second, out.activity);
+    assert.equal(raised.record.first, before.record.first, 'the idle value does not move');
+
+    // The name tree states the count as text and has to keep up. Section 86's rule, section 273's
+    // consequence.
+    const node = (nameNodes(after) ?? []).find((one) => one.name.startsWith(ACTIVITY_STATE_NAME));
+    assert.ok(node !== undefined, `${name}: the counter lost its name`);
+    assert.equal(Number(node.name.split('_').pop()), raised.record.second + 1);
+
+    // The entry: appended, so the prefix and every existing activity keep their index.
+    const grown = handlerSets(after);
+    assert.ok(grown !== undefined, `${name}: base slot 9 stopped reading`);
+    assert.equal(grown.addresses.length, sets.addresses.length + 1);
+    assert.equal(out.set, sets.addresses.length);
+    // **Every existing entry keeps its index, and this line used to assert nothing**: it compared
+    // the length of a slice taken to a length against that length, which is true of any container.
+    // The relocations move the addresses, so the real assertion is that they all move by one delta
+    // and none is left behind or reordered.
+    const deltas = new Set(sets.addresses
+      .map((was, k) => (grown.addresses[k] as number) - was));
+    assert.equal(deltas.size, 1, `${name}: the prefix did not move as one block`);
+
+    // The three handlers, and the one key, in the shape section 273 measured: event type 0 on the
+    // handlers and a press on the key.
+    const entries = taggedList(after, grown.addresses[out.set] as number)?.entries ?? [];
+    const handlers = entries.filter((one) => (one.tag & EVENT_MASK) === 0);
+    assert.deepEqual(handlers.map((one) => one.tag).sort((a, b) => a - b), [1, 2, 5]);
+    const keys = entries.filter((one) => (one.tag & EVENT_MASK) !== 0);
+    assert.equal(keys.length, 1);
+    assert.equal((keys[0] as { tag: number }).tag & SCAN_MASK, 20);
+
+    // And one more list writes the counter, which is the closure `activityWriterCount` exists for.
+    assert.equal(activityWriterCount(after), (activityWriterCount(c) as number) + 1);
+    assert.equal(activityCount(after), (activityCount(c) as number) + 1);
+  }
+  assert.equal(hosts, 4, 'one container per architecture');
+  // **37 bytes on all four**, and the same number on each is the point rather than the number: the
+  // insertions are the enter list, the select list, their two pointers, the tagged list and its
+  // pointer, none of which depends on the architecture. A container whose name count crossed a
+  // power of ten would be 38, which none of these four is.
+  assert.deepEqual([...growth], [37]);
+});
+
+test('a composed activity is entered by running its select list, and nothing else selects it',
+     skipUnless(...ACTIVITY_HOSTS), () => {
+  // The four hop chain, section 120, built from the far end. This function produces hops two and
+  // three; hop four is a menu row and belongs to the screen half, so the reader still reports the
+  // new entry as the one nothing binds. Asserting that is what keeps the boundary honest: a later
+  // change that quietly bound a key here would fail this test rather than pass the one above.
+  for (const name of ACTIVITY_HOSTS) {
+    const c = parse(require_(name));
+    const out = composeActivity(c, {
+      label: 'Test', targets: [{ variable: aDeviceVariable(c), value: 1 }],
+    });
+    const after = parse(out.bytes);
+    const lists = after.actionLists() ?? [];
+
+    const select = lists[out.selectList] ?? [];
+    assert.equal(select.length, 1, `${name}: the select list is one instruction`);
+    assert.equal((select[0] as { opcode: number }).opcode, 0x1f);
+    assert.equal((select[0] as { operand: number }).operand, 0xff00 | out.set);
+
+    // The enter list writes the device and then the counter, in that order, because a reader that
+    // stopped at the first write would otherwise report a device's value as the activity's.
+    const enter = lists[out.enterList] ?? [];
+    assert.equal(enter.length, 2);
+    assert.equal((enter[1] as { operand: number }).operand, out.activity);
+
+    // Hop four is absent by design, so the entry is selected and is not an activity's yet.
+    assert.equal(handlerSetRoles(after)[out.set], 'idle');
+  }
+});
+
+test('the activity composer refuses what would produce a container that merely parses',
+     skipUnless('h600_config'), () => {
+  const c = parse(require_('h600_config'));
+  const ok = { label: 'Test', targets: [{ variable: aDeviceVariable(c), value: 1 }] };
+  // A label has to be drawable, which is printable ASCII, and cannot be nothing.
+  assert.throws(() => composeActivity(c, { ...ok, label: '' }), ComposeError);
+  assert.throws(() => composeActivity(c, { ...ok, label: 'Caf\u00e9' }), ComposeError);
+  // The firmware owns thirteen variables and an activity may not write one, section 138.
+  assert.throws(() => composeActivity(c, { ...ok, targets: [{ variable: 3, value: 1 }] }),
+    ComposeError);
+  // **A variable past the end, refused by the count and not by the seven bit rail.** The comment
+  // here claimed the opposite until the audit of 6 September 2026, and the message is what settles
+  // it: this container has 74 variables, so 128 never reaches the encoding check. That rail is
+  // unreachable on every container in this corpus and is kept for the encoding rather than for the
+  // sample, which its own comment now says.
+  assert.throws(() => composeActivity(c, { ...ok, targets: [{ variable: 128, value: 1 }] }),
+    /past the .* that exist/);
+  // A value the variable does not take matches no transition, so the device is never driven and the
+  // activity is silently dead. The one failure this composer's whole design is about.
+  assert.throws(() => composeActivity(c, { ...ok, targets: [{ variable: aDeviceVariable(c), value: 9999 }] }),
+    /does not take the value/);
+  // The counter is not a device, and writing it as one defeats the enter list's ordering.
+  const counter = stateVariables(c).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME));
+  assert.ok(counter !== undefined);
+  assert.throws(() => composeActivity(c, { ...ok, targets: [{ variable: counter.index, value: 0 }] }),
+    /not a device/);
+  // A scan code is six bits, and an integer: a bitwise mask alone truncates 63.5 to a real button.
+  assert.throws(() => composeActivity(c, { ...ok, keys: [{ scan: 64, list: 0 }] }), ComposeError);
+  assert.throws(() => composeActivity(c, { ...ok, keys: [{ scan: 63.5, list: 0 }] }), ComposeError);
+  // One key, bound twice: the reader takes the first and the second is unreachable.
+  assert.throws(() => composeActivity(c, {
+    ...ok, keys: [{ scan: 20, list: 0 }, { scan: 20, list: 1 }] }), /bound twice/);
+  // Every list index a caller hands over has to name a list. An index past the end parses and does
+  // nothing, which is the same silence.
+  const lists = c.actionLists()?.length as number;
+  assert.throws(() => composeActivity(c, { ...ok, keys: [{ scan: 20, list: lists }] }),
+    /of \d+ that exist/);
+  assert.throws(() => composeActivity(c, { ...ok, leaveList: lists }), /of \d+ that exist/);
+  assert.throws(() => composeActivity(c, { ...ok, resumeList: -1 }), /of \d+ that exist/);
+  // **And an underscore is fine**, which it was not for a day: the ban is a device's, because a
+  // state variable's name is `<label>_<property>_<values>`, and an activity has no node at all.
+  assert.equal(composeActivity(c, { ...ok, label: 'Watch_TV' }).label, 'Watch_TV');
 });

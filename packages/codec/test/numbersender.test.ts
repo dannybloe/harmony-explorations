@@ -18,6 +18,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { IMAGES, PARSEABLE_EXCLUDED, imagePath, load, require_, skipUnless, skipWithoutLab } from '@harmony/lab';
 import { parse } from '../src/gspm.ts';
+import { ACTION_LIST_INDEX_OPCODE, SEND_INFRARED } from '../src/index.ts';
 import {
   NUMBER_SENDER_DIGITS,
   NUMBER_SENDER_RECORD_LENGTH,
@@ -312,10 +313,11 @@ const ZERO_SAMPLE = 'calibration_favzero';
 const HANDOVER_OPERAND = 0xf300;
 /** Loads a literal into the accumulator. */
 const OPCODE_LOAD = 0x7a;
-/** Runs another base slot 10 list, its operand naming the entry. */
-const OPCODE_RUN = 0x7f;
+/** Runs another base slot 10 list, its operand naming the entry. Imported, not respelled: the two
+ *  opcodes are named once each in `src` and a test's copy diverges as readily as a module's. */
+const OPCODE_RUN = ACTION_LIST_INDEX_OPCODE;
 /** Sends an infrared code, its operand being `{ u8 group; u8 index }`. */
-const OPCODE_SEND = 0x7d;
+const OPCODE_SEND = SEND_INFRARED;
 const OPCODE_REGISTER = 0x1f;
 
 /** Every base slot 10 list that hands a value to the number sender, and the value it loads. */

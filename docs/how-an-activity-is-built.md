@@ -6,6 +6,12 @@ builder has to touch them, each with a check that can fail.
 
 **This is chapter 1.1 of `todo.md`**, and its plan is `docs/plans/003-how-an-activity-is-built.md`.
 
+**The composer exists now, `composeActivity` in `packages/codec/src/compose.ts`**, chapter 1.2, so
+this document has a second job: it is what that function's rules are read out of, and a rule stated
+here that the code does not follow is a defect in one of the two. The function does steps 1 to 5
+below and deliberately not 6 or 7, which are the screen and live in a separate function for the same
+reason `composeDeviceScreen` is separate from `composeDevice`.
+
 ## What an activity is, before any bytes
 
 An activity is "Watch TV". You press it, several appliances switch on, their inputs get set, and the
@@ -53,6 +59,16 @@ The rule for adding one, which is inference rather than measurement since nothin
 addition: raise `second` by one, give the new activity the new maximum, leave the idle value where it
 is. That turns a container of the twelve shape into one of the three shape.
 
+**And the name tree says the count as well**, so it changes with the record: the node
+`CurrentActivityState_0_<values>` ends in `second + 1`, which is section 86's rule over every named
+variable rather than anything about activities. Because the count is text, raising it can make the
+name **longer**, and then this is a length edit to base slot 0 and not a field poke. One container in
+fifteen is at that boundary.
+
+**An activity has no name tree node of its own**, which is worth stating because a device does: the
+tree names the variable, and the activity's own label is drawn on the menu page as pixels. So step 7
+below is where an activity gets its name, and this step touches the tree only for that count.
+
 ### 2. One entry in the key map table
 
 Base slot 9. The activity's own keypad map, and section 272 says what the table is: a fixed per model
@@ -87,12 +103,25 @@ the same three:
 |---|---|
 | 1 | **enter**: run when the activity starts. This is the whole of the start sequence |
 | 2 | **leave**: run when it stops. Cancels the timers and restores the display |
-| 5 | a third handler, run on some transition this document does not identify |
+| 5 | a third handler. **What it does is read** and what fires it is not: it re-sends the inputs with no power change, which is the shape of a "fix it" chain |
 
 *The check that can fail*: every activity entry has all three.
 
-**P3.** Tag 5 is present on every activity on every architecture, and a composer must emit it. What it
-is **for** is not established here and is the largest hole in this document.
+**P3.** Tag 5 is present on every activity on every architecture, and a composer must emit it. **What
+fires it** is not established and is the largest hole in this document. What it **does** was already
+read before this document was written, in `ACTIVITY_START_TAG`'s own docstring, and this section said
+it was unidentified for a day: over the corpus it re-sends the inputs with no power change.
+
+**Section 273 bounds what a composer may put there.** Tag 5 always runs a real list, so it cannot take
+the null instruction tag 2 can. Its **state writes** are a subset of the enter list's on 50 of 50, and
+the subset is **empty** on 24. So pointing tag 5 at the enter list, which `composeActivity` does when
+the caller says nothing, sits inside the measured envelope trivially; whether it is behaviourally
+right is still open.
+
+Two tighter readings were checked. "The enter list without the power writes" matches 0 of 50 and is
+dead. "A prefix of the enter list" **holds on 28 of 50**, of which 24 are the empty case, so it is
+4 of the 26 that write anything, and all four arch 8 containers have it on every activity. This
+document said it failed everywhere<!--superseded-->, which was a claim with no test behind it.
 
 **Two things section 273 adds, and both change what a composer emits.** The extra base slot 9 entry,
 the one section 272 could only define by exclusion, carries tags 1 and 5 and **no leave handler**, on

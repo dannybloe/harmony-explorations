@@ -26,7 +26,8 @@ Plan: [003-how-an-activity-is-built.md](docs/plans/003-how-an-activity-is-built.
   - [x] 1.1.6 What an entry in the activity switching table corresponds to: a per model prefix, one per activity, one more (section 272)
   - [x] 1.1.7 Where device mode's own keypad map comes from: the device's own screen record (section 271)
   - [x] 1.1.8 Scored against one_config and h600_config: seven of nine right, P6 incomplete, P7 wrong
-- [ ] 1.2 Compose an activity, the counterpart of `composeDevice`
+- [x] 1.2 Compose an activity, the counterpart of `composeDevice`: `composeActivity`, four architectures
+  - [ ] 1.2.1 The screen half: a menu row and a drawn name, two bindings on arch 14 (section 273)
 - [ ] 1.3 Write one to the spare Harmony One and watch the television
 
 ## 2. Screens

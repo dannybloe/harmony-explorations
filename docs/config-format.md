@@ -2649,6 +2649,18 @@ screen. An activity page's `0x7F` operands are a **contiguous ascending run** of
 the tagged list's own order, on 16 of 16 activity pages against under half of pages generally, so a
 fresh run of action lists per activity menu is how the generator lays one out.
 
+**The value count is stated in the name tree as well**, section 86's rule over 276 named variables
+applied here: the node is `CurrentActivityState_0_<values>` and the trailing number is `second + 1`.
+A writer that changes the activity count changes both, and because the count is text the name can get
+**longer**, which makes the insertion a length edit to base slot 0. In this corpus that is
+`one_config` alone, at nine values going to ten. Section 273.
+
+**Tag 5's state writes are a subset of tag 1's**, on 50 of 50, and empty on 24, section 273. The
+tighter reading that they are a **prefix** holds on 28 of 50, 4 of the 26 that write anything, and on
+every activity of all four arch 8 containers. It always
+runs a real list and never the null instruction. What fires it is unread; what it does is a re-send of
+the inputs with no power change.
+
 **The extra entry has no leave handler**, section 273, which is what lets it be recognised rather than
 only defined: it carries tags 1 and 5 on 15 of 15, where all 50 activity entries carry exactly 1, 2 and
 5. A leave handler may itself be a null instruction, opcode 0 operand 0, on 21 of the 50 and all of

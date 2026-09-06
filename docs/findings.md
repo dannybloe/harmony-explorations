@@ -34896,6 +34896,46 @@ scans 8 and 2, and the same four scans carry every activity on all three arch 14
 physical key each of the four is, is not established here**: `reference/button-maps.md` names those
 numbers for other models and a scan code does not transfer between skins.
 
+### The count is stated twice, and adding an activity is a name tree length edit
+
+The name tree states the value count as well: its node is `CurrentActivityState_0_<values>` and the
+trailing number is `second + 1`. **That is section 86's, not this one's**, tested over 276 named
+variables, and it was written up here as a new closure for an hour before the reader's own docstring
+was read. Recording it that way is the point of the correction convention: the fact was already in the
+repository, at twenty times the scope, and the session that "found" it had not looked.
+
+**What is new is the consequence.** The count lives in the name as **text**, so raising it can make the
+string longer, and then inserting an activity is a **length** edit to base slot 0 rather than a field
+poke. It fires when the count crosses a power of ten, which is `one_config` alone in this corpus, nine
+values going to ten. This paragraph said four<!--superseded--> until the test refuted it on its first
+run. Rare is the argument for handling it, not for ignoring it: the machinery exists, since the device
+composer already grows that section.
+
+**An activity has no node of its own**, which a composer needs to know because a device does. The tree
+names the variable; the activity's own label is drawn on the menu page as pixels.
+
+### What a composer may put on tag 5, and two readings that die
+
+Tag 5 is on all 50 activities and **always runs a real list**, so it cannot take the null instruction
+tag 2 can. **What it does was already read** and this session spent an hour treating it as unknown:
+`ACTIVITY_START_TAG`'s docstring in `inventory.ts` says it re-sends the inputs with no power change,
+measured off the sends it reaches. What **fires** it is still unread, and that is the open part.
+
+The composer needs the writes rather than the sends, so those were measured. **A tag 5 list's state
+writes are a subset of its enter list's on 50 of 50**, and the subset is **empty** on 24. So
+`composeActivity` points tag 5 at the enter list when the caller says nothing, which is inside the
+envelope trivially, and says in its own docstring that behavioural correctness is a separate question.
+
+Two tighter readings were checked. **"The enter list without the power writes" matches 0 of 50** and
+is dead. **"A prefix of the enter list" was written up as dead too<!--superseded--> and is not**: it
+holds on **28 of 50**, and the wrong figure survived because the claim reached three documents and a
+docstring with **no assertion behind it**, which is step 3 of the four places skipped in the same hour
+it was being written about. The honest reading of 28 is that 24 of them are the empty case, so the
+load bearing figure is **4 of the 26** activities whose tag 5 writes anything, and those four are not
+scattered: the rule holds on **every** activity of all four arch 8 containers and on none elsewhere.
+Too weak to build a composer on and too strong to call refuted, which is why the number is recorded
+rather than a verdict.
+
 ### The extra entry can be recognised from its own bytes
 
 Section 272 identified base slot 9's one leftover entry by **exclusion**, as the selected entry no

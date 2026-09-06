@@ -436,6 +436,8 @@ and leave this table alone.
 | `399 of 411` | the reconciliation of 6 September 2026 | 424 sends through a state transition and 12 inline. The first pair came from a walk of its own that stopped one level shallower than `activityStartSteps`, which follows a write made by a transition it has already entered |
 | `happens to equal `second` in ten of the eleven` | section 273, 6 September 2026 | a description of the eleven containers that existed then. The rule is that the values `0` to `second` are exactly the activities plus one idle value, on 15 of 15, and the idle one is the maximum on 12 and inside the run on 3 |
 | `Ten of them have it equal to the highest value` | section 273, 6 September 2026 | same claim in the reader's own docstring, and the same correction: 12 of 15 now, and the point is that the position varies rather than that one container is odd |
+| `the variable in five bits` | section 139, restated 6 September 2026 | the index is seven bits, 0 to 127, and the corpus reaches 93. A test masked it to five and passed, because every activity counter in its own list sits below 32; `calibration_h600`'s is 34 and is outside that list |
+| `a prefix of the enter list fails on every container checked` | the composer audit, 6 September 2026 | it holds on 28 of the 50 activities, 24 of them because tag 5 writes nothing, so the figure is 4 of the 26 that write anything, and it holds on every activity of all four arch 8 containers. The claim reached three documents and a docstring with no assertion behind it |
 
 ## The Harmony 525's erase block size is unmeasured, so arch 9 gets no rail entry
 

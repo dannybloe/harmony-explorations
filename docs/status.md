@@ -824,6 +824,34 @@ cannot drift apart; what a reader should not expect is two independent statement
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
 
+**A configuration can now be given a new activity, and the rules it has to follow are measured,
+section 273.** An activity is what a Harmony calls "Watch TV": pressing it switches the equipment on,
+sets the inputs, and points the keypad at several devices at once. Building a device into a
+configuration has worked since August and a television answered it; building an **activity** did not
+exist at all.
+
+The rule that was missing is how an activity gets its number. The configuration keeps one counter
+whose value says which activity is running, and this project had written down a description of it
+rather than a rule: the value meaning "nothing is running" is the highest one, in ten of the eleven
+configurations we had, and the eleventh was called odd. Over fifteen there is one rule. The counter
+runs from zero with no gaps, its values are exactly the activities plus one for idle, and **where the
+idle one sits is the part that varies**, highest on twelve and somewhere in the middle on three. The
+three were treated three different ways before: one was named as the exception, one was written up
+somewhere else as evidence *for* the old reading, and the third had never been noticed.
+
+Four smaller things came out of checking it, each of which a builder would otherwise get wrong.
+**Where an activity's entry goes does not matter**, so a new one can simply be added on the end: of
+the ten configurations with more than one activity, not one keeps them in numerical order. **A
+Harmony 600 needs two keys per activity** where every other model needs one, both of them presses of
+different buttons, so a builder that adds one leaves half that remote's menu dead. The leftover entry
+this project could previously only describe as "the one nothing points at" turns out to be
+recognisable on its own: it is the only one with no "leaving" handler. And that handler may be
+**empty** on two of the four models, so a builder has to emit it but need not give it anything to do.
+
+`composeActivity` is the result, checked on one configuration of each model. It adds thirty seven
+bytes and every reader in the codebase sees the new activity afterwards. What it deliberately does
+not do is put a row on the screen, which is the next piece.
+
 **The rest of the 525's settings area is now read, and two thirds of it is not empty, section 270.**
 The area set aside for settings is five blocks of 64 kilobytes and the settings themselves fill less
 than one. Reading the other four found the tail end of an **earlier** set of settings sitting in two

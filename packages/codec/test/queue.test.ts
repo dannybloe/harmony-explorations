@@ -23,9 +23,13 @@ import {
   undecidedLists,
   worstQueueRun,
 } from '../src/queue.ts';
+import { ACTION_LIST_INDEX_OPCODE, SEND_INFRARED } from '../src/index.ts';
 
-const CALL = 0x7f;
-const SEND = 0x7d;
+// The two opcodes come from the one place each is named, `sections.ts` and `inventory.ts`, rather
+// than being spelled again here. `ACTION_LIST_INDEX_OPCODE`'s own docstring argues that a test hard
+// coding `0x7f` reads like a magic number, and a test's copy diverges as readily as a module's.
+const CALL = ACTION_LIST_INDEX_OPCODE;
+const SEND = SEND_INFRARED;
 
 /**
  * The deepest any action list of each configuration goes, measured.

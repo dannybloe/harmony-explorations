@@ -20,6 +20,7 @@ import {
   nameNodes,
   stateRecords,
   taggedList,
+  ACTION_LIST_INDEX_OPCODE,
 } from './sections.ts';
 import { characterMap, screenStrings } from './text.ts';
 import { panelPoint, touchOwner, touchPageOf } from './touch.ts';
@@ -160,18 +161,26 @@ import {
   STATE_FROM_BYTE_REGISTER,
   STATE_WRITE_BASE,
 } from './actions.ts';
-/** Opcode `0x7F`, whose operand indexes base slot 10. Section 34. */
-const ACTION_LIST_INDEX = 0x7f;
 /**
  * Opcode `0x1F` with operand `0xFFxx` selects the current binding table entry, the low byte being
  * the index into base slot 9. `docs/config-format.md`, from the register machine's own band.
+ *
+ * Exported since section 273, because the activity composer emits one and there must not be a
+ * second spelling of it in `compose.ts`.
  */
-const SELECT_BINDING_SET = 0x1f;
-const SELECT_BINDING_SET_MASK = 0xff00;
+export const SELECT_BINDING_SET = 0x1f;
+export const SELECT_BINDING_SET_MASK = 0xff00;
 /** A key code's scan code, the rest of it being the event type. Section 17. */
 const SCAN_CODE_MASK = 0x3f;
-/** How far to shift a key code to leave the event type: 0 none, 1 release, 2 press, 3 repeat. */
-const KEY_EVENT_SHIFT = 6;
+/**
+ * How far to shift a key code to leave the event type: 0 none, 1 release, 2 press, 3 repeat.
+ *
+ * Exported since 6 September 2026, because `compose.ts` needs the **writing** side of this encoding
+ * and briefly declared its own `KEY_EVENT_SHIFT = 6` with a comment acknowledging the duplication.
+ * Acknowledging it is not resolving it: two right copies is the state that precedes two disagreeing
+ * ones, which is `isa.py`'s rule and does not care that one of them is a six.
+ */
+export const KEY_EVENT_SHIFT = 6;
 /** The event type of a press. */
 export const KEY_EVENT_PRESS = 2;
 
@@ -234,7 +243,7 @@ export function activityBindings(c: Container): ActivityBinding[] {
   const setActivity = new Map<number, number>();
   sets.addresses.forEach((address, index) => {
     for (const entry of taggedList(c, address)?.entries ?? []) {
-      if (entry.opcode !== ACTION_LIST_INDEX) continue;
+      if (entry.opcode !== ACTION_LIST_INDEX_OPCODE) continue;
       const activity = writes.get(entry.operand);
       if (activity !== undefined) setActivity.set(index, activity);
     }
@@ -256,7 +265,7 @@ export function activityBindings(c: Container): ActivityBinding[] {
   const out: ActivityBinding[] = [];
   modePages(c).forEach((page, index) => {
     for (const entry of taggedList(c, page.list)?.entries ?? []) {
-      if (entry.opcode !== ACTION_LIST_INDEX) continue;
+      if (entry.opcode !== ACTION_LIST_INDEX_OPCODE) continue;
       const hit = selects.get(entry.operand);
       if (hit === undefined) continue;
       out.push({
@@ -397,13 +406,13 @@ export function activityNames(c: Container): ActivityName[] {
       walked.add(index);
       for (const i of lists[index] ?? []) {
         if (i.opcode === ENTER_MODE) modes.add(i.operand);
-        if (i.opcode === ACTION_LIST_INDEX) walk(i.operand, depth + 1);
+        if (i.opcode === ACTION_LIST_INDEX_OPCODE) walk(i.operand, depth + 1);
       }
     };
     walk(binding.list, 0);
     for (const entry of taggedList(c, sets?.addresses[binding.set] ?? 0)?.entries ?? []) {
       if (entry.opcode === ENTER_MODE) modes.add(entry.operand);
-      if (entry.opcode === ACTION_LIST_INDEX) walk(entry.operand, 1);
+      if (entry.opcode === ACTION_LIST_INDEX_OPCODE) walk(entry.operand, 1);
     }
 
     // Hop two: what those modes put on the screen. One of these strings is the activity's own name,
@@ -870,7 +879,7 @@ export function deviceListRows(c: Container): DeviceListRow[] {
     const rows: DeviceListRow[] = [];
     record.pages.forEach((page, pageIndex) => {
       for (const entry of taggedList(c, page.list)?.entries ?? []) {
-        if (entry.opcode !== ACTION_LIST_INDEX || !isRow(entry.operand)) continue;
+        if (entry.opcode !== ACTION_LIST_INDEX_OPCODE || !isRow(entry.operand)) continue;
         const mode = (lists[entry.operand] as readonly Instruction[])[1] as Instruction;
         rows.push({ menu, page: pageIndex, scan: entry.tag & 0x3f, mode: mode.operand });
       }
@@ -933,7 +942,7 @@ export function devices(c: Container): Device[] {
     if (!labels.includes(variable.device)) labels.push(variable.device);
     const reached = new Set<number>();
     for (const value of records?.[variable.index]?.values ?? []) {
-      if (value.opcode !== ACTION_LIST_INDEX) continue;
+      if (value.opcode !== ACTION_LIST_INDEX_OPCODE) continue;
       for (const group of groupsOf(value.operand)) reached.add(group);
     }
     if (reached.size !== 1) continue;
@@ -988,7 +997,7 @@ export function devices(c: Container): Device[] {
     const reached = new Set<number>();
     for (const page of (modeRecords(c) ?? [])[row.mode]?.pages ?? []) {
       for (const entry of taggedList(c, page.list)?.entries ?? []) {
-        if (entry.opcode !== ACTION_LIST_INDEX) continue;
+        if (entry.opcode !== ACTION_LIST_INDEX_OPCODE) continue;
         for (const group of groupsOf(entry.operand)) reached.add(group);
       }
     }
@@ -1029,7 +1038,7 @@ export function deviceModeTitles(c: Container): Map<number, Set<string>> {
     const reached = new Set<number>();
     for (const page of mode.pages) {
       for (const entry of taggedList(c, page.list)?.entries ?? []) {
-        if (entry.opcode !== ACTION_LIST_INDEX) continue;
+        if (entry.opcode !== ACTION_LIST_INDEX_OPCODE) continue;
         for (const group of sent.get(entry.operand) ?? []) reached.add(group);
       }
     }
@@ -1091,7 +1100,7 @@ export function infraredCodesPerList(c: Container): Map<number, InfraredCode[]> 
           group: instruction.operand >> INFRARED_GROUP_SHIFT,
           code: instruction.operand & 0xff,
         });
-      } else if (instruction.opcode === ACTION_LIST_INDEX) {
+      } else if (instruction.opcode === ACTION_LIST_INDEX_OPCODE) {
         found.push(...walk(instruction.operand, seen));
       }
     }
@@ -1172,7 +1181,7 @@ export function keyCodes(c: Container): KeyCode[] {
   const out: KeyCode[] = [];
   const collect = (where: 'page' | 'set', index: number, list: number): void => {
     for (const entry of taggedList(c, list)?.entries ?? []) {
-      if (entry.opcode !== ACTION_LIST_INDEX) continue;
+      if (entry.opcode !== ACTION_LIST_INDEX_OPCODE) continue;
       const sent = codes.get(entry.operand);
       if (sent === undefined) continue;
       out.push({
@@ -1276,7 +1285,7 @@ export function deviceModeMaps(c: Container): DeviceModeMap[] {
   const read = (list: number, where: 'page' | 'set', index: number): KeyCode[] => {
     const out: KeyCode[] = [];
     for (const entry of taggedList(c, list)?.entries ?? []) {
-      if (entry.opcode !== ACTION_LIST_INDEX) continue;
+      if (entry.opcode !== ACTION_LIST_INDEX_OPCODE) continue;
       const sent = codes.get(entry.operand);
       if (sent === undefined) continue;
       out.push({
@@ -1502,7 +1511,7 @@ export function pageScans(c: Container): number[][] {
   return modePages(c).map((page) => {
     const found = new Set<number>();
     for (const entry of taggedList(c, page.list)?.entries ?? []) {
-      if (entry.opcode === ACTION_LIST_INDEX) found.add(entry.tag & SCAN_CODE_MASK);
+      if (entry.opcode === ACTION_LIST_INDEX_OPCODE) found.add(entry.tag & SCAN_CODE_MASK);
     }
     return [...found].sort((a, b) => a - b);
   });
@@ -1664,7 +1673,7 @@ export function pairLabelsToGroups(
 function boundScans(c: Container, page: ModePage): Set<number> {
   return new Set(
     (taggedList(c, page.list)?.entries ?? [])
-      .filter((entry) => entry.opcode === ACTION_LIST_INDEX)
+      .filter((entry) => entry.opcode === ACTION_LIST_INDEX_OPCODE)
       .map((entry) => entry.tag & SCAN_CODE_MASK),
   );
 }
@@ -1940,7 +1949,7 @@ export function deviceIdOfGroup(c: Container): Map<number, number> {
         if (sub === STATE_FROM_BYTE_REGISTER || sub === BYTE_REGISTER_FROM_STATE) {
           taken.add(instruction.operand & 0xff);
         }
-      } else if (instruction.opcode === ACTION_LIST_INDEX) {
+      } else if (instruction.opcode === ACTION_LIST_INDEX_OPCODE) {
         walk(instruction.operand, seen, taken);
       }
     }
@@ -1955,7 +1964,7 @@ export function deviceIdOfGroup(c: Container): Map<number, number> {
     const title = texts.filter((one) => one.y === top).map((one) => one.text.trim()).join(' ');
     const touched = new Set<number>();
     for (const entry of taggedList(c, page.list)?.entries ?? []) {
-      if (entry.opcode === ACTION_LIST_INDEX) walk(entry.operand, new Set(), touched);
+      if (entry.opcode === ACTION_LIST_INDEX_OPCODE) walk(entry.operand, new Set(), touched);
     }
     const ids = new Set(
       [...touched].flatMap((one) => {
@@ -2090,7 +2099,7 @@ export function powerOnInstructions(c: Container): Map<number, PowerOnInstructio
     const group = byLabel.get(variable.device);
     if (group === undefined) continue;
     for (const value of records[variable.index]?.values ?? []) {
-      if (value.opcode !== ACTION_LIST_INDEX) continue;
+      if (value.opcode !== ACTION_LIST_INDEX_OPCODE) continue;
       if (value.from !== POWER_OFF || value.to !== POWER_ON) continue;
       const held = (lists[value.operand] ?? [])
         .map((one, at) => ({ one, at }))
@@ -2162,7 +2171,7 @@ export function activityStartSteps(c: Container, set: number): QueuedStep[] {
         // A write to a state variable, which runs whatever that value's transition names.
         const variable = instruction.opcode - STATE_WRITE_BASE;
         for (const value of records[variable]?.values ?? []) {
-          if (value.opcode !== ACTION_LIST_INDEX) continue;
+          if (value.opcode !== ACTION_LIST_INDEX_OPCODE) continue;
           if (value.to !== instruction.operand) continue;
           walk(value.operand, new Set(), depth + 1);
         }
@@ -2170,13 +2179,13 @@ export function activityStartSteps(c: Container, set: number): QueuedStep[] {
         steps.push({ kind: 'send', group: instruction.operand >>> 8, value: instruction.operand & 0xff });
       } else if (instruction.opcode === IR_QUANTITY_OPCODE) {
         steps.push({ kind: 'delay', group: instruction.operand >>> 8, value: instruction.operand & 0xff });
-      } else if (instruction.opcode === ACTION_LIST_INDEX) {
+      } else if (instruction.opcode === ACTION_LIST_INDEX_OPCODE) {
         walk(instruction.operand, seen, depth + 1);
       }
     }
   };
   for (const entry of taggedList(c, address)?.entries ?? []) {
-    if (entry.opcode !== ACTION_LIST_INDEX) continue;
+    if (entry.opcode !== ACTION_LIST_INDEX_OPCODE) continue;
     if (entry.tag !== ACTIVITY_START_TAG) continue;
     walk(entry.operand, new Set(), 0);
   }

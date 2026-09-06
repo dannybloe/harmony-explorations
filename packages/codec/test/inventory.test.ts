@@ -50,6 +50,7 @@ import {
   idleActivityValue,
   KEY_EVENT_PRESS,
   keyLabels,
+  nameNodes,
   pairLabelsToGroups,
   softKeyScans,
   pageScans,
@@ -295,8 +296,13 @@ test('the activity variable is written as many times as it has values', skipWith
     const c = parse(data);
     const variable = stateVariables(c)
       .find((v) => v.name.split('_')[0] === ACTIVITY_STATE_NAME) as { index: number };
-    // The opcode carries the variable in five bits, `0x80 | n`.
-    const opcode = STATE_WRITE_BASE | (variable.index & 0x1f);
+    // **The opcode carries the variable in seven bits and this line masked it to five**, until
+    // 6 September 2026. It passed because every activity variable in `INVENTORY` is below 32, so the
+    // mask was a no-op; on a container whose counter sits higher it would have selected **another
+    // variable's** opcode and counted that one's writes as the activity's, with no error anywhere.
+    // `activityBindings`'s own docstring predicted exactly this, naming `calibration_h600`, whose
+    // counter is variable 34 and which is outside this list. Section 139 is the width.
+    const opcode = STATE_WRITE_BASE + variable.index;
     const written = new Set<number>();
     for (const list of c.actionLists() ?? []) {
       for (const instruction of list) {
@@ -1910,6 +1916,102 @@ test('the four hop reader agrees with a direct walk of the first two hops',
   // **The magnitude, so the agreement is not agreement about nothing.** Fifty is the corpus activity
   // count, which is also what `activityCount` reports and what the 63 bindings collapse to.
   assert.equal(pairs, 50);
+});
+
+test("tag 5's state writes are a subset of the enter list's, and are often none",
+     skipUnless(...USER_CONFIGS), () => {
+  // Section 273, and it exists to bound what a composer may put on tag 5. What the handler **does**
+  // is already read, in `ACTIVITY_START_TAG`'s docstring: it re-sends the inputs with no power
+  // change, measured off the sends it reaches. What fires it is still not established.
+  //
+  // This measures the other half, the state writes, because that is what a composer emits. Two
+  // candidate rules die here and are recorded so nobody fits them again.
+  let activities = 0;
+  let subset = 0;
+  let empty = 0;
+  let matchesEnterWithoutPower = 0;
+  let isAPrefix = 0;
+  let isANonEmptyPrefix = 0;
+  let writesAnything = 0;
+  for (const name of USER_CONFIGS) {
+    const c = parse(require_(name));
+    const sets = handlerSets(c);
+    const lists = c.actionLists();
+    assert.ok(sets !== undefined && lists !== undefined, name);
+    const roles = handlerSetRoles(c);
+    const power = new Set((nameNodes(c) ?? [])
+      .filter((one) => /_Power_\d+$/.test(one.name)).map((one) => one.index));
+    const writesOf = (index: number) => (lists[index] ?? [])
+      .filter((one) => one.opcode >= STATE_WRITE_BASE)
+      .map((one) => `${one.opcode - STATE_WRITE_BASE}=${one.operand}`);
+
+    sets.addresses.forEach((address, index) => {
+      if (roles[index] !== 'activity') return;
+      activities += 1;
+      const handlers = new Map((taggedList(c, address)?.entries ?? [])
+        .filter((one) => (one.tag & EVENT_MASK) === 0).map((one) => [one.tag, one]));
+      const enter = handlers.get(1);
+      const resume = handlers.get(5);
+      assert.ok(enter?.opcode === ACTION_LIST_INDEX_OPCODE
+        && resume?.opcode === ACTION_LIST_INDEX_OPCODE, `${name}: entry ${index}`);
+      const inEnter = writesOf(enter.operand);
+      const inResume = writesOf(resume.operand);
+      if (inResume.every((one) => inEnter.includes(one))) subset += 1;
+      if (inResume.length === 0) empty += 1; else writesAnything += 1;
+      if (inResume.every((one, k) => inEnter[k] === one)) {
+        isAPrefix += 1;
+        if (inResume.length > 0) isANonEmptyPrefix += 1;
+      }
+      const withoutPower = inEnter
+        .filter((one) => !power.has(Number((one.split('=')[0]) as string)));
+      if (JSON.stringify([...inResume].sort()) === JSON.stringify([...withoutPower].sort())) {
+        matchesEnterWithoutPower += 1;
+      }
+    });
+  }
+  assert.equal(activities, 50);
+  // **The envelope a composer may sit inside**, which is what makes pointing tag 5 at the enter
+  // list defensible rather than arbitrary: the enter list's writes are trivially a subset of
+  // themselves.
+  assert.equal(subset, 50);
+  assert.equal(empty, 24, 'writing nothing at all is attested and common');
+  // **The rule that reads best and is false**, kept as a measurement so it is not fitted again:
+  // "the enter list without the power writes" matches nothing.
+  assert.equal(matchesEnterWithoutPower, 0);
+  // **And the one that is neither true nor false.** "A prefix of the enter list" was written into
+  // three documents and a docstring as failing everywhere, with no assertion behind it, and an audit
+  // refuted it in one measurement. It holds on 28, but 24 of those hold only because tag 5 writes
+  // nothing at all, so the figure that carries any weight is 4 of the 26 that write anything.
+  assert.equal(writesAnything, 26);
+  assert.equal(isAPrefix, 28);
+  assert.equal(isANonEmptyPrefix, 4);
+});
+
+test('adding an activity is a name tree length edit on one of the fifteen',
+     skipUnless(...USER_CONFIGS), () => {
+  // Section 273, and it is deliberately **not** a second copy of the closure above it. That the name
+  // node's trailing number is `second + 1` is section 86's, tested over 276 named variables by
+  // 'a level 1 name ends in the number of values its variable takes'. Re-asserting it here for one
+  // variable would be two copies of one derivation, which is the state this project's oldest rule
+  // forbids, and it was written that way first.
+  //
+  // What is new is the consequence for a composer: because the count is stated in the name as text,
+  // raising it can make the string **longer**, and then inserting an activity is a length edit to
+  // base slot 0 rather than a field poke. It happens exactly when the count crosses a power of ten.
+  let seen = 0;
+  let lengthens = 0;
+  for (const name of USER_CONFIGS) {
+    const c = parse(require_(name));
+    const variable = stateVariables(c).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME));
+    assert.ok(variable?.stated !== undefined, `${name}: the activity variable states no count`);
+    seen += 1;
+    if (String(variable.stated + 1).length > String(variable.stated).length) lengthens += 1;
+  }
+  assert.equal(seen, 15, 'every user config names its activity variable with a count');
+  // **One**, and the first version of this test guessed four and was refuted on its first run.
+  // `one_config` sits at nine values and would go to ten; `arch8_config_885` is already at ten. So
+  // the case is rare, which is the argument for handling it rather than for ignoring it.
+  assert.equal(lengthens, 1);
 });
 
 test('the entry that is neither prefix nor activity is the one without a leave handler',

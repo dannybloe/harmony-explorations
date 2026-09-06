@@ -24,8 +24,10 @@
  */
 import {
   Container, type Instruction, TRAILER_CHECKSUM_OFFSET, archSlot, parse, trailerChecksum,
+  SCAN_MASK,
 } from './gspm.ts';
 import { u16 as u16le, u24 } from './bytes.ts';
+import { STATE_WRITE_BASE } from './actions.ts';
 import {
   STATE_RECORD_HEADER,
   STATE_TABLE_SLOT,
@@ -37,8 +39,29 @@ import {
   stateTable,
   taggedList,
   taggedListPools,
+  ACTION_LIST_INDEX_OPCODE,
+  HANDLER_TAG_ENTER,
+  HANDLER_TAG_LEAVE,
+  NAME_NODE_HEADER,
+  nameNodes,
+  type NameNode,
+  handlerSets,
+  HANDLER_TABLE_SLOT,
 } from './sections.ts';
 import { SCREEN_JUMP, bitmapAt, screenProgram } from './screen.ts';
+// **The opcodes come from the one place each is named**, and until 6 September 2026 this file had
+// its own `SEND_INFRARED` and its own `RUN_ACTION_LIST` beside the copies in `inventory.ts` and
+// `sections.ts`. All correct, none able to see the others: the state `isa.py`'s docstring forbids.
+import {
+  ACTIVITY_STATE_NAME,
+  KEY_EVENT_PRESS,
+  SELECT_BINDING_SET,
+  SELECT_BINDING_SET_MASK,
+  SEND_INFRARED,
+  FIRMWARE_STATE_VARIABLE_MAX,
+  KEY_EVENT_SHIFT,
+  stateVariables,
+} from './inventory.ts';
 import { characterMap } from './text.ts';
 import { type FontSet, fontSets, glyphOf } from './font.ts';
 import {
@@ -164,12 +187,16 @@ export function blockWordsOf(pulses: readonly Pulse[]): IrPulse[] {
 
 /** The action list table's base slot, whose lists are what everything that runs points at. */
 const ACTION_TABLE_SLOT = 10;
-/** Opcode 0x7d: send an infrared code, operand `(group << 8) | record`. */
-const SEND_INFRARED = 0x7d;
-/** Opcode 0x7f: run the base slot 10 action list the operand indexes. */
-const RUN_ACTION_LIST = 0x7f;
-/** The firmware owns state variables 0 to 12, section 138, and a composer must not touch them. */
-const FIRMWARE_STATE_MAX = 12;
+/** One past the highest variable a state write can name: the index is the opcode's low seven bits,
+ *  `actions.ts`, so 128 is where the write becomes an instruction of a different band. */
+const STATE_WRITE_LIMIT = 128;
+/** Tag 5's handler, which no reading names, so it is spelled here rather than guessed at a call. */
+const HANDLER_TAG_RESUME = 5;
+// **`FIRMWARE_STATE_VARIABLE_MAX` is imported rather than restated**, and this file declared its own
+// `FIRMWARE_STATE_VARIABLE_MAX = 12` beside it until 6 September 2026. The two were equal and the pairing was
+// worse than an ordinary duplicate: the rails below read this file's copy while `compose.test.ts`
+// imported the other one, so the check and the test that says the check is right were reading
+// different constants. Section 138 is the reading, that the firmware owns variables 0 to 12.
 
 /**
  * Append entries to one of the counted pointer tables, which is the one growth every section
@@ -372,7 +399,7 @@ export function composeDevice(c: Container, device: ComposeDevice): ComposedDevi
   // count states, section 86.
   const states = stateTable(current);
   if (states === undefined) throw new ComposeError('base slot 13 does not read as a table');
-  if (states.count < FIRMWARE_STATE_MAX + 1) {
+  if (states.count < FIRMWARE_STATE_VARIABLE_MAX + 1) {
     throw new ComposeError("a table without the firmware's own variables is not one to extend");
   }
   const recordLength = STATE_RECORD_HEADER + STATE_VALUE_LENGTH * 2;
@@ -391,8 +418,8 @@ export function composeDevice(c: Container, device: ComposeDevice): ComposedDevi
   const powerList = firstList + power;
   const record = new Writer(recordLength)
     .u16(0).u16(1).u16(2).u8(0)
-    .u8(0).u16(0).u16(1).u16(powerList).u8(RUN_ACTION_LIST)
-    .u8(0).u16(1).u16(0).u16(powerList).u8(RUN_ACTION_LIST);
+    .u8(0).u16(0).u16(1).u16(powerList).u8(ACTION_LIST_INDEX_OPCODE)
+    .u8(0).u16(1).u16(0).u16(powerList).u8(ACTION_LIST_INDEX_OPCODE);
   recordHole.bytes.set(record.bytes, recordAt);
   const recordAddress = current.flashBase + recordAt;
   current = parse(recordHole.bytes);
@@ -431,6 +458,343 @@ export function composeDevice(c: Container, device: ComposeDevice): ComposedDevi
     group: group.group,
     lists: device.commands.map((_, k) => firstList + k),
     variable,
+  };
+}
+
+/**
+ * One device's target state when an activity is running: a base slot 13 variable and its value.
+ *
+ * **A composer never names a code here and that is section 273's load bearing point**, restating
+ * the anatomy's P4: the enter list writes the *device's* variable, and the code goes out because
+ * that variable's transition runs the list that sends it. Over the corpus 424 of the 436 sends an
+ * activity causes arrive that way and 12 are inline, so writing state is the design and an inline
+ * send is the exception nobody has explained.
+ */
+export interface ComposeActivityTarget {
+  /** A device state variable, in base slot 13's numbering, as `composeDevice` returns it. */
+  readonly variable: number;
+  /** The value the activity wants it in. Its transition is what sends the code. */
+  readonly value: number;
+}
+
+export interface ComposeActivity {
+  /**
+   * The word the activity is known by, which the **screen half** draws on the menu page as pixels.
+   *
+   * **It deliberately does not take a device label's grammar**, and the first version of this
+   * function did: it refused an underscore, which is right for a device because a state variable is
+   * named `<label>_<property>_<values>` and the underscore is the separator that makes the label
+   * recoverable. An activity has **no node in the name tree at all**, section 273, so that reason
+   * does not transfer and the rule refused `Watch_TV` for nothing. Printable ASCII still holds,
+   * since the glyph sets are what draw it.
+   *
+   * This function only checks and carries it. Nothing here writes it into the container, which is
+   * why it comes back in `ComposedActivity`: the screen half is what draws it, and an unused field
+   * with a rail in front of it is worse than no field.
+   */
+  readonly label: string;
+  readonly targets: readonly ComposeActivityTarget[];
+  /** The activity's keypad map: a scan code and the base slot 10 list its press runs. */
+  readonly keys?: readonly { readonly scan: number; readonly list: number }[];
+  /**
+   * What tag 2, the leave handler, runs. Omitted emits the **null instruction**, opcode 0 with
+   * operand 0, which is what 21 of the corpus's 50 activities carry, all on arch 8 and arch 9.
+   * So the tag is required and giving it something to run is not. Section 273.
+   */
+  readonly leaveList?: number;
+  /**
+   * What tag 5 runs. Tag 5 is on all 50 activities and **always runs a real list**, so it cannot be
+   * the null instruction the way tag 2 can, and what fires it is not established.
+   *
+   * What is measured is the envelope, section 273: **the state writes in a tag 5 list are a subset
+   * of the enter list's, on 50 of 50**, and the subset is **empty** on 24 of them. One candidate
+   * rule dies on that same measurement, so it is not used here: "the enter list without the power
+   * writes" matches 0 of 50. A second, "a **prefix** of the enter list", was written up as dying
+   * too<!--superseded--> and does not: it holds on 28 of 50, though 24 of those are the empty case,
+   * so the load bearing figure is **4 of the 26** that write anything, and it holds on every
+   * activity of the four arch 8 containers. Too weak to build on and too strong to call refuted.
+   * `ACTIVITY_START_TAG`'s docstring reads the handler off the sends it reaches rather than the
+   * writes, as a re-send of the inputs with no power change.
+   *
+   * Omitted points it at the **enter list**, whose write set is trivially a subset of itself, so
+   * the default sits inside the measured envelope instead of outside it. That it is *behaviourally*
+   * right is still unestablished, and a caller that knows better should pass a list.
+   */
+  readonly resumeList?: number;
+}
+
+export interface ComposedActivity {
+  bytes: Uint8Array;
+  /** The value of the activity counter, which is what identifies the activity everywhere. */
+  activity: number;
+  /** The base slot 9 index of its keypad map, which is what a menu row selects. */
+  set: number;
+  /** The enter list, base slot 10, which is tag 1 and the whole start sequence. */
+  enterList: number;
+  /** The list a menu row has to run: it selects the set, and the set's tag 1 does the rest. */
+  selectList: number;
+  /** The label, carried through for the screen half to draw. Nothing in these bytes holds it. */
+  label: string;
+}
+
+/**
+ * Compose an activity: its number, its keypad map, its three handlers and its start sequence.
+ *
+ * The counterpart of `composeDevice`, and like that one it stops short of the screen. After this the
+ * activity **exists and can be entered**, by running `selectList`; what it does not have is a row on
+ * the activity menu or a drawn name, which is the screen half and lives in a separate function for
+ * the same reason `composeDeviceScreen` does, since it is arch 12 shaped where this is not.
+ *
+ * The four changes, in the order the container stays parseable through them, of which only the
+ * first two and the last make room:
+ *
+ * 1. the action lists, in one hole below base slot 10's table, with their pointers appended
+ * 2. the base slot 9 entry, its tagged list in a hole below that section, pointer appended
+ * 3. the activity counter's `second`, raised **in place**, which needs no room
+ * 4. the counter's name tree node, whose trailing value count is text and may get longer
+ *
+ * **The entry is appended and that is safe rather than convenient**, section 273: an entry's
+ * position in base slot 9 does not encode its activity number, none of the ten corpus containers
+ * with several activities having its entries in value order. The number is carried by the write
+ * inside the enter list and by nothing structural.
+ *
+ * **What this does not do is emit a second binding on arch 14.** An activity there is bound by two
+ * keys and by one on the other three architectures, section 273, but that is a property of the
+ * *menu row*, which is the screen half's job. This function produces the one thing a row points at.
+ */
+export function composeActivity(c: Container, activity: ComposeActivity): ComposedActivity {
+  if (activity.label === ''
+      || [...activity.label].some((ch) => ch.charCodeAt(0) < 0x20 || ch.charCodeAt(0) > 0x7e)) {
+    throw new ComposeError('an activity label is printable ASCII, which is what the glyphs draw');
+  }
+  if (c.architecture === undefined) throw new ComposeError('the container states no architecture');
+
+  const variable = stateVariables(c).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME));
+  const record = variable?.record;
+  if (variable === undefined || record === undefined) {
+    throw new ComposeError(`no ${ACTIVITY_STATE_NAME} variable to add an activity to`);
+  }
+  if (record.count !== 0) {
+    // Every activity record in the corpus carries zero transitions, so raising `second` is a two
+    // byte poke. One with transitions would need them extended to cover the new value, which is a
+    // length change, and refusing is better than writing a record whose values stop short.
+    throw new ComposeError('the activity counter carries transitions, which this does not extend');
+  }
+  const value = record.second + 1;
+
+  const states = stateTable(c);
+  if (states === undefined) throw new ComposeError('base slot 13 does not read as a table');
+  // The highest value each variable takes, so a target can be checked against its own range rather
+  // than only against the count of variables. A variable whose record does not read is left out and
+  // its target passes, which is deliberate: refusing on a reader's silence would make this rail
+  // fire on a container this composer has no other complaint about.
+  const ranges = new Map(stateVariables(c)
+    .filter((one) => one.record !== undefined)
+    .map((one) => [one.index, (one.record as { second: number }).second]));
+  for (const target of activity.targets) {
+    if (target.variable <= FIRMWARE_STATE_VARIABLE_MAX) {
+      throw new ComposeError(
+        `variable ${target.variable} is the firmware's, and an activity may not write one`);
+    }
+    if (target.variable >= states.count) {
+      throw new ComposeError(`variable ${target.variable} is past the ${states.count} that exist`);
+    }
+    if (target.variable >= STATE_WRITE_LIMIT) {
+      // The index is the low **seven** bits of the opcode, so 128 is where a write silently becomes
+      // an instruction of another band rather than a bad write.
+      //
+      // **This is unreachable on every container that exists and is kept anyway**, which the audit
+      // of 6 September 2026 established rather than assumed: the check above refuses anything at or
+      // above `states.count`, and the largest base slot 13 in this corpus holds 94 variables. So the
+      // format allows 128 and no sample comes within 34 of it. It stays because it guards the
+      // **encoding** rather than the corpus, and the day a container has 130 variables the other
+      // check stops refusing and this is the only thing between a write and another band's opcode.
+      throw new ComposeError(
+        `variable ${target.variable} cannot be written: the opcode carries seven bits of index`);
+    }
+    if (target.variable === variable.index) {
+      // Writing the counter as if it were a device defeats the ordering the enter list depends on,
+      // since the reader takes the **first** write of the counter it finds and would then report a
+      // device's value as the activity's.
+      throw new ComposeError('the activity counter is not a device an activity can put into a state');
+    }
+    if (target.value > (ranges.get(target.variable) ?? target.value)) {
+      // A value outside the variable's own range matches no transition, so the device is never
+      // driven and the activity is silently dead. Exactly the failure this composer's design note
+      // is about: state is what sends the code.
+      throw new ComposeError(
+        `variable ${target.variable} does not take the value ${target.value}`);
+    }
+  }
+  if (variable.index >= STATE_WRITE_LIMIT) {
+    throw new ComposeError('the activity counter is past the index a state write can carry');
+  }
+
+  // Every list index a caller hands over is checked against base slot 10 before anything is
+  // written. `composeDevice` does the same for its power command, and the reason is the same: an
+  // index past the end names no list, the entry still parses, and the key does nothing at all.
+  const existingLists = c.actionLists()?.length;
+  if (existingLists === undefined) throw new ComposeError('base slot 10 does not read as lists');
+  const named: [string, number | undefined][] = [
+    ['the leave handler', activity.leaveList],
+    ['the resume handler', activity.resumeList],
+    ...(activity.keys ?? []).map((key): [string, number] => [`the key on scan ${key.scan}`, key.list]),
+  ];
+  for (const [what, index] of named) {
+    if (index === undefined) continue;
+    if (!Number.isInteger(index) || index < 0 || index >= existingLists) {
+      throw new ComposeError(`${what} names list ${index} of ${existingLists} that exist`);
+    }
+  }
+
+  const sets = handlerSets(c);
+  if (sets === undefined) throw new ComposeError('base slot 9 does not read as a table');
+  const set = sets.addresses.length;
+  if (set >= 0xff) {
+    // Two separate one byte ceilings, and this said `set > 0xff`<!--superseded--> until the audit of
+    // 6 September 2026, which is off by one in the direction that does damage: at 255 existing
+    // entries the count written below is 256, `Writer.u8` masks that to **0**, and the section reads
+    // back as holding nothing. So the last usable index is 254. The largest base slot 9 in the
+    // corpus holds 17 entries, so nothing is near it, which is exactly why the bound had to be
+    // reasoned about rather than measured.
+    throw new ComposeError('base slot 9 is full: its count and the selector operand are one byte');
+  }
+
+  // ---- 1. the action lists ----
+  //
+  // The enter list writes each device's target and then the counter, in that order, because the
+  // counter is what the four hop reader finds and a reader that stopped at the first write would
+  // otherwise report a device value as the activity. The select list is one instruction and is
+  // what a menu row runs.
+  let current = c;
+  const actionSlot = archSlot(c.architecture, ACTION_TABLE_SLOT);
+  const actionTable = current.pointerArrayAt(actionSlot);
+  if (actionTable === undefined) throw new ComposeError('base slot 10 does not read as a table');
+  const firstList = actionTable.values.length;
+  const enterList = firstList;
+  const selectList = firstList + 1;
+
+  const enterBody = new Writer(1 + 3 * (activity.targets.length + 1));
+  enterBody.u8(activity.targets.length + 1);
+  for (const target of activity.targets) {
+    enterBody.u16(target.value).u8(STATE_WRITE_BASE + target.variable);
+  }
+  enterBody.u16(value).u8(STATE_WRITE_BASE + variable.index);
+  const selectBody = new Writer(4)
+    .u8(1).u16(SELECT_BINDING_SET_MASK | set).u8(SELECT_BINDING_SET);
+
+  const listsAt = actionTable.start;
+  const listsHole = relocate(current, listsAt, enterBody.bytes.length + selectBody.bytes.length);
+  listsHole.bytes.set(enterBody.bytes, listsAt);
+  listsHole.bytes.set(selectBody.bytes, listsAt + enterBody.bytes.length);
+  const listBase = current.flashBase + listsAt;
+  current = parse(appendTableEntries(parse(listsHole.bytes), actionSlot,
+    [listBase, listBase + enterBody.bytes.length]));
+
+  // ---- 2. the base slot 9 entry ----
+  //
+  // A tagged list in the narrow form: `u8 count` then `{ u8 tag; u16 operand; u8 opcode }`. Three
+  // handlers of event type 0 and one press per key.
+  const resumeList = activity.resumeList ?? enterList;
+  const entries: { tag: number; operand: number; opcode: number }[] = [
+    { tag: HANDLER_TAG_ENTER, operand: enterList, opcode: ACTION_LIST_INDEX_OPCODE },
+    activity.leaveList === undefined
+      ? { tag: HANDLER_TAG_LEAVE, operand: 0, opcode: 0 }
+      : { tag: HANDLER_TAG_LEAVE, operand: activity.leaveList, opcode: ACTION_LIST_INDEX_OPCODE },
+    { tag: HANDLER_TAG_RESUME, operand: resumeList, opcode: ACTION_LIST_INDEX_OPCODE },
+  ];
+  const bound = new Set<number>();
+  for (const key of activity.keys ?? []) {
+    if (!Number.isInteger(key.scan) || (key.scan & ~SCAN_MASK) !== 0) {
+      // `Number.isInteger` rather than the mask alone, since a bitwise `&` truncates: 63.5 passed
+      // the mask and became 63, which is a different button.
+      throw new ComposeError(`scan ${key.scan} does not fit the six bits a key code gives it`);
+    }
+    if (bound.has(key.scan)) {
+      // Two entries with one tag in a tagged list, where the reader takes the first and the second
+      // is unreachable. A silently ignored binding is the failure class this whole file is about.
+      throw new ComposeError(`scan ${key.scan} is bound twice in one keypad map`);
+    }
+    bound.add(key.scan);
+    entries.push({
+      tag: (KEY_EVENT_PRESS << KEY_EVENT_SHIFT) | key.scan,
+      operand: key.list,
+      opcode: ACTION_LIST_INDEX_OPCODE,
+    });
+  }
+  if (entries.length > 0xff) throw new ComposeError('a narrow tagged list states its count in a byte');
+
+  // **Base slot 9's append is spelled out rather than going through `appendTableEntries`**, and
+  // that is not a style choice: it is `u8 count` then `u24 address[count]` but it is **not** one of
+  // the six counted pointer arrays `pointerArrayAt` recognises, because that reader demands the
+  // count and the pointers account for the section **exactly** and here the tagged lists sit in the
+  // same section behind them. So the helper returns undefined for this slot on every architecture.
+  //
+  // Two relocations in the order that keeps the container parseable: the tagged list first, into a
+  // hole immediately below the section, where it is unreferenced filler until the pointer names it;
+  // then the three bytes of pointer at the array's own end, and the count byte last.
+  const entryBody = new Writer(1 + 4 * entries.length).u8(entries.length);
+  for (const one of entries) entryBody.u8(one.tag).u16(one.operand).u8(one.opcode);
+  const sets2 = handlerSets(current);
+  if (sets2 === undefined) throw new ComposeError('base slot 9 stopped reading');
+  const bodyAt = sets2.start;
+  const bodyHole = relocate(current, bodyAt, entryBody.bytes.length);
+  bodyHole.bytes.set(entryBody.bytes, bodyAt);
+  const entryAddress = current.flashBase + bodyAt;
+  current = parse(bodyHole.bytes);
+
+  const sets3 = handlerSets(current);
+  if (sets3 === undefined) throw new ComposeError('base slot 9 stopped reading after its content');
+  const pointerAt = sets3.start + sets3.length;
+  const pointerHole = relocate(current, pointerAt, 3);
+  pointerHole.bytes.set(new Writer(3).u24(entryAddress).bytes, pointerAt);
+  pointerHole.bytes.set(new Writer(1).u8(sets3.addresses.length + 1).bytes, sets3.start);
+  current = parse(pointerHole.bytes);
+
+  // ---- 3. the counter's own record ----
+  //
+  // `second` is the `u16` at +0x02 and the record carries no values, so this is a poke with no
+  // relocation. Re-read the table rather than reusing the offset from before, since everything
+  // above has moved.
+  const grownStates = stateTable(current);
+  const moved = grownStates?.entries[variable.index];
+  if (grownStates === undefined || moved === undefined) {
+    throw new ComposeError('base slot 13 stopped reading');
+  }
+  const recordAt = current.blobOffsetOf(moved);
+  if (recordAt === undefined) throw new ComposeError('the activity record is outside the container');
+  const withSecond = Uint8Array.from(current.blob);
+  withSecond.set(new Writer(2).u16(value).bytes, recordAt + 2);
+  current = parse(withSecond);
+
+  // ---- 4. the name tree's stated value count ----
+  //
+  // The node is `CurrentActivityState_0_<values>` and the number is `second + 1`, section 86's rule
+  // over every named variable. It is **text**, so raising it can lengthen the node, which is why
+  // this is a relocation and not another poke.
+  const node = (nameNodes(current) ?? [])
+    .find((one: NameNode) => one.name.startsWith(ACTIVITY_STATE_NAME));
+  const treeSection = current.sections[archSlot(c.architecture, 0)];
+  if (node === undefined || treeSection === undefined || current.frameLength === undefined) {
+    throw new ComposeError('the container has no name tree to state the activity count in');
+  }
+  const treeStart = current.blobOffsetOf(treeSection.address);
+  if (treeStart === undefined) throw new ComposeError('the name tree is outside the container');
+  const renamed = `${node.name.slice(0, node.name.lastIndexOf('_') + 1)}${value + 1}`;
+  const grew = renamed.length - node.name.length;
+  const nameAt = node.start + NAME_NODE_HEADER;
+  const nameHole = grew === 0
+    ? { bytes: Uint8Array.from(current.blob) }
+    : relocate(current, nameAt + node.name.length, grew);
+  nameHole.bytes.set(new Writer(renamed.length).ascii(renamed).bytes, nameAt);
+  nameHole.bytes.set(new Writer(2).u16(4 + renamed.length).bytes, node.start + 1);
+  if (grew !== 0) {
+    nameHole.bytes.set(new Writer(3).u24(current.frameLength + grew).bytes, treeStart + 2);
+  }
+
+  return {
+    bytes: restamped(nameHole.bytes), activity: value, set, enterList, selectList,
+    label: activity.label,
   };
 }
 
@@ -607,7 +971,7 @@ function deviceListMenus(
     for (const page of record.pages) {
       const list = taggedList(c, page.list);
       for (const entry of list?.entries ?? []) {
-        if (entry.opcode === RUN_ACTION_LIST && isRow(entry.operand)) {
+        if (entry.opcode === ACTION_LIST_INDEX_OPCODE && isRow(entry.operand)) {
           modes.add((lists[entry.operand]?.[1] as Instruction).operand);
         }
       }
@@ -806,7 +1170,7 @@ function composeMenuPage(
   // 3. The list, twice: the pool copy after the last page's own copy, then the list at the end of
   // the page list run. The copy goes first because the pool sits below everything else here.
   const listBytes = new Writer(1 + 4 * 2).u8(2)
-    .u8(0x80 | MENU_ROW_SCAN).u16(rowList).u8(RUN_ACTION_LIST)
+    .u8(0x80 | MENU_ROW_SCAN).u16(rowList).u8(ACTION_LIST_INDEX_OPCODE)
     .u8(0x80 | (MENU_ROW_SCAN + 1)).u16(bottomKey.operand).u8(bottomKey.opcode);
   const pages = modePages(current);
   const lastIndex = pages.findIndex((one) => one.address === last.address);
@@ -1070,7 +1434,7 @@ export function composeDeviceScreen(
   const listBytes = new Writer(1 + 4 * rows.length);
   listBytes.u8(rows.length);
   rows.forEach((row, k) => {
-    listBytes.u8(0x80 | (DEVICE_PAGE_SCANS[k] as number)).u16(row.list).u8(RUN_ACTION_LIST);
+    listBytes.u8(0x80 | (DEVICE_PAGE_SCANS[k] as number)).u16(row.list).u8(ACTION_LIST_INDEX_OPCODE);
   });
   const lastPool = taggedListPools(current).at(-1);
   if (lastPool === undefined) throw new ComposeError('no copy pool to extend');
@@ -1240,7 +1604,7 @@ export function composeDeviceScreen(
     const grow = (listStart: number): void => {
       const at = listStart + 1 + 4 * entries;
       const hole = relocate(current, at, 4);
-      hole.bytes.set(new Writer(4).u8(0x80 | 50).u16(rowList).u8(RUN_ACTION_LIST).bytes, at);
+      hole.bytes.set(new Writer(4).u8(0x80 | 50).u16(rowList).u8(ACTION_LIST_INDEX_OPCODE).bytes, at);
       hole.bytes[listStart] = entries + 1;
       for (let k = 0; k < entries; k += 1) {
         const entryAt = listStart + 1 + 4 * k;
