@@ -16,12 +16,13 @@ sequence. The reasoning it held is `docs/plans/002-the-roadmap.md`, its decision
 
 Plan: [003-how-an-activity-is-built.md](docs/plans/003-how-an-activity-is-built.md)
 
-- [ ] 1.1 Establish how an activity is built, read off the factory configuration
-  - [ ] 1.1.1 Which sections it occupies, and which it shares with a device
-  - [ ] 1.1.2 The keypad map: bindings, and the enter and leave lists
-  - [ ] 1.1.3 The power on sequence, and how a device's delay relates to it
-  - [ ] 1.1.4 The screen page and its name
-  - [ ] 1.1.5 The state variable it sets
+- [ ] 1.1 Establish how an activity is built, read off the factory configuration.
+      Anatomy: [how-an-activity-is-built.md](docs/how-an-activity-is-built.md)
+  - [x] 1.1.1 Which sections it occupies, and which it shares with a device
+  - [x] 1.1.2 The keypad map: bindings, and the enter and leave lists
+  - [x] 1.1.3 The power on sequence, and how a device's delay relates to it
+  - [x] 1.1.4 The screen page and its name
+  - [x] 1.1.5 The state variable it sets
   - [x] 1.1.6 What an entry in the activity switching table corresponds to: a per model prefix, one per activity, one more (section 272)
   - [x] 1.1.7 Where device mode's own keypad map comes from: the device's own screen record (section 271)
   - [ ] 1.1.8 Score the write up against a second and third specimen, and record what it got wrong
