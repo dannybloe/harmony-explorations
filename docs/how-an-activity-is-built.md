@@ -51,9 +51,11 @@ from exactly one place.
 **Section 273 says which value, and it is the part the factory specimen could not show**, having one
 activity. The rule over all fifteen user configurations: the variable takes `0` to its record's
 `second`, those values are **exactly** the activities plus the idle one with no gap and nothing spare,
-and `second` **is** the activity count. Where the idle value sits varies, the maximum on 12 and inside
-the run on 3, so **a composer must not assume the idle value is the highest** and must not take
-`second + 1` for granted as unused without checking the record.
+and `second` **is** the activity count. Where the idle value sits varies, the maximum on 12 and one below it
+on 3, so **a composer must not assume the idle value is the highest** and must not take `second + 1`
+for granted as unused without checking the record. It never has to **work it out**: `first` states the
+value and the firmware seeds the variable from it at boot, section 138, so idle is the counter's
+ordinary starting value rather than a role the format assigns.
 
 The rule for adding one, which is inference rather than measurement since nothing here watched an
 addition: raise `second` by one, give the new activity the new maximum, leave the idle value where it

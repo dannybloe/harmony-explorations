@@ -438,6 +438,8 @@ and leave this table alone.
 | `Ten of them have it equal to the highest value` | section 273, 6 September 2026 | same claim in the reader's own docstring, and the same correction: 12 of 15 now, and the point is that the position varies rather than that one container is odd |
 | `the variable in five bits` | section 139, restated 6 September 2026 | the index is seven bits, 0 to 127, and the corpus reaches 93. A test masked it to five and passed, because every activity counter in its own list sits below 32; `calibration_h600`'s is 34 and is outside that list |
 | `a prefix of the enter list fails on every container checked` | the composer audit, 6 September 2026 | it holds on 28 of the 50 activities, 24 of them because tag 5 writes nothing, so the figure is 4 of the 26 that write anything, and it holds on every activity of all four arch 8 containers. The claim reached three documents and a docstring with no assertion behind it |
+| `the idle value sits inside the run` | Danny's question of 6 September 2026 | true and too vague to be useful: all three put it exactly **one below the maximum**, out of 8, 4 and 9 places each, which is what one activity being added later predicts and nothing else does |
+| `neither confirms nor refutes` | the same | said of the "an activity was added later" reading while the measurement that supports it sat one paragraph above, unmade. The corpus supports it; what it does not settle is whether the compiler renumbers on a full rebuild |
 
 ## The Harmony 525's erase block size is unmeasured, so arch 9 gets no rail entry
 

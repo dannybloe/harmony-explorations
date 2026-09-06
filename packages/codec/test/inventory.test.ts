@@ -1837,6 +1837,7 @@ test('the activity variable has one value per activity plus one, and one of them
   let idleIsTheMaximum = 0;
   let idleInsideTheRun = 0;
   let idleIsNotAnActivity = 0;
+  let idleOneBelowTheTop = 0;
   let oneEntryEach = 0;
   for (const name of USER_CONFIGS) {
     const c = parse(require_(name));
@@ -1852,6 +1853,7 @@ test('the activity variable has one value per activity plus one, and one of them
     if (JSON.stringify(every) === JSON.stringify(filled)) exact += 1;
     if (record.second === used.length) secondIsTheCount += 1;
     if (idle === record.second) idleIsTheMaximum += 1; else idleInsideTheRun += 1;
+    if (idle === record.second - 1) idleOneBelowTheTop += 1;
     if (!used.includes(idle)) idleIsNotAnActivity += 1;
     if (new Set(activityBindings(c).map((one) => one.set)).size === used.length) oneEntryEach += 1;
   }
@@ -1862,6 +1864,12 @@ test('the activity variable has one value per activity plus one, and one of them
   // than as a share, so it is visible which side moves.
   assert.equal(idleIsTheMaximum, 12);
   assert.equal(idleInsideTheRun, 3);
+  // **And all three sit in the same place**, which "inside the run" was too vague to
+  // say<!--superseded-->: exactly one below the maximum, out of 8, 4 and 9 non-top positions they
+  // could each have taken. Danny's question of 6 September 2026 is what prompted measuring it, and
+  // it is the evidence section 273 had recorded as absent: it is what "one activity was added after
+  // the file was built, and the idle value did not move" predicts, and nothing else predicts it.
+  assert.equal(idleOneBelowTheTop, 3);
   // **The two the blind re-measure added.** The first is what makes the row above a partition rather
   // than a coincidence; the second is what a composer needs, that an activity value is not shared.
   assert.equal(idleIsNotAnActivity, 15);

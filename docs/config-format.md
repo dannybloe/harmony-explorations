@@ -2688,9 +2688,13 @@ rule that covers all fifteen. The variable takes the values `0` to its record's 
 | base slot 9 holds one activity entry per activity value, no duplicate and no spare | 15 of 15 |
 | the idle value is the maximum | 12 of 15 |
 | the idle value sits **inside** the run, an activity holding the maximum | 3 of 15 |
+| and where it does, it is exactly **one below** the maximum | 3 of 3 |
 
 The first row follows arithmetically from the second and third and is measured rather than derived, so
-the table states what was run rather than six independent results. The three with the idle value inside
+the table states what was run rather than six independent results. **Nothing has to work out which
+value is idle**: `first` states it and the firmware seeds the variable from it at boot, section 138, so
+the last two rows describe where a compiler happened to put a number rather than anything a reader
+needs to infer. The three with the idle value inside
 the run are `one_config`, `arch8_config_880` and `arch8_config_885`.
 
 **An entry's position in base slot 9 does not encode its activity number.** Of the ten user configs

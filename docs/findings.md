@@ -34812,6 +34812,7 @@ fifteen user configurations on four architectures:
 | base slot 9 holds **one** activity entry per activity value, no duplicate and no spare | 15 of 15 |
 | the idle value is the maximum | 12 of 15 |
 | the idle value sits **inside** the run and an activity holds the maximum | 3 of 15 |
+| and when it does, it is **one below the maximum** | 3 of 3 |
 
 So there is one rule and not twelve cases plus three: the variable has one value per activity **plus
 one**, and exactly one of those values means idle. Where that one sits is the part that varies.
@@ -34826,8 +34827,12 @@ record's own `first` field, read and not derived, so a table column headed idle 
 `first` would print one number twice.
 
 The three with the idle value inside the run are `one_config`, `arch8_config_880` and
-`arch8_config_885`. In each, the value below the idle one and the value above it are both activities:
-0 to 6 and 8 with 7 idle; 0, 1, 2 and 4 with 3 idle; 0 to 7 and 9 with 8 idle.
+`arch8_config_885`: 0 to 6 and 8 with 7 idle; 0, 1, 2 and 4 with 3 idle; 0 to 7 and 9 with 8 idle.
+
+**All three put it in the same place, one below the maximum**, and this section said only that it sat
+"inside the run"<!--superseded--> until Danny asked why a compiler that allocates the numbers would
+leave a hole at all. The three had 8, 4 and 9 non-top positions available and all three took the same
+one, which is not chance and which the next section should have been weighing.
 
 ### What a composer does with it
 
@@ -34849,12 +34854,25 @@ against the bench unit.
 The obvious reading is that the three are configurations somebody **added an activity to** after the
 first was built, and the twelve were each generated in one pass.
 
-**The corpus neither confirms nor refutes it.** `h700_config` has five activities numbered 0 to 4 with
-the idle value at 5, and a five activity configuration that grew one activity at a time would show a
-hole; but that is equally what a container generated in one pass looks like, which is what the
-hypothesis says about it. So either those were authored together, or Logitech's generator renumbers on
-a full compile, and nothing here distinguishes the two. Deciding it needs a container watched while an
-activity is added, which is the same instrument section 58 used for the timestamp.
+**The corpus supports it and does not settle it, and this section said "neither confirms nor
+refutes"<!--superseded--> while the supporting measurement sat one paragraph above unmade.** All three
+put the idle value **one below the maximum**, out of 8, 4 and 9 places each. Adding one activity to a
+container whose idle value was already the maximum produces exactly that and nothing else does, so the
+three look like configurations that were built with one fewer activity and then had one added.
+
+What it does not settle is the other direction. `h700_config` has five activities numbered 0 to 4 with
+the idle value at 5, so either it was authored in one pass or Logitech's generator renumbers on a full
+compile, and nothing here distinguishes those. Deciding it needs a container watched while an activity
+is added, which is the instrument section 58 used for the timestamp.
+
+**The mechanism was never in doubt and is worth restating here, because the question "how does the
+remote know which value is idle" has an answer that makes the hole a non-event.** It does not infer it.
+Base slot 13's record states each variable's **starting value** in `first`, and section 138 read the
+firmware's seeder, at `0x2A266` on the Harmony One (arch 12), walking the table at boot and setting
+each variable to it. So idle is not a property the format records: it is the activity counter's
+ordinary initial value, which means "nothing is running" because nothing is running at boot. A
+compiler therefore has no reason to prefer any particular number for it, and a reader has no reason to
+work it out.
 
 **"They are strangers' working configurations" is not evidence and was fitted to the three that
 suggested it.** `arch8_config_a` to `d` are contributed working configurations too and all four have
