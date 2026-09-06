@@ -35072,9 +35072,35 @@ variables the firmware owns, section 138, the clock among them. So on that archi
 are "seed everything" and "seed the configuration's variables but leave the firmware's alone", where
 on the other two they are "seed everything" and "seed nothing".
 
-**What sets arch 9's guard is not traced and this section does not claim it.** Which of its paths is
-the cold boot is therefore open, and the difference above is stated as the shape of the code rather
-than as a statement about what a Harmony 525 does when its batteries come out.
+### What sets arch 9's guard, which is the startup path and a runtime one
+
+Traced, and it is two call sites with a literal each. The guard at `0x1A2` has exactly one reader, the
+loop, and one writer, `0x07930`, which copies it from `0x101` and then calls the seeder. `0x101` in
+turn has two writers and both are immediately followed by that call:
+
+| | flag | what it does |
+|---|---|---|
+| `0x04C72` | `MOVLW 0x01` | seeds **every** variable, the firmware's thirteen included |
+| `0x02498` | `CLRF` | seeds the configuration's variables and leaves 0 to 12 alone |
+
+**The flag 1 site is the application's own startup.** Its enclosing routine is called from `0x07FB4`,
+which sets `FSR1` and `FSR2` to `0x300`, clears `TBLPTRU` and then calls it in an endless loop, which
+is a C runtime entering `main`. `0x07FB4` is reached by a single `GOTO` from `0x01008`, and the reset
+vector's own target at `0x00EF6` is a **different** routine of the same shape one page lower, which is
+the bootloader's. That split is corroborated from outside the disassembly: the external flash copy of
+this firmware is this image from `0x1000` onward, so `0x1000` is where the application starts and the
+page below it is the bootloader's.
+
+So on a Harmony 525 a startup seeds the clock from the configuration, exactly as a power cycle does on
+a Harmony One, and the two architectures agree about the case that matters most.
+
+**The flag 0 site is a runtime path and this section stops short of naming it.** It sits under a small
+state machine on `0x3DC`, whose two cases decode to 1 and 2 through the running XOR that an `XORLW`
+chain requires, and `0x3DC` is the low nibble of a byte the code has just required to be `0xC0` or
+above. What that byte is, is not established here, so what the reseed is a response to is open. What
+is established is the half the question needed: it is **not** the startup path, so the design is
+"seed everything at boot, and reseed the configuration's variables without disturbing the clock at
+some later moment", where arch 12's is "seed everything on a cold boot and nothing on a warm one".
 
 ### What it means for the question that prompted it
 
@@ -35086,7 +35112,8 @@ numbering rule rests on the field and not on the seeder, so it is unaffected eit
 
 An image whose slot 13 fetch is absent from its seeker census. A store that reads a width from
 anywhere but the table's own `narrow`. An arch 9 path that compares a record against `0xFEFE`, or an
-arch 12 or arch 14 loop that compares an index against 13.
+arch 12 or arch 14 loop that compares an index against 13. A third writer of arch 9's guard, or a
+reader of it outside the loop.
 
 ### Where it lands
 

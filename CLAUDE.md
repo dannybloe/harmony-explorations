@@ -109,7 +109,7 @@ designing around its absence.
 ## How planning works, one job per document
 
 Decided on 6 September 2026, after `docs/roadmap.md` was retired for doing four jobs at once: it
-stated what the project is, held the fifteen decisions, sequenced the work and carried the evidence
+stated what the project is, held the decisions, sequenced the work and carried the evidence
 gathered while planning. Reading it to find out what happens next meant reading all four, so nobody
 did, and the sequence ended up restated in this file and in `docs/status.md` as well. **1121 of its
 2404 lines were three separate accounts of what to do next.**
@@ -952,6 +952,16 @@ in a reply rather than the first.
 bare number where the claim is genuinely about the architecture and not about a model, since several
 models share one, and `docs/findings.md` does so throughout.
 
+**And every step asks which architectures its answer covers**, decision 16, taken on 6 September 2026.
+Naming the architecture is about being understood; this is about the claim being **true as widely as
+it is stated**. Section 138 read the firmware routine that gives every state variable its starting
+value, on the Harmony One, and wrote it up as a fact about Harmonys; section 274 checked the other two
+images and found the Harmony 525 guarding it differently. Nothing in this file would have caught that,
+because every other rule here is about whether a claim is right rather than how wide it is. So: before
+a `todo.md` item is ticked and before a finding is written, ask. **"Not checked" and "no image exists"
+are complete answers**, and a step whose value is entirely on one architecture may say so and move on.
+What is forbidden is a claim scoped to one architecture and worded as all of them.
+
 ## Answer in plain language, and keep the jargon out of the reply
 
 Asked for on 21 August 2026, after a long technical answer had to be repeated in ordinary words before
@@ -1017,7 +1027,7 @@ todo.md                         THE sequence, and the only place it lives: six n
                                 of us adds, ticks or removes an item. It replaced docs/roadmap.md
                                 on 6 September 2026, which was doing four jobs and carried 1121 of
                                 its 2404 lines as three separate accounts of what to do next
-docs/decisions.md               the fifteen numbered decisions, plus what this project is and its
+docs/decisions.md               the numbered decisions, plus what this project is and its
                                 context. **The numbers are cited from here, from findings.md and
                                 from code comments, so they never change**; a decision that turns
                                 out wrong is corrected in place

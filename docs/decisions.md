@@ -379,6 +379,40 @@ image is a second sample rather than a stand in. Other models are iterated on la
    audited in later. Without this paragraph the archive would quietly contaminate the shareable pool,
    which is the exact failure decision 11 exists to prevent.
 
+16. **Every step asks the architecture question, and a step that answers it for one architecture says
+   so.** *Taken by Danny on 6 September 2026, prompted by section 274.* A step of `todo.md` is not
+   finished when it works on one remote. It is finished when the other architectures have been
+   **asked about**, and the answer may perfectly well be "not checked" or "no image exists": what is
+   forbidden is a claim whose scope is one architecture and whose wording is all of them.
+
+   **The measurement behind it.** Section 138 read the firmware routine that gives every state
+   variable its starting value, on the Harmony One, and stated the result as a fact about Harmonys.
+   Danny asked whether the other images had been checked. They had not. Checking them took an
+   afternoon, found the mechanism to be the same on all three, and found the Harmony 525 doing it
+   with a **different guard**, seeding the configuration's variables while leaving the firmware's own
+   thirteen alone where the other two seed everything or nothing. That difference had been invisible
+   for as long as nobody asked, and nothing in this project's rules would ever have surfaced it,
+   because every rule here is about whether a claim is **true** and this one was about how **wide**
+   it is.
+
+   Three things follow, and the third is the one with teeth.
+
+   * **A finding states its scope in its own words.** Not "the firmware does X" but "arch 12 does X
+     and the others are unchecked". The `finding` skill's gate asks for two independent samples and
+     names two architectures as the example, so the standard already exists; what was missing is that
+     it is asked at every step rather than only when a finding is being written up.
+   * **A step may close with the question answered "no".** Reading the other images is often cheap
+     and sometimes impossible, and "arch 14 has no second remote so this cannot be tried" is a
+     complete answer. An unasked question is not.
+   * **Where a difference is found, it is per architecture data and not a branch.** This repository
+     already does that everywhere it matters, `CONFIG_REGION_BASE`, `ERASE_BLOCK_SIZE`,
+     `ARCHITECTURES_WITH_A_WRITE_TARGET`, and the reason is decision 4's: a table can be compared
+     against the corpus and an `if` cannot.
+
+   **What this does not license is fanning out over every architecture by reflex.** Six of them exist
+   here and two have hardware. The question is cheap; answering it may not be, and a step whose whole
+   value is on arch 12 is allowed to say so and move on.
+
 Scope is the Harmony One (arch 12) and the Harmony 600 (arch 14), the remotes on the bench, with
 the 700 2.8 image as the arch 14 reference. **Arch 9 is a target**: the Harmony 525 arrived on 8
 August 2026, its config and its firmware are in the lab, and `docs/memory-map-525.md` records what

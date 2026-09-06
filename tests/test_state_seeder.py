@@ -16,9 +16,11 @@ and arch 9 do the same thing, and that **arch 9 does it with two differences tha
   one byte that, when nonzero, skips the store for **every** variable. Arch 9's, when zero, skips
   only indices 0 to 12, which are the thirteen the firmware owns, and seeds everything above them.
 
-**What sets arch 9's guard is deliberately not claimed.** Section 138 traced arch 12's to a checksum
-over data memory, so that architecture's warm and cold starts are named. Nothing here traced arch 9's,
-so which of its two paths is the cold boot is open and this file does not assert it.
+Arch 9's guard is traced too: one reader, one writer, and that writer copies it from a byte with
+exactly two writers, each a literal followed immediately by the call. The literal 1 site is the
+**application's startup**, so a Harmony 525 seeds its clock at boot exactly as a Harmony One does on a
+power cycle. The literal 0 site is a runtime path this file does not name, and the test asserts the
+shape of both rather than a story about either.
 
 The closure is the seeker census. Each architecture's section seeker takes a raw slot in a register
 that every caller loads with a literal, so one scan names every slot the firmware ever fetches. Slot
@@ -54,6 +56,14 @@ SEEKER_CALL_SITES = {12: 24, 14: 19, 9: 17}
 FIRMWARE_STATE_VARIABLES = 13
 # The record's "no initial value" marker on arch 12 and arch 14, one byte of it.
 NO_INITIAL_VALUE_BYTE = 0xFE
+
+# Arch 9's guard, section 274: the routine that copies it in, the seeder it then calls, the two sites
+# that set it with a literal, and the application entry that reaches the one meaning "seed the clock".
+GUARD_WRITER = 0x07930
+SEEDER_ENTRY = 0x0479A
+GUARD_SITES = {0x04C72: 1, 0x02498: 0}
+APPLICATION_ENTRY = 0x07FB4
+MAIN = 0x04BFA
 
 
 def instructions(name, base, start, count):
@@ -110,6 +120,34 @@ class TheSeederExistsOnEveryArchitectureWeHaveAnImageFor(unittest.TestCase):
                 # equality rather than a store of 0xFE.
                 self.assertTrue(any(p.mnemonic == 'XORWF' for _, p in run),
                                 f'arch {arch}: the marker is compared, not written')
+
+    def test_arch_9s_guard_is_set_from_two_places_and_the_startup_one_seeds_everything(self):
+        """One reader, one writer, and two literals behind it. Section 274."""
+        lab.require('h525_code')
+        code = lab.load('h525_code')
+        base = ARCHITECTURES[9]['base']
+        # The writer copies the flag in and calls the seeder in the next instruction.
+        run = instructions('h525_code', base, GUARD_WRITER, 2)
+        self.assertEqual(run[0][1].mnemonic, 'MOVFF')
+        self.assertEqual(run[1][1].fields['target'], SEEDER_ENTRY,
+                         'the guard is set immediately before the loop runs')
+        # And the flag itself is a literal at each of the two sites, one of them the startup path.
+        for site, expected in GUARD_SITES.items():
+            with self.subTest(site=hex(site)):
+                pair = instructions('h525_code', base, site, 2)
+                if expected == 0:
+                    self.assertEqual(pair[0][1].mnemonic, 'CLRF')
+                else:
+                    self.assertEqual(literals(instructions('h525_code', base, site - 2, 1)),
+                                     [expected])
+                self.assertEqual(pair[1][1].fields['target'], GUARD_WRITER,
+                                 'each site calls the routine that copies the flag in')
+        # The startup site's routine is entered from the C runtime that calls it in an endless loop,
+        # which is what says "boot" rather than "some path that happens to seed everything".
+        entry = instructions('h525_code', base, APPLICATION_ENTRY, 5)
+        self.assertEqual([p.mnemonic for _, p in entry][:3], ['LFSR', 'LFSR', 'CLRF'])
+        self.assertEqual(entry[4][1].fields['target'], MAIN,
+                         'the application entry calls main, which is the flag 1 site')
 
     def test_arch_9_has_no_such_test_and_guards_the_firmware_variables_by_index(self):
         """The difference, and it is the reason this file exists rather than a note on section 138."""

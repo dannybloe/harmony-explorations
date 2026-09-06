@@ -52,6 +52,12 @@ the honest move is to write it up as unconfirmed, using that word.
   answer is already known, and report the score for wrong answers too. The base address
   derivation scores 98.9 percent for the right base against 11 to 30 percent for wrong ones.
 * **What would falsify it?** If nothing would, it is not a finding, it is a description.
+* **Which architectures does it hold on, and which were checked?** Decision 16, and it is a question
+  about the claim's **width** rather than its truth, which is why no other gate item catches it. State
+  the scope in the finding's own words: "arch 12 does X and the others are unchecked" rather than "the
+  firmware does X". "Not checked" and "no image exists" are complete answers; not having asked is not.
+  Section 274 is the measurement behind it, where the state variable seeder had been read on the
+  Harmony One and written up unscoped, and the Harmony 525 turned out to guard it differently.
 * **Which sources were checked before the work started, and was Logitech's own client one of them? Reading it first is decision 2, and `../lab/work/myharmony/src/` is MyHarmony as C# source** Name them, in the finding. Logitech's own
   client, the firmware, `docs/findings.md`. This is not bureaucracy: on 28 August 2026 a session
   derived a packet framing by six rounds of hardware guessing while the answer sat in one function of

@@ -6,6 +6,12 @@ down into a plan under `docs/plans/` when it is reached, and the plan is linked 
 Either of us adds, ticks or removes items. Keep the descriptions to one line: the reasoning belongs in
 a plan, in `docs/decisions.md`, or in `docs/findings.md` with a test.
 
+**Every item asks the architecture question before it is ticked**, decision 16: does this hold on the
+other architectures, and if it was not checked, the item says so. "Not checked" and "no image exists"
+are complete answers; an unasked question is not. Section 274 is what prompted it, where a firmware
+reading stated as a fact about Harmonys turned out to be arch 12's and the Harmony 525 does it
+differently.
+
 *Replaced `docs/plans/002-the-roadmap.md` on 6 September 2026, which carried three separate accounts of the same
 sequence. The reasoning it held is `docs/plans/002-the-roadmap.md`, its decisions are
 `docs/decisions.md`.*

@@ -19,6 +19,12 @@ import os
 import unittest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def _read(relative):
+    """A repository file as text, by its path from the root."""
+    with open(os.path.join(ROOT, relative), encoding='utf-8') as handle:
+        return handle.read()
 sys.path.insert(0, os.path.join(ROOT, 'tools'))
 
 import facts  # noqa: E402
@@ -220,6 +226,56 @@ class TestTheDetachedMarkerDiagnostic(unittest.TestCase):
         self.assertIn('collections.Counter(m.group(2) for m in MARKER.finditer(text))', source)
         self.assertNotIn('attached = {m.group(2) for m in MARKER.finditer(text)}', source)
 
+
+
+class TheDecisionsAreNumberedAndCited(unittest.TestCase):
+    """`docs/decisions.md`'s numbers are cited from other files, so they may never move.
+
+    A gap or a duplicate is what would let two documents cite the same number for different things,
+    which is the failure the "keep its number forever" rule in `CLAUDE.md` exists to prevent. Nothing
+    checked it until 6 September 2026, when decision 16 was added and a **count of the decisions**
+    turned out to be sitting in prose in `CLAUDE.md`, unrecomputed and one behind. That count is gone
+    rather than incremented, for the same reason the lab register's row count went: a number quoted
+    in prose with nothing recomputing it is wrong at the next change.
+    """
+
+    def numbers(self):
+        text = _read('docs/decisions.md')
+        return [int(m) for m in re.findall(r'^(\d+)\. \*\*', text, re.MULTILINE)]
+
+    def test_they_run_from_one_with_no_gap_and_no_duplicate(self):
+        found = self.numbers()
+        self.assertEqual(found, sorted(found), 'the decisions are in order')
+        self.assertEqual(found, list(range(1, len(found) + 1)),
+                         'numbered from 1 with no gap, since other files cite them')
+
+    def test_no_document_states_how_many_there_are(self):
+        """A count of them is a copy with nothing recomputing it, so no live document carries one."""
+        worded = re.compile(
+            r'(?:the )?(?:ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|'
+            r'nineteen|twenty)\s+(?:numbered\s+)?decisions', re.IGNORECASE)
+        for name in ('CLAUDE.md', 'README.md', 'todo.md', 'docs/status.md'):
+            path = os.path.join(ROOT, name)
+            if not os.path.exists(path):
+                continue
+            for line in _read(name).splitlines():
+                # A sentence about what the **retired** roadmap held is history and stays.
+                if 'roadmap' in line.lower():
+                    continue
+                with self.subTest(document=name):
+                    self.assertIsNone(worded.search(line),
+                                      f'{name} states a decision count: {line.strip()[:80]}')
+
+    def test_decision_16_reached_the_places_that_have_to_carry_it(self):
+        """The architecture question is asked at each step, so it lives where a step is worked on."""
+        for name, needle in (
+            ('CLAUDE.md', 'decision 16'),
+            ('todo.md', 'decision 16'),
+            ('.claude/skills/finding/SKILL.md', 'Decision 16'),
+        ):
+            with self.subTest(document=name):
+                self.assertIn(needle, _read(name),
+                              f'{name} does not cite the rule it has to apply')
 
 if __name__ == '__main__':
     unittest.main()
