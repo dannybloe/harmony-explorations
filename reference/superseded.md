@@ -427,6 +427,11 @@ and leave this table alone.
 | `The spare Harmony One is the only write target` | Danny's decision of 5 September 2026 | of which units may be written to. Two may: the spare Harmony One and the Harmony 525. His everyday Harmony One and the Harmony 600 stay refused, the 600 because it is the only arch 14 remote in existence here. The rail refused arch 9 for one day, because permission is not capability; section 269 performed the demonstration and `ARCHITECTURES_WITH_A_WRITE_TARGET` is `[9, 12]` |
 | `the spare is the only one that may be` | section 269, 6 September 2026 | of which remotes have been written to. Two have: the spare Harmony One, four times from 30 August, and the Harmony 525 once on 6 September |
 | `arch 9 has no write target` | section 269, 6 September 2026 | of the write rails. It has one. What it does not have is a RAM write target or a traced reset escape, and each of those is refused by a check of its own rather than by the flash list being short |
+| `no keypad map in any config here sends a code outside an activity` | section 271, corrected 6 September 2026 | true of base slot 9 alone; a device's own map is a base slot 6 mode record's own tagged list and every configuration here has one per device |
+| `no config here holds a keypad map for device mode` | section 271, corrected 6 September 2026 | 62 of 62 device groups with codes have one, on all four architectures, and each addresses exactly one device |
+| `Where device mode's own keypad map lives is open` | section 271, corrected 6 September 2026 | it is the device's own base slot 6 mode record, consulted on a key press after the page and before base slot 9 |
+| `that agreement is the device's answer` | section 271, corrected 6 September 2026 | the stated map differs from it on 136 of the 1032 pairs where every activity agrees, and binds 568 keys no activity binds |
+| `devices and activities together is the reading the counts support` | section 272, corrected 6 September 2026 | a device never has an entry: it is a per model prefix nothing selects, plus one per activity, plus exactly one more |
 
 ## The Harmony 525's erase block size is unmeasured, so arch 9 gets no rail entry
 

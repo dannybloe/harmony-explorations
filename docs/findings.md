@@ -4480,8 +4480,9 @@ with no count at all. Reading it removes the guesswork from every array in the f
 
 ### What is not established
 
-**What an entry of base slot 9 corresponds to**, beyond having bindings and a lifecycle. Devices
-and activities together is the reading the counts support and it is not proven.
+~~**What an entry of base slot 9 corresponds to**, beyond having bindings and a lifecycle.~~
+**Answered by section 272 on 6 September 2026**, and the reading offered here was wrong: it is a per
+model prefix nothing selects, plus one per activity, plus exactly one more. A device never has one.
 
 **The second table in a base slot 14 record**, empty in every record in the corpus.
 
@@ -21231,9 +21232,14 @@ in an activity any key may carry any appliance's command, and in a device's map 
 same key is not a conflict at all.
 
 What the numbers above **do** establish is that an activity's map reads as the device's map plus that
-activity's own overrides, which is what makes a device map **reconstructable** where a file states none:
-where every activity that binds a key agrees, that agreement is the device's answer, and the nine
-disagreements are left unbound rather than decided.
+activity's own overrides.
+
+**They do not make a device map reconstructable, and this paragraph said they did.** It read that where
+every activity that binds a key agrees, that agreement is the device's answer<!--superseded-->. The file
+states a device's map, section 271, so that rule can be scored against it, and it is wrong on 136 of the
+1032 pairs where every activity agrees and blind to a further 568 keys no activity binds. It also
+follows that the nine disagreements here are not the whole of the overriding: they are the overrides
+that two activities happened to disagree **with each other** about.
 
 ### The consequence, which is a rail for an activity editor
 
@@ -21284,24 +21290,40 @@ That makes the keypad the smaller half of a device's map, and it means the scree
 second population, are where the interesting part of device mode lives. Nothing here reads which appliance
 a screen page belongs to, section 52, so that is the reading a device page eventually needs.
 
-### Where device mode's own keypad map lives is open
+### Where device mode's own keypad map lives, closed by section 271
 
-**No keypad map in any configuration here sends an infrared code outside an activity.** Counted over the
-fifteen user configs: 158 keypad maps, of which 65 are installed by something in the configuration
-itself, `0x1F` with a high byte of `0xFF` selecting one per section 120, and 50 of those by an activity.
-**Exactly those 50 send a code**, and no map an activity does not install sends one. The other 108 send
-nothing, and 38 of them bind fifty or more keys to lists made of comparisons, register work and mode
-entries, which is a menu rather than a device.
+**This heading read "is open" and the answer below it was wrong**, until 6 September 2026. The
+measurement stands and the conclusion drawn from it does not, so both are kept here.
 
-The screen side is ruled out separately: mode page bindings use four distinct scan codes on the Harmony
-600, seven on the Harmony One and four on the Harmony 525, and **none of them is a physical key**
-according to the measured geometry in `packages/silhouettes`. That is section 128's disjointness seen
-from the other end.
+The measurement, over base slot 9 and over the fifteen user configs: 158 keypad maps, of which 65 are
+installed by something in the configuration itself, `0x1F` with a high byte of `0xFF` selecting one per
+section 120, and 50 of those by an activity. **Exactly those 50 send a code**, and no map an activity
+does not install sends one. The other 108 send nothing, and 38 of them bind fifty or more keys to lists
+made of comparisons, register work and mode entries, which is a menu rather than a device.
 
-So three readings remain and none is established: the firmware builds the map from the selected device's
-own command order in base slot 5; device mode reuses the running activity's map filtered to one device;
-or there is a map in the container nothing here recognises. **Do not close this by choosing one.** What
-settles it is the firmware routine behind the Devices item, followed to whatever it installs.
+The conclusion drawn from it was that **no keypad map in any configuration here sends an infrared code
+outside an activity**<!--superseded-->, and therefore that **no configuration here holds a keypad map
+for device mode**<!--superseded-->. Both are false. What is true is the narrower statement that base
+slot 9 belongs to the activities. A device's own map is a **base slot 6 mode record's own tagged list**,
+it is in every configuration here, and the firmware resolves a key press against the current page, then
+that list, then the base slot 9 stack. Section 271.
+
+So of the three readings this section offered, **the third was right**: "there is a map in the container
+nothing here recognises". The uncomfortable part is that the reader for it had existed since section 52
+and nobody had asked those lists what they **send**. The instruction the section gave, that what settles
+it is the firmware routine behind the Devices item, was also right, and section 69 had already read the
+routine a month earlier without either section noticing the other.
+
+The screen side of the argument was sound and survives, restated by section 271 from a third side: mode
+page bindings use four distinct scan codes on the Harmony 600, seven on the Harmony One and four on the
+Harmony 525, and **none of them is a physical key** according to the measured geometry in
+`packages/silhouettes`. What that shows is that a **page** is not a keypad map, and the mistake was
+reading it as showing that base slot 6 holds none.
+
+**The methodological lesson is one this section already states about itself and then repeated.** It
+records that a corpus measurement was used to answer a question about the product. The second failure is
+different and worse: a corpus measurement over **one structure** was used to answer a question about the
+container, and the section's own three readings named the right answer without anything going to look.
 
 ### The methodological failure, recorded because it will recur
 
@@ -34526,3 +34548,221 @@ than counted, and the erased pair called out where a block is chosen.
 `packages/lab/test/parity.test.ts`: the fixture count, which is the check that fails in a fresh clone
 when a registration is left half done. `tests/test_harmony_525_region.py`: the table above, byte for
 byte, including the closure between the container's stated length and where the flash stops.
+
+## 271. Device mode's keypad map is the device's own mode record, and section 151 looked in the wrong slot
+
+**This closes the open question section 151 left and refutes the claim it left standing.** That
+section measured base slot 9, found that every keypad map sending an infrared code is installed by an
+activity, and concluded that **no configuration here holds a keypad map for device mode**. The
+conclusion followed correctly from the measurement and the measurement was of the wrong structure. A
+device's own map is a **base slot 6 mode record's own tagged list**, the one section 52 reads through
+the back pointer beside the entry, and the firmware consults it on every key press.
+
+So the third of section 151's three readings is the right one, "a map in the container nobody here
+recognises", and it was recognised: the reader for it, `taggedList` over `modeRecords(c)[m].start`,
+has been in `packages/codec` since section 52. Nothing had asked it what the lists **send**.
+
+### What was checked before the work started
+
+`docs/findings.md` sections 37, 39, 52, 66, 67, 68, 69, 120 and 151; `docs/config-format.md` base
+slots 6 and 9; the Harmony 700 2.8 and Harmony One 3.4 images; and `docs/myharmony/model.md`, which
+is Logitech's own schema as it was mined on 30 August 2026. The last of those is the reason to have
+looked again at all: their platform declares `DeviceButtonMap` keyed by a `DeviceId` beside
+`ActivityButtonMap` keyed by an `ActivityId`, so the vendor states that a device's map is a first
+class object, and this project's own specification said no such object is in the file.
+
+### The firmware resolves a key against the page, then the mode, then the base slot 9 stack
+
+Section 69 read the two block routine at `0x168F4` on the Harmony 700 and named its two pointers: the
+`u24` at page record + 0, which is the page's list, and the `u24` at entry + 1, which is the back
+pointer to the **mode record's own** list. What that section did not ask is where the tag comes from,
+and the tag is what makes the second block a keypad map rather than a lifecycle hook.
+
+```
+0EAC0:  MOVF 0x03,W ; XORLW 0xfc ...     a switch on the stack entry's kind
+0EAD0:  MOVFF 0x1b0,gprF2F               the key event, into the tag
+        CALL 0x168f4                     page's list, then the mode record's own
+        BZ ...                           a miss falls through to the next entry
+0EAE0:  MOVFF 0x1b0,0x3c4                the same key event
+        MOVFF 0x120,0x3c3                a base slot 9 list instead
+        CALL 0x1b6de
+```
+
+`0x1B0` holds the key event, an event type in `0xC0` and a scan code in `0x3F`. The `XORLW` chain
+decodes to three cases, `0xFC`, `0xFE` and `0xFD`, with a default: one of them is the current mode and
+its page and the other three are base slot 9 lists from three different sources. So the screen's mode
+is **an entry on the same key resolution stack** the base slot 9 sets sit on, and inside that entry
+the page overrides the mode.
+
+The Harmony One 3.4 image is the same shape at a different address. `0x24D98` puts the key event from
+`0xEB2` into `0x229` and calls `0x283F6`, which reaches the two consecutive blocks at `0x28430` and
+`0x2846C`, both calling the runner at `0x2E2F2`; the chain's other arms pass the same key event to
+`0x326` and call `0x2E2B4`, which is base slot 9's. Two architectures, no third mechanism.
+
+### Every device in the corpus has one, and it sends only that device
+
+For each infrared group, take the modes whose **own** tagged list runs a list that sends that group,
+and pick the one whose keypad and screen maps are largest together.
+
+| | count |
+|---|---|
+| device groups with at least one infrared code | 62 |
+| such a mode exists | 62 |
+| the largest is unique, with no tie | 62 |
+| it sends **only** that device, on its keypad and on its pages alike | 62 |
+
+Over the fifteen user configurations on four architectures. The one device group with no map is the
+Harmony 600 configuration's third, which has **zero** infrared codes, so no map could send anything
+for it: the exclusion is the population's rather than the reader's.
+
+**The purity is the result worth keeping**, because it is Logitech's own sentence measured. The
+Harmony One manual says "after you select a device, the Harmony One controls only that device", and
+here 62 of 62 maps address one device and no other, where an activity's map mixes two or three
+routinely.
+
+### The independent closure: the drawn device list names the same mode
+
+On arch 12 (Harmony One) the device list is drawn on the screen and each row's action list enters a
+mode, which `deviceListRows` has read since section 239 by an entirely separate route: the row's own
+`0x7E`, decoded from the screen, with no reference to infrared groups at all. The census above starts
+from the infrared groups and never looks at the device list.
+
+**They agree on 8 of 8**, across four containers: `one_config`'s five devices, and the single device
+of `one_config_unprogrammed`, `one_spare_before_sync` and `one_spare_after_sync`, the last of which
+moved from mode 44 to mode 98 between the two reads of the same remote and is matched at both.
+
+### The calibration case: the factory configuration
+
+`one_config_unprogrammed` holds one device and one activity, so the two maps can be compared with
+nothing else in the way. The device's mode binds 30 keypad keys and 50 screen keys over 9 pages; the
+activity's base slot 9 set binds 24 keys that send a code, and **all 24 hold the same command as the
+device's map**, with none differing and none missing. The device map carries 6 keys the activity does
+not.
+
+### The keypad and the screen are disjoint populations, in all fifteen
+
+A mode record's own tagged list binds physical keys and its pages bind screen keys, and the two scan
+code populations do not intersect anywhere in the corpus: 0 shared scan codes in each of the fifteen
+user configurations, on all four architectures. That is section 128's disjointness seen from a third
+side, and it is what makes the split between the two halves structural rather than a convention.
+
+**The screen is the bigger half, measured.** Over the 62 maps, 1609 keypad bindings against 1818
+screen bindings, so 53% of what device mode offers is on the display. Section 151 argued that from the
+product side, that an old remote has more buttons than a Harmony and the overflow goes on the screen.
+It is now a count.
+
+### The consequence: a reconstructed device map is wrong, and section 151's own nine reappear
+
+Section 151 said an activity's map reads as the device's map plus that activity's overrides, and that
+this makes a device map **reconstructable** where the file states none. The file does state one, so
+the reconstruction can be scored against it. Every pair of a device and a key that some activity map
+binds, against the same device's stated map:
+
+| | count |
+|---|---|
+| pairs of a device and a key bound by an activity | 1123 |
+| the stated map holds the same command | 896 |
+| the activities agree with each other and the stated map differs | 136 |
+| the activities disagree among themselves | 9 |
+| the stated map does not bind that key at all | 82 |
+| keys the stated map binds that no activity binds | 568 |
+
+**The nine are section 151's nine**, arrived at over a population counted differently, which is what
+says the two measurements are of the same thing.
+
+Two readings, and the second is the one with teeth. The reconstruction is **wrong** on 136 of the
+1032 pairs where every activity agrees, which is 13%, so "where the activities agree, that is the
+device's answer" is not a rule. And it is **blind** to 568 keys, a third again as many as it sees, so
+a device page built from the activity maps shows two thirds of the device. FreeHarmony reads the
+stated map.
+
+**What the 136 are is not established here.** They are what an activity **overrides**, on the
+straightforward reading, which would mean section 151 undercounted overrides by an order of magnitude
+because it could only see the ones activities disagreed about. Nothing in this section tests that.
+
+### What would falsify it
+
+A device group whose largest single-group mode is shared with another group's codes; a user
+configuration where a device with codes has no such mode; a firmware where the second block of the
+two block lookup is reached with anything but a key event in the tag; or a Harmony One whose device
+list row enters a mode the census does not pick.
+
+### Where it lands
+
+* `docs/config-format.md`, base slot 6 and base slot 9, both of which stated the dead claim.
+* `packages/codec/src/inventory.ts`: `deviceModeMaps`, with `DeviceModeMap`.
+* `packages/codec/test/inventory.test.ts`: every count above, and the negative that carries the
+  claim, that a device mode map addresses exactly one device.
+* Section 151 is corrected in place and the dead wording is in `reference/superseded.md`.
+
+## 272. What a base slot 9 entry corresponds to: a fixed prefix, one per activity, and one more
+
+**Not devices and activities together**, which is the reading `docs/config-format.md` recorded as
+supported by the counts and not proven. A device never has an entry at all.
+
+The table has three populations, and the split is made by asking which entries the configuration's own
+code ever selects, `0x1F` with an operand high byte of `0xFF`, section 120.
+
+| population | what it is | how many |
+|---|---|---|
+| the configuration never selects it | a contiguous prefix, per model | 7 on arch 8 and 12, 5 on arch 14, 4 on arch 9 |
+| one activity's key map | what `activities` already reports as its `set` | one per activity |
+| the one left over | selected, and carries an enter handler as an activity's does | exactly one |
+
+Over the fifteen user configurations on four architectures: the never selected entries are a
+**prefix** in 15 of 15, the selected ones number **activities plus one** in 15 of 15, and there is
+exactly one that is selected and is not an activity's in 15 of 15. The prefix length depends only on
+the architecture and moves with neither the device count nor the activity count.
+
+### Why the old reading looked right, which is the instructive part
+
+It came from one owner's notes: a six device installation whose table has eleven entries. That
+container is `h700_config`, it has **five** activities, and its prefix is five, so
+`5 + 5 + 1 = 11` and `6 + 5 = 11` are the same number. Scored across the corpus:
+
+| reading | fits |
+|---|---|
+| entries = devices + activities | **2** of 15, and both are the Harmony 700 pair the reading came from |
+| entries = a per model prefix + activities + 1 | **15** of 15 |
+
+The two Harmony 700 configurations are one sample rather than two, since they differ in a single
+binding, so the old reading fits **one** installation, the one it was fitted to. That is the shape a
+rule fitted to its own evidence takes, and the corpus had 14 counterexamples available the whole time.
+
+### The prefix is never installed by the configuration, which is a separate result
+
+Not one `0x1F` in any of the fifteen configurations selects an entry below the prefix: 0 of 93 prefix
+entries across the corpus. So those entries exist, are pointed at by the table, and nothing the
+configuration does reaches them. Two readings, and neither is established here: the firmware installs
+them itself, by an index it holds rather than one a configuration states, or they are dead weight the
+generator emits for every remote of a model. **The prefix being per model rather than per
+configuration favours the first**, since the same seven entries appear in a Harmony One holding one
+device and in one holding five.
+
+That matters for a writer more than the numbering does: a configuration built from nothing has to
+carry the prefix its model expects, and the number of entries it may then add is one per activity plus
+one. Getting the count wrong is the failure mode base slot 15 already has, where the firmware replaces
+a group of the wrong length with a compiled in default and reports nothing.
+
+### The one left over
+
+It is selected in all fifteen, and in all fifteen it carries a **tag 1** handler, which is the enter
+list an activity's own entry has. On the factory Harmony One configuration it is selected by a list
+that no mode, page or other entry runs, so it is installed from the boot chain, and it binds the
+Devices key. That is consistent with its being the map in force when no activity is running, and
+**this section does not claim it**: what is measured is the count, the selection and the enter
+handler. Whether the idle map is one thing on all four architectures is unread, and its bindings send
+infrared codes in 6 of the 15 and not in the other 9, which a single reading would have to explain.
+
+### What would falsify it
+
+A user configuration whose selected entries do not number one more than its activities; a prefix entry
+that some `0x1F` selects; a prefix that is not contiguous; or a prefix whose length differs between two
+configurations of one architecture.
+
+### Where it lands
+
+* `docs/config-format.md`, base slot 9, which carried the dead reading as "not established".
+* `packages/codec/src/inventory.ts`: `handlerSetRoles`, with `HandlerSetRole`.
+* `packages/codec/test/inventory.test.ts`: the three counts, the prefix lengths per architecture, and
+  the score of the old reading against the new one, which is what stops it being written again.

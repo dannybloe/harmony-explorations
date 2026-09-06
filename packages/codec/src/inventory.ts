@@ -1182,6 +1182,141 @@ export function keyCodes(c: Container): KeyCode[] {
   return out;
 }
 
+/** What a base slot 9 entry is for, which is one of three things and not one of two. */
+export type HandlerSetRole = 'unselected' | 'activity' | 'idle';
+
+/**
+ * Every base slot 9 entry with what it is for, which settles what the table corresponds to.
+ *
+ * `docs/config-format.md` recorded this as not established and offered "devices and activities
+ * together" as the reading the counts support. It is not: a device never has an entry, and the count
+ * is a fixed per model prefix plus one entry per activity plus exactly one more. Section 272.
+ *
+ * * **`unselected`**: an entry no `0x1F` in the configuration ever selects. These are a contiguous
+ *   prefix in all fifteen user configurations, 7 entries long on arch 8 and arch 12 (Harmony One),
+ *   5 on arch 14 (Harmony 600 and 700) and 4 on arch 9 (Harmony 525), and the length does not move
+ *   with the number of devices or activities.
+ * * **`activity`**: the key map one activity installs while it runs, which is what `activities`
+ *   already reports as its `set`.
+ * * **`idle`**: the one remaining entry. There is exactly one in every user configuration here, it is
+ *   always selected, and it always carries an enter handler as an activity's does. **What installs it
+ *   and when is not established**, so the name says where it sits in the count and not what it does.
+ */
+export function handlerSetRoles(c: Container): HandlerSetRole[] {
+  const sets = handlerSets(c);
+  if (sets === undefined) return [];
+  const selected = new Set<number>();
+  for (const list of c.actionLists() ?? []) {
+    for (const instruction of list ?? []) {
+      if (instruction.opcode !== SELECT_BINDING_SET) continue;
+      if ((instruction.operand & SELECT_BINDING_SET_MASK) !== SELECT_BINDING_SET_MASK) continue;
+      selected.add(instruction.operand & 0xff);
+    }
+  }
+  const byActivity = new Set(activityBindings(c).map((one) => one.set));
+  return sets.addresses.map((_, index) => {
+    if (!selected.has(index)) return 'unselected';
+    return byActivity.has(index) ? 'activity' : 'idle';
+  });
+}
+
+/** One device's own map: the keypad it takes over in device mode, and the screen pages beside it. */
+export interface DeviceModeMap {
+  /** The device, as an index into base slot 5's group array. */
+  group: number;
+  /** The base slot 6 mode it is, which is what the device list enters for this device. */
+  mode: number;
+  /**
+   * The keypad bindings, from the **mode record's own** tagged list rather than a page's.
+   *
+   * The tag is the whole key code, an event type in `0xC0` and a scan code in `0x3F`, exactly as
+   * base slot 9 spells one. These are physical keys: the scan codes here and the ones a page binds
+   * are disjoint populations on arch 9, 12 and 14, section 271.
+   */
+  keypad: KeyCode[];
+  /** The same for every page of that mode, which is device mode's screen and is usually the larger half. */
+  screen: KeyCode[];
+  /** How many pages those screen bindings are spread over. */
+  pages: number;
+}
+
+/**
+ * Device mode's own map, per device: the map the remote installs when somebody picks a device.
+ *
+ * **This closes section 151's open question and refutes what it left standing.** That section
+ * measured base slot 9 and found that every keypad map sending an infrared code is installed by an
+ * activity, and concluded that no configuration here holds a map for device mode. Base slot 9 is
+ * the wrong place to have looked: a device's map is a **base slot 6 mode record's own tagged list**,
+ * the one section 52 reads through the back pointer beside the entry, and the firmware consults it
+ * on every key press. Section 271.
+ *
+ * The mode is picked as the one whose maps are largest for this device, and that choice is checked
+ * two ways rather than trusted: it is unique in all 62 device groups of the corpus that have codes,
+ * it sends **only** that device in all 62, and on arch 12 (Harmony One), where the drawn device list
+ * names a mode by an entirely separate route, the two agree 8 times out of 8.
+ *
+ * A device with no infrared codes is absent, because a map that sends nothing cannot be found this
+ * way; the Harmony 600 configuration has one such device.
+ */
+export function deviceModeMaps(c: Container): DeviceModeMap[] {
+  const codes = infraredCodesPerList(c);
+  const records = modeRecords(c);
+  if (records === undefined) return [];
+
+  // A mode's own bindings and its pages', reduced to the devices each half addresses. Built once
+  // for every mode, because the pick below is a maximum over all of them per device.
+  const read = (list: number, where: 'page' | 'set', index: number): KeyCode[] => {
+    const out: KeyCode[] = [];
+    for (const entry of taggedList(c, list)?.entries ?? []) {
+      if (entry.opcode !== ACTION_LIST_INDEX) continue;
+      const sent = codes.get(entry.operand);
+      if (sent === undefined) continue;
+      out.push({
+        where,
+        index,
+        tag: entry.tag,
+        event: entry.tag >> KEY_EVENT_SHIFT,
+        scan: entry.tag & SCAN_CODE_MASK,
+        codes: sent,
+      });
+    }
+    return out;
+  };
+  const groupsOf = (bindings: readonly KeyCode[]): Set<number> =>
+    new Set(bindings.flatMap((one) => one.codes.map((sent) => sent.group)));
+
+  let firstPage = 0;
+  const surveyed = records.map((record, mode) => {
+    const at = firstPage;
+    firstPage += record.pages.length;
+    const keypad = read(record.start, 'set', mode);
+    const screen = record.pages.flatMap((page, k) => read(page.list, 'page', at + k));
+    return { mode, keypad, screen, groups: groupsOf([...keypad, ...screen]) };
+  });
+
+  const out: DeviceModeMap[] = [];
+  for (const group of irGroups(c)?.map((_, index) => index) ?? []) {
+    // Only the modes that carry a keypad map are candidates. A screen only mode addressing this
+    // device is an activity's page, which serves several devices at once and would win on size.
+    const mine = surveyed.filter((one) => one.keypad.length > 0 && one.groups.has(group));
+    if (mine.length === 0) continue;
+    const size = (one: (typeof surveyed)[number]): number => one.keypad.length + one.screen.length;
+    const largest = Math.max(...mine.map(size));
+    const top = mine.filter((one) => size(one) === largest);
+    if (top.length !== 1) continue;
+    const found = top[0] as (typeof surveyed)[number];
+    if (found.groups.size !== 1) continue;
+    out.push({
+      group,
+      mode: found.mode,
+      keypad: found.keypad,
+      screen: found.screen,
+      pages: (records[found.mode] as ModeRecord).pages.length,
+    });
+  }
+  return out;
+}
+
 /** An activity, with the devices it drives and the key map it installs. */
 export interface Activity extends ActivityName {
   /** The base slot 9 set the chain selects: the activity's own key map while it runs. Section 39. */

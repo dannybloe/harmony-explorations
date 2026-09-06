@@ -369,13 +369,17 @@ activity's map are two maps of the same keypad, authored separately, and it was 
 their help pages and from measurements over the corpus. Here the two are separate types with a
 shared base, keyed by the two different things.
 
-**`RootButtonMap` is the interesting one and it bears on an open question.** It extends the
-base and adds nothing, so it is a map belonging to neither a device nor an activity, which
-leaves the remote itself. Where device mode's own keypad map lives is open here, section 151:
-every keypad map in the corpus that sends a code is installed by an activity, and three readings
-of that remain. A map class keyed by nothing is consistent with the reading that the remote
-carries a base map, and it is **not** evidence that it does: this is a schema for a later
-generation of hardware and no capture here holds one. Worth testing, not worth believing.
+**`DeviceButtonMap` was the load bearing one, and this section said `RootButtonMap` was.** It
+pointed at the open question of where device mode's keypad map lives and offered the map class
+keyed by nothing as a candidate. The answer was the ordinary one: a device's map is keyed by the
+device in their schema and stated per device in the file, section 271, in the device's own screen
+record. So this cluster corroborated the container's own answer and was read as a hint about a
+missing one.
+
+`RootButtonMap` is still unexplained. It extends the base and adds nothing, so it is a map
+belonging to neither a device nor an activity, which leaves the remote itself. Nothing in the
+corpus needs it, this is a schema for a later generation of hardware, and no capture here holds
+one. Worth testing, not worth believing.
 
 ### A button has three actions, not one
 

@@ -22,8 +22,8 @@ Plan: [003-how-an-activity-is-built.md](docs/plans/003-how-an-activity-is-built.
   - [ ] 1.1.3 The power on sequence, and how a device's delay relates to it
   - [ ] 1.1.4 The screen page and its name
   - [ ] 1.1.5 The state variable it sets
-  - [ ] 1.1.6 Open: what an entry in the activity switching table corresponds to
-  - [ ] 1.1.7 Open: where device mode's own keypad map comes from
+  - [x] 1.1.6 What an entry in the activity switching table corresponds to: a per model prefix, one per activity, one more (section 272)
+  - [x] 1.1.7 Where device mode's own keypad map comes from: the device's own screen record (section 271)
   - [ ] 1.1.8 Score the write up against a second and third specimen, and record what it got wrong
 - [ ] 1.2 Compose an activity, the counterpart of `composeDevice`
 - [ ] 1.3 Write one to the spare Harmony One and watch the television

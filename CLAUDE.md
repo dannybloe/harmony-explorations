@@ -89,10 +89,15 @@ one driving activity, and on the Harmony One's receiver 3 of its 35 buttons are 
 activities that use it. That is the activity editor's rail and it must not be carried into the device
 one.
 
-**Where device mode's own keypad map lives is open and must not be guessed.** No keypad map in any config
-here sends a code outside an activity: 158 maps, 65 installed by the config, 50 by an activity, exactly
-those 50 sending codes. Three readings remain, section 151, and the dead phrasing is in
-`reference/superseded.md`.
+**Device mode's map is the device's own screen record, section 271**, and this said it was open and must
+not be guessed until 6 September 2026. What the corpus measured was base slot 9, where every map that
+sends a code is an activity's, and that was read as covering the whole keypad. It does not: a key press
+is resolved against the current screen page, then the **screen record** that page belongs to, then the
+base slot 9 stack, and the middle one is a device's own map. Every device with codes has one, 62 of 62
+across four architectures, each sending that device and no other, and the screen half is the larger,
+1818 bindings against 1609. **So a device page reads the stated map and never reconstructs one** from
+what the activities agree on: that rule is wrong on 136 of the 1032 pairs where they do agree, and blind
+to 568 keys no activity binds.
 
 `docs/how-a-harmony-works.md` is the long form and `.claude/skills/how-a-harmony-works/SKILL.md` is the
 ritual that makes it get read. **The rule behind both**: a measurement over the corpus answers "what do

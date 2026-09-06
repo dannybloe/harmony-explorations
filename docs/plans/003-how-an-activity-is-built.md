@@ -58,13 +58,16 @@ television answered it. `docs/adding-a-device.md` is that chain written down as 
 For an **activity** there is the reading side and nothing else. No composer, no checklist, and two
 things this project's own specification marks as not established:
 
-* **What an entry in the activity switching table corresponds to is unread.** `docs/config-format.md`
-  records eleven entries against a six device installation and says that devices and activities
-  together is the reading the counts support and is not proven. So nothing here can say how many
-  entries a configuration of ours should carry.
-* **Where device mode's own keypad map comes from is open**, section 151, with three candidate
-  readings and no evidence between them. An activity built correctly could still leave the Devices
-  button pointing at nothing.
+* ~~**What an entry in the activity switching table corresponds to is unread.**~~ **Closed on
+  6 September 2026 by section 272**: a fixed per model prefix the configuration never selects, plus
+  one entry per activity, plus exactly one more, in 15 of 15 user configurations. A device never has
+  one, and the reading the spec had recorded fitted only the installation it was fitted to. So a
+  configuration of ours carries its model's prefix and adds one entry per activity plus one.
+* ~~**Where device mode's own keypad map comes from is open**, section 151, with three candidate
+  readings and no evidence between them.~~ **Closed on 6 September 2026 by section 271**: it is the
+  device's own base slot 6 mode record, and a device's map is stated per device on all four
+  architectures. So nothing an activity builder does can leave the Devices button pointing at
+  nothing, because that map belongs to the device rather than to any activity.
 
 Neither is code to be written. Both are firmware to be read, which is why **no size is given for this
 step**: it may be an afternoon or it may go the way of the screen language.

@@ -390,30 +390,43 @@ declare no `Activities` capability at all, only `PartiallySetupActivities`, whil
 both. So a screenless Harmony is an activity machine with room for one activity, plus a device button
 per appliance, and the screen is what buys a remote more than one.
 
-## Open: where device mode's own keypad map lives
+## Where device mode's own keypad map lives, answered
 
-**No keypad map in any configuration here sends an infrared code outside an activity.** Of 158 keypad
-maps across the fifteen user configurations, 65 are installed by something in the configuration and 50 of
-those by an activity, and exactly those 50 send codes. The remaining 108 send nothing, and 38 of them bind
-fifty or more keys to lists made of comparisons and mode entries, which is a menu.
+**It is the device's own screen record**, section 271, closed on 6 September 2026. Every device in the
+file has a screen of its own: a title, some pages of buttons, and, in the same record, a map of the
+physical keypad. Picking that device on the remote enters that record, and from then on every key on the
+remote sends one of that device's commands. That is the whole of device mode.
 
-So the map device mode uses is not identified. Three readings, none of them established:
+Two numbers say it is the right structure rather than a plausible one. Every device with any commands
+has exactly one such record, 62 of 62 across all four kinds of remote here, and each of them sends
+**that device and no other**, which is Logitech's own sentence about the product turned into a count.
+And on a Harmony One the device list drawn on the screen sends you to exactly that record, 8 times out
+of 8, which is a second route to the same answer that shares no code with the first.
 
-1. The firmware builds it from the selected device's own command order in base slot 5.
-2. Device mode reuses the running activity's map, filtered to the chosen device.
-3. There is a map in the container that nothing here has recognised yet.
+**The screen is the larger half, measured**: 1818 buttons on the pages against 1609 on the keypad. This
+document argued that from the way people use the feature, that an old remote has more buttons than a
+Harmony and the overflow goes on the display. It is now a count.
 
-**Do not close this by choosing one.** What would settle it is the firmware: the routine that runs when
-the Devices item is pressed, followed to whatever it installs. `.claude/skills/trace-section/SKILL.md`
-is the method.
+### What this section said before, and why it was wrong
 
-**A fourth reading arrived on 30 August 2026 and it is not evidence either.** Logitech's schema has
-a third button map subclass, keyed by neither a device nor an activity, which leaves the remote
-itself: a base map belonging to the unit. That is consistent with there being such a thing, and it
-is consistent with the later hardware having one and these remotes not. No capture here holds one,
-and the schema is for a generation this project does not own. **It changes what to look for in the
-firmware, not what to believe.** If the routine behind the Devices item installs a map that came
-from neither of the two places above, this names the thing it found.
+It said the map was not identified, offered three readings and told the reader not to choose one. The
+measurement behind that is unchanged and correct: of the 158 keypad maps in one particular part of the
+file, exactly the 50 an activity installs send commands, so **that** part belongs to the activities. The
+mistake was treating that part as the whole keypad. The third of the three readings, "there is a map in
+the container that nothing here has recognised yet", was right, and the reader for it had been in the
+code for a month with nobody asking it what those maps send.
+
+**A fourth reading arrived on 30 August 2026 from Logitech's own schema and it was a distraction.** Their
+schema has a button map class keyed by neither a device nor an activity, and this section offered it as
+a candidate for a base map belonging to the unit. The half of that schema that mattered was the ordinary
+half, the map class keyed by a **device**, which is exactly what the file turned out to state.
+
+### What is still open
+
+Nothing about where the map is. What is not read is whether the differences between a device's map and
+an activity's map are all deliberate overrides: there are 136 keys where every activity agrees with the
+other activities and disagrees with the device's own map, which is ten times the number this project
+previously thought were overrides, and nothing has tested that reading.
 
 ## The rule this document is really for
 

@@ -28,6 +28,8 @@ import {
   handlerSets,
   ACTIVITY_STATE_NAME,
   activities,
+  deviceModeMaps,
+  handlerSetRoles,
   deviceModeTitles,
   deviceVariables,
   devices,
@@ -1455,16 +1457,16 @@ test('a device\'s button is often another device\'s in one of the activities tha
   assert.deepEqual(one, { pairs: 35, settled: 3, another: 32, unbound: 29, driving: 8 });
 });
 
-test('a keypad map that sends a code is an activity\'s, so no config here holds a device mode map',
+test('every base slot 9 keypad map that sends a code is an activity\'s',
      skipUnless(...USER_CONFIGS), () => {
-  // The other half of section 151, and it is the open question stated as a check rather than as a
-  // paragraph. Device mode points the whole keypad at one device with no activity running, so its map
-  // would be a keypad map that sends codes and that no activity installs. There is none.
+  // The other half of section 151, **with its conclusion removed rather than its measurement**. This
+  // was titled "so no config here holds a device mode map" until section 271, and every number below
+  // is unchanged: what was wrong is that base slot 9 was taken for the whole of the keypad. A device's
+  // own map is a base slot 6 mode record's own tagged list, and the test for it is
+  // `a device mode map addresses exactly one device` below.
   //
-  // **Do not close this by inventing a mechanism.** Three readings remain: the firmware builds the map
-  // from the device's own command order, device mode reuses the running activity's map filtered to one
-  // device, or there is a map nothing here recognises. What settles it is the firmware routine behind
-  // the Devices item.
+  // So what this still says, and it is worth saying, is that base slot 9 belongs to the activities:
+  // every map in it that sends a code is one an activity installs, with no spares.
   let maps = 0;
   let installedByTheConfig = 0;
   let installedByAnActivity = 0;
@@ -1508,12 +1510,245 @@ test('a keypad map that sends a code is an activity\'s, so no config here holds 
   assert.equal(installedByTheConfig, 65);
   assert.equal(installedByAnActivity, 50);
   assert.equal(sending, 50, 'exactly as many send a code as an activity installs');
-  // **The assertion that carries the claim.** A keypad map that sends a code and is not an activity's
-  // would be a device mode map, and a sample holding one fails here rather than being absorbed.
+  // **The assertion that carries the claim**, which is now about base slot 9 alone: a map in it that
+  // sends a code and that no activity installs would be a slot 9 map belonging to something else.
   assert.equal(sendingAndNotAnActivity, 0);
   // And the counterweight, so the zero above is not read as "there are no other maps": 38 of them bind
   // fifty or more keys, to lists of comparisons, register work and mode entries. That is a menu.
   assert.equal(bindingTheWholeKeypad, 38);
+});
+
+test('a device mode map addresses exactly one device, and every device with codes has one',
+     skipUnless(...USER_CONFIGS), () => {
+  // Section 271. Device mode points the whole keypad at one device, and the map that does it is the
+  // device's own base slot 6 mode record: its **own** tagged list is the keypad and its pages are the
+  // screen. `deviceModeMaps` picks the mode whose two maps are largest for a device, and the three
+  // things asserted here are what make that pick a reading rather than a heuristic: it exists, it is
+  // unique, and it sends nothing but its own device.
+  let withCodes = 0;
+  let mapped = 0;
+  let keypad = 0;
+  let screen = 0;
+  let impure = 0;
+  for (const name of USER_CONFIGS) {
+    const c = parse(require_(name));
+    withCodes += devices(c).filter((one) => one.group !== undefined && one.codes > 0).length;
+    const maps = deviceModeMaps(c);
+    mapped += maps.length;
+    for (const map of maps) {
+      keypad += map.keypad.length;
+      screen += map.screen.length;
+      const groups = new Set(
+        [...map.keypad, ...map.screen].flatMap((one) => one.codes.map((sent) => sent.group)),
+      );
+      // **The assertion that carries the claim**, and it is Logitech's own sentence about the product
+      // measured in the file: "after you select a device, the Harmony One controls only that device".
+      if (groups.size !== 1 || !groups.has(map.group)) impure += 1;
+    }
+  }
+  assert.equal(withCodes, 62, 'device groups in the corpus with at least one infrared code');
+  // 62 of 62, so the one group with none is the Harmony 600 config's third and no map could send for
+  // it. The exclusion is the population's rather than the reader's.
+  assert.equal(mapped, 62);
+  assert.equal(impure, 0);
+  // The screen is the bigger half, which section 151 argued from the product side and could not count.
+  assert.equal(keypad, 1609);
+  assert.equal(screen, 1818);
+});
+
+test('the drawn device list enters the same mode the infrared groups pick', skipUnless(
+  'one_config', 'one_config_unprogrammed', 'one_spare_before_sync', 'one_spare_after_sync'), () => {
+  // **The independent closure of section 271.** `deviceListRows` reads a row's `0x7E` off the screen
+  // and never looks at an infrared group; `deviceModeMaps` starts from the infrared groups and never
+  // looks at the device list. Arch 12 (Harmony One) alone, since the row shape is that model's.
+  let rows = 0;
+  let agreeing = 0;
+  for (const name of ['one_config', 'one_config_unprogrammed', 'one_spare_before_sync',
+                      'one_spare_after_sync']) {
+    const c = parse(require_(name));
+    const maps = new Map(deviceModeMaps(c).map((one) => [one.group, one.mode]));
+    for (const device of devices(c)) {
+      if (device.mode === undefined || device.group === undefined) continue;
+      rows += 1;
+      if (maps.get(device.group) === device.mode) agreeing += 1;
+    }
+  }
+  assert.equal(rows, 8, 'device list rows that reach a device on the arch 12 containers');
+  assert.equal(agreeing, 8);
+});
+
+test('the factory config\'s one activity agrees with its one device\'s stated map',
+     skipUnless('one_config_unprogrammed'), () => {
+  // The calibration case of section 271: one device and one activity, so the two maps can be compared
+  // with nothing else in the way. A reader picking the wrong mode would have to agree on all 24 by
+  // luck.
+  const c = parse(require_('one_config_unprogrammed'));
+  const maps = deviceModeMaps(c);
+  assert.equal(maps.length, 1);
+  const map = maps[0] as (typeof maps)[number];
+  assert.equal(map.keypad.length, 30);
+  assert.equal(map.screen.length, 50);
+  assert.equal(map.pages, 9);
+
+  const spell = (codes: readonly { group: number; code: number }[]): string =>
+    codes.map((one) => `${one.group}:${one.code}`).join('+');
+  const stated = new Map(map.keypad.map((one) => [one.tag, spell(one.codes)]));
+  const codes = infraredCodesPerList(c);
+  const sets = handlerSets(c);
+  const running = activities(c);
+  assert.equal(running.length, 1);
+  let shared = 0;
+  let differing = 0;
+  let missing = 0;
+  for (const entry of taggedList(c, sets?.addresses[(running[0] as (typeof running)[number]).set] as number)?.entries ?? []) {
+    const sent = codes.get(entry.operand);
+    if (sent === undefined) continue;
+    const here = stated.get(entry.tag);
+    if (here === undefined) missing += 1;
+    else if (here === spell(sent)) shared += 1;
+    else differing += 1;
+  }
+  assert.equal(shared, 24, 'keys the activity binds that the device map spells identically');
+  assert.equal(differing, 0);
+  assert.equal(missing, 0);
+  // And the device map is the larger of the two, by six keys, which is the whole point of device mode.
+  assert.equal(map.keypad.length - shared, 6);
+});
+
+test('a device mode keypad and a device mode screen never share a scan code',
+     skipUnless(...USER_CONFIGS), () => {
+  // Section 271, and section 128's disjointness seen from a third side: the mode record's own list
+  // binds physical keys and its pages bind screen keys, so the split between the two halves is
+  // structural. Asserted per container rather than in total, because a corpus wide zero would be
+  // satisfied by a container that binds nothing.
+  for (const name of USER_CONFIGS) {
+    const c = parse(require_(name));
+    const keypad = new Set<number>();
+    const screen = new Set<number>();
+    for (const map of deviceModeMaps(c)) {
+      for (const one of map.keypad) keypad.add(one.scan);
+      for (const one of map.screen) screen.add(one.scan);
+    }
+    assert.ok(keypad.size > 0 && screen.size > 0, `${name}: one of the two halves is empty`);
+    const shared = [...keypad].filter((one) => screen.has(one));
+    assert.deepEqual(shared, [], `${name}: a scan code on both halves`);
+  }
+});
+
+test('reconstructing a device map from the activity maps is wrong and blind',
+     skipUnless(...USER_CONFIGS), () => {
+  // **The consequence of section 271.** Section 151 said a device map is reconstructable as what the
+  // activity maps agree on. The file states one, so the reconstruction can be scored, and the score is
+  // the reason FreeHarmony reads the stated map instead.
+  const spell = (codes: readonly { group: number; code: number }[]): string =>
+    codes.map((one) => `${one.group}:${one.code}`).join('+');
+  let pairs = 0;
+  let same = 0;
+  let differing = 0;
+  let activitiesDisagree = 0;
+  let unbound = 0;
+  let statedOnly = 0;
+  for (const name of USER_CONFIGS) {
+    const c = parse(require_(name));
+    const codes = infraredCodesPerList(c);
+    const sets = handlerSets(c);
+    // What each activity map says, per device and key. A binding sending two devices at once is a
+    // macro and belongs to neither, so it is left out rather than attributed to the first.
+    const byActivity = new Map<number, Map<number, Set<string>>>();
+    for (const binding of activityBindings(c)) {
+      for (const entry of taggedList(c, sets?.addresses[binding.set] as number)?.entries ?? []) {
+        const sent = codes.get(entry.operand);
+        if (sent === undefined) continue;
+        const group = (sent[0] as (typeof sent)[number]).group;
+        if (sent.some((one) => one.group !== group)) continue;
+        const keys = byActivity.get(group) ?? new Map<number, Set<string>>();
+        const seen = keys.get(entry.tag) ?? new Set<string>();
+        seen.add(spell(sent));
+        keys.set(entry.tag, seen);
+        byActivity.set(group, keys);
+      }
+    }
+    for (const map of deviceModeMaps(c)) {
+      const stated = new Map(map.keypad.map((one) => [one.tag, spell(one.codes)]));
+      const keys = byActivity.get(map.group) ?? new Map<number, Set<string>>();
+      for (const [tag, seen] of keys) {
+        pairs += 1;
+        const here = stated.get(tag);
+        if (here === undefined) unbound += 1;
+        else if (seen.size > 1) activitiesDisagree += 1;
+        else if (seen.has(here)) same += 1;
+        else differing += 1;
+      }
+      for (const tag of stated.keys()) if (!keys.has(tag)) statedOnly += 1;
+    }
+  }
+  assert.equal(pairs, 1123);
+  assert.equal(same, 896);
+  // **The assertion that carries the claim.** The reconstruction is wrong on 136 of the 1032 pairs
+  // where every activity agrees, so "where the activities agree, that is the device's answer" is not a
+  // rule; and it never sees the 568.
+  assert.equal(differing, 136);
+  assert.equal(statedOnly, 568);
+  assert.equal(unbound, 82);
+  // Section 151's own nine, over a population counted differently, which is what says the two
+  // measurements are of the same thing.
+  assert.equal(activitiesDisagree, 9);
+});
+
+/** The base slot 9 prefix no configuration selects, per architecture. Section 272. */
+const UNSELECTED_PREFIX: Readonly<Record<number, number>> = { 8: 7, 9: 4, 12: 7, 14: 5 };
+
+test('base slot 9 is a per model prefix, one entry per activity, and exactly one more',
+     skipUnless(...USER_CONFIGS), () => {
+  // Section 272, and it replaces "devices and activities together", which `docs/config-format.md`
+  // recorded as the reading the counts support. A device never has an entry.
+  let contiguous = 0;
+  let matchingActivities = 0;
+  let exactlyOneIdle = 0;
+  let prefixEntries = 0;
+  let fitsTheOldReading = 0;
+  for (const name of USER_CONFIGS) {
+    const c = parse(require_(name));
+    const roles = handlerSetRoles(c);
+    const running = activities(c).length;
+    const unselected = roles.filter((one) => one === 'unselected').length;
+    prefixEntries += unselected;
+
+    // The prefix is a prefix, which is what makes it a population rather than a leftover.
+    if (roles.slice(0, unselected).every((one) => one === 'unselected')) contiguous += 1;
+    assert.equal(unselected, UNSELECTED_PREFIX[c.architecture as number],
+      `${name}: the prefix is per architecture`);
+
+    if (roles.filter((one) => one === 'activity').length === running) matchingActivities += 1;
+    if (roles.filter((one) => one === 'idle').length === 1) exactlyOneIdle += 1;
+    // The reading this replaces, scored on the same corpus rather than argued against.
+    if (roles.length === running + devices(c).length) fitsTheOldReading += 1;
+  }
+  assert.equal(contiguous, 15);
+  assert.equal(matchingActivities, 15);
+  assert.equal(exactlyOneIdle, 15);
+  assert.equal(prefixEntries, 93, 'prefix entries across the corpus, none of them ever selected');
+  // **The assertion that keeps the dead reading dead.** It fits the two Harmony 700 containers, which
+  // differ in one binding and are the installation it was fitted to, and nothing else.
+  assert.equal(fitsTheOldReading, 2);
+});
+
+test('the one entry that is neither the prefix nor an activity carries an enter handler',
+     skipUnless(...USER_CONFIGS), () => {
+  // Section 272's weakest claim stated as its strongest available check. What that entry **is** is not
+  // established; what is measured is that there is one, that something selects it, and that it has the
+  // tag 1 handler an activity's entry has.
+  for (const name of USER_CONFIGS) {
+    const c = parse(require_(name));
+    const roles = handlerSetRoles(c);
+    const sets = handlerSets(c);
+    const idle = roles.indexOf('idle');
+    assert.ok(idle >= 0, `${name}: no entry left over`);
+    assert.equal(roles.lastIndexOf('idle'), idle, `${name}: more than one left over`);
+    const entries = taggedList(c, sets?.addresses[idle] as number)?.entries ?? [];
+    assert.ok(entries.some((one) => one.tag === ACTIVITY_START_TAG),
+      `${name}: the left over entry has no enter handler`);
+  }
 });
 
 /**
