@@ -36,7 +36,7 @@ Plan: [003-how-an-activity-is-built.md](docs/plans/003-how-an-activity-is-built.
   - [x] 1.2.1 The screen half on arch 12 (Harmony One): a menu row, its hit rectangle and a drawn name (section 275)
   - [ ] 1.2.2 A fourth activity, which needs a new menu page: a page counter, a pool copy, a page count, and undeadening the two page turn keys (section 275)
   - [ ] 1.2.3 The screen half on arch 14 (Harmony 600), where an activity binds two keys (section 273)
-- [ ] 1.3 Write one to the spare Harmony One and watch the television
+- [ ] 1.3 Write one to the spare Harmony One and watch the television, per docs/plans/004-writing-an-activity.md
 
 ## 2. Screens
 

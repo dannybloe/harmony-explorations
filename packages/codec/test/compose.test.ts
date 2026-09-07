@@ -23,6 +23,7 @@ import {
   composeActivity,
   composeActivityMenuRow,
   activityBindings,
+  activityNames,
   touchPageOf,
   composeIrGroup,
   coverage,
@@ -1249,4 +1250,57 @@ test('adding a page to a one page list menu has to undeaden its two page turn ke
   // Twelve: the activity menu and three device lists on each of the three configs whose menus hold
   // one page. `one_config` has none, since every one of its list menus already has two or three.
   assert.equal(menus, 12);
+});
+
+test('a composed menu row can wear an existing row\'s icon, chosen by its drawn label',
+     skipUnless('one_config'), () => {
+  // The rank an icon is read from comes from **where the label is drawn** and not from the scan
+  // code, section 275, and this is the case that separates the two: on `one_config`'s first
+  // activity page the three rows are scans 50, 51 and 52, so `scan - 48` gives 2, 3 and 4 where the
+  // ranks are 0, 1 and 2. `menuIconLike` beside it does use `scan - 48`, correctly, because a
+  // device list page's rows **are** the lowest scans.
+  const c = parse(require_('one_config'));
+  const named = activityNames(c).filter((one) => one.name !== undefined && one.at !== undefined);
+  // Exact, not a floor: all eight of the everyday Harmony One's activities resolve to a name and a
+  // drawn position, so a reader that stopped resolving one would fail here rather than be absorbed.
+  assert.equal(named.length, 8);
+  assert.equal(activityNames(c).length, 8);
+
+  // Every named row's label sits on the row grid, which is what the rank divides out of, and the
+  // eight cover all three ranks, which is what makes `scan - 48` visibly wrong: those same rows are
+  // scans 48 to 52 across three pages.
+  const ranks = named.map((one) => ((one.at as { y: number }).y - 0x39) / 54);
+  for (const [k, rank] of ranks.entries()) {
+    assert.ok(Number.isInteger(rank) && rank >= 0 && rank < 3,
+              `${named[k]?.name} is drawn at y ${(named[k]?.at as { y: number }).y}, off the grid`);
+  }
+  assert.deepEqual([...new Set(ranks)].sort(), [0, 1, 2]);
+
+  // A row asked for by name comes out wearing that row's icon and not the first row's.
+  const wanted = named.find((one) => ((one.at as { y: number }).y) !== 0x39);
+  assert.ok(wanted?.name !== undefined, 'no named activity is drawn below the top row');
+  const plain = composeActivityMenuRow(c, 'Play Game', 7);
+  const asked = composeActivityMenuRow(c, 'Play Game', 7, { iconLike: wanted.name });
+  const iconOf = (bytes: Uint8Array, at: { menu: number; page: number }): number | undefined => {
+    const g = parse(bytes);
+    const page = (modeRecords(g) ?? [])[at.menu]?.pages[at.page];
+    if (page === undefined) return undefined;
+    // The new row's own icon, at its own rank, which is one below the rows the page already had.
+    for (const one of screenProgram(g, page.program) ?? []) {
+      if (one.opcode !== 0x02) continue;
+      if (one.operands[0] !== 0x0b) continue;
+      if (one.operands[1] !== 0x27 + 54 * 2) continue;
+      return one.operands[2]! | (one.operands[3]! << 8) | (one.operands[4]! << 16);
+    }
+    return undefined;
+  };
+  const plainIcon = iconOf(plain.bytes, plain);
+  const askedIcon = iconOf(asked.bytes, asked);
+  assert.ok(plainIcon !== undefined && askedIcon !== undefined, 'the composed row draws no icon');
+  assert.notEqual(askedIcon, plainIcon,
+                  'asking for a named row\'s icon gave the same picture as the default');
+
+  // And a name nothing is labelled with is a refusal rather than a fallback.
+  assert.throws(() => composeActivityMenuRow(c, 'Play Game', 7, { iconLike: 'Nothing At All' }),
+                /0 activity menu rows are labelled/);
 });

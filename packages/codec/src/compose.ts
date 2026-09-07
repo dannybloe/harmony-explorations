@@ -57,6 +57,7 @@ import { LIST_ROW_PITCH, PANEL_LEFT, SCREEN_ROW_PITCH, touchPageOf } from './tou
 // `sections.ts`. All correct, none able to see the others: the state `isa.py`'s docstring forbids.
 import {
   ACTIVITY_STATE_NAME,
+  activityNames,
   KEY_EVENT_PRESS,
   SELECT_BINDING_SET,
   SELECT_BINDING_SET_MASK,
@@ -1867,6 +1868,37 @@ function fontThatSpells(
       ? font : best);
 }
 
+/**
+ * The icon an activity menu row draws, for the row labelled `iconLike`, so a new television activity
+ * wears the television icon the configuration already carries.
+ *
+ * **The rank comes from where the label is drawn and never from the scan code**, which is the whole
+ * difference from `menuIconLike` beside it: that one computes `scan - 48`, correct for a device list
+ * page whose rows are the lowest scans, and wrong here because an activity page's scan codes are
+ * positions in its hit page, section 275. `activityNames` states the label's own pixel position, and
+ * a row's label and its background sit one row pitch apart per rank, so the rank divides out.
+ */
+function activityRowIcon(c: Container, iconLike: string): number {
+  const named = activityNames(c).filter((one) => one.name === iconLike && one.at !== undefined);
+  if (named.length !== 1) {
+    throw new ComposeError(
+      `${named.length} activity menu rows are labelled ${iconLike}, so there is no one icon to copy`);
+  }
+  const at = (named[0] as { at: { x: number; y: number } }).at;
+  const rank = (at.y - MENU_ROW1_LABEL_Y) / MENU_ROW_PITCH;
+  if (!Number.isInteger(rank) || rank < 0 || rank >= ACTIVITY_ROWS) {
+    throw new ComposeError(`the row labelled ${iconLike} is drawn at y ${at.y}, off the row grid`);
+  }
+  const page = modePages(c)[(named[0] as { page: number }).page];
+  if (page === undefined) throw new ComposeError(`the row labelled ${iconLike} has no page`);
+  const icon = pictureDrawnAt(c, page.program,
+    MENU_ROW1_BG[0] + MENU_ICON_OFFSET[0], MENU_ROW1_BG[1] + MENU_ICON_OFFSET[1] + MENU_ROW_PITCH * rank);
+  if (icon === undefined) {
+    throw new ComposeError(`the row labelled ${iconLike} draws no icon at rank ${rank}`);
+  }
+  return icon;
+}
+
 /** What `composeActivityMenuRow` put on the screen, for a caller that has to find it again. */
 export interface ComposedActivityRow {
   bytes: Uint8Array;
@@ -1878,6 +1910,16 @@ export interface ComposedActivityRow {
   rowList: number;
   /** The scan code the new row answers to, which is its position in the page's hit rectangles. */
   scan: number;
+}
+
+export interface ComposeActivityRowOptions {
+  /**
+   * An existing activity menu row whose icon the new row wears, by its drawn label, so a television
+   * activity gets the television icon. Without it the first row's icon is copied, whatever it shows,
+   * which is `composeDeviceScreen`'s behaviour and its documented wart: on the spare Harmony One the
+   * first row is a music activity, so an unqualified television activity comes out wearing a disc.
+   */
+  iconLike?: string;
 }
 
 /**
@@ -1907,7 +1949,7 @@ export interface ComposedActivityRow {
  * not bite on the two configurations chapter 1 targets, whose activity menu holds one row of three.
  */
 export function composeActivityMenuRow(
-  c: Container, label: string, set: number,
+  c: Container, label: string, set: number, options: ComposeActivityRowOptions = {},
 ): ComposedActivityRow {
   if (c.architecture !== 12) {
     throw new ComposeError('the activity menu is composed for the Harmony One alone');
@@ -2033,8 +2075,10 @@ export function composeActivityMenuRow(
   const firstProgram = recordOf().pages[0]?.program;
   if (firstProgram === undefined) throw new ComposeError('the activity menu has no first page');
   const bg = pictureDrawnAt(current, firstProgram, ...MENU_ROW1_BG);
-  const icon = pictureDrawnAt(current, firstProgram,
-    MENU_ROW1_BG[0] + MENU_ICON_OFFSET[0], MENU_ROW1_BG[1] + MENU_ICON_OFFSET[1]);
+  const icon = options.iconLike === undefined
+    ? pictureDrawnAt(current, firstProgram,
+      MENU_ROW1_BG[0] + MENU_ICON_OFFSET[0], MENU_ROW1_BG[1] + MENU_ICON_OFFSET[1])
+    : activityRowIcon(current, options.iconLike);
   if (bg === undefined || icon === undefined) {
     throw new ComposeError("the activity menu's first page draws no row this can copy");
   }

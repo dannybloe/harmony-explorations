@@ -1220,7 +1220,7 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
         # 68 since 4 September 2026 and the two Harmony 350 rows, per the comment on the row count
         # test below. 69 since the programmed Harmony 350 was read, section 262. 72 since the
         # programmed Harmony 300 was read, section 265.
-        self.assertEqual(len(named), 72, "lab paths the register names, as at 5 September 2026")
+        self.assertEqual(len(named), 74, "lab paths the register names, as at 7 September 2026")
         for path in sorted(named):
             with self.subTest(path=path):
                 if '*' in path:
@@ -1293,7 +1293,10 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
             return module, module['rows'](fh.read())
 
     def test_the_register_parses_into_the_rows_the_document_states(self):
-        """51 artefacts, exact rather than a floor, so a row lost to a formatting change fails.
+        """Every artefact row parses, counted exactly rather than as a floor, so a row lost to a
+        formatting change fails. The number is deliberately not restated in this docstring:
+        it said 51 while the assertion said 52, which is the same drift the register's own
+        history is about.
 
         The number is here rather than a `fact:` marker because every producer in `tools/facts.py`
         needs a lab and this one needs only the repository. It is also a correction: `CLAUDE.md` said
@@ -1308,8 +1311,8 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
         # was dug is what `make lab-check` can answer with.
         # 49 since the programmed Harmony 350 got its own row, section 262, 50 since the one
         # device differential beside it, section 263, and 51 since the Harmony 300, section 264.
-        self.assertEqual(len(rows), 52)
-        self.assertEqual(len(dict(rows)), 52, 'a duplicated path would make a query ambiguous')
+        self.assertEqual(len(rows), 53)
+        self.assertEqual(len(dict(rows)), 53, 'a duplicated path would make a query ambiguous')
         self.assertNotIn('unseen', dict(rows), 'the status legend is not an artefact')
 
     def test_a_query_is_answered_by_ancestors_and_by_descendants(self):
