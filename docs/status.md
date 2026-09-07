@@ -831,10 +831,19 @@ from nothing appears on the factory configuration's menu under its own name.
 
 The correction on the way there is worth more than the row. The plan was to reuse the builder that
 adds a row to the **device** list, since the two menus draw their rows on the same grid. They are not
-the same page: a device list page has three rows and one arrow to the next page, and an activity menu
-page has its rows and **two** fixed keys along the bottom, with no next-page arrow at all, because the
-menu is paged by the strips down either side of the screen. So the old builder refused every real
-configuration, correctly, and there are two builders now, which is what Danny asked for.
+the same page. A Harmony One's touch panel is bigger than the picture on it, and four keys around the
+edge of that picture are not part of it: two beside the display, which turn a list's pages, and two
+below it, labelled by whatever the screen draws just above them. **In the activity menu both of the
+bottom two are live, "Options" and "Devices". In the device list only the left one is, "Activities",
+and the right one is not enabled at all.** So the two pages offer a different number of tap areas,
+the old builder refused every real configuration, correctly, and there are two builders now, which
+is what Danny asked for.
+
+The reply that reported this first said a device list page had "one arrow to the next page", which is
+wrong: Danny corrected it from the remote, and the file agrees on every point. Not one screen in any
+of the four configurations binds the two page turn keys, 778 pages of them, so paging is the remote's
+own business and never the page's. What had been read as a page turn is the left bottom button, and
+it had been carrying that name in a constant, in four comments and in a test's title.
 
 It also answered a question that had been left open. A page holds **three** activities, which nobody
 had counted, and the everyday Harmony One's eight sit on pages of three, three and two. A document

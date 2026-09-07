@@ -866,9 +866,20 @@ const MENU_EDGE_SCANS: readonly [number, number] = [46, 47];
  * the first and 15, 16, 17 and more in the second. The composer used 12 and 13 and got the spare's
  * three row page right by luck. So a page is matched on **what its hit page offers** instead.
  *
- * A page's rows sit on the lowest scans, the page flip on the next one up, and the last two are the
- * screen's edges. So the row count is the area count minus three, and this table is that spelled
- * out rather than computed, since the order is what a match needs.
+ * A page's rows sit on the lowest scans, the **left bottom key** on the next one up, and the last two
+ * are the two rectangles either side of the display. So the row count is the area count minus three,
+ * and this table is that spelled out rather than computed, since the order is what a match needs.
+ *
+ * **Neither of those is a page flip and this file said the fourth one was**, until 7 September 2026,
+ * when Danny corrected it from the remote in his hand and section 275 measured it. A Harmony One
+ * turns a list's pages with the two buttons **beside** the display, which are scans 46 and 47, and
+ * **no mode page in either configuration binds either of them**, 0 bindings over 778 pages, so the
+ * paging is answered above the page and never on it. The rectangle above the edges is the left of the
+ * two physical buttons **below** the display, which in device mode the screen labels "Activities";
+ * every one of the 29 device list pages here binds it, all 29 through opcode `0x72`, which
+ * `actions.ts` names as mapping a state variable's value rather than as any kind of flip. The right
+ * bottom button has no rectangle at all on a device list page, which is Logitech's way of saying it
+ * is not enabled there.
  */
 const MENU_HIT_AREAS: readonly (readonly number[])[] = [
   [48, 49, 46, 47],
@@ -913,8 +924,6 @@ const OP_FONT = 0x10;
 const OP_SWITCH = 0x12;
 const OP_RETURN = 0x17;
 const OP_CALL = 0x16;
-/** The tagged list opcode a page flip rides on, through base slot 14, section 39. */
-const PAGE_FLIP_OPCODE = 0x72;
 
 /** A command as it appears on the device's page: the row's word. */
 export interface ComposeRow {
@@ -1414,7 +1423,7 @@ export function composeDeviceScreen(
   const mode = table.addresses.length;
 
   // 1. The menu row's action list: beep, enter the new mode, mark device mode. One list, shared
-  // by every menu, the way the corpus shares its page flip list.
+  // by every menu, the way the corpus shares its bottom key list.
   const actionSlot = archSlot(c.architecture, ACTION_TABLE_SLOT);
   const actionTable = c.pointerArrayAt(actionSlot);
   if (actionTable === undefined) throw new ComposeError('base slot 10 does not read as a table');
@@ -1567,7 +1576,7 @@ export function composeDeviceScreen(
                    grownTable.start + 3 + 3 * mode);
   current = parse(swapped.blob);
 
-  // 6. One row on each menu's last page: the flip entry moves from the two row layout's bottom to
+  // 6. One row on each menu's last page: the bottom key moves from the two row layout's scan to
   // the three row one's, the lead byte says which layout is in force, the list and its pool copy
   // both grow by the row, and the program draws the label above the third row's background.
   const pagesAdded: number[] = [];
@@ -1606,13 +1615,17 @@ export function composeDeviceScreen(
     if (list === undefined || list.entries.some((entry) => entry.flags !== undefined)) {
       throw new ComposeError('a menu page list is not the narrow form the corpus uses');
     }
-    // The list and its copy, the same edit twice: retag the flip from scan 50 to scan 51, append
-    // the row on scan 50, bump the count. The copy grows first, because it sits below the
+    // The list and its copy, the same edit twice: retag the bottom key from scan 50 to scan 51,
+    // append the row on scan 50, bump the count. The copy grows first, because it sits below the
     // original and growing it moves the original.
-    // The flip is the one entry on scan 50, whatever it runs: nine menus bind the bare page flip
-    // opcode there and one wraps it in a beeping action list, so the retag keys on the scan and
-    // not on the opcode, and a page with no single scan 50 entry is refused as a layout this does
-    // not know.
+    // **Why the scan moves at all**: a code is an area's position in its hit page, section 275, so
+    // a two row page stores row, row, bottom key and numbers them 48, 49, 50, and the three row
+    // page it becomes numbers the same bottom key 51. Nothing about the key changes.
+    // It is the one entry on scan 50, whatever it runs: nine menus bind opcode `0x72` bare there
+    // and one wraps it in a beeping action list, so the retag keys on the scan and not on the
+    // opcode, and a page with no single scan 50 entry is refused as a layout this does not know.
+    // This said "the flip" until 7 September 2026 and that was wrong twice: the key is the left of
+    // the two below the display, and `0x72` maps a state variable's value, `actions.ts`.
     const flips = list.entries.filter((entry) => entry.tag === (0x80 | 50)).length;
     if (flips !== 1) {
       throw new ComposeError(`a menu page binds scan 50 ${flips} times, not the one flip expected`);
@@ -1735,11 +1748,15 @@ function activityMenus(c: Container): { menu: number | undefined; marker: Instru
  * section 275, and **it is not the device list's**.
  *
  * That was the composer's first assumption and it was wrong. A device list page offers three row
- * rectangles, **one** page flip and the two screen edges; an activity menu page offers up to three
- * rows, **two** fixed bottom keys and the same two edges, and it carries no page flip binding at
- * all, since the menu is paged by the edge keys at the mode's own level. So the two menus share a
+ * rectangles, **one** bottom key and the two rectangles beside the display; an activity menu page
+ * offers up to three rows, **two** bottom keys and the same two beside it. So the two menus share a
  * pixel grid and nothing else, and `composeMenuPage` correctly refuses an activity page as a layout
  * it does not know.
+ *
+ * **The difference is which of the two physical bottom buttons the page enables**, and that is the
+ * whole of it: a device list page carries a rectangle for the left one only, 29 of 29, where an
+ * activity menu page carries both, 6 of 6. Neither carries a page flip, because a Harmony One turns
+ * pages with the buttons beside the display and no page binds those, 0 of 778.
  *
  * Three rows, at these panel coordinates, identical on all four configurations: the same rectangle
  * stepped down by `ACTIVITY_ROW_PITCH`, with the top row first. The bottom keys sit at `y` 271 and
@@ -1872,7 +1889,7 @@ export interface ComposedActivityRow {
  * **A separate builder from `composeMenuPage`, deliberately: decision 17.** The first attempt reused
  * the device list's page builder on the strength of the two menus sharing a row pitch, and it threw
  * on every real configuration, correctly: an activity page has two bottom keys where a device page
- * has one page flip, so its hit page offers a different number of rectangles. Reuse would have meant
+ * has one, so its hit page offers a different number of rectangles. Reuse would have meant
  * a builder branching on which menu it was building, which is the shape that rots. What the two may
  * share is a **step**, and they do: `withActivityHitPage` composes a hit page the same way
  * `composeMenuPage` does. See `ACTIVITY_ROWS` for the measured layout and section 275 for the

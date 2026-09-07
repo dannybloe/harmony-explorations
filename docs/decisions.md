@@ -555,7 +555,8 @@ remote and 2 in the second, which is what section 117 measured as a generator er
 
    **What prompted it.** The activity menu row was going to reuse the device list's page builder, on
    the strength of the two menus drawing their rows on one grid. They do, and everything around the
-   rows differs: a device list page carries three rows and one page flip binding, an activity menu
+   rows differs: a device list page carries three rows and a rectangle for the **left** of the two
+   buttons below the display, and an activity menu
    page carries up to three rows and **two** fixed bottom keys and binds no flip at all. So the
    builder refused every real configuration, correctly, and the fix on offer was a parameter saying
    which menu was being built.

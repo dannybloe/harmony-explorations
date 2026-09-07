@@ -211,9 +211,10 @@ binding per activity leaves half its menu dead.
 
 **And on arch 12 (Harmony One) the page the row goes on is not a device list page**, section 275,
 which is the correction that stopped a composer reusing the device list's builder. An activity menu
-page carries **two** bottom keys where a device list page carries one page flip, so it offers a
-different number of hit rectangles; it binds no page flip at all, since the menu is paged by the two
-screen edge rectangles at the mode's own level; and it holds **three** rows. A rectangle's scan code
+page enables **both** of the two physical buttons below the display where a device list page enables
+only the left one, so it offers a different number of hit rectangles; **neither** menu binds a page
+flip, because the remote turns a list's pages with the two buttons beside the display and no mode
+page binds those, 0 bindings over 778 pages; and it holds **three** rows. A rectangle's scan code
 is its **position** in the page, which is why the rows are scans 50, 51 and 52 on one page of the
 everyday Harmony One and 48, 49 and 50 on the next, and why a row is appended after the last
 rectangle and before the two edges: anywhere earlier renumbers the areas after it and moves a

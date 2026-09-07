@@ -287,6 +287,44 @@ on a Harmony One the same thing happens on the touch panel.
 
 So "the buttons of a device" is two questions, not one, and an interface has to keep them apart.
 
+### Four keys around a Harmony One's screen are not on the screen
+
+**Danny's account, from the remote in his hand, 7 September 2026**, and it is here rather than in
+`docs/findings.md` because it is what the buttons **are**. It was written down because a session had
+just published the opposite, out of the file, and got it wrong twice over.
+
+A Harmony One's touch panel is larger than the picture it displays. Around the displayed area sit
+four touch keys that are part of the panel and **not part of the image**:
+
+* **two beside the display, one on each side.** These turn the pages of a list. Every list on the
+  remote pages with them, the device list and the activity menu alike.
+* **two below the display.** These are labelled by whatever the screen draws just above them, so the
+  word belongs to the picture and the button does not.
+
+**What the two below say depends on where you are**, and one of them is sometimes dead:
+
+| | left button | right button |
+|---|---|---|
+| in the activity menu | "Options" | "Devices" |
+| in the device list | "Activities" | **not enabled** |
+
+That last cell is not a guess and it is not a rendering detail: the configuration gives a device list
+page **no touch rectangle** for the right button at all, on 29 of 29 such pages, so a tap there
+resolves to nothing. Section 275.
+
+**What this is for.** Anything drawing a Harmony One's screen has to draw the four separately from
+the list, and anything editing a list must not offer to bind them: two of them belong to the remote's
+own paging and the other two are how you leave the screen you are on. And the reason it is written
+down at all is the failure it corrects. The file shows a device list page carrying **four**
+rectangles above the two at the edges, three of them rows, and the fourth was read as a
+"page flip" for a month, in a constant, in four comments and in a test's title. It is not a flip;
+it is the left button, and the remote's paging is on the two rectangles that nobody had bound.
+
+**Which is the rule at the bottom of this document, again.** A measurement over the corpus answers
+"what do these files contain" and never "what does the product do". Four rectangles per page is a
+fact about the file. Which of them is a button, what it says, and which one is dead, is a fact about
+the remote, and there was no way to reach it from the bytes.
+
 ## A favourite channel is a screen button, and the channel is text
 
 Read out of Logitech's own button records on 23 August 2026, for three of the models on the bench. A

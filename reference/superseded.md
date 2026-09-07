@@ -32,6 +32,8 @@ and leave this table alone.
 
 | phrase | superseded by | what is true instead |
 |---|---|---|
+| `the page flip on the next one up` | section 275, corrected 7 September 2026 | the rectangle above the two at the panel's edges is the **left of the two physical buttons below the display**, labelled "Activities" in device mode; a Harmony One turns a list's pages with the two buttons **beside** the display and **no mode page binds either**, 0 bindings over 778 pages |
+| `a page flip binding | yes` | section 275, corrected 7 September 2026 | no arch 12 (Harmony One) page binds a page flip, on either menu: the device list's fourth rectangle is a bottom button running opcode `0x72`, which maps a state variable's value |
 | `the generator is not simply packing them` | section 275, corrected 7 September 2026 | an arch 12 (Harmony One) activity menu page holds **three** rows, measured over six pages of four containers, so the everyday Harmony One's 3, 3 and 2 is a full page, a full page and the remainder |
 | `pools devices at account level` | section 218, corrected 30 August 2026 | a household holds account records and each holds exactly one remote, so an account is one remote's world and its devices are that remote's; measured over 21 account records |
 | `another reader will not move it` | section 53 | seven readers moved it, from 26.3% to 98.1% on a Harmony 700 |

@@ -1424,19 +1424,32 @@ scans 50, 51 and 52 on the first page and 48, 49 and 50 on the second. Two conse
 A row is recognised by **geometry** and never by its code. And an area appended anywhere but after the
 last content one renumbers every area after it, which silently moves a binding the page already had.
 
-**An activity menu page and a device list page are different layouts**, section 275, measured over six
-activity menu pages on four arch 12 (Harmony One) containers:
+**The two rectangles at the panel's edges are the page turn buttons, and no page binds them**,
+section 275. All 778 mode pages of four arch 12 (Harmony One) containers offer both, and 0 of them
+carry a binding on scan 46 or 47, so a list's paging is answered above the page on every screen in
+the configuration. Those two rectangles sit outside the drawn area, `x` 765 and 3556 against a
+display spanning 1257 to 3556, which is the geometry saying the buttons are beside the screen rather
+than on it.
+
+**The rectangles at `y` 271 are the two physical buttons below the display**, and which of them a
+page enables is the difference between the two list menus, measured over the same containers:
 
 | | a device list page | an activity menu page |
 |---|---|---|
 | rows | 3 | up to 3 |
-| the key below them | 1, the page flip | **2**, each entering a fixed mode |
-| edges | 2 | 2 |
-| a page flip binding | yes | **none, on 0 of 6** |
+| left button, `x` 1257 width 1395 | 1, on **29 of 29** pages | 1, on **6 of 6** |
+| right button, `x` 2406 width 1150 | **none, on 29 of 29** | 1, on 6 of 6 |
+| what those bind | opcode `0x72`, all 29 | enter a mode, all 12 |
+| beside the display | 2, unbound | 2, unbound |
 
-An activity menu's pages are reached by the two edge rectangles, which every page offers and no page
-binds, so the paging happens above the page. Its rows are 2600 panel units wide and 807 tall, start at
-the panel's left edge of 1257, and step down by one `LIST_ROW_PITCH` of 872, on 11 of 11 rows.
+A button with **no rectangle** is how the format says it is not enabled, which is what the right one
+is in device mode. The left one is labelled "Activities" there and "Options" in an activity, with
+"Devices" on the right, and its `0x72` maps a state variable's value rather than turning a page:
+variable 35 on the everyday Harmony One and 40 on the factory one, so where it goes depends on what
+is running.
+
+An activity menu's rows are 2600 panel units wide and 807 tall, start at the panel's left edge of
+1257, and step down by one `LIST_ROW_PITCH` of 872, on 11 of 11 rows.
 
 **The geometry is not user data.** Two Harmony Ones with entirely different configurations carry
 the same 35 rectangle sizes and share 70 of 70 distinct records; only the number of pages differs.

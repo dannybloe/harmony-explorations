@@ -30914,7 +30914,10 @@ and 5.
 The lead byte is a **zero based index into that configuration's own hit map table**, section 125. So
 12 in one file and 4 in another are indices into different tables and were never comparable. Every
 one of those pages offers the **same six areas**, `48, 49, 50, 51, 46, 47`: three device rows on the
-lowest scans, the page flip on the next one up, and the two screen edges last.
+lowest scans, then the **left of the two buttons below the display**, then the two rectangles either
+side of it. *This said the fourth was the page flip until section 275 corrected it: a Harmony One
+turns a list's pages with the two buttons beside the display, no page binds those, and the fourth
+rectangle runs opcode `0x72`, a state value lookup.*
 
 There is one layout. **A device list page binds exactly its hit page's area count minus three**, on
 every device list page of every arch 12 configuration here, and a menu's pages are full except the
@@ -35159,19 +35162,43 @@ Per page, over all six:
 | | a device list page | an activity menu page |
 |---|---|---|
 | row rectangles | 3 | 1, 2 or 3 |
-| the key below them | **1**, the page flip | **2**, both entering a fixed mode |
-| screen edges | 2 | 2 |
-| a page flip binding | yes, opcode `0x72` or a list ending in one | **none, on 0 of 6** |
+| rectangle for the **left** button below the display | 1, on 29 of 29 pages | 1, on 6 of 6 |
+| rectangle for the **right** one | **none, on 29 of 29** | 1, on 6 of 6 |
+| what those run | opcode `0x72`, all 29 | enter a mode, all 12 |
+| rectangles either side of the display | 2 | 2 |
+| bindings on those | **0** | **0** |
 
-**Two bottom keys and not one is the whole difference**, and it is why the device list's builder
-refuses an activity page rather than mangling it: a hit page is matched on the rectangles it offers,
-and these offer a different number of them. On the everyday Harmony One the two keys enter modes 176
-and 100 from all three pages of the menu, so they are fixed destinations rather than navigation
-between the menu's own pages.
+**Which of the two bottom buttons the page enables is the whole difference**, and it is why the
+device list's builder refuses an activity page rather than mangling it: a hit page is matched on the
+rectangles it offers, and these offer a different number of them. On the everyday Harmony One the
+two keys enter modes 176 and 100 from all three pages of the menu, so they are fixed destinations.
 
-**There is no page flip on an activity menu at all.** Its pages are reached by the two screen edge
-rectangles, scans 46 and 47, which every page offers and **no page binds**, so the paging is handled
-above the page. That is the opposite of the device list, whose flip is a binding on the page itself.
+**This section said the fourth rectangle of a device list page was a page flip and that the activity
+menu carried none**<!--superseded-->, which was wrong in both halves. Danny corrected it from the
+remote in his hand and the correction measures cleanly:
+
+* **A Harmony One turns a list's pages with the two buttons beside the display**, which are scans 46
+  and 47, and **not one mode page binds either of them**: 778 mode pages across four containers, all
+  778 offering both rectangles, 0 bindings. So paging is answered above the page on **every** screen
+  in the configuration, the device list included, and neither menu has a flip to compare.
+* **The rectangle above those is the left of the two physical buttons below the display.** In device
+  mode the screen labels it "Activities"; in an activity it is "Options", with "Devices" on the
+  right. Every one of the 29 device list pages binds it and all 29 run opcode `0x72`, which
+  `actions.ts` and `docs/config-format.md` name as **mapping a state variable's value** through base
+  slot 14, section 39, not as any kind of flip. Its operand's low byte is state variable 35 on the
+  everyday Harmony One and 40 on the factory one, so where that key goes depends on what is running,
+  which is what "back to the Activities list" has to do.
+* **The right bottom button has no rectangle at all on a device list page**, 29 of 29, which is how
+  the format says a button is not enabled: a tap there resolves to nothing. Danny stated it before it
+  was measured.
+
+**How the wrong reading survived.** `PAGE_FLIP_OPCODE = 0x72` sat in `compose.ts` with the docstring
+"the tagged list opcode a page flip rides on", **declared and never used**, while `actions.ts`, which
+is the one opcode table, named the same opcode correctly the whole time. So it was a second copy of a
+derivation that disagreed with the original, and unused, which is the one shape no test can catch. It
+is gone rather than corrected. What it had already cost is the wording of four comments in the device
+composer and the title of a test, all of which called a bottom key a flip; the byte operations under
+them were right, since they key on the scan and never on the opcode.
 
 **The rows sit on the grid section 125 already established**, which is what makes them safe to
 compose: the same rectangle, 2600 panel units wide and 807 tall, starting at the panel's own left edge
@@ -35251,15 +35278,19 @@ the two the configuration already had.
 
 ### What would falsify it
 
-An arch 12 (Harmony One) configuration whose activity menu page binds a page flip, or carries one
-bottom key or three. A row off the `LIST_ROW_PITCH` grid, or one not starting at the panel's left
-edge. A fourth row slot on any page. An area whose scan code is not its position. An activity menu
-with more than three activities on one page.
+An arch 12 (Harmony One) mode page that binds scan 46 or 47. A device list page offering a rectangle
+for the right bottom button, or an activity menu page offering only one of the two. A device list
+bottom key running anything but opcode `0x72`, or an activity menu one running anything but an enter.
+A row off the `LIST_ROW_PITCH` grid, or one not starting at the panel's left edge. A fourth row slot
+on any page. An area whose scan code is not its position. An activity menu with more than three
+activities on one page.
 
 ### Where it lands
 
 * `docs/config-format.md`, base slot 17, beside the hit page reading.
 * `docs/how-an-activity-is-built.md`, whose P7 paragraph is corrected in place.
-* `packages/codec/test/compose.test.ts`, four tests: the layout over six pages, the composer keeping
-  every binding it found, the whole chain from `composeActivity` through to the four hop reader, and
-  the refusals including the full page.
+* `docs/how-a-harmony-works.md`, which is where what the buttons **are** belongs, since that is the
+  product's own account and not the file's.
+* `packages/codec/test/compose.test.ts`, five tests: the layout over six pages, the buttons over all
+  778 mode pages, the composer keeping every binding it found, the whole chain from `composeActivity`
+  through to the four hop reader, and the refusals including the full page.

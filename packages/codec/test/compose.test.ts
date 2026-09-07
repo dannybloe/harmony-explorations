@@ -268,10 +268,10 @@ test('one_config takes the television onto its screen and every check holds', sk
               `label ${k} is centred on its pad`);
   });
 
-  // Every menu's grown page: the row on scan 50 runs the shared entering list, the flip moved to
+  // Every menu's grown page: the row on scan 50 runs the shared entering list, the bottom key moved
   // scan 51 whatever spelling it had, the lead byte declares the three row layout, and the page
-  // still renders whole in every variant. Menu 233 is why the flip is asserted by scan and not by
-  // opcode: nine menus bind the bare page flip and it wraps its own in a beeping action list.
+  // still renders whole in every variant. Menu 233 is why the bottom key is asserted by scan and not
+  // by opcode: nine menus bind bare `0x72` and it wraps its own in a beeping action list.
   for (const menu of composed.menus) {
     const grown = modeRecords(after)![menu]!.pages.at(-1)!;
     assert.equal(grown.lead, 12, `menu ${menu} declares the three row layout`);
@@ -654,7 +654,8 @@ test('a menu whose last page holds one row is refused rather than grown', skipUn
  * and concluded that Logitech switched layout family at seven devices. The lead byte is an index
  * into that configuration's **own** hit map table, section 125, so the numbers were never
  * comparable. What every one of these pages actually offers is the same six areas, and there is one
- * layout: three rows to a page, the page flip on the next scan up, the two screen edges last. Since
+ * layout: three rows to a page, the left bottom key on the next scan up, the two rectangles beside
+ * the display last. Since
  * the row count is the area count minus three, a partly filled page is a smaller hit page and never
  * a different design. Section 239.
  */
@@ -920,14 +921,14 @@ function activityMenuOf(c: ReturnType<typeof parse>): number {
   return best;
 }
 
-test('an activity menu page carries two bottom keys where a device list page carries a page flip',
+test('an activity menu page enables both bottom buttons where a device list page enables the left one',
      skipUnless(...ACTIVITY_MENU_HOSTS), () => {
   // Section 275, and the measurement that refuted reusing `composeMenuPage`. Every number here is
   // exact: a floor would absorb a whole configuration dropping out of the loop.
   let pages = 0;
   let rows = 0;
   let keys = 0;
-  let flips = 0;
+  let sideBindings = 0;
   const rowShapes = new Set<string>();
   const keyCounts = new Set<number>();
   for (const name of ACTIVITY_MENU_HOSTS) {
@@ -957,18 +958,25 @@ test('an activity menu page carries two bottom keys where a device list page car
       pageRows.forEach((area, k) => {
         assert.equal(area.y, top.y - 872 * k, `${name}: row ${k} is off the grid`);
       });
-      // And no page flip anywhere: the menu is paged by the edges at the mode's own level, so
-      // nothing on the page carries the flip opcode a device list binds on its bottom key.
+      // The two rectangles beside the display are what turns a page, and **no page binds either**,
+      // so nothing about paging is on the page. Counted over every arch 12 mode page below, not
+      // just the menu's, because that is what makes it a fact about the model.
       for (const entry of taggedList(c, page.list)?.entries ?? []) {
-        if (entry.opcode === 0x72) flips += 1;
+        const scan = entry.tag & 0x3f;
+        if (scan === 46 || scan === 47) sideBindings += 1;
       }
+      // And both bottom rectangles, which is what a device list page does not have.
+      const bottoms = content.filter((area) => area.y === 271);
+      assert.equal(bottoms.length, 2, `${name}: an activity page does not offer both bottom keys`);
+      assert.deepEqual(bottoms.map((area) => `${area.x}/${area.width}`).sort(),
+                       ['1257/1395', '2406/1150'], `${name}: the bottom keys are not the two below`);
     }
   }
   assert.equal(pages, 6, 'the four Harmony One configs hold six activity menu pages between them');
   assert.equal(rows, 11, 'carrying eleven row rectangles between them, three on the fullest page');
   assert.equal(keys, 12, 'and two bottom keys on every one of the six pages');
   assert.deepEqual([...keyCounts], [2], 'every page carries exactly two, never one and never three');
-  assert.equal(flips, 0, 'and no page binds a page flip');
+  assert.equal(sideBindings, 0, 'and no page binds either of the two rectangles beside the display');
   assert.deepEqual([...rowShapes], ['1257x2600x807'], 'one row rectangle across four configurations');
 });
 
@@ -1058,4 +1066,91 @@ test('the activity menu composer refuses what would render and start nothing',
   full = parse(composeActivityMenuRow(full, 'Two', 7).bytes);
   full = parse(composeActivityMenuRow(full, 'Three', 7).bytes);
   assert.throws(() => composeActivityMenuRow(full, 'Four', 7), /already draws 3 rows/);
+});
+
+test('a Harmony One turns a list page with the buttons beside the display, which no page binds',
+     skipUnless(...ACTIVITY_MENU_HOSTS), () => {
+  // Danny's correction of 7 September 2026, measured. The composer's own docstrings called the
+  // fourth rectangle of a device list page a page flip; it is the left of the two physical buttons
+  // **below** the display, the paging is on the two beside it, and nothing on any page answers
+  // those. Section 275.
+  const LEFT = '1257/1395';
+  const RIGHT = '2406/1150';
+  let allPages = 0;
+  let sideRectangles = 0;
+  let sideBindings = 0;
+  let devicePages = 0;
+  let activityPages = 0;
+  const deviceBottoms = new Set<string>();
+  const activityBottoms = new Set<string>();
+  let deviceValueMaps = 0;
+  let activityEnters = 0;
+  for (const name of ACTIVITY_MENU_HOSTS) {
+    const c = parse(require_(name));
+    const lists = c.actionLists() ?? [];
+    const records = modeRecords(c) ?? [];
+
+    // Every mode page of the model, not only the two menus: that is what makes it a fact about the
+    // Harmony One rather than about these menus.
+    for (const record of records) {
+      for (const page of record.pages) {
+        allPages += 1;
+        const hit = touchPageOf(c, page);
+        sideRectangles += (hit?.areas ?? [])
+          .filter((area) => area.code === 46 || area.code === 47).length;
+        for (const entry of taggedList(c, page.list)?.entries ?? []) {
+          const scan = entry.tag & 0x3f;
+          if (scan === 46 || scan === 47) sideBindings += 1;
+        }
+      }
+    }
+
+    // A device list row enters a mode and writes 1 into the device mode marker; an activity row
+    // selects a keypad map and writes 0. That is what tells the two menus apart, section 239.
+    for (const record of records) {
+      let activities = 0;
+      let devices = 0;
+      for (const page of record.pages) {
+        for (const entry of taggedList(c, page.list)?.entries ?? []) {
+          if (entry.opcode !== 0x7f) continue;
+          const list = lists[entry.operand];
+          if (list?.length !== 3 || list[0]?.opcode !== 0x75) continue;
+          if (list[1]?.opcode === 0x1f) activities += 1;
+          else if (list[1]?.opcode === 0x7e && list[2]?.operand === 1) devices += 1;
+        }
+      }
+      if (activities === 0 && devices === 0) continue;
+      const isActivity = activities > 0;
+      for (const page of record.pages) {
+        const hit = touchPageOf(c, page);
+        const bottoms = (hit?.areas ?? []).filter((area) => area.y === 271);
+        const shape = bottoms.map((area) => `${area.x}/${area.width}`).sort().join(' ');
+        const bound = new Map((taggedList(c, page.list)?.entries ?? [])
+          .map((entry) => [entry.tag & 0x3f, entry]));
+        for (const area of bottoms) {
+          const entry = bound.get(area.code);
+          assert.ok(entry !== undefined, `${name}: a bottom key rectangle is offered and unbound`);
+          const last = entry.opcode === 0x7f ? lists[entry.operand]?.at(-1)?.opcode : entry.opcode;
+          if (isActivity) { if (last === 0x7e) activityEnters += 1; }
+          else if (last === 0x72) deviceValueMaps += 1;
+        }
+        if (isActivity) { activityPages += 1; activityBottoms.add(shape); }
+        else { devicePages += 1; deviceBottoms.add(shape); }
+      }
+    }
+  }
+  assert.equal(allPages, 778, 'the four Harmony One configs hold 778 mode pages between them');
+  assert.equal(sideRectangles, 2 * allPages, 'every one of them offers both rectangles beside the display');
+  assert.equal(sideBindings, 0, 'and not one of them binds either, so paging is answered above the page');
+
+  assert.equal(devicePages, 29);
+  assert.deepEqual([...deviceBottoms], [LEFT],
+                   'a device list page offers the left bottom button and no rectangle for the right one');
+  assert.equal(deviceValueMaps, 29,
+               'and all 29 run opcode 0x72, which actions.ts names as mapping a state value');
+
+  assert.equal(activityPages, 6);
+  assert.deepEqual([...activityBottoms], [`${LEFT} ${RIGHT}`],
+                   'an activity menu page offers both');
+  assert.equal(activityEnters, 12, 'and both of its keys on all six pages enter a mode');
 });
