@@ -21,6 +21,9 @@ import {
   blockWordsOf,
   composeDevice,
   composeActivity,
+  composeActivityMenuRow,
+  activityBindings,
+  touchPageOf,
   composeIrGroup,
   coverage,
   EVENT_MASK,
@@ -885,4 +888,174 @@ test('the activity composer refuses what would produce a container that merely p
   // **And an underscore is fine**, which it was not for a day: the ban is a device's, because a
   // state variable's name is `<label>_<property>_<values>`, and an activity has no node at all.
   assert.equal(composeActivity(c, { ...ok, label: 'Watch_TV' }).label, 'Watch_TV');
+});
+
+/**
+ * The Harmony One configurations, which are the only ones with a touch panel to draw a menu on.
+ * Named once here so the layout claim and the composer claim below cannot walk different corpora,
+ * which is the drift `TheCorpusWidePopulationsAgree` exists to catch.
+ */
+const ACTIVITY_MENU_HOSTS = [
+  'one_config', 'one_config_unprogrammed', 'one_spare_before_sync', 'one_spare_after_sync',
+];
+
+/** Which mode of a container is its activity menu, by the same reading the composer uses. */
+function activityMenuOf(c: ReturnType<typeof parse>): number {
+  const lists = c.actionLists() ?? [];
+  let best = -1;
+  let most = 0;
+  (modeRecords(c) ?? []).forEach((record, index) => {
+    const sets = new Set<number>();
+    for (const page of record.pages) {
+      for (const entry of taggedList(c, page.list)?.entries ?? []) {
+        if (entry.opcode !== 0x7f) continue;
+        const list = lists[entry.operand];
+        if (list?.length === 3 && list[0]?.opcode === 0x75 && list[1]?.opcode === 0x1f) {
+          sets.add((list[1] as { operand: number }).operand & 0xff);
+        }
+      }
+    }
+    if (sets.size > most) { most = sets.size; best = index; }
+  });
+  return best;
+}
+
+test('an activity menu page carries two bottom keys where a device list page carries a page flip',
+     skipUnless(...ACTIVITY_MENU_HOSTS), () => {
+  // Section 275, and the measurement that refuted reusing `composeMenuPage`. Every number here is
+  // exact: a floor would absorb a whole configuration dropping out of the loop.
+  let pages = 0;
+  let rows = 0;
+  let keys = 0;
+  let flips = 0;
+  const rowShapes = new Set<string>();
+  const keyCounts = new Set<number>();
+  for (const name of ACTIVITY_MENU_HOSTS) {
+    const c = parse(require_(name));
+    const menu = activityMenuOf(c);
+    assert.notEqual(menu, -1, `${name}: no activity menu`);
+    for (const page of (modeRecords(c) ?? [])[menu]?.pages ?? []) {
+      const hit = touchPageOf(c, page);
+      assert.ok(hit !== undefined, `${name}: a menu page has no hit page`);
+      pages += 1;
+      const edges = hit.areas.filter((area) => area.code === 46 || area.code === 47);
+      assert.equal(edges.length, 2, `${name}: a menu page does not offer both edges`);
+      const content = hit.areas.filter((area) => area.code !== 46 && area.code !== 47);
+      // A row spans the list; a bottom key is half of it. The widest is a row by construction, and
+      // what is being asserted is that the two kinds are cleanly separable at all.
+      const widest = content.reduce((a, b) => (b.width > a.width ? b : a));
+      const pageRows = content.filter((area) => area.x === widest.x && area.width === widest.width
+        && area.height === widest.height).sort((a, b) => b.y - a.y);
+      const pageKeys = content.filter((area) => !pageRows.includes(area));
+      rows += pageRows.length;
+      keys += pageKeys.length;
+      keyCounts.add(pageKeys.length);
+      const top = pageRows[0];
+      assert.ok(top !== undefined, `${name}: a menu page draws no row`);
+      rowShapes.add(`${top.x}x${top.width}x${top.height}`);
+      // The grid: the same rectangle stepped down by one pitch per row.
+      pageRows.forEach((area, k) => {
+        assert.equal(area.y, top.y - 872 * k, `${name}: row ${k} is off the grid`);
+      });
+      // And no page flip anywhere: the menu is paged by the edges at the mode's own level, so
+      // nothing on the page carries the flip opcode a device list binds on its bottom key.
+      for (const entry of taggedList(c, page.list)?.entries ?? []) {
+        if (entry.opcode === 0x72) flips += 1;
+      }
+    }
+  }
+  assert.equal(pages, 6, 'the four Harmony One configs hold six activity menu pages between them');
+  assert.equal(rows, 11, 'carrying eleven row rectangles between them, three on the fullest page');
+  assert.equal(keys, 12, 'and two bottom keys on every one of the six pages');
+  assert.deepEqual([...keyCounts], [2], 'every page carries exactly two, never one and never three');
+  assert.equal(flips, 0, 'and no page binds a page flip');
+  assert.deepEqual([...rowShapes], ['1257x2600x807'], 'one row rectangle across four configurations');
+});
+
+test('a composed activity menu row keeps every binding the page had and adds exactly one',
+     skipUnless(...ACTIVITY_MENU_HOSTS), () => {
+  let hosts = 0;
+  for (const name of ACTIVITY_MENU_HOSTS) {
+    const c = parse(require_(name));
+    const before = activityBindings(c);
+    const out = composeActivityMenuRow(c, 'Play Game', 7);
+    const after = parse(out.bytes);
+    hosts += 1;
+
+    // The scan is the next unused one, which is what appending an area before the two edges buys.
+    const page = (modeRecords(after) ?? [])[out.menu]?.pages[out.page];
+    const hit = page === undefined ? undefined : touchPageOf(after, page);
+    assert.ok(page !== undefined && hit !== undefined, `${name}: the composed page does not read back`);
+    const content = hit.areas.filter((area) => area.code !== 46 && area.code !== 47);
+    assert.equal(out.scan, 48 + content.length - 1, `${name}: the row did not take the next scan`);
+    assert.deepEqual(content.map((area) => area.code), content.map((_, k) => 48 + k),
+                     `${name}: the composed hit page does not number its areas by position`);
+
+    // Every binding the page had is still on its own scan, running its own list. This is the
+    // assertion the positional numbering exists for: an area inserted anywhere but the end would
+    // renumber the areas after it and silently move a binding to another row.
+    const wasBound = new Map((taggedList(c, ((modeRecords(c) ?? [])[activityMenuOf(c)]
+      ?.pages[out.page] as { list: number }).list)?.entries ?? [])
+      .map((entry) => [entry.tag, `${entry.opcode}/${entry.operand}`]));
+    const nowBound = new Map((taggedList(after, page.list)?.entries ?? [])
+      .map((entry) => [entry.tag, `${entry.opcode}/${entry.operand}`]));
+    for (const [tag, ran] of wasBound) {
+      assert.equal(nowBound.get(tag), ran, `${name}: the binding on tag ${tag} changed`);
+    }
+    assert.equal(nowBound.size, wasBound.size + 1, `${name}: not exactly one binding was added`);
+
+    // And the four hop reader sees one more activity than it did, which is the whole point: the
+    // behaviour half alone leaves an entry nothing can reach.
+    assert.equal(activityBindings(after).length, before.length + 1,
+                 `${name}: the composed row does not read back as an activity binding`);
+  }
+  assert.equal(hosts, ACTIVITY_MENU_HOSTS.length);
+});
+
+test('an activity composed and then put on the menu is reachable through all four hops',
+     skipUnless('one_config_unprogrammed'), () => {
+  // The chapter's goal in one test: nothing on the remote can start an activity that has an entry
+  // and no row, so the two halves are only worth anything together.
+  const c = parse(require_('one_config_unprogrammed'));
+  const counter = stateVariables(c).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME));
+  const target = stateVariables(c)
+    .find((one) => one.index > FIRMWARE_STATE_VARIABLE_MAX && one.index !== counter?.index);
+  assert.ok(target !== undefined, 'the container has no variable an activity could write');
+
+  const built = composeActivity(c, {
+    label: 'Play Game',
+    targets: [{ variable: target.index, value: 1 }],
+    keys: [{ scan: 20, list: 0 }],
+  });
+  const shown = composeActivityMenuRow(parse(built.bytes), built.label, built.set);
+  const after = parse(shown.bytes);
+
+  const bindings = activityBindings(after);
+  assert.equal(bindings.length, activityBindings(c).length + 1);
+  const added = bindings.find((one) => one.set === built.set);
+  assert.ok(added !== undefined, 'the new entry is not bound to anything');
+  assert.equal(added.scan, shown.scan);
+  assert.equal(added.list, shown.rowList);
+  assert.equal(handlerSetRoles(after)[built.set], 'activity');
+});
+
+test('the activity menu composer refuses what would render and start nothing',
+     skipUnless('one_config_unprogrammed', 'h600_config'), () => {
+  const c = parse(require_('one_config_unprogrammed'));
+  // An entry past the end: the row draws and selects a keypad map that does not exist.
+  const sets = handlerSets(c);
+  assert.ok(sets !== undefined);
+  assert.throws(() => composeActivityMenuRow(c, 'Play Game', sets.addresses.length),
+                /past the \d+ that exist/);
+  assert.throws(() => composeActivityMenuRow(c, 'Play Game', 0xff), /base slot 9 index/);
+  assert.throws(() => composeActivityMenuRow(c, 'Play Game', -1), /base slot 9 index/);
+  // A model with no touch panel, where every pixel position here means nothing.
+  assert.throws(() => composeActivityMenuRow(parse(require_('h600_config')), 'Play Game', 0),
+                /Harmony One alone/);
+  // And a page that is already full, which is a refusal and not a second page: three rows fit and
+  // adding a page needs a counter, a pool copy and a page count nobody has measured on this menu.
+  let full = parse(require_('one_config_unprogrammed').slice());
+  full = parse(composeActivityMenuRow(full, 'Two', 7).bytes);
+  full = parse(composeActivityMenuRow(full, 'Three', 7).bytes);
+  assert.throws(() => composeActivityMenuRow(full, 'Four', 7), /already draws 3 rows/);
 });

@@ -33,7 +33,9 @@ Plan: [003-how-an-activity-is-built.md](docs/plans/003-how-an-activity-is-built.
   - [x] 1.1.7 Where device mode's own keypad map comes from: the device's own screen record (section 271)
   - [x] 1.1.8 Scored against one_config and h600_config: seven of nine right, P6 incomplete, P7 wrong
 - [x] 1.2 Compose an activity, the counterpart of `composeDevice`: `composeActivity`, four architectures
-  - [ ] 1.2.1 The screen half: a menu row and a drawn name, two bindings on arch 14 (section 273)
+  - [x] 1.2.1 The screen half on arch 12 (Harmony One): a menu row, its hit rectangle and a drawn name (section 275)
+  - [ ] 1.2.2 A fourth activity, which needs a new menu page: a page counter, a pool copy and a page count
+  - [ ] 1.2.3 The screen half on arch 14 (Harmony 600), where an activity binds two keys (section 273)
 - [ ] 1.3 Write one to the spare Harmony One and watch the television
 
 ## 2. Screens

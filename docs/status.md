@@ -559,7 +559,7 @@ finding.
 
 `todo.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 274<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 275<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -823,6 +823,23 @@ figures common to both carry `fact:` markers, so `make facts` moves every copy t
 cannot drift apart; what a reader should not expect is two independent statements of one measurement.
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
+
+**And it can now be started, section 275.** The behaviour half of an activity leaves something the
+remote can run and nothing that reaches it: what reaches it is a row on the Harmony One's activity
+menu, which is now composed, drawn and checked by picture as well as by test. A whole activity built
+from nothing appears on the factory configuration's menu under its own name.
+
+The correction on the way there is worth more than the row. The plan was to reuse the builder that
+adds a row to the **device** list, since the two menus draw their rows on the same grid. They are not
+the same page: a device list page has three rows and one arrow to the next page, and an activity menu
+page has its rows and **two** fixed keys along the bottom, with no next-page arrow at all, because the
+menu is paged by the strips down either side of the screen. So the old builder refused every real
+configuration, correctly, and there are two builders now, which is what Danny asked for.
+
+It also answered a question that had been left open. A page holds **three** activities, which nobody
+had counted, and the everyday Harmony One's eight sit on pages of three, three and two. A document
+here had concluded from those numbers that the generator was not simply filling pages in order. With
+the capacity known, that is exactly what it is doing.
 
 **A configuration can now be given a new activity, and the rules it has to follow are measured,
 section 273.** An activity is what a Harmony calls "Watch TV": pressing it switches the equipment on,

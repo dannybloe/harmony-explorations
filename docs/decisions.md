@@ -548,6 +548,34 @@ consistent. So the refusal is the finding and the fallback is the warning, and *
 damaged is now read**: an arch 10 read duplicates whole 54 byte chunks, 16 in the first read of that
 remote and 2 in the second, which is what section 117 measured as a generator error.
 
+17. **One screen builder per kind of menu, never one that branches.** *Taken by Danny on 7 September
+   2026, prompted by section 275.* The composer that adds a row to the **device** list and the one
+   that adds a row to the **activity** menu are separate functions and stay separate, even where they
+   share a step.
+
+   **What prompted it.** The activity menu row was going to reuse the device list's page builder, on
+   the strength of the two menus drawing their rows on one grid. They do, and everything around the
+   rows differs: a device list page carries three rows and one page flip binding, an activity menu
+   page carries up to three rows and **two** fixed bottom keys and binds no flip at all. So the
+   builder refused every real configuration, correctly, and the fix on offer was a parameter saying
+   which menu was being built.
+
+   **Why the parameter is the wrong answer.** Two reasons, and Danny gave the second.
+
+   * A function that branches on which menu it is building is two functions sharing a body, which is
+     the shape this project's oldest rule is about: a change made for one caller is made in code the
+     other one runs, and no test can see that it was not meant to apply.
+   * **The two are expected to diverge further, not converge.** The layout is likely to differ per
+     model as well as per menu, and once the application owns how a list is constructed there is no
+     reason a page must be three rows of a fixed shape at all: an activity menu of six entries, or a
+     page of tap areas the user laid out, is a direction the product may want. None of that is a work
+     item and none of it is planned. It is the reason not to build a single builder that would have
+     to be taken apart first.
+
+   What they may share is a **step**, named and called from both, and section 275's composer does:
+   the hit page composition, the pool copy and the label spelling are the same job in both menus.
+   Sharing a step is not the same as sharing a builder.
+
     *Moved here from `CLAUDE.md` on 29 August 2026, where thirteen thousand characters
     of it sat in every session to argue a question that arises once a year. It is the plan
     of record that holds decisions, and this is one.*

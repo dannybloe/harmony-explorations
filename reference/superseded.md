@@ -32,6 +32,7 @@ and leave this table alone.
 
 | phrase | superseded by | what is true instead |
 |---|---|---|
+| `the generator is not simply packing them` | section 275, corrected 7 September 2026 | an arch 12 (Harmony One) activity menu page holds **three** rows, measured over six pages of four containers, so the everyday Harmony One's 3, 3 and 2 is a full page, a full page and the remainder |
 | `pools devices at account level` | section 218, corrected 30 August 2026 | a household holds account records and each holds exactly one remote, so an account is one remote's world and its devices are that remote's; measured over 21 account records |
 | `another reader will not move it` | section 53 | seven readers moved it, from 26.3% to 98.1% on a Harmony 700 |
 | `still carries no `data-scan` attribute` | the traced drawings, 21 August 2026 | a drawing states a code on the keys `reference/button-maps.md` names and no attribute on the rest |

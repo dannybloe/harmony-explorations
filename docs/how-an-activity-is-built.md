@@ -209,6 +209,16 @@ arch 8, arch 9 and arch 12, on 15 of 15. Both of an arch 14 pair are presses of 
 same page, so the second is not the first key's release, and a writer for a Harmony 600 that emits one
 binding per activity leaves half its menu dead.
 
+**And on arch 12 (Harmony One) the page the row goes on is not a device list page**, section 275,
+which is the correction that stopped a composer reusing the device list's builder. An activity menu
+page carries **two** bottom keys where a device list page carries one page flip, so it offers a
+different number of hit rectangles; it binds no page flip at all, since the menu is paged by the two
+screen edge rectangles at the mode's own level; and it holds **three** rows. A rectangle's scan code
+is its **position** in the page, which is why the rows are scans 50, 51 and 52 on one page of the
+everyday Harmony One and 48, 49 and 50 on the next, and why a row is appended after the last
+rectangle and before the two edges: anywhere earlier renumbers the areas after it and moves a
+binding that already existed.
+
 ### 7. A drawn name, and the screens the activity enters
 
 The activity's name is drawn on the menu page, as pixels, at a stated position. It is also drawn by the
@@ -282,8 +292,12 @@ tagged list entry: a new page record, its own tagged list, its own screen progra
 that reaches it. It is the same problem section 239 hit from the other side, where a seventh device
 needed a third page on the device list and that was what blocked the goal.
 
-**What decides when a page fills is not read here.** Three pages of 3, 3 and 2 is not a full page
-followed by a remainder, so the generator is not simply packing them.
+**What decides when a page fills was not read here, and section 275 read it.** This paragraph said
+*three pages of 3, 3 and 2 is not a full page followed by a remainder, so the generator is not simply
+packing them*, and it was wrong for a reason worth keeping: the page's capacity had never been
+measured, so a full page could not be recognised. It is **three** rows on arch 12 (Harmony One),
+measured over six activity menu pages of four containers. So 3, 3 and 2 is a full page, a full page
+and the remainder, and the generator is packing them after all.
 
 ### P6 was incomplete: arch 14 has no delay to inherit
 
@@ -304,7 +318,6 @@ composer badly wrong about an activity like that one, which is mostly its own bi
 ### What this leaves open
 
 * what tag 5 is for, which no specimen answered
-* what decides when an activity menu page fills
 * the 12 inline sends, now located on arch 8 and arch 9 and still unexplained
 * which physical keys the four arch 14 activity scan codes are, and why that architecture binds two
 * whether Logitech's generator renumbers activities on a full compile, which is what would decide

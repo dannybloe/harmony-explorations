@@ -1417,6 +1417,27 @@ scan codes the One's key table carries where arch 14 numbers 41 to 54. A page's 
 upward consecutively, then 43 and 44 for the two largest pages, and always end with 46 and 47,
 which are a tall strip at each edge of the panel. Nine page shapes exist and no others.
 
+**A code is a position, not a name**, section 275: the first area a page stores is scan 48, the second
+49 and so on, with 46 and 47 carried by the two edges wherever they sit. So which scan is which row
+differs from page to page, and it does: on the everyday Harmony One's activity menu the three rows are
+scans 50, 51 and 52 on the first page and 48, 49 and 50 on the second. Two consequences for a writer.
+A row is recognised by **geometry** and never by its code. And an area appended anywhere but after the
+last content one renumbers every area after it, which silently moves a binding the page already had.
+
+**An activity menu page and a device list page are different layouts**, section 275, measured over six
+activity menu pages on four arch 12 (Harmony One) containers:
+
+| | a device list page | an activity menu page |
+|---|---|---|
+| rows | 3 | up to 3 |
+| the key below them | 1, the page flip | **2**, each entering a fixed mode |
+| edges | 2 | 2 |
+| a page flip binding | yes | **none, on 0 of 6** |
+
+An activity menu's pages are reached by the two edge rectangles, which every page offers and no page
+binds, so the paging happens above the page. Its rows are 2600 panel units wide and 807 tall, start at
+the panel's left edge of 1257, and step down by one `LIST_ROW_PITCH` of 872, on 11 of 11 rows.
+
 **The geometry is not user data.** Two Harmony Ones with entirely different configurations carry
 the same 35 rectangle sizes and share 70 of 70 distinct records; only the number of pages differs.
 

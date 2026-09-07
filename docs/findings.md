@@ -35120,3 +35120,146 @@ reader of it outside the loop.
 * `docs/config-format.md`, base slot 13's record, beside `first`.
 * `tests/test_state_seeder.py`, which pins the census, the site counts, the marker on the two that
   have it and the index rule on the one that does not.
+
+## 275. An activity menu page is not a device list page, it holds three rows, and that is what fills it
+
+### What prompted it
+
+Chapter 1.2.1: put a composed activity on the screen so somebody can start it. `composeActivity`
+builds the behaviour half, an entry in the keypad map table with its three lifecycle handlers and its
+state transitions, and nothing on the remote can reach it. The reaching is a row on the activity menu.
+
+The plan was to reuse `composeMenuPage`, the device list's page builder, on the strength of the two
+menus sharing a row pitch. That plan is wrong and the code refused every real configuration, which is
+what this section measures.
+
+### Sources checked first
+
+`docs/findings.md` sections 125 (the hit page index and the panel to pixel grid), 239 (the device list
+row and its per configuration marker), 240 (the device list page builder) and 273 (the four hop chain
+from a menu row to an activity's keypad map). Logitech's own client was not read for this: the layout
+in question is the compiled artefact's, and the four containers state it directly. The firmware was
+not read either, for the same reason, and section 45's touch loop already says how a rectangle is
+resolved.
+
+### The population
+
+Four arch 12 (Harmony One) containers, which is the whole of it: this is a claim about a **touch
+panel**, and arch 14 (Harmony 600 and 700), arch 9 (Harmony 525) and arch 8 (Harmony 880 and 885)
+have none. `one_config`, `one_config_unprogrammed`, `one_spare_before_sync` and `one_spare_after_sync`,
+between them **6** activity menu pages carrying **11** row rectangles.
+
+Decision 16's question, answered plainly: **one architecture, and no other architecture can have this
+answer.** What the other three do instead is section 273's, where an activity is reached by a key.
+
+### The measurement
+
+Per page, over all six:
+
+| | a device list page | an activity menu page |
+|---|---|---|
+| row rectangles | 3 | 1, 2 or 3 |
+| the key below them | **1**, the page flip | **2**, both entering a fixed mode |
+| screen edges | 2 | 2 |
+| a page flip binding | yes, opcode `0x72` or a list ending in one | **none, on 0 of 6** |
+
+**Two bottom keys and not one is the whole difference**, and it is why the device list's builder
+refuses an activity page rather than mangling it: a hit page is matched on the rectangles it offers,
+and these offer a different number of them. On the everyday Harmony One the two keys enter modes 176
+and 100 from all three pages of the menu, so they are fixed destinations rather than navigation
+between the menu's own pages.
+
+**There is no page flip on an activity menu at all.** Its pages are reached by the two screen edge
+rectangles, scans 46 and 47, which every page offers and **no page binds**, so the paging is handled
+above the page. That is the opposite of the device list, whose flip is a binding on the page itself.
+
+**The rows sit on the grid section 125 already established**, which is what makes them safe to
+compose: the same rectangle, 2600 panel units wide and 807 tall, starting at the panel's own left edge
+of 1257, stepped down by `LIST_ROW_PITCH`. Eleven of eleven rows, four configurations. The pitch and
+the left edge are **imported and not measured again**; what this section adds is that the activity
+menu uses them.
+
+**A page holds three rows and no more**, which is the number that had never been measured.
+
+### A scan code is a position, which is what makes a row safe to append
+
+Section 125 read the lead byte as an index into the hit map. What follows from it, and is worth
+stating on its own because a composer depends on it: **an area's scan code is its position in the
+page**, the first being 48, the second 49, and so on, with the two edges carrying 46 and 47 wherever
+they are stored. So which scan is which row differs per page, and it does: on the everyday Harmony
+One's first activity page the three rows are scans 50, 51 and 52 and the two keys are 48 and 49, and
+on its second page the rows are 48, 49 and 50 and the keys are 51 and 52.
+
+Two consequences. A row cannot be recognised by its scan code and has to be recognised by its
+**geometry**, which is what separates a row from a bottom key: a row spans the list from the panel's
+left edge, a bottom key is half as wide and taller. And a new row must be appended **after the last
+content rectangle and before the two edges**, because an area inserted anywhere earlier renumbers
+every area after it and silently moves an existing binding to another row.
+
+### What this closes: the generator is packing them after all
+
+`docs/how-an-activity-is-built.md` scored prediction P7 and wrote, of the everyday Harmony One's eight
+activities over pages of 3, 3 and 2, that *three pages of 3, 3 and 2 is not a full page followed by a
+remainder, so the generator is not simply packing them*<!--superseded-->. That is wrong, and it was
+wrong for a stated reason: the page's capacity had not been measured, so a full page could not be
+recognised. It is three. So 3, 3 and 2 is a full page, a full page and the remainder, and the open
+question "what decides when an activity menu page fills" has the ordinary answer.
+
+### The composer
+
+`composeActivityMenuRow` in `packages/codec/src/compose.ts`, a **separate builder** from
+`composeMenuPage` rather than a branch inside it, which is decision 17. The argument is the table
+above: a builder that took both layouts would be a builder branching on which menu it was building,
+and the two are going to diverge further rather than converge, since a menu of custom tap areas is a
+direction the product may want.
+
+It **fills a page rather than adding one**: the menu's last page is grown to its next row slot, and a
+menu whose last page already holds three is refused. That refusal is the honest edge of what has been
+built, since a new page needs a page counter, a second pool copy and a mode page count, none of which
+has been measured on an activity menu. It does not bite on the two configurations chapter 1 targets,
+whose activity menu holds one row of three.
+
+Four insertions, each leaving the container parseable: the row's action list, beep then select the
+entry then clear the device mode marker; a hit page one rectangle wider, reused where the config has
+one with that exact geometry and composed otherwise; the binding, in the page's tagged list and in its
+pool copy; and the drawing, the row's background, its icon, a font and the label, inserted where the
+program's closing instruction begins so the close slides up and the census restamps what moves.
+
+### A font is a partial alphabet, and which one is complete is per configuration
+
+Found while spelling the label and worth recording because a tabulated font index is what
+`DEVICE_ROW_FONT` is. Over the 26 upper case letters, 26 lower case, ten digits and the space:
+
+| container | fonts | the best set covers | which font that is |
+|---|---|---|---|
+| `one_config` | 18 | 61 of 63 | 9 |
+| `one_spare_after_sync` | 17 | 58 of 63 | 9 |
+| `one_config_unprogrammed` | 18 | 55 of 63 | **5** |
+
+A configuration carries only the glyphs it draws, so the complete set is wherever the compiler
+happened to put it. `fontThatSpells` therefore prefers the font the page already draws its rows in and
+falls back to the nearest **in height** that can spell the word. Height is the tie break rather than
+coverage because the label is going into a row of fixed pitch: a set that spells the word in the wrong
+size draws over its neighbours, where a set one glyph short simply refuses.
+
+### The check that is not a test
+
+The three composed pages were drawn, which is the check a reader cannot make: a label half a row out
+passes every assertion here. All three render with no missing glyph and no undecoded picture, the new
+row's background and icon land on the grid, and on the everyday Harmony One the third row sits below
+the two the configuration already had.
+
+### What would falsify it
+
+An arch 12 (Harmony One) configuration whose activity menu page binds a page flip, or carries one
+bottom key or three. A row off the `LIST_ROW_PITCH` grid, or one not starting at the panel's left
+edge. A fourth row slot on any page. An area whose scan code is not its position. An activity menu
+with more than three activities on one page.
+
+### Where it lands
+
+* `docs/config-format.md`, base slot 17, beside the hit page reading.
+* `docs/how-an-activity-is-built.md`, whose P7 paragraph is corrected in place.
+* `packages/codec/test/compose.test.ts`, four tests: the layout over six pages, the composer keeping
+  every binding it found, the whole chain from `composeActivity` through to the four hop reader, and
+  the refusals including the full page.

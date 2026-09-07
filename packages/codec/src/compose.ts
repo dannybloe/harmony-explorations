@@ -32,6 +32,8 @@ import {
   STATE_RECORD_HEADER,
   STATE_TABLE_SLOT,
   STATE_VALUE_LENGTH,
+  type ModePage,
+  type ModeRecord,
   modePages,
   modeRecords,
   modeTable,
@@ -49,6 +51,7 @@ import {
   HANDLER_TABLE_SLOT,
 } from './sections.ts';
 import { SCREEN_JUMP, bitmapAt, screenProgram } from './screen.ts';
+import { LIST_ROW_PITCH, PANEL_LEFT, SCREEN_ROW_PITCH, touchPageOf } from './touch.ts';
 // **The opcodes come from the one place each is named**, and until 6 September 2026 this file had
 // its own `SEND_INFRARED` and its own `RUN_ACTION_LIST` beside the copies in `inventory.ts` and
 // `sections.ts`. All correct, none able to see the others: the state `isa.py`'s docstring forbids.
@@ -75,7 +78,7 @@ import {
 import type { Pulse } from './irframe.ts';
 import { IR_TABLE_SLOT } from './ir.ts';
 import { blockOfStatedCode, statedCode, statedProtocol } from './stated.ts';
-import { TOUCH_AREA_LENGTH, type TouchArea, touchPages } from './tables.ts';
+import { TOUCH_AREA_LENGTH, type TouchArea, type TouchPage, touchPages } from './tables.ts';
 import { deviceListRows, deviceModeMarker } from './inventory.ts';
 import { relocate } from './relocate.ts';
 import { Writer } from './emit.ts';
@@ -842,7 +845,11 @@ const MENU_ROW3_BG: readonly [number, number] = [0x06, 0x92];
 const MENU_ROW1_BG: readonly [number, number] = [0x06, 0x26];
 const MENU_ICON_OFFSET: readonly [number, number] = [5, 1];
 const MENU_ROW1_LABEL_Y = 0x39;
-const MENU_ROW_PITCH = 54;
+/**
+ * The rows' pixel pitch, which is `screen.ts`'s and not a number of this file's own: the two were
+ * the same 54 in two places until 7 September 2026, which is the state `isa.py`'s docstring forbids.
+ */
+const MENU_ROW_PITCH = SCREEN_ROW_PITCH;
 /** Where a page draws its own number, top left, and the `/` that follows it. */
 const MENU_COUNTER_XY: readonly [number, number] = [13, 18];
 const MENU_COUNTER_SLASH_X = 18;
@@ -881,6 +888,16 @@ const DEVICE_PAGE_LEAD = 10;
 const ROW_BEEP_OPERAND = 0x0fca;
 /** Opcode 0x7e: enter the mode the operand indexes. */
 const ENTER_MODE = 0x7e;
+/** Opcode 0x75: the beeper, which every menu row in the corpus opens with. */
+const BEEP_OPCODE = 0x75;
+/**
+ * What an **activity** row writes into the device mode marker, against a device row's 1.
+ *
+ * The value is ours and the variable is not: section 239 measured eight different variables across
+ * fourteen configurations, so `activityMenus` reads the instruction off a row the config already
+ * carries and this supplies only the operand. Section 275.
+ */
+const ACTIVITY_MENU_MARKER_VALUE = 0;
 /**
  * A menu row ends by writing 1 into the variable that marks device mode, and **which variable that
  * is differs per configuration**, eight values across fourteen configs, section 239. So the composer
@@ -1668,4 +1685,435 @@ export function composeDeviceScreen(
   }
 
   return { bytes: restamped(current.blob), mode, menus: found.menus, rowList, pagesAdded };
+}
+
+/**
+ * The activity menu's mode, and the marker its rows write, read off the rows the config has.
+ *
+ * The shape of an activity row is the device list row's with one instruction swapped: beep, then
+ * **select a base slot 9 entry** where a device row enters a mode, then the same per configuration
+ * marker variable, written **0** where a device row writes 1. Section 275.
+ *
+ * Read rather than tabulated for the same reason `deviceModeMarker` is: which variable marks the
+ * top level screen differs per configuration, so a composer carrying a number would write a menu row
+ * that parses, renders, and points the remote at the wrong screen.
+ */
+function activityMenus(c: Container): { menu: number | undefined; marker: Instruction | undefined } {
+  const lists = c.actionLists() ?? [];
+  const endOfRow = (index: number): Instruction | undefined => {
+    const list = lists[index];
+    if (list === undefined || list.length !== 3) return undefined;
+    if (list[0]?.opcode !== BEEP_OPCODE) return undefined;
+    const select = list[1] as Instruction;
+    if (select.opcode !== SELECT_BINDING_SET) return undefined;
+    if ((select.operand & SELECT_BINDING_SET_MASK) !== SELECT_BINDING_SET_MASK) return undefined;
+    return list[2] as Instruction;
+  };
+  const records = modeRecords(c) ?? [];
+  let menu: number | undefined;
+  let marker: Instruction | undefined;
+  let most = 0;
+  records.forEach((record, index) => {
+    const sets = new Set<number>();
+    let end: Instruction | undefined;
+    for (const page of record.pages) {
+      for (const entry of taggedList(c, page.list)?.entries ?? []) {
+        if (entry.opcode !== ACTION_LIST_INDEX_OPCODE) continue;
+        const found = endOfRow(entry.operand);
+        if (found === undefined) continue;
+        sets.add((lists[entry.operand]?.[1] as Instruction).operand & 0xff);
+        end = found;
+      }
+    }
+    if (sets.size > most) { most = sets.size; menu = index; marker = end; }
+  });
+  return { menu, marker };
+}
+
+/**
+ * The activity menu's own page layout, measured on four arch 12 (Harmony One) configurations,
+ * section 275, and **it is not the device list's**.
+ *
+ * That was the composer's first assumption and it was wrong. A device list page offers three row
+ * rectangles, **one** page flip and the two screen edges; an activity menu page offers up to three
+ * rows, **two** fixed bottom keys and the same two edges, and it carries no page flip binding at
+ * all, since the menu is paged by the edge keys at the mode's own level. So the two menus share a
+ * pixel grid and nothing else, and `composeMenuPage` correctly refuses an activity page as a layout
+ * it does not know.
+ *
+ * Three rows, at these panel coordinates, identical on all four configurations: the same rectangle
+ * stepped down by `ACTIVITY_ROW_PITCH`, with the top row first. The bottom keys sit at `y` 271 and
+ * the edges at 1400, neither of which this composer ever writes.
+ */
+const ACTIVITY_ROWS = 3;
+/**
+ * The rows' panel pitch and their left edge, both **already derived** and imported rather than
+ * measured again here: section 125 established that a hit rectangle's `LIST_ROW_PITCH` and a screen
+ * program's `SCREEN_ROW_PITCH` are one distance measured in two units. That the activity menu's rows
+ * sit on that same grid is what this section adds, and it is checked over eleven rows.
+ */
+const ACTIVITY_ROW_PITCH = LIST_ROW_PITCH;
+const ACTIVITY_ROW_LEFT = PANEL_LEFT;
+/**
+ * A hit page numbers its areas **by position**: the first is scan 48, the second 49, and so on, with
+ * the two edges carrying 46 and 47 wherever they sit. That is why which scan is which row differs
+ * per page, section 125, and it is what makes a row safe to append: a new area added after the last
+ * content one takes the next unused scan and moves nobody else's.
+ */
+const MENU_FIRST_SCAN = 48;
+
+/** One activity menu page as this composer needs to see it: its rows, its keys and its edges. */
+interface ActivityPageLayout {
+  /** The row rectangles, top of the screen first, which is descending panel `y`. */
+  rows: TouchArea[];
+  /** Everything else the page offers except the two edges, in stored order. */
+  keys: TouchArea[];
+  edges: TouchArea[];
+  /** The areas in stored order, which is what assigns the scan codes. */
+  content: TouchArea[];
+}
+
+/**
+ * Read a page's hit rectangles as an activity menu layout, or undefined where it is not one.
+ *
+ * A row is recognised by **geometry against the page's own widest rectangle**, rather than by scan
+ * code, because the scan is positional and varies per page: on one configuration the three rows are
+ * scans 50, 51 and 52 on the first page and 48, 49 and 50 on the second. The rows are the areas
+ * sharing the widest one's `x`, `width` and `height`, which separates them from the two bottom keys,
+ * that being half width and taller, and from the edges, that being narrow and tall.
+ */
+function activityPageLayout(page: TouchPage): ActivityPageLayout | undefined {
+  const edges = page.areas.filter((area) => area.code === MENU_EDGE_SCANS[0]
+    || area.code === MENU_EDGE_SCANS[1]);
+  if (edges.length !== 2) return undefined;
+  const content = page.areas.filter((area) => !edges.includes(area));
+  if (content.length === 0) return undefined;
+  // The widest content rectangle is a row: a row spans the list, a bottom key spans half of it.
+  const widest = content.reduce((a, b) => (b.width > a.width ? b : a));
+  const isRow = (area: TouchArea): boolean => area.x === widest.x && area.width === widest.width
+    && area.height === widest.height;
+  const rows = content.filter(isRow).sort((a, b) => b.y - a.y);
+  const keys = content.filter((area) => !isRow(area));
+  if (rows.length === 0 || rows.length > ACTIVITY_ROWS) return undefined;
+  // The rows must sit on the grid, so a page whose wide rectangles are something else is refused
+  // rather than grown into a fourth row nothing draws.
+  const top = rows[0] as TouchArea;
+  if (!rows.every((area, k) => area.y === top.y - ACTIVITY_ROW_PITCH * k)) return undefined;
+  // And a row starts at the panel's own left edge, which is what separates it from any other wide
+  // rectangle a page might carry. Eleven of eleven rows across four configurations, section 275.
+  if (top.x !== ACTIVITY_ROW_LEFT) return undefined;
+  return { rows, keys, edges, content };
+}
+
+/**
+ * The font to draw a menu label in: the one the page already uses where it can spell the label, and
+ * otherwise the nearest in height that can.
+ *
+ * **A configuration carries only the glyphs it draws**, so a font is a partial alphabet and which
+ * one is complete is per configuration rather than per model. Measured over 63 letters, digits and
+ * the space on three arch 12 (Harmony One) configurations, section 275: the best set covers 61, 58
+ * and 55 of them and it is font 9, 9 and **5**. So an index cannot be tabulated, which is what
+ * `DEVICE_ROW_FONT` does and why a device title is refused for most words on the factory
+ * configuration.
+ *
+ * Height is the tie break rather than coverage, because a label is going into a row of fixed pitch:
+ * a set that spells the word in the wrong size draws over its neighbours, where a set one glyph
+ * short simply refuses.
+ */
+function fontThatSpells(
+  c: Container,
+  map: NonNullable<ReturnType<typeof characterMap>>,
+  text: string,
+  preferred: number,
+): number {
+  const sets = fontSets(c) ?? [];
+  const spells = (font: number): boolean => {
+    const set = sets[font];
+    if (set === undefined) return false;
+    try {
+      codesFor(map, c, set, text, font);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  if (spells(preferred)) return preferred;
+  const want = sets[preferred]?.height;
+  const able = sets.map((_, font) => font).filter(spells);
+  if (able.length === 0 || want === undefined) {
+    // Reported against the font the page actually uses, since that is the one a reader will look at.
+    codesFor(map, c, sets[preferred] as FontSet, text, preferred);
+    throw new ComposeError(`no font in this config spells '${text}'`);
+  }
+  return able.reduce((best, font) =>
+    Math.abs((sets[font] as FontSet).height - want) < Math.abs((sets[best] as FontSet).height - want)
+      ? font : best);
+}
+
+/** What `composeActivityMenuRow` put on the screen, for a caller that has to find it again. */
+export interface ComposedActivityRow {
+  bytes: Uint8Array;
+  /** The mode the activity menu is, which the row was added to. */
+  menu: number;
+  /** Which page of that menu gained the row, counting from zero. */
+  page: number;
+  /** The base slot 10 list the row runs: beep, select the entry, clear the device mode marker. */
+  rowList: number;
+  /** The scan code the new row answers to, which is its position in the page's hit rectangles. */
+  scan: number;
+}
+
+/**
+ * Put a composed activity on the activity menu: one row on its last page, with the activity's name.
+ *
+ * The other half of `composeActivity`, which builds everything a remote needs to **run** an activity
+ * and nothing that lets anybody **start** one.
+ *
+ * **A separate builder from `composeMenuPage`, deliberately: decision 17.** The first attempt reused
+ * the device list's page builder on the strength of the two menus sharing a row pitch, and it threw
+ * on every real configuration, correctly: an activity page has two bottom keys where a device page
+ * has one page flip, so its hit page offers a different number of rectangles. Reuse would have meant
+ * a builder branching on which menu it was building, which is the shape that rots. What the two may
+ * share is a **step**, and they do: `withActivityHitPage` composes a hit page the same way
+ * `composeMenuPage` does. See `ACTIVITY_ROWS` for the measured layout and section 275 for the
+ * evidence.
+ *
+ * **Arch 12 (Harmony One) only**, decision 16's question answered: the row's own three instructions
+ * are architecture neutral, and the pixel grid, the hit rectangles and the screen program around
+ * them are that model's. Arch 14 (Harmony 600 and 700) has no touch panel at all, and arch 9
+ * (Harmony 525) binds its activities to keys rather than to a list.
+ *
+ * **It fills a page rather than adding one.** A menu's last page is grown to the next row slot, and
+ * a menu whose last page already holds three is refused rather than given a fourth page, because a
+ * new page needs a page counter, a second pool copy and a mode page count, none of which has been
+ * measured on an activity menu. That refusal is the honest boundary of what is built, and it does
+ * not bite on the two configurations chapter 1 targets, whose activity menu holds one row of three.
+ */
+export function composeActivityMenuRow(
+  c: Container, label: string, set: number,
+): ComposedActivityRow {
+  if (c.architecture !== 12) {
+    throw new ComposeError('the activity menu is composed for the Harmony One alone');
+  }
+  if (!Number.isInteger(set) || set < 0 || set >= 0xff) {
+    // 0xff is the mask the selector's own operand carries, so an entry there reads as no entry.
+    throw new ComposeError(`${set} is not a base slot 9 index this composer can select`);
+  }
+  const startSets = handlerSets(c);
+  if (startSets === undefined) throw new ComposeError('base slot 9 does not read as a table');
+  if (set >= startSets.addresses.length) {
+    // A row selecting an entry that does not exist renders correctly and starts nothing, which is
+    // the failure class every refusal in this file is for.
+    throw new ComposeError(`entry ${set} is past the ${startSets.addresses.length} that exist`);
+  }
+  const { menu, marker } = activityMenus(c);
+  if (menu === undefined || marker === undefined) {
+    throw new ComposeError('no activity menu found to add a row to');
+  }
+
+  let current = c;
+  const recordOf = (): ModeRecord => {
+    const record = modeRecords(current)?.[menu];
+    if (record === undefined) throw new ComposeError(`the activity menu stopped reading`);
+    return record;
+  };
+  const pageIndexOf = (): number => recordOf().pages.length - 1;
+  const pageOf = (): ModePage => {
+    const page = recordOf().pages.at(-1);
+    if (page === undefined) throw new ComposeError('the activity menu has no page');
+    return page;
+  };
+
+  // The layout, and the one refusal that decides whether this can run at all.
+  const startLayout = activityPageLayout(
+    touchPageOf(current, pageOf()) ?? { address: 0, areas: [], start: 0, length: 0 });
+  if (startLayout === undefined) {
+    throw new ComposeError("the activity menu's last page is not a row layout this knows");
+  }
+  if (startLayout.rows.length >= ACTIVITY_ROWS) {
+    throw new ComposeError(
+      `the activity menu's last page already draws ${ACTIVITY_ROWS} rows, and adding a page is not built`);
+  }
+  const rank = startLayout.rows.length;
+  const scan = MENU_FIRST_SCAN + startLayout.content.length;
+
+  // The label is spelled before anything moves, so an unspellable name refuses with the container
+  // untouched rather than half grown.
+  const startProgram = screenProgram(current, pageOf().program) ?? [];
+  const rowFontOf = (program: readonly { opcode: number; operands: Uint8Array }[]): number => {
+    // The font in effect where the **last row's** label is drawn, which is the font this row wants.
+    // Read rather than tabulated: the corpus draws its rows in font 6, 7 and 10 across four configs.
+    let font: number | undefined;
+    for (const one of program) {
+      if (one.opcode === OP_FONT) font = one.operands[0];
+      if ((one.opcode === OP_TEXT_AT || one.opcode === OP_TEXT_INLINE)
+          && one.operands[0] === MENU_LABEL_X
+          && one.operands[1] === MENU_ROW1_LABEL_Y + MENU_ROW_PITCH * (rank - 1)) {
+        if (font === undefined) break;
+        return font;
+      }
+    }
+    throw new ComposeError("the activity menu's page draws no row label this can copy a font from");
+  };
+  const map = characterMap(current);
+  if (map === undefined) throw new ComposeError('the config carries no character map');
+  const rowFont = fontThatSpells(current, map, label, rowFontOf(startProgram));
+  const fontSet = (fontSets(current) ?? [])[rowFont];
+  if (fontSet === undefined) {
+    throw new ComposeError('the config does not carry the font the activity menu draws its rows in');
+  }
+  const labelCodes = codesFor(map, current, fontSet, label, rowFont);
+
+  // 1. The row's action list: beep, select the activity's keypad map, clear the device mode marker.
+  // The marker's **variable** is read off the config and only its value is ours, since which
+  // variable it is differs per configuration, section 239.
+  const actionSlot = archSlot(12, ACTION_TABLE_SLOT);
+  const actionTable = current.pointerArrayAt(actionSlot);
+  if (actionTable === undefined) throw new ComposeError('base slot 10 does not read as a table');
+  const rowList = actionTable.values.length;
+  const rowBytes = new Writer(1 + 3 * 3).u8(3)
+    .u16(ROW_BEEP_OPERAND).u8(BEEP_OPCODE)
+    .u16(SELECT_BINDING_SET_MASK | set).u8(SELECT_BINDING_SET)
+    .u16(ACTIVITY_MENU_MARKER_VALUE).u8(marker.opcode);
+  const rowAt = actionTable.start;
+  const rowHole = relocate(current, rowAt, rowBytes.bytes.length);
+  rowHole.bytes.set(rowBytes.bytes, rowAt);
+  current = parse(appendTableEntries(
+    parse(rowHole.bytes), actionSlot, [current.flashBase + rowAt]));
+
+  // 2. The hit page, one rectangle wider. An existing page with exactly this geometry is reused
+  // where the config has one, which is what the corpus's own three row pages are; otherwise one is
+  // composed the way `composeMenuPage` composes one, pointer first so the census sees the slot.
+  current = withActivityHitPage(current, menu, rank);
+
+  // 3. The binding, in the page's list and in its pool copy. The copy grows first, because it sits
+  // below the original and growing it moves the original.
+  const growList = (listStart: number, entries: number): void => {
+    const at = listStart + 1 + 4 * entries;
+    const hole = relocate(current, at, 4);
+    hole.bytes.set(
+      new Writer(4).u8(0x80 | scan).u16(rowList).u8(ACTION_LIST_INDEX_OPCODE).bytes, at);
+    hole.bytes[listStart] = entries + 1;
+    current = parse(hole.bytes);
+  };
+  const listNow = taggedList(current, pageOf().list);
+  if (listNow === undefined || listNow.wide) {
+    throw new ComposeError("the activity menu's page list is not the narrow form the corpus uses");
+  }
+  const entries = listNow.entries.length;
+  const pageIndex = modePages(current).findIndex((one) => one.address === pageOf().address);
+  const copyOff = pageListCopies(current)[pageIndex];
+  if (copyOff === undefined) throw new ComposeError("the activity menu's page has no pool copy");
+  growList(copyOff, entries);
+  const listOff = current.blobOffsetOf(pageOf().list);
+  if (listOff === undefined) throw new ComposeError("the activity menu's page list moved out of reach");
+  growList(listOff, entries);
+
+  // 4. The drawing: the row's background, its icon, the font and the label, inserted where the
+  // program's closing instruction begins, so the close slides up and every address the census
+  // states is restamped with it. The background and icon are read here, after the three grows
+  // above moved them: an address read before an insertion below it is stale by that insertion.
+  const firstProgram = recordOf().pages[0]?.program;
+  if (firstProgram === undefined) throw new ComposeError('the activity menu has no first page');
+  const bg = pictureDrawnAt(current, firstProgram, ...MENU_ROW1_BG);
+  const icon = pictureDrawnAt(current, firstProgram,
+    MENU_ROW1_BG[0] + MENU_ICON_OFFSET[0], MENU_ROW1_BG[1] + MENU_ICON_OFFSET[1]);
+  if (bg === undefined || icon === undefined) {
+    throw new ComposeError("the activity menu's first page draws no row this can copy");
+  }
+  const program = screenProgram(current, pageOf().program);
+  const closing = program?.at(-1);
+  if (program === undefined || closing === undefined || closing.opcode !== OP_END) {
+    throw new ComposeError("the activity menu's page program does not end the way the corpus ends one");
+  }
+  const bgY = MENU_ROW1_BG[1] + MENU_ROW_PITCH * rank;
+  const drawn = new Writer(6 + 6 + 2 + 3 + labelCodes.length + 1);
+  // These bytes are written after the hole's position is known, so anything sitting at or above it
+  // is shifted here rather than by the census, exactly as the device list's row growth does.
+  const shift = (address: number): number =>
+    address + (address >= current.flashBase + closing.start ? drawn.bytes.length : 0);
+  drawn.u8(OP_IMAGE).u8(MENU_ROW1_BG[0]).u8(bgY).u24(shift(bg));
+  drawn.u8(OP_IMAGE).u8(MENU_ROW1_BG[0] + MENU_ICON_OFFSET[0]).u8(bgY + MENU_ICON_OFFSET[1])
+    .u24(shift(icon));
+  drawn.u8(OP_FONT).u8(rowFont);
+  drawn.u8(OP_TEXT_INLINE).u8(MENU_LABEL_X).u8(MENU_ROW1_LABEL_Y + MENU_ROW_PITCH * rank);
+  labelCodes.forEach((code) => drawn.u8(code));
+  drawn.u8(0);
+  const programHole = relocate(current, closing.start, drawn.bytes.length);
+  programHole.bytes.set(drawn.bytes, closing.start);
+  current = parse(programHole.bytes);
+
+  return { bytes: restamped(current.blob), menu, page: pageIndexOf(), rowList, scan };
+}
+
+/**
+ * Point the activity menu's last page at a hit page carrying one more row, composing one if the
+ * configuration has none.
+ *
+ * The composed page keeps **every** rectangle the old one had, in the same stored order, and adds
+ * the new row after the last content one and before the two edges. That order is the whole point:
+ * the scan codes are positional, so keeping the prefix identical keeps every binding the page
+ * already has, and the new row lands on the next unused scan.
+ */
+function withActivityHitPage(start: Container, menu: number, rank: number): Container {
+  let current = start;
+  const pageOf = (): ModePage => {
+    const page = modeRecords(current)?.[menu]?.pages.at(-1);
+    if (page === undefined) throw new ComposeError('the activity menu has no page');
+    return page;
+  };
+  const hits = touchPages(current);
+  const old = touchPageOf(current, pageOf());
+  const layout = old === undefined ? undefined : activityPageLayout(old);
+  if (hits === undefined || old === undefined || layout === undefined) {
+    throw new ComposeError('the hit map stopped reading');
+  }
+  const top = layout.rows[0] as TouchArea;
+  const added: TouchArea = {
+    ...top, y: top.y - ACTIVITY_ROW_PITCH * rank, code: MENU_FIRST_SCAN + layout.content.length,
+  };
+  const wanted: readonly TouchArea[] = [...layout.content, added, ...layout.edges];
+  const codes = wanted.map((_, k) =>
+    (k < wanted.length - 2 ? MENU_FIRST_SCAN + k : MENU_EDGE_SCANS[k - (wanted.length - 2)] as number));
+  let lead = hits.records.findIndex((page) => page.areas.length === wanted.length
+    && wanted.every((want, k) => page.areas[k]?.code === codes[k]
+      && sameRectangle(page.areas[k] as TouchArea, want)));
+  if (lead < 0) {
+    lead = hits.records.length;
+    // The table gains its pointer first, at an existing page, so the census knows the slot before
+    // the areas exist; then the page is written after the last one; then the pointer is swapped.
+    const tableAt = hits.start + hits.length;
+    const grownTable = relocate(current, tableAt, 3);
+    grownTable.bytes.set(new Writer(3).u24(old.address).bytes, tableAt);
+    grownTable.bytes[hits.start] = hits.records.length + 1;
+    current = parse(grownTable.bytes);
+    const before = touchPages(current);
+    if (before === undefined) throw new ComposeError('the hit map stopped reading');
+    const at = Math.max(...before.records.map((page) => page.start + page.length));
+    const base = current.flashBase + at;
+    const written = new Writer(wanted.length * TOUCH_AREA_LENGTH + 1 + 3 * wanted.length);
+    wanted.forEach((want, k) => {
+      written.u16(want.x).u16(want.width).u16(want.y).u16(want.height).u8(codes[k] as number)
+        .u24(base + TOUCH_AREA_LENGTH * k);
+    });
+    written.u8(wanted.length);
+    wanted.forEach((_, k) => { written.u24(base + TOUCH_AREA_LENGTH * k); });
+    const hole = relocate(current, at, written.bytes.length);
+    hole.bytes.set(written.bytes, at);
+    const placed = parse(hole.bytes);
+    const table = touchPages(placed);
+    if (table === undefined) throw new ComposeError('the hit map stopped reading');
+    placed.blob.set(new Writer(3).u24(base + wanted.length * TOUCH_AREA_LENGTH).bytes,
+                    table.start + 1 + 3 * lead);
+    current = parse(placed.blob);
+    const grown = touchPages(current)?.records[lead];
+    if (grown === undefined || grown.areas.length !== wanted.length) {
+      throw new ComposeError('the composed activity hit page does not read back');
+    }
+  }
+  // The lead byte, in place and last, so nothing above moves it again.
+  const at = current.blobOffsetOf(pageOf().address);
+  if (at === undefined) throw new ComposeError('the activity menu page moved out of reach');
+  current.blob[at] = lead;
+  return parse(current.blob);
 }
