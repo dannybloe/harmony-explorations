@@ -1426,10 +1426,24 @@ last content one renumbers every area after it, which silently moves a binding t
 
 **The two rectangles at the panel's edges are the page turn buttons, and no page binds them**,
 section 275. All 778 mode pages of four arch 12 (Harmony One) containers offer both, and 0 of them
-carry a binding on scan 46 or 47, so a list's paging is answered above the page on every screen in
-the configuration. Those two rectangles sit outside the drawn area, `x` 765 and 3556 against a
-display spanning 1257 to 3556, which is the geometry saying the buttons are beside the screen rather
-than on it.
+carry a binding on scan 46 or 47. Those two rectangles sit outside the drawn area, `x` 765 and 3556
+against a display spanning 1257 to 3556, which is the geometry saying the buttons are beside the
+screen rather than on it.
+
+**They are bound in two other places**, and **`keyCodes` is the wrong reader to ask** about either:
+it reports only bindings that end in an infrared code and answers 0 for these scans.
+
+* **Base slot 9 entries 1, 2, 3 and 4**, a press of each scan in each, so 8 bindings per container
+  on all four. Those are the fixed prefix nothing selects, section 272. Entry 1 is the only one
+  giving the two scans different lists, `0x0f` with `0xFFA0` against `0xFFA1`, undecoded.
+* **A mode record's own tagged list, exactly when the mode has one page.** Both keys on 538 of 538
+  single page modes and neither on 0 of 58 multi page ones, 1076 bindings, every one a press, and
+  962 of them the **null instruction** of opcode 0 with operand 0.
+
+So paging is a default the firmware supplies and a screen with nowhere to page turns it **off**. A
+writer that adds a second page to a one page menu must remove those two null bindings, or the new
+page is unreachable while every count closes and both checksums pass. All 12 one page list menus here
+carry them.
 
 **The rectangles at `y` 271 are the two physical buttons below the display**, and which of them a
 page enables is the difference between the two list menus, measured over the same containers:

@@ -34,7 +34,7 @@ Plan: [003-how-an-activity-is-built.md](docs/plans/003-how-an-activity-is-built.
   - [x] 1.1.8 Scored against one_config and h600_config: seven of nine right, P6 incomplete, P7 wrong
 - [x] 1.2 Compose an activity, the counterpart of `composeDevice`: `composeActivity`, four architectures
   - [x] 1.2.1 The screen half on arch 12 (Harmony One): a menu row, its hit rectangle and a drawn name (section 275)
-  - [ ] 1.2.2 A fourth activity, which needs a new menu page: a page counter, a pool copy and a page count
+  - [ ] 1.2.2 A fourth activity, which needs a new menu page: a page counter, a pool copy, a page count, and undeadening the two page turn keys (section 275)
   - [ ] 1.2.3 The screen half on arch 14 (Harmony 600), where an activity binds two keys (section 273)
 - [ ] 1.3 Write one to the spare Harmony One and watch the television
 

@@ -227,3 +227,21 @@ produce a config the remote accepts and mishandles.
   section adds is the other half: two compiles that share a build timestamp are **byte identical**, so
   the reshuffle travels with that field and asking twice can hand back the same artefact rather than a
   second sample.
+
+* **A one page screen deadens the two page turn keys**, section 275, arch 12 (Harmony One), and it is
+  the newest way to produce a file the remote accepts and mishandles. A Harmony One turns a list's
+  pages with the two touch keys **beside** the display, scans 46 and 47, and **no mode page binds
+  them**, 0 over 778 pages, so paging is a default the firmware supplies. What a screen can do is
+  switch that default off, and a screen with one page does: both keys on **538 of 538** single page
+  modes and neither on **0 of 58** multi page ones, 1076 bindings over four containers, every one a
+  press, in the **mode record's own** tagged list rather than a page's, and 962 of them the **null
+  instruction** of opcode 0 with operand 0. So a writer growing a menu from one page to two has to
+  remove those two bindings. Leave them and the file closes every count this project can check,
+  passes both checksums, renders every page identically, and the second page cannot be reached. All
+  **12** one page list menus in the corpus carry them: the activity menu and three device lists on
+  each of the three configurations whose menus hold one page.
+  **Two readers will mislead you here and both already have.** `keyCodes` answers 0 for these scans,
+  because it reports only bindings that end in an infrared code, which is the `keyCodes` versus
+  `pageScans` trap met a third time. And `ModeRecord` has **no `list` field**, its own tagged list
+  being already parsed in `entries`, so a walk written as `if (record.list !== undefined)` walks
+  nothing and reports a clean zero, which is exactly what happened when this was first measured.

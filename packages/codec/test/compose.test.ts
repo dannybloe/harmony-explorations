@@ -1141,7 +1141,7 @@ test('a Harmony One turns a list page with the buttons beside the display, which
   }
   assert.equal(allPages, 778, 'the four Harmony One configs hold 778 mode pages between them');
   assert.equal(sideRectangles, 2 * allPages, 'every one of them offers both rectangles beside the display');
-  assert.equal(sideBindings, 0, 'and not one of them binds either, so paging is answered above the page');
+  assert.equal(sideBindings, 0, 'and not one of them binds either, so no page can change the paging');
 
   assert.equal(devicePages, 29);
   assert.deepEqual([...deviceBottoms], [LEFT],
@@ -1153,4 +1153,100 @@ test('a Harmony One turns a list page with the buttons beside the display, which
   assert.deepEqual([...activityBottoms], [`${LEFT} ${RIGHT}`],
                    'an activity menu page offers both');
   assert.equal(activityEnters, 12, 'and both of its keys on all six pages enter a mode');
+});
+
+test('a screen with one page deadens the two page turn keys, and one with several leaves them alone',
+     skipUnless(...ACTIVITY_MENU_HOSTS), () => {
+  // The other half of the claim above, and the reason it needed its own measurement: `keyCodes`
+  // answers 0 for these scans, because it reports only bindings that end in an infrared code. That
+  // is the trap `CLAUDE.md` names about `keyCodes` versus `pageScans`, met a third time, so this
+  // walks every tagged list in the container instead. Section 275.
+  const PRESS = 2;
+  for (const name of ACTIVITY_MENU_HOSTS) {
+    const c = parse(require_(name));
+    const sets = handlerSets(c);
+    assert.ok(sets !== undefined, `${name}: base slot 9 does not read as a table`);
+    const roles = handlerSetRoles(c);
+
+    // Every base slot 9 entry.
+    const inSets: { set: number; scan: number; event: number }[] = [];
+    sets.addresses.forEach((address, index) => {
+      for (const entry of taggedList(c, address)?.entries ?? []) {
+        const scan = entry.tag & SCAN_MASK;
+        if (scan !== 46 && scan !== 47) continue;
+        inSets.push({ set: index, scan, event: (entry.tag & EVENT_MASK) >> 6 });
+      }
+    });
+    assert.equal(inSets.length, 8, `${name}: not 8 page turn bindings`);
+    assert.deepEqual([...new Set(inSets.map((one) => one.set))].sort((a, b) => a - b), [1, 2, 3, 4],
+                     `${name}: the page turn keys are not bound in entries 1 to 4`);
+    assert.deepEqual([...new Set(inSets.map((one) => one.event))], [PRESS],
+                     `${name}: a page turn binding is not a press`);
+    for (const one of inSets) {
+      assert.equal(roles[one.set], 'unselected',
+                   `${name}: entry ${one.set} is selected, so it is not the fixed prefix`);
+    }
+
+    // A mode record binds them too, in its **own** tagged list, and the first version of this
+    // asserted it did not: it walked a `record.list` field that does not exist, so it checked
+    // nothing and passed. The rule is asserted per record below instead of as a total.
+    let modes = 0;
+    for (const record of modeRecords(c) ?? []) {
+      modes += 1;
+      const bound = record.entries.filter((entry) => {
+        const scan = entry.tag & SCAN_MASK;
+        return scan === 46 || scan === 47;
+      });
+      // A page never does, on any of them.
+      for (const page of record.pages) {
+        for (const entry of taggedList(c, page.list)?.entries ?? []) {
+          const scan = entry.tag & SCAN_MASK;
+          assert.ok(scan !== 46 && scan !== 47, `${name}: a page binds scan ${scan}`);
+        }
+      }
+      assert.equal(bound.length, record.pages.length === 1 ? 2 : 0,
+                   `${name}: mode ${modes - 1} has ${record.pages.length} pages and binds `
+                   + `${bound.length} page turn keys`);
+    }
+    assert.ok(modes > 0, `${name}: the mode walk found nothing to walk`);
+  }
+});
+
+test('adding a page to a one page list menu has to undeaden its two page turn keys',
+     skipUnless(...ACTIVITY_MENU_HOSTS), () => {
+  // The rail that falls out of the rule above, and it is the reason `composeActivityMenuRow`
+  // refusing to add a page is worth more than it looked. Every one page list menu in the corpus
+  // binds both page turn keys to the **null instruction**, opcode 0 with operand 0, which is how a
+  // screen with nowhere to page says so. Grow such a menu to two pages and the second is
+  // unreachable, with everything else about the file correct. Section 275.
+  let menus = 0;
+  for (const name of ACTIVITY_MENU_HOSTS) {
+    const c = parse(require_(name));
+    const lists = c.actionLists() ?? [];
+    for (const record of modeRecords(c) ?? []) {
+      // A list menu is one whose pages carry rows: an activity row selects a keypad map, a device
+      // row enters a mode and writes 1 into the device mode marker.
+      let isList = false;
+      for (const page of record.pages) {
+        for (const entry of taggedList(c, page.list)?.entries ?? []) {
+          if (entry.opcode !== 0x7f) continue;
+          const list = lists[entry.operand];
+          if (list?.length !== 3 || list[0]?.opcode !== 0x75) continue;
+          if (list[1]?.opcode === 0x1f) isList = true;
+          else if (list[1]?.opcode === 0x7e && list[2]?.operand === 1) isList = true;
+        }
+      }
+      if (!isList || record.pages.length !== 1) continue;
+      menus += 1;
+      const deadened = record.entries.filter((entry) => {
+        const scan = entry.tag & SCAN_MASK;
+        return (scan === 46 || scan === 47) && entry.opcode === 0 && entry.operand === 0;
+      });
+      assert.equal(deadened.length, 2,
+                   `${name}: a one page list menu deadens ${deadened.length} page turn keys, not 2`);
+    }
+  }
+  // Twelve: the activity menu and three device lists on each of the three configs whose menus hold
+  // one page. `one_config` has none, since every one of its list menus already has two or three.
+  assert.equal(menus, 12);
 });

@@ -35179,8 +35179,51 @@ remote in his hand and the correction measures cleanly:
 
 * **A Harmony One turns a list's pages with the two buttons beside the display**, which are scans 46
   and 47, and **not one mode page binds either of them**: 778 mode pages across four containers, all
-  778 offering both rectangles, 0 bindings. So paging is answered above the page on **every** screen
-  in the configuration, the device list included, and neither menu has a flip to compare.
+  778 offering both rectangles, 0 bindings. So neither menu has a flip to compare, and a page cannot
+  change how paging behaves.
+
+  **Where they are bound took two attempts and the first answer was wrong**, so both are here.
+
+  `keyCodes` reports 0 bindings on those scans, and that is not evidence: it reports only bindings
+  that end in an infrared code, a trap `CLAUDE.md` already names about `keyCodes` versus
+  `pageScans`, met here a third time. Walking every tagged list instead found the keypad map's
+  **fixed prefix**: **8 bindings per configuration on all four**, a press of each scan in each of
+  base slot 9 entries **1, 2, 3 and 4**, all four `unselected`, which is section 272's prefix. Entry
+  1 is the only one giving the two scans different lists, a beep then opcode `0x0f` with `0xFFA0`
+  against `0xFFA1`, which `actions.ts` places as a peripheral operation without decoding it. That
+  asymmetry is the shape "previous page" and "next page" would have, and saying so is a hypothesis.
+
+  **Then "and nowhere else" turned out to be false, and the way it was false is the lesson.** The
+  walk that produced it read a `record.list` field that does not exist on a `ModeRecord`, under an
+  `if (... !== undefined)`, so it walked no mode record at all and reported a clean zero. The test
+  written from it did the same and passed. A mode record's own tagged list binds them **1076 times**
+  across the four containers.
+
+### A screen with one page deadens the two page turn keys, and that is a rail
+
+The rule inverted what a guess would have said, and it is exact on all four containers:
+
+| a mode with | binds a page turn key |
+|---|---|
+| exactly one page | **both, on 538 of 538** |
+| more than one page | **neither, on 0 of 58** |
+
+596 modes, 1076 bindings, every one of them a press. And what the great majority bind is the **null
+instruction**, opcode 0 with operand 0: 962 of the 1076, with 64 running a beep and an enter and the
+rest a handful of other shapes.
+
+So the paging is a **default** the firmware provides, and a screen with nowhere to page **switches it
+off** by binding the keys to nothing. A screen with several pages says nothing and gets the default.
+
+**That is a way to produce a file the remote accepts and mishandles**, which is this project's worst
+hazard class: grow a one page menu to two pages and the second page is unreachable, with the
+container closing every count, both checksums passing and every page rendering. Every one page list
+menu here does it, 12 of 12: the activity menu and three device lists on each of the three
+configurations whose menus hold one page.
+
+It is also why `composeActivityMenuRow` refusing to add a page is worth more than it looked. That
+refusal was written because a new page needs a counter, a pool copy and a page count; it turns out to
+need this as well, and `todo.md` 1.2.2 carries it.
 * **The rectangle above those is the left of the two physical buttons below the display.** In device
   mode the screen labels it "Activities"; in an activity it is "Options", with "Devices" on the
   right. Every one of the 29 device list pages binds it and all 29 run opcode `0x72`, which
@@ -35278,7 +35321,10 @@ the two the configuration already had.
 
 ### What would falsify it
 
-An arch 12 (Harmony One) mode page that binds scan 46 or 47. A device list page offering a rectangle
+An arch 12 (Harmony One) mode page that binds scan 46 or 47, or a keypad map entry outside 1 to 4
+that does, or a container binding fewer or more than 8 of them there. A one page mode binding fewer
+than both, or a multi page mode binding either. A one page **list** menu whose two bindings are
+anything but the null instruction. A device list page offering a rectangle
 for the right bottom button, or an activity menu page offering only one of the two. A device list
 bottom key running anything but opcode `0x72`, or an activity menu one running anything but an enter.
 A row off the `LIST_ROW_PITCH` grid, or one not starting at the panel's left edge. A fourth row slot
@@ -35291,6 +35337,9 @@ activities on one page.
 * `docs/how-an-activity-is-built.md`, whose P7 paragraph is corrected in place.
 * `docs/how-a-harmony-works.md`, which is where what the buttons **are** belongs, since that is the
   product's own account and not the file's.
-* `packages/codec/test/compose.test.ts`, five tests: the layout over six pages, the buttons over all
-  778 mode pages, the composer keeping every binding it found, the whole chain from `composeActivity`
-  through to the four hop reader, and the refusals including the full page.
+* `CLAUDE.md`'s table of rails a writer must respect, since a deadened page key is a file the remote
+  accepts and mishandles, and `.claude/skills/writing-a-config/SKILL.md` for the evidence.
+* `packages/codec/test/compose.test.ts`, seven tests: the layout over six pages, the buttons over all
+  778 mode pages, the one page rule per mode record, the deadening over the 12 one page list menus,
+  the composer keeping every binding it found, the whole chain from `composeActivity` through to the
+  four hop reader, and the refusals including the full page.

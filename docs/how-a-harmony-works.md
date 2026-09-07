@@ -318,7 +318,13 @@ own paging and the other two are how you leave the screen you are on. And the re
 down at all is the failure it corrects. The file shows a device list page carrying **four**
 rectangles above the two at the edges, three of them rows, and the fourth was read as a
 "page flip" for a month, in a constant, in four comments and in a test's title. It is not a flip;
-it is the left button, and the remote's paging is on the two rectangles that nobody had bound.
+it is the left button, and the remote's paging is on the two rectangles no page binds.
+
+**Paging those two keys is something the remote does by itself**, and a screen with only one page
+switches it off: every single page screen in these configurations binds both keys to nothing, and
+every multi page screen leaves them alone, 538 against 58 with no exception. So an editor should
+neither offer those keys nor need to, and anything that grows a menu from one page to two has to
+undo the switching off or the second page cannot be reached. Section 275.
 
 **Which is the rule at the bottom of this document, again.** A measurement over the corpus answers
 "what do these files contain" and never "what does the product do". Four rectangles per page is a
