@@ -36,9 +36,10 @@ Plan: [003-how-an-activity-is-built.md](docs/plans/003-how-an-activity-is-built.
   - [x] 1.2.1 The screen half on arch 12 (Harmony One): a menu row, its hit rectangle and a drawn name (section 275)
   - [ ] 1.2.2 A fourth activity, which needs a new menu page: a page counter, a pool copy, a page count, and undeadening the two page turn keys (section 275)
   - [ ] 1.2.3 The screen half on arch 14 (Harmony 600), where an activity binds two keys (section 273)
-  - [ ] 1.2.4 An activity's own screen mode, so its enter handler can open with an enter mode instruction as all 12 real ones do (section 276)
+  - [x] 1.2.4 An activity's own screen mode, so its enter handler can open with an enter mode instruction as all 60 real ones do: a start up screen, then a working screen named by a base slot 14 record device mode's Activities key reaches (section 279)
   - [x] 1.2.5 Put a device's power variable below narrow, renumbering every reference: written 8 September 2026, the variable is one byte and holds 1 after a press, and the seven existing activities came through identical. The television still does not respond, so the width was not the cause (section 277)
   - [ ] 1.2.6 The arch 14 send prelude: every Harmony 600 and 700 send list opens with a 0x7F, one distinct target each, which the composer does not emit (section 278)
+  - [ ] 1.2.7 Power off: a composed device joins the idle map's all off list and every existing activity's enter list as 0, and a composed activity writes every other device 0, so Off and switching activity turn it off (section 279)
 - [ ] 1.3 Write one to the spare Harmony One and watch the television, per docs/plans/004-writing-an-activity.md
   - [x] 1.3.1 First write: the activity appears on the menu and beeps, and starts nothing (section 276)
   - [x] 1.3.2 Why: base slot 13's narrow and wide size the state variable storage and everything above it is painted with 0xFE at every boot, so the power variable held 65278 instead of 0. Measured on arch 12 and both arch 14 images, confirmed on hardware; the fill is unmeasured on arch 9
@@ -47,7 +48,7 @@ Plan: [003-how-an-activity-is-built.md](docs/plans/003-how-an-activity-is-built.
   - [x] 1.3.5 The television still does not respond: the transition fired all along and the composed send was bare, where every corpus send is paired with a 0x7C for the same device (section 278)
   - [x] 1.3.6 Cheap discriminator before building a screen: point a 0x7E at a mode the config already has. The screen changed and nothing was sent, so it was not the cause (section 278)
   - [x] 1.3.7 Pair every composed send with its 0x7C: written 24 September 2026, 25 blocks, and the activity switches the television on through the composed device (section 278)
-  - [ ] 1.3.8 Rebuild from the composers alone and write that, since the file on the remote carries a hand added enter list and was paired by a script
+  - [x] 1.3.8 Rebuild from the composers alone and write that: written 24 September 2026, 25 blocks, the activity shows its start up and working screens with header, pads and Devices, and comes back from device mode (section 279)
 
 ## 2. Screens
 

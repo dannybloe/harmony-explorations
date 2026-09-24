@@ -36015,3 +36015,166 @@ Two claims in section 277 are wrong. Each carries a pointer here rather than bei
 * `tests/test_one_send_path.py`: the two dispatcher arms reach one worker, only the `0x7C` handler
   marks its device byte, the worker's full test agrees with section 236's ring bounds, and the
   priority byte at `0x119` takes 2 from the send, 1 from the quantity and 3 after the picker.
+
+## 279. An activity on a Harmony One shows two screens, and the one it runs on is named by a base slot 14 record that device mode's Activities key reaches
+
+Section 278 ended with a composed activity that switched the television on and showed the wrong
+screen: the device's own page, a device page's pads where an activity has blue ones, no "Devices" key, no
+header until the pairing, and the surrounding keys of a device page. That is because the composer
+entered the device's mode, which was section 277's cheap discriminator and never meant to stay. This
+section reads what an activity's screen is, composes one, and writes the result on the spare
+Harmony One, rebuilt from the composers alone, which is todo 1.3.8.
+
+### Two screens, not one
+
+**An activity's enter list opens by entering a screen and ends by entering another.** The first is a
+start up screen, "Keep the remote pointed at your system", of kind 0 with one page, whose record's
+own tagged list binds 52 keys to lists that do nothing plus the enter, leave and header handlers, and
+whose page list is empty. It is the same shape on 60 of 60 and each activity has its own. The activity's
+enter list follows the `0x7E` with `0x07` band `0xFB`, cancel every timer, which section 278 read.
+The second is the
+**working screen**: the activity's own pads, blue, a "Devices" key at the right bottom, and the
+header. It is entered at the end of the chain, behind the infrared.
+
+Over the thirteen distinct Harmony One configurations here that hold an activity, 60 activities:
+
+* **The first instruction of every enter list is a `0x7E`, and it is never the working screen**,
+  0 of 60. The second is `07:FFFB` on 60 of 60.
+* **The working screen is reached from the enter list by calls alone on 8 of 60**, all eight on the
+  everyday Harmony One, `one_config`, each behind a `0x3F` whose payload is the call. On the other
+  52 the deferred call enters a Remote Assistant screen instead, "If any devices are not set up
+  correctly, press Help now", whose OK key's list enters the working screen, so calls alone reach it
+  only through that key's list, deep and not checked. Following the chain is not a reader.
+* **`0x3F` with operand `0xD000` occurs 73 times in those thirteen containers, always as the first
+  of a two slot list whose second is a `0x7F`**, and that call's list is `{1F:FB02, 7F:...}` on 73 of
+  73. Sixty are one per activity, called second to last from its enter list; the last instruction of
+  every enter list is a call into `{1F:FB01, 7F:...}`. The other thirteen, one per configuration, are
+  called from a list that is not an enter list. `0xD100` occurs 21 times in the same shape, on the
+  three configurations Logitech compiled for us alone. That `0xD000` defers its call until what is
+  queued ahead of it has gone is an inference from where it sits, after every write and send of the
+  enter list, and **is not read in the firmware**.
+
+### The table that names the working screen
+
+The remote has to get back to the working screen from device mode, and that path is a table.
+**Device mode's Activities key**, the left bottom key of every device mode page, runs a chain that
+maps the activity running flag through base slot 14 and then `CurrentActivityState`, and the record
+it lands in has one case per activity whose screen program is `queue 0x7E:mode; end`, section 39's
+second interpreter queueing an action instruction, opcode 17. Its cases are the working screens.
+
+The record is found by walking, and **only from that key**: the right bottom key of an activity's
+working screen, "Devices", reaches a second record keyed by the same variable whose cases enter each
+activity's own device list, so walking every key a device mode page binds finds two candidates. On
+twelve of the thirteen, keeping the records whose every activity case enters a mode finds three, and
+on the factory configuration five. From the Activities key alone the walk finds exactly one record on
+463 of 463 device mode pages over the thirteen.
+
+| configurations | the record | activities |
+|---|---|---|
+| `one_config_unprogrammed`, `one_spare_after_sync` | 3 | 1 each |
+| `compiled_protocols`, `_2`, `_3` | 5 | 7 each |
+| `one_config` | 11 | 8 |
+| `one_spare_myharmony`, `one_spare_20260830`, `calibration_favzero` | 13 | 7 each |
+| `calibration_one`, `calibration_favchannels`, `phase7_before`, `phase7_after` | 13 | 2 each |
+
+**Every activity has a case**, 60 of 60 over the thirteen, **and the record has exactly one case
+more**, for the idle value, whose program queues a `0x72` into a further record rather than entering
+a screen, 13 of 13. The record's number varies four ways, which is why it is read off the walk and never carried as a constant. The
+closure is the everyday Harmony One's eight: the case the table names is the screen the enter chain
+reaches by calls, on all eight.
+
+### The working screen's shape, on the spare
+
+The spare Harmony One's four one page working screens, modes 47, 83, 149 and 181, each name
+lists of their own whose contents are identical: enter `1f:eb12 7f:2e4`, leave
+`1f:ea12 7f:2fd 7f:361`, header `73:0 73:3 73:2`, and one timer, `0x12`, four seconds, which fires
+`73:3 73:1 1f:eb12`, two screen programs and itself again. The record's own tagged list opens with
+`af:0 ae:0`, section 272's deadened page turn keys, since each has one page. The hit page offers the
+Devices key at scan 48 and pads at 49 to 53 on three of them and 49 and 50 on the fourth, mode 83.
+Each page's program calls a chrome of its own, since the chrome draws the title, and then draws
+"Devices" and a blue pad picture per slot with its label beneath. Each Devices key runs
+`{75, 7E:its own device list}`.
+
+The colour is in the picture: six pad slots, six addresses and three distinct pictures, one per row,
+and no working screen's pad picture is a device page's on any of the thirteen.
+
+### What the composer does
+
+`composeActivityScreen` copies the lowest one page working screen that has the two null entries,
+exactly one `{0x75, 0x7E}` key and a program that opens with a call, and gives it the new activity's
+title and pads. Then it adds one case to the table: the `{u16 value; u24 address}` pair, the count,
+and the two instruction program. `composeActivity` with `screen` writes an enter list close to the
+corpus's: the start up screen of a named existing activity, cancel every timer, the target writes, the
+counter write, the activity running list every enter list calls, `{07:ffff, a6:1}` on the spare, and
+last a `{3F:D000, 7F:show}` list whose call enters the working screen.
+
+**That last list is not the corpus's shape**: every real payload calls into the Remote Assistant's
+branch and every real enter list ends with one more call into it, where ours enters the working
+screen directly and ends there. So a composed activity asks no Remote Assistant question.
+
+Three things it does not do. The Devices key enters the **all devices list** rather than a device list
+of this activity's own, because composing that is a further mode and a further record case. It builds one page, five pads at most on the spare and two on the
+everyday Harmony One, and the template rule is fitted to the spare: it refuses on five of the
+thirteen, the factory configuration and the four with two activities, which have no one page working
+screen with a Devices key. And **it switches no other device off.** On the spare Harmony One each of
+the seven activities' enter lists writes the power variable of each of the five original devices, 1
+for those it uses and 0 for the rest, through the lists it calls, and the idle key map's enter list
+writes all five 0; the model prefix map binds a key to selecting that idle map, `1F:FF0D`, which is
+presumably Off and not measured. `TV_OnlinePower` is written by none of them. That is the spare's
+shape and not a general one: on `compiled_protocols` twelve or thirteen of fifteen power variables are
+written by no activity at all, which is not read. A composed device is in none of these lists, so its
+power variable is written 1 by its own activity and 0 by nothing, and a composed activity leaves every
+other device as it was.
+
+### The hardware
+
+Written on 24 September 2026 to the spare Harmony One, the rebuild from the composers alone that
+todo 1.3.8 asks for: `compose-device` then `compose-activity`, off the spare's read of 30 August
+2026, with no list added or paired by hand. The compare base was a fresh region read of the unit,
+equal byte for byte to the previous base with the previous write's container laid over it, section
+277's construction. Every one of the 25 blocks matched it before the erase, and the whole
+configuration read back identical to the file afterwards.
+
+Pressed by Danny, all five as predicted:
+
+1. The activity opens on its start up screen and moves on to its working screen, two blue pads,
+   Power and Mute, and "Devices" at the right bottom.
+2. The header is drawn: clock, battery, infrared indicator and the activity's name.
+3. The pads and the hard keys work.
+4. "Devices", then device mode's "Activities" key, comes back to the working screen, which is the
+   record case the composer added.
+5. Off ends the activity and switches nothing, the power off gap above. The idle map's enter list
+   writes the five original devices 0 and none was on.
+
+So the deferred call fires on arch 12, and the start up screen's dead keys were not a trap.
+
+### Scope, decision 16
+
+* The two screens, the table and its walk: arch 12 (Harmony One), over thirteen configurations.
+  **Not checked** on arch 14 (Harmony 600 and 700), whose activities have screens of their own and
+  whose device mode has an "Activity" key, and arch 9 (Harmony 525) and arch 8 (Harmony 880 and 885),
+  which have no touch panel. The composer refuses anything but arch 12.
+* `0x3F`'s deferral: an inference, on arch 12 only, not read in any firmware image; that the call
+  it carries runs is measured on the spare, item 1 of the hardware above.
+
+### Sources
+
+The corpus, `docs/findings.md` sections 39, 272, 275, 276 and 278, and the spare's own screens
+rendered by `make render`. **Neither the firmware nor Logitech's client was consulted**: the client
+compiles nothing, per its register row, and the question was answered by what the configurations
+contain; the one claim that would need the firmware, what `0x3F` does, is marked as unread.
+
+### Falsification
+
+A Harmony One activity with no case in the record the Activities key reaches, or a case that is not
+its working screen. On the remote, the composed activity staying on its start up screen would have, and did not.
+
+### Where it lands
+
+* `packages/codec/src/inventory.ts`: `activityScreens`, the walk, and `activitiesKey`.
+* `packages/codec/src/compose.ts`: `composeActivityScreen`, `nextActivityValue`, and the `screen`
+  option of `composeActivity`.
+* `packages/codec/bin/compose-activity.ts`: `--pads`, `--startup-like` and `--no-screen`.
+* `packages/codec/test/compose.test.ts`: the table per configuration, exact, with the enter chain
+  closure; a composed activity's two screens, enter list, deadened keys, full accounting and round
+  trip; and the three refusals.

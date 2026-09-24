@@ -2,7 +2,8 @@
  * Put an activity into a configuration, keypad map, state transitions, menu row and all.
  *
  *   node packages/codec/bin/compose-activity.ts --in <config> --out <file> --label 'LG kijken' \
- *       --targets 51=1 --keys 3:4809,4:4810,9:4813,19:4811,20:4812 --icon-like 'LG WebOS'
+ *       --targets 51=1 --keys 3:4809,4:4810,9:4813,19:4811,20:4812 --icon-like 'LG WebOS' \
+ *       --pads Power:4808,Mute:4813 --startup-like 'LG WebOS'
  *
  * The counterpart of `compose-device.ts` and the same job for chapter 1: run the composition on a
  * real configuration and print every check somebody should read before the result goes near a
@@ -20,6 +21,11 @@
  * **A length change, like `compose-device.ts` and unlike `set-delay.ts`**, so the block count is
  * printed: everything after the first insertion moves and the trailer checksum moves with it.
  *
+ * **The activity gets its own two screens**, section 279: the start up screen of `--startup-like`,
+ * an existing activity's, and a working screen of its own with `--pads` on it, `label:list` pairs,
+ * which may be none. `--no-screen` leaves both out, which is what this produced before and what left
+ * the remote on the page that started the activity.
+ *
  * **The build timestamp is stamped**, unlike `compose-device.ts`, which deliberately does not. That
  * script's reason was that an exercise should differ from its input only where it says; this one is
  * meant to be written, and an arch 12 (Harmony One) remote reseeds its clock from that stamp at
@@ -35,8 +41,11 @@ import {
   activityBindings,
   assertQueueFits,
   assertStateTableConsistent,
+  activityScreens,
   composeActivity,
   composeActivityMenuRow,
+  composeActivityScreen,
+  nextActivityValue,
   coverage,
   handlerSetRoles,
   handlerSets,
@@ -71,6 +80,9 @@ const keysArg = argument('keys') ?? '';
 // Which existing activity menu row's icon the new row wears, by its drawn label, so a television
 // activity gets the television's. Without it the first row's icon is copied, whatever it shows.
 const iconLike = argument('icon-like');
+const withScreen = !process.argv.includes('--no-screen');
+const startupLike = argument('startup-like');
+const padsArg = argument('pads') ?? '';
 
 const targets = targetsArg.split(',').map((one) => {
   const [variable, value] = one.split('=');
@@ -81,6 +93,12 @@ const keys = keysArg === '' ? [] : keysArg.split(',').map((one) => {
   const [scan, list] = one.split(':');
   if (scan === undefined || list === undefined) fail(`${one} is not scan:list`);
   return { scan: Number(scan), list: Number(list) };
+});
+
+const pads = padsArg === '' ? [] : padsArg.split(',').map((one) => {
+  const cut = one.lastIndexOf(':');
+  if (cut <= 0) fail(`${one} is not label:list`);
+  return { label: one.slice(0, cut), list: Number(one.slice(cut + 1)) };
 });
 
 const before = parse(new Uint8Array(readFileSync(input)));
@@ -109,7 +127,19 @@ for (const key of keys) {
     + `${list === undefined ? 'MISSING' : list.map((one) => `0x${one.opcode.toString(16)}:${one.operand}`).join(' ')}\n`);
 }
 
-const built = composeActivity(before, { label, targets, keys });
+const screen = withScreen
+  ? composeActivityScreen(before, nextActivityValue(before), label, pads,
+                          startupLike === undefined ? {} : { startupLike })
+  : undefined;
+const built = composeActivity(screen === undefined ? before : parse(screen.bytes), {
+  label, targets, keys,
+  ...(screen === undefined ? {} : {
+    screen: {
+      startupMode: screen.startupMode, workingMode: screen.mode, activeList: screen.activeList,
+      activity: screen.activity,
+    },
+  }),
+});
 const shown = composeActivityMenuRow(parse(built.bytes), built.label, built.set,
                                      iconLike === undefined ? {} : { iconLike });
 // A save is stamped with the moment of saving, base slot 3 and the clock's own state values.
@@ -124,6 +154,9 @@ if (added === undefined) fail('the new keypad map is bound to nothing');
 if (handlerSetRoles(after)[built.set] !== 'activity') fail('the new entry does not read as an activity');
 if (added.scan !== shown.scan || added.list !== shown.rowList) {
   fail('the menu row the reader finds is not the one that was composed');
+}
+if (screen !== undefined && activityScreens(after)?.screens.get(built.activity) !== screen.mode) {
+  fail('the record the remote returns through does not name the composed working screen');
 }
 const report = coverage(after);
 if (report.accounted !== report.total) {
@@ -141,6 +174,11 @@ process.stdout.write(`stamped ${builtAt}\n`);
 process.stdout.write(`${after.blob.length} bytes, activity number ${built.activity}, keypad map `
   + `entry ${built.set} of ${grown?.addresses.length}, menu row on scan ${shown.scan} of mode `
   + `${shown.menu} page ${shown.page}, running list ${shown.rowList}\n`);
+if (screen !== undefined) {
+  process.stdout.write(`working screen mode ${screen.mode}, pads on scans [${screen.scans.join(', ')}], `
+    + `Devices key list ${screen.devicesList}, start up screen mode ${screen.startupMode}, `
+    + `returned to through base slot 14 record ${screen.map}\n`);
+}
 process.stdout.write('every byte accounted, no overlap, checksum agrees, emitter round trips, '
   + `all four hops read back, deepest action list ${worst?.peak} of ${ACTION_QUEUE_INSTRUCTIONS} `
   + 'queue slots\n');

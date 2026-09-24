@@ -23,7 +23,11 @@ import {
   ACTION_LIST_INDEX_OPCODE,
 } from './sections.ts';
 import { characterMap, screenStrings } from './text.ts';
-import { panelPoint, touchOwner, touchPageOf } from './touch.ts';
+import {
+  SCREEN_END, SCREEN_QUEUE_INSTRUCTION, screenProgram,
+} from './screen.ts';
+import { valueMaps } from './valuemap.ts';
+import { EDGE_CODES, PANEL_LEFT, panelPoint, touchOwner, touchPageOf } from './touch.ts';
 import type { ScreenString } from './text.ts';
 import type { TouchArea } from './tables.ts';
 import type { ModePage, ModeRecord, StateRecord } from './sections.ts';
@@ -312,6 +316,140 @@ export function activityWriterCount(c: Container): number | undefined {
 export function idleActivityValue(c: Container): number | undefined {
   return activityVariable(c)?.record?.first;
 }
+
+/** Where each activity's working screen is stated: one base slot 14 record, keyed by activity. */
+export interface ActivityScreens {
+  /** The base slot 14 record, by index, which is what an `0x72` operand's high byte selects. */
+  map: number;
+  /** Activity value to the base slot 6 mode that activity shows once it is running. */
+  screens: Map<number, number>;
+}
+
+/**
+ * The screen each activity shows while it runs, read from the table the remote itself consults to
+ * get back to it, section 279.
+ *
+ * **An activity has two screens and this is the second.** Its enter list opens by entering a mode
+ * whose page says "Keep the remote pointed at your system" and binds every key to nothing; the
+ * screen with the activity's own pads and "Devices" in the corner is entered at the end of the
+ * chain, behind the infrared. So the first `0x7E` of an enter list is the wrong place to look, and
+ * following the chain is worse, because it branches on the Remote Assistant's state variables and
+ * reaches half a dozen help screens.
+ *
+ * The table is the reliable source, and it is found the way the remote reaches it. **Device mode's
+ * "Activities" key** maps a state variable through base slot 14, and while an activity runs that
+ * chain lands in a record keyed by `CurrentActivityState` whose cases are the two instruction screen
+ * program `queue 0x7E:mode; end`. So this walks the Activities key of every device mode page, follows
+ * `0x7F` into lists and `0x72` into the record it selects and on through the instructions its cases
+ * queue, and keeps the records the walk selects **on the activity variable**. Only that key: walking
+ * every key a device mode page binds reaches the Devices key's record too, which is keyed by the same
+ * variable, and then there are two answers.
+ *
+ * **Shape alone was tried first and is not enough**: on twelve of the thirteen Harmony One
+ * configurations with activities, three records are keyed by the activity and enter a mode on every
+ * case an activity binds, and on the factory one five. The others map each activity to its own device
+ * list, which is what the Devices key of the activity's screen enters. Every one of them also carries
+ * a case for the idle value, which enters no mode, so "every case" is the wrong test. The walk
+ * separates them where the shape cannot: from the Activities key alone it finds exactly one record on
+ * 463 of 463 device mode pages over those thirteen.
+ *
+ * Cases for values no activity binds are ignored, and so is a binding with no case, which is exactly
+ * what a composed activity is before its screen is composed. Undefined when the walk reaches no such
+ * record or more than one, since two candidates would be a guess.
+ */
+export function activityScreens(c: Container): ActivityScreens | undefined {
+  const variable = activityVariable(c);
+  const lists = c.actionLists();
+  const maps = valueMaps(c);
+  const marker = deviceModeMarker(c);
+  if (variable === undefined || lists === undefined || maps === undefined || marker === undefined) {
+    return undefined;
+  }
+  const values = new Set(activityBindings(c).map((one) => one.activity));
+  const queuedBy = (address: number): Instruction[] => (screenProgram(c, address) ?? [])
+    .filter((one) => one.opcode === SCREEN_QUEUE_INSTRUCTION)
+    .map((one) => ({
+      operand: (one.operands[0] as number) | ((one.operands[1] as number) << 8),
+      opcode: one.operands[2] as number,
+    }));
+  const enters = (address: number): number | undefined => {
+    const program = screenProgram(c, address);
+    if (program === undefined || program.length !== 2) return undefined;
+    if (program[1]?.opcode !== SCREEN_END) return undefined;
+    const [queued] = queuedBy(address);
+    return queued?.opcode === ENTER_MODE ? queued.operand : undefined;
+  };
+
+  // The walk. A visited set per instruction, since the chains loop: a case can queue the key's own
+  // list again, and the device list's lists call shared machinery several levels deep.
+  const reached = new Set<number>();
+  const seen = new Set<string>();
+  const walk = (instruction: Instruction, depth: number): void => {
+    const key = `${instruction.opcode}:${instruction.operand}`;
+    if (depth > MAP_WALK_DEPTH || seen.has(key)) return;
+    seen.add(key);
+    if (instruction.opcode === ACTION_LIST_INDEX_OPCODE) {
+      for (const one of lists[instruction.operand] ?? []) walk(one, depth + 1);
+    } else if (instruction.opcode === MAP_VALUE_OPCODE) {
+      const map = instruction.operand >> 8;
+      if ((instruction.operand & 0xff) === variable.index) reached.add(map);
+      for (const [, target] of maps[map]?.entries ?? []) {
+        for (const one of queuedBy(target)) walk(one, depth + 1);
+      }
+    }
+  };
+  const deviceModes = new Set<number>();
+  for (const list of lists) {
+    if (!isDeviceListRowShape(list)) continue;
+    const end = list[2] as Instruction;
+    if (end.opcode === marker.opcode && end.operand === marker.operand) {
+      deviceModes.add((list[1] as Instruction).operand);
+    }
+  }
+  const records = modeRecords(c) ?? [];
+  for (const mode of deviceModes) {
+    for (const page of records[mode]?.pages ?? []) {
+      const left = activitiesKey(c, page);
+      if (left === undefined) continue;
+      for (const entry of taggedList(c, page.list)?.entries ?? []) {
+        if (entry.tag === ((KEY_EVENT_PRESS << KEY_EVENT_SHIFT) | left)) walk(entry, 0);
+      }
+    }
+  }
+
+  const found: ActivityScreens[] = [];
+  for (const map of reached) {
+    const screens = new Map<number, number>();
+    for (const [value, target] of maps[map]?.entries ?? []) {
+      if (!values.has(value)) continue;
+      const mode = enters(target);
+      if (mode !== undefined) screens.set(value, mode);
+    }
+    if (screens.size > 0) found.push({ map, screens });
+  }
+  return found.length === 1 ? found[0] : undefined;
+}
+
+/**
+ * The scan code of a page's **left bottom key**, the one device mode labels "Activities", or
+ * undefined where the page offers none.
+ *
+ * Found by position rather than by code, since a code is an area's place in its hit page, section
+ * 275: the lowest content rectangle that starts at the panel's left edge. The right bottom key, where
+ * a page has one, is "Devices" and leads to the running activity's device list, which is a different
+ * record keyed by the same variable, so walking both keys finds two answers where there is one.
+ */
+function activitiesKey(c: Container, page: ModePage): number | undefined {
+  const areas = (touchPageOf(c, page)?.areas ?? []).filter((one) => !EDGE_CODES.includes(one.code));
+  if (areas.length === 0) return undefined;
+  const bottom = Math.min(...areas.map((one) => one.y));
+  return areas.find((one) => one.y === bottom && one.x === PANEL_LEFT)?.code;
+}
+
+/** Opcode `0x72`: map a state variable's value through the base slot 14 record its high byte names. */
+const MAP_VALUE_OPCODE = 0x72;
+/** How deep `activityScreens` follows a chain. A guard against a loop, not a reading: three suffice. */
+const MAP_WALK_DEPTH = 12;
 
 /** An activity, the page whose keys start it, and its name where the config lets us name it. */
 export interface ActivityName {

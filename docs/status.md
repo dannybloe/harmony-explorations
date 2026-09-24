@@ -559,7 +559,7 @@ finding.
 
 `todo.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 278<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 279<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -823,6 +823,16 @@ figures common to both carry `fact:` markers, so `make facts` moves every copy t
 cannot drift apart; what a reader should not expect is two independent statements of one measurement.
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
+
+**And it looks like an activity now, section 279.** A Harmony One activity shows two screens: a
+start up one while the commands go out, and then its own, with blue pads, "Devices" in the corner and
+the header. The composer made neither, so the activity ran inside the television's device page. Which
+screen an activity runs on is stated by one table, the one device mode's "Activities" key uses to get
+back, and it has a case for all 60 activities in the thirteen Harmony One configurations here. The
+rebuild from the composers alone, with nothing added by hand, was written to the spare and does
+everything a real activity does on screen. What it still does not do is **switch anything off**: a
+composed device is in no activity's power off list and not in the one Off runs, so Off ends the
+activity and leaves the television on, measured, which is `todo.md` 1.2.7.
 
 **And a composed activity switches the television on, sections 276 to 278.** Written to the spare
 Harmony One four times over before it did, and each failure was a different rail. The first write put

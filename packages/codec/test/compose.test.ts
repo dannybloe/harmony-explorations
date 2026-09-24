@@ -26,6 +26,10 @@ import {
   stateVariableSite,
   composeActivity,
   composeActivityMenuRow,
+  composeActivityScreen,
+  activityScreens,
+  nextActivityValue,
+  valueMaps,
   activityBindings,
   activityNames,
   touchPageOf,
@@ -1460,4 +1464,191 @@ test('renumbering refuses a position it cannot express', skipUnless('one_config'
   // the old behaviour: appending changes no reference at all.
   const appended = renumberStateVariables(c, table.count);
   assert.deepEqual(appended, c.blob);
+});
+
+/**
+ * Every Harmony One configuration here that has an activity, and the base slot 14 record its
+ * Activities key reaches, section 279. One per distinct configuration: the spare's many region reads
+ * hold the same record and would only repeat `one_spare_20260830`.
+ *
+ * The record number differs four ways, which is the point of reading it off the walk rather than
+ * carrying one: 3 on a factory configuration, 5 on the three Logitech compiled for us, 11 on the
+ * everyday Harmony One and 13 on the spare and the calibration account.
+ */
+const ACTIVITY_SCREEN_RECORDS: Readonly<Record<string, number>> = {
+  one_config_unprogrammed: 3,
+  one_spare_after_sync: 3,
+  one_config: 11,
+  one_spare_myharmony: 13,
+  one_spare_20260830: 13,
+  calibration_one: 13,
+  calibration_favchannels: 13,
+  calibration_favzero: 13,
+  compiled_protocols: 5,
+  compiled_protocols_2: 5,
+  compiled_protocols_3: 5,
+  phase7_before: 13,
+  phase7_after: 13,
+};
+
+test('the Activities key of device mode reaches one record, and it names a screen for every activity',
+     skipUnless(...Object.keys(ACTIVITY_SCREEN_RECORDS)), () => {
+  let activities = 0;
+  let reachedByCalls = 0;
+  for (const [name, record] of Object.entries(ACTIVITY_SCREEN_RECORDS)) {
+    const c = parse(require_(name));
+    const found = activityScreens(c);
+    assert.ok(found !== undefined, `${name}: the walk found no record, or more than one`);
+    assert.equal(found.map, record, name);
+    // Every activity a key starts has a working screen, and nothing else does: the reader keeps only
+    // values some key starts, so the record's one further case, the idle value's, is checked below
+    // from the raw record. A configuration
+    // Logitech compiled never leaves one out, which is what makes a composed activity without one
+    // the defect this section was opened for.
+    const bound = [...new Set(activityBindings(c).map((one) => one.activity))].sort((a, b) => a - b);
+    assert.deepEqual([...found.screens.keys()].sort((a, b) => a - b), bound, name);
+    activities += bound.length;
+    // The raw record holds exactly one case beyond the activities, for the idle value, and it enters
+    // no screen: its program queues a `0x72` into another record.
+    const raw = (valueMaps(c)?.[record]?.entries ?? []).map(([value]) => value);
+    const extra = raw.filter((value) => !bound.includes(value));
+    assert.equal(extra.length, 1, `${name}: the record's cases beyond the activities`);
+    const idle = stateVariables(c).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME))?.record?.first;
+    assert.equal(extra[0], idle, `${name}: the extra case is not the idle value`);
+
+    // The closure, from the other end: the enter list. Its first instruction enters the start up
+    // screen and **never** the working one, and the working one is reached by following calls alone,
+    // behind a deferred `0x3F`, on the everyday Harmony One's eight and on nothing else. The other 52
+    // get there through the Remote Assistant's timers and comparisons, which is why the table and
+    // not the chain is what the reader reads.
+    const lists = c.actionLists() ?? [];
+    const sets = handlerSets(c);
+    assert.ok(sets !== undefined, name);
+    const done = new Set<number>();
+    for (const binding of activityBindings(c)) {
+      if (done.has(binding.activity)) continue;
+      done.add(binding.activity);
+      const enter: { tag: number; operand: number } | undefined = (taggedList(c, sets.addresses[binding.set] as number)?.entries ?? [])
+        .find((one) => one.tag === 1);
+      assert.ok(enter !== undefined, `${name}: activity ${binding.activity} has no enter list`);
+      const working = found.screens.get(binding.activity);
+      const first: { opcode: number; operand: number } | undefined = (lists[enter.operand] ?? [])[0];
+      assert.equal(first?.opcode, 0x7e, `${name}: activity ${binding.activity}`);
+      assert.notEqual(first?.operand, working, `${name}: activity ${binding.activity}`);
+      let deferred = false;
+      const walk = (list: number, depth: number, behind: boolean): void => {
+        if (depth > 8) return;
+        const body = lists[list] ?? [];
+        body.forEach((one, k) => {
+          if (one.opcode === 0x7e && one.operand === working && behind) deferred = true;
+          if (one.opcode === 0x7f) walk(one.operand, depth + 1, behind || body[k - 1]?.opcode === 0x3f);
+        });
+      };
+      walk(enter.operand, 0, false);
+      if (deferred) reachedByCalls += 1;
+      if (deferred) assert.equal(name, 'one_config');
+    }
+  }
+  // 1 + 1 + 8 + 7 + 7 + 2 + 2 + 7 + 7 + 7 + 7 + 2 + 2.
+  assert.equal(activities, 60);
+  assert.equal(reachedByCalls, 8);
+});
+
+test('a composed activity gets its own working screen and enters it after the start up screen',
+     skipUnless('one_spare_20260830'), () => {
+  const c = parse(require_('one_spare_20260830'));
+  const before = activityScreens(c);
+  assert.ok(before !== undefined);
+  const activity = nextActivityValue(c);
+
+  const screen = composeActivityScreen(c, activity, 'Test', [
+    { label: 'Power', list: 0 },
+    { label: 'Mute', list: 1 },
+  ], { startupLike: 'LG WebOS' });
+  const middle = parse(screen.bytes);
+  assert.equal(screen.activity, activity);
+  assert.equal(screen.map, before.map);
+  assert.equal(screen.scans.length, 2);
+
+  const built = composeActivity(middle, {
+    label: 'Test',
+    targets: [{ variable: aDeviceVariable(middle), value: 1 }],
+    keys: [{ scan: 20, list: 0 }],
+    screen: {
+      startupMode: screen.startupMode, workingMode: screen.mode,
+      activeList: screen.activeList, activity: screen.activity,
+    },
+  });
+  assert.equal(built.activity, activity);
+  // A case is only read for an activity some row starts, so the row goes on too.
+  const after = parse(composeActivityMenuRow(parse(built.bytes), built.label, built.set).bytes);
+
+  // The record gains the one case and every existing case keeps its screen.
+  const found = activityScreens(after);
+  assert.ok(found !== undefined, 'the composed container no longer reads one record');
+  assert.equal(found.map, before.map);
+  assert.equal(found.screens.get(activity), screen.mode);
+  for (const [value, mode] of before.screens) assert.equal(found.screens.get(value), mode);
+
+  // The enter list opens the way all 60 real ones do, section 279, and ends by deferring the
+  // working screen behind whatever was queued before it.
+  const lists = after.actionLists() ?? [];
+  const enter = lists[built.enterList] ?? [];
+  assert.deepEqual(enter.slice(0, 2), [
+    { opcode: 0x7e, operand: screen.startupMode },
+    { opcode: 0x07, operand: 0xfffb },
+  ]);
+  assert.deepEqual(enter.at(-2), { opcode: 0x7f, operand: screen.activeList });
+  const deferred = enter.at(-1);
+  assert.equal(deferred?.opcode, 0x7f);
+  const defer = lists[deferred.operand] ?? [];
+  assert.equal(defer.length, 2);
+  assert.deepEqual(defer[0], { opcode: 0x3f, operand: 0xd000 });
+  assert.equal(defer[1]?.opcode, 0x7f);
+  assert.deepEqual(lists[(defer[1] as { operand: number }).operand], [{ opcode: 0x7e, operand: screen.mode }]);
+  assert.notEqual(screen.startupMode, screen.mode);
+
+  // The active list is the one every other enter list calls: silent write of 1 into a variable.
+  assert.deepEqual((lists[screen.activeList] ?? [])[0], { opcode: 0x07, operand: 0xffff });
+
+  // The page's Devices key runs a beep and enters a device list.
+  const devices = lists[screen.devicesList] ?? [];
+  assert.equal(devices.length, 2);
+  assert.equal(devices[0]?.opcode, 0x75);
+  assert.equal(devices[1]?.opcode, 0x7e);
+
+  // The one page screen deadens both page turn keys, the rule of section 272.
+  const record = (modeRecords(after) ?? [])[screen.mode];
+  assert.ok(record !== undefined);
+  assert.equal(record.pages.length, 1);
+  const deadened = record.entries.filter((one) => one.tag === 0xaf || one.tag === 0xae);
+  assert.deepEqual(deadened.map((one) => [one.tag, one.opcode, one.operand]), [[0xaf, 0, 0], [0xae, 0, 0]]);
+
+  const report = coverage(after);
+  assert.equal(report.accounted, report.total, 'every byte is claimed');
+  assert.equal(roundTrip(after).equal, true, 'the emitter reproduces the composed file');
+});
+
+test('the activity screen composer refuses what it cannot place', skipUnless('one_spare_20260830', 'h600_config'),
+     () => {
+  const c = parse(require_('one_spare_20260830'));
+  const rows = [{ label: 'Power', list: 0 }];
+  // An activity that already has a working screen.
+  assert.throws(() => composeActivityScreen(c, 0, 'Test', rows), /already has a working screen/);
+  // Any architecture but the Harmony One's.
+  const h600 = parse(require_('h600_config'));
+  assert.throws(() => composeActivityScreen(h600, nextActivityValue(h600), 'Test', rows),
+                /Harmony One alone/);
+  // And the enter list refuses a screen composed for another activity number.
+  const screen = composeActivityScreen(c, nextActivityValue(c), 'Test', rows);
+  const middle = parse(screen.bytes);
+  assert.throws(() => composeActivity(middle, {
+    label: 'Test',
+    targets: [{ variable: aDeviceVariable(middle), value: 1 }],
+    keys: [{ scan: 20, list: 0 }],
+    screen: {
+      startupMode: screen.startupMode, workingMode: screen.mode,
+      activeList: screen.activeList, activity: screen.activity + 1,
+    },
+  }), /the screen was composed for activity/);
 });

@@ -53,14 +53,19 @@ import {
   handlerSets,
   HANDLER_TABLE_SLOT,
 } from './sections.ts';
-import { SCREEN_JUMP, bitmapAt, screenProgram } from './screen.ts';
-import { LIST_ROW_PITCH, PANEL_LEFT, SCREEN_ROW_PITCH, touchPageOf } from './touch.ts';
+import { SCREEN_JUMP, SCREEN_QUEUE_INSTRUCTION, bitmapAt, screenProgram } from './screen.ts';
+import {
+  EDGE_CODES, LIST_ROW_PITCH, PANEL_LEFT, SCREEN_ROW_PITCH, touchOwner, touchPageOf,
+} from './touch.ts';
 // **The opcodes come from the one place each is named**, and until 6 September 2026 this file had
 // its own `SEND_INFRARED` and its own `RUN_ACTION_LIST` beside the copies in `inventory.ts` and
 // `sections.ts`. All correct, none able to see the others: the state `isa.py`'s docstring forbids.
 import {
   ACTIVITY_STATE_NAME,
+  type ActivityScreens,
+  activityBindings,
   activityNames,
+  activityScreens,
   KEY_EVENT_PRESS,
   SELECT_BINDING_SET,
   SELECT_BINDING_SET_MASK,
@@ -88,6 +93,7 @@ import { TOUCH_AREA_LENGTH, type TouchArea, type TouchPage, touchPages } from '.
 import { deviceListRows, deviceModeMarker } from './inventory.ts';
 import { relocate } from './relocate.ts';
 import { Writer } from './emit.ts';
+import { valueMaps } from './valuemap.ts';
 
 export class ComposeError extends Error {}
 
@@ -647,6 +653,21 @@ export interface ComposeActivity {
    * right is still unestablished, and a caller that knows better should pass a list.
    */
   readonly resumeList?: number;
+  /**
+   * The activity's two screens, from `composeActivityScreen`, section 279. Given, the enter list
+   * opens the way every Harmony One activity's does: enter the start up screen, cancel the timers,
+   * write the state, say an activity is running, and enter the working screen **deferred**, through
+   * the six byte `0x3F` band `0xD0` instruction every activity's chain uses, so it is not on until
+   * the infrared ahead of it is out. Omitted, the enter list writes state and nothing else, which is
+   * what this function produced until then and what left the remote on the page that started it.
+   */
+  readonly screen?: {
+    readonly startupMode: number;
+    readonly workingMode: number;
+    readonly activeList: number;
+    /** The value the screen's record case was composed for, checked against this activity's. */
+    readonly activity: number;
+  };
 }
 
 export interface ComposedActivity {
@@ -670,6 +691,13 @@ export interface ComposedActivity {
  * activity **exists and can be entered**, by running `selectList`; what it does not have is a row on
  * the activity menu or a drawn name, which is the screen half and lives in a separate function for
  * the same reason `composeDeviceScreen` does, since it is arch 12 shaped where this is not.
+ *
+ * **With `screen` it also shows the activity's two screens**, section 279, which on a Harmony One is
+ * what separates an activity that looks like one from a set of key bindings. The screen itself is
+ * `composeActivityScreen`'s, composed first; this only writes the enter list that uses it: the start
+ * up screen first and every timer cancelled, as all 60 real enter lists open, then the writes,
+ * then the list every activity calls to say one is running, and last a deferred call that enters the
+ * working screen once what is queued ahead of it has gone.
  *
  * The four changes, in the order the container stays parseable through them, of which only the
  * first two and the last make room:
@@ -799,23 +827,62 @@ export function composeActivity(c: Container, activity: ComposeActivity): Compos
   const firstList = actionTable.values.length;
   const enterList = firstList;
   const selectList = firstList + 1;
+  // With a screen, two more: the working screen's entry, and the deferred call that reaches it. The
+  // corpus shape is a two slot list of the `0xD0` instruction and a `0x7F`, 73 of 73 over thirteen
+  // Harmony One configurations, one per activity called from its enter list, so the payload is a call
+  // and not the `0x7E` itself. **Ours is not the corpus's in two ways**, section 279: every real
+  // payload calls `{1F:FB02, 7F:...}`, the Remote Assistant's branch, where ours enters the working
+  // screen directly, and every real enter list ends with a further call into that branch, which ours
+  // leaves out. So the composed activity skips the Remote Assistant's question.
+  const screen = activity.screen;
+  if (screen !== undefined) {
+    if (screen.activity !== value) {
+      throw new ComposeError(`the screen was composed for activity ${screen.activity}, this is ${value}`);
+    }
+    for (const [what, index] of [['the active list', screen.activeList]] as const) {
+      if (!Number.isInteger(index) || index < 0 || index >= existingLists) {
+        throw new ComposeError(`${what} names list ${index} of ${existingLists} that exist`);
+      }
+    }
+  }
+  const showList = firstList + 2;
+  const deferList = firstList + 3;
 
-  const enterBody = new Writer(1 + 3 * (activity.targets.length + 1));
-  enterBody.u8(activity.targets.length + 1);
+  const opening = screen === undefined ? 0 : 2;
+  const closing = screen === undefined ? 0 : 2;
+  const enterBody = new Writer(1 + 3 * (opening + activity.targets.length + 1 + closing));
+  enterBody.u8(opening + activity.targets.length + 1 + closing);
+  if (screen !== undefined) {
+    enterBody.u16(screen.startupMode).u8(ENTER_MODE);
+    enterBody.u16(CANCEL_TIMERS.operand).u8(CANCEL_TIMERS.opcode);
+  }
   for (const target of activity.targets) {
     enterBody.u16(target.value).u8(STATE_WRITE_BASE + target.variable);
   }
   enterBody.u16(value).u8(STATE_WRITE_BASE + variable.index);
+  if (screen !== undefined) {
+    enterBody.u16(screen.activeList).u8(ACTION_LIST_INDEX_OPCODE);
+    enterBody.u16(deferList).u8(ACTION_LIST_INDEX_OPCODE);
+  }
   const selectBody = new Writer(4)
     .u8(1).u16(SELECT_BINDING_SET_MASK | set).u8(SELECT_BINDING_SET);
+  const extra = screen === undefined ? [] : [
+    new Writer(4).u8(1).u16(screen.workingMode).u8(ENTER_MODE).bytes,
+    new Writer(7).u8(2).u16(DEFERRED.operand).u8(DEFERRED.opcode)
+      .u16(showList).u8(ACTION_LIST_INDEX_OPCODE).bytes,
+  ];
+  const bodies = [enterBody.bytes, selectBody.bytes, ...extra];
 
   const listsAt = actionTable.start;
-  const listsHole = relocate(current, listsAt, enterBody.bytes.length + selectBody.bytes.length);
-  listsHole.bytes.set(enterBody.bytes, listsAt);
-  listsHole.bytes.set(selectBody.bytes, listsAt + enterBody.bytes.length);
-  const listBase = current.flashBase + listsAt;
-  current = parse(appendTableEntries(parse(listsHole.bytes), actionSlot,
-    [listBase, listBase + enterBody.bytes.length]));
+  const listsHole = relocate(current, listsAt, bodies.reduce((sum, one) => sum + one.length, 0));
+  const starts: number[] = [];
+  let cursor = listsAt;
+  for (const one of bodies) {
+    listsHole.bytes.set(one, cursor);
+    starts.push(current.flashBase + cursor);
+    cursor += one.length;
+  }
+  current = parse(appendTableEntries(parse(listsHole.bytes), actionSlot, starts));
 
   // ---- 2. the base slot 9 entry ----
   //
@@ -2299,4 +2366,433 @@ function withActivityHitPage(start: Container, menu: number, rank: number): Cont
   if (at === undefined) throw new ComposeError('the activity menu page moved out of reach');
   current.blob[at] = lead;
   return parse(current.blob);
+}
+
+/*
+ * ---- An activity's own screen, Harmony One (arch 12) only, section 279 ----
+ *
+ * An activity has two screens and a composed one had neither: its enter list opened with no mode at
+ * all, so the remote stayed on whatever page started it, which is `todo.md` 1.2.4. The first is the
+ * **start up** screen, "Keep the remote pointed at your system", whose record binds every key to
+ * nothing; every activity's enter list opens by entering its own, 60 of 60 across the thirteen
+ * Harmony One configurations with activities. The second is the **working** screen, blue pads and "Devices" in
+ * the corner, and it is entered at the **end** of the chain, behind the infrared, through the six
+ * byte `0x3F` band `0xD0` instruction. Device mode's "Activities" key comes back to it through a
+ * base slot 14 record keyed by the activity, `activityScreens`.
+ *
+ * So composing the screen is three things: a new mode shaped like the configuration's own one page
+ * working screens, a case in that record, and an enter list that opens with the start up screen and
+ * defers the working one. The first two are `composeActivityScreen`; the third is `composeActivity`'s
+ * `screen` option, because the enter list is that function's.
+ */
+
+/** Opcode `0x3F` with the operand's high nibble `0xD`: the six byte instruction whose second half is
+ *  an ordinary instruction carried as data. Every one of the eight on the spare Harmony One is the
+ *  operand `0xD000` heading a two slot list whose payload is a `0x7F`, section 139 and 279. */
+const DEFERRED = { opcode: 0x3f, operand: 0xd000 } as const;
+/** `0x07` band `0xFB`: cancel every running timer, the second instruction of every enter list that
+ *  enters a start up screen on the Harmony One, section 279. */
+const CANCEL_TIMERS = { opcode: 0x07, operand: 0xfffb } as const;
+/** `0x07` band `0xFF`, the silent flag, which the "an activity is running" list writes first. */
+const SILENT_WRITE = { opcode: 0x07, operand: 0xffff } as const;
+
+/** The value the next composed activity will take: one past the counter's highest, section 273. */
+export function nextActivityValue(c: Container): number {
+  const record = stateVariables(c).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME))?.record;
+  if (record === undefined) throw new ComposeError(`no ${ACTIVITY_STATE_NAME} variable`);
+  return record.second + 1;
+}
+
+export interface ComposeActivityScreenOptions {
+  /**
+   * An existing activity, by its drawn menu label, whose start up screen the new activity shows.
+   * That screen draws the activity's icon, so a television activity wants a television one. Without
+   * it the start up screen of the activity whose working screen served as the template is used.
+   */
+  startupLike?: string;
+}
+
+export interface ComposedActivityScreen {
+  bytes: Uint8Array;
+  /** The activity value the screen was composed for, which `composeActivity` must then produce. */
+  activity: number;
+  /** The new working screen, base slot 6. */
+  mode: number;
+  /** The existing start up screen the enter list should open with. */
+  startupMode: number;
+  /** The existing list every activity's enter list calls to say an activity is running. */
+  activeList: number;
+  /** The base slot 14 record that gained the activity's case. */
+  map: number;
+  /** The list the page's "Devices" key runs: beep, enter the device list. */
+  devicesList: number;
+  /** The scan codes the pads answer to, in row order. */
+  scans: number[];
+}
+
+/** The three facts a working screen template supplies, read once so every step uses the same. */
+interface WorkingTemplate {
+  mode: number;
+  activity: number;
+  record: ModeRecord;
+  page: ModePage;
+  chrome: number;
+  devicesScan: number;
+}
+
+/**
+ * The one page working screen to copy the frame from, or a refusal.
+ *
+ * A candidate is a working screen, per `activityScreens`, with one page whose list binds exactly one
+ * key to "beep, enter a mode", which is its Devices key, and whose record starts with the two null
+ * bindings a one page screen carries on the keys beside the display. The lowest mode index wins,
+ * which is arbitrary and deterministic: on the spare Harmony One the four candidates share every
+ * handler list's contents and differ only in which lists they name, and each calls a chrome of its
+ * own, since the chrome draws the title.
+ *
+ * **The rule is fitted to the spare** and says so: it refuses on five of the thirteen Harmony One
+ * configurations with activities, the factory one and the four with two activities, none of which
+ * has a one page working screen with a Devices key.
+ */
+function workingTemplate(c: Container, screens: ActivityScreens): WorkingTemplate {
+  const lists = c.actionLists() ?? [];
+  const records = modeRecords(c) ?? [];
+  const found: WorkingTemplate[] = [];
+  for (const [activity, mode] of screens.screens) {
+    const record = records[mode];
+    const page = record?.pages[0];
+    if (record === undefined || page === undefined || record.pages.length !== 1) continue;
+    const nulls = record.entries.filter((one) => one.opcode === 0 && one.operand === 0);
+    if (nulls.length !== EDGE_CODES.length) continue;
+    const keys = (taggedList(c, page.list)?.entries ?? []).filter((entry) => {
+      const list = lists[entry.operand];
+      return entry.opcode === ACTION_LIST_INDEX_OPCODE && list?.length === 2
+        && list[0]?.opcode === BEEP_OPCODE && list[1]?.opcode === ENTER_MODE;
+    });
+    const first = screenProgram(c, page.program)?.[0];
+    if (keys.length !== 1 || first?.opcode !== OP_CALL) continue;
+    found.push({
+      mode, activity, record, page, chrome: u24(first.operands, 0),
+      devicesScan: (keys[0] as { tag: number }).tag & SCAN_MASK,
+    });
+  }
+  found.sort((a, b) => a.mode - b.mode);
+  const chosen = found[0];
+  if (chosen === undefined) throw new ComposeError('no one page working screen to take the frame from');
+  return chosen;
+}
+
+/**
+ * Give a composed activity its working screen, and put it where the remote looks for it.
+ *
+ * `activity` is the value the activity has or will have, `nextActivityValue` before
+ * `composeActivity` runs. `rows` are the pads, drawn top left first, at most as many as the
+ * template's hit page offers, which is five on the spare Harmony One and two on the everyday one;
+ * none is a real shape too, one of the everyday Harmony One's eight working screens carrying only its
+ * Devices key.
+ *
+ * **Everything that is the same on every working screen is shared rather than copied**: the record's
+ * enter, leave and header handler lists, the header timer those start, the background, the "Devices"
+ * string, the pad pictures. The four one page working screens on the spare Harmony One carry
+ * byte identical copies of each handler list, each copy its own list, and one timer between them, so sharing the lists is
+ * what their compiler does with the duplicates folded, and the rule a writer must respect is only
+ * that two working screens are never on at once, which a mode switch guarantees.
+ *
+ * **What is ours**: the title, drawn inline in the chrome's own font where that font spells it; the
+ * pads' labels; the page list and its pool copy; and the Devices key, which enters the **all devices**
+ * menu where a real activity's enters a device list of its own devices. That last one is a known
+ * simplification, since building a per activity device list is a second screen.
+ */
+export function composeActivityScreen(
+  c: Container, activity: number, label: string, rows: readonly ComposeRow[],
+  options: ComposeActivityScreenOptions = {},
+): ComposedActivityScreen {
+  if (c.architecture !== 12) {
+    throw new ComposeError('an activity screen is composed for the Harmony One alone');
+  }
+  const screens = activityScreens(c);
+  if (screens === undefined) throw new ComposeError('no record says which screen an activity shows');
+  if (screens.screens.has(activity)) {
+    throw new ComposeError(`activity ${activity} already has a working screen`);
+  }
+  const template = workingTemplate(c, screens);
+  const lists = c.actionLists() ?? [];
+  const records = modeRecords(c) ?? [];
+
+  // The pads the template's hit page offers, matched to the slots by where a touch lands: the
+  // centre of slot k's picture is asked which area it hits, which is the firmware's own question.
+  const hit = touchPageOf(c, template.page);
+  if (hit === undefined || template.page.lead === undefined) {
+    throw new ComposeError("the template page's hit page does not read");
+  }
+  const pictures: number[] = [];
+  for (const [x, y] of DEVICE_PAGE_SLOTS) {
+    let found: number | undefined;
+    for (const mode of screens.screens.values()) {
+      for (const page of records[mode]?.pages ?? []) {
+        found ??= pictureDrawnAt(c, page.program, x, y);
+      }
+    }
+    if (found === undefined) break;
+    pictures.push(found);
+  }
+  const scans: number[] = [];
+  for (const [k, [x, y]] of DEVICE_PAGE_SLOTS.entries()) {
+    const picture = pictures[k] === undefined ? undefined : bitmapAt(c, pictures[k] as number);
+    if (picture === undefined) break;
+    const owner = touchOwner(hit.areas, x + picture.stride / 2, y + picture.rows / 2);
+    if (owner === undefined || owner.code === template.devicesScan
+        || EDGE_CODES.includes(owner.code)) break;
+    scans.push(owner.code);
+  }
+  if (rows.length > scans.length) {
+    throw new ComposeError(`a working screen here holds ${scans.length} pads, not ${rows.length}`);
+  }
+
+  // The chrome to copy: font, title, background, the queued header work, the title again, return.
+  const chrome = screenProgram(c, template.chrome) ?? [];
+  const shape = chrome.map((one) => one.opcode);
+  const titleAt = shape.indexOf(OP_TEXT_AT);
+  if (shape[0] !== OP_FONT || titleAt !== 1 || shape.lastIndexOf(OP_TEXT_AT) === titleAt
+      || shape.at(-2) !== OP_RETURN || shape.at(-1) !== OP_END) {
+    throw new ComposeError('the template chrome is not the font, title, frame, title, return shape');
+  }
+  const titleFont = chrome[0]?.operands[0] as number;
+  const map = characterMap(c);
+  if (map === undefined) throw new ComposeError('the config draws no text this can spell from');
+  const titleX = chrome[titleAt]?.operands[0] as number;
+  const titleY = chrome[titleAt]?.operands[1] as number;
+
+  // The page program to copy: the call, the footer's font and text, then pads in the pad font.
+  const program = screenProgram(c, template.page.program) ?? [];
+  const firstImage = program.findIndex((one) => one.opcode === OP_IMAGE);
+  const footer = program.slice(1, firstImage < 0 ? program.length - 1 : firstImage);
+  if (footer.length !== 2 || footer[0]?.opcode !== OP_FONT || footer[1]?.opcode !== OP_TEXT_AT) {
+    throw new ComposeError('the template page does not open with its footer the way the corpus does');
+  }
+  const padFont = program.find((one, k) => k > firstImage && one.opcode === OP_FONT)?.operands[0]
+    ?? DEVICE_ROW_FONT;
+
+  // The start up screen and the "an activity is running" list, both read off existing activities.
+  const bindings = activityBindings(c);
+  const sets = handlerSets(c);
+  const enterOf = (value: number): readonly Instruction[] | undefined => {
+    const binding = bindings.find((one) => one.activity === value);
+    const set = binding === undefined ? undefined : sets?.addresses[binding.set];
+    const entry = set === undefined ? undefined
+      : taggedList(c, set)?.entries.find((one) => one.tag === HANDLER_TAG_ENTER);
+    return entry === undefined ? undefined : lists[entry.operand];
+  };
+  const startupOf = options.startupLike === undefined
+    ? template.activity
+    : activityNames(c).find((one) => one.name === options.startupLike)?.activity;
+  if (startupOf === undefined) throw new ComposeError(`no activity is labelled ${options.startupLike}`);
+  const opening = enterOf(startupOf)?.[0];
+  if (opening?.opcode !== ENTER_MODE) {
+    throw new ComposeError(`activity ${startupOf}'s enter list does not open with a start up screen`);
+  }
+  const startupMode = opening.operand;
+  const called = [...screens.screens.keys()].map((value) => new Set((enterOf(value) ?? [])
+    .filter((one) => one.opcode === ACTION_LIST_INDEX_OPCODE).map((one) => one.operand)));
+  const active = [...(called[0] ?? [])].filter((index) => called.every((set) => set.has(index)))
+    .filter((index) => {
+      const list = lists[index];
+      return list?.length === 2 && list[0]?.opcode === SILENT_WRITE.opcode
+        && list[0]?.operand === SILENT_WRITE.operand
+        && (list[1] as Instruction).opcode >= STATE_WRITE_BASE && list[1]?.operand === 1;
+    });
+  if (active.length !== 1) {
+    throw new ComposeError(`${active.length} lists look like the "an activity is running" flag`);
+  }
+  const activeList = active[0] as number;
+
+  // ---- 1. the Devices key's list, reused where the config has one ----
+  const menus = deviceListMenus(c).menus;
+  const devicesMenu = menus[0];
+  if (devicesMenu === undefined) throw new ComposeError('no device list menu for the Devices key');
+  let current = c;
+  let devicesList = lists.findIndex((list) => list?.length === 2
+    && list[0]?.opcode === BEEP_OPCODE && list[1]?.opcode === ENTER_MODE
+    && list[1]?.operand === devicesMenu);
+  const actionSlot = archSlot(12, ACTION_TABLE_SLOT);
+  if (devicesList < 0) {
+    const table = current.pointerArrayAt(actionSlot);
+    if (table === undefined) throw new ComposeError('base slot 10 does not read as a table');
+    devicesList = table.values.length;
+    const bytes = new Writer(1 + 3 * 2).u8(2)
+      .u16(ROW_BEEP_OPERAND).u8(BEEP_OPCODE).u16(devicesMenu).u8(ENTER_MODE).bytes;
+    const hole = relocate(current, table.start, bytes.length);
+    hole.bytes.set(bytes, table.start);
+    current = parse(appendTableEntries(parse(hole.bytes), actionSlot,
+                                       [current.flashBase + table.start]));
+  }
+
+  // ---- 2. the mode table's placeholder entry, swapped at the end, as composeDeviceScreen does ----
+  const stale = modeTable(current);
+  const placeholder = stale?.addresses[0];
+  if (stale === undefined || placeholder === undefined) throw new ComposeError('base slot 6 does not read');
+  const mode = stale.addresses.length;
+  const tableAt = stale.start + stale.length;
+  const tableHole = relocate(current, tableAt, 3);
+  tableHole.bytes.set(new Writer(3).u24(placeholder).bytes, tableAt);
+  tableHole.bytes.set(new Writer(3).u24(mode + 1).bytes, stale.start);
+  current = parse(tableHole.bytes);
+
+  // ---- 3. the page list, its pool copy first, then the list itself in base slot 8 ----
+  const listBytes = new Writer(1 + 4 * (rows.length + 1)).u8(rows.length + 1)
+    .u8(0x80 | template.devicesScan).u16(devicesList).u8(ACTION_LIST_INDEX_OPCODE);
+  rows.forEach((row, k) => {
+    listBytes.u8(0x80 | (scans[k] as number)).u16(row.list).u8(ACTION_LIST_INDEX_OPCODE);
+  });
+  const lastPool = taggedListPools(current).at(-1);
+  if (lastPool === undefined) throw new ComposeError('no copy pool to extend');
+  const copyHole = relocate(current, lastPool.end, listBytes.bytes.length);
+  copyHole.bytes.set(listBytes.bytes, lastPool.end);
+  current = parse(copyHole.bytes);
+  const listAt = Math.max(...modePages(current).map((page) => {
+    const off = current.blobOffsetOf(page.list);
+    const list = taggedList(current, page.list);
+    return off === undefined || list === undefined ? 0 : off + list.length;
+  }));
+  const listHole = relocate(current, listAt, listBytes.bytes.length);
+  listHole.bytes.set(listBytes.bytes, listAt);
+  current = parse(listHole.bytes);
+  const pageListAddress = current.flashBase + listAt;
+
+  // ---- 4. the mode block: record list, chrome, page program, page record, entry ----
+  // Every address the block embeds is re-read here, after the three insertions above.
+  const moved = modeRecords(current)?.[template.mode];
+  const movedPage = moved?.pages[0];
+  if (moved === undefined || movedPage === undefined) throw new ComposeError('the template moved away');
+  const movedChrome = screenProgram(current, u24(
+    (screenProgram(current, movedPage.program)?.[0] as { operands: Uint8Array }).operands, 0)) ?? [];
+  const movedProgram = screenProgram(current, movedPage.program) ?? [];
+  const recordStart = current.blobOffsetOf(moved.start);
+  if (recordStart === undefined) throw new ComposeError('the template record is out of reach');
+  const recordList = current.blob.slice(recordStart, recordStart + moved.length);
+  const sets14 = fontSets(current) ?? [];
+  const titleFontUsed = fontThatSpells(current, map, label, titleFont);
+  const titleCodes = codesFor(map, current, sets14[titleFontUsed] as FontSet, label, titleFontUsed);
+  const padSet = sets14[padFont];
+  if (padSet === undefined) throw new ComposeError('the pad font does not read');
+  const rowCodes = rows.map((row) => codesFor(map, current, padSet, row.label, padFont));
+  const movedPictures = DEVICE_PAGE_SLOTS.slice(0, rows.length).map(([x, y]) => {
+    for (const m of activityScreens(current)?.screens.values() ?? []) {
+      for (const page of modeRecords(current)?.[m]?.pages ?? []) {
+        const one = pictureDrawnAt(current, page.program, x, y);
+        if (one !== undefined) return one;
+      }
+    }
+    throw new ComposeError('a pad picture stopped reading');
+  });
+
+  const queued = movedChrome.filter((one) => one.opcode === SCREEN_QUEUE_INSTRUCTION);
+  const background = movedChrome.find((one) => one.opcode === OP_IMAGE);
+  if (background === undefined) throw new ComposeError('the template chrome draws no background');
+  const chromeLength = 2 + (3 + titleCodes.length + 1) + 6 + 4 * queued.length + 6 + 1 + 1;
+  const programLength = 4 + 2 + 6
+    + rows.reduce((sum, _, k) => sum + 6 + (1 + 2 + (rowCodes[k] as number[]).length + 1), 0)
+    + (rows.length > 0 ? 2 : 0) + 1;
+  const blockLength = recordList.length + chromeLength + programLength + 7 + (6 + 3);
+  const blockAt = Math.max(...(modeRecords(current) ?? []).map((record) => {
+    const off = current.blobOffsetOf(record.address);
+    return off === undefined ? 0 : off + record.entryLength;
+  }));
+  const base = current.flashBase + blockAt;
+  const shifted = (address: number): number => (address >= base ? address + blockLength : address);
+  const chromeAddress = base + recordList.length;
+  const programAddress = chromeAddress + chromeLength;
+  const pageAddress = programAddress + programLength;
+  const entryAddress = pageAddress + 7;
+
+  const block = new Writer(blockLength);
+  block.raw(recordList);
+  // The chrome. The title is drawn inline the first time and by reference the second, which is the
+  // corpus's own economy: a referenced run is the payload of an inline one, three bytes in.
+  block.u8(OP_FONT).u8(titleFontUsed);
+  block.u8(OP_TEXT_INLINE).u8(titleX).u8(titleY);
+  titleCodes.forEach((code) => block.u8(code));
+  block.u8(0);
+  block.u8(OP_IMAGE).u8(background.operands[0] as number).u8(background.operands[1] as number)
+    .u24(shifted(u24(background.operands, 2)));
+  for (const one of queued) block.u8(SCREEN_QUEUE_INSTRUCTION).raw(one.operands);
+  block.u8(OP_TEXT_AT).u8(titleX).u8(titleY).u24(chromeAddress + 2 + 3);
+  block.u8(OP_RETURN).u8(OP_END);
+  // The page: the call, the footer copied, then each pad's picture and its centred label.
+  const footerFont = movedProgram[1];
+  const footerText = movedProgram[2];
+  if (footerFont?.opcode !== OP_FONT || footerText?.opcode !== OP_TEXT_AT) {
+    throw new ComposeError('the template footer moved out of shape');
+  }
+  block.u8(OP_CALL).u24(chromeAddress);
+  block.u8(OP_FONT).raw(footerFont.operands);
+  block.u8(OP_TEXT_AT).u8(footerText.operands[0] as number).u8(footerText.operands[1] as number)
+    .u24(shifted(u24(footerText.operands, 2)));
+  rows.forEach((row, k) => {
+    const [x, y] = DEVICE_PAGE_SLOTS[k] as readonly [number, number];
+    const picture = movedPictures[k] as number;
+    block.u8(OP_IMAGE).u8(x).u8(y).u24(shifted(picture));
+    if (k === 0) block.u8(OP_FONT).u8(padFont);
+    const width = bitmapAt(current, picture)?.stride ?? 0;
+    const wide = textWidth(current, padSet, rowCodes[k] as number[]);
+    if (wide > width) {
+      throw new ComposeError(`'${row.label}' is ${wide} pixels wide and its pad is ${width}`);
+    }
+    block.u8(OP_TEXT_INLINE).u8(x + Math.round((width - wide) / 2)).u8(y + DEVICE_LABEL_DROP);
+    (rowCodes[k] as number[]).forEach((code) => block.u8(code));
+    block.u8(0);
+  });
+  block.u8(OP_END);
+  block.u8(template.page.lead).u24(shifted(pageListAddress)).u24(programAddress);
+  block.u8(0).u24(base).u16(1).u24(pageAddress);
+  if (block.remaining !== 0) throw new ComposeError(`the mode block is ${block.remaining} bytes short`);
+  const blockHole = relocate(current, blockAt, blockLength);
+  blockHole.bytes.set(block.bytes, blockAt);
+  const swapped = parse(blockHole.bytes);
+  const grownTable = modeTable(swapped);
+  if (grownTable === undefined) throw new ComposeError('base slot 6 stopped reading');
+  swapped.blob.set(new Writer(3).u24(entryAddress).bytes, grownTable.start + 3 + 3 * mode);
+  current = parse(swapped.blob);
+
+  // ---- 5. the activity's case in the base slot 14 record ----
+  // The entry first, pointing at an existing case's program so the census can see it, then the
+  // program, inserted in front of the lowest one the record names, then the entry swapped onto it.
+  const record = valueMaps(current)?.[screens.map];
+  const recordAt = record === undefined ? undefined : current.blobOffsetOf(record.address);
+  if (record === undefined || recordAt === undefined || record.entries.length >= 0xff) {
+    throw new ComposeError('the activity screen record does not read, or is full');
+  }
+  const caseAt = recordAt + 2 + 5 * record.entries.length;
+  const caseHole = relocate(current, caseAt, 5);
+  caseHole.bytes.set(new Writer(5).u16(activity).u24((record.entries[0] as [number, number])[1]).bytes,
+                     caseAt);
+  caseHole.bytes[recordAt + 1] = record.entries.length + 1;
+  current = parse(caseHole.bytes);
+  const grownRecord = valueMaps(current)?.[screens.map];
+  const lowest = Math.min(...(grownRecord?.entries ?? []).map(([, target]) => target));
+  const programAt = current.blobOffsetOf(lowest);
+  if (grownRecord === undefined || programAt === undefined) {
+    throw new ComposeError('the activity screen record stopped reading');
+  }
+  const caseProgram = new Writer(5).u8(SCREEN_QUEUE_INSTRUCTION).u16(mode).u8(ENTER_MODE).u8(OP_END);
+  const programHole = relocate(current, programAt, caseProgram.bytes.length);
+  programHole.bytes.set(caseProgram.bytes, programAt);
+  const placed = parse(programHole.bytes);
+  const finalRecord = valueMaps(placed)?.[screens.map];
+  const finalAt = finalRecord === undefined ? undefined : placed.blobOffsetOf(finalRecord.address);
+  if (finalRecord === undefined || finalAt === undefined) {
+    throw new ComposeError('the activity screen record stopped reading');
+  }
+  placed.blob.set(new Writer(3).u24(placed.flashBase + programAt).bytes,
+                  finalAt + 2 + 5 * (finalRecord.entries.length - 1) + 2);
+  current = parse(placed.blob);
+
+  const check = activityScreens(current);
+  if (check?.screens.get(activity) !== undefined && check.screens.get(activity) !== mode) {
+    throw new ComposeError('the record names another screen for the activity than the one composed');
+  }
+  return {
+    bytes: restamped(current.blob), activity, mode, startupMode, activeList, map: screens.map,
+    devicesList, scans: scans.slice(0, rows.length),
+  };
 }

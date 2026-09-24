@@ -1219,8 +1219,9 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
         # write rails compare the connected unit against and which must not be in this repository.
         # 68 since 4 September 2026 and the two Harmony 350 rows, per the comment on the row count
         # test below. 69 since the programmed Harmony 350 was read, section 262. 72 since the
-        # programmed Harmony 300 was read, section 265.
-        self.assertEqual(len(named), 74, "lab paths the register names, as at 7 September 2026")
+        # programmed Harmony 300 was read, section 265. 75 since the rebuild from the composers
+        # alone, section 279, which is a folder inside `work/plan-1.3/` named on that row.
+        self.assertEqual(len(named), 75, "lab paths the register names, as at 24 September 2026")
         for path in sorted(named):
             with self.subTest(path=path):
                 if '*' in path:

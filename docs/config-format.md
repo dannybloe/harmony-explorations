@@ -867,6 +867,15 @@ a record of their own, so two records can overlap by design.
 
 The range table is empty in eleven of the fifteen configs; the other four carry one range each.
 
+**An activity's working screen, arch 12 (Harmony One)**, section 279. One record here is keyed by
+`CurrentActivityState` and holds, per activity, the two instruction screen program
+`17 lo hi 0x7E; 0`, entering that activity's working screen, plus one case for the idle value that
+enters no screen. It is found by walking from the left bottom key of a device mode page, the
+"Activities" key, through `0x7F` and `0x72`; its index differs per configuration, 3, 5, 11 or 13 on
+the thirteen measured, so it is never a constant. The activity's enter list opens with a `0x7E` into
+a different mode, its start up screen, on 60 of 60. Unchecked on every other architecture.
+`activityScreens` in `packages/codec/src/inventory.ts`.
+
 Read with `gspm.value_maps` and `gspm.value_map_reference`. [findings.md](findings.md) section 39.
 
 ### The screen language
