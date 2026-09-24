@@ -34,6 +34,7 @@ import {
   FIRMWARE_STATE_VARIABLE_MAX,
   activityBindings,
   assertQueueFits,
+  assertStateTableConsistent,
   composeActivity,
   composeActivityMenuRow,
   coverage,
@@ -132,6 +133,7 @@ if (report.overlaps.length > 0) fail(`${report.overlaps.length} byte range(s) ar
 if (!trailerAgrees(after)) fail('the result does not state its own checksum');
 if (!roundTrip(after).equal) fail('the emitter does not reproduce the result');
 assertQueueFits(after);
+assertStateTableConsistent(after);
 const worst = worstQueueRun(after);
 const grown = handlerSets(after);
 

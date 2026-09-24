@@ -559,7 +559,7 @@ finding.
 
 `todo.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 275<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 278<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -823,6 +823,18 @@ figures common to both carry `fact:` markers, so `make facts` moves every copy t
 cannot drift apart; what a reader should not expect is two independent statements of one measurement.
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
+
+**And a composed activity switches the television on, sections 276 to 278.** Written to the spare
+Harmony One four times over before it did, and each failure was a different rail. The first write put
+the activity's power variable above the storage the configuration declares, where the remote paints
+it over at every boot, section 276. The second put it where it belongs and still nothing happened,
+section 277, which looked in the wrong place: the variable changed as it should, and the activity's
+transition fired. What never left the remote was the command itself. **Every command a Harmony
+configuration sends is followed by a small instruction naming the same device again**, all
+4267<!--fact:send_lists--> such lists in the user configurations, and the device composer wrote the
+command alone. That answers a key press, which is how section 242 checked it, and sends nothing when
+an activity's state transition runs it. Paired, it works
+from both, section 278. Why the firmware treats the two routes differently is not read yet.
 
 **And it can now be started, section 275.** The behaviour half of an activity leaves something the
 remote can run and nothing that reaches it: what reaches it is a row on the Harmony One's activity

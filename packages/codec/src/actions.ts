@@ -46,6 +46,66 @@ export const BYTE_REGISTER_FROM_STATE = 0xf0;
 export const STATE_FROM_BYTE_REGISTER = 0xee;
 
 /**
+ * Every `0x1f` band sub opcode whose operand's low byte names a state variable.
+ *
+ * Six, and the count is the point. `BANDS_1F` below carries the readings and this carries the
+ * machine readable half of the same fact, so `stateVariableSite` can find a reference without a
+ * second table of opcodes elsewhere. `TheStateVariableSitesMatchTheirReadings` in
+ * `test/actions.test.ts` compares the two by reading the reading strings, so adding a sub opcode
+ * to one and not the other fails rather than drifting.
+ *
+ * **Two of these were nearly missed and that would have been silent**, section 277: a first survey
+ * of the corpus counted only `0xF0` and `0xEE`, the pair `inventory.ts` needs by name, and found 100
+ * references. All six carry 1511. A renumbering built on the pair would have left 1411 references
+ * pointing at the wrong variable in a file that still parses.
+ */
+export const STATE_BAND_SUBS: ReadonlySet<number> = new Set([
+  0xf2, 0xf1, BYTE_REGISTER_FROM_STATE, 0xef, STATE_FROM_BYTE_REGISTER, 0xed,
+]);
+
+/** Opcodes whose operand's **low byte** names a state variable, rather than the opcode naming it. */
+export const STATE_LOW_BYTE_OPCODES: ReadonlySet<number> = new Set([0x70, 0x71, 0x72]);
+
+/** Where an instruction's state variable index lives, so a rewriter can move it. */
+export interface StateVariableSite {
+  index: number;
+  /**
+   * `opcode` means the index is `opcode - STATE_WRITE_BASE` and moving it moves the **opcode**;
+   * `low` means it is the operand's low byte.
+   */
+  where: 'opcode' | 'low';
+}
+
+/**
+ * The state variable an instruction names, and which field carries it.
+ *
+ * **The one enumeration of where a variable index can appear inside an action list**, which exists
+ * because renumbering a variable has to find all of them and a missed one is a config that parses
+ * and drives the wrong device. Three kinds: the write band `0x80 | n`, the three opcodes that take
+ * the index in the operand's low byte, and six sub opcodes of the `0x1f` band that do the same.
+ *
+ * Measured over the fourteen programmed configurations: 3281 writes through the opcode, 3371 through
+ * a low byte opcode and 1511 through the band, 8163 in all, of which **0 name a variable the
+ * container's own base slot 13 does not have**. That closure is what says the three kinds are the
+ * ones a generator uses, and it is asserted in `test/actions.test.ts`.
+ *
+ * A variable index is **not** carried anywhere else a rewriter has to follow. Base slot 14's records
+ * are selected by `0x72`'s **high** byte rather than being indexed by the variable, section 39, and
+ * base slot 16's are reached through a transition's list rather than by index, section 154. What does
+ * carry one outside an action list is a name tree node, which `stateVariables` reads and a caller
+ * moves separately.
+ */
+export function stateVariableSite(instruction: Instruction): StateVariableSite | undefined {
+  const { opcode, operand } = instruction;
+  if (opcode >= STATE_WRITE_BASE) return { index: opcode - STATE_WRITE_BASE, where: 'opcode' };
+  if (STATE_LOW_BYTE_OPCODES.has(opcode)) return { index: operand & 0xff, where: 'low' };
+  if (opcode === STATE_BAND && STATE_BAND_SUBS.has((operand >>> 8) & 0xff)) {
+    return { index: operand & 0xff, where: 'low' };
+  }
+  return undefined;
+}
+
+/**
  * How far a reading goes.
  *
  * `placement` means the handler is found and its immediate effect is known: which routine runs,

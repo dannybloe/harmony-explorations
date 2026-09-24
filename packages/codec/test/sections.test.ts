@@ -11,6 +11,8 @@ import assert from 'node:assert/strict';
 import { load, skipUnless, skipWithoutLab, require_ } from '@harmony/lab';
 import {
   ACCUMULATOR_LOAD_OPCODE,
+  StateTableError,
+  assertStateTableConsistent,
   Container,
   FAMILIES,
   FRAME_HEADER,
@@ -1518,3 +1520,74 @@ test('a flipped touch area back pointer is refused, and a picture bank is not a 
     assert.equal(touchPages(bank), undefined);
     assert.notEqual(touchMapStart(bank), undefined);
   });
+
+// The nineteen the rest of the workspace counts, per `edit.test.ts`'s own list and
+// `tests/test_toolchain.py`'s comparison of the three.
+const ALL_CONTAINERS = [
+  'one_safemode', 'one34_region2', 'h700_gspm', 'h600_safemode_gspm', 'h650_safemode_gspm',
+  'one_config', 'one_config_unprogrammed', 'h600_config', 'h700_config', 'h700_config_2',
+  'h525_config', 'h525_config_2', 'arch8_config_a', 'arch8_config_b', 'arch8_config_c',
+  'arch8_config_d', 'h525_safemode_ahcm', 'one_spare_before_sync', 'one_spare_after_sync',
+];
+
+/**
+ * Section 276. The firmware sizes the state variable storage as `narrow + 2 * wide` and paints
+ * `0xFE` over everything above it at each boot, while the boot loop that seeds each variable runs
+ * over `count`. So a header where the three do not add up carries variables that are seeded and then
+ * erased. This asserts the identity the whole corpus keeps, which is what makes it enforceable.
+ *
+ * **What it deliberately does not assert is which of the two the firmware uses**, because it cannot:
+ * `narrow + wide` and `count` are the same number in all 19, so no container here can tell a rule
+ * about one from a rule about the other. That comes from the images and lives in the finding.
+ *
+ * The exact counts are here rather than a floor because `ALL_CONTAINERS` is a literal in this file:
+ * the numbers move only when somebody adds a sample, and then they move in the diff.
+ */
+test("every container's state table splits its variables exactly",
+  skipUnless(...ALL_CONTAINERS), () => {
+    let checked = 0;
+    let oneWide = 0;
+    for (const name of ALL_CONTAINERS) {
+      const c = parse(require_(name));
+      const t = stateTable(c);
+      assert.ok(t !== undefined, `${name} carries a state table`);
+      assert.equal(t.narrow + t.wide, t.count,
+        `${name}: ${t.narrow} narrow plus ${t.wide} wide is not ${t.count}`);
+      assert.equal(t.narrowAgain, t.narrow, `${name} repeats its narrow count`);
+      assert.doesNotThrow(() => assertStateTableConsistent(c), name);
+      if (t.wide === 1) oneWide += 1;
+      checked += 1;
+    }
+    assert.equal(checked, 19);
+    // Exactly one wide variable is the commonest shape and not a property of an architecture:
+    // **three of the sixteen are arch 14 containers**, and only `h600_config` and the two Harmony
+    // 700 configs are the many wide kind, at 19 and 27. That is why the composer raises `wide`
+    // rather than renumbering everything at or above `narrow`.
+    assert.equal(oneWide, 16);
+  });
+
+/**
+ * The negative half, because a rail that cannot fire is not a check. Both arms of the rule get
+ * their own corrupted header, since raising `count` alone is the mistake the composer actually made
+ * and a disagreeing `narrowAgain` is the one nothing has yet.
+ */
+test('a state table header whose split does not add up, or whose repeat disagrees, is refused',
+  skipUnless('one_config'), () => {
+  const c = parse(require_('one_config'));
+  const t = stateTable(c);
+  assert.ok(t !== undefined);
+  assert.doesNotThrow(() => assertStateTableConsistent(c));
+  // The corruption goes through `c.blob` and not the file, because a section offset is an offset
+  // into the container and this sample is a flash region with the container some way into it.
+  const original = c.blob;
+
+  const raisedCount = Uint8Array.from(original);
+  raisedCount[t.start] = (t.count + 1) & 0xff;
+  raisedCount[t.start + 1] = ((t.count + 1) >> 8) & 0xff;
+  assert.throws(() => assertStateTableConsistent(parse(raisedCount)), StateTableError);
+
+  const skewedRepeat = Uint8Array.from(original);
+  skewedRepeat[t.start + 6] = (t.narrow + 1) & 0xff;
+  skewedRepeat[t.start + 7] = ((t.narrow + 1) >> 8) & 0xff;
+  assert.throws(() => assertStateTableConsistent(parse(skewedRepeat)), StateTableError);
+});

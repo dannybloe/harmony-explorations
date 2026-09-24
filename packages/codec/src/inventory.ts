@@ -688,10 +688,43 @@ const SHORTEST_USEFUL_LABEL = 2;
 /**
  * Opcode `0x7D`: send an infrared code, `{ u8 group; u8 index }`. Section 33.
  *
- * The group is the device, section 86, so this instruction is the only place in the format where an
- * action says **which device** it is talking to.
+ * The group is the device, section 86. This said the instruction is "the only place in the format
+ * where an action says **which device** it is talking to", and that is corrected rather than
+ * quietly dropped, section 278: `DEVICE_QUANTITY` below names the same device in its own high byte
+ * on every send list of the corpus, and a composed send without it is not transmitted when an
+ * activity's state transition runs it.
  */
 export const SEND_INFRARED = 0x7d;
+
+/**
+ * Opcode `0x7C`: the per device quantity every send is paired with, `{ u8 group; u8 amount }`.
+ *
+ * **This is not decoration and it is not only the power on delay.** Every action list holding a
+ * `0x7D` holds one of these, with this operand's high byte equal to the send's, on every
+ * architecture the lab holds a configuration of: `{0x7D, 0x7C}` on arch 8, 9, 10 and 12,
+ * `{0x7F, 0x7D, 0x7C}` on arch 14, and that pair or `{0x07, 0x7D, 0x7C}` on arch 16. Sections 33 and
+ * 278. Section 70 reads the quantity and section 236 the queue it lands in.
+ *
+ * **A bare send is not transmitted when a state transition runs it**, measured on the spare Harmony
+ * One, section 278: a composed device whose six lists were the send alone answered a button press on
+ * all six and sent nothing when the activity's power transition ran the same list, while pointing
+ * that transition at an existing paired list switched the television on. Pairing the six fixed it.
+ * Why the two routes differ is **unread**: both instructions push a two byte entry into one queue,
+ * this one with bit 6 set on its device byte, and section 236's reading of the queue's picker would
+ * let a lone send out, so that reading does not explain it either.
+ */
+export const DEVICE_QUANTITY = 0x7c;
+
+/**
+ * What a composed send pairs with its `0x7C`: an amount of 1.
+ *
+ * Deliberately a constant rather than a computed delay. The quantity is a per device wait and this
+ * project has no basis for choosing one for a device it has just added, so it takes the value the
+ * configuration's own LG television entry carries, `0x7C` operand `0x0301`, which is the list run 3
+ * of section 278 switched the television on with. Section 236 is why a small value is safe: a
+ * quantity with no later command for its own device behind it is never felt.
+ */
+export const DEVICE_QUANTITY_DEFAULT = 1;
 // **One constant, not two.** This file declared `SEND_INFRARED` here and `IR_SEND_OPCODE` nine
 // hundred lines below, both `0x7d`, both correct, until 6 September 2026. Two right copies is the
 // state that precedes two diverging ones and no test can see it, which is exactly what `CLAUDE.md`'s

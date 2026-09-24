@@ -27,7 +27,7 @@ import {
   SCAN_MASK,
 } from './gspm.ts';
 import { u16 as u16le, u24 } from './bytes.ts';
-import { STATE_WRITE_BASE } from './actions.ts';
+import { STATE_WRITE_BASE, stateVariableSite } from './actions.ts';
 import {
   STATE_RECORD_HEADER,
   STATE_TABLE_SLOT,
@@ -38,12 +38,15 @@ import {
   modeRecords,
   modeTable,
   pageListCopies,
+  assertStateTableConsistent,
+  STATE_TABLE_HEADER,
   stateTable,
   taggedList,
   taggedListPools,
   ACTION_LIST_INDEX_OPCODE,
   HANDLER_TAG_ENTER,
   HANDLER_TAG_LEAVE,
+  NAME_LEVEL_STATE_VARIABLE,
   NAME_NODE_HEADER,
   nameNodes,
   type NameNode,
@@ -62,6 +65,8 @@ import {
   SELECT_BINDING_SET,
   SELECT_BINDING_SET_MASK,
   SEND_INFRARED,
+  DEVICE_QUANTITY,
+  DEVICE_QUANTITY_DEFAULT,
   FIRMWARE_STATE_VARIABLE_MAX,
   KEY_EVENT_SHIFT,
   stateVariables,
@@ -362,6 +367,74 @@ export interface ComposedDevice {
  * same route it names every corpus device, section 126. What it does not have yet is a screen
  * page, which is the next insertion in the checklist's order.
  */
+/**
+ * Shift every state variable at or above `from` up by one, rewriting every reference to one.
+ *
+ * **Same length throughout**, which is what makes it safe: every site is an opcode byte or an
+ * operand's low byte already in the container, so nothing moves and no pointer goes stale. The
+ * caller then inserts the new entry pointer, which is the only length change.
+ *
+ * Two kinds of site, and the enumeration of the first is deliberately not here.
+ * `stateVariableSite` in `actions.ts` is the one place that knows where an index can sit inside an
+ * action list, next to the readings that state the same fact in prose, because a second copy of
+ * that list is how 1411 of 1511 references get missed: a first survey used two of the six `0x1F`
+ * band sub opcodes and found 100 sites where there are 1511. Section 277.
+ *
+ * The second is a **name tree node** at level 1, whose index is the variable it names, section 77.
+ * Those are `u16` fields at a known offset, so the rewrite is the same shape.
+ *
+ * What deliberately needs no rewrite, both checked rather than assumed: base slot 14's records are
+ * chosen by `0x72`'s **high** byte rather than indexed by the variable, section 39, and base slot
+ * 16's are reached through a transition's action list rather than by variable index, section 154.
+ * A transition's own `operand` is a list index and not a variable.
+ *
+ * **The bound is the write band's seven bits.** A variable shifted to 128 would need an opcode of
+ * `0x100`, which does not exist, so the shift is refused rather than truncated. Nothing in the
+ * corpus comes within 34 of it, which is exactly why the check has to be reasoned about.
+ */
+export function renumberStateVariables(c: Container, from: number): Uint8Array {
+  const table = stateTable(c);
+  if (table === undefined) throw new ComposeError('base slot 13 does not read as a table');
+  if (!Number.isInteger(from) || from < 0 || from > table.count) {
+    throw new ComposeError(`${from} is not a position in a table of ${table.count} variables`);
+  }
+  if (table.count >= STATE_WRITE_LIMIT) {
+    throw new ComposeError(
+      `renumbering would put a variable at ${table.count}, and a write opcode carries seven bits`);
+  }
+  const bytes = Uint8Array.from(c.blob);
+
+  // The action lists. `actionLists` gives the parsed instructions and `actionListSites` gives the
+  // matching offsets, both off the same pointer table, so the two are index for index.
+  if (c.architecture === undefined) throw new ComposeError('the container states no architecture');
+  const listTable = c.pointerArrayAt(archSlot(c.architecture, ACTION_TABLE_SLOT));
+  const lists = c.actionLists();
+  if (listTable === undefined || lists === undefined) {
+    throw new ComposeError('base slot 10 does not read as lists');
+  }
+  listTable.values.forEach((address, li) => {
+    const sites = c.actionListSites(address);
+    const list = lists[li];
+    if (sites === undefined || list === undefined) {
+      throw new ComposeError(`action list ${li} does not read back for renumbering`);
+    }
+    list.forEach((instruction, k) => {
+      const site = stateVariableSite(instruction);
+      const where = sites[k];
+      if (site === undefined || where === undefined || site.index < from) return;
+      if (site.where === 'opcode') bytes[where.opcodeAt] = STATE_WRITE_BASE + site.index + 1;
+      else bytes[where.operandAt] = site.index + 1;
+    });
+  });
+
+  // The name tree's level 1 nodes, whose index is the variable.
+  for (const node of nameNodes(c) ?? []) {
+    if (node.level !== NAME_LEVEL_STATE_VARIABLE || node.index < from) continue;
+    bytes.set(new Writer(2).u16(node.index + 1).bytes, node.start + 5);
+  }
+  return bytes;
+}
+
 export function composeDevice(c: Container, device: ComposeDevice): ComposedDevice {
   if (device.label === '' || device.label.includes('_')
       || [...device.label].some((ch) => ch.charCodeAt(0) < 0x20 || ch.charCodeAt(0) > 0x7e)) {
@@ -376,19 +449,29 @@ export function composeDevice(c: Container, device: ComposeDevice): ComposedDevi
   // The infrared half, then everything else on the reparsed result.
   const group = composeIrGroup(c, device.commands);
 
-  // One action list per command: `u8 1; u16 (group << 8) | record; u8 0x7d`, in a hole below the
-  // action table, each named by a pointer appended to the table. The list index is what the
-  // transitions below and phase 6's screen bindings point at.
+  // One action list per command, in a hole below the action table, each named by a pointer appended
+  // to the table. The list index is what the transitions below and phase 6's screen bindings point
+  // at.
+  //
+  // **Two instructions and not one**, `u8 2; u16 (group << 8) | record; u8 0x7d;
+  // u16 (group << 8) | amount; u8 0x7c`. This emitted the send alone until 8 September 2026 and the
+  // result was a device that answered every button press and sent nothing when an activity asked
+  // for it, on hardware. `DEVICE_QUANTITY`'s docstring carries the measurement, section 278: every
+  // send list Logitech's generator wrote is this pair, none is bare, and the bare form is not sent
+  // when an activity's state transition runs it. On arch 14 every real one also opens with a `0x7F`
+  // that this does not emit, which is todo 1.2.6.
   let current = parse(group.bytes);
   const actionSlot = archSlot(c.architecture, ACTION_TABLE_SLOT);
   const actionTable = current.pointerArrayAt(actionSlot);
   if (actionTable === undefined) throw new ComposeError('base slot 10 does not read as a table');
-  const listBytes = 4;
+  const listBytes = 7;
   const listsAt = actionTable.start;
   const listsHole = relocate(current, listsAt, listBytes * device.commands.length);
   device.commands.forEach((_, k) => {
     listsHole.bytes.set(
-      new Writer(listBytes).u8(1).u16((group.group << 8) | k).u8(SEND_INFRARED).bytes,
+      new Writer(listBytes).u8(2)
+        .u16((group.group << 8) | k).u8(SEND_INFRARED)
+        .u16((group.group << 8) | DEVICE_QUANTITY_DEFAULT).u8(DEVICE_QUANTITY).bytes,
       listsAt + listBytes * k);
   });
   const listBase = current.flashBase + listsAt;
@@ -429,15 +512,54 @@ export function composeDevice(c: Container, device: ComposeDevice): ComposedDevi
   current = parse(recordHole.bytes);
 
   // The state table is not a counted pointer array, so its append is spelled out: three bytes at
-  // the end of its entry pointers, then the u16 count at its start.
+  // the end of its entry pointers, then the header at its start.
+  //
+  // **Two words move, not one, and getting that wrong produced a config the remote accepts and
+  // ignores**, section 276. The new pointer goes on the end, so its index is at or above the
+  // table's own `narrow` threshold and the variable is a wide one: `wide` has to say so. The
+  // firmware sizes the variable storage as `narrow + 2 * wide` and **fills every byte above it with
+  // `0xFE` at each boot**, while the seeding loop runs first and over `count`. So raising `count`
+  // alone buys a variable that is seeded correctly and then painted over, holding 65278 rather than
+  // the 0 its record states. That is what a device added to the spare Harmony One did: the activity
+  // appeared on the menu, beeped, and started nothing, and the `0xFE` run on the connected remote
+  // begins at exactly the byte this arithmetic predicts.
+  //
+  // **The pointer goes in at `narrow`, so the new variable is a one byte one**, section 277, which
+  // is a reversal: appending it at the end made it a two byte variable, and **no two byte variable
+  // anywhere in the corpus carries a transition**, 0 of 64, against 91 of 194 one byte ones. A
+  // device's power variable is nothing but its transitions, so the appended shape is one Logitech's
+  // generator has never emitted. Measured on hardware too: the appended version set its variable
+  // correctly on a connected Harmony One and no code went out, where the same remote's own activity
+  // drives the same television through variable 36, below `narrow`, with the same two transitions.
+  //
+  // The price is a renumbering, which is why the first attempt avoided it. Every variable at or
+  // above `narrow` shifts up by one and every reference to one has to move with it, and those
+  // references are real rather than spare: on the four programmed arch 12 (Harmony One) containers
+  // the single top variable is named by 22 to 40 instructions. `renumberStateVariables` below is
+  // that rewrite, and it is the reason this insertion is three steps rather than one.
   const grownStates = stateTable(current);
   if (grownStates === undefined) throw new ComposeError('base slot 13 stopped reading');
-  const entryAt = grownStates.start + grownStates.length;
+  const variable = grownStates.narrow;
+  // 1. Renumber first, while the table still has its old shape, so the walk sees the old indices.
+  current = parse(renumberStateVariables(current, variable));
+  // 2. Insert the pointer at the new variable's own position, which is where `narrow` was.
+  const inserted = stateTable(current);
+  if (inserted === undefined) throw new ComposeError('base slot 13 stopped reading after renumbering');
+  const entryAt = inserted.start + STATE_TABLE_HEADER + 3 * variable;
   const entryHole = relocate(current, entryAt, 3);
   entryHole.bytes.set(new Writer(3).u24(recordAddress).bytes, entryAt);
-  entryHole.bytes.set(new Writer(2).u16(grownStates.count + 1).bytes, grownStates.start);
-  const variable = grownStates.count;
+  // 3. The header: one more variable, one more of them narrow, `wide` unchanged. `narrowAgain` is
+  // the fourth word and moves with `narrow` so the two stay equal, which is what the corpus keeps
+  // on 19 of 19 even though these two architectures read it and store it nowhere.
+  entryHole.bytes.set(
+    new Writer(8)
+      .u16(inserted.count + 1)
+      .u16(inserted.narrow + 1)
+      .u16(inserted.wide)
+      .u16(inserted.narrowAgain + 1).bytes,
+    inserted.start);
   current = parse(entryHole.bytes);
+  assertStateTableConsistent(current);
 
   // The name tree node: `<label>_Power_2` at level 1, indexed by the new variable, appended to the
   // frame and the frame's own length grown to say so. The tree is host side, base slots 0 and 1,

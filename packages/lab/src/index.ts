@@ -266,6 +266,24 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // `one_spare_plus_lg2_region` over all 1703936 bytes**, which is why it is here rather than
   // being left out as a duplicate. The identity is the claim, and it is asserted.
   one_spare_reverted_region: '20260903T175608Z-one-spare-reverted-region-0x40000-0x1e0000.bin',
+  // The region as it stands after the first activity write, read 7 September 2026 because that
+  // write invalidated every dump a later one compares against: the remote no longer matches
+  // `one_spare_reverted_region`, so this is the known good content for the next erase. Its
+  // configuration is the one whose state table header section 276 refuses, so it is deliberately
+  // **not** a sample of anything: it is the only artefact here holding a container this project
+  // built and the remote will not run.
+  one_spare_lg_activity_region: '20260907T1042Z-one-spare-lg-activity-region.bin',
+  // And after the second activity write, read 8 September 2026 as the compare base for the third.
+  // The configuration on it is the one whose power variable sits **above** `narrow`, section 277,
+  // so like the entry above it holds a container this project built and the remote runs without
+  // starting the device. Not a sample of anything: it is a known good baseline for an erase.
+  one_spare_narrow_base: '20260908T1323Z-one-spare-narrow-base-region.bin',
+  // And after the third activity write, 8 September 2026. **It is also the proof that a read like
+  // this is unnecessary**, section 277: the previous region with the container overlaid equals this
+  // read on all 1703936 bytes, so a write's compare base can be constructed rather than read.
+  one_spare_probe_base: '20260908T1347Z-one-spare-probe-base-region.bin',
+  one_spare_retarget_base: '20260908T1513Z-one-spare-retarget-base-region.bin',
+  one_spare_paired_base: '20260908T1532Z-one-spare-paired-base-region.bin',
   // Two configs Logitech compiled to a specification we wrote, 13 August 2026: the corpus's only
   // known answer samples. Section 132. Not in the corpus wide lists, on purpose; see tests/lab.py.
   calibration_one: 'calibration-one-spare.bin',
@@ -411,7 +429,8 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
     'one_spare_20260901_delay', 'one_spare_20260901_denon', 'one_spare_20260901_region',
     'one_spare_written_by_us', 'one_spare_written_region', 'one_spare_plus_lg_region',
     'one_spare_mixed_region', 'one_spare_plus_lg2_region', 'one_spare_denon65_region',
-    'one_spare_reverted_region',
+    'one_spare_reverted_region', 'one_spare_lg_activity_region', 'one_spare_narrow_base', 'one_spare_probe_base',
+    'one_spare_retarget_base', 'one_spare_paired_base',
     // The Harmony 525's erase block, added 6 September 2026, and it is the first entry here that is
     // not a Harmony One's. It parses because its first 51195 bytes are `h525_config_2` exactly, so
     // counting it would add a configuration that does not exist. Same reason as

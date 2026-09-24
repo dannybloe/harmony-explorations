@@ -62,7 +62,10 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // 101 since the other four blocks of that region, section 270, which completes it: five blocks
   // from `0x820000` to `0x870000`, of which two hold the tail of an earlier configuration and two
   // are erased throughout.
-  assert.equal(Object.keys(pythonImages()).length, 101, 'every fixture tests/lab.py names');
+  // 106 since the spare Harmony One's region has been read again before each activity write,
+  // sections 276 and 277 and the round after them: a write invalidates the dump the next write
+  // compares against, so each one needs its own base and each base is a fixture.
+  assert.equal(Object.keys(pythonImages()).length, 106, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {
@@ -104,5 +107,13 @@ test('the two sides exclude the same fixtures from the parseable population', ()
   // the wrong **shape** rather than out of date: a rehearsal compares a whole 64 KiB block and that
   // remote's configuration is 51195 bytes, so a region read was the only way to cover one. Its
   // first 51195 bytes are `h525_config_2` exactly.
-  assert.equal(names.length, 14, 'each one a container already counted, or that container plus a known edit');
+  // The fifteenth is the spare Harmony One's region read after the first activity write, section
+  // 276, and it is the only entry here holding a container this project **built**. It is excluded
+  // for the usual reason, that its configuration would be counted twice, and for one of its own: the
+  // remote will not run it, since its base slot 13 header declares more variables than it sizes
+  // storage for, so counting it would put a configuration in the corpus that no remote executes.
+  // The sixteenth, seventeenth and eighteenth are the same shape as the fifteenth: the region read
+  // before each later activity write, excluded because each one's configuration is already counted
+  // under the read it was built from.
+  assert.equal(names.length, 19, 'each one a container already counted, or that container plus a known edit');
 });

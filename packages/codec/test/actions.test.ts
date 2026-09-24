@@ -23,7 +23,13 @@ import {
   BAND_3F_C0_PROPERTY_LIMIT,
   BAND_3F_C0_SELECTOR,
   ARITHMETIC_BLOCK,
+  STATE_BAND,
+  STATE_BAND_SUBS,
+  STATE_LOW_BYTE_OPCODES,
   STATE_WRITE_BASE,
+  stateVariableSite,
+  SEND_INFRARED,
+  DEVICE_QUANTITY,
 } from '../src/index.ts';
 import type { Instruction } from '../src/index.ts';
 
@@ -854,3 +860,127 @@ test('the state variable write carries seven bits, not five', skipWithoutLab(), 
   assert.equal(reading({ opcode: 0x80 + 69, operand: 0 }, 12)?.what, 'state variable 69 = the operand');
   assert.equal(reading({ opcode: 0xff, operand: 0 }, 12)?.what, 'state variable 127 = the operand');
 });
+
+/**
+ * Fourteen programmed configurations: the Python `USER_CONFIGS` without the two contributed arch 8
+ * ones, `arch8_config_880` and `arch8_config_885`, and with `calibration_one`. Two of them,
+ * `one_config_unprogrammed` and `one_spare_before_sync`, parse to the same container, so there are
+ * thirteen distinct. Named here rather than derived because the counts below are exact.
+ *
+ * This said "`USER_CONFIGS` minus the one that carries no action lists", which was wrong on both
+ * halves: every one of them carries lists, and the difference is the three names above.
+ */
+const VARIABLE_SITE_CONFIGS = [
+  'one_config', 'one_config_unprogrammed', 'h600_config', 'h700_config', 'h700_config_2',
+  'h525_config', 'h525_config_2', 'arch8_config_a', 'arch8_config_b', 'arch8_config_c',
+  'arch8_config_d', 'one_spare_before_sync', 'one_spare_after_sync', 'calibration_one',
+];
+
+/**
+ * Section 277. `stateVariableSite` is the one enumeration of where a variable index can appear in an
+ * action list, and `BANDS_1F`'s readings carry the same fact in prose. This compares them by reading
+ * the prose, so adding a sub opcode to one and not the other fails here rather than drifting.
+ *
+ * The reason it is worth a test of its own: the readings are what a person checks the enumeration
+ * against, and a first survey of the corpus used two of the six sub opcodes and undercounted the
+ * references by 1411. A renumbering built on that survey leaves those pointing at the wrong
+ * variable, in a file that parses and checksums.
+ */
+test('every reading that names a state variable in a low byte is a site the rewriter finds', () => {
+  let named = 0;
+  for (let sub = 0; sub <= 0xff; sub += 1) {
+    // The band's own operand shape: the sub opcode is the high byte, the argument the low.
+    const what = reading({ opcode: STATE_BAND, operand: (sub << 8) | 7 }, 12)?.what;
+    if (what === undefined || !/state variable the low byte names/.test(what)) continue;
+    named += 1;
+    assert.ok(STATE_BAND_SUBS.has(sub),
+      `sub opcode 0x${sub.toString(16)} reads as "${what}" and is not in STATE_BAND_SUBS`);
+    const site = stateVariableSite({ opcode: STATE_BAND, operand: (sub << 8) | 7 });
+    assert.deepEqual(site, { index: 7, where: 'low' }, `sub opcode 0x${sub.toString(16)}`);
+  }
+  assert.equal(named, 6, 'the sub opcodes whose reading names a state variable in the low byte');
+  assert.equal(STATE_BAND_SUBS.size, 6);
+  // And the negative: a band sub opcode that names no variable is not a site. 0xF6 sends the byte
+  // register to base slot 16, which is the neighbouring reading and carries no index.
+  assert.equal(stateVariableSite({ opcode: STATE_BAND, operand: (0xf6 << 8) | 7 }), undefined);
+  // The other two kinds, and their negatives.
+  assert.deepEqual(stateVariableSite({ opcode: STATE_WRITE_BASE + 51, operand: 1 }),
+                   { index: 51, where: 'opcode' });
+  for (const opcode of STATE_LOW_BYTE_OPCODES) {
+    assert.deepEqual(stateVariableSite({ opcode, operand: 0x0234 }), { index: 0x34, where: 'low' });
+  }
+  assert.equal(stateVariableSite({ opcode: 0x7d, operand: 0x0102 }), undefined,
+               'an infrared send names no variable');
+});
+
+/**
+ * The closure behind the enumeration, and the strongest evidence available that the three kinds are
+ * the ones a generator uses: every site it finds names a variable the container's own base slot 13
+ * has. A fourth kind of site would not be caught by this, but a wrong reading of any of the three
+ * would be, since a misread field yields an index off the end almost at once.
+ */
+test('every state variable a corpus action list names is one its own table has',
+  skipUnless(...VARIABLE_SITE_CONFIGS), () => {
+    let sites = 0;
+    let overCount = 0;
+    const perKind = new Map<string, number>();
+    for (const name of VARIABLE_SITE_CONFIGS) {
+      const c = parse(require_(name));
+      const table = stateTable(c);
+      assert.ok(table !== undefined, `${name} carries a state table`);
+      for (const list of c.actionLists() ?? []) {
+        for (const instruction of list ?? []) {
+          const site = stateVariableSite(instruction);
+          if (site === undefined) continue;
+          sites += 1;
+          const kind = site.where === 'opcode' ? 'opcode'
+            : instruction.opcode === STATE_BAND ? 'band' : 'low';
+          perKind.set(kind, (perKind.get(kind) ?? 0) + 1);
+          if (site.index >= table.count) overCount += 1;
+        }
+      }
+    }
+    assert.equal(overCount, 0, 'no site names a variable past its own count');
+    assert.equal(perKind.get('opcode'), 3281);
+    assert.equal(perKind.get('low'), 3371);
+    assert.equal(perKind.get('band'), 1511);
+    assert.equal(sites, 8163);
+  });
+
+/**
+ * Section 278. Every action list that sends an infrared code also carries a `0x7C` naming the same
+ * device, on all four architectures, and no send in the corpus is bare. This is the regularity the
+ * composer broke: its lists were the send alone, which answered a key press on the spare Harmony One
+ * and sent nothing when an activity's transition ran them.
+ *
+ * Exact per architecture, including the arch 14 shape with its leading call, so a reader or a
+ * sample that changes any of them shows up here rather than in a count that happens to still close.
+ */
+test('every corpus send is paired with a 0x7C naming the same device, and none is bare',
+  skipUnless(...VARIABLE_SITE_CONFIGS), () => {
+    const perArch = new Map<number, { paired: number; bare: number; shapes: Set<string> }>();
+    for (const name of VARIABLE_SITE_CONFIGS) {
+      const c = parse(require_(name));
+      const arch = c.architecture!;
+      const tally = perArch.get(arch) ?? { paired: 0, bare: 0, shapes: new Set<string>() };
+      perArch.set(arch, tally);
+      for (const list of c.actionLists() ?? []) {
+        const send = list.find((one) => one.opcode === SEND_INFRARED);
+        if (send === undefined) continue;
+        tally.shapes.add(list.map((one) => one.opcode.toString(16)).join(','));
+        const quantity = list.find((one) => one.opcode === DEVICE_QUANTITY);
+        if (quantity === undefined) { tally.bare += 1; continue; }
+        assert.equal(quantity.operand >>> 8, send.operand >>> 8,
+                     `${name}: the 0x7C names the same device as the send`);
+        tally.paired += 1;
+      }
+    }
+    const summary = [...perArch].sort((a, b) => a[0] - b[0])
+      .map(([arch, t]) => [arch, t.paired, t.bare, [...t.shapes].sort()]);
+    assert.deepEqual(summary, [
+      [8, 1595, 0, ['7d,7c']],
+      [9, 308, 0, ['7d,7c']],
+      [12, 903, 0, ['7d,7c']],
+      [14, 932, 0, ['7f,7d,7c']],
+    ]);
+  });

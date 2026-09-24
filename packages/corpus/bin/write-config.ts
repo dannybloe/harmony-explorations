@@ -65,7 +65,8 @@ import {
   writeBlock,
 } from '@harmony/usb/write';
 import {
-  ACTION_QUEUE_INSTRUCTIONS, QueueError, assertQueueFits, parse, trailerChecksum, worstQueueRun,
+  ACTION_QUEUE_INSTRUCTIONS, QueueError, StateTableError, assertQueueFits,
+  assertStateTableConsistent, parse, trailerChecksum, worstQueueRun,
 } from '@harmony/codec';
 import { profileFor, readConfig } from '../src/index.ts';
 
@@ -98,6 +99,20 @@ const SPARE_DUMPS = new Set([
   // And after the revert, section 248. Identical to `one_spare_plus_lg2_region`, so either name
   // is a valid compare base for whatever comes next.
   'one_spare_reverted_region',
+  // And after the first activity write, section 276, read on 7 September 2026 with the unit's
+  // identity checked by `assertUnitIsPermitted` before it was filed. It is the compare base for the
+  // write that corrects that configuration's base slot 13 header, and it is the reason this list has
+  // to be added to by hand: the previous entry stopped describing the remote the moment that write
+  // landed, and a stale compare base is exactly what this rail exists to refuse.
+  'one_spare_lg_activity_region',
+  // And after the second activity write, section 277, which is the compare base for the write that
+  // moves the power variable below `narrow`.
+  'one_spare_narrow_base',
+  'one_spare_probe_base',
+  // The region behind the retargeted transition probe, read after the enter-mode write.
+  'one_spare_retarget_base',
+  // The region behind the paired-send probe, read after the retarget write.
+  'one_spare_paired_base',
 ]);
 
 /** The lab's name for the unit this may run against. One label, because there is one write target. */
@@ -225,6 +240,17 @@ async function main(): Promise<void> {
     if (!(error instanceof QueueError)) throw error;
     fail(`${configPath} overflows the remote's action queue: ${error.message}. The remote would `
       + 'accept it and silently drop instructions, so it is refused here');
+  }
+  // **The second silent one, and ours produced it.** The firmware sizes the state variable storage
+  // from base slot 13's `narrow` and `wide` and paints `0xFE` over everything above it at each boot,
+  // while the seeding loop runs over `count`. So a config whose header does not add up carries
+  // variables that are seeded and then erased, with no error anywhere. Section 276.
+  try {
+    assertStateTableConsistent(container);
+  } catch (error) {
+    if (!(error instanceof StateTableError)) throw error;
+    fail(`${configPath} has an inconsistent state variable table: ${error.message}. The remote `
+      + 'would accept it and overwrite those variables at every boot, so it is refused here');
   }
   const worst = worstQueueRun(container);
   if (worst !== undefined) {

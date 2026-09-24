@@ -762,6 +762,33 @@ export class Container {
     return out;
   }
 
+  /**
+   * Where each instruction of one action list sits in the blob, for a rewriter that pokes a field.
+   *
+   * **Deliberately immediately below `actionList`, because the two share one rule** and the layout
+   * is stated once per method rather than derived twice in different files: a list is a `u8` count
+   * then `count` instructions of an operand `u16` and an opcode `u8`. If that rule ever changes,
+   * both bodies are on the same screen. `compose.ts` uses this to renumber a state variable, whose
+   * index sits either in an opcode byte or in an operand's low byte, section 277.
+   *
+   * Returns undefined on exactly the conditions `actionList` does, so a caller that has a parsed
+   * list has an offset list of the same length.
+   */
+  actionListSites(address: number): { operandAt: number; opcodeAt: number }[] | undefined {
+    const off = this.blobOffsetOf(address);
+    if (off === undefined || this.blob.length === 0 || off < 0 || off >= this.blob.length) {
+      return undefined;
+    }
+    const count = u8(this.blob, off);
+    const end = off + 1 + INSTRUCTION_LENGTH * count;
+    if (end > this.blob.length) return undefined;
+    const out: { operandAt: number; opcodeAt: number }[] = [];
+    for (let k = 0; k < count; k += 1) {
+      out.push({ operandAt: off + 1 + INSTRUCTION_LENGTH * k, opcodeAt: off + 3 + INSTRUCTION_LENGTH * k });
+    }
+    return out;
+  }
+
   /** Every action list the table at base slot 10 addresses, in table order. */
   actionLists(): Instruction[][] | undefined {
     if (this.architecture === undefined) return undefined;

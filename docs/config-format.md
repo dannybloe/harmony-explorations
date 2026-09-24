@@ -1759,6 +1759,34 @@ loads it rather than from what the bytes look like.
 The firmware copies this into RAM as two runs, `narrow` single bytes followed by `wide` pairs, so
 **an index below `narrow` is a one byte variable and an index at or above it is a two byte one**.
 
+**Three of the four words are live, and the storage is sized `narrow + 2 * wide` with `count`
+playing no part in it**, section 276. `count` limits the boot loop that seeds each variable from its
+record and is kept only in a scratch byte, so nothing compares an index against it; `narrow` is the
+width threshold; `wide` sizes the storage. Above `narrow + 2 * wide` the firmware **fills every byte
+with `0xFE` at each boot**, and because the seeding loop runs first, a variable above the storage is
+seeded correctly and then painted over, holding 65278 rather than its record's value, with no error
+anywhere. The fill's ceiling is per image rather than per architecture, `0x7F` on the Harmony One,
+`0xFF` on the Harmony 700 and `0xC0` on the Harmony 600, and a second arm starts it at the constant 18
+under a flags bit that is unread; the fill is unmeasured on arch 9 (Harmony 525). `narrow again` is
+fetched and discarded on arch 12 (Harmony One) and arch 14 (Harmony 600 and 700); arch 9 reads it,
+section 274. A separate check does compare an index against `narrow + wide`, seven instructions on all
+six images in the lab, but its callers are `WRITE_MISC` and `READ_MISC` **selector `0x01`**: a
+configuration's own state write reaches the store unchecked, so that bound is not what a writer has to
+respect, and a refused read returns 0 rather than an error. The identity
+`narrow + wide == count` holds on 19 of 19 containers, which is what makes it enforceable rather than
+what proves the bound, since the two are the same number in every one, and
+`assertStateTableConsistent` refuses a container that breaks it.
+
+**A composed variable that carries transitions goes in below `narrow`**, section 277, which costs a
+renumbering: every variable at or above the insertion point shifts up by one and every reference has
+to move with it. The reason is a measurement rather than the firmware, since nothing read so far
+branches on the width: 0 of 64 two byte variables in the corpus carry transitions against 91 of 194
+one byte ones. A reference sits in an opcode byte or an operand's low byte, in one of three kinds
+enumerated by `stateVariableSite`, 8163 of them across the fourteen programmed configs with 0 naming
+a variable its own table lacks; a name tree node at level 1 carries one too. **The transition entry's
+own leading byte is `0x00` in 569 of 569** and is not an enable bit, which section 277 corrects in
+place.
+
 The opcodes that index it are `0x70`, `0x71` and `0x72`, in the operand's low byte. Every index in
 every config is below that config's own `count`, and the halves are respected exactly:
 
@@ -3522,6 +3550,13 @@ equals the `0x7D` operand's. So the grouping is shared between the infrared data
 1 in most sends. What says it is a count rather than a second identifier is not the size of that set,
 which grew when the population did: an identifier would have to separate the records of a group, the
 largest group here holds 111, and the firmware caps this field at 100. Section 140.
+
+**A writer must emit the pair, and a bare send is not a smaller version of it.** Section 278, on the
+spare Harmony One: a composed list of `0x7D` alone sends from a key press and sends **nothing** when
+an activity's state transition runs it, and adding the `0x7C` for the same device fixes it. So the
+shape above is a rail and not a habit. Measured on arch 12 (Harmony One) only; the firmware's reason
+is unread. On arch 14 every send list also opens with a `0x7F`, one distinct target per list, which
+the composer does not emit and which is unread.
 
 **On arch 16 the cover is exact rather than onto**, section 261, which is the one architecture where
 that can be asserted: the Harmony 350's action lists hold 130 send instructions with 130 distinct

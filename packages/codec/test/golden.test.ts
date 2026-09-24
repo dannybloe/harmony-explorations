@@ -103,6 +103,17 @@ const CONTAINERS = [
   // And after the revert, section 248, whose vector duplicates `one_spare_plus_lg2_region`
   // exactly, because the write put those bytes back.
   'one_spare_reverted_region',
+  // And after the first activity write, section 276. It is the only entry here holding a container
+  // this project built and the remote would not run: its base slot 13 declares 52 state variables
+  // and sizes storage for 51, so both readers agreeing about it is a check over a header neither
+  // side would ever emit.
+  'one_spare_lg_activity_region',
+  // And after the second activity write, section 277, whose configuration puts the power variable
+  // above `narrow`: the same standing as the entry above, a container we built kept as a baseline.
+  'one_spare_narrow_base',
+  'one_spare_probe_base',
+  'one_spare_retarget_base',
+  'one_spare_paired_base',
   // The two configs Logitech compiled to a specification we wrote, section 132: the only samples
   // whose devices and activities were chosen before the bytes existed, so a disagreement between the
   // two implementations about them would be a disagreement about a known answer.
@@ -260,7 +271,10 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 61 since that Harmony 300 was programmed, section 265.
   // 62 since the Harmony 525's erase block, section 268, the first region read of a remote other
   // than the spare Harmony One.
-  assert.equal(present.length, 62, 'every vector, which is what `make golden` compares');
+  // 63 since the spare Harmony One's region was read again after the first activity write, section
+  // 276, because that write invalidated the dump every later write compares against.
+  // 64 since the compare base for the third activity write, section 277.
+  assert.equal(present.length, 67, 'every vector, which is what `make golden` compares');
   // 38 since the Harmony 895 landed: its key table reads with the existing reader even though
   // every other arch 10 reader is gated, which is what made section 177's keypad closure possible
   // without any arch 10 progress at all.
@@ -281,7 +295,11 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // insertions and almost nothing else about it transfers by index.
   // 55 since the one device differential, section 263.
   // 56 since the Harmony 300, section 264, whose key table reads with the existing reader.
-  assert.equal(complete, 57, 'the vectors whose container has a key table at all');
+  // 58 since the spare Harmony One's region read after the first activity write, section 276: its
+  // key table reads normally, which is worth a line because the header defect that write corrected
+  // is in base slot 13 and touches nothing a key table reader looks at.
+  // 59 since the compare base for the third activity write, section 277.
+  assert.equal(complete, 62, 'the vectors whose container has a key table at all');
 
   // **The number sender field, and why it needs its own guard.** It is an empty array on 30 vectors
   // and null on 8, with eight carrying a record since 30 August 2026, and this comment said 25 and 9
@@ -346,7 +364,12 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // not move, so the record survives, which is itself the answer to one of that section's questions.
   // 22 since the programmed Harmony 300, section 265, which carries a record for the four favourite
   // channels Danny entered on it.
-  assert.equal(senders.filter((one) => Array.isArray(one) && one.length > 0).length, 22,
+  // 23 since the spare Harmony One's region read after the first activity write, section 276: its
+  // favourite channel records are the same ones, carried through a fifth erase and write of those
+  // blocks, which is what makes this count the cheapest evidence that a write preserves them.
+  // 24 since the compare base for the third activity write, section 277: the favourite channel
+  // records have now survived a sixth erase and write of the blocks holding them.
+  assert.equal(senders.filter((one) => Array.isArray(one) && one.length > 0).length, 27,
     'the configs that populate base slot 16');
 });
 
@@ -362,7 +385,10 @@ test('the list above covers exactly what the Python side writes a vector for', (
   // population and not in the corpus one, which is the split every region here takes: the vectors
   // exist to make the two codecs disagree if they can, and the corpus totals count each
   // configuration once.
-  assert.equal(python.length, 62, 'the golden vectors, which is what `make golden` prints');
+  // 63 since the spare Harmony One's region was read again after the first activity write, section
+  // 276, because that write invalidated the dump every later write compares against.
+  // 64 since the compare base for the third activity write, section 277.
+  assert.equal(python.length, 67, 'the golden vectors, which is what `make golden` prints');
   assert.deepEqual([...CONTAINERS].sort(), python.sort());
 });
 

@@ -257,6 +257,17 @@ IMAGES = {
     # And after the revert, section 248: identical to one_spare_plus_lg2_region over the whole
     # region, which tests/test_write_sequence.py asserts rather than states.
     'one_spare_reverted_region': '20260903T175608Z-one-spare-reverted-region-0x40000-0x1e0000.bin',
+    # The region after the first activity write, 7 September 2026: the known good content for the
+    # next erase, since the remote no longer matches the reverted region. Section 276.
+    'one_spare_lg_activity_region': '20260907T1042Z-one-spare-lg-activity-region.bin',
+    # And after the second activity write, 8 September 2026: the compare base for the third.
+    # Section 277.
+    'one_spare_narrow_base': '20260908T1323Z-one-spare-narrow-base-region.bin',
+    # And after the third activity write, 8 September 2026, which is also what proved a post write
+    # read unnecessary: the previous region plus the container equals it exactly. Section 277.
+    'one_spare_probe_base': '20260908T1347Z-one-spare-probe-base-region.bin',
+    'one_spare_retarget_base': '20260908T1513Z-one-spare-retarget-base-region.bin',
+    'one_spare_paired_base': '20260908T1532Z-one-spare-paired-base-region.bin',
     # Two configs Logitech compiled to a specification we wrote, 13 August 2026, and the corpus's only
     # **known answer** samples: three devices and two activities chosen by us, on a throwaway account,
     # then compiled by the live service and downloaded without a byte reaching a remote. Section 132.
@@ -428,7 +439,9 @@ PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_confi
                       'one_spare_written_by_us', 'one_spare_written_region',
                       'one_spare_plus_lg_region', 'one_spare_mixed_region',
                       'one_spare_plus_lg2_region', 'one_spare_denon65_region',
-                      'one_spare_reverted_region',
+                      'one_spare_reverted_region', 'one_spare_lg_activity_region',
+                      'one_spare_narrow_base', 'one_spare_probe_base',
+                      'one_spare_retarget_base', 'one_spare_paired_base',
                       # The erase block of the Harmony 525, added 6 September 2026. It parses,
                       # because it starts with the container `h525_config_2` already counts, byte
                       # for byte for all 51195 of it. Counting it again would inflate every corpus

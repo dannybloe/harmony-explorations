@@ -29,6 +29,38 @@ loading the argument for it.
 Collected here because they are scattered across a dozen findings and every one of them is a way to
 produce a config the remote accepts and mishandles.
 
+* **Base slot 13's `narrow` and `wide` size the state variable storage, and `count` does not**,
+  section 276, so appending a variable moves two words of that four word header rather than one. The
+  firmware allocates `narrow + 2 * wide` bytes, which is what the store's own width arithmetic needs,
+  and then **fills every byte above that with `0xFE` at each boot**. The seeding loop runs **first**
+  and over `count`, so a container whose count exceeds the sum seeds those variables correctly and
+  then paints over them: they hold 65278 instead of what their record states. The fourth header word
+  is fetched and stored nowhere, and `count` survives only in a scratch byte, so nothing compares an
+  index against it. Measured on arch 12 (Harmony One) at `0x2A330` and arch 14 (Harmony 700 reference
+  image) at `0x17A42`. **The fill's ceiling is per image and not per architecture**, `0x7F` on the
+  Harmony One, `0xFF` on the Harmony 700 and `0xC0` on the Harmony 600, and a second arm starts the
+  fill at the constant 18 when a flags bit says so, which is unread. The fill is **not** measured on
+  arch 9 (Harmony 525), so nothing here says what a 525 does with a variable above its storage.
+  **This one is not a prediction.** The composer here raised `count` alone, and the device it added to
+  the spare Harmony One appeared on the activity menu, beeped when pressed and started nothing; a read
+  only look at the connected remote found the `0xFE` run beginning at exactly the byte the arithmetic
+  predicts, with the activity's own variable the first casualty. `narrow + wide == count` on 19 of 19
+  containers and `assertStateTableConsistent` refuses a container that breaks it.
+  **A separate bound check exists and is not this**: seven instructions comparing an index against
+  `narrow + wide`, on all six images in the lab, whose callers are **`WRITE_MISC` and `READ_MISC`
+  selector `0x01`**, a host poking a variable over USB. A configuration's own state write clears bit 7
+  of the opcode and reaches the store unchecked, so that bound is nothing a config writer has to
+  respect. Reading that guard as the config's was this section's recorded error. What it is worth
+  knowing for is the reply: a refused read returns 0, which looks exactly like a variable holding 0.
+* **Every send is paired with a `0x7C` naming the same device**, section 278. Section 33 found the
+  shape, `{0x7D, 0x7C}` on arch 8, 9 and 12 and `{0x7F, 0x7D, 0x7C}` on arch 14, with no bare send
+  anywhere in the corpus, and section 278 found out what it costs to ignore: the device composer
+  emitted the send alone, the result answered every pad press correctly, and an activity that ran the
+  same list switched nothing on. The transition fired; the send did not go out. Pairing it fixed that
+  on the spare Harmony One. **The trap is that the obvious check passes**: section 242 tested a composed
+  device with a pad press, which is the one route that works. So a composed send is checked from an
+  activity, not from a key. Why the firmware treats the two routes differently is unread, and the
+  arch 14 `0x7F` in front is unread and not emitted.
 * **Base slot 13's first seven records are the clock and are stamped too**, section 130: `first` is the
   value a variable holds when the config is generated, and records 0 to 6 are second, minute, hour, day,
   weekday, month and year, each equal to the corresponding field of base slot 3's timestamp in all 21

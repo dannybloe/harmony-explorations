@@ -272,9 +272,23 @@ export interface StateTable {
   count: number;
   /** Variables stored as one byte, indices 0 to `narrow - 1`. */
   narrow: number;
-  /** Variables stored as two bytes, indices `narrow` to `count - 1`. */
+  /**
+   * Variables stored as two bytes, indices `narrow` to `count - 1`.
+   *
+   * **`narrow + 2 * wide` is the storage the firmware allocates, and `count` plays no part in it**,
+   * section 276. So this word is load bearing rather than redundant: a variable above the storage is
+   * seeded and then painted over with `0xFE` at every boot, silently.
+   * `assertStateTableConsistent` below is the refusal.
+   */
   wide: number;
-  /** The header repeats `narrow`; why is not established. */
+  /**
+   * The header repeats `narrow`.
+   *
+   * Arch 12 (Harmony One) and arch 14 (Harmony 600 and 700) fetch this word and store it nowhere,
+   * section 276, so nothing on those remotes uses it; arch 9 (Harmony 525) reads it, section 274.
+   * `count` is kept only in a scratch byte on both, so nothing compares an index against it either.
+   * Whether the host software used it is unknown, and it equals `narrow` on 19 of 19 containers.
+   */
   narrowAgain: number;
   entries: number[];
   start: number;
@@ -295,14 +309,69 @@ export interface StateTable {
  * The split is what the firmware's lookup uses: an index below `narrow` reads one byte and an
  * index at or above it reads two, so the width belongs to the index and not to the value.
  */
+export class StateTableError extends Error {}
+
+/**
+ * Refuse a container whose base slot 13 header does not add up.
+ *
+ * **`narrow` and `wide` size the state variable storage and `count` does not**, section 276. The
+ * firmware computes `narrow + 2 * wide` as the RAM the variables occupy, which is what the store's
+ * own width arithmetic needs, and then **fills every byte above it with `0xFE` at each boot**. The
+ * seeding loop runs first and over `count`, so a container whose `count` exceeds the sum seeds
+ * variables into bytes the fill then paints over: they hold 65278 rather than what their record
+ * says, and nothing anywhere reports it. Measured on arch 12 (Harmony One) at `0x2A330` and arch 14
+ * (Harmony 700 reference image) at `0x17A42`, and confirmed on a connected Harmony One where the
+ * `0xFE` run begins at the computed byte and not one either side.
+ *
+ * A separate bound check does exist, `0x2A694` and `0x17DCA`, and it is **not** what fires here:
+ * its callers are host command handlers, and a configuration's own state write reaches the store
+ * with no bound check at all. The first version of this rail had that backwards.
+ *
+ * Arch 9 (Harmony 525) reads all four words and guards per variable, section 274, so none of this
+ * is its rule.
+ *
+ * `narrow + wide === count` holds on 19 of 19 containers in the corpus and `narrowAgain === narrow`
+ * on 19 of 19, so a header that breaks either is one no generator here has ever emitted. This
+ * exists because ours did: `composeDevice` raised `count` alone, and the device it added to the
+ * spare Harmony One appeared on the activity menu, beeped and started nothing, because the one
+ * variable the whole activity turns on sat one index above the bound.
+ *
+ * A rail rather than a warning, for the reason every rail in `writing-a-config` is: the failure is
+ * silent on the remote, so the last place it can be caught is before the bytes leave here.
+ */
+export function assertStateTableConsistent(c: Container): void {
+  const t = stateTable(c);
+  if (t === undefined) return;
+  if (t.narrow + t.wide !== t.count) {
+    throw new StateTableError(
+      `base slot 13 says ${t.count} state variables and splits them ${t.narrow} narrow and ${t.wide} `
+      + `wide, which is ${t.narrow + t.wide}: the firmware sizes the storage from the split, so `
+      + `variables ${t.narrow + t.wide} to ${t.count - 1} are seeded and then overwritten with 0xFE `
+      + 'at every boot');
+  }
+  if (t.narrowAgain !== t.narrow) {
+    throw new StateTableError(
+      `base slot 13 states its narrow count twice and the two disagree, ${t.narrow} and `
+      + `${t.narrowAgain}; what reads the second is unestablished, so they are kept equal`);
+  }
+}
+
+/**
+ * Base slot 13's header: four `u16` words in front of the entry pointers.
+ *
+ * Named because it was three literal 8s in the reader below and a fourth in `compose.ts`, which
+ * inserts a pointer at a computed position and so has to know where the array starts.
+ */
+export const STATE_TABLE_HEADER = 8;
+
 export function stateTable(c: Container): StateTable | undefined {
   const off = sectionStart(c, STATE_TABLE_SLOT);
-  if (off === undefined || off + 8 > c.blob.length) return undefined;
+  if (off === undefined || off + STATE_TABLE_HEADER > c.blob.length) return undefined;
   const count = u16(c.blob, off);
-  const length = 8 + 3 * count;
+  const length = STATE_TABLE_HEADER + 3 * count;
   if (off + length > c.blob.length) return undefined;
   const entries: number[] = [];
-  for (let p = off + 8; p < off + length; p += 3) entries.push(u24(c.blob, p));
+  for (let p = off + STATE_TABLE_HEADER; p < off + length; p += 3) entries.push(u24(c.blob, p));
   return {
     count,
     narrow: u16(c.blob, off + 2),

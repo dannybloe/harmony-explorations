@@ -3955,6 +3955,12 @@ labelling the remaining ten from a search into a reading.
 Definitions, defaults or names are all plausible and none is checked.
 
 **Why the header repeats `narrow`.** Two fields hold the same number in all ten configs.
+**Narrowed by section 276**: on arch 12 (Harmony One) and arch 14 (Harmony 600 and 700) the fourth
+word is fetched and nothing stores it, so nothing on those remotes uses it, and on arch 9 (Harmony
+525) it is read, section 274. Whether the host software used it is still unknown. That section also
+finds the **third** word is not decoration either: `narrow + wide` is the bound the firmware checks an
+index against, and `count` is not consulted, so this section's observation that the three add up is a
+rail rather than a convention.
 
 **What any individual variable means.** The table is sized and split; nothing here names entry 9,
 which is the one `0x71` reads most. **Answered by section 86**: base slot 0 names every variable
@@ -35343,3 +35349,669 @@ activities on one page.
   778 mode pages, the one page rule per mode record, the deadening over the 12 one page list menus,
   the composer keeping every binding it found, the whole chain from `composeActivity` through to the
   four hop reader, and the refusals including the full page.
+
+## 276. Base slot 13's `wide` sizes the state variable storage, and everything above it is painted with `0xFE` at every boot
+
+**A device this project composed and wrote to the spare Harmony One appeared on the activity menu,
+beeped when pressed and started nothing.** The cause is base slot 13's header: `composeDevice`
+raised the section's `count` when it appended a variable and left the other two words alone, so the
+container declared 52 variables and declared the storage large enough for 51. The remote sizes that
+storage from the words it was given and **fills everything above it with `0xFE` at every boot**, and
+the one variable the whole activity turns on sat in the first two bytes above the line.
+
+It is a new instance of the hazard class this project keeps meeting: a configuration the remote
+accepts and mishandles. The file parses, both checksums verify, the byte accounting closes with no
+overlaps, the emitter reproduces it, every reader here agrees the device is there and named, and the
+remote runs it and does nothing.
+
+**Recorded correction, and the reviewer was right.** The first version of this section claimed the
+firmware **refuses** a write to a variable at or above `narrow + wide` and that a config's state
+write is dropped by that check<!--superseded-->. The bound check is real and it does refuse, and the
+blind reviewer's caller census refuted the attribution: its callers are **host** command handlers,
+and **a config's own state write is not bound checked at all**. So the write lands and the failure is
+the fill, which is the half that hardware had already confirmed. The wrong reading came from finding
+a guard, reading its two callers as the store and the load, and never asking what dispatched them.
+Two things made it plausible and neither is evidence: the guard sits three instructions in front of
+the store, and the symptom fits.
+
+### Sources checked before the work started
+
+`docs/findings.md` sections 34, 35 and 138 for the table's header and its seeder, and section 274 for
+the seeder on all three architectures. The firmware images for arch 12 (Harmony One) and arch 14 (the
+Harmony 700 reference image), disassembled here. Logitech's own client was not consulted and could
+not have answered: this is arithmetic inside the interpreter, not a field a host writes.
+
+### The header, and which words the firmware keeps
+
+Section 35 read the header and stored the second word as the threshold. Reading the initialiser again
+shows all four words fetched, **the low byte of three of them kept and the fourth stored nowhere**:
+`0x17974` on arch 14 (Harmony 700 reference image), `0x2A264` on arch 12 (Harmony One).
+
+| word | arch 14 (Harmony 700) | arch 12 (Harmony One) | what it does |
+|---|---|---|---|
+| 1, `count` | scratch `0x0D2F` | scratch `0x0D05` | the seeding loop's limit, and nothing else |
+| 2, `narrow` | `0x1EA` | `0x187` | the one byte to two byte width threshold |
+| 3, `wide` | `0x1EB` | `0x188` | sizes the storage, and bounds a host command |
+| 4, `narrowAgain` | discarded | discarded | nothing stores it |
+
+Only the low byte of each is kept, so a value above 255 is silently truncated. `count` goes to a
+shared scratch byte rather than a retained global, so it does not survive the routine. `count` is
+still used, twice, and neither use is a check: it is the **limit of the boot loop** that seeds each
+variable from its record, and the entry array's length is `8 + 3 * count`. **What it never is, is a
+validity bound on an index**, in either image.
+
+That answers half of section 35's open question about why the header repeats `narrow`: on these two
+architectures nothing on the remote uses the fourth word. Arch 9 (Harmony 525) reads it, section 274.
+
+### The fill, which is the mechanism
+
+Immediately after the seeding loop, `0x17A42` on arch 14 (Harmony 700 reference image) and `0x2A330`
+on arch 12 (Harmony One):
+
+```
+17a46: MOVF  0x1eb,W     wide
+17a48: ADDWF WREG,W      doubled
+17a4a: ADDWF 0x1ea,W     plus narrow
+```
+
+`narrow + 2 * wide` is the storage the variables occupy, which is section 35's own "RAM it occupies"
+column reached from the code rather than from the table, and it is exactly what the store's own
+arithmetic needs: below `narrow` one byte at `base + index`, at or above it two bytes at
+`base + narrow + 2 * (index - narrow)`. A loop then writes `0xFE` into every byte from that offset
+upwards. **The ceiling is per image rather than per architecture**, which is worth stating because
+the obvious reading is wrong: `0x7F` on arch 12 (Harmony One), `0xFF` on the Harmony 700 and `0xC0`
+on the Harmony 600, so two images of the same architecture disagree. The Harmony One paints up to
+index 126.
+
+**There is a second way into the same fill and its start is the constant 18**, chosen by a bit of a
+flags byte: `0x2A33E` on arch 12 (Harmony One), `0x17A52` on the Harmony 700, `0x16116` on the Harmony
+600, and the bit tested differs too, 3 against 4. So "everything above `narrow + 2 * wide`" describes
+the arm that runs on an ordinary boot, and the flag that selects the other arm is unread. On the boot
+this section measured, the computed arm is the one that ran, because the run begins at the computed
+byte.
+
+**The order is what does the damage.** The seeding loop runs first, over `count` records, through a
+store that performs no bound check of its own, so record 51 is seeded correctly into the two bytes
+above the declared storage. The fill runs second and paints over them.
+
+### Confirmed on hardware, read only, before anything was rewritten
+
+The spare Harmony One with the offending configuration on it, connected, untouched since its own
+last boot, data memory from `0x108`:
+
+```
+0x108  08 29 0a 07 02 08 1a 01 01 06 03 14 00 00 02 00
+0x118  01 00 00 00 01 05 02 00 00 00 00 00 00 00 00 01
+0x128  00 00 01 01 00 00 01 00 01 00 00 07 00 00 00 00
+0x138  00 00 00 00 01 00 fe fe fe fe fe fe fe fe fe fe
+```
+
+The container declares `narrow = 50` and `wide = 1`, so the storage is 52 bytes and ends at
+`0x108 + 52 = 0x13C`. **The `0xFE` run begins at `0x13C` exactly**, and variable 51 is the two bytes
+`0x13C` and `0x13D`. So it holds 65278 where its record says 0.
+
+The same read calibrates itself, which is what makes the base address a measurement rather than an
+assumption: variables 0 to 6 are the clock, section 130, and they read 10:41:08 on day 7, month 8
+zero based against a stated maximum of 11, year 26. That is the moment of the read.
+
+### The bound check, and what it actually guards
+
+Seven instructions, identical modulo the address of the two globals, and present on **every image
+in the lab**: `0x2A694` on arch 12 (Harmony One), `0x17DCA` on the Harmony 700 and `0x16466` on the
+Harmony 600 for arch 14, `0x17BA2` on the 650, `0x04B32` on arch 9 (Harmony 525) and `0x172A4` on
+arch 16 (Harmony 350). The Harmony One's:
+
+```
+2a694: MOVLB 0x1
+2a696: MOVF  0x187,W     narrow
+2a698: ADDWF 0x188,W     plus wide
+2a69a: SUBWF 0x196,W     minus the index
+2a69c: BC    0x2a6a0
+2a69e: RETLW 0x01        in range
+2a6a0: RETLW 0x00        out of range
+```
+
+**Its callers are USB command handlers and not the interpreter**, which is this section's recorded
+correction, and they are commands this project's own protocol table already names:
+
+* `0x26692`, in front of a **write**, is `WRITE_MISC` **selector `0x01`**, whose executor this
+  document lists at `0x2668E` in its own arch 12 selector table. On failure the store is skipped and
+  the handler reports success anyway.
+* `0x26D24`, in front of a **read**, is `READ_MISC` **selector `0x01`**. Its two result bytes are
+  cleared before the dispatch, so **a refused index comes back as 0**, which is indistinguishable
+  from a variable holding 0. The same shape as arch 9's `READ_MISC`, already recorded.
+
+So the bound protects a host poking a state variable over USB, which is a command we can send: the
+neighbouring selector `0x07` on the same chain is the RAM write `assertRamWriteAllowed` guards. Arch
+14 (Harmony 700 reference image) has **one** caller, `0x0CBCC`, the read; its write handler carries
+four selector cases where the Harmony One's carries eight, so on that architecture no write path is
+bound checked at all. Arch 9 (Harmony 525) has two, `0x02FF8` and `0x03430`.
+
+A configuration's own writes take neither path. `0x24F94` on arch 12 (Harmony One) tests
+`opcode >= 0x80`, clears bit 7 and reaches the store through `0x2A598`, with no bound check;
+`0x2513C` dispatches opcode `0x72` to the load with the index unchecked. Arch 14 (Harmony 700
+reference image) is the same at `0x0EC9C` and `0x0EE50`.
+
+So the bound exists, and what it protects is a host asking the remote to poke a variable over USB.
+That is worth knowing on its own, because it is a reply this project reads: a refused index comes
+back as 0 and looks exactly like a variable holding 0.
+
+### The closure, and one that was claimed and is not one
+
+* **The arithmetic and the hardware**, which is the real one and has nothing in common: the fill's
+  start is computed from two header words in the code, and the `0xFE` run on a connected remote
+  begins at that byte and not one either side.
+* **The two architectures**: the store's width arithmetic, the fill's offset arithmetic and the bound
+  check are the same instructions in both images, differing only in the array base, the addresses of
+  the globals, the fill ceiling and the flags bit tested.
+* **The corpus identity is not a closure for the bound**, and the first version of this section used
+  it as one. `narrow + wide == count` on 19 of 19 containers and `narrowAgain == narrow` on 19 of 19,
+  and on 21 of 21 with the two deliberately outside that population, so **the corpus cannot
+  distinguish a bound of `count` from a bound of `narrow + wide`**: they are the same number in every
+  one. What the identity is evidence for is what generators emit, which is what makes it enforceable.
+  **The one generator that has broken it is ours**, and its container is excluded from the corpus, so
+  a sentence like "no generator here has ever emitted such a header" would be true only by leaving out
+  the counterexample.
+
+### The calibration, and what it scores against
+
+The wrong answer is available and was obtained the expensive way: the container as written, with
+`wide` one short, is the only case anywhere in which the two readings of the header come apart. Under
+"`count` sizes the storage" the device works; under "`narrow + 2 * wide` sizes it" the variable is
+overwritten at every boot. The remote agrees with the second, at the exact byte.
+
+### Which architectures this covers
+
+The header reading, the store's width arithmetic and the fill are measured on **arch 12 (Harmony
+One)** and on **arch 14** on both the Harmony 700 reference image and the Harmony 600's own. **The
+bound routine is on all six images in the lab**, including arch 9 (Harmony 525) and arch 16 (Harmony
+350), so it is not one architecture's.
+
+**Arch 9 (Harmony 525) is scoped more carefully than the first version of this section managed**,
+which said it "is not covered and is known to differ" on section 274's authority<!--superseded-->.
+That section's "guards per variable" is about the **seeder**, a different routine, and generalising it
+to the bound was wrong: the Harmony 525 carries the identical seven instructions at `0x04B32` with two
+callers. What is genuinely unmeasured there is the **fill**, so nothing here says whether a Harmony 525
+paints over a variable above its storage.
+
+Arch 8 (Harmony 880 and 885) and arch 10 (Harmony 890 and 895) have no image here at all. The corpus
+identity holds on all four architectures the corpus carries, which is a claim about generators and not
+about firmware.
+
+### What is not established
+
+**Why the value does not stick, which the one press experiment made sharper rather than closed.**
+The row was pressed on the connected remote and the two variables the activity's enter list writes
+behaved differently:
+
+| variable | what the list writes | before | after | transitions on its record |
+|---|---|---|---|---|
+| 20, `CurrentActivityState_0` | 8 | 1 | **8** | 0 |
+| 51, `LG_Power` | 1 | `0xFE 0xFE` | **`0xFE 0xFE`** | 2 |
+
+Both are `0x80 | n` writes three bytes apart in the same list, so the list ran. Variable 20's record
+seeds to 6 and it reads 8, which is also what rules the cable out as an explanation: the boot routine
+seeds every variable and then fills, in that order in one function, so had reconnecting re-run it
+variable 20 would have been reset. It was not.
+
+**And the store has no bound check, so nothing on the path accounts for this.** `0x24F94` strips bit 7
+and calls `0x2A598`, which loads the old value, stores the new one unconditionally, and then hands both
+to the transition machinery by way of `0x2A74E`, which fetches the variable's own record out of base
+slot 13 by index. Traced instruction by instruction, and the wide arm's arithmetic lands on `0x13C`
+exactly.
+
+So there are two facts and no mechanism joining them: the byte holds the sentinel after a press that
+should have written it, and no refusal exists on the path. Three candidates, none tested. The
+transition machinery may restore a value when no transition matches, which would fit the table above
+and rests on two variables. `0x2A234`, which the store calls and whose answer it keeps, is unread.
+And a third fill site may exist that the two found here do not account for.
+
+**What is not in doubt is that the activity could not have started.** The record's transitions are 0
+to 1 and 1 to 0, the variable was holding 65278, and a transition is what runs the power list. That is
+enough to explain the beep and nothing happening, and it does not depend on which of the three
+candidates is right.
+
+### The corrected configuration was written, and the byte level prediction held exactly
+
+Written to the spare Harmony One on 7 September 2026, 25 blocks, every erase with both neighbours read
+before and after, the whole configuration reading back byte for byte identical to the file, and the
+remote restarting itself. Data memory from `0x108` immediately afterwards:
+
+| | before the write | after it |
+|---|---|---|
+| variable 51 at `0x13C` | `0xFE 0xFE` | **`00 00`**, seeded from its record |
+| where the `0xFE` run starts | `0x13C` | **`0x13E`** |
+
+`narrow + 2 * wide` moved from 52 to 54, so the boundary moved by exactly two bytes and the variable
+it had been sitting on is now inside the storage. **A second instrument agrees the remote is running
+this file**: its clock read 13:07:49 against the container's own build stamp of 13:07:23, which is
+section 111's reseeding of the clock from base slot 3 at boot, so the boot happened and it read our
+bytes.
+
+Then the row was pressed and **variable 51 read `01 00`**, with the clock showing no restart in
+between. So the write lands, the variable holds what the activity puts there, and the whole of this
+section's mechanism is confirmed on hardware.
+
+### And the television still did not respond, which is a different finding
+
+The activity beeps, sets its counter and sets the television's power variable to 1 from 0, which is
+exactly the transition its own record declares, and no code goes out. So this section closes the
+header defect and does not close the activity.
+
+**What the corpus says, and it is a shape no configuration here contains.** Across the fourteen
+programmed configurations, counting every variable's record:
+
+| | carry transitions |
+|---|---|
+| variables below `narrow`, one byte | 91 of 194 |
+| variables at or above `narrow`, two bytes | **0 of 64** |
+
+So Logitech's generator has never put a transition on a two byte variable, and `composeDevice` now
+does exactly that, because raising `wide` is what keeps the header consistent when the pointer is
+appended at the end. The calibration case is direct: the real activity on this same remote drives its
+television through `TV_Power`, variable 36, which is **below** `narrow` and carries the same two
+transitions in the same shape, and it works.
+
+**Whether the width is the cause is not established.** The transition walker at `0x2A37A` on arch 12
+(Harmony One) reads the record's count and then each entry's `from` and `to` as 16 bit values, and
+nothing in the part read branches on the variable's width. So what is measured is a 0 of 64 absence
+and a working narrow counterexample, not a refusal.
+
+**What follows for the composer** is that appending the pointer is the wrong end. Inserting it at
+`narrow` makes the variable a one byte one and matches all 91 working cases, and it costs what this
+section's fix section rejected it for: every variable at or above `narrow` shifts up by one, and those
+are referenced. On the four programmed arch 12 (Harmony One) containers the single top wide variable
+is written by an action list 3 times and read 22 to 40 times, so a composer that inserts there has to
+rewrite those references rather than only the header. That is the next piece of work, and it is
+`todo.md` 1.2.5.
+
+**Why `wide` exists at all**, given that `count - narrow` would give it. A separate word lets the two
+disagree and nothing treats that as an error, so it is redundancy without a check. Worse than
+redundant: `count` drives the seeding loop and `wide` sizes the storage, so a disagreement makes the
+remote seed variables it then erases.
+
+**What `count > narrow + wide` costs beyond the fill.** The seeding loop runs on `count` through an
+unchecked store, so a larger gap would write further above the storage before the fill covered it, and
+what lives there is unread.
+
+**What the guarded host command is.** Its operands arrive through a buffer fetch and its results leave
+through a byte appender; which USB command carries it is unread.
+
+### The fix, and where it lands
+
+`composeDevice` appends its pointer at the end of the entry list, so the new index is at or above
+`narrow` and the variable is a wide one: `wide` is the word that has to move, and it now does, with
+`narrow` and `narrowAgain` left alone so nothing already in the table is renumbered.
+
+Inserting at `narrow` instead would give a one byte variable and reproduce the commonest shape,
+exactly one wide variable at the top: 16 of 19 containers, and **not** the property of three
+architectures it first looked like, since three of the sixteen are arch 14 containers and only two
+arch 14 containers are the many wide kind.
+
+It is rejected because it **renumbers every variable at or above `narrow`**, and the corpus says those
+are in use rather than spare. Two measurements, both against the reviewer's own count rather than this
+composer's: on the three many wide containers there are 19 variables above `narrow` on the Harmony 600
+and 27 on each Harmony 700 config, all named, several of them the delay variables. And even where
+there is only one, **the top wide variable is written by an action list on 8 of the 19**, the four arch
+8 (Harmony 880 and 885) containers and the four programmed arch 12 (Harmony One) ones, through the
+`0x1F` band write and a `0x70` update rather than through `0x80 | n`. It is unnamed on 19 of 19, which
+is what made it look spare. So renumbering it would silently repoint instructions that already exist,
+and two bytes of storage is much the cheaper price.
+
+* `docs/config-format.md`, base slot 13, where the header's three live words are marked as such.
+* `packages/codec/src/sections.ts`: `assertStateTableConsistent`, a refusal beside the reader whose
+  header it checks, thrown as `StateTableError`.
+* `packages/corpus/bin/write-config.ts`, alongside `assertQueueFits`, which is the last point at which
+  either silent failure can be caught, plus both compose scripts.
+* `packages/codec/test/sections.test.ts`: the identity over all 19 containers with the exact split
+  counts, and both arms of the refusal against a deliberately corrupted header.
+* `packages/codec/test/compose.test.ts`: the four architecture composer test asserts that `count` and
+  `wide` each rise by one, that `narrow` does not move, and that the new index is inside the storage.
+* `CLAUDE.md`'s table of rails and `.claude/skills/writing-a-config/SKILL.md`.
+
+## 277. A device's power variable belongs below `narrow`, the renumbering that puts it there, and the width is not why the activity stays silent
+
+> **Corrected by section 278.** The transition this section treats as not firing did fire; what
+> failed was the send in the list it ran, which lacked the `0x7C` every corpus send carries. The
+> silent flag's elimination below by reading `0xE24` afterwards was also invalid, since the
+> dispatcher clears it on return, though its conclusion holds by another route. Both are kept as
+> written.
+
+Section 276 fixed base slot 13's header and the activity still only beeped. This is the second
+attempt at the same target and it separates two things that had been one: the composer now produces
+the variable shape Logitech's generator produces, which is a real correction, **and that shape is not
+what was stopping the television.** Both halves are measured on hardware.
+
+### What the corpus says about where a power variable goes
+
+A variable below the table's `narrow` count is stored as one byte and one at or above it as two,
+section 35. Across the fourteen programmed configurations, counting every variable's record:
+
+| | carry transitions |
+|---|---|
+| below `narrow`, one byte | 91 of 194 |
+| at or above `narrow`, two bytes | **0 of 64** |
+
+A device's power variable is nothing but its transitions, so appending one at the end of the table,
+which is what `composeDevice` did, produces a shape **no generator here has ever emitted**. The
+calibration is on the same remote: its own working activity drives the same television through
+variable 36 on that config, below `narrow`, carrying the same two transitions in the same order.
+
+**The leading byte of a transition is `0x00` in 569 of 569 across those fourteen**, which is worth
+recording because it was briefly read as a per transition enable bit. See the correction below.
+
+### The renumbering, and the site enumeration it needs
+
+Inserting at `narrow` shifts every variable at or above it up by one, so every reference has to move.
+`renumberStateVariables` in `packages/codec/src/compose.ts` does that, same length throughout, since
+every site is an opcode byte or an operand's low byte already present.
+
+**Where a reference can be is one enumeration and it lives in one place**, `stateVariableSite` in
+`actions.ts`, beside the readings that state the same fact in prose. Three kinds:
+
+| kind | references across the fourteen configs |
+|---|---|
+| the write band, `0x80 \| n`, index in the opcode | 3281 |
+| `0x70`, `0x71`, `0x72`, index in the operand's low byte | 3371 |
+| six sub opcodes of the `0x1F` band, likewise | 1511 |
+| total | 8163 |
+
+**0 of those 8163 name a variable its own container's base slot 13 does not have**, which is the
+closure that says the three kinds are the ones a generator uses.
+
+**A first survey of this got it wrong and the error would have been silent.** It counted two of the
+six band sub opcodes, the pair `inventory.ts` needs by name, and reported 100 references where there
+are 1511. On the container actually being built it said 28 references had to move where the true
+figure is **57**, so a renumbering built on it would have left 29 instructions naming the wrong
+device in a file that parses, checksums and round trips. That is why the enumeration is exported from
+the one module that already knows, with a test that reads the prose readings back and fails if the
+two lists ever disagree.
+
+What deliberately needs no rewrite, each checked rather than assumed: base slot 14's records are
+selected by `0x72`'s **high** byte rather than indexed by the variable, section 39; base slot 16's are
+reached through a transition's action list, section 154; a transition's own operand is a list index. A
+**name tree node** at level 1 does carry the index, section 77, and is rewritten.
+
+### Written and confirmed on hardware
+
+Written to the spare Harmony One on 8 September 2026. The diff against what the remote already held
+was **80 bytes in 5 blocks**, since the remote carried the sibling configuration and only the
+renumbering differs, so this is much the cheapest write performed here. Every erase checked both
+neighbours, the configuration read back byte for byte identical, and the remote restarted itself.
+
+| | section 276's build | this one |
+|---|---|---|
+| the variable | 51, two bytes | **50, one byte** |
+| its address in memory | `0x13C` | `0x13A` |
+| what it holds after a restart | `00 00` | **`00`** |
+| after pressing the row | `01 00` | **`01`** |
+| where the `0xFE` run starts | `0x13E` | `0x13D` |
+
+> **Corrected in place.** The left column's restart value read `0xFE 0xFE`, which is what the
+> *first* build held before section 276 corrected its header; the rebuild it compares against read
+> `00 00`, section 276's own table. The boundary beside it was always the rebuild's.
+
+**And the seven existing activities came through the renumbering identical**, instruction for
+instruction, checked by walking every one's enter list before and after with the indices mapped
+through the shift.
+
+### The television still does not respond, so the width is refuted
+
+What works, all of it measured by pressing the row on the connected remote: the row beeps, the
+activity's keypad map is selected and **its volume and channel keys drive the television correctly**,
+the counter goes to 8, and the power variable goes 0 to 1, which is exactly the transition its record
+declares. What does not happen is the power code, and the screens do not change either.
+
+So the variable's width was not the cause. The claim that survives is the corpus one, that this is the
+shape a generator emits, which is reason enough to keep the change.
+
+**The screens not changing is a second, expected symptom** and it is `todo.md` 1.2.4 rather than a
+mystery: all seven working activities' enter lists open with `0x7E`, enter the activity's own screen
+mode, and `composeActivity` builds no such mode, so there is nothing for it to enter.
+
+### The record is not the difference, and neither is the silent flag
+
+Two candidates checked and both dead.
+
+**The record.** Ours against two working power records on the same configuration, byte for byte:
+
+```
+working TV_Power     header 00 00 01 00 02 00 00   values 00 01 00 00 00 ee 0d 7f / 00 00 00 01 00 ef 0d 7f
+working Denon_Power  header 00 00 01 00 02 00 00   values 00 00 00 01 00 f1 0d 7f / 00 01 00 00 00 b4 03 7f
+ours    LG_Power     header 00 00 01 00 02 00 00   values 00 00 00 01 00 c8 12 7f / 00 01 00 00 00 c8 12 7f
+```
+
+Identical in shape, and the order is not it either, since `Denon_Power` states its 0 to 1 first as
+ours does. The only difference of substance is that ours runs the same list for both directions,
+being a toggle.
+
+**The silent flag.** `0x07` band `0xFF` sets one byte, `0xE24` on arch 12 (Harmony One), and the state
+write skips its notification when it is nonzero, section 73. Read on the connected remote after the
+press it is **zero**, so nothing was suppressed that way. That reading cannot show it, section 278:
+the dispatcher clears the byte as the write returns. Worth recording separately: the flag gates
+more than section 73's "whether the screen redraws" suggests, since at `0x2A5B8` a nonzero value
+branches past the record fetch and the whole transition walk.
+
+### What the firmware says should happen, and a correction inside this section
+
+The walker is `0x2A37A` on arch 12 (Harmony One), reached from the state write at `0x2A598`. It
+advances the flash cursor past `first`, reads `second`, reads the count, and then per transition reads
+a leading byte into `0xD24`, the `from` into `0xD25` and the `to` into `0xD27`. Matching is a pair of
+comparisons against the old and new values with two special cases, `0xFFFE` as a wildcard and `0xFFFD`
+meaning the value changed, and `0xD29` survives as 1 only if both halves match. On a match with
+`0xD24` zero, `0x24D22` is called, which is what runs the action.
+
+**Ours matches**: `from` 0 equals the old value and `to` 1 equals the new one. So the firmware as read
+says this transition should fire, and it does not.
+
+**The correction.** `BTFSS 0xD24,7` two instructions before the firing call was first read here as the
+gate on the action itself, which would have made the leading byte an enable bit that a writer must
+set. It is not: bit 7 gates `0xD2B` and the action is reached with `0xD24` **zero**, which is what all
+569 corpus transitions carry. The wrong reading came from stopping at the first conditional branch
+before the call rather than following both arms, and it would have produced a rail demanding a byte
+no generator writes.
+
+### What is not established
+
+**Why the transition does not fire.**<!--superseded--> It did; section 278. Every candidate this section could reach is dead: the header,
+the variable's width, the record's bytes, the record's order, the silent flag, and the firmware path
+as far as the firing call. `0x24D22` itself is unread, and so is whatever the enter list's missing
+`0x7E` and `0x07` set up.
+
+**Whether the two leading instructions are a prerequisite.** All seven working activities open with
+`0x7E` then `0x07` and ours opens with neither, which is the last systematic difference left. The
+cheap discriminator does not need a screen built: point a `0x7E` at a mode the configuration already
+has, which is cosmetically wrong and mechanically sufficient, and see whether the code goes out.
+
+**Whether a two byte variable's transitions would fire at all**, which this section set out to test
+and cannot answer either way now: the shape is gone from the composer, and the corpus has 0 of 64 to
+compare against.
+
+### Where it lands
+
+* `docs/config-format.md`, base slot 13, on where a composed variable goes and why.
+* `packages/codec/src/actions.ts`: `stateVariableSite`, `STATE_BAND_SUBS`, `STATE_LOW_BYTE_OPCODES`.
+* `packages/codec/src/gspm.ts`: `actionListSites`, immediately below `actionList` because the two
+  share one layout rule.
+* `packages/codec/src/compose.ts`: `renumberStateVariables`, and the insertion at `narrow`.
+* `packages/codec/src/sections.ts`: `STATE_TABLE_HEADER`, which was three literals and a fourth.
+* `packages/codec/test/actions.test.ts`: the enumeration against its own prose, and the 8163 site
+  census with its zero out of range.
+* `packages/codec/test/compose.test.ts`: the header's new shape per architecture, the entry pointers
+  surviving in order, the names moving with their variables, a per host census of displaced
+  references, and the refusals.
+
+## 278. A send is always paired with a `0x7C` naming the same device, and a composed send without it goes out on a key press and not when a state transition runs it
+
+Section 277 ended with a composed activity that switched on nothing, with every candidate it could
+reach dead. This is the answer, established on the spare Harmony One by three writes of its own, two
+on 8 September 2026 after section 277's and one on 24 September 2026, and it is not where section 277
+was looking: **the transition fired all along**, and what never left the remote was the send it ran.
+That is an inference and a close one: run 4 below leaves the transition record byte for byte as
+section 277 wrote it, changes only the list it runs, and the television came on.
+
+### The regularity, which is not new
+
+Every action list that holds a `0x7D` send holds a `0x7C` too, and the `0x7C` operand's high byte
+is the send's device. Section 33 found it over ten configurations and `docs/config-format.md` carries
+it as a live figure, 4267<!--fact:send_lists--> lists over the 15<!--fact:user_configs--> user
+configurations. Split per architecture over the fourteen configurations the TypeScript census walks,
+`VARIABLE_SITE_CONFIGS`, which adds the calibration Harmony One and lacks the two contributed arch 8
+configurations the Python population has. Two of the fourteen, `one_config_unprogrammed` and
+`one_spare_before_sync`, parse to the same container, so the Harmony One row counts one file's 97
+lists twice and there are thirteen distinct containers behind it:
+
+| architecture | lists holding a send | paired, same device in both high bytes | bare | shape |
+|---|---|---|---|---|
+| 8 (Harmony 880 and 885) | 1595 | 1595 | 0 | `{0x7D, 0x7C}` |
+| 9 (Harmony 525) | 308 | 308 | 0 | `{0x7D, 0x7C}` |
+| 12 (Harmony One) | 903 | 903 | 0 | `{0x7D, 0x7C}` |
+| 14 (Harmony 600 and 700) | 932 | 932 | 0 | `{0x7F, 0x7D, 0x7C}` |
+
+3738 of 3738 there. **It holds outside both populations too**: the Harmony 890's 301 of 301 on arch
+10, and 602 of 602 over the five Harmony 300 and 350 containers on arch 16, where a third shape
+`{0x07, 0x7D, 0x7C}` occurs beside the plain pair. The only bare sends anywhere in the lab are the six
+per file in the containers this project composed.
+
+What is new is that the rule is load bearing: **the composer emitted the bare `{0x7D}` from section
+242 onwards**, a shape no configuration Logitech generated contains, and it went unnoticed because
+section 242's check was a pad press, and a pad press sends it.
+
+### The hardware, three writes and one press
+
+All on the spare Harmony One, the only arch 12 unit that may be written. Runs 1, 3 and 4 are writes,
+each read back byte for byte against its file and each followed by the remote's own restart; run 2
+is buttons pressed on the configuration run 1 left.
+
+1. **The enter list given the two instructions every working activity opens with**, `0x7E` into
+   the device's own mode and `0x07` band `0xFB`, section 277's cheap discriminator. The screen
+   changed to the device page, the power variable went 0 to 1 and the activity counter to 8, both
+   read out of data memory. No code went out. So the two instructions are not the prerequisite.
+2. **The same configuration's six pads, pressed by hand.** The device page the activity now entered
+   carries all six composed commands on its pads, the power command included, which no hard key
+   binds. **All six worked.** So the record, its group, its frame and the list are right, and the
+   list sends from a key.
+3. **The power transition pointed at an existing paired list**, a four byte change: `7f:4808` to
+   `7f:476`, the discrete power on of the configuration's older LG television entry,
+   `{7d:774, 7c:769}`. Pressing the activity **switched the television on**. So the transition
+   fires for the composed variable, and section 277's framing was wrong from its title down.
+4. **The six composed lists paired**, `{7d:(6 << 8) | k, 7c:(6 << 8) | 1}`, and the transition put
+   back on `7f:4808`. Pressing the activity **switched the television on through the composed
+   device**. Between runs 1 and 4 the only change on the send path is the `0x7C`.
+
+The contrast is the finding: the same bare list, from the same page, answered a press and did
+nothing from a transition; the paired list works from both.
+
+### What the firmware does with the two, most of it section 70's
+
+**Section 70 read this pair on both arch 12 (Harmony One) and arch 14 (Harmony 700)** and this
+section re-derived it before finding that out, which is recorded rather than tidied away. What section 70 established: the two handlers,
+`0x26F74` and `0x26F96` on the Harmony One, are one routine twice, sharing the worker at `0x26F4E`;
+the `0x7C` handler sets bit 6 of its device byte, `BSF 0x6BD,6`, which marks the queued entry as a
+quantity rather than a send; the send asks for priority 2 and the quantity for priority 1; and on
+the Harmony 700 **the sender consults the queue for a quantity entry**, at `0x13830` and `0x13AC8`,
+and changes its own timing parameter accordingly.
+
+**Section 236 then read the queue's consumers on both images**: the scan at `0x2706A`, the picker at
+`0x2711C` that decides whether a queued send may go, and the countdown at `0x27318`, with the ring's
+Harmony One bounds, `0x686` to `0x6A4`, in its table and in `tests/test_send_queue.py`.
+
+What this reading adds on arch 12, read off the 3.4 image and re-measured by a blind reviewer:
+
+* **The full test's literal agrees with the ring's bounds.** The worker `0x26F4E` pushes two bytes,
+  the handler's `0x6B9` then `0x6BA`, with its count at `0x685` and its write cursor at `0x6A6`.
+  `0x26E24` reports the ring full when the count is `0x1E`, and section 236's bounds span
+  `0x6A4 - 0x686 = 0x1E`, so two fields give **30 bytes**, the figure section 70 read on the Harmony
+  700. A full queue makes the worker return 0 and the dispatcher then sets `0xD00` to 1 at
+  `0x25022`, for both arms; what that leads to is unread. A push into an **empty** queue, `0x26E5A`,
+  first calls `0x2CCBA` and sets `0xEE0` to 1, which is unread too.
+* **The priority lands in `0x119`, which is state variable 17's byte**, `0x108 + 17`. `0x26F2A`
+  copies it there from `0x6B8` and calls `0x24C0E` with `0x2D` in `0xEA7`, and each handler calls
+  `0x26F2A` only when its push succeeded and `0x119` is below its own priority, so the byte ends up
+  the larger of what it held and the priority. In all five Harmony One containers variable 17 is
+  unnamed, has range 0 to 3 and no transitions, and exactly one instruction reads it, a `0x71`
+  comparison, and the same holds on every other arch 12 container in the lab, on all six arch 8
+  files and on all four arch 14 ones; on arch 9 (Harmony 525) variable 17 is an ordinary named one.
+  The firmware drives the byte past the handlers too: right after section 236's picker lets a send
+  go, `0x277A2` to `0x277AE` passes **3** to the same `0x26F2A`, a reset path clears it, and
+  `0x2778A` tests it for 2 and 3. So the stated range of 0 to 3 is the firmware's, and the two
+  handlers are the part of it that writes 1 and 2. What the one list that tests it is for is
+  unread.
+
+**Why a bare send is never transmitted from a transition is not read, and the reading that exists
+cuts against the obvious answer.** Section 236's picker holds a send back only while an earlier entry
+names the same device, so as read it would let a lone send out, and the power list's send is alone
+in the queue at that moment. Section 70's Harmony 700 sender also consults the queue for a quantity
+entry and changes its timing on finding one. A sender that needs that entry would fit this
+measurement, and a key press would then have to supply something a transition does not; neither
+half has been traced on either image, so that is a reading to test and not a finding.
+
+### What else was observed and is not explained
+
+**The header bar.** In runs 1 and 3, with the activity inside the device's page, the remote drew no
+header: no clock, no battery, no activity name, no infrared indicator. In run 4 it drew one. The
+only change between runs 3 and 4 is the pairing and the transition's target. Recorded because it
+is the kind of thing a later change of screen will otherwise be blamed for.
+
+**A read back that dropped a chunk.** Run 4's first attempt wrote four blocks whole and then
+failed reading the fourth back, `flash chunk out of sequence: expected 0xbc, got 0x77 after 682
+bytes`, which is section 223's shape. The rerun recognised all four as this file's bytes and
+completed all 25, and the whole configuration read back identical. So a failure on the verifying
+read after a complete write is recovered by the rerun the message asks for, measured once.
+
+### Scope, decision 16
+
+* **The regularity**: measured on arch 8, 9, 12 and 14, above.
+* **The consequence**, that a bare send is silent from a transition: arch 12 (Harmony One) only.
+  Arch 9 (Harmony 525) is a write target and unmeasured; arch 14 (Harmony 600) has none.
+* **The firmware reading**: arch 12 only. The other images are unchecked.
+* **The composer on arch 14 still differs from the corpus**: it emits `{0x7D, 0x7C}` where every
+  arch 14 send list is `{0x7F, 0x7D, 0x7C}`, and the `0x7F` is not a fixed prefix, since the Harmony
+  600's configuration has 188 distinct ones, each a `0x1F` byte register load and a further call.
+  What it does is unread, and nothing can test it on hardware.
+
+### Sources
+
+The firmware and `docs/findings.md` sections 33, 70, 73, 223, 236, 238, 242 and 277. **Section 70 was
+consulted after the firmware had been read, not before**, which is how its reading came to be
+repeated above. **Logitech's client
+was not consulted**, on the ground its register row gives: it compiles nothing, the compiler being
+server side, so it holds no action list emitter to read.
+
+### Falsification
+
+A bare `{0x7D}` list that sends from a transition on a Harmony One, or a paired list that does not.
+Either reopens this.
+
+### Corrections to section 277, in place here
+
+Two claims in section 277 are wrong. Each carries a pointer here rather than being edited away.
+
+* **"Why the transition does not fire"**<!--superseded--> and the title's "why the activity stays silent" frame it
+  as a transition that does not fire. It fired; run 3 above is the proof. The error was treating
+  "no code went out" as "the action did not run" when the action was a list whose own send was the
+  part that failed. The framing survived because nothing section 277 tested could tell the two
+  apart.
+* **The silent flag's elimination by measurement** was invalid while its conclusion was right, and
+  the reason was already recorded: section 73 says the dispatcher clears `0xE24` immediately after
+  the write that consumed it, which is `0x24FB2`, so reading it afterwards reads zero whatever
+  happened. The measurement went against a fact this document held. The conclusion holds by a
+  different route, a little weaker than it sounds: the list in question held no `0x07` at all, and
+  the band it later gained, `0xFB`, is the timer cancel at `0x2A05E`, whose own body does not write
+  `0xE24`. It calls `0x27C62`, which is unread, and the only direct writes to `0xE24` anywhere in the
+  image are clears, so what sets the flag is not visible to the trace either.
+
+### Where it lands
+
+* `packages/codec/src/inventory.ts`: `DEVICE_QUANTITY` and `DEVICE_QUANTITY_DEFAULT` beside
+  `SEND_INFRARED`, whose docstring's claim to be the only place an action names its device is
+  corrected in place.
+* `packages/codec/src/compose.ts`: every composed command list is the pair.
+* `packages/codec/test/compose.test.ts`: the two assertions that a composed list is one send now
+  assert the pair, the same on all four hosts, which on arch 14 is a known deviation from the corpus
+  and is todo 1.2.6.
+* `packages/codec/test/actions.test.ts`: the 3738 list census per architecture, exact, with no bare
+  send.
+* `tests/test_one_send_path.py`: the two dispatcher arms reach one worker, only the `0x7C` handler
+  marks its device byte, the worker's full test agrees with section 236's ring bounds, and the
+  priority byte at `0x119` takes 2 from the send, 1 from the quantity and 3 after the picker.

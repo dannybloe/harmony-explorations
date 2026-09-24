@@ -2093,6 +2093,8 @@ file.
 
 | the rail | what a writer must do |
 |---|---|
+| base slot 13's `narrow` and `wide` size the state variable storage, and `count` does not | so appending a variable moves **two** words of that header. The firmware allocates `narrow + 2 * wide` and paints `0xFE` over everything above it at each boot, while the seeding loop runs over `count`, so raising the count alone buys a variable that is seeded and then erased, silently. Ours did: the device appeared on the menu, beeped and started nothing. `assertStateTableConsistent` |
+| every send is paired with a `0x7C` naming the same device | emit `{0x7D, 0x7C}`, never the send alone. All 4267<!--fact:send_lists--> send lists of the user configurations are the pair and none is bare, and a bare one sends from a key press and **nothing** from an activity's transition, measured on the spare Harmony One, section 278. On arch 14 each also opens with a `0x7F` that is unread |
 | base slot 13's first seven records are the clock | stamp them, and reuse none of variables 0 to 12: the firmware owns thirteen, not seven. Eight values and nine on a 31st, since the year's maximum always moves with it and the day of the month's moves too. Arch 9 (Harmony 525) keeps its own |
 | base slot 3's timestamp is stamped at write time | never copied. The one field where a round trip and a save differ |
 | `end_addr` is restamped when anything changes length | the only header field that moves with a section's growth |

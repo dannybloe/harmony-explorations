@@ -14,12 +14,16 @@ import assert from 'node:assert/strict';
 import { IMAGES, PARSEABLE_EXCLUDED, load, require_, skipUnless, skipWithoutLab } from '@harmony/lab';
 import {
   ComposeError,
+  DEVICE_QUANTITY_DEFAULT,
   FIRMWARE_STATE_VARIABLE_MAX,
   IR_PULSE_MARK,
   IR_PULSE_MAX,
   blockOfStatedCode,
   blockWordsOf,
+  assertStateTableConsistent,
   composeDevice,
+  renumberStateVariables,
+  stateVariableSite,
   composeActivity,
   composeActivityMenuRow,
   activityBindings,
@@ -46,6 +50,7 @@ import {
   parse,
   roundTrip,
   statedCode,
+  stateTable,
   stateVariables,
   trailerAgrees,
   archSlot,
@@ -88,6 +93,8 @@ for (const host of HOSTS) {
     const before = parse(load(host) as Uint8Array);
     const wasGroups = irGroups(before) ?? [];
     const wasInventory = inventory(before);
+    const wasTable = stateTable(before);
+    assert.ok(wasTable !== undefined, `${host} carries a state table`);
     const composed = composeDevice(before, { label: 'LG', commands: TELEVISION, power: 0 });
     const after = parse(composed.bytes);
 
@@ -139,19 +146,71 @@ for (const host of HOSTS) {
     assert.equal(variable?.name, 'LG_Power_2');
     assert.ok(composed.variable > FIRMWARE_STATE_VARIABLE_MAX,
               'the new variable sits above the firmware\'s own thirteen');
+
+    // **The new variable is a one byte one, which means it goes in at `narrow`**, section 277: no
+    // two byte variable anywhere in the corpus carries a transition, 0 of 64, and a device's power
+    // variable is nothing but its transitions. So `count` and `narrow` both rise and `wide` does
+    // not, and the variable lands inside the storage the firmware allocates rather than above it,
+    // which is section 276's separate defect and is asserted here too because both were live at
+    // once.
+    const grownTable = stateTable(after);
+    assert.ok(grownTable !== undefined);
+    assert.equal(grownTable.count, wasTable.count + 1);
+    assert.equal(grownTable.narrow, wasTable.narrow + 1, 'the new variable is a narrow one');
+    assert.equal(grownTable.wide, wasTable.wide, 'and no existing variable changes width');
+    assert.equal(grownTable.narrowAgain, grownTable.narrow);
+    assert.equal(composed.variable, wasTable.narrow, 'it takes the position `narrow` named');
+    assert.ok(composed.variable < grownTable.narrow, 'so it is stored as one byte');
+    assert.ok(composed.variable < grownTable.narrow + grownTable.wide,
+              'and inside the storage the firmware allocates');
+    assert.doesNotThrow(() => assertStateTableConsistent(after));
+
+    // **Every variable the insertion displaced kept its identity**, which is the renumbering's
+    // whole job. The entry pointers are what this walks rather than `stateVariables`, because that
+    // reader returns only the variables the name tree names and the displaced one is unnamed in
+    // every container here: a walk over names reported zero moved variables where the table says
+    // one, which is the population trap this project keeps meeting.
+    //
+    // Removing the inserted pointer from the new array has to give the old array back exactly.
+    // Each entry is a record's address and the records themselves do not move, so this is the
+    // strongest available statement that nothing was dropped, duplicated or reordered.
+    const withoutTheNewOne = [...grownTable.entries];
+    withoutTheNewOne.splice(composed.variable, 1);
+    assert.deepEqual(withoutTheNewOne, wasTable.entries,
+      'the old entry pointers survive in order, with the new one spliced in at its index');
+    assert.equal(grownTable.entries[composed.variable] !== undefined, true);
+
+    // And the named half: a name node's index is the variable it names, section 77, so a displaced
+    // variable's name has to have moved with it.
+    const wasNamed = new Map(stateVariables(before).map((v) => [v.index, v.label]));
+    const nowNamed = new Map(stateVariables(after).map((v) => [v.index, v.label]));
+    for (const [index, label] of wasNamed) {
+      const to = index >= composed.variable ? index + 1 : index;
+      assert.equal(nowNamed.get(to), label, `the name of variable ${index} moved to ${to}`);
+    }
+    assert.equal(nowNamed.size, wasNamed.size + 1, 'plus the one this composer named');
     assert.equal(variable?.record?.first, 0, 'nothing is running when a config is generated');
     assert.equal(variable?.record?.second, 1, 'a power switch has two states');
     assert.deepEqual(
       variable?.record?.values.map((one) => [one.from, one.to, one.opcode, one.operand]),
       [[0, 1, 0x7f, composed.lists[0]], [1, 0, 0x7f, composed.lists[0]]],
       'both transitions run the power command\'s list');
-    // And each command's list is one send to the new group, readable off the container itself.
+    // And each command's list is the send **paired** with its per device quantity, readable off the
+    // container itself. This asserted the send alone until 8 September 2026, and the title said "one
+    // send", which was true of what the composer emitted and false of every send list in the corpus:
+    // section 278 measures every one as this pair with the device agreeing in both high bytes, and
+    // the bare form sent nothing when an activity's transition ran it on the spare Harmony One while
+    // answering a button press correctly. So the claim being asserted here changed rather than the
+    // assertion being relaxed. **On the arch 14 host it asserts a known deviation**: every Harmony
+    // 600 and 700 send list opens with a `0x7F` as well, which the composer does not emit, todo
+    // 1.2.6, so there this pins what the composer writes rather than what the corpus holds.
     const lists = after.actionLists();
     composed.lists.forEach((index, k) => {
       const list = lists?.[index];
       assert.deepEqual(list?.map((one) => [one.opcode, one.operand]),
-                       [[0x7d, (composed.group << 8) | k]],
-                       `command ${k}'s list is one send to the new group`);
+                       [[0x7d, (composed.group << 8) | k],
+                        [0x7c, (composed.group << 8) | DEVICE_QUANTITY_DEFAULT]],
+                       `command ${k}'s list sends to the new group and names it again`);
     });
   });
 }
@@ -297,8 +356,9 @@ test('one_config takes the television onto its screen and every check holds', sk
   ROWS.forEach((row) => {
     const bound = bindings.entries[row.k]!;
     assert.deepEqual(lists[bound.operand]!.map((one) => [one.opcode, one.operand]),
-                     [[0x7d, (device.group << 8) | row.k]],
-                     `row ${row.label} reaches the new command`);
+                     [[0x7d, (device.group << 8) | row.k],
+                      [0x7c, (device.group << 8) | DEVICE_QUANTITY_DEFAULT]],
+                     `row ${row.label} reaches the new command, paired as every corpus send is`);
   });
 
   // Section 69's rail: one pool copy per page, the new page's included, agreeing entry by entry,
@@ -1303,4 +1363,101 @@ test('a composed menu row can wear an existing row\'s icon, chosen by its drawn 
   // And a name nothing is labelled with is a refusal rather than a fallback.
   assert.throws(() => composeActivityMenuRow(c, 'Play Game', 7, { iconLike: 'Nothing At All' }),
                 /0 activity menu rows are labelled/);
+});
+
+/**
+ * References to a variable at or above `narrow`, and below it, per host.
+ *
+ * Exact rather than a floor: these move only when a reader changes or a sample is replaced, and
+ * then they move in the diff. `h525_config`'s zero is the interesting row, since it is what makes
+ * the guard in the test below have to be a per host statement rather than `moved > 0`.
+ */
+const DISPLACED_REFERENCES: Record<string, { moved: number; below: number }> = {
+  one_config: { moved: 88, below: 627 },
+  h600_config: { moved: 127, below: 644 },
+  h525_config: { moved: 0, below: 123 },
+  arch8_config_a: { moved: 31, below: 351 },
+};
+
+/**
+ * Section 277. The renumbering's own claim, stated as a census rather than a spot check: every
+ * reference to a displaced variable moved, and every reference below the insertion point did not.
+ *
+ * **This is the assertion that could pass while the code was wrong**, which is why it counts sites
+ * rather than checking one. A renumbering that missed a kind of site leaves a container that parses,
+ * checksums, round trips and drives the wrong device, and the site kinds are exactly what was got
+ * wrong first: a survey using two of the six `0x1F` band sub opcodes found 100 references where
+ * there are 1511.
+ */
+for (const host of HOSTS) {
+  test(`${host}: renumbering moves every reference to a displaced variable and no other`,
+    skipUnless(host), () => {
+      const before = parse(load(host) as Uint8Array);
+      const table = stateTable(before);
+      assert.ok(table !== undefined);
+      const from = table.narrow;
+
+      // The census before, per variable index, over every site kind `stateVariableSite` knows.
+      const census = (c: Container): Map<number, number> => {
+        const out = new Map<number, number>();
+        for (const list of c.actionLists() ?? []) {
+          for (const instruction of list ?? []) {
+            const site = stateVariableSite(instruction);
+            if (site === undefined) continue;
+            out.set(site.index, (out.get(site.index) ?? 0) + 1);
+          }
+        }
+        return out;
+      };
+      const was = census(before);
+      const after = parse(renumberStateVariables(before, from));
+      const now = census(after);
+
+      // Same length: a renumbering pokes bytes and inserts nothing.
+      assert.equal(after.blob.length, before.blob.length);
+
+      let below = 0;
+      let moved = 0;
+      for (const [index, count] of was) {
+        if (index < from) {
+          assert.equal(now.get(index), count, `variable ${index} keeps its ${count} reference(s)`);
+          below += count;
+        } else {
+          assert.equal(now.get(index + 1), count,
+            `variable ${index}'s ${count} reference(s) moved to ${index + 1}`);
+          moved += count;
+        }
+      }
+      // The total is conserved, which catches a rewrite that turned a reference into a different
+      // opcode rather than moving it.
+      const total = (m: Map<number, number>): number => [...m.values()].reduce((a, b) => a + b, 0);
+      assert.equal(total(now), total(was));
+      assert.equal(below + moved, total(was));
+      // And the insertion point is now free, since nothing referenced the new variable yet.
+      assert.equal(now.get(from), undefined, 'no reference is left pointing at the new position');
+      // **Exact per host, because three of the four exercise the moving half and one does not.**
+      // The Harmony 525's own top variable is referenced by nothing, so that host asserts only that
+      // the untouched half stays untouched, and saying so here is the honest form: a `moved > 0`
+      // guard fails on it and a `moved >= 0` guard would hide that the other three carry the claim.
+      assert.deepEqual({ moved, below }, DISPLACED_REFERENCES[host],
+        `${host}'s displaced and untouched reference counts`);
+    });
+}
+
+/**
+ * The refusals, because a renumbering that truncates silently is worse than one that stops. The
+ * write band carries seven bits of index, so a table already at 128 cannot be grown, and a position
+ * outside the table is a caller's mistake rather than a no-op.
+ */
+test('renumbering refuses a position it cannot express', skipUnless('one_config'), () => {
+  const c = parse(load('one_config') as Uint8Array);
+  const table = stateTable(c);
+  assert.ok(table !== undefined);
+  assert.throws(() => renumberStateVariables(c, -1), ComposeError);
+  assert.throws(() => renumberStateVariables(c, table.count + 1), ComposeError);
+  assert.throws(() => renumberStateVariables(c, 1.5), ComposeError);
+  // The end of the table is a legal position and a no-op, which is worth asserting because it is
+  // the old behaviour: appending changes no reference at all.
+  const appended = renumberStateVariables(c, table.count);
+  assert.deepEqual(appended, c.blob);
 });

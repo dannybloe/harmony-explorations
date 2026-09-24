@@ -103,6 +103,17 @@ CONTAINERS = (
     'one_spare_denon65_region',
     # And after the revert, section 248, which put the previous bytes back.
     'one_spare_reverted_region',
+    # And after the first activity write, section 276, read because that write invalidated the dump
+    # every later one compares against. It is the only container in this list the remote will not
+    # run: its base slot 13 declares 52 state variables and sizes storage for 51, so a golden vector
+    # over it is a check that both readers agree about a header neither would emit.
+    'one_spare_lg_activity_region',
+    # And after the second activity write, section 277, whose configuration puts the power variable
+    # above `narrow`. Same standing as the entry above: a container we built, kept as a baseline.
+    'one_spare_narrow_base',
+    'one_spare_probe_base',
+    'one_spare_retarget_base',
+    'one_spare_paired_base',
     # The two configs Logitech compiled to a specification we wrote, section 132. They are out of the
     # corpus wide claim lists, deliberately, and they belong here for the same reason the arch 9 safe
     # mode container does: a golden vector is a cheap check between two implementations and costs the
