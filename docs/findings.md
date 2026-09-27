@@ -36590,8 +36590,10 @@ saw it restart. The verdict and select bits standing again say the boot validate
   in 1395 bytes, section 281, and every routine named here is byte identical between them. On the 700
   2.8 and the 650 0.4 package the chain was decoded and selector 2's opening read: it sets two flags
   where the 0.2 builds set one, `0x380` and `0x1E9` on the 700 and `0x37E` and `0x0E9` on the 0.4 by
-  the second reviewer's read, and the verdict byte there is `0x68E`. What it arms on those builds is
-  unread.
+  the second reviewer's read, and the verdict byte there is `0x68E`. This said what it arms on those
+  builds is unread<!--superseded-->, and section 283 read one half: the second flag, `0x1E9` on the 700
+  and `0x0E9` on the 0.4, is read at the next boot, cleared, and spoils the state variables' sum, so a
+  drop followed by a restart reloads every variable from the configuration. The other flag is unread.
 * The sends: one Harmony 650.
 * Arch 12's invalidate arms nothing that section 246 found; arch 9's executor is unread.
 
@@ -36630,3 +36632,136 @@ rail text. All corrected. **The two reviewers disagreed on the store's size**: t
 1 KiB block from its scan bound, and the second two blocks used in turn. The erase loop's literals,
 asserted in the test, name two, and the scan bound is per block, so both are right about what they
 measured.
+
+## 283. On the Harmony 650 a changed delay is live straight after the write, and a restart resets the clock
+
+`todo.md` 1.4.2: the first write to arch 14 that changes something, one device's power on delay
+raised and then put back, to see what a remote that keeps its settings in memory does with a new
+configuration. **The prediction written beforehand, from the image, was wrong**, and a blind reviewer
+reading the same image made the same one, so the disagreement is between the 0.2 build as read and the
+unit, and not a slip in one reading.
+
+### The edit
+
+On arch 14 a delay is a state variable, section 234, so the edit is a base slot 13 record's `first`
+and not the `0x7C` byte `setPowerOnDelay` edits on the other architectures. The Denon receiver's
+`PowerOnDelay` record is entry 65 at `0x6C778`, `first` 60 tenths, raised to 90. With the trailer
+checksum that is two bytes in two erase blocks, `0x060000` and `0x100000`; the configuration's first
+block is untouched, so the drop's flag is spent on `0x060000` and the settings store is not
+consulted, section 282. `write-config.ts` did the whole sequence, drop, two erases each checked on
+both neighbours, write, whole read back identical, and restart. A region read afterwards, fourteen
+blocks from `0x030000`, differs from the one before in exactly those two bytes.
+
+### What the 0.2 image says
+
+The variables are at data `0xE10`, one byte each below `narrow` and two above, in a 192 byte
+allocation, so the Denon's is the word at `0xE54`. The seeder at `0x16024` has two callers, the boot
+path at `0x14F9C` and `0x0F390`, and does this:
+
+1. **An entry gate**: unless `0x68B` bit 2 or bit 1 is set, meaning the user container or the one at
+   `0x020000` validated, it skips the loop.
+2. **A sum**: an XOR seeded `0xA5` over the 174 bytes from `0xE22`, compared with the byte at `0xED2`.
+   A match sets `0xD2D`, a scratch byte used elsewhere too, and a set `0xD2D` makes the loop store
+   nothing. The loop has no other skip than a `first` of `0xFEFE`.
+3. **A paint**: `0xFE` over everything above the table's size, or above byte 18 when bit 4 of `0x68B`
+   is clear and bit 1 set, then the sum restamped at `0x1613A`.
+
+Every store, `0x16474`, restamps the sum at `0x164C0`. The third direct writer of `0xED2` is an `INCF`
+at `0x14F8E`, on the boot path, when the user container fails validation; that path clears bit 4 and
+so ends in the paint from byte 18, **erasing the configuration's variables rather than reloading
+them**. The sum starts eighteen bytes into the array, so the clock and the firmware's own variables are
+outside it. This is section 138's warm start on the Harmony One, found here for arch 14, whose guard
+section 274 had located and not traced.
+
+**The later builds add a second writer, and it is the one that answers for them.** On the Harmony
+700's 2.8 and the Harmony 650's own 0.4 package the variables are at `0x900`, the sum covers 237 bytes
+from `0x912`, and the boot path reads a flag, clears it and increments the sum before the seeder runs:
+`0x1621E` to `0x16228` on the 700, flag `0x1E9` and sum `0x1EC`, and `0x15FD4` to `0x15FDE` on the
+0.4, flag `0x0E9` and sum `0x0EC`. **The flag's only writer is the cache drop**, `0x0C3EC` on both. So
+on those builds a drop followed by a restart reloads every variable by design, which is what section
+282 said was unread there. The 0.2 builds, which this unit runs, have no such flag, and read alone they
+predict that `RESET`, which keeps data memory, leaves the old value in force until a battery pull.
+
+### What the remote did
+
+The variables were read live over USB, `READ_MISC` selector 7, before and after each step, with the
+unit identified off its identity block each time.
+
+| | flash | `0xE54` | clock, from `0xE10` | sum at `0xED2` |
+|---|---|---|---|---|
+| before | 60 | 60 | 09:17:54 | `0xA5` |
+| after the write and its restart | 90 | **90** | 08:40:10 | `0xC3` |
+| just before a restart alone | 90 | 90 | 08:45:06 | `0xC3` |
+| after the restart alone | 90 | 90 | 08:39:54 | `0xC3` |
+| after the revert and its restart | 60 | **60** | 08:39:54 | `0xA5` |
+
+**The new value was in force straight after the restart, in both directions**, so on this unit a
+configuration written this way takes effect without a battery pull. The sum moved by exactly `60 ^ 90`
+each way, which is the store's restamp and the control that the address read is the variable. The
+other delays read what the configuration states throughout: television 50, set top box 15, PS3 15,
+Kodi 0.
+
+**Every restart put the clock back to the configuration's stamp**, 08:39:42, which base slot 3 and base
+slot 13's records 0 to 6 both carry, read 12 to 28 seconds afterwards. So a configuration written
+without restamping leaves the remote showing its stamp time, and a writer for this model has to stamp
+it, as the rails already say. Which of the two the clock comes from is not settled here, and it
+matters: if it is the records, the loop ran on a restart with nothing written, since the sum guards
+every index.
+
+**Variables 7 to 12 say nothing about this.** They read `1 0 3 4 10 4` after every restart where the
+configuration states `0 0 5 0 0 0`, but the boot writes variable 11 to 10 at `0x14FAC` straight after
+the seeder, and 7, 9, 10 and 12 have writers elsewhere.
+
+**Why the reload ran on the 0.2 build is open.** Leads not yet read: whatever the bootloader below
+`0x9000` does to data memory before the application starts, which is not in these images; whether the
+software stack from `0xE00` reaches the summed span; and any indirect writer the tracer cannot see.
+**Two experiments would narrow it with no write**: start an activity, read `CurrentActivityState` at
+`0xE32`, send a restart alone and read it again, which says whether the loop runs on a bare restart;
+and read a byte no startup code writes before and after a restart, which tests whether data memory
+survives this restart at all.
+
+### Scope, decision 16
+
+* The measurement: one Harmony 650 on its 0.2 build, one delay raised and put back, and one restart
+  alone.
+* The reading: the seeder, its sum and the store are byte identical on the Harmony 600's and the 650's
+  0.2 builds, asserted range by range. The Harmony 700's 2.8 and the 650's 0.4 package have the same
+  sum at other addresses **and** the drop's forced reload, which the 0.2 builds lack. What the 600 or
+  the 700 do after a write is not measured, and the 600 may not be written.
+* Arch 12 (Harmony One) keeps its delays inline and needed no reload for section 236's change to be
+  felt; arch 9 (Harmony 525) guards per variable, section 274, and was not written to change anything.
+
+### Sources
+
+The firmware, sections 138, 234, 274 and 282, and the lab note `work/plan-1.4/1.4.2-delay-change-NOTES.md`
+written before the write and holding every reading above. Logitech's client was not consulted: the
+question was what this unit does with a configuration whose bytes we chose.
+
+### Falsification
+
+A write that changes a stated variable and reads back the old value in memory after the restart; a
+restart that leaves the clock running rather than reloading it; a region read after such a write that
+differs anywhere but the edited bytes and the trailer.
+
+### Where it lands
+
+* `tests/test_arch14_write_target.py`: the sum's span, seed and `XORWF` on two builds, the entry gate,
+  the guard and the loop's skip past the store, the store's address and restamp, the failed validation
+  path ending in the paint from byte 18, the later builds' drop flag, the two region reads' two byte
+  difference, and the record's memory address.
+* `packages/lab`, `tests/lab.py` and the golden vectors: `h650_delay90_region`, the compare base the
+  revert used, excluded from the corpus like `h650_config_region`.
+* `docs/config-format.md` beside `first`, `docs/memory-map-600.md`, and section 282's scope corrected.
+
+### The reviewers
+
+Both ran on the whole diff. The blind one reproduced every address and number above and, from the 0.2
+image alone, made the same prediction as the lab note, that the old value would survive the restart.
+**The second found the draft wrong in six places**: it called the 700 2.8 "the same shape" and missed
+the drop's forced reload there, which it found and the blind one found independently; it named one
+other writer of the sum where there are three direct ones; it said the failed validation path forces a
+reload, where it ends in the paint and erases; it said the discriminating experiment needed a RAM
+write, where using the remote changes variables inside the sum; it attributed the clock to the records
+where base slot 3 carries the same stamp; and it offered variables 7 to 12 as a caution where the image
+shows the boot writing them. It also found three figures missing from the lab note, the memory map
+header claiming more was read live than was, and two test assertions that stopped short. All corrected.

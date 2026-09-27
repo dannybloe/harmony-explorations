@@ -490,3 +490,4 @@ executor is unread and its part's register page sits above the bound this projec
 dispatcher. The runtime check for the second had been removed as unreachable, correctly, on the
 argument that the shared gate refused every architecture outside a list of `[12]`; adding arch 9 made
 it reachable in the same commit and the test comparing the two tables is what caught it.
+| `What it arms on those builds is unread` | section 283, 27 September 2026 | said of the cache drop's second flag on the 700 2.8 and the 650 0.4 package; section 283 read it: the next boot spoils the state variables' sum, so the drop forces a reload of every variable |

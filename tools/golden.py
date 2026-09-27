@@ -117,6 +117,7 @@ CONTAINERS = (
     'one_spare_screen_base',
     'one_spare_poweroff_base',
     'h650_config_region',
+    'h650_delay90_region',
     # The two configs Logitech compiled to a specification we wrote, section 132. They are out of the
     # corpus wide claim lists, deliberately, and they belong here for the same reason the arch 9 safe
     # mode container does: a golden vector is a cheap check between two implementations and costs the

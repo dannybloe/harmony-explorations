@@ -563,7 +563,7 @@ finding.
 
 `todo.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 282<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 283<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -827,6 +827,13 @@ figures common to both carry `fact:` markers, so `make facts` moves every copy t
 cannot drift apart; what a reader should not expect is two independent statements of one measurement.
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
+
+**And the Harmony 650 took a changed configuration, section 283.** One device's power on delay
+raised from six seconds to nine and put back, each a two block write with everything read back. On
+this model a delay is a setting the remote holds in memory, and the firmware this unit runs reads as
+though a restart keeps the old one; newer firmware for the same model forces a reload. It did not keep it: the new value was live straight after the
+restart, both ways, read out of the remote's memory. Every restart also set the remote's clock back to
+the time stamped in the configuration, so a writer for this model has to stamp it.
 
 **And Off switches it off, section 280.** A device goes off when the remote writes 0 into its power
 state, and Logitech's compiler puts every device into two places that do that: the list Off runs, and

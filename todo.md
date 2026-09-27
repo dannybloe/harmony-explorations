@@ -51,7 +51,7 @@ Plan: [003-how-an-activity-is-built.md](docs/plans/003-how-an-activity-is-built.
   - [x] 1.3.8 Rebuild from the composers alone and write that: written 24 September 2026, 25 blocks, the activity shows its start up and working screens with header, pads and Devices, and comes back from device mode (section 279)
 - [ ] 1.4 Write one to the Harmony 650 and watch the television, the arch 14 counterpart of 1.3
   - [x] 1.4.1 Read the cache drop and the restart in the 650's own firmware, then send each once: both as read, and the drop arms the next erase, which at 0x030000 may update a setting in the remote's settings store (section 282)
-  - [ ] 1.4.2 A first write that changes something: one delay byte changed and reverted, to see what a remote that copies its configuration does with a new one
+  - [x] 1.4.2 A first write that changes something: one delay byte changed and reverted, to see what a remote that keeps its settings in memory does with a new one: live straight after the restart, and every restart resets the clock (section 283)
   - [ ] 1.4.3 A composed device on the 650, catalogue to remote, as 4.3.1 did on the One
   - [ ] 1.4.4 A composed activity, which needs 1.2.3 and 1.2.6 first
 

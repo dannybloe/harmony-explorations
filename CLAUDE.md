@@ -731,7 +731,8 @@ blocks, which is the first write to use the whole eight step sequence. On the **
 block written back unchanged on 6 September, section 269, which is the second architecture written to
 and needed no compiler, since nothing can compile a configuration for that model. On the **Harmony
 650**, a second hand unit which Danny says may be reprogrammed as the work needs: one block written back unchanged on
-27 September 2026, section 281, the first write to arch 14. **No other remote has been written to and
+27 September 2026, section 281, the first write to arch 14; and one power on delay raised and put back
+the same day, section 283, two blocks each way, live in the remote's memory straight after the restart. **No other remote has been written to and
 no other may be**, which said "the spare is the only one that may be"<!--superseded--> until 6
 September 2026. His everyday Harmony One and the Harmony 600 are excluded by name, and **the rail
 aimed at the 600 is the unit check on its identity**, since it reports the same product id and

@@ -2773,6 +2773,17 @@ marker, filling the array's unused tail with `0xFE` instead, and its guard is pe
 all or nothing, skipping indices 0 to 12 where arch 12 (Harmony One) and arch 14 (Harmony 600 and 700)
 either seed everything or nothing.
 
+**On arch 14 the guard is a checksum**, section 283: an XOR seeded `0xA5` over the variable array from
+its nineteenth byte, 174 bytes from data `0xE22` on the 600's and 650's 0.2 builds and 237 from `0x912`
+on the 700 2.8 and the 650's 0.4 package, against a stored sum every store restamps. The seeder runs
+only when a container validated, and a matching sum then skips every store. A user container that fails
+validation does not reload: the variables above byte 18 are painted `0xFE`. **The 700 2.8 and the 0.4
+force a reload after a cache drop**, a flag the drop sets and the next boot turns into a spoiled sum;
+the 0.2 builds have no such flag. **Measured on a Harmony 650 running 0.2, a changed `first` was
+nonetheless in force straight after a write and its restart**, both ways, and every restart put the
+clock back to the configuration's stamp, so an unstamped configuration shows its stamp time. Why the
+reload ran on that build is open.
+
 **The idle value is the record's `first` field**, base slot 13 at +0x00, which section 60 read as an
 initial value and marked unconfirmed. No binding writes it, in fifteen of fifteen user configs. The
 arch 9 safe mode container is the one place a list writes the idle value, and it is the one with zero

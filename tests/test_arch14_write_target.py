@@ -413,5 +413,170 @@ class TheRestartOnTheZeroPointTwoBuilds(unittest.TestCase):
         self.assertFalse(_writes_program_memory(self.code, RESET_PATH))
 
 
+#: Section 283, the state variable seeder's guard on the two 0.2 builds and on the 700 2.8: the
+#: checksum routine, the seeder that compares it, and the store that restamps it.
+SEEDER_SUM = {'h650_bench_code': 0x15FF4, 'h700_code': 0x17944}
+SEEDER = 0x16024
+VARIABLE_STORE = 0x16474
+#: The two 0.2 builds' shared ranges for this section, compared like `SHARED` above.
+SEEDER_SHARED = ((0x14F2E, 0x14FA0), (SEEDER_SUM['h650_bench_code'], 0x16140), (VARIABLE_STORE, 0x164C4))
+
+
+def _checksum_span(code, at):
+    """(seed, first address, byte count) the checksum routine at `at` XORs over.
+
+    `MOVLB`, `CLRF` the counter, `MOVLW seed`, `MOVWF`, then the pointer's low and high byte as two
+    literal loads and the bound as a third, which is the same shape on both builds read.
+    """
+    seed = _at(code, at + 4).fields['k']
+    low, high = _at(code, at + 8).fields['k'], _at(code, at + 12).fields['k']
+    return seed, (high << 8) | low, _at(code, at + 16).fields['k']
+
+
+class TheSeederReloadsOnlyWhenItsChecksumFailsInTheImage(unittest.TestCase):
+    """What the 0.2 image says, which is what section 283's first prediction was built on.
+
+    The unit reloaded on a warm restart anyway, so this is a statement about the image and not about
+    what happened at any one boot: `0xED2` was never read at boot time.
+    """
+
+    def test_the_routines_are_byte_identical_on_the_600_and_the_650(self):
+        lab.require(*BUILDS_02)
+        one, other = (lab.load(name) for name in BUILDS_02)
+        for start, end in SEEDER_SHARED:
+            with self.subTest(hex(start)):
+                self.assertEqual(one[start - BASE:end - BASE], other[start - BASE:end - BASE])
+
+    def test_the_checksum_is_an_xor_seeded_0xa5_over_the_variables_above_the_clock(self):
+        # 0.2: 174 bytes from 0xE22, the array starting at 0xE10. 700 2.8: 237 from 0x912, array at
+        # 0x900. Both start 18 bytes in, so the clock and the firmware's other variables are left out.
+        lab.require(*SEEDER_SUM)
+        expected = {'h650_bench_code': (0xA5, 0xE22, 0xAE), 'h700_code': (0xA5, 0x912, 0xED)}
+        for name, at in SEEDER_SUM.items():
+            with self.subTest(name):
+                code = lab.load(name)
+                self.assertEqual(_checksum_span(code, at), expected[name])
+                # And it is an XOR: the byte fetched through INDF0 is folded into the running sum.
+                self.assertEqual((_at(code, at + 0x1E).mnemonic, _at(code, at + 0x20).mnemonic),
+                                 ('MOVF', 'XORWF'))
+
+    def test_the_seeder_sets_its_guard_when_the_sum_matches_and_the_loop_then_stores_nothing(self):
+        lab.require('h650_bench_code')
+        code = lab.load('h650_bench_code')
+        self.assertEqual((_at(code, 0x16038).mnemonic, _at(code, 0x16038).fields['target']),
+                         ('RCALL', SEEDER_SUM['h650_bench_code']))
+        self.assertEqual((_at(code, 0x1603A).fields['k'], _at(code, 0x1603C).mnemonic,
+                          _at(code, 0x1603C).fields['f']), (0x0E, 'SUBWF', 0xD2))
+        self.assertEqual((_at(code, 0x16044).fields['k'], _at(code, 0x16048).fields['f']), (1, 0x2D))
+        # In the loop, a nonzero guard branches past the store call, to the index increment.
+        self.assertEqual((_at(code, 0x160DA).fields['f'], _at(code, 0x160DC).mnemonic,
+                          _at(code, 0x160DC).fields['target']), (0x2D, 'BNZ', 0x160EC))
+
+    def test_the_seeder_runs_only_once_a_container_validated(self):
+        # 0x68B bit 2 is the user container's verdict and bit 1 the other container's; with neither
+        # set the seeder branches straight to the paint.
+        lab.require('h650_bench_code')
+        code = lab.load('h650_bench_code')
+        self.assertEqual((_at(code, 0x1602C).fields['f'], _at(code, 0x1602E).fields['k'],
+                          _at(code, 0x16030).mnemonic), (0x8B, 0x04, 'BNZ'))
+        self.assertEqual((_at(code, 0x16034).fields['k'], _at(code, 0x16036).mnemonic,
+                          _at(code, 0x16036).fields['target']), (0x02, 'BZ', 0x16100))
+        self.assertEqual(_at(code, 0x160EA).fields['target'], VARIABLE_STORE)
+
+    def test_every_store_addresses_0xe10_and_restamps_the_sum(self):
+        lab.require('h650_bench_code')
+        code = lab.load('h650_bench_code')
+        self.assertEqual((_at(code, 0x16480).fields['k'], _at(code, 0x16484).fields['k']), (0x10, 0x0E))
+        self.assertEqual(_at(code, 0x164BC).fields['target'], SEEDER_SUM['h650_bench_code'])
+        self.assertEqual((_at(code, 0x164C0).mnemonic, _at(code, 0x164C0).fields['f']), ('MOVWF', 0xD2))
+
+    def test_a_failed_user_container_spoils_the_sum_and_ends_in_the_paint_from_byte_18(self):
+        # The INCF is taken when the verdict bit is clear, and the path then clears bit 4. With bit 4
+        # clear and bit 1 set the seeder moves the paint's start to 0x12, so everything the sum covers
+        # is painted 0xFE rather than reloaded from the user configuration.
+        lab.require('h650_bench_code')
+        code = lab.load('h650_bench_code')
+        self.assertEqual((_at(code, 0x14F88).mnemonic, _at(code, 0x14F88).fields['b']), ('BTFSC', 2))
+        self.assertEqual((_at(code, 0x14F8E).mnemonic, _at(code, 0x14F8E).fields['f']), ('INCF', 0xD2))
+        self.assertEqual((_at(code, 0x14F92).mnemonic, _at(code, 0x14F92).fields['b']), ('BCF', 4))
+        self.assertEqual(_at(code, 0x14F9C).fields['target'], SEEDER)
+        self.assertEqual((_at(code, 0x1610A).fields['k'], _at(code, 0x1610C).mnemonic,
+                          _at(code, 0x16110).fields['k'], _at(code, 0x16116).fields['k'],
+                          _at(code, 0x16118).fields['f']), (0x10, 'BNZ', 0x02, 0x12, 0x2A))
+        self.assertEqual((_at(code, 0x1611A).fields['k'], _at(code, 0x1612E).fields['k'],
+                          _at(code, 0x16130).mnemonic), (0xC0, 0xFE, 'MOVWF'))
+
+    def test_the_sum_has_three_direct_writers_on_the_0_2_build(self):
+        # The seeder's tail, the store, and the INCF. Indirect access is invisible to this count.
+        lab.require('h650_bench_code')
+        code = lab.load('h650_bench_code')
+        writers = [(address, instr.mnemonic) for address, instr in
+                   ((a, _at(code, a)) for a in range(BASE, BASE + len(code), 2))
+                   if instr.mnemonic in ('MOVWF', 'INCF', 'CLRF', 'SETF', 'DECF')
+                   and instr.fields.get('f') == 0xD2 and instr.fields.get('a') == 1
+                   and _at(code, address - 2).mnemonic == 'MOVLB'
+                   and _at(code, address - 2).fields['k'] == 0x0E]
+        self.assertEqual(writers, [(0x14F8E, 'INCF'), (0x1613A, 'MOVWF'), (0x164C0, 'MOVWF')])
+
+
+class TheLaterBuildsForceAReloadAfterACacheDrop(unittest.TestCase):
+    """Section 283: on the 700 2.8 and the 650's 0.4 package the drop sets a flag that the next boot
+    turns into a spoiled sum, and the 0.2 builds this unit runs have no such flag."""
+
+    SITES = {'h700_code': (0xC3EC, 0x1621E, 0x16228, 0x01, 0xE9, 0xEC),
+             'h650_code': (0xC3EC, 0x15FD4, 0x15FDE, 0x00, 0xE9, 0xEC)}
+
+    def test_the_drop_writes_the_flag_and_the_boot_clears_it_and_increments_the_sum(self):
+        lab.require(*self.SITES)
+        for name, (drop, read, bump, bank, flag, total) in self.SITES.items():
+            with self.subTest(name):
+                code = lab.load(name)
+                self.assertEqual((_at(code, drop).mnemonic, _at(code, drop).fields['f']), ('MOVWF', flag))
+                self.assertEqual((_at(code, drop - 2).mnemonic, _at(code, drop - 2).fields['k']), ('MOVLW', 1))
+                self.assertEqual((_at(code, read).mnemonic, _at(code, read).fields['f'],
+                                  _at(code, read + 2).mnemonic), ('MOVF', flag, 'BZ'))
+                self.assertEqual((_at(code, bump - 2).fields['k'], _at(code, bump).mnemonic,
+                                  _at(code, bump).fields['f']), (bank, 'INCF', total))
+
+    def test_the_0_2_build_writes_nothing_at_the_later_builds_flag_from_the_drop(self):
+        # The drop's executor on 0.2 is 0xC344; its flag is 0x725, consumed by the erase, section 282.
+        lab.require('h650_bench_code')
+        code = lab.load('h650_bench_code')
+        # Banked stores only: the walk also writes FSR0L, 0xFE9 in the access bank, whose low byte
+        # is the same 0xE9, and that is a pointer setup and not a flag.
+        stores = [instr.fields.get('f') for _, instr in _walk(code, 0xC344, stop=(0xC430,))
+                  if instr.mnemonic == 'MOVWF' and instr.fields.get('a') == 1]
+        self.assertNotIn(0xE9, stores)
+        self.assertIn(0x25, stores, 'the control: the 0x725 flag this build does set')
+
+
+class TheDelayWriteChangedTwoBytesOfTheRegion(unittest.TestCase):
+    """1.4.2 on the Harmony 650: the Denon's power on delay 60 to 90 tenths, in the region reads."""
+
+    RECORD = 0x6C778
+    TRAILER = 0x10D986
+    REGION = 0x030000
+
+    def test_the_two_region_reads_differ_in_the_delay_and_the_trailer_and_nowhere_else(self):
+        lab.require('h650_config_region', 'h650_delay90_region')
+        before, after = lab.load('h650_config_region'), lab.load('h650_delay90_region')
+        self.assertEqual(len(before), len(after))
+        moved = [self.REGION + i for i, (a, b) in enumerate(zip(before, after)) if a != b]
+        self.assertEqual(moved, [self.RECORD, self.TRAILER])
+        at = self.RECORD - self.REGION
+        self.assertEqual((before[at] | before[at + 1] << 8, after[at] | after[at + 1] << 8), (60, 90))
+
+    def test_the_byte_is_the_first_value_of_a_wide_variable_whose_memory_is_0xe54(self):
+        # The record is base slot 13 entry 65, above `narrow`, so it is stored as two bytes at
+        # 0xE10 + narrow + 2 * (65 - narrow). That is the address the live reads were taken at.
+        lab.require('h650_delay90_region')
+        from harmony import gspm
+        table = gspm.parse(lab.load('h650_delay90_region')).state_table()
+        index = table.entries.index(self.RECORD)
+        self.assertEqual((index, table.narrow, table.wide), (65, 62, 23))
+        self.assertFalse(table.is_narrow(index))
+        self.assertEqual(0xE10 + table.narrow + 2 * (index - table.narrow), 0xE54)
+
+
 if __name__ == '__main__':
     unittest.main()

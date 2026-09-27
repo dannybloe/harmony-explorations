@@ -130,6 +130,8 @@ const SPARE_DUMPS = new Set([
  */
 const H650_DUMPS = new Set([
   'h650_config_region',
+  // After 1.4.2's write, the Denon's power on delay at 90 tenths: the compare base for the revert.
+  'h650_delay90_region',
 ]);
 
 /** A remote this may run against, per architecture read off the device. */

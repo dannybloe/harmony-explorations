@@ -70,6 +70,20 @@ The measurement, on the bench remote and read only: `0x130000` is erased and dif
 `0x030000`, which is the calibration case and rules out a 1 MiB part; `0x1F0000` answers; and
 `0x230000` is refused.
 
+## Data memory, the 0.2 build
+
+The addresses and their meaning come from the 0.2 image, which the 600 and the 650 share for these
+routines; the values were read live over `READ_MISC` selector 7 on the Harmony 650 only, section 283.
+The 600 was not measured.
+
+| data | what |
+|---|---|
+| `0xE10` | the state variables, `narrow` bytes then two per wide one; the clock is the first seven |
+| `0xE22` to `0xECF` | what the reload checksum covers, an XOR seeded `0xA5` |
+| `0xED2` | that checksum, restamped by every store; at boot, once a container validated, a match skips the reload |
+| `0x68B` | the verdict and container select bits, section 282 |
+| `0x725` | the flag the cache drop sets and the next erase consumes, section 282 |
+
 ## What is not established
 
 * **What the settings in the store at `0xFF` `+0xEC00` mean**, section 282 having read its layout
