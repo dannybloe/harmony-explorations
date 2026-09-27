@@ -35,7 +35,7 @@ Plan: [003-how-an-activity-is-built.md](docs/plans/003-how-an-activity-is-built.
 - [x] 1.2 Compose an activity, the counterpart of `composeDevice`: `composeActivity`, four architectures
   - [x] 1.2.1 The screen half on arch 12 (Harmony One): a menu row, its hit rectangle and a drawn name (section 275)
   - [ ] 1.2.2 A fourth activity, which needs a new menu page: a page counter, a pool copy, a page count, and undeadening the two page turn keys (section 275)
-  - [ ] 1.2.3 The screen half on arch 14 (Harmony 600), where an activity binds two keys (section 273)
+  - [ ] 1.2.3 The screen half on arch 14 (Harmony 600 and 650), where an activity binds two keys (section 273); the 600's screen is monochrome and the 650's colour, so say which it was checked on
   - [x] 1.2.4 An activity's own screen mode, so its enter handler can open with an enter mode instruction as all 60 real ones do: a start up screen, then a working screen named by a base slot 14 record device mode's Activities key reaches (section 279)
   - [x] 1.2.5 Put a device's power variable below narrow, renumbering every reference: written 8 September 2026, the variable is one byte and holds 1 after a press, and the seven existing activities came through identical. The television still does not respond, so the width was not the cause (section 277)
   - [ ] 1.2.6 The arch 14 send prelude: every Harmony 600 and 700 send list opens with a 0x7F, one distinct target each, which the composer does not emit (section 278)
@@ -49,6 +49,11 @@ Plan: [003-how-an-activity-is-built.md](docs/plans/003-how-an-activity-is-built.
   - [x] 1.3.6 Cheap discriminator before building a screen: point a 0x7E at a mode the config already has. The screen changed and nothing was sent, so it was not the cause (section 278)
   - [x] 1.3.7 Pair every composed send with its 0x7C: written 24 September 2026, 25 blocks, and the activity switches the television on through the composed device (section 278)
   - [x] 1.3.8 Rebuild from the composers alone and write that: written 24 September 2026, 25 blocks, the activity shows its start up and working screens with header, pads and Devices, and comes back from device mode (section 279)
+- [ ] 1.4 Write one to the Harmony 650 and watch the television, the arch 14 counterpart of 1.3
+  - [ ] 1.4.1 Read the cache drop and the restart in the 650's own firmware, then send each once
+  - [ ] 1.4.2 A first write that changes something: one delay byte changed and reverted, to see what a remote that copies its configuration does with a new one
+  - [ ] 1.4.3 A composed device on the 650, catalogue to remote, as 4.3.1 did on the One
+  - [ ] 1.4.4 A composed activity, which needs 1.2.3 and 1.2.6 first
 
 ## 2. Screens
 
