@@ -66,7 +66,8 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // sections 276 and 277 and the round after them: a write invalidates the dump the next write
   // compares against, so each one needs its own base and each base is a fixture.
   // 107 since the compare base for the working screen write, section 279.
-  assert.equal(Object.keys(pythonImages()).length, 107, 'every fixture tests/lab.py names');
+  // 108 since the compare base for the power off write, section 280.
+  assert.equal(Object.keys(pythonImages()).length, 108, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {
@@ -117,5 +118,6 @@ test('the two sides exclude the same fixtures from the parseable population', ()
   // before each later activity write, excluded because each one's configuration is already counted
   // under the read it was built from.
   // The nineteenth is the compare base for the working screen write, section 279, the same shape.
-  assert.equal(names.length, 20, 'each one a container already counted, or that container plus a known edit');
+  // The twentieth is the compare base for the power off write, section 280, the same shape again.
+  assert.equal(names.length, 21, 'each one a container already counted, or that container plus a known edit');
 });

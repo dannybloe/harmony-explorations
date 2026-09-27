@@ -876,6 +876,14 @@ the thirteen measured, so it is never a constant. The activity's enter list open
 a different mode, its start up screen, on 60 of 60. Unchecked on every other architecture.
 `activityScreens` in `packages/codec/src/inventory.ts`.
 
+**The all off list**, section 280. A base slot 10 list of state writes only, each a 0 into a
+device's `Power` variable, reached from the `idle` base slot 9 entry's enter list through `0x7F` and
+the `0x7F` a base slot 14 case queues. Exactly one on each of the eleven user configurations with two
+devices or more, arch 8, 9, 12 and 14, naming every `Power` variable; none where there is one device.
+The walk is from `CurrentLocation`'s record, whose one case, value 0, queues the call, so the switch off
+is conditional on it. Every activity's enter list writes every one of those variables, 1 or 0,
+directly or through the lists it calls, up to three calls down. `allOffList`.
+
 Read with `gspm.value_maps` and `gspm.value_map_reference`. [findings.md](findings.md) section 39.
 
 ### The screen language

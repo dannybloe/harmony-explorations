@@ -114,6 +114,7 @@ const SPARE_DUMPS = new Set([
   // The region behind the paired-send probe, read after the retarget write.
   'one_spare_paired_base',
   'one_spare_screen_base',
+  'one_spare_poweroff_base',
 ]);
 
 /** The lab's name for the unit this may run against. One label, because there is one write target. */

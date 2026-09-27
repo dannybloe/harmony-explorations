@@ -36124,7 +36124,7 @@ presumably Off and not measured. `TV_OnlinePower` is written by none of them. Th
 shape and not a general one: on `compiled_protocols` twelve or thirteen of fifteen power variables are
 written by no activity at all, which is not read. A composed device is in none of these lists, so its
 power variable is written 1 by its own activity and 0 by nothing, and a composed activity leaves every
-other device as it was.
+other device as it was. Section 280 adds both.
 
 ### The hardware
 
@@ -36178,3 +36178,145 @@ its working screen. On the remote, the composed activity staying on its start up
 * `packages/codec/test/compose.test.ts`: the table per configuration, exact, with the enter chain
   closure; a composed activity's two screens, enter list, deadened keys, full accounting and round
   trip; and the three refusals.
+
+## 280. A device is switched off by two lists it has to be in, and a composed device was in neither
+
+Section 279's activity started the television and Off left it on, measured on the spare Harmony One:
+the activity ended and no device did anything. A device goes off when 0 is written into its `Power`
+variable, which runs the variable's transition from on to off, and nothing in the configuration wrote
+that 0 for the composed device.
+
+### The two lists, measured
+
+**The all off list.** The idle key map, the one base slot 9 entry section 272 calls `idle`, is what
+the remote installs when an activity ends. Its enter list maps `CurrentLocation` through base slot
+14, and that record's one case, for the value 0, queues a call to a list whose every instruction
+writes 0 into a device's `Power` variable. So the switch off is conditional on that variable and is
+never a direct call; in the four configurations with one device the case queues the one write
+itself, with no list between. On the spare it is `{a4:0 9b:0 9f:0 a8:0 ac:0}`, the five original devices.
+
+Over the fifteen user configurations, `lab.USER_CONFIGS`, four architectures:
+
+| configurations | devices | all off lists |
+|---|---|---|
+| `h700_config`, `h700_config_2` | 5, 5 | 1 each, naming all five |
+| `h600_config` | 3 | 1, naming all three |
+| `h525_config` | 3 | 1, naming all three |
+| `one_config` | 4 | 1, naming all four |
+| `arch8_config_a` to `_d`, `_880`, `_885` | 3, 5, 6, 6, 4, 7 | 1 each, naming all |
+| `h525_config_2`, `one_config_unprogrammed`, `one_spare_before_sync`, `one_spare_after_sync` | 1 each | none |
+
+**Eleven of eleven with two power variables or more carry exactly one reachable from the idle key
+map, and it names every power variable and nothing else.** The shape alone is not unique: ten of the
+eleven hold other lists of only zero writes into power variables, up to ten of them on
+`arch8_config_885`, which the walk does not reach. The four with one device carry none. Outside that population, the spare's reads
+**before its first composed device**, the four calibration configurations, one of them a Harmony
+600's, `phase7_before`, `phase7_after` and the three Logitech compiled for our test account carry
+one each, naming every power variable. Every spare read from the first composed device on names five
+of six, which is the defect this section is about.
+
+**Every activity's enter list writes every one of those variables**, 1 for the devices it uses and 0
+for the rest, directly or through the lists it calls: 46 of 46 activities over the eleven, 7 of 7
+on the spare, and 21 of 21 over the three configurations the service compiled for our test account.
+So starting an activity switches off what the previous one left on, and the Off key switches off
+everything.
+
+**Those three were first written up here as the exception, and the blind reviewer refuted it.** The
+walk that measured them stopped two calls down, and their compiler puts most power writes three
+calls down, behind a list holding a `0x3F` and a call: 140 of the 196 writes over the first two. At
+two calls none of the 21 activities writes every variable; at any depth all 21 do. The other sixteen
+configurations pass at two calls, which is why the shallow walk looked right. The test asserts both
+depths so the trap is on record.
+
+The rule is about **power variables**, not devices: a few devices have no `Power` variable at all,
+only an input, `GChromecast` on `h600_config`, `Kodi` on `one_config` and `Media_Center_PC_2` on three
+arch 8 files, and no list writes them.
+
+A composed device was in no list. So its power variable was written 1 by its own activity and 0 by
+nothing, and a composed activity wrote only its own device, leaving every other device as it was.
+
+### What the composers do now
+
+* `joinPowerOff` appends `P:0` to the all off list and inserts it into every activity's enter list
+  **immediately before the write of the activity counter**. Every power write of a real enter list
+  sits before that write, and directly in front of it in every user configuration; on four
+  calibration activities a call setting an input sits between. One three byte
+  instruction per list, grown in place through `relocate`. A list named twice in base slot 10 is
+  refused, since growing it would grow both. `compose-device.ts` calls it unless `--no-power-off`.
+  **It refuses a configuration with one device**, which has no all off list to grow: that one's
+  idle map queues its single zero write itself, so a second device would need the list created, and
+  nothing composes one yet. Both command line defaults stop there and name the flag that skips them.
+* `activityPowerTargets` gives a new activity a write per device: 1 for those it uses, 0 for every
+  other device the all off list names. `compose-activity.ts` completes `--targets` with it unless
+  `--leave-others-on`.
+
+Tested on one configuration per architecture, arch 8 (`arch8_config_a`), arch 9 (Harmony 525),
+arch 12 (Harmony One) and arch 14 (Harmony 600), and it composes without refusal on all eleven
+multi device user configurations, the four calibration ones, both `phase7` ones and the three
+compiled for our test account: the list keeps its index and gains the variable, every enter
+list gains exactly the one write before the counter, every byte is accounted for and the file round
+trips.
+
+### The hardware
+
+Written to the spare Harmony One on 24 September 2026: `compose-device` then `compose-activity` off
+the spare's read of 30 August 2026, both with their new defaults, and nothing by hand. Danny chose
+the activity's devices, the LG television and the Denon on the input its `LG WebOS` activity uses,
+with volume and mute on the Denon's lists, as every other activity on the spare has them. The
+compare base was a fresh region read, equal byte for byte to section 279's base with section 279's
+container laid over it; all 25 blocks matched before the erase and the configuration read back
+identical afterwards.
+
+Pressed from Off, everything off, and reported as expected:
+
+1. The activity switches the LG and the Denon on and sets the Denon's input.
+2. Volume and mute, and the Mute pad, go to the Denon.
+3. **Off switches both off**, which is the all off list, and the composed device is in it.
+
+Whether the optional fourth step was run, starting the composed activity from `LG WebOS`, is not
+recorded; the subsection below says what it would do.
+
+### A configuration with one device twice
+
+The spare holds the same LG television twice: `TV`, the entry Logitech compiled, and `LG`, ours. An
+activity that switches `LG` on switches `TV` off, and each is a real code to the same set. Starting
+the composed activity from an activity that had `TV` on sends `LG`'s power toggle, which turns the set
+off, and then `TV`'s power off. That is not a defect of either list, it is what two entries for one
+device do, and it is why the hardware run above starts from Off. Which entry stays is Danny's to decide.
+
+### Scope, decision 16
+
+* The two lists and the activity rule: arch 8, 9, 12 and 14 over the fifteen user configurations,
+  plus the spare's reads and the calibration configurations on arch 12 and arch 14. Arch 10 (Harmony 890) and arch 16
+  (Harmony 300 and 350) are unchecked.
+* The hardware: arch 12 (Harmony One) only.
+
+### Sources
+
+The corpus and sections 272, 276, 278 and 279. Neither the firmware nor Logitech's client was
+consulted: the question is what a configuration contains, and the transition a write of 0 runs is
+section 86's and section 278's.
+
+### Falsification
+
+A Logitech built configuration with two power variables or more and no single all off list, or with
+one that leaves a power variable out, or an activity that leaves one alone at any depth.
+
+### Where it lands
+
+* `packages/codec/src/inventory.ts`: `allOffList`.
+* `packages/codec/src/compose.ts`: `joinPowerOff` and `activityPowerTargets`.
+* `packages/codec/bin/compose-device.ts` and `compose-activity.ts`: both on by default.
+* `packages/codec/test/compose.test.ts`: the list per user configuration and the activity rule,
+  exact; the three compiled configurations and the spare at both depths; the join on four
+  architectures; and two of its refusals, a variable already in the list and one that is not a
+  power variable. The refusal of a list named twice is not tested.
+
+### The reviewers
+
+Both ran on the whole diff. The blind one found the depth error above. The second found the same one
+independently, plus the scoping of the spare's reads and the calibration population, the shape's
+non uniqueness and the insertion point's wording, all corrected here. **They disagreed on one point
+and the blind one was right**: the second said nothing reachable from a one device configuration's
+idle map writes its power variable, having followed queued calls only; the case queues the write
+itself, `a4:0` on `one_config_unprogrammed`, measured.

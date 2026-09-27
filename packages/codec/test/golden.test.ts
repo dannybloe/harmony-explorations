@@ -115,6 +115,7 @@ const CONTAINERS = [
   'one_spare_retarget_base',
   'one_spare_paired_base',
   'one_spare_screen_base',
+  'one_spare_poweroff_base',
   // The two configs Logitech compiled to a specification we wrote, section 132: the only samples
   // whose devices and activities were chosen before the bytes existed, so a disagreement between the
   // two implementations about them would be a disagreement about a known answer.
@@ -276,7 +277,8 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 276, because that write invalidated the dump every later write compares against.
   // 64 since the compare base for the third activity write, section 277.
   // 68 since the compare base for the working screen write, section 279.
-  assert.equal(present.length, 68, 'every vector, which is what `make golden` compares');
+  // 69 since the compare base for the power off write, section 280.
+  assert.equal(present.length, 69, 'every vector, which is what `make golden` compares');
   // 38 since the Harmony 895 landed: its key table reads with the existing reader even though
   // every other arch 10 reader is gated, which is what made section 177's keypad closure possible
   // without any arch 10 progress at all.
@@ -302,7 +304,8 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // is in base slot 13 and touches nothing a key table reader looks at.
   // 59 since the compare base for the third activity write, section 277.
   // 63 since the compare base for the working screen write, section 279.
-  assert.equal(complete, 63, 'the vectors whose container has a key table at all');
+  // 64 since the compare base for the power off write, section 280.
+  assert.equal(complete, 64, 'the vectors whose container has a key table at all');
 
   // **The number sender field, and why it needs its own guard.** It is an empty array on 30 vectors
   // and null on 8, with eight carrying a record since 30 August 2026, and this comment said 25 and 9
@@ -373,7 +376,8 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 24 since the compare base for the third activity write, section 277: the favourite channel
   // records have now survived a sixth erase and write of the blocks holding them.
   // 28 since the compare base for the working screen write, section 279, one erase and write further.
-  assert.equal(senders.filter((one) => Array.isArray(one) && one.length > 0).length, 28,
+  // 29 since the compare base for the power off write, section 280.
+  assert.equal(senders.filter((one) => Array.isArray(one) && one.length > 0).length, 29,
     'the configs that populate base slot 16');
 });
 
@@ -393,7 +397,8 @@ test('the list above covers exactly what the Python side writes a vector for', (
   // 276, because that write invalidated the dump every later write compares against.
   // 64 since the compare base for the third activity write, section 277.
   // 68 since the compare base for the working screen write, section 279.
-  assert.equal(python.length, 68, 'the golden vectors, which is what `make golden` prints');
+  // 69 since the compare base for the power off write, section 280.
+  assert.equal(python.length, 69, 'the golden vectors, which is what `make golden` prints');
   assert.deepEqual([...CONTAINERS].sort(), python.sort());
 });
 

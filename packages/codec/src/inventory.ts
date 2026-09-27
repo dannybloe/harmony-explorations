@@ -430,6 +430,76 @@ export function activityScreens(c: Container): ActivityScreens | undefined {
   return found.length === 1 ? found[0] : undefined;
 }
 
+/** The list the remote runs to switch every device off, and the power variables it names. */
+export interface AllOffList {
+  /** Its base slot 10 index. */
+  list: number;
+  /** The power variables it writes 0 into, in its own order. */
+  variables: number[];
+}
+
+/**
+ * The list that switches every device off when no activity is left running, section 280.
+ *
+ * **It is reached from the idle key map**, the one base slot 9 entry `handlerSetRoles` calls
+ * `idle`, which the remote installs when an activity ends: its enter list maps `CurrentLocation`
+ * through base slot 14, and the record's one case, for the value 0, queues a call to a list whose
+ * every instruction writes 0 into a device's `Power` variable. So the switch off is conditional on
+ * that variable, and never a direct call. Writing 0 is what runs each device's transition from on to off, so a
+ * device switched on and missing from this list stays on.
+ *
+ * Found by shape along that walk rather than by position, and the shape is strict: every
+ * instruction a state write, every write a 0, every variable a `Power` one. Exactly one list fits on
+ * every Logitech built configuration measured with two devices or more, on arch 8 (Harmony 880 and 885), arch 9
+ * (Harmony 525), arch 12 (Harmony One) and arch 14 (Harmony 600 and 700), and it names every power
+ * variable the configuration has. A device with no `Power` variable, which a few have, is in no such
+ * list. Undefined when none fits or several do, which is what a configuration with one device gives,
+ * since the case queues that one write itself.
+ */
+export function allOffList(c: Container): AllOffList | undefined {
+  const lists = c.actionLists();
+  const sets = handlerSets(c);
+  const maps = valueMaps(c) ?? [];
+  if (lists === undefined || sets === undefined) return undefined;
+  const power = new Set(deviceVariables(c)
+    .filter((one) => one.property === POWER_PROPERTY)
+    .map((one) => one.index));
+  const isAllOff = (list: readonly Instruction[] | undefined): boolean => list !== undefined
+    && list.length > 0
+    && list.every((one) => one.opcode >= STATE_WRITE_BASE && one.operand === POWER_OFF
+      && power.has(one.opcode - STATE_WRITE_BASE));
+
+  const found = new Set<number>();
+  const seen = new Set<string>();
+  const walk = (list: number, depth: number): void => {
+    if (depth > MAP_WALK_DEPTH || seen.has(`l${list}`)) return;
+    seen.add(`l${list}`);
+    if (isAllOff(lists[list])) found.add(list);
+    for (const one of lists[list] ?? []) {
+      if (one.opcode === ACTION_LIST_INDEX_OPCODE) walk(one.operand, depth + 1);
+      if (one.opcode !== MAP_VALUE_OPCODE) continue;
+      const map = one.operand >> 8;
+      if (seen.has(`m${map}`)) continue;
+      seen.add(`m${map}`);
+      for (const [, target] of maps[map]?.entries ?? []) {
+        for (const step of screenProgram(c, target) ?? []) {
+          if (step.opcode !== SCREEN_QUEUE_INSTRUCTION || step.operands[2] !== ACTION_LIST_INDEX_OPCODE) continue;
+          walk((step.operands[0] as number) | ((step.operands[1] as number) << 8), depth + 1);
+        }
+      }
+    }
+  };
+  const roles = handlerSetRoles(c);
+  sets.addresses.forEach((address, index) => {
+    if (roles[index] !== 'idle') return;
+    const enter = (taggedList(c, address)?.entries ?? []).find((one) => one.tag === 1);
+    if (enter?.opcode === ACTION_LIST_INDEX_OPCODE) walk(enter.operand, 0);
+  });
+  if (found.size !== 1) return undefined;
+  const [list] = [...found] as [number];
+  return { list, variables: (lists[list] as Instruction[]).map((one) => one.opcode - STATE_WRITE_BASE) };
+}
+
 /**
  * The scan code of a page's **left bottom key**, the one device mode labels "Activities", or
  * undefined where the page offers none.

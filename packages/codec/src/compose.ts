@@ -66,6 +66,9 @@ import {
   activityBindings,
   activityNames,
   activityScreens,
+  allOffList,
+  deviceVariables,
+  handlerSetRoles,
   KEY_EVENT_PRESS,
   SELECT_BINDING_SET,
   SELECT_BINDING_SET_MASK,
@@ -2795,4 +2798,118 @@ export function composeActivityScreen(
     bytes: restamped(current.blob), activity, mode, startupMode, activeList, map: screens.map,
     devicesList, scans: scans.slice(0, rows.length),
   };
+}
+
+/*
+ * ---- Switching a device off, section 280 ----
+ *
+ * A device is switched off by writing 0 into its `Power` variable, which runs the variable's
+ * transition from on to off, and **nothing writes that 0 for a composed device**: Logitech's
+ * compiler puts every device into two places and the composer put it into neither. Measured on the
+ * spare Harmony One, where Off ended the composed activity and left the television on.
+ *
+ * 1. **The idle key map's all off list**, `allOffList`, which the remote runs when an activity ends.
+ * 2. **Every activity's enter list**, which writes every device's power variable, 1 for the devices
+ *    it uses and 0 for the rest, so starting an activity switches off what the last one left on. On
+ *    every Logitech built configuration measured, across four architectures, directly or through the
+ *    lists it calls, sometimes three calls down.
+ *
+ * `joinPowerOff` puts a new device into both; `activityPowerTargets` gives a new activity the
+ * writes for every device, which `composeActivity` then emits like any other target.
+ */
+
+export interface JoinedPowerOff {
+  bytes: Uint8Array;
+  /** The all off list the write was appended to. */
+  allOff: number;
+  /** The enter lists that gained a write, one per activity, in base slot 9 order. */
+  enterLists: number[];
+}
+
+/**
+ * Put a device's power variable into the all off list and into every activity's enter list as 0.
+ *
+ * **Appended in place**, one three byte instruction per list, through `relocate`, which moves
+ * everything at or above the insertion and every pointer to it; the list's own count byte is then
+ * raised. In an enter list the write goes **immediately before the write of the activity counter**:
+ * every power write of a real enter list sits before that write, and directly in front of it in
+ * every user configuration. A configuration with one device has no all off list and is refused,
+ * since its idle map queues the one zero write itself and a second device would need the list made. A list named by two base slot 10 entries is refused, because growing it would
+ * change the other one too.
+ */
+export function joinPowerOff(c: Container, variable: number): JoinedPowerOff {
+  const power = deviceVariables(c).find((one) => one.index === variable);
+  if (power === undefined || power.property !== 'Power') {
+    throw new ComposeError(`state variable ${variable} is not a device's Power variable`);
+  }
+  const allOff = allOffList(c);
+  if (allOff === undefined) throw new ComposeError('no single list switches every device off');
+  if (allOff.variables.includes(variable)) {
+    throw new ComposeError(`the all off list already writes variable ${variable}`);
+  }
+  const counter = stateVariables(c).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME));
+  if (counter === undefined) throw new ComposeError(`no ${ACTIVITY_STATE_NAME} variable`);
+  const counterWrite = STATE_WRITE_BASE + counter.index;
+
+  const sets = handlerSets(c);
+  if (sets === undefined) throw new ComposeError('base slot 9 does not read');
+  const roles = handlerSetRoles(c);
+  const enterLists: number[] = [];
+  sets.addresses.forEach((address, index) => {
+    if (roles[index] !== 'activity') return;
+    const enter = (taggedList(c, address)?.entries ?? []).find((one) => one.tag === HANDLER_TAG_ENTER);
+    if (enter?.opcode !== ACTION_LIST_INDEX_OPCODE) {
+      throw new ComposeError(`activity key map ${index} has no enter list`);
+    }
+    if (!enterLists.includes(enter.operand)) enterLists.push(enter.operand);
+  });
+
+  const write = new Writer(3).u16(0).u8(STATE_WRITE_BASE + variable).bytes;
+  if (c.architecture === undefined) throw new ComposeError('the container states no architecture');
+  const actionSlot = archSlot(c.architecture, ACTION_TABLE_SLOT);
+  let current = c;
+  // Each insertion re-reads the table, since every one moves what follows it.
+  const insert = (list: number, position: (body: readonly Instruction[]) => number): void => {
+    const table = current.pointerArrayAt(actionSlot);
+    const body = current.actionLists()?.[list];
+    const address = table?.values[list];
+    if (table === undefined || body === undefined || address === undefined) {
+      throw new ComposeError(`list ${list} does not read`);
+    }
+    if (table.values.filter((one) => one === address).length !== 1) {
+      throw new ComposeError(`list ${list} is named twice in base slot 10, so growing it grows both`);
+    }
+    if (body.length >= 0xff) throw new ComposeError(`list ${list} states its count in a byte`);
+    const start = current.blobOffsetOf(address);
+    if (start === undefined) throw new ComposeError(`list ${list} is outside the container`);
+    const at = start + 1 + 3 * position(body);
+    const hole = relocate(current, at, write.length);
+    hole.bytes.set(write, at);
+    hole.bytes[start] = body.length + 1;
+    current = parse(hole.bytes);
+  };
+  insert(allOff.list, (body) => body.length);
+  for (const list of enterLists) {
+    insert(list, (body) => {
+      const at = body.findIndex((one) => one.opcode === counterWrite);
+      if (at < 0) throw new ComposeError(`enter list ${list} does not write the activity counter`);
+      return at;
+    });
+  }
+  return { bytes: restamped(Uint8Array.from(current.blob)), allOff: allOff.list, enterLists };
+}
+
+/**
+ * The power writes a new activity makes: 1 into each variable in `on`, 0 into every other device
+ * the all off list names, in that order, which is the order a real enter list calls them in.
+ */
+export function activityPowerTargets(
+  c: Container, on: readonly number[],
+): { variable: number; value: number }[] {
+  const allOff = allOffList(c);
+  if (allOff === undefined) throw new ComposeError('no single list switches every device off');
+  return [
+    ...on.map((variable) => ({ variable, value: 1 })),
+    ...allOff.variables.filter((one) => !on.includes(one)).map((variable) => ({ variable, value: 0 })),
+  ];
 }

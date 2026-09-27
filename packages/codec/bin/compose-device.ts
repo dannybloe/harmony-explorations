@@ -16,6 +16,11 @@
  * block count is printed: a one byte edit costs two erase blocks and this costs as many as the
  * insertion point leaves behind it.
  *
+ * **The device is put into every list that switches devices off**, section 280: the idle key map's
+ * all off list, which is what Off runs, and every activity's enter list as a 0, which is what
+ * switches it off when another activity starts. Without that the device goes on and never off.
+ * `--no-power-off` leaves it out, which is what this produced before.
+ *
  * It deliberately does not stamp the build timestamp, for `set-delay.ts`'s reason: a timestamp is
  * right for a save and wrong for an exercise whose output should differ from its input only in the
  * places this prints.
@@ -33,6 +38,7 @@ import {
   devices,
   inventory,
   irGroups,
+  joinPowerOff,
   parse,
   roundTrip,
   statedCode,
@@ -102,7 +108,13 @@ process.stdout.write(`${input}: ${before.blob.length} bytes, ${wasDevices.length
   + `(${wasDevices.map((one) => one.name ?? '?').join(', ')})\n`);
 
 const composed = composeDevice(before, { label, commands, power: 0 });
-const withDevice = parse(composed.bytes);
+let withDevice = parse(composed.bytes);
+if (!process.argv.includes('--no-power-off')) {
+  const joined = joinPowerOff(withDevice, composed.variable);
+  withDevice = parse(joined.bytes);
+  process.stdout.write(`power variable ${composed.variable} joins all off list ${joined.allOff} and `
+    + `${joined.enterLists.length} activity enter lists as 0\n`);
+}
 const screen = composeDeviceScreen(withDevice, label,
   labels.map((name, k) => ({ label: name, list: composed.lists[k] as number })),
   iconLike === undefined ? {} : { iconLike });

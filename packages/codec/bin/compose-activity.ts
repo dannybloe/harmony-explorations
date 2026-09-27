@@ -26,6 +26,11 @@
  * which may be none. `--no-screen` leaves both out, which is what this produced before and what left
  * the remote on the page that started the activity.
  *
+ * **Every other device is switched off**, section 280: a real enter list writes every device's
+ * power variable, 1 for the devices it uses and 0 for the rest, so the targets are completed with a 0
+ * for each device the configuration's all off list names and `--targets` does not.
+ * `--leave-others-on` leaves them out, which is what this produced before.
+ *
  * **The build timestamp is stamped**, unlike `compose-device.ts`, which deliberately does not. That
  * script's reason was that an exercise should differ from its input only where it says; this one is
  * meant to be written, and an arch 12 (Harmony One) remote reseeds its clock from that stamp at
@@ -41,6 +46,7 @@ import {
   activityBindings,
   assertQueueFits,
   assertStateTableConsistent,
+  activityPowerTargets,
   activityScreens,
   composeActivity,
   composeActivityMenuRow,
@@ -102,6 +108,11 @@ const pads = padsArg === '' ? [] : padsArg.split(',').map((one) => {
 });
 
 const before = parse(new Uint8Array(readFileSync(input)));
+const named = new Set(targets.map((one) => one.variable));
+const othersOff = process.argv.includes('--leave-others-on') ? [] : activityPowerTargets(
+  before, targets.filter((one) => one.value !== 0).map((one) => one.variable),
+).filter((one) => one.value === 0 && !named.has(one.variable));
+targets.push(...othersOff);
 const counter = stateVariables(before).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME));
 const wasBindings = activityBindings(before);
 process.stdout.write(`${input}: ${before.blob.length} bytes, arch ${before.architecture}, `

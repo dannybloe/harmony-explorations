@@ -29,6 +29,10 @@ import {
   composeActivityScreen,
   activityScreens,
   nextActivityValue,
+  allOffList,
+  joinPowerOff,
+  activityPowerTargets,
+  deviceVariables,
   valueMaps,
   activityBindings,
   activityNames,
@@ -1651,4 +1655,153 @@ test('the activity screen composer refuses what it cannot place', skipUnless('on
       activeList: screen.activeList, activity: screen.activity + 1,
     },
   }), /the screen was composed for activity/);
+});
+
+/**
+ * The fifteen user configurations, and how many devices each switches off when no activity is left,
+ * section 280. Zero means the configuration has one device and no all off list, which is the case
+ * the reader returns undefined for.
+ */
+const ALL_OFF: Readonly<Record<string, number>> = {
+  h700_config: 5, h700_config_2: 5, h600_config: 3, h525_config: 3, h525_config_2: 0,
+  one_config: 4, one_config_unprogrammed: 0, one_spare_before_sync: 0, one_spare_after_sync: 0,
+  arch8_config_a: 3, arch8_config_b: 5, arch8_config_c: 6, arch8_config_d: 6,
+  arch8_config_880: 4, arch8_config_885: 7,
+};
+
+/**
+ * Every state variable an enter list writes, directly or through the lists it calls, no deeper
+ * than `depth` calls. The depth is a parameter because it is the finding's trap: the three
+ * configurations compiled for our test account put most of their power writes three calls down,
+ * behind a list holding a `0x3F`, and a walk that stopped at two called them an exception.
+ */
+function powerWrites(c: ReturnType<typeof parse>, list: number, depth = 8): Set<number> {
+  const lists = c.actionLists() ?? [];
+  const out = new Set<number>();
+  const seen = new Set<number>();
+  const walk = (at: number, level: number): void => {
+    if (seen.has(at)) return;
+    seen.add(at);
+    for (const one of lists[at] ?? []) {
+      if (one.opcode >= 0x80) out.add(one.opcode - 0x80);
+      if (one.opcode === 0x7f && level < depth) walk(one.operand, level + 1);
+    }
+  };
+  walk(list, 0);
+  return out;
+}
+
+function enterListsOf(c: ReturnType<typeof parse>): number[] {
+  const sets = handlerSets(c);
+  const roles = handlerSetRoles(c);
+  const out: number[] = [];
+  (sets?.addresses ?? []).forEach((address, index) => {
+    if (roles[index] !== 'activity') return;
+    const enter = (taggedList(c, address)?.entries ?? []).find((one) => one.tag === 1);
+    if (enter !== undefined && !out.includes(enter.operand)) out.push(enter.operand);
+  });
+  return out;
+}
+
+test('the idle key map reaches one list that switches every device off, and every activity sets every device',
+     skipUnless(...Object.keys(ALL_OFF)), () => {
+  let activities = 0;
+  for (const [name, count] of Object.entries(ALL_OFF)) {
+    const c = parse(require_(name));
+    const power = deviceVariables(c).filter((one) => one.property === 'Power').map((one) => one.index);
+    const found = allOffList(c);
+    if (count === 0) {
+      assert.equal(found, undefined, name);
+      assert.equal(power.length, 1, `${name}: a configuration without the list has one device`);
+      continue;
+    }
+    assert.ok(found !== undefined, `${name}: no single all off list`);
+    assert.equal(found.variables.length, count, name);
+    // It names every device's power variable and nothing else.
+    assert.deepEqual([...found.variables].sort((a, b) => a - b), [...power].sort((a, b) => a - b), name);
+    // And every activity's enter list writes every one of them, on or off, which is what switching
+    // from one activity to another relies on.
+    for (const list of enterListsOf(c)) {
+      const written = powerWrites(c, list);
+      for (const variable of found.variables) {
+        assert.ok(written.has(variable), `${name}: enter list ${list} leaves variable ${variable} alone`);
+      }
+      activities += 1;
+    }
+  }
+  // 5 + 5 + 3 + 3 + 8 + 1 + 2 + 3 + 3 + 4 + 9, over the eleven with a list.
+  assert.equal(activities, 46);
+});
+
+test('the configurations our test account had compiled follow the rule three calls down, and a walk of two misses it',
+     skipUnless('compiled_protocols', 'compiled_protocols_2', 'compiled_protocols_3', 'one_spare_20260830'), () => {
+  // The blind reviewer's correction, section 280: these were first written up as the exception to
+  // every activity setting every device, from a walk that stopped two calls down. Both halves are
+  // asserted, so the depth that matters is on record.
+  for (const [name, devices] of [['compiled_protocols', 14], ['compiled_protocols_2', 14],
+                                   ['compiled_protocols_3', 8], ['one_spare_20260830', 5]] as const) {
+    const c = parse(require_(name));
+    const found = allOffList(c);
+    assert.ok(found !== undefined, name);
+    assert.equal(found.variables.length, devices, name);
+    const complete = (depth: number): number => enterListsOf(c)
+      .filter((list) => found.variables.every((v) => powerWrites(c, list, depth).has(v))).length;
+    assert.equal(complete(8), 7, `${name}: every activity writes every power variable`);
+    assert.equal(complete(2), name === 'one_spare_20260830' ? 7 : 0, `${name}: within two calls`);
+  }
+});
+
+for (const host of HOSTS) {
+  test(`${host}: a composed device joins the all off list and every activity switches it off`, skipUnless(host), () => {
+    const before = parse(require_(host));
+    const composed = composeDevice(before, { label: 'LG', commands: TELEVISION, power: 0 });
+    const withDevice = parse(composed.bytes);
+    // Before joining, the new device is exactly what section 280 found on the remote: in no list.
+    assert.equal(allOffList(withDevice)?.variables.includes(composed.variable), false);
+    const was = allOffList(withDevice);
+    assert.ok(was !== undefined);
+
+    const joined = joinPowerOff(withDevice, composed.variable);
+    const after = parse(joined.bytes);
+    const now = allOffList(after);
+    assert.ok(now !== undefined, `${host}: the all off list stopped reading`);
+    assert.deepEqual(now.variables, [...was.variables, composed.variable]);
+    assert.equal(now.list, was.list, 'the list grew in place and kept its index');
+
+    // Every activity's enter list writes it 0, immediately before the activity counter.
+    const counter = stateVariables(after).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME));
+    assert.ok(counter !== undefined);
+    const lists = after.actionLists() ?? [];
+    const enters = enterListsOf(after);
+    assert.deepEqual(joined.enterLists, enters);
+    for (const list of enters) {
+      const body = lists[list] ?? [];
+      const at = body.findIndex((one) => one.opcode === 0x80 + counter.index);
+      assert.deepEqual(body[at - 1], { opcode: 0x80 + composed.variable, operand: 0 }, `${host}: list ${list}`);
+      assert.equal(body.length, ((withDevice.actionLists() ?? [])[list] ?? []).length + 1);
+    }
+    // One instruction per list and nothing else: three bytes per enter list plus the all off list.
+    assert.equal(joined.bytes.length - composed.bytes.length, 3 * (enters.length + 1));
+
+    const report = coverage(after);
+    assert.equal(report.accounted, report.total, 'every byte is claimed');
+    assert.deepEqual(report.overlaps, []);
+    assert.ok(trailerAgrees(after));
+    assert.equal(roundTrip(after).equal, true);
+
+    // A new activity then sets the device on and every other one off.
+    const targets = activityPowerTargets(after, [composed.variable]);
+    assert.deepEqual(targets[0], { variable: composed.variable, value: 1 });
+    assert.deepEqual(targets.slice(1).map((one) => one.variable), was.variables);
+    assert.ok(targets.slice(1).every((one) => one.value === 0));
+  });
+}
+
+test('joining the power off lists refuses what is not a new device\'s power variable', skipUnless('one_config'), () => {
+  const c = parse(require_('one_config'));
+  const found = allOffList(c);
+  assert.ok(found !== undefined);
+  assert.throws(() => joinPowerOff(c, found.variables[0] as number), /already writes/);
+  const counter = stateVariables(c).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME));
+  assert.throws(() => joinPowerOff(c, counter?.index as number), /not a device's Power variable/);
 });

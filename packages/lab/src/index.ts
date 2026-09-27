@@ -287,6 +287,9 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // After the paired write, read as the compare base for the working screen write, section 279. It
   // equals `one_spare_paired_base` with the paired container laid over it, all 1703936 bytes.
   one_spare_screen_base: '20260924T1430Z-one-spare-screen-base-region-region.bin',
+  // After the working screen write, the compare base for the power off write, section 280. It equals
+  // `one_spare_screen_base` with that write's container laid over it, all 1703936 bytes.
+  one_spare_poweroff_base: '20260924T1514Z-one-spare-poweroff-base-region-region.bin',
   // Two configs Logitech compiled to a specification we wrote, 13 August 2026: the corpus's only
   // known answer samples. Section 132. Not in the corpus wide lists, on purpose; see tests/lab.py.
   calibration_one: 'calibration-one-spare.bin',
@@ -434,6 +437,7 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
     'one_spare_mixed_region', 'one_spare_plus_lg2_region', 'one_spare_denon65_region',
     'one_spare_reverted_region', 'one_spare_lg_activity_region', 'one_spare_narrow_base', 'one_spare_probe_base',
     'one_spare_retarget_base', 'one_spare_paired_base', 'one_spare_screen_base',
+    'one_spare_poweroff_base',
     // The Harmony 525's erase block, added 6 September 2026, and it is the first entry here that is
     // not a Harmony One's. It parses because its first 51195 bytes are `h525_config_2` exactly, so
     // counting it would add a configuration that does not exist. Same reason as
