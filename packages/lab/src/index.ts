@@ -134,6 +134,7 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // target's rehearsal dump. It begins with the configuration, which is 907660 bytes and so does not
   // end inside it, and it equals the whole external flash read of the same morning at `0x030000`.
   h650_region_030000: '20260927T0906Z-h650-region-030000-region.bin',
+  h650_config_region: '20260927T1022Z-h650-config-region.bin',
   // The arch 9 safe mode container, cut out of the 525's own firmware region at flash 0x818000 on
   // 8 August 2026. Section 76 kept it out of the corpus because it contradicted six corpus claims;
   // section 77 read one of them and section 78 read four more, so what is left is base slot 1's
@@ -452,7 +453,11 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
     // counting it would add a configuration that does not exist. Same reason as
     // `vendor_region_user_config` above and the same shape: a region whose container is already
     // counted under the read it came from.
-    'h525_region_820000'];
+    'h525_region_820000',
+    // The Harmony 650's configuration region, section 282, excluded for a different reason: its
+    // container is counted nowhere, and whether the 650's configuration joins the corpus is a
+    // decision of its own rather than a side effect of registering a compare base.
+    'h650_config_region'];
 
 const cache = new Map<string, string[]>();
 

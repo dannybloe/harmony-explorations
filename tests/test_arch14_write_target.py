@@ -23,7 +23,7 @@ import re
 import unittest
 
 import lab
-from harmony.pic18 import isa
+from harmony.pic18 import chains, isa
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
@@ -127,6 +127,290 @@ class TheHarmony650IsToldFromTheHarmony600ByItsIdentityAlone(unittest.TestCase):
             words = fh.read().split()
         self.assertIn(self.h650.hex(), words)
         self.assertNotIn(self.h600.hex(), words)
+
+
+# ---------------------------------------------------------------------------------------------------
+# Section 282: the cache drop and the restart on the two 0.2 builds, read before either was sent.
+# Every address below is the Harmony 650's own build and the Harmony 600's alike, which the first test
+# of the first class asserts by comparing the bytes of every routine named, so a claim here is about
+# both units. The two builds differ elsewhere, in 1395 bytes, section 281.
+
+BUILDS_02 = ('h600_code_complete', 'h650_bench_code')
+
+WRITE_MISC_CHAIN = 0xC314
+CACHE_DROP = 0xC344             # WRITE_MISC selector 2
+DESCRIPTOR_LOOP = 0x15E1E
+ERASE_PARSE = 0xC240            # ERASE_FLASH's parse handler, state 8
+STORE_WRITE = 0xDD16            # write one setting; compacts when both pages are full
+STORE_ERASE = 0x19C2E           # erase one 1 KiB block of internal program memory
+ESCAPE_CHAIN = 0xBCDA
+MODE_CHAIN = 0x150DE
+RESET_PATH = 0x1516E
+
+#: The routines a claim below rests on, as (start, end) byte ranges compared between the two builds.
+#: The store's whole manager, `0xD276` to `0xDE00`, covers the copy at `0xD442`, the reformat at
+#: `0xD804` and the lookups; the restart's callees are the last three.
+SHARED = ((WRITE_MISC_CHAIN, 0xC364), (0xC430, 0xC432), (DESCRIPTOR_LOOP, 0x15E88), (0x107A2, 0x107C4),
+          (ERASE_PARSE, 0xC2D0), (0xD276, 0xDE00), (0x19906, 0x19940), (STORE_ERASE, 0x19C50),
+          (0xBCBC, 0xBD16), (0x15084, 0x1509A), (MODE_CHAIN, 0x150EC), (RESET_PATH, 0x15190),
+          (0x189FA, 0x18A10), (0x18B2A, 0x18B40))
+
+#: The unlock sequence and the table write, which is what writing internal program memory needs.
+EECON1, EECON2 = 0xFA6, 0xFA7
+SKIPS = {'BTFSS', 'BTFSC', 'CPFSEQ', 'CPFSGT', 'CPFSLT', 'DECFSZ', 'DCFSNZ', 'INCFSZ', 'INFSNZ',
+         'TSTFSZ'}
+
+
+def _at(code, address):
+    return isa.decode(code, address - BASE, BASE)
+
+
+def _walk(code, entry, stop=()):
+    """Every instruction reachable from `entry`, as (address, instruction).
+
+    Follows fall through, both arms of a branch and of a skip, and every call; stops at a return or
+    at an address in `stop`, which is how a handler's shared exit is left out of its own walk.
+    """
+    seen, work, out = set(), [entry], []
+    while work:
+        address = work.pop()
+        if address in seen or address in stop or not BASE <= address < BASE + len(code):
+            continue
+        seen.add(address)
+        instr = _at(code, address)
+        out.append((address, instr))
+        name, following = instr.mnemonic, address + 2 * instr.words
+        if name in ('RETURN', 'RETLW', 'RETFIE', 'RESET'):
+            continue
+        target = instr.fields.get('target')
+        if name in ('GOTO', 'BRA'):
+            work.append(target)
+            continue
+        if target is not None:
+            work.append(target)
+        work.append(following)
+        if name in SKIPS:
+            work.append(following + 2 * _at(code, following).words)
+    return out
+
+
+def _reaches(code, entry, address, stop=()):
+    return any(at == address for at, _ in _walk(code, entry, stop))
+
+
+def _writes_program_memory(code, entry, stop=()):
+    """Whether anything reachable from `entry` writes EECON1 or EECON2 or executes a table write.
+
+    Follows fall through, both arms of a branch and of a skip, and every call; stops at a return or
+    at an address in `stop`, which is how a handler's shared exit is left out of its own walk.
+    """
+    seen, work = set(), [entry]
+    while work:
+        address = work.pop()
+        if address in seen or address in stop or not BASE <= address < BASE + len(code):
+            continue
+        seen.add(address)
+        instr = _at(code, address)
+        name, following = instr.mnemonic, address + 2 * instr.words
+        if name.startswith('TBLWT'):
+            return True
+        target_register = instr.fields.get('dst')
+        if target_register is None and instr.fields.get('a') == 0:
+            target_register = 0xF00 | instr.fields.get('f', 0)
+        if name in ('MOVWF', 'MOVFF', 'CLRF', 'SETF', 'BSF', 'BCF') \
+                and target_register in (EECON1, EECON2):
+            return True
+        if name in ('RETURN', 'RETLW', 'RETFIE', 'RESET'):
+            continue
+        target = instr.fields.get('target')
+        if name in ('GOTO', 'BRA'):
+            work.append(target)
+            continue
+        if target is not None:
+            work.append(target)
+        work.append(following)
+        if name in SKIPS:
+            work.append(following + 2 * _at(code, following).words)
+    return False
+
+
+class TheCacheDropOnTheTwoZeroPointTwoBuilds(unittest.TestCase):
+
+    def test_every_routine_this_rests_on_is_byte_identical_on_the_600_and_the_650(self):
+        lab.require(*BUILDS_02)
+        h600, h650 = (lab.load(n) for n in BUILDS_02)
+        for start, end in SHARED:
+            with self.subTest(hex(start)):
+                self.assertEqual(h600[start - BASE:end - BASE], h650[start - BASE:end - BASE])
+
+    def test_selector_2_is_the_executor_the_chain_names(self):
+        lab.require(*BUILDS_02)
+        for name in BUILDS_02:
+            with self.subTest(name):
+                table = chains.chain_table(lab.load(name), BASE, WRITE_MISC_CHAIN)
+                self.assertEqual(set(table), {1, 2, 5, 6, 7, 8, 9, 10, 11})
+                self.assertEqual(table[2], CACHE_DROP)
+                # The calibration case, as section 97 has it: 0x07 is the RAM write.
+                self.assertEqual(_at(lab.load(name), table[7]).fields['dst'], 0xFE9)
+
+    def test_it_clears_four_records_then_the_verdict_and_the_select_bit_and_sets_a_flag(self):
+        lab.require('h650_bench_code')
+        code = lab.load('h650_bench_code')
+        call = _at(code, CACHE_DROP)
+        self.assertEqual((call.mnemonic, call.fields['target']), ('CALL', DESCRIPTOR_LOOP))
+        # Bank 6 then BCF 0x8B,2: the verdict bit of flags byte 0x68B, section 252.
+        self.assertEqual((_at(code, 0xC348).mnemonic, _at(code, 0xC348).fields['k']), ('MOVLB', 6))
+        verdict = _at(code, 0xC34A)
+        self.assertEqual((verdict.mnemonic, verdict.fields['f'], verdict.fields['b']), ('BCF', 0x8B, 2))
+        # Bank 7, 1 into 0x25: the flag at 0x725 the next erase reads.
+        self.assertEqual(_at(code, 0xC34C).fields['k'], 7)
+        self.assertEqual(_at(code, 0xC34E).fields['k'], 1)
+        self.assertEqual((_at(code, 0xC350).mnemonic, _at(code, 0xC350).fields['f']), ('MOVWF', 0x25))
+        select = _at(code, 0xC35A)
+        self.assertEqual((select.mnemonic, select.fields['f'], select.fields['b']), ('BCF', 0x8B, 4))
+        # The loop: four records of five bytes at 0xEE6. Arch 12 has three at 0xEE8, section 246.
+        self.assertEqual(_at(code, 0x15E22).fields['k'], 4)
+        self.assertEqual(_at(code, 0x15E2A).mnemonic, 'MULLW')
+        self.assertEqual(_at(code, 0x15E2A).fields['k'], 5)
+        self.assertEqual((_at(code, 0x15E34).fields['k'], _at(code, 0x15E38).fields['k']), (0xE6, 0x0E))
+
+    def test_the_drop_itself_writes_no_program_memory_and_the_control_does(self):
+        lab.require('h650_bench_code')
+        code = lab.load('h650_bench_code')
+        self.assertFalse(_writes_program_memory(code, CACHE_DROP, stop={0xC430}))
+        # The control: the settings store's writer is found by the same walk.
+        self.assertTrue(_writes_program_memory(code, STORE_WRITE))
+
+
+class TheEraseAfterADropUpdatesOneSetting(unittest.TestCase):
+
+    def setUp(self):
+        lab.require('h650_bench_code')
+        self.code = lab.load('h650_bench_code')
+
+    def test_the_erase_parse_reads_the_flag_and_clears_it(self):
+        self.assertEqual(_at(self.code, 0xC242).fields['k'], 8)       # state 8, ERASE_FLASH
+        read = _at(self.code, 0xC26C)
+        self.assertEqual((read.mnemonic, read.fields['f']), ('MOVF', 0x25))
+        self.assertEqual(_at(self.code, 0xC26E).mnemonic, 'BZ')
+        self.assertEqual((_at(self.code, 0xC272).mnemonic, _at(self.code, 0xC272).fields['f']),
+                         ('CLRF', 0x25))
+
+    def test_at_the_configurations_first_block_it_reads_setting_0x80_and_writes_it_back(self):
+        # The address compare: low and middle byte zero, top byte 3, so 0x030000 exactly.
+        self.assertEqual(_at(self.code, 0xC296).fields['k'], 0x03)
+        self.assertEqual(_at(self.code, 0xC29C).fields['k'], 0x80)
+        self.assertEqual(_at(self.code, 0xC2A4).fields['target'], 0xDA04)
+        # Bit 0 of what came back is cleared, then setting 0x80 is written with it.
+        clear = _at(self.code, 0xC2AE)
+        self.assertEqual((clear.mnemonic, clear.fields['b']), ('BCF', 0))
+        self.assertEqual(_at(self.code, 0xC2B0).fields['k'], 0x80)
+        self.assertEqual(_at(self.code, 0xC2BC).fields['target'], STORE_WRITE)
+
+    def test_the_store_is_two_one_kilobyte_blocks_from_0x1EC00(self):
+        # The page base, stated literally before the lookup.
+        self.assertEqual((_at(self.code, 0xDB82).fields['k'], _at(self.code, 0xDB86).fields['k']),
+                         (0xEC, 0x01))
+        # The compaction loop runs twice, index times 0x0400, plus 0x01EC00, into the block eraser.
+        self.assertEqual(_at(self.code, 0xDD5E).fields['k'], 2)
+        self.assertEqual(_at(self.code, 0xDD74).fields['k'], 0x04)
+        self.assertEqual((_at(self.code, 0xDD94).fields['k'], _at(self.code, 0xDD9A).fields['k']),
+                         (0xEC, 0x01))
+        self.assertEqual(_at(self.code, 0xDDA0).fields['target'], STORE_ERASE)
+        # The eraser sets WREN and FREE, a one block erase of program memory.
+        self.assertEqual(_at(self.code, 0x19C3C).fields['k'], 0x14)
+
+    def test_an_unchanged_value_writes_nothing_and_a_changed_one_is_a_two_byte_append(self):
+        # The compare against the stored value, and on a match code 0 and out, before any table write.
+        self.assertEqual((_at(self.code, 0xDC50).mnemonic, _at(self.code, 0xDC50).fields['k']), ('MOVLW', 0))
+        self.assertEqual(_at(self.code, 0xDC52).fields['target'], 0xDD14)
+        self.assertTrue(_at(self.code, 0xDC9A).mnemonic.startswith('TBLWT'))
+        self.assertTrue(_at(self.code, 0xDCA8).mnemonic.startswith('TBLWT'))
+        self.assertEqual(_at(self.code, 0xDCAA).fields['k'], 0x24)          # WREN and WPROG
+
+    def test_a_full_store_is_copied_first_and_erased_only_when_the_copy_frees_nothing(self):
+        # Code 4 is the free slot search coming back empty, in the append.
+        self.assertEqual(_at(self.code, 0xDC58).fields['target'], 0xD368)
+        self.assertEqual(_at(self.code, 0xDC7C).fields['k'], 4)
+        # The caller: on 4, the copy into the other block, then the append again.
+        self.assertEqual(_at(self.code, 0xDD28).fields['k'], 4)
+        self.assertEqual(_at(self.code, 0xDD32).fields['target'], 0xD442)
+        self.assertEqual(_at(self.code, 0xDD4A).fields['target'], 0xDB60)
+        self.assertEqual(_at(self.code, 0xDD50).fields['k'], 4)
+        self.assertEqual(_at(self.code, 0xDD56).mnemonic, 'BNZ')
+        # Only past that second 4 does the erase loop run, and then a fresh header and the one record.
+        self.assertEqual(_at(self.code, 0xDDA0).fields['target'], STORE_ERASE)
+        self.assertEqual(_at(self.code, 0xDDB2).fields['target'], 0xD804)
+        self.assertEqual(_at(self.code, 0xDDC0).fields['target'], 0xDB60)
+        # And an append that fills the active block starts the copy there and then.
+        self.assertEqual(_at(self.code, 0xDCF8).fields['target'], 0xD442)
+
+    def test_the_copy_programs_the_other_block_and_erases_nothing(self):
+        self.assertTrue(_writes_program_memory(self.code, 0xD442))
+        self.assertFalse(_reaches(self.code, 0xD442, STORE_ERASE))
+
+
+class TheTwoUnitsSettingsStores(unittest.TestCase):
+    """What the store holds on both units, read off their internal page 0xFF."""
+
+    #: Records after the four byte header. The draft counted the header as two more, 61 and 5.
+    PAGES = {'h600_page_ff': 59, 'h650_page_ff': 3}
+
+    def pairs(self, page, base):
+        block = page[base + 4:base + 0x400]
+        used = [i for i in range(0, len(block), 2) if block[i:i + 2] != b'\xff\xff']
+        return [] if not used else [(block[i], block[i + 1]) for i in range(0, used[-1] + 2, 2)]
+
+    def test_the_first_block_holds_the_records_and_the_second_is_erased(self):
+        lab.require(*self.PAGES)
+        for name, count in self.PAGES.items():
+            with self.subTest(name):
+                page = lab.load(name)
+                self.assertEqual(page[0xEC00:0xEC04], bytes.fromhex('fcff0000'))
+                self.assertEqual(len(self.pairs(page, 0xEC00)), count)
+                self.assertEqual(set(page[0xF000:0xF400]), {0xFF})
+
+    def test_setting_0x80_was_written_three_times_and_its_last_value_has_bit_0_clear(self):
+        lab.require(*self.PAGES)
+        for name in self.PAGES:
+            with self.subTest(name):
+                values = [v for k, v in self.pairs(lab.load(name), 0xEC00) if k == 0x80]
+                self.assertEqual(values, [0xF8, 0xFF, 0xFE])
+
+    def test_the_store_ends_exactly_where_the_identity_block_begins(self):
+        # The end is computed from the literals the eraser loop uses, so it reads the firmware: base
+        # 0x01EC00, a stride of 0x0400 and two blocks. Page 0xFF is internal 0x010000 up.
+        lab.require('h650_bench_code')
+        code = lab.load('h650_bench_code')
+        base = (_at(code, 0xDD9A).fields['k'] << 16) | (_at(code, 0xDD94).fields['k'] << 8)
+        stride = _at(code, 0xDD74).fields['k'] << 8
+        end = base + _at(code, 0xDD5E).fields['k'] * stride
+        self.assertEqual((base, stride, end), (0x01EC00, 0x0400, 0x01F400))
+        self.assertEqual(end, 0x010000 + IDENTITY_AT)
+
+
+class TheRestartOnTheZeroPointTwoBuilds(unittest.TestCase):
+
+    def setUp(self):
+        lab.require('h650_bench_code')
+        self.code = lab.load('h650_bench_code')
+
+    def test_the_escape_sends_2_and_3_to_one_flag(self):
+        table = chains.chain_table(self.code, BASE, ESCAPE_CHAIN)
+        self.assertEqual(table, {5: 0xBD0A, 2: 0xBCFC, 3: 0xBCFC, 1: 0xBCEC})
+        self.assertEqual((_at(self.code, 0xBCFC).fields['k'], _at(self.code, 0xBCFE).fields['k']), (1, 1))
+        self.assertEqual((_at(self.code, 0xBD00).mnemonic, _at(self.code, 0xBD00).fields['f']),
+                         ('MOVWF', 0xFF))
+
+    def test_the_flag_puts_the_mode_to_3_and_mode_3_ends_in_reset(self):
+        self.assertEqual(_at(self.code, 0x15090).fields['f'], 0xFF)
+        self.assertEqual(_at(self.code, 0x15096).fields['k'], 3)
+        self.assertEqual(_at(self.code, 0x15098).fields['f'], 0x40)
+        self.assertEqual(chains.chain_table(self.code, BASE, MODE_CHAIN)[3], RESET_PATH)
+        self.assertEqual(_at(self.code, 0x1518C).mnemonic, 'RESET')
+
+    def test_nothing_on_the_way_writes_program_memory(self):
+        self.assertFalse(_writes_program_memory(self.code, RESET_PATH))
 
 
 if __name__ == '__main__':

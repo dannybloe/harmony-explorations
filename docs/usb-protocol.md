@@ -716,6 +716,23 @@ byte at `0x1A4`. Nothing in that call graph reaches a flash gate, checked with a
 the erase handler, which does. The neighbouring routine `0x2A0C8` walks the same records and
 decrements a three byte counter in each, so bit 0 is what makes a descriptor live.
 
+**On arch 14 it drops four, and it arms the next erase for one extra step**, section 282, read on the Harmony 650's own
+0.2 build and byte identical on the Harmony 600's. The chain is at `0xC314` and selector `0x02` at
+`0xC344`. It calls `0x15E1E`, the same walk over **four** five byte records at `0x0EE6`, with a leaf
+at `0x107A2` zeroing a two byte entry each at `0x063`; then clears bits 2 and 4 of the flags byte at
+`0x68B`, which are the verdict and the container select bit of section 252, and writes 1 to `0x725`.
+That byte has its reader in `ERASE_FLASH`'s parse handler at `0xC240`: the first erase after a drop
+clears it wherever it is, and only if that erase is at exactly `0x030000`, the configuration's first
+block, does it read setting
+`0x80` from the **settings store** in internal program memory at `0x01EC00`, clears its bit 0, and
+writes it back. The erase itself goes ahead the same either way. The store is two 1 KiB blocks used
+one at a time, each a header and then two byte records, setting and value, appended in order; a
+write that changes nothing writes nothing, a full block is copied into the other, and both are
+erased only when that copy frees nothing, after which the store holds a bare header and the one
+record, every other setting lost. So the drop writes nothing persistent, and what it arms can reach internal
+program memory, two blocks below the identity block and never it. **Sent to the Harmony 650 on 27
+September 2026**: `0x68B` went from `0x16` to `0x02` and `0x725` from 0 to 1, as read.
+
 concordance names it `invalidate_flash` and sends it as the first step of a config write, "so that
 nothing will attempt to reference it while we're working". The purpose is right and the name is not,
 which is the third time an upstream selector name has been wrong for this architecture.

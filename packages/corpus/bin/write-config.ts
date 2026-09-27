@@ -1,11 +1,18 @@
 /**
- * Put a configuration **we produced** onto the spare Harmony One, and verify it came back.
+ * Put a configuration **we produced** onto a permitted remote, and verify it came back.
  *
  *   node packages/corpus/bin/write-config.ts --config <file> --dump one_spare_20260901_region
  *   HARMONY_ENABLE_WRITES=1 HARMONY_FIRST_WRITE=1 ... --commit
  *   ... --commit --no-restart      section 247's control: every step but the last
  *   ... --commit --no-invalidate   section 250's control: every step but the first
  *   ... --commit --drop-only      section 250's isolating control: the drop and nothing else
+ *   ... --commit --restart-only   section 282: the restart and nothing else
+ *
+ * **Two units since 27 September 2026, section 282**, chosen by the architecture read off the remote
+ * the way `rehearse-block.ts` chooses: the spare Harmony One on arch 12 and the Harmony 650 on arch
+ * 14, each with its own unit record and its own list of dumps. The Harmony 525 is not here, since
+ * nothing has composed a configuration for it. On arch 14 the Harmony 600 enumerates identically to
+ * the 650 and is refused by the unit check.
  *
  * **This is the step `rehearse-block.ts` was the rehearsal for.** That script writes a unit's own
  * dump back, so its correct outcome is known in advance and a difference is a failure. This one
@@ -117,8 +124,31 @@ const SPARE_DUMPS = new Set([
   'one_spare_poweroff_base',
 ]);
 
-/** The lab's name for the unit this may run against. One label, because there is one write target. */
-const PERMITTED_UNIT_LABEL = 'one_spare';
+/**
+ * The Harmony 650's own region reads, section 282. Same rule as the spare's list: region reads only,
+ * each one the unit's content at the moment it was read, so every write adds the next one.
+ */
+const H650_DUMPS = new Set([
+  'h650_config_region',
+]);
+
+/** A remote this may run against, per architecture read off the device. */
+interface Target {
+  readonly model: string;
+  /** The lab's name for the unit, whose identity file the unit check compares against. */
+  readonly unitLabel: string;
+  readonly dumps: ReadonlySet<string>;
+}
+
+/**
+ * Keyed by what the device says, never by an argument, for the reason `rehearse-block.ts` gives: an
+ * argument would let an operator point one unit's allow list at another.
+ */
+const TARGETS: Readonly<Record<number, Target>> = {
+  12: { model: 'the spare Harmony One', unitLabel: 'one_spare', dumps: SPARE_DUMPS },
+  14: { model: 'the Harmony 650', unitLabel: 'h650', dumps: H650_DUMPS },
+};
+const ALL_DUMPS = new Set(Object.values(TARGETS).flatMap((t) => [...t.dumps]));
 
 function argument(name: string): string | undefined {
   const at = process.argv.indexOf(`--${name}`);
@@ -209,10 +239,18 @@ async function main(): Promise<void> {
     fail('--drop-only and --no-invalidate ask for opposite things: the first sends only the drop '
       + 'and the second sends everything but');
   }
+  // **The restart alone, section 282**, the other half of sending the two commands once each on the
+  // Harmony 650 before any write depends on them. Same precondition as `--drop-only`: the remote
+  // holds the file, read whole and compared, and nothing is erased.
+  const restartOnly = process.argv.includes('--restart-only');
+  if (restartOnly && (dropOnly || !restart)) {
+    fail('--restart-only sends the restart and nothing else, so it cannot be combined with '
+      + '--drop-only or --no-restart');
+  }
 
-  if (!SPARE_DUMPS.has(dumpName)) {
-    fail(`${dumpName} is not one of the spare Harmony One's own region reads `
-      + `(${[...SPARE_DUMPS].join(', ')}). Refusing: the byte compare below can only identify the `
+  if (!ALL_DUMPS.has(dumpName)) {
+    fail(`${dumpName} is not one of a permitted unit's own region reads `
+      + `(${[...ALL_DUMPS].join(', ')}). Refusing: the byte compare below can only identify the `
       + 'unit if the dump belongs to the unit that may be written to.');
   }
   const dumpPath = imagePath(dumpName);
@@ -286,17 +324,27 @@ async function main(): Promise<void> {
     say(`firmware ${identity.firmware}, flash id ${identity.flash}, `
       + `architecture ${architecture}, skin ${identity.skin}\n`);
 
-    const stored = unitIdentity(PERMITTED_UNIT_LABEL);
+    const unit = TARGETS[architecture];
+    if (unit === undefined) {
+      throw new Refusal(`architecture ${architecture} has no unit this may write to `
+        + `(${Object.entries(TARGETS).map(([a, t]) => `${a}: ${t.model}`).join(', ')})`);
+    }
+    if (!unit.dumps.has(dumpName)) {
+      throw new Refusal(`${dumpName} is not one of ${unit.model}'s own region reads `
+        + `(${[...unit.dumps].join(', ')}), and the remote on the cable is architecture `
+        + `${architecture}. Refusing rather than comparing one unit against another's content.`);
+    }
+    const stored = unitIdentity(unit.unitLabel);
     if (stored === undefined) {
-      throw new Refusal(`the lab has no recorded identity for ${PERMITTED_UNIT_LABEL}, so nothing `
-        + 'can say whether the remote on the cable is the one this may write to. Two Harmony Ones '
-        + `enumerate identically. Write it to ${unitIdentityPath(PERMITTED_UNIT_LABEL)}`);
+      throw new Refusal(`the lab has no recorded identity for ${unit.unitLabel}, so nothing `
+        + 'can say whether the remote on the cable is the one this may write to. Two remotes of one '
+        + `model enumerate identically. Write it to ${unitIdentityPath(unit.unitLabel)}`);
     }
     const permitted = unitIdentityFromText(stored);
     const identityBlock = await remote.readUnitIdentity();
     assertUnitIsPermitted({ identityBlock, permittedUnit: permitted });
     say(`unit identity ${unitIdentityText(identityBlock).slice(0, 8)}..., which `
-      + `matches the recorded ${PERMITTED_UNIT_LABEL}\n`);
+      + `matches the recorded ${unit.unitLabel}\n`);
 
     const base = CONFIG_REGION_BASE[architecture];
     const blockSize = ERASE_BLOCK_SIZE[architecture];
@@ -382,7 +430,7 @@ async function main(): Promise<void> {
     // with a test, because a boundary read the wrong way erases one block of a pair and leaves the
     // other holding the old byte, and every per block read back would still pass.
     const blocks = blocksDiffering(dump, target, base, blockSize);
-    if (blocks.length === 0 && !dropOnly) {
+    if (blocks.length === 0 && !dropOnly && !restartOnly) {
       say('the config is byte identical to the dump: there is nothing to write\n');
       return;
     }
@@ -391,8 +439,9 @@ async function main(): Promise<void> {
     // blocks to write would be measuring the drop and the write together, which is the confusion it
     // exists to resolve. Everything below then loops over an empty plan and the dump comparison
     // measures nothing, so the precondition that matters is the container read the branch performs.
-    if (dropOnly && blocks.length !== 0) {
-      throw new Refusal(`--drop-only wants a remote that already holds ${configPath}, and `
+    if ((dropOnly || restartOnly) && blocks.length !== 0) {
+      throw new Refusal(`${dropOnly ? '--drop-only' : '--restart-only'} wants a remote that already `
+        + `holds ${configPath}, and `
         + `${blocks.length} block(s) differ from ${dumpName}. Write it first, or name the dump and `
         + 'config that match what is on the device.');
     }
@@ -516,15 +565,41 @@ async function main(): Promise<void> {
       await containerMatchesTheFile();
       say('--drop-only: sending the cache drop and nothing else. No erase, no write, no restart\n');
       await remote.invalidateCachedRegions(permission);
-      say('the drop is sent. The remote keeps running; its verdict byte is now clear. Read its '
-        + 'clock, pull the cable, plug it back in, and read the clock again: a running time that '
-        + 'starts over is a restart the drop caused with no write anywhere in the chain\n');
+      // Section 250's clock experiment is a Harmony One's; on arch 14 the next erase consumes the drop's
+      // flag instead, section 282, so the advice differs per architecture.
+      say(architecture === 12
+        ? 'the drop is sent. The remote keeps running; its verdict byte is now clear. Read its '
+          + 'clock, pull the cable, plug it back in, and read the clock again: a running time that '
+          + 'starts over is a restart the drop caused with no write anywhere in the chain\n'
+        : 'the drop is sent. The remote keeps running with its verdict clear and a flag set that the '
+          + 'next erase consumes; a restart or a battery pull clears both\n');
+      return;
+    }
+    if (restartOnly) {
+      await containerMatchesTheFile();
+      say('--restart-only: sending the restart and nothing else. No drop, no erase, no write\n');
+      await remote.resetDevice(permission);
+      resetSent = true;
+      say('the restart is sent. The remote leaves the bus and comes back on its own; '
+        + 'give it a few seconds before enumerating again\n');
       return;
     }
 
+    // **On arch 14 the drop also arms the first erase after it**, section 282: that erase clears the
+    // flag wherever it is, and only an erase at exactly `0x030000` then updates a setting in the
+    // remote's settings store. This writes only the blocks that differ, in ascending order, so a run
+    // that leaves the first block alone spends the flag on another block and never touches the store.
     if (invalidate) {
       say('dropping the cached region descriptors, so nothing references the config while it '
         + 'changes, and so the remote re-checks what we write\n');
+      if (architecture === 14) {
+        say(blocks[0] === base
+          ? 'arch 14: the first erase is the configuration\'s first block, so the remote will also '
+            + 'look at setting 0x80 in its settings store and write it if its bit 0 is set, section 282\n'
+          : `arch 14: the first erase is 0x${blocks[0]!.toString(16)}, not the configuration's first `
+            + 'block, so the drop\'s flag is spent there and the settings store is left alone, '
+            + 'section 282\n');
+      }
       await remote.invalidateCachedRegions(permission);
     } else {
       say("--no-invalidate: the drop is deliberately not sent, which is section 250's control. "

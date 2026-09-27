@@ -267,7 +267,9 @@ test('a write target is refused the reboot unless its escape is traced and it is
   // The title was "a write target either dispatches the reset escape or is refused one" until then,
   // an either or that arch 14 made false by doing both.
   assert.deepEqual([...ARCHITECTURES_WITH_A_WRITE_TARGET], [9, 12, 14]);
-  assert.deepEqual([...ARCHITECTURES_WITH_A_RESET_TARGET], [12]);
+  // **Arch 14 joined on 27 September 2026, section 282**, once its path was read on the Harmony 650's
+  // own build, so traced and permitted are the same two architectures now.
+  assert.deepEqual([...ARCHITECTURES_WITH_A_RESET_TARGET], [12, 14]);
   for (const architecture of ARCHITECTURES_WITH_A_RESET_TARGET) {
     assert.ok(ESCAPE_SUB_COMMANDS[architecture]?.includes(ESCAPE_RESET), `architecture ${architecture}`);
   }
@@ -285,15 +287,16 @@ test('a write target is refused the reboot unless its escape is traced and it is
   assert.deepEqual(refused, [9]);
 });
 
-test('the reset escape is refused on a write target whose escape is unread, or that was never rebooted', () => {
+test('the reset escape is refused on a write target whose escape is unread, and allowed on the two that are traced', () => {
   // The runtime half of the pair above, and it needs the flag on: with writes disabled
   // `assertResetAllowed` throws at its first line for every architecture, so asserting a throw here
   // would say nothing about which condition fired. The message is what distinguishes them.
   //
   // Arch 9 (Harmony 525) may have a flash block written to it since 6 September 2026 and its escape
-  // dispatcher is unread, so it is refused by the dispatch check. Arch 14 (Harmony 650) is traced and
-  // has never been sent the reboot, so it passes that check and is refused by the reset list, section
-  // 281. Arch 12 (Harmony One) is the control: same call, same shape of permission, and it returns.
+  // dispatcher is unread, so it is refused by the dispatch check. Arch 12 (Harmony One) is the control:
+  // same call, same shape of permission, and it returns. Arch 14 (Harmony 650) was refused by the
+  // reset list from section 281 and is allowed since section 282, when its path was read on its own
+  // build; the list's refusal is dormant now, since no write target is traced and off it.
   const output = withWritesEnabled(`
     ${IDEAL_SOURCE}
     const say = (name, permission) => {
@@ -321,8 +324,8 @@ test('the reset escape is refused on a write target whose escape is unread, or t
         intendedVersion: {},
         versionBlock: rails.encodeVersionBlock({architecture: 9}),
       }),
-      // Arch 14 (Harmony 650) since section 281: a write target whose escape **is** traced, so only
-      // the reset list stands between it and a reboot nobody has sent to that architecture.
+      // Arch 14 (Harmony 650): a write target whose escape **is** traced. The reset list refused it
+      // from section 281 and admits it since section 282, which is what this now asserts.
       say('arch 14', {
         ...IDEAL,
         architecture: 14,
@@ -334,14 +337,15 @@ test('the reset escape is refused on a write target whose escape is unread, or t
   assert.deepEqual(JSON.parse(output), [
     'arch 12: allowed',
     'arch 9: RailError for the unread escape',
-    'arch 14: RailError for no reboot ever sent',
+    'arch 14: allowed',
   ]);
 });
 
-test('the invalidate is refused on arch 14, which may be written a block and nothing else', () => {
+test('the invalidate is allowed on every write target, arch 14 since its executor was read', () => {
   // Section 281. The invalidate took the write permission and nothing more, so putting the Harmony 650
-  // on the write list handed it a command whose arch 14 executor nobody has read. Arch 12 (Harmony
-  // One) is the control and returns; arch 9 (Harmony 525) keeps what it had before the split.
+  // on the write list handed it a command whose arch 14 executor nobody had read, and this asserted
+  // arch 14 was refused. Section 282 read the executor on the Harmony 650's own build and Danny
+  // added arch 14, so all three answer now and the list's refusal is dormant.
   const output = withWritesEnabled(`
     ${IDEAL_SOURCE}
     const say = (name, architecture) => {
@@ -363,7 +367,7 @@ test('the invalidate is refused on arch 14, which may be written a block and not
   assert.deepEqual(JSON.parse(output), [
     'arch 12: allowed',
     'arch 9: allowed',
-    'arch 14: RailError for the unread executor',
+    'arch 14: allowed',
   ]);
 });
 
@@ -395,7 +399,7 @@ test('firmware is never written, and there is no argument that changes that', ()
   assert.throws(() => assertFirmwareWriteRefused(), RailError);
 });
 
-test("arch 14's write target is the Harmony 650, for the block path and no other", () => {
+test("arch 14's write target is the Harmony 650, for the block path, the invalidate and the reboot, and not RAM", () => {
   // **This was "arch 14 has no write target on the bench"<!--superseded--> until 27 September 2026**, section 281,
   // when a Harmony 650 arrived and Danny made it the write target. The paragraph below is what was
   // true before and stays as the record of why the list held 14 out.
@@ -412,10 +416,12 @@ test("arch 14's write target is the Harmony 650, for the block path and no other
   // the Harmony 600 out now is the unit check, since both are arch 14; what this asserts is that the
   // arrival bought one path, the flash block, and not the three that have lists of their own.
   assert.deepEqual([...ARCHITECTURES_WITH_A_WRITE_TARGET], [9, 12, 14]);
-  assert.ok(!ARCHITECTURES_WITH_A_RESET_TARGET.includes(14), 'the reboot');
-  assert.ok(!ARCHITECTURES_WITH_AN_INVALIDATE_TARGET.includes(14), 'the invalidate');
+  // The reboot and the invalidate followed in section 282, each on its own evidence: the escape path
+  // and the selector 2 executor read on the Harmony 650's own build. The RAM write did not.
+  assert.ok(ARCHITECTURES_WITH_A_RESET_TARGET.includes(14), 'the reboot, section 282');
+  assert.ok(ARCHITECTURES_WITH_AN_INVALIDATE_TARGET.includes(14), 'the invalidate, section 282');
   assert.ok(!ARCHITECTURES_WITH_A_RAM_WRITE_TARGET.includes(14), 'the RAM write');
-  assert.deepEqual([...ARCHITECTURES_WITH_AN_INVALIDATE_TARGET], [9, 12]);
+  assert.deepEqual([...ARCHITECTURES_WITH_AN_INVALIDATE_TARGET], [9, 12, 14]);
 });
 
 test('the writable range needs both a region and a ceiling, and a hole in either refuses', () => {

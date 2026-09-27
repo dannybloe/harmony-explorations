@@ -120,8 +120,8 @@ export const ARCHITECTURES_WITH_A_WRITE_TARGET: readonly number[] = [9, 12, 14];
 // permission names the 650's unit record, and the 600's identity block differs from it, compared off
 // both units' own internal page reads. What this admits is the flash block path and nothing else,
 // the same shape as arch 9's arrival: the reboot and the invalidate have lists of their own below,
-// and arch 14 is on neither, because arch 14 dispatching an escape is not the same as anybody having
-// sent one to it.
+// and arch 14 was on neither, because arch 14 dispatching an escape is not the same as anybody having
+// sent one to it. It joined both in section 282, each on its own reading of the 650's build.
 
 /**
  * Architectures a config writer may **restart**, the escape's `0x02`, which is not the write list.
@@ -132,8 +132,14 @@ export const ARCHITECTURES_WITH_A_WRITE_TARGET: readonly number[] = [9, 12, 14];
  * nobody has sent to that architecture was the list it joined. Arch 12 (Harmony One) has had it sent,
  * section 247. Arch 9 (Harmony 525) has no escape row and `assertResetAllowed` refuses it on that
  * ground as well.
+ *
+ * **Arch 14 joined on 27 September 2026, section 282**, Danny's decision, once the path had been read
+ * on the Harmony 650's own build rather than only on the Harmony 700's, section 97: the escape's
+ * `0x02` sets one flag, the main loop turns it into mode 3, and mode 3 waits and executes `RESET`,
+ * with nothing on the way that writes program memory. The 600's bytes are identical, and the unit check
+ * is what keeps a restart off it.
  */
-export const ARCHITECTURES_WITH_A_RESET_TARGET: readonly number[] = [12];
+export const ARCHITECTURES_WITH_A_RESET_TARGET: readonly number[] = [12, 14];
 
 /**
  * Architectures a config writer may send the **invalidate** to, `WRITE_MISC` selector `0x02`, which
@@ -145,8 +151,16 @@ export const ARCHITECTURES_WITH_A_RESET_TARGET: readonly number[] = [12];
  * 12 (Harmony One), where it has been sent and its effect measured, sections 247 to 251, and arch 9
  * (Harmony 525), which was reachable through the write list since section 269 and has not been sent
  * one. Narrowing arch 9 is a separate decision and this commit does not take it.
+ *
+ * **Arch 14 joined on 27 September 2026, section 282**, Danny's decision, after its executor was read
+ * on the Harmony 650's own build: four five byte records in data memory cleared, the verdict and the
+ * container select bits cleared, and a flag set that the **next** `ERASE_FLASH` consumes. That last
+ * part is the difference from arch 12 and it is not this command's effect but the erase's: the first
+ * erase after a drop consumes the flag wherever it is, and if that erase is at `0x030000` it may
+ * update one setting in the remote's settings store in internal program memory at `0x1EC00`, which on
+ * both units read here would write nothing. The drop itself writes nothing persistent.
  */
-export const ARCHITECTURES_WITH_AN_INVALIDATE_TARGET: readonly number[] = [9, 12];
+export const ARCHITECTURES_WITH_AN_INVALIDATE_TARGET: readonly number[] = [9, 12, 14];
 
 /**
  * Architectures whose data memory may be written, which is not the same list and is deliberately
@@ -745,6 +759,10 @@ export function assertSessionEndAllowed(
  */
 export function assertInvalidateAllowed(p: WritePermission): void {
   assertPermissionIsUsable(p);
+  // **Dormant since section 282**, when arch 14 joined and this list became equal to the write list,
+  // so every architecture that gets past the line above is on it. It is kept because it wakes the
+  // moment the write list grows without it, which is exactly the arrival it exists for; the test
+  // pinning both lists is what says they are equal today.
   if (!ARCHITECTURES_WITH_AN_INVALIDATE_TARGET.includes(p.architecture)) {
     throw new RailError(
       `architecture ${p.architecture} may be written a block and not sent the invalidate: its `
@@ -788,17 +806,20 @@ export function assertInvalidateAllowed(p: WritePermission): void {
  *
  * The test stays as well, since the two claims differ: this refuses at runtime, and the test says
  * the tables have not drifted. **Since section 281 a second check follows it**, the reset list, which
- * refuses an architecture whose escape is traced and has never been sent the reboot: arch 14 (Harmony
- * 600, 650 and 700). The dispatch check runs first so that it stays reachable, arch 9 being the case
- * it refuses and the list never getting a say. The session end rail keeps its own copy because it takes the lighter
+ * refuses an architecture whose escape is traced and which nobody has decided to reboot. It refused
+ * arch 14 (Harmony 600, 650 and 700) until section 282 added it, and is dormant since. The dispatch
+ * check runs first so that it stays reachable, arch 9 being the case it refuses and the list never
+ * getting a say. The session end rail keeps its own copy because it takes the lighter
  * permission and always could be reached with any architecture.
  */
 export function assertResetAllowed(p: WritePermission): void {
   assertPermissionIsUsable(p);
-  // The dispatch check first and the list second, so that each has an architecture it is the one to
-  // refuse: arch 9 (Harmony 525) fails the first, arch 14 (Harmony 600, 650 and 700) passes it and
-  // fails the second. The other order made the first unreachable, since the list is `[12]` and arch
-  // 12 dispatches, which is the state the docstring above warns about. Section 281's review.
+  // The dispatch check first and the list second, so that each had an architecture it was the one to
+  // refuse: arch 9 (Harmony 525) fails the first, and arch 14 (Harmony 600, 650 and 700) passed it and
+  // failed the second until section 282. The other order made the first unreachable, since the list
+  // was `[12]` then and arch 12 dispatches, which is the state the docstring above warns about.
+  // **The second is dormant since section 282**, when arch 14 joined the reset list: every write
+  // target that dispatches the escape is on it. It wakes when one arrives that is not.
   const dispatched = ESCAPE_SUB_COMMANDS[p.architecture];
   if (dispatched === undefined || !dispatched.includes(ESCAPE_RESET)) {
     throw new RailError(

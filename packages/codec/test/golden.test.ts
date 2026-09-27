@@ -116,6 +116,7 @@ const CONTAINERS = [
   'one_spare_paired_base',
   'one_spare_screen_base',
   'one_spare_poweroff_base',
+  'h650_config_region',
   // The two configs Logitech compiled to a specification we wrote, section 132: the only samples
   // whose devices and activities were chosen before the bytes existed, so a disagreement between the
   // two implementations about them would be a disagreement about a known answer.
@@ -278,7 +279,8 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 64 since the compare base for the third activity write, section 277.
   // 68 since the compare base for the working screen write, section 279.
   // 69 since the compare base for the power off write, section 280.
-  assert.equal(present.length, 69, 'every vector, which is what `make golden` compares');
+  // 70 since the Harmony 650's configuration region, section 282, the first arch 14 compare base.
+  assert.equal(present.length, 70, 'every vector, which is what `make golden` compares');
   // 38 since the Harmony 895 landed: its key table reads with the existing reader even though
   // every other arch 10 reader is gated, which is what made section 177's keypad closure possible
   // without any arch 10 progress at all.
@@ -305,7 +307,8 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 59 since the compare base for the third activity write, section 277.
   // 63 since the compare base for the working screen write, section 279.
   // 64 since the compare base for the power off write, section 280.
-  assert.equal(complete, 64, 'the vectors whose container has a key table at all');
+  // 65 since the Harmony 650's configuration region, section 282.
+  assert.equal(complete, 65, 'the vectors whose container has a key table at all');
 
   // **The number sender field, and why it needs its own guard.** It is an empty array on 30 vectors
   // and null on 8, with eight carrying a record since 30 August 2026, and this comment said 25 and 9
@@ -337,7 +340,9 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // remote: the block's first 51195 bytes are `h525_config_2` exactly, so it necessarily declares
   // whatever that container declares. It is in the golden population because the two codecs should
   // be compared wherever they can be, not because it is a second sample.
-  assert.equal(senders.filter((one) => Array.isArray(one) && one.length === 0).length, 33);
+  // 34 since the Harmony 650's configuration region, section 282: its MyHarmony configuration
+  // declares no number sender.
+  assert.equal(senders.filter((one) => Array.isArray(one) && one.length === 0).length, 34);
   // **Four since the second compiled sample**, and the reason is the account rather than the request:
   // every configuration compiled from the account that carries favourite channels carries the sender
   // record too, whichever appliances are on it that day. Three of them were made deliberately for base
@@ -398,7 +403,8 @@ test('the list above covers exactly what the Python side writes a vector for', (
   // 64 since the compare base for the third activity write, section 277.
   // 68 since the compare base for the working screen write, section 279.
   // 69 since the compare base for the power off write, section 280.
-  assert.equal(python.length, 69, 'the golden vectors, which is what `make golden` prints');
+  // 70 since the Harmony 650's configuration region, section 282.
+  assert.equal(python.length, 70, 'the golden vectors, which is what `make golden` prints');
   assert.deepEqual([...CONTAINERS].sort(), python.sort());
 });
 

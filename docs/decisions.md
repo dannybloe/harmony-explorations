@@ -138,7 +138,8 @@ image is a second sample rather than a stand in. Other models are iterated on la
    architecture, and the unit check on the identity block read off the unit is the rail that tells them
    apart. The 650 brought the
    block write and nothing else: the reset escape and the invalidate gained lists of their own rather
-   than travelling with it.
+   than travelling with it, and arch 14 joined both later the same day, section 282, each on its own
+   reading of the 650's firmware and one send.
 7. **Heads down on our own derivation.** The findings in harmony-decompiler discussion #1 are
    treated as hypotheses to test, not as facts to adopt. The original format designer
    (`glenharris`) is active there and is a privileged source, but asking is held in reserve for

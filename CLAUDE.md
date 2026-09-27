@@ -799,9 +799,14 @@ document:
   281: one block written back unchanged, the blocks either side identical before and after the erase,
   and the whole configuration read back with the SHA-256 of the read before it. Its two constants came
   off four arch 14 firmware images, the ceiling `0x200000` from the address classifier and the 64 KiB
-  block from the eraser's SPI opcode `0xD8`. **The reset escape and the invalidate do not come with
-  it**: both had taken write permission and nothing more, so they have lists of their own now,
-  `[12]` and `[9, 12]`, and the RAM write stays `[12]`. **Arch 9 (Harmony 525) is a write target since
+  block from the eraser's SPI opcode `0xD8`. **The reset escape and the invalidate did not come with
+  it**: both had taken write permission and nothing more, so they got lists of their own, and arch 14
+  joined both in section 282 once each had been read on the 650's own build and sent to it once. The
+  lists are `[12, 14]` and `[9, 12, 14]` and the RAM write stays `[12]`. **What the invalidate arms
+  on arch 14 is the part to know**: the first erase after a drop consumes it, and only if that erase
+  is at `0x030000` does the remote update one setting in a settings store it keeps in its own
+  internal program memory at `0x01EC00`, two 1 KiB blocks below the identity block. On both units
+  read here that update writes nothing, since the setting already holds the value it would get. **Arch 9 (Harmony 525) is a write target since
   6 September 2026**, on Danny's word, which made `ARCHITECTURES_WITH_A_WRITE_TARGET` `[9, 12]`, and
   it is `[9, 12, 14]` since section 281. It was
   permitted from 5 September and refused by the rail until the demonstration was authorised, which is

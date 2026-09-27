@@ -14,9 +14,8 @@
  * performed the same day. The Harmony 600 is arch 14 too and reports the same product id, so what
  * keeps it out is the unit check against the `h650` record and not the architecture.
  *
- * **What arch 9 and arch 14 do not get with it** is a reset at the end: nothing has read the Harmony
- * 525's escape dispatcher, and the Harmony 650's is read but it has never been sent the reboot, so
- * the reset list refuses both. This script sends none either way: `writeBlock` erases, writes and verifies, and
+ * **What arch 9 does not get with it** is a reset at the end: nothing has read the Harmony 525's
+ * escape dispatcher. Arch 14 may be restarted since section 282. This script sends none either way: `writeBlock` erases, writes and verifies, and
  * the eight step sequence with its cache drop and its restart lives in `packages/corpus`. Nothing
  * here depends on the remote rebooting, and on arch 9 nothing has to: it has no re-check flag to
  * clear, section 253.

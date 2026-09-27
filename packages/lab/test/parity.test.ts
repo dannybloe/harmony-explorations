@@ -70,7 +70,8 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // 109 since the Harmony 650's config block, the compare base for its first write, section 281.
   // 110 since the bench Harmony 650's own firmware, which is not the published package's, section 281.
   // 111 since that unit's identity page, which is what keeps the Harmony 600 out, section 281.
-  assert.equal(Object.keys(pythonImages()).length, 111, 'every fixture tests/lab.py names');
+  // 112 since that unit's whole configuration region, write-config.ts's compare base, section 282.
+  assert.equal(Object.keys(pythonImages()).length, 112, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {
@@ -122,5 +123,10 @@ test('the two sides exclude the same fixtures from the parseable population', ()
   // under the read it was built from.
   // The nineteenth is the compare base for the working screen write, section 279, the same shape.
   // The twentieth is the compare base for the power off write, section 280, the same shape again.
-  assert.equal(names.length, 21, 'each one a container already counted, or that container plus a known edit');
+  // **The twenty second is the first of a different kind**, the Harmony 650's configuration region,
+  // section 282: its container is counted nowhere, and it is excluded so that registering a compare
+  // base does not quietly add a configuration to every corpus wide total. Whether the 650 joins the
+  // corpus is a decision of its own.
+  assert.equal(names.length, 22, 'each one a container already counted, that container plus a known '
+    + 'edit, or a compare base whose remote is not yet in the corpus');
 });

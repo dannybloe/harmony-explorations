@@ -2826,7 +2826,7 @@ granularity is 62:
 |---|---|---|
 | `+0x0000` | 8438, an image, version 1.6 | 41624, the tail of the application |
 | `+0xE000` | 634, an image, version 3.4 | absent |
-| `+0xEC00` | absent | **121 bytes, unidentified** |
+| `+0xEC00` | absent | **121 bytes, unidentified**, the settings store since section 282 |
 | `+0xF400` | 64, the identity block | 48, the identity block with its fourth field erased |
 | `+0xF580` | 4 | 4 |
 | `+0xF5C0` | **2, unidentified** | absent |
@@ -36405,7 +36405,9 @@ invalidate half**: the test pairing the write list with the escape table failed 
 14 added, while no test tied the invalidate to an architecture at all, its one arch 14 case being
 refused by the version block's architecture before any list. The invalidate was found by reading the
 rails, and it has a runtime test now. The reset rail's two checks run in the order that keeps both
-reachable, dispatch first, which refuses arch 9, then the list, which refuses arch 14.
+reachable, dispatch first, which refuses arch 9, then the list, which refuses arch 14. **Section 282
+added arch 14 to both lists**, after reading each command on the 650's own build and sending it once,
+so the list checks are dormant since.
 
 ### The demonstration
 
@@ -36471,3 +36473,160 @@ erase at `0x030000`, or a Harmony 600 whose identity block matches the 650's rec
 * `tests/test_findings.py`: the classifier's population gains the two 650 images.
 * `packages/usb/test/rails.test.ts` and `rehearsal.test.ts`: the reset and invalidate refused on arch
   14 at runtime, and every test that pinned the old lists rewritten to the new ones.
+
+## 282. On the Harmony 650 the cache drop arms the next erase, and the restart is the Harmony 700's
+
+`todo.md` 1.4.1: read the cache drop and the restart in the Harmony 650's own firmware, then send each
+once. Both were read before anything was sent, on the 650's 0.2 build read off the unit, and every
+routine below is byte identical on the Harmony 600's 0.2, asserted range by range. What the Harmony
+One's reading predicted held for the command itself. What it did not predict is what the command
+leaves behind for the next one.
+
+### The cache drop
+
+`WRITE_MISC`'s selector chain is at `0xC314` on both 0.2 builds, one per image, and `0xC3AA` on the
+700 2.8 and the 650 0.4 package; `chains.py` decodes the same nine selectors on all four, with `0x07`
+landing on the RAM write as its calibration. Selector `0x02` is at `0xC344`:
+
+1. `CALL 0x15E1E`, which walks **four** five byte records at data `0x0EE6`, clears bit 0 of each,
+   zeroes the other four bytes, and through the leaf `0x107A2` zeroes a two byte entry each at
+   `0x063 + 2i`. The Harmony One's walk is the same over three records at `0x0EE8`, section 246.
+2. `BCF 0x68B,2` and, if set, `BCF 0x68B,4`: the verdict and the container select bit, section 252.
+3. 1 into `0x725`, and the packet handled flag.
+
+A walk from the executor to the shared exit reaches no table write and no write of `EECON1` or
+`EECON2`, which is what writing internal program memory needs, and the eraser is not reached. The
+walk's control is the settings store writer below, which it does find.
+
+**Both reviewers found the flag gates only this extra**, not the erase itself: the parse sets the
+erase state before it tests the flag, so an erase goes ahead the same either way.
+
+**The flag at `0x725` is read by `ERASE_FLASH`.** Its parse handler, state 8 at `0xC240`, reads the
+three address bytes and then tests the flag. When the flag is clear nothing else happens, which is
+every erase this project had sent to the 650 before, section 281's among them. When it is set the
+handler clears it and:
+
+* for an address of `0xFE0000` or more, internal program memory, sets the verdict and select bits
+  back;
+* for exactly `0x030000`, the configuration's first block, reads setting `0x80` from the **settings
+  store**, clears its bit 0, and writes it back.
+
+### The settings store
+
+Internal program memory from `0x01EC00`, page `0xFF` `+0xEC00`, which `docs/memory-map-600.md` listed
+as 121 unidentified bytes. The PIC18F67J50 has no data EEPROM, and this is the emulation: two 1 KiB
+blocks, `0x01EC00` and `0x01F000`, **used one at a time**. A block opens with a four byte header, `fc
+ff 00 00` on both units, which the firmware reads through `0xD2A0` to pick the active block; the
+second reviewer reads bit 1 as active and bit 2 as ready to receive, not re-derived here. After the
+header come two byte records, setting then value, appended in order.
+
+* **A lookup, `0xDA04`, scans the active block backwards** from its last slot and returns the first
+  record for the setting, so the latest one wins.
+* **A write, `0xDB60`, returns without writing when the value is unchanged**, `0xDC34` to `0xDC52`.
+  Otherwise it appends the record with two table writes and a word program, `EECON1 = 0x24`, and
+  reads it back.
+* **When the active block fills**, the append that fills it calls `0xD442` at `0xDCF8`, which copies
+  the latest value of every setting into the other block and erases nothing.
+* **When no free slot is left**, the write's code 4, the caller `0xDD16` runs that copy, `0xDD32`,
+  and tries again. Only if the retry also returns 4 does it erase both blocks, `EECON1 = 0x14`
+  through `0x19C2E`, and then `0xD804` writes a fresh header and the one record being written. **Every
+  other setting is lost at that point**, which is a reformat and not a compaction.
+
+The erase loop's own literals give its span, `0x01EC00` plus two strides of `0x0400`, which ends at
+`0x01F400`, exactly where the identity block begins, and every path above stays inside that span. So
+none reaches the identity block or the configuration words at the top of the part.
+
+On the two units, read off page `0xFF`, records counted after the header:
+
+| | records | second block | setting `0x80`, in order |
+|---|---|---|---|
+| Harmony 600 | 59 | erased | `0xF8`, `0xFF`, `0xFE` |
+| Harmony 650 | 3 | erased | `0xF8`, `0xFF`, `0xFE` |
+
+So on both, setting `0x80`'s latest value already has bit 0 clear, and an erase at `0x030000` after a
+drop writes nothing to the store. A block holds 510 records, so neither unit is near the copy, let
+alone the reformat. What any setting means is unread.
+
+**The consequence for a writer, and it matters for 1.4.2.** The flag is consumed by the **first**
+erase after the drop, wherever it is, and only an erase at exactly `0x030000` touches the store.
+`write-config.ts` erases only the blocks that differ, in ascending order, so a write that leaves the
+configuration's first block alone uses up the drop on another block and never reaches the store. A
+write that changes the first block would reach it, and on these two units would still write nothing.
+concordance sends the drop before its erases on arch 14, section 245. Logitech's own client was not
+read for this architecture, and whether its sequence touches the store by another route is open: the
+0.2 build also has a settings read and write driven over USB, from command state `0xB2` and `0xB3`,
+and concordance's arch 14 path sends `WRITE_MISC` selector `0x0A` before and after the erase. Neither
+was traced.
+
+### The restart
+
+The escape handler is at `0xBCBC`. Its sub-command chain sends `0x02` and `0x03` to `0xBCFC`, which
+puts 1 into `0x1FF`. That flag's reader at `0x15090` puts 3 into the mode variable `0x740`, and the
+mode dispatch sends 3 to `0x1516E`: `0x01F4` loaded for a wait, a poll, a finishing call, and `RESET`
+at `0x1518C`. That is section 97's shape on the 700 2.8 at other addresses, and the walk from
+`0x1516E` writes no program memory.
+
+### Sent once each
+
+Danny decided to add arch 14 to the two lists section 281 had split out, and `write-config.ts` now
+takes its unit from the architecture the way the rehearsal does, the spare Harmony One on arch 12 and
+the Harmony 650 on arch 14, with `--restart-only` beside `--drop-only`. Both runs first read the whole
+configuration off the remote and compared it with the file, and a fresh region read was the compare
+base. No erase was sent.
+
+| | `0x68B` | `0x725` |
+|---|---|---|
+| before | `0x16` | `0x00` |
+| after the drop, acknowledged | `0x02` | `0x01` |
+| after the restart | `0x16` | `0x00` |
+
+The drop cleared exactly bits 2 and 4 and set the flag, as read. After the restart the remote was off
+the bus at two seconds and back at eight, in its application, software type 0 and skin 72, and Danny
+saw it restart. The verdict and select bits standing again say the boot validated the configuration.
+
+### Scope, decision 16
+
+* The readings: arch 14, the Harmony 650's and the Harmony 600's 0.2 builds. The two builds differ
+  in 1395 bytes, section 281, and every routine named here is byte identical between them. On the 700
+  2.8 and the 650 0.4 package the chain was decoded and selector 2's opening read: it sets two flags
+  where the 0.2 builds set one, `0x380` and `0x1E9` on the 700 and `0x37E` and `0x0E9` on the 0.4 by
+  the second reviewer's read, and the verdict byte there is `0x68E`. What it arms on those builds is
+  unread.
+* The sends: one Harmony 650.
+* Arch 12's invalidate arms nothing that section 246 found; arch 9's executor is unread.
+
+### Sources
+
+The firmware, and section 97, 246 and 252's readings on the other builds. Logitech's client was not
+consulted: the question was what this build does with two commands whose bytes are already known.
+
+### Falsification
+
+A write of program memory reachable from the drop or the restart; an erase at `0x030000` after a drop
+that changes the store when setting `0x80`'s last value has bit 0 clear; a settings store erase that
+reaches `0x01F400`.
+
+### Where it lands
+
+* `packages/usb/src/rails.ts`: 14 on the reset and the invalidate list, whose refusals are dormant.
+* `packages/corpus/bin/write-config.ts`: the unit by architecture and `--restart-only`.
+* `tests/test_arch14_write_target.py`: the shared ranges, the drop's executor and its walk with a
+  control, the erase's reading of the flag, the store's span and its append and compaction, both
+  units' stores, and the restart path.
+* `packages/usb/test/rails.test.ts`: the lists and the runtime answers for arch 14.
+* `docs/usb-protocol.md` and `docs/memory-map-600.md`: the structured half.
+
+### The reviewers
+
+Both ran on the whole diff. **The second reviewer found the store written up wrong**: the draft said a
+full store is erased and "written back compacted", and the code first copies the latest values into
+the other block, erasing nothing, and erases both only when that fails, after which it writes a bare
+header and every other setting is gone. It also found the record counts including the header, 61 and
+5 where the records are 59 and 3; the hedge on the lookup removable, since it scans backwards; the
+drop described as arming "the next erase at `0x030000`" where it arms the next erase and only one at
+that address uses it, which is what the writer's consequence above now says; "Logitech's own sync"
+asserted with the client unread; the builds called byte identical where the routines are; and stale
+rail text. All corrected. **The two reviewers disagreed on the store's size**: the blind one gave one
+1 KiB block from its scan bound, and the second two blocks used in turn. The erase loop's literals,
+asserted in the test, name two, and the scan bound is per block, so both are right about what they
+measured.

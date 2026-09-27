@@ -156,6 +156,9 @@ IMAGES = {
     # target's rehearsal dump. It starts with a configuration of 907660 bytes, so no container ends
     # inside it, and it equals the whole external flash read of the same morning at 0x030000.
     'h650_region_030000': '20260927T0906Z-h650-region-030000-region.bin',
+    # The Harmony 650's whole configuration region, fourteen blocks from 0x030000, the compare base
+    # for write-config.ts on that unit, section 282.
+    'h650_config_region': '20260927T1022Z-h650-config-region.bin',
     # The arch 9 safe mode container, cut out of the 525's firmware region at flash 0x818000.
     # Deliberately not in CONTAINERS: it is the sample the corpus wide claims are re-derived
     # against, and two of them are still open, base slot 1's extent and the log area's range.
@@ -462,7 +465,13 @@ PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_confi
                       # for byte for all 51195 of it. Counting it again would inflate every corpus
                       # wide total by one configuration that does not exist, which is precisely
                       # what this list is for. Section 268.
-                      'h525_region_820000')
+                      'h525_region_820000',
+                      # The Harmony 650's configuration region, write-config.ts's compare base,
+                      # section 282. Excluded for a different reason from the rest: its container is
+                      # counted nowhere else, and that is the point. Whether the 650's configuration
+                      # joins the corpus is a decision of its own, since every corpus wide total
+                      # would move, and a compare base is not the place to take it.
+                      'h650_config_region')
 
 CONTAINERS = (
     'h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'h525_config_2', 'one_config',
