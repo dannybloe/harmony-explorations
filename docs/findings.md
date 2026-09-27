@@ -18371,7 +18371,7 @@ from the corpus.
   rather than at `>= 15`, which was equal to the population by coincidence and would not have stayed so.
 * `reference/superseded.md`: the two dead phrasings.
 
-## 138. The clock is state variables 0 to 6, and the firmware owns thirteen of them
+## 138. The clock is state variables 0 to 6, and the firmware owns thirteen of them<!--superseded-->
 
 Section 137 posed the question this answers: whether a remote's clock is read from base slot 3's record
 or from base slot 13's `first`, which no measurement of a clock can separate because section 130
@@ -18469,7 +18469,12 @@ The field naming in section 111 is unaffected and stays the strongest evidence f
 because it pairs each RAM byte with a record field by watching the subtraction, including the skip over
 the derived weekday at `0x10C`.
 
-### The firmware owns thirteen state variables, not seven
+### The firmware owns thirteen state variables, not seven<!--superseded-->
+
+**Corrected by section 284.** Thirteen is arch 9's block. The boundary below was read off two Harmony 525
+configs and one safe mode container; on arch 8, 12 and 14 indices 13 to 17 are fixed in every user
+configuration, safe mode differing at 14 on arch 12, and unnamed, and the firmware's fill starts at 18,
+as on arch 12 and 14 its checksum does, so there it owns eighteen. The argument is right and was applied to the corpus at once instead of per architecture.
 
 Measured over 21 containers, the 19 of the corpus population plus the two arch 8 header samples. For each
 index from 7 to 12 there is **exactly one `first`/`second` pair per architecture**, with no variation
@@ -35538,9 +35543,10 @@ to the bound was wrong: the Harmony 525 carries the identical seven instructions
 callers. What is genuinely unmeasured there is the **fill**, so nothing here says whether a Harmony 525
 paints over a variable above its storage.
 
-Arch 8 (Harmony 880 and 885) and arch 10 (Harmony 890 and 895) have no image here at all. The corpus
+Arch 8 (Harmony 880 and 885) and arch 10 (Harmony 890 and 895) have no image here at all.<!--superseded--> The corpus
 identity holds on all four architectures the corpus carries, which is a claim about generators and not
-about firmware.
+about firmware. **Corrected by section 284**: arch 8 has two images here, and their seeder fills from the
+literal 18 at `0x17370` as the others do; arch 10 has none.
 
 ### What is not established
 
@@ -36839,7 +36845,7 @@ and that is the cheapest test of the second.
 and 17 directly, at `0xE1D`, `0xE20` and `0xE21`, beside 7 and 9 to 12, and the sum and the failure path's
 paint both start at 18. The rail reserves 0 to 12, from arch 12's reading in section 138. Whether a
 composed variable at 13 to 17 would be overwritten on the Harmony 650 is unmeasured, and it wants
-reading before step 1.4.3 composes one.
+reading before step 1.4.3 composes one. **Section 284 answered it**: 0 to 17 on arch 8, 12 and 14.
 
 ### Scope, decision 16
 
@@ -36944,3 +36950,146 @@ visible; `0xED8` offered as evidence though it did not change, where `0xEE5`'s w
 flag test blind to arithmetic writes; and the restart ordinals disagreeing between files. All
 corrected.
 
+
+## 284. The firmware owns state variables 0 to 17 on arch 8, 12 and 14, and 0 to 12 only on arch 9
+
+**Section 138's boundary is arch 9's and was read as everyone's.** It cut the firmware's block at 12
+because index 13 varies inside an architecture and two configs name it through base slot 0, and every
+one of those is a Harmony 525 container: `h525_config` names 13 `CurrentLocation`, 15, 16 and 17,
+`h525_config_2` names 13, 15 and 17, and its safe mode container names 14. On the other architectures
+the firmware's own routines put the boundary at 18, and the configurations agree.
+
+### The firmware, which is what can tell
+
+**The seeder's alternative fill starts at the literal 18 on seven images, six builds of three
+architectures.** It is the arm that paints `0xFE` from a constant rather than from `narrow + 2 * wide`,
+section 276: `0x2A33E` on the Harmony One 3.4, `0x17A52` on the Harmony 700 2.8, `0x16102` on the 0.2
+build, read off both the Harmony 600 and the 650 and the same at this address though the two reads
+differ elsewhere, `0x1782A` on the 650's 0.4 package, and `0x17370` on the Harmony 880 and 885 images,
+whose variables sit at `0x108` as the Harmony One's do. Every image's flag arm loads 18 a second time. **The checksum that decides whether the seeder runs
+at all starts at index 18 too, on arch 12 and 14**: at data `0x11A` on the Harmony One, seeded `0xA5`
+from `0x2A234` and compared with `0x189` at `0x2A27C`, at `0x912` on the Harmony 700 and the 650's 0.4
+package and at `0xE22` on the 0.2 build, section 283. The arch 8 images carry no such sum. None of the seed loops tests
+the index, so a configuration's `first` still seeds 0 to 17; the block shows in where the fill and the
+checksum start, and in who else writes it.
+
+**The firmware stores its own state into 13 to 17 and into nothing above them, up to where each
+image's fill stops**, 126 on the Harmony One, 191 on the 0.2 build, 254 on the Harmony 700 and the 0.4
+package and 63 on arch 8, counting the tracer's banked, `MOVFF` and bit stores: 13, 15, 16 and 17 on the
+Harmony One, all five on the Harmony 700, 13, 16 and 17 on both 650 builds and the 600, and 13, 15, 16
+and 17 on the Harmony 880 and 885. The hits above 17, at 56 on the Harmony One, 21 on the 600's read,
+and 24, 56 and 57 on arch 8, all sit inside data that only decodes as code: the USB report descriptor,
+and on arch 8 the text `FLASH Memory ID`, `Erase` and `Clear`, with bank selects like `0x01A1` and
+`0x01E1` that are `MOVLB` only by ignoring its reserved bits. The writers are plain
+stores and conditional ones: on the Harmony One 13 is cleared in an initialiser and set from `PORTB` bit
+1 at `0x2400E`, 15 and 16 are stored only when a newly derived value differs, and 17 is copied from
+`0x6B8`. When they run against the seeder is unread, so a configuration's value there is replaced
+whenever they do, which is not shown for every boot; and 14 on the Harmony One and 14 and 15 on the 0.2
+builds and the 0.4 package, 15 on the 0.4 package and 14 on the Harmony 880 and 885 have no direct
+writer at all, belonging to the block by the fill, and on arch 12 and 14 the checksum, alone.
+
+**Arch 9's boundary is its firmware's too**, at 13 rather than 18: its seeder compares the index against
+the literal 13 and skips below it, section 274, and its alternative fill starts at the literal 13,
+`0x4824`, which is section 274's second entry.
+
+### The configurations, which agree and cannot tell
+
+Over every container in the lab whose state table reads, the 22 named after the table below plus the
+spare Harmony One's series, the calibration and compiled containers Logitech's service built for two
+accounts, `calibration_h600`, `h650_delay90_region` and the vendor region files: on arch 8 (Harmony 880
+and 885), arch 12 (Harmony One) and arch 14 (Harmony 600, 650 and 700) each index from 13 to 17 states
+one `first` and `second` per architecture, the one exception being 14 on arch 12, where the safe mode
+container states 0 / 1 against 2 / 4 in every user configuration; and none of the containers that carry
+a name tree names anything below 18. Index 18 varies on all three, by two pairs among the user
+configurations of arch 12 and 14, the third there being the safe mode containers', which state exactly
+18 narrow variables so that their 18 is their one wide one.
+
+| index | arch 8 | arch 9 | arch 12 | arch 14 |
+|---|---|---|---|---|
+| 13 | 1 / 1 | 0 / 0, and 0 / 2 in safe mode | 1 / 1 | 0 / 32 |
+| 14 | 0 / 1 | three pairs | 2 / 4, and 0 / 1 in safe mode | 1 / 1 |
+| 15 | 0 / 3 | three pairs | 0 / 3 | 0 / 3 |
+| 16 | 0 / 1 | two pairs | 0 / 1 | 0 / 1 |
+| 17 | 0 / 3 | two pairs | 0 / 3 | 0 / 3 |
+| 18 | four pairs | 0 / 3 | three pairs | three pairs |
+
+The 22 are arch 8's six, four saved configurations of one arch 8 remote whose model is not stated and
+one configuration each of an 880 and an 885; arch 9's three; arch 12's six, which are four distinct
+containers from two Harmony Ones, the two safe mode entries being one container and
+`one_config_unprogrammed` being byte for byte `one_spare_before_sync`; and arch 14's seven, from a Harmony 600, a 650 and a 700 and their
+three safe mode containers. The Harmony 525's safe mode container holds sixteen variables, so its
+column from 16 down is the two user configurations alone.
+
+**This half cannot separate a firmware constant from a generator constant**, since every configuration
+here is the output of Logitech's own generator or of ours editing its output, and naming carries little
+on its own: above 17, 21 to 33 percent of each table is unnamed on arch 14, 30 to 53 on arch 8 and 42
+to 78 on arch 12, over every lab container of theirs that carries a name tree. What it adds is that 13 to 17 is an unbroken fixed and unnamed
+run in every container of those three architectures, which is what a writer needs to know. On arch 9 it
+is naming that carries the boundary, not fixedness: 13 is 0 / 0 in both user configurations, and 18 is
+0 / 3 and unnamed in both.
+
+### What changes
+
+* `FIRMWARE_STATE_VARIABLE_MAX_BY_ARCHITECTURE` in `packages/codec/src/inventory.ts`, 17 on arch 8, 12
+  and 14 and 12 on arch 9, and `firmwareStateVariableMax`, which gives an unlisted architecture the
+  widest block. The composer's two rails and `compose-activity.ts` ask it for the container's own
+  architecture. `FIRMWARE_STATE_VARIABLE_MAX` stays 12 as the block common to every architecture, which
+  is what the naming table `FIRMWARE_STATE_VARIABLES` covers.
+* Nothing composed so far is affected. A composed device's power variable goes in at `narrow`, section
+  277, which is 40 or more in every Harmony One user configuration here, 62 on the Harmony 650 and 18
+in the safe mode containers, so never inside the block; and an
+  activity targets a device's named power variable, and nothing below 18 is named on these
+  architectures. What the old rail allowed, on every architecture, was an activity written to 13 to 17.
+
+### Scope, decision 16
+
+Firmware read on arch 8, 9, 12 and 14, seven images plus the Harmony 525's; configurations on the same
+four. Arch 10 (Harmony 890 and 895) is not checked, because nothing here reads its state table, and gets
+the widest block by default; arch 16 (Harmony 300 and 350) and arch 18 (Harmony Touch) have no state
+table read here. What 13 to 17 mean is unread, beyond 13 on the Harmony One being set from an input pin.
+
+### Sources
+
+Section 138's own table and argument, section 274's arch 9 seeder, section 276's reading of the
+alternative fill, and section 283's lead and sums. Logitech's client was not consulted: which variables
+a compiled configuration reserves is the firmware's statement and the configuration's, not the client's.
+
+### Falsification
+
+An image of arch 8, 12 or 14 whose alternative fill or checksum starts elsewhere, or that stores into an
+index from 18 up; a configuration of those architectures that names an index from 13 to 17, or states a
+second pair there outside arch 12's 14.
+
+### Where it lands
+
+* `tests/test_firmware_state_block.py`: the literal 18 on seven images, each followed by the store the
+  computed arm joins, the Harmony One's checksum from index 18 and its compare, the stores into 13 to
+  17 pinned per image and none above them up to each fill's top but the table hits, each checked to sit
+  in a descriptor or a string, and the Harmony 525's fill from 13 with its join.
+* `packages/codec/test/inventory.test.ts`: the per architecture table over the 22, arch 9's names, and
+  the constant and function; section 138's test retitled to the claim it carries, 0 to 12 on every
+  architecture, with its naming check confined to arch 9.
+* `docs/config-format.md`, `CLAUDE.md`'s rail table, the `writing-a-config` skill,
+  `docs/adding-a-device.md`, section 138 corrected in place, section 276's arch 8 sentence corrected,
+  section 283's lead answered, and `reference/superseded.md`.
+
+### The reviewers
+
+The blind one reached 0 to 17 and 0 to 12 from the firmware and the configurations without our answer,
+and added the Harmony One's checksum from index 18 and the Harmony 525's fill from 13, both now above.
+The second found the population stated as every container where it was 22 of many, all of which agree;
+the samples' independence overstated, arch 12's six being four files; the safe mode exception applied at
+arch 12's 14 and not at arch 9's 13, and a test counting a missing record as a pair; the naming claim
+vacuous on containers with no name tree; "overwritten" where the writers are conditional and some
+indices have none; the firmware evidence understated, with the checksum, the 650's 0.4 package and
+indices above 18 unread; arch 8 said to have no image where two are in the lab, a stale sentence
+section 276 carried too; a composed device's variable said to go at the end where it goes in at
+`narrow`; the old rail said to refuse 13 to 17 on arch 9 where it refused them nowhere; and section 138's
+retitled test still demanding a name at 13 on every architecture. All corrected. A second pass found
+the unnamed share misstated; bit stores and indices above 63 left out of the store census, which
+turned up three more hits, all in the USB report descriptor; six images where there are seven, the 0.2
+build's two reads differing elsewhere; a checksum claimed for arch 8, which has none; index 18's third
+pair on arch 12 and 14 being the safe mode containers' wide variable; and the population described
+loosely in places. All corrected, and its account of the Harmony One's gate, a branch at `0x2A276`
+read as the sum's compare, was checked and corrected in turn: that branch is the flag test, and the
+compare is at `0x2A27C`.

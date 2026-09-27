@@ -15,7 +15,7 @@ import { IMAGES, PARSEABLE_EXCLUDED, load, require_, skipUnless, skipWithoutLab 
 import {
   ComposeError,
   DEVICE_QUANTITY_DEFAULT,
-  FIRMWARE_STATE_VARIABLE_MAX,
+  firmwareStateVariableMax,
   IR_PULSE_MARK,
   IR_PULSE_MAX,
   blockOfStatedCode,
@@ -152,8 +152,8 @@ for (const host of HOSTS) {
     assert.equal(device?.codes, TELEVISION.length);
     const variable = stateVariables(after).find((one) => one.index === composed.variable);
     assert.equal(variable?.name, 'LG_Power_2');
-    assert.ok(composed.variable > FIRMWARE_STATE_VARIABLE_MAX,
-              'the new variable sits above the firmware\'s own thirteen');
+    assert.ok(composed.variable > firmwareStateVariableMax(after.architecture),
+              'the new variable sits above the firmware\'s own block');
 
     // **The new variable is a one byte one, which means it goes in at `narrow`**, section 277: no
     // two byte variable anywhere in the corpus carries a transition, 0 of 64, and a device's power
@@ -813,7 +813,7 @@ const ACTIVITY_HOSTS = ['one_config_unprogrammed', 'h600_config', 'h525_config',
 function aDeviceVariable(c: ReturnType<typeof parse>): number {
   const counter = stateVariables(c).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME));
   const found = stateVariables(c)
-    .find((one) => one.index > FIRMWARE_STATE_VARIABLE_MAX && one.index !== counter?.index);
+    .find((one) => one.index > firmwareStateVariableMax(c.architecture) && one.index !== counter?.index);
   assert.ok(found !== undefined, 'the container has no variable an activity could write');
   return found.index;
 }
@@ -923,7 +923,7 @@ test('the activity composer refuses what would produce a container that merely p
   // A label has to be drawable, which is printable ASCII, and cannot be nothing.
   assert.throws(() => composeActivity(c, { ...ok, label: '' }), ComposeError);
   assert.throws(() => composeActivity(c, { ...ok, label: 'Caf\u00e9' }), ComposeError);
-  // The firmware owns thirteen variables and an activity may not write one, section 138.
+  // The firmware owns a block of variables and an activity may not write one, sections 138 and 284.
   assert.throws(() => composeActivity(c, { ...ok, targets: [{ variable: 3, value: 1 }] }),
     ComposeError);
   // **A variable past the end, refused by the count and not by the seven bit rail.** The comment
@@ -1096,7 +1096,7 @@ test('an activity composed and then put on the menu is reachable through all fou
   const c = parse(require_('one_config_unprogrammed'));
   const counter = stateVariables(c).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME));
   const target = stateVariables(c)
-    .find((one) => one.index > FIRMWARE_STATE_VARIABLE_MAX && one.index !== counter?.index);
+    .find((one) => one.index > firmwareStateVariableMax(c.architecture) && one.index !== counter?.index);
   assert.ok(target !== undefined, 'the container has no variable an activity could write');
 
   const built = composeActivity(c, {

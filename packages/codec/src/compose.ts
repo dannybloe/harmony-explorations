@@ -75,7 +75,7 @@ import {
   SEND_INFRARED,
   DEVICE_QUANTITY,
   DEVICE_QUANTITY_DEFAULT,
-  FIRMWARE_STATE_VARIABLE_MAX,
+  firmwareStateVariableMax,
   KEY_EVENT_SHIFT,
   stateVariables,
 } from './inventory.ts';
@@ -214,7 +214,9 @@ const HANDLER_TAG_RESUME = 5;
 // `FIRMWARE_STATE_VARIABLE_MAX = 12` beside it until 6 September 2026. The two were equal and the pairing was
 // worse than an ordinary duplicate: the rails below read this file's copy while `compose.test.ts`
 // imported the other one, so the check and the test that says the check is right were reading
-// different constants. Section 138 is the reading, that the firmware owns variables 0 to 12.
+// different constants. Section 138 is the reading, that the firmware owns variables 0 to 12 on every
+// architecture, and section 284 the correction, that it owns 0 to 17 on arch 8, 12 and 14, so the
+// rails below ask `firmwareStateVariableMax` for the container's own architecture.
 
 /**
  * Append entries to one of the counted pointer tables, which is the one growth every section
@@ -495,7 +497,7 @@ export function composeDevice(c: Container, device: ComposeDevice): ComposedDevi
   // count states, section 86.
   const states = stateTable(current);
   if (states === undefined) throw new ComposeError('base slot 13 does not read as a table');
-  if (states.count < FIRMWARE_STATE_VARIABLE_MAX + 1) {
+  if (states.count < firmwareStateVariableMax(current.architecture) + 1) {
     throw new ComposeError("a table without the firmware's own variables is not one to extend");
   }
   const recordLength = STATE_RECORD_HEADER + STATE_VALUE_LENGTH * 2;
@@ -749,7 +751,7 @@ export function composeActivity(c: Container, activity: ComposeActivity): Compos
     .filter((one) => one.record !== undefined)
     .map((one) => [one.index, (one.record as { second: number }).second]));
   for (const target of activity.targets) {
-    if (target.variable <= FIRMWARE_STATE_VARIABLE_MAX) {
+    if (target.variable <= firmwareStateVariableMax(c.architecture)) {
       throw new ComposeError(
         `variable ${target.variable} is the firmware's, and an activity may not write one`);
     }

@@ -56,6 +56,8 @@ import {
   pageScans,
   FIRMWARE_STATE_VARIABLES,
   FIRMWARE_STATE_VARIABLE_MAX,
+  FIRMWARE_STATE_VARIABLE_MAX_BY_ARCHITECTURE,
+  firmwareStateVariableMax,
   stateTable,
   SCREEN_ROWS,
   touchOwner,
@@ -1103,7 +1105,7 @@ test('base slot 13 starts with the firmware\'s own clock, seeded from the build 
     assert.equal(FIRMWARE_STATE_VARIABLE_MAX, 12);
   });
 
-test('the firmware owns thirteen state variables, and the six above the clock are per architecture',
+test('the firmware owns 0 to 12 on every architecture, and the six above the clock are per architecture',
   skipUnless(...INVENTORY.map(([name]) => name)), () => {
     // Section 138. The clock's own seven are proven by equalling base slot 3's timestamp, which says
     // nothing about 7 to 12. Those rest on two things instead: within one architecture every container
@@ -1144,14 +1146,16 @@ test('the firmware owns thirteen state variables, and the six above the clock ar
         `${key} takes ${values.size} values across its architecture (${[...values].join(', ')}), so it ` +
         'is not a firmware constant');
     }
-    // And the boundary is measured rather than chosen: index 13 is where a config starts naming one.
+    // And the boundary is measured rather than chosen: index 13 is where a config starts naming one, on
+    // arch 9 only, section 284; elsewhere nothing below 18 is named and the next test says why.
     const namesThirteen = [...INVENTORY].filter(([name]) => {
       const c = parse(load(name) as Uint8Array);
-      return new Set(stateVariables(c).map((one) => one.index)).has(FIRMWARE_STATE_VARIABLE_MAX + 1);
+      return c.architecture === 9
+        && new Set(stateVariables(c).map((one) => one.index)).has(FIRMWARE_STATE_VARIABLE_MAX + 1);
     });
     assert.ok(namesThirteen.length > 0,
-      'no container names variable 13, so the block may reach further than 12 and this test would not ' +
-      'notice: section 138 rests on that boundary being visible');
+      'no arch 9 container names variable 13, so its block may reach further than 12 and this test ' +
+      'would not notice: arch 9\'s half of the boundary rests on that name being visible');
 
     // The closure, and the reason to believe the meanings rather than only the fixedness: section 111
     // measured these four bytes on a connected Harmony One and section 103 read their level counts out
@@ -1169,6 +1173,68 @@ test('the firmware owns thirteen state variables, and the six above the clock ar
         `section 111 measured ${measured} at 0x${(0x108 + index).toString(16)} where the config's ` +
         `maximum is ${record.second}`);
     }
+  });
+
+/** The 22 containers of section 284's table; the lab's other readable ones agree and are not listed. */
+const FIRMWARE_BLOCK_POPULATION: Readonly<Record<number, readonly string[]>> = {
+  8: ['arch8_config_880', 'arch8_config_885', 'arch8_config_a', 'arch8_config_b', 'arch8_config_c',
+    'arch8_config_d'],
+  9: ['h525_config', 'h525_config_2', 'h525_safemode_ahcm'],
+  12: ['one34_region2', 'one_config', 'one_config_unprogrammed', 'one_safemode', 'one_spare_after_sync',
+    'one_spare_before_sync'],
+  14: ['h600_config', 'h600_safemode_gspm', 'h650_config_region', 'h650_safemode_gspm', 'h700_config',
+    'h700_config_2', 'h700_gspm'],
+};
+
+test('the firmware owns 0 to 17 on arch 8, 12 and 14, and 0 to 12 on arch 9',
+  skipUnless(...Object.values(FIRMWARE_BLOCK_POPULATION).flat()), () => {
+    // Section 284. Section 138 cut the block at 12 because index 13 varies and is named on arch 9, and
+    // read that as every architecture's boundary. Measured per architecture instead: on 8, 12 and 14
+    // indices 13 to 17 state one `first` and `second` in every container, safe mode ones included, and
+    // no container names one, while 18 varies on all three. The one exception is 14 on arch 12, where
+    // the two safe mode containers state their own pair, which is still no freedom for a config.
+    const pairs = new Map<string, Set<string>>();
+    const namedPerContainer = new Map<string, number[]>();
+    for (const [arch, names] of Object.entries(FIRMWARE_BLOCK_POPULATION)) {
+      for (const name of names) {
+        const c = parse(require_(name));
+        assert.equal(c.architecture, Number(arch), `${name} is arch ${arch}`);
+        const records = stateRecords(c) as Array<{ first: number; second: number }>;
+        const named = stateVariables(c).map((one) => one.index);
+        const kind = /safemode|region2|_gspm$/.test(name) ? 'safe' : 'user';
+        for (let index = 13; index <= 18; index += 1) {
+          // The Harmony 525's safe mode container holds sixteen variables, so it has no 16 to 18; any other
+          // container short of 18 records fails here rather than passing on what it lacks.
+          if (records[index] === undefined && name === 'h525_safemode_ahcm') continue;
+          assert.ok(records[index] !== undefined, `${name} has no record ${index}`);
+          const key = `${arch}/${index}/${index === 14 && arch === '12' ? kind : 'any'}`;
+          if (!pairs.has(key)) pairs.set(key, new Set());
+          pairs.get(key)?.add(`${records[index]?.first}/${records[index]?.second}`);
+        }
+        const namedInBlock = named.filter((index) => index >= 13 && index <= 17).sort((a, b) => a - b);
+        namedPerContainer.set(name, namedInBlock);
+        if (arch !== '9') {
+          assert.deepEqual(named.filter((index) => index <= 17), [], `${name} names part of 0 to 17`);
+        }
+      }
+    }
+    for (const arch of ['8', '12', '14']) {
+      for (let index = 13; index <= 17; index += 1) {
+        for (const [key, values] of pairs) {
+          if (!key.startsWith(`${arch}/${index}/`)) continue;
+          assert.equal(values.size, 1, `${key} takes ${[...values].join(', ')}`);
+        }
+      }
+    }
+    // 18 varies on all three: four pairs on arch 8 and three on arch 12 and on arch 14.
+    assert.deepEqual(['8', '12', '14'].map((arch) => pairs.get(`${arch}/18/any`)?.size), [4, 3, 3]);
+    // On arch 9 it is naming that carries the boundary, not fixedness, since 13 is 0/0 in both user
+    // configurations: both name some of 13 to 17 and the safe mode container names 14.
+    assert.deepEqual(['h525_config', 'h525_config_2', 'h525_safemode_ahcm'].map((n) => namedPerContainer.get(n)),
+      [[13, 15, 16, 17], [13, 15, 17], [14]]);
+    // The rail follows, and an architecture nothing measured gets the widest block.
+    assert.deepEqual(FIRMWARE_STATE_VARIABLE_MAX_BY_ARCHITECTURE, { 8: 17, 9: 12, 12: 17, 14: 17 });
+    assert.deepEqual([8, 9, 12, 14, 10, undefined].map(firmwareStateVariableMax), [17, 12, 17, 17, 17, 17]);
   });
 
 test('a page binds more keys than it sends codes with, which is why pageScans exists',

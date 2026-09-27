@@ -52,7 +52,8 @@ SEEKED_SLOTS = {
 }
 SEEKER_CALL_SITES = {12: 24, 14: 19, 9: 17}
 
-# The firmware owns state variables 0 to 12, section 138. Arch 9's loop names the 13 as a literal.
+# Arch 9's firmware owns state variables 0 to 12, and its loop names the 13 as a literal. Section 138 read
+# that as every architecture's block; section 284 found 0 to 17 on arch 8, 12 and 14.
 FIRMWARE_STATE_VARIABLES = 13
 # The record's "no initial value" marker on arch 12 and arch 14, one byte of it.
 NO_INITIAL_VALUE_BYTE = 0xFE

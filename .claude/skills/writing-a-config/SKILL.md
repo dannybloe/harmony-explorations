@@ -66,10 +66,14 @@ produce a config the remote accepts and mishandles.
   weekday, month and year, each equal to the corresponding field of base slot 3's timestamp in all 21
   containers. So a carried over config carries a stale clock in two places, not one, and none of them may
   be reused for anything else, which section 74 had already said of 3, 5 and 6. **The firmware owns
-  thirteen and not seven**, section 138: variables 7 to 12 state the identical value and maximum in every
-  container of their architecture and base slot 0 names none of them, index 13 being where both stop. So
-  the rail is to reuse none of 0 to 12, and on arch 9 (Harmony 525) their values differ from the other
-  three architectures, so a carried over config must keep each architecture's own. **It is eight values and
+  more than seven, and how many is per architecture**, sections 138 and 284: its variables state the
+  identical value and maximum in every user configuration of their architecture, safe mode differing at
+  14 on arch 12, and base slot 0 names none of them, which stops at 12 on arch 9 (Harmony 525) and at 17 on arch 8, 12 and 14, where the firmware's
+  alternative fill also starts at 18 on every image read, the checksum does on arch 12 and 14, and it
+  stores into several of 13 to 17 itself. So the rail is to reuse
+  none of that block, `firmwareStateVariableMax`, and their values differ per architecture, so a carried
+  over config must keep each architecture's own. Section 138 said thirteen for every architecture, having
+  measured the boundary on two Harmony 525 configs. **It is eight values and
   sometimes nine, not seven**, which building the rail found rather than reading it. **Five** maxima are
   constants, `59, 59, 23, 6, 11`. Two move with their value and both have to be stamped: the year's is
   that year plus one, and the day of the month's is 30 in every container here because none was built on

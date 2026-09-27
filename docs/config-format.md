@@ -1888,8 +1888,9 @@ inside the maxima stated here, with the battery exactly at its own, which is a c
 hardware reading and a config field with no shared code behind them.
 
 **For a writer:** stamp all seven clock records at the moment of writing, the same rail as base slot 3's
-timestamp, and **reuse none of 0 to 12 for anything**. A carried over config sets the remote's clock to
-when the old config was made.
+timestamp, and **reuse none of the firmware's block for anything**: 0 to 17 on arch 8, 12 and 14, and 0
+to 12 on arch 9, section 284. A carried over config sets the remote's clock to when the old config was
+made.
 
 **Two of the seven maxima move with their value**, so a save writes eight values and sometimes nine
 rather than seven. **Five** of the maxima are constants, `59, 59, 23, 6, 11` for the second, minute,
@@ -3947,7 +3948,7 @@ arch 8 inserts a NULL at slot 8 and arch 12 inserts that plus a real section at 
 | 10 | the action list table | 38 |
 | 11 | screen language programs | 40 |
 | 12 | the timer table | 43 |
-| 13 | the state variable table: a range, and transitions carrying one instruction. Variables 0 to 12 are the firmware's own, and 0 to 6 **are** its clock | 35, 60, 86, 130, 138 |
+| 13 | the state variable table: a range, and transitions carrying one instruction. Variables 0 to 17 are the firmware's own on arch 8, 12 and 14 and 0 to 12 on arch 9, and 0 to 6 **are** its clock | 35, 60, 86, 130, 138, 284 |
 | 14 | the state value map, indexed by opcode `0x72`'s high byte | 39 |
 | 15 | the parameter block: numbered groups of `u16` | 44 |
 | 16 | the number sender: one record per appliance that takes a number, with a table per digit. Seven made configs populate it and no found one does, and it carries only the channels that survive being written as an integer | 39, 154, 156, 165 |

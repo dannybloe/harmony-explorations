@@ -1674,10 +1674,43 @@ export const FIRMWARE_STATE_VARIABLES: Readonly<Record<number, string>> = {
 /**
  * The highest index the firmware owns, so a writer can refuse the whole block in one test.
  *
- * Section 138. Thirteen, not seven: index 13 is where variation inside an architecture starts and where
- * two configs name a variable through base slot 0, which is the boundary rather than a chosen cut.
+ * Section 138. Thirteen, not seven, is the block **common to every architecture**: on arch 9 index 13 is
+ * where its configs start naming a variable through base slot 0 and its firmware's literal 13 sits. Section 284 found the
+ * block reaching 17 on the other three, so a writer asks `firmwareStateVariableMax` below.
  */
 export const FIRMWARE_STATE_VARIABLE_MAX = 12;
+
+/**
+ * The highest index the firmware owns, per architecture: what a writer refuses, section 284.
+ *
+ * `FIRMWARE_STATE_VARIABLE_MAX` above is the block common to every architecture, and it was read as
+ * the block on all of them until section 284 measured 13 to 17 separately. On arch 8 (Harmony 880 and
+ * 885), arch 12 (Harmony One) and arch 14 (Harmony 600, 650 and 700) those five carry one `first` and
+ * `second` per architecture in every container, safe mode ones included, with a single exception at 14
+ * on arch 12 where safe mode states its own; base slot 0 names none of them; and the firmware's
+ * alternative fill starts at 18 on the Harmony One, 600, 650, 700, 880 and 885 images, as the checksum
+ * that gates the seeder does on the Harmony One and arch 14. The firmware also stores into some of them
+ * directly, 13, 15, 16 and 17 on the Harmony One, the 880 and the 885, all five on the 700, and 13, 16
+ * and 17 on the 650 and 600, and into none above 17 but bytes of data that decode as code. Section
+ * 138's cut at 12 came from arch 9 (Harmony 525), where its configurations name 13 upward and its own
+ * seeder compares the index against the literal 13.
+ *
+ * An architecture not listed gets the widest block, since refusing a variable that turns out to be free
+ * costs a composer nothing and writing one the firmware owns costs a device that silently misbehaves.
+ * Arch 10 (Harmony 890 and 895) is not listed because nothing here reads its state table.
+ */
+export const FIRMWARE_STATE_VARIABLE_MAX_BY_ARCHITECTURE: Readonly<Record<number, number>> = {
+  8: 17,
+  9: 12,
+  12: 17,
+  14: 17,
+};
+
+/** The highest firmware owned index on `architecture`, the widest known block when it is unlisted. */
+export function firmwareStateVariableMax(architecture: number | undefined): number {
+  const stated = architecture === undefined ? undefined : FIRMWARE_STATE_VARIABLE_MAX_BY_ARCHITECTURE[architecture];
+  return stated ?? Math.max(...Object.values(FIRMWARE_STATE_VARIABLE_MAX_BY_ARCHITECTURE));
+}
 
 /**
  * A screen variant's conditions in words, one per branch the program took.

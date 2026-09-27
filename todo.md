@@ -53,7 +53,7 @@ Plan: [003-how-an-activity-is-built.md](docs/plans/003-how-an-activity-is-built.
   - [x] 1.4.1 Read the cache drop and the restart in the 650's own firmware, then send each once: both as read, and the drop arms the next erase, which at 0x030000 may update a setting in the remote's settings store (section 282)
   - [x] 1.4.2 A first write that changes something: one delay byte changed and reverted, to see what a remote that keeps its settings in memory does with a new one: live straight after the restart, and every restart resets the clock (section 283)
   - [ ] 1.4.3 A composed device on the 650, catalogue to remote, as 4.3.1 did on the One
-    - [ ] Read whether variables 13 to 17 are the firmware's on the 650 before composing one there, since its build writes 13, 16 and 17 directly (section 283)
+    - [x] Read whether variables 13 to 17 are the firmware's on the 650 before composing one there: they are, 0 to 17 on the Harmony One, 600, 650, 700 and 880 and 885 while the 525 keeps 0 to 12, and the rail follows (section 284)
   - [ ] 1.4.4 A composed activity, which needs 1.2.3 and 1.2.6 first
 
 ## 2. Screens

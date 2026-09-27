@@ -42,7 +42,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import {
   ACTION_QUEUE_INSTRUCTIONS,
   ACTIVITY_STATE_NAME,
-  FIRMWARE_STATE_VARIABLE_MAX,
+  firmwareStateVariableMax,
   activityBindings,
   assertQueueFits,
   assertStateTableConsistent,
@@ -125,7 +125,7 @@ const lists = before.actionLists() ?? [];
 for (const target of targets) {
   const variable = stateVariables(before).find((one) => one.index === target.variable);
   if (variable === undefined) fail(`the config has no state variable ${target.variable}`);
-  if (variable.index <= FIRMWARE_STATE_VARIABLE_MAX) {
+  if (variable.index <= firmwareStateVariableMax(before.architecture)) {
     fail(`variable ${target.variable} is one of the firmware's own, which an activity may not write`);
   }
   const transition = variable.record?.values.find((one) => one.to === target.value);

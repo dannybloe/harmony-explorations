@@ -563,7 +563,7 @@ finding.
 
 `todo.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 283<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 284<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -827,6 +827,12 @@ figures common to both carry `fact:` markers, so `make facts` moves every copy t
 cannot drift apart; what a reader should not expect is two independent statements of one measurement.
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
+
+**And the firmware keeps more of the remote's state for itself than the rules said, section 284.** The
+first eighteen state values are the firmware's on the Harmony One, the 600, 650 and 700 and the 880 and 885,
+where the rule had said thirteen: the thirteen came from the Harmony 525, which really does let a
+configuration use most of the rest. A writer now refuses the right block per model. Nothing written so far
+touched the difference.
 
 **And the Harmony 650 took a changed configuration, section 283.** One device's power on delay
 raised from six seconds to nine and put back, each a two block write with everything read back. On

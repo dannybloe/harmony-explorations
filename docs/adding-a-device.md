@@ -486,9 +486,9 @@ A device is not a list of codes. Seven pieces, and each one is an insertion that
       `composeDevice` appends `<label>_Power_2` at level 1 under the new variable's index and grows
       the frame's own stated length; the label is refused if it carries the grammar's separator
 - [x] base slot 13: its state variables with their transitions, one action list instruction each, and
-      **none of the firmware's own 0 to 12**, section 138. One power variable, `first` 0 because
-      nothing runs when a config is generated, both transitions running the power command's list, and
-      the new index asserted above the firmware's thirteen
+      **none of the firmware's own block**, 0 to 17 on a Harmony One, sections 138 and 284. One power
+      variable, `first` 0 because nothing runs when a config is generated, both transitions running the
+      power command's list, and the new index asserted above the firmware's block
 - [x] base slot 10: one action list per command, so a binding has something to point at. One
       four byte list per command, a single send of `(group << 8) | record`, appended to the table so
       no existing list renumbers
