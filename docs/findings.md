@@ -36704,26 +36704,58 @@ Kodi 0.
 **Every restart put the clock back to the configuration's stamp**, 08:39:42, which base slot 3 and base
 slot 13's records 0 to 6 both carry, read 12 to 28 seconds afterwards. So a configuration written
 without restamping leaves the remote showing its stamp time, and a writer for this model has to stamp
-it, as the rails already say. Which of the two the clock comes from is not settled here, and it
-matters: if it is the records, the loop ran on a restart with nothing written, since the sum guards
-every index.
+it, as the rails already say. Which of the two the clock comes from is not settled here.
 
-**Variables 7 to 12 say nothing about this.** They read `1 0 3 4 10 4` after every restart where the
-configuration states `0 0 5 0 0 0`, but the boot writes variable 11 to 10 at `0x14FAC` straight after
-the seeder, and 7, 9, 10 and 12 have writers elsewhere.
+**Variables 7 to 12 say nothing about this.** They read `1 0 3 4 10 4` after the write restarts and
+`1 0 0 4 10 4` after the bare restart below, where the configuration states `0 0 5 0 0 0`, but the
+boot writes variable 11 to 10 at `0x14FAC` straight after the seeder, and 7, 9, 10 and 12 have writers
+elsewhere.
 
-**Why the reload ran on the 0.2 build is open.** Leads not yet read: whatever the bootloader below
-`0x9000` does to data memory before the application starts, which is not in these images; whether the
-software stack from `0xE00` reaches the summed span; and any indirect writer the tracer cannot see.
-**Two experiments would narrow it with no write**: start an activity, read `CurrentActivityState` at
-`0xE32`, send a restart alone and read it again, which says whether the loop runs on a bare restart;
-and read a byte no startup code writes before and after a restart, which tests whether data memory
-survives this restart at all.
+### A bare restart undoes what an activity changed
+
+The first of the two experiments the review named was run. The remote cannot be used while it is on
+the cable, so Danny unplugged the 650, started TV kijken, and plugged it back in. The variables were
+read at rest, after that, and ten seconds after the escape's restart with nothing written:
+
+* **At rest** the array from byte 18 equals the configuration's `first` values except three unnamed
+  variables, indices 44, 46 and 69, which read 1, 1 and `0xFEFD` where the records state 0; the first
+  and last are their record's maximum. None of the three has a direct access in the image, so whatever
+  sets them does so indirectly.
+* **After the activity** `CurrentActivityState` read 2 where its idle value is 3, eight variables in
+  the summed span had moved, all narrow, indices 32, 34, 39, 47, 51, 54, 55 and 56, and the stored sum
+  was restamped to match. So plugging the cable back in kept the running state.
+* **After the bare restart** the array from byte 18 equals the state at rest byte for byte:
+  `CurrentActivityState` 3 again, every moved variable back, the same three unnamed variables included.
+
+Each stored sum equals `0xA5` XOR its own snapshot's bytes 18 to 107, which is the firmware's sum if
+the 84 bytes after the array are still painted `0xFE`; those were not read. **So on this unit's 0.2
+build a restart with nothing written puts back every variable the activity changed, although the sum
+matched just before it.** Seven of the eight moved variables have a `first` of 0, so this alone cannot
+tell a reload from a clear; `CurrentActivityState`'s 3 is its `first` and also its maximum, and no
+direct writer of it is in the image. What carries "from the configuration" is the delay above, which
+went to 90 and back to 60 with the flash across a restart. **Either data memory does not survive this
+restart, or something at boot spoils or bypasses the sum; which is open.**
+
+**The clock went back twice.** It read 09:06:34 at rest, then 08:41:40 after the replug, the stamp plus
+1 minute 58 seconds, then the stamp plus 12 seconds after the bare restart. So a clock reset happened
+during the unplug or the replug too. If it was at the replug, the clock was reset while the activity's
+variables were kept, which would separate the clock's reset from the reload; which of the two it was
+is not decided by these reads.
+
+Leads not yet read: whatever the bootloader below `0x9000` does to data memory before the application
+starts, which is not in these images; whether the software stack from `0xE00` reaches the summed span;
+the seeder's second caller at `0x0F390`; and any indirect writer the tracer cannot see. A dump of data
+`0x000` to `0xDFF` before and after a second bare restart: 712 nonzero bytes identical, 46 changed,
+`0x800` to `0xCFF` zero both times. On its own that cannot tell memory kept from memory rebuilt
+identically, but `0x500` to `0x5FF` holds what looks like an infrared duration buffer, identical across
+the restart; if nothing at boot writes it, it is evidence that memory is kept. This configuration has
+no variable marked `0xFEFE`, which the reload would skip and which would be the clean test.
 
 ### Scope, decision 16
 
-* The measurement: one Harmony 650 on its 0.2 build, one delay raised and put back, and one restart
-  alone.
+* The measurement: one Harmony 650 on its 0.2 build, one delay raised and put back, and three
+  restarts alone: one read for the clock, one after an activity was started with the variables read,
+  and one with only data `0x000` to `0xDFF` read.
 * The reading: the seeder, its sum and the store are byte identical on the Harmony 600's and the 650's
   0.2 builds, asserted range by range. The Harmony 700's 2.8 and the 650's 0.4 package have the same
   sum at other addresses **and** the drop's forced reload, which the 0.2 builds lack. What the 600 or
@@ -36733,24 +36765,29 @@ survives this restart at all.
 
 ### Sources
 
-The firmware, sections 138, 234, 274 and 282, and the lab note `work/plan-1.4/1.4.2-delay-change-NOTES.md`
-written before the write and holding every reading above. Logitech's client was not consulted: the
+The firmware, sections 138, 234, 274 and 282, the lab note `work/plan-1.4/1.4.2-delay-change-NOTES.md`
+written before the write and holding every reading above, and `reads/20260927T1150Z-h650-ram-activity-restart.bin`
+with its notes, the three snapshots. Logitech's client was not consulted: the
 question was what this unit does with a configuration whose bytes we chose.
 
 ### Falsification
 
 A write that changes a stated variable and reads back the old value in memory after the restart; a
 restart that leaves the clock running rather than reloading it; a region read after such a write that
-differs anywhere but the edited bytes and the trailer.
+differs anywhere but the edited bytes and the trailer; a bare restart after an activity that leaves
+`CurrentActivityState` at the activity's value.
 
 ### Where it lands
 
 * `tests/test_arch14_write_target.py`: the sum's span, seed and `XORWF` on two builds, the entry gate,
   the guard and the loop's skip past the store, the store's address and restamp, the failed validation
   path ending in the paint from byte 18, the later builds' drop flag, the two region reads' two byte
-  difference, and the record's memory address.
+  difference, the record's memory address, and the three snapshots of the activity experiment: each
+  sum against its own array, the eight variables the activity moved, and the restart putting back
+  the state at rest.
 * `packages/lab`, `tests/lab.py` and the golden vectors: `h650_delay90_region`, the compare base the
-  revert used, excluded from the corpus like `h650_config_region`.
+  revert used, excluded from the corpus like `h650_config_region`. `packages/lab` and `tests/lab.py`
+  also name `h650_ram_activity_restart`, the snapshots, which is not a container.
 * `docs/config-format.md` beside `first`, `docs/memory-map-600.md`, and section 282's scope corrected.
 
 ### The reviewers
@@ -36765,3 +36802,14 @@ write, where using the remote changes variables inside the sum; it attributed th
 where base slot 3 carries the same stamp; and it offered variables 7 to 12 as a caution where the image
 shows the boot writing them. It also found three figures missing from the lab note, the memory map
 header claiming more was read live than was, and two test assertions that stopped short. All corrected.
+
+**The addition's reviewers.** The blind one reproduced every figure of the activity experiment from the
+snapshots and the configuration alone, and noticed the clock going back before the activity as well as
+after the restart. The second found the draft saying a restart reloads "every variable" where eleven
+of the 85 do not equal their `first` afterwards, the seconds of the clock, six firmware variables and
+the three unnamed ones, and the evidence covers the eight the activity moved; it counted sixteen, which
+a recount put at eleven; the bold
+sentence presupposing memory survives the restart; "a remote on the cable runs nothing" where its
+clock ticks; the replug read as settling when the clock was reset; variable 9's reading after the bare
+restart contradicting the line above it; and the sum closure stating the painted tail as fact where it
+was not read. All corrected.

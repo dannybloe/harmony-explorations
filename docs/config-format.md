@@ -2781,8 +2781,9 @@ validation does not reload: the variables above byte 18 are painted `0xFE`. **Th
 force a reload after a cache drop**, a flag the drop sets and the next boot turns into a spoiled sum;
 the 0.2 builds have no such flag. **Measured on a Harmony 650 running 0.2, a changed `first` was
 nonetheless in force straight after a write and its restart**, both ways, and every restart put the
-clock back to the configuration's stamp, so an unstamped configuration shows its stamp time. Why the
-reload ran on that build is open.
+clock back to the configuration's stamp, so an unstamped configuration shows its stamp time. **A bare
+restart, with nothing written, puts back every variable an activity changed**, although the sum
+matched. Whether data memory survives that restart, or something spoils the sum, is open.
 
 **The idle value is the record's `first` field**, base slot 13 at +0x00, which section 60 read as an
 initial value and marked unconfirmed. No binding writes it, in fifteen of fifteen user configs. The

@@ -832,7 +832,8 @@ accounting table** here, which was a real duplicate with nothing added and has b
 raised from six seconds to nine and put back, each a two block write with everything read back. On
 this model a delay is a setting the remote holds in memory, and the firmware this unit runs reads as
 though a restart keeps the old one; newer firmware for the same model forces a reload. It did not keep it: the new value was live straight after the
-restart, both ways, read out of the remote's memory. Every restart also set the remote's clock back to
+restart, both ways, read out of the remote's memory. A restart with nothing written does the same:
+after an activity was started, restarting put back everything the activity had changed. Every restart also set the remote's clock back to
 the time stamped in the configuration, so a writer for this model has to stamp it.
 
 **And Off switches it off, section 280.** A device goes off when the remote writes 0 into its power

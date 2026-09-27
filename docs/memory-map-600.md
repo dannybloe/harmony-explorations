@@ -80,7 +80,7 @@ The 600 was not measured.
 |---|---|
 | `0xE10` | the state variables, `narrow` bytes then two per wide one; the clock is the first seven |
 | `0xE22` to `0xECF` | what the reload checksum covers, an XOR seeded `0xA5` |
-| `0xED2` | that checksum, restamped by every store; at boot, once a container validated, a match skips the reload |
+| `0xED2` | that checksum, restamped by every store; at boot, once a container validated, a match skips the reload in the image, which was measured not to hold across a restart on the 650, section 283 |
 | `0x68B` | the verdict and container select bits, section 282 |
 | `0x725` | the flag the cache drop sets and the next erase consumes, section 282 |
 

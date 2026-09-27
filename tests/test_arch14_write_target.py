@@ -578,5 +578,67 @@ class TheDelayWriteChangedTwoBytesOfTheRegion(unittest.TestCase):
         self.assertEqual(0xE10 + table.narrow + 2 * (index - table.narrow), 0xE54)
 
 
+class ABareRestartUndoesWhatAnActivityChangedOnTheHarmony650(unittest.TestCase):
+    """Section 283's activity experiment, from the three snapshots filed in the lab.
+
+    Each snapshot is the 108 byte variable array from data 0xE10 and then the stored sum at 0xED2:
+    at rest, after an activity was started off the cable, and ten seconds after a bare restart.
+    """
+
+    REGION = 0x030000
+
+    def snapshots(self):
+        data = lab.load('h650_ram_activity_restart')
+        self.assertEqual(len(data), 3 * 109)
+        return [(data[k * 109:k * 109 + 108], data[k * 109 + 108]) for k in range(3)]
+
+    def seeded(self):
+        """What the seeder writes from the configuration's `first` values, byte for byte."""
+        from harmony import gspm
+        region = lab.load('h650_config_region')
+        table = gspm.parse(region).state_table()
+        out = bytearray(table.ram_bytes)
+        for index, address in enumerate(table.entries):
+            at = address - self.REGION
+            first = region[at] | region[at + 1] << 8
+            self.assertNotEqual(first, 0xFEFE, 'no record here skips the reload')
+            if table.is_narrow(index):
+                out[index] = first & 0xFF
+            else:
+                off = table.narrow + 2 * (index - table.narrow)
+                out[off:off + 2] = bytes([first & 0xFF, first >> 8])
+        return bytes(out)
+
+    def test_each_stored_sum_is_the_xor_of_its_own_snapshot(self):
+        # The sum covers 0xE22..0xECF: array bytes 18 to 107 and then 84 bytes the seeder paints 0xFE,
+        # whose XOR is zero since the count is even. Those 84 were not read, so this closes on the
+        # assumption that they are still painted; three matches of three make chance unlikely.
+        lab.require('h650_ram_activity_restart')
+        for k, (array, stored) in enumerate(self.snapshots()):
+            with self.subTest(k):
+                total = 0xA5
+                for byte in array[18:]:
+                    total ^= byte
+                self.assertEqual(total, stored)
+
+    def test_the_activity_moved_eight_variables_and_the_restart_put_every_one_back(self):
+        lab.require('h650_ram_activity_restart', 'h650_config_region')
+        (rest, _), (active, _), (restarted, _) = self.snapshots()
+        seeded = self.seeded()
+        # CurrentActivityState is index 34, narrow, at 0xE32: idle 3, then TV kijken's 2.
+        self.assertEqual((rest[34], active[34], restarted[34]), (3, 2, 3))
+        moved = [i for i in range(18, 108) if active[i] != rest[i]]
+        # All eight are narrow variables, one byte each, so the byte offset is the variable's index.
+        self.assertEqual(moved, [32, 34, 39, 47, 51, 54, 55, 56])
+        # The restart put back exactly the state at rest.
+        self.assertEqual(restarted[18:], rest[18:])
+        # And that state is the configuration's `first` values except three unnamed variables,
+        # indices 44, 46 and 69, which read 1, 1 and 0xFEFD where the records state 0; 44 and 69 at
+        # their record's maximum. Identical at rest and after the restart, so something after the
+        # seeder sets them, and nothing in the image accesses them directly.
+        differ = {0xE10 + i: restarted[i] for i in range(18, 108) if restarted[i] != seeded[i]}
+        self.assertEqual(differ, {0xE3C: 1, 0xE3E: 1, 0xE5C: 0xFD, 0xE5D: 0xFE})
+
+
 if __name__ == '__main__':
     unittest.main()

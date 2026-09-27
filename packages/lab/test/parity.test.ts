@@ -72,7 +72,8 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // 111 since that unit's identity page, which is what keeps the Harmony 600 out, section 281.
   // 112 since that unit's whole configuration region, write-config.ts's compare base, section 282.
   // 113 since that region again after 1.4.2's delay write, the compare base for the revert.
-  assert.equal(Object.keys(pythonImages()).length, 113, 'every fixture tests/lab.py names');
+  // 114 since the 650's state variable snapshots across a bare restart, section 283.
+  assert.equal(Object.keys(pythonImages()).length, 114, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {
