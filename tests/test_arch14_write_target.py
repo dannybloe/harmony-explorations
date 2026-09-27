@@ -640,5 +640,76 @@ class ABareRestartUndoesWhatAnActivityChangedOnTheHarmony650(unittest.TestCase):
         self.assertEqual(differ, {0xE3C: 1, 0xE3E: 1, 0xE5C: 0xFD, 0xE5D: 0xFE})
 
 
+class TheInfraredRingCameThroughABareRestart(unittest.TestCase):
+    """Section 283: page 5 of data memory is the infrared sender's ring, and it survived a restart.
+
+    Its contents after the restart are the tail of one Denon record's block, exactly where one send
+    of that block from index 0 stops, which is memory kept rather than rebuilt.
+    """
+
+    WRITE_REGISTERS = (0xFEF, 0xFEE, 0xFED, 0xFEC)  # INDF0, POSTINC0, POSTDEC0, PREINC0
+
+    def test_three_stores_address_page_5_through_its_write_index_and_nothing_names_it(self):
+        # Within the compiler's pointer shape, MOVLW 5; ADDWFC FSR0H. A store through a pointer held
+        # in a variable is outside this scan, and the content closure below does not rely on it.
+        lab.require('h650_bench_code')
+        code = lab.load('h650_bench_code')
+        writes, reads = [], 0
+        for off in range(0, len(code) - 6, 2):
+            here, nxt, then = (isa.decode(code, off + d, BASE) for d in (0, 2, 4))
+            if (here.mnemonic, here.fields.get('k')) == ('MOVLW', 0x05) and nxt.mnemonic == 'ADDWFC' \
+                    and (nxt.fields.get('f'), nxt.fields.get('a')) == (0xEA, 0):
+                target = then.fields.get('dst')
+                if target is None and then.fields.get('a') == 0 and (
+                        then.mnemonic in ('MOVWF', 'CLRF', 'SETF') or then.fields.get('d') == 1):
+                    target = 0xF00 | then.fields.get('f', 0)
+                if target in self.WRITE_REGISTERS:
+                    writes.append(off + BASE + 4)
+                else:
+                    reads += 1
+            self.assertFalse(here.mnemonic == 'MOVLB' and here.fields.get('k') == 5, hex(off + BASE))
+            self.assertFalse(here.mnemonic == 'MOVFF' and 0x500 <= here.fields.get('dst', 0) < 0x600,
+                             hex(off + BASE))
+            self.assertFalse(here.mnemonic == 'LFSR' and 0x500 <= here.fields.get('k', 0) < 0x600,
+                             hex(off + BASE))
+        self.assertEqual(writes, [0x11E4C, 0x11E5E, 0x11E8E])
+        self.assertEqual(reads, 33)
+        # Each store is preceded by the write index being read and advanced.
+        for at in writes:
+            with self.subTest(hex(at)):
+                self.assertEqual((_at(code, at - 14).mnemonic, _at(code, at - 14).fields['f'],
+                                  _at(code, at - 12).mnemonic), ('MOVF', 0x60, 'INCF'))
+
+    def test_the_index_reset_touches_only_the_three_indices(self):
+        lab.require('h650_bench_code')
+        code = lab.load('h650_bench_code')
+        self.assertEqual([(_at(code, a).mnemonic, _at(code, a).fields.get('f', _at(code, a).fields.get('k')))
+                          for a in range(0x10CF2, 0x10CFC, 2)],
+                         [('MOVLB', 7), ('CLRF', 0x5E), ('CLRF', 0x5F), ('CLRF', 0x60), ('RETURN', None)])
+
+    def test_the_ring_is_the_tail_of_one_denon_block_on_both_sides_of_the_restart(self):
+        lab.require('h650_ram_across_restart', 'h650_config_region')
+        from harmony import gspm
+        data = lab.load('h650_ram_across_restart')
+        self.assertEqual(len(data), 2 * 0xE00)
+        before, after = data[:0xE00], data[0xE00:]
+        self.assertEqual(before[0x500:0x600], after[0x500:0x600])
+        for half in (before, after):
+            self.assertEqual((half[0x75E], half[0x75F], half[0x760]), (0, 0, 0))
+        region = lab.load('h650_config_region')
+        ring = after[0x500:0x600]
+        rotated = ring[104:] + ring[:104]
+        # The 616 byte block at 0x45BAF, its terminator included; 616 is two turns plus 104.
+        block = 0x45BAF - 0x30000
+        length = next(i + 2 for i in range(block, len(region), 2) if region[i:i + 2] == b'\x00\x00') - block
+        self.assertEqual((length, length % 256), (616, 104))
+        self.assertEqual(rotated, region[block + length - 256:block + length])
+        # Named by exactly one record: group 3, the Denon receiver, record 36.
+        c = gspm.parse(region)
+        naming = [(gi, ri) for gi, group in enumerate(c.ir_groups())
+                  for ri, record in enumerate(group) if 0x45BAF in c.ir_record_blocks(record)]
+        self.assertEqual(naming, [(3, 36)])
+
+
 if __name__ == '__main__':
     unittest.main()

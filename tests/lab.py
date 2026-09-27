@@ -165,6 +165,8 @@ IMAGES = {
     # Three snapshots of the 650's state variables, 108 bytes from data 0xE10 plus the stored sum:
     # at rest, after an activity was started off the cable, and after a bare restart. Section 283.
     'h650_ram_activity_restart': '20260927T1150Z-h650-ram-activity-restart.bin',
+    # The 650's data memory 0x000..0xDFF before and after a second bare restart, section 283.
+    'h650_ram_across_restart': '20260927T1210Z-h650-ram-across-restart.bin',
     # The arch 9 safe mode container, cut out of the 525's firmware region at flash 0x818000.
     # Deliberately not in CONTAINERS: it is the sample the corpus wide claims are re-derived
     # against, and two of them are still open, base slot 1's extent and the log area's range.

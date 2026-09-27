@@ -36747,15 +36747,44 @@ starts, which is not in these images; whether the software stack from `0xE00` re
 the seeder's second caller at `0x0F390`; and any indirect writer the tracer cannot see. A dump of data
 `0x000` to `0xDFF` before and after a second bare restart: 712 nonzero bytes identical, 46 changed,
 `0x800` to `0xCFF` zero both times. On its own that cannot tell memory kept from memory rebuilt
-identically, but `0x500` to `0x5FF` holds what looks like an infrared duration buffer, identical across
-the restart; if nothing at boot writes it, it is evidence that memory is kept. This configuration has
-no variable marked `0xFEFE`, which the reload would skip and which would be the clean test.
+identically.
+
+**The infrared ring at `0x500` to `0x5FF` came through the restart unchanged, so the restart does not
+clear all of data memory.** The page is the sender's ring, 256 bytes with a count at `0x75E`, a read
+index at `0x75F` and a write index at `0x760`. Three stores address it through its own write index,
+`0x11E4C` and `0x11E5E` in the word push `0x11E32` and `0x11E8E` in the byte push `0x11E74`, whose four
+calls are all in the feeder from `0x1683C` that reads a configuration duration block; 33 accesses
+read it, in the players the low priority interrupt dispatches; and nothing names the page by bank, by
+an absolute store or by `LFSR`. Stores through a pointer held in a variable are not traced, and the
+closure below does not need them to be absent.
+
+**The closure is the content.** Read from its oldest byte, at offset 104, the whole ring equals 256
+contiguous bytes of the configuration at `0x45D17`: the last 256 of the 616 byte block at `0x45BAF`,
+terminator included, and 616 is 104 past two turns of the ring, which is where one send of that block
+from index 0 stops. The block is named by one record only, Denon record 36, as its send once block. The
+sender's own state agrees on both sides of the restart: the last word pushed, `0x3F7` and `0x3F8`, is
+the terminator, and `0x3DE` is `0xFF`, idle. The three indices read 0 on both sides too, which says
+nothing about the boot, since `0x10CF2` clears them at the end of every send as well as at startup,
+where it is the boot's only contact with the ring. For the ring to have been rebuilt at boot, the boot
+would have to send exactly that record's block from index 0, and nothing found at startup starts a
+send.
+
+So what is left is narrower: the variables' bank is cleared, or something at boot spoils or bypasses
+the sum, or the skip does not do what the image was read to say, which that reading has already got
+wrong once. The software stack is a candidate for the second: the startup points both of its registers
+at `0xE00` and it grows upward, so it reaches the clock after 16 bytes and the summed span after 34.
+The high priority handler pushes 2 bytes and the low priority one 7, plus whatever the routines it
+calls use; how deep it gets is unmeasured, since the dumps stop at `0xDFF`. A dump of bank `0xE00` to
+`0xEFF` across a restart would separate the first of the three from the others, through the stack's
+leftovers at `0xE00` to `0xE0F` and the 84 painted bytes, the boot itself rewriting several others.
+This configuration has no variable marked `0xFEFE`, which the reload would skip and which would be
+the clean test.
 
 ### Scope, decision 16
 
 * The measurement: one Harmony 650 on its 0.2 build, one delay raised and put back, and three
   restarts alone: one read for the clock, one after an activity was started with the variables read,
-  and one with only data `0x000` to `0xDFF` read.
+  and one with only data `0x000` to `0xDFF` read, which is where the infrared ring was seen to survive.
 * The reading: the seeder, its sum and the store are byte identical on the Harmony 600's and the 650's
   0.2 builds, asserted range by range. The Harmony 700's 2.8 and the 650's 0.4 package have the same
   sum at other addresses **and** the drop's forced reload, which the 0.2 builds lack. What the 600 or
@@ -36784,10 +36813,12 @@ differs anywhere but the edited bytes and the trailer; a bare restart after an a
   path ending in the paint from byte 18, the later builds' drop flag, the two region reads' two byte
   difference, the record's memory address, and the three snapshots of the activity experiment: each
   sum against its own array, the eight variables the activity moved, and the restart putting back
-  the state at rest.
+  the state at rest; and the infrared ring's stores in the image, with the dumps showing its contents
+  unchanged across the restart and equal, rotated, to the tail of Denon record 36's send once block.
 * `packages/lab`, `tests/lab.py` and the golden vectors: `h650_delay90_region`, the compare base the
   revert used, excluded from the corpus like `h650_config_region`. `packages/lab` and `tests/lab.py`
-  also name `h650_ram_activity_restart`, the snapshots, which is not a container.
+  also name `h650_ram_activity_restart`, the snapshots, and `h650_ram_across_restart`, the two
+  dumps, neither of them a container.
 * `docs/config-format.md` beside `first`, `docs/memory-map-600.md`, and section 282's scope corrected.
 
 ### The reviewers
@@ -36813,3 +36844,13 @@ sentence presupposing memory survives the restart; "a remote on the cable runs n
 clock ticks; the replug read as settling when the clock was reset; variable 9's reading after the bare
 restart contradicting the line above it; and the sum closure stating the painted tail as fact where it
 was not read. All corrected.
+
+**The ring's reviewers.** The blind one found the same ring, the same three stores and the same
+startup contact, and matched the whole ring to the Denon block. The second found the draft claiming
+memory outside the variables is kept where only page 5 was shown; the zero indices offered as the
+boot's doing where they were zero before the restart too, the sender clearing them after every send;
+"three stores write into it" stronger than a scan that cannot see stores through a pointer variable;
+the closure resting on the remote being on the cable rather than on the content; and the stores
+placed in one routine where they are two push helpers called from the feeder. All corrected, and the
+tests now assert the rotated ring against the block and the one record that names it.
+

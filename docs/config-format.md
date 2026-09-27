@@ -2783,7 +2783,8 @@ the 0.2 builds have no such flag. **Measured on a Harmony 650 running 0.2, a cha
 nonetheless in force straight after a write and its restart**, both ways, and every restart put the
 clock back to the configuration's stamp, so an unstamped configuration shows its stamp time. **A bare
 restart, with nothing written, puts back every variable an activity changed**, although the sum
-matched. Whether data memory survives that restart, or something spoils the sum, is open.
+matched. The infrared sender's ring survives it unchanged, so the restart does not clear all of data memory;
+whether the variables' bank is cleared or something at boot spoils or bypasses the sum is open.
 
 **The idle value is the record's `first` field**, base slot 13 at +0x00, which section 60 read as an
 initial value and marked unconfirmed. No binding writes it, in fifteen of fifteen user configs. The
