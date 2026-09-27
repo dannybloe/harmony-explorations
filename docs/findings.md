@@ -36745,7 +36745,7 @@ is not decided by these reads.
 Leads not yet read: whatever the bootloader below `0x9000` does to data memory before the application
 starts, which is not in these images; whether the software stack from `0xE00` reaches the summed span;
 the seeder's second caller at `0x0F390`; and any indirect writer the tracer cannot see. A dump of data
-`0x000` to `0xDFF` before and after a second bare restart: 712 nonzero bytes identical, 46 changed,
+`0x000` to `0xDFF` before and after a third bare restart: 712 nonzero bytes identical, 46 changed,
 `0x800` to `0xCFF` zero both times. On its own that cannot tell memory kept from memory rebuilt
 identically.
 
@@ -36769,22 +36769,84 @@ where it is the boot's only contact with the ring. For the ring to have been reb
 would have to send exactly that record's block from index 0, and nothing found at startup starts a
 send.
 
-So what is left is narrower: the variables' bank is cleared, or something at boot spoils or bypasses
+So what was left was narrower: the variables' bank is cleared, or something at boot spoils or bypasses
 the sum, or the skip does not do what the image was read to say, which that reading has already got
 wrong once. The software stack is a candidate for the second: the startup points both of its registers
 at `0xE00` and it grows upward, so it reaches the clock after 16 bytes and the summed span after 34.
-The high priority handler pushes 2 bytes and the low priority one 7, plus whatever the routines it
-calls use; how deep it gets is unmeasured, since the dumps stop at `0xDFF`. A dump of bank `0xE00` to
-`0xEFF` across a restart would separate the first of the three from the others, through the stack's
-leftovers at `0xE00` to `0xE0F` and the 84 painted bytes, the boot itself rewriting several others.
-This configuration has no variable marked `0xFEFE`, which the reload would skip and which would be
-the clean test.
+
+**The bank is probably not cleared, read across a fourth bare restart.** All 256 bytes from `0xE00`,
+read with the remote at rest either side of `write-config.ts --restart-only`: nine differ. Three are
+the clock's seconds, minutes and hours, the other four clock bytes unchanged, and six are at `0xED4` to
+`0xEE5`. What survived the restart is not all evidence alike. The stack's leftovers at `0xE00` to
+`0xE0F`, the same bytes both times with six of them nonzero, the 84 bytes from `0xE7C` still reading
+`0xFE`, and the sum at `0xED2`, `0xA5` and equal to the XOR over `0xE22` to `0xECF` on both sides, are
+all what a cleared bank would leave too once the seeder had reloaded it, painted its tail and restamped
+its sum. So they cannot tell a clear from none, and they do not bound how deep the stack goes at boot
+either. What can tell is `0xEDC` to `0xEDF`, the second setter's arguments below, written only where
+that setter is called: `00 01 00 01` either side, variable 1 increased by one, which is the minutes
+store that ran last before the restart. A clear would zero them, and putting them back takes another
+minutes store, where the clock shows no minute boundary between its reset to the stamp and the read. That makes
+the first of the three unlikely rather than impossible, together with the infrared ring above. The
+painted tail the snapshot closure had to assume is now read painted, either side of this later restart.
+
+**And this pair shows the reload running with a sum that was valid before the restart.** Variable 44
+read 1 before it; after it, the last store that went through the transition branch records 44's old
+value as 0 at `0xED4` and its new value as 1. The minutes and hours read 39 and 8, their `first`, where
+before they read 41 and 9. Nothing in the configuration sets 44 to 0, its one set instruction setting
+it to 1, and nothing in it sets or steps variable 1 or 2, counted over every instruction it holds and
+every path to the setters: the set opcodes, the `0x1F` band's set and step, the add of `0x70` and
+`0x71`, and `0x1F` `F7`, which queues an instruction it names. The firmware itself only steps the
+minutes, from `0x106A0`, and the instructions it queues from its other call sites were not counted.
+The store at `0x16474` has three callers, the seeder and the two setters below, by any instruction
+with a target. So the seeder stored at this boot, although in the last read before the restart the
+sum matched, and every store since restamps it. Either the verdict at boot was a mismatch, meaning
+something between that read and the compare changed the sum or the bytes it covers, or the flag the
+verdict sets was changed before the loop read it, or the loop does not do what the image was read to
+say. The software stack stays a candidate for the first, since nothing above bounds its depth at boot.
+
+**The six changed bytes are among those two setters write**, `0x16360` and `0x163AA`, where every action
+list opcode at `0x80` or above goes, from call sites at `0x0E8C4`, `0x0EFE8`, `0x0EB68` and `0x0EF90`: so
+the configuration's own set variable instructions reach variables the image never names, which is why
+44, 46 and 69 had no direct accessor. Each hands an index to the store and then, **unless** a flag its
+caller copies from `0x219` is set, calls `0x1613E`, the routine that evaluates a variable's
+transitions; the flag is `0xED8` for the first setter and `0xEDC` for the second. The bytes are shared
+rather than theirs: `0xED4` to `0xED7` are the old and new value `0x1613E` compares, the seeder writes
+`0xEE1` and `0xEE2` too, and `0xEE4` has six other writers. `0xEE1` holds the index the store was
+handed, which the seeder confirms by putting its loop index there before its call, and still holds it
+afterwards only for a narrow variable, since for a wide one the store turns it into an offset; 1, 44
+and 46 are all narrow. Before the restart the last store was variable 1, the clock's minutes, from 40
+to 41 by the second setter's increment. After it `0xEE1` and `0xEE4` read 46 and `0xEE5` 44: the last
+store was 46 set to 1, and it ran no transitions, because `0xEE5` stayed at 44 and its only writers
+are the first setter's transition branch and the second setter's entry; `0xED8` to `0xEDB` read the
+same on both sides and show nothing by themselves. Before it 44 went from 0 to 1 through the
+transition branch. Variables 44 and 46 are
+two of the three the activity experiment found away from their `first` after a restart, so something
+sets them after the seeder through the executor's set instruction, most likely the configuration's own,
+44's one set instruction setting it to 1; which list does it is unread.
+A transition at boot putting an activity's variables back, which could have replaced the reload, is
+ruled out for 44 and the clock by the census above.
+
+**The skip flag is not the seeder's own.** `0xD2D` is set from the sum's verdict at `0x16048` and read at
+`0x160DA` before each store. None of the routines that run between the two and the loop's end writes
+it directly, and the word reader writes through its pointer, `0xD2B` and `0xD2C` in the four reads
+before the loop and `0xD30` and `0xD31` inside it. But the address has 43 direct accesses across the
+image, plus pointer writes the tracer cannot see, among them `0x1613E`'s own three byte read at `0xD2C`
+through `0x17F1C`, which covers it, and routines such as `0x10800`, which copies the clock's seconds
+into it, so it is shared scratch. Whether any writer of it can run while the seeder loops is unread,
+and that is the cheapest test of the second.
+
+**A lead for the writer rails, not settled here.** On this build the firmware writes variables 13, 16
+and 17 directly, at `0xE1D`, `0xE20` and `0xE21`, beside 7 and 9 to 12, and the sum and the failure path's
+paint both start at 18. The rail reserves 0 to 12, from arch 12's reading in section 138. Whether a
+composed variable at 13 to 17 would be overwritten on the Harmony 650 is unmeasured, and it wants
+reading before step 1.4.3 composes one.
 
 ### Scope, decision 16
 
-* The measurement: one Harmony 650 on its 0.2 build, one delay raised and put back, and three
+* The measurement: one Harmony 650 on its 0.2 build, one delay raised and put back, and four
   restarts alone: one read for the clock, one after an activity was started with the variables read,
-  and one with only data `0x000` to `0xDFF` read, which is where the infrared ring was seen to survive.
+  one with only data `0x000` to `0xDFF` read, which is where the infrared ring was seen to survive, and
+  one at rest with bank `0xE00` to `0xEFF` read either side.
 * The reading: the seeder, its sum and the store are byte identical on the Harmony 600's and the 650's
   0.2 builds, asserted range by range. The Harmony 700's 2.8 and the 650's 0.4 package have the same
   sum at other addresses **and** the drop's forced reload, which the 0.2 builds lack. What the 600 or
@@ -36814,11 +36876,19 @@ differs anywhere but the edited bytes and the trailer; a bare restart after an a
   difference, the record's memory address, and the three snapshots of the activity experiment: each
   sum against its own array, the eight variables the activity moved, and the restart putting back
   the state at rest; and the infrared ring's stores in the image, with the dumps showing its contents
-  unchanged across the restart and equal, rotated, to the tail of Denon record 36's send once block.
+  unchanged across the restart and equal, rotated, to the tail of Denon record 36's send once block;
+  and the bank dump: the nine bytes that changed, the second setter's arguments unchanged, the sum
+  valid and the tail painted on both sides, variable 44 and the clock put back to `first` with no
+  instruction in the configuration that could, the six non clock bytes among those the two setters
+  write, their conditional call of the transitions, the last stores naming variable 1 and then 46 with
+  its flag set and 44, the skip flag written by nothing the seeder runs directly and copied from the
+  clock at `0x10800` among its other writers, and the firmware's direct writes to variables 13, 16 and
+  17.
 * `packages/lab`, `tests/lab.py` and the golden vectors: `h650_delay90_region`, the compare base the
   revert used, excluded from the corpus like `h650_config_region`. `packages/lab` and `tests/lab.py`
-  also name `h650_ram_activity_restart`, the snapshots, and `h650_ram_across_restart`, the two
-  dumps, neither of them a container.
+  also name `h650_ram_activity_restart`, the snapshots, `h650_ram_across_restart`, the two
+  dumps, and `h650_bank_e_across_restart`, the variables' bank either side of the fourth, none of them a
+  container.
 * `docs/config-format.md` beside `first`, `docs/memory-map-600.md`, and section 282's scope corrected.
 
 ### The reviewers
@@ -36853,4 +36923,24 @@ boot's doing where they were zero before the restart too, the sender clearing th
 the closure resting on the remote being on the cable rather than on the content; and the stores
 placed in one routine where they are two push helpers called from the feeder. All corrected, and the
 tests now assert the rotated ring against the block and the one record that names it.
+
+**The bank dump's reviewers.** The blind one found the same nine bytes, the same setters and the same
+flag, and was first to see that the dump shows the reload: 44 was 1 before the restart and 0 as the old
+value of the boot's store, with the clock back at its stamp, which the draft had called something this
+pair could not show, along with the firmware's direct writes to 13, 16 and 17. The second found the
+draft resting "the bank is not cleared" on bytes a clear followed by a reload would leave identical,
+where the discriminating ones are the second setter's arguments; offering the stack as bounded by the
+same bytes; stating the setters always run the transitions where a caller's flag can stop them, and did
+for the boot's last store; a fourth candidate that could not explain the delay or the clock; the
+setters' working bytes as theirs where they are shared; "stored every minute" with no rate measured;
+the skip flag's helpers listed four where seven routines are called directly, thirteen with their
+callees, and the pointer writes the test could not see; "three restarts" over four; and the memory map's rows naming bytes that did not change. It
+counted seven nonzero stack bytes where there are six. All corrected, the fourth candidate removed by
+the census, and the tests assert the discriminating bytes, the reload and the conditional call. A
+second pass on the rewrite found the census narrower in the test than in the prose, missing the add
+path, the queue path and four instruction sources, all of which it now walks with none hitting; "nothing
+sets variable 1" silent about the firmware's own minutes step; "the one store" where only the last is
+visible; `0xED8` offered as evidence though it did not change, where `0xEE5`'s writers carry it; a skip
+flag test blind to arithmetic writes; and the restart ordinals disagreeing between files. All
+corrected.
 

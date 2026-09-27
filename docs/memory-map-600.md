@@ -82,6 +82,9 @@ The 600 was not measured.
 | `0xE22` to `0xECF` | what the reload checksum covers, an XOR seeded `0xA5` |
 | `0x500` to `0x5FF` | the infrared sender's ring, indices at `0x75E` to `0x760`; kept across a bare restart on the Harmony 650, section 283 |
 | `0xED2` | that checksum, restamped by every store; at boot, once a container validated, a match skips the reload in the image, which was measured not to hold across a restart on the 650, section 283 |
+| `0xE00` to `0xEFF` | the whole bank; across one bare restart at rest on the Harmony 650 only the clock's seconds, minutes and hours and the six bytes below changed, section 283 |
+| `0xED4`, `0xED6`, `0xEE1`, `0xEE2`, `0xEE4`, `0xEE5` | among the working bytes of the two setters at `0x16360` and `0x163AA`, which store a variable and, unless a flag at `0xED8` or `0xEDC` is set, run the transitions; shared with the seeder and others. `0xEE1` is the index the store was handed, for a narrow variable |
+| `0xEDC` to `0xEDF` | the second setter's arguments, written only where it is called; unchanged across that restart, which is what makes a cleared bank unlikely |
 | `0x68B` | the verdict and container select bits, section 282 |
 | `0x725` | the flag the cache drop sets and the next erase consumes, section 282 |
 

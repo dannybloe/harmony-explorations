@@ -141,8 +141,11 @@ export const IMAGES: Readonly<Record<string, string>> = {
   h650_delay90_region: '20260927T1110Z-h650-delay90-region.bin',
   // Three snapshots of the 650's state variables across an activity and a bare restart, section 283.
   h650_ram_activity_restart: '20260927T1150Z-h650-ram-activity-restart.bin',
-  // The 650's data memory 0x000..0xDFF before and after a second bare restart, section 283.
+  // The 650's data memory 0x000..0xDFF before and after a third bare restart, section 283.
   h650_ram_across_restart: '20260927T1210Z-h650-ram-across-restart.bin',
+  // The 650's data memory bank 0xE00..0xEFF before and after a fourth bare restart, at rest,
+  // section 283.
+  h650_bank_e_across_restart: '20260927T1320Z-h650-bankE-across-restart.bin',
   // The arch 9 safe mode container, cut out of the 525's own firmware region at flash 0x818000 on
   // 8 August 2026. Section 76 kept it out of the corpus because it contradicted six corpus claims;
   // section 77 read one of them and section 78 read four more, so what is left is base slot 1's

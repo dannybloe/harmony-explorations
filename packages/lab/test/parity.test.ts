@@ -73,8 +73,9 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // 112 since that unit's whole configuration region, write-config.ts's compare base, section 282.
   // 113 since that region again after 1.4.2's delay write, the compare base for the revert.
   // 114 since the 650's state variable snapshots across a bare restart, section 283.
-  // 115 since its data memory dumps across a second one.
-  assert.equal(Object.keys(pythonImages()).length, 115, 'every fixture tests/lab.py names');
+  // 115 since its data memory dumps across a third restart.
+  // 116 since the variables' own bank across a fourth.
+  assert.equal(Object.keys(pythonImages()).length, 116, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {

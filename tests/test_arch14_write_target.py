@@ -611,8 +611,10 @@ class ABareRestartUndoesWhatAnActivityChangedOnTheHarmony650(unittest.TestCase):
 
     def test_each_stored_sum_is_the_xor_of_its_own_snapshot(self):
         # The sum covers 0xE22..0xECF: array bytes 18 to 107 and then 84 bytes the seeder paints 0xFE,
-        # whose XOR is zero since the count is even. Those 84 were not read, so this closes on the
-        # assumption that they are still painted; three matches of three make chance unlikely.
+        # whose XOR is zero since the count is even. Those 84 were not read with these snapshots, so
+        # this closes on the assumption that they are still painted; three matches of three make chance
+        # unlikely, and TheVariablesBankAcrossABareRestart reads them painted either side of a
+        # later restart.
         lab.require('h650_ram_activity_restart')
         for k, (array, stored) in enumerate(self.snapshots()):
             with self.subTest(k):
@@ -709,6 +711,187 @@ class TheInfraredRingCameThroughABareRestart(unittest.TestCase):
         naming = [(gi, ri) for gi, group in enumerate(c.ir_groups())
                   for ri, record in enumerate(group) if 0x45BAF in c.ir_record_blocks(record)]
         self.assertEqual(naming, [(3, 36)])
+
+
+def _every_instruction(region):
+    """Every instruction a configuration holds: action lists, base slot 8's leading list and
+    records, handler sets, mode entries and page lists, and timers."""
+    from harmony import gspm
+    c = gspm.parse(region)
+    out = [i for lst in c.action_lists() for i in lst]
+    slot = gspm.arch_slot(c.architecture, gspm.BINDING_TABLE_SLOT)
+    out += c.action_list(c.sections[slot].address) + [b for r in c.binding_records() for b in r]
+    lists = list(c.handler_sets()) + [p.list_address for p in c.mode_pages()]
+    out += [e for a in lists for e in c.tagged_list(a) or []]
+    out += [e for r in c.mode_records() for e in r.entries]
+    out += [t.instruction for t in c.timers()]
+    return out
+
+
+def _direct_writers(code, address):
+    """Code addresses that write `address` by a banked access or a `MOVFF`, per the tracer."""
+    from harmony.pic18 import trace
+    return [hit.addr for hit in trace.trace(code, BASE, [address])[address] if 'WRITE' in hit.kind]
+
+
+class TheVariablesBankAcrossABareRestart(unittest.TestCase):
+    """Section 283: bank `0xE00` to `0xEFF` read either side of a fourth bare restart, at rest.
+
+    The stack's leftovers, the painted tail and a valid sum survive, which a cleared bank would also
+    leave once the seeder had reloaded it; what makes a clear unlikely is the second setter's arguments
+    at `0xEDC` to `0xEDF`, written only where that setter is called, unchanged with no minute boundary
+    passed. Variable 44 and the clock went back to `first` with no instruction in the configuration that
+    could have done it,
+    so the seeder stored at that boot although the sum had matched. Besides the clock, what changed are
+    bytes the two setters write, and their last stores.
+    """
+
+    CHANGED = [0xE10, 0xE11, 0xE12, 0xED4, 0xED6, 0xEE1, 0xEE2, 0xEE4, 0xEE5]
+    #: The two routines that store a variable and, unless their caller's flag is set, run the
+    #: transitions. Every action list opcode at 0x80 or above reaches the first.
+    SETTERS = (0x16360, 0x163AA)
+    #: Where each is called; the flag is copied from 0x219 just before.
+    CALL_SITES = {0x16360: [0x0E8C4, 0x0EFE8], 0x163AA: [0x0EB68, 0x0EF90]}
+
+    def _halves(self):
+        lab.require('h650_bank_e_across_restart')
+        data = lab.load('h650_bank_e_across_restart')
+        self.assertEqual(len(data), 0x200)
+        return data[:0x100], data[0x100:]
+
+    def test_only_three_clock_bytes_and_six_setter_bytes_changed(self):
+        before, after = self._halves()
+        self.assertEqual([0xE00 + i for i in range(0x100) if before[i] != after[i]], self.CHANGED)
+        # Seconds, minutes and hours; the day, weekday, month and year stayed.
+        self.assertEqual((list(before[0x10:0x13]), list(after[0x10:0x13])), ([14, 41, 9], [54, 39, 8]))
+        # The stack's leftovers, the same both times with six nonzero, which a reload would not
+        # disturb either, so this does not tell a clear from none.
+        self.assertEqual(before[:0x10], after[:0x10])
+        self.assertEqual(sum(1 for b in before[:0x10] if b), 6)
+
+    def test_the_second_setters_arguments_survived_and_only_its_call_sites_write_them(self):
+        before, after = self._halves()
+        self.assertEqual((before[0xDC:0xE0], after[0xDC:0xE0]), (bytes([0, 1, 0, 1]),) * 2)
+        lab.require('h650_bench_code')
+        code = lab.load('h650_bench_code')
+        sites = self.CALL_SITES[0x163AA]
+        for address in range(0xEDC, 0xEE0):
+            with self.subTest(hex(address)):
+                writers = _direct_writers(code, address)
+                self.assertTrue(writers)
+                # Every writer sits in the stretch that sets up one of the two calls.
+                self.assertTrue(all(any(site - 0x30 <= w < site for site in sites) for w in writers),
+                                [hex(w) for w in writers])
+        # And no minute boundary passed after the restart: the stamp is 08:39:42 and the read 08:39:54.
+        lab.require('h650_config_region')
+        from harmony import gspm
+        region = lab.load('h650_config_region')
+        table = gspm.parse(region).state_table()
+        stamp = [region[e - 0x30000] for e in table.entries[:3]]
+        self.assertEqual((stamp, list(after[0x10:0x13])), ([42, 39, 8], [54, 39, 8]))
+
+    def test_the_seeder_stored_although_the_sum_matched_before_the_restart(self):
+        before, after = self._halves()
+        # Variable 44 was 1; the boot's transition store saw it at 0. Minutes and hours went back to
+        # the stamp, 39 and 8.
+        self.assertEqual((before[0x10 + 44], after[0xD4], after[0xD6], after[0xEE5 - 0xE00]), (1, 0, 1, 44))
+        self.assertEqual((list(before[0x11:0x13]), list(after[0x11:0x13])), ([41, 9], [39, 8]))
+        lab.require('h650_config_region', 'h650_bench_code')
+        instructions = _every_instruction(lab.load('h650_config_region'))
+        # Every path from a configuration instruction to the four setter call sites: opcode 0x80 and
+        # up sets variable opcode & 0x7F (0x0E8C4); the 0x1F band's ED and EE set and F1 and F2 step
+        # (0x0EFE8, 0x0EF90); 0x70 and 0x71 with case 6 or 7 in the high byte's low nibble add
+        # (0x0EB68); and 0x1F F7 queues an instruction named by its low byte, so it could reach any.
+        sets = sorted((i.opcode & 0x7F, i.operand) for i in instructions
+                      if i.opcode >= 0x80 and (i.opcode & 0x7F) in (1, 2, 44))
+        band = [i for i in instructions if i.opcode == 0x1F and i.operand >> 8 in (0xED, 0xEE, 0xF1, 0xF2)
+                and i.operand & 0xFF in (1, 2, 44)]
+        adds = [i for i in instructions if i.opcode in (0x70, 0x71) and (i.operand >> 8) & 0x0F in (6, 7)]
+        queued = [i for i in instructions if i.opcode == 0x1F and i.operand >> 8 == 0xF7]
+        # Nothing in the configuration sets 44 to 0, and nothing sets or steps the minutes or hours;
+        # the one add names variable 69.
+        self.assertEqual((sets, band, [(i.opcode, i.operand) for i in adds], queued),
+                         ([(44, 1)], [], [(0x70, 0x0745)], []))
+        # The store has three callers, the seeder and the two setters, by any instruction with a target.
+        code = lab.load('h650_bench_code')
+        callers = sorted(at for at in range(BASE, BASE + len(code), 2)
+                         if _at(code, at).fields.get('target') == 0x16474)
+        self.assertEqual(callers, [0x160EA, 0x1637A, 0x16444])
+
+    def test_the_firmware_writes_variables_13_16_and_17_directly(self):
+        lab.require('h650_bench_code')
+        code = lab.load('h650_bench_code')
+        self.assertEqual([bool(_direct_writers(code, 0xE10 + i)) for i in range(13, 18)],
+                         [True, False, False, True, True])
+
+    def test_the_sum_is_valid_and_the_tail_painted_on_both_sides(self):
+        for name, half in zip(('before', 'after'), self._halves()):
+            with self.subTest(name):
+                folded = 0xA5
+                for byte in half[0x22:0xD0]:
+                    folded ^= byte
+                self.assertEqual((folded, half[0xD2]), (0xA5, 0xA5))
+                # 62 narrow bytes plus 23 two byte wide ones is 108, so the paint starts at 0xE10 + 108.
+                self.assertEqual(half[0x7C:0xD0], b'\xfe' * 84)
+
+    def test_the_changed_bytes_outside_the_clock_are_written_by_the_two_setters(self):
+        lab.require('h650_bench_code')
+        code = lab.load('h650_bench_code')
+        written = set()
+        for entry, (flag, skip) in zip(self.SETTERS, ((0xED8, 0x1637E), (0xEDC, 0x16448))):
+            with self.subTest(hex(entry)):
+                body = [(at, instr) for at, instr in _walk(code, entry) if entry <= at < entry + 0xC0]
+                written |= {instr.fields['dst'] for _, instr in body if instr.mnemonic == 'MOVFF'}
+                calls = {instr.fields.get('target') for _, instr in body if instr.mnemonic in ('RCALL', 'CALL')}
+                self.assertLessEqual({0x16474, 0x1613E}, calls)
+                # The transitions run only when the flag is clear.
+                self.assertEqual((_at(code, skip).mnemonic, _at(code, skip).fields['f'] | 0xE00,
+                                  _at(code, skip + 2).mnemonic), ('MOVF', flag, 'BNZ'))
+                for site in self.CALL_SITES[entry]:
+                    self.assertEqual(_at(code, site).fields['target'], entry)
+                    self.assertEqual((_at(code, site - 4).fields['src'], _at(code, site - 4).fields['dst']),
+                                     (0x219, flag))
+        self.assertLessEqual({a for a in self.CHANGED if a >= 0xE13}, written)
+        # 0xEE1 is the index the store is handed: the seeder puts its loop index there before the call.
+        self.assertEqual((_at(code, 0x160E6).fields['src'], _at(code, 0x160E6).fields['dst'],
+                          _at(code, 0x160EA).fields['target']), (0xD2E, 0xEE1, 0x16474))
+
+    def test_the_last_stores_name_the_minutes_and_then_forty_six_without_transitions_and_forty_four(self):
+        before, after = self._halves()
+        # Before: the minutes, variable 1, from 40 to 41 by the second setter's increment.
+        self.assertEqual(([before[a - 0xE00] for a in (0xED4, 0xED6, 0xEE1, 0xEE2)]), [40, 41, 1, 41])
+        # After: 46 set to 1, and 0xEE5 left at 44. Its only writers are the first setter's transition
+        # branch and the second setter's entry, so that store skipped the transitions; 0xED8 to 0xEDB
+        # read the same on both sides and show nothing by themselves. The last store through the
+        # transition branch was 44, from 0 to 1.
+        self.assertEqual([after[a - 0xE00] for a in (0xEE1, 0xEE2, 0xEE4)], [46, 1, 46])
+        self.assertEqual(before[0xD8:0xDC], after[0xD8:0xDC])
+        self.assertEqual([after[a - 0xE00] for a in (0xED4, 0xED6, 0xEE5)], [0, 1, 44])
+        lab.require('h650_bench_code')
+        self.assertEqual(_direct_writers(lab.load('h650_bench_code'), 0xEE5), [0x16384, 0x163AC])
+        # Both at 1, which ABareRestartUndoesWhatAnActivityChangedOnTheHarmony650 finds away from `first`.
+        self.assertEqual((after[0x10 + 44], after[0x10 + 46]), (1, 1))
+
+    def test_nothing_the_seeder_runs_writes_its_skip_flag_directly(self):
+        lab.require('h650_bench_code')
+        code = lab.load('h650_bench_code')
+        # Everything between setting the flag at 0x16048 and the loop's end: seven routines called
+        # directly, with their callees.
+        walked = {at for entry in (0x18020, 0x18128, 0x17EEC, 0x18136, 0x1807C, 0x17EBE, 0x16474)
+                  for at, _ in _walk(code, entry)}
+        writers = _direct_writers(code, 0xD2D)
+        self.assertEqual(len(writers), 19)
+        self.assertFalse(walked & set(writers))
+        # The word reader writes through its pointer instead: 0xD2B before the loop, 0xD30 inside it.
+        for at, low in ((0x1605E, 0x2B), (0x16070, 0x2B), (0x16082, 0x2B), (0x16094, 0x2B), (0x160C0, 0x30)):
+            self.assertEqual((_at(code, at).mnemonic, _at(code, at).fields['k'], _at(code, at + 4).fields['k']),
+                             ('MOVLW', low, 0x0D), hex(at))
+        # The flag is shared scratch: the transition routine's own three byte read lands on 0xD2C to
+        # 0xD2E, and another routine copies the clock's seconds into it.
+        self.assertEqual([_at(code, a).fields['k'] for a in (0x16158, 0x1615C)], [0x2C, 0x0D])
+        self.assertEqual(_at(code, 0x16160).fields['target'], 0x17F1C)
+        self.assertEqual((_at(code, 0x10800).fields.get('src'), _at(code, 0x10800).fields.get('dst')),
+                         (0xE10, 0xD2D))
 
 
 if __name__ == '__main__':
