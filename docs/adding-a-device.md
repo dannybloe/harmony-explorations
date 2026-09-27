@@ -75,9 +75,9 @@ Named so that nobody adds them to the critical path.
 * **Matching Logitech's byte layout.** Two compiles of one unchanged account differ in 67% of their
   bytes, section 154, so equality with their generator is not achievable and not wanted. Phase 6
   compares inventories.
-* **Any remote other than the Harmony One.** It is the only architecture with a write target, and arch
-  14 (Harmony 600) stays read only until a second one exists. Phases 1 to 7 are architecture neutral and
-  7 and 8 are the One alone.
+* **Any remote other than the Harmony One.** It was the only architecture with a write target when
+  this was written; the Harmony 525 and the Harmony 650 have one since, sections 269 and 281, and the
+  Harmony 600 stays read only. Phases 1 to 7 are architecture neutral and 7 and 8 are the One alone.
 * **The application's interface.** Phase 1 touches FreeHarmony's main process and no screen. The rest of
   this repository owes FreeHarmony an API, not a page.
 * **An activity.** A device added in device mode is reachable without one, `docs/how-a-harmony-works.md`,

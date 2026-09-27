@@ -1972,7 +1972,10 @@ class TheEraseBlockAtTheRehearsalAddressIsSixtyFourKiB(unittest.TestCase):
         #
         # The row list is still pinned rather than only the arch 12 entry, because a row appearing
         # from nowhere should make somebody look. It is the population that moved, not the claim.
-        self.assertEqual(sorted(rows), ['12', '9'])
+        # **Arch 14 (Harmony 600, 650 and 700) gained its row on 27 September 2026**, section 281, off
+        # the same kind of evidence as arch 9's, the eraser's opcode in its own firmware images, so
+        # this does not judge it either; `tests/test_arch14_write_target.py` does.
+        self.assertEqual(sorted(rows), ['12', '14', '9'])
         self.assertEqual(rows['12'], '0x10000')
         geometry = flash_geometry(self.source, *BENCH_ONE_FLASH)
         self.assertEqual(block_at(geometry, REHEARSAL_BLOCK)[1], 0x10000)

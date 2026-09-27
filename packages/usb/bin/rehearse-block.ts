@@ -10,8 +10,13 @@
  * hours in between, which was the state the rehearsal was built for: the read and compare had to
  * happen first anyway, and it did.
  *
- * **What arch 9 does not get with it** is a reset at the end, since nothing has read the Harmony
- * 525's escape dispatcher, and this script sends none: `writeBlock` erases, writes and verifies, and
+ * **Three since 27 September 2026**, section 281: the Harmony 650, arch 14, by Danny's decision, and
+ * performed the same day. The Harmony 600 is arch 14 too and reports the same product id, so what
+ * keeps it out is the unit check against the `h650` record and not the architecture.
+ *
+ * **What arch 9 and arch 14 do not get with it** is a reset at the end: nothing has read the Harmony
+ * 525's escape dispatcher, and the Harmony 650's is read but it has never been sent the reboot, so
+ * the reset list refuses both. This script sends none either way: `writeBlock` erases, writes and verifies, and
  * the eight step sequence with its cache drop and its restart lives in `packages/corpus`. Nothing
  * here depends on the remote rebooting, and on arch 9 nothing has to: it has no re-check flag to
  * clear, section 253.
@@ -219,6 +224,19 @@ const H525_DUMPS = new Set<string>([
   // gap invites a region read nobody needs, not because they are good targets.
 ]);
 
+/**
+ * The lab images that are the **Harmony 650's** own configuration region, arch 14.
+ *
+ * One block, `0x030000`, read on 27 September 2026 and equal to the whole external flash read of the
+ * same morning over that range, two reads. **The Harmony 600 shares the product id and the
+ * architecture**, so this list is not what keeps the 600 out: the identity check is, since the
+ * target below names the 650's unit record and the 600 carries a different identity block, which
+ * was compared off both units' internal page reads before this was added. Section 281.
+ */
+const H650_DUMPS = new Set<string>([
+  'h650_region_030000',
+]);
+
 /** A remote this script may run against, per architecture. */
 interface Target {
   /** How to say which remote, in a refusal an operator reads. */
@@ -254,6 +272,9 @@ interface Target {
 const TARGETS: Readonly<Record<number, Target>> = {
   9: { model: 'the Harmony 525', unitLabel: 'h525', dumps: H525_DUMPS },
   12: { model: 'the spare Harmony One', unitLabel: 'one_spare', dumps: SPARE_DUMPS },
+  // The Harmony 650, never the Harmony 600: both are arch 14 and both enumerate as 0xC122, so the
+  // unit record is the only thing that tells them apart, and it names the 650.
+  14: { model: 'the Harmony 650', unitLabel: 'h650', dumps: H650_DUMPS },
 };
 
 /** Every dump name any target accepts, for the cheap check before the device is opened. */

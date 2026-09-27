@@ -5628,8 +5628,9 @@ Three leads for the row, none of them run:
 **The route that would finish it is blocked on purpose.** `WRITE_MISC` selector `0x07` writes a
 byte into the data memory of a running remote, so a host could drive the row lines itself and read
 the matrix out completely, which is precisely what the parked firmware will not do. That is a write
-to a live device, on arch 14, where `packages/usb/src/rails.ts` allows no write target at all. It
-is recorded here as the shape of the answer, not as a plan.
+to a live device, on arch 14, where `packages/usb/src/rails.ts` allowed no write target at all when
+this was written; since section 281 it allows the Harmony 650 a flash block and no RAM write, so the
+answer is the same. It is recorded here as the shape of the answer, not as a plan.
 
 ### Arch 12 gives nothing at all, and that is the interesting half
 
@@ -15414,7 +15415,8 @@ reassurance:
 
 The rails do not change and none of them rested on this. Writing stays behind
 `HARMONY_ENABLE_WRITES`, `WRITE_FLASH` stays restricted to the config region, and arch 14 has no
-write target at all because only one arch 14 remote is on the bench.
+write target<!--superseded--> at all because only one arch 14 remote is on the bench. (Until section
+281, when a Harmony 650 arrived and became one; the Harmony 600 stays unwritable.)
 
 ### How safe mode is entered: the procedure is documented, the mechanism is half read
 
@@ -30426,7 +30428,7 @@ Three rails come with it.
 * **The value is per device and consecutive ones interact.** Section 70's fold rule means an editor
   that inserted a quantity next to an existing one would change the existing one's effect.
 * **Arch 14 is not writable this way.** Its delay is a state variable, so changing it is an edit to
-  a base slot 13 record, and it has no write target anyway.
+  a base slot 13 record, and it had no write target anyway until section 281 gave it the Harmony 650.
 
 `deviceDelays` reports both, with a `source` of `variable` or `instruction`, and refuses to invent
 the fields the inlining architectures do not have: no identifier, no default, and no inter device
@@ -32186,7 +32188,8 @@ the others, and the fact that a clean write appeared not to help.
   14 arms without consulting the verdict, so a failed validation re-arms on the next pass and a
   Harmony 600 should not have a Harmony One's stuck screen. Read from the image and corroborated by
   the resting state of a connected Harmony 600; the experiment that would settle it needs a write
-  command and arch 14 has no write target.
+  command and arch 14 has no write target<!--superseded-->. (It has one since section 281, the
+  Harmony 650, and this experiment is on the 600's resting state, which the 650 does not answer.)
 
 ### Where it lands
 
@@ -32449,8 +32452,9 @@ means.
 ### Why the arch 14 experiment cannot be run
 
 Section 251's runs turned on sending `WRITE_MISC` selector `0x02` to clear the verdict and watching it
-come back. That is a write command, and **arch 14 has no write target on this bench**, so nothing here
-may clear a Harmony 600's verdict. The structural reading above stands as a reading, and the only
+come back. That is a write command, and **arch 14 has no write target on this bench**<!--superseded-->, so nothing here
+may clear a Harmony 600's verdict. (Since section 281 arch 14 has one, the Harmony 650, and the 600
+still may not be written, so the sentence's conclusion stands for the 600.) The structural reading above stands as a reading, and the only
 hardware evidence for it is the resting state.
 
 ### Where it lands
@@ -36320,3 +36324,150 @@ non uniqueness and the insertion point's wording, all corrected here. **They dis
 and the blind one was right**: the second said nothing reachable from a one device configuration's
 idle map writes its power variable, having followed queued calls only; the case queues the write
 itself, `a4:0` on `one_config_unprogrammed`, measured.
+
+## 281. Arch 14 gets a write target, and it is the Harmony 650 rather than the Harmony 600
+
+A second hand Harmony 650 arrived on the bench, programmed with Logitech's current software for a
+set top box, the Denon receiver and the LG television, and Danny made it the write target: it may be
+reprogrammed as the work needs, where the Harmony 600 is the one to be careful with. This section is
+what that took, and it is three things: the two arch 14 numbers a write needs, read off the firmware;
+why the architecture cannot tell the two remotes apart and what does; and the demonstration.
+
+### The two remotes are one architecture and one product id
+
+Both report product id `0xC122`, architecture 14, firmware 0.2 and flash id `15:1C`, the EON F16 of
+2 MiB. They differ in the skin, 72 on the 650 and 71 on the 600, and in the hardware version, but
+the rehearsal gates on neither, and a configuration read off a remote states none of the six
+compatibility fields, so for the rehearsal's case the version gate has nothing to compare. So **the
+write list cannot admit one and refuse the other**: putting 14 on it admits
+both, and what refuses the 600 is `assertUnitIsPermitted`, which compares the identity block read
+off the remote, internal `0xFFF400`, against the unit record the permission names. The two GUIDs
+there differ between the two units and neither is filler, measured off both units' reads of page
+`0xFF`; the 650's are what its record in the lab holds, and the 600's are not. That is the same
+mechanism that already separated the spare Harmony One from the everyday one, section 226. On arch
+14 it is the one refusal aimed at the unit. Two others would usually fire as well and are not relied
+on: the rehearsal's byte compare against the 650's dump, and, for a compiled configuration whose
+wrapper states a skin, the version gate.
+
+The firmware is **one program in two builds**, which is why nothing read on the 600 transfers by
+address without checking. Both applications are version 0.2 and 70336 bytes and both verify their
+own header checksum. Compared position by position 1395 bytes differ, which overstates the edits
+where content moved. Runs of 64 bytes or more that match cover 68409 of the 70336: 67333 at the same
+address, 905 twelve bytes lower on the 650, all above `0x19EF7`, and 171 two hundred and forty bytes
+lower. So most of the program sits at the same address in both and the shifted part is near the top.
+The entry points are `0x1A262` on the 650 and `0x1A26E` on the 600. Safe mode differs in 924 bytes
+and the bootloader in 1152 of 4096. The two routines this section rests on sit in the unshifted part
+and are at the same address on both. Why the builds differ is unread.
+
+**External block 0 differs too, and it holds the unit's identity.** The 600 keeps a copy of its
+application at external `0x000000`. On the 650 that block is erased flash apart from 69 bytes: the
+first 48 are byte identical to the first 48 of the identity block in internal page `0xFF`, 16 bytes of
+`0xEE` then the two GUIDs, and 21 more sit between `0x180` and `0x337`, unread. The application is
+found nowhere in the 650's external flash. The consequence is for the lab rather than for writing: a
+whole external flash read of this unit carries its identity, which is one more reason a region read
+never leaves the lab. This paragraph was first written as "that region is `0xEE`
+fill"<!--superseded-->, from the first bytes of the block, and the second reviewer counted it.
+
+### The two numbers, off four images
+
+`WRITABLE_CEILING[14]` is `0x200000`. The flash address classifier, section 192, refuses a top byte
+of `0x20` or more; it was asserted on the 600 and 700 images and is asserted now on the published 650
+0.4 package and on the 650's own 0.2 read off the unit, one classifier per image with the same
+ceiling. The part is 2 MiB, so the ceiling is the part.
+
+`ERASE_BLOCK_SIZE[14]` is 64 KiB. The one routine that erases external flash selects the part, sends
+write enable, and loads `0xD8` for the byte sender: `MOVLB`, `MOVLW 0xD8`, `MOVWF`, then the call.
+`0xD8` is the SPI block erase, 64 KiB on this part. It is at `0x17462` on the 600 and on the 650's
+own build, `0x18B9E` in the 650 0.4 package and `0x18DC6` in the 700 2.8. Each image loads `0xD8` in
+exactly two places, and the other is `MOVLW 0xD8; SUBWF TMR0H,W; BC`, a timer compare, which is the
+control that the table names the eraser and not an arbitrary byte. No literal `0x20`, `0x52`, `0xC7`
+or `0x60`, the part's other erase commands, is handed to the byte sender in any of the four; the blind
+reviewer found the same on the 600's image by tracing the sender's callers, and noted two call sites
+that pass a byte from a variable, whose writers it found only as `0x06` and `0x04` inside the driver.
+
+`CONFIG_REGION_BASE[14]` was already `0x030000`, and the 650's configuration starts there, 907660
+bytes of it.
+
+### What the write list no longer gates
+
+Arch 14 on the write list would have handed a Harmony 650 two commands nobody has sent to that
+architecture. **The reset escape**: arch 14 has an `ESCAPE_SUB_COMMANDS` row with `0x02`, so the
+runtime check section 269 restored, that the architecture dispatches the escape, passes, and the
+only thing between a writer and a reboot was the list. **The invalidate**, `WRITE_MISC` selector
+`0x02`, which took write permission and checked nothing else, and whose arch 14 executor is unread.
+Both have lists of their own now: `ARCHITECTURES_WITH_A_RESET_TARGET` is `[12]`, the one architecture
+where the reboot has been sent, and `ARCHITECTURES_WITH_AN_INVALIDATE_TARGET` is `[9, 12]`, which is
+exactly what the write list admitted before, so arch 9 (Harmony 525) keeps a permission it had
+without having been sent one. So the two lists follow different criteria, the reset list what has
+been demonstrated and the invalidate list what was already permitted, and narrowing the second is a
+separate decision. The RAM write stays `[12]`. **The suite caught the reset half and not the
+invalidate half**: the test pairing the write list with the escape table failed on the first run with
+14 added, while no test tied the invalidate to an architecture at all, its one arch 14 case being
+refused by the version block's architecture before any list. The invalidate was found by reading the
+rails, and it has a runtime test now. The reset rail's two checks run in the order that keeps both
+reachable, dispatch first, which refuses arch 9, then the list, which refuses arch 14.
+
+### The demonstration
+
+The same shape as the two before it, sections 222 and 269: one erase block of the remote's own
+bytes, written back unchanged. The block at `0x030000` was read with the region reader, and a whole
+external flash read of the same session agreed with it over that range. The rehearsal then:
+
+1. read the identity off the unit and matched it against the `h650` record;
+2. read the block and found it byte for byte equal to that dump;
+3. read the neighbouring blocks `0x020000`, which holds the safe mode configuration, and `0x040000`;
+4. erased `0x030000` and read it back as all ones;
+5. read both neighbours again, identical, so the erase stayed inside its 64 KiB;
+6. wrote the block in 21 transfers of up to 3150 bytes and read it back identical.
+
+Afterwards the whole configuration was read through the configuration reader, a different reader
+from the block compare with its own chunking, though both end in the same flash read call, and it
+has the same SHA-256 as the configuration read taken before the write, which is the independent end. The remote
+stayed on the bus throughout. Nothing was sent beyond the erase, the writes and the reads: no
+invalidate and no restart, which the rehearsal never sends.
+
+So the 64 KiB block is measured on the part now and not only read off the firmware. What the remote
+does with its copied configuration after a write, arch 14 keeping its configuration on a serial chip
+and copying it rather than executing it in place, is not tested by a write that changes nothing, and
+is the next thing a changing write on this unit will show.
+
+### Scope, decision 16
+
+* The ceiling and the erase block: arch 14, four firmware images, three models. The demonstration:
+  one arch 14 unit, the Harmony 650.
+* The identity split: two units, the Harmony 600 and the Harmony 650, which is every arch 14 remote
+  in existence here.
+* Not checked: whether the 600's own part behaves the same under an erase, since it is not written.
+
+### Sources
+
+The firmware images and the two units' own reads. Logitech's client was not consulted for the block
+size, since the eraser's opcode states it and the classifier states the ceiling; `docs/host-client.md`
+carries the client's arch 12 block table and says nothing about arch 14's part.
+
+### The reviewers
+
+Both ran on the whole diff. The blind one was stopped partway and measured only the 600's image, where
+it found `0xD8` alone among erase commands and the routine at the address above. The second found
+thirteen things and all of them are corrected here or in the code: the external block 0 wording, the
+readers "sharing no code", the suite catching "all of it", the unit check as "the only thing", the
+1395 and 68409 figures and the "moved down by 12 bytes" that preceded them in the lab note, the reset
+rail's first check made unreachable by the new list in front of it, the range test losing its ceiling
+hole, stale comments in the rails, and eleven places still stating the old state.
+
+### Falsification
+
+An arch 14 image whose eraser sends a different opcode, a neighbouring block that changes across an
+erase at `0x030000`, or a Harmony 600 whose identity block matches the 650's record.
+
+### Where it lands
+
+* `packages/usb/src/rails.ts`: the two arch 14 rows, 14 on the write list, the two new lists with
+  their refusals, and `writableRangeFrom`, which keeps the ceiling hole testable now that no table has
+  one.
+* `packages/usb/src/rehearsal.ts` and `bin/rehearse-block.ts`: the flash size and the third target.
+* `tests/test_arch14_write_target.py`: the eraser in four images, its control, the rails against the
+  firmware, and the identity split.
+* `tests/test_findings.py`: the classifier's population gains the two 650 images.
+* `packages/usb/test/rails.test.ts` and `rehearsal.test.ts`: the reset and invalidate refused on arch
+  14 at runtime, and every test that pinned the old lists rewritten to the new ones.

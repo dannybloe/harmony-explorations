@@ -1555,8 +1555,9 @@ Three things this changes, none of them about bytes:
   bytes that were already there and so never needed a restore, so every one of these
   backups is verified as a *copy* and unverified as a *restore*. (This said the flash write data path
   "does not exist", which section 175 read on 25 August 2026 and `packages/usb/src/writes.ts` now
-  builds. What has never happened is the sending, and that is the half this bullet is about.) That gap is procedural rather than a gap in the data, and it is why the spare is the
-  only write target when writing arrives.
+  builds. What has never happened is the sending, and that is the half this bullet is about.) That gap is procedural rather than a gap in the data, and it is why the spare was the
+  first write target when writing arrived, and why the units permitted since, the Harmony 525 and the
+  Harmony 650, are ones a failed restore would not cost Danny his everyday remote.
 
 #### How the prediction did
 

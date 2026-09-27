@@ -71,6 +71,9 @@ IMAGES = {
     'one_page_ff': 'one-internal-ff-full.bin',
     'one_spare_page_ff': 'one2-internal-ff-full.bin',
     'h600_page_ff': '600-internal-ff-full.bin',
+    # The bench Harmony 650's, read on 27 September 2026 and matching its own backup. Section 281: it
+    # is what tells that unit from the Harmony 600, which shares its product id and architecture.
+    'h650_page_ff': '20260927T0840Z-h650-internal-ff-region.bin',
     # The same staged application, read again on 11 August 2026 while the remote was stranded in
     # safe mode. Kept alongside rather than replacing anything, because its whole value is the
     # comparison: it is byte identical to the other two copies, which is how we know entering safe
@@ -99,10 +102,15 @@ IMAGES = {
     'h600_safemode_gspm': '600-0.2-safemode-gspm-base0x20000.bin',
     # The Harmony 650 update package, the third and last published Harmony firmware. It sat in
     # reference/checksums.md as "not yet analysed, arch 15" until the package was opened; it is
-    # arch 14, so arch 14 has three firmware images and three safe mode configs where arch 12 has
-    # one of each.
+    # arch 14, so arch 14 had three firmware images and three safe mode configs where arch 12 has
+    # one of each. Four images since section 281, with the bench Harmony 650's own 0.2 below.
     'h650_code': '650-0.4-Region_2-code-base0x9000.bin',
     'h650_safemode_gspm': '650-0.4-Region_3-gspm-base0x20000.bin',
+    # The bench Harmony 650's own application, read off the remote on 27 September 2026 across both
+    # internal pages. Version 0.2 where the published package is 0.4, and its header checksum verifies
+    # over all 70336 bytes. Most of it sits at the same address as the Harmony 600's 0.2, and a part
+    # near the top 12 and 240 bytes lower, section 281.
+    'h650_bench_code': '650-0.2-code-base0x9000-bench.bin',
     # The Harmony 300 and Harmony 350 firmware, fetched from Logitech's own software update
     # service on 28 August 2026, section 196. **The fourth published Harmony firmware and the
     # first that did not come from a third party repair site**: the service serves it under
@@ -144,6 +152,10 @@ IMAGES = {
     'h525_region_840000': '20260906T1100Z-h525-region-840000-region.bin',
     'h525_region_850000': '20260906T1100Z-h525-region-850000-region.bin',
     'h525_region_860000': '20260906T1100Z-h525-region-860000-region.bin',
+    # The Harmony 650's first configuration block, 27 September 2026, section 281, the arch 14 write
+    # target's rehearsal dump. It starts with a configuration of 907660 bytes, so no container ends
+    # inside it, and it equals the whole external flash read of the same morning at 0x030000.
+    'h650_region_030000': '20260927T0906Z-h650-region-030000-region.bin',
     # The arch 9 safe mode container, cut out of the 525's firmware region at flash 0x818000.
     # Deliberately not in CONTAINERS: it is the sample the corpus wide claims are re-derived
     # against, and two of them are still open, base slot 1's extent and the log area's range.

@@ -137,7 +137,8 @@ export class HarmonyRemote {
    * own answer is the best source available, section 118.
    *
    * **This does not touch the write rails.** `ARCHITECTURES_WITH_A_WRITE_TARGET` is consulted
-   * separately and is `[12]`, so learning that a remote is arch 9 cannot make it writable.
+   * separately, so learning a remote's architecture cannot make it writable: arch 14 is on that list
+   * and a Harmony 600 is still refused, by the unit check.
    */
   useArchitecture(architecture: number): void {
     if (this.architecture === undefined) this.architecture = architecture;

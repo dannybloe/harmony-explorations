@@ -149,8 +149,8 @@ same `0x820000`, `0x810000` and `0x800000` this page does. `ERASE_BLOCK_SIZE[9]`
 September 2026**, section 269: one block at `0x820000` was erased and rewritten on the bench unit and
 the blocks either side, `0x810000` and `0x830000`, are byte identical before and after, so a fourth
 direction agrees and it is the only one that asked the hardware. A write to this model was refused by
-`ARCHITECTURES_WITH_A_WRITE_TARGET`, "which is `[12]`"<!--superseded-->, until that run; it is
-`[9, 12]` now.
+`ARCHITECTURES_WITH_A_WRITE_TARGET`, "which is `[12]`"<!--superseded-->, until that run; it was
+`[9, 12]` after it and is `[9, 12, 14]` since section 281.
 
 **Writing is a byte at a time**, same section: every byte gets its own write enable, its own three
 byte address, its own status poll and its own write disable, so nothing here has a page boundary.

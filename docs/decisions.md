@@ -115,10 +115,11 @@ image is a second sample rather than a stand in. Other models are iterated on la
    base slot 15 and is executing, so some derived state is there to see. Even on arch 12 the remote is
    in USB mode, so its interface cannot be driven and its analogue sampler is stopped, which is not
    what activity semantics would need. The decision stands on the first three.
-6. **Safety rails are absolute.** Firmware is never written. **Two units may be written to**, the
-   spare Harmony One and the Harmony 525, Danny's decision of 5 September 2026, which replaces "the
-   spare Harmony One is the only write target"<!--superseded-->. His everyday Harmony One and the
-   Harmony 600 stay refused, the 600 because it is the only arch 14 remote here. **The 525 became a write
+6. **Safety rails are absolute.** Firmware is never written. **Three units may be written to** since
+   27 September 2026, the third paragraph below; it was **two**, the spare Harmony One and the Harmony
+   525, from Danny's decision of 5 September 2026, which replaced "the spare Harmony One is the only
+   write target"<!--superseded-->. His everyday Harmony One and the Harmony 600 stay refused, the 600
+   then because it was "the only arch 14 remote here"<!--superseded-->. **The 525 became a write
    target on 6 September 2026**, when the demonstration was authorised and performed, section 269.
    Before that it was "permitted and the rail still refuses it"<!--superseded-->, because permission
    is not capability, which had itself replaced arch 9 having "no `CONFIG_REGION_BASE` entry and no
@@ -130,6 +131,14 @@ image is a second sample rather than a stand in. Other models are iterated on la
    careful got stronger rather than weaker**: its application firmware sits one 64 KiB step below its
    configuration and the safe mode image below that, and the firmware bounds an erase to the flash
    part and nowhere finer, so both images are inside what the remote will accept. Details below.
+   **A third unit since 27 September 2026, the Harmony 650**, Danny's decision the day a second hand
+   one arrived for the purpose, and the demonstration was performed the same day, section 281. That is
+   the condition this decision named for arch 14, a second arch 14 remote, so the 600's exclusion now
+   rests on its identity rather than on its being alone: the two report one product id and one
+   architecture, and the unit check on the identity block read off the unit is the rail that tells them
+   apart. The 650 brought the
+   block write and nothing else: the reset escape and the invalidate gained lists of their own rather
+   than travelling with it.
 7. **Heads down on our own derivation.** The findings in harmony-decompiler discussion #1 are
    treated as hypotheses to test, not as facts to adopt. The original format designer
    (`glenharris`) is active there and is a privileged source, but asking is held in reserve for

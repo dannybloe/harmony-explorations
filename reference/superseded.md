@@ -435,6 +435,8 @@ and leave this table alone.
 | `The spare Harmony One is the only write target` | Danny's decision of 5 September 2026 | of which units may be written to. Two may: the spare Harmony One and the Harmony 525. His everyday Harmony One and the Harmony 600 stay refused, the 600 because it is the only arch 14 remote in existence here. The rail refused arch 9 for one day, because permission is not capability; section 269 performed the demonstration and `ARCHITECTURES_WITH_A_WRITE_TARGET` is `[9, 12]` |
 | `the spare is the only one that may be` | section 269, 6 September 2026 | of which remotes have been written to. Two have: the spare Harmony One, four times from 30 August, and the Harmony 525 once on 6 September |
 | `arch 9 has no write target` | section 269, 6 September 2026 | of the write rails. It has one. What it does not have is a RAM write target or a traced reset escape, and each of those is refused by a check of its own rather than by the flash list being short |
+| `arch 14 has no write target` | section 281, 27 September 2026 | of the write rails. It has one, the Harmony 650. What it does not have is a reset, an invalidate or a RAM write target, each refused by a list of its own, and the Harmony 600 on the same architecture is refused by the unit check |
+| `the only arch 14 remote in existence` | section 281, 27 September 2026 | of the Harmony 600, as the reason it was excluded from writing. A Harmony 650 is on the bench too, and the 600 stays excluded by Danny's decision, enforced through its identity block since the two share a product id and an architecture |
 | `no keypad map in any config here sends a code outside an activity` | section 271, corrected 6 September 2026 | true of base slot 9 alone; a device's own map is a base slot 6 mode record's own tagged list and every configuration here has one per device |
 | `no config here holds a keypad map for device mode` | section 271, corrected 6 September 2026 | 62 of 62 device groups with codes have one, on all four architectures, and each addresses exactly one device |
 | `Where device mode's own keypad map lives is open` | section 271, corrected 6 September 2026 | it is the device's own base slot 6 mode record, consulted on a key press after the page and before base slot 9 |
@@ -463,7 +465,8 @@ the Harmony 525 became writable"<!--superseded-->. That was correct for one day 
 file exists to catch, a prohibition written as though it were permanent. **The Harmony 525 became a
 write target on 6 September 2026**, section 269, when Danny authorised the demonstration and it was
 performed: one block of its own bytes, the neighbours byte identical either side of the erase, the
-configuration read back through a different reader with the same SHA-256. The list is `[9, 12]`.
+configuration read back through a different reader with the same SHA-256. The list was `[9, 12]`,
+and is `[9, 12, 14]` since section 281.
 
 **Section 267's actual argument is unaffected and is the half to keep**: the firmware bounds an erase
 to the flash part and nowhere finer, so both firmware images sit inside the reachable range and our
@@ -476,7 +479,8 @@ architecture where being wrong reaches the running firmware.
 **Killed by section 269**, 6 September 2026, and it was true for one day. Permission arrived on
 5 September with Danny's decision, the three constants arrived the same day with section 267, and
 neither is capability: what was missing was a demonstration. It was authorised and performed, so
-`ARCHITECTURES_WITH_A_WRITE_TARGET` is `[9, 12]` and no document may say the rail refuses arch 9.
+`ARCHITECTURES_WITH_A_WRITE_TARGET` became `[9, 12]`, `[9, 12, 14]` since section 281, and no
+document may say the rail refuses arch 9.
 
 **Two paths did not come with it, and a document that treats the flash permission as covering them is
 restating a dead claim.** `assertRamWriteAllowed` consults

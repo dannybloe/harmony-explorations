@@ -102,7 +102,7 @@ After 3 produces something.
 - [ ] L2 Excavate the lab: discovery is done, the reading phase is left, in tag order.
       Method and grid: [lab-excavation.md](docs/lab-excavation.md)
 - [ ] L3 `GET_VERSION` field 6 and field 9's accessor, the two fields of twelve with no reading
-- [ ] L4 A second arch 14 remote, which is what writing to a Harmony 600 waits on
+- [x] L4 A second arch 14 remote: the Harmony 650, arch 14's write target, while the Harmony 600 stays excluded (section 281)
 
 ---
 
@@ -115,5 +115,6 @@ After 3 produces something.
 - [x] Write to a remote: one block unchanged, a field changed and reverted, a device added, a delay
       raised, and the whole eight step sequence sent (arch 12, sections 222 to 251)
 - [x] Write to a second architecture: one block unchanged on the Harmony 525 (section 269)
+- [x] Write to a third architecture: one block unchanged on the Harmony 650 (section 281)
 - [x] Infrared: 681 protocol families in the rhythm table, and blocks byte identical to Logitech's
       own compiler for the same codes

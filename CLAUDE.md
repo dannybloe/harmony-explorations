@@ -723,16 +723,19 @@ files already here rather than for incoming ones.
 
 ## Never write to a remote
 
-Read paths only, except on **two units**, deliberately and behind two flags. On the **spare Harmony
+Read paths only, except on **three units**, deliberately and behind two flags. On the **spare Harmony
 One**: a block written back unchanged on 30 August 2026, section 222; a delay byte changed and
 reverted on 1 September, sections 236 and 237; a device added on 3 September, section 242, 25 blocks,
 after which the television answered it; and one power on delay raised the same day, section 247, two
 blocks, which is the first write to use the whole eight step sequence. On the **Harmony 525**: one
 block written back unchanged on 6 September, section 269, which is the second architecture written to
-and needed no compiler, since nothing can compile a configuration for that model. **No other remote
-has been written to and no other may be**, which said "the spare is the only one that may
-be"<!--superseded--> until 6 September 2026. His everyday Harmony One and the Harmony 600 are excluded
-by name. These
+and needed no compiler, since nothing can compile a configuration for that model. On the **Harmony
+650**, a second hand unit which Danny says may be reprogrammed as the work needs: one block written back unchanged on
+27 September 2026, section 281, the first write to arch 14. **No other remote has been written to and
+no other may be**, which said "the spare is the only one that may be"<!--superseded--> until 6
+September 2026. His everyday Harmony One and the Harmony 600 are excluded by name, and **the rail
+aimed at the 600 is the unit check on its identity**, since it reports the same product id and
+architecture as the 650. These
 devices are irreplaceable. Note that patching a concordance
 architecture constant to fix the firmware dump also redirects `erase_firmware()` and
 `write_firmware_to_remote(direct=1)`, so a patched build must be treated as read-only.
@@ -749,12 +752,16 @@ document:
 * **Firmware is never written.** `WRITE_FLASH` is restricted to the config region for the detected
   architecture (One `0x040000`, 600/700 `0x030000`) and a write outside it is refused by the
   library, not by the user interface.
-* **Two units may be written to and no others**, Danny's decision of 5 September 2026: the **spare
-  Harmony One** and the **Harmony 525**. The exclusions are the point: his everyday Harmony One, and
-  the Harmony 600, which is the only arch 14 remote in existence here.
+* **Three units may be written to and no others**: the **spare Harmony One** and the **Harmony 525**,
+  Danny's decision of 5 September 2026, and the **Harmony 650**, his decision of 27 September 2026.
+  The exclusions are the point: his everyday Harmony One, and the Harmony 600. This said the 600 was
+  excluded as "the only arch 14 remote in existence here"<!--superseded--> until the 650 arrived,
+  which is what the rule named as the condition for an arch 14 write target. **The 600 and the 650
+  are one product id and one architecture**, so the write list admits both and the unit check, off
+  the identity block read from the remote, is what refuses the 600. Section 281.
   **The 525 is permitted and not yet possible**, which is a distinction to keep rather than collapse.
-  `ARCHITECTURES_WITH_A_WRITE_TARGET` is still `[12]`, and what is missing is now a demonstration
-  rather than a number. **All three constants landed on 5 September 2026, section 267**, read out of
+  `ARCHITECTURES_WITH_A_WRITE_TARGET` was still `[12]` then, and what was missing was a demonstration
+  rather than a number, which section 269 supplied. **All three constants landed on 5 September 2026, section 267**, read out of
   the 525's own application image: the configuration is at `0x820000`, the ceiling is `0x870000` where
   the log area starts, and the erase block is 64 KiB, because the driver sends the SPI opcode `0xD8`
   and the classifier accepts exactly eight tags, which is the whole 512 KiB part. This bullet said
@@ -782,13 +789,21 @@ document:
   which the existing model predicted: it keeps its configuration on a serial chip and executes nothing
   out of the block being erased, where arch 12 does and does restart, section 247.
   **The old wording said the spare Harmony One was the only write target**<!--superseded--> and that
-  arch 9 had none either. **Seven remotes are on the bench**: a programmed Harmony One, a Harmony 600, the spare Harmony
-  One, a Harmony 525, and since 27 August 2026 a Harmony Touch, a Harmony 350 and a Harmony 300.
+  arch 9 had none either. **Eight remotes are on the bench**: a programmed Harmony One, a Harmony 600, the spare Harmony
+  One, a Harmony 525, since 27 August 2026 a Harmony Touch, a Harmony 350 and a Harmony 300, and since
+  27 September 2026 a Harmony 650.
   This said four until 29 August 2026, twelve lines above an architecture table that dates the other
   three. None of the three changes the write argument, since none is arch 12 (Harmony One) and
-  `openHarmony` refuses all three, which is why the stale count survived. **Arch 14 (Harmony 600) has no write target at all** and writing to it
-  stays blocked until a second arch 14 remote exists. **Arch 9 (Harmony 525) is a write target since
-  6 September 2026**, on Danny's word, and `ARCHITECTURES_WITH_A_WRITE_TARGET` is `[9, 12]`. It was
+  `openHarmony` refuses all three, which is why the stale count survived. **Arch 14 had no write
+  target**<!--superseded--> until 27 September 2026, when a Harmony 650 arrived and became it, section
+  281: one block written back unchanged, the blocks either side identical before and after the erase,
+  and the whole configuration read back with the SHA-256 of the read before it. Its two constants came
+  off four arch 14 firmware images, the ceiling `0x200000` from the address classifier and the 64 KiB
+  block from the eraser's SPI opcode `0xD8`. **The reset escape and the invalidate do not come with
+  it**: both had taken write permission and nothing more, so they have lists of their own now,
+  `[12]` and `[9, 12]`, and the RAM write stays `[12]`. **Arch 9 (Harmony 525) is a write target since
+  6 September 2026**, on Danny's word, which made `ARCHITECTURES_WITH_A_WRITE_TARGET` `[9, 12]`, and
+  it is `[9, 12, 14]` since section 281. It was
   permitted from 5 September and refused by the rail until the demonstration was authorised, which is
   the distinction the module rests on: permission is not capability, and having every constant a write
   needs is not capability either, which section 267 made concrete by supplying them. This said arch 9
@@ -906,9 +921,10 @@ document:
   region and at `0x870000` on arch 9 because the log area starts there.
 * **A new architecture refuses writes by construction**, because the gate is
   `ARCHITECTURES_WITH_A_WRITE_TARGET` in `packages/usb/src/rails.ts` and it names the architectures a
-  demonstration has been performed on, `[9, 12]`. Adding a read profile does not add a write target
-  and must not. **Nor does adding one path add another**: the reset escape and the RAM write have
-  lists of their own, because arch 9 arriving on this one would otherwise have taken both with it.
+  demonstration has been performed on, `[9, 12, 14]`. Adding a read profile does not add a write target
+  and must not. **Nor does adding one path add another**: the reset escape, the invalidate and the RAM
+  write have lists of their own. Arch 9 arriving on the write list took the invalidate with it, which
+  the invalidate list keeps, and would have taken the other two; arch 14 would have taken all three.
 
 **Read only is not the same as harmless, and the two hazards are enforced in code.** An internal
 program memory read of an **odd count** never terminates and hangs the remote, so `packages/usb`
@@ -936,7 +952,7 @@ architecture numbers are this project's internal handle and map to nothing on th
 |---|---|
 | 9 | Harmony 525 |
 | 12 | Harmony One, or the spare Harmony One |
-| 14 | Harmony 600, or the Harmony 700 for the reference image |
+| 14 | Harmony 600 or Harmony 650, or the Harmony 700 for the reference image. The 650 is the write target and the 600 is not, so name which |
 | 8 | Harmony 880 or 885, contributed configs only |
 | 10 | Harmony 890 or 895, contributed configs only |
 | 16 | Harmony 300 or Harmony 350, on the bench since 27 August 2026, never opened by **this** library, which refuses the file based family; its configuration was read with concordance and is a lab fixture, section 194. **Its firmware is in the lab since 28 August 2026**, from Logitech's own update service, section 196, and **six of its fifteen container slots are named out of it**, section 259 |
@@ -1886,11 +1902,13 @@ HARMONY_ODD_READ_EXPERIMENT=1 node packages/usb/bin/idle-flags-after-hang.ts
                        holds its three predictions. Take the batteries out afterwards.
 node packages/usb/bin/rehearse-block.ts --dump <image> --block 0x040000 [--commit]
                        the write rehearsal, M4: read one 64 KiB erase block off a remote, compare it
-                       with the lab dump, and print what a write would send. **Two units since
-                       6 September 2026**, chosen by the architecture read off the remote rather than
-                       by an argument: the spare Harmony One and the Harmony 525. **Both may be
-                       written since 6 September 2026**, which said "only the first may be
-                       written"<!--superseded--> for the few hours before the demonstration ran.
+                       with the lab dump, and print what a write would send. **Three units**, chosen
+                       by the architecture read off the remote rather than by an argument: the spare
+                       Harmony One, the Harmony 525 since 6 September 2026 and the Harmony 650 since
+                       27 September, section 281. On arch 14 the architecture admits the Harmony 600
+                       too and the unit check is what refuses it. **All three may be written**, which
+                       said "only the first may be written"<!--superseded--> for the few hours before
+                       the 525's demonstration ran.
                        A 525 run needs two things first, both reads: a region read covering a whole
                        block, and that filename plus the unit's identity registered in the lab. Only
                        block `0x820000` is registered, so no other 525 block can be rehearsed until a

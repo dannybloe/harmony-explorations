@@ -72,7 +72,8 @@ test('only a unit the rehearsal may run against has a flash size recorded', () =
   // named a property this table does not have. What the table actually bounds is the neighbour
   // reads, which happen in the **dry run**, before anything is written and on an architecture that
   // may never be written to at all. A hole is still not a default.
-  assert.deepEqual(Object.keys(NOMINAL_FLASH_SIZE).sort(), ['12', '9']);
+  // Arch 14 (Harmony 650) since section 281.
+  assert.deepEqual(Object.keys(NOMINAL_FLASH_SIZE).sort(), ['12', '14', '9']);
 });
 
 test('the arch 9 part is eight blocks and the config region is the top five of them', () => {
@@ -188,14 +189,18 @@ function rehearsalScript(): string {
   return readFileSync(fileURLToPath(new URL('../bin/rehearse-block.ts', import.meta.url)), 'utf8');
 }
 
-test('the rehearsal names two units and keys them by the architecture off the remote', () => {
+test('the rehearsal names three units and keys them by the architecture off the remote', () => {
   // Danny's decision of 5 September 2026 made the permitted units two, and section 267 gave arch 9
   // (Harmony 525) the three constants a comparison needs. Before that the script had one hardcoded
-  // label and one hardcoded dump set.
+  // label and one hardcoded dump set. **Three since 27 September 2026**, section 281: the Harmony 650
+  // is arch 14's, and the Harmony 600 on the same architecture is kept out by the unit check, since
+  // its identity is not the one `h650` records.
   const text = rehearsalScript();
   assert.match(text, /const TARGETS: Readonly<Record<number, Target>>/);
   assert.match(text, /9: \{ model: 'the Harmony 525', unitLabel: 'h525'/);
   assert.match(text, /12: \{ model: 'the spare Harmony One', unitLabel: 'one_spare'/);
+  assert.match(text, /14: \{ model: 'the Harmony 650', unitLabel: 'h650', dumps: H650_DUMPS \}/);
+  assert.match(text, /const H650_DUMPS = new Set<string>\(\[\s*'h650_region_030000',\s*\]\);/);
   // Keyed by what the device says. An argument would let an operator point the Harmony One's allow
   // list at a 525, which is the slip the allow list exists to stop.
   assert.match(text, /const target = TARGETS\[architecture\];/);
@@ -212,8 +217,8 @@ test('a dry run asks for no write permission, whether or not the target has one'
   // protects an operator: a run without `--commit` reaches its own end before anything asks for
   // write permission, so a dry run on a permitted target is still a read. That is a property of the
   // script's shape and it can fail on any refactor, where the old assertion could only fail on a
-  // decision.
-  assert.deepEqual([...ARCHITECTURES_WITH_A_WRITE_TARGET], [9, 12]);
+  // decision. Arch 14 (Harmony 650) joined both on 27 September 2026, section 281.
+  assert.deepEqual([...ARCHITECTURES_WITH_A_WRITE_TARGET], [9, 12, 14]);
   const text = rehearsalScript();
   const dryReturn = text.indexOf("dry run: nothing was written");
   const firstWrite = text.indexOf('assertFirstWriteAllowed()');

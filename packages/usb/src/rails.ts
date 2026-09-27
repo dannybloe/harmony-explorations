@@ -61,7 +61,7 @@ export const CONFIG_REGION_BASE: Readonly<Record<number, number>> = {
   // `ARCHITECTURES_WITH_A_WRITE_TARGET` "is `[12]` and this commit does not change
   // it"<!--superseded-->, on the ground that what these rows buy is a refusal naming the missing
   // demonstration rather than a missing number. Section 269 performed the demonstration on 6
-  // September 2026 and the list is `[9, 12]`. The distinction the wording was drawing is still the
+  // September 2026 and the list was `[9, 12]`, and `[9, 12, 14]` since section 281. The distinction the wording was drawing is still the
   // right one and is easier to see now that both halves have happened: the rows say where a write
   // would be bounded, the list says whether anything may write, and the rows did not move when the
   // permission did.
@@ -74,14 +74,21 @@ export const CONFIG_REGION_BASE: Readonly<Record<number, number>> = {
 /**
  * Architectures that have a write target at all.
  *
- * Seven remotes are on the bench: a programmed Harmony One, a Harmony 600, a spare Harmony One, a
- * Harmony 525, and since 27 August 2026 a Harmony Touch, a Harmony 350 and a Harmony 300, none of
- * which this library can even open. **Two units may be written to**, Danny's decision of 5 September
- * 2026: the spare Harmony One, which is arch 12, and the Harmony 525, which is arch 9. His everyday
- * Harmony One and the Harmony 600 are excluded by name, the 600 because it is the only arch 14
- * remote in existence here. **So arch 14 has no write target**, and writing to it stays refused
- * until a second arch 14 remote exists. Reading arch 14 is unaffected, which is the point of keeping
- * this separate from the read paths.
+ * Eight remotes are on the bench: a programmed Harmony One, a Harmony 600, a spare Harmony One, a
+ * Harmony 525, since 27 August 2026 a Harmony Touch, a Harmony 350 and a Harmony 300, none of which
+ * this library can even open, and since 27 September 2026 a Harmony 650. **Three units may be
+ * written to**: the spare Harmony One, which is arch 12, and the Harmony 525, which is arch 9, by
+ * Danny's decision of 5 September 2026, and the Harmony 650, which is arch 14, by his decision of 27
+ * September. His everyday Harmony One and the Harmony 600 are excluded by name. This said "the 600
+ * because it is the only arch 14 remote in existence here"<!--superseded--> and that "arch 14 has no
+ * write target"<!--superseded--> until the 650 arrived, which was exactly the condition it named for
+ * reopening: a second arch 14 remote.
+ *
+ * **Arch 14 on this list does not let the Harmony 600 be written**, and that is the part to read
+ * twice. The two report the same product id and architecture, so this list cannot tell them apart;
+ * `assertUnitIsPermitted` can, from the identity block read off the unit, and a permission naming the
+ * 650's record refuses the 600. So on arch 14 the unit check is the rail that carries the exclusion,
+ * where on arch 12 it separates the spare from the everyday One in the same way. Section 281.
  *
  * **Arch 9 was added on 6 September 2026, on Danny's word, for the block rehearsal.** It had been
  * permitted since 5 September and refused by this list, which is the distinction the module rests
@@ -104,7 +111,42 @@ export const CONFIG_REGION_BASE: Readonly<Record<number, number>> = {
  * So an architecture arriving on this list gets the flash block path and nothing else, and each
  * further path is a decision with its own evidence rather than a side effect of this line.
  */
-export const ARCHITECTURES_WITH_A_WRITE_TARGET: readonly number[] = [9, 12];
+export const ARCHITECTURES_WITH_A_WRITE_TARGET: readonly number[] = [9, 12, 14];
+//
+// **Arch 14 joined on 27 September 2026, for the Harmony 650 and never for the Harmony 600**, section
+// 281. Danny's decision: a second hand Harmony 650 arrived, arch 14 like the 600, and may be
+// reprogrammed freely. The 600 stays excluded by name and it is **the identity check** that holds
+// that line, not this list, since both remotes are arch 14 and both enumerate as `0xC122`: a
+// permission names the 650's unit record, and the 600's identity block differs from it, compared off
+// both units' own internal page reads. What this admits is the flash block path and nothing else,
+// the same shape as arch 9's arrival: the reboot and the invalidate have lists of their own below,
+// and arch 14 is on neither, because arch 14 dispatching an escape is not the same as anybody having
+// sent one to it.
+
+/**
+ * Architectures a config writer may **restart**, the escape's `0x02`, which is not the write list.
+ *
+ * Split out on 27 September 2026, section 281, and the reason is the one section 269 recorded for the
+ * RAM write: arch 14 (Harmony 600, 650 and 700) dispatches the reset escape, `ESCAPE_SUB_COMMANDS`
+ * has its row, so the only thing between a Harmony 650 joining the write list and a reboot command
+ * nobody has sent to that architecture was the list it joined. Arch 12 (Harmony One) has had it sent,
+ * section 247. Arch 9 (Harmony 525) has no escape row and `assertResetAllowed` refuses it on that
+ * ground as well.
+ */
+export const ARCHITECTURES_WITH_A_RESET_TARGET: readonly number[] = [12];
+
+/**
+ * Architectures a config writer may send the **invalidate** to, `WRITE_MISC` selector `0x02`, which
+ * is not the write list either.
+ *
+ * Split out on 27 September 2026, section 281, for arch 14's sake: the invalidate took write
+ * permission and nothing else, so a Harmony 650 on the write list would have been handed a command
+ * whose arch 14 executor nobody has read. **The list keeps exactly what was permitted before**, arch
+ * 12 (Harmony One), where it has been sent and its effect measured, sections 247 to 251, and arch 9
+ * (Harmony 525), which was reachable through the write list since section 269 and has not been sent
+ * one. Narrowing arch 9 is a separate decision and this commit does not take it.
+ */
+export const ARCHITECTURES_WITH_AN_INVALIDATE_TARGET: readonly number[] = [9, 12];
 
 /**
  * Architectures whose data memory may be written, which is not the same list and is deliberately
@@ -154,6 +196,15 @@ export const WRITABLE_CEILING: Readonly<Record<number, number>> = {
   // the log inside the writable range for no gain, since no configuration here comes near it.
   9: 0x870000,
   12: 0x3d0000,
+  // **The top of the part on arch 14 (Harmony 600, 650 and 700)**, added on 27 September 2026 for
+  // the Harmony 650, section 281. The external flash is 2 MiB and the firmware's own address
+  // classifier refuses a top byte of `0x20` or more, section 192, asserted on four arch 14 images:
+  // the Harmony 600's, the Harmony 700's and both of the Harmony 650's. Nothing is known to live above the
+  // configuration on this architecture, where the log area's writer does not exist, so the ceiling
+  // is the part's end rather than something below it. Below the region sit the safe mode
+  // configuration at `0x020000` and, on the Harmony 600, the stored application at `0x000000`, which
+  // `CONFIG_REGION_BASE` keeps out of reach.
+  14: 0x200000,
 };
 
 /**
@@ -218,6 +269,15 @@ export const ERASE_BLOCK_SIZE: Readonly<Record<number, number>> = {
   // is the case where that stopped being true, three parts against arch 12 (Harmony One).
   9: 0x10000,
   12: 0x10000,
+  // **Arch 14 (Harmony 600, 650 and 700) reads off its own firmware, four images**, section 281.
+  // The eraser sends `0xD8`, the 64 KiB block erase of the EON F16 part these remotes report as
+  // `15:1C`. The routine starts at `0x1745C` in both the Harmony 600's and the Harmony 650's 0.2,
+  // which are two builds of one program and carry it at the same address, and loads the opcode at
+  // `0x17462`; in the Harmony 650's 0.4 package the load is at `0x18B9E` and in the Harmony 700's 2.8
+  // at `0x18DC6`, whose routine starts at `0x18DC0`. The part also has a 4 KiB sector erase, `0x20`,
+  // which none of the four sends. **Measured on the part since the first write on the Harmony 650**,
+  // section 281: the blocks either side of `0x030000` were identical before and after the erase.
+  14: 0x10000,
 };
 
 /**
@@ -402,7 +462,30 @@ export function assertUnitIsPermitted(
 
 /** The half-open range a write may touch, for the architecture in `p`. */
 export function writableRange(p: WritePermission): { start: number; end: number } {
-  const start = CONFIG_REGION_BASE[p.architecture];
+  return writableRangeFrom(
+    p.architecture,
+    CONFIG_REGION_BASE[p.architecture],
+    WRITABLE_CEILING[p.architecture],
+    p.configLength,
+  );
+}
+
+/**
+ * The rule inside `writableRange`, apart from the two table lookups.
+ *
+ * **Exported so the ceiling hole can be tested at all**, the same reason `eraseBoundsFor` is. Until
+ * section 281 arch 14 (Harmony 600, 650 and 700) was the architecture with a region and no ceiling,
+ * which is the case the refusal below exists for; it has both now, and so does every other
+ * architecture with a region, so no call through the tables reaches the branch. Taking the two
+ * values as arguments keeps the rule testable without a table holding a hole on purpose.
+ */
+export function writableRangeFrom(
+  architecture: number,
+  start: number | undefined,
+  ceiling: number | undefined,
+  configLength: number,
+): { start: number; end: number } {
+  const p = { architecture, configLength };
   if (start === undefined) {
     throw new RailError(`no config region recorded for architecture ${p.architecture}`);
   }
@@ -410,14 +493,14 @@ export function writableRange(p: WritePermission): { start: number; end: number 
     throw new RailError(`implausible config length ${p.configLength}`);
   }
   const end = start + p.configLength;
-  const ceiling = WRITABLE_CEILING[p.architecture];
   // **A hole in the table is a refusal, not "no ceiling".** This read `ceiling !== undefined &&`,
   // so an architecture with a config region and no recorded ceiling got an unbounded write, while
   // `assertEraseAllowed` reads the identical hole as a refusal. Two rails, one table, opposite
-  // readings, and section 88's stated rule is that a table with a hole refuses. It is unreachable
-  // today because `ARCHITECTURES_WITH_A_WRITE_TARGET` is `[12]` and arch 12 (Harmony One) has both
-  // entries; adding arch 14 (Harmony 600) when a second unit arrives would have silently given its
-  // writes no upper bound while its erases still refused. Section 139.
+  // readings, and section 88's stated rule is that a table with a hole refuses. It was unreachable
+  // then because `ARCHITECTURES_WITH_A_WRITE_TARGET` was `[12]` and arch 12 (Harmony One) had both
+  // entries; adding arch 14 when a second unit arrived would have silently given its writes no upper
+  // bound while its erases still refused. Section 139. That is what happened in section 281, and arch
+  // 14 gained its ceiling in the same commit, so the branch is reached through `writableRangeFrom`.
   if (ceiling === undefined) {
     throw new RailError(
       `no writable ceiling recorded for architecture ${p.architecture}: refusing to write`,
@@ -457,7 +540,7 @@ export function assertFlashWriteAllowed(
  *
  * **Exported so the refusal can be tested at all.** Inside `assertEraseAllowed` it sat after
  * `assertPermissionIsUsable`, which already refuses every architecture outside
- * `ARCHITECTURES_WITH_A_WRITE_TARGET`, and that list is `[12]`, which has both entries. So the
+ * `ARCHITECTURES_WITH_A_WRITE_TARGET`, and that list was `[12]`, which has both entries. So the
  * branch was unreachable through any caller, and the rail nobody can trigger is the rail nobody has
  * tested: `rails.test.ts` checked the table's shape instead, which is the same defect one level up.
  * The lookup is the thing with a rule in it, so it is a function with a test rather than four lines
@@ -662,6 +745,13 @@ export function assertSessionEndAllowed(
  */
 export function assertInvalidateAllowed(p: WritePermission): void {
   assertPermissionIsUsable(p);
+  if (!ARCHITECTURES_WITH_AN_INVALIDATE_TARGET.includes(p.architecture)) {
+    throw new RailError(
+      `architecture ${p.architecture} may be written a block and not sent the invalidate: its `
+        + '`WRITE_MISC` selector 2 executor is unread, and a flash demonstration buys no other path. '
+        + 'Section 281.',
+    );
+  }
 }
 
 /**
@@ -697,17 +787,31 @@ export function assertInvalidateAllowed(p: WritePermission): void {
  * a guard justified by another table's contents needs re-deriving whenever that table moves.
  *
  * The test stays as well, since the two claims differ: this refuses at runtime, and the test says
- * the tables have not drifted. The session end rail keeps its own copy because it takes the lighter
+ * the tables have not drifted. **Since section 281 a second check follows it**, the reset list, which
+ * refuses an architecture whose escape is traced and has never been sent the reboot: arch 14 (Harmony
+ * 600, 650 and 700). The dispatch check runs first so that it stays reachable, arch 9 being the case
+ * it refuses and the list never getting a say. The session end rail keeps its own copy because it takes the lighter
  * permission and always could be reached with any architecture.
  */
 export function assertResetAllowed(p: WritePermission): void {
   assertPermissionIsUsable(p);
+  // The dispatch check first and the list second, so that each has an architecture it is the one to
+  // refuse: arch 9 (Harmony 525) fails the first, arch 14 (Harmony 600, 650 and 700) passes it and
+  // fails the second. The other order made the first unreachable, since the list is `[12]` and arch
+  // 12 dispatches, which is the state the docstring above warns about. Section 281's review.
   const dispatched = ESCAPE_SUB_COMMANDS[p.architecture];
   if (dispatched === undefined || !dispatched.includes(ESCAPE_RESET)) {
     throw new RailError(
       `architecture ${p.architecture} has no reset escape read from its firmware, so restarting it `
         + 'is refused: the reboot would be a command nobody here has traced. Section 97 is what was '
         + 'read for arch 12, and the equivalent for this architecture is unread.',
+    );
+  }
+  if (!ARCHITECTURES_WITH_A_RESET_TARGET.includes(p.architecture)) {
+    throw new RailError(
+      `architecture ${p.architecture} may be written a block and not restarted over USB: its escape `
+        + 'is traced but nothing here has sent it the reboot, and a flash demonstration buys no other '
+        + 'path. Section 281.',
     );
   }
 }

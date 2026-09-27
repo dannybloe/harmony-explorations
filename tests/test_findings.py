@@ -2096,7 +2096,8 @@ class TestTheFlashAddressIsClassifiedBeforeItIsUsed(unittest.TestCase):
       pattern was a pattern about one image. **A byte pattern that contains a register address cannot
       be used to compare two images.**
 
-    The classifier is one routine across two architectures and four images. What is per architecture
+    The classifier is one routine across two architectures and six images, four of them arch 14's
+    since section 281 added the Harmony 650's two. What is per architecture
     is the external ceiling, and that is asserted per image rather than shared.
     """
 
@@ -2112,15 +2113,21 @@ class TestTheFlashAddressIsClassifiedBeforeItIsUsed(unittest.TestCase):
         'one34_code': 0x40,
         'h600_code_complete': 0x20,
         'h700_code': 0x20,
+        # The Harmony 650's two, since section 281 made that unit arch 14's write target: the package
+        # and the one read off the bench unit, which is a different build.
+        'h650_code': 0x20,
+        'h650_bench_code': 0x20,
     }
     BASES = {
         'one_internal_fe': 0x0000,
         'one34_code': 0x020000,
         'h600_code_complete': 0x9000,
         'h700_code': 0x9000,
+        'h650_code': 0x9000,
+        'h650_bench_code': 0x9000,
     }
     ARCH12 = ('one_internal_fe', 'one34_code')
-    ARCH14 = ('h600_code_complete', 'h700_code')
+    ARCH14 = ('h600_code_complete', 'h700_code', 'h650_code', 'h650_bench_code')
 
     #: Safe mode's own copies of the three variables the classifier and both handlers share.
     STATE, ADDRESS, SELECTOR = 0x1E7, 0x1E8, 0x1EE
@@ -2175,7 +2182,7 @@ class TestTheFlashAddressIsClassifiedBeforeItIsUsed(unittest.TestCase):
             self.assertGreater(entry, 0, name)
         self.assertEqual(found, self.CEILINGS)
         # And the split is by architecture rather than by image, which is the claim worth pinning:
-        # two images agree on each side and the two sides disagree.
+        # the images agree on each side, two on arch 12 and four on arch 14, and the two sides disagree.
         self.assertEqual({found[n] for n in self.ARCH12}, {0x40})
         self.assertEqual({found[n] for n in self.ARCH14}, {0x20})
         self.assertNotEqual(found['one34_code'], found['h700_code'])

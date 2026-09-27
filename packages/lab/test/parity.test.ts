@@ -67,7 +67,10 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // compares against, so each one needs its own base and each base is a fixture.
   // 107 since the compare base for the working screen write, section 279.
   // 108 since the compare base for the power off write, section 280.
-  assert.equal(Object.keys(pythonImages()).length, 108, 'every fixture tests/lab.py names');
+  // 109 since the Harmony 650's config block, the compare base for its first write, section 281.
+  // 110 since the bench Harmony 650's own firmware, which is not the published package's, section 281.
+  // 111 since that unit's identity page, which is what keeps the Harmony 600 out, section 281.
+  assert.equal(Object.keys(pythonImages()).length, 111, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {

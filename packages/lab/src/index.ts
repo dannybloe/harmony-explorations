@@ -64,6 +64,8 @@ export const IMAGES: Readonly<Record<string, string>> = {
   one_page_ff: 'one-internal-ff-full.bin',
   one_spare_page_ff: 'one2-internal-ff-full.bin',
   h600_page_ff: '600-internal-ff-full.bin',
+  // The bench Harmony 650's, section 281.
+  h650_page_ff: '20260927T0840Z-h650-internal-ff-region.bin',
   // The same staged application, read again on 11 August 2026 while the remote was stranded in safe
   // mode. Kept alongside rather than replacing anything, because its whole value is the comparison:
   // it is byte identical to the other two copies, which is how we know entering safe mode erased
@@ -90,6 +92,9 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // configs where arch 12 has one of each.
   h650_code: '650-0.4-Region_2-code-base0x9000.bin',
   h650_safemode_gspm: '650-0.4-Region_3-gspm-base0x20000.bin',
+  // The bench Harmony 650's own application, 0.2 where the package is 0.4, read off the remote across
+  // both internal pages. Section 281.
+  h650_bench_code: '650-0.2-code-base0x9000-bench.bin',
   // The Harmony 300 and Harmony 350 firmware, fetched from Logitech's own software update service
   // on 28 August 2026, section 196. **The fourth published Harmony firmware and the first that did
   // not come from a third party repair site**: the service serves it under skin 104 and its own
@@ -125,6 +130,10 @@ export const IMAGES: Readonly<Record<string, string>> = {
   h525_region_840000: '20260906T1100Z-h525-region-840000-region.bin',
   h525_region_850000: '20260906T1100Z-h525-region-850000-region.bin',
   h525_region_860000: '20260906T1100Z-h525-region-860000-region.bin',
+  // The Harmony 650's first configuration block, 27 September 2026, section 281: the arch 14 write
+  // target's rehearsal dump. It begins with the configuration, which is 907660 bytes and so does not
+  // end inside it, and it equals the whole external flash read of the same morning at `0x030000`.
+  h650_region_030000: '20260927T0906Z-h650-region-030000-region.bin',
   // The arch 9 safe mode container, cut out of the 525's own firmware region at flash 0x818000 on
   // 8 August 2026. Section 76 kept it out of the corpus because it contradicted six corpus claims;
   // section 77 read one of them and section 78 read four more, so what is left is base slot 1's

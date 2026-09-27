@@ -122,7 +122,7 @@ this table on.
 
 | selector | replies land in | what it is |
 |---|---|---|
-| 1, the default | `responses/` | a **test account**, whose address says so in its local part. Danny pointed the Harmony Touch work at it by name on 27 August 2026, and it is the account `compile.py` has been authorised against |
+| 1, the default | `responses/` | a **test account**, whose address says so in its local part. Danny pointed the Harmony Touch work at it by name on 27 August 2026, and it is the account `compile.py` has been authorised against. **The Harmony 650 is on it** since 27 September 2026, programmed by Danny with MyHarmony with his KPN set top box, Denon and LG television |
 | 2 | `responses-account2/` | the account under Danny's own name, and the one that accumulated the calibration records |
 
 So **neither account is read only** and the old rail pointed at the wrong one. The standing rule is

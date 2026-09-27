@@ -32,6 +32,10 @@ export const NOMINAL_FLASH_SIZE: Readonly<Record<number, number>> = {
   // floor rather than a size.
   9: 0x880000,
   12: 0x400000,
+  // Arch 14 (Harmony 600, 650 and 700): 2 MiB from zero, the EON F16, section 88's four routes. The
+  // block below the configuration, `0x020000`, holds the safe mode configuration, so the neighbour
+  // check on a first write at `0x030000` is what shows an erase of 64 KiB left it alone. Section 281.
+  14: 0x200000,
 };
 
 /**
