@@ -32,7 +32,7 @@ Plan: [003-how-an-activity-is-built.md](docs/plans/003-how-an-activity-is-built.
   - [x] 1.1.6 What an entry in the activity switching table corresponds to: a per model prefix, one per activity, one more (section 272)
   - [x] 1.1.7 Where device mode's own keypad map comes from: the device's own screen record (section 271)
   - [x] 1.1.8 Scored against one_config and h600_config: seven of nine right, P6 incomplete, P7 wrong
-- [x] 1.2 Compose an activity, the counterpart of `composeDevice`: `composeActivity`, four architectures
+- [ ] 1.2 Compose an activity, the counterpart of `composeDevice`: `composeActivity`, four architectures
   - [x] 1.2.1 The screen half on arch 12 (Harmony One): a menu row, its hit rectangle and a drawn name (section 275)
   - [ ] 1.2.2 A fourth activity, which needs a new menu page: a page counter, a pool copy, a page count, and undeadening the two page turn keys (section 275)
   - [x] 1.2.3 The screen half on arch 14 (Harmony 600 and 650): the activity menu is the two row device list, a row on both buttons, and a page of one activity swaps to the full page picture; composed and checked on the 650, 600 and 700 configurations, not on hardware (section 289)
@@ -41,7 +41,8 @@ Plan: [003-how-an-activity-is-built.md](docs/plans/003-how-an-activity-is-built.
   - [x] 1.2.6 The arch 14 send prelude: a delay step of three lists per command, read on 1598 of 1598 and composed with the device's InterDeviceDelay variable and table; not on hardware yet, since it acts only inside a start sequence (section 287)
   - [x] 1.2.7 Power off: a composed device joins the idle map's all off list and every existing activity's enter list as 0, and a composed activity writes every other device 0. Written 24 September 2026 with the Denon in the activity, and Off switches both off (section 280)
   - [x] 1.2.8 A composed device's power on delay on arch 14: the on transition runs the power command and then a 0x72 on PowerOnDelay through a 451 case table, a hundred tenths at a time, 15 of 15, and composed; not on hardware yet (section 288)
-  - [ ] 1.2.9 An arch 14 activity's own screens: every enter list opens with a start up screen of its own, "Starting" and its name, 13 of 13, and whether it has a working screen is unread (section 289)
+  - [x] 1.2.9 An arch 14 activity's own screens: a start up screen of its own, "Starting" and its name, and a working screen that is a device page with "Devices" at the bottom, plus a case in the four lookup records keyed by the activity; composed and checked on the 650, 600 and 700 configurations, not on hardware (section 290)
+  - [ ] 1.2.10 A composed arch 14 activity's own device list, "Activity" at the bottom: the key under Devices opens the idle one now, "Activities" (section 290)
 - [ ] 1.3 Write one to the spare Harmony One and watch the television, per docs/plans/004-writing-an-activity.md
   - [x] 1.3.1 First write: the activity appears on the menu and beeps, and starts nothing (section 276)
   - [x] 1.3.2 Why: base slot 13's narrow and wide size the state variable storage and everything above it is painted with 0xFE at every boot, so the power variable held 65278 instead of 0. Measured on arch 12 and both arch 14 images, confirmed on hardware; the fill is unmeasured on arch 9
@@ -61,8 +62,8 @@ Plan: [003-how-an-activity-is-built.md](docs/plans/003-how-an-activity-is-built.
     - [x] Read the 650's region back and register it as the next compare base: `h650_lg_region`, the written file byte for byte
     - [x] Skip the 650's welcome tour after a write: list 660's enter becomes a call to the tour's exit, written, the tour gone (section 286)
     - [ ] Fix `deviceModeMaps`, which picks a help screen for the 700s' A/V switch because it skips a device mode with no key and counts an enter handler as one, and restate section 271's counts (section 285); waits for the bench 700's configuration, read only, as a third case
-  - [ ] 1.4.4 A composed activity, which needs 1.2.9 first
-    - [ ] Write the start variable, 52 on the 650, to 1 near the start of its enter list and to 0 at the end, as all 13 arch 14 activities do, or the inter device delay does not act (section 289)
+  - [ ] 1.4.4 A composed activity, which needed 1.2.9 first
+    - [ ] Write the start variable, 52 on the 650, to 1 near the start of its enter list and to 0 at the end, as all 13 arch 14 activities do, or the inter device delay does not act; composed with the screens now, not yet on the remote (sections 289 and 290)
     - [ ] A region read of the 650 covering 0x110000 before the write, since the composed device's delays reach that block (section 288)
 
 ## 2. Screens
@@ -86,7 +87,7 @@ Plan: [003-how-an-activity-is-built.md](docs/plans/003-how-an-activity-is-built.
 
 - [ ] 4.1 FreeHarmony: how a device is stored in our own library
 - [ ] 4.2 FreeHarmony: convert Logitech's database records into that format
-- [x] 4.3 Turn device information into a compilation that works on a remote
+- [ ] 4.3 Turn device information into a compilation that works on a remote
   - [x] 4.3.1 One device, six commands, catalogue to remote, television answered (section 242)
   - [ ] 4.3.2 A full device of ninety commands
   - [ ] 4.3.3 Several devices at once

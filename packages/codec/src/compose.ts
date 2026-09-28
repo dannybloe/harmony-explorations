@@ -71,6 +71,7 @@ import {
   activityNames,
   activityScreens,
   allOffList,
+  caseQueued,
   deviceVariables,
   handlerSetRoles,
   KEY_EVENT_PRESS,
@@ -1117,7 +1118,16 @@ export interface ComposeActivity {
   readonly screen?: {
     readonly startupMode: number;
     readonly workingMode: number;
-    readonly activeList: number;
+    /** Harmony One: the list every activity's enter list calls to say one is running. */
+    readonly activeList?: number | undefined;
+    /**
+     * Harmony 600, 650 and 700: the variable the start sequence holds at 1 while it runs, the one it
+     * writes 1 before deferring the working screen, and the base slot 9 entry the screen's keypad map
+     * case selects, section 290. All three from `composeActivityScreen`.
+     */
+    readonly startVariable?: number | undefined;
+    readonly flagVariable?: number | undefined;
+    readonly set?: number | undefined;
     /** The value the screen's record case was composed for, checked against this activity's. */
     readonly activity: number;
   };
@@ -1288,38 +1298,64 @@ export function composeActivity(c: Container, activity: ComposeActivity): Compos
   // screen directly, and every real enter list ends with a further call into that branch, which ours
   // leaves out. So the composed activity skips the Remote Assistant's question.
   const screen = activity.screen;
+  // On arch 14 (Harmony 600, 650 and 700) the start sequence has another shape, section 290: no timer
+  // cancel and no "an activity is running" list, and instead a variable held at 1 while it runs, which
+  // gates the inter device delay, and a flag written 1 before the working screen is deferred. And the
+  // deferred list enters the working screen itself, `h600_config`'s form, where the Harmony One's calls
+  // a list that does.
+  const fourSlot = c.architecture === 14;
   if (screen !== undefined) {
     if (screen.activity !== value) {
       throw new ComposeError(`the screen was composed for activity ${screen.activity}, this is ${value}`);
     }
-    for (const [what, index] of [['the active list', screen.activeList]] as const) {
-      if (!Number.isInteger(index) || index < 0 || index >= existingLists) {
-        throw new ComposeError(`${what} names list ${index} of ${existingLists} that exist`);
+    if (fourSlot) {
+      if (screen.set !== set) {
+        throw new ComposeError(`the screen selects keypad map ${screen.set}, and this activity's is ${set}`);
+      }
+      for (const [what, index] of [['start', screen.startVariable], ['flag', screen.flagVariable]] as const) {
+        if (index === undefined || !Number.isInteger(index) || index <= firmwareStateVariableMax(c.architecture)
+            || index >= Math.min(states.count, STATE_WRITE_LIMIT)) {
+          throw new ComposeError(`the ${what} variable ${index} is not one an enter list can write`);
+        }
+      }
+    } else {
+      for (const [what, index] of [['the active list', screen.activeList]] as const) {
+        if (index === undefined || !Number.isInteger(index) || index < 0 || index >= existingLists) {
+          throw new ComposeError(`${what} names list ${index} of ${existingLists} that exist`);
+        }
       }
     }
   }
   const showList = firstList + 2;
-  const deferList = firstList + 3;
+  const deferList = fourSlot ? firstList + 2 : firstList + 3;
 
   const opening = screen === undefined ? 0 : 2;
-  const closing = screen === undefined ? 0 : 2;
+  const closing = screen === undefined ? 0 : fourSlot ? 3 : 2;
   const enterBody = new Writer(1 + 3 * (opening + activity.targets.length + 1 + closing));
   enterBody.u8(opening + activity.targets.length + 1 + closing);
   if (screen !== undefined) {
     enterBody.u16(screen.startupMode).u8(ENTER_MODE);
-    enterBody.u16(CANCEL_TIMERS.operand).u8(CANCEL_TIMERS.opcode);
+    if (fourSlot) enterBody.u16(1).u8(STATE_WRITE_BASE + (screen.startVariable as number));
+    else enterBody.u16(CANCEL_TIMERS.operand).u8(CANCEL_TIMERS.opcode);
   }
   for (const target of activity.targets) {
     enterBody.u16(target.value).u8(STATE_WRITE_BASE + target.variable);
   }
   enterBody.u16(value).u8(STATE_WRITE_BASE + variable.index);
-  if (screen !== undefined) {
-    enterBody.u16(screen.activeList).u8(ACTION_LIST_INDEX_OPCODE);
+  if (screen !== undefined && fourSlot) {
+    enterBody.u16(1).u8(STATE_WRITE_BASE + (screen.flagVariable as number));
+    enterBody.u16(deferList).u8(ACTION_LIST_INDEX_OPCODE);
+    enterBody.u16(0).u8(STATE_WRITE_BASE + (screen.startVariable as number));
+  } else if (screen !== undefined) {
+    enterBody.u16(screen.activeList as number).u8(ACTION_LIST_INDEX_OPCODE);
     enterBody.u16(deferList).u8(ACTION_LIST_INDEX_OPCODE);
   }
   const selectBody = new Writer(4)
     .u8(1).u16(SELECT_BINDING_SET_MASK | set).u8(SELECT_BINDING_SET);
-  const extra = screen === undefined ? [] : [
+  const extra = screen === undefined ? [] : fourSlot ? [
+    new Writer(7).u8(2).u16(DEFERRED.operand).u8(DEFERRED.opcode)
+      .u16(screen.workingMode).u8(ENTER_MODE).bytes,
+  ] : [
     new Writer(4).u8(1).u16(screen.workingMode).u8(ENTER_MODE).bytes,
     new Writer(7).u8(2).u16(DEFERRED.operand).u8(DEFERRED.opcode)
       .u16(showList).u8(ACTION_LIST_INDEX_OPCODE).bytes,
@@ -2428,9 +2464,13 @@ interface FourSlotTemplate {
   titleFont: number;
   counterFont: number;
   labelFont: number;
-  /** The background of a page holding one item and of one holding more, as picture addresses. */
-  single: number;
-  crossed: number;
+  /**
+   * The background of a page holding one item or none and of one holding more, as picture addresses.
+   * Always both for a device mode; an activity's working screens may lack one, `calibration_h600`'s
+   * having no page of one command, and then only a page that needs it is refused.
+   */
+  single: number | undefined;
+  crossed: number | undefined;
   /** The device mode whose own list the new one's key map is shaped on. */
   keyMode: number;
 }
@@ -2637,6 +2677,180 @@ function growFourSlotMenu(
   return { container: current, bound: nextRow - firstRowList };
 }
 
+/**
+ * A page's tagged list on arch 14: the lists its items run, bound in `FOUR_SLOT_ITEMS` order and
+ * stored in `FOUR_SLOT_STORED_ORDER`, as all 184 device pages of section 285 are.
+ *
+ * **A page that binds nothing is two bytes and not one**, `00 00`: a first byte of zero is what says
+ * the list is in the wide form, whose count follows, so a lone `00` reads as a wide list whose count is
+ * the next structure's first byte. All 258 empty page lists on the four arch 14 user configurations
+ * are `00 00`, section 290, and the one byte form cost a whole run of list copies to the reader.
+ */
+function fourSlotPageList(itemLists: readonly number[]): Uint8Array {
+  if (itemLists.length === 0) return new Uint8Array([0, 0]);
+  const bytes = new Writer(1 + 4 * itemLists.length).u8(itemLists.length);
+  const placed = itemLists.map((list, k) => ({ scan: FOUR_SLOT_ITEMS[k]?.scan as number, list }))
+    .sort((a, b) => FOUR_SLOT_STORED_ORDER.indexOf(a.scan) - FOUR_SLOT_STORED_ORDER.indexOf(b.scan));
+  for (const one of placed) {
+    bytes.u8((KEY_EVENT_PRESS << KEY_EVENT_SHIFT) | one.scan).u16(one.list).u8(ACTION_LIST_INDEX_OPCODE);
+  }
+  return bytes.bytes;
+}
+
+/** A mode page's program, sized before the block is placed and built once its addresses are known. */
+interface Arch14Program {
+  length: number;
+  build: (shifted: (address: number) => number) => Uint8Array;
+}
+
+/**
+ * A four slot page's program: the template's background for one item or none, or for more, the rest
+ * of its top chrome, the title, the page counter when there is one, the labels, left ones from the
+ * edge and right ones ending at it, and the template's bottom chrome. The background is written by
+ * hand and everything else around the middle is copied.
+ */
+function fourSlotPageProgram(
+  c: Container, template: FourSlotTemplate, measuring: FontSet,
+  page: { titleCodes: readonly number[]; counter?: readonly (readonly number[])[] | undefined; labels: readonly (readonly number[])[] },
+): Arch14Program {
+  const text = (x: number, y: number, codes: readonly number[]): number[] =>
+    [OP_TEXT_INLINE, x, y, ...codes, 0];
+  const middle: number[] = [OP_FONT, template.titleFont,
+    ...text(FOUR_SLOT_TITLE_XY[0], FOUR_SLOT_TITLE_XY[1], page.titleCodes)];
+  if (page.counter !== undefined) {
+    middle.push(OP_FONT, template.counterFont,
+      ...page.counter.flatMap((codes, k) => text(FOUR_SLOT_COUNTER_X[k] as number, FOUR_SLOT_TITLE_XY[1], codes)));
+  }
+  if (page.labels.length > 0) middle.push(OP_FONT, template.labelFont);
+  page.labels.forEach((codes, k) => {
+    const item = FOUR_SLOT_ITEMS[k] as (typeof FOUR_SLOT_ITEMS)[number];
+    const x = item.column === 0 ? FOUR_SLOT_LEFT_X : FOUR_SLOT_RIGHT_END - textWidth(c, measuring, codes);
+    middle.push(...text(x, FOUR_SLOT_LABEL_Y[item.row], codes));
+  });
+  const copied = [...template.prefix.slice(1), ...template.suffix];
+  const length = 1 + 5 + copied.reduce((sum, one) => sum + one.length, 0) + middle.length;
+  const background = page.labels.length > 1 ? template.crossed : template.single;
+  if (background === undefined) {
+    throw new ComposeError(`no page here holding ${page.labels.length > 1 ? 'several items' : 'one item or none'} `
+      + 'draws a background to copy for one');
+  }
+  return {
+    length,
+    build: (shifted) => {
+      const out: number[] = [OP_IMAGE, 0, 0, ...new Writer(3).u24(shifted(background)).bytes];
+      for (const one of template.prefix.slice(1)) out.push(...copiedInstruction(c, one, shifted));
+      out.push(...middle);
+      for (const one of template.suffix) out.push(...copiedInstruction(c, one, shifted));
+      return new Uint8Array(out);
+    },
+  };
+}
+
+/**
+ * Add a mode to an arch 14 configuration: the step `composeFourSlotDeviceScreen` and
+ * `composeFourSlotActivityScreen` share, decision 17's shared step, so the order that keeps the
+ * container parseable through it is written once.
+ *
+ * 1. the mode table gains an entry, on a placeholder until the block exists, as on the Harmony One;
+ * 2. each page's list, its copy at the end of the last pool and itself at the end of the page lists,
+ *    in page order, because the copies pair with the pages by position, section 69; one hole each
+ *    for all the copies and all the lists, since a list nothing names yet is invisible to the walks
+ *    that find the ends, and a second insertion then lands in front of the first;
+ * 3. the block, where the mode entries end: the mode's own tagged list, then per page its program
+ *    and a six byte page record, then the entry. Its own addresses are final, and the ones a program
+ *    copies are shifted by its length the way the census would shift them, since the census cannot
+ *    see bytes not yet written. `programsFor` is called after step 2, with the container as it then
+ *    is, so a template read inside it is not stale;
+ * 4. the swap: the table's last pointer from the placeholder to the entry.
+ */
+function appendArch14Mode(
+  start: Container, mode: number, own: readonly { tag: number; operand: number; opcode: number }[],
+  lists: readonly Uint8Array[], programsFor: (current: Container) => Arch14Program[],
+): Container {
+  let current = start;
+  const stale = modeTable(current);
+  if (stale === undefined) throw new ComposeError('base slot 6 stopped reading');
+  if (stale.addresses.length !== mode) {
+    throw new ComposeError(`the new mode would be ${stale.addresses.length}, not the ${mode} expected`);
+  }
+  const placeholderEntry = stale.addresses[0];
+  if (placeholderEntry === undefined) throw new ComposeError('a config with no modes has no menus');
+  const tableAt = stale.start + stale.length;
+  const tableHole = relocate(current, tableAt, 3);
+  tableHole.bytes.set(new Writer(3).u24(placeholderEntry).bytes, tableAt);
+  tableHole.bytes.set(new Writer(3).u24(mode + 1).bytes, stale.start);
+  current = parse(tableHole.bytes);
+
+  const allLists = new Uint8Array(lists.reduce((sum, bytes) => sum + bytes.length, 0));
+  lists.reduce((offset, bytes) => { allLists.set(bytes, offset); return offset + bytes.length; }, 0);
+  const lastPool = taggedListPools(current).at(-1);
+  if (lastPool === undefined) throw new ComposeError('no copy pool to extend');
+  const copyHole = relocate(current, lastPool.end, allLists.length);
+  copyHole.bytes.set(allLists, lastPool.end);
+  current = parse(copyHole.bytes);
+  const listAt = Math.max(...modePages(current).map((page) => {
+    const off = current.blobOffsetOf(page.list);
+    const list = taggedList(current, page.list);
+    return off === undefined || list === undefined ? 0 : off + list.length;
+  }));
+  const listHole = relocate(current, listAt, allLists.length);
+  listHole.bytes.set(allLists, listAt);
+  current = parse(listHole.bytes);
+  const pageListAddresses: number[] = [];
+  lists.reduce((offset, bytes) => {
+    pageListAddresses.push(current.flashBase + offset);
+    return offset + bytes.length;
+  }, listAt);
+
+  const records = modeRecords(current);
+  if (records === undefined) throw new ComposeError('base slot 6 does not read');
+  const programs = programsFor(current);
+  if (programs.length !== lists.length) {
+    throw new ComposeError(`${programs.length} programs for ${lists.length} pages`);
+  }
+  const ownLength = 1 + 4 * own.length;
+  const pageRecord = 6;
+  const blockLength = ownLength + programs.reduce((sum, one) => sum + one.length + pageRecord, 0)
+    + 6 + 3 * programs.length;
+  const blockAt = Math.max(...records.map((record) => {
+    const off = current.blobOffsetOf(record.address);
+    return off === undefined ? 0 : off + record.entryLength;
+  }));
+  const base = current.flashBase + blockAt;
+  const shifted = (address: number): number => (address >= base ? address + blockLength : address);
+  const block = new Writer(blockLength);
+  block.u8(own.length);
+  for (const entry of own) block.u8(entry.tag).u16(entry.operand).u8(entry.opcode);
+  const pageAddresses: number[] = [];
+  let at = base + ownLength;
+  programs.forEach((program, p) => {
+    const programAddress = at;
+    const bytes = program.build(shifted);
+    if (bytes.length !== program.length) {
+      throw new ComposeError(`page ${p}'s program came to ${bytes.length} bytes against ${program.length}`);
+    }
+    block.raw(bytes);
+    at += program.length;
+    pageAddresses.push(at);
+    block.u24(shifted(pageListAddresses[p] as number)).u24(programAddress);
+    at += pageRecord;
+  });
+  const entryAddress = at;
+  block.u8(0).u24(base).u16(programs.length);
+  pageAddresses.forEach((address) => block.u24(address));
+  if (block.bytes.length !== blockLength) {
+    throw new ComposeError(`the block came to ${block.bytes.length} bytes against the ${blockLength} its hole has`);
+  }
+  const blockHole = relocate(current, blockAt, blockLength);
+  blockHole.bytes.set(block.bytes, blockAt);
+
+  const swapped = parse(blockHole.bytes);
+  const grownTable = modeTable(swapped);
+  if (grownTable === undefined) throw new ComposeError('base slot 6 stopped reading');
+  swapped.blob.set(new Writer(3).u24(entryAddress).bytes, grownTable.start + 3 + 3 * mode);
+  return parse(swapped.blob);
+}
+
 function composeFourSlotDeviceScreen(
   c: Container, label: string, rows: readonly ComposeRow[], options: ComposeScreenOptions,
 ): ComposedScreen {
@@ -2744,134 +2958,21 @@ function composeFourSlotDeviceScreen(
     Array.from({ length: rowBindings }, (_, k) => c.flashBase + rowAt + k * oneRow.length)));
   let nextRow = rowList;
 
-  // 2. The table entry, on a placeholder until the block exists, as on the Harmony One.
-  const stale = modeTable(current);
-  if (stale === undefined) throw new ComposeError('base slot 6 stopped reading');
-  const placeholderEntry = stale.addresses[0];
-  if (placeholderEntry === undefined) throw new ComposeError('a config with no modes has no menus');
-  const tableAt = stale.start + stale.length;
-  const tableHole = relocate(current, tableAt, 3);
-  tableHole.bytes.set(new Writer(3).u24(placeholderEntry).bytes, tableAt);
-  tableHole.bytes.set(new Writer(3).u24(mode + 1).bytes, stale.start);
-  current = parse(tableHole.bytes);
-
-  // 3 and 4. Each page's list, its copy at the end of the last pool and itself at the end of the
-  // page lists, in page order, because the copies pair with the pages by position, section 69.
+  // 2 to 6. The mode itself, through the step every arch 14 mode composer shares. Filled in
+  // `FOUR_SLOT_ITEMS` order and stored in `FOUR_SLOT_STORED_ORDER`, as every page is.
   const pageRows = Array.from({ length: pageCount }, (_, p) => rows.slice(p * perPage, (p + 1) * perPage));
-  // Filled in `FOUR_SLOT_ITEMS` order and stored in `FOUR_SLOT_STORED_ORDER`, as every page is.
-  const pageListBytes = pageRows.map((onPage) => {
-    const bytes = new Writer(1 + 4 * onPage.length).u8(onPage.length);
-    const placed = onPage.map((row, k) => ({ scan: FOUR_SLOT_ITEMS[k]?.scan as number, list: row.list }))
-      .sort((a, b) => FOUR_SLOT_STORED_ORDER.indexOf(a.scan) - FOUR_SLOT_STORED_ORDER.indexOf(b.scan));
-    for (const one of placed) {
-      bytes.u8((KEY_EVENT_PRESS << KEY_EVENT_SHIFT) | one.scan).u16(one.list).u8(ACTION_LIST_INDEX_OPCODE);
-    }
-    return bytes.bytes;
+  const pageListBytes = pageRows.map((onPage) => fourSlotPageList(onPage.map((row) => row.list)));
+  current = appendArch14Mode(current, mode, own, pageListBytes, (now) => {
+    // Read again: every address and offset the first reading holds is stale by the insertions above.
+    const fresh = fourSlotTemplate(now, options.keysLike);
+    const measuring = (fontSets(now) ?? [])[template.labelFont];
+    if (measuring === undefined) throw new ComposeError('the label font stopped reading');
+    return pageRows.map((onPage, p) => fourSlotPageProgram(now, fresh, measuring, {
+      titleCodes,
+      counter: pageCount > 1 ? [digitCodes(p + 1), slashCodes, digitCodes(pageCount)] : undefined,
+      labels: onPage.map((_, k) => rowCodes[p * perPage + k] as number[]),
+    }));
   });
-  // One hole each for all the copies and all the lists, rather than one per page: a list nothing
-  // names yet is invisible to the walks that find the ends, so a second insertion lands in front of
-  // the first and leaves the first page naming the second page's list. Which is what happened.
-  const allLists = new Uint8Array(pageListBytes.reduce((sum, bytes) => sum + bytes.length, 0));
-  pageListBytes.reduce((offset, bytes) => { allLists.set(bytes, offset); return offset + bytes.length; }, 0);
-  const lastPool = taggedListPools(current).at(-1);
-  if (lastPool === undefined) throw new ComposeError('no copy pool to extend');
-  const copyHole = relocate(current, lastPool.end, allLists.length);
-  copyHole.bytes.set(allLists, lastPool.end);
-  current = parse(copyHole.bytes);
-  const listAt = Math.max(...modePages(current).map((page) => {
-    const off = current.blobOffsetOf(page.list);
-    const list = taggedList(current, page.list);
-    return off === undefined || list === undefined ? 0 : off + list.length;
-  }));
-  const listHole = relocate(current, listAt, allLists.length);
-  listHole.bytes.set(allLists, listAt);
-  current = parse(listHole.bytes);
-  const pageListAddresses: number[] = [];
-  pageListBytes.reduce((offset, bytes) => {
-    pageListAddresses.push(current.flashBase + offset);
-    return offset + bytes.length;
-  }, listAt);
-
-  // 5. The block, where the mode entries end: the key map, then per page its program and its record,
-  // then the entry. Its own addresses are final here, and the ones it copies are shifted by its
-  // length the way the census would shift them, since the census cannot see bytes not yet written.
-  const records = modeRecords(current);
-  if (records === undefined) throw new ComposeError('base slot 6 does not read');
-  // Read again: every address and offset the first reading holds is stale by the insertions above.
-  const fresh = fourSlotTemplate(current, options.keysLike);
-  const measuring = (fontSets(current) ?? [])[template.labelFont];
-  if (measuring === undefined) throw new ComposeError('the label font stopped reading');
-  const text = (x: number, y: number, codes: readonly number[]): number[] =>
-    [OP_TEXT_INLINE, x, y, ...codes, 0];
-  // What a page draws between the copied top bar and the copied bottom bar: the title, the counter
-  // when there is more than one page, and a label per item, left ones from the edge and right ones
-  // ending at it.
-  const middles = pageRows.map((onPage, p) => {
-    const out: number[] = [OP_FONT, fresh.titleFont,
-      ...text(FOUR_SLOT_TITLE_XY[0], FOUR_SLOT_TITLE_XY[1], titleCodes)];
-    if (pageCount > 1) {
-      out.push(OP_FONT, fresh.counterFont,
-        ...text(FOUR_SLOT_COUNTER_X[0], FOUR_SLOT_TITLE_XY[1], digitCodes(p + 1)),
-        ...text(FOUR_SLOT_COUNTER_X[1], FOUR_SLOT_TITLE_XY[1], slashCodes),
-        ...text(FOUR_SLOT_COUNTER_X[2], FOUR_SLOT_TITLE_XY[1], digitCodes(pageCount)));
-    }
-    out.push(OP_FONT, fresh.labelFont);
-    onPage.forEach((_, k) => {
-      const item = FOUR_SLOT_ITEMS[k] as (typeof FOUR_SLOT_ITEMS)[number];
-      const codes = rowCodes[p * perPage + k] as number[];
-      const x = item.column === 0
-        ? FOUR_SLOT_LEFT_X : FOUR_SLOT_RIGHT_END - textWidth(current, measuring, codes);
-      out.push(...text(x, FOUR_SLOT_LABEL_Y[item.row], codes));
-    });
-    return out;
-  });
-  // The background is written by hand and the rest of the prefix and all of the suffix are copied.
-  const copied = [...fresh.prefix.slice(1), ...fresh.suffix];
-  const copiedLength = copied.reduce((sum, one) => sum + one.length, 0);
-  const backgroundLength = 1 + 5;
-  const programLengths = middles.map((middle) => backgroundLength + copiedLength + middle.length);
-  const ownLength = 1 + 4 * own.length;
-  const pageRecord = 6;
-  const blockLength = ownLength + programLengths.reduce((sum, n) => sum + n + pageRecord, 0)
-    + 6 + 3 * pageCount;
-  const blockAt = Math.max(...records.map((record) => {
-    const off = current.blobOffsetOf(record.address);
-    return off === undefined ? 0 : off + record.entryLength;
-  }));
-  const base = current.flashBase + blockAt;
-  const shifted = (address: number): number => (address >= base ? address + blockLength : address);
-  const block = new Writer(blockLength);
-  block.u8(own.length);
-  for (const entry of own) block.u8(entry.tag).u16(entry.operand).u8(entry.opcode);
-  const pageAddresses: number[] = [];
-  let at = base + ownLength;
-  middles.forEach((middle, p) => {
-    const programAddress = at;
-    const background = pageRows[p]?.length === 1 ? fresh.single : fresh.crossed;
-    block.u8(OP_IMAGE).u8(0).u8(0).u24(shifted(background));
-    for (const one of fresh.prefix.slice(1)) copiedInstruction(current, one, shifted).forEach((b) => block.u8(b));
-    middle.forEach((b) => block.u8(b));
-    for (const one of fresh.suffix) copiedInstruction(current, one, shifted).forEach((b) => block.u8(b));
-    at += programLengths[p] as number;
-    pageAddresses.push(at);
-    block.u24(shifted(pageListAddresses[p] as number)).u24(programAddress);
-    at += pageRecord;
-  });
-  const entryAddress = at;
-  block.u8(0).u24(base).u16(pageCount);
-  pageAddresses.forEach((address) => block.u24(address));
-  if (block.bytes.length !== blockLength) {
-    throw new ComposeError(`the block came to ${block.bytes.length} bytes against the ${blockLength} its hole has`);
-  }
-  const blockHole = relocate(current, blockAt, blockLength);
-  blockHole.bytes.set(block.bytes, blockAt);
-
-  // 6. The swap: the table's last pointer from the placeholder to the entry.
-  const swapped = parse(blockHole.bytes);
-  const grownTable = modeTable(swapped);
-  if (grownTable === undefined) throw new ComposeError('base slot 6 stopped reading');
-  swapped.blob.set(new Writer(3).u24(entryAddress).bytes, grownTable.start + 3 + 3 * mode);
-  current = parse(swapped.blob);
 
   // 7. One more item on each menu's last page, which is a step `composeFourSlotActivityRow` shares.
   // A corner page that held one device takes the crossed background its menu's full pages draw; a
@@ -3541,14 +3642,23 @@ export interface ComposedActivityScreen {
   mode: number;
   /** The existing start up screen the enter list should open with. */
   startupMode: number;
-  /** The existing list every activity's enter list calls to say an activity is running. */
-  activeList: number;
-  /** The base slot 14 record that gained the activity's case. */
+  /** The existing list every activity's enter list calls to say an activity is running. Harmony One only. */
+  activeList?: number;
+  /** The base slot 14 record that gained the activity's case: on arch 14, the working screen's. */
   map: number;
-  /** The list the page's "Devices" key runs: beep, enter the device list. */
-  devicesList: number;
-  /** The scan codes the pads answer to, in row order. */
+  /** The list the page's "Devices" key runs: beep, enter the device list. Harmony One only. */
+  devicesList?: number;
+  /** The scan codes the pads answer to, in row order. Empty on arch 14, whose pads are the corners. */
   scans: number[];
+  /** Arch 14 only: the variable the start sequence holds at 1, and the one it writes before deferring. */
+  startVariable?: number;
+  flagVariable?: number;
+  /** Arch 14 only: the base slot 9 entry the keypad map case selects, which `composeActivity` must add. */
+  set?: number;
+  /** Arch 14 only: the base slot 14 records that gained a case, working screen's first. */
+  maps?: number[];
+  /** Arch 14 only: how many pages the working screen has. */
+  pages?: number;
 }
 
 /** The three facts a working screen template supplies, read once so every step uses the same. */
@@ -3604,6 +3714,414 @@ function workingTemplate(c: Container, screens: ActivityScreens): WorkingTemplat
 }
 
 /**
+ * One more case in an existing base slot 14 record: `key` runs `program`, a screen language program
+ * ending in its own `0x00`. The step both architectures' activity screen composers share.
+ *
+ * The case goes on the end of the record, pointing at an existing case's program so the census can
+ * see it, then the program is inserted in front of the lowest one the record names, then the case is
+ * swapped onto it. Moved out of the Harmony One's `composeActivityScreen` unchanged, section 279, with
+ * one refusal added: a key the record already has a case for, since the walk stops at the first match
+ * and a second case for the same key would never run.
+ */
+function appendValueMapCase(start: Container, map: number, key: number, program: Uint8Array): Container {
+  // A record is a byte, a count of `VALUE_MAP_COUNT_WIDTH` bytes, then the cases: the count is one
+  // byte on the Harmony One and two on the Harmony 600, 650 and 700, which is where the cases start.
+  const width = VALUE_MAP_COUNT_WIDTH[start.architecture as number];
+  const record = valueMaps(start)?.[map];
+  const recordAt = record === undefined ? undefined : start.blobOffsetOf(record.address);
+  if (width === undefined || record === undefined || recordAt === undefined
+      || record.entries.length >= 2 ** (8 * width) - 1) {
+    throw new ComposeError(`base slot 14 record ${map} does not read, or is full`);
+  }
+  if (record.entries.some(([one]) => one === key)) {
+    throw new ComposeError(`base slot 14 record ${map} already has a case for ${key}`);
+  }
+  const stride = VALUE_MAP_KEY_WIDTH + 3;
+  const caseAt = recordAt + 1 + width + stride * record.entries.length;
+  const caseHole = relocate(start, caseAt, stride);
+  caseHole.bytes.set(new Writer(stride).u16(key).u24((record.entries[0] as [number, number])[1]).bytes, caseAt);
+  const count = new Writer(width);
+  if (width === 1) count.u8(record.entries.length + 1); else count.u16(record.entries.length + 1);
+  caseHole.bytes.set(count.bytes, recordAt + 1);
+  const current = parse(caseHole.bytes);
+  const grownRecord = valueMaps(current)?.[map];
+  const lowest = Math.min(...(grownRecord?.entries ?? []).map(([, target]) => target));
+  const programAt = current.blobOffsetOf(lowest);
+  if (grownRecord === undefined || programAt === undefined) {
+    throw new ComposeError(`base slot 14 record ${map} stopped reading`);
+  }
+  const programHole = relocate(current, programAt, program.length);
+  programHole.bytes.set(program, programAt);
+  const placed = parse(programHole.bytes);
+  const finalRecord = valueMaps(placed)?.[map];
+  const finalAt = finalRecord === undefined ? undefined : placed.blobOffsetOf(finalRecord.address);
+  if (finalRecord === undefined || finalAt === undefined) {
+    throw new ComposeError(`base slot 14 record ${map} stopped reading`);
+  }
+  placed.blob.set(new Writer(3).u24(placed.flashBase + programAt).bytes,
+                  finalAt + 1 + width + stride * (finalRecord.entries.length - 1) + VALUE_MAP_KEY_WIDTH);
+  return parse(placed.blob);
+}
+
+/*
+ * ---- An activity's own screens, Harmony 600, 650 and 700 (arch 14), section 290 ----
+ *
+ * The same two screens as on the Harmony One and a different arrangement of both. The **start up**
+ * screen is the activity's own here rather than shared: "Starting" and the activity's name above the
+ * three fixed lines, one per activity, 13 of 13 on the four arch 14 user configurations. The
+ * **working** screen is a device mode page with a different word at the bottom, "Devices" where a
+ * device's says "Back", two backgrounds of its own, and on the 650 and 700 its own operand for the
+ * queued `0x73` at the top. Four records of base slot 14 are keyed by the
+ * activity rather than one, each of which gains a case:
+ *
+ * - the working screen's: activity to "enter its working screen", naming the screen the start
+ *   sequence ends on, 13 of 13, and the idle value to a further record. What reaches it is the one case,
+ *   for 0, of a record keyed by `CurrentLocation`, and that record is what the centre key under a device list
+ *   evaluates, 21 device lists of 21, which write "Activity" or "Activities" above that key;
+ * - the key under Devices', which the working screen's own record names, and a second one with the same
+ *   cases: activity to a device list of its own, saying "Activity" at the bottom, and the idle value
+ *   to the one saying "Activities", each holding every device;
+ * - the binding set's: activity to "select its keypad map", with no idle case.
+ *
+ * **What is not composed, and it is deliberate**: the help screen and the Remote Assistant's question.
+ * Every real activity on the 650, `calibration_h600` and the 700 reaches its working screen through
+ * the Remote Assistant's branch, and `h600_config`'s reach it directly, `[3F D000, 7E working]`. That
+ * second form is the one a composed activity takes. **Nor is the activity's own device list**: the
+ * key under Devices of a composed activity opens the idle value's, the one saying "Activities", its case
+ * copied. Its centre key still leads back to the composed activity's working screen, through
+ * `CurrentLocation` and the working screen record, under the word "Activities".
+ *
+ * **A name is spelled in the fonts the configuration has**, and each holds only the letters its own
+ * texts use. The start up title's font is the one every start up title is drawn in, and the status and
+ * battery messages too, so a name with a letter none of those has is refused, "Watch TV" on
+ * `h600_config` for its W.
+ */
+
+/** "Starting", then the name, at y 5 and centred, 13 of 13. */
+const STARTUP_TITLE_PREFIX = 'Starting ';
+const STARTUP_TITLE_Y = 5;
+/**
+ * The widest title a start up screen draws on one line, 123 pixels, the widest of the 11 one line
+ * titles among the 13 on the four arch 14 user configurations. A longer one wraps onto a second line at y 19, which this does not compose,
+ * so this is the composer's own limit and a title past it is refused rather than wrapped.
+ */
+const STARTUP_TITLE_MAX = 123;
+/** Below the title every start up screen draws the same three lines, from y 82 down, 13 of 13. */
+const STARTUP_FIXED_Y = 82;
+
+/** What every arch 14 activity's enter list states, read off all of them rather than one. */
+interface Arch14Starts {
+  counter: number;
+  idle: number;
+  /** The variable the start sequence holds at 1 while it runs, which gates the inter device delay. */
+  startVariable: number;
+  /** The variable written 1 just before the working screen is deferred. */
+  flagVariable: number;
+  /** Per activity value: its start up mode and its base slot 9 entry. */
+  startup: Map<number, number>;
+  sets: Map<number, number>;
+}
+
+/**
+ * The start sequence's shape, `[7E startup, S:=1, ..., counter:=activity, F:=1, 7F deferred, S:=0]`,
+ * where the deferred list opens with the `0x3F` band `0xD0` instruction. Refused unless every activity
+ * has it and all agree on `S` and `F`, which is 13 of 13, section 290.
+ */
+function arch14Starts(c: Container): Arch14Starts {
+  const lists = c.actionLists() ?? [];
+  const sets = handlerSets(c);
+  const counterVariable = stateVariables(c).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME));
+  if (sets === undefined || counterVariable?.record === undefined) {
+    throw new ComposeError(`no ${ACTIVITY_STATE_NAME} variable or no base slot 9 to read activities from`);
+  }
+  const counter = counterVariable.index;
+  const written = (one: Instruction | undefined, value: number): number | undefined =>
+    one !== undefined && one.opcode >= STATE_WRITE_BASE && one.operand === value
+      ? one.opcode - STATE_WRITE_BASE : undefined;
+  const starts = new Set<number>();
+  const flags = new Set<number>();
+  const startup = new Map<number, number>();
+  const setOf = new Map<number, number>();
+  for (const binding of activityBindings(c)) {
+    if (startup.has(binding.activity)) continue;
+    const address = sets.addresses[binding.set];
+    const entry = address === undefined ? undefined
+      : taggedList(c, address)?.entries.find((one) => one.tag === HANDLER_TAG_ENTER);
+    const enter = entry === undefined ? undefined : lists[entry.operand];
+    const call = enter?.at(-2);
+    const deferred = call?.opcode === ACTION_LIST_INDEX_OPCODE ? lists[call.operand] : undefined;
+    const start = written(enter?.[1], 1);
+    const flag = written(enter?.at(-3), 1);
+    if (enter === undefined || enter[0]?.opcode !== ENTER_MODE || start === undefined
+        || written(enter.at(-1), 0) !== start || flag === undefined
+        || written(enter.at(-4), binding.activity) !== counter
+        || deferred?.[0]?.opcode !== DEFERRED.opcode || deferred[0].operand !== DEFERRED.operand) {
+      throw new ComposeError(`activity ${binding.activity}'s enter list is not the shape every arch 14 one has`);
+    }
+    starts.add(start);
+    flags.add(flag);
+    startup.set(binding.activity, enter[0].operand);
+    setOf.set(binding.activity, binding.set);
+  }
+  if (startup.size === 0) throw new ComposeError('no activity to take the start sequence from');
+  if (starts.size !== 1 || flags.size !== 1) {
+    throw new ComposeError(`the activities disagree about the start sequence's variables: ${starts.size} `
+      + `start variables and ${flags.size} flags`);
+  }
+  return {
+    counter, idle: counterVariable.record.first,
+    startVariable: [...starts][0] as number, flagVariable: [...flags][0] as number, startup, sets: setOf,
+  };
+}
+
+/** The four records keyed by the activity, by what their cases do. */
+interface ActivityMaps {
+  working: number;
+  devices: number[];
+  select: number;
+}
+
+/**
+ * The base slot 14 records keyed by the activity, found by their keys and what their cases queue: every
+ * activity and the idle value, activities entering a mode and the idle value not, is the working
+ * screen's; the same keys all entering a mode are the key under Devices'; every activity and not the idle
+ * value, each selecting that activity's own keypad map, is the binding set's. One, one or more, and
+ * one, on 4 of 4, and anything else is refused rather than guessed at.
+ */
+function activityMaps(c: Container, starts: Arch14Starts): ActivityMaps {
+  const maps = valueMaps(c);
+  if (maps === undefined) throw new ComposeError('base slot 14 does not read');
+  const activities = [...starts.startup.keys()].sort((a, b) => a - b);
+  const everything = [...activities, starts.idle].sort((a, b) => a - b);
+  const same = (keys: number[], want: number[]): boolean =>
+    keys.length === want.length && [...keys].sort((a, b) => a - b).every((key, k) => key === want[k]);
+  const working: number[] = [];
+  const devices: number[] = [];
+  const select: number[] = [];
+  maps.forEach((map, index) => {
+    if (map.ranges.length !== 0) return;
+    const keys = map.entries.map(([key]) => key);
+    const queued = new Map(map.entries.map(([key, target]) => [key, caseQueued(c, target)]));
+    const enters = (key: number): boolean => queued.get(key)?.opcode === ENTER_MODE;
+    if (same(keys, everything) && activities.every(enters)) {
+      (enters(starts.idle) ? devices : working).push(index);
+    } else if (same(keys, activities) && activities.every((key) => {
+      const one = queued.get(key);
+      return one?.opcode === SELECT_BINDING_SET && one.operand === (SELECT_BINDING_SET_MASK | (starts.sets.get(key) as number));
+    })) {
+      select.push(index);
+    }
+  });
+  if (working.length !== 1 || devices.length === 0 || select.length !== 1) {
+    throw new ComposeError(`the activity keyed records read as ${working.length} working screen, `
+      + `${devices.length} Devices key and ${select.length} keypad map records, not 1, some and 1`);
+  }
+  return { working: working[0] as number, devices, select: select[0] as number };
+}
+
+/**
+ * The first page of the lowest working screen whose program is a device mode page's chrome around its
+ * middle, which is where the composed one's prefix, bottom word and record entries come from, plus the
+ * two backgrounds by majority over every working page: one command or none, and more.
+ */
+function workingTemplate14(c: Container, starts: Arch14Starts, maps: ActivityMaps): {
+  mode: number; activity: number; entries: TaggedEntry[];
+  prefix: ScreenInstruction[]; suffix: ScreenInstruction[];
+  single: number | undefined; crossed: number | undefined;
+} {
+  const records = modeRecords(c) ?? [];
+  const record = valueMaps(c)?.[maps.working];
+  const byActivity = new Map<number, number>();
+  for (const [key, target] of record?.entries ?? []) {
+    const one = caseQueued(c, target);
+    if (key !== starts.idle && one?.opcode === ENTER_MODE) byActivity.set(key, one.operand);
+  }
+  const counts = [new Map<number, number>(), new Map<number, number>()];
+  let chosen: { mode: number; activity: number; program: ScreenInstruction[] } | undefined;
+  for (const [activity, mode] of [...byActivity].sort((a, b) => a[1] - b[1])) {
+    for (const page of records[mode]?.pages ?? []) {
+      const program = screenProgram(c, page.program) ?? [];
+      const picture = program[0]?.opcode === OP_IMAGE ? bitmapReference(program[0]) : undefined;
+      const items = taggedList(c, page.list)?.entries.length ?? 0;
+      const tally = counts[items > 1 ? 1 : 0] as Map<number, number>;
+      if (picture !== undefined) tally.set(picture, (tally.get(picture) ?? 0) + 1);
+      const opcodes = program.map((one) => one.opcode);
+      const suffix = program.slice(-4);
+      if (chosen === undefined
+          && FOUR_SLOT_PREFIX.every((opcode, k) => opcodes[k] === opcode) && opcodes[3] === OP_FONT
+          && FOUR_SLOT_SUFFIX_OPCODES.every((opcode, k) => suffix[k]?.opcode === opcode)
+          && [OP_TEXT_AT, OP_TEXT_INLINE].includes(suffix[2]?.opcode as number) && suffix[3]?.opcode === OP_END) {
+        chosen = { mode, activity, program };
+      }
+    }
+  }
+  const majority = (tally: Map<number, number>): number | undefined =>
+    [...tally].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0]?.[0];
+  const found = chosen === undefined ? undefined : records[chosen.mode];
+  if (chosen === undefined || found === undefined) {
+    throw new ComposeError('no working screen has the chrome a device mode page has');
+  }
+  if (found.entries.some((entry) => entry.flags !== undefined)) {
+    throw new ComposeError('the template working screen is not in the narrow form');
+  }
+  return {
+    mode: chosen.mode, activity: chosen.activity, entries: found.entries,
+    prefix: chosen.program.slice(0, 3), suffix: chosen.program.slice(-4),
+    single: majority(counts[0] as Map<number, number>), crossed: majority(counts[1] as Map<number, number>),
+  };
+}
+
+function composeFourSlotActivityScreen(
+  c: Container, activity: number, label: string, rows: readonly ComposeRow[],
+  options: ComposeActivityScreenOptions,
+): ComposedActivityScreen {
+  const starts = arch14Starts(c);
+  if (starts.startup.has(activity) || activity === starts.idle) {
+    throw new ComposeError(`activity ${activity} already has a working screen`);
+  }
+  const maps = activityMaps(c, starts);
+  const working = workingTemplate14(c, starts, maps);
+  const device = fourSlotTemplate(c, undefined);
+  const charMap = characterMap(c);
+  if (charMap === undefined) throw new ComposeError('the config draws no text this can spell from');
+  const setOf = (font: number, now: Container = c): FontSet => {
+    const set = (fontSets(now) ?? [])[font];
+    if (set === undefined) throw new ComposeError(`the config does not carry font ${font}`);
+    return set;
+  };
+
+  // The start up screen to copy: the image, the font, the title, then the three fixed lines.
+  const startupOf = options.startupLike === undefined
+    ? working.activity
+    : activityNames(c).find((one) => one.name === options.startupLike)?.activity;
+  const startupTemplate = startupOf === undefined ? undefined : starts.startup.get(startupOf);
+  if (startupTemplate === undefined) throw new ComposeError(`no activity is labelled ${options.startupLike}`);
+  const startupRecord = (modeRecords(c) ?? [])[startupTemplate];
+  const startupPage = startupRecord?.pages[0];
+  const startupProgram = startupPage === undefined ? [] : screenProgram(c, startupPage.program) ?? [];
+  const fixedFrom = startupProgram.findIndex((one, k) => k >= 2
+    && (one.opcode === OP_TEXT_AT || one.opcode === OP_TEXT_INLINE) && (one.operands[1] as number) >= STARTUP_FIXED_Y);
+  const fixed = fixedFrom < 0 ? [] : startupProgram.slice(fixedFrom, -1);
+  if (startupRecord === undefined || startupRecord.pages.length !== 1 || startupPage === undefined
+      || (taggedList(c, startupPage.list)?.entries.length ?? -1) !== 0
+      || startupRecord.entries.some((entry) => entry.flags !== undefined)
+      || startupProgram[0]?.opcode !== OP_IMAGE || startupProgram[1]?.opcode !== OP_FONT
+      || fixed.length === 0 || startupProgram.at(-1)?.opcode !== OP_END
+      || !startupProgram.slice(2, fixedFrom).every((one) => one.opcode === OP_TEXT_INLINE || one.opcode === OP_TEXT_AT)
+      || !fixed.every((one) => one.opcode === OP_TEXT_AT || one.opcode === OP_TEXT_INLINE)) {
+    throw new ComposeError(`activity ${startupOf}'s start up screen is not the one page shape every arch 14 one has`);
+  }
+  const startupFont = startupProgram[1]?.operands[0] as number;
+  const startupCodes = codesFor(charMap, c, setOf(startupFont), STARTUP_TITLE_PREFIX + label, startupFont);
+  const startupWidth = textWidth(c, setOf(startupFont), startupCodes);
+  if (startupWidth > STARTUP_TITLE_MAX) {
+    throw new ComposeError(`'${STARTUP_TITLE_PREFIX}${label}' is ${startupWidth} pixels wide and a start up `
+      + `screen's one line holds ${STARTUP_TITLE_MAX}: give the activity a shorter label`);
+  }
+
+  // The working screen's text, refused before anything moves.
+  const perPage = FOUR_SLOT_ITEMS.length;
+  const pageCount = Math.max(1, Math.ceil(rows.length / perPage));
+  if (pageCount > 9) throw new ComposeError('a page counter of two digits is not composed');
+  const titleCodes = codesFor(charMap, c, setOf(device.titleFont), label, device.titleFont);
+  const titleWidth = textWidth(c, setOf(device.titleFont), titleCodes);
+  const titleRoom = (pageCount > 1 ? FOUR_SLOT_COUNTER_X[0] : FOUR_SLOT_SCREEN_WIDTH) - FOUR_SLOT_TITLE_XY[0];
+  if (titleWidth > titleRoom) {
+    throw new ComposeError(`'${label}' is ${titleWidth} pixels wide and the working screen's title holds ${titleRoom}`);
+  }
+  const rowCodes = rows.map((row) => codesFor(charMap, c, setOf(device.labelFont), row.label, device.labelFont));
+  rows.forEach((row, k) => {
+    const wide = textWidth(c, setOf(device.labelFont), rowCodes[k] as number[]);
+    if (wide > FOUR_SLOT_LABEL_MAX) {
+      throw new ComposeError(`'${row.label}' is ${wide} pixels wide and a corner holds ${FOUR_SLOT_LABEL_MAX}: `
+        + 'give it a shorter label');
+    }
+  });
+  const existingLists = c.actionLists()?.length ?? 0;
+  for (const row of rows) {
+    if (!Number.isInteger(row.list) || row.list < 0 || row.list >= existingLists) {
+      throw new ComposeError(`'${row.label}' names list ${row.list} of ${existingLists} that exist`);
+    }
+  }
+  const digitCodes = (n: number): number[] =>
+    codesFor(charMap, c, setOf(device.counterFont), String(n), device.counterFont);
+  const slashCodes = codesFor(charMap, c, setOf(device.counterFont), '/', device.counterFont);
+  const pageRows = Array.from({ length: pageCount }, (_, p) => rows.slice(p * perPage, (p + 1) * perPage));
+  const needs = new Set(pageRows.map((onPage) => onPage.length > 1));
+  if ((needs.has(false) && working.single === undefined) || (needs.has(true) && working.crossed === undefined)) {
+    throw new ComposeError('no working screen here holds as many commands as a page of this one, so there '
+      + 'is no background to copy for it');
+  }
+
+  const table = modeTable(c);
+  if (table === undefined) throw new ComposeError('base slot 6 states no table');
+  const startupMode = table.addresses.length;
+  const mode = startupMode + 1;
+  const sets = handlerSets(c);
+  if (sets === undefined) throw new ComposeError('base slot 9 does not read');
+  const set = sets.addresses.length;
+
+  // 1. The start up screen: its record's entries as the template's, bound to nothing, one page with an
+  // empty list, and a program of the template's picture and font, the new title, and its fixed lines.
+  const own = (entries: readonly TaggedEntry[]) =>
+    entries.map((entry) => ({ tag: entry.tag, operand: entry.operand, opcode: entry.opcode }));
+  let current = appendArch14Mode(c, startupMode, own(startupRecord.entries), [fourSlotPageList([])], (now) => {
+    const nowProgram = screenProgram(now, (modeRecords(now)?.[startupTemplate]?.pages[0] as ModePage).program) ?? [];
+    const copied = [nowProgram[0], nowProgram[1], ...nowProgram.slice(fixedFrom, -1)] as ScreenInstruction[];
+    const x = Math.floor((FOUR_SLOT_SCREEN_WIDTH - startupWidth) / 2);
+    const title = [OP_TEXT_INLINE, x, STARTUP_TITLE_Y, ...startupCodes, 0];
+    return [{
+      length: copied.reduce((sum, one) => sum + one.length, 0) + title.length + 1,
+      build: (shifted) => new Uint8Array([
+        ...copiedInstruction(now, copied[0] as ScreenInstruction, shifted),
+        ...copiedInstruction(now, copied[1] as ScreenInstruction, shifted),
+        ...title,
+        ...copied.slice(2).flatMap((one) => [...copiedInstruction(now, one, shifted)]),
+        OP_END,
+      ]),
+    }];
+  });
+
+  // 2. The working screen: a device mode page's program with the working screen's prefix, bottom word
+  // and backgrounds, and the working screen's own two record entries.
+  const pageListBytes = pageRows.map((onPage) => fourSlotPageList(onPage.map((row) => row.list)));
+  current = appendArch14Mode(current, mode, own(working.entries), pageListBytes, (now) => {
+    const freshDevice = fourSlotTemplate(now, undefined);
+    const freshWorking = workingTemplate14(now, arch14Starts(now), activityMaps(now, arch14Starts(now)));
+    const template: FourSlotTemplate = {
+      ...freshDevice, prefix: freshWorking.prefix, suffix: freshWorking.suffix,
+      single: freshWorking.single, crossed: freshWorking.crossed,
+    };
+    const measuring = setOf(device.labelFont, now);
+    return pageRows.map((onPage, p) => fourSlotPageProgram(now, template, measuring, {
+      titleCodes,
+      counter: pageCount > 1 ? [digitCodes(p + 1), slashCodes, digitCodes(pageCount)] : undefined,
+      labels: onPage.map((_, k) => rowCodes[p * perPage + k] as number[]),
+    }));
+  });
+
+  // 3. The four cases. The Devices key's copy the idle value's program, byte for byte, so the composed
+  // activity's Devices key opens the list shown when no activity is running.
+  const idleProgram = (map: number): Uint8Array => {
+    const target = valueMaps(current)?.[map]?.entries.find(([key]) => key === starts.idle)?.[1];
+    const one = target === undefined ? undefined : caseQueued(current, target);
+    if (one === undefined) throw new ComposeError(`record ${map} has no idle case to copy`);
+    return new Writer(5).u8(SCREEN_QUEUE_INSTRUCTION).u16(one.operand).u8(one.opcode).u8(OP_END).bytes;
+  };
+  current = appendValueMapCase(current, maps.working, activity,
+    new Writer(5).u8(SCREEN_QUEUE_INSTRUCTION).u16(mode).u8(ENTER_MODE).u8(OP_END).bytes);
+  for (const map of maps.devices) current = appendValueMapCase(current, map, activity, idleProgram(map));
+  current = appendValueMapCase(current, maps.select, activity, new Writer(5)
+    .u8(SCREEN_QUEUE_INSTRUCTION).u16(SELECT_BINDING_SET_MASK | set).u8(SELECT_BINDING_SET).u8(OP_END).bytes);
+
+  return {
+    bytes: restamped(current.blob), activity, mode, startupMode, map: maps.working, scans: [],
+    startVariable: starts.startVariable, flagVariable: starts.flagVariable, set,
+    maps: [maps.working, ...maps.devices, maps.select], pages: pageCount,
+  };
+}
+
+/**
  * Give a composed activity its working screen, and put it where the remote looks for it.
  *
  * `activity` is the value the activity has or will have, `nextActivityValue` before
@@ -3628,8 +4146,9 @@ export function composeActivityScreen(
   c: Container, activity: number, label: string, rows: readonly ComposeRow[],
   options: ComposeActivityScreenOptions = {},
 ): ComposedActivityScreen {
+  if (c.architecture === 14) return composeFourSlotActivityScreen(c, activity, label, rows, options);
   if (c.architecture !== 12) {
-    throw new ComposeError('an activity screen is composed for the Harmony One alone');
+    throw new ComposeError('an activity screen is composed for the Harmony One, 600, 650 and 700 alone');
   }
   const screens = activityScreens(c);
   if (screens === undefined) throw new ComposeError('no record says which screen an activity shows');
@@ -3876,37 +4395,8 @@ export function composeActivityScreen(
   current = parse(swapped.blob);
 
   // ---- 5. the activity's case in the base slot 14 record ----
-  // The entry first, pointing at an existing case's program so the census can see it, then the
-  // program, inserted in front of the lowest one the record names, then the entry swapped onto it.
-  const record = valueMaps(current)?.[screens.map];
-  const recordAt = record === undefined ? undefined : current.blobOffsetOf(record.address);
-  if (record === undefined || recordAt === undefined || record.entries.length >= 0xff) {
-    throw new ComposeError('the activity screen record does not read, or is full');
-  }
-  const caseAt = recordAt + 2 + 5 * record.entries.length;
-  const caseHole = relocate(current, caseAt, 5);
-  caseHole.bytes.set(new Writer(5).u16(activity).u24((record.entries[0] as [number, number])[1]).bytes,
-                     caseAt);
-  caseHole.bytes[recordAt + 1] = record.entries.length + 1;
-  current = parse(caseHole.bytes);
-  const grownRecord = valueMaps(current)?.[screens.map];
-  const lowest = Math.min(...(grownRecord?.entries ?? []).map(([, target]) => target));
-  const programAt = current.blobOffsetOf(lowest);
-  if (grownRecord === undefined || programAt === undefined) {
-    throw new ComposeError('the activity screen record stopped reading');
-  }
-  const caseProgram = new Writer(5).u8(SCREEN_QUEUE_INSTRUCTION).u16(mode).u8(ENTER_MODE).u8(OP_END);
-  const programHole = relocate(current, programAt, caseProgram.bytes.length);
-  programHole.bytes.set(caseProgram.bytes, programAt);
-  const placed = parse(programHole.bytes);
-  const finalRecord = valueMaps(placed)?.[screens.map];
-  const finalAt = finalRecord === undefined ? undefined : placed.blobOffsetOf(finalRecord.address);
-  if (finalRecord === undefined || finalAt === undefined) {
-    throw new ComposeError('the activity screen record stopped reading');
-  }
-  placed.blob.set(new Writer(3).u24(placed.flashBase + programAt).bytes,
-                  finalAt + 2 + 5 * (finalRecord.entries.length - 1) + 2);
-  current = parse(placed.blob);
+  current = appendValueMapCase(current, screens.map, activity,
+    new Writer(5).u8(SCREEN_QUEUE_INSTRUCTION).u16(mode).u8(ENTER_MODE).u8(OP_END).bytes);
 
   const check = activityScreens(current);
   if (check?.screens.get(activity) !== undefined && check.screens.get(activity) !== mode) {

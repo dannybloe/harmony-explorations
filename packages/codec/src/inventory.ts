@@ -326,6 +326,22 @@ export interface ActivityScreens {
 }
 
 /**
+ * What a base slot 14 case does when it is one instruction: its program is a single `0x11` queueing
+ * an action list instruction, then the end, which is every case of the records keyed by the activity
+ * on the Harmony One and on the Harmony 600, 650 and 700, sections 279 and 290. Undefined for any
+ * other program, so a caller asking "does this case enter a mode" cannot be answered by a longer one.
+ */
+export function caseQueued(c: Container, address: number): Instruction | undefined {
+  const program = screenProgram(c, address);
+  const first = program?.[0];
+  if (program?.length !== 2 || program[1]?.opcode !== SCREEN_END
+      || first?.opcode !== SCREEN_QUEUE_INSTRUCTION) {
+    return undefined;
+  }
+  return { opcode: first.operands[2] as number, operand: (first.operands[0] as number) | ((first.operands[1] as number) << 8) };
+}
+
+/**
  * The screen each activity shows while it runs, read from the table the remote itself consults to
  * get back to it, section 279.
  *
@@ -373,10 +389,7 @@ export function activityScreens(c: Container): ActivityScreens | undefined {
       opcode: one.operands[2] as number,
     }));
   const enters = (address: number): number | undefined => {
-    const program = screenProgram(c, address);
-    if (program === undefined || program.length !== 2) return undefined;
-    if (program[1]?.opcode !== SCREEN_END) return undefined;
-    const [queued] = queuedBy(address);
+    const queued = caseQueued(c, address);
     return queued?.opcode === ENTER_MODE ? queued.operand : undefined;
   };
 

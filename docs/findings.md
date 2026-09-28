@@ -37804,7 +37804,8 @@ agreeing and the emitter round tripping. `compose-activity.ts` on the 650's conf
 with the composed LG television on it, run as `--label 'LG kijken' --targets 28=1 --no-screen`, which
 switches one device on and writes the other five off, adds 117 bytes and touches 13 erase blocks; the
 bytes move with the label and the targets and the blocks did not. It needs
-`--no-screen` there, because the activity's own screens are composed for the Harmony One alone.
+`--no-screen` there, because the activity's own screens were then composed for the Harmony One
+alone<!--superseded-->; section 290 composes them on arch 14 too.
 
 **That script's erase block count had section 288's defect** and is fixed the same way: it stepped from
 the end of the input rather than from the block that end falls in.
@@ -37879,4 +37880,203 @@ composed row that shows its label and starts nothing when either of its buttons 
 * `packages/codec/test/compose.test.ts`: the menu's shape on all four configurations, the start
   variable around every activity's enter list, and the composed row on three of them with the fourth's
   refusal.
+* `docs/config-format.md`, `todo.md` and `docs/status.md`.
+
+## 290. An arch 14 activity has a start up screen of its own and a working screen shaped like a device page, and a composed activity now gets both
+
+**Todo 1.2.9.** Section 289 put a composed activity on the Harmony 600, 650 and 700 activity menu and
+left it with no screen of its own, so pressing its row would leave the remote on whatever it showed
+before. Section 279 read and composed the Harmony One's two activity screens. Here the same two are read
+on arch 14, where they are arranged differently, and composed.
+
+### The two screens, on the four arch 14 user configurations
+
+`h650_config_region`, `h600_config`, `calibration_h600` and `h700_config`, 13 activities, the working
+screen of each taken from where its own start sequence ends rather than from any table.
+
+| | count |
+|---|---|
+| start up screens: one page binding nothing, its record 54 bindings to nothing | 13 of 13 |
+| their program: a picture, font 2, the title, three fixed lines from y 82, the end | 13 of 13 |
+| the three fixed lines the same on every activity of a configuration | 4 of 4 |
+| the title on one line, "Starting" and the name at y 5 and `x = floor((128 - width) / 2)` | 11 of 13 |
+| the widest title on one line; the other 2 wrap onto a second line at y 19 | 123 pixels |
+| working screens, and their pages | 13, 27 |
+| a page's second and third instructions, a queued `0x73` and the top bar, the same as every working page's of its configuration | 4 of 4 |
+| that queued `0x73`'s operand against a device mode page's 1 | 2 on the 650 and 700, 1 on the two 600s |
+| "Devices" at 40, 114 as the last text | 27 of 27 |
+| the title in the device mode pages' title font | 27 of 27 |
+| the labels in their label font, on the pages that have labels | 25 of 25 |
+| one picture for a page of one command or none, another for more, never both | 4 of 4 |
+| the working screen's record: two entries, the first scan 25 through a record keyed by the activity | 13 of 13 |
+
+**So a start up screen is the activity's own on arch 14**, where on the Harmony One an activity shows
+one it shares, and **a working screen is a device mode page** with its own bottom word and its own two
+pictures: the page's top bar, title font, label font, corners and page counter are the device page's,
+and so is its queued `0x73` on the two 600 configurations, where the 650's and 700's have operand 2
+for a device page's 1. That is what lets `fourSlotPageProgram`, the device screen's page step, draw it. `calibration_h600`
+has no working page of one command or none, so the single background is not in that configuration.
+
+### The start sequence's end, and four records keyed by the activity
+
+Every enter list is `[7E startup, S := 1, ..., counter := activity, F := 1, 7F deferred, S := 0]`, 13 of
+13, `S` being section 289's start variable and `F` a flag of one variable per configuration, 39, 34, 39
+and 44. The deferred list opens with the six byte `0x3F` band `0xD0` instruction, 13 of 13, and then:
+
+| | count |
+|---|---|
+| enters the working screen directly, `[3F D000, 7E working]` | 3, all `h600_config`'s |
+| calls a list that tests one variable, enters a Remote Assistant screen, then the working screen | 10 |
+
+The variable is unnamed, one per configuration, and the Remote Assistant screen's "Turn off Assistant"
+button writes 1 into it and enters the working screen, on the three configurations that have the
+screen, so the test is what skips the question once it has been turned off. Four records of base slot 14 are keyed by the activity
+counter, found by their keys and by what their cases queue, and each has exactly the shape below on 4
+configurations of 4:
+
+| record | keys | cases | per configuration |
+|---|---|---|---|
+| working screen | every activity and the idle value | an activity's enters the screen its start sequence ends on, 13 of 13; the idle value's queues a further record | 1 |
+| the key under Devices | the same | every one enters a device list: an activity's a list of its own saying "Activity" above the centre key, the idle value's the one saying "Activities", 17 of 17, each with every device | 2, with the same cases |
+| keypad map | every activity, no idle value | selects that activity's own base slot 9 entry, 13 of 13 | 1 |
+
+The working screen's own record names the first of those two, `0x72` with `record << 8 | counter` on
+scan 25, 13 of 13. **The centre key under every device list evaluates a record keyed by `CurrentLocation` whose one case,
+for 0, queues the working screen record**: the 17 those records enter and one more per configuration
+that nothing found here enters, 21 of 21, and the record has that one case on 4 of 4. So that key,
+written "Activity" or "Activities", leads to the running activity's working screen when
+`CurrentLocation` is 0, which is what `docs/how-a-harmony-works.md` says "Activity" does, and on the
+idle list to the idle case, which queues a further record. What `CurrentLocation` holds on a device list
+is unread.
+
+### Composed
+
+`composeActivityScreen` dispatches to `composeFourSlotActivityScreen` on arch 14, which reads all of the
+above off every activity rather than one, refusing unless the activities agree, and appends two modes
+and four cases:
+
+1. a start up screen: the template activity's record entries, one page with an empty list, and a program
+   of its picture and font, "Starting" and the name centred at y 5, and its three fixed lines copied;
+2. a working screen: the working screen's own two record entries, and per page the device page's program
+   with the working page's top chrome and bottom word, four commands to a page, the corner picture by the
+   rule in the table;
+3. one case in each of the four records for the new activity: enter the working screen, the idle value's
+   device list twice, and select the base slot 9 entry `composeActivity` is about to add.
+
+`composeActivity` takes the start variable, the flag and that entry from it and writes the enter list in
+the arch 14 shape, with `h600_config`'s deferred list, `[3F D000, 7E working]`. The mode step
+`appendArch14Mode` and the case step `appendValueMapCase` are the device screen's and the Harmony One
+activity screen's, moved into functions of their own so each builder calls them: decision 17.
+
+On the 650, the 600 and the 700, a composed activity with five commands over two pages, and on the 650
+also with none, one and six, reads back with the start sequence in that shape, both screens drawing what the table says, all
+four cases answering for its number, every byte accounted for with no overlap, the checksum agreeing and
+the emitter round tripping. The picture of the composed start up and working screens beside a compiled
+one of each, on the 650 and the 600, differs by eye in the name and the commands and in nothing else.
+`compose-activity.ts` on `h650_config_region`, the 650's configuration before the LG television was
+added to it, run as `--label 'Play Audio' --targets
+32=1 --keys 20:710 --pads Power:710,Menu:3060`, which switches one device on and three off, adds 626
+bytes and touches 13 erase blocks.
+
+### Two things the composer got wrong on the way
+
+**An empty tagged list is two bytes**, `00 00`: a first byte of zero says the list is in the wide form
+and the count follows. All 258 empty page lists of the four configurations are that. The first version
+wrote one byte, the list reader then took the next structure's first byte as the count, and the whole
+run of page list copies after it stopped reading, which surfaced as the menu row composer finding no
+copy of a page. It is `CLAUDE.md`'s pitfall about inferring a form from the byte that states it, met
+from the writing side.
+
+**A base slot 14 record's count is two bytes on arch 14**, `VALUE_MAP_COUNT_WIDTH`, and the case step
+moved out of the Harmony One composer assumed one. The relocation refused, since the new case would
+have split the record's first case, so nothing was written wrong.
+
+### What is not composed
+
+* **A composed activity's own device list.** The key under Devices opens the idle value's list, the one
+  saying "Activities" where an activity's own says "Activity", and in the idle order. Its centre key
+  goes through `CurrentLocation` to the working screen record, whose case for the running activity is
+  now the composed one's, so the word says "Activities" and the key leads back to the activity.
+* **The Remote Assistant and help screens**, which the ten other activities reach first.
+* **A letter the font lacks.** Each font holds only the letters the configuration's own texts use, so a
+  start up title can only use letters some text already drawn in font 2 has, the start up titles and
+  the status and battery messages: "Watch TV" is refused on `h600_config` for its W, and "Sky" is
+  accepted there although no activity's name has a y. Adding letters to a font is todo 3.2.
+* **A title that needs two lines**, past 123 pixels, which is the composer's own limit, taken from the
+  widest one line title in the table and so fitted to it: the two titles that wrap would be about 130
+  and 163 pixels on one line, so any limit from 123 to 129 separates them.
+* **A working page of one command or none on `calibration_h600`**, whose picture that configuration
+  does not hold.
+
+### The reviewers
+
+The blind re-measure, given the questions and not this section, reproduced every figure in both tables
+per configuration: the enter list shape and its three variables, the 54 null entries and `00 00`, the
+widest one line title at 123 pixels, the 3 direct and 10 Remote Assistant chains, the queued `0x73`'s
+operand, the backgrounds by item count, the four records keyed by the activity and what their cases
+enter, and 258 empty page lists of 258. It read the Remote Assistant's button and `CurrentLocation`,
+both confirmed above. It found the composed activity whole: every byte accounted for, every existing
+list, mode, entry and variable unchanged but for the counter's range and name, and one case added to
+each of the four records.
+
+**The departures it listed are recorded rather than fixed**, since none is this step's and each is a
+question for todo 1.4.4 on the remote. Three are `composeActivity`'s since section 273: its base slot 9
+entry carries tags 1, 2 and 5 and the keys it is given, where every compiled one also carries its own
+"Attempting to fix the problem" mode on tag `0x43`, three lists on tags `0x8E` to `0x90` and one on tag
+`0xC3`, none of them read here; its tag
+2 is the null instruction where a compiled one runs `[S := 1, S := 0]`; and its tag 5 runs the enter
+list where a compiled one runs a list of its own without the start up screen or the counter. **The
+composed activity's number is above the idle value**, `second + 1`, where the idle value is the highest
+on 4 configurations of 4; section 273 found it inside the run on 3 of the 15 user configurations, so the
+format allows it, and whether an arch 14 remote does is for the remote to show. The 650's start up
+screen draws the fixed lines inline where the template draws them by reference, and titles and page
+counters are always inline, which is a size difference only. And on the 700's menu a composed label
+takes the page's own font, font 12, section 289's rule.
+
+The prose audit's findings were each re-measured before changing anything:
+
+* The letter limit was stated as "letters some existing title has", and font 2 also draws the status
+  and battery messages, so "Sky" composes on `h600_config` with no y in any activity's name.
+* The script run was attributed to the 650 "as it is now" when it ran on `h650_config_region`, before
+  the LG television.
+* "Its own top chrome" and "the device page's" each held on 2 configurations of 4, which is the queued
+  `0x73`'s operand.
+* A table row said "first three instructions" where the test compares the second and third.
+* The device list count left out one list per configuration: 21, not 17.
+* `docs/status.md` said the way back knows about the new activity while this section called it unread.
+* "Devices key" was used on a model with no such key.
+* The composed cases named were not the ones the test ran; the test now runs those too.
+* todo 1.4.4's start variable item was ticked with nothing written to a remote.
+
+Each is corrected.
+
+### Scope, decision 16
+
+Arch 14, three models and four configurations, the configuration only, no image read. The Harmony One's
+composer behaves as before: its step 5 is the case step, byte for byte, with one refusal added, a key the
+record already has a case for. **Nothing here is measured on hardware**; that is todo 1.4.4.
+
+### Sources
+
+The four configurations; sections 69 for the page copies, 279 for the Harmony One's screens, 285 for the
+four slot page, 287 and 289 for the start variable, and `docs/how-a-harmony-works.md` for the centre
+key. The firmware was not read and Logitech's client was not consulted, for section 278's reason.
+
+### Falsification
+
+An arch 14 start up screen that binds a key or has a second page; a working page whose picture breaks
+the one command or none rule, or whose title or label font is not its configuration's device pages';
+a record keyed by the activity that fits none of the three shapes; or, on hardware, a composed activity
+that stays on its start up screen after its commands have gone out, or that the key under "Activity" does not
+bring back.
+
+### Where it lands
+
+* `packages/codec/src/compose.ts`: `composeFourSlotActivityScreen`, `appendValueMapCase`, the arch 14
+  enter list in `composeActivity`, an empty `fourSlotPageList`, and a four slot template may lack one
+  background.
+* `packages/codec/src/inventory.ts`: `caseQueued`, which `activityScreens` now uses too.
+* `packages/codec/bin/compose-activity.ts`: the arch 14 screens and their read back.
+* `packages/codec/test/compose.test.ts`: the two screens and the four records on all four
+  configurations, the composed activity on all four, and the refusal test moved to the Harmony 525.
 * `docs/config-format.md`, `todo.md` and `docs/status.md`.

@@ -28,6 +28,7 @@ import {
   composeActivityMenuRow,
   composeActivityScreen,
   activityScreens,
+  caseQueued,
   nextActivityValue,
   allOffList,
   joinPowerOff,
@@ -1931,6 +1932,357 @@ test('an activity row composed on a Harmony 650, 600 and 700 takes the bottom ro
   assert.equal(composed, 3);
 });
 
+/** The screen an activity's deferred list ends on: directly, or through the Remote Assistant's branch. */
+function deferredScreens(c: ReturnType<typeof parse>, deferred: readonly { opcode: number; operand: number }[]):
+    { working: number | undefined; assistant: number | undefined } {
+  const lists = c.actionLists()!;
+  if (deferred[1]?.opcode === 0x7e) return { working: deferred[1].operand, assistant: undefined };
+  const branch = lists[deferred[1]?.operand ?? -1] ?? [];
+  const inner = lists[branch.find((one) => one.opcode === 0x7f)?.operand ?? -1] ?? [];
+  const entered = inner.filter((one) => one.opcode === 0x7e).map((one) => one.operand);
+  return { working: entered.at(-1), assistant: entered.length === 2 ? entered[0] : undefined };
+}
+
+test('every arch 14 activity defers its own working screen, and four records keyed by the activity say where its keys go',
+     skipUnless(...FOUR_SLOT_ACTIVITY_HOSTS), () => {
+  // Section 290. What the composer copies, measured on every activity of the four configurations
+  // rather than on the one it takes a template from.
+  const flags: number[] = [];
+  let activities = 0;
+  let direct = 0;
+  let throughAssistant = 0;
+  let workingAgrees = 0;
+  let selectsOwn = 0;
+  let workingEntries = 0;
+  let emptyLists = 0;
+  let emptyTwoBytes = 0;
+  let deviceLists = 0;
+  let listWords = 0;
+  let centreReachesWorking = 0;
+  let everyDevice = 0;
+  let keyedByLocation = 0;
+  let allLists = 0;
+  let allListsReach = 0;
+  const devicesRecords: number[] = [];
+  for (const name of FOUR_SLOT_ACTIVITY_HOSTS) {
+    const c = parse(require_(name));
+    const lists = c.actionLists()!;
+    const sets = handlerSets(c)!;
+    const counter = stateVariables(c).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME))!;
+    const idle = counter.record!.first;
+    const strings = screenStrings(c, characterMap(c));
+    const records = modeRecords(c)!;
+    const drawsText = (mode: number, text: string): boolean => records[mode]!.pages.some((page) =>
+      strings.some((one) => one.program === page.program && one.text === text));
+    const flagsHere = new Set<number>();
+    const deferredTo = new Map<number, number>();
+    const setOf = new Map<number, number>();
+    for (const binding of activityBindings(c)) {
+      if (setOf.has(binding.activity)) continue;
+      setOf.set(binding.activity, binding.set);
+      activities += 1;
+      const enter = lists[taggedList(c, sets.addresses[binding.set]!)!.entries.find((one) => one.tag === 1)!.operand]!;
+      assert.deepEqual([enter.at(-4)!.opcode, enter.at(-4)!.operand], [0x80 + counter.index, binding.activity]);
+      assert.equal(enter.at(-3)!.operand, 1, `${name}: the flag is written 1`);
+      flagsHere.add(enter.at(-3)!.opcode - 0x80);
+      const deferred = lists[enter.at(-2)!.operand]!;
+      assert.deepEqual(deferred[0], { opcode: 0x3f, operand: 0xd000 });
+      const reached = deferredScreens(c, deferred);
+      if (reached.assistant === undefined) direct += 1;
+      else if (drawsText(reached.assistant, 'Remote Assistant')) throughAssistant += 1;
+      deferredTo.set(binding.activity, reached.working!);
+    }
+    assert.equal(flagsHere.size, 1, `${name}: one flag variable`);
+    flags.push([...flagsHere][0]!);
+
+    // The records keyed by the activity, by their keys and what their cases queue.
+    const activityValues = [...setOf.keys()].sort((a, b) => a - b);
+    const everything = [...activityValues, idle].sort((a, b) => a - b);
+    const keysAre = (keys: number[], want: number[]): boolean =>
+      JSON.stringify([...keys].sort((a, b) => a - b)) === JSON.stringify(want);
+    const working: number[] = [];
+    const devicesHere: number[] = [];
+    const select: number[] = [];
+    valueMaps(c)!.forEach((map, index) => {
+      const queued = new Map(map.entries.map(([key, target]) => [key, caseQueued(c, target)]));
+      const keys = map.entries.map(([key]) => key);
+      const enters = (key: number): boolean => queued.get(key)?.opcode === 0x7e;
+      if (keysAre(keys, everything) && activityValues.every(enters)) {
+        (enters(idle) ? devicesHere : working).push(index);
+      } else if (keysAre(keys, activityValues) && activityValues.every((key) => queued.get(key)?.opcode === 0x1f)) {
+        select.push(index);
+        for (const key of activityValues) {
+          if (queued.get(key)!.operand === (0xff00 | setOf.get(key)!)) selectsOwn += 1;
+        }
+      }
+    });
+    assert.equal(working.length, 1, `${name}: one working screen record`);
+    assert.equal(select.length, 1, `${name}: one keypad map record`);
+    devicesRecords.push(devicesHere.length);
+    const [first, second] = devicesHere.map((index) => valueMaps(c)![index]!.entries
+      .map(([key, target]) => [key, caseQueued(c, target)]));
+    assert.deepEqual(first, second, `${name}: the two Devices key records have the same cases`);
+    for (const [key, target] of valueMaps(c)![working[0]!]!.entries) {
+      if (key !== idle && caseQueued(c, target)!.operand === deferredTo.get(key)) workingAgrees += 1;
+    }
+    // The device lists those records enter: a list of its own per activity, saying "Activity" above
+    // the centre key, and the idle one saying "Activities", and that key reaches the working screen
+    // record through one case of a record keyed by another variable.
+    for (const [key, target] of valueMaps(c)![devicesHere[0]!]!.entries) {
+      const list = records[caseQueued(c, target)!.operand]!;
+      const word = strings.find((one) => list.pages[0]!.program === one.program && one.y >= 110)?.text;
+      if (word === (key === idle ? 'Activities' : 'Activity')) listWords += 1;
+      const rows = list.pages.reduce((sum, page) => sum + new Set(taggedList(c, page.list)!.entries
+        .map((one) => JSON.stringify(lists[one.operand]))).size, 0);
+      if (rows === new Set(deviceListRows(c).map((one) => one.mode)).size) everyDevice += 1;
+      const centre = list.entries.find((one) => one.tag === 0x99)!;
+      const via = valueMaps(c)![centre.operand >> 8]!.entries.map(([, one]) => caseQueued(c, one));
+      const location = stateVariables(c).find((one) => one.index === (centre.operand & 0xff))?.label ?? '';
+      if (location.startsWith('CurrentLocation') && via.length === 1
+          && valueMaps(c)![centre.operand >> 8]!.entries[0]![0] === 0) keyedByLocation += 1;
+      if (centre.opcode === 0x72 && (centre.operand & 0xff) !== counter.index
+          && via.some((one) => one?.opcode === 0x72 && one.operand === ((working[0]! << 8) | counter.index))) {
+        centreReachesWorking += 1;
+      }
+      deviceLists += 1;
+    }
+    // Every working screen's own record: the Devices key through one of those records, then one more.
+    for (const mode of new Set(deferredTo.values())) {
+      const entries = records[mode]!.entries.map((one) => [one.tag, one.opcode, one.operand]);
+      assert.equal(entries.length, 2);
+      assert.deepEqual(entries[0], [0x99, 0x72, (devicesHere[0]! << 8) | counter.index]);
+      assert.equal(entries[1]![1], 0x73);
+      workingEntries += 1;
+    }
+    // Every device list, including one per configuration those records never enter.
+    for (const record of records) {
+      if (!record.pages.some((page) => strings.some((one) => one.program === page.program && one.y >= 110
+          && (one.text === 'Activity' || one.text === 'Activities')))) continue;
+      allLists += 1;
+      const centre = record.entries.find((one) => one.tag === 0x99);
+      if (centre?.opcode === 0x72 && valueMaps(c)![centre.operand >> 8]!.entries.some(([, one]) =>
+        caseQueued(c, one)?.operand === ((working[0]! << 8) | counter.index))) allListsReach += 1;
+    }
+    // An empty page list is the wide form's zero and a count of zero.
+    for (const record of records) {
+      for (const page of record.pages) {
+        if (taggedList(c, page.list)!.entries.length !== 0) continue;
+        emptyLists += 1;
+        const at = c.blobOffsetOf(page.list)!;
+        if (c.blob[at] === 0 && c.blob[at + 1] === 0) emptyTwoBytes += 1;
+      }
+    }
+  }
+  assert.equal(activities, 13);
+  assert.deepEqual(flags, [39, 34, 39, 44]);
+  assert.equal(direct, 3, "h600_config's three reach the working screen directly");
+  assert.equal(throughAssistant, 10, 'the other ten through a Remote Assistant screen first');
+  assert.equal(workingAgrees, 13, 'the working screen record names the screen the start sequence ends on');
+  assert.equal(selectsOwn, 13, "the keypad map record selects each activity's own entry");
+  assert.deepEqual(devicesRecords, [2, 2, 2, 2]);
+  assert.equal(deviceLists, 17, 'thirteen activities and four idle values');
+  assert.equal(listWords, 17, '"Activity" on an activity\'s own device list, "Activities" on the idle one');
+  assert.equal(centreReachesWorking, 17, 'the centre key under every one reaches the working screen record');
+  assert.equal(everyDevice, 17, 'and every one lists every device');
+  assert.equal(keyedByLocation, 17, 'through one case, for 0, of a record keyed by CurrentLocation');
+  assert.equal(allLists, 21, 'one more device list per configuration, which those records do not enter');
+  assert.equal(allListsReach, 21, 'and its centre key reaches the working screen record too');
+  assert.equal(workingEntries, 13);
+  assert.equal(emptyLists, 258);
+  assert.equal(emptyTwoBytes, 258);
+});
+
+test('every arch 14 start up screen is one page binding nothing, and every working screen page is a device page with "Devices" at the bottom',
+     skipUnless(...FOUR_SLOT_ACTIVITY_HOSTS), () => {
+  // Section 290, the two screens a composed activity copies, over all 13 activities.
+  const count = { startups: 0, bindNothing: 0, shape: 0, oneLine: 0, centred: 0, fixedSame: 0, pages: 0,
+    prefix: 0, devices: 0, titleFont: 0, labelled: 0, labelFont: 0, splitBackgrounds: 0 };
+  let widest = 0;
+  const queuedOperands: number[][] = [];
+  for (const name of FOUR_SLOT_ACTIVITY_HOSTS) {
+    const c = parse(require_(name));
+    const lists = c.actionLists()!;
+    const sets = handlerSets(c)!;
+    const records = modeRecords(c)!;
+    const strings = screenStrings(c, characterMap(c));
+    const fonts = fontSets(c)!;
+    const fixedLines = new Set<string>();
+    const workingModes = new Set<number>();
+    for (const set of new Set(activityBindings(c).map((one) => one.set))) {
+      const enter = lists[taggedList(c, sets.addresses[set]!)!.entries.find((one) => one.tag === 1)!.operand]!;
+      workingModes.add(deferredScreens(c, lists[enter.at(-2)!.operand]!).working!);
+      const startup = records[enter[0]!.operand]!;
+      count.startups += 1;
+      if (startup.pages.length === 1 && taggedList(c, startup.pages[0]!.list)!.entries.length === 0
+          && startup.entries.length === 54 && startup.entries.every((one) => one.opcode === 0 && one.operand === 0)) {
+        count.bindNothing += 1;
+      }
+      const program = screenProgram(c, startup.pages[0]!.program)!;
+      const texts = program.filter((one) => one.opcode === 0x04 || one.opcode === 0x05);
+      const above = texts.filter((one) => one.operands[1]! < 82);
+      if (program[0]!.opcode === 0x02 && program[1]!.opcode === 0x10 && program[1]!.operands[0] === 2
+          && program.at(-1)!.opcode === 0 && program.length === 3 + texts.length && texts.length - above.length === 3) {
+        count.shape += 1;
+      }
+      if (above.length === 1) {
+        count.oneLine += 1;
+        const width = drawnCodes(c, above[0]!).reduce((sum, code) => sum + (glyphOf(c, fonts[2]!, code)?.width ?? 0), 0);
+        widest = Math.max(widest, width);
+        if (above[0]!.operands[0] === Math.floor((128 - width) / 2) && above[0]!.operands[1] === 5) count.centred += 1;
+      }
+      fixedLines.add(strings.filter((one) => one.program === startup.pages[0]!.program && one.y >= 82)
+        .map((one) => `${one.text}@${one.x},${one.y}`).join('|'));
+    }
+    if (fixedLines.size === 1) count.fixedSame += 1;
+
+    // The working screens' pages, against the device mode pages' fonts.
+    const device = screenProgram(c, records[deviceListRows(c)[0]!.mode]!.pages[0]!.program)!;
+    const prefixes = new Set<string>();
+    const byItems = [new Set<number>(), new Set<number>()];
+    for (const mode of workingModes) {
+      for (const page of records[mode]!.pages) {
+        count.pages += 1;
+        const program = screenProgram(c, page.program)!;
+        prefixes.add(program.slice(1, 3).map((one) => [...c.blob.slice(one.start, one.start + one.length)].join()).join(';'));
+        const last = strings.filter((one) => one.program === page.program).at(-1)!;
+        if (last.text === 'Devices' && last.x === 40 && last.y === 114) count.devices += 1;
+        if (program[3]!.opcode === 0x10 && program[3]!.operands[0] === device[3]!.operands[0]) count.titleFont += 1;
+        const items = taggedList(c, page.list)!.entries.length;
+        if (items > 0) {
+          count.labelled += 1;
+          const selects = program.slice(5, -4).filter((one) => one.opcode === 0x10);
+          if (selects.at(-1)!.operands[0] === device[9]!.operands[0]) count.labelFont += 1;
+        }
+        byItems[items > 1 ? 1 : 0]!.add(bitmapReference(program[0]!)!);
+      }
+    }
+    count.prefix += prefixes.size;
+    queuedOperands.push([...prefixes].map((one) => Number(one.split(';')[0]!.split(',')[1])));
+    if (byItems.every((one) => one.size <= 1) && ![...byItems[0]!].some((one) => byItems[1]!.has(one))) {
+      count.splitBackgrounds += 1;
+    }
+  }
+  assert.deepEqual(count, {
+    startups: 13, bindNothing: 13, shape: 13, oneLine: 11, centred: 11, fixedSame: 4, pages: 27,
+    prefix: 4, devices: 27, titleFont: 27, labelled: 25, labelFont: 25, splitBackgrounds: 4,
+  });
+  assert.equal(widest, 123, 'the widest start up title on one line');
+  // The queued 0x73 a working page opens with: 1 as on a device page on the 600s, 2 on the 650 and 700.
+  assert.deepEqual(queuedOperands, [[2], [1], [1], [2]]);
+});
+
+test('an activity composed on a Harmony 650, 600 and 700 opens on a start up screen of its own and ends on a working screen of its own',
+     skipUnless(...FOUR_SLOT_ACTIVITY_HOSTS), () => {
+  let composed = 0;
+  for (const name of FOUR_SLOT_ACTIVITY_HOSTS) {
+    const c = parse(require_(name));
+    const deviceMode = modeRecords(c)![deviceListRows(c)[0]!.mode]!;
+    const commands = deviceMode.pages.flatMap((page) => taggedList(c, page.list)!.entries.map((one) => one.operand));
+    const rows = ['Power', 'Menu', 'Home', 'Info', 'Guide'].map((label, k) => ({ label, list: commands[k]! }));
+    const activity = nextActivityValue(c);
+    if (name === 'calibration_h600') {
+      // No working screen there holds one command or none, so the second page has no background.
+      assert.throws(() => composeActivityScreen(c, activity, 'Play Audio', rows), /no background to copy/);
+    }
+    const onPages = name === 'calibration_h600' ? rows.slice(0, 4) : rows;
+    const screen = composeActivityScreen(c, activity, 'Play Audio', onPages);
+    const middle = parse(screen.bytes);
+    const counter = stateVariables(middle).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME))!;
+    const target = stateVariables(middle).find((one) =>
+      one.index > firmwareStateVariableMax(middle.architecture) && one.index !== counter.index
+      && (one.record?.second ?? 0) >= 1)!;
+    const built = composeActivity(middle, {
+      label: 'Play Audio', targets: [{ variable: target.index, value: 1 }],
+      screen: {
+        startupMode: screen.startupMode, workingMode: screen.mode, activity: screen.activity,
+        startVariable: screen.startVariable, flagVariable: screen.flagVariable, set: screen.set,
+      },
+    });
+    const after = name === 'calibration_h600' ? parse(built.bytes)
+      : parse(composeActivityMenuRow(parse(built.bytes), built.label, built.set).bytes);
+    const report = coverage(after);
+    assert.equal(report.accounted, report.total, `${name}: every byte is claimed`);
+    assert.deepEqual(report.overlaps, [], `${name}: and no byte twice`);
+    assert.ok(trailerAgrees(after), name);
+    assert.equal(roundTrip(after).equal, true, `${name}: the emitter reproduces the composed file`);
+    assertStateTableConsistent(after);
+
+    // The start sequence, every activity's shape, and the deferred list the one h600_config's take.
+    const lists = after.actionLists()!;
+    const enter = lists[built.enterList]!.map((one) => [one.opcode, one.operand]);
+    assert.deepEqual(enter[0], [0x7e, screen.startupMode]);
+    assert.deepEqual(enter[1], [0x80 + screen.startVariable!, 1]);
+    assert.deepEqual(enter.slice(-4), [[0x80 + counter.index, built.activity], [0x80 + screen.flagVariable!, 1],
+      [0x7f, built.enterList + 2], [0x80 + screen.startVariable!, 0]]);
+    assert.deepEqual(lists[built.enterList + 2], [{ opcode: 0x3f, operand: 0xd000 }, { opcode: 0x7e, operand: screen.mode }]);
+
+    // The start up screen: the template's record, one page binding nothing, and its own title.
+    const strings = screenStrings(after, characterMap(after));
+    const records = modeRecords(after)!;
+    const startup = records[screen.startupMode]!;
+    assert.equal(startup.entries.length, 54);
+    assert.ok(startup.entries.every((one) => one.opcode === 0 && one.operand === 0));
+    assert.equal(startup.pages.length, 1);
+    const listAt = after.blobOffsetOf(startup.pages[0]!.list)!;
+    assert.deepEqual([...after.blob.slice(listAt, listAt + 2)], [0, 0]);
+    const drawn = strings.filter((one) => one.program === startup.pages[0]!.program);
+    assert.deepEqual(drawn.map((one) => one.text),
+                     ['Starting Play Audio', 'Please keep the', 'remote pointed at', 'your system']);
+    const title = screenProgram(after, startup.pages[0]!.program)!.find((one) => one.opcode === 0x05)!;
+    const width = drawnCodes(after, title).reduce((sum, code) =>
+      sum + (glyphOf(after, fontSets(after)![drawn[0]!.font]!, code)?.width ?? 0), 0);
+    assert.deepEqual([drawn[0]!.x, drawn[0]!.y], [Math.floor((128 - width) / 2), 5]);
+
+    // The working screen: four commands to a page, the title, the page counter, "Devices".
+    const working = records[screen.mode]!;
+    assert.equal(working.pages.length, onPages.length > 4 ? 2 : 1);
+    assert.equal(working.entries.length, 2);
+    assert.equal(working.entries[0]!.opcode, 0x72);
+    working.pages.forEach((page, p) => {
+      const onPage = onPages.slice(4 * p, 4 * p + 4);
+      assert.deepEqual(taggedList(after, page.list)!.entries.map((one) => one.operand).sort((a, b) => a - b),
+                       onPage.map((row) => row.list).sort((a, b) => a - b));
+      const texts = strings.filter((one) => one.program === page.program).map((one) => one.text);
+      assert.equal(texts[0], 'Play Audio');
+      assert.equal(texts.at(-1), 'Devices');
+      for (const row of onPage) assert.ok(texts.includes(row.label), `${name}: ${row.label} is drawn`);
+      for (const variant of renderVariants(after, page.program).variants) {
+        assert.equal(variant.page.glyphsMissing, 0);
+        assert.equal(variant.page.picturesMissing, 0);
+      }
+    });
+
+    // The four records keyed by the activity each gained one case for it, and say what the others do.
+    const maps = valueMaps(after)!;
+    const caseFor = (map: number) => caseQueued(after, maps[map]!.entries.find(([key]) => key === built.activity)![1]);
+    const idleFor = (map: number) => caseQueued(after, maps[map]!.entries.find(([key]) => key === counter.record!.first)![1]);
+    const [workingMap, firstDevices, secondDevices, selectMap] = screen.maps!;
+    assert.deepEqual(caseFor(workingMap!), { opcode: 0x7e, operand: screen.mode });
+    assert.deepEqual(caseFor(firstDevices!), idleFor(firstDevices!));
+    assert.deepEqual(caseFor(secondDevices!), idleFor(secondDevices!));
+    assert.deepEqual(caseFor(selectMap!), { opcode: 0x1f, operand: 0xff00 | built.set });
+    assert.equal(working.entries[0]!.operand, (firstDevices! << 8) | counter.index);
+    composed += 1;
+  }
+  assert.equal(composed, 4);
+  // And on the 650 with none, one and six commands: one page of each size a working screen has.
+  const c = parse(require_('h650_config_region'));
+  const commands = modeRecords(c)![deviceListRows(c)[0]!.mode]!.pages
+    .flatMap((page) => taggedList(c, page.list)!.entries.map((one) => one.operand));
+  for (const [n, pages] of [[0, 1], [1, 1], [6, 2]] as const) {
+    const rows = Array.from({ length: n }, (_, k) => ({ label: ['Power', 'Menu', 'Home'][k % 3]!, list: commands[k]! }));
+    const screen = composeActivityScreen(c, nextActivityValue(c), 'Play Audio', rows);
+    const after = parse(screen.bytes);
+    assert.equal(screen.pages, pages);
+    const report = coverage(after);
+    assert.equal(report.accounted, report.total, `${n} commands: every byte is claimed`);
+    assert.equal(roundTrip(after).equal, true, `${n} commands: the emitter reproduces it`);
+    for (const page of modeRecords(after)![screen.mode]!.pages) {
+      assert.equal(taggedList(after, page.list)!.entries.length <= 4, true);
+    }
+  }
+});
+
 test('a Harmony One turns a list page with the buttons beside the display, which no page binds',
      skipUnless(...ACTIVITY_MENU_HOSTS), () => {
   // Danny's correction of 7 September 2026, measured. The composer's own docstrings called the
@@ -2407,10 +2759,10 @@ test('a composed activity gets its own working screen and enters it after the st
   assert.notEqual(screen.startupMode, screen.mode);
 
   // The active list is the one every other enter list calls: silent write of 1 into a variable.
-  assert.deepEqual((lists[screen.activeList] ?? [])[0], { opcode: 0x07, operand: 0xffff });
+  assert.deepEqual((lists[screen.activeList as number] ?? [])[0], { opcode: 0x07, operand: 0xffff });
 
   // The page's Devices key runs a beep and enters a device list.
-  const devices = lists[screen.devicesList] ?? [];
+  const devices = lists[screen.devicesList as number] ?? [];
   assert.equal(devices.length, 2);
   assert.equal(devices[0]?.opcode, 0x75);
   assert.equal(devices[1]?.opcode, 0x7e);
@@ -2427,16 +2779,16 @@ test('a composed activity gets its own working screen and enters it after the st
   assert.equal(roundTrip(after).equal, true, 'the emitter reproduces the composed file');
 });
 
-test('the activity screen composer refuses what it cannot place', skipUnless('one_spare_20260830', 'h600_config'),
+test('the activity screen composer refuses what it cannot place', skipUnless('one_spare_20260830', 'h525_config'),
      () => {
   const c = parse(require_('one_spare_20260830'));
   const rows = [{ label: 'Power', list: 0 }];
   // An activity that already has a working screen.
   assert.throws(() => composeActivityScreen(c, 0, 'Test', rows), /already has a working screen/);
-  // Any architecture but the Harmony One's.
-  const h600 = parse(require_('h600_config'));
-  assert.throws(() => composeActivityScreen(h600, nextActivityValue(h600), 'Test', rows),
-                /Harmony One alone/);
+  // Any architecture but the Harmony One's and the Harmony 600, 650 and 700's, section 290.
+  const h525 = parse(require_('h525_config'));
+  assert.throws(() => composeActivityScreen(h525, nextActivityValue(h525), 'Test', rows),
+                /Harmony One, 600, 650 and 700 alone/);
   // And the enter list refuses a screen composed for another activity number.
   const screen = composeActivityScreen(c, nextActivityValue(c), 'Test', rows);
   const middle = parse(screen.bytes);

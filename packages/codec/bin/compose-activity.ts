@@ -24,7 +24,10 @@
  * **The activity gets its own two screens**, section 279: the start up screen of `--startup-like`,
  * an existing activity's, and a working screen of its own with `--pads` on it, `label:list` pairs,
  * which may be none. `--no-screen` leaves both out, which is what this produced before and what left
- * the remote on the page that started the activity.
+ * the remote on the page that started the activity. **On a Harmony 600, 650 or 700 the start up
+ * screen is the activity's own**, section 290, "Starting" and its label, with `--startup-like`
+ * choosing whose picture it copies, and the working screen is a device page with "Devices" at the
+ * bottom and `--pads` in its corners, four to a page.
  *
  * **Every other device is switched off**, section 280: a real enter list writes every device's
  * power variable, 1 for the devices it uses and 0 for the rest, so the targets are completed with a 0
@@ -48,6 +51,8 @@ import {
   assertStateTableConsistent,
   activityPowerTargets,
   activityScreens,
+  caseQueued,
+  valueMaps,
   composeActivity,
   composeActivityMenuRow,
   composeActivityScreen,
@@ -147,6 +152,7 @@ const built = composeActivity(screen === undefined ? before : parse(screen.bytes
   ...(screen === undefined ? {} : {
     screen: {
       startupMode: screen.startupMode, workingMode: screen.mode, activeList: screen.activeList,
+      startVariable: screen.startVariable, flagVariable: screen.flagVariable, set: screen.set,
       activity: screen.activity,
     },
   }),
@@ -172,8 +178,24 @@ if (added.map((one) => one.scan).sort((a, b) => a - b).join() !== [...shown.scan
     || !added.every((one) => composedLists.has(one.list))) {
   fail('the menu row the reader finds is not the one that was composed');
 }
-if (screen !== undefined && activityScreens(after)?.screens.get(built.activity) !== screen.mode) {
+// The Harmony One is read back through the walk from device mode's Activities key; a Harmony 600, 650
+// or 700 has no such key, so there each record keyed by the activity is asked for its new case, and the
+// working screen's must enter the composed screen.
+if (screen !== undefined && after.architecture === 12
+    && activityScreens(after)?.screens.get(built.activity) !== screen.mode) {
   fail('the record the remote returns through does not name the composed working screen');
+}
+if (screen !== undefined && after.architecture === 14) {
+  const maps = valueMaps(after) ?? [];
+  const caseOf = (map: number): number | undefined =>
+    maps[map]?.entries.find(([key]) => key === built.activity)?.[1];
+  for (const map of screen.maps ?? []) {
+    if (caseOf(map) === undefined) fail(`base slot 14 record ${map} has no case for activity ${built.activity}`);
+  }
+  const entered = caseOf(screen.map);
+  if (entered === undefined || caseQueued(after, entered)?.operand !== screen.mode) {
+    fail('the working screen record does not name the composed working screen');
+  }
 }
 const report = coverage(after);
 if (report.accounted !== report.total) {
@@ -191,7 +213,11 @@ process.stdout.write(`stamped ${builtAt}\n`);
 process.stdout.write(`${after.blob.length} bytes, activity number ${built.activity}, keypad map `
   + `entry ${built.set} of ${grown?.addresses.length}, menu row on scan ${shown.scans.join(' and ')} of mode `
   + `${shown.menu} page ${shown.page}, running lists ${shown.rowList} to ${shown.rowList + shown.rowLists - 1}\n`);
-if (screen !== undefined) {
+if (screen !== undefined && after.architecture === 14) {
+  process.stdout.write(`working screen mode ${screen.mode}, ${screen.pages} page(s), start up screen mode `
+    + `${screen.startupMode}, cases in base slot 14 records ${(screen.maps ?? []).join(', ')}, start sequence `
+    + `variable ${screen.startVariable} and flag ${screen.flagVariable}\n`);
+} else if (screen !== undefined) {
   process.stdout.write(`working screen mode ${screen.mode}, pads on scans [${screen.scans.join(', ')}], `
     + `Devices key list ${screen.devicesList}, start up screen mode ${screen.startupMode}, `
     + `returned to through base slot 14 record ${screen.map}\n`);

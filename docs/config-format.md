@@ -692,6 +692,44 @@ two takes the full page's picture.
 then writes 1 into the variable every command's delay step tests, and ends by writing 0 into it, 13 of
 13, section 289. So the inter device delay acts only inside an activity's start.
 
+**The enter list in full**, section 290, 13 of 13:
+
+```
+u16 startup;         u8 0x7E       the activity's own start up screen
+u16 1;               u8 0x80 + S   the start variable, section 289
+...                                the devices' writes
+u16 activity;        u8 0x80 + c   the activity counter
+u16 1;               u8 0x80 + F   a flag, one variable per configuration: 39, 34, 39, 44
+u16 deferred;        u8 0x7F       [3F D000, 7E working] on h600_config, 3 of 3; the other 10 call a
+                                   list testing one variable, entering a Remote Assistant screen, then
+                                   the working screen
+u16 0;               u8 0x80 + S
+```
+
+**A start up screen** is a mode of one page with an empty list, `00 00`, and 54 bindings to nothing,
+13 of 13; its program is `[02 picture, 10 02, the title, three fixed lines from y 82, 00]`, the fixed
+lines the same across a configuration's activities, 4 of 4, and the title "Starting" and the name at
+y 5 and `x = floor((128 - width) / 2)` on the 11 of 13 that fit one line, at most 123 pixels. Font 2
+holds only the letters the texts drawn in it use, the start up titles and the status and battery messages.
+
+**A working screen** is a four slot device mode page, section 285, whose queued `0x73` has operand 2 on
+the 650 and 700 and 1, as a device page's, on the 600s, with "Devices" at 40, 114 where a device page has "Back", 27 pages of 27, the device pages' title and label fonts, and a
+picture of its own for a page of one command or none and another for more, 4 of 4. Its record is two
+entries: scan 25 as `0x72` on the first of the two records for the key under Devices below, then a `0x73`, 13 of 13.
+
+**Four base slot 14 records are keyed by the activity counter**, on 4 of 4:
+
+| record | keys | an activity's case | the idle value's |
+|---|---|---|---|
+| working screen, 1 | activities and idle | enter the screen its start sequence ends on, 13 of 13 | queue a further record |
+| the key under Devices, 2 with the same cases | activities and idle | enter its own device list, "Activity" at the bottom | enter the one saying "Activities" |
+| keypad map, 1 | activities only | `0x1F` with `0xFF00 | entry`, its own, 13 of 13 | none |
+
+Every device list's scan 25 evaluates a record keyed by `CurrentLocation` whose one case, for 0, queues
+the working screen record: the 17 those records enter and one more per configuration, 21 of 21. The
+Remote Assistant screen's "Turn off Assistant" writes 1 into the variable the chain before the working
+screen tests, and enters the working screen.
+
 **A corner page carries its own chrome**, with no call to a shared program:
 
 ```
