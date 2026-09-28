@@ -400,11 +400,8 @@ export function activityScreens(c: Container): ActivityScreens | undefined {
   };
   const deviceModes = new Set<number>();
   for (const list of lists) {
-    if (!isDeviceListRowShape(list)) continue;
-    const end = list[2] as Instruction;
-    if (end.opcode === marker.opcode && end.operand === marker.operand) {
-      deviceModes.add((list[1] as Instruction).operand);
-    }
+    const mode = deviceListRowMode(list, c.architecture, marker);
+    if (mode !== undefined) deviceModes.add(mode);
   }
   const records = modeRecords(c) ?? [];
   for (const mode of deviceModes) {
@@ -1035,12 +1032,48 @@ export function deviceVariables(c: Container): DeviceVariable[] {
  * label turns up in the screen text as well, and those are two encodings of one string decoded by
  * unrelated code, base slot 0's bytes against base slot 7's glyph pixels.
  */
-/** A device list row's shape: beep, enter a mode, mark device mode. Arch 12 (Harmony One). */
-function isDeviceListRowShape(list: readonly Instruction[] | undefined): boolean {
-  return list !== undefined && list.length === 3
+/**
+ * A device list row's shape, per architecture, or false where none is known.
+ *
+ * Arch 12 (Harmony One): beep, enter a mode, mark device mode. Arch 14 (Harmony 600, 650 and 700):
+ * enter a mode, mark device mode, **with no beep**, which is why the Harmony One's shape found no row
+ * on any arch 14 configuration and this reader reported none there until section 285. Measured on
+ * all four arch 14 user configurations: every list of the two instruction shape ends in the one
+ * write each configuration uses, `0x9F` operand 1 on the Harmony 650, `0x9B` on the 600 and `0xA5`
+ * on both 700s, half of them bound on a device list page and the other half the lists that page's
+ * second copy names, section 69. Every other architecture is tested against the Harmony One's shape,
+ * which finds no marker on arch 8, 9 or 10 and so no row, rather than being read on its own terms.
+ */
+function isDeviceListRowShape(
+  list: readonly Instruction[] | undefined, architecture: number | undefined,
+): boolean {
+  if (list === undefined) return false;
+  if (architecture === 14) {
+    return list.length === 2
+      && list[0]?.opcode === ENTER_MODE_OPCODE
+      && (list[1] as Instruction).opcode >= STATE_WRITE_BASE;
+  }
+  return list.length === 3
     && list[0]?.opcode === 0x75
     && list[1]?.opcode === ENTER_MODE_OPCODE
     && (list[2] as Instruction).opcode >= STATE_WRITE_BASE;
+}
+
+/**
+ * The mode a device list row enters, if `list` is a row ending in `marker`, and otherwise undefined.
+ * The one test of a row, which the composer's menu finder and `deviceListRows` both use: it was two
+ * copies of the same four conditions until the arch 14 shape was added, and a third shape would have
+ * had to be taught to both.
+ */
+export function deviceListRowMode(
+  list: readonly Instruction[] | undefined, architecture: number | undefined,
+  marker: Instruction | undefined,
+): number | undefined {
+  if (marker === undefined || !isDeviceListRowShape(list, architecture)) return undefined;
+  const rows = list as readonly Instruction[];
+  const end = rows[rows.length - 1] as Instruction;
+  if (end.opcode !== marker.opcode || end.operand !== marker.operand) return undefined;
+  return (rows.find((one) => one.opcode === ENTER_MODE_OPCODE) as Instruction).operand;
 }
 
 /** Opcode `0x7e`: enter the mode the operand indexes. */
@@ -1057,13 +1090,13 @@ const ENTER_MODE_OPCODE = 0x7e;
  * majority answer over every row shaped list is the marker. Section 239.
  *
  * Undefined for a configuration with no such row, which is every architecture but arch 12 (Harmony
- * One) and any Harmony One config with no device list.
+ * One) and arch 14 (Harmony 600, 650 and 700), and any config of those two with no device list.
  */
 export function deviceModeMarker(c: Container): Instruction | undefined {
   const tally = new Map<string, { instruction: Instruction; count: number }>();
   for (const list of c.actionLists() ?? []) {
-    if (!isDeviceListRowShape(list)) continue;
-    const end = list[2] as Instruction;
+    if (!isDeviceListRowShape(list, c.architecture)) continue;
+    const end = list[list.length - 1] as Instruction;
     const key = `${end.opcode}:${end.operand}`;
     const seen = tally.get(key);
     if (seen === undefined) tally.set(key, { instruction: end, count: 1 });
@@ -1107,12 +1140,6 @@ export function deviceListRows(c: Container): DeviceListRow[] {
   const marker = deviceModeMarker(c);
   if (marker === undefined) return [];
   const lists = c.actionLists() ?? [];
-  const isRow = (index: number): boolean => {
-    const list = lists[index];
-    if (!isDeviceListRowShape(list)) return false;
-    const end = (list as readonly Instruction[])[2] as Instruction;
-    return end.opcode === marker.opcode && end.operand === marker.operand;
-  };
   const records = modeRecords(c) ?? [];
   let best: DeviceListRow[] = [];
   let bestReach = 0;
@@ -1120,9 +1147,10 @@ export function deviceListRows(c: Container): DeviceListRow[] {
     const rows: DeviceListRow[] = [];
     record.pages.forEach((page, pageIndex) => {
       for (const entry of taggedList(c, page.list)?.entries ?? []) {
-        if (entry.opcode !== ACTION_LIST_INDEX_OPCODE || !isRow(entry.operand)) continue;
-        const mode = (lists[entry.operand] as readonly Instruction[])[1] as Instruction;
-        rows.push({ menu, page: pageIndex, scan: entry.tag & 0x3f, mode: mode.operand });
+        if (entry.opcode !== ACTION_LIST_INDEX_OPCODE) continue;
+        const mode = deviceListRowMode(lists[entry.operand], c.architecture, marker);
+        if (mode === undefined) continue;
+        rows.push({ menu, page: pageIndex, scan: entry.tag & 0x3f, mode });
       }
     });
     const reach = new Set(rows.map((row) => row.mode)).size;
@@ -1136,6 +1164,10 @@ export function deviceListRows(c: Container): DeviceListRow[] {
   // lines rather than labels is what left the Wii's page unpaired in section 240's first reading.
   const record = records[best[0]!.menu] as ModeRecord;
   const drawn = screenStrings(c, characterMap(c));
+  if (c.architecture === 14) {
+    labelFourSlotRows(best, record, drawn);
+    return best;
+  }
   record.pages.forEach((page, pageIndex) => {
     const onPage = best.filter((row) => row.page === pageIndex).sort((a, b) => a.scan - b.scan);
     const lines = drawn
@@ -1160,6 +1192,85 @@ export function deviceListRows(c: Container): DeviceListRow[] {
 
 /** Vertical distance between two rows of the device list on the arch 12 screen, in pixels. */
 const DEVICE_LIST_ROW_PITCH = 54;
+
+/**
+ * The four items of an arch 14 (Harmony 600, 650 and 700) page, in the order a page fills them:
+ * one per button around the display, top left, top right, bottom left, bottom right, and each
+ * item's cell. Section 285, measured on all four arch 14 user configurations: every page of a
+ * device list or a device mode binds a prefix of this order, 184 of 184, and holds four but the last
+ * of its mode and one page of the 700s' receiver mode. The scans are the buttons' own, the screen
+ * being no touch screen.
+ */
+export const FOUR_SLOT_ITEMS: readonly { scan: number; column: 0 | 1; row: 0 | 1 }[] = [
+  { scan: 8, column: 0, row: 0 },
+  { scan: 2, column: 1, row: 0 },
+  { scan: 9, column: 0, row: 1 },
+  { scan: 34, column: 1, row: 1 },
+];
+/**
+ * The order a page's tagged list **stores** the four scans in, which is not the order they fill:
+ * bottom left, top left, bottom right, top right, with a scan the page does not bind left out. All 184
+ * device list and device mode pages of the four arch 14 user configurations store theirs this way,
+ * full ones as 9, 8, 34, 2 and a three item one as 9, 8, 2. The firmware searches a list for a tag, so
+ * nothing here says the order matters to the remote; a composer keeps it so that a composed page is
+ * one the compiler could have written. Section 285.
+ */
+export const FOUR_SLOT_STORED_ORDER: readonly number[] = [9, 8, 34, 2];
+/**
+ * Where an item's label sits, per cell, on a 128 pixel screen. A left label starts at x 3 and a right
+ * one **ends** at 125, whatever its font, 448 of 448 and 414 of 414 on the corner pages of the four arch
+ * 14 user configurations' device lists and device modes, where the start moves with the width. In the
+ * top row a one line label sits at y 40 whatever its font, and a two line label starts at 25 with its
+ * second line one font height below, which is 40 again in the usual font; the bottom row is 50 lower.
+ */
+export const FOUR_SLOT_LEFT_X = 3;
+export const FOUR_SLOT_RIGHT_END = 125;
+export const FOUR_SLOT_LABEL_Y: readonly [number, number] = [40, 90];
+/**
+ * The second layout a device list takes on arch 14: **two rows**, a device per row bound to both
+ * buttons of that row, its label centred, at `x = floor((128 - width) / 2)` on 21 of 21 such labels
+ * over the four arch 14 user configurations, and at y 35 and 79. One device list menu per
+ * configuration is drawn this way, beside the corner ones. Section 285.
+ */
+export const TWO_ROW_LABEL_Y: readonly [number, number] = [35, 79];
+export const FOUR_SLOT_SCREEN_WIDTH = 128;
+/** The two scans of each row, top then bottom, as `FOUR_SLOT_ITEMS` places them. */
+export const FOUR_SLOT_ROWS: readonly (readonly number[])[] = [0, 1].map((row) =>
+  FOUR_SLOT_ITEMS.filter((item) => item.row === row).map((item) => item.scan));
+
+/** The vertical bands the two rows' labels fall in: above the title bar's end and below the bar. */
+const FOUR_SLOT_ROW_BANDS: readonly [number, number, number] = [16, 64, 112];
+const FOUR_SLOT_COLUMN_SPLIT = 64;
+
+/**
+ * An arch 14 device list page's labels, paired with its rows by **cell** rather than by rank: two
+ * labels share a line when they sit side by side, so the rank pairing arch 12 uses would read "TV
+ * KPN" as one label. The lines of a cell join top to bottom, which is how a long name wraps.
+ *
+ * Corners only. The two row layout's labels are centred and would pair with its left hand rows
+ * alone. A two row list reaches every device, as the corner lists do, and `deviceListRows` keeps the
+ * first of the tied lists, which is a corner one on every configuration here because its mode number
+ * is lower; so the case does not arise, by that tie order rather than by width, and is not read.
+ */
+function labelFourSlotRows(
+  rows: DeviceListRow[], record: ModeRecord, drawn: ReturnType<typeof screenStrings>,
+): void {
+  record.pages.forEach((page, pageIndex) => {
+    const lines = drawn.filter((one) => one.program === page.program
+      && one.text.trim().length >= SHORTEST_USEFUL_LABEL);
+    for (const row of rows) {
+      if (row.page !== pageIndex) continue;
+      const item = FOUR_SLOT_ITEMS.find((one) => one.scan === row.scan);
+      if (item === undefined) continue;
+      const inCell = lines
+        .filter((one) => (one.x < FOUR_SLOT_COLUMN_SPLIT ? 0 : 1) === item.column
+          && one.y >= (FOUR_SLOT_ROW_BANDS[item.row] as number)
+          && one.y < (FOUR_SLOT_ROW_BANDS[item.row + 1] as number))
+        .sort((a, b) => a.y - b.y);
+      if (inCell.length > 0) row.label = inCell.map((one) => one.text.trim()).join(' ');
+    }
+  });
+}
 
 export function devices(c: Container): Device[] {
   const groups = irGroups(c) ?? [];
@@ -1251,6 +1362,26 @@ export function devices(c: Container): Device[] {
         device.source = 'list';
       }
     } else if (reached.size === 0 && !withoutInfrared.some((device) => device.mode === row.mode)) {
+      // A mode with no codes on its pages can still belong to a device that has codes: the Harmony
+      // 600's Chromecast has a group and a mode whose one page binds nothing, section 285, and it
+      // was appended a second time as `GChromeca..` the moment arch 14 rows were read. So the label
+      // names it first, where exactly one unmoded device carries it, a trailing `..` being the
+      // screen's own elision of a name too long for its cell. A name spells a space as `_`, which a
+      // label does not, so the two are compared with the underscores read as spaces. **Fitted to one
+      // case**: two rows in the corpus reach no group, this one and a Wii on `compiled_protocols_3`
+      // that names nothing and falls through, and a screen does not always mark an elision, one
+      // calibration configuration cutting `Panasonic_Blu-ray_Player` to `Panasonic Blu-ray` with no
+      // dots, so an unmarked cut is not matched.
+      const stem = row.label?.endsWith('..') ? row.label.slice(0, -2) : row.label;
+      const spoken = (name: string): string => name.replaceAll('_', ' ');
+      const named = stem === undefined ? [] : out.filter((device) => device.mode === undefined
+        && device.name !== undefined
+        && (spoken(device.name) === row.label
+          || (stem !== row.label && spoken(device.name).startsWith(stem))));
+      if (named.length === 1) {
+        (named[0] as (typeof out)[number]).mode = row.mode;
+        continue;
+      }
       withoutInfrared.push({
         codes: 0,
         variables: [],

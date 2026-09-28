@@ -43,6 +43,7 @@ import {
   stateTable,
   taggedList,
   taggedListPools,
+  type TaggedEntry,
   ACTION_LIST_INDEX_OPCODE,
   HANDLER_TAG_ENTER,
   HANDLER_TAG_LEAVE,
@@ -53,7 +54,10 @@ import {
   handlerSets,
   HANDLER_TABLE_SLOT,
 } from './sections.ts';
-import { SCREEN_JUMP, SCREEN_QUEUE_INSTRUCTION, bitmapAt, screenProgram } from './screen.ts';
+import {
+  SCREEN_DRAW_IMAGE_AT, SCREEN_JUMP, SCREEN_QUEUE_INSTRUCTION, type ScreenInstruction, bitmapAt,
+  bitmapReference, screenProgram,
+} from './screen.ts';
 import {
   EDGE_CODES, LIST_ROW_PITCH, PANEL_LEFT, SCREEN_ROW_PITCH, touchOwner, touchPageOf,
 } from './touch.ts';
@@ -90,10 +94,15 @@ import {
   irBuildRecord,
 } from './ir.ts';
 import type { Pulse } from './irframe.ts';
-import { IR_TABLE_SLOT } from './ir.ts';
+import { IR_TABLE_SLOT, irGroups } from './ir.ts';
+import { irFrame } from './irframe.ts';
 import { blockOfStatedCode, statedCode, statedProtocol } from './stated.ts';
 import { TOUCH_AREA_LENGTH, type TouchArea, type TouchPage, touchPages } from './tables.ts';
-import { deviceListRows, deviceModeMarker } from './inventory.ts';
+import {
+  deviceListRowMode, deviceListRows, deviceModeMarker, FOUR_SLOT_ITEMS, FOUR_SLOT_LABEL_Y,
+  FOUR_SLOT_LEFT_X, FOUR_SLOT_RIGHT_END, FOUR_SLOT_ROWS, FOUR_SLOT_SCREEN_WIDTH, FOUR_SLOT_STORED_ORDER,
+  TWO_ROW_LABEL_Y,
+} from './inventory.ts';
 import { relocate } from './relocate.ts';
 import { Writer } from './emit.ts';
 import { valueMaps } from './valuemap.ts';
@@ -1137,6 +1146,12 @@ export interface ComposedScreen {
   rowList: number;
   /** The menus whose last page was full, so a new one row page was added to each, section 240. */
   pagesAdded: number[];
+  /** Arch 14 only: how many row lists were written, from `rowList` on, one per menu binding and copy. */
+  rowLists?: number;
+  /** Arch 14 only: how many keys of the new device mode's key map send one of its commands. */
+  keys?: number;
+  /** Arch 14 only: how many pages the new device mode has. */
+  pages?: number;
 }
 
 /** The glyph codes that spell `text` in `set`, or a refusal naming the first missing character. */
@@ -1178,13 +1193,6 @@ function deviceListMenus(
 ): { menus: number[]; reach: number; marker: Instruction | undefined } {
   const lists = c.actionLists() ?? [];
   const marker = deviceModeMarker(c);
-  const isRow = (index: number): boolean => {
-    const list = lists[index];
-    if (list === undefined || list.length !== 3 || list[0]?.opcode !== 0x75
-        || list[1]?.opcode !== ENTER_MODE || marker === undefined) return false;
-    const end = (list as readonly Instruction[])[2] as Instruction;
-    return end.opcode === marker.opcode && end.operand === marker.operand;
-  };
   const records = modeRecords(c) ?? [];
   let deepest = 0;
   const reached = records.map((record) => {
@@ -1192,9 +1200,9 @@ function deviceListMenus(
     for (const page of record.pages) {
       const list = taggedList(c, page.list);
       for (const entry of list?.entries ?? []) {
-        if (entry.opcode === ACTION_LIST_INDEX_OPCODE && isRow(entry.operand)) {
-          modes.add((lists[entry.operand]?.[1] as Instruction).operand);
-        }
+        if (entry.opcode !== ACTION_LIST_INDEX_OPCODE) continue;
+        const mode = deviceListRowMode(lists[entry.operand], c.architecture, marker);
+        if (mode !== undefined) modes.add(mode);
       }
     }
     deepest = Math.max(deepest, modes.size);
@@ -1584,13 +1592,22 @@ export interface ComposeScreenOptions {
    * the television icon. Without it the first row's icon is copied, whatever it shows.
    */
   iconLike?: string;
+  /**
+   * Arch 14 only: the device list row whose device mode the new one takes its key map from, by its
+   * drawn label. Every key that mode binds is bound in the new one too, to the new device's command
+   * sending the same frame where exactly one does and to nothing otherwise, so a key never falls
+   * through to another device's map. Without it the first row's mode is the template and no key
+   * matches unless the numbers happen to agree.
+   */
+  keysLike?: string;
 }
 
 export function composeDeviceScreen(
   c: Container, label: string, rows: readonly ComposeRow[], options: ComposeScreenOptions = {},
 ): ComposedScreen {
+  if (c.architecture === 14) return composeFourSlotDeviceScreen(c, label, rows, options);
   if (c.architecture !== 12) {
-    throw new ComposeError('the screen half is composed for the Harmony One alone');
+    throw new ComposeError('the screen half is composed for the Harmony One and arch 14 alone');
   }
   if (rows.length === 0 || rows.length > DEVICE_PAGE_SCANS.length) {
     throw new ComposeError(`a device page has one to six rows, not ${rows.length}`);
@@ -1893,6 +1910,521 @@ export function composeDeviceScreen(
   }
 
   return { bytes: restamped(current.blob), mode, menus: found.menus, rowList, pagesAdded };
+}
+
+/*
+ * ---- The screen half, arch 14 (Harmony 600, 650 and 700), section 285 ----
+ *
+ * An arch 14 screen is not a touch screen. It labels the four buttons around the display, one label
+ * per corner, and a page of a device list or a device mode binds those four buttons and nothing
+ * else: `FOUR_SLOT_ITEMS` in `inventory.ts`, where the reader lives. Everything below is read off
+ * the configuration being composed into, the way the Harmony One's half reads its pictures: the
+ * chrome is copied from one of the configuration's own device pages, the two backgrounds from its
+ * device mode pages, the key map's shape from one of its device modes, and the row marker from its
+ * rows. What is a constant is the geometry, which is the same on all four arch 14 user
+ * configurations here.
+ *
+ * Three differences from the Harmony One's half, each measured rather than assumed:
+ *
+ * * a mode's pages carry **their own** chrome, background, bars, title and page counter, with no call
+ *   to a shared program, so the block is list, then a program and a six byte page record per page,
+ *   then the entry, which is how the 650's own modes are laid out;
+ * * a device mode's own list binds **every** key: 47 entries on all 21 device modes of the four
+ *   configurations, each key either sending that device's command or bound to nothing, 547 of 547
+ *   bound keys sending. The Harmony One's composed mode had an empty list, which lets a key fall
+ *   through to whatever lies below it; here the key map is composed with the mode;
+ * * a row is two instructions, enter the mode and write the marker, with no beep.
+ *
+ * What is deliberately not composed: a new menu page when a menu's last page holds four, which
+ * would renumber every page counter of that menu and is refused rather than half done; and the
+ * `0x7F` call in front of every arch 14 command, todo 1.2.6. On the Harmony 650 that call tests one
+ * variable and runs a list of that device's own only while it is 1, and all 31 lists that write the
+ * variable set it to 1 and back to 0 inside themselves, three of them the activities' start
+ * sequences. The device's list is one `0x72` on that device's `InterDeviceDelay` variable through a
+ * base slot 14 table, all five devices, so the call applies the device's inter device delay while a
+ * start sequence runs, and a composed command sent from one skips it. What each table case does is
+ * unread. The variable is the 650's numbering, 52; the 600 tests 46 and the 700 59. A composed
+ * device carries no delay variables either, so `deviceDelays` does not report it.
+ */
+
+/**
+ * The screen is 128 pixels wide; a label may run from its edge to the middle and no further. This is
+ * the composer's own limit and not a measurement: the widest corner label on the arch 14
+ * configurations is 59 pixels, the compiler cutting a longer name with `..`.
+ */
+const FOUR_SLOT_LABEL_MAX = 60;
+/**
+ * The page counter's three glyphs, `n`, `/`, `m`, at these x on the title's y: a corner page's, when
+ * its mode has two to nine pages, 98 of 98. A two row list's pages draw it at `0x63`, `0x6A`, `0x6F`
+ * and a mode of ten pages or more further left, neither of which the composer writes.
+ */
+const FOUR_SLOT_COUNTER_X: readonly [number, number, number] = [0x6a, 0x71, 0x76];
+const FOUR_SLOT_TITLE_XY: readonly [number, number] = [0, 2];
+
+/** The opcode sequence of a device mode page's chrome, around the part a composer writes. */
+const FOUR_SLOT_PREFIX = [OP_IMAGE, SCREEN_QUEUE_INSTRUCTION, SCREEN_DRAW_IMAGE_AT] as const;
+const FOUR_SLOT_SUFFIX_OPCODES = [SCREEN_DRAW_IMAGE_AT, OP_FONT] as const;
+
+/** An instruction's bytes, copied, with the address it ends in shifted when it names one. */
+function copiedInstruction(
+  c: Container, instruction: ScreenInstruction, shift: (address: number) => number,
+): Uint8Array {
+  const bytes = c.blob.slice(instruction.start, instruction.start + instruction.length);
+  if (instruction.opcode === OP_IMAGE || instruction.opcode === SCREEN_DRAW_IMAGE_AT
+      || instruction.opcode === OP_TEXT_AT) {
+    const at = bytes.length - 3;
+    bytes.set(new Writer(3).u24(shift(u24(bytes, at))).bytes, at);
+  }
+  return bytes;
+}
+
+/** The frame a list sends, as `bits:value`, or undefined for a list with no send or no frame. */
+function sentFrame(c: Container, list: readonly Instruction[] | undefined): string | undefined {
+  const send = list?.find((one) => one.opcode === SEND_INFRARED);
+  if (send === undefined) return undefined;
+  const address = irGroups(c)?.[send.operand >> 8]?.addresses[send.operand & 0xff];
+  const frame = address === undefined ? undefined : irFrame(c, address);
+  return frame === undefined ? undefined : `${frame.bits}:${frame.value.toString(16)}`;
+}
+
+/** What a composer copies out of an arch 14 configuration before it moves anything. */
+interface FourSlotTemplate {
+  /** The template page's first three instructions and its last four, as instructions. */
+  prefix: ScreenInstruction[];
+  suffix: ScreenInstruction[];
+  titleFont: number;
+  counterFont: number;
+  labelFont: number;
+  /** The background of a page holding one item and of one holding more, as picture addresses. */
+  single: number;
+  crossed: number;
+  /** The device mode whose own list the new one's key map is shaped on. */
+  keyMode: number;
+}
+
+function fourSlotTemplate(c: Container, keysLike: string | undefined): FourSlotTemplate {
+  const rows = deviceListRows(c);
+  if (rows.length === 0) throw new ComposeError('no device list to take a device mode from');
+  const records = modeRecords(c) ?? [];
+  const deviceModes = [...new Set(rows.map((row) => row.mode))];
+  const slotScans = new Set(FOUR_SLOT_ITEMS.map((item) => item.scan));
+
+  // The two backgrounds, by majority over the device mode pages holding one item and four.
+  const tally = (want: (items: number[]) => boolean): number | undefined => {
+    const counts = new Map<number, number>();
+    for (const mode of deviceModes) {
+      for (const page of records[mode]?.pages ?? []) {
+        const items = (taggedList(c, page.list)?.entries ?? []).map((entry) => entry.tag & SCAN_MASK);
+        if (!items.every((scan) => slotScans.has(scan)) || !want(items)) continue;
+        const first = screenProgram(c, page.program)?.[0];
+        const picture = first?.opcode === OP_IMAGE ? bitmapReference(first) : undefined;
+        if (picture !== undefined) counts.set(picture, (counts.get(picture) ?? 0) + 1);
+      }
+    }
+    let best: number | undefined;
+    let most = 0;
+    for (const [picture, count] of counts) if (count > most) { most = count; best = picture; }
+    return best;
+  };
+  const first = FOUR_SLOT_ITEMS[0]?.scan;
+  const single = tally((items) => items.length === 1 && items[0] === first);
+  const crossed = tally((items) => items.length === FOUR_SLOT_ITEMS.length);
+  if (single === undefined || crossed === undefined) {
+    throw new ComposeError('no device mode page carries the two backgrounds the layout reuses');
+  }
+
+  // The chrome, from the first device mode page whose program has the measured shape.
+  for (const mode of deviceModes) {
+    for (const page of records[mode]?.pages ?? []) {
+      const program = screenProgram(c, page.program);
+      if (program === undefined || program.length < 14) continue;
+      const opcodes = program.map((one) => one.opcode);
+      const texts = (from: number, count: number): boolean => opcodes.slice(from, from + count)
+        .every((opcode) => opcode === OP_TEXT_AT || opcode === OP_TEXT_INLINE);
+      const suffix = program.slice(-4);
+      if (!FOUR_SLOT_PREFIX.every((opcode, k) => opcodes[k] === opcode)
+          || opcodes[3] !== OP_FONT || !texts(4, 1) || opcodes[5] !== OP_FONT || !texts(6, 3)
+          || opcodes[9] !== OP_FONT
+          || !FOUR_SLOT_SUFFIX_OPCODES.every((opcode, k) => suffix[k]?.opcode === opcode)
+          || !texts(program.length - 2, 1) || suffix[3]?.opcode !== OP_END) continue;
+      const keyRow = keysLike === undefined ? rows[0] : rows.find((row) => row.label === keysLike);
+      if (keyRow === undefined) {
+        throw new ComposeError(`no device list row is labelled ${keysLike}, so there is no key map to copy`);
+      }
+      return {
+        prefix: program.slice(0, 3),
+        suffix,
+        titleFont: program[3]?.operands[0] as number,
+        counterFont: program[5]?.operands[0] as number,
+        labelFont: program[9]?.operands[0] as number,
+        single,
+        crossed,
+        keyMode: keyRow.mode,
+      };
+    }
+  }
+  throw new ComposeError('no device mode page has the chrome this composes');
+}
+
+/**
+ * Which of the two arch 14 device list layouts a page's list is in, and how many devices it holds:
+ * corners, one scan per device filling `FOUR_SLOT_ITEMS` in order, or rows, both scans of a row per
+ * device filling `FOUR_SLOT_ROWS` in order. Undefined for anything else, which the composer refuses.
+ */
+function menuLayout(
+  c: Container, entries: readonly TaggedEntry[],
+): { rows: boolean; used: number; capacity: number } | undefined {
+  const lists = c.actionLists() ?? [];
+  const byList = new Map<string, number[]>();
+  for (const entry of entries) {
+    // Two scans of one row run twin lists rather than one, section 69, so a device is its mode.
+    const list = lists[entry.operand];
+    const key = entry.opcode === ACTION_LIST_INDEX_OPCODE ? JSON.stringify(list) : `${entry.opcode}:${entry.operand}`;
+    byList.set(key, [...(byList.get(key) ?? []), entry.tag & SCAN_MASK]);
+  }
+  const groups = [...byList.values()].map((scans) => [...scans].sort((a, b) => a - b).join(','));
+  const same = (want: readonly (readonly number[])[]): boolean => {
+    const wanted = want.map((scans) => [...scans].sort((a, b) => a - b).join(','));
+    return groups.length === wanted.length && wanted.every((one) => groups.includes(one));
+  };
+  const used = groups.length;
+  if (same(FOUR_SLOT_ITEMS.slice(0, used).map((item) => [item.scan]))) {
+    return { rows: false, used, capacity: FOUR_SLOT_ITEMS.length };
+  }
+  if (same(FOUR_SLOT_ROWS.slice(0, used))) return { rows: true, used, capacity: FOUR_SLOT_ROWS.length };
+  return undefined;
+}
+
+function composeFourSlotDeviceScreen(
+  c: Container, label: string, rows: readonly ComposeRow[], options: ComposeScreenOptions,
+): ComposedScreen {
+  if (rows.length === 0) throw new ComposeError('a device mode needs at least one command on its screen');
+  const perPage = FOUR_SLOT_ITEMS.length;
+  const pageCount = Math.ceil(rows.length / perPage);
+  if (pageCount > 9) throw new ComposeError('a page counter of two digits is not composed');
+  const map = characterMap(c);
+  if (map === undefined) throw new ComposeError('the config draws no text this can spell from');
+  const template = fourSlotTemplate(c, options.keysLike);
+  const sets = fontSets(c) ?? [];
+  const setOf = (font: number): FontSet => {
+    const set = sets[font];
+    if (set === undefined) throw new ComposeError(`the config does not carry font ${font}`);
+    return set;
+  };
+  const titleCodes = codesFor(map, c, setOf(template.titleFont), label, template.titleFont);
+  const menuCodes = codesFor(map, c, setOf(template.labelFont), label, template.labelFont);
+  const rowCodes = rows.map((row) => codesFor(map, c, setOf(template.labelFont), row.label,
+                                              template.labelFont));
+  const digitCodes = (n: number): number[] =>
+    codesFor(map, c, setOf(template.counterFont), String(n), template.counterFont);
+  const slashCodes = codesFor(map, c, setOf(template.counterFont), '/', template.counterFont);
+  [label, ...rows.map((row) => row.label)].forEach((text, k) => {
+    const wide = textWidth(c, setOf(template.labelFont), k === 0 ? menuCodes : rowCodes[k - 1] as number[]);
+    if (wide > FOUR_SLOT_LABEL_MAX) {
+      throw new ComposeError(`'${text}' is ${wide} pixels wide and a corner holds ${FOUR_SLOT_LABEL_MAX}: `
+        + 'give it a shorter label');
+    }
+  });
+
+  const found = deviceListMenus(c);
+  if (found.menus.length === 0 || found.marker === undefined) {
+    throw new ComposeError('no device list menu found to grow');
+  }
+  // Refused before anything moves: a full last page would need a new page and a new counter on
+  // every page of that menu. Counted as well: how many buttons the new device takes on each menu,
+  // one corner or a row's two, which is how many row lists step 1 writes for that menu's list and
+  // as many again for its copy.
+  let rowBindings = 0;
+  for (const menu of found.menus) {
+    const page = modeRecords(c)?.[menu]?.pages.at(-1);
+    const layout = menuLayout(c, taggedList(c, page?.list ?? 0)?.entries ?? []);
+    if (layout === undefined) {
+      throw new ComposeError(`menu ${menu}'s last page is neither of the two arch 14 layouts`);
+    }
+    if (layout.used >= layout.capacity) {
+      throw new ComposeError(`menu ${menu}'s last page is full, and a new menu page is not composed `
+        + 'on arch 14');
+    }
+    rowBindings += 2 * (layout.rows ? (FOUR_SLOT_ROWS[layout.used] as readonly number[]).length : 1);
+  }
+  const table = modeTable(c);
+  if (table === undefined) throw new ComposeError('base slot 6 states no table');
+  const mode = table.addresses.length;
+
+  // The key map, from the template mode's own list: same keys in the same order, each bound to the
+  // command sending the same frame when exactly one does, and to nothing when none does. The two
+  // bindings that are not keys but the mode's own navigation, the list and the map through base slot
+  // 14 that every device mode carries, are copied as they are, and the four corners are nothing
+  // because a page binds them.
+  const lists = c.actionLists() ?? [];
+  const keyTemplate = modeRecords(c)?.[template.keyMode]?.entries ?? [];
+  // By frame, and a set rather than a list: two items running one command are one command.
+  const ours = new Map<string, Set<number>>();
+  rows.forEach((row) => {
+    const frame = sentFrame(c, lists[row.list]);
+    if (frame !== undefined) ours.set(frame, (ours.get(frame) ?? new Set()).add(row.list));
+  });
+  const slotScans = new Set(FOUR_SLOT_ITEMS.map((item) => item.scan));
+  let keys = 0;
+  const own = keyTemplate.map((entry) => {
+    if (entry.opcode !== ACTION_LIST_INDEX_OPCODE) {
+      const corner = slotScans.has(entry.tag & SCAN_MASK) && entry.tag >> KEY_EVENT_SHIFT === KEY_EVENT_PRESS;
+      return corner ? { tag: entry.tag, operand: 0, opcode: 0 } : entry;
+    }
+    const frame = sentFrame(c, lists[entry.operand]);
+    const match = frame === undefined ? undefined : ours.get(frame);
+    if (match?.size === 1) {
+      keys += 1;
+      return { tag: entry.tag, operand: [...match][0] as number, opcode: ACTION_LIST_INDEX_OPCODE };
+    }
+    return { tag: entry.tag, operand: 0, opcode: 0 };
+  });
+  if (keyTemplate.some((entry) => entry.flags !== undefined)) {
+    throw new ComposeError('the template key map is not the narrow form every device mode uses');
+  }
+
+  // 1. The row lists: enter the new mode, write the marker. **One per button bound, and another for
+  // each copy**, identical, because that is what the compiler writes: on the four arch 14 user
+  // configurations 300 row lists are bound 300 times, none twice and none shared between a page and
+  // its copy. The Harmony One composer shares one, and that is measured to work there; here the
+  // compiler's own shape is the one with nothing left to find out.
+  const actionSlot = archSlot(c.architecture as number, ACTION_TABLE_SLOT);
+  const actionTable = c.pointerArrayAt(actionSlot);
+  if (actionTable === undefined) throw new ComposeError('base slot 10 does not read as a table');
+  const rowList = actionTable.values.length;
+  const oneRow = new Writer(1 + 3 * 2).u8(2)
+    .u16(mode).u8(ENTER_MODE)
+    .u16(found.marker.operand).u8(found.marker.opcode).bytes;
+  const rowAt = actionTable.start;
+  const rowHole = relocate(c, rowAt, oneRow.length * rowBindings);
+  for (let k = 0; k < rowBindings; k += 1) rowHole.bytes.set(oneRow, rowAt + k * oneRow.length);
+  let current = parse(appendTableEntries(parse(rowHole.bytes), actionSlot,
+    Array.from({ length: rowBindings }, (_, k) => c.flashBase + rowAt + k * oneRow.length)));
+  let nextRow = rowList;
+
+  // 2. The table entry, on a placeholder until the block exists, as on the Harmony One.
+  const stale = modeTable(current);
+  if (stale === undefined) throw new ComposeError('base slot 6 stopped reading');
+  const placeholderEntry = stale.addresses[0];
+  if (placeholderEntry === undefined) throw new ComposeError('a config with no modes has no menus');
+  const tableAt = stale.start + stale.length;
+  const tableHole = relocate(current, tableAt, 3);
+  tableHole.bytes.set(new Writer(3).u24(placeholderEntry).bytes, tableAt);
+  tableHole.bytes.set(new Writer(3).u24(mode + 1).bytes, stale.start);
+  current = parse(tableHole.bytes);
+
+  // 3 and 4. Each page's list, its copy at the end of the last pool and itself at the end of the
+  // page lists, in page order, because the copies pair with the pages by position, section 69.
+  const pageRows = Array.from({ length: pageCount }, (_, p) => rows.slice(p * perPage, (p + 1) * perPage));
+  // Filled in `FOUR_SLOT_ITEMS` order and stored in `FOUR_SLOT_STORED_ORDER`, as every page is.
+  const pageListBytes = pageRows.map((onPage) => {
+    const bytes = new Writer(1 + 4 * onPage.length).u8(onPage.length);
+    const placed = onPage.map((row, k) => ({ scan: FOUR_SLOT_ITEMS[k]?.scan as number, list: row.list }))
+      .sort((a, b) => FOUR_SLOT_STORED_ORDER.indexOf(a.scan) - FOUR_SLOT_STORED_ORDER.indexOf(b.scan));
+    for (const one of placed) {
+      bytes.u8((KEY_EVENT_PRESS << KEY_EVENT_SHIFT) | one.scan).u16(one.list).u8(ACTION_LIST_INDEX_OPCODE);
+    }
+    return bytes.bytes;
+  });
+  // One hole each for all the copies and all the lists, rather than one per page: a list nothing
+  // names yet is invisible to the walks that find the ends, so a second insertion lands in front of
+  // the first and leaves the first page naming the second page's list. Which is what happened.
+  const allLists = new Uint8Array(pageListBytes.reduce((sum, bytes) => sum + bytes.length, 0));
+  pageListBytes.reduce((offset, bytes) => { allLists.set(bytes, offset); return offset + bytes.length; }, 0);
+  const lastPool = taggedListPools(current).at(-1);
+  if (lastPool === undefined) throw new ComposeError('no copy pool to extend');
+  const copyHole = relocate(current, lastPool.end, allLists.length);
+  copyHole.bytes.set(allLists, lastPool.end);
+  current = parse(copyHole.bytes);
+  const listAt = Math.max(...modePages(current).map((page) => {
+    const off = current.blobOffsetOf(page.list);
+    const list = taggedList(current, page.list);
+    return off === undefined || list === undefined ? 0 : off + list.length;
+  }));
+  const listHole = relocate(current, listAt, allLists.length);
+  listHole.bytes.set(allLists, listAt);
+  current = parse(listHole.bytes);
+  const pageListAddresses: number[] = [];
+  pageListBytes.reduce((offset, bytes) => {
+    pageListAddresses.push(current.flashBase + offset);
+    return offset + bytes.length;
+  }, listAt);
+
+  // 5. The block, where the mode entries end: the key map, then per page its program and its record,
+  // then the entry. Its own addresses are final here, and the ones it copies are shifted by its
+  // length the way the census would shift them, since the census cannot see bytes not yet written.
+  const records = modeRecords(current);
+  if (records === undefined) throw new ComposeError('base slot 6 does not read');
+  // Read again: every address and offset the first reading holds is stale by the insertions above.
+  const fresh = fourSlotTemplate(current, options.keysLike);
+  const measuring = (fontSets(current) ?? [])[template.labelFont];
+  if (measuring === undefined) throw new ComposeError('the label font stopped reading');
+  const text = (x: number, y: number, codes: readonly number[]): number[] =>
+    [OP_TEXT_INLINE, x, y, ...codes, 0];
+  // What a page draws between the copied top bar and the copied bottom bar: the title, the counter
+  // when there is more than one page, and a label per item, left ones from the edge and right ones
+  // ending at it.
+  const middles = pageRows.map((onPage, p) => {
+    const out: number[] = [OP_FONT, fresh.titleFont,
+      ...text(FOUR_SLOT_TITLE_XY[0], FOUR_SLOT_TITLE_XY[1], titleCodes)];
+    if (pageCount > 1) {
+      out.push(OP_FONT, fresh.counterFont,
+        ...text(FOUR_SLOT_COUNTER_X[0], FOUR_SLOT_TITLE_XY[1], digitCodes(p + 1)),
+        ...text(FOUR_SLOT_COUNTER_X[1], FOUR_SLOT_TITLE_XY[1], slashCodes),
+        ...text(FOUR_SLOT_COUNTER_X[2], FOUR_SLOT_TITLE_XY[1], digitCodes(pageCount)));
+    }
+    out.push(OP_FONT, fresh.labelFont);
+    onPage.forEach((_, k) => {
+      const item = FOUR_SLOT_ITEMS[k] as (typeof FOUR_SLOT_ITEMS)[number];
+      const codes = rowCodes[p * perPage + k] as number[];
+      const x = item.column === 0
+        ? FOUR_SLOT_LEFT_X : FOUR_SLOT_RIGHT_END - textWidth(current, measuring, codes);
+      out.push(...text(x, FOUR_SLOT_LABEL_Y[item.row], codes));
+    });
+    return out;
+  });
+  // The background is written by hand and the rest of the prefix and all of the suffix are copied.
+  const copied = [...fresh.prefix.slice(1), ...fresh.suffix];
+  const copiedLength = copied.reduce((sum, one) => sum + one.length, 0);
+  const backgroundLength = 1 + 5;
+  const programLengths = middles.map((middle) => backgroundLength + copiedLength + middle.length);
+  const ownLength = 1 + 4 * own.length;
+  const pageRecord = 6;
+  const blockLength = ownLength + programLengths.reduce((sum, n) => sum + n + pageRecord, 0)
+    + 6 + 3 * pageCount;
+  const blockAt = Math.max(...records.map((record) => {
+    const off = current.blobOffsetOf(record.address);
+    return off === undefined ? 0 : off + record.entryLength;
+  }));
+  const base = current.flashBase + blockAt;
+  const shifted = (address: number): number => (address >= base ? address + blockLength : address);
+  const block = new Writer(blockLength);
+  block.u8(own.length);
+  for (const entry of own) block.u8(entry.tag).u16(entry.operand).u8(entry.opcode);
+  const pageAddresses: number[] = [];
+  let at = base + ownLength;
+  middles.forEach((middle, p) => {
+    const programAddress = at;
+    const background = pageRows[p]?.length === 1 ? fresh.single : fresh.crossed;
+    block.u8(OP_IMAGE).u8(0).u8(0).u24(shifted(background));
+    for (const one of fresh.prefix.slice(1)) copiedInstruction(current, one, shifted).forEach((b) => block.u8(b));
+    middle.forEach((b) => block.u8(b));
+    for (const one of fresh.suffix) copiedInstruction(current, one, shifted).forEach((b) => block.u8(b));
+    at += programLengths[p] as number;
+    pageAddresses.push(at);
+    block.u24(shifted(pageListAddresses[p] as number)).u24(programAddress);
+    at += pageRecord;
+  });
+  const entryAddress = at;
+  block.u8(0).u24(base).u16(pageCount);
+  pageAddresses.forEach((address) => block.u24(address));
+  if (block.bytes.length !== blockLength) {
+    throw new ComposeError(`the block came to ${block.bytes.length} bytes against the ${blockLength} its hole has`);
+  }
+  const blockHole = relocate(current, blockAt, blockLength);
+  blockHole.bytes.set(block.bytes, blockAt);
+
+  // 6. The swap: the table's last pointer from the placeholder to the entry.
+  const swapped = parse(blockHole.bytes);
+  const grownTable = modeTable(swapped);
+  if (grownTable === undefined) throw new ComposeError('base slot 6 stopped reading');
+  swapped.blob.set(new Writer(3).u24(entryAddress).bytes, grownTable.start + 3 + 3 * mode);
+  current = parse(swapped.blob);
+
+  // 7. One more item on each menu's last page: its list and the list's copy grow by the corner the
+  // page fills next, the label goes in above the page's closing bar, and a page that held one item
+  // takes the crossed background its menu's full pages draw.
+  for (const menu of found.menus) {
+    const page = modeRecords(current)?.[menu]?.pages.at(-1);
+    const list = page === undefined ? undefined : taggedList(current, page.list);
+    if (page === undefined || list === undefined) throw new ComposeError('a menu lost its page');
+    const layout = menuLayout(current, list.entries);
+    if (layout === undefined) throw new ComposeError('a menu page changed layout');
+    const entries = list.entries.length;
+    // The scans the new device is bound to: the next corner, or both buttons of the next row.
+    const scans = layout.rows
+      ? [...(FOUR_SLOT_ROWS[layout.used] as readonly number[])]
+      : [(FOUR_SLOT_ITEMS[layout.used] as (typeof FOUR_SLOT_ITEMS)[number]).scan];
+    // The list grows by the new entries, each running a row list of its own, and is written back
+    // whole in the stored order, so a new bottom right lands between top left and top right.
+    const grow = (listStart: number): void => {
+      const width = 4;
+      const end = listStart + 1 + width * entries;
+      const kept = Array.from({ length: entries }, (_, k) =>
+        current.blob.slice(listStart + 1 + width * k, listStart + 1 + width * (k + 1)));
+      const added = scans.map((scan) => {
+        const list = nextRow;
+        nextRow += 1;
+        return new Writer(width).u8((KEY_EVENT_PRESS << KEY_EVENT_SHIFT) | scan).u16(list)
+          .u8(ACTION_LIST_INDEX_OPCODE).bytes;
+      });
+      const all = [...kept, ...added].sort((a, b) =>
+        FOUR_SLOT_STORED_ORDER.indexOf((a[0] as number) & SCAN_MASK)
+          - FOUR_SLOT_STORED_ORDER.indexOf((b[0] as number) & SCAN_MASK));
+      const hole = relocate(current, end, width * added.length);
+      hole.bytes[listStart] = all.length;
+      all.forEach((one, k) => hole.bytes.set(one, listStart + 1 + width * k));
+      current = parse(hole.bytes);
+    };
+    const pageIndex = modePages(current).findIndex((one) => one.address === page.address);
+    const copyOff = pageListCopies(current)[pageIndex];
+    if (copyOff === undefined) throw new ComposeError('a menu page has no pool copy');
+    grow(copyOff);
+    const moved = modeRecords(current)?.[menu]?.pages.at(-1);
+    const listOff = moved === undefined ? undefined : current.blobOffsetOf(moved.list);
+    if (listOff === undefined) throw new ComposeError('a menu page list moved out of reach');
+    grow(listOff);
+
+    const target = modeRecords(current)?.[menu]?.pages.at(-1);
+    const program = target === undefined ? undefined : screenProgram(current, target.program);
+    const bar = program?.findLastIndex((one) => one.opcode === SCREEN_DRAW_IMAGE_AT);
+    if (target === undefined || program === undefined || bar === undefined || bar < 0) {
+      throw new ComposeError('a menu page program has no closing bar to draw above');
+    }
+    const labelSet = (fontSets(current) ?? [])[template.labelFont];
+    if (labelSet === undefined) throw new ComposeError('the label font stopped reading');
+    const wide = textWidth(current, labelSet, menuCodes);
+    const item = FOUR_SLOT_ITEMS[layout.used] as (typeof FOUR_SLOT_ITEMS)[number];
+    const [x, y] = layout.rows
+      ? [Math.floor((FOUR_SLOT_SCREEN_WIDTH - wide) / 2), TWO_ROW_LABEL_Y[layout.used] as number]
+      : [item.column === 0 ? FOUR_SLOT_LEFT_X : FOUR_SLOT_RIGHT_END - wide, FOUR_SLOT_LABEL_Y[item.row]];
+    // A font select only where the page has another font in effect at the bar: the compiler never
+    // selects the font already selected, 0 of the 820 selects on the four arch 14 configurations.
+    const inEffect = program.slice(0, bar).findLast((one) => one.opcode === OP_FONT)?.operands[0];
+    const drawn = new Uint8Array([
+      ...(inEffect === template.labelFont ? [] : [OP_FONT, template.labelFont]),
+      OP_TEXT_INLINE, x, y, ...menuCodes, 0,
+    ]);
+    const insertAt = (program[bar] as ScreenInstruction).start;
+    const programHole = relocate(current, insertAt, drawn.length);
+    programHole.bytes.set(drawn, insertAt);
+    current = parse(programHole.bytes);
+
+    if (!layout.rows && layout.used === 1) {
+      // Read both after the insertion, so neither address is stale by it. A two row list's pages all
+      // draw one picture whatever they hold, the crossed one on the 650 and 700s and one of its own
+      // on the 600, so only the corner layout changes.
+      const full = modeRecords(current)?.[menu]?.pages.find((one) =>
+        (taggedList(current, one.list)?.entries.length ?? 0) === perPage);
+      const fullFirst = full === undefined ? undefined : screenProgram(current, full.program)?.[0];
+      const crossed = fullFirst?.opcode === OP_IMAGE ? bitmapReference(fullFirst) : undefined;
+      const last = modeRecords(current)?.[menu]?.pages.at(-1);
+      const lastFirst = last === undefined ? undefined : screenProgram(current, last.program)?.[0];
+      if (crossed === undefined || lastFirst?.opcode !== OP_IMAGE) {
+        throw new ComposeError(`menu ${menu} has no full page to take the crossed background from`);
+      }
+      current.blob.set(new Writer(3).u24(crossed).bytes, lastFirst.start + lastFirst.length - 3);
+      current = parse(current.blob);
+    }
+  }
+
+  if (nextRow !== rowList + rowBindings) {
+    throw new ComposeError(`${nextRow - rowList} row lists bound against the ${rowBindings} written`);
+  }
+  return {
+    bytes: restamped(current.blob), mode, menus: found.menus, rowList, pagesAdded: [], keys,
+    pages: pageCount, rowLists: rowBindings,
+  };
 }
 
 /**

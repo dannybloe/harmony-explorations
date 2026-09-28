@@ -281,3 +281,19 @@ produce a config the remote accepts and mishandles.
   `pageScans` trap met a third time. And `ModeRecord` has **no `list` field**, its own tagged list
   being already parsed in `entries`, so a walk written as `if (record.list !== undefined)` walks
   nothing and reports a clean zero, which is exactly what happened when this was first measured.
+
+* **An arch 14 device mode binds every key, and a composed one must too**, section 285. On all 21
+  device modes of the four arch 14 user configurations the mode's own list holds 47 entries: besides
+  the mode's two navigation entries, a `0x72` and a `0x73`, each key sends that device's command or is
+  bound to **nothing**, never left out. A key a mode leaves out is
+  resolved further down, against base slot 9, section 271's order, which is a map this device does not
+  own; what a left out key then does on an arch 14 remote has not been measured. The arch 14 composer copies the key set of an existing device mode
+  and binds only the keys whose frame one of the new commands sends. Two further refusals are
+  deliberate: a device list whose last page is full, since a new page renumbers every page counter of
+  that list, and a label wider than sixty pixels, the composer's own limit, the widest compiled corner
+  label being 59. Three conventions are kept although nothing says the remote needs them, so that a
+  composed page is one the compiler could have written: a row list per button and per copy, entries
+  stored 9, 8, 34, 2, and no font selected that is already in effect. **Where the arch 14 screens differ from
+  the Harmony One's is geometry, and none of it transfers**: four labelled corners, scans 8, 2, 9 and 34
+  filled in that order, right hand labels ending at x 125, and one device list per configuration drawn
+  in two rows with centred labels.

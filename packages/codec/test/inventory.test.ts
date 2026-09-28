@@ -34,6 +34,7 @@ import {
   handlerSetRoles,
   deviceModeTitles,
   deviceVariables,
+  deviceListRows,
   devices,
   infraredCodesPerList,
   infraredGroupsPerList,
@@ -1645,6 +1646,31 @@ test('a device mode map addresses exactly one device, and every device with code
   assert.equal(keypadLarger, 7);
 });
 
+test('an arch 14 device list is read, and its labels pair with their corners',
+     skipUnless('h650_config_region', 'h600_config', 'h700_config', 'h700_config_2'), () => {
+  // Section 285. Every arch 14 row is two instructions, enter a mode and write the marker, with no
+  // beep, so the Harmony One's shape found none of them and every arch 14 device had no mode. The
+  // labels pair by corner: two sit side by side on one line, which the Harmony One's rank pairing
+  // would have read as one label.
+  const expected: Record<string, [number, number, number, string][]> = {
+    h650_config_region: [[0, 9, 230, 'Denon'], [0, 8, 160, 'TV'], [0, 34, 243, 'PS3'],
+                         [0, 2, 103, 'KPN'], [1, 8, 157, 'Kodi']],
+    h600_config: [[0, 9, 224, 'PS'], [0, 8, 106, 'KPN'], [0, 34, 161, 'GChromeca..'], [0, 2, 156, 'TV']],
+    h700_config: [[0, 9, 158, 'Bluray'], [0, 8, 262, 'TV'], [0, 34, 246, 'Roku'], [0, 2, 347, 'VCR'],
+                  [1, 8, 120, 'Receiver'], [1, 2, 267, 'A/V Switch']],
+  };
+  expected['h700_config_2'] = expected['h700_config']!;
+  for (const [name, rows] of Object.entries(expected)) {
+    const c = parse(require_(name));
+    assert.deepEqual(deviceListRows(c).map((row) => [row.page, row.scan, row.mode, row.label]), rows, name);
+    // And every device gets its mode, the Chromecast too: its mode's one page binds nothing, so it
+    // reaches no infrared group, and its elided label is what ties it to the device already named.
+    const found = devices(c);
+    assert.equal(found.length, rows.length, `${name}: one device per row, none twice`);
+    assert.deepEqual(found.map((one) => one.mode).sort(), rows.map((row) => row[2]).sort(), name);
+  }
+});
+
 test('the drawn device list enters the same mode the infrared groups pick', skipUnless(
   'one_config', 'one_config_unprogrammed', 'one_spare_before_sync', 'one_spare_after_sync'), () => {
   // **The independent closure of section 271.** `deviceListRows` reads a row's `0x7E` off the screen
@@ -1664,6 +1690,31 @@ test('the drawn device list enters the same mode the infrared groups pick', skip
   }
   assert.equal(rows, 8, 'device list rows that reach a device on the arch 12 containers');
   assert.equal(agreeing, 8);
+});
+
+test('on arch 14 the drawn device list enters the mode the infrared groups pick, but for one device',
+     skipUnless('h650_config_region', 'h600_config', 'h700_config', 'h700_config_2', 'calibration_h600'), () => {
+  // Section 285, section 271's closure run where it could not be before. The two disagreements are
+  // `deviceModeMaps` being wrong, not the list: the Harmony 700's A/V switch has a device mode that
+  // binds no key, so the reader, which considers only modes with a keypad binding and counts a mode's
+  // enter handler as one, picks a help screen instead. Named here so that fixing the reader has to
+  // change this test.
+  let rows = 0;
+  let agreeing = 0;
+  const disagreeing: string[] = [];
+  for (const name of ['h650_config_region', 'h600_config', 'h700_config', 'h700_config_2', 'calibration_h600']) {
+    const c = parse(require_(name));
+    const maps = new Map(deviceModeMaps(c).map((one) => [one.group, one.mode]));
+    for (const device of devices(c)) {
+      if (device.mode === undefined || device.group === undefined || !maps.has(device.group)) continue;
+      rows += 1;
+      if (maps.get(device.group) === device.mode) agreeing += 1;
+      else disagreeing.push(`${name} ${device.name} ${device.mode} ${maps.get(device.group)}`);
+    }
+  }
+  assert.equal(rows, 23);
+  assert.equal(agreeing, 21);
+  assert.deepEqual(disagreeing, ['h700_config A/V_Switch 267 324', 'h700_config_2 A/V_Switch 267 324']);
 });
 
 test('the factory config\'s one activity agrees with its one device\'s stated map',

@@ -37093,3 +37093,193 @@ pair on arch 12 and 14 being the safe mode containers' wide variable; and the po
 loosely in places. All corrected, and its account of the Harmony One's gate, a branch at `0x2A276`
 read as the sum's compare, was checked and corrected in turn: that branch is the flag test, and the
 compare is at `0x2A27C`.
+
+## 285. Arch 14's device list and device mode screens are read and composed, and a device is composed for the Harmony 650
+
+**The device list reader found no row on any arch 14 configuration, and that was the row's shape
+rather than the list's absence.** An arch 12 (Harmony One) row is three instructions, beep, enter a
+mode, write the marker. An arch 14 (Harmony 600, 650 and 700) row is two: enter the mode and write the
+marker, with no beep. On all four arch 14 user configurations every list of that two instruction
+shape ends in one write, a different one per configuration, `0x9F` operand 1 on the Harmony 650,
+`0x9B` on the 600 and `0xA5` on both 700s, which is variable 31, 27 and 37: 60, 48, 96 and 96 lists,
+half of them bound on a device list page and the other half the twin lists their pages' second copies
+name, section 69. So `deviceModeMarker`, `deviceListRows` and every device's `mode` were empty on arch
+14, and the composer's screen half refused the architecture outright.
+
+### The layout, off the four configurations
+
+An arch 14 screen is not a touch screen. A page labels the four buttons around the display and binds
+those four scans and nothing else, and the four fill in one order: **8 top left, 2 top right, 9
+bottom left, 34 bottom right**. Every one of the 184 pages of the four configurations' device lists and
+21 device modes, 5 modes on the 650, 4 on the 600 and 6 on each 700, binds a prefix of that order, and
+every page holds four but the last of its mode and one page on each 700: the fourth of eleven in the
+receiver's mode, which holds three. **The order a page stores its entries in is another one**, bottom
+left, top left, bottom right, top right, a scan the page does not bind left out: 184 of 184, full pages
+as 9, 8, 34, 2 and the four three item ones as 9, 8, 2. The four configurations are the corpus's three
+arch 14 user configurations plus `h650_config_region`, which `PARSEABLE_EXCLUDED` keeps out of the corpus
+wide totals, so the counts in this section are over a wider population than `lab.CONTAINERS`.
+
+* **A right hand label ends at x 125 and a left hand one starts at 3**, whatever its font: on the corner
+  pages among those 184, 414 of 414 right hand labels end at 125 and 448 of 448 left hand ones start at
+  3. A one line label sits at y 40 in the top row and 90 in the bottom one whatever its font, and a two
+  line label starts at 25 or 75 with its second line one font height below and in the same font, which
+  is 40 or 90 again in the two usual label fonts; of the 862 lines 569 are at 40 or 90 and 245 at 25 or
+  75, and the other 48 are second lines in smaller fonts, **higher** than 40 by the difference in
+  height, 35 to 39.
+* **One device list per configuration is drawn in two rows** instead of corners: a device per row,
+  bound to **both** buttons of that row, 2 and 8 for the top and 9 and 34 for the bottom, its label
+  centred at y 35 or 79. The centring is `x = floor((128 - width) / 2)`, 21 of 21 labels, and every
+  page of one of those lists draws the same picture whatever it holds: the corner lists' crossed one
+  on the 650 and the 700s, and a picture of its own on the 600, a single dashed line, where
+  `calibration_h600` does the same. These pages also carry no queued `0x73`, see below.
+* **The background is one picture for a page holding one item and another for a page holding more**,
+  the second drawing the cross that divides the corners: 136 of 136 device mode pages that bind only
+  corner scans, 9 with one item and 127 with two to four, plus one page binding nothing that draws the
+  first. The two pictures are per configuration.
+* **A page carries its own chrome**: a background, a queued `0x73` instruction, the top bar, the title
+  in one font, the page counter `n/m` in another on the title's line when a mode has more than one
+  page, the labels in a third, then the bottom bar and its word. The queued `0x73` is on 173 of the 184
+  pages, all but the 11 of the two row lists. The counter's three pieces sit at x `0x6A`, `0x71` and
+  `0x76` on a corner page whose mode has two to nine pages, 98 of 98; the two row lists draw it at
+  `0x63`, `0x6A`, `0x6F` even for `1/3`, and a mode of ten pages or more further left again. There is
+  no call to a shared program, unlike arch 12's device pages, and a mode's block is its own list, then
+  per page a program and a six byte page record, then the entry, which is how the 650's own modes are
+  laid out. The one device mode in the four configurations with a single page, the 600's Chromecast,
+  whose page binds nothing, draws no counter.
+* **A device mode's own list binds every key**: 47 entries on all 21 device modes, the four corners
+  bound to nothing because a page binds them, one `0x72` and one `0x73` of the mode's own navigation,
+  and every other key either an action list or nothing. All 547 keys bound to a list send that device's
+  command. So on arch 14 a device mode has a key map of its own, where the Harmony One's composed mode
+  had an empty list and let every key fall through.
+
+### What was built
+
+* **The reader**: `isDeviceListRowShape` knows the arch 14 shape, `deviceListRowMode` is the one test of
+  a row that the reader and the composer's menu finder share, and an arch 14 row's label is paired by
+  **corner** rather than by rank, since two labels sit on one line. All four configurations now read
+  their whole device list with every label right, and every device gets its mode. Corners only: a two
+  row list reaches every device, as the corner lists do, and the reader keeps the first of the tied
+  lists, a corner one on every configuration because its mode number is lower, so the two row list's
+  centred labels are never the ones paired.
+* **A side effect, corrected before it landed**: the Harmony 600's Chromecast has an infrared group of
+  no codes, section 271, and a mode whose one page binds nothing, so its row reaches no group, and
+  `devices` appended it a second time as `GChromeca..` the moment arch 14 rows were read. A row that
+  reaches no group now names an existing device first, where exactly one device with no mode carries
+  its label, underscores read as spaces and a trailing `..` being the screen's elision of a name too
+  long for its corner. The 600 reads as four devices, the Chromecast's mode attached. **The rule is
+  fitted to one case**: two rows in the corpus reach no group, this one and a Wii on
+  `compiled_protocols_3` that names no device and falls through correctly, and a screen does not
+  always mark a cut, `calibration_h600` shortening `Panasonic_Blu-ray_Player` to `Panasonic Blu-ray`
+  with no dots, which the rule would not match.
+* **The composer's arch 14 screen half**, `composeDeviceScreen` on arch 14: a new device mode with a
+  page per four commands, the chrome copied instruction for instruction from one of the configuration's
+  own device mode pages, the two backgrounds from its device mode pages, the page counter when there is
+  more than one page, and a key map with the template mode's 47 keys in its order, each bound to the
+  new command sending the same frame where exactly one does and to nothing otherwise, the navigation
+  copied; then one more item on every device list menu's last page, corner or row, with the crossed
+  background where a corner page grows from one item to two. Entries are stored in the stored order,
+  a row list is written per button bound and per copy, and no font is selected that is already in
+  effect, each of which is what the compiler writes, below. `compose-device.ts --keys-like <label>`
+  names the device whose mode is the key template.
+* **Refused rather than half done**: a menu whose last page is full, which needs a new page and a new
+  counter on every page of that menu; a label wider than sixty pixels, which is the composer's limit
+  and not a measurement, the widest corner label on these configurations being 59; a letter a font
+  does not carry. **The full menus are what refuse the 600 and the 700**: the Harmony 700's two row
+  list holds two devices on each of three pages, and all five of the Harmony 600's lists are full, its
+  four corner lists holding four devices on their one page and its two row list two on each of two.
+  The 600's label font carrying only the letters its own screens draw is refused first when a label
+  uses another, and is not the reason it cannot compose. So only the 650 composes today.
+* **Not composed, todo 1.2.6**: the `0x7F` call every arch 14 command opens with, 422, 188 and 372
+  lists on the 650, 600 and 700. It loads 1, runs a list of that device's own only if a variable equals
+  it, and returns; the variable is 52 on the 650, 46 on the 600 and 59 on the 700, and every list that
+  writes it sets it to 1 and back to 0 inside itself, 31, 27 and 50 of them, three of the 650's being
+  the activities' `Starting ...` sequences. **The device's list is one `0x72` on that device's own
+  `InterDeviceDelay` variable through a base slot 14 table**, for all five devices on the 650, so the
+  call applies the device's inter device delay while a start sequence runs and not on a key press in
+  device mode. What each table case does is unread. A composed command skips it, and a composed device
+  also carries none of the delay variables every compiled one has, so `deviceDelays` does not report
+  it and an activity starting it would get no inter device delay. Section 235 reads those variables.
+
+### A closure, and the disagreement it found in section 271's reader
+
+Section 271's closure, the drawn device list entering the mode `deviceModeMaps` picks from the infrared
+groups, could be run on arch 12 alone, since arch 14 had no rows. Run now on the four arch 14 user
+configurations and `calibration_h600`, 24 rows reach a device with a group: 21 agree, the 600's
+Chromecast has no map to agree with, and **the Harmony 700's A/V switch disagrees on both 700s**, the
+list entering mode 267 and `deviceModeMaps` picking 324. The list is right. Mode 267 is the device's
+own, titled with its name, five commands on two pages and every key bound to nothing; 324 is a help
+screen, "Is the A/V Switch set to the Input 2 input?", whose page reaches one of 267's command lists
+through a call. `deviceModeMaps` considers only modes with a keypad binding, and counts one whose tag
+is the **enter handler**, tag 6, as a key: so the one device mode with no keys was passed over for a
+screen whose only "key" is its handler. Section 271's 62 of 62 therefore includes two groups whose mode
+is wrong, and its keypad totals include handler tags: exactly 2 of section 271's 1609 keypad bindings,
+both mode 324's on the two 700s. Not corrected here, since it moves section
+271's counts and is its own finding; `todo.md` carries it, and the test asserts the two by name so the
+fix has to change the test.
+
+### The first composition, on the Harmony 650's own configuration, not written
+
+`compose-device.ts` on `h650-current-config.bin`, byte for byte the `h650_config_region` read, with the
+LG OLED55C27LA out of Logitech's catalogue, the six commands and labels of section 242 and `--keys-like
+TV`: a sixth device, group 5, power variable 62 joined to the all off list and the three activities'
+enter lists, mode 284 with two pages, and the LG on the last page of all five device lists. Every byte
+claimed and none twice, the checksum restated, the emitter reproducing the file, the deepest action list
+16 of 40, all six commands sending a number the 650 already sends to its own LG television, and five
+keys of the key map bound to the new device, volume, channel and mute, the television's own mode
+binding power to no key. Drawn by `render.ts`, the two pages and the five menus look like the 650's own.
+The write is 13 of the file's 14 erase blocks, `0x030000` and `0x050000` to `0x100000`, every one inside
+the `h650_config_region` dump, and 1874 bytes longer than what is on the remote. It has not been written.
+
+### The reviewers, and what the composition still does differently from the compiler
+
+The blind re-measure reproduced the layout, the counts, the closure and the composed file, and scored
+the composition against the compiler's own conventions, which found four departures. Three are fixed:
+**one row list shared by every binding**, where the compiler writes a list per button and per copy, 300
+lists bound 300 times on the four configurations with none shared, so the composition now writes twelve;
+**entries appended in fill order**, where every page stores 9, 8, 34, 2; and **a font selected again when
+already in effect**, 0 of the compiler's 820 selects. The Harmony One composer shares one row list and
+that is measured to work there, so none of the three is known to matter; they were fixed so that nothing
+about the composed file is new to the remote except the device. The fourth stays: the composed commands
+open without the `0x7F` delay call and the device has no delay variables, above, which is todo 1.2.6
+and matters to an activity and not to device mode. Each fix was cheap to test and each test is
+controlled: reintroducing the repeated font select fails it.
+
+The prose audit found the two row background wrong on the 600, the two row lists wrongly called never
+the widest, the 600's refusal attributed to its font when its full menus refuse it, the second label
+line's direction backwards, the counter positions and the queued `0x73` stated for every page when they
+hold for the corner ones, 17 centred labels where there are 21, and the handler tag count left as a
+"may". Every one was re-measured here before it was changed, and every one holds.
+
+### Scope, decision 16
+
+Read on arch 14 alone, four user configurations from three models; composition exercised on the 650
+alone, refused on the 600 and 700 for the reasons above. Arch 12's reader and composer are unchanged,
+and arch 8, 9 and 10 have no device list reader and no screen half.
+
+### Sources
+
+The four arch 14 configurations, which are Logitech's compiler's output and so its own statement of the
+layout, and section 69, 239, 271 and 276. The firmware was not read for this and neither was Logitech's
+client: the layout is what the service compiled, and `software/classic/SERVER-DEPENDENCY.md` records that
+the compiler was server side, so the client holds no statement of it.
+
+### Falsification
+
+An arch 14 device list or device mode page binding its corners in another order, a right hand label
+ending anywhere but 125, a device mode whose own list is not 47 entries, a key of a device mode bound to
+a list that sends nothing; or, on the 650, a composed device whose menu row does not enter its mode or
+whose key does not send its command.
+
+### Where it lands
+
+* `packages/codec/test/inventory.test.ts`: the four configurations' device lists, corner, mode and label,
+  and one device per row with every mode attached, the Chromecast's included.
+* `packages/codec/test/compose.test.ts`: the 650 takes the television with six items, two pages, the
+  counter, the corners in stored order and their label edges, the key map's 47 keys and its two bound
+  ones, twelve row lists each bound once with the marker, all five menus in stored order with no font
+  selected twice running, the two row one's pair of scans and its label at y 79 and centred, the
+  crossed background on a corner menu page grown to two, and every page's copy; the 600 refused for a
+  full menu as well as for its font and the 700 for a full menu; the device mode marker table widened
+  to arch 14, and the screen half's refusal moved to the Harmony 525. Controls that moved the right edge
+  to 124 and that selected the label font again each failed the first.
+* `docs/config-format.md`, `todo.md`, `docs/status.md` and the `writing-a-config` skill.

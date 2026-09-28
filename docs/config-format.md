@@ -633,6 +633,77 @@ never an infrared group.
 
 Read with `deviceModeMaps` in `packages/codec/src/inventory.ts`.
 
+**On arch 14 the same closure holds for 21 of the 23 rows it can compare**, section 285, over the four
+arch 14 user configurations and `calibration_h600`. The two that do not are the Harmony 700's A/V switch on
+both 700s, and there `deviceModeMaps` is wrong, not the list: that device's mode binds no key, and the
+reader considers only modes with a keypad binding and counts a mode's enter handler, tag 6, as one, so it
+picks a help screen. The 62 of 62 above includes those two. *Unconfirmed until the reader is fixed.*
+
+#### The device list and device mode pages on arch 14
+
+Section 285, measured on the four arch 14 user configurations (Harmony 650, 600 and two 700s), which
+are the corpus's three plus `h650_config_region`, kept out of the corpus wide totals.
+
+**A device list row is two instructions**, where arch 12's is three with a beep in front:
+
+```
+u8 2
+u16 mode;   u8 0x7E        enter the device's mode
+u16 1;      u8 0x80 + v    write 1 into the marker variable v, per configuration: 31, 27, 37
+```
+
+**A page labels the four buttons around the display** and binds only their scans, filled in this order:
+
+| order | scan | corner | label |
+|---|---|---|---|
+| 1 | 8 | top left | starts at x 3, y 40 |
+| 2 | 2 | top right | ends at x 125, y 40 |
+| 3 | 9 | bottom left | starts at x 3, y 90 |
+| 4 | 34 | bottom right | ends at x 125, y 90 |
+
+The y is a one line label's in any font. A two line label starts at 25 or 75, its second line one font
+height below in the same font, which is 40 or 90 in the usual label fonts and 35 to 39 in smaller ones.
+Every one of the 184 device list and device mode pages binds a prefix of that order, 414 of 414 right hand
+labels on their corner pages end at 125 and 448 of 448 left hand ones start at 3, and every page holds four
+but the last of its mode and one page of each 700's receiver mode. **A page stores its entries in another
+order**, 9, 8, 34, 2 with an unbound scan left out, 184 of 184. **One device list per configuration is two
+rows instead**: a device per row bound to both of that row's scans, 2 and 8 or 9 and 34, each binding
+running a row list of its own, its label at y 35 or 79 and `x = floor((128 - width) / 2)`, 21 of 21. Its
+pages all draw one picture, the corner lists' crossed one on the 650 and 700s and one of its own on the
+600, and carry no queued `0x73`. **Every row list is bound once**: 300 of 300, none shared between two
+buttons or between a page and its copy.
+
+**A corner page carries its own chrome**, with no call to a shared program:
+
+```
+op 2    0, 0, background       one picture for a page of one item or none, another for more, 173 of 173
+op 17   queue 0x73 operand 1       173 of 184, absent on the 11 two row list pages
+op 3    the top bar
+op 16   title font;    op 4 or 5 at (0, 2), the title
+op 16   counter font;  three texts at y 2: n / m, on a mode of several pages only, at x 0x6A, 0x71, 0x76
+                       for two to nine pages, 98 of 98; 0x63, 0x6A, 0x6F on a two row list page
+op 16   label font;    the labels
+op 3    the bottom bar
+op 16;  op 4 or 5      the bottom bar's word: Back on a device mode, Activity or Activities on a list
+op 0
+```
+
+A mode of ten pages or more draws the counter further left, `0x63` and then `0x5C` from page 10. A
+mode's block is its own tagged list, then per page its program and a **six** byte page record, `u24
+list; u24 program`, since arch 14 pages carry no lead byte, then the entry.
+
+**A device mode's own list binds every key**: 47 entries on all 21 device modes, the four corner scans
+bound to nothing, one `0x72` and one `0x73`, and every other key an action list or nothing, 547 of 547
+bound keys sending that device's command.
+
+**Every command list opens with a `0x7F` call**, 422, 188 and 372 on the 650, 600 and 700: `0x1F`
+loading 1, then a list testing a variable against it with `0x71` and, while it matches, calling a list
+of the device's own that is one `0x72` on that device's `InterDeviceDelay` variable through a base slot
+14 table. The variable is 52, 46 and 59, and every list writing it sets it to 1 and back to 0 inside
+itself, 31, 27 and 50, the 650's three `Starting ...` sequences among them. So the inter device delay
+applies inside a start sequence and not on a device mode key press. What each table case does is
+**unconfirmed**.
+
 **The container's key table is the first mode record**, byte for byte: same offset, same count,
 same four byte entries. The tagged list encoding and the key table encoding are one encoding.
 
@@ -2864,8 +2935,12 @@ and not the highest.
 **Confirmed on 15<!--fact:user_configs--> user configs across four architectures**, section 126,
 which names 63<!--fact:devices_named--> of 63<!--fact:devices_total--> devices. A device that sends codes is an
 infrared group, section 86, so the list starts from base slot 5's group array and the question is
-the name. **A device can send nothing**, section 240: on arch 12 the device list itself is the
-population, and a row whose mode reaches no group is a device with `group` undefined and no codes.
+the name. **A device can send nothing**, section 240: on arch 12 and, since section 285, arch 14 the
+device list itself is the population, and a row whose mode reaches no group is a device with `group`
+undefined and no codes, unless its label names exactly one device already found that has no mode yet,
+underscores read as spaces and a trailing `..` being the screen's elision, which is the Harmony 600's
+Chromecast: a group of no codes, and a mode whose one page binds nothing. Fitted to that one case, with
+one negative, a Wii that names nothing; a cut the screen does not mark with `..` is not matched.
 
 A level 1 name that belongs to a device is spelled
 

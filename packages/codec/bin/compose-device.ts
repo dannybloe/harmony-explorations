@@ -74,6 +74,9 @@ const wanted = (argument('commands') ?? fail('--commands is a comma separated li
 // Which existing device list row's icon the new row wears, by its drawn label: a television gets
 // the television's. Without it the first row's icon is copied, whatever device that is.
 const iconLike = argument('icon-like');
+// Arch 14: which device list row's device mode the new key map copies its keys from, by label. A
+// key sending the frame one of the new commands sends is bound to it, every other key to nothing.
+const keysLike = argument('keys-like');
 // What each pad says, in the commands' order. The catalogue's own names are the default and the
 // long ones do not fit an 81 pixel pad, section 242, so a real device page passes `--labels`.
 const labels = argument('labels')?.split(',') ?? wanted;
@@ -117,7 +120,7 @@ if (!process.argv.includes('--no-power-off')) {
 }
 const screen = composeDeviceScreen(withDevice, label,
   labels.map((name, k) => ({ label: name, list: composed.lists[k] as number })),
-  iconLike === undefined ? {} : { iconLike });
+  { ...(iconLike === undefined ? {} : { iconLike }), ...(keysLike === undefined ? {} : { keysLike }) });
 // **A save is stamped with the moment of saving**, base slot 3 and the clock's seven state values,
 // which is the rail that separates a save from a round trip. The first device written to a remote
 // carried its input's stamp, and after a battery pull the remote's clock showed 22 August, section
@@ -141,7 +144,9 @@ const worst = worstQueueRun(after);
 process.stdout.write(`stamped ${builtAt}\n`);
 process.stdout.write(`${after.blob.length} bytes, ${nowDevices.length} devices, group `
   + `${composed.group}, mode ${screen.mode}, ${screen.menus.length} device list menus: `
-  + `${screen.menus.length - screen.pagesAdded.length} grew a row, ${screen.pagesAdded.length} got a page\n`);
+  + `${screen.menus.length - screen.pagesAdded.length} grew a row, ${screen.pagesAdded.length} got a page`
+  + (screen.keys === undefined ? '' : `; ${screen.pages} page(s), ${screen.keys} key(s) of the key map send its commands`)
+  + '\n');
 process.stdout.write(`every byte accounted, no overlap, checksum agrees, emitter round trips, `
   + `deepest action list ${worst?.peak} of ${ACTION_QUEUE_INSTRUCTIONS} queue slots\n`);
 

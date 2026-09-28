@@ -400,7 +400,191 @@ test('one_config takes the television onto its screen and every check holds', sk
   assert.equal(drawn.length, MENUS.length + 1, 'ten menu rows and the title');
 });
 
-test('the screen half refuses what it cannot draw or place', skipUnless('one_config', 'h600_config'),
+/** The device list menus of the Harmony 650's own configuration: four in corners, 179 in two rows. */
+const H650_MENUS = [57, 61, 74, 135, 179] as const;
+
+test('the Harmony 650 takes the television onto its screen and every check holds',
+     skipUnless('h650_config_region'), () => {
+  // Section 285: arch 14's screen half, on the one arch 14 unit this project may write to. Six items
+  // so the mode needs two pages, which is what exercises the page counter and both backgrounds.
+  const pristine = parse(require_('h650_config_region'));
+  const device = composeDevice(pristine, { label: 'LG', commands: TELEVISION, power: 0 });
+  const before = parse(device.bytes);
+  const wasModes = modeTable(before)!.addresses.length;
+  const wasPages = modePages(before).length;
+  const items = ['Power', 'Up', 'Down', 'Power', 'Up', 'Down'].map((label, k) =>
+    ({ label, list: device.lists[k % 3]! }));
+  const composed = composeDeviceScreen(before, 'LG', items, { keysLike: 'TV' });
+  const after = parse(composed.bytes);
+
+  assert.equal(composed.mode, wasModes);
+  assert.equal(modeTable(after)!.addresses.length, wasModes + 1);
+  assert.deepEqual([...composed.menus], [...H650_MENUS]);
+  assert.deepEqual(composed.pagesAdded, []);
+  assert.equal(composed.pages, 2);
+  const report = coverage(after);
+  assert.equal(report.accounted, report.total, 'every byte is claimed');
+  assert.deepEqual(report.overlaps, [], 'and no byte twice');
+  assert.ok(trailerAgrees(after));
+  assert.equal(roundTrip(after).equal, true, 'the emitter reproduces the composed file');
+
+  // The rows: enter the mode and write the 650's own marker, variable 31, with no beep in front, one
+  // list per button bound and per copy, as the compiler writes them. Four corner menus take one
+  // button each and the two row menu two, so twelve, and each is bound exactly once.
+  const lists = after.actionLists()!;
+  assert.equal(composed.rowLists, 12);
+  const rowIndices = Array.from({ length: 12 }, (_, k) => composed.rowList + k);
+  for (const index of rowIndices) {
+    assert.deepEqual(lists[index]!.map((one) => [one.opcode, one.operand]),
+                     [[0x7e, composed.mode], [0x80 + 31, 1]]);
+  }
+  const boundRows = [...modePages(after).map((page) => page.list),
+                     ...pageListCopies(after).map((copy) => copy + after.flashBase)]
+    .flatMap((list) => taggedList(after, list)!.entries)
+    .filter((one) => one.opcode === 0x7f && rowIndices.includes(one.operand))
+    .map((one) => one.operand);
+  assert.deepEqual(boundRows.sort((a, b) => a - b), rowIndices, 'every row list bound once');
+
+  // The pages: four corners filled in order and then two, stored bottom left, top left, bottom right,
+  // top right as every arch 14 page is, each item running its command, the labels left from x 3 or
+  // ending at 125, at y 40 and 90, and nothing unresolved when drawn.
+  const record = modeRecords(after)![composed.mode]!;
+  assert.equal(record.pageCount, 2);
+  const labelSet = fontSets(after)![7]!;
+  record.pages.forEach((page, p) => {
+    const onPage = items.slice(4 * p, 4 * p + 4);
+    const bound = taggedList(after, page.list)!.entries;
+    const filled = onPage.map((item, k) => [0x80 | [8, 2, 9, 34][k]!, 0x7f, item.list] as const);
+    assert.deepEqual(bound.map((one) => [one.tag, one.opcode, one.operand]),
+                     [9, 8, 34, 2].flatMap((scan) => filled.filter((one) => one[0] === (0x80 | scan))));
+    const labels = screenProgram(after, page.program)!
+      .filter((one) => one.opcode === 0x05 && one.operands[1]! >= 40 && one.operands[1]! <= 90);
+    assert.equal(labels.length, onPage.length);
+    labels.forEach((one, k) => {
+      const width = [...one.glyphs!].reduce((sum, code) => sum + (glyphOf(after, labelSet, code)?.width ?? 0), 0);
+      assert.ok(width > 0);
+      assert.equal(one.operands[1], [40, 40, 90, 90][k]);
+      if (k % 2 === 0) assert.equal(one.operands[0], 3, `item ${k} starts at the left edge`);
+      else assert.equal(one.operands[0]! + width, 125, `item ${k} ends at the right edge`);
+    });
+    for (const variant of renderVariants(after, page.program).variants) {
+      assert.equal(variant.page.glyphsMissing, 0);
+      assert.equal(variant.page.picturesMissing, 0);
+    }
+  });
+  // The page counter, drawn on each page as `n/2` in the title bar.
+  const counters = record.pages.map((page) => screenStrings(after, characterMap(after))
+    .filter((one) => one.program === page.program && one.y === 2 && one.x >= 0x6a)
+    .map((one) => one.text).join(''));
+  assert.deepEqual(counters, ['1/2', '2/2']);
+
+  // The key map: the television's own mode's 47 keys, in its order, with the two keys that send
+  // what the new commands send bound to them and every other key bound to nothing. All three codes
+  // are ones the 650's own LG television sends; power goes unbound because the television's own
+  // mode binds its power code to no key.
+  const template = modeRecords(after)![deviceListRows(before).find((row) => row.label === 'TV')!.mode]!;
+  assert.equal(record.entries.length, template.entries.length);
+  assert.equal(record.entries.length, 47);
+  assert.deepEqual(record.entries.map((one) => one.tag), template.entries.map((one) => one.tag));
+  const keys = record.entries.filter((one) => one.opcode === 0x7f);
+  assert.equal(keys.length, 2);
+  assert.equal(composed.keys, 2);
+  assert.deepEqual(keys.map((one) => one.operand).sort(), [device.lists[1]!, device.lists[2]!].sort());
+  for (const one of record.entries) {
+    if (one.opcode === 0x7f || one.opcode === 0) continue;
+    const twin = template.entries.find((other) => other.tag === one.tag)!;
+    assert.deepEqual([one.opcode, one.operand], [twin.opcode, twin.operand], 'navigation is copied');
+  }
+
+  // The reader sees it: six devices, the LG on every menu's last page with its label.
+  const rows = deviceListRows(after);
+  assert.deepEqual(rows.filter((row) => row.mode === composed.mode).map((row) => [row.page, row.scan, row.label]),
+                   [[1, 2, 'LG']]);
+  const storedRank = (tag: number): number => [9, 8, 34, 2].indexOf(tag & 0x3f);
+  for (const menu of composed.menus) {
+    const last = modeRecords(after)![menu]!.pages.at(-1)!;
+    const entries = taggedList(after, last.list)!.entries;
+    assert.ok(entries.some((one) =>
+      one.opcode === 0x7f && lists[one.operand]?.[0]?.operand === composed.mode), `menu ${menu} reaches it`);
+    assert.deepEqual(entries.map((one) => storedRank(one.tag)),
+                     entries.map((one) => storedRank(one.tag)).sort((a, b) => a - b), `menu ${menu} in stored order`);
+    for (const variant of renderVariants(after, last.program).variants) {
+      assert.equal(variant.page.glyphsMissing, 0, `menu ${menu} draws every glyph`);
+    }
+    // No font select repeating the font already in effect, which the compiler never writes.
+    let font = -1;
+    for (const one of screenProgram(after, last.program)!) {
+      if (one.opcode !== 0x10) continue;
+      assert.notEqual(one.operands[0], font, `menu ${menu} selects font ${font} twice running`);
+      font = one.operands[0]!;
+    }
+  }
+  // A corner menu page that went from one item to two draws the crossed background its full pages do.
+  const corner = modeRecords(after)![H650_MENUS[0]!]!;
+  const firstPicture = (program: number): number => {
+    const one = screenProgram(after, program)![0]!;
+    return (one.operands[2]! << 16) | (one.operands[3]! << 8) | one.operands[4]!;
+  };
+  assert.equal(taggedList(after, corner.pages.at(-1)!.list)!.entries.length, 2);
+  assert.equal(firstPicture(corner.pages.at(-1)!.program), firstPicture(corner.pages[0]!.program));
+  // The two row menu binds the new device to both bottom buttons and centres its label.
+  const twoRow = modeRecords(after)![179]!.pages.at(-1)!;
+  assert.deepEqual(taggedList(after, twoRow.list)!.entries.filter((one) =>
+    lists[one.operand]?.[0]?.operand === composed.mode).map((one) => one.tag & 0x3f), [9, 34]);
+  const centred = screenStrings(after, characterMap(after)).find((one) =>
+    one.program === twoRow.program && one.text === 'LG')!;
+  assert.equal(centred.y, 79);
+  const centredWidth = [...centred.text].length === 0 ? 0
+    : screenProgram(after, twoRow.program)!.filter((one) => one.opcode === 0x05 && one.operands[1] === 79)
+      .map((one) => [...one.glyphs!].reduce((sum, code) => sum + (glyphOf(after, labelSet, code)?.width ?? 0), 0))[0]!;
+  assert.equal(centred.x, Math.floor((128 - centredWidth) / 2));
+
+  // Section 69's rail, over every page: one copy per page, agreeing entry by entry.
+  const pages = modePages(after);
+  const copies = pageListCopies(after);
+  assert.equal(pages.length, wasPages + 2);
+  assert.equal(copies.length, pages.length);
+  const body = (index: number): string =>
+    (lists[index] ?? []).map((one) => `${one.opcode}:${one.operand}`).join(' ');
+  pages.forEach((page, index) => {
+    const mine = taggedList(after, page.list)!;
+    const copy = taggedList(after, copies[index]! + after.flashBase)!;
+    assert.equal(copy.entries.length, mine.entries.length, `page ${index}'s copy has every entry`);
+    mine.entries.forEach((entry, k) => {
+      const twin = copy.entries[k]!;
+      assert.deepEqual([twin.tag, twin.opcode], [entry.tag, entry.opcode]);
+      if (entry.opcode === 0x7f) assert.equal(body(twin.operand), body(entry.operand));
+      else assert.equal(twin.operand, entry.operand);
+    });
+  });
+});
+
+test('the arch 14 screen half refuses a full last page and a letter its fonts do not carry',
+     skipUnless('h600_config', 'h700_config'), () => {
+  // A full last page would need a new menu page and a renumbered counter on every page of that
+  // menu, which is not composed: the Harmony 700's two row list holds two devices on each of three
+  // pages, and so do all five of the Harmony 600's, which is what refuses it: its label font carrying
+  // only the letters its own screens draw is refused first, and is not the reason it cannot compose.
+  const refusal = (host: string, label: string): string => {
+    const c = parse(require_(host));
+    const device = composeDevice(c, { label, commands: TELEVISION, power: 0 });
+    try {
+      composeDeviceScreen(parse(device.bytes), label, [{ label: 'Up', list: device.lists[1]! }]);
+    } catch (error) {
+      assert.ok(error instanceof ComposeError, String(error));
+      return error.message;
+    }
+    return 'composed';
+  };
+  assert.match(refusal('h700_config', 'TV'), /menu 283's last page is full/);
+  assert.match(refusal('h600_config', 'TV'), /font 6 has no glyph for 'U'/);
+  const c600 = parse(require_('h600_config'));
+  const tv = composeDevice(c600, { label: 'TV', commands: TELEVISION, power: 0 });
+  assert.throws(() => composeDeviceScreen(parse(tv.bytes), 'TV', [{ label: 'TV', list: tv.lists[1]! }]),
+                /menu 64's last page is full/);
+});
+
+test('the screen half refuses what it cannot draw or place', skipUnless('one_config', 'h525_config'),
      () => {
   const pristine = parse(load('one_config') as Uint8Array);
   const device = composeDevice(pristine, { label: 'LG', commands: TELEVISION, power: 0 });
@@ -413,11 +597,12 @@ test('the screen half refuses what it cannot draw or place', skipUnless('one_con
                 (error: unknown) => error instanceof ComposeError && /'z'/.test(String(error)),
                 'the refusal names the missing character');
 
-  // The other architectures are refused outright: every position here is the One's.
-  const h600 = parse(load('h600_config') as Uint8Array);
-  assert.throws(() => composeDeviceScreen(h600, 'LG', rows),
+  // An architecture with neither layout is refused outright. Arch 14 was refused here too until
+  // section 285 composed its screen, and its own refusals are asserted beside its composition.
+  const h525 = parse(load('h525_config') as Uint8Array);
+  assert.throws(() => composeDeviceScreen(h525, 'LG', rows),
                 (error: unknown) => error instanceof ComposeError
-                  && /Harmony One/.test(String(error)));
+                  && /Harmony One and arch 14 alone/.test(String(error)));
 
   // No rows and too many rows are refused before anything moves.
   assert.throws(() => composeDeviceScreen(before, 'LG', []), ComposeError);
@@ -566,9 +751,16 @@ const DEVICE_MODE_MARKERS: Readonly<Record<string, number>> = {
   compiled_protocols: 31,
   compiled_protocols_2: 32,
   compiled_protocols_3: 33,
+  // Arch 14 (Harmony 600 and 700), read since section 285, whose rows carry no beep and so were not
+  // rows to the Harmony One's shape. The 650's own configuration is a region fixture and sits
+  // outside this population; it writes 31, which the 650's composition test asserts.
+  h600_config: 27,
+  calibration_h600: 28,
+  h700_config: 37,
+  h700_config_2: 37,
 };
 
-test('every Harmony One config states its own device mode marker, and they differ',
+test('every config with a device list states its own device mode marker, and they differ',
      skipWithoutLab(), () => {
   const found: Record<string, number> = {};
   for (const name of Object.keys(IMAGES)) {
@@ -588,11 +780,11 @@ test('every Harmony One config states its own device mode marker, and they diffe
   }
   assert.deepEqual(found, DEVICE_MODE_MARKERS);
   // The claim that matters to the composer: it is not one number, and it is not even stable for
-  // one remote. Eight distinct values over the fourteen configurations that carry a device list,
-  // and the spare Harmony One's own two reads either side of a sync differ by one, so a constant
-  // is wrong on thirteen of the fourteen.
+  // one remote. Ten distinct values over the eighteen configurations that carry a device list, eight
+  // over the fourteen Harmony One ones, and the spare Harmony One's own two reads either side of a
+  // sync differ by one, so a constant is wrong on most of them.
   const distinct = [...new Set(Object.values(DEVICE_MODE_MARKERS))].sort((a, b) => a - b);
-  assert.deepEqual(distinct, [24, 25, 26, 27, 30, 31, 32, 33]);
+  assert.deepEqual(distinct, [24, 25, 26, 27, 28, 30, 31, 32, 33, 37]);
   assert.notEqual(DEVICE_MODE_MARKERS['one_spare_before_sync'],
                   DEVICE_MODE_MARKERS['one_spare_after_sync'],
                   'one remote, two syncs, two different variables');
