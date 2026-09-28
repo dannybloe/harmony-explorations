@@ -2951,3 +2951,22 @@ test('joining the power off lists refuses what is not a new device\'s power vari
   const counter = stateVariables(c).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME));
   assert.throws(() => joinPowerOff(c, counter?.index as number), /not a device's Power variable/);
 });
+
+// findings.md section 291: the composed activity, read back off the Harmony 650 after the write that
+// all eight predictions held for. The two reads bracket it, so this states what the remote held on
+// each side rather than what the composer meant to produce, and it fails if a reader stops finding
+// the row a person pressed. Activity 4 is above the idle value 3, which no compiled arch 14
+// configuration does, and its row sits under Kodi kijken on that row's page, 106, which the person
+// at the remote saw as the menu's second page; the page order itself is not asserted here.
+test('the composed activity read back off the Harmony 650 is a fourth row, on Kodi kijken\'s page below it',
+     skipUnless('h650_pre144_region', 'h650_post144_region'), () => {
+  const row = (name: string) => activityNames(parse(require_(name)))
+    .map((one) => [one.activity, one.page, one.name, one.at?.y]);
+  const before = row('h650_pre144_region');
+  assert.deepEqual(before.map((one) => one[2]), ['Kodi kijken', 'LG WebOS', 'TV kijken']);
+  const after = row('h650_post144_region');
+  assert.deepEqual(after.slice(0, 3), before);
+  assert.deepEqual(after.slice(3), [[4, 106, 'LG kijken', 79]]);
+  // Kodi kijken is the second page's other row, at the top.
+  assert.deepEqual(after[0], [0, 106, 'Kodi kijken', 35]);
+});

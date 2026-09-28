@@ -4951,6 +4951,10 @@ emitting a two instruction timer and watching only the first one run.
 **Which timer is which.** The section is sized, its records are decoded and every one of them is
 reachable; nothing here says that index 3 on the 600 is the backlight.
 
+> **One is named since section 292**: on arch 14 the lower of the two timers whose list opens with
+> `1F E910` is how long the screen stays lit, measured on the Harmony 650 by writing it. On the 600
+> that is index 1 and not index 3, which holds 10 on every 600 configuration and is still unread.
+
 **The software counted kind**, for want of a config that uses it.
 
 **Where the four RAM entries are copied back from the scheduler.** The poll routine tests the RAM
@@ -38080,3 +38084,222 @@ bring back.
 * `packages/codec/test/compose.test.ts`: the two screens and the four records on all four
   configurations, the composed activity on all four, and the refusal test moved to the Harmony 525.
 * `docs/config-format.md`, `todo.md` and `docs/status.md`.
+
+## 291. A composed activity runs on the Harmony 650: its row, its two screens, its commands and the way back
+
+**Todo 1.4.4**, the arch 14 counterpart of section 279. Sections 289 and 290 composed an activity's
+menu row, its start up and working screens and the four records keyed by the activity, with nothing
+written to a remote. Here one is written to the Harmony 650 and used.
+
+### What was written
+
+`h650-1.4.4-lg-kijken.bin`, 920143 bytes, in the lab with its build commands and eight predictions
+written before the write. Three steps from `h650_config_region`: the LG television rebuilt with
+sections 287 and 288's delay step and power on delay, section 286's tour skip, then "LG kijken"
+modelled on the 650's own LG WebOS: the LG and the Denon on, the Denon to input 1, every other device
+off, LG WebOS's 38 key bindings, its four corners, its start up picture. Activity number 4, above the
+idle value 3, which no compiled arch 14 configuration does.
+
+`h650_pre144_region`, read before the write, is `h650_notour_region` byte for byte with the block at
+`0x110000` erased. The write was 14 erases, 649048 bytes differing in 14 blocks, 15176 reports; every
+erase stayed inside its own block on both sides, the whole configuration read back identical to the
+file, and the remote restarted on its own. `h650_post144_region`, read afterwards, is the file byte for
+byte and the rest of the block at `0x110000` erased. Both reads end at `0x120000`, the end of that
+block, so nothing past it was read either time.
+
+### What the remote did
+
+**All eight predictions held**, as reported from the remote: the ordinary screen after the restart
+with no tour and no status screen; the row on the menu's second page under Kodi kijken; "Starting LG
+kijken", the television and the Denon on and to its input, then the working screen with its four
+corners and "Devices"; the corners and the hardware keys as in LG WebOS; the key under Devices
+opening the list that says "Activities", which is section 290's known gap, and **its centre key
+coming back to the LG kijken screen**, which section 290 derived through `CurrentLocation` and had
+not seen; Off switching both devices off; and the LG in device mode as after section 285.
+
+So four things section 290 left for the remote to show are shown. An activity number above the idle
+value runs. The start variable's `1` and `0` around the enter list do not stop anything. The
+deferred list's direct form, `[3F D000, 7E working]`, reaches the working screen without the Remote
+Assistant question. And the three departures section 290 recorded in the base slot 9 entry, tags 2
+and 5 and the unread tags `0x43`, `0x8E` to `0x90` and `0xC3`, produced nothing visible on the eight
+checks. That last is an absence and not a reading: nothing here exercises what those tags are for.
+
+### What is still not separable
+
+Whether the delays act, as the notes said before the write: the LG receives no later command inside
+the start, so its power on delay has nothing to hold back (section 236), and the inter device delay
+of half a second is too short to see.
+
+### Scope, decision 16
+
+The Harmony 650 alone, one activity, one write, checked by hand on the remote. The Harmony 600 is
+excluded from writes and the Harmony 700 is not on the bench, so neither is checked; the composer's
+output for both is section 290's and was never written.
+
+### Sources
+
+The lab notes for the write, sections 285 to 290, and the eight observations. The firmware was not
+read and Logitech's client was not consulted, since nothing new was derived.
+
+### Falsification
+
+Any of the eight failing on a repeat, or a later read of the 650 differing from `h650_post144_region`
+outside a write of ours.
+
+### Where it lands
+
+* `packages/codec/test/compose.test.ts`: the two reads either side, the fourth row on the second page.
+* `packages/lab/src/index.ts`, `tests/lab.py`, `packages/corpus/bin/write-config.ts` and both golden
+  lists: `h650_pre144_region` and `h650_post144_region`.
+* `todo.md` and `docs/status.md`.
+
+## 292. The Harmony 650's screen light timeout is a timer in the configuration, and MyHarmony calls it GlowTime
+
+**Asked for from the bench**: the 650's screen goes dark after six or seven seconds, which is too soon
+to be comfortable. No setting for it exists on the remote.
+
+### The candidate
+
+Logitech's configuration service answers `GetRemoteSettings` with a remote's settings, and seven
+distinct answers are saved in the lab: five in `work/myharmony/responses/`, in six files since the
+Harmony Touch's is saved twice, and two in `responses-account2/`. A Harmony 600's and a Harmony 700's
+each list three settings, `GlowTime`, `TiltSensor` and `RemoteAssistant`, with `GlowTime` at 20 **and a
+default of 20** on both. A Harmony Touch's names a `ScreenTimeout` instead, and the Harmony 525's and
+the three Harmony One+ answers list no settings at all. **Which remote an answer describes comes from
+its `RemoteName` and not from its file name**: `responses-account2/GET_RemoteSettings_skin22.json`
+answers for a Harmony 700 while the file of the same name in `responses/` answers for a Harmony 525,
+skin 22 being the 525 in `packages/usb/src/models.ts`. `GlowTime` at 20 also appears in
+`GET_UAD_Settings`, saved in four directories across both accounts and always for a Harmony 600, and
+`GetProductCapabilities` states its default as 20.
+
+**Client sourced.** The 600's `GetRemoteSettings` answer was saved in the session that compiled
+`calibration_h600`: its file is dated 13 August 2026 08:03 and `work/myharmony/compiled-600/Result.EzHex`
+08:04, and that compile's container is `calibration_h600`'s byte for byte. The second account compiled
+only Harmony One configurations, so its 700's answer has no configuration to be compared with. The
+decompiled client under `work/myharmony/src/` does not name the setting at all.
+
+**Since the stated 20 is also the default, the calibration case shows the value arriving in the file
+and not a choice**: nobody is known to have set it. What it fixes is the units, seconds, and the field.
+The two compiled configurations with 8 and 10, the 650's and `h600_config`'s, come from remotes whose
+settings nobody saved.
+
+### The pair of timers
+
+Among base slot 12's timers, section 43, **two on every arch 14 user configuration queue a list whose
+first instruction is `1F E910`**, section 73's field splitting instruction. The three firmware embedded
+arch 14 containers, `h700_gspm` and the two safe mode images, have no timers at all. Their durations:
+
+| configuration | the pair, index and seconds |
+|---|---|
+| `h650_config_region` | 1: 8, 3: 10 |
+| `h600_config` | 1: 10, 3: 10 |
+| `calibration_h600` | 1: **20**, 3: 10 |
+| `h700_config`, `h700_config_2` | 5: 10, 7: 10 |
+
+**The two are one light with two durations**, chosen by a test. On the 650 list `10C1` is
+`[71 8009, 7F 0394, 7F 0C15]` and list `10C2` is `[71 8009, 7F 0B95, 7F 0859]`: each tests state
+variable 9 and takes one of two arms, and in both the first arm reaches a list starting timer 3 and
+the second a list starting timer 1. Every one of the four lists first runs list `02F5`, which cancels
+timers 0, 1 and 3, and `1F E90C`; the two under `10C2` add `1F E918`. The same two callers are on
+`h600_config` and `calibration_h600`, and on the 700 for timers 5 and 7, where timer 5's starting list
+is also reached from a list testing variable 14. What variable 9 holds is not read.
+
+When timer 1 expires on the 650 it queues list `0DEE`, `[1F E910, 7F 0708]`. List `0708`,
+`[1F FB00, 7F 1027]`, is also timer 2's own, and it loads the byte register with 0 and runs `1027`,
+`[71 8011, 7F 1026, 1F EB02]`: if variable 17 is 0 it runs `1026`, `[1F E903, 1F EB00]`, and otherwise
+it starts timer 2, which comes back to the same test two seconds later. Timer 0 queues
+`[1F E900, 3F F101]`. So after the light's own timer expires there is a two second poll on variable 17
+and then a further ten seconds before `1F E900`. What the `0xE9` operands select is not read, and the
+screen was seen to go dark at about timer 1's expiry, so what the ten seconds after it do was not
+checked by eye.
+
+### The same pair on two older architectures
+
+**The same shape is on every arch 8 and arch 10 user configuration whose timers read**, nine of them,
+the Harmony 880, 885, 890 and 895: two timers queueing a list that opens with `1F E910`, the higher one
+at 10 seconds on all nine and the lower one at 20 on five, 10 on three and 5 on one. So across fourteen
+user configurations on three architectures the higher of the pair never moves and the lower one does,
+which is the shape a user setting would leave. **Nothing there is measured**, and no firmware for
+either architecture is in the lab. The Harmony 525 has one timer per configuration whose list opens
+with `1F E910`, always 1 second, and the timer that differs between its two configurations, 10 and 20
+seconds, queues `1F E900` directly; whether that is its screen light is not checked. The Harmony One
+has no such list.
+
+### The measurement
+
+Two writes to the 650 with `packages/codec/bin/set-timer.ts`, two bytes each, the duration and the
+trailer checksum, in the blocks at `0x060000` and `0x110000`, each read back identical:
+
+| timer 1 | the screen, timed off the cable |
+|---|---|
+| 8, as Logitech compiled it | dark after six or seven seconds |
+| 20, the first write | lit for about 20 seconds |
+| 10, the second | lit for about 10 seconds |
+
+**So timer 1 is how long the screen stays lit, on the Harmony 650**, and the calibration case agrees
+with MyHarmony's `GlowTime` in units and in the field it lands in. Timer 3, the other arm, was not
+changed, so when the remote takes that arm is unread.
+
+### Once, and not again: a black screen
+
+After the first write, of 20, the remote was unplugged and its screen stayed black until the
+batteries came out. `h650_glow20_region`, read afterwards, differs from `h650_post144_region` in
+exactly the two bytes written, so the configuration was intact. After the second write, of 10, the
+same unplugging left an ordinary screen. One occurrence in two writes of the same shape, and nothing
+here says what it was; it is recorded so that a second occurrence can be counted rather than
+rediscovered. The Harmony One's unexplained stranding after idling on USB is the nearest known case
+and is not evidence that this is the same.
+
+### The rule the reader uses, scored
+
+`screenLightTimer` names the **lower index** of the pair. On arch 14 the two timers differ on two
+configurations, the 650's reads, where it is measured, and `calibration_h600`, where 20 is the default;
+the lower index is right on both and the higher wrong on both. So is the rule "the one that is not
+10", which the two cases do not tell apart. On `h600_config` and both 700 configurations the pair holds
+10 and 10, so the index the reader gives there is the rule's and not a measurement, and the seconds
+are right whichever is named. A structural rule, the second arm of the variable 9 test, picks the same
+index on all four compiles and is not implemented.
+
+### Scope, decision 16
+
+**Measured on the Harmony 650 alone.** On the Harmony 600, excluded from writes, the calibration case
+agrees and nothing more. On the Harmony 700 the pair is present and which one is the light is not
+established. On arch 8 and arch 10 the pair is present and unmeasured, and `screenLightTimer` answers
+nothing there, deliberately, until it is checked. On the Harmony 525 and the Harmony One the pattern
+is not the same and is not read. The firmware was not read on any architecture.
+
+### Sources
+
+The seven saved `GetRemoteSettings` answers, `GET_UAD_Settings` and `GetProductCapabilities`, and the
+decompiled client, all Logitech's; the four arch 14 user configurations, the nine arch 8 and arch 10
+ones, the three 650 reads and the two write journals; sections 43 and 73. The firmware was not read.
+
+### Falsification
+
+A write of timer 1 on the 650 that does not move the screen time; a configuration compiled with a
+`GlowTime` somebody chose whose lower timer of the pair differs from it; or an arch 14 user
+configuration with a number of such timers other than two.
+
+### The reviewers
+
+The blind re-measure reproduced every duration, list and count above, the two bytes between the reads,
+and the file dates, and found the default of 20 and the second account's 700 answer, both now above.
+It saw the reader's docstring by accident, which it reported, so it was not fully blind on which timer
+was claimed. The prose audit found this section counting three writes where there were two, stating
+the saved answers as three and then undercounting where `GlowTime` appears, "only compiled one with a
+20" unscoped where arch 8 and arch 10 carry it too, the pair claimed for firmware containers that have
+no timers, "all that is known" about timer 3 where the callers show the two arms, a skipped list in
+the chain, a vacuous "every block past it" in section 291, a todo tick resting on less than its item,
+and two test titles and an off arch 14 assertion that could not fail. Each is corrected.
+
+### Where it lands
+
+* `packages/codec/src/tables.ts`: `screenLightTimer` and `SCREEN_LIGHT_STEP`.
+* `packages/codec/bin/set-timer.ts`: a timer's duration changed, read back and checksummed, the
+  sibling of `set-delay.ts`.
+* `packages/codec/test/sections.test.ts`: the index and the seconds on seven arch 14 containers, the
+  pair counted on every arch 8, 10 and 14 user configuration, one on the Harmony 525 and none on the
+  Harmony One.
+* `packages/lab/src/index.ts`, `tests/lab.py`, `packages/corpus/bin/write-config.ts` and both golden
+  lists: `h650_glow20_region`.
+* `docs/config-format.md`, section 43's open question, `todo.md` and `docs/status.md`.

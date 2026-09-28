@@ -145,6 +145,15 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // And after section 286's write, the introduction tour skipped: `h650_lg_region` with list 660's
   // second instruction and the trailer checksum changed, three bytes. The compare base after that.
   h650_notour_region: '20260928T0752Z-h650-notour-region.bin',
+  // The same content read again before 1.4.4, reaching 0x120000 since that write ends inside the block
+  // at 0x110000: `h650_notour_region` byte for byte, and that block erased. The compare base for it.
+  h650_pre144_region: '20260928T1242Z-h650-pre-1-4-4-region.bin',
+  // After 1.4.4's write, the composed activity LG kijken: the written file byte for byte and the rest
+  // of the block at 0x110000 erased, which is where the read ends. The compare base after that.
+  h650_post144_region: '20260928T1306Z-h650-post-1-4-4-region.bin',
+  // After timer 1, the screen light, went from 8 to 20 seconds: `h650_post144_region` in the duration
+  // and the trailer checksum, two bytes. Read after a battery pull cleared a black screen.
+  h650_glow20_region: '20260928T1318Z-h650-glow20-region.bin',
   // Three snapshots of the 650's state variables across an activity and a bare restart, section 283.
   h650_ram_activity_restart: '20260927T1150Z-h650-ram-activity-restart.bin',
   // The 650's data memory 0x000..0xDFF before and after a third bare restart, section 283.
@@ -480,7 +489,13 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
     // And after 1.4.3's write, the composed LG television, for the same reason.
     'h650_lg_region',
     // And after section 286's write, the introduction tour skipped, for the same reason.
-    'h650_notour_region'];
+    'h650_notour_region',
+    // And the same read again before 1.4.4, one block longer, for the same reason.
+    'h650_pre144_region',
+    // And after 1.4.4's write, the composed activity, for the same reason.
+    'h650_post144_region',
+    // And after the screen light timer went to 20 seconds, for the same reason.
+    'h650_glow20_region'];
 
 const cache = new Map<string, string[]>();
 

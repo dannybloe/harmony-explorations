@@ -563,7 +563,7 @@ finding.
 
 `todo.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 290<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 292<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -827,6 +827,21 @@ figures common to both carry `fact:` markers, so `make facts` moves every copy t
 cannot drift apart; what a reader should not expect is two independent statements of one measurement.
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
+
+**How long a Harmony 650's screen stays lit is a timer in its configuration, section 292.** Logitech's
+software called the setting GlowTime and offered it for the Harmony 600 and 700; on the 650 it was 8 seconds, and
+the screen went dark after six or seven. Writing 20 and then 10 made the screen stay lit for about 20 and
+then about 10, so it is a setting FreeHarmony can offer. Measured on the 650; on the 600 the one configuration
+compiled beside a saved copy of the setting agrees with it, and on the 700 two timers look alike and which one
+it is stays open. After the write of 20 the remote once kept a black screen after unplugging until the
+batteries came out, with its configuration intact; that did not happen after the write of 10 and is
+recorded rather than explained.
+
+**And a composed activity runs on the Harmony 650, section 291.** Written whole, 14 blocks, and every
+one of eight checks made before the write held on the remote: the row on the activity menu, the start up
+screen, the television and the receiver switching on and to the right input, the working screen with its
+four corners, the keys, the way into device mode and back, and Off. That is the arch 14 counterpart of
+what the spare Harmony One showed in section 279.
 
 **And a composed activity on a Harmony 600, 650 or 700 now shows its own two screens, section
 290.** On those models each activity has a screen of its own while it starts, "Starting" and its name

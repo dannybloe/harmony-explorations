@@ -120,6 +120,9 @@ CONTAINERS = (
     'h650_delay90_region',
     'h650_lg_region',
     'h650_notour_region',
+    'h650_pre144_region',
+    'h650_post144_region',
+    'h650_glow20_region',
     # The two configs Logitech compiled to a specification we wrote, section 132. They are out of the
     # corpus wide claim lists, deliberately, and they belong here for the same reason the arch 9 safe
     # mode container does: a golden vector is a cheap check between two implementations and costs the

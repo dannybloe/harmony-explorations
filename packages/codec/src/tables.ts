@@ -99,6 +99,49 @@ export function timers(c: Container): Table<Timer> | undefined {
   return { records, start: table.start, length: table.length };
 }
 
+/**
+ * The operand of the `0x1F` instruction every arch 14 screen light list opens with. Section 73 reads
+ * `0xE9` as "split the low byte into three fields and act on them", so what `0x10` selects is not
+ * read; what is measured is which timer's list opens with it, and what changing that timer does.
+ */
+export const SCREEN_LIGHT_STEP = 0xe910;
+
+/**
+ * Which base slot 12 timer holds how long an arch 14 remote's screen stays lit, as an index.
+ *
+ * **Measured on the Harmony 650, section 292**: its timer 1 held 8 seconds, and writing 20 and then 10
+ * made the screen stay lit for about 20 and then about 10. Logitech's MyHarmony calls the setting
+ * `GlowTime` for a Harmony 600, and `calibration_h600` was compiled in the session that saved its
+ * settings saying 20, which is also the default, with this timer at 20 where every other arch 14
+ * compiled configuration has 8 or 10. So that case fixes the units and the field, not a choice.
+ *
+ * Two timers on every arch 14 user configuration queue a list that opens with `SCREEN_LIGHT_STEP`,
+ * the two arms of one test of state variable 9, and the screen light is the **lower** index of the
+ * two. That choice is fitted: the 650 and the calibration configuration are the only cases where
+ * the two differ, and on both the lower one is the one that moved. On `h600_config` and the Harmony
+ * 700's two configurations both hold 10, so there the index is the rule's pick and not a
+ * measurement, though the seconds are right either way. When the remote takes the other arm is
+ * unread.
+ *
+ * Returns undefined off arch 14, **deliberately and not for want of a pattern**: arch 8 and arch 10
+ * carry the same pair on every user configuration, unmeasured, the Harmony 525 has one such timer
+ * and the Harmony One none. Firmware embedded containers have no timers, so it answers nothing there.
+ */
+export function screenLightTimer(c: Container): number | undefined {
+  if (c.architecture !== 14) return undefined;
+  const table = timers(c);
+  const lists = c.actionLists();
+  if (table === undefined || lists === undefined) return undefined;
+  const pair = table.records.flatMap((timer, index) => {
+    if (timer.instruction.opcode !== 0x7f) return [];
+    const first = lists[timer.instruction.operand]?.[0];
+    return first?.opcode === 0x1f && first.operand === SCREEN_LIGHT_STEP ? [index] : [];
+  });
+  // Two on every arch 14 user configuration read. Anything else is a shape this reading has not seen, so
+  // it answers nothing rather than guessing which of three, or of one, is the screen light.
+  return pair.length === 2 ? pair[0] : undefined;
+}
+
 /** One of a record's three digit tables: ten instructions, indexed by the digit. */
 export interface DigitTable {
   address: number;

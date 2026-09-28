@@ -62,9 +62,10 @@ Plan: [003-how-an-activity-is-built.md](docs/plans/003-how-an-activity-is-built.
     - [x] Read the 650's region back and register it as the next compare base: `h650_lg_region`, the written file byte for byte
     - [x] Skip the 650's welcome tour after a write: list 660's enter becomes a call to the tour's exit, written, the tour gone (section 286)
     - [ ] Fix `deviceModeMaps`, which picks a help screen for the 700s' A/V switch because it skips a device mode with no key and counts an enter handler as one, and restate section 271's counts (section 285); waits for the bench 700's configuration, read only, as a third case
-  - [ ] 1.4.4 A composed activity, which needed 1.2.9 first
-    - [ ] Write the start variable, 52 on the 650, to 1 near the start of its enter list and to 0 at the end, as all 13 arch 14 activities do, or the inter device delay does not act; composed with the screens now, not yet on the remote (sections 289 and 290)
-    - [ ] A region read of the 650 covering 0x110000 before the write, since the composed device's delays reach that block (section 288)
+  - [x] 1.4.4 A composed activity, which needed 1.2.9 first: "LG kijken" written, 14 blocks, and all eight predictions hold on the remote (section 291)
+    - [x] Write the start variable, 52 on the 650, to 1 near the start of its enter list and to 0 at the end, as all 13 arch 14 activities do, or the inter device delay does not act: written with the screens and the activity runs, while whether the delay acts cannot be told by eye (sections 290 and 291)
+    - [x] A region read of the 650 covering 0x110000 before the write, since the composed device's delays reach that block: `h650_pre144_region`, and `h650_post144_region` after (section 291)
+  - [x] 1.4.5 How long the screen stays lit: timer 1 on the 650, MyHarmony's GlowTime, 8 seconds as compiled, written as 20 and then 10 and timed on the remote (section 292)
 
 ## 2. Screens
 
@@ -119,6 +120,7 @@ After 3 produces something.
       Method and grid: [lab-excavation.md](docs/lab-excavation.md)
 - [ ] L3 `GET_VERSION` field 6 and field 9's accessor, the two fields of twelve with no reading
 - [x] L4 A second arch 14 remote: the Harmony 650, arch 14's write target, while the Harmony 600 stays excluded (section 281)
+- [ ] L5 A black screen on the Harmony 650 after unplugging, once, after the write of a 20 second screen timer, cleared by a battery pull with the configuration intact; not seen after the next write (section 292)
 
 ---
 

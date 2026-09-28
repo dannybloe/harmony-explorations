@@ -11,6 +11,8 @@ import assert from 'node:assert/strict';
 import { load, skipUnless, skipWithoutLab, require_ } from '@harmony/lab';
 import {
   ACCUMULATOR_LOAD_OPCODE,
+  SCREEN_LIGHT_STEP,
+  screenLightTimer,
   StateTableError,
   assertStateTableConsistent,
   Container,
@@ -219,6 +221,77 @@ for (const [name, count, longest, groups, pages, areas] of TABLES) {
       }
     });
 }
+
+/**
+ * `[sample, the screen light timer's index, its seconds]`, findings.md section 292. The 650 reads are
+ * the measurement: 8 as Logitech compiled it, then 20 as written here, and the screen stayed lit for
+ * about 20. `calibration_h600` is the known answer, compiled in the session that saved MyHarmony
+ * settings stating a `GlowTime` of 20, which is also its default. On `h600_config` and the two
+ * Harmony 700 configurations both timers of the pair hold 10, so there the index is the rule's pick
+ * and not a measurement.
+ */
+const SCREEN_LIGHT: readonly [string, number, number][] = [
+  ['h650_config_region', 1, 8],
+  ['h650_post144_region', 1, 8],
+  ['h650_glow20_region', 1, 20],
+  ['calibration_h600', 1, 20],
+  ['h600_config', 1, 10],
+  ['h700_config', 5, 10],
+  ['h700_config_2', 5, 10],
+];
+
+/** How many timers queue a list opening with the screen light step, counted without the reader. */
+function lightTimers(c: Container): number[] {
+  const lists = c.actionLists() ?? [];
+  return (timers(c)?.records ?? []).flatMap((t, index) => t.instruction.opcode === 0x7f
+    && lists[t.instruction.operand]?.[0]?.opcode === 0x1f
+    && lists[t.instruction.operand]?.[0]?.operand === SCREEN_LIGHT_STEP ? [index] : []);
+}
+
+test('the arch 14 screen light reader names the lower of the pair, and the 650 reads hold what was written',
+  skipUnless(...SCREEN_LIGHT.map(([name]) => name)), () => {
+    for (const [name, index, seconds] of SCREEN_LIGHT) {
+      const c = parse(require_(name));
+      assert.equal(screenLightTimer(c), index, name);
+      assert.equal(timers(c)?.records[index]?.duration, seconds, name);
+      // The pair, counted here rather than by the reader, which is what lets it refuse other shapes.
+      assert.equal(lightTimers(c).length, 2, name);
+    }
+  });
+
+/**
+ * `[sample, the lower's seconds, the higher's seconds]` for the same pair where the reader does not
+ * look, section 292: every arch 8 and arch 10 user configuration whose timers read. The higher one is
+ * 10 on all nine and the lower one moves, which is the shape a user setting leaves, and nothing here
+ * is measured on a remote.
+ */
+const OLDER_PAIRS: readonly [string, number, number][] = [
+  ['arch8_config_a', 20, 10],
+  ['arch8_config_b', 20, 10],
+  ['arch8_config_c', 20, 10],
+  ['arch8_config_d', 20, 10],
+  ['arch8_config_880', 10, 10],
+  ['arch8_config_885', 5, 10],
+  ['h890_config', 10, 10],
+  ['h890_config_rescan', 10, 10],
+  ['h895_config', 20, 10],
+];
+
+test('arch 8 and arch 10 carry the same pair of light timers, the Harmony 525 one and the Harmony One none',
+  skipUnless(...OLDER_PAIRS.map(([name]) => name), 'h525_config', 'h525_config_2', 'one_config'), () => {
+    for (const [name, lower, higher] of OLDER_PAIRS) {
+      const c = parse(require_(name));
+      const pair = lightTimers(c);
+      assert.equal(pair.length, 2, name);
+      assert.deepEqual(pair.map((i) => timers(c)?.records[i]?.duration), [lower, higher], name);
+      // The reader stays off these architectures until one is measured.
+      assert.equal(screenLightTimer(c), undefined, name);
+    }
+    for (const name of ['h525_config', 'h525_config_2']) {
+      assert.equal(lightTimers(parse(require_(name))).length, 1, name);
+    }
+    assert.equal(lightTimers(parse(require_('one_config'))).length, 0);
+  });
 
 /** `[sample, mode records, tagged entries across them]`. findings.md section 52. */
 const MODES: readonly [string, number, number][] = [

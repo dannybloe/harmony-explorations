@@ -1793,6 +1793,14 @@ rather than an error. Both are rails for a writer.
 Kind `0` is counted down in software instead and no config in the corpus uses it, so its rate is
 *not established*.
 
+**One timer is named: the screen light, on arch 14.** Two timers on every arch 14 user configuration
+queue a list opening with `1F E910`, and the lower index of the two is how long the screen stays lit, in
+seconds. MyHarmony calls the setting `GlowTime`. *Measured on the Harmony 650 only*, by writing 20 and
+10 and timing the screen; on the Harmony 600 the calibration configuration agrees with the saved `GlowTime`,
+which is 20 and also its default, and on the Harmony 700 both timers of the pair hold 10, so its pick is
+the rule's and *not established*. The two are the arms of one test of state variable 9; when the
+other arm is taken is *not established*. Arch 8 and arch 10 carry the same pair, *unmeasured*. `screenLightTimer` in `packages/codec/src/tables.ts`, findings.md section 292.
+
 Read with `gspm.timers` and `gspm.timer_reference`. [findings.md](findings.md) section 43.
 
 ### Base slot 16: the number sender

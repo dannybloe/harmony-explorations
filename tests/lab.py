@@ -167,6 +167,14 @@ IMAGES = {
     'h650_lg_region': '20260928T0705Z-h650-lg-region.bin',
     # And after section 286's write, the introduction tour skipped. The compare base after that.
     'h650_notour_region': '20260928T0752Z-h650-notour-region.bin',
+    # The same content read before 1.4.4, reaching 0x120000: the one above byte for byte and the
+    # block at 0x110000 erased. The compare base for that write.
+    'h650_pre144_region': '20260928T1242Z-h650-pre-1-4-4-region.bin',
+    # After 1.4.4's write, the composed activity LG kijken: the written file byte for byte and the
+    # rest of the block at 0x110000 erased, where the read ends. The compare base after that.
+    'h650_post144_region': '20260928T1306Z-h650-post-1-4-4-region.bin',
+    # After timer 1, the screen light, went from 8 to 20 seconds: two bytes, read after a battery pull.
+    'h650_glow20_region': '20260928T1318Z-h650-glow20-region.bin',
     # Three snapshots of the 650's state variables, 108 bytes from data 0xE10 plus the stored sum:
     # at rest, after an activity was started off the cable, and after a bare restart. Section 283.
     'h650_ram_activity_restart': '20260927T1150Z-h650-ram-activity-restart.bin',
@@ -493,7 +501,13 @@ PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_confi
                       # And after 1.4.3's write, the composed LG television.
                       'h650_lg_region',
                       # And after section 286's write, the introduction tour skipped.
-                      'h650_notour_region')
+                      'h650_notour_region',
+                      # And the same read before 1.4.4, one block longer.
+                      'h650_pre144_region',
+                      # And after 1.4.4's write, the composed activity.
+                      'h650_post144_region',
+                      # And after the screen light timer went to 20 seconds.
+                      'h650_glow20_region')
 
 CONTAINERS = (
     'h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'h525_config_2', 'one_config',

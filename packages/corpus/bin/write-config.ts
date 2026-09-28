@@ -136,6 +136,13 @@ const H650_DUMPS = new Set([
   'h650_lg_region',
   // After section 286's write, the introduction tour skipped: the compare base after that.
   'h650_notour_region',
+  // Read again before 1.4.4, one block longer, since that write reaches the block at 0x110000.
+  'h650_pre144_region',
+  // After 1.4.4's write, the composed activity LG kijken: the file written, byte for byte, and the
+  // rest of its last block erased. The compare base after that.
+  'h650_post144_region',
+  // After timer 1, the screen light, went from 8 to 20 seconds: two bytes, read after a battery pull.
+  'h650_glow20_region',
 ]);
 
 /** A remote this may run against, per architecture read off the device. */
