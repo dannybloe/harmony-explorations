@@ -514,7 +514,7 @@ function activitiesKey(c: Container, page: ModePage): number | undefined {
 }
 
 /** Opcode `0x72`: map a state variable's value through the base slot 14 record its high byte names. */
-const MAP_VALUE_OPCODE = 0x72;
+export const MAP_VALUE_OPCODE = 0x72;
 /** How deep `activityScreens` follows a chain. A guard against a loop, not a reading: three suffice. */
 const MAP_WALK_DEPTH = 12;
 
@@ -934,6 +934,146 @@ export const DEVICE_QUANTITY_DEFAULT = 1;
 // hundred lines below, both `0x7d`, both correct, until 6 September 2026. Two right copies is the
 // state that precedes two diverging ones and no test can see it, which is exactly what `CLAUDE.md`'s
 // oldest rule is about. Exported because a test of the activity anatomy needs to name the send.
+
+/**
+ * Opcode `0x71`: a condition on a state variable, section 34. Operand bits 8 to 11 choose the
+ * comparison, 0 being equality with the byte register, and bit 15 gives it two arms.
+ */
+export const CONDITION_OPCODE = 0x71;
+/**
+ * `0x1F` sub opcode `0xFB`: load the byte register with the operand's low byte, which is what the
+ * `0x71` after it compares a variable against. The sub opcode is the operand's high byte.
+ */
+export const BYTE_REGISTER_LOAD = 0xfb;
+/**
+ * Action opcode `0x67`, the third producer into the infrared queue, whose entries carry tag 5,
+ * sections 70 and 71. What a base slot 14 case of a device's inter device delay table queues, with the
+ * device's group in the operand's high byte and the delay in tenths in its low byte, section 287.
+ */
+export const QUEUE_INTER_DEVICE_DELAY = 0x67;
+/**
+ * The values an inter device delay table has a case for, 0 to 20 tenths of a second, **in the order
+ * the compiler stores them**: every table of the kind on the five arch 14 containers, 23 tables of
+ * 23, and each case's program sits in the same order. The order changes nothing, since the keys are
+ * distinct and the walk stops at the one that matches; it is reproduced because it costs nothing and
+ * looks like a hash table's iteration order in the generator rather than a choice. A variable
+ * holding more than 20 matches no case and queues nothing.
+ */
+export const INTER_DEVICE_DELAY_VALUES: readonly number[] = [
+  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 16, 19, 18, 20,
+];
+
+/**
+ * What an arch 14 command does before it sends, read whole, section 287.
+ *
+ * ```
+ * send list    [0x7F load, 0x7D (group << 8) | record, 0x7C (group << 8) | amount]
+ * load         [0x1F 0xFB01, 0x7F condition]          byte register := 1
+ * condition    [0x71 start, 0x7F delay]               only while variable `start` equals it
+ * delay        [0x72 (table << 8) | variable]         the device's own inter device delay
+ * ```
+ *
+ * **`load` and `condition` are private to the command and `delay` is shared by the device**: 1598
+ * send lists of 1598 on the five arch 14 containers, the Harmony 600, 650 and 700, no `load` or
+ * `condition` named by a second list and one `delay` per device. `start` is one variable per
+ * configuration, which every list that writes it sets to 1 and back to 0 inside itself, three of
+ * them on the 650 an activity's start sequence, section 285; so the delay is queued inside a start
+ * sequence and not on a device mode key press, which is an inference and not a measurement. `variable` is the device's `InterDeviceDelay_<identifier>`, and `table` a base slot 14
+ * record whose case for each value queues that many tenths for the device's group through
+ * `QUEUE_INTER_DEVICE_DELAY`, which `interDeviceDelayCases` reads.
+ */
+export interface SendPrelude {
+  /** The list holding the send. */
+  list: number;
+  /** The group the send names, which is the device. */
+  group: number;
+  load: number;
+  /** The `0x1F` operand of `load`'s first instruction, `0xFB01` on all 1598. */
+  loadOperand: number;
+  condition: number;
+  /** The `0x71` operand of `condition`'s first instruction, whose low byte is `start`. */
+  conditionOperand: number;
+  delay: number;
+  /** Which base slot 14 record the `0x72` names. */
+  table: number;
+  /** Which state variable it maps, the device's `InterDeviceDelay_<identifier>`. */
+  variable: number;
+}
+
+/**
+ * Every send list that opens with the prelude `SendPrelude` describes, in exactly that shape.
+ *
+ * A list that opens some other way is left out rather than half read, so a count of these against a
+ * count of send lists is the check that the shape holds. Empty on the arch 8, 9 and 12 containers
+ * measured, whose sends open with no call.
+ */
+export function sendPreludes(c: Container): SendPrelude[] {
+  const lists = c.actionLists();
+  if (lists === undefined) return [];
+  const exactly = (index: number, opcodes: readonly number[]): Instruction[] | undefined => {
+    const list = lists[index];
+    return list !== undefined && list.length === opcodes.length
+      && list.every((one, k) => one.opcode === opcodes[k]) ? list : undefined;
+  };
+  const out: SendPrelude[] = [];
+  lists.forEach((list, index) => {
+    const opening = exactly(index, [ACTION_LIST_INDEX_OPCODE, SEND_INFRARED, DEVICE_QUANTITY]);
+    if (opening === undefined || list.length !== 3) return;
+    const load = (opening[0] as Instruction).operand;
+    const loaded = exactly(load, [STATE_BAND, ACTION_LIST_INDEX_OPCODE]);
+    if (loaded === undefined || (loaded[0] as Instruction).operand >>> 8 !== BYTE_REGISTER_LOAD) return;
+    const condition = (loaded[1] as Instruction).operand;
+    const tested = exactly(condition, [CONDITION_OPCODE, ACTION_LIST_INDEX_OPCODE]);
+    if (tested === undefined) return;
+    const delay = (tested[1] as Instruction).operand;
+    const mapped = exactly(delay, [MAP_VALUE_OPCODE]);
+    if (mapped === undefined) return;
+    const map = (mapped[0] as Instruction).operand;
+    out.push({
+      list: index,
+      group: (opening[1] as Instruction).operand >>> INFRARED_GROUP_SHIFT,
+      load,
+      loadOperand: (loaded[0] as Instruction).operand,
+      condition,
+      conditionOperand: (tested[0] as Instruction).operand,
+      delay,
+      table: map >>> 8,
+      variable: map & 0xff,
+    });
+  });
+  return out;
+}
+
+/** One case of an inter device delay table: the value it matches and what it queues. */
+export interface InterDeviceDelayCase {
+  value: number;
+  group: number;
+  tenths: number;
+}
+
+/**
+ * A base slot 14 record read as an inter device delay table, or undefined when it is not one.
+ *
+ * It is one when every case's program is exactly `0x11 operand 0x67; end`, queueing one
+ * `QUEUE_INTER_DEVICE_DELAY`, and the record has no ranges. On the five arch 14 containers each
+ * such table has the 21 cases of `INTER_DEVICE_DELAY_VALUES`, each queueing its own value for the
+ * group of the device whose commands name it: the tables of two devices differ in the group byte
+ * and nowhere else, which is why each device carries its own.
+ */
+export function interDeviceDelayCases(c: Container, table: number): InterDeviceDelayCase[] | undefined {
+  const map = valueMaps(c)?.[table];
+  if (map === undefined || map.ranges.length !== 0) return undefined;
+  const out: InterDeviceDelayCase[] = [];
+  for (const [value, target] of map.entries) {
+    const program = screenProgram(c, target);
+    const queued = program?.[0];
+    if (program === undefined || program.length !== 2 || queued === undefined
+        || queued.opcode !== SCREEN_QUEUE_INSTRUCTION || program[1]?.opcode !== SCREEN_END
+        || queued.operands[2] !== QUEUE_INTER_DEVICE_DELAY) return undefined;
+    out.push({ value, tenths: queued.operands[0] as number, group: queued.operands[1] as number });
+  }
+  return out;
+}
 
 /** The high byte of `0x7D`'s operand: the base slot 5 group. */
 const INFRARED_GROUP_SHIFT = 8;

@@ -35978,7 +35978,8 @@ read after a complete write is recovered by the rerun the message asks for, meas
 * **The composer on arch 14 still differs from the corpus**: it emits `{0x7D, 0x7C}` where every
   arch 14 send list is `{0x7F, 0x7D, 0x7C}`, and the `0x7F` is not a fixed prefix, since the Harmony
   600's configuration has 188 distinct ones, each a `0x1F` byte register load and a further call.
-  What it does is unread, and nothing can test it on hardware.
+  What it does is unread, and nothing can test it on hardware. *Read in section 287, and composed: a
+  delay step of three lists, two of them the command's own.*
 
 ### Sources
 
@@ -36019,7 +36020,7 @@ Two claims in section 277 are wrong. Each carries a pointer here rather than bei
 * `packages/codec/src/compose.ts`: every composed command list is the pair.
 * `packages/codec/test/compose.test.ts`: the two assertions that a composed list is one send now
   assert the pair, the same on all four hosts, which on arch 14 is a known deviation from the corpus
-  and is todo 1.2.6.
+  and is todo 1.2.6. *Closed by section 287, which composes the prelude and asserts it there.*
 * `packages/codec/test/actions.test.ts`: the 3738 list census per architecture, exact, with no bare
   send.
 * `tests/test_one_send_path.py`: the two dispatcher arms reach one worker, only the `0x7C` handler
@@ -37199,6 +37200,8 @@ wide totals, so the counts in this section are over a wider population than `lab
   device mode. What each table case does is unread. A composed command skips it, and a composed device
   also carries none of the delay variables every compiled one has, so `deviceDelays` does not report
   it and an activity starting it would get no inter device delay. Section 235 reads those variables.
+  *Section 287 reads the cases and composes the call, the `InterDeviceDelay` variable and its table;
+  the other seven delay variables are still not composed, so `deviceDelays` still does not report it.*
 
 ### A closure, and the disagreement it found in section 271's reader
 
@@ -37262,7 +37265,7 @@ already in effect**, 0 of the compiler's 820 selects. The Harmony One composer s
 that is measured to work there, so none of the three is known to matter; they were fixed so that nothing
 about the composed file is new to the remote except the device. The fourth stays: the composed commands
 open without the `0x7F` delay call and the device has no delay variables, above, which is todo 1.2.6
-and matters to an activity and not to device mode. Each fix was cheap to test and each test is
+and matters to an activity and not to device mode. *Composed since section 287.* Each fix was cheap to test and each test is
 controlled: reintroducing the repeated font select fails it.
 
 The prose audit found the two row background wrong on the 600, the two row lists wrongly called never
@@ -37446,3 +37449,158 @@ failing to follow a skipped reload.
   written file byte for byte, differing from `h650_lg_region` in the three bytes.
 * `docs/config-format.md`, `todo.md` and `docs/status.md`.
 
+
+## 287. Every arch 14 command opens with a delay step of three lists, and a composed device now gets all three
+
+**Todo 1.2.6, and it closes an open reading of section 285.** Every send list Logitech's compiler writes
+for a Harmony 600, 650 or 700 opens with a `0x7F`, which sections 278 and 285 recorded and the composer
+did not emit. The call is read whole now, including what the base slot 14 table at its end does, and
+`composeDevice` gives a device on arch 14 every piece of it.
+
+### The shape, on 1598 of 1598
+
+```
+send list    [0x7F load, 0x7D (group << 8) | record, 0x7C (group << 8) | amount]
+load         [0x1F 0xFB01, 0x7F condition]          byte register := 1
+condition    [0x71 start, 0x7F delay]               only while variable `start` equals it
+delay        [0x72 (table << 8) | variable]         the device's own inter device delay
+```
+
+Measured on the five arch 14 configurations the lab holds: 422 send lists on `h650_config_region`, 188
+on `h600_config`, 244 on `calibration_h600` and 372 on each Harmony 700 configuration, the second of
+which repeats the first. Every send list has exactly this shape, and three things about it are exact:
+
+* **`load` and `condition` belong to one command each.** No list names a `load` or a `condition` that
+  another list names, so a device of ninety commands carries 180 lists that do nothing but this.
+* **`delay` belongs to one device.** Every command of a device names the same one, and no two devices
+  share one: 5, 3, 3, 6 and 6 of them.
+* **`start` is one variable per configuration**, 52, 46, 47 and 59, compared for equality, the `0x71`
+  operand's bits 8 to 11 being 0. Every list that writes it sets it to 1 and back to 0 inside itself,
+  31, 27, 23 and 50 of them, three of the 650's being the activities' `Starting ...` sequences.
+  **That the delay step acts inside a start sequence and not on a device mode key press is an
+  inference**, from those three and from the variable being 0 at rest. What reaches the other 28 of
+  the 650's writers is unread: the prose auditor found none of the 131 named by a `0x7F`, by a screen
+  program queueing one, or by a state transition.
+
+`variable` is the device's `InterDeviceDelay_<identifier>` on all 23, the identifier being the one the
+remote's own delay page joins to that device's group on 17 of 17 devices with commands, a two byte
+variable above `narrow`, never the last, with a maximum of 65277, holding 5 on 15 of the 17 devices with commands on the four distinct
+configurations and 10 and 3 on the other two.
+
+None of it occurs elsewhere: 0 of the 2563 send lists on the corpus's arch 8, 9 and 12 containers
+open with a call, measured once, and the test holds it on the three the composer's host test uses,
+`one_config`, `h525_config` and `arch8_config_a`, 340, 200 and 239 send lists.
+
+### What the table does, which section 285 left unread
+
+Each device's base slot 14 record has 21 cases, the values 0 to 20, no ranges, and each case's program
+is one screen language instruction and an end: `0x11` queueing action opcode `0x67` with the operand
+`(group << 8) | value`, the group being the device's. So the case for 7 queues 7 for that device, and a
+value above 20 matches no case and queues nothing. **The 23 tables' programs differ only in the group
+byte**, which is why every device carries its own rather than sharing one; the records themselves
+differ in their program pointers too.
+
+**Each device also has a second 21 case table on the same variable**, found by the blind reviewer: 5,
+4, 3 and 6 of them, reached from one list each, whose cases each queue a call to a list rather than a
+`0x67`. The prelude does not reach them, and what they are for is unread; the remote's delay setting
+screen is the likely reader and that is a guess. Not composed.
+
+`0x67` is section 71's third producer into the infrared queue: a two byte entry whose tag is
+`5 << 4 | group` and whose value is the operand's low byte, beside the send's kind 0 and the `0x7C`
+quantity's kind 4. **What the sender does with a kind 5 entry is unread.** That it is the inter device
+delay rests on the variable's name and on the operand carrying it, not on a firmware reading, so it is
+stated here as unconfirmed.
+
+**The cases are stored in the order 0 to 15, 17, 16, 19, 18, 20**, and the programs in the same order,
+on 23 tables of 23. It is not the delay tables' own order: every base slot 14 record whose keys are
+exactly 0 to 20 has it, 36 of 36 on the four distinct configurations, and the prose auditor found wider
+records continuing the same pairwise swaps. The order means nothing to the remote, whose walk stops at
+the one key that matches; a hash table's iteration order inside the generator would produce it, which
+is a guess. The composer reproduces it because it costs nothing.
+
+### Composed
+
+`composeDevice` on arch 14 now adds, before the device's commands:
+
+1. the variable, `InterDeviceDelay_<identifier>_65278`, a two byte one like the compiled ones, but
+   appended at the end of base slot 13, where no compiled one sits, so that `count` and `wide` rise by
+   one and nothing is renumbered for it. It holds 5 unless the caller asks for another value from 0 to
+   20, and anything else is refused. Its identifier is one more than the highest the configuration's
+   names carry. The identifiers are consecutive on the 650 and on `calibration_h600` and not on the 600
+   or the 700, so this follows two accounts of four; a name is host side, so the remote reads none of
+   it.
+2. the table, a base slot 14 record after the last record and its 21 programs after the last record's
+   programs. **Last and last**, because on all five configurations a record's address rises with its
+   index and so does its first program's, and the last record's end and its programs' end are where
+   the records and the programs end; a configuration where either is not true is refused. The
+   insertion is three relocations, each leaving a container the census can walk: a header pointer
+   naming an existing delay table, then the record with its cases naming that table's programs, then
+   the programs, after which both are swapped onto what was composed.
+3. the lists: each command's send list opens with a call to its own `load`, the lists are laid out as
+   the sends, then the device's `delay`, then `load` and `condition` for each command in turn. `load`'s
+   and `condition`'s operands are copied off the configuration's own preludes, and the composer refuses a
+   configuration whose preludes disagree about either, or which has none.
+
+**Two mistakes in the first version, both caught by the byte accounting before anything was written.**
+The table's header pointer was written at an offset read before the record's insertion moved the header,
+which put the pointer into base slot 13 instead; and the new cases were copied from the existing table
+before the same insertion moved its programs, so they named every program 109 bytes short, and the
+census then read the misaligned programs' bytes as pointer fields and rewrote them on the next
+insertion. Both offsets are read again after the move now, and the composed 650 accounts for every byte
+with no overlap. A third difference was caught by both reviewers and is fixed: the first placement put
+the new record after the model table's and its programs in front of the model's, which broke the index
+order every compiled configuration keeps.
+
+**Differences from the compiler that stay**, none known to matter: the lists are laid out together
+where the compiler scatters them, so each `condition` sits right after its `load`, which 1 of the 1226
+compiled pairs the blind reviewer checked does; and the delay variable is last rather than among the
+device's other delay variables.
+
+**What is deliberately not composed**: the device's other seven delay variables, among them its power on
+delay, the defaults, and the two counter and flag pairs, and the "Set to default" page. That page is how
+`deviceIdOfGroup` joins a device to its identifier, so `deviceDelays` still does not report a composed
+device. The power on delay matters to an activity: on the 650 a compiled device's power on list ends
+with a `0x72` on its `PowerOnDelay_<identifier>`, which a composed device's power list does not have.
+
+### Scope, decision 16
+
+The shape: arch 14, three models and five configurations; absent on arch 8, 9 and 12, measured; arch 10
+and 16 not checked here. The table's meaning: the configuration only, no image read. The composition:
+built and read back on the Harmony 650's configuration, where the reader, the accounting, the round trip,
+the checksum and the index order all agree, and on `h600_config` by the four host test. **Nothing about it is measured on hardware**: an inter device delay is felt only
+inside a start sequence, so the first test is the composed activity of todo 1.4.4.
+
+### The reviewers
+
+The blind re-measure reproduced every count, the chain, the tables and the composed device's shape,
+and found the second table per device and the three layout differences above. The prose audit found
+the total stated as 1648 where the five counts sum to 1598, in six places, corrected; the variable said
+to sit where the compiled ones sit, the identifier rule said to hold on every configuration, the start
+sequence reading stated as a measurement, the tables said to differ only in the group byte, and the case
+order said to be the delay tables' own, each corrected above; and the placement. Each was re-measured
+here before it was changed.
+
+### Sources
+
+The five configurations; sections 34 and 140 for `0x71`, 39 for base slot 14, 70 and 71 for the
+infrared queue and `0x67`, 235 for the delay variables, 278 and 285 for the earlier account. The
+firmware was not read for this, beyond what those sections read. Logitech's client was not consulted,
+for section 278's reason: it compiles nothing, so it holds no emitter.
+
+### Falsification
+
+An arch 14 send list in some other shape; a `load` or `condition` named twice; a delay table whose cases
+queue something other than their own value for their own device; or, on hardware, a composed device whose
+commands stop sending from device mode once they carry the prelude.
+
+### Where it lands
+
+* `packages/codec/src/inventory.ts`: `sendPreludes` and `interDeviceDelayCases`, the readers, with
+  `INTER_DEVICE_DELAY_VALUES` and the opcode constants.
+* `packages/codec/src/compose.ts`: `composeDevice` emits the prelude on arch 14 and returns the delay's
+  variable, table, list and identifier; `stateRecordEnd` and `appendNameNode` are the two insertions the
+  power variable and the delay variable share.
+* `packages/codec/test/compose.test.ts`: the shape on all five configurations, the 23 tables, the
+  identifier join, the index order, and the composed 650 device read back through the same readers; the four host test on `h600_config` now
+  asserts the prelude where it asserted the bare pair as a known deviation.
+* `docs/config-format.md`, `todo.md`, `docs/status.md` and the `writing-a-config` skill.

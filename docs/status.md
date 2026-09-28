@@ -563,7 +563,7 @@ finding.
 
 `todo.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 286<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 287<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -827,6 +827,17 @@ figures common to both carry `fact:` markers, so `make facts` moves every copy t
 cannot drift apart; what a reader should not expect is two independent statements of one measurement.
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
+
+**And a device composed for the Harmony 600, 650 or 700 now waits between commands the way Logitech's
+own do, section 287.** Every command their compiler writes for those models first runs a small delay
+step, which by every sign is the device's own inter device delay, applied while an activity is starting
+up and not when a key is pressed in device mode; the remote has not been watched doing it. That step is three short lists per
+command, two of them belonging to that one command and the third to the device, and a table per
+device that turns its delay setting, 0 to 2 seconds, into what the remote queues. Measured on all 1598 commands of the
+five configurations of those models, and the composer now writes all of it for a new device, with the
+half second Logitech gives nearly every device. It has not been on a remote yet, because it only acts
+while an activity starts, which is what the composed activity will show. A device's power on delay is
+still missing and is the next piece.
 
 **And the Harmony 650 no longer opens Logitech's introduction tour after a write, section 286.** Every
 write reloads the configuration, and every reload started a ten screen tour that had to be pressed

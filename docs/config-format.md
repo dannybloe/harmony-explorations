@@ -701,8 +701,13 @@ loading 1, then a list testing a variable against it with `0x71` and, while it m
 of the device's own that is one `0x72` on that device's `InterDeviceDelay` variable through a base slot
 14 table. The variable is 52, 46 and 59, and every list writing it sets it to 1 and back to 0 inside
 itself, 31, 27 and 50, the 650's three `Starting ...` sequences among them. So the inter device delay
-applies inside a start sequence and not on a device mode key press. What each table case does is
-**unconfirmed**.
+applies inside a start sequence and not on a device mode key press. **Each table case is read**,
+section 287: 21 cases, 0 to 20 tenths, each a screen program queueing `0x67` with `(group << 8) | value`
+for the device's own group, so tables differ per device in that byte only, stored in the order 0 to 15,
+17, 16, 19, 18, 20. `load` and `condition` are private to each command, `delay` shared by the device,
+1598 of 1598. What the sender does with the queued kind 5 entry is **unconfirmed**, and so is the
+start sequence reading above, which is inferred from three of the 650's 31 writers. `sendPreludes`
+and `interDeviceDelayCases`; `composeDevice` emits all of it on arch 14.
 
 **The container's key table is the first mode record**, byte for byte: same offset, same count,
 same four byte entries. The tagged list encoding and the key table encoding are one encoding.
@@ -3688,8 +3693,8 @@ largest group here holds 111, and the firmware caps this field at 100. Section 1
 spare Harmony One: a composed list of `0x7D` alone sends from a key press and sends **nothing** when
 an activity's state transition runs it, and adding the `0x7C` for the same device fixes it. So the
 shape above is a rail and not a habit. Measured on arch 12 (Harmony One) only; the firmware's reason
-is unread. On arch 14 every send list also opens with a `0x7F`, one distinct target per list, which
-the composer does not emit and which is unread.
+is unread. On arch 14 every send list also opens with a `0x7F`, a delay step of three lists read in
+section 287, which the composer emits.
 
 **On arch 16 the cover is exact rather than onto**, section 261, which is the one architecture where
 that can be asserted: the Harmony 350's action lists hold 130 send instructions with 130 distinct

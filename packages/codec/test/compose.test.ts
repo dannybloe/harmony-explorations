@@ -34,6 +34,7 @@ import {
   activityPowerTargets,
   deviceVariables,
   valueMaps,
+  deviceIdOfGroup,
   activityBindings,
   activityNames,
   touchPageOf,
@@ -60,6 +61,10 @@ import {
   statedCode,
   stateTable,
   stateVariables,
+  sendPreludes,
+  interDeviceDelayCases,
+  INTER_DEVICE_DELAY_VALUES,
+  INTER_DEVICE_DELAY_DEFAULT,
   trailerAgrees,
   archSlot,
   characterMap,
@@ -161,11 +166,21 @@ for (const host of HOSTS) {
     // not, and the variable lands inside the storage the firmware allocates rather than above it,
     // which is section 276's separate defect and is asserted here too because both were live at
     // once.
+    //
+    // On arch 14 the device also gains its inter device delay, a two byte variable appended at the
+    // end as all 24 compiled ones sit above `narrow`, section 287, so there `count` rises by two and
+    // `wide` by one, and that one is the delay variable rather than an existing variable widening.
     const grownTable = stateTable(after);
     assert.ok(grownTable !== undefined);
-    assert.equal(grownTable.count, wasTable.count + 1);
+    const delayed = after.architecture === 14;
+    assert.equal(composed.delay !== undefined, delayed, 'a delay exactly on arch 14');
+    assert.equal(grownTable.count, wasTable.count + (delayed ? 2 : 1));
     assert.equal(grownTable.narrow, wasTable.narrow + 1, 'the new variable is a narrow one');
-    assert.equal(grownTable.wide, wasTable.wide, 'and no existing variable changes width');
+    assert.equal(grownTable.wide, wasTable.wide + (delayed ? 1 : 0),
+                 'and no existing variable changes width');
+    if (composed.delay !== undefined) {
+      assert.equal(composed.delay.variable, grownTable.count - 1, 'the delay variable is the last');
+    }
     assert.equal(grownTable.narrowAgain, grownTable.narrow);
     assert.equal(composed.variable, wasTable.narrow, 'it takes the position `narrow` named');
     assert.ok(composed.variable < grownTable.narrow, 'so it is stored as one byte');
@@ -184,6 +199,8 @@ for (const host of HOSTS) {
     // strongest available statement that nothing was dropped, duplicated or reordered.
     const withoutTheNewOne = [...grownTable.entries];
     withoutTheNewOne.splice(composed.variable, 1);
+    // And the delay variable's, which is the last, where it is one.
+    if (composed.delay !== undefined) withoutTheNewOne.pop();
     assert.deepEqual(withoutTheNewOne, wasTable.entries,
       'the old entry pointers survive in order, with the new one spliced in at its index');
     assert.equal(grownTable.entries[composed.variable] !== undefined, true);
@@ -196,7 +213,7 @@ for (const host of HOSTS) {
       const to = index >= composed.variable ? index + 1 : index;
       assert.equal(nowNamed.get(to), label, `the name of variable ${index} moved to ${to}`);
     }
-    assert.equal(nowNamed.size, wasNamed.size + 1, 'plus the one this composer named');
+    assert.equal(nowNamed.size, wasNamed.size + (delayed ? 2 : 1), 'plus the ones this composer named');
     assert.equal(variable?.record?.first, 0, 'nothing is running when a config is generated');
     assert.equal(variable?.record?.second, 1, 'a power switch has two states');
     assert.deepEqual(
@@ -209,16 +226,19 @@ for (const host of HOSTS) {
     // section 278 measures every one as this pair with the device agreeing in both high bytes, and
     // the bare form sent nothing when an activity's transition ran it on the spare Harmony One while
     // answering a button press correctly. So the claim being asserted here changed rather than the
-    // assertion being relaxed. **On the arch 14 host it asserts a known deviation**: every Harmony
-    // 600 and 700 send list opens with a `0x7F` as well, which the composer does not emit, todo
-    // 1.2.6, so there this pins what the composer writes rather than what the corpus holds.
+    // assertion being relaxed. **On the arch 14 host the pair opens with the `0x7F` prelude**, as
+    // every Harmony 600, 650 and 700 send list does, section 287, and `sendPreludes`, the reader,
+    // is what says it has the compiler's shape; this asserted the bare pair there until then, as a
+    // known deviation, todo 1.2.6.
     const lists = after.actionLists();
+    const preludes = new Map(sendPreludes(after).map((one) => [one.list, one]));
     composed.lists.forEach((index, k) => {
       const list = lists?.[index];
-      assert.deepEqual(list?.map((one) => [one.opcode, one.operand]),
-                       [[0x7d, (composed.group << 8) | k],
-                        [0x7c, (composed.group << 8) | DEVICE_QUANTITY_DEFAULT]],
+      const pair = [[0x7d, (composed.group << 8) | k],
+                    [0x7c, (composed.group << 8) | DEVICE_QUANTITY_DEFAULT]];
+      assert.deepEqual(list?.slice(delayed ? 1 : 0).map((one) => [one.opcode, one.operand]), pair,
                        `command ${k}'s list sends to the new group and names it again`);
+      assert.equal(preludes.has(index), delayed, `command ${k} opens with the prelude exactly on arch 14`);
     });
   });
 }
@@ -557,6 +577,156 @@ test('the Harmony 650 takes the television onto its screen and every check holds
       else assert.equal(twin.operand, entry.operand);
     });
   });
+});
+
+/** Whether base slot 14's records, and their first programs, sit in the order of their indices. */
+function addressesFollowIndices(c: ReturnType<typeof parse>): boolean {
+  const maps = valueMaps(c)!;
+  const first = maps.map((one) => Math.min(...one.entries.map(([, target]) => target)));
+  return maps.every((one, k) => k === 0 || (one.address > maps[k - 1]!.address && first[k]! > first[k - 1]!));
+}
+
+/**
+ * The arch 14 configurations, each with its send list count and its start sequence variable, the
+ * one every command's condition tests. The second Harmony 700 configuration repeats the first.
+ */
+const PRELUDE_HOSTS = [
+  ['h650_config_region', 422, 52],
+  ['h600_config', 188, 46],
+  ['calibration_h600', 244, 47],
+  ['h700_config', 372, 59],
+  ['h700_config_2', 372, 59],
+] as const;
+
+test('every arch 14 command opens with a private load and condition and its device\'s delay list',
+     skipUnless(...PRELUDE_HOSTS.map(([name]) => name)), () => {
+  // Section 287. The shape is read whole by `sendPreludes`, which leaves out any list that opens
+  // another way, so its count against the send list count is the claim.
+  let tables = 0;
+  const held: number[] = [];
+  for (const [name, sends, start] of PRELUDE_HOSTS) {
+    const c = parse(require_(name));
+    // The compiler's own order, which the composer keeps: a base slot 14 record's address rises with
+    // its index, and so does its first program's.
+    assert.ok(addressesFollowIndices(c), `${name}: base slot 14 is stored in index order`);
+    const identifiers = deviceIdOfGroup(c);
+    const lists = c.actionLists()!;
+    const sending = lists.filter((list) => list.some((one) => one.opcode === 0x7d)).length;
+    const preludes = sendPreludes(c);
+    assert.equal(sending, sends, `${name} has ${sends} send lists`);
+    assert.equal(preludes.length, sends, `${name}: every one opens with the prelude`);
+    // The load and the condition are the command's own: no list names one that another names.
+    const namedBy = new Map<number, number>();
+    lists.forEach((list) => list.forEach((one) => {
+      if (one.opcode === 0x7f) namedBy.set(one.operand, (namedBy.get(one.operand) ?? 0) + 1);
+    }));
+    for (const one of preludes) {
+      assert.equal(namedBy.get(one.load), 1, `${name}: list ${one.list}'s load is its own`);
+      assert.equal(namedBy.get(one.condition), 1, `${name}: list ${one.list}'s condition is its own`);
+    }
+    assert.deepEqual([...new Set(preludes.map((one) => one.loadOperand))], [0xfb01], 'byte register := 1');
+    assert.deepEqual([...new Set(preludes.map((one) => one.conditionOperand))], [start],
+                     `${name}: one start sequence variable, compared for equality`);
+    // One delay list per device, naming that device's own `InterDeviceDelay_<identifier>` through a
+    // table whose cases queue their own value for that device's group.
+    const byGroup = new Map<number, Set<number>>();
+    for (const one of preludes) byGroup.set(one.group, (byGroup.get(one.group) ?? new Set()).add(one.delay));
+    for (const [group, delays] of byGroup) {
+      assert.equal(delays.size, 1, `${name}: group ${group} has one delay list`);
+    }
+    const names = new Map(stateVariables(c).map((one) => [one.index, one]));
+    const perDelay = new Map(preludes.map((one) => [one.delay, one]));
+    const narrow = stateTable(c)!.narrow;
+    for (const one of perDelay.values()) {
+      const variable = names.get(one.variable);
+      assert.match(variable?.label ?? '', /^InterDeviceDelay_\d+$/);
+      assert.ok(one.variable >= narrow, 'a two byte variable');
+      assert.equal(variable?.record?.second, 65277);
+      if (name !== 'h700_config_2') held.push(variable?.record?.first ?? -1);
+      // And it is that device's: the identifier in its name is the one the remote's own delay page
+      // joins to the device's group, section 234.
+      assert.equal(variable?.deviceId, identifiers.get(one.group), `${name}: group ${one.group}'s own delay`);
+      const cases = interDeviceDelayCases(c, one.table);
+      assert.ok(cases !== undefined, `${name}: table ${one.table} reads as a delay table`);
+      assert.deepEqual(cases.map((k) => k.value), [...INTER_DEVICE_DELAY_VALUES]);
+      assert.ok(cases.every((k) => k.tenths === k.value && k.group === one.group));
+      tables += 1;
+    }
+  }
+  assert.equal(tables, 23, 'five, three, three, six and six');
+  assert.equal(PRELUDE_HOSTS.reduce((sum, [, sends]) => sum + sends, 0), 1598, 'the total the documents quote');
+  // What the compiled devices hold, the second Harmony 700 configuration left out as a repeat: the
+  // composer's default is the value nearly all of them carry.
+  assert.equal(held.length, 17, 'the devices with commands');
+  assert.equal(held.filter((one) => one === INTER_DEVICE_DELAY_DEFAULT).length, 15);
+  assert.deepEqual(held.filter((one) => one !== INTER_DEVICE_DELAY_DEFAULT).sort((a, b) => a - b), [3, 10]);
+});
+
+test('no command opens with the prelude on the Harmony One, the 525 or the arch 8 configuration',
+     skipUnless('one_config', 'h525_config', 'arch8_config_a'), () => {
+  for (const [name, sends] of [['one_config', 340], ['h525_config', 200], ['arch8_config_a', 239]] as const) {
+    const c = parse(require_(name));
+    assert.equal(c.actionLists()!.filter((list) => list.some((one) => one.opcode === 0x7d)).length, sends);
+    assert.deepEqual(sendPreludes(c), [], `${name} has sends and no prelude`);
+  }
+});
+
+test('a device composed on the Harmony 650 opens every command in the compiler\'s shape and order',
+     skipUnless('h650_config_region'), () => {
+  const pristine = parse(require_('h650_config_region'));
+  const wasPreludes = sendPreludes(pristine);
+  const wasIds = stateVariables(pristine).flatMap((one) => one.deviceId === undefined ? [] : [one.deviceId]);
+  const device = composeDevice(pristine, { label: 'LG', commands: TELEVISION, power: 0 });
+  const after = parse(device.bytes);
+  const report = coverage(after);
+  assert.equal(report.accounted, report.total, 'every byte is claimed');
+  assert.deepEqual(report.overlaps, [], 'and no byte twice');
+  assert.ok(trailerAgrees(after));
+  assert.equal(roundTrip(after).equal, true, 'the emitter reproduces the composed file');
+  assert.ok(addressesFollowIndices(after), 'the new table is stored last, as its index is');
+
+  // Every command is in the reader's shape, with the configuration's own load and condition, and
+  // the three share one delay list that no other device's command names.
+  const delay = device.delay!;
+  const preludes = sendPreludes(after);
+  assert.equal(preludes.length, wasPreludes.length + TELEVISION.length);
+  const mine = preludes.filter((one) => one.group === device.group);
+  assert.deepEqual(mine.map((one) => one.list), [...device.lists]);
+  for (const one of mine) {
+    assert.equal(one.loadOperand, 0xfb01);
+    assert.equal(one.conditionOperand, 52, 'the 650\'s start sequence variable');
+    assert.equal(one.delay, delay.list);
+    assert.equal(one.table, delay.table);
+    assert.equal(one.variable, delay.variable);
+  }
+  assert.ok(preludes.filter((one) => one.group !== device.group).every((one) => one.delay !== delay.list));
+  assert.equal(new Set(mine.flatMap((one) => [one.load, one.condition])).size, 2 * TELEVISION.length);
+
+  // The table queues each value for the new group, and every existing table still reads as before.
+  const cases = interDeviceDelayCases(after, delay.table)!;
+  assert.deepEqual(cases.map((one) => one.value), [...INTER_DEVICE_DELAY_VALUES]);
+  assert.ok(cases.every((one) => one.tenths === one.value && one.group === device.group));
+  for (const one of wasPreludes) {
+    assert.deepEqual(interDeviceDelayCases(after, one.table), interDeviceDelayCases(pristine, one.table));
+  }
+
+  // The variable: two bytes, the last, named with an identifier no device here has, holding the
+  // default, and its maximum the one every compiled one states.
+  const variable = stateVariables(after).find((one) => one.index === delay.variable)!;
+  assert.equal(delay.variable, stateTable(after)!.count - 1);
+  assert.ok(delay.variable >= stateTable(after)!.narrow, 'a two byte variable');
+  assert.equal(variable.name, `InterDeviceDelay_${delay.identifier}_65278`);
+  assert.equal(delay.identifier, Math.max(...wasIds) + 1);
+  assert.equal(variable.record?.first, INTER_DEVICE_DELAY_DEFAULT);
+  assert.equal(variable.record?.second, 65277);
+  assert.equal(variable.record?.count, 0, 'no transitions');
+
+  // A value the table has no case for is refused rather than written as a delay that never applies.
+  assert.throws(() => composeDevice(pristine, { label: 'LG', commands: TELEVISION, interDeviceDelay: 21 }),
+                ComposeError);
+  const slow = parse(composeDevice(pristine, { label: 'LG', commands: TELEVISION, interDeviceDelay: 20 }).bytes);
+  assert.equal(stateVariables(slow).find((one) => one.label.startsWith('InterDeviceDelay_' + delay.identifier))
+    ?.record?.first, 20);
 });
 
 test('the arch 14 screen half refuses a full last page and a letter its fonts do not carry',
