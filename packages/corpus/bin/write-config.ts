@@ -143,6 +143,8 @@ const H650_DUMPS = new Set([
   'h650_post144_region',
   // After timer 1, the screen light, went from 8 to 20 seconds: two bytes, read after a battery pull.
   'h650_glow20_region',
+  // And after it went to 10: the same two bytes again. The compare base after that.
+  'h650_glow10_region',
 ]);
 
 /** A remote this may run against, per architecture read off the device. */

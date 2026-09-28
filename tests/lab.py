@@ -175,6 +175,8 @@ IMAGES = {
     'h650_post144_region': '20260928T1306Z-h650-post-1-4-4-region.bin',
     # After timer 1, the screen light, went from 8 to 20 seconds: two bytes, read after a battery pull.
     'h650_glow20_region': '20260928T1318Z-h650-glow20-region.bin',
+    # And after it went to 10 seconds: the same two bytes. The compare base after that.
+    'h650_glow10_region': '20260928T1449Z-h650-glow10-region.bin',
     # Three snapshots of the 650's state variables, 108 bytes from data 0xE10 plus the stored sum:
     # at rest, after an activity was started off the cable, and after a bare restart. Section 283.
     'h650_ram_activity_restart': '20260927T1150Z-h650-ram-activity-restart.bin',
@@ -507,7 +509,9 @@ PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_confi
                       # And after 1.4.4's write, the composed activity.
                       'h650_post144_region',
                       # And after the screen light timer went to 20 seconds.
-                      'h650_glow20_region')
+                      'h650_glow20_region',
+                      # And after it went to 10 seconds.
+                      'h650_glow10_region')
 
 CONTAINERS = (
     'h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'h525_config_2', 'one_config',

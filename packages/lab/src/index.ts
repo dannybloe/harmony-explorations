@@ -154,6 +154,9 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // After timer 1, the screen light, went from 8 to 20 seconds: `h650_post144_region` in the duration
   // and the trailer checksum, two bytes. Read after a battery pull cleared a black screen.
   h650_glow20_region: '20260928T1318Z-h650-glow20-region.bin',
+  // And after it went to 10 seconds: `h650_glow20_region` in the same two bytes. The compare base after
+  // that, and what the 650 holds at the end of section 292.
+  h650_glow10_region: '20260928T1449Z-h650-glow10-region.bin',
   // Three snapshots of the 650's state variables across an activity and a bare restart, section 283.
   h650_ram_activity_restart: '20260927T1150Z-h650-ram-activity-restart.bin',
   // The 650's data memory 0x000..0xDFF before and after a third bare restart, section 283.
@@ -495,7 +498,9 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
     // And after 1.4.4's write, the composed activity, for the same reason.
     'h650_post144_region',
     // And after the screen light timer went to 20 seconds, for the same reason.
-    'h650_glow20_region'];
+    'h650_glow20_region',
+    // And after it went to 10 seconds, for the same reason.
+    'h650_glow10_region'];
 
 const cache = new Map<string, string[]>();
 

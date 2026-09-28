@@ -38301,5 +38301,6 @@ and two test titles and an off arch 14 assertion that could not fail. Each is co
   pair counted on every arch 8, 10 and 14 user configuration, one on the Harmony 525 and none on the
   Harmony One.
 * `packages/lab/src/index.ts`, `tests/lab.py`, `packages/corpus/bin/write-config.ts` and both golden
-  lists: `h650_glow20_region`.
+  lists: `h650_glow20_region` and `h650_glow10_region`, the second the two bytes again and what the
+  650 holds at the end of this section.
 * `docs/config-format.md`, section 43's open question, `todo.md` and `docs/status.md`.

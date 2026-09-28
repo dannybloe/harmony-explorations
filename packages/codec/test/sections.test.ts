@@ -224,8 +224,8 @@ for (const [name, count, longest, groups, pages, areas] of TABLES) {
 
 /**
  * `[sample, the screen light timer's index, its seconds]`, findings.md section 292. The 650 reads are
- * the measurement: 8 as Logitech compiled it, then 20 as written here, and the screen stayed lit for
- * about 20. `calibration_h600` is the known answer, compiled in the session that saved MyHarmony
+ * the measurement: 8 as Logitech compiled it, then 20 and 10 as written here, and the screen stayed
+ * lit for about 20 and then about 10. `calibration_h600` is the known answer, compiled in the session that saved MyHarmony
  * settings stating a `GlowTime` of 20, which is also its default. On `h600_config` and the two
  * Harmony 700 configurations both timers of the pair hold 10, so there the index is the rule's pick
  * and not a measurement.
@@ -234,6 +234,7 @@ const SCREEN_LIGHT: readonly [string, number, number][] = [
   ['h650_config_region', 1, 8],
   ['h650_post144_region', 1, 8],
   ['h650_glow20_region', 1, 20],
+  ['h650_glow10_region', 1, 10],
   ['calibration_h600', 1, 20],
   ['h600_config', 1, 10],
   ['h700_config', 5, 10],

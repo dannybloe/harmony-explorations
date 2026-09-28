@@ -1,6 +1,6 @@
 # Todo
 
-**The sequence lives here and nowhere else.** Six chapters, coarse on purpose. A chapter gets broken
+**The sequence lives here and nowhere else.** Seven chapters, coarse on purpose. A chapter gets broken
 down into a plan under `docs/plans/` when it is reached, and the plan is linked from its item.
 
 Either of us adds, ticks or removes items. Keep the descriptions to one line: the reasoning belongs in
@@ -102,12 +102,24 @@ Deliberately later. First target is devices that already exist in a catalogue.
 - [ ] 5.3 A learned code's storage class
 - [ ] 5.4 The three encoding classes no configuration in the corpus carries
 
-## 6. The app
+## 6. Remote settings
+
+The remote's own settings rather than its devices and activities. Logitech's service lists them per model.
+
+- [ ] 6.1 Find where each setting lives, per model
+  - [x] 6.1.1 GlowTime, how long the screen stays lit: a timer, measured on the Harmony 650; which of the Harmony 700's pair is open (section 292)
+  - [ ] 6.1.2 RemoteAssistant, the question after an activity starts, on the Harmony 600, 650 and 700
+  - [ ] 6.1.3 TiltSensor, waking when picked up, on the Harmony 600, 650 and 700
+  - [ ] 6.1.4 The Harmony Touch's eleven, among them screen brightness and screen timeout
+  - [ ] 6.1.5 The Harmony One's and the Harmony 525's, which Logitech's service does not list
+- [ ] 6.2 Read and change them from FreeHarmony
+
+## 7. The app
 
 After 3 produces something.
 
-- [ ] 6.1 The interface
-- [ ] 6.2 Publish `packages/*` so somebody without this checkout can build it (decision 4)
+- [ ] 7.1 The interface
+- [ ] 7.2 Publish `packages/*` so somebody without this checkout can build it (decision 4)
 
 ---
 

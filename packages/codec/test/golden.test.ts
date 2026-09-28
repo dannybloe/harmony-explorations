@@ -123,6 +123,7 @@ const CONTAINERS = [
   'h650_pre144_region',
   'h650_post144_region',
   'h650_glow20_region',
+  'h650_glow10_region',
   // The two configs Logitech compiled to a specification we wrote, section 132: the only samples
   // whose devices and activities were chosen before the bytes existed, so a disagreement between the
   // two implementations about them would be a disagreement about a known answer.
@@ -288,8 +289,9 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 70 since the Harmony 650's configuration region, section 282, the first arch 14 compare base.
   // 71 since that region after 1.4.2's delay write, 72 since the region after 1.4.3's composed device,
   // 73 since the region after section 286's tour skip, 74 and 75 since the reads either side of
-  // 1.4.4's composed activity, section 291, and 76 since the screen light timer at 20, section 292.
-  assert.equal(present.length, 76, 'every vector, which is what `make golden` compares');
+  // 1.4.4's composed activity, section 291, and 76 and 77 since the screen light timer at 20 and at
+  // 10, section 292.
+  assert.equal(present.length, 77, 'every vector, which is what `make golden` compares');
   // 38 since the Harmony 895 landed: its key table reads with the existing reader even though
   // every other arch 10 reader is gated, which is what made section 177's keypad closure possible
   // without any arch 10 progress at all.
@@ -322,8 +324,8 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // unchanged: the composer adds a device mode and menu entries and no key table entry.
   // 68 since the region after section 286's tour skip, which changes one action list instruction.
   // 70 since the reads either side of 1.4.4's composed activity, section 291, and 71 since the screen
-  // light timer at 20 seconds, section 292: each keeps a key table.
-  assert.equal(complete, 71, 'the vectors whose container has a key table at all');
+  // light timer at 20 seconds, section 292, and 72 since it at 10: each keeps a key table.
+  assert.equal(complete, 72, 'the vectors whose container has a key table at all');
 
   // **The number sender field, and why it needs its own guard.** It is an empty array on 30 vectors
   // and null on 8, with eight carrying a record since 30 August 2026, and this comment said 25 and 9
@@ -360,8 +362,8 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 35 since that region after 1.4.2's delay write, the same configuration with one delay changed.
   // 36 since that region after 1.4.3's composed device, section 285, which adds none either, and 37
   // since the region after section 286's tour skip, 39 since the reads either side of 1.4.4's
-  // composed activity, section 291, and 40 since the screen light timer at 20, section 292.
-  assert.equal(senders.filter((one) => Array.isArray(one) && one.length === 0).length, 40);
+  // composed activity, section 291, and 40 and 41 since the screen light timer at 20 and at 10.
+  assert.equal(senders.filter((one) => Array.isArray(one) && one.length === 0).length, 41);
   // **Four since the second compiled sample**, and the reason is the account rather than the request:
   // every configuration compiled from the account that carries favourite channels carries the sender
   // record too, whichever appliances are on it that day. Three of them were made deliberately for base
@@ -425,8 +427,8 @@ test('the list above covers exactly what the Python side writes a vector for', (
   // 70 since the Harmony 650's configuration region, section 282.
   // 71 since that region after 1.4.2's delay write, the compare base for the revert, and 72 since the
   // region after 1.4.3's composed device, and 73 since the region after section 286's tour skip,
-  // 75 since the reads either side of 1.4.4, section 291, and 76 since the 20 second timer, 292.
-  assert.equal(python.length, 76, 'the golden vectors, which is what `make golden` prints');
+  // 75 since the reads either side of 1.4.4, section 291, and 77 since the 20 and 10 second timers.
+  assert.equal(python.length, 77, 'the golden vectors, which is what `make golden` prints');
   assert.deepEqual([...CONTAINERS].sort(), python.sort());
 });
 

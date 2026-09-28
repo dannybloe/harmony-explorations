@@ -116,7 +116,7 @@ did, and the sequence ended up restated in this file and in `docs/status.md` as 
 
 Four documents now, and the rule is one job each.
 
-* **`todo.md` is the sequence and the only place it lives.** Six numbered chapters as markdown
+* **`todo.md` is the sequence and the only place it lives.** Seven numbered chapters as markdown
   checkboxes, sub-items indented, **one line each**. Either of us adds, ticks or removes an item
   without ceremony. **Do not restate the sequence anywhere else**, which is the failure being
   corrected: a summary of the plan is a copy with no test behind it, so it rots the way section 4
@@ -1044,7 +1044,7 @@ docs/status.md                  where the work stands: what reads, what the corp
                                 sections moved out of this file on 29 August 2026, because carrying
                                 them here cost about 12600 tokens in every session to restate
                                 claims that live in docs/findings.md with a test each
-todo.md                         THE sequence, and the only place it lives: six numbered chapters
+todo.md                         THE sequence, and the only place it lives: seven numbered chapters
                                 as markdown checkboxes, sub-items indented, one line each. Either
                                 of us adds, ticks or removes an item. It replaced docs/roadmap.md
                                 on 6 September 2026, which was doing four jobs and carried 1121 of
