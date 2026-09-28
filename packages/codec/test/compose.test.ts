@@ -92,6 +92,7 @@ import {
   taggedList,
   Container,
   compiledBlockWords,
+  bitmapReference,
 } from '../src/index.ts';
 
 /**
@@ -1640,7 +1641,7 @@ test('an activity composed and then put on the menu is reachable through all fou
 });
 
 test('the activity menu composer refuses what would render and start nothing',
-     skipUnless('one_config_unprogrammed', 'h600_config'), () => {
+     skipUnless('one_config_unprogrammed', 'h525_config'), () => {
   const c = parse(require_('one_config_unprogrammed'));
   // An entry past the end: the row draws and selects a keypad map that does not exist.
   const sets = handlerSets(c);
@@ -1649,15 +1650,285 @@ test('the activity menu composer refuses what would render and start nothing',
                 /past the \d+ that exist/);
   assert.throws(() => composeActivityMenuRow(c, 'Play Game', 0xff), /base slot 9 index/);
   assert.throws(() => composeActivityMenuRow(c, 'Play Game', -1), /base slot 9 index/);
-  // A model with no touch panel, where every pixel position here means nothing.
-  assert.throws(() => composeActivityMenuRow(parse(require_('h600_config')), 'Play Game', 0),
-                /Harmony One alone/);
+  // A model whose activities sit on keys rather than on a menu, where nothing here applies.
+  assert.throws(() => composeActivityMenuRow(parse(require_('h525_config')), 'Play Game', 0),
+                /Harmony One, 600, 650 and 700 alone/);
   // And a page that is already full, which is a refusal and not a second page: three rows fit and
   // adding a page needs a counter, a pool copy and a page count nobody has measured on this menu.
   let full = parse(require_('one_config_unprogrammed').slice());
   full = parse(composeActivityMenuRow(full, 'Two', 7).bytes);
   full = parse(composeActivityMenuRow(full, 'Three', 7).bytes);
   assert.throws(() => composeActivityMenuRow(full, 'Four', 7), /already draws 3 rows/);
+});
+
+/** The four arch 14 user configurations, one each; the second Harmony 700 one repeats the first. */
+const FOUR_SLOT_ACTIVITY_HOSTS = ['h650_config_region', 'h600_config', 'calibration_h600', 'h700_config'] as const;
+
+/** The glyph codes a text instruction draws, inline or through the string it names. */
+function drawnCodes(c: ReturnType<typeof parse>, one: { opcode: number; operands: Uint8Array; glyphs?: Uint8Array }): number[] {
+  if (one.glyphs !== undefined) return [...one.glyphs];
+  const at = c.blobOffsetOf((one.operands[4]! << 16) | (one.operands[3]! << 8) | one.operands[2]!)!;
+  const codes: number[] = [];
+  for (let k = at; c.blob[k] !== 0; k += 1) codes.push(c.blob[k]!);
+  return codes;
+}
+
+test('an arch 14 activity menu puts an activity on both buttons of a row and draws a full page picture of its own',
+     skipUnless(...FOUR_SLOT_ACTIVITY_HOSTS), () => {
+  // Section 289, what `composeFourSlotActivityRow` rests on, over every activity menu page of the four
+  // Harmony 600, 650 and 700 configurations.
+  let activities = 0;
+  let onOneRow = 0;
+  let rowLists = 0;
+  let beepless = 0;
+  let labels = 0;
+  let centred = 0;
+  const labelYs = new Set<number>();
+  let singlePages = 0;
+  let singleOnActivityScreens = 0;
+  let deviceSinglePages = 0;
+  let deviceSingleSharing = 0;
+  const allRowLists = new Set<string>();
+  let menusWithFull = 0;
+  let onePicture = 0;
+  let fullPictureOwn = 0;
+  for (const name of FOUR_SLOT_ACTIVITY_HOSTS) {
+    const c = parse(require_(name));
+    const lists = c.actionLists()!;
+    const pages = modePages(c);
+    const copies = pageListCopies(c);
+    const bindings = activityBindings(c);
+    const record = modeRecords(c)!.find((one) =>
+      one.pages.some((page) => page.address === pages[bindings[0]!.page]!.address))!;
+    // An activity's own screens are told by their title, which is the activity's menu label: the
+    // working screens are reached through base slot 14 and a deferred call, so the chain walk
+    // `activityNames` makes does not find them all.
+    const drawn = screenStrings(c, characterMap(c));
+    const menuLabels = new Set(drawn.filter((one) => record.pages.some((page) => page.program === one.program)
+      && (one.y === 35 || one.y === 79)).map((one) => one.text));
+    const deviceModes = new Set(deviceListRows(c).map((row) => row.mode));
+    const listModes = new Set(deviceListRows(c).map((row) =>
+      modeRecords(c)!.findIndex((one) => one.pages.some((page) => page.address === pages[row.page]?.address))));
+
+    // Every activity on both buttons of one row, top or bottom.
+    const scans = new Map<number, number[]>();
+    for (const one of bindings) scans.set(one.activity, [...(scans.get(one.activity) ?? []), one.scan]);
+    activities += scans.size;
+    for (const each of scans.values()) {
+      const row = [...each].sort((a, b) => a - b).join(',');
+      if (row === '2,8' || row === '9,34') onOneRow += 1;
+    }
+
+    const fullPictures = new Set<number>();
+    for (const page of record.pages) {
+      // Every row list, the page's and its copy's: select the entry, write 0 into the variable the
+      // device rows write 1 into, no beep.
+      const marker = deviceModeMarker(c)!.opcode;
+      const index = pages.findIndex((one) => one.address === page.address);
+      for (const list of [page.list, copies[index]! + c.flashBase]) {
+        for (const entry of taggedList(c, list)!.entries) {
+          rowLists += 1;
+          allRowLists.add(`${name}:${entry.operand}`);
+          const run = lists[entry.operand]!;
+          if (run.length === 2 && run[0]!.opcode === 0x1f && run[0]!.operand >> 8 === 0xff
+              && run[1]!.opcode === marker && run[1]!.operand === 0) beepless += 1;
+        }
+      }
+      // The labels: centred, at y 35 or 79, drawn before the closing bar.
+      const program = screenProgram(c, page.program)!;
+      const bar = program.findLastIndex((one) => one.opcode === 0x03);
+      let font = -1;
+      let labelsOnPage = 0;
+      program.forEach((one, k) => {
+        if (one.opcode === 0x10) font = one.operands[0]!;
+        if ((one.opcode !== 0x04 && one.opcode !== 0x05) || k >= bar || one.operands[1]! < 20) return;
+        labels += 1;
+        labelYs.add(one.operands[1]!);
+        // The top row's activity is labelled at 35 and the bottom row's at 79.
+        const tops = taggedList(c, page.list)!.entries.filter((entry) => (entry.tag & 0x3f) === 8);
+        const bottoms = taggedList(c, page.list)!.entries.filter((entry) => (entry.tag & 0x3f) === 9);
+        assert.equal(one.operands[1], labelsOnPage === 0 ? 35 : 79, `${name}: row ${labelsOnPage}'s label`);
+        assert.equal(tops.length, 1);
+        assert.ok(labelsOnPage === 0 || bottoms.length === 1);
+        labelsOnPage += 1;
+        const width = drawnCodes(c, one).reduce((sum, code) =>
+          sum + (glyphOf(c, fontSets(c)![font]!, code)?.width ?? 0), 0);
+        if (one.operands[0] === Math.floor((128 - width) / 2)) centred += 1;
+      });
+      // The picture: a page of one activity draws what a one item corner page draws; a full page
+      // draws one of the menu's own.
+      const picture = bitmapReference(program[0]!)!;
+      const held = taggedList(c, page.list)!.entries.length;
+      if (held === 2) {
+        singlePages += 1;
+        // Every other page drawing this picture is one of an activity's own screens.
+        const sharing = modeRecords(c)!.flatMap((other) => (other === record ? [] : other.pages
+          .filter((one) => {
+            const first = screenProgram(c, one.program)?.[0];
+            return first?.opcode === 0x02 && bitmapReference(first) === picture;
+          })));
+        if (sharing.length > 0 && sharing.every((one) => drawn.some((text) =>
+          text.program === one.program && menuLabels.has(text.text)))) singleOnActivityScreens += 1;
+        // And no one item device list or device mode page draws it.
+        modeRecords(c)!.forEach((other, mode) => {
+          if (!deviceModes.has(mode) && !listModes.has(mode)) return;
+          for (const one of other.pages) {
+            const corners = (taggedList(c, one.list)?.entries ?? [])
+              .filter((entry) => [8, 2, 9, 34].includes(entry.tag & 0x3f));
+            if (corners.length !== 1 || (corners[0]!.tag & 0x3f) !== 8) continue;
+            deviceSinglePages += 1;
+            const first = screenProgram(c, one.program)![0]!;
+            if (first.opcode === 0x02 && bitmapReference(first) === picture) deviceSingleSharing += 1;
+          }
+        });
+      }
+      if (held === 4) fullPictures.add(picture);
+    }
+    if (fullPictures.size > 0) menusWithFull += 1;
+    if (fullPictures.size === 1) onePicture += 1;
+    const outside = pages.filter((other) => !record.pages.some((page) => page.address === other.address))
+      .map((other) => screenProgram(c, other.program)?.[0])
+      .flatMap((first) => (first?.opcode === 0x02 ? [bitmapReference(first)] : []));
+    if ([...fullPictures].every((picture) => !outside.includes(picture))) fullPictureOwn += 1;
+  }
+  assert.equal(activities, 13);
+  assert.equal(onOneRow, 13, 'every activity on both buttons of one row');
+  assert.equal(rowLists, 52);
+  assert.equal(beepless, 52, 'every row list selects its entry and clears the device mode marker, with no beep');
+  assert.equal(allRowLists.size, 52, 'and each binding runs a list of its own');
+  assert.equal(labels, 13);
+  assert.equal(centred, 13, 'every label centred');
+  assert.deepEqual([...labelYs].sort((a, b) => a - b), [35, 79]);
+  assert.equal(singlePages, 3);
+  assert.equal(singleOnActivityScreens, 3, "a page of one activity draws a picture the activities' own screens draw");
+  assert.equal(deviceSinglePages, 6, "on the three configurations with a page of one activity");
+  assert.equal(deviceSingleSharing, 0, 'and no one item device page does');
+  assert.equal(menusWithFull, 4);
+  assert.equal(onePicture, 4, 'a menu\'s full pages draw one picture');
+  assert.equal(fullPictureOwn, 4, 'which no page outside the menu draws');
+});
+
+test('every arch 14 activity opens with its own start up screen and brackets its start with the delay step\'s variable',
+     skipUnless(...FOUR_SLOT_ACTIVITY_HOSTS), () => {
+  // Section 289, and the reason todo 1.4.4's composed activity has to write the variable: every command's
+  // inter device delay step runs under a condition on it, section 287.
+  const variables: number[] = [];
+  let activities = 0;
+  let bracketed = 0;
+  let startingScreen = 0;
+  for (const name of FOUR_SLOT_ACTIVITY_HOSTS) {
+    const c = parse(require_(name));
+    const lists = c.actionLists()!;
+    const sets = handlerSets(c)!;
+    const starts = new Set(sendPreludes(c).map((one) => one.conditionOperand & 0xff));
+    assert.equal(starts.size, 1, `${name}: one start variable`);
+    const start = [...starts][0]!;
+    variables.push(start);
+    const strings = screenStrings(c, characterMap(c));
+    for (const set of new Set(activityBindings(c).map((one) => one.set))) {
+      activities += 1;
+      const enter = taggedList(c, sets.addresses[set]!)!.entries.find((one) => one.tag === 1)!;
+      const list = lists[enter.operand]!;
+      if (list[1]?.opcode === 0x80 + start && list[1]?.operand === 1
+          && list.at(-1)?.opcode === 0x80 + start && list.at(-1)?.operand === 0) bracketed += 1;
+      const first = list[0]!;
+      if (first.opcode === 0x7e && modeRecords(c)![first.operand]!.pages.some((page) =>
+        strings.some((one) => one.program === page.program && one.text.startsWith('Starting')))) startingScreen += 1;
+    }
+  }
+  assert.deepEqual(variables, [52, 46, 47, 59]);
+  assert.equal(activities, 13);
+  assert.equal(startingScreen, 13, 'every enter list opens by entering a "Starting" screen');
+  assert.equal(bracketed, 13, 'then writes 1 into the variable, and ends writing 0 into it');
+});
+
+test('an activity row composed on a Harmony 650, 600 and 700 takes the bottom row and the full page picture',
+     skipUnless(...FOUR_SLOT_ACTIVITY_HOSTS), () => {
+  let composed = 0;
+  for (const name of FOUR_SLOT_ACTIVITY_HOSTS) {
+    const pristine = parse(require_(name));
+    const counter = stateVariables(pristine).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME));
+    const target = stateVariables(pristine).find((one) =>
+      one.index > firmwareStateVariableMax(pristine.architecture) && one.index !== counter?.index
+      && (one.record?.second ?? 0) >= 1)!;
+    const built = composeActivity(pristine, { label: 'LG kijken', targets: [{ variable: target.index, value: 1 }] });
+    const before = parse(built.bytes);
+    if (name === 'calibration_h600') {
+      // Its one page holds two activities, and a new page is not composed.
+      assert.throws(() => composeActivityMenuRow(before, built.label, built.set), /last page is full/);
+      continue;
+    }
+    composed += 1;
+    assert.throws(() => composeActivityMenuRow(before, built.label, built.set, { iconLike: 'TV' }),
+                  /draws no icon/);
+    const shown = composeActivityMenuRow(before, built.label, built.set);
+    const after = parse(shown.bytes);
+    const report = coverage(after);
+    assert.equal(report.accounted, report.total, `${name}: every byte is claimed`);
+    assert.deepEqual(report.overlaps, [], `${name}: and no byte twice`);
+    assert.ok(trailerAgrees(after), name);
+    assert.equal(roundTrip(after).equal, true, `${name}: the emitter reproduces the composed file`);
+
+    // Four row lists, the page's two and the copy's two, each select the entry and clear the marker
+    // the configuration's own rows clear.
+    const lists = after.actionLists()!;
+    assert.deepEqual(shown.scans, [9, 34]);
+    assert.equal(shown.rowLists, 4);
+    const record = modeRecords(after)![shown.menu]!;
+    const page = record.pages.at(-1)!;
+    assert.equal(shown.page, record.pages.length - 1);
+    const theirs = lists[taggedList(after, page.list)!.entries.find((one) => (one.tag & 0x3f) === 8)!.operand]!;
+    for (let k = 0; k < 4; k += 1) {
+      assert.deepEqual(lists[shown.rowList + k]!.map((one) => [one.opcode, one.operand]),
+                       [[0x1f, 0xff00 | built.set], [theirs[1]!.opcode, 0]]);
+    }
+    // The page and its copy, in the stored order, the new row on the bottom buttons.
+    const index = modePages(after).findIndex((one) => one.address === page.address);
+    for (const list of [page.list, pageListCopies(after)[index]! + after.flashBase]) {
+      const entries = taggedList(after, list)!.entries;
+      assert.deepEqual(entries.map((one) => one.tag & 0x3f), [9, 8, 34, 2], `${name}: stored order`);
+      assert.deepEqual(entries.filter((one) => (one.tag & 0x3f) === 9 || (one.tag & 0x3f) === 34)
+        .map((one) => lists[one.operand]![0]!.operand), [0xff00 | built.set, 0xff00 | built.set]);
+    }
+    // The reader: two more bindings, both the new activity's, on the new row, and it is an activity.
+    const added = activityBindings(after).filter((one) => one.set === built.set);
+    assert.deepEqual(added.map((one) => one.scan).sort((a, b) => a - b), [9, 34]);
+    assert.equal(activityBindings(after).length, activityBindings(before).length + 2);
+    assert.equal(handlerSetRoles(after)[built.set], 'activity');
+    // The label, centred at y 79, and the picture the menu's full pages draw.
+    const drawn = screenStrings(after, characterMap(after)).find((one) =>
+      one.program === page.program && one.text === 'LG kijken')!;
+    assert.equal(drawn.y, 79);
+    const label = screenProgram(after, page.program)!.find((one) => one.opcode === 0x05 && one.operands[1] === 79)!;
+    const width = drawnCodes(after, label).reduce((sum, code) =>
+      sum + (glyphOf(after, fontSets(after)![drawn.font]!, code)?.width ?? 0), 0);
+    assert.equal(drawn.x, Math.floor((128 - width) / 2));
+    const full = record.pages.find((one) => taggedList(after, one.list)!.entries.length === 4 && one !== page)!;
+    assert.equal(bitmapReference(screenProgram(after, page.program)![0]!),
+                 bitmapReference(screenProgram(after, full.program)![0]!));
+    for (const variant of renderVariants(after, page.program).variants) {
+      assert.equal(variant.page.glyphsMissing, 0);
+      assert.equal(variant.page.picturesMissing, 0);
+    }
+    // One font select before the labels and none between them, as on every compiled full page, where
+    // the page's own font spells the name. The Harmony 700's last page draws its label in a smaller
+    // font that has no L, G, k or j, so there the new label needs a font of its own; a name that font
+    // spells takes it and adds no select.
+    const selectsBetween = (bytes: Uint8Array): number => {
+      const grown = parse(bytes);
+      const last = modeRecords(grown)![shown.menu]!.pages.at(-1)!;
+      const program = screenProgram(grown, last.program)!;
+      const from = program.findIndex((one) => (one.opcode === 0x04 || one.opcode === 0x05) && one.operands[1] === 35);
+      return program.slice(from, program.findLastIndex((one) => one.opcode === 0x03))
+        .filter((one) => one.opcode === 0x10).length;
+    };
+    assert.equal(selectsBetween(shown.bytes), name === 'h700_config' ? 1 : 0, `${name}: the label font`);
+    if (name === 'h700_config') {
+      assert.equal(selectsBetween(composeActivityMenuRow(before, 'Play Audio', built.set).bytes), 0,
+                   'a name the page font spells shares it');
+    }
+  }
+  assert.equal(composed, 3);
 });
 
 test('a Harmony One turns a list page with the buttons beside the display, which no page binds',

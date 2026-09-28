@@ -2528,6 +2528,115 @@ function menuLayout(
   return undefined;
 }
 
+/**
+ * One more item on an arch 14 menu's last page: the page's list and its pool copy each gain the
+ * buttons the item is bound to, the label goes in above the page's closing bar, and a page that held
+ * one item may take the background its menu's full pages draw. The step both arch 14 menus share,
+ * the device list and the activity menu, per decision 17: two builders, and the steps they have in
+ * common written once.
+ *
+ * `firstRowList` is the first of the row lists the caller has already put in base slot 10, one per
+ * button bound on the page and another per button on the copy, **in that order**, copy first: the
+ * item takes the next corner, one list, or both buttons of the next row, two. What those lists run is
+ * the caller's, which is the whole difference between the two menus.
+ *
+ * `background` says when the one item page's picture is replaced. `'corners'` is the device list's
+ * rule, where a two row list's one device page already draws its full pages' picture, on both lists
+ * that have such a page, the 650's and `calibration_h600`'s; `'both'` replaces it in either layout,
+ * which is the activity menu's rule, only the two row layout occurring there: a page holding one
+ * activity draws a picture the activities' own screens draw too, 3 of 3 on the four arch 14 user
+ * configurations, and its full pages one picture of the menu's own, drawn by no page outside it, 4
+ * menus of 4, section 289.
+ */
+function growFourSlotMenu(
+  start: Container, menu: number, firstRowList: number, codes: readonly number[], font: number,
+  background: 'corners' | 'both',
+): { container: Container; bound: number } {
+  let current = start;
+  let nextRow = firstRowList;
+  const page = modeRecords(current)?.[menu]?.pages.at(-1);
+  const list = page === undefined ? undefined : taggedList(current, page.list);
+  if (page === undefined || list === undefined) throw new ComposeError('a menu lost its page');
+  const layout = menuLayout(current, list.entries);
+  if (layout === undefined) throw new ComposeError('a menu page changed layout');
+  if (layout.used >= layout.capacity) throw new ComposeError(`menu ${menu}'s last page is full`);
+  const entries = list.entries.length;
+  // The scans the new item is bound to: the next corner, or both buttons of the next row.
+  const scans = layout.rows
+    ? [...(FOUR_SLOT_ROWS[layout.used] as readonly number[])]
+    : [(FOUR_SLOT_ITEMS[layout.used] as (typeof FOUR_SLOT_ITEMS)[number]).scan];
+  // The list grows by the new entries, each running a row list of its own, and is written back
+  // whole in the stored order, so a new bottom right lands between top left and top right.
+  const grow = (listStart: number): void => {
+    const width = 4;
+    const end = listStart + 1 + width * entries;
+    const kept = Array.from({ length: entries }, (_, k) =>
+      current.blob.slice(listStart + 1 + width * k, listStart + 1 + width * (k + 1)));
+    const added = scans.map((scan) => {
+      const row = nextRow;
+      nextRow += 1;
+      return new Writer(width).u8((KEY_EVENT_PRESS << KEY_EVENT_SHIFT) | scan).u16(row)
+        .u8(ACTION_LIST_INDEX_OPCODE).bytes;
+    });
+    const all = [...kept, ...added].sort((a, b) =>
+      FOUR_SLOT_STORED_ORDER.indexOf((a[0] as number) & SCAN_MASK)
+        - FOUR_SLOT_STORED_ORDER.indexOf((b[0] as number) & SCAN_MASK));
+    const hole = relocate(current, end, width * added.length);
+    hole.bytes[listStart] = all.length;
+    all.forEach((one, k) => hole.bytes.set(one, listStart + 1 + width * k));
+    current = parse(hole.bytes);
+  };
+  const pageIndex = modePages(current).findIndex((one) => one.address === page.address);
+  const copyOff = pageListCopies(current)[pageIndex];
+  if (copyOff === undefined) throw new ComposeError('a menu page has no pool copy');
+  grow(copyOff);
+  const moved = modeRecords(current)?.[menu]?.pages.at(-1);
+  const listOff = moved === undefined ? undefined : current.blobOffsetOf(moved.list);
+  if (listOff === undefined) throw new ComposeError('a menu page list moved out of reach');
+  grow(listOff);
+
+  const target = modeRecords(current)?.[menu]?.pages.at(-1);
+  const program = target === undefined ? undefined : screenProgram(current, target.program);
+  const bar = program?.findLastIndex((one) => one.opcode === SCREEN_DRAW_IMAGE_AT);
+  if (target === undefined || program === undefined || bar === undefined || bar < 0) {
+    throw new ComposeError('a menu page program has no closing bar to draw above');
+  }
+  const labelSet = (fontSets(current) ?? [])[font];
+  if (labelSet === undefined) throw new ComposeError('the label font stopped reading');
+  const wide = textWidth(current, labelSet, codes);
+  const item = FOUR_SLOT_ITEMS[layout.used] as (typeof FOUR_SLOT_ITEMS)[number];
+  const [x, y] = layout.rows
+    ? [Math.floor((FOUR_SLOT_SCREEN_WIDTH - wide) / 2), TWO_ROW_LABEL_Y[layout.used] as number]
+    : [item.column === 0 ? FOUR_SLOT_LEFT_X : FOUR_SLOT_RIGHT_END - wide, FOUR_SLOT_LABEL_Y[item.row]];
+  // A font select only where the page has another font in effect at the bar: the compiler never
+  // selects the font already selected, 0 of the 820 selects on the four arch 14 configurations.
+  const inEffect = program.slice(0, bar).findLast((one) => one.opcode === OP_FONT)?.operands[0];
+  const drawn = new Uint8Array([
+    ...(inEffect === font ? [] : [OP_FONT, font]),
+    OP_TEXT_INLINE, x, y, ...codes, 0,
+  ]);
+  const insertAt = (program[bar] as ScreenInstruction).start;
+  const programHole = relocate(current, insertAt, drawn.length);
+  programHole.bytes.set(drawn, insertAt);
+  current = parse(programHole.bytes);
+
+  if (layout.used === 1 && (background === 'both' || !layout.rows)) {
+    // Read both after the insertion, so neither address is stale by it.
+    const full = modeRecords(current)?.[menu]?.pages.find((one) =>
+      (taggedList(current, one.list)?.entries.length ?? 0) === FOUR_SLOT_ITEMS.length);
+    const fullFirst = full === undefined ? undefined : screenProgram(current, full.program)?.[0];
+    const crossed = fullFirst?.opcode === OP_IMAGE ? bitmapReference(fullFirst) : undefined;
+    const last = modeRecords(current)?.[menu]?.pages.at(-1);
+    const lastFirst = last === undefined ? undefined : screenProgram(current, last.program)?.[0];
+    if (crossed === undefined || lastFirst?.opcode !== OP_IMAGE) {
+      throw new ComposeError(`menu ${menu} has no full page to take the background from`);
+    }
+    current.blob.set(new Writer(3).u24(crossed).bytes, lastFirst.start + lastFirst.length - 3);
+    current = parse(current.blob);
+  }
+  return { container: current, bound: nextRow - firstRowList };
+}
+
 function composeFourSlotDeviceScreen(
   c: Container, label: string, rows: readonly ComposeRow[], options: ComposeScreenOptions,
 ): ComposedScreen {
@@ -2764,91 +2873,14 @@ function composeFourSlotDeviceScreen(
   swapped.blob.set(new Writer(3).u24(entryAddress).bytes, grownTable.start + 3 + 3 * mode);
   current = parse(swapped.blob);
 
-  // 7. One more item on each menu's last page: its list and the list's copy grow by the corner the
-  // page fills next, the label goes in above the page's closing bar, and a page that held one item
-  // takes the crossed background its menu's full pages draw.
+  // 7. One more item on each menu's last page, which is a step `composeFourSlotActivityRow` shares.
+  // A corner page that held one device takes the crossed background its menu's full pages draw; a
+  // two row list's one device page already draws its full pages' picture, on the two lists that have
+  // one, so that layout changes nothing.
   for (const menu of found.menus) {
-    const page = modeRecords(current)?.[menu]?.pages.at(-1);
-    const list = page === undefined ? undefined : taggedList(current, page.list);
-    if (page === undefined || list === undefined) throw new ComposeError('a menu lost its page');
-    const layout = menuLayout(current, list.entries);
-    if (layout === undefined) throw new ComposeError('a menu page changed layout');
-    const entries = list.entries.length;
-    // The scans the new device is bound to: the next corner, or both buttons of the next row.
-    const scans = layout.rows
-      ? [...(FOUR_SLOT_ROWS[layout.used] as readonly number[])]
-      : [(FOUR_SLOT_ITEMS[layout.used] as (typeof FOUR_SLOT_ITEMS)[number]).scan];
-    // The list grows by the new entries, each running a row list of its own, and is written back
-    // whole in the stored order, so a new bottom right lands between top left and top right.
-    const grow = (listStart: number): void => {
-      const width = 4;
-      const end = listStart + 1 + width * entries;
-      const kept = Array.from({ length: entries }, (_, k) =>
-        current.blob.slice(listStart + 1 + width * k, listStart + 1 + width * (k + 1)));
-      const added = scans.map((scan) => {
-        const list = nextRow;
-        nextRow += 1;
-        return new Writer(width).u8((KEY_EVENT_PRESS << KEY_EVENT_SHIFT) | scan).u16(list)
-          .u8(ACTION_LIST_INDEX_OPCODE).bytes;
-      });
-      const all = [...kept, ...added].sort((a, b) =>
-        FOUR_SLOT_STORED_ORDER.indexOf((a[0] as number) & SCAN_MASK)
-          - FOUR_SLOT_STORED_ORDER.indexOf((b[0] as number) & SCAN_MASK));
-      const hole = relocate(current, end, width * added.length);
-      hole.bytes[listStart] = all.length;
-      all.forEach((one, k) => hole.bytes.set(one, listStart + 1 + width * k));
-      current = parse(hole.bytes);
-    };
-    const pageIndex = modePages(current).findIndex((one) => one.address === page.address);
-    const copyOff = pageListCopies(current)[pageIndex];
-    if (copyOff === undefined) throw new ComposeError('a menu page has no pool copy');
-    grow(copyOff);
-    const moved = modeRecords(current)?.[menu]?.pages.at(-1);
-    const listOff = moved === undefined ? undefined : current.blobOffsetOf(moved.list);
-    if (listOff === undefined) throw new ComposeError('a menu page list moved out of reach');
-    grow(listOff);
-
-    const target = modeRecords(current)?.[menu]?.pages.at(-1);
-    const program = target === undefined ? undefined : screenProgram(current, target.program);
-    const bar = program?.findLastIndex((one) => one.opcode === SCREEN_DRAW_IMAGE_AT);
-    if (target === undefined || program === undefined || bar === undefined || bar < 0) {
-      throw new ComposeError('a menu page program has no closing bar to draw above');
-    }
-    const labelSet = (fontSets(current) ?? [])[template.labelFont];
-    if (labelSet === undefined) throw new ComposeError('the label font stopped reading');
-    const wide = textWidth(current, labelSet, menuCodes);
-    const item = FOUR_SLOT_ITEMS[layout.used] as (typeof FOUR_SLOT_ITEMS)[number];
-    const [x, y] = layout.rows
-      ? [Math.floor((FOUR_SLOT_SCREEN_WIDTH - wide) / 2), TWO_ROW_LABEL_Y[layout.used] as number]
-      : [item.column === 0 ? FOUR_SLOT_LEFT_X : FOUR_SLOT_RIGHT_END - wide, FOUR_SLOT_LABEL_Y[item.row]];
-    // A font select only where the page has another font in effect at the bar: the compiler never
-    // selects the font already selected, 0 of the 820 selects on the four arch 14 configurations.
-    const inEffect = program.slice(0, bar).findLast((one) => one.opcode === OP_FONT)?.operands[0];
-    const drawn = new Uint8Array([
-      ...(inEffect === template.labelFont ? [] : [OP_FONT, template.labelFont]),
-      OP_TEXT_INLINE, x, y, ...menuCodes, 0,
-    ]);
-    const insertAt = (program[bar] as ScreenInstruction).start;
-    const programHole = relocate(current, insertAt, drawn.length);
-    programHole.bytes.set(drawn, insertAt);
-    current = parse(programHole.bytes);
-
-    if (!layout.rows && layout.used === 1) {
-      // Read both after the insertion, so neither address is stale by it. A two row list's pages all
-      // draw one picture whatever they hold, the crossed one on the 650 and 700s and one of its own
-      // on the 600, so only the corner layout changes.
-      const full = modeRecords(current)?.[menu]?.pages.find((one) =>
-        (taggedList(current, one.list)?.entries.length ?? 0) === perPage);
-      const fullFirst = full === undefined ? undefined : screenProgram(current, full.program)?.[0];
-      const crossed = fullFirst?.opcode === OP_IMAGE ? bitmapReference(fullFirst) : undefined;
-      const last = modeRecords(current)?.[menu]?.pages.at(-1);
-      const lastFirst = last === undefined ? undefined : screenProgram(current, last.program)?.[0];
-      if (crossed === undefined || lastFirst?.opcode !== OP_IMAGE) {
-        throw new ComposeError(`menu ${menu} has no full page to take the crossed background from`);
-      }
-      current.blob.set(new Writer(3).u24(crossed).bytes, lastFirst.start + lastFirst.length - 3);
-      current = parse(current.blob);
-    }
+    const grown = growFourSlotMenu(current, menu, nextRow, menuCodes, template.labelFont, 'corners');
+    current = grown.container;
+    nextRow += grown.bound;
   }
 
   if (nextRow !== rowList + rowBindings) {
@@ -2865,7 +2897,8 @@ function composeFourSlotDeviceScreen(
  *
  * The shape of an activity row is the device list row's with one instruction swapped: beep, then
  * **select a base slot 9 entry** where a device row enters a mode, then the same per configuration
- * marker variable, written **0** where a device row writes 1. Section 275.
+ * marker variable, written **0** where a device row writes 1. Section 275. On arch 14 (Harmony 600,
+ * 650 and 700) there is no beep, as on that architecture's device rows, section 289.
  *
  * Read rather than tabulated for the same reason `deviceModeMarker` is: which variable marks the
  * top level screen differs per configuration, so a composer carrying a number would write a menu row
@@ -2873,14 +2906,20 @@ function composeFourSlotDeviceScreen(
  */
 function activityMenus(c: Container): { menu: number | undefined; marker: Instruction | undefined } {
   const lists = c.actionLists() ?? [];
+  // The row without its beep: an arch 14 (Harmony 600, 650 and 700) row carries none and an arch 12
+  // (Harmony One) row opens with one, section 289.
+  const bodyOf = (list: readonly Instruction[] | undefined): readonly Instruction[] | undefined => {
+    if (list === undefined) return undefined;
+    if (c.architecture === 14) return list;
+    return list[0]?.opcode === BEEP_OPCODE ? list.slice(1) : undefined;
+  };
   const endOfRow = (index: number): Instruction | undefined => {
-    const list = lists[index];
-    if (list === undefined || list.length !== 3) return undefined;
-    if (list[0]?.opcode !== BEEP_OPCODE) return undefined;
-    const select = list[1] as Instruction;
+    const body = bodyOf(lists[index]);
+    if (body === undefined || body.length !== 2) return undefined;
+    const select = body[0] as Instruction;
     if (select.opcode !== SELECT_BINDING_SET) return undefined;
     if ((select.operand & SELECT_BINDING_SET_MASK) !== SELECT_BINDING_SET_MASK) return undefined;
-    return list[2] as Instruction;
+    return body[1] as Instruction;
   };
   const records = modeRecords(c) ?? [];
   let menu: number | undefined;
@@ -2894,7 +2933,7 @@ function activityMenus(c: Container): { menu: number | undefined; marker: Instru
         if (entry.opcode !== ACTION_LIST_INDEX_OPCODE) continue;
         const found = endOfRow(entry.operand);
         if (found === undefined) continue;
-        sets.add((lists[entry.operand]?.[1] as Instruction).operand & 0xff);
+        sets.add((bodyOf(lists[entry.operand])?.[0] as Instruction).operand & 0xff);
         end = found;
       }
     }
@@ -3065,10 +3104,24 @@ export interface ComposedActivityRow {
   menu: number;
   /** Which page of that menu gained the row, counting from zero. */
   page: number;
-  /** The base slot 10 list the row runs: beep, select the entry, clear the device mode marker. */
+  /**
+   * The base slot 10 list the row runs: beep, select the entry, clear the device mode marker, and on
+   * arch 14 (Harmony 600, 650 and 700) the first of `rowLists`, which carry no beep.
+   */
   rowList: number;
   /** The scan code the new row answers to, which is its position in the page's hit rectangles. */
   scan: number;
+  /**
+   * Every scan the row answers to: `scan` alone on arch 12 (Harmony One), and on arch 14 (Harmony
+   * 600, 650 and 700) both buttons of the row, top or bottom, section 273.
+   */
+  scans: number[];
+  /**
+   * How many row lists were written from `rowList` on: one on arch 12, where every binding shares
+   * it, and on arch 14 one per button on the page and another per button on its copy, as the compiler
+   * writes them, section 285.
+   */
+  rowLists: number;
 }
 
 export interface ComposeActivityRowOptions {
@@ -3096,10 +3149,12 @@ export interface ComposeActivityRowOptions {
  * `composeMenuPage` does. See `ACTIVITY_ROWS` for the measured layout and section 275 for the
  * evidence.
  *
- * **Arch 12 (Harmony One) only**, decision 16's question answered: the row's own three instructions
- * are architecture neutral, and the pixel grid, the hit rectangles and the screen program around
- * them are that model's. Arch 14 (Harmony 600 and 700) has no touch panel at all, and arch 9
- * (Harmony 525) binds its activities to keys rather than to a list.
+ * **Arch 12 (Harmony One) here, and arch 14 (Harmony 600, 650 and 700) in
+ * `composeFourSlotActivityRow`**, decision 16's question answered: the pixel grid, the hit rectangles
+ * and the screen program around a row are the Harmony One's, and arch 14 has no touch panel at all,
+ * its menu being section 289's two row layout, so the two share nothing but the menu finder and this
+ * function's refusals. Arch 8 (Harmony 880 and 885) and arch 9 (Harmony 525) are refused, the 525
+ * binding its activities to keys rather than to a list.
  *
  * **It fills a page rather than adding one.** A menu's last page is grown to the next row slot, and
  * a menu whose last page already holds three is refused rather than given a fourth page, because a
@@ -3110,8 +3165,8 @@ export interface ComposeActivityRowOptions {
 export function composeActivityMenuRow(
   c: Container, label: string, set: number, options: ComposeActivityRowOptions = {},
 ): ComposedActivityRow {
-  if (c.architecture !== 12) {
-    throw new ComposeError('the activity menu is composed for the Harmony One alone');
+  if (c.architecture !== 12 && c.architecture !== 14) {
+    throw new ComposeError('the activity menu is composed for the Harmony One, 600, 650 and 700 alone');
   }
   if (!Number.isInteger(set) || set < 0 || set >= 0xff) {
     // 0xff is the mask the selector's own operand carries, so an entry there reads as no entry.
@@ -3128,6 +3183,7 @@ export function composeActivityMenuRow(
   if (menu === undefined || marker === undefined) {
     throw new ComposeError('no activity menu found to add a row to');
   }
+  if (c.architecture === 14) return composeFourSlotActivityRow(c, label, set, menu, marker, options);
 
   let current = c;
   const recordOf = (): ModeRecord => {
@@ -3263,7 +3319,102 @@ export function composeActivityMenuRow(
   programHole.bytes.set(drawn.bytes, closing.start);
   current = parse(programHole.bytes);
 
-  return { bytes: restamped(current.blob), menu, page: pageIndexOf(), rowList, scan };
+  return { bytes: restamped(current.blob), menu, page: pageIndexOf(), rowList, scan, scans: [scan], rowLists: 1 };
+}
+
+/**
+ * The activity menu row on arch 14 (Harmony 600, 650 and 700), section 289: one row on the menu's
+ * last page, bound to both buttons of that row, its label centred.
+ *
+ * **The menu is the device list's two row layout**, measured on all four arch 14 user configurations:
+ * two activities to a page, the top one on scans 8 and 2 and the bottom one on 9 and 34, each button
+ * running a list of its own and the page's pool copy another, the label centred at y 35 or 79 before
+ * the page's closing bar. So the growth is `growFourSlotMenu`, the step the device list uses, and
+ * what is this builder's is the row's two instructions and one rule about the picture:
+ *
+ * * a row selects the activity's base slot 9 entry and writes 0 into the marker variable, with **no
+ *   beep**, where an arch 12 row opens with one;
+ * * **a full page draws a picture of the menu's own**, and a page holding one activity one the
+ *   activities' own screens draw too, where a two row device list's one device page draws its full
+ *   pages' picture. So a page that grows from one activity to two takes its menu's full page picture,
+ *   which means a menu of one page and one activity is refused: there is no full page to take it from.
+ *
+ * No icon, since the arch 14 menu draws none, so `iconLike` is refused rather than ignored. A full last
+ * page is refused too: a new page needs a page counter on every page of the menu, added where the menu
+ * has one page and renumbered otherwise, which is `todo.md` 1.2.2's arch 12 work and not built here.
+ */
+function composeFourSlotActivityRow(
+  c: Container, label: string, set: number, menu: number, marker: Instruction,
+  options: ComposeActivityRowOptions,
+): ComposedActivityRow {
+  if (options.iconLike !== undefined) {
+    throw new ComposeError('an arch 14 activity menu draws no icon, so there is none to copy');
+  }
+  const record = modeRecords(c)?.[menu];
+  const page = record?.pages.at(-1);
+  if (record === undefined || page === undefined) throw new ComposeError('the activity menu has no page');
+  const layout = menuLayout(c, taggedList(c, page.list)?.entries ?? []);
+  if (layout === undefined || !layout.rows) {
+    throw new ComposeError("the activity menu's last page is not the two row layout");
+  }
+  if (layout.used >= layout.capacity) {
+    throw new ComposeError("the activity menu's last page is full, and a new menu page is not composed "
+      + 'on arch 14');
+  }
+
+  // The label's font: the one in effect at the closing bar of the page being grown, which is its
+  // existing label's, unless that font cannot spell the name. **One font per page** is the compiler's
+  // rule, 5 of 5 full pages on the four arch 14 configurations drawing both labels in one, and the
+  // Harmony 700's last page is why it is read off that page and not the first: its lone label is in a
+  // smaller font than the menu's others, section 289. Spelled before anything moves.
+  const map = characterMap(c);
+  if (map === undefined) throw new ComposeError('the config draws no text this can spell from');
+  const lastProgram = screenProgram(c, page.program) ?? [];
+  const bar = lastProgram.findLastIndex((one) => one.opcode === SCREEN_DRAW_IMAGE_AT);
+  const preferred = lastProgram.slice(0, bar < 0 ? 0 : bar)
+    .findLast((one) => one.opcode === OP_FONT)?.operands[0];
+  if (preferred === undefined) throw new ComposeError("the activity menu's last page selects no label font");
+  const font = fontThatSpells(c, map, label, preferred);
+  const fontSet = (fontSets(c) ?? [])[font];
+  if (fontSet === undefined) throw new ComposeError(`the config does not carry font ${font}`);
+  const codes = codesFor(map, c, fontSet, label, font);
+  // The composer's own conservative limit, the width a corner layout's labels span, 3 to 125. The
+  // compiler draws a name too wide for the label font whole in a smaller font, and a centred label
+  // reaches 128 on one two row device list, section 289; this refuses instead.
+  const wide = textWidth(c, fontSet, codes);
+  if (wide > FOUR_SLOT_RIGHT_END - FOUR_SLOT_LEFT_X) {
+    throw new ComposeError(`'${label}' is ${wide} pixels wide and a row holds `
+      + `${FOUR_SLOT_RIGHT_END - FOUR_SLOT_LEFT_X}: give it a shorter label`);
+  }
+
+  // 1. The row lists: select the entry, write 0 into the marker. One per button on the page and one
+  // per button on its copy, identical, below base slot 10's table with their pointers appended.
+  const scans = [...(FOUR_SLOT_ROWS[layout.used] as readonly number[])];
+  const rowLists = 2 * scans.length;
+  const actionSlot = archSlot(14, ACTION_TABLE_SLOT);
+  const actionTable = c.pointerArrayAt(actionSlot);
+  if (actionTable === undefined) throw new ComposeError('base slot 10 does not read as a table');
+  const rowList = actionTable.values.length;
+  const oneRow = new Writer(1 + 3 * 2).u8(2)
+    .u16(SELECT_BINDING_SET_MASK | set).u8(SELECT_BINDING_SET)
+    .u16(ACTIVITY_MENU_MARKER_VALUE).u8(marker.opcode).bytes;
+  const rowAt = actionTable.start;
+  const rowHole = relocate(c, rowAt, oneRow.length * rowLists);
+  for (let k = 0; k < rowLists; k += 1) rowHole.bytes.set(oneRow, rowAt + k * oneRow.length);
+  let current = parse(appendTableEntries(parse(rowHole.bytes), actionSlot,
+    Array.from({ length: rowLists }, (_, k) => c.flashBase + rowAt + k * oneRow.length)));
+
+  // 2. The page grows by the row, its copy first, and a page that held one activity takes the
+  // picture its menu's full pages draw.
+  const grown = growFourSlotMenu(current, menu, rowList, codes, font, 'both');
+  if (grown.bound !== rowLists) {
+    throw new ComposeError(`${grown.bound} row lists bound against the ${rowLists} written`);
+  }
+  current = grown.container;
+  const pageIndex = (modeRecords(current)?.[menu]?.pages.length ?? 0) - 1;
+  return {
+    bytes: restamped(current.blob), menu, page: pageIndex, rowList, scan: scans[0] as number, scans, rowLists,
+  };
 }
 
 /**

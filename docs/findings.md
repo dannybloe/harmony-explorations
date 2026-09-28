@@ -37737,3 +37737,146 @@ to it goes out without the wait its variable holds.
 * `packages/codec/test/compose.test.ts`: the shape and the tables on all five configurations, and the
   composed 650 device read back through the same readers; the four host test asserts the on list.
 * `docs/config-format.md`, `todo.md`, `docs/status.md` and the `writing-a-config` skill.
+
+## 289. An arch 14 activity menu is the two row device list with its own rows, and a composed activity now gets a row on it
+
+**Todo 1.2.3.** `composeActivityMenuRow` built a Harmony One row and refused everything else, so an
+activity composed for a Harmony 600, 650 or 700 existed and could be selected and nothing on the screen
+reached it. Section 273 had established that on arch 14 an activity is bound by two keys on one page.
+What the page around those two keys looks like is read here, and composed.
+
+### The menu, on the four arch 14 user configurations
+
+`h650_config_region`, `h600_config`, `calibration_h600` and `h700_config`; the second 700 configuration
+repeats the first and is left out. Each has one activity menu, of two, two, one and three pages.
+
+| | count |
+|---|---|
+| activities on the menu | 13 |
+| on both buttons of one row, 8 and 2 on top or 9 and 34 below | 13 of 13 |
+| row lists, a page's and its copy's, `[0x1F 0xFF00 | entry, 0x80 + v := 0]` with no beep | 52 of 52 |
+| labels at y 35 or 79 and `x = floor((128 - width) / 2)` | 13 of 13 |
+| pages of one activity drawing a picture the activity's own screens draw too | 3 of 3 |
+| one item device list and device mode pages drawing that picture, on the three with such a page | 0 of 6 |
+| menus whose full pages draw one picture, drawn by no page outside the menu | 4 of 4 |
+
+`v` is the configuration's own device mode marker, 31, 27, 28 and 37, the variable section 285's device
+rows write 1 into, on 4 of 4. The page stores its entries 9, 8, 34, 2 as section 285's device pages do,
+the page counter sits where the corner pages put theirs and the "Devices" word where the activities' own
+screens put theirs, and each binding runs a row list of its own, the page's copy another, 52 distinct of
+52, as section 285 measured for the device lists.
+
+**So the activity menu is the device list's two row layout**, with the row's two instructions changed
+and **one difference in the pictures**. A two row device list whose last page holds one device draws
+the full pages' picture on it, on both lists that have such a page, the 650's and `calibration_h600`'s,
+the 600's and the 700's having none. An activity menu draws a picture of its own on a full page and, on
+a page of one activity, a picture it shares with the activities' own screens and with no device page. A
+row added to a page of one activity therefore has to take the full page's picture, or the page shows two
+activities on the background drawn for one.
+
+### Composed
+
+The device list's step that grows a menu's last page by one item is now its own function,
+`growFourSlotMenu`, and both builders call it: decision 17's two builders sharing a step. It takes when a
+one item page's picture is replaced as an argument: the device list's in the corner layout only, the
+activity menu's in either, of which only the two row one occurs. `composeFourSlotActivityRow` writes the four row lists, one per button on the page
+and on its copy, and calls it; `activityMenus` reads a row with no beep on arch 14; `composeActivityMenuRow`
+dispatches to it there.
+
+It refuses a full last page, which is `calibration_h600`'s only one, since a new page needs a page
+counter on every page of the menu, added where the menu has one page, as that one has, and renumbered
+otherwise; a menu of one page and one activity, which has no full page to take the picture from; a label
+wider than 122 pixels; and an icon, since the menu draws none. **The 122 is the composer's own
+conservative limit**, the span a corner layout's labels use: the compiler draws a name too wide for the
+label font whole in a smaller font, "Play Audio Cassette" in font 12 on the 700's menu, and a centred
+label reaches 128 pixels on `calibration_h600`'s two row device list, so names from 123 to 128 pixels are
+refused here and would fit. **The label's font is the page's own**: both labels of a full page are in
+one font on 5 of 5 compiled full pages, so the new label takes the font in effect at the closing bar of
+the page it joins, or the nearest in height that spells the name when that one cannot. The Harmony
+700's last page is the case that decides it: its lone label is in font 12, where the menu's other labels
+are in font 7, and font 12 has no L, G, k or j. So "LG kijken" gets a font select of its own there, which
+no compiled full page carries, and a name font 12 spells gets none.
+
+On the 650, the 600 and the 700 an activity composed and put on the menu reads back as an activity on
+both bottom buttons of the last page, with its label centred at y 79, the page's picture the full
+page's, the list and its copy in the stored order, every byte accounted for with no overlap, the checksum
+agreeing and the emitter round tripping. `compose-activity.ts` on the 650's configuration as it is now,
+with the composed LG television on it, run as `--label 'LG kijken' --targets 28=1 --no-screen`, which
+switches one device on and writes the other five off, adds 117 bytes and touches 13 erase blocks; the
+bytes move with the label and the targets and the blocks did not. It needs
+`--no-screen` there, because the activity's own screens are composed for the Harmony One alone.
+
+**That script's erase block count had section 288's defect** and is fixed the same way: it stepped from
+the end of the input rather than from the block that end falls in.
+
+### Every arch 14 activity brackets its start with section 287's variable
+
+Measured for the composed activity todo 1.4.4 needs, on all 13 activities of the four configurations:
+the enter list opens by entering a start up screen of the activity's own, drawing "Starting" and its
+name, then writes 1 into the variable section 287's condition tests, and its last instruction writes 0
+into it, 13 of 13, the variable being 52, 46, 47 and 59. **That is the evidence section 287's start
+sequence reading already rested on**, the 650's three being among the lists it counted, so this adds the
+count and not a new route. What it means for a composer is the consequence: an activity whose enter list
+does not write that variable runs every command's inter device delay step with the condition false, so
+that delay does not act. **The power on delay is called with no such condition in front of it**, from
+the power variable's on list, section 288, so whether it depends on the variable is unread.
+
+### Scope, decision 16
+
+Arch 14, three models and four configurations, the configuration only, no image read. The 600's screen
+is monochrome and the 650's colour, which todo 1.2.3 states and this section did not measure, and the
+composer copies both configurations' own pictures rather than drawing any, which is why one builder
+serves both. **Nothing here is measured on hardware**; the
+row is first pressed in todo 1.4.4.
+
+### The reviewers
+
+The blind re-measure reproduced every count in the table per configuration, found the 52 row lists
+distinct and each page's copy agreeing with it position by position, and found the composed page matching
+the compiled full pages with every existing page, list and binding unchanged apart from address shifts.
+**One departure it found was real and is fixed**: the composer took the label font off the menu's first
+page, so on the Harmony 700 it drew the new label in font 7 beside a label in font 12, two fonts on one
+page where every compiled full page has one; it takes the page's own font now, above. Two further
+differences from the compiler it reported are left as they are. The four row lists are appended to base
+slot 10, so a grown page's lists are not numbered consecutively in stored order as a compiled page's
+are, 8 of 8; section 285's device rows are appended the same way and were pressed on the 650 and work.
+And the new label is drawn on the menu alone, where every compiled label is drawn on the activity's own
+screens as well, which is todo 1.2.9.
+
+The prose audit found the byte count stated without the targets behind it, a test title naming a
+comparison its body does not make, two checks folded into one count, a comparison against the input
+before the activity rather than after it, and a docstring naming arch 9 alone as refused where arch 8 is
+too; each is corrected. Its second pass found more, and each was re-measured here before it was
+changed: **this section's first draft called the one activity picture the one item corner picture**,
+which is true of the activities' own screens and of none of the 6 one item device pages beside it, so the table
+and the prose say which now; the 122 pixel limit was given as the compiler's where it is ours; the
+refusal of a full page gave renumbering a counter as its reason on the one menu that has none; the start
+sequence observation was left uncounted where it holds on 13 of 13, and was said to gate both delays
+where it gates one; `docs/status.md` had the menu's own picture on the wrong page; and the test counted
+a one item picture without the negative count against the device pages, and the row lists without their
+distinctness. **Its first objection was checked and does not hold**: it read the 600's two row
+device list as drawing the one item picture on a one device page, and the page it measured is the 600's
+activity menu, mode 104, whose rows select an activity; the 600's two row device list has two full pages
+and no other. The contrast above is worded now to what was measured, which is two lists.
+
+### Sources
+
+The four configurations; sections 69 for the page copies, 273 for the two bindings, 275 for the Harmony
+One's menu and marker, 285 for the arch 14 layouts and 287 for variable 52. The firmware was not read,
+and Logitech's client was not consulted, for section 278's reason.
+
+### Falsification
+
+An arch 14 activity menu page whose activity is bound to anything but both buttons of one row, whose
+row lists beep, or whose one activity page draws its menu's full page picture; or, on hardware, a
+composed row that shows its label and starts nothing when either of its buttons is pressed.
+
+### Where it lands
+
+* `packages/codec/src/compose.ts`: `growFourSlotMenu`, `composeFourSlotActivityRow`, and
+  `ComposedActivityRow` gains `scans` and `rowLists`.
+* `packages/codec/bin/compose-activity.ts`: checks every binding the row makes, and the block count.
+* `packages/codec/test/compose.test.ts`: the menu's shape on all four configurations, the start
+  variable around every activity's enter list, and the composed row on three of them with the fourth's
+  refusal.
+* `docs/config-format.md`, `todo.md` and `docs/status.md`.

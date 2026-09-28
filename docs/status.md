@@ -563,7 +563,7 @@ finding.
 
 `todo.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 288<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 289<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -827,6 +827,19 @@ figures common to both carry `fact:` markers, so `make facts` moves every copy t
 cannot drift apart; what a reader should not expect is two independent statements of one measurement.
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
+
+**And a composed activity gets a place on the activity menu of a Harmony 600, 650 or 700, section
+289.** Those menus show two activities to a page, one per row, and each activity answers to both
+buttons of its row. That turns out to be exactly the two row layout the device list already uses, so
+the composer now shares the step that adds an item to a page between the two menus. Only two things
+differ: pressing the row selects the activity rather than opening a device, and a full page has a
+background of its own, which a page holding one activity has to take once a second activity joins it. Built and
+read back on the 650, 600 and 700 configurations with every check passing; the calibration 600 is
+refused because its only page is full and adding a page is not built. It has not been pressed on a
+remote yet. Looking at the activities for this also showed that every one of the thirteen opens with a
+"Starting" screen of its own, and switches on, for the length of its start up, the setting every
+command's delay step tests. So the composed activity will have to do the same, or the delay between
+commands built earlier will not act; whether the power on delay needs it too is not known.
 
 **And a device composed for the Harmony 600, 650 or 700 now waits between commands the way Logitech's
 own do, section 287.** Every command their compiler writes for those models first runs a small delay

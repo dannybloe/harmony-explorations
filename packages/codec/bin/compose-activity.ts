@@ -64,7 +64,7 @@ import {
   worstQueueRun,
 } from '../src/index.ts';
 
-/** The erase block a Harmony One clears in one go, which is what a write is counted in. */
+/** The erase block a Harmony One, 525 and 650 clear in one go, which is what a write is counted in. */
 const ERASE_BLOCK = 0x10000;
 
 function argument(name: string): string | undefined {
@@ -116,7 +116,7 @@ targets.push(...othersOff);
 const counter = stateVariables(before).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME));
 const wasBindings = activityBindings(before);
 process.stdout.write(`${input}: ${before.blob.length} bytes, arch ${before.architecture}, `
-  + `${wasBindings.length} activities, counter values 0 to ${counter?.record?.second}, `
+  + `${new Set(wasBindings.map((one) => one.activity)).size} activities, counter values 0 to ${counter?.record?.second}, `
   + `idle ${counter?.record?.first}\n`);
 
 // What the arguments name, spelled out, because a wrong variable or a wrong list produces a
@@ -159,11 +159,17 @@ const after = parse(saveEdits(parse(shown.bytes), [], builtAt).bytes);
 
 // Read the result back with the same readers rather than trusting the composition.
 const nowBindings = activityBindings(after);
-if (nowBindings.length !== wasBindings.length + 1) fail('the activity did not arrive on the menu');
-const added = nowBindings.find((one) => one.set === built.set);
-if (added === undefined) fail('the new keypad map is bound to nothing');
+// One binding per scan the row answers to: one on a Harmony One, both buttons of a row on a Harmony
+// 600, 650 or 700, section 273, each running one of the row lists that were written.
+const added = nowBindings.filter((one) => one.set === built.set);
+if (added.length === 0) fail('the new keypad map is bound to nothing');
+if (nowBindings.length !== wasBindings.length + shown.scans.length) {
+  fail(`${nowBindings.length - wasBindings.length} bindings arrived for a row on ${shown.scans.length} scans`);
+}
 if (handlerSetRoles(after)[built.set] !== 'activity') fail('the new entry does not read as an activity');
-if (added.scan !== shown.scan || added.list !== shown.rowList) {
+const composedLists = new Set(Array.from({ length: shown.rowLists }, (_, k) => shown.rowList + k));
+if (added.map((one) => one.scan).sort((a, b) => a - b).join() !== [...shown.scans].sort((a, b) => a - b).join()
+    || !added.every((one) => composedLists.has(one.list))) {
   fail('the menu row the reader finds is not the one that was composed');
 }
 if (screen !== undefined && activityScreens(after)?.screens.get(built.activity) !== screen.mode) {
@@ -183,8 +189,8 @@ const grown = handlerSets(after);
 
 process.stdout.write(`stamped ${builtAt}\n`);
 process.stdout.write(`${after.blob.length} bytes, activity number ${built.activity}, keypad map `
-  + `entry ${built.set} of ${grown?.addresses.length}, menu row on scan ${shown.scan} of mode `
-  + `${shown.menu} page ${shown.page}, running list ${shown.rowList}\n`);
+  + `entry ${built.set} of ${grown?.addresses.length}, menu row on scan ${shown.scans.join(' and ')} of mode `
+  + `${shown.menu} page ${shown.page}, running lists ${shown.rowList} to ${shown.rowList + shown.rowLists - 1}\n`);
 if (screen !== undefined) {
   process.stdout.write(`working screen mode ${screen.mode}, pads on scans [${screen.scans.join(', ')}], `
     + `Devices key list ${screen.devicesList}, start up screen mode ${screen.startupMode}, `
@@ -203,8 +209,12 @@ for (let at = 0; at < shorter; at += 1) {
   blocks.add(block);
   at = block + ERASE_BLOCK - 1;
 }
-for (let at = shorter; at < after.blob.length; at += ERASE_BLOCK) {
-  blocks.add(Math.floor(at / ERASE_BLOCK) * ERASE_BLOCK);
+// Every block the growth reaches, counted from the block the shorter one ends in: stepping from
+// `shorter` itself misses the last block whenever the tail crosses a boundary, as it did in
+// `compose-device.ts`.
+for (let block = Math.floor(shorter / ERASE_BLOCK) * ERASE_BLOCK; block < after.blob.length;
+  block += ERASE_BLOCK) {
+  blocks.add(block);
 }
 const first = Math.min(...blocks);
 process.stdout.write(`the write would touch ${blocks.size} erase block(s) of `

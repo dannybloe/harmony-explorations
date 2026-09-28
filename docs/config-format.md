@@ -673,6 +673,25 @@ pages all draw one picture, the corner lists' crossed one on the 650 and 700s an
 600, and carry no queued `0x73`. **Every row list is bound once**: 300 of 300, none shared between two
 buttons or between a page and its copy.
 
+**The activity menu is the two row layout too**, section 289, on the four configurations: each
+activity on both buttons of one row, 13 of 13, its label centred at y 35 or 79, 13 of 13, and each
+binding and each copy's binding running a row list of its own, 52 of 52:
+
+```
+u8 2
+u16 0xFF00 | entry;  u8 0x1F       select the activity's base slot 9 entry
+u16 0;               u8 0x80 + v   write 0 into the device mode marker, the device rows' v, 4 of 4
+```
+
+**Its pictures differ from the device list's**: a page of one activity draws a picture the activities'
+own screens draw too, 3 of 3, and none of the 6 one item device pages beside it, and its full pages one picture of
+the menu's own that no page outside the menu draws, 4 menus of 4. So a page growing from one activity to
+two takes the full page's picture.
+
+**Every arch 14 activity's enter list opens with its own start up screen**, "Starting" and its name,
+then writes 1 into the variable every command's delay step tests, and ends by writing 0 into it, 13 of
+13, section 289. So the inter device delay acts only inside an activity's start.
+
 **A corner page carries its own chrome**, with no call to a shared program:
 
 ```
