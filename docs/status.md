@@ -828,15 +828,17 @@ cannot drift apart; what a reader should not expect is two independent statement
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
 
-**And a device can be put onto a Harmony 650's screen, section 285, not yet written.** The 650, 600
+**And a device can be put onto a Harmony 650's screen, section 285, and it works.** The 650, 600
 and 700 draw their screens differently from the Harmony One: four labels in the corners, one beside
 each button around the display, and a device list that is sometimes two rows instead. The composer now
 builds that, and the LG television composed into the 650's own configuration gets two pages of its
-own, a key map that binds volume, channel and mute to it and every other key to nothing, which is what
-the remote should then do and has not yet been seen doing, and a place on all five device lists, with
-every check passing and the result drawn. Where it differed from what Logitech's own software writes,
-in three small ways, it has been brought in line. Writing it is thirteen
-erase blocks and waits for the remote to be back together. Reading the 650's device lists also showed
+own, a key map that binds volume, channel and mute to it and every other key to nothing, and a place
+on all five device lists, with every check passing and the result drawn. Where it differed from what
+Logitech's own software writes, in three small ways, it was brought in line. It was then written,
+thirteen erase blocks read back identical, and on the remote every one of the six predictions held:
+the television appears where predicted, its two pages and its keys work it, and Off still switches
+everything off. After every write the 650 opens Logitech's introduction tour, which the next write can
+switch off. Reading the 650's device lists also showed
 that an older reader picks the wrong screen for one device on the Harmony 700s, which is open.
 
 **And the firmware keeps more of the remote's state for itself than the rules said, section 284.** The

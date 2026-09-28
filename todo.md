@@ -55,7 +55,9 @@ Plan: [003-how-an-activity-is-built.md](docs/plans/003-how-an-activity-is-built.
   - [ ] 1.4.3 A composed device on the 650, catalogue to remote, as 4.3.1 did on the One
     - [x] Read whether variables 13 to 17 are the firmware's on the 650 before composing one there: they are, 0 to 17 on the Harmony One, 600, 650, 700 and 880 and 885 while the 525 keeps 0 to 12, and the rail follows (section 284)
     - [x] Compose it offline: arch 14's screen half built, the LG on its own two page device mode with a key map and on all five device lists, every check passing, 13 blocks (section 285)
-    - [ ] Write it once the 650 is reassembled, with `write-config.ts` against `h650_config_region`, then press its screen items, its volume key in device mode, and Off
+    - [x] Write it once the 650 is reassembled, with `write-config.ts` against `h650_config_region`, then press its screen items, its volume key in device mode, and Off: all six predictions hold (section 285)
+    - [x] Read the 650's region back and register it as the next compare base: `h650_lg_region`, the written file byte for byte
+    - [ ] Skip the 650's welcome tour after a write: list 3 calls list 660 (`0xAC` write variable 44 := 1, enter mode 216) on every reload, so blank that call; confirm list 3 is the reload hook first
     - [ ] Fix `deviceModeMaps`, which picks a help screen for the 700s' A/V switch because it skips a device mode with no key and counts an enter handler as one, and restate section 271's counts (section 285)
   - [ ] 1.4.4 A composed activity, which needs 1.2.3 and 1.2.6 first
 

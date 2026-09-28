@@ -139,6 +139,9 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // from `h650_config_region` in exactly the delay byte and the trailer checksum. The compare base
   // for the revert.
   h650_delay90_region: '20260927T1110Z-h650-delay90-region.bin',
+  // The same region after 1.4.3's write, section 285: the composed LG television, byte for byte the
+  // file written, block 0x040000 and the erased tail unchanged. The compare base for the next write.
+  h650_lg_region: '20260928T0705Z-h650-lg-region.bin',
   // Three snapshots of the 650's state variables across an activity and a bare restart, section 283.
   h650_ram_activity_restart: '20260927T1150Z-h650-ram-activity-restart.bin',
   // The 650's data memory 0x000..0xDFF before and after a third bare restart, section 283.
@@ -470,7 +473,9 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
     // decision of its own rather than a side effect of registering a compare base.
     'h650_config_region',
     // And that region after 1.4.2's write, for the same reason.
-    'h650_delay90_region'];
+    'h650_delay90_region',
+    // And after 1.4.3's write, the composed LG television, for the same reason.
+    'h650_lg_region'];
 
 const cache = new Map<string, string[]>();
 

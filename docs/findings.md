@@ -37094,7 +37094,7 @@ loosely in places. All corrected, and its account of the Harmony One's gate, a b
 read as the sum's compare, was checked and corrected in turn: that branch is the flag test, and the
 compare is at `0x2A27C`.
 
-## 285. Arch 14's device list and device mode screens are read and composed, and a device is composed for the Harmony 650
+## 285. Arch 14's device list and device mode screens are read and composed, and a composed device works on the Harmony 650
 
 **The device list reader found no row on any arch 14 configuration, and that was the row's shape
 rather than the list's absence.** An arch 12 (Harmony One) row is three instructions, beep, enter a
@@ -37217,7 +37217,7 @@ both mode 324's on the two 700s. Not corrected here, since it moves section
 271's counts and is its own finding; `todo.md` carries it, and the test asserts the two by name so the
 fix has to change the test.
 
-### The first composition, on the Harmony 650's own configuration, not written
+### The first composition, on the Harmony 650's own configuration
 
 `compose-device.ts` on `h650-current-config.bin`, byte for byte the `h650_config_region` read, with the
 LG OLED55C27LA out of Logitech's catalogue, the six commands and labels of section 242 and `--keys-like
@@ -37228,7 +37228,28 @@ claimed and none twice, the checksum restated, the emitter reproducing the file,
 keys of the key map bound to the new device, volume, channel and mute, the television's own mode
 binding power to no key. Drawn by `render.ts`, the two pages and the five menus look like the 650's own.
 The write is 13 of the file's 14 erase blocks, `0x030000` and `0x050000` to `0x100000`, every one inside
-the `h650_config_region` dump, and 1874 bytes longer than what is on the remote. It has not been written.
+the `h650_config_region` dump, and 1874 bytes longer than what was on the remote.
+
+### Written, and the remote does what the file says
+
+This section said the composition had not been written, which was true when it was committed; it was
+written afterwards. `write-config.ts` identified the unit as the 650 off its own identity block,
+found all 13 blocks byte identical to `h650_config_region`, erased and wrote each with both neighbours
+unchanged after every erase, read the whole configuration back byte identical to the file, and
+restarted the remote, which came back on the bus by itself. Off the cable it showed Logitech's
+introduction tour, mode 216, which is in the configuration it replaced as well: list 3 calls list 660,
+which writes variable 44 and enters the tour, and it came up after the 650's earlier writes too, so
+it is what a reload does and not something the composition added. Whether list 3 is the reload hook
+is unread.
+
+**Danny then checked the six predictions of the lab note and reports all of them confirmed**: the LG
+top right on the second page of the device list, `LG 1/2` with Power, Vol+, Vol- and Ch+ in the
+corners and Ch- and Mute on the second page, each item working the television, volume, channel and
+mute working in LG device mode, Off switching everything off, and an activity not sending the LG's
+power toggle. That is his summary rather than a key by key record, and it is the first composed key
+map observed working, which is section 271's keypad half on hardware: the keys the map binds send the
+new device's commands. Whether a key it binds to nothing does nothing, rather than falling through to
+another device's command, rests on the same summary.
 
 ### The reviewers, and what the composition still does differently from the compiler
 
