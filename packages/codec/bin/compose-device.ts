@@ -21,6 +21,10 @@
  * switches it off when another activity starts. Without that the device goes on and never off.
  * `--no-power-off` leaves it out, which is what this produced before.
  *
+ * **On a Harmony 600, 650 or 700 the device also gets its two delays**, sections 287 and 288:
+ * `--power-on-delay` and `--inter-device-delay` in tenths of a second, 0 to 450 and 0 to 20, and
+ * without them what most compiled devices carry, 15 and 5.
+ *
  * It deliberately does not stamp the build timestamp, for `set-delay.ts`'s reason: a timestamp is
  * right for a save and wrong for an exercise whose output should differ from its input only in the
  * places this prints.
@@ -110,7 +114,26 @@ const wasDevices = inventory(before).devices;
 process.stdout.write(`${input}: ${before.blob.length} bytes, ${wasDevices.length} devices `
   + `(${wasDevices.map((one) => one.name ?? '?').join(', ')})\n`);
 
-const composed = composeDevice(before, { label, commands, power: 0 });
+// Arch 14 only: the two delays in tenths of a second, which the composer otherwise sets to what most
+// of Logitech's devices carry. A television usually wants a longer power on delay than that.
+const tenths = (name: string): number | undefined => {
+  const given = argument(name);
+  if (given === undefined) return undefined;
+  const value = Number(given);
+  return Number.isInteger(value) ? value : fail(`--${name} is a whole number of tenths of a second`);
+};
+const powerOnDelay = tenths('power-on-delay');
+const interDeviceDelay = tenths('inter-device-delay');
+const composed = composeDevice(before, {
+  label, commands, power: 0,
+  ...(powerOnDelay === undefined ? {} : { powerOnDelay }),
+  ...(interDeviceDelay === undefined ? {} : { interDeviceDelay }),
+});
+if (composed.powerOnDelay !== undefined && composed.delay !== undefined) {
+  process.stdout.write(`delays: power on variable ${composed.powerOnDelay.variable} through table `
+    + `${composed.powerOnDelay.table}, inter device variable ${composed.delay.variable} through table `
+    + `${composed.delay.table}, identifier ${composed.delay.identifier}\n`);
+}
 let withDevice = parse(composed.bytes);
 if (!process.argv.includes('--no-power-off')) {
   const joined = joinPowerOff(withDevice, composed.variable);
@@ -179,8 +202,12 @@ for (let at = 0; at < shorter; at += 1) {
   blocks.add(block);
   at = block + ERASE_BLOCK - 1;
 }
-for (let at = shorter; at < after.blob.length; at += ERASE_BLOCK) {
-  blocks.add(Math.floor(at / ERASE_BLOCK) * ERASE_BLOCK);
+// Every block the growth reaches, from the one holding the input's last byte to the one holding the
+// output's. This stepped a whole block from `shorter` until 28 September 2026 and so missed the last
+// block whenever the growth crossed a boundary, reporting 13 where a composition touched 14.
+for (let block = Math.floor(shorter / ERASE_BLOCK) * ERASE_BLOCK; block < after.blob.length;
+  block += ERASE_BLOCK) {
+  blocks.add(block);
 }
 const first = Math.min(...blocks);
 process.stdout.write(`the write would touch ${blocks.size} erase block(s) of `

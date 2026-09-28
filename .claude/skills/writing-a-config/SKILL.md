@@ -63,7 +63,12 @@ produce a config the remote accepts and mishandles.
   the `0x7F` in front is a delay step of three lists**, section 287: a load and a condition private to
   the command and a delay list shared by the device, whose base slot 14 table queues the device's inter
   device delay, by inference while a start sequence runs. The composer emits all three, with the device's
-  `InterDeviceDelay` variable and its table, and a writer adding a command by hand must too.
+  `InterDeviceDelay` variable and its table, and a writer adding a command by hand must too. **And
+  switching an arch 14 device on runs the power command and then its power on delay**, section 288: a
+  `0x72` on `PowerOnDelay_<identifier>` through a 451 case table that queues the wait a hundred tenths
+  at a time. A power variable whose on transition runs the power command alone switches the device on
+  with no wait, so, by section 236's reading measured on the Harmony One, the activity's next command
+  to it can arrive before it is ready.
 * **Base slot 13's first seven records are the clock and are stamped too**, section 130: `first` is the
   value a variable holds when the config is generated, and records 0 to 6 are second, minute, hour, day,
   weekday, month and year, each equal to the corresponding field of base slot 3's timestamp in all 21

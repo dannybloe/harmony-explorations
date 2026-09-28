@@ -563,7 +563,7 @@ finding.
 
 `todo.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 287<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 288<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -837,7 +837,11 @@ device that turns its delay setting, 0 to 2 seconds, into what the remote queues
 five configurations of those models, and the composer now writes all of it for a new device, with the
 half second Logitech gives nearly every device. It has not been on a remote yet, because it only acts
 while an activity starts, which is what the composed activity will show. A device's power on delay is
-still missing and is the next piece.
+composed too now, section 288: switching the device on sends its power code and then makes the
+remote wait the device's power on delay, up to 45 seconds, before anything else goes to it, which is
+what all fifteen of Logitech's own devices with a power switch do on those configurations. Neither delay has been seen on
+a remote on these models, and that they act only while an activity starts rests on the Harmony One's
+measurement and on these configurations, which is what the composed activity will test.
 
 **And the Harmony 650 no longer opens Logitech's introduction tour after a write, section 286.** Every
 write reloads the configuration, and every reload started a ten screen tour that had to be pressed

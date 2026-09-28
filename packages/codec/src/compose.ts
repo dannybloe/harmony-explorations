@@ -87,6 +87,11 @@ import {
   CONDITION_OPCODE,
   INTER_DEVICE_DELAY_VALUES,
   MAP_VALUE_OPCODE,
+  POWER_ON_DELAY_CASES,
+  POWER_ON_DELAY_CHUNK,
+  powerOnDelayAmounts,
+  powerOnDelayCases,
+  powerOnDelays,
   QUEUE_INTER_DEVICE_DELAY,
 } from './inventory.ts';
 import { characterMap } from './text.ts';
@@ -381,6 +386,11 @@ export interface ComposeDevice {
    * queues in front of each of this device's commands. Default `INTER_DEVICE_DELAY_DEFAULT`.
    */
   readonly interDeviceDelay?: number;
+  /**
+   * Arch 14 only: the power on delay in tenths of a second, 0 to 450, queued after the power
+   * command when the device is switched on. Default `POWER_ON_DELAY_DEFAULT`.
+   */
+  readonly powerOnDelay?: number;
 }
 
 export interface ComposedDevice {
@@ -396,6 +406,12 @@ export interface ComposedDevice {
    * of the device's own that applies it, and `identifier` the number the variable's name carries.
    */
   delay?: { variable: number; table: number; list: number; identifier: number };
+  /**
+   * Arch 14 only: the power on delay, section 288. `variable` is `PowerOnDelay_<identifier>`,
+   * `table` the base slot 14 record mapping it, `list` the list holding that `0x72`, and `on` the
+   * list the power variable runs to switch the device on: the power command, then `list`.
+   */
+  powerOnDelay?: { variable: number; table: number; list: number; on: number };
 }
 
 /**
@@ -545,10 +561,12 @@ export function composeDevice(c: Container, device: ComposeDevice): ComposedDevi
   // the delay step, which this emits since section 287; see below.
   let current = parse(group.bytes);
 
-  // Arch 14: the device's inter device delay, a variable and the base slot 14 table that maps it,
-  // which every command's prelude below names. Section 287.
+  // Arch 14: the device's two delays, each a variable and the base slot 14 table that maps it,
+  // which every command's prelude and the power on list below name. Sections 287 and 288.
   const delay = c.architecture === SEND_PRELUDE_ARCHITECTURE
-    ? composeInterDeviceDelay(current, group.group, device.interDeviceDelay ?? INTER_DEVICE_DELAY_DEFAULT)
+    ? composeDelays(current, group.group,
+                    device.interDeviceDelay ?? INTER_DEVICE_DELAY_DEFAULT,
+                    device.powerOnDelay ?? POWER_ON_DELAY_DEFAULT)
     : undefined;
   if (delay !== undefined) current = parse(delay.bytes);
 
@@ -557,7 +575,9 @@ export function composeDevice(c: Container, device: ComposeDevice): ComposedDevi
   if (actionTable === undefined) throw new ComposeError('base slot 10 does not read as a table');
   // Each list is `u8 count` and three bytes per instruction. On arch 14 a send opens with a call,
   // so it is three instructions, and the device gains one delay list plus two lists per command,
-  // laid out after the sends: delay, then load and condition for command 0, then for command 1.
+  // laid out after the sends: delay, then load and condition for command 0, then for command 1;
+  // then the power on delay list and the list the power variable runs to switch the device on,
+  // which calls the power command and then that delay list.
   const n = device.commands.length;
   const firstList = actionTable.values.length;
   const sendBytes = delay === undefined ? 7 : 10;
@@ -570,8 +590,11 @@ export function composeDevice(c: Container, device: ComposeDevice): ComposedDevi
       .u16((group.group << 8) | k).u8(SEND_INFRARED)
       .u16((group.group << 8) | DEVICE_QUANTITY_DEFAULT).u8(DEVICE_QUANTITY);
   });
+  const powerDelayList = delayList + 1 + 2 * n;
+  const onList = powerDelayList + 1;
   if (delay !== undefined) {
-    bodies.push(new Writer(4).u8(1).u16((delay.table << 8) | delay.variable).u8(MAP_VALUE_OPCODE));
+    const spacing = delay.interDevice;
+    bodies.push(new Writer(4).u8(1).u16((spacing.table << 8) | spacing.variable).u8(MAP_VALUE_OPCODE));
     device.commands.forEach((_, k) => {
       bodies.push(new Writer(7).u8(2)
         .u16(delay.loadOperand).u8(STATE_BAND)
@@ -580,6 +603,11 @@ export function composeDevice(c: Container, device: ComposeDevice): ComposedDevi
         .u16(delay.conditionOperand).u8(CONDITION_OPCODE)
         .u16(delayList).u8(ACTION_LIST_INDEX_OPCODE));
     });
+    const waits = delay.powerOn;
+    bodies.push(new Writer(4).u8(1).u16((waits.table << 8) | waits.variable).u8(MAP_VALUE_OPCODE));
+    bodies.push(new Writer(7).u8(2)
+      .u16(firstList + power).u8(ACTION_LIST_INDEX_OPCODE)
+      .u16(powerDelayList).u8(ACTION_LIST_INDEX_OPCODE));
   }
   const listsAt = actionTable.start;
   const listsLength = bodies.reduce((sum, body) => sum + body.bytes.length, 0);
@@ -595,7 +623,8 @@ export function composeDevice(c: Container, device: ComposeDevice): ComposedDevi
   current = parse(appendTableEntries(parse(listsHole.bytes), actionSlot, listAddresses));
 
   // The power variable: a seven byte header and two transitions, each running the power command's
-  // list. `first` is 0 because nothing is running when a config is generated, section 130, and the
+  // list, except that on arch 14 switching on runs the list that follows it with the power on delay,
+  // as every compiled device there does, section 288. `first` is 0 because nothing is running when a config is generated, section 130, and the
   // maximum is 1 because a power switch has two states, which is also what the node's trailing
   // count states, section 86.
   const states = stateTable(current);
@@ -607,9 +636,10 @@ export function composeDevice(c: Container, device: ComposeDevice): ComposedDevi
   const recordAt = stateRecordEnd(current);
   const recordHole = relocate(current, recordAt, recordLength);
   const powerList = firstList + power;
+  const switchOn = delay === undefined ? powerList : onList;
   const record = new Writer(recordLength)
     .u16(0).u16(1).u16(2).u8(0)
-    .u8(0).u16(0).u16(1).u16(powerList).u8(ACTION_LIST_INDEX_OPCODE)
+    .u8(0).u16(0).u16(1).u16(switchOn).u8(ACTION_LIST_INDEX_OPCODE)
     .u8(0).u16(1).u16(0).u16(powerList).u8(ACTION_LIST_INDEX_OPCODE);
   recordHole.bytes.set(record.bytes, recordAt);
   const recordAddress = current.flashBase + recordAt;
@@ -668,48 +698,66 @@ export function composeDevice(c: Container, device: ComposeDevice): ComposedDevi
   // The name tree node: `<label>_Power_2` at level 1, indexed by the new variable.
   const named = parse(appendNameNode(current, `${device.label}_Power_2`, variable));
 
-  // The delay variable was appended at the end, so the renumbering moved it up by one, and the
-  // delay list's `0x72` with it. Read back rather than assumed.
-  let delayed: ComposedDevice['delay'];
-  if (delay !== undefined) {
-    const mapped = named.actionLists()?.[delayList]?.[0];
-    if (mapped?.opcode !== MAP_VALUE_OPCODE || mapped.operand >>> 8 !== delay.table
-        || (mapped.operand & 0xff) !== delay.variable + 1) {
-      throw new ComposeError('the delay list does not name the renumbered delay variable');
+  // The delay variables were appended at the end, so the renumbering moved them up by one, and the
+  // delay lists' `0x72`s with them. Read back rather than assumed.
+  const renumbered = (list: number, one: { variable: number; table: number }): number => {
+    const mapped = named.actionLists()?.[list]?.[0];
+    if (mapped?.opcode !== MAP_VALUE_OPCODE || mapped.operand >>> 8 !== one.table
+        || (mapped.operand & 0xff) !== one.variable + 1) {
+      throw new ComposeError(`delay list ${list} does not name its renumbered variable`);
     }
-    delayed = { variable: delay.variable + 1, table: delay.table, list: delayList, identifier: delay.identifier };
-  }
+    return one.variable + 1;
+  };
+  const delays = delay === undefined ? {} : {
+    delay: {
+      variable: renumbered(delayList, delay.interDevice), table: delay.interDevice.table,
+      list: delayList, identifier: delay.identifier,
+    },
+    powerOnDelay: {
+      variable: renumbered(powerDelayList, delay.powerOn), table: delay.powerOn.table,
+      list: powerDelayList, on: onList,
+    },
+  };
 
   return {
     bytes: restamped(named.blob),
     group: group.group,
     lists: device.commands.map((_, k) => firstList + k),
     variable,
-    ...(delayed === undefined ? {} : { delay: delayed }),
+    ...delays,
   };
 }
 
 /*
- * ---- The arch 14 send prelude, section 287 ----
+ * ---- The arch 14 delays, sections 287 and 288 ----
  *
- * Every command Logitech's compiler writes for a Harmony 600, 650 or 700 opens with a call, and a
- * composed one did not until this. `SendPrelude` in `inventory.ts` is the reading: a private list
- * that loads 1, a private list that runs the device's delay list only while the configuration's
+ * **Every command Logitech's compiler writes for a Harmony 600, 650 or 700 opens with a call**, and
+ * a composed one did not until section 287. `SendPrelude` in `inventory.ts` is the reading: a private
+ * list that loads 1, a private list that runs the device's delay list only while the configuration's
  * start sequence variable equals it, and the delay list, one `0x72` mapping the device's
  * `InterDeviceDelay_<identifier>` through a base slot 14 table whose case for each value queues that
  * many tenths for the device's group. So, by inference from three of the 650's start sequences and
  * not by measurement, inside an activity's start sequence each command waits the device's inter
  * device delay, and a key press in device mode does not.
  *
- * A composed device gets the same three pieces the compiler gives one, and nothing is shared with
- * another device except the start sequence variable, which is the configuration's. The load and
- * the condition are copied off the configuration's own preludes rather than restated, and the
- * composer refuses a configuration whose preludes disagree about either.
+ * **And a device's power on list ends with its power on delay**, section 288, `PowerOnDelay` in
+ * `inventory.ts`: the `Power` variable's off to on transition runs a list that calls the power
+ * command and then one `0x72` mapping `PowerOnDelay_<identifier>` through a 451 case table, whose
+ * case for each value up to 450 tenths queues that value as `0x7C` quantities for the device's group,
+ * a hundred at a time, a case above 100 through a list of its own. The off transition sends a code of
+ * the device with no delay; a composed device has one power command, so it sends that.
  *
- * **What is deliberately not composed**: the device's other seven delay variables, among them its
- * power on delay and the defaults the remote's "Set to default" page restores. That page is how
- * `deviceIdOfGroup` joins a device to its identifier, so `deviceDelays` still does not report a
- * composed device.
+ * A composed device gets the same pieces the compiler gives one, and nothing is shared with another
+ * device except the start sequence variable, which is the configuration's. The load and the condition
+ * are copied off the configuration's own preludes, and the power on table's case order off one of its
+ * own tables, rather than restated, and the composer refuses a configuration whose preludes disagree
+ * or which has neither to copy.
+ *
+ * **What is deliberately not composed**: the device's other six delay variables, the defaults and the
+ * two counter and flag pairs; the second table each device carries on each of its two delay
+ * variables, whose cases call lists rather than queue a delay and whose reader is unread; and the
+ * remote's "Set to default" page. That page is how `deviceIdOfGroup` joins a device to its
+ * identifier, so `deviceDelays` still does not report a composed device.
  */
 
 /** The architecture whose commands open with the prelude: arch 14, the Harmony 600, 650 and 700. */
@@ -720,64 +768,43 @@ const SEND_PRELUDE_ARCHITECTURE = 14;
  */
 export const INTER_DEVICE_DELAY_DEFAULT = 5;
 /**
- * The highest value an `InterDeviceDelay` variable states, on 24 of 24: the name ends `_65278`,
- * one more, like every variable's, section 86. Wider than the table's 20, which is the compiler's.
+ * The power on delay a composed device starts with, in tenths: 9 of the 15 devices with a `Power`
+ * variable on the four distinct arch 14 configurations carry 15. The other six are 35 to 80, and they
+ * include all four televisions, none of which carries 15, so a television is composed with the value
+ * given rather than this.
  */
-const INTER_DEVICE_DELAY_MAX = 65277;
+export const POWER_ON_DELAY_DEFAULT = 15;
+/**
+ * The highest value either delay variable states, on every one of them: the name ends `_65278`,
+ * one more, like every variable's, section 86. Wider than either table, which is the compiler's.
+ */
+const DELAY_VARIABLE_MAX = 65277;
 /** Base slot 14 records open with a byte the firmware steps over, 2 in every record of the corpus. */
 const VALUE_MAP_LEAD = 2;
 
-interface ComposedDelay {
+interface ComposedDelays {
   bytes: Uint8Array;
-  /** The delay variable before the power variable's renumbering. */
-  variable: number;
-  table: number;
   identifier: number;
   loadOperand: number;
   conditionOperand: number;
+  /** Both variables as numbered before the power variable's renumbering, and their tables. */
+  interDevice: { variable: number; table: number };
+  powerOn: { variable: number; table: number };
 }
 
 /**
- * Give a device on arch 14 its inter device delay: the variable, its name, and its table.
+ * A two byte state variable with no transitions, appended at the end of base slot 13 and named.
  *
- * **The variable is a two byte one, appended at the end**: all 24 compiled ones sit above `narrow`,
- * though none is last, and appending means `count` and `wide` both move and nothing is renumbered
- * here. Its identifier is one more than the highest the configuration's names carry, which is how
- * the devices are numbered on the 650 and on `calibration_h600` and not on the 600 or the 700. It is
- * host side only: nothing in the remote reads a name.
- *
- * **The table is inserted in three steps, each leaving a container the census can walk**, the order
- * `composeActivityScreen` uses for its one base slot 14 case: a header pointer naming an existing
- * delay table, then the record after the last record with its cases naming that table's programs,
- * then the programs after the last record's programs, after which the pointers are swapped onto what
- * was composed. Last and last, so that address order keeps following index order for both, as the
- * compiler's does on every configuration here.
+ * All the compiled delay variables sit above `narrow`, though none is last, and appending means
+ * `count` and `wide` both move and nothing is renumbered here.
  */
-function composeInterDeviceDelay(c: Container, group: number, tenths: number): ComposedDelay {
-  if (!Number.isInteger(tenths) || !INTER_DEVICE_DELAY_VALUES.includes(tenths)) {
-    throw new ComposeError(`an inter device delay is 0 to 20 tenths of a second, not ${tenths}`);
-  }
-  if (c.architecture === undefined) throw new ComposeError('the container states no architecture');
-  const preludes = sendPreludes(c);
-  const model = preludes[0];
-  if (model === undefined) throw new ComposeError('no command here opens with the arch 14 prelude to copy');
-  for (const one of preludes) {
-    if (one.loadOperand !== model.loadOperand || one.conditionOperand !== model.conditionOperand) {
-      throw new ComposeError(`the preludes of lists ${model.list} and ${one.list} disagree`);
-    }
-  }
-  if (interDeviceDelayCases(c, model.table) === undefined) {
-    throw new ComposeError(`base slot 14 record ${model.table} does not read as a delay table`);
-  }
-
-  // 1. The variable: a record with no transitions, its pointer at the end, count and wide raised.
-  const identifiers = stateVariables(c).flatMap((one) => one.deviceId === undefined ? [] : [one.deviceId]);
-  if (identifiers.length === 0) throw new ComposeError('no variable here names a device identifier');
-  const identifier = Math.max(...identifiers) + 1;
+function appendDelayVariable(
+  c: Container, name: string, first: number,
+): { bytes: Uint8Array; variable: number } {
   const recordAt = stateRecordEnd(c);
   const recordHole = relocate(c, recordAt, STATE_RECORD_HEADER);
   recordHole.bytes.set(new Writer(STATE_RECORD_HEADER)
-    .u16(tenths).u16(INTER_DEVICE_DELAY_MAX).u16(0).u8(0).bytes, recordAt);
+    .u16(first).u16(DELAY_VARIABLE_MAX).u16(0).u8(0).bytes, recordAt);
   let current = parse(recordHole.bytes);
   const states = stateTable(current);
   if (states === undefined) throw new ComposeError('base slot 13 stopped reading');
@@ -793,67 +820,109 @@ function composeInterDeviceDelay(c: Container, group: number, tenths: number): C
   states.start);
   current = parse(entryHole.bytes);
   assertStateTableConsistent(current);
-  current = parse(appendNameNode(
-    current, `InterDeviceDelay_${identifier}_${INTER_DEVICE_DELAY_MAX + 1}`, variable));
+  return { bytes: appendNameNode(current, name, variable), variable };
+}
 
-  // 2. A header pointer naming the model's table, so the census sees a record there.
-  const slot = archSlot(current.architecture as number, VALUE_MAP_SLOT);
-  const header = countedPointers(current, slot, VALUE_MAP_SECTION_COUNT_WIDTH);
-  const counter = VALUE_MAP_COUNT_WIDTH[current.architecture as number];
-  if (header === undefined || counter === undefined) throw new ComposeError('base slot 14 does not read');
-  const table = header.values.length;
-  if (table >= 0xff) throw new ComposeError('base slot 14 is full');
-  const siblingAddress = header.values[model.table] as number;
-  const pointerAt = header.start + VALUE_MAP_SECTION_COUNT_WIDTH + 3 * table;
-  const pointerHole = relocate(current, pointerAt, 3);
-  pointerHole.bytes.set(new Writer(3).u24(siblingAddress).bytes, pointerAt);
-  pointerHole.bytes[header.start] = table + 1;
-  current = parse(pointerHole.bytes);
-
-  // 3. The record, after the last one, its cases naming the model's programs for now. **After the
-  // last and not after the model's**, because on all five configurations a record's address rises
-  // with its index and so does its first program's, and the new record takes the last index. The
-  // last record also ends where the records end on all five, so this is a boundary; a configuration
-  // where it is not is refused rather than guessed at.
-  const records = valueMaps(current);
-  const previous = records?.[table - 1];
-  const previousAt = previous === undefined ? undefined : current.blobOffsetOf(previous.address);
-  if (records === undefined || previous === undefined || previousAt === undefined) {
-    throw new ComposeError('base slot 14 stopped reading');
+/**
+ * Append action lists at the foot of the action table, where `composeDevice` puts its own, and
+ * return the index of the first. Each list is its instructions, `[operand, opcode]`.
+ */
+function appendActionLists(
+  c: Container, bodies: readonly (readonly [number, number])[][],
+): { bytes: Uint8Array; first: number } {
+  if (c.architecture === undefined) throw new ComposeError('the container states no architecture');
+  const slot = archSlot(c.architecture, ACTION_TABLE_SLOT);
+  const table = c.pointerArrayAt(slot);
+  if (table === undefined) throw new ComposeError('base slot 10 does not read as a table');
+  const writers = bodies.map((body) => {
+    const one = new Writer(1 + 3 * body.length).u8(body.length);
+    for (const [operand, opcode] of body) one.u16(operand).u8(opcode);
+    return one;
+  });
+  const at = table.start;
+  const hole = relocate(c, at, writers.reduce((sum, one) => sum + one.bytes.length, 0));
+  const addresses: number[] = [];
+  let next = at;
+  for (const one of writers) {
+    hole.bytes.set(one.bytes, next);
+    addresses.push(c.flashBase + next);
+    next += one.bytes.length;
   }
+  return { bytes: appendTableEntries(parse(hole.bytes), slot, addresses), first: table.values.length };
+}
+
+/**
+ * Append a base slot 14 record whose cases, in `keys`' order, run `programs`, one each.
+ *
+ * **Inserted in three steps, each leaving a container the census can walk**, the order
+ * `composeActivityScreen` uses for its one base slot 14 case: a header pointer naming the last
+ * record, then the record after the last record with every case naming one of that record's
+ * programs, then the programs after the last record's programs, after which the pointers are swapped
+ * onto what was composed. **Last and last**, because on all five arch 14 configurations a record's
+ * address rises with its index and so does its first program's, and the last record's end and its
+ * programs' end are where the records and the programs end; a configuration where either is not
+ * true is refused rather than guessed at.
+ *
+ * Two offsets are read again after the insertion that moves them, and both were once reused, section
+ * 287: the header's, which put the pointer into base slot 13, and the last record's programs', which
+ * named every program 109 bytes short and led the census to read program bytes as pointer fields.
+ */
+function appendValueMap(
+  c: Container, keys: readonly number[], programs: readonly Uint8Array[],
+): { bytes: Uint8Array; table: number } {
+  if (c.architecture === undefined) throw new ComposeError('the container states no architecture');
+  if (keys.length !== programs.length || keys.length === 0) {
+    throw new ComposeError('a base slot 14 record needs one program per case');
+  }
+  const slot = archSlot(c.architecture, VALUE_MAP_SLOT);
+  const counter = VALUE_MAP_COUNT_WIDTH[c.architecture];
+  const headerOf = (one: Container) => {
+    const header = countedPointers(one, slot, VALUE_MAP_SECTION_COUNT_WIDTH);
+    if (header === undefined) throw new ComposeError('base slot 14 does not read');
+    return header;
+  };
+  if (counter === undefined) throw new ComposeError('base slot 14 does not read');
+  const header = headerOf(c);
+  const table = header.values.length;
+  if (table === 0 || table >= 0xff) throw new ComposeError('base slot 14 is empty or full');
+
+  // 1. A header pointer naming the last record, so the census sees a record there.
+  const pointerAt = header.start + VALUE_MAP_SECTION_COUNT_WIDTH + 3 * table;
+  const pointerHole = relocate(c, pointerAt, 3);
+  pointerHole.bytes.set(new Writer(3).u24(header.values[table - 1] as number).bytes, pointerAt);
+  pointerHole.bytes[header.start] = table + 1;
+  let current = parse(pointerHole.bytes);
+
+  // 2. The record, after the last one.
   const recordEnd = (one: { address: number; length: number }): number =>
     (current.blobOffsetOf(one.address) as number) + one.length;
-  if (records.slice(0, table).some((one) => recordEnd(one) > previousAt + previous.length)) {
+  const records = (valueMaps(current) ?? []).slice(0, table);
+  const previous = records.at(-1);
+  if (previous === undefined || current.blobOffsetOf(previous.address) === undefined) {
+    throw new ComposeError('base slot 14 stopped reading');
+  }
+  const tableAt = recordEnd(previous);
+  if (records.some((one) => recordEnd(one) > tableAt)) {
     throw new ComposeError('the last base slot 14 record does not end where the records end');
   }
   const stride = VALUE_MAP_KEY_WIDTH + 3;
-  const cases = INTER_DEVICE_DELAY_VALUES.length;
-  const tableLength = 1 + counter + stride * cases + 1;
-  const tableAt = previousAt + previous.length;
-  const tableHole = relocate(current, tableAt, tableLength);
-  current = parse(tableHole.bytes);
-  // The model's programs sit above the insertion, so its cases are read again after it: copied from
-  // before, they named every program 109 bytes short, and the census then read the misaligned
-  // programs' bytes as pointer fields and rewrote them on the next insertion.
-  const shifted = valueMaps(current)?.[model.table];
-  if (shifted === undefined) throw new ComposeError('the model table stopped reading');
-  const record = new Writer(tableLength).u8(VALUE_MAP_LEAD).u16(cases);
-  INTER_DEVICE_DELAY_VALUES.forEach((value, k) => {
-    record.u16(value).u24((shifted.entries[k] as [number, number])[1]);
-  });
+  const tableLength = 1 + counter + stride * keys.length + 1;
+  current = parse(relocate(current, tableAt, tableLength).bytes);
+  const stand = (valueMaps(current) ?? [])[table - 1]?.entries[0]?.[1];
+  if (stand === undefined) throw new ComposeError('base slot 14 stopped reading');
+  const record = new Writer(tableLength).u8(VALUE_MAP_LEAD);
+  if (counter === 2) record.u16(keys.length);
+  else record.u8(keys.length);
+  for (const key of keys) record.u16(key).u24(stand);
   record.u8(0);
+  if (record.remaining !== 0) throw new ComposeError(`the record is ${record.remaining} bytes short`);
   current.blob.set(record.bytes, tableAt);
-  // The header sits above the records, so the insertion moved it: its offset is read again rather
-  // than reused, which the first version of this did and which wrote the pointer into base slot 13.
-  const moved = countedPointers(current, slot, VALUE_MAP_SECTION_COUNT_WIDTH);
-  if (moved === undefined) throw new ComposeError('base slot 14 stopped reading');
+  const moved = headerOf(current);
   current.blob.set(new Writer(3).u24(current.flashBase + tableAt).bytes,
                    moved.start + VALUE_MAP_SECTION_COUNT_WIDTH + 3 * table);
   current = parse(current.blob);
 
-  // 4. The programs, after the last record's, then the cases swapped onto them. The last record's
-  // programs end where every record's programs end on all five configurations, the same condition
-  // as the records', and refused the same way where it does not hold.
+  // 3. The programs, after the last record's, then the cases swapped onto them.
   const programEnd = (target: number): number => {
     const last = screenProgram(current, target)?.at(-1);
     if (last === undefined) throw new ComposeError('a base slot 14 case does not read as a program');
@@ -866,30 +935,114 @@ function composeInterDeviceDelay(c: Container, group: number, tenths: number): C
   if (before.some((one) => one.entries.some(([, target]) => programEnd(target) > programsAt))) {
     throw new ComposeError("the last base slot 14 record's programs do not end where the programs end");
   }
-  const programLength = 5;
-  const programHole = relocate(current, programsAt, programLength * cases);
-  INTER_DEVICE_DELAY_VALUES.forEach((value, k) => {
-    programHole.bytes.set(new Writer(programLength)
-      .u8(SCREEN_QUEUE_INSTRUCTION).u16((group << 8) | value).u8(QUEUE_INTER_DEVICE_DELAY).u8(OP_END).bytes,
-    programsAt + programLength * k);
-  });
+  const programHole = relocate(current, programsAt, programs.reduce((sum, one) => sum + one.length, 0));
+  const starts: number[] = [];
+  let next = programsAt;
+  for (const program of programs) {
+    programHole.bytes.set(program, next);
+    starts.push(next);
+    next += program.length;
+  }
   current = parse(programHole.bytes);
   const composed = valueMaps(current)?.[table];
   const composedAt = composed === undefined ? undefined : current.blobOffsetOf(composed.address);
-  if (composedAt === undefined) throw new ComposeError('the composed table stopped reading');
-  INTER_DEVICE_DELAY_VALUES.forEach((_, k) => {
-    current.blob.set(new Writer(3).u24(current.flashBase + programsAt + programLength * k).bytes,
+  if (composedAt === undefined) throw new ComposeError('the composed record stopped reading');
+  starts.forEach((start, k) => {
+    current.blob.set(new Writer(3).u24(current.flashBase + start).bytes,
                      composedAt + 1 + counter + stride * k + VALUE_MAP_KEY_WIDTH);
   });
-  current = parse(current.blob);
-  const read = interDeviceDelayCases(current, table);
-  if (read === undefined || read.length !== cases
-      || read.some((one) => one.group !== group || one.tenths !== one.value)) {
-    throw new ComposeError('the composed delay table does not read back as one');
+  return { bytes: parse(current.blob).blob, table };
+}
+
+/** A screen program queueing one action instruction, `0x11 operand opcode; end`. */
+function queueing(operand: number, opcode: number): Uint8Array {
+  return new Writer(5).u8(SCREEN_QUEUE_INSTRUCTION).u16(operand).u8(opcode).u8(OP_END).bytes;
+}
+
+/**
+ * Give a device on arch 14 its two delays: the variables, their names, the power on table's chunk
+ * lists, and the two tables. The lists that name the tables are `composeDevice`'s.
+ *
+ * Both variables carry one identifier, one more than the highest the configuration's names carry,
+ * which is how the devices are numbered on the 650 and on `calibration_h600` and not on the 600 or
+ * the 700. It is host side only: nothing in the remote reads a name.
+ */
+function composeDelays(c: Container, group: number, interDevice: number, powerOn: number): ComposedDelays {
+  if (!Number.isInteger(interDevice) || !INTER_DEVICE_DELAY_VALUES.includes(interDevice)) {
+    throw new ComposeError(`an inter device delay is 0 to 20 tenths of a second, not ${interDevice}`);
+  }
+  if (!Number.isInteger(powerOn) || powerOn < 0 || powerOn >= POWER_ON_DELAY_CASES) {
+    throw new ComposeError(`a power on delay is 0 to 450 tenths of a second, not ${powerOn}`);
+  }
+  const preludes = sendPreludes(c);
+  const model = preludes[0];
+  if (model === undefined) throw new ComposeError('no command here opens with the arch 14 prelude to copy');
+  for (const one of preludes) {
+    if (one.loadOperand !== model.loadOperand || one.conditionOperand !== model.conditionOperand) {
+      throw new ComposeError(`the preludes of lists ${model.list} and ${one.list} disagree`);
+    }
+  }
+  if (interDeviceDelayCases(c, model.table) === undefined) {
+    throw new ComposeError(`base slot 14 record ${model.table} does not read as a delay table`);
+  }
+  // The power on table's case order, off the configuration's own: one order on all 15 here, and a
+  // configuration whose tables disagree is refused rather than one of them picked.
+  const orders = new Set(powerOnDelays(c).map((one) =>
+    (powerOnDelayCases(c, one.table) ?? []).map((k) => k.value).join(',')));
+  const order = [...orders][0]?.split(',').map(Number);
+  if (orders.size === 0) throw new ComposeError('no device here has a power on delay table to copy');
+  if (orders.size !== 1 || order === undefined || order.length !== POWER_ON_DELAY_CASES) {
+    throw new ComposeError('the power on delay tables here do not agree on one order of 451 cases');
+  }
+
+  const identifiers = stateVariables(c).flatMap((one) => one.deviceId === undefined ? [] : [one.deviceId]);
+  if (identifiers.length === 0) throw new ComposeError('no variable here names a device identifier');
+  const identifier = Math.max(...identifiers) + 1;
+
+  // The variables, power on first, which is the order the compiler numbers them in on 9 of the 15
+  // devices and not a rule; nothing reads the order.
+  const powered = appendDelayVariable(c, `PowerOnDelay_${identifier}_${DELAY_VARIABLE_MAX + 1}`, powerOn);
+  const spaced = appendDelayVariable(parse(powered.bytes),
+    `InterDeviceDelay_${identifier}_${DELAY_VARIABLE_MAX + 1}`, interDevice);
+  let current = parse(spaced.bytes);
+
+  // The lists a case above 100 calls, one per value from 101 to 450, laid out as the compiler lays
+  // them out: contiguous and in the table's own case order, not in value order, on 15 of 15.
+  const chunked = order.filter((value) => value > POWER_ON_DELAY_CHUNK);
+  const chunks = appendActionLists(current, chunked.map((value) =>
+    powerOnDelayAmounts(value).map((amount) => [(group << 8) | amount, DEVICE_QUANTITY] as const)));
+  current = parse(chunks.bytes);
+  const chunkOf = new Map(chunked.map((value, k) => [value, chunks.first + k]));
+
+  const inter = appendValueMap(current, INTER_DEVICE_DELAY_VALUES,
+    INTER_DEVICE_DELAY_VALUES.map((value) => queueing((group << 8) | value, QUEUE_INTER_DEVICE_DELAY)));
+  current = parse(inter.bytes);
+  const power = appendValueMap(current, order, order.map((value) => {
+    if (value === 0) return Uint8Array.of(OP_END);
+    const list = chunkOf.get(value);
+    return list === undefined
+      ? queueing((group << 8) | value, DEVICE_QUANTITY)
+      : queueing(list, ACTION_LIST_INDEX_OPCODE);
+  }));
+  current = parse(power.bytes);
+
+  // Both tables read back as what they are, through the readers the corpus was measured with.
+  const spacing = interDeviceDelayCases(current, inter.table);
+  if (spacing === undefined || spacing.length !== INTER_DEVICE_DELAY_VALUES.length
+      || spacing.some((one) => one.group !== group || one.tenths !== one.value)) {
+    throw new ComposeError('the composed inter device delay table does not read back as one');
+  }
+  const waits = powerOnDelayCases(current, power.table);
+  if (waits === undefined || waits.length !== POWER_ON_DELAY_CASES
+      || waits.some((one) => one.group !== group
+        || one.amounts.join() !== powerOnDelayAmounts(one.value).join())) {
+    throw new ComposeError('the composed power on delay table does not read back as one');
   }
   return {
-    bytes: current.blob, variable, table, identifier,
+    bytes: current.blob, identifier,
     loadOperand: model.loadOperand, conditionOperand: model.conditionOperand,
+    interDevice: { variable: spaced.variable, table: inter.table },
+    powerOn: { variable: powered.variable, table: power.table },
   };
 }
 

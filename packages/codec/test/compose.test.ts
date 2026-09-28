@@ -33,6 +33,7 @@ import {
   joinPowerOff,
   activityPowerTargets,
   deviceVariables,
+  stateRecords,
   valueMaps,
   deviceIdOfGroup,
   activityBindings,
@@ -65,6 +66,11 @@ import {
   interDeviceDelayCases,
   INTER_DEVICE_DELAY_VALUES,
   INTER_DEVICE_DELAY_DEFAULT,
+  POWER_ON_DELAY_DEFAULT,
+  POWER_ON_DELAY_CASES,
+  powerOnDelays,
+  powerOnDelayCases,
+  powerOnDelayAmounts,
   trailerAgrees,
   archSlot,
   characterMap,
@@ -167,19 +173,20 @@ for (const host of HOSTS) {
     // which is section 276's separate defect and is asserted here too because both were live at
     // once.
     //
-    // On arch 14 the device also gains its inter device delay, a two byte variable appended at the
-    // end as all 24 compiled ones sit above `narrow`, section 287, so there `count` rises by two and
-    // `wide` by one, and that one is the delay variable rather than an existing variable widening.
+    // On arch 14 the device also gains its two delays, two byte variables appended at the end, as all
+    // the compiled ones sit above `narrow`, sections 287 and 288, so there `count` rises by three and
+    // `wide` by two, and those two are the delay variables rather than existing variables widening.
     const grownTable = stateTable(after);
     assert.ok(grownTable !== undefined);
     const delayed = after.architecture === 14;
     assert.equal(composed.delay !== undefined, delayed, 'a delay exactly on arch 14');
-    assert.equal(grownTable.count, wasTable.count + (delayed ? 2 : 1));
+    assert.equal(grownTable.count, wasTable.count + (delayed ? 3 : 1));
     assert.equal(grownTable.narrow, wasTable.narrow + 1, 'the new variable is a narrow one');
-    assert.equal(grownTable.wide, wasTable.wide + (delayed ? 1 : 0),
+    assert.equal(grownTable.wide, wasTable.wide + (delayed ? 2 : 0),
                  'and no existing variable changes width');
     if (composed.delay !== undefined) {
-      assert.equal(composed.delay.variable, grownTable.count - 1, 'the delay variable is the last');
+      assert.equal(composed.powerOnDelay?.variable, grownTable.count - 2, 'the power on delay variable');
+      assert.equal(composed.delay.variable, grownTable.count - 1, 'then the inter device delay variable');
     }
     assert.equal(grownTable.narrowAgain, grownTable.narrow);
     assert.equal(composed.variable, wasTable.narrow, 'it takes the position `narrow` named');
@@ -199,8 +206,8 @@ for (const host of HOSTS) {
     // strongest available statement that nothing was dropped, duplicated or reordered.
     const withoutTheNewOne = [...grownTable.entries];
     withoutTheNewOne.splice(composed.variable, 1);
-    // And the delay variable's, which is the last, where it is one.
-    if (composed.delay !== undefined) withoutTheNewOne.pop();
+    // And the two delay variables', which are the last two, where they exist.
+    if (composed.delay !== undefined) withoutTheNewOne.splice(-2, 2);
     assert.deepEqual(withoutTheNewOne, wasTable.entries,
       'the old entry pointers survive in order, with the new one spliced in at its index');
     assert.equal(grownTable.entries[composed.variable] !== undefined, true);
@@ -213,13 +220,18 @@ for (const host of HOSTS) {
       const to = index >= composed.variable ? index + 1 : index;
       assert.equal(nowNamed.get(to), label, `the name of variable ${index} moved to ${to}`);
     }
-    assert.equal(nowNamed.size, wasNamed.size + (delayed ? 2 : 1), 'plus the ones this composer named');
+    assert.equal(nowNamed.size, wasNamed.size + (delayed ? 3 : 1), 'plus the ones this composer named');
     assert.equal(variable?.record?.first, 0, 'nothing is running when a config is generated');
     assert.equal(variable?.record?.second, 1, 'a power switch has two states');
     assert.deepEqual(
       variable?.record?.values.map((one) => [one.from, one.to, one.opcode, one.operand]),
-      [[0, 1, 0x7f, composed.lists[0]], [1, 0, 0x7f, composed.lists[0]]],
-      'both transitions run the power command\'s list');
+      [[0, 1, 0x7f, composed.powerOnDelay?.on ?? composed.lists[0]], [1, 0, 0x7f, composed.lists[0]]],
+      'switching off runs the power command\'s list, and switching on too except on arch 14');
+    // On arch 14 switching on runs the power command and then the power on delay, section 288.
+    if (composed.powerOnDelay !== undefined) {
+      assert.deepEqual(after.actionLists()![composed.powerOnDelay.on]!.map((one) => [one.opcode, one.operand]),
+                       [[0x7f, composed.lists[0]], [0x7f, composed.powerOnDelay.list]]);
+    }
     // And each command's list is the send **paired** with its per device quantity, readable off the
     // container itself. This asserted the send alone until 8 September 2026, and the title said "one
     // send", which was true of what the composer emitted and false of every send list in the corpus:
@@ -669,6 +681,155 @@ test('no command opens with the prelude on the Harmony One, the 525 or the arch 
     assert.equal(c.actionLists()!.filter((list) => list.some((one) => one.opcode === 0x7d)).length, sends);
     assert.deepEqual(sendPreludes(c), [], `${name} has sends and no prelude`);
   }
+});
+
+test('every arch 14 device with a Power variable switches on through its power command and then its power on delay',
+     skipUnless(...PRELUDE_HOSTS.map(([name]) => name)), () => {
+  // Section 288. The off transition runs the power command's send list; the on transition runs a
+  // list calling that same send list and then a list of one 0x72 on the device's PowerOnDelay, whose
+  // table queues each value from 0 to 450 as 0x7C quantities a hundred at a time.
+  let devicesSeen = 0;
+  let offSame = 0;
+  let second = 0;
+  let notLast = 0;
+  const perConfiguration: number[] = [];
+  const held: number[] = [];
+  const orders = new Set<string>();
+  for (const [name] of PRELUDE_HOSTS) {
+    const c = parse(require_(name));
+    const lists = c.actionLists()!;
+    const records = stateRecords(c)!;
+    const names = new Map(stateVariables(c).map((one) => [one.index, one]));
+    const sends = new Map(sendPreludes(c).map((one) => [one.list, one]));
+    const identifiers = deviceIdOfGroup(c);
+    const delays = powerOnDelays(c);
+    const powered = deviceVariables(c).filter((one) => one.property === 'Power');
+    assert.equal(delays.length, powered.length, `${name}: every Power variable has one`);
+    assert.equal(new Set(delays.map((one) => one.group)).size, delays.length, 'one per device');
+    assert.equal(new Set(delays.map((one) => one.delay)).size, delays.length, 'no two devices share one');
+    perConfiguration.push(delays.length);
+    // The second table on every PowerOnDelay variable, a device with no Power variable included: 451
+    // cases each calling a list of two instructions, 0x7A and then 0x6C with the case's own value.
+    // What reads it is unread.
+    const mappers = new Map<number, Set<number>>();
+    lists.forEach((list) => list.forEach((step) => {
+      if (step.opcode !== 0x72) return;
+      const set = mappers.get(step.operand & 0xff) ?? new Set<number>();
+      mappers.set(step.operand & 0xff, set.add(step.operand >>> 8));
+    }));
+    const queueTables = new Set(delays.map((one) => one.table));
+    for (const variable of names.values()) {
+      if (!/^PowerOnDelay_\d+$/.test(variable.label)) continue;
+      const others = [...(mappers.get(variable.index) ?? [])].filter((table) => !queueTables.has(table));
+      assert.equal(others.length, 1, `${name}: ${variable.label} has one second table`);
+      const map = valueMaps(c)![others[0]!]!;
+      assert.equal(map.entries.length, POWER_ON_DELAY_CASES);
+      for (const [value, target] of map.entries) {
+        const step = screenProgram(c, target)![0]!;
+        assert.equal(step.opcode, 0x11);
+        assert.equal(step.operands[2], 0x7f);
+        const called = lists[step.operands[0]! | (step.operands[1]! << 8)]!;
+        assert.deepEqual(called.map((one) => one.opcode), [0x7a, 0x6c]);
+        assert.equal(called[1]!.operand, value, `${name}: the second table's case ${value} writes ${value}`);
+      }
+      if (name !== 'h700_config_2') second += 1;
+    }
+    for (const one of delays) {
+      const variable = names.get(one.variable)!;
+      assert.equal(variable.deviceId, identifiers.get(one.group), `${name}: group ${one.group}'s own`);
+      assert.ok(one.variable >= stateTable(c)!.narrow, 'a two byte variable');
+      assert.equal(variable.record?.second, 65277);
+      const on = lists[one.on]!;
+      const power = sends.get(on[0]!.operand);
+      assert.equal(on[0]!.opcode, 0x7f);
+      assert.equal(power?.group, one.group, 'switching on starts with the power command');
+      const delayAt = on.findIndex((step) => step.opcode === 0x7f && step.operand === one.delay);
+      assert.ok(delayAt > 0, 'and calls the delay after it');
+      if (delayAt !== on.length - 1) notLast += 1;
+      // The off transition sends a code of the same device with no delay: a send list of its own,
+      // or a list whose first call is one. Not necessarily the same code, since a device with
+      // separate on and off codes sends the off one.
+      const record = records.find((r) => r.values.some((v) => v.from === 0 && v.to === 1 && v.operand === one.on))!;
+      const off = record.values.find((v) => v.from === 1 && v.to === 0)!;
+      const offSend = sends.get(off.operand) ?? sends.get(lists[off.operand]![0]!.operand);
+      assert.equal(offSend?.group, one.group, `${name}: switching off sends a code of the device`);
+      assert.ok(!(lists[off.operand] ?? []).some((step) => step.opcode === 0x7f && step.operand === one.delay),
+                'and no power on delay');
+      if (offSend!.list === power!.list) offSame += 1;
+      const cases = powerOnDelayCases(c, one.table)!;
+      assert.equal(cases.length, POWER_ON_DELAY_CASES);
+      assert.deepEqual([...cases.map((k) => k.value)].sort((a, b) => a - b),
+                       Array.from({ length: POWER_ON_DELAY_CASES }, (_, k) => k));
+      for (const k of cases) {
+        assert.equal(k.group, one.group);
+        assert.deepEqual(k.amounts, powerOnDelayAmounts(k.value), `${name}: case ${k.value}`);
+        assert.equal(k.list !== undefined, k.value > 100, 'a list exactly above a hundred');
+      }
+      // The lists above a hundred are the device's own, contiguous and in the table's case order,
+      // which is not value order.
+      const called = cases.filter((k) => k.list !== undefined).map((k) => k.list as number);
+      assert.deepEqual(called, called.map((_, k) => called[0]! + k));
+      const byValue = cases.filter((k) => k.list !== undefined).sort((a, b) => a.value - b.value)
+        .map((k) => k.list as number);
+      assert.notDeepEqual(byValue, called, 'and that is not value order');
+      orders.add(cases.map((k) => k.value).join(','));
+      if (name !== 'h700_config_2') {
+        devicesSeen += 1;
+        held.push(variable.record?.first ?? -1);
+      }
+    }
+  }
+  assert.equal(devicesSeen, 15, 'four, three, three and five');
+  assert.deepEqual(perConfiguration, [4, 3, 3, 5, 5]);
+  assert.equal(notLast, 2, "the delay is last in the on list except on the Harmony 700's video recorder, both 700s");
+  assert.equal(second, 18, 'the fifteen and the three devices with no Power variable');
+  assert.equal(offSame, 7, 'devices whose off sends the same code as their on, of 20 with both 700s counted');
+  assert.equal(orders.size, 1, 'one case order on every table');
+  assert.equal(held.filter((one) => one === POWER_ON_DELAY_DEFAULT).length, 9);
+  assert.deepEqual(held.filter((one) => one !== POWER_ON_DELAY_DEFAULT).sort((a, b) => a - b),
+                   [35, 50, 50, 60, 75, 80]);
+});
+
+test('a device composed on the Harmony 650 switches on with a power on delay in the compiler\'s shape',
+     skipUnless('h650_config_region'), () => {
+  const pristine = parse(require_('h650_config_region'));
+  const was = powerOnDelays(pristine);
+  const device = composeDevice(pristine, { label: 'LG', commands: TELEVISION, power: 0, powerOnDelay: 50 });
+  const after = parse(device.bytes);
+  const report = coverage(after);
+  assert.equal(report.accounted, report.total, 'every byte is claimed');
+  assert.deepEqual(report.overlaps, [], 'and no byte twice');
+  assert.ok(trailerAgrees(after));
+  assert.equal(roundTrip(after).equal, true, 'the emitter reproduces the composed file');
+  assert.ok(addressesFollowIndices(after), 'both new tables stored last, as their indices are');
+
+  // The reader finds it by the compiler's route, and every existing device's is unchanged.
+  const found = powerOnDelays(after);
+  assert.equal(found.length, was.length + 1);
+  const mine = found.find((one) => one.group === device.group)!;
+  assert.deepEqual(mine, { group: device.group, on: device.powerOnDelay!.on, delay: device.powerOnDelay!.list,
+                           table: device.powerOnDelay!.table, variable: device.powerOnDelay!.variable });
+  for (const one of was) {
+    assert.deepEqual(powerOnDelayCases(after, one.table), powerOnDelayCases(pristine, one.table));
+  }
+  const cases = powerOnDelayCases(after, mine.table)!;
+  const called = cases.filter((k) => k.list !== undefined).map((k) => k.list as number);
+  assert.deepEqual(called, called.map((_, k) => called[0]! + k), 'its lists in case order, as compiled');
+  assert.deepEqual(cases.map((k) => k.value), powerOnDelayCases(pristine, was[0]!.table)!.map((k) => k.value),
+                   "the configuration's own case order");
+  assert.ok(cases.every((k) => k.group === device.group
+    && k.amounts.join() === powerOnDelayAmounts(k.value).join()));
+
+  // The variable carries the same identifier as the inter device one, and the value asked for.
+  const variable = stateVariables(after).find((one) => one.index === mine.variable)!;
+  assert.equal(variable.name, `PowerOnDelay_${device.delay!.identifier}_65278`);
+  assert.equal(variable.record?.first, 50);
+  assert.equal(variable.record?.count, 0, 'no transitions');
+  const plain = composeDevice(pristine, { label: 'LG', commands: TELEVISION });
+  assert.equal(stateVariables(parse(plain.bytes)).find((one) => one.index === plain.powerOnDelay!.variable)
+    ?.record?.first, POWER_ON_DELAY_DEFAULT);
+  assert.throws(() => composeDevice(pristine, { label: 'LG', commands: TELEVISION, powerOnDelay: 451 }),
+                ComposeError);
 });
 
 test('a device composed on the Harmony 650 opens every command in the compiler\'s shape and order',

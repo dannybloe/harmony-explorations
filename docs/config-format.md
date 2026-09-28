@@ -2051,6 +2051,16 @@ it is not language bound; it answers for fewer devices, because one that nothing
 such list. That `0x72`'s base slot 14 record has 451 entries, which states the 0 to 450 range a
 third time.
 
+**The power on list and its table**, section 288. The `Power` variable's off to on transition runs a
+list that calls a send list of the device and then a list of one `0x72` on `PowerOnDelay_<identifier>`,
+15 of 15 devices; the off transition sends a code of the device with no delay. The table's 451 cases
+queue the value as `0x7C` quantities for the device's group, a hundred at a time: 0 an end alone, 1 to
+100 one `0x7C`, 101 to 450 a call to a list of the device's own holding hundreds and a remainder, the
+350 lists contiguous in the table's case order, which is one order on all 15. Each device also has a
+second 451 case table on the same variable, whose cases call lists, **unconfirmed** in purpose.
+`powerOnDelays` and `powerOnDelayCases`; `composeDevice` emits the list, the variable and the table on
+arch 14.
+
 `deviceDelays`, `powerOnInstructions` and `deviceIdOfGroup` in `packages/codec/src/inventory.ts`.
 [findings.md](findings.md) sections 234 and 235.
 

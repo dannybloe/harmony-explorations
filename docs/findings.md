@@ -37200,8 +37200,9 @@ wide totals, so the counts in this section are over a wider population than `lab
   device mode. What each table case does is unread. A composed command skips it, and a composed device
   also carries none of the delay variables every compiled one has, so `deviceDelays` does not report
   it and an activity starting it would get no inter device delay. Section 235 reads those variables.
-  *Section 287 reads the cases and composes the call, the `InterDeviceDelay` variable and its table;
-  the other seven delay variables are still not composed, so `deviceDelays` still does not report it.*
+  *Section 287 reads the cases and composes the call, the `InterDeviceDelay` variable and its table,
+  and section 288 the power on delay; the other six delay variables are still not composed, so
+  `deviceDelays` still does not report it.*
 
 ### A closure, and the disagreement it found in section 271's reader
 
@@ -37561,6 +37562,7 @@ delay, the defaults, and the two counter and flag pairs, and the "Set to default
 `deviceIdOfGroup` joins a device to its identifier, so `deviceDelays` still does not report a composed
 device. The power on delay matters to an activity: on the 650 a compiled device's power on list ends
 with a `0x72` on its `PowerOnDelay_<identifier>`, which a composed device's power list does not have.
+*Composed since section 288, with the power on list and the table.*
 
 ### Scope, decision 16
 
@@ -37603,4 +37605,135 @@ commands stop sending from device mode once they carry the prelude.
 * `packages/codec/test/compose.test.ts`: the shape on all five configurations, the 23 tables, the
   identifier join, the index order, and the composed 650 device read back through the same readers; the four host test on `h600_config` now
   asserts the prelude where it asserted the bare pair as a known deviation.
+* `docs/config-format.md`, `todo.md`, `docs/status.md` and the `writing-a-config` skill.
+
+## 288. An arch 14 device switches on through its power command and then its power on delay, and a composed device now does too
+
+**Todo 1.2.8.** Section 287 gave a composed device the inter device delay and left the power on delay
+out, noting that a compiled device's power on list ends with a `0x72` on its `PowerOnDelay_<identifier>`
+and a composed one's does not. That list is read whole now, with its table, and composed.
+
+### The on list, on 15 of 15
+
+```
+Power 0 -> 1    [0x7F power command, ..., 0x7F delay, ...]
+delay           [0x72 (table << 8) | variable]          PowerOnDelay_<identifier>
+Power 1 -> 0    a send list of the device's, or a list whose first call is one; no delay
+```
+
+Measured on the 15 devices with a `Power` variable on the four distinct arch 14 configurations, four on
+the 650, three on the 600, three on `calibration_h600` and five on the Harmony 700, the second 700
+configuration repeating the first. On every one the on list opens with a call to a send list of that
+device and then calls the delay list, and every device has its own delay list. Two televisions put one
+`0x1F` instruction between the two calls, and the Harmony 700's video recorder calls a third list after
+the delay, so the delay is last on 14 of the 15; neither extra is read. The off list sends the same code
+as the on list on 5 of the 15 and a different code of the same device on the other 10, a device with
+separate on and off codes, and it never names the delay; on two televisions it is a list calling the
+send and then writing a variable. `variable` is a
+two byte variable above `narrow` with a maximum of 65277, whose identifier is the one the remote's own
+delay page joins to the device's group on 15 of 15. It holds 15 on 9 of the 15, and 35, 50, 50, 60, 75 and
+80 on the other six, the four televisions among them: **no television carries 15**. Three further
+devices carry the variable with no `Power` variable, the 650's Kodi, the 600's Chromecast and the
+700's Roku, each holding 0 and having only the second table below.
+
+Arch 8, 9 and 12 have none of this: there the delay is a `0x7C` inline in the on list, which
+`powerOnInstructions` reads, section 235.
+
+### The table
+
+Each device's table has 451 cases, 0 to 450 tenths, no ranges, and each case's program queues the value
+as `0x7C` quantities for the device's group, **a hundred at a time**:
+
+* 0 queues nothing: the program is an end alone;
+* 1 to 100 queue one `0x7C` of `(group << 8) | value`;
+* 101 to 450 queue a call to a list of the device's own holding the value as hundreds and a
+  remainder, 250 being `[100, 100, 50]`.
+
+All 6765 cases of the 15 tables follow that rule. The 350 lists behind a device's cases above 100 are
+contiguous and stored **in the table's case order, not in value order**, on 15 of 15. The case order is
+one order on every one of the tables, and not merely pairwise swaps: it agrees with section 287's 21
+case order on its first 20 positions, and of its 451 values 17 stay in place, 121 form
+swapped pairs and 48 rotations of four. A hundred is also the value at which section 70's queue stops
+folding a quantity into the entry before it, so a wait spelled a hundred at a time stays several
+entries; **that the compiler splits at a hundred because of the fold is an inference**, since section 70
+also keeps a single larger quantity whole when nothing folds it.
+
+**Each device also has a second 451 case table on the same variable**, the counterpart of section 287's
+second inter device table: every case calls a list of its own, `0x7A` and then `0x6C` with the case's
+value, on the 18 devices that carry the variable. The on list does not reach it and what reads it is
+unread. Not composed.
+
+### Composed
+
+`composeDevice` on arch 14 now adds, beside section 287's inter device delay:
+
+1. the variable, `PowerOnDelay_<identifier>_65278`, with the same identifier as the inter device one,
+   appended before it at the end of base slot 13. It holds 15 unless the caller asks for 0 to 450, and
+   anything else is refused. `compose-device.ts` takes `--power-on-delay` and `--inter-device-delay`.
+2. the 350 lists for the cases above 100, contiguous and in the case order, which is copied off the
+   configuration's own tables; the composer refuses a configuration whose tables disagree on it.
+3. the table, after the last record with its programs after the last record's, through the same
+   insertion as the inter device table, which is one function now, `appendValueMap`.
+4. the delay list and the on list, and the power variable's off to on transition runs the on list, where
+   it ran the power command's list directly. The off transition still runs the power command's list.
+
+The composed 650 device reads back through `powerOnDelays` and `powerOnDelayCases` exactly as a compiled
+one does, every byte is accounted for with no overlap, and the emitter round trips it. Built with the
+LG television's six commands on the 650's own configuration and a power on delay of 50, the 650's own
+television's, it is 11708 bytes longer than the input and touches **14** erase blocks, one more than
+section 285's write: it now reaches the block at `0x110000`, which is past the end of the region read
+the next write would compare against, so that write needs a region read covering it first. The default
+of 15 is wrong for a television on the evidence above, so a television is composed with the value
+given.
+
+**`compose-device.ts` reported 13**, and that was a defect in its count, found by the prose auditor: it
+stepped a whole block from the end of the input and so skipped the last block whenever the growth crossed
+a boundary. Section 285's composition ended inside its thirteenth block, so its count was right.
+
+**Two readings in this section's first draft were wrong before the tests settled them**, neither in a
+committed document. The off transition was said to run the same power command, which holds on 5 of 15;
+and the lists above 100 were said to be in value order, which holds on none, the composer's first
+version writing them that way.
+
+### Scope, decision 16
+
+The shape and the table: arch 14, three models and five configurations, the configuration only, no image
+read. The composition: the Harmony 650's configuration, and `h600_config` by the four host test. **Nothing
+here is measured on hardware.** The power on delay is felt only when an activity switches a device on and
+then sends it something, section 236, so the first test is todo 1.4.4.
+
+### The reviewers
+
+The blind re-measure reproduced the on and off lists, the rule on every case, the case order and the
+layout, the three devices with no `Power` variable and the second table, and found the composed device
+matching with every existing list, table and record unchanged apart from the renumbering. Its
+differences from the compiler are the ones above and the layout ones section 287 names. The prose
+audit found the erase block count, the case order described as pairwise swaps, the off transition's
+superseded reading surviving in two code comments, the delay said to end the on list, the default
+being no television's, the fold stated as the reason, and four test assertions weaker than their
+messages. Each was re-measured here before it was changed.
+
+### Sources
+
+The five configurations; sections 70 and 71 for the queue and its fold at 100, 86 for the `Power`
+variable's transitions, 235 for the delay variables and the inline form elsewhere, 236 for what a
+power on delay holds back, and 287. The firmware was not read beyond those sections, and Logitech's
+client was not consulted, for section 278's reason.
+
+### Falsification
+
+A compiled arch 14 device whose on list does not call its power on delay after its power command, or
+whose table breaks the hundred at a time rule; or, on hardware, a composed device switched on by an activity whose next command
+to it goes out without the wait its variable holds.
+
+### Where it lands
+
+* `packages/codec/src/inventory.ts`: `powerOnDelays`, `powerOnDelayCases` and `powerOnDelayAmounts`, with
+  `POWER_ON_DELAY_CHUNK` and `POWER_ON_DELAY_CASES`.
+* `packages/codec/src/compose.ts`: `composeDelays` makes both delays; `appendDelayVariable`,
+  `appendActionLists` and `appendValueMap` are the three insertions they share; `composeDevice` gives the
+  power variable its on list.
+* `packages/codec/bin/compose-device.ts`: `--power-on-delay` and `--inter-device-delay`.
+* `packages/codec/test/compose.test.ts`: the shape and the tables on all five configurations, and the
+  composed 650 device read back through the same readers; the four host test asserts the on list.
 * `docs/config-format.md`, `todo.md`, `docs/status.md` and the `writing-a-config` skill.

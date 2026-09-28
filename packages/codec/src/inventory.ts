@@ -1075,6 +1075,138 @@ export function interDeviceDelayCases(c: Container, table: number): InterDeviceD
   return out;
 }
 
+/**
+ * The most a single `0x7C` quantity carries in a power on delay table, in tenths: a larger value is
+ * spelled as that many hundreds and a remainder, on every case of every such table here, section
+ * 288. Section 70's queue folds a quantity into the entry before it only while that entry is below
+ * 100, which is the same number seen from the firmware's side; that the compiler splits because of
+ * it is an inference.
+ */
+export const POWER_ON_DELAY_CHUNK = 100;
+/**
+ * The values a power on delay table has a case for: 0 to 450 tenths, 45 seconds, on the 15 tables of
+ * the 15 devices with a `Power` variable on the four distinct arch 14 configurations.
+ */
+export const POWER_ON_DELAY_CASES = 451;
+
+/**
+ * An arch 14 device's power on delay, read from the list its `Power` variable runs when it goes
+ * from off to on, section 288.
+ *
+ * ```
+ * on list      [0x7F power command, ..., 0x7F delay]
+ * delay        [0x72 (table << 8) | variable]          the device's PowerOnDelay_<identifier>
+ * ```
+ *
+ * The on list runs a send list of the device and then the delay list, on 15 of the 15
+ * devices with a `Power` variable on the four distinct arch 14 configurations, the second Harmony
+ * 700 configuration repeating the first; two televisions carry one
+ * more instruction between them and one video recorder a third call after. The off transition sends
+ * a code of the device with no delay, the same code as the on list on 5 of the 15. Arch 8, 9 and 12 inline the delay as a
+ * `0x7C` instead, which `powerOnInstructions` reads.
+ */
+export interface PowerOnDelay {
+  group: number;
+  /** The list the `Power` variable's off to on transition runs. */
+  on: number;
+  /** The one list holding the `0x72`. */
+  delay: number;
+  table: number;
+  variable: number;
+}
+
+/** Every arch 14 device's power on delay, by the route `PowerOnDelay` describes. */
+export function powerOnDelays(c: Container): PowerOnDelay[] {
+  const lists = c.actionLists();
+  const records = stateRecords(c);
+  if (lists === undefined || records === undefined) return [];
+  const names = new Map(stateVariables(c).map((one) => [one.index, one.label]));
+  const byLabel = new Map(devices(c).flatMap((one) => (one.name === undefined ? [] : [[one.name, one.group] as const])));
+  const out: PowerOnDelay[] = [];
+  for (const variable of deviceVariables(c)) {
+    if (variable.property !== POWER_PROPERTY) continue;
+    const group = byLabel.get(variable.device);
+    if (group === undefined) continue;
+    for (const value of records[variable.index]?.values ?? []) {
+      if (value.opcode !== ACTION_LIST_INDEX_OPCODE || value.from !== POWER_OFF || value.to !== POWER_ON) continue;
+      for (const one of lists[value.operand] ?? []) {
+        if (one.opcode !== ACTION_LIST_INDEX_OPCODE) continue;
+        const called = lists[one.operand];
+        const mapped = called?.[0];
+        if (called?.length !== 1 || mapped?.opcode !== MAP_VALUE_OPCODE) continue;
+        if (!/^PowerOnDelay_\d+$/.test(names.get(mapped.operand & 0xff) ?? '')) continue;
+        out.push({
+          group, on: value.operand, delay: one.operand,
+          table: mapped.operand >>> 8, variable: mapped.operand & 0xff,
+        });
+      }
+    }
+  }
+  return out;
+}
+
+/** One case of a power on delay table: the value it matches and the quantities it queues. */
+export interface PowerOnDelayCase {
+  value: number;
+  group: number;
+  /** The `0x7C` amounts queued, in order: none for 0, one up to 100, and hundreds then the rest. */
+  amounts: number[];
+  /** The action list a case above 100 calls to queue them, which only those cases have. */
+  list?: number;
+}
+
+/**
+ * A base slot 14 record read as a power on delay table, or undefined when it is not one.
+ *
+ * Each case's program is an end alone, for 0; or `0x11` queueing one `0x7C` of `(group << 8) |
+ * value`; or `0x11` queueing a `0x7F` to a list of nothing but `0x7C`s for that group, for a value
+ * above `POWER_ON_DELAY_CHUNK`. Every case must name one group and there must be no ranges.
+ */
+export function powerOnDelayCases(c: Container, table: number): PowerOnDelayCase[] | undefined {
+  const map = valueMaps(c)?.[table];
+  const lists = c.actionLists();
+  if (map === undefined || lists === undefined || map.ranges.length !== 0) return undefined;
+  const out: PowerOnDelayCase[] = [];
+  let group: number | undefined;
+  const agree = (one: number): boolean => (group ??= one) === one;
+  for (const [value, target] of map.entries) {
+    const program = screenProgram(c, target);
+    if (program === undefined || program.at(-1)?.opcode !== SCREEN_END) return undefined;
+    if (program.length === 1) {
+      out.push({ value, group: -1, amounts: [] });
+      continue;
+    }
+    const queued = program[0];
+    if (program.length !== 2 || queued?.opcode !== SCREEN_QUEUE_INSTRUCTION) return undefined;
+    const operand = (queued.operands[0] as number) | ((queued.operands[1] as number) << 8);
+    if (queued.operands[2] === DEVICE_QUANTITY) {
+      if (!agree(operand >>> 8)) return undefined;
+      out.push({ value, group: operand >>> 8, amounts: [operand & 0xff] });
+    } else if (queued.operands[2] === ACTION_LIST_INDEX_OPCODE) {
+      const called = lists[operand];
+      if (called === undefined || called.length === 0) return undefined;
+      if (called.some((one) => one.opcode !== DEVICE_QUANTITY || !agree(one.operand >>> 8))) return undefined;
+      out.push({ value, group: group as number, amounts: called.map((one) => one.operand & 0xff), list: operand });
+    } else {
+      return undefined;
+    }
+  }
+  if (group === undefined) return undefined;
+  return out.map((one) => ({ ...one, group: group as number }));
+}
+
+/** The amounts a power on delay of `tenths` is queued as: hundreds first, then the rest. */
+export function powerOnDelayAmounts(tenths: number): number[] {
+  const out: number[] = [];
+  let left = tenths;
+  while (left > POWER_ON_DELAY_CHUNK) {
+    out.push(POWER_ON_DELAY_CHUNK);
+    left -= POWER_ON_DELAY_CHUNK;
+  }
+  if (left > 0) out.push(left);
+  return out;
+}
+
 /** The high byte of `0x7D`'s operand: the base slot 5 group. */
 const INFRARED_GROUP_SHIFT = 8;
 
