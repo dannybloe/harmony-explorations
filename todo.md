@@ -43,7 +43,7 @@ Plan: [003-how-an-activity-is-built.md](docs/plans/003-how-an-activity-is-built.
   - [x] 1.2.8 A composed device's power on delay on arch 14: the on transition runs the power command and then a 0x72 on PowerOnDelay through a 451 case table, a hundred tenths at a time, 15 of 15, and composed; not on hardware yet (section 288)
   - [x] 1.2.9 An arch 14 activity's own screens: a start up screen of its own, "Starting" and its name, and a working screen that is a device page with "Devices" at the bottom, plus a case in the four lookup records keyed by the activity; composed and checked on the 650, 600 and 700 configurations, not on hardware (section 290)
   - [ ] 1.2.10 A composed arch 14 activity's own device list, "Activity" at the bottom: the key under Devices opens the idle one now, "Activities" (section 290)
-- [ ] 1.3 Write one to the spare Harmony One and watch the television, per docs/plans/004-writing-an-activity.md
+- [x] 1.3 Write one to the spare Harmony One and watch the television, per docs/plans/004-writing-an-activity.md
   - [x] 1.3.1 First write: the activity appears on the menu and beeps, and starts nothing (section 276)
   - [x] 1.3.2 Why: base slot 13's narrow and wide size the state variable storage and everything above it is painted with 0xFE at every boot, so the power variable held 65278 instead of 0. Measured on arch 12 and both arch 14 images, confirmed on hardware; the fill is unmeasured on arch 9
   - [x] 1.3.3 Read the spare's region fresh, since the first write invalidated the dump every later one compares against: once before every write since

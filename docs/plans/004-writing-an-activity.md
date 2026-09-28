@@ -1,6 +1,9 @@
 # Plan 004: writing an activity to the spare Harmony One
 
-**Status: open.** Written 7 September 2026. This is `todo.md` item 1.3 worked out, and nothing in it
+**Status: done.** The goal was met by todo 1.3.7, section 278, when the television answered a composed
+activity, and 1.3.8, section 279, rebuilt it from the composers alone. What follows is kept as written.
+
+Written 7 September 2026. This is `todo.md` item 1.3 worked out, and nothing in it
 has been sent to a remote. Every number below is measured off the file and the lab dump, so what is
 left is the hardware session.
 
