@@ -65,6 +65,7 @@ import {
 import { claims } from './coverage.ts';
 import { parameterGroups, timers } from './tables.ts';
 import { IR_QUANTITY_CAP } from './ir.ts';
+import { STATE_WRITE_BASE, stateVariableSite } from './actions.ts';
 
 /** What a caller may not do. Separate from `GspmError` so an editor can catch only its own. */
 export class EditError extends GspmError {}
@@ -642,4 +643,133 @@ export function setPageListEntry(
     out.push({ start: at, bytes: Uint8Array.from(bytes), owner: `page ${page} ${where} ${index}` });
   }
   return out;
+}
+
+/** Opcode 0x7E: enter the mode the operand indexes. */
+const ENTER_MODE = 0x7e;
+
+/** Where a configuration's introduction tour starts and how it ends, as `introductionTour` found it. */
+export interface IntroductionTour {
+  /**
+   * `shown` when the list enters the tour's first screen, `skipped` when it calls the tour's exit
+   * instead, which is the form Logitech's own compiler writes on `h600_config` and both Harmony 700
+   * configurations and the form `skipIntroductionTour` produces.
+   */
+  state: 'shown' | 'skipped';
+  /** The base slot 10 list that marks the tour started and then enters it or skips it. */
+  list: number;
+  /** The state variable that list sets to 1, which no other `0x80 + v` write in an action list sets. */
+  variable: number;
+  /** The tour's first screen, where the list enters one; a skipped tour names none. */
+  mode?: number;
+  /** How many screens the tour is, walking every mode its screens enter. */
+  modes: number;
+  /** The list the tour's last screen runs, which is how the tour ends. */
+  exit: number;
+}
+
+/**
+ * Find the introduction tour a configuration opens after every reload, and whether it is skipped.
+ *
+ * **What the tour is**, section 286: ten screens, `Welcome to your Harmony 650 remote` to `You can now
+ * enjoy your entertainment system`, which a Harmony 650 was seen opening after a write, when the
+ * configuration is reloaded. It is started by one list of two instructions, **set a variable
+ * to 1, then enter the tour's first screen**, and it ends when its last screen runs one list, the
+ * list that returns the remote to its Remote Assistant screen. The variable is seeded 0, and that exit
+ * route calls the tour itself while it is 0, which is why the tour sets it first.
+ *
+ * **Logitech's compiler writes the same list in a second form**, set the variable and then call the
+ * exit, so the tour is never entered: on `h600_config` and both Harmony 700 configurations, lists 364
+ * and 1157, where on the Harmony 650's configuration and `calibration_h600` it enters the tour. So the
+ * edit below produces the vendor's own form rather than one of ours.
+ *
+ * Found structurally rather than by number: a two instruction list `[0x80 + v := 1, x]` whose
+ * variable no other `0x80 + v` write in an action list sets, where `x` either enters a mode whose screens reach exactly
+ * one list between them, or calls a list that exactly one set of screens reaches in that way.
+ */
+export function introductionTour(c: Container): IntroductionTour {
+  const lists = c.actionLists() ?? [];
+  const records = modeRecords(c) ?? [];
+  // How many instructions write each variable through the opcode, which is how a list sets one.
+  const writes = new Map<number, number>();
+  for (const list of lists) {
+    for (const one of list) {
+      const site = stateVariableSite(one);
+      if (site?.where === 'opcode') writes.set(site.index, (writes.get(site.index) ?? 0) + 1);
+    }
+  }
+  const bindings = (mode: number): TaggedEntry[] => [
+    ...(records[mode]?.entries ?? []),
+    ...(records[mode]?.pages ?? []).flatMap((page) => taggedList(c, page.list)?.entries ?? []),
+  ];
+  // A set of screens: every mode reached from one by the modes they enter, and the lists they run.
+  const screens = (from: number): { modes: Set<number>; exits: Set<number> } => {
+    const modes = new Set<number>();
+    const exits = new Set<number>();
+    const queue = [from];
+    while (queue.length > 0) {
+      const mode = queue.shift() as number;
+      if (modes.has(mode)) continue;
+      modes.add(mode);
+      for (const entry of bindings(mode)) {
+        if (entry.opcode === ENTER_MODE) queue.push(entry.operand);
+        else if (entry.opcode === ACTION_LIST_INDEX_OPCODE) exits.add(entry.operand);
+      }
+    }
+    return { modes, exits };
+  };
+  // For the skipped form: which screen sets, closed under the modes they enter, run a list and only
+  // that list. Keyed by the list, with the size of each set that does.
+  const toursEnding = new Map<number, number[]>();
+  records.forEach((_, mode) => {
+    const { modes, exits } = screens(mode);
+    if (exits.size !== 1 || modes.size < 2) return;
+    const exit = [...exits][0] as number;
+    const smallest = Math.min(...modes);
+    if (smallest !== mode) return;  // one entry per set, keyed on its lowest mode
+    toursEnding.set(exit, [...(toursEnding.get(exit) ?? []), modes.size]);
+  });
+  const found: IntroductionTour[] = [];
+  lists.forEach((list, index) => {
+    const [mark, next] = list;
+    if (list.length !== 2 || mark === undefined || next === undefined) return;
+    if (mark.opcode < STATE_WRITE_BASE || mark.operand !== 1) return;
+    const variable = mark.opcode - STATE_WRITE_BASE;
+    if (writes.get(variable) !== 1) return;
+    if (next.opcode === ENTER_MODE) {
+      const { modes, exits } = screens(next.operand);
+      if (exits.size !== 1) return;
+      found.push({ state: 'shown', list: index, variable, mode: next.operand, modes: modes.size,
+                   exit: [...exits][0] as number });
+    } else if (next.opcode === ACTION_LIST_INDEX_OPCODE) {
+      const tours = toursEnding.get(next.operand);
+      if (tours?.length !== 1) return;
+      found.push({ state: 'skipped', list: index, variable, modes: tours[0] as number, exit: next.operand });
+    }
+  });
+  if (found.length !== 1) {
+    throw new EditError(`${found.length} lists have the introduction tour's shape, and one is needed`);
+  }
+  return found[0] as IntroductionTour;
+}
+
+/** The edit `introductionTour` describes: the tour list's enter becomes a call to its exit. */
+export function skipIntroductionTour(c: Container): Edit[] {
+  const tour = introductionTour(c);
+  if (tour.state === 'skipped') {
+    throw new EditError(`the introduction tour is already skipped: list ${tour.list} calls its exit`);
+  }
+  const table = c.pointerArray(archSlot(c.architecture as number, ACTION_LIST_TABLE_SLOT));
+  const address = table?.[tour.list];
+  if (address === undefined) throw new EditError(`action list ${tour.list} has no address`);
+  // The second instruction, `{ u16 operand; u8 opcode }` with the operand low byte first, past the
+  // count byte and the first instruction.
+  const off = c.blobOffsetOf(address + 1 + 3);
+  if (off === undefined) throw new EditError(`action list ${tour.list} is outside the container`);
+  if (tour.exit > 0xffff) throw new EditError(`list ${tour.exit} does not fit an operand`);
+  return [{
+    start: off,
+    bytes: Uint8Array.from([tour.exit & 0xff, tour.exit >>> 8, ACTION_LIST_INDEX_OPCODE]),
+    owner: `introduction tour list ${tour.list}`,
+  }];
 }

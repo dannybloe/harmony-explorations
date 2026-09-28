@@ -37304,3 +37304,145 @@ whose key does not send its command.
   to arch 14, and the screen half's refusal moved to the Harmony 525. Controls that moved the right edge
   to 124 and that selected the label font again each failed the first.
 * `docs/config-format.md`, `todo.md`, `docs/status.md` and the `writing-a-config` skill.
+
+## 286. The Harmony 650's introduction tour is one list, and skipping it is the form Logitech's own compiler writes
+
+**After a write the Harmony 650 opened Logitech's introduction tour**, Danny reports, after section
+285's write and after the 650's earlier ones: ten screens from `Welcome to your Harmony 650 remote` to
+`You can now enjoy your entertainment system with one-touch activity control`, which had to be pressed
+through before the remote could be used. The tour is in the configuration, mode
+216, and in the configuration before section 285's as well, so it was never something a composition
+added.
+
+### What starts it and what ends it
+
+One list starts it, list 660, `[0xAC operand 1, 0x7E operand 216]`: write variable 44 to 1, then
+enter the tour's first screen. Variable 44 is seeded 0 in base slot 13, its maximum is 1, and list 660
+is the only instruction in the configuration that writes it, over every instruction site the codec
+reads, 20568 of them, mode bindings, handler sets, state transitions and timers included; the prose
+auditor measured that, where `introductionTour` itself counts only the `0x80 + v` writes in action
+lists. Two lists read it. List 3983 is
+`[0x71 0x802C, 0x7F 660, 0x7E 112]`, a two armed comparison with the byte register, section 140, whose
+caller list 1744 loads 0 into it first: so while variable 44 is 0 it calls the tour, and otherwise it
+enters mode 112, the Remote Assistant screen, `If any devices are still On press "Help" now`. List
+4133 compares it too.
+
+Walking every mode the tour's screens enter gives ten modes, and between them their bindings reach
+**exactly one list**, list 137, run by the last screen's centre key, labelled Exit. No action list calls
+list 137; it is named by that screen and twice by base slot 8's leading list, below. It reaches list
+3983 through list 1274 and 3609, and 3609 is `[0x71 0x8015, 0x7F 1744, 0x72 ...]`, so only while
+variable 21 is 0, and then through 1744. So the tour marks itself started before entering, which is what
+stops that route from starting it again while variable 21 is 0, and on its last screen hands over to it
+with the mark set.
+
+List 660 is called from two places: list 3, the third of lists 1 to 4, which each open with the same
+call to list 2911, and list 3983. **Lists 1 to 4 are named by base slot 8's leading list**, section 83's
+own action list of the section, which on the 650 is `[0x7E 13, 0x7F 1, 0x7F 2, 0x7F 3, 0x7F 4, 0x7E 9,
+0x7F 137, 0x7E 10, 0x7F 5, 0x7E 12, 0x7F 137]`, the same on `calibration_h600` and `h600_config` with
+their own exit list, and on both 700s one list later throughout. This section first said nothing in the
+configuration names lists 1 to 4<!--superseded-->, and the prose audit found the list. The firmware
+uses it as a table of entry points: on the Harmony 700 image `0x0F782` seeks base slot 8, bounds an index
+in `0x1BE` against the leading list's count and queues that one instruction, and it has three callers,
+`0x16710` with the literal index 1 and `0x0F7FA` and `0x0F824` with an index copied from `0x1BF`, which
+the instruction handler at `0x0F248` sets from the operand it was given. Which index runs after a
+reload was not read. After a reload variable 44 is 0 and either route would open the tour.
+
+### The skip
+
+Replace list 660's second instruction, `0x7E 216`, with `0x7F 137`. The mark stays, so every reader of
+variable 44 sees what it sees after a finished tour, and the remote then runs what the tour's Exit
+runs. Same length, so the file differs in the instruction and the trailer checksum, three bytes, and
+the write is two erase blocks.
+
+**Written to the 650, and Danny reports the tour did not appear.** The configuration read back
+identical to the file and the remote restarted, which the write log records; off the cable, by his
+report, it showed the Remote Assistant screen, which is where the tour's exit leads while variable 21
+is 0, and which he says the remote also shows after an ordinary restart. So the reload's route to the tour goes through list 660, which is what
+the edit needed; whether that route starts at list 3 or at the exit route stays open. Danny is content
+with the Remote Assistant screen, a single press of Exit, so it is left as it is.
+
+### The skipped form is Logitech's own, found by the blind reviewer
+
+**The other three arch 14 user configurations already carry the tour in exactly the edited form.** Each
+has the same ten screen tour with one exit, and the list that marks it started calls that exit instead
+of entering it: `h600_config` list 364, `[0xA9 1, 0x7F 135]`, variable 41, and both Harmony 700
+configurations list 1157, `[0xB3 1, 0x7F 306]`, variable 51, each variable seeded 0 and written by that
+list alone, and no list in any of the three enters the tour's first screen. So Logitech's compiler
+writes the list in two forms, **shown** on the 650's configuration and on `calibration_h600`, a Harmony
+600 configuration its service compiled for this project, and **skipped** on the other three, and the
+edit turns the first into the second. What selects the form on their side is not known; both MyHarmony
+compiles here carry the shown form.
+
+This was first written up as "a tour of a different shape that this does not read"<!--superseded-->,
+a reading of `h600_config`'s list as a mark and a call where it is the mark and the tour's own exit, and
+the blind re-measure caught it. The Harmony 700's exit route reaches the same kind of check,
+`[0x71 0x8033, 0x7F 1157, 0x7E 165]`, so the loop the edit creates through the exit route on the 650, cut
+by the mark, is one the vendor's 700 configurations carry as compiled.
+
+### Found structurally, so it transfers
+
+`introductionTour` looks for a two instruction list `[0x80 + v := 1, x]` whose variable no other
+instruction writes, where `x` enters a mode whose screens reach exactly one list between them, or calls
+a list that exactly one set of screens reaches that way, and reports which. Scored over every
+configuration the lab registers, it finds exactly one on each arch 14 user configuration, shown on
+`calibration_h600` and the 650's three region reads before this write, skipped on `h600_config`, both
+700s and the 650's read after it, and nothing on the three arch 14 safe mode containers, the 36 arch 12
+(Harmony One) containers, the Harmony 525's, the 880s', the 890 and 895's or the Harmony 300 and 350's.
+A skipped tour refuses a second skip and a configuration without one refuses the edit.
+
+### Two things the edit changes that are not the tour
+
+* **The worst case queue check no longer judges this route.** `assertQueueFits` walks lists ignoring
+  conditions and judges the runs that end, and with the edit the tour list, the exit route and the
+  lists between them form a cycle as far as a condition blind walk can see, twelve lists of them. The
+  conditions cut it: simulated with them, the start list reaches the Remote Assistant screen in 42
+  instructions with 8 to 10 in flight of 40. The Harmony 700 configurations carry the same twelve list
+  cycle as compiled.
+* **The build timestamp is the input's.** `skip-tour.ts` edits through `applyEdits`, the faithful path,
+  as `set-delay.ts` does, so base slot 3 and the clock records are not restamped and the file differs
+  from what was on the remote in the three bytes and nowhere else.
+
+### Scope, decision 16
+
+Arch 14 only: five user configurations of the Harmony 600, 650 and 700 read, the skip written on the 650
+alone. **Other architectures have tours of another shape**, which the rule does not find: `one_config`,
+arch 12 (Harmony One), has an eleven screen tour from `Welcome!` to `It's that easy!`, entered by list
+943, `[0x07 0xFFFB, 0x7F 484, 0x7E 72, 0xA9 1]`, whose mark comes after the enter and whose screens run
+many lists; `h525_config_2`, arch 9 (Harmony 525), draws `Welkom bij uw afstandsbedienin..` on mode 61
+and `h525_config` draws no welcome at all. Neither was read further.
+
+### The reviewers
+
+The blind re-measure found the skipped form on the other three configurations, above, which changed
+the section's headline, and confirmed the edit to the byte, the absence of a recursion through the exit
+route with the mark set, and the queue figures. The prose audit found base slot 8's leading list naming
+lists 1 to 4, hardware results worded as measurements where they are Danny's report, the Harmony One's
+and the 525's tours, list 3's position among the four, the exit route's condition on variable 21, and
+the code's single writer check being narrower than the prose. Each was re-measured here before it was
+changed and each holds.
+
+### Sources
+
+The configuration and section 140's reading of `0x71`; the Harmony 700 image for the call routine,
+through `pic18_trace.py` and `pic18_xref.py`, which found no fixed list number; Logitech's client,
+`../lab/work/myharmony/src/`, which names no tour; and sections 104 and 238 for how events and the
+queue reach a list.
+
+### Falsification
+
+The tour appearing after a later write of this file or of another configuration skipped the same way;
+a second list writing variable 44; a tour screen binding a second list; or the Remote Assistant screen
+failing to follow a skipped reload.
+
+### Where it lands
+
+* `packages/codec/src/edit.ts`: `introductionTour` and `skipIntroductionTour`, and
+  `packages/codec/bin/skip-tour.ts` to build a file with it.
+* `packages/codec/test/edit.test.ts`: the shown tour on both configurations, the edit changing only
+  the instruction and the checksum and no other list, the edited file reading as the skipped form and
+  refusing a second skip; the skipped form on `h600_config`, both 700s and the 650's region read after
+  the write; and the refusal on `one_config`, `h525_config` and the 650's safe mode container.
+* `h650_notour_region`, the region read after the write, registered as the next compare base: the
+  written file byte for byte, differing from `h650_lg_region` in the three bytes.
+* `docs/config-format.md`, `todo.md` and `docs/status.md`.
+

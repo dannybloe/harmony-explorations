@@ -563,7 +563,7 @@ finding.
 
 `todo.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 285<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 286<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -827,6 +827,15 @@ figures common to both carry `fact:` markers, so `make facts` moves every copy t
 cannot drift apart; what a reader should not expect is two independent statements of one measurement.
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
+
+**And the Harmony 650 no longer opens Logitech's introduction tour after a write, section 286.** Every
+write reloads the configuration, and every reload started a ten screen tour that had to be pressed
+through. One instruction in the configuration starts it; changing it to do what the tour's own Exit
+does leaves the remote exactly where a finished tour would, and after that write Danny saw the
+ordinary Remote Assistant screen instead. The changed instruction is exactly what Logitech's own software writes
+on the Harmony 600 and 700 configurations here, whose tour is switched off that way, so the edit copies
+the vendor rather than inventing something. The editor finds the instruction by its shape rather than
+by number, and tells a tour that is shown from one that is already skipped.
 
 **And a device can be put onto a Harmony 650's screen, section 285, and it works.** The 650, 600
 and 700 draw their screens differently from the Harmony One: four labels in the corners, one beside

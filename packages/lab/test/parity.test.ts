@@ -76,7 +76,8 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // 115 since its data memory dumps across a third restart.
   // 116 since the variables' own bank across a fourth.
   // 117 since the configuration region after 1.4.3's composed device, section 285.
-  assert.equal(Object.keys(pythonImages()).length, 117, 'every fixture tests/lab.py names');
+  // 118 since that region after the introduction tour was skipped, section 286.
+  assert.equal(Object.keys(pythonImages()).length, 118, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {
@@ -133,7 +134,7 @@ test('the two sides exclude the same fixtures from the parseable population', ()
   // base does not quietly add a configuration to every corpus wide total. Whether the 650 joins the
   // corpus is a decision of its own.
   // 23 with that region again after 1.4.2's delay write, the same kind, and 24 with it after 1.4.3's
-  // composed device, section 285.
-  assert.equal(names.length, 24, 'each one a container already counted, that container plus a known '
+  // composed device, section 285, and 25 with it after the tour skip, section 286.
+  assert.equal(names.length, 25, 'each one a container already counted, that container plus a known '
     + 'edit, or a compare base whose remote is not yet in the corpus');
 });

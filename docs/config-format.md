@@ -3328,6 +3328,33 @@ against opcode `0x1F` and the **second** against a sub-command value. The bank i
 chain of custody, the last explicit `MOVLB` before the branch into the chain plus the absence of any
 other on the path, rather than by the disassembler's inference, which drops at a control transfer.
 
+#### The introduction tour is one list, in one of two forms
+
+Section 286, on all five arch 14 user configurations. The introduction tour, which a Harmony 650 was
+seen opening after a reload, is started by one list, which Logitech's compiler writes in one of two
+forms, shown on `calibration_h600` and the 650's configuration and skipped on the other three:
+
+```
+[0x80 + v   operand 1]      mark the tour started: variable v, seeded 0, written nowhere else
+[0x7E       operand m]      shown: enter the tour's first screen
+[0x7F       operand exit]   skipped: run the tour's exit instead, h600_config and both 700s
+```
+
+List 660 with `v` 44 and `m` 216 on the 650, list 396 with 43 and 183 on `calibration_h600`: ten
+screens each, whose bindings reach exactly one list between them, the last screen's Exit, list 137
+and list 63, and base slot 8's leading list names it twice. That exit reaches
+`[0x71 0x8000 | v, 0x7F tour, 0x7E assistant]` after loading 0 into the byte register, while a second
+variable, 21 on the 650, is 0, so it calls the tour list itself while `v` is 0, which is why the tour
+marks itself first. The start list is list 3 on the 650, one of lists 1 to 4 that base slot 8's leading
+list names, and the firmware queues one instruction of that list by index; which index a reload runs
+is **unconfirmed**.
+
+**Skipping it** is replacing `0x7E m` with `0x7F exit`, which is the vendor's skipped form: same length,
+the mark kept, so the remote is left in the state a finished tour leaves. Written to the 650, and Danny
+reports the tour did not appear after the restart, the Remote Assistant screen that follows the tour's
+exit coming up instead. `introductionTour` reports the form and `skipIntroductionTour` refuses a tour
+already skipped and a configuration with neither form.
+
 #### The final run belongs to base slot 8
 
 The lists a `0x7F` never names are not orphans. Base slot 8 holds a `u16` reference to **every** list

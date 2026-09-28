@@ -165,6 +165,8 @@ IMAGES = {
     # The same region after 1.4.3's write, the composed LG television, section 285. The compare
     # base for the next write.
     'h650_lg_region': '20260928T0705Z-h650-lg-region.bin',
+    # And after section 286's write, the introduction tour skipped. The compare base after that.
+    'h650_notour_region': '20260928T0752Z-h650-notour-region.bin',
     # Three snapshots of the 650's state variables, 108 bytes from data 0xE10 plus the stored sum:
     # at rest, after an activity was started off the cable, and after a bare restart. Section 283.
     'h650_ram_activity_restart': '20260927T1150Z-h650-ram-activity-restart.bin',
@@ -489,7 +491,9 @@ PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_confi
                       # And that region after 1.4.2's write, for the same reason.
                       'h650_delay90_region',
                       # And after 1.4.3's write, the composed LG television.
-                      'h650_lg_region')
+                      'h650_lg_region',
+                      # And after section 286's write, the introduction tour skipped.
+                      'h650_notour_region')
 
 CONTAINERS = (
     'h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'h525_config_2', 'one_config',

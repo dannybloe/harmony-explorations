@@ -41,8 +41,10 @@ import {
   parameterGroups,
   parse,
   powerOnInstructions,
+  introductionTour,
   setPageListEntry,
   setParameter,
+  skipIntroductionTour,
   setPowerOnDelay,
   setTimerDuration,
   taggedList,
@@ -854,4 +856,65 @@ test('a device that states no inline delay is refused', skipUnless('h600_config'
   const c = parse(require_('h600_config'));
   assert.equal(powerOnInstructions(c).size, 0, 'arch 14 inlines none');
   assert.throws(() => setPowerOnDelay(c, 0, 50), EditError);
+});
+
+test('the introduction tour is one list on the Harmony 600 and 650, and skipping it is one instruction',
+     skipUnless('h650_lg_region', 'calibration_h600'), () => {
+  // Section 286. The list marks the tour started and enters its first screen; the skip keeps the
+  // mark and calls the list the tour's last screen runs, which is what a finished tour leaves.
+  const expected = {
+    h650_lg_region: { state: 'shown', list: 660, variable: 44, mode: 216, modes: 10, exit: 137 },
+    calibration_h600: { state: 'shown', list: 396, variable: 43, mode: 183, modes: 10, exit: 63 },
+  } as const;
+  for (const [name, want] of Object.entries(expected)) {
+    const c = parse(require_(name));
+    assert.deepEqual(introductionTour(c), want, name);
+    const report = applyEdits(c, skipIntroductionTour(c));
+    const after = parse(report.bytes);
+    const lists = after.actionLists()!;
+    assert.deepEqual(lists[want.list]!.map((one) => [one.opcode, one.operand]),
+                     [[0x80 + want.variable, 1], [ACTION_LIST_INDEX_OPCODE, want.exit]], name);
+    // Nothing else moved: the instruction and the trailer checksum, and every other list reads alike.
+    const [edit] = skipIntroductionTour(c);
+    const trailer = report.bytes.length - TRAILER_CHECKSUM_OFFSET;
+    for (const run of report.changed) {
+      const inside = (run.start >= edit!.start && run.start + run.length <= edit!.start + 3)
+        || (run.start >= trailer && run.start + run.length <= trailer + 2);
+      assert.ok(inside, `${name}: 0x${run.start.toString(16)} is neither the instruction nor the checksum`);
+    }
+    assert.equal(after.trailerChecksum, trailerChecksum(report.bytes), `${name}: recomputes`);
+    const before = c.actionLists()!;
+    assert.equal(lists.length, before.length);
+    assert.deepEqual(lists.filter((_, k) => k !== want.list), before.filter((_, k) => k !== want.list));
+    // The edited file reads as the vendor's skipped form, the same list and exit, so the edit cannot
+    // be applied twice.
+    assert.deepEqual(introductionTour(after),
+                     { state: 'skipped', list: want.list, variable: want.variable, modes: 10, exit: want.exit });
+    assert.throws(() => skipIntroductionTour(after), /already skipped/);
+  }
+});
+
+test('Logitech\'s own compiler writes the skipped form on h600_config and both 700s, and the 650 reads so once skipped',
+     skipUnless('h600_config', 'h700_config', 'h700_config_2', 'h650_notour_region'), () => {
+  // Section 286: the list marks the tour started and calls the tour's exit, never entering it, which
+  // is exactly what the skip produces. So the edit is the vendor's form and not one of ours.
+  const expected = {
+    h600_config: { state: 'skipped', list: 364, variable: 41, modes: 10, exit: 135 },
+    h700_config: { state: 'skipped', list: 1157, variable: 51, modes: 10, exit: 306 },
+    h700_config_2: { state: 'skipped', list: 1157, variable: 51, modes: 10, exit: 306 },
+    // And the Harmony 650 as read back after the skip was written, which is now in that form too.
+    h650_notour_region: { state: 'skipped', list: 660, variable: 44, modes: 10, exit: 137 },
+  } as const;
+  for (const [name, want] of Object.entries(expected)) {
+    const c = parse(require_(name));
+    assert.deepEqual(introductionTour(c), want, name);
+    assert.throws(() => skipIntroductionTour(c), /already skipped/, name);
+  }
+});
+
+test('a configuration whose tour, if it has one, is in neither form is refused rather than guessed at',
+     skipUnless('one_config', 'h525_config', 'h650_safemode_gspm'), () => {
+  for (const name of ['one_config', 'h525_config', 'h650_safemode_gspm']) {
+    assert.throws(() => skipIntroductionTour(parse(require_(name))), /0 lists have/, name);
+  }
 });

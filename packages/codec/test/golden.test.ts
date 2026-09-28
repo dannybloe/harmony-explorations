@@ -119,6 +119,7 @@ const CONTAINERS = [
   'h650_config_region',
   'h650_delay90_region',
   'h650_lg_region',
+  'h650_notour_region',
   // The two configs Logitech compiled to a specification we wrote, section 132: the only samples
   // whose devices and activities were chosen before the bytes existed, so a disagreement between the
   // two implementations about them would be a disagreement about a known answer.
@@ -282,8 +283,9 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 68 since the compare base for the working screen write, section 279.
   // 69 since the compare base for the power off write, section 280.
   // 70 since the Harmony 650's configuration region, section 282, the first arch 14 compare base.
-  // 71 since that region after 1.4.2's delay write, 72 since the region after 1.4.3's composed device.
-  assert.equal(present.length, 72, 'every vector, which is what `make golden` compares');
+  // 71 since that region after 1.4.2's delay write, 72 since the region after 1.4.3's composed device,
+  // 73 since the region after section 286's tour skip.
+  assert.equal(present.length, 73, 'every vector, which is what `make golden` compares');
   // 38 since the Harmony 895 landed: its key table reads with the existing reader even though
   // every other arch 10 reader is gated, which is what made section 177's keypad closure possible
   // without any arch 10 progress at all.
@@ -314,7 +316,8 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 66 since that region after 1.4.2's delay write.
   // 67 since that region after 1.4.3's composed device, section 285, which carries its key table
   // unchanged: the composer adds a device mode and menu entries and no key table entry.
-  assert.equal(complete, 67, 'the vectors whose container has a key table at all');
+  // 68 since the region after section 286's tour skip, which changes one action list instruction.
+  assert.equal(complete, 68, 'the vectors whose container has a key table at all');
 
   // **The number sender field, and why it needs its own guard.** It is an empty array on 30 vectors
   // and null on 8, with eight carrying a record since 30 August 2026, and this comment said 25 and 9
@@ -349,8 +352,9 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 34 since the Harmony 650's configuration region, section 282: its MyHarmony configuration
   // declares no number sender.
   // 35 since that region after 1.4.2's delay write, the same configuration with one delay changed.
-  // 36 since that region after 1.4.3's composed device, section 285, which adds none either.
-  assert.equal(senders.filter((one) => Array.isArray(one) && one.length === 0).length, 36);
+  // 36 since that region after 1.4.3's composed device, section 285, which adds none either, and 37
+  // since the region after section 286's tour skip.
+  assert.equal(senders.filter((one) => Array.isArray(one) && one.length === 0).length, 37);
   // **Four since the second compiled sample**, and the reason is the account rather than the request:
   // every configuration compiled from the account that carries favourite channels carries the sender
   // record too, whichever appliances are on it that day. Three of them were made deliberately for base
@@ -413,8 +417,8 @@ test('the list above covers exactly what the Python side writes a vector for', (
   // 69 since the compare base for the power off write, section 280.
   // 70 since the Harmony 650's configuration region, section 282.
   // 71 since that region after 1.4.2's delay write, the compare base for the revert, and 72 since the
-  // region after 1.4.3's composed device.
-  assert.equal(python.length, 72, 'the golden vectors, which is what `make golden` prints');
+  // region after 1.4.3's composed device, and 73 since the region after section 286's tour skip.
+  assert.equal(python.length, 73, 'the golden vectors, which is what `make golden` prints');
   assert.deepEqual([...CONTAINERS].sort(), python.sort());
 });
 

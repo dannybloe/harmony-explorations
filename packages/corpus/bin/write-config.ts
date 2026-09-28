@@ -134,6 +134,8 @@ const H650_DUMPS = new Set([
   'h650_delay90_region',
   // After 1.4.3's write, the composed LG television, section 285: the compare base for the next one.
   'h650_lg_region',
+  // After section 286's write, the introduction tour skipped: the compare base after that.
+  'h650_notour_region',
 ]);
 
 /** A remote this may run against, per architecture read off the device. */
