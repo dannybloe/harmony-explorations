@@ -723,7 +723,7 @@ files already here rather than for incoming ones.
 
 ## Never write to a remote
 
-Read paths only, except on **three units**, deliberately and behind two flags. On the **spare Harmony
+Read paths only, except on **five units**, deliberately and behind two flags, of which three have been written to. On the **spare Harmony
 One**: a block written back unchanged on 30 August 2026, section 222; a delay byte changed and
 reverted on 1 September, sections 236 and 237; a device added on 3 September, section 242, 25 blocks,
 after which the television answered it; and one power on delay raised the same day, section 247, two
@@ -734,9 +734,12 @@ and needed no compiler, since nothing can compile a configuration for that model
 27 September 2026, section 281, the first write to arch 14; and one power on delay raised and put back
 the same day, section 283, two blocks each way, live in the remote's memory straight after the restart. **No other remote has been written to and
 no other may be**, which said "the spare is the only one that may be"<!--superseded--> until 6
-September 2026. His everyday Harmony One and the Harmony 600 are excluded by name, and **the rail
-aimed at the 600 is the unit check on its identity**, since it reports the same product id and
-architecture as the 650. These
+September 2026. **The Harmony 600 and the Harmony 700 may be written to since 29 September 2026**,
+Danny's decision that day, and neither has been yet: each first gets its identity and a whole region
+read into the lab, then one block back unchanged, then a real write, the order every unit here has
+taken. The 600 was excluded by name until then. His everyday Harmony One still is, and **the rail
+that separates units is the unit check on the identity block**, since the 600 and the 650 report the
+same product id and architecture, and two Harmony Ones enumerate alike. These
 devices are irreplaceable. Note that patching a concordance
 architecture constant to fix the firmware dump also redirects `erase_firmware()` and
 `write_firmware_to_remote(direct=1)`, so a patched build must be treated as read-only.
@@ -753,13 +756,19 @@ document:
 * **Firmware is never written.** `WRITE_FLASH` is restricted to the config region for the detected
   architecture (One `0x040000`, 600/700 `0x030000`) and a write outside it is refused by the
   library, not by the user interface.
-* **Three units may be written to and no others**: the **spare Harmony One** and the **Harmony 525**,
-  Danny's decision of 5 September 2026, and the **Harmony 650**, his decision of 27 September 2026.
-  The exclusions are the point: his everyday Harmony One, and the Harmony 600. This said the 600 was
-  excluded as "the only arch 14 remote in existence here"<!--superseded--> until the 650 arrived,
-  which is what the rule named as the condition for an arch 14 write target. **The 600 and the 650
-  are one product id and one architecture**, so the write list admits both and the unit check, off
-  the identity block read from the remote, is what refuses the 600. Section 281.
+* **Five units may be written to and no others**: the **spare Harmony One** and the **Harmony 525**,
+  Danny's decision of 5 September 2026, the **Harmony 650**, his decision of 27 September 2026, and
+  the **Harmony 600** and the **Harmony 700**, his decision of 29 September 2026. The exclusion is the
+  point: his everyday Harmony One. This said the 600 was excluded as "the only arch 14 remote in
+  existence here"<!--superseded--> until the 650 arrived, which is what the rule named as the
+  condition for an arch 14 write target, and then that the unit check "is what refuses the
+  600"<!--superseded--> until it was admitted. **The 600 and the 650 are one product id and one
+  architecture**, so the architecture cannot choose the unit: the dump names which unit is expected
+  and the identity block read from the remote has to match that unit's record. Section 281.
+  **The config writer also refuses a commit on a firmware build whose cache drop and restart nobody
+  has read**, because those two commands are the firmware's: read on the 0.2 builds of the 600 and
+  the 650, section 282, and not on the Harmony 700's, whose drop sets a flag the 0.2 builds do not.
+  The block rehearsal sends neither and has no such check.
   **The 525 is permitted and not yet possible**, which is a distinction to keep rather than collapse.
   `ARCHITECTURES_WITH_A_WRITE_TARGET` was still `[12]` then, and what was missing was a demonstration
   rather than a number, which section 269 supplied. **All three constants landed on 5 September 2026, section 267**, read out of
@@ -958,7 +967,7 @@ architecture numbers are this project's internal handle and map to nothing on th
 |---|---|
 | 9 | Harmony 525 |
 | 12 | Harmony One, or the spare Harmony One |
-| 14 | Harmony 600 or Harmony 650, or the Harmony 700 for the reference image. The 650 is the write target and the 600 is not, so name which |
+| 14 | Harmony 600, Harmony 650 or Harmony 700; the 700 was a reference image until a unit arrived. All three are write targets since 29 September 2026 and they enumerate alike, so name which |
 | 8 | Harmony 880 or 885, contributed configs only |
 | 10 | Harmony 890 or 895, contributed configs only |
 | 16 | Harmony 300 or Harmony 350, on the bench since 27 August 2026, never opened by **this** library, which refuses the file based family; its configuration was read with concordance and is a lab fixture, section 194. **Its firmware is in the lab since 28 August 2026**, from Logitech's own update service, section 196, and **six of its fifteen container slots are named out of it**, section 259 |
@@ -1908,11 +1917,12 @@ HARMONY_ODD_READ_EXPERIMENT=1 node packages/usb/bin/idle-flags-after-hang.ts
                        holds its three predictions. Take the batteries out afterwards.
 node packages/usb/bin/rehearse-block.ts --dump <image> --block 0x040000 [--commit]
                        the write rehearsal, M4: read one 64 KiB erase block off a remote, compare it
-                       with the lab dump, and print what a write would send. **Three units**, chosen
-                       by the architecture read off the remote rather than by an argument: the spare
-                       Harmony One, the Harmony 525 since 6 September 2026 and the Harmony 650 since
-                       27 September, section 281. On arch 14 the architecture admits the Harmony 600
-                       too and the unit check is what refuses it. **All three may be written**, which
+                       with the lab dump, and print what a write would send. **Five units**: the spare
+                       Harmony One, the Harmony 525 since 6 September 2026, the Harmony 650 since
+                       27 September, section 281, and the Harmony 600 and the Harmony 700 since 29
+                       September, neither with a registered dump yet. The dump names the unit and the
+                       identity read off the remote has to match it, since three arch 14 units
+                       enumerate alike. **All of them may be written**, which
                        said "only the first may be written"<!--superseded--> for the few hours before
                        the 525's demonstration ran.
                        A 525 run needs two things first, both reads: a region read covering a whole

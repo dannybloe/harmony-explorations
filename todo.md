@@ -32,7 +32,7 @@ Plan: [003-how-an-activity-is-built.md](docs/plans/003-how-an-activity-is-built.
   - [x] 1.1.6 What an entry in the activity switching table corresponds to: a per model prefix, one per activity, one more (section 272)
   - [x] 1.1.7 Where device mode's own keypad map comes from: the device's own screen record (section 271)
   - [x] 1.1.8 Scored against one_config and h600_config: seven of nine right, P6 incomplete, P7 wrong
-- [ ] 1.2 Compose an activity, the counterpart of `composeDevice`: `composeActivity`, four architectures
+- [ ] 1.2 Compose an activity, the counterpart of `composeDevice`: `composeActivity`, on the Harmony One and the Harmony 600, 650 and 700
   - [x] 1.2.1 The screen half on arch 12 (Harmony One): a menu row, its hit rectangle and a drawn name (section 275)
   - [x] 1.2.2 A fourth activity, which needs a new menu page: a page counter, a pool copy, a page count, and undeadening the two page turn keys; Harmony One only, composed on two configurations and written to the spare Harmony One, which pages to four, and the device list's stale totals fixed with it (section 293)
   - [x] 1.2.3 The screen half on arch 14 (Harmony 600 and 650): the activity menu is the two row device list, a row on both buttons, and a page of one activity swaps to the full page picture; composed and checked on the 650, 600 and 700 configurations, not on hardware (section 289)
@@ -43,6 +43,7 @@ Plan: [003-how-an-activity-is-built.md](docs/plans/003-how-an-activity-is-built.
   - [x] 1.2.8 A composed device's power on delay on arch 14: the on transition runs the power command and then a 0x72 on PowerOnDelay through a 451 case table, a hundred tenths at a time, 15 of 15, and composed; not on hardware yet (section 288)
   - [x] 1.2.9 An arch 14 activity's own screens: a start up screen of its own, "Starting" and its name, and a working screen that is a device page with "Devices" at the bottom, plus a case in the four lookup records keyed by the activity; composed and checked on the 650, 600 and 700 configurations, not on hardware (section 290)
   - [x] 1.2.10 A composed arch 14 activity's own device list, "Activity" at the bottom: the idle list with the activity's devices first, reproducing all 13 real ones pixel for pixel; written to the 650 for LG kijken, and it shows and leads back as predicted (section 294)
+  - [ ] 1.2.11 Check a composed activity on the Harmony 700 itself, which so far is checked only against its configuration files: written once L7 has made it a write target
 - [x] 1.3 Write one to the spare Harmony One and watch the television, per docs/plans/004-writing-an-activity.md
   - [x] 1.3.1 First write: the activity appears on the menu and beeps, and starts nothing (section 276)
   - [x] 1.3.2 Why: base slot 13's narrow and wide size the state variable storage and everything above it is painted with 0xFE at every boot, so the power variable held 65278 instead of 0. Measured on arch 12 and both arch 14 images, confirmed on hardware; the fill is unmeasured on arch 9
@@ -66,6 +67,7 @@ Plan: [003-how-an-activity-is-built.md](docs/plans/003-how-an-activity-is-built.
     - [x] Write the start variable, 52 on the 650, to 1 near the start of its enter list and to 0 at the end, as all 13 arch 14 activities do, or the inter device delay does not act: written with the screens and the activity runs, while whether the delay acts cannot be told by eye (sections 290 and 291)
     - [x] A region read of the 650 covering 0x110000 before the write, since the composed device's delays reach that block: `h650_pre144_region`, and `h650_post144_region` after (section 291)
   - [x] 1.4.5 How long the screen stays lit: timer 1 on the 650, MyHarmony's GlowTime, 8 seconds as compiled, written as 20 and then 10 and timed on the remote (section 292)
+- [ ] 1.5 Compose and write an activity for the Harmony 525: nothing composes one yet, and nothing can compile a configuration for that model, so there is no vendor file to check ours against (section 269 wrote one block back unchanged)
 
 ## 2. Screens
 
@@ -107,7 +109,9 @@ Deliberately later. First target is devices that already exist in a catalogue.
 The remote's own settings rather than its devices and activities. Logitech's service lists them per model.
 
 - [ ] 6.1 Find where each setting lives, per model
-  - [x] 6.1.1 GlowTime, how long the screen stays lit: a timer, measured on the Harmony 650; which of the Harmony 700's pair is open (section 292)
+  - [ ] 6.1.1 GlowTime, how long the screen stays lit: a timer (section 292)
+    - [x] On the Harmony 650: timer 1, 8 seconds as compiled, written as 20 and then 10 and timed on the remote
+    - [ ] On the Harmony 700: which of its pair of timers it is, on the bench unit
   - [ ] 6.1.2 RemoteAssistant, the question after an activity starts, on the Harmony 600, 650 and 700
   - [ ] 6.1.3 TiltSensor, waking when picked up, on the Harmony 600, 650 and 700
   - [ ] 6.1.4 The Harmony Touch's eleven, among them screen brightness and screen timeout
@@ -131,8 +135,17 @@ After 3 produces something.
 - [ ] L2 Excavate the lab: discovery is done, the reading phase is left, in tag order.
       Method and grid: [lab-excavation.md](docs/lab-excavation.md)
 - [ ] L3 `GET_VERSION` field 6 and field 9's accessor, the two fields of twelve with no reading
-- [x] L4 A second arch 14 remote: the Harmony 650, arch 14's write target, while the Harmony 600 stays excluded (section 281)
+- [x] L4 A second arch 14 remote: the Harmony 650, arch 14's write target, while the Harmony 600 stayed excluded until L6 (section 281)
 - [ ] L5 A black screen on the Harmony 650 after unplugging, once, after the write of a 20 second screen timer, cleared by a battery pull with the configuration intact; not seen after the next write (section 292)
+- [ ] L6 The Harmony 600 as a write target, Danny's decision of 29 September 2026, while the everyday Harmony One stays excluded
+  - [ ] Record its identity as `h600` with `read-identity.ts --record` and read its whole configuration region into the lab
+  - [ ] Write one block back unchanged with `rehearse-block.ts`
+  - [ ] A real write with `write-config.ts`, whose cache drop and restart are read on the 600's own 0.2 build (section 282)
+- [ ] L7 The Harmony 700 as a write target, the same decision, once it is on the bench
+  - [ ] Read its identity, its firmware and its configuration, read only; the configuration is also the third case 1.4's `deviceModeMaps` item waits for
+  - [ ] Read the cache drop and the restart in that build, whose drop sets a second flag the 0.2 builds do not and half of which is unread (sections 282 and 283), and only then add the build to `write-config.ts`
+  - [ ] Record its identity as `h700`, read its whole configuration region, and write one block back unchanged with `rehearse-block.ts`
+  - [ ] A real write with `write-config.ts`
 
 ---
 

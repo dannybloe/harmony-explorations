@@ -1631,7 +1631,11 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # **36 later the same day**, when `docs/roadmap.md` was retired: its numbered decisions became
         # `docs/decisions.md` and the rest of it `docs/plans/002-the-roadmap.md`, so one withheld file
         # became two. No new writing, and both are on the list.
-        self.assertEqual(len(stating), 36,
+        #
+        # **37 on 29 September 2026**: `todo.md`, whose items for the Harmony 600's and the Harmony
+        # 700's first writes name `rehearse-block.ts`. It is withheld already, as one of the files
+        # that restate the sequence, so nothing widens and the list was re-read before this moved.
+        self.assertEqual(len(stating), 37,
                          'the number of files stating the write path moved, so re-read the withhold '
                          'list before restamping this: %s' % stating)
 

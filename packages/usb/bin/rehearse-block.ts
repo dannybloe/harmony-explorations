@@ -14,6 +14,12 @@
  * performed the same day. The Harmony 600 is arch 14 too and reports the same product id, so what
  * keeps it out is the unit check against the `h650` record and not the architecture.
  *
+ * **Five since 29 September 2026**, by Danny's decision that day: the Harmony 600 and the Harmony 700,
+ * both arch 14, beside the 650. Three units of one architecture enumerate alike, so the architecture
+ * no longer picks the unit: the **dump** names which one is expected, and the identity block read off
+ * the remote has to match that unit's record. Neither has a dump or a record in the lab yet, so both
+ * are refused until their first region read is registered. The everyday Harmony One stays excluded.
+ *
  * **What arch 9 does not get with it** is a reset at the end: nothing has read the Harmony 525's
  * escape dispatcher. Arch 14 may be restarted since section 282. This script sends none either way: `writeBlock` erases, writes and verifies, and
  * the eight step sequence with its cache drop and its restart lives in `packages/corpus`. Nothing
@@ -236,6 +242,14 @@ const H650_DUMPS = new Set<string>([
   'h650_region_030000',
 ]);
 
+/**
+ * The Harmony 600's and the Harmony 700's region reads, empty until each unit's first one is read and
+ * registered. Danny's decision of 29 September 2026 made both writable, and an empty list
+ * is what keeps either from being compared, and so from being written, before the lab holds its bytes.
+ */
+const H600_DUMPS = new Set<string>([]);
+const H700_DUMPS = new Set<string>([]);
+
 /** A remote this script may run against, per architecture. */
 interface Target {
   /** How to say which remote, in a refusal an operator reads. */
@@ -268,17 +282,21 @@ interface Target {
  * the exception: reading and comparing is the step that has to happen before a write is authorised at
  * all.
  */
-const TARGETS: Readonly<Record<number, Target>> = {
-  9: { model: 'the Harmony 525', unitLabel: 'h525', dumps: H525_DUMPS },
-  12: { model: 'the spare Harmony One', unitLabel: 'one_spare', dumps: SPARE_DUMPS },
-  // The Harmony 650, never the Harmony 600: both are arch 14 and both enumerate as 0xC122, so the
-  // unit record is the only thing that tells them apart, and it names the 650.
-  14: { model: 'the Harmony 650', unitLabel: 'h650', dumps: H650_DUMPS },
+const TARGETS: Readonly<Record<number, readonly Target[]>> = {
+  9: [{ model: 'the Harmony 525', unitLabel: 'h525', dumps: H525_DUMPS }],
+  12: [{ model: 'the spare Harmony One', unitLabel: 'one_spare', dumps: SPARE_DUMPS }],
+  // Three units on arch 14 since Danny's decision of 29 September 2026, and the 600 and the 650 enumerate identically, so the
+  // dump says which unit is expected and the unit record is what says the one on the cable is it.
+  14: [
+    { model: 'the Harmony 650', unitLabel: 'h650', dumps: H650_DUMPS },
+    { model: 'the Harmony 600', unitLabel: 'h600', dumps: H600_DUMPS },
+    { model: 'the Harmony 700', unitLabel: 'h700', dumps: H700_DUMPS },
+  ],
 };
 
 /** Every dump name any target accepts, for the cheap check before the device is opened. */
 const EVERY_DUMP = new Set<string>(
-  Object.values(TARGETS).flatMap((t) => [...t.dumps]),
+  Object.values(TARGETS).flat().flatMap((t) => [...t.dumps]),
 );
 
 /**
@@ -449,19 +467,21 @@ async function main(): Promise<void> {
     // memory, no write, and the comparison is against what the lab recorded rather than against a
     // boolean. Printed as the first few characters only: the whole value identifies a specific piece
     // of somebody's hardware and belongs in the lab, not in a terminal log that gets pasted about.
-    const target = TARGETS[architecture];
-    if (target === undefined) {
+    const targets = TARGETS[architecture];
+    if (targets === undefined) {
       throw new Refusal(
         `architecture ${architecture} is not a unit this may run against `
-          + `(${Object.entries(TARGETS).map(([a, t]) => `${a}: ${t.model}`).join(', ')})`,
+          + `(${Object.entries(TARGETS).map(([a, t]) => `${a}: ${t.map((one) => one.model).join(' or ')}`).join(', ')})`,
       );
     }
-    if (!target.dumps.has(dumpName)) {
+    // **The dump names the unit expected, and the identity below is what checks it**: two units of
+    // one architecture enumerate alike, so neither the product id nor the architecture can choose.
+    const target = targets.find((one) => one.dumps.has(dumpName));
+    if (target === undefined) {
       throw new Refusal(
-        `${dumpName} is not one of ${target.model}'s own dumps `
-          + `(${[...target.dumps].join(', ') || 'none are registered for it yet'}). The remote on `
-          + `the cable is architecture ${architecture}, so that is the unit whose dumps apply, and `
-          + 'comparing it against another unit\'s bytes would say nothing about either.',
+        `${dumpName} is not one of the dumps of an architecture ${architecture} unit `
+          + `(${targets.map((one) => `${one.model}: ${[...one.dumps].join(', ') || 'none are registered for it yet'}`).join('; ')}). `
+          + 'Comparing the remote on the cable against another unit\'s bytes would say nothing about either.',
       );
     }
     const permitted = permittedUnit(target);

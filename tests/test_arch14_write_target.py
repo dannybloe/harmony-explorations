@@ -14,7 +14,9 @@ asserted here, in the same four images, by decoding the instruction that loads t
 and hardware version differ too, and the rehearsal gates on neither. The
 identity GUIDs differ and neither is filler, which is the precondition for the unit check being a
 check at all; and the 650's are the ones its unit record in the lab holds, so a permission naming
-`h650` refuses the 600.
+`h650` refuses the 600. Since Danny's decision of 29 September 2026 the 600 may be written to as well,
+under its own record, so what this establishes now is that the check can tell the two apart, which is
+what keeps a write meant for one off the other.
 """
 
 import os

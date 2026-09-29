@@ -36359,7 +36359,10 @@ off the remote, internal `0xFFF400`, against the unit record the permission name
 there differ between the two units and neither is filler, measured off both units' reads of page
 `0xFF`; the 650's are what its record in the lab holds, and the 600's are not. That is the same
 mechanism that already separated the spare Harmony One from the everyday one, section 226. On arch
-14 it is the one refusal aimed at the unit. Two others would usually fire as well and are not relied
+14 it is the one refusal aimed at the unit. **Since Danny's decision of 29 September 2026 the 600 is
+a write target too, and the Harmony 700 with it**, so the same check now separates three arch 14
+units rather than refusing one: the dump names which is expected, and the identity block has to
+match that unit's record. Two others would usually fire as well and are not relied
 on: the rehearsal's byte compare against the 650's dump, and, for a compiled configuration whose
 wrapper states a skin, the version gate.
 

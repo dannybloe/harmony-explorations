@@ -79,16 +79,18 @@ export const CONFIG_REGION_BASE: Readonly<Record<number, number>> = {
  * this library can even open, and since 27 September 2026 a Harmony 650. **Three units may be
  * written to**: the spare Harmony One, which is arch 12, and the Harmony 525, which is arch 9, by
  * Danny's decision of 5 September 2026, and the Harmony 650, which is arch 14, by his decision of 27
- * September. His everyday Harmony One and the Harmony 600 are excluded by name. This said "the 600
+ * September. **Five since 29 September 2026**: the Harmony 600 and the Harmony 700, both arch 14, by
+ * Danny's decision that day. His everyday Harmony One is excluded by name. This said "the 600
  * because it is the only arch 14 remote in existence here"<!--superseded--> and that "arch 14 has no
  * write target"<!--superseded--> until the 650 arrived, which was exactly the condition it named for
  * reopening: a second arch 14 remote.
  *
- * **Arch 14 on this list does not let the Harmony 600 be written**, and that is the part to read
- * twice. The two report the same product id and architecture, so this list cannot tell them apart;
- * `assertUnitIsPermitted` can, from the identity block read off the unit, and a permission naming the
- * 650's record refuses the 600. So on arch 14 the unit check is the rail that carries the exclusion,
- * where on arch 12 it separates the spare from the everyday One in the same way. Section 281.
+ * **This list says nothing about which arch 14 unit is on the cable**, and that is the part to read
+ * twice. The 600 and the 650 report the same product id and architecture, so this list cannot tell
+ * them apart; `assertUnitIsPermitted` can, from the identity block read off the unit, and a
+ * permission naming one unit's record refuses every other. So the unit check is the rail that
+ * carries each exclusion, on arch 12 separating the spare from the everyday One and on arch 14 a
+ * write meant for one unit from the other two. Section 281.
  *
  * **Arch 9 was added on 6 September 2026, on Danny's word, for the block rehearsal.** It had been
  * permitted since 5 September and refused by this list, which is the distinction the module rests
@@ -113,12 +115,12 @@ export const CONFIG_REGION_BASE: Readonly<Record<number, number>> = {
  */
 export const ARCHITECTURES_WITH_A_WRITE_TARGET: readonly number[] = [9, 12, 14];
 //
-// **Arch 14 joined on 27 September 2026, for the Harmony 650 and never for the Harmony 600**, section
-// 281. Danny's decision: a second hand Harmony 650 arrived, arch 14 like the 600, and may be
-// reprogrammed freely. The 600 stays excluded by name and it is **the identity check** that holds
-// that line, not this list, since both remotes are arch 14 and both enumerate as `0xC122`: a
-// permission names the 650's unit record, and the 600's identity block differs from it, compared off
-// both units' own internal page reads. What this admits is the flash block path and nothing else,
+// **Arch 14 joined on 27 September 2026, for the Harmony 650**, section 281. Danny's decision: a
+// second hand Harmony 650 arrived, arch 14 like the 600, and may be reprogrammed freely. The 600 was
+// excluded by name until his decision of 29 September 2026 admitted it and the Harmony 700, and it is
+// **the identity check** that holds each unit's line, not this list, since both remotes are arch 14
+// and both enumerate as `0xC122`: a permission names one unit's record, and the 600's identity block
+// differs from the 650's, compared off both units' own internal page reads. What this admits is the flash block path and nothing else,
 // the same shape as arch 9's arrival: the reboot and the invalidate have lists of their own below,
 // and arch 14 was on neither, because arch 14 dispatching an escape is not the same as anybody having
 // sent one to it. It joined both in section 282, each on its own reading of the 650's build.

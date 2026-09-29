@@ -14,6 +14,14 @@
  * nothing has composed a configuration for it. On arch 14 the Harmony 600 enumerates identically to
  * the 650 and is refused by the unit check.
  *
+ * **Four since 29 September 2026**, Danny's decision: the Harmony 600 and the Harmony 700 join the 650
+ * on arch 14, so the dump names which unit is expected and the identity block has to match its
+ * record, the way `rehearse-block.ts` does it. **A unit also states the firmware builds its cache
+ * drop and restart were read in**, and a commit on any other build is refused, because the 700 2.8's
+ * drop sets a flag the 0.2 builds do not and half of what it arms is unread, sections 282 and 283.
+ * The version string is not a build: the 600 and the 650 both report 0.2 and differ in 1395 bytes,
+ * and 0.2 is listed for both only because section 282 found every routine involved identical.
+ *
  * **This is the step `rehearse-block.ts` was the rehearsal for.** That script writes a unit's own
  * dump back, so its correct outcome is known in advance and a difference is a failure. This one
  * writes bytes that have never been on a remote, which is the whole difficulty: what makes it safe
@@ -150,23 +158,48 @@ const H650_DUMPS = new Set([
   'h650_devicelist_region',
 ]);
 
+/**
+ * The Harmony 600's and the Harmony 700's region reads, empty until each unit's first one is read and
+ * registered. Danny's decision of 29 September 2026 made both writable, and an empty list is what
+ * keeps either from being written before the lab holds bytes to restore it from.
+ */
+const H600_DUMPS = new Set<string>([]);
+const H700_DUMPS = new Set<string>([]);
+
 /** A remote this may run against, per architecture read off the device. */
 interface Target {
   readonly model: string;
   /** The lab's name for the unit, whose identity file the unit check compares against. */
   readonly unitLabel: string;
   readonly dumps: ReadonlySet<string>;
+  /**
+   * The firmware builds, as the remote reports them, in whose own image the cache drop and the
+   * restart this sends were read before either was sent. A unit reporting any other build is refused
+   * a commit, because both commands are the firmware's and not the format's: the 650's were read on
+   * its build 0.2 and sent once each before a write depended on them, section 282, and the Harmony
+   * 700 runs another build. Empty for a unit whose build nobody has read yet.
+   */
+  readonly sequenceReadOn: readonly string[];
 }
 
 /**
  * Keyed by what the device says, never by an argument, for the reason `rehearse-block.ts` gives: an
- * argument would let an operator point one unit's allow list at another.
+ * argument would let an operator point one unit's allow list at another. **Several units per
+ * architecture since Danny's decision of 29 September 2026**, and the 600 and the 650 enumerate
+ * identically, so the dump names which unit is expected and the identity block read off the remote
+ * is what refuses any other.
  */
-const TARGETS: Readonly<Record<number, Target>> = {
-  12: { model: 'the spare Harmony One', unitLabel: 'one_spare', dumps: SPARE_DUMPS },
-  14: { model: 'the Harmony 650', unitLabel: 'h650', dumps: H650_DUMPS },
+const TARGETS: Readonly<Record<number, readonly Target[]>> = {
+  12: [{ model: 'the spare Harmony One', unitLabel: 'one_spare', dumps: SPARE_DUMPS, sequenceReadOn: ['3.4'] }],
+  14: [
+    { model: 'the Harmony 650', unitLabel: 'h650', dumps: H650_DUMPS, sequenceReadOn: ['0.2'] },
+    // The same build as the 650, `600-0.2-code-base0x9000-COMPLETE.bin`, read off this unit.
+    { model: 'the Harmony 600', unitLabel: 'h600', dumps: H600_DUMPS, sequenceReadOn: ['0.2'] },
+    // Nothing until its build is read off the unit and the drop and the restart are read in it.
+    { model: 'the Harmony 700', unitLabel: 'h700', dumps: H700_DUMPS, sequenceReadOn: [] },
+  ],
 };
-const ALL_DUMPS = new Set(Object.values(TARGETS).flatMap((t) => [...t.dumps]));
+const ALL_DUMPS = new Set(Object.values(TARGETS).flat().flatMap((t) => [...t.dumps]));
 
 function argument(name: string): string | undefined {
   const at = process.argv.indexOf(`--${name}`);
@@ -342,15 +375,21 @@ async function main(): Promise<void> {
     say(`firmware ${identity.firmware}, flash id ${identity.flash}, `
       + `architecture ${architecture}, skin ${identity.skin}\n`);
 
-    const unit = TARGETS[architecture];
-    if (unit === undefined) {
+    const units = TARGETS[architecture];
+    if (units === undefined) {
       throw new Refusal(`architecture ${architecture} has no unit this may write to `
-        + `(${Object.entries(TARGETS).map(([a, t]) => `${a}: ${t.model}`).join(', ')})`);
+        + `(${Object.entries(TARGETS).map(([a, t]) => `${a}: ${t.map((one) => one.model).join(' or ')}`).join(', ')})`);
     }
-    if (!unit.dumps.has(dumpName)) {
-      throw new Refusal(`${dumpName} is not one of ${unit.model}'s own region reads `
-        + `(${[...unit.dumps].join(', ')}), and the remote on the cable is architecture `
-        + `${architecture}. Refusing rather than comparing one unit against another's content.`);
+    const unit = units.find((one) => one.dumps.has(dumpName));
+    if (unit === undefined) {
+      throw new Refusal(`${dumpName} is not one of the region reads of an architecture ${architecture} `
+        + `unit (${units.map((one) => `${one.model}: ${[...one.dumps].join(', ') || 'none registered yet'}`).join('; ')}). `
+        + "Refusing rather than comparing one unit against another's content.");
+    }
+    if (commit && !unit.sequenceReadOn.includes(identity.firmware)) {
+      throw new Refusal(`${unit.model} reports firmware ${identity.firmware}, and the cache drop and the `
+        + `restart this sends have been read in ${unit.sequenceReadOn.length === 0 ? 'no build of it yet'
+          : `build ${unit.sequenceReadOn.join(' and ')} only`}. Read both in that build's image first.`);
     }
     const stored = unitIdentity(unit.unitLabel);
     if (stored === undefined) {

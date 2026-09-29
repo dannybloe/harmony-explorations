@@ -115,8 +115,9 @@ image is a second sample rather than a stand in. Other models are iterated on la
    base slot 15 and is executing, so some derived state is there to see. Even on arch 12 the remote is
    in USB mode, so its interface cannot be driven and its analogue sampler is stopped, which is not
    what activity semantics would need. The decision stands on the first three.
-6. **Safety rails are absolute.** Firmware is never written. **Three units may be written to** since
-   27 September 2026, the third paragraph below; it was **two**, the spare Harmony One and the Harmony
+6. **Safety rails are absolute.** Firmware is never written. **Five units may be written to** since
+   29 September 2026, the last paragraph below, and **three** before that from 27 September 2026, the
+   third; it was **two**, the spare Harmony One and the Harmony
    525, from Danny's decision of 5 September 2026, which replaced "the spare Harmony One is the only
    write target"<!--superseded-->. His everyday Harmony One and the Harmony 600 stay refused, the 600
    then because it was "the only arch 14 remote here"<!--superseded-->. **The 525 became a write
@@ -140,6 +141,14 @@ image is a second sample rather than a stand in. Other models are iterated on la
    block write and nothing else: the reset escape and the invalidate gained lists of their own rather
    than travelling with it, and arch 14 joined both later the same day, section 282, each on its own
    reading of the 650's firmware and one send.
+   **The Harmony 600 and the Harmony 700 since 29 September 2026**, Danny's decision: the work had
+   reached the point where writing to the 600 had to be faced, and a Harmony 700 unit was on its way
+   to the bench. The everyday Harmony One is the one unit still excluded. Nothing about the rails changed:
+   three arch 14 units enumerate alike, so the dump names which unit is expected and the identity
+   block read off the remote has to match that unit's record, and the config writer refuses a commit
+   on a firmware build whose cache drop and restart nobody has read, which is the 700's until it is.
+   Each unit takes the order the others took: identity and region into the lab, one block back
+   unchanged, then a real write.
 7. **Heads down on our own derivation.** The findings in harmony-decompiler discussion #1 are
    treated as hypotheses to test, not as facts to adopt. The original format designer
    (`glenharris`) is active there and is a privileged source, but asking is held in reserve for

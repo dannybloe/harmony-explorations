@@ -189,22 +189,42 @@ function rehearsalScript(): string {
   return readFileSync(fileURLToPath(new URL('../bin/rehearse-block.ts', import.meta.url)), 'utf8');
 }
 
-test('the rehearsal names three units and keys them by the architecture off the remote', () => {
+test('the rehearsal names five units and keys them by the architecture off the remote', () => {
   // Danny's decision of 5 September 2026 made the permitted units two, and section 267 gave arch 9
   // (Harmony 525) the three constants a comparison needs. Before that the script had one hardcoded
   // label and one hardcoded dump set. **Three since 27 September 2026**, section 281: the Harmony 650
-  // is arch 14's, and the Harmony 600 on the same architecture is kept out by the unit check, since
-  // its identity is not the one `h650` records.
+  // is arch 14's. **Five since Danny's decision of 29 September 2026**: the Harmony 600 and the
+  // Harmony 700 join it, each with its own unit record and its own dumps, none registered yet.
   const text = rehearsalScript();
-  assert.match(text, /const TARGETS: Readonly<Record<number, Target>>/);
-  assert.match(text, /9: \{ model: 'the Harmony 525', unitLabel: 'h525'/);
-  assert.match(text, /12: \{ model: 'the spare Harmony One', unitLabel: 'one_spare'/);
-  assert.match(text, /14: \{ model: 'the Harmony 650', unitLabel: 'h650', dumps: H650_DUMPS \}/);
+  assert.match(text, /const TARGETS: Readonly<Record<number, readonly Target\[\]>>/);
+  assert.match(text, /9: \[\{ model: 'the Harmony 525', unitLabel: 'h525'/);
+  assert.match(text, /12: \[\{ model: 'the spare Harmony One', unitLabel: 'one_spare'/);
+  assert.match(text, /\{ model: 'the Harmony 650', unitLabel: 'h650', dumps: H650_DUMPS \}/);
+  assert.match(text, /\{ model: 'the Harmony 600', unitLabel: 'h600', dumps: H600_DUMPS \}/);
+  assert.match(text, /\{ model: 'the Harmony 700', unitLabel: 'h700', dumps: H700_DUMPS \}/);
   assert.match(text, /const H650_DUMPS = new Set<string>\(\[\s*'h650_region_030000',\s*\]\);/);
-  // Keyed by what the device says. An argument would let an operator point the Harmony One's allow
-  // list at a 525, which is the slip the allow list exists to stop.
-  assert.match(text, /const target = TARGETS\[architecture\];/);
+  // No dumps yet for the two new units, so neither can be compared, and so neither written, until a
+  // region read of it is registered.
+  assert.match(text, /const H600_DUMPS = new Set<string>\(\[\]\);/);
+  assert.match(text, /const H700_DUMPS = new Set<string>\(\[\]\);/);
+  // Keyed by what the device says, and within an architecture by the dump, which the identity check
+  // then holds to: an argument alone would let an operator point one unit's allow list at another.
+  assert.match(text, /const targets = TARGETS\[architecture\];/);
+  assert.match(text, /const target = targets\.find\(\(one\) => one\.dumps\.has\(dumpName\)\);/);
   assert.ok(!/--unit/.test(text), 'the unit is read off the remote, never taken as an argument');
+});
+
+test('the config writer refuses a commit on a firmware build whose drop and restart nobody read', () => {
+  // Danny's decision of 29 September 2026 made the Harmony 600 and 700 writable, and the 700 runs
+  // another build than the one the 650's drop and restart were read in, section 282. So each unit
+  // names the builds read, the 700 names none, and a commit on any other is refused.
+  const text = readFileSync(fileURLToPath(new URL('../../corpus/bin/write-config.ts', import.meta.url)), 'utf8');
+  assert.match(text, /unitLabel: 'one_spare', dumps: SPARE_DUMPS, sequenceReadOn: \['3\.4'\] \}/);
+  assert.match(text, /unitLabel: 'h650', dumps: H650_DUMPS, sequenceReadOn: \['0\.2'\] \}/);
+  assert.match(text, /unitLabel: 'h600', dumps: H600_DUMPS, sequenceReadOn: \['0\.2'\] \}/);
+  assert.match(text, /unitLabel: 'h700', dumps: H700_DUMPS, sequenceReadOn: \[\] \}/);
+  assert.match(text, /if \(commit && !unit\.sequenceReadOn\.includes\(identity\.firmware\)\) \{\s*throw new Refusal/);
+  assert.match(text, /const unit = units\.find\(\(one\) => one\.dumps\.has\(dumpName\)\);/);
 });
 
 test('a dry run asks for no write permission, whether or not the target has one', () => {

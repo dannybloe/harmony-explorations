@@ -42,8 +42,9 @@ constantly. There has never been a Harmony 700 here.
   to this architecture and is a **reference image**: two configurations and a firmware image, no
   remote. **The 650 is the third unit that may be written to** and arch 14 the third architecture
   written to: one block of its own bytes put back unchanged the day it was permitted, section 281.
-  The 600 stays excluded, and since the two share a product id and an architecture it is the unit
-  check against the identity block that keeps it out
+  **The 600 and the 700 may be written to since 29 September 2026**, Danny's decision, and neither
+  has been yet. The three share a product id and an architecture, so the dump names which unit is
+  expected and the unit check against the identity block is what refuses any other
 * **arch 9**, the Harmony 525, connected on 8 August 2026 and a target since: its config and its
   firmware are in the lab, and its class 5 infrared, which was the last big gap in the byte
   accounting, is read. **It is the second unit that may be written to**, Danny's decision of 5
