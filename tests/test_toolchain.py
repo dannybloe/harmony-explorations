@@ -218,7 +218,9 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # 35 since `tests/test_status_screens.py`, section 249.
         # 37 since `tests/test_harmony_525_region.py`, section 270.
         # 42 since `tests/test_harmony_700_settings_store.py`, section 296.
-        self.assertEqual(len(files), 43, 'the Python test files')
+        # 43 since `tests/test_harmony_700_status_byte.py`, section 298.
+        # 44 since `tests/test_harmony_700_cache_drop.py`, section 299.
+        self.assertEqual(len(files), 44, 'the Python test files')
         with_block = 0
         for path in files:
             with open(path, encoding='utf-8') as handle:
@@ -238,7 +240,9 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # 35 since `tests/test_harmony_525_region.py`, section 270, which carries one.
         # 39 since `tests/test_firmware_state_block.py`, section 284.
         # 40 since `tests/test_harmony_700_settings_store.py`, section 296, which carries one.
-        self.assertEqual(with_block, 41,
+        # 41 since `tests/test_harmony_700_status_byte.py`, section 298, which carries one.
+        # 42 since `tests/test_harmony_700_cache_drop.py`, section 299, which carries one.
+        self.assertEqual(with_block, 42,
                          'files carrying a __main__ block, of %d' % len(files))
 
 
@@ -665,7 +669,8 @@ class APythonBoundOnACorpusTotalIsExact(unittest.TestCase):
         found, scanned = self._bounds()
         # 37 since `tests/test_harmony_525_region.py`, section 270.
         # 42 since `tests/test_harmony_700_settings_store.py`, section 296.
-        self.assertEqual(len(scanned), 43, 'Python test files, which moves when one is added')
+        # 44 since `tests/test_harmony_700_cache_drop.py`, section 299.
+        self.assertEqual(len(scanned), 44, 'Python test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):

@@ -791,7 +791,8 @@ document:
   and the identity block read from the remote has to match that unit's record. Section 281.
   **The config writer also refuses a commit on a firmware build whose cache drop and restart nobody
   has read**, because those two commands are the firmware's: read on the 0.2 builds of the 600 and
-  the 650, section 282, and not on the Harmony 700's, whose drop sets a flag the 0.2 builds do not.
+  the 650, section 282, and on the Harmony 700's 2.8 since section 299, whose drop is theirs at other
+  addresses plus a second flag section 283 read.
   The block rehearsal sends neither and has no such check.
   **The 525 is permitted and not yet possible**, which is a distinction to keep rather than collapse.
   `ARCHITECTURES_WITH_A_WRITE_TARGET` was still `[12]` then, and what was missing was a demonstration

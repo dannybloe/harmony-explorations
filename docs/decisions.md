@@ -146,7 +146,8 @@ image is a second sample rather than a stand in. Other models are iterated on la
    to the bench. The everyday Harmony One is the one unit still excluded. Nothing about the rails changed:
    three arch 14 units enumerate alike, so the dump names which unit is expected and the identity
    block read off the remote has to match that unit's record, and the config writer refuses a commit
-   on a firmware build whose cache drop and restart nobody has read, which is the 700's until it is.
+   on a firmware build whose cache drop and restart nobody has read. The 700's build was one until
+   section 299 read its 2.8's drop, which is the 0.2 drop relocated plus one flag.
    Each unit takes the order the others took: identity and region into the lab, one block back
    unchanged, then a real write.
 7. **Heads down on our own derivation.** The findings in harmony-decompiler discussion #1 are

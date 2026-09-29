@@ -217,12 +217,13 @@ test('the rehearsal names five units and keys them by the architecture off the r
 test('the config writer refuses a commit on a firmware build whose drop and restart nobody read', () => {
   // Danny's decision of 29 September 2026 made the Harmony 600 and 700 writable, and the 700 runs
   // another build than the one the 650's drop and restart were read in, section 282. So each unit
-  // names the builds read, the 700 names none, and a commit on any other is refused.
+  // names the builds read, and a commit on any other is refused. The 700 named none until section
+  // 299 read its 2.8.
   const text = readFileSync(fileURLToPath(new URL('../../corpus/bin/write-config.ts', import.meta.url)), 'utf8');
   assert.match(text, /unitLabel: 'one_spare', dumps: SPARE_DUMPS, sequenceReadOn: \['3\.4'\] \}/);
   assert.match(text, /unitLabel: 'h650', dumps: H650_DUMPS, sequenceReadOn: \['0\.2'\] \}/);
   assert.match(text, /unitLabel: 'h600', dumps: H600_DUMPS, sequenceReadOn: \['0\.2'\] \}/);
-  assert.match(text, /unitLabel: 'h700', dumps: H700_DUMPS, sequenceReadOn: \[\] \}/);
+  assert.match(text, /unitLabel: 'h700', dumps: H700_DUMPS, sequenceReadOn: \['2\.8'\] \}/);
   assert.match(text, /if \(commit && !unit\.sequenceReadOn\.includes\(identity\.firmware\)\) \{\s*throw new Refusal/);
   assert.match(text, /const unit = units\.find\(\(one\) => one\.dumps\.has\(dumpName\)\);/);
 });

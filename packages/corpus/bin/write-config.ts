@@ -17,8 +17,9 @@
  * **Four since 29 September 2026**, Danny's decision: the Harmony 600 and the Harmony 700 join the 650
  * on arch 14, so the dump names which unit is expected and the identity block has to match its
  * record, the way `rehearse-block.ts` does it. **A unit also states the firmware builds its cache
- * drop and restart were read in**, and a commit on any other build is refused, because the 700 2.8's
- * drop sets a flag the 0.2 builds do not and half of what it arms is unread, sections 282 and 283.
+ * drop and restart were read in**, and a commit on any other build is refused. The 700's 2.8 is read
+ * since section 299: its drop is the 0.2 builds' at other addresses plus a second flag section 283
+ * read, and its restart is section 97's.
  * The version string is not a build: the 600 and the 650 both report 0.2 and differ in 1395 bytes,
  * and 0.2 is listed for both only because section 282 found every routine involved identical.
  *
@@ -176,8 +177,9 @@ interface Target {
    * The firmware builds, as the remote reports them, in whose own image the cache drop and the
    * restart this sends were read before either was sent. A unit reporting any other build is refused
    * a commit, because both commands are the firmware's and not the format's: the 650's were read on
-   * its build 0.2 and sent once each before a write depended on them, section 282, and the Harmony
-   * 700 runs another build. Empty for a unit whose build nobody has read yet.
+   * its build 0.2 and sent once each before a write depended on them, section 282. The Harmony 700's
+   * 2.8 was read against that build, section 299, and has been sent neither. Empty for a unit whose
+   * build nobody has read yet.
    */
   readonly sequenceReadOn: readonly string[];
 }
@@ -195,8 +197,9 @@ const TARGETS: Readonly<Record<number, readonly Target[]>> = {
     { model: 'the Harmony 650', unitLabel: 'h650', dumps: H650_DUMPS, sequenceReadOn: ['0.2'] },
     // The same build as the 650, `600-0.2-code-base0x9000-COMPLETE.bin`, read off this unit.
     { model: 'the Harmony 600', unitLabel: 'h600', dumps: H600_DUMPS, sequenceReadOn: ['0.2'] },
-    // Nothing until its build is read off the unit and the drop and the restart are read in it.
-    { model: 'the Harmony 700', unitLabel: 'h700', dumps: H700_DUMPS, sequenceReadOn: [] },
+    // 2.8, which it runs since section 297: the drop is read in section 299 and the restart in 97.
+    // Its dumps are still none, so nothing can be written to it until a region read is registered.
+    { model: 'the Harmony 700', unitLabel: 'h700', dumps: H700_DUMPS, sequenceReadOn: ['2.8'] },
   ],
 };
 const ALL_DUMPS = new Set(Object.values(TARGETS).flat().flatMap((t) => [...t.dumps]));

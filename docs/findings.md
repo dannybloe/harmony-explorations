@@ -36613,7 +36613,8 @@ saw it restart. The verdict and select bits standing again say the boot validate
   the second reviewer's read, and the verdict byte there is `0x68E`. This said what it arms on those
   builds is unread<!--superseded-->, and section 283 read one half: the second flag, `0x1E9` on the 700
   and `0x0E9` on the 0.4, is read at the next boot, cleared, and spoils the state variables' sum, so a
-  drop followed by a restart reloads every variable from the configuration. The other flag is unread.
+  drop followed by a restart reloads every variable from the configuration. The other flag was unread
+  here, and section 299 reads it: it is the 0.2 builds' erase flag at `0x380`.
 * The sends: one Harmony 650.
 * Arch 12's invalidate arms nothing that section 246 found; arch 9's executor is unread.
 
@@ -38860,7 +38861,9 @@ What that fits, and what it does not settle:
 **For a writer**, which is the part to carry, as a prediction: if the 2.8 build this unit now runs keeps
 section 282's path, a configuration write of ours that drops the cache and then erases `0x030000` would
 append a record here too, and the store holds 510 before it copies. Neither that path nor the 2.8 drop,
-which sets a flag the 0.2 builds do not, is read on 2.8. What setting `0x80` means is unread.
+which sets a flag the 0.2 builds do not, is read on 2.8<!--superseded-->, and section 299 reads both: the
+2.8 drop is the 0.2 drop at other addresses plus that flag, and the erase path is the same code. What
+setting `0x80` means is unread.
 
 ### Scope, decision 16
 
@@ -39107,3 +39110,90 @@ the escape's `0x02`.
   and store, the escape to `RESET`, and the start up clearing path.
 * `packages/usb/test/firmware.test.ts`: 2.8 allowed for staging and reinstall, and 2.3 in application
   mode refused, since no application build of that number is read.
+
+## 299. The Harmony 700's 2.8 cache drop is the 0.2 builds' drop at other addresses, so the configuration writer admits 2.8
+
+`write-config.ts` refuses a commit on a firmware build whose cache drop and restart nobody has read,
+because both commands are the firmware's and not the format's, and the Harmony 700 named no build.
+The restart on 2.8 is section 97's, and section 298 reads 2.5's. This reads the drop, `WRITE_MISC`
+selector 2, on Logitech's 2.8 image against the Harmony 650's own 0.2 build, which section 282 read and
+sent the drop to.
+
+### The same code, relocated
+
+| | 0.2 | 2.8 |
+|---|---|---|
+| selector 2's arm | `0x0C344` | `0x0C3DA` |
+| the cache walk it calls | `0x15E1E`, four five byte records at `0x0EE6` | `0x1776E`, four at `0x06E5` |
+| the per record leaf | `0x107A2`, entries from `0x063` | `0x14CBC`, entries from `0xF03` |
+| the verdict bit cleared | `0x68B` bit 2 | `0x68E` bit 2 |
+| the erase flag set | `0x725` | `0x380` |
+| a second flag set | none | `0x1E9` |
+| `ERASE_FLASH`'s parse | `0x0C240` | `0x0C2D6` |
+| the store's lookup | `0x0DA04` | `0x1155C` |
+| the store's write, and the caller the parse calls | `0x0DB60`, `0x0DD16` | `0x116B8`, `0x1186E` |
+
+**Every routine compared is the same instruction sequence** once the operands that move with the data
+are set aside: call targets, banked file addresses, bank selections, and the literals added to `FSR0`
+that form a table's address. Access bank operands are compared as they stand. That is the arm up to
+where 2.8 inserts its second flag, and each of the others whole, to its return: the walk, 45
+instructions, the leaf 17, the erase parse 61, the lookup 150, the write's caller 74 and the write 179.
+**What was set aside is one consistent relocation and not a difference**: across all of them 67 banked
+data addresses and 54 call and branch targets each map to exactly one on the other build, and no two
+share one. The tables themselves are pinned per build rather than compared.
+
+**So `0x380` is the 0.2 builds' `0x725`**, the flag section 282 read: the erase parse tests it after
+reading the address, clears it whatever the address, sets the verdict and container select bits, 2 and
+4, back for an address of `0xFE0000` or more, and for exactly `0x030000` looks up setting `0x80` in the
+settings store, clears its bit 0 and writes it back, a write that stores nothing when the value is
+unchanged. The arm itself clears bit 4 as well as bit 2, so until then the configuration reader's page
+is the fallback container's. Both builds then set one more flag, `0x722` and `0x37D`, whose one reader, at
+`0x0C56A` and `0x0C606`, is a routine returning 1 when it or its neighbour is set; what that routine
+decides is not traced, and it is the same on both, where on 0.2 the drop and an erase after it were
+sent and answered, section 282.
+
+**The one difference is `0x1E9`**, set between the erase flag and the container select bit, which
+section 283 read: the boot path finds it, clears it and spoils the state variables' sum, so a drop
+followed by a restart reloads every variable from the configuration even when the configuration
+validates. **It is an extra route and not the only one.** The 0.2 builds lack it, and section 283's
+prediction from their image, that `RESET` would leave the old values in force until a battery pull, was
+wrong: on the 650's 0.2 a changed delay was in force straight after the write's restart, in both
+directions. What reloaded it there is not separated by this reading, so 2.8 adds a forced reload to a
+build that already took a new value without one.
+
+### What changes
+
+The Harmony 700's target in `write-config.ts` names build 2.8, so a commit on it is no longer refused
+for its build. **Nothing can be written to it yet**: its region reads are still unregistered as dumps,
+so the writer refuses it for having none, and `todo.md`'s next item is a block written back unchanged
+with `rehearse-block.ts` first.
+
+### Scope, decision 16
+
+The Harmony 700's 2.8, against the Harmony 650's 0.2 build. The 2.5 build the 700 ran matches 0.2 over
+the walk, the lookup and the write and sets no second flag, but it is not what the unit runs and is not
+added. The settings store update path's effect on this unit is section 296's prediction and not
+measured.
+
+Not established, and named by the blind reviewer: that a cable pull or a suspend between the drop and
+the erase discards the erase flag, since the session reset clears it; what setting `0x80` bit 0 means,
+where the reviewer read the boot validator as skipping the user container's checksum when it is clear;
+and 2.8's validator, which has twenty instructions 0.2 does not and was not compared.
+
+### Sources checked before the work
+
+Sections 97, 282 and 283; `h700_code` and `h650_bench_code`. Logitech's client was not read for this:
+the question was what the firmware does with a command whose bytes are known.
+
+### Falsification
+
+A 2.8 remote whose configuration does not reload its variables after a drop and a restart, or whose
+settings store changes on a drop followed by an erase anywhere but `0x030000`.
+
+### Where it lands
+
+* `packages/corpus/bin/write-config.ts`: the Harmony 700 names `['2.8']`.
+* `tests/test_harmony_700_cache_drop.py`: the arm, the erase flag's use, the equal sequences, the
+  relocation as a one to one map, the tables per build, and a control that the comparison sees the
+  whole arm's difference.
+* `packages/usb/test/rehearsal.test.ts`: the writer's build list.
