@@ -38418,7 +38418,31 @@ Two growths, both read back through the corpus readers:
 | `one_spare_poweroff_base` | eight activities, three pages | two | four pages, header `4 pages`, `4` at x 12 |
 
 Both account for every byte, overlap nowhere, pass the trailer check and round trip through the
-emitter, and `activityNames` finds every activity, old and new. Neither has been written to a remote.
+emitter, and `activityNames` finds every activity, old and new.
+
+### On the spare Harmony One
+
+**Written on 29 September 2026 and every check held.** The spare's region was read first, since the
+last one in the lab predated the power off write, and filed as `one_spare_page4_base`. Two activities
+were composed onto it with `compose-activity.ts`, each switching the LG television on and every other
+device off with the same keys as "LG kijken", and the nine stale device list totals were restated by
+calling `paginate` on each of those modes, which a device composition only does for a menu it grows by
+a page. 25 blocks, every erase inside its own block, the whole configuration read back identical, and
+the remote restarted on its own. Danny checked five things before any were seen: the ordinary screen
+came up; the activity menu reads "4 pages" and the keys beside the display page through `1/` to `4/`;
+page 3 ends with "Test Een" and page 4 holds "Test Tien" alone, both white with the television icon;
+"Test Tien" switches the television on; and the device list reads "3 pages" and reaches the LG on its
+third page. So the page turn keys, cut from the record's list, page as the firmware's default does on a
+screen of several pages, which section 275 inferred from the file and this is the first sight of.
+
+**Two defects came out of preparing it, and both are fixed.** The icon of a row on a new page was
+looked up after the page's record had been counted and before its pointer was real, when
+`activityNames` no longer reads the menu, so asking for "LG kijken"'s icon refused a row that exists;
+the row is located before anything changes now, and a test asserts the new row wears that icon. And
+the first labels chosen, "Test 9" and "Test 10", rendered in another colour: the row font of that
+configuration draws no `9`, `1` or `0`, so `fontThatSpells` took the whole label into the nearest
+font that has them, and that font's glyphs are another colour. The labels were changed to ones the row
+font spells rather than the rule being changed, which is the open item below.
 
 ### Section 275 recounted
 
@@ -38432,12 +38456,15 @@ test of that section's rule, and the rule is unaffected.
   one page modes of `one_spare_poweroff_base`. What the firmware's default paging does on a screen
   with one page is unread.
 * Pages on arch 14, and the calibration Harmony 600's full menu.
+* **A label the row font cannot spell is drawn whole in another font, and on the spare that font is
+  another colour.** A row reads right and looks wrong, which no reader test sees; only the render did.
+  Adding the missing glyphs to the row font, or refusing such a label, are the two ways out.
 
 ### Falsification
 
 A multi page Harmony One screen whose header total differs from its page count, or whose number does
-not end at x 18; a one page one that draws either; two modes calling one header; or the spare Harmony
-One's activity menu, written with a fourth page, not paging to it.
+not end at x 18; a one page one that draws either; or two modes calling one header. The one on the
+remote, the spare's four page menu not paging, was run and did not happen.
 
 ### The reviewers
 

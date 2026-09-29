@@ -1827,7 +1827,7 @@ function onTopRow(c: Container, menu: number, page: number, scan: number): boole
 }
 
 /** Compose `labels` as activities one after another, each put on the activity menu, as a user would. */
-function composeActivities(start: Container, labels: readonly string[]): {
+function composeActivities(start: Container, labels: readonly string[], iconLike?: string): {
   container: Container; menu: number; placed: { page: number; scan: number }[];
 } {
   let c = start;
@@ -1838,7 +1838,8 @@ function composeActivities(start: Container, labels: readonly string[]): {
     const target = stateVariables(c)
       .find((one) => one.index > firmwareStateVariableMax(c.architecture) && one.index !== counter?.index)!;
     const built = composeActivity(c, { label, targets: [{ variable: target.index, value: 1 }], keys: [{ scan: 20, list: 0 }] });
-    const shown = composeActivityMenuRow(parse(built.bytes), built.label, built.set);
+    const shown = composeActivityMenuRow(parse(built.bytes), built.label, built.set,
+                                         iconLike === undefined ? {} : { iconLike });
     c = parse(shown.bytes);
     menu = shown.menu;
     placed.push({ page: shown.page, scan: shown.scan });
@@ -1907,6 +1908,26 @@ for (const [host, labels, pages, replaced] of [
     assert.deepEqual(lost, [...replaced], 'a text some screen drew is gone');
   });
 }
+
+test('an activity that opens a new page can wear an existing row\'s icon', skipUnless('one_spare_poweroff_base'), () => {
+  // Found writing the four page menu to the spare Harmony One: the icon was looked up after the new
+  // page's record was counted and before its pointer was real, when `activityNames` no longer reads
+  // the menu, so asking for "LG kijken"'s icon refused a row that exists. Section 293.
+  const { container: after, menu } = composeActivities(parse(require_('one_spare_poweroff_base')),
+                                                       ['Nine', 'Ten'], 'LG kijken');
+  const record = modeRecords(after)![menu]!;
+  const images = (program: number) => (screenProgram(after, program) ?? [])
+    .filter((one) => one.opcode === 2)
+    .map((one) => ({ x: one.operands[0]!, y: one.operands[1]!, picture: one.operands[2]! | (one.operands[3]! << 8) | (one.operands[4]! << 16) }));
+  // The new page's icon is its second picture, after the row background.
+  const icon = images(record.pages.at(-1)!.program)[1]!;
+  const lg = activityNames(after).find((one) => one.name === 'LG kijken')!;
+  const rank = (lg.at!.y - 57) / 54;
+  const lgPage = modePages(after)[lg.page]!;
+  const lgIcon = images(lgPage.program).find((one) => one.x === icon.x && one.y === icon.y + 54 * rank);
+  assert.ok(lgIcon !== undefined, 'LG kijken\'s row draws no icon where the new one does');
+  assert.equal(icon.picture, lgIcon.picture, 'the new row does not wear LG kijken\'s icon');
+});
 
 /** The four arch 14 user configurations, one each; the second Harmony 700 one repeats the first. */
 const FOUR_SLOT_ACTIVITY_HOSTS = ['h650_config_region', 'h600_config', 'calibration_h600', 'h700_config'] as const;

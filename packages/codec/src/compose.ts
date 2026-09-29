@@ -3535,6 +3535,12 @@ function fontThatSpells(
  * a row's label and its background sit one row pitch apart per rank, so the rank divides out.
  */
 function activityRowIcon(c: Container, iconLike: string): number {
+  const { program, rank } = activityRowPlace(c, iconLike);
+  return activityRowIconAt(c, program, rank, iconLike);
+}
+
+/** Where the row labelled `iconLike` is: the program of its page, and its rank on that page. */
+function activityRowPlace(c: Container, iconLike: string): { program: number; rank: number } {
   const named = activityNames(c).filter((one) => one.name === iconLike && one.at !== undefined);
   if (named.length !== 1) {
     throw new ComposeError(
@@ -3547,7 +3553,12 @@ function activityRowIcon(c: Container, iconLike: string): number {
   }
   const page = modePages(c)[(named[0] as { page: number }).page];
   if (page === undefined) throw new ComposeError(`the row labelled ${iconLike} has no page`);
-  const icon = pictureDrawnAt(c, page.program,
+  return { program: page.program, rank };
+}
+
+/** The icon a row at `rank` of the page whose program is `program` draws. */
+function activityRowIconAt(c: Container, program: number, rank: number, iconLike: string): number {
+  const icon = pictureDrawnAt(c, program,
     MENU_ROW1_BG[0] + MENU_ICON_OFFSET[0], MENU_ROW1_BG[1] + MENU_ICON_OFFSET[1] + MENU_ROW_PITCH * rank);
   if (icon === undefined) {
     throw new ComposeError(`the row labelled ${iconLike} draws no icon at rank ${rank}`);
@@ -3913,6 +3924,16 @@ function composeActivityMenuPage(
   const last = recordOf().pages.at(-1);
   const lastTouch = last === undefined ? undefined : touchPageOf(current, last);
   const layout = lastTouch === undefined ? undefined : activityPageLayout(lastTouch);
+  // Which of this menu's pages and which rank the row `iconLike` names, read now: once the new page's
+  // record is counted and its pointer is still a placeholder, `activityNames` no longer reads the
+  // menu, which is how a tenth activity on the spare Harmony One was refused. The page is found again
+  // by its index in the record, since every insertion below moves its program.
+  const iconRow = iconLike === undefined ? undefined : (() => {
+    const place = activityRowPlace(current, iconLike);
+    const index = recordOf().pages.findIndex((page) => page.program === place.program);
+    if (index < 0) throw new ComposeError(`the row labelled ${iconLike} is not on the activity menu`);
+    return { index, rank: place.rank };
+  })();
   if (last === undefined || layout === undefined) {
     throw new ComposeError("the activity menu's last page is not a row layout this knows");
   }
@@ -3998,7 +4019,7 @@ function composeActivityMenuPage(
   const icon = iconLike === undefined
     ? pictureDrawnAt(current, first.program,
       MENU_ROW1_BG[0] + MENU_ICON_OFFSET[0], MENU_ROW1_BG[1] + MENU_ICON_OFFSET[1])
-    : activityRowIcon(current, iconLike);
+    : activityRowIconAt(current, (recordOf().pages[iconRow!.index] as ModePage).program, iconRow!.rank, iconLike);
   if (bg === undefined || icon === undefined) {
     throw new ComposeError("the activity menu's first page draws no row this can copy");
   }

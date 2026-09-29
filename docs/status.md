@@ -832,11 +832,11 @@ accounting table** here, which was a real duplicate with nothing added and has b
 a page, and a fourth used to be refused. Now it opens a new page, and the menu says so in the three
 places a Harmony One configuration does: "2 pages" at the top, "1/", "2/" on each page, and the two
 touch keys beside the display no longer switched off, which is what every Harmony One screen of several
-pages in the corpus does. Composed on a fresh Harmony One's
-configuration and on the spare's, which went from three pages to four, with everything reading back;
-not written to a remote yet. The same work found that the device lists given a third page earlier
-state "2 pages" at the top in the configuration written to the spare, and that is fixed for the next
-write.
+pages in the corpus does. **Written to the spare Harmony One and it pages**: ten activities over four
+pages, "Test Een" and "Test Tien" at the end, and the television switching on from the fourth page.
+The same work found that the device lists given a third page earlier said "2 pages" at the top, and
+that write corrected them to "3 pages" on the remote. One thing it showed that no test sees: a label
+whose characters the menu's font lacks comes out in another colour.
 
 **How long a Harmony 650's screen stays lit is a timer in its configuration, section 292.** Logitech's
 software called the setting GlowTime and offered it for the Harmony 600 and 700; on the 650 it was 8 seconds, and

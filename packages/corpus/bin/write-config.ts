@@ -122,6 +122,7 @@ const SPARE_DUMPS = new Set([
   'one_spare_paired_base',
   'one_spare_screen_base',
   'one_spare_poweroff_base',
+  'one_spare_page4_base',
 ]);
 
 /**

@@ -311,6 +311,7 @@ IMAGES = {
     'one_spare_paired_base': '20260908T1532Z-one-spare-paired-base-region.bin',
     'one_spare_screen_base': '20260924T1430Z-one-spare-screen-base-region-region.bin',
     'one_spare_poweroff_base': '20260924T1514Z-one-spare-poweroff-base-region-region.bin',
+    'one_spare_page4_base': '20260929T0533Z-one-spare-page4-base-region-region.bin',
     # Two configs Logitech compiled to a specification we wrote, 13 August 2026, and the corpus's only
     # **known answer** samples: three devices and two activities chosen by us, on a throwaway account,
     # then compiled by the live service and downloaded without a byte reaching a remote. Section 132.
@@ -485,7 +486,7 @@ PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_confi
                       'one_spare_reverted_region', 'one_spare_lg_activity_region',
                       'one_spare_narrow_base', 'one_spare_probe_base',
                       'one_spare_retarget_base', 'one_spare_paired_base', 'one_spare_screen_base',
-                      'one_spare_poweroff_base',
+                      'one_spare_poweroff_base', 'one_spare_page4_base',
                       # The erase block of the Harmony 525, added 6 September 2026. It parses,
                       # because it starts with the container `h525_config_2` already counts, byte
                       # for byte for all 51195 of it. Counting it again would inflate every corpus

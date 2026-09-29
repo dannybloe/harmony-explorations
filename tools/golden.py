@@ -116,6 +116,7 @@ CONTAINERS = (
     'one_spare_paired_base',
     'one_spare_screen_base',
     'one_spare_poweroff_base',
+    'one_spare_page4_base',
     'h650_config_region',
     'h650_delay90_region',
     'h650_lg_region',

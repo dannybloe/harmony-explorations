@@ -116,6 +116,7 @@ const CONTAINERS = [
   'one_spare_paired_base',
   'one_spare_screen_base',
   'one_spare_poweroff_base',
+  'one_spare_page4_base',
   'h650_config_region',
   'h650_delay90_region',
   'h650_lg_region',
@@ -290,8 +291,8 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 71 since that region after 1.4.2's delay write, 72 since the region after 1.4.3's composed device,
   // 73 since the region after section 286's tour skip, 74 and 75 since the reads either side of
   // 1.4.4's composed activity, section 291, and 76 and 77 since the screen light timer at 20 and at
-  // 10, section 292.
-  assert.equal(present.length, 77, 'every vector, which is what `make golden` compares');
+  // 10, section 292, and 78 since the spare Harmony One's region before its four page menu, 293.
+  assert.equal(present.length, 78, 'every vector, which is what `make golden` compares');
   // 38 since the Harmony 895 landed: its key table reads with the existing reader even though
   // every other arch 10 reader is gated, which is what made section 177's keypad closure possible
   // without any arch 10 progress at all.
@@ -324,8 +325,9 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // unchanged: the composer adds a device mode and menu entries and no key table entry.
   // 68 since the region after section 286's tour skip, which changes one action list instruction.
   // 70 since the reads either side of 1.4.4's composed activity, section 291, and 71 since the screen
-  // light timer at 20 seconds, section 292, and 72 since it at 10: each keeps a key table.
-  assert.equal(complete, 72, 'the vectors whose container has a key table at all');
+  // light timer at 20 seconds, section 292, 72 since it at 10, and 73 since the spare's region
+  // before its four page menu, section 293: each keeps a key table.
+  assert.equal(complete, 73, 'the vectors whose container has a key table at all');
 
   // **The number sender field, and why it needs its own guard.** It is an empty array on 30 vectors
   // and null on 8, with eight carrying a record since 30 August 2026, and this comment said 25 and 9
@@ -362,7 +364,8 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 35 since that region after 1.4.2's delay write, the same configuration with one delay changed.
   // 36 since that region after 1.4.3's composed device, section 285, which adds none either, and 37
   // since the region after section 286's tour skip, 39 since the reads either side of 1.4.4's
-  // composed activity, section 291, and 40 and 41 since the screen light timer at 20 and at 10.
+  // composed activity, section 291, and 40 and 41 since the screen light timer at 20 and at 10. The
+  // spare's region before its four page menu, section 293, carries a number sender, so not 42.
   assert.equal(senders.filter((one) => Array.isArray(one) && one.length === 0).length, 41);
   // **Four since the second compiled sample**, and the reason is the account rather than the request:
   // every configuration compiled from the account that carries favourite channels carries the sender
@@ -402,8 +405,9 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 24 since the compare base for the third activity write, section 277: the favourite channel
   // records have now survived a sixth erase and write of the blocks holding them.
   // 28 since the compare base for the working screen write, section 279, one erase and write further.
-  // 29 since the compare base for the power off write, section 280.
-  assert.equal(senders.filter((one) => Array.isArray(one) && one.length > 0).length, 29,
+  // 29 since the compare base for the power off write, section 280, and 30 since the one for the
+  // four page activity menu write, section 293.
+  assert.equal(senders.filter((one) => Array.isArray(one) && one.length > 0).length, 30,
     'the configs that populate base slot 16');
 });
 
@@ -427,8 +431,9 @@ test('the list above covers exactly what the Python side writes a vector for', (
   // 70 since the Harmony 650's configuration region, section 282.
   // 71 since that region after 1.4.2's delay write, the compare base for the revert, and 72 since the
   // region after 1.4.3's composed device, and 73 since the region after section 286's tour skip,
-  // 75 since the reads either side of 1.4.4, section 291, and 77 since the 20 and 10 second timers.
-  assert.equal(python.length, 77, 'the golden vectors, which is what `make golden` prints');
+  // 75 since the reads either side of 1.4.4, section 291, 77 since the 20 and 10 second timers, and
+  // 78 since the spare's region before its four page menu, section 293.
+  assert.equal(python.length, 78, 'the golden vectors, which is what `make golden` prints');
   assert.deepEqual([...CONTAINERS].sort(), python.sort());
 });
 
