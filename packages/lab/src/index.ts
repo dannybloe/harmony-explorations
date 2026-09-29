@@ -160,6 +160,22 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // After section 294's write, LG kijken's own device list: the written file byte for byte and the
   // rest of the block at 0x110000 erased. The compare base after that.
   h650_devicelist_region: '20260929T1032Z-h650-devicelist-region.bin',
+  // The bench Harmony 700 as it arrived, in safe mode, section 295: both internal program memory pages,
+  // whose application at 0x9000 fails its checksum with the 1 KiB page at 0x10000 erased, and the
+  // external flash below its configuration, whose staged application at 0x000000 verifies. The same two
+  // pages read again after a Harmony Desktop sync are byte identical, so that sync wrote no application
+  // into the processor. External flash was first read after it, so what it wrote there is not known.
+  h700_internal_fe: '20260929T1243Z-h700-internal-fe-region.bin',
+  h700_internal_ff: '20260929T1243Z-h700-internal-ff-region.bin',
+  h700_staging_region: '20260929T1323Z-h700-staging-region.bin',
+  h700_after_hd_internal_fe: '20260929T1315Z-h700-after-hd-internal-fe-region.bin',
+  h700_after_hd_internal_ff: '20260929T1315Z-h700-after-hd-internal-ff-region.bin',
+  // And after `reinstall-firmware.ts` asked it to install its own staged image: the page at 0x10000
+  // restored and nothing else changed.
+  h700_repaired_internal_fe: '20260929T1345Z-h700-repaired-internal-fe-region.bin',
+  h700_repaired_internal_ff: '20260929T1345Z-h700-repaired-internal-ff-region.bin',
+  // The 650's internal page 0xFE, whose safe mode image carries the same install routine.
+  h650_internal_fe: '20260927T0840Z-h650-internal-fe-region.bin',
   // Three snapshots of the 650's state variables across an activity and a bare restart, section 283.
   h650_ram_activity_restart: '20260927T1150Z-h650-ram-activity-restart.bin',
   // The 650's data memory 0x000..0xDFF before and after a third bare restart, section 283.
@@ -508,7 +524,11 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
     // And after it went to 10 seconds, for the same reason.
     'h650_glow10_region',
     // And after LG kijken got its own device list, section 294.
-    'h650_devicelist_region'];
+    'h650_devicelist_region',
+    // External flash of the bench Harmony 700 from 0x000000, kept for the staged application at its
+    // start. The container at 0x020000 is byte for byte `h700_gspm`, the embedded config the 2.8
+    // package carries as its region 3, so counting it would count that one twice. Section 295.
+    'h700_staging_region'];
 
 const cache = new Map<string, string[]>();
 

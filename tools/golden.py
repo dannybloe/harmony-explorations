@@ -210,6 +210,10 @@ CONTAINERS = (
     # common, one cut out of a firmware image and one read off a different unit by Logitech's own
     # client. Section 215, where the claim that it had no counterpart is corrected.
     'vendor_region_embedded_config',
+    # External flash of the bench Harmony 700 from 0x000000, section 295. Kept for the staged
+    # application at its start, and the container at 0x020000 is byte for byte `h700_gspm`: a
+    # duplicate on the same terms as the two above, read off a unit rather than cut out of a package.
+    'h700_staging_region',
 )
 
 

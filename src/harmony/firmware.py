@@ -5,8 +5,8 @@ Every image examined so far, across both architectures, starts with the same 16 
 
     0x00  u16   checksum
     0x02  ff ff
-    0x04  u16   (image_size - 8) & 0xFFFF, the byte count from offset 8 to the end
-    0x06  u8    0x00 on architecture 12, 0x01 on architecture 14
+    0x04  u24   image_size - 8, the byte count from offset 8 to the end
+    0x06        its top byte, read as a family byte until section 295: 0 or 1 by size alone
     0x07  u8    firmware version, nibble BCD: 0x34 is 3.4, 0x28 is 2.8, 0x02 is 0.2
     0x08  48 47  magic, which concordance's _fix_magic_bytes() writes
     0x0A  GOTO <entry point>, which sits near the end of the image
@@ -34,7 +34,12 @@ CHECKSUM_START = 4
 CHECKSUM_SEED_EVEN = 0x21
 CHECKSUM_SEED_ODD = 0x43
 
-ARCH_FAMILY_BYTE = {0x00: 'architecture 12 (Gin)', 0x01: 'architecture 14'}
+# **Byte 6 is not a family byte**, section 295. It was read as one, 0 on arch 12 and 1 on arch 14, and it
+# is the top byte of the image's 24 bit length less 8: the Harmony 700's safe mode image reads bytes 4
+# to 6 as one number when it installs an application, and on all seven images here the three byte
+# reading is the length whose checksum verifies. The Harmony 350's is 1 as well, being over 64 KiB.
+# The field keeps its name so that callers do not break, and `family` says what it actually is.
+ARCH_FAMILY_BYTE = {0x00: 'length less 8 under 64 KiB', 0x01: 'length less 8 from 64 KiB to 128 KiB'}
 
 
 @dataclass
@@ -49,6 +54,11 @@ class Header:
     @property
     def version(self) -> str:
         return '%d.%d' % (self.version_bcd >> 4, self.version_bcd & 0x0F)
+
+    @property
+    def stated_size(self) -> int:
+        """The length the header states: bytes 4 to 6 as one 24 bit number, plus 8. Section 295."""
+        return (self.size_field | (self.family_byte << 16)) + 8
 
     @property
     def family(self) -> str:
@@ -95,8 +105,10 @@ def verify_checksum(code: bytes) -> bool:
 def recover_size(code: bytes) -> Optional[int]:
     """The image's true length, from the size field, even if `code` is truncated.
 
-    The field holds `(size - 8) & 0xFFFF`, so the top bits are lost and the answer is
-    ambiguous modulo 64 KiB.
+    This reads the field as `(size - 8) & 0xFFFF`, ambiguous modulo 64 KiB. **The header states
+    the whole length**, bytes 4 to 6, section 295, which is `ImageHeader.stated_size`; this
+    function is kept for a truncated image whose byte 6 is not trusted, and on every real image in
+    the lab exactly one candidate verifies, the stated one.
 
     A candidate that lies inside `code` can be **checked** rather than guessed at, because the
     header carries a checksum over the whole image: the right length is the one whose checksum

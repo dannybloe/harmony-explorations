@@ -118,15 +118,17 @@ class TestItIsAnOrdinaryPic18Image(unittest.TestCase):
         header = firmware.parse_header(payload)
         self.assertTrue(header.has_magic)
 
-    def test_it_declares_the_same_family_as_the_arch_14_images(self):
-        """Measured against the other images rather than asserted as a constant."""
-        lab.require('h350_package', 'h700_code', 'h600_code', 'one34_code')
-        family = firmware.parse_header(_payload()).family_byte
-        for name in ('h700_code', 'h600_code'):
-            self.assertEqual(family, firmware.parse_header(lab.load(name)).family_byte,
-                             '%s should declare the same family byte' % name)
-        self.assertNotEqual(family, firmware.parse_header(lab.load('one34_code')).family_byte,
-                            'the Harmony One is the other family, so the byte separates two things')
+    def test_its_byte_6_is_the_top_byte_of_its_length_as_on_the_other_images(self):
+        """This asserted that byte 6 declares the same family as the arch 14 images<!--superseded-->, which was the
+        reading section 295 refuted: the byte is the top of a 24 bit length, and the Harmony 350's image
+        is over 64 KiB like theirs. Measured against the other images rather than asserted as a constant."""
+        others = ('h700_code', 'h600_code_complete', 'h650_code', 'h650_bench_code', 'one34_code')
+        lab.require('h350_package', *others)
+        for name, image in (('h350', _payload()),) + tuple((n, lab.load(n)) for n in others):
+            with self.subTest(image=name):
+                header = firmware.parse_header(image)
+                self.assertEqual(header.stated_size, len(image))
+                self.assertEqual(header.family_byte, (len(image) - 8) >> 16)
 
     def test_the_base_derivation_is_decisive(self):
         lab.require('h350_package')

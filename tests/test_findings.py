@@ -15,7 +15,7 @@ from harmony.pic18 import chains, disasm, isa, trace
 
 
 class TestFirmwareHeader(unittest.TestCase):
-    # logical name -> (version, family byte, size field, true size)
+    # logical name -> (version, byte 6 which is the length's top byte, size field, true size)
     EXPECTED = {
         'one34_code': ('3.4', 0x00, 0xEA8A, 0x0EA92),
         'h700_code': ('2.8', 0x01, 0x2B78, 0x12B80),
@@ -33,6 +33,14 @@ class TestFirmwareHeader(unittest.TestCase):
                 self.assertEqual(h.family_byte, family)
                 self.assertEqual(h.size_field, size_field)
                 self.assertTrue(h.has_magic, '0x48 0x47 magic at offset 8')
+
+    def test_bytes_4_to_6_are_the_length_less_eight(self):
+        # Section 295: byte 6 is the length's top byte and not a family, so the three bytes state the
+        # true size outright, which the table above records independently as its last column.
+        lab.require(*self.EXPECTED)
+        for name, (_, _, _, true_size) in self.EXPECTED.items():
+            with self.subTest(image=name):
+                self.assertEqual(firmware.parse_header(lab.load(name)).stated_size, true_size)
 
     def test_size_field_encodes_length_minus_eight(self):
         lab.require('one34_code', 'h700_code')

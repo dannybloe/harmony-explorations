@@ -464,8 +464,8 @@ Identical across all three images:
 ```
 0x00  u16   checksum
 0x02  ff ff
-0x04  u16   (image_size - 8) & 0xFFFF   i.e. byte count from offset 8 to end
-0x06  u8    0x00 on arch 12, 0x01 on arch 14
+0x04  u24   image_size - 8              i.e. byte count from offset 8 to end, section 295
+0x06        its top byte: 0x00 on these arch 12 images and 0x01 on the arch 14 ones, by size alone
 0x07  u8    firmware version, BCD
 0x08  48 47  the magic that concordance's _fix_magic_bytes() writes
 0x0A  GOTO <entry point>
@@ -2720,9 +2720,11 @@ bytes, and it takes five seconds.
 Three things, and the first is the one that matters.
 
 **The image validates itself.** `src/harmony/firmware.py` already knew the header format and its
-checksum, from images decoded out of `.hfw` packages. The size field holds `(size - 8) & 0xFFFF`, so
-it is ambiguous modulo 64 KiB, and the candidates are 4800, 70336 and 135872 bytes. Only 70336
-verifies: stored `0x6A2B`, computed `0x6A2B`. The truncated file does not verify at any candidate.
+checksum, from images decoded out of `.hfw` packages. The size field was read as `(size - 8) & 0xFFFF`,
+ambiguous modulo 64 KiB, with candidates 4800, 70336 and 135872 bytes, and only 70336 verifies:
+stored `0x6A2B`, computed `0x6A2B`. **Section 295 found the field is three bytes**, byte 6 being its
+top, and it states 70336 outright, so the ambiguity was this reader's and not the header's. The
+closure stands, since it is the checksum that picked the length. The truncated file does not verify at any candidate.
 A 16 bit checksum over 70 KiB agreeing by chance is a one in 65536 event, and the wrong-length
 candidates demonstrate what a mismatch looks like.
 
@@ -25994,8 +25996,9 @@ order, five things that could each have failed:
 
 * `firmware.verify_checksum` passes and `firmware.parse_header` finds the `HG` magic at offset 8.
 * the header's version is BCD `0x14`, and the package's own manifest says `VERSION="1.4"`.
-* the header's **family byte is 1**, which is the value the Harmony 600, 650 and 700 images carry and
-  not the Harmony One's 0. Asserted against those images rather than against a constant.
+* the header's byte 6 is 1, the value the Harmony 600, 650 and 700 images carry and not the Harmony
+  One's 0. **This was read as a family byte and it is not one**, section 295: it is the top byte of
+  the image's 24 bit length, 1 on every image here longer than 64 KiB, and the Harmony 350's is.
 * `loadaddr.find_base` answers `0x9000`, where 1581 of 1582 targets land on a function boundary,
   99.9%, against 32.5% for the runner up at `0xC000`, which reaches only 1460 of them. Quoting the
   two raw hit counts side by side would have compared different denominators. That is the decisive
@@ -26003,8 +26006,8 @@ order, five things that could each have failed:
 * the instruction at `0x9000` is `GOTO 0x1AED4` and the header's own entry point field is `0x1AED4`.
   Two fields, one answer, which is what makes the derived base more than a score.
 
-**What none of that says is which architecture a Harmony 350 is.** The family byte has only ever had
-two values here and it is not the architecture number a config states; section 194 read a Harmony
+**What none of that says is which architecture a Harmony 350 is.** Byte 6 was never going to say it,
+being part of the length; section 194 read a Harmony
 350's format word and section 195 its skin, and neither is an architecture either. The manifest's
 `PATH="/fw/normalmode"` is a **named file**, which is section 193's reading exactly, so the storage
 being addressed by filename and the processor being a PIC18 are both true and were never in tension.
@@ -38636,3 +38639,174 @@ placeholder's device asserted nowhere, which the calibration test now counts, 63
 * `packages/codec/test/compose.test.ts`: the calibration over the thirteen, the refusals, and the list
   on the three configurations the end to end test composes a menu row on.
 * `docs/config-format.md`, `todo.md` and `docs/status.md`.
+
+## 295. A Harmony 700 installs its firmware from a staged copy in external flash, and one stuck in safe mode was repaired by asking it to install its own
+
+A second hand Harmony 700 arrived showing the safe mode screen at every start. It is on the bench as
+the unit `h700`, arch 14, skin 66, flash `15:1C`, and its version block said firmware 2.3 and software
+type 4. Everything below was read off it before anything was sent, and the one thing sent is the
+second half of Logitech's own install sequence.
+
+### Why it was in safe mode
+
+The safe mode image at internal `0x1000` is version 2.3, 29888 bytes, and verifies. The application at
+internal `0x9000` is version 2.5, states 71552 bytes, and **does not verify**: stored `0x99E2`, computed
+`0x2D92`. The one 1 KiB page of program memory at `0x10000` to `0x10400` is erased and the pages either
+side hold code, read twice. The same region read on the Harmony 650 has code in that page and its
+application verifies, so the hole is the remote's and not the read's.
+
+The previous owner's configuration at `0x030000` was intact, 974009 bytes, every structural check
+passing, so the configuration was not the cause.
+
+### Why Logitech's software could not repair it
+
+* **MyHarmony** checks for newer firmware before a sync, and once a latest version has come back,
+  `RemoteUpdateManager.IsFirmwareUpgradeRequired` returns true for `FirmwareType.SafeMode` without
+  asking anything else. **Which service it asks depends on the product**: the software update service
+  only when the product declares `SupportsProvisioning` or `SupportsCertificateActivation`, or is a
+  Harmony 350, and skins 66, 71 and 72 declare neither in `GetAllProducts`. So for this family it
+  takes `WebRemoteManager.CheckLatestFirmware`, whose files live under `files.myharmony.com`, and the
+  file name it asks for is unread. The software update service does answer 404 for skins 66, 71 and 72
+  on both channels, where skin 104 answers 200 with the same key, but that is a route MyHarmony does
+  not use for them, so it says nothing about why the sync failed. **Not established**: whether
+  Logitech still serves firmware for this family, and whether the firmware step is where MyHarmony's
+  sync fails. This bullet said both were the update service's 404 until reviewer 2 read the branch
+  above it, the same day.
+* **Harmony Desktop** synced a configuration: the configuration region holds a new compile of the
+  account afterwards, 1070416 bytes, and both internal pages read afterwards are byte for byte the
+  arrival reads, so it wrote no application into the processor. **What it did to external flash from
+  `0x000000` is not known**, because that range was first read after the sync: the staged 2.5
+  application there, and the embedded configuration at `0x020000`, which is byte for byte the 2.8
+  package's region 3, may be older than the sync or written by it. Danny found its hidden recovery
+  menu and nothing in it acted on this model.
+* **The server side works**: a compile requested for the 700's account record succeeded and holds the
+  same devices and activities, `work/myharmony/compiled-700/` in the lab.
+
+### How an arch 14 remote installs firmware
+
+**Logitech's `firmwareupgrade.xml` for skin 66**, in Harmony Desktop's mirrored templates, names the
+regions and the sequence. Region 2, the application, is written to **external** flash at `0x000000`,
+the embedded configuration to `0x020000`, the bootloader and safe mode are `0xFE0000` and `0xFE1000`.
+After the write it sets the update status, `WRITE_MISC` selector 6, to `code.update.new`, 2, reads it
+back, and restarts the remote with the escape's `0x02`. So the host never writes the application into
+the processor; the remote copies it in.
+
+**The safe mode image does the copy**, read on the 700's 2.3 image:
+
+* `0x02074`, in its start up sequence, calls `0x02B90`.
+* `0x02B90` reads the status through `0x07E6E`, which returns data memory `0x100` for index 0. It treats
+  4 as 2 and 7 as 6, and returns unless the value is 2 or 6.
+* It reads the three bytes at external `0x000004`, the image's length less 8, adds 8, and **clamps the
+  result to `0x15C00`**, so the copy ends at internal `0x1EC00`, below the settings store section 282
+  found at `0x01EC00` and the identity block at `0x1F400`.
+* It erases internal program memory in 1 KiB pages from `0x9000` through the routine at `0x07CBA`, then
+  copies two bytes at a time from external flash into the holding latches, `0x07CD6`, committing every
+  64 bytes through `0x07CEC`.
+* It stores 0 back into the status through `0x07E7A`.
+* Afterwards `0x027DC` compares the application's stored checksum with one computed over internal
+  `0x9000` onward, and on a match the start up jumps to `0x900A`, the application. That comparison
+  failing is what kept this remote in safe mode.
+
+**The status byte's command is not the general misc shape.** The safe mode image's `WRITE_MISC` parser
+reads the packet's bytes in order into `0xD09`, `0xD0B`, `0xD0A`, `0xD0D` and `0xD0C`, its selector
+chain sends 6 to `0x039B6`, and that arm stores `0xD0B` as the address and `0xD0A` as the value. So the
+value is the packet's **third** byte after the command byte, the fourth in all, and this project's `writeMiscRequest`, which sends a sixteen bit
+address and value, would have stored the address's low byte. The template's own bytes are `A3 06 00 02`
+and `B2 06 00`, and those are what `updateStatusWriteRequest` and `updateStatusReadRequest` build.
+
+**The image length is three bytes.** The Python reader, `src/harmony/firmware.py`, takes offset 4 as a
+sixteen bit size and offset 6 as a family byte, `0x00` on arch 12 and `0x01` on arch 14, and recovers
+the length by trying every candidate. The safe mode image reads offsets 4 to 6 as one number, so that
+"family byte" is the length's top byte. **The byte never told two families apart**, and the image
+that shows it is the Harmony 350's: it is not arch 14 and it carries `0x01`, because it is 73472 bytes.
+On the seven application images in the lab, the Harmony 350, the Harmony 600's complete image, the
+Harmony 650's two, the Harmony 700 2.8 and its bench unit's staged 2.5, and the Harmony One's 3.4, the
+three bytes plus 8 are the length whose checksum verifies, and byte 6 is 1 on the six over 64 KiB and
+0 on the One's 60050. **The arch 14 safe mode images refute the family reading more directly**: the
+600's and 650's 0.2, 24320 bytes, and the 700's 2.3, 29888, all carry 0 there. Section 196 had read the 350's `0x01` as sharing the arch 14 family and is corrected in
+place. Trying candidates is ambiguous where the remote is not: a synthetic image repeating every 256
+bytes verifies at two lengths. `packages/usb/src/firmware.ts` reads it the remote's way and the Python
+reader gains `stated_size`; its recovered sizes on the real images are unaffected, since on each of
+them only one candidate verifies. `tests/test_findings.py` and `tests/test_harmony_350_firmware.py`
+assert the three byte reading on the application images, `packages/usb/test/firmware.test.ts` on the
+staged 2.5 and the three arch 14 safe mode images.
+
+### The repair
+
+The remote's external flash at `0x000000`, read after the Harmony Desktop sync, held a 2.5
+application, 71552 bytes, **verifying**, and differing from the installed copy in exactly that page.
+How the hole came about is **not established**: the install routine erases every page before it copies
+any, so an interrupted copy would leave everything after the break erased rather than one hole with
+code after it, and a page whose programming failed or a later erase of that one page both fit. So the
+repair needed no firmware from anywhere and no flash write from the host: set the status to 2 and
+restart.
+
+`packages/usb/bin/reinstall-firmware.ts --unit h700 --commit` did that, after a dry run, behind
+`HARMONY_ENABLE_WRITES=1` and a new door, `HARMONY_FIRMWARE_REINSTALL=1`. It read the unit's identity
+against the lab record, the software type, and the staged image, which the rail checks itself; sent
+`A3 06 00 02`; read back 2; and restarted the remote. **It came back as firmware 2.5, software type 0.**
+The internal pages read afterwards differ from the arrival reads in 1005 bytes, all in the page at
+`0x10000`, which now equals the staged bytes; the bootloader, the safe mode image and everything above
+the application are byte identical.
+
+### The package that would have been wrong
+
+The one 700 firmware package in the lab, the 2.8 `.hfw` from a repair site, **states two different
+flash parts**: its `Region_2.EZUpgrade` header's `INTENDED` block says `0x14:0x1C` for both software
+types, and its `Data.xml` says `0x15:0x1C` for skin 66, which is what this remote and the second 700
+whose configurations are in the lab carry. Which of the two a client acts on is unread, since nothing
+in MyHarmony calls `EZUpgrade.Intended()`. Reinstalling the remote's own build avoided the question.
+
+### Scope, decision 16
+
+* **Read**: the install routine and the status byte handler on the Harmony 700's 2.3 safe mode image.
+  **The routine's status normalisation**, 4 read as 2 and 7 as 6, is one byte pattern that does not
+  depend on where a build put its variables, and it occurs once in each of the three arch 14 safe mode
+  images, at `0x02B9C` on the 700 and `0x01A8C` on the 600 and the 650, and in none of the application
+  images, the staged 2.5 or the Harmony One's internal pages, which fits: arch 12 runs its application
+  in place and has no staging copy. On the 600's and the 650's images the routine it sits in starts at
+  `0x01A80` and is called once, from `0x0107E`. The `0x15C00` clamp was offered here as a second
+  distinctive step and is not one: the application images compare against that constant too. The
+  600's and 650's selector 6 handlers, and every safe mode image's escape handler, are unread; the
+  restart was sent to a safe mode image once, on the Harmony 700, and it restarted.
+* **Sent**: one Harmony 700.
+* Arch 9 (Harmony 525) installs through an EEPROM byte its bootloader reads, section 119, and entering
+  its safe mode destroys the application, so nothing here transfers to it.
+
+### Sources checked before the work
+
+Logitech's clients first, per decision 2: MyHarmony's decompiled `RemoteUpdateManager` for the safe mode
+branch and the update service query, Harmony Desktop's `SKIN66/firmwareupgrade.xml` for the sequence and
+the regions, and the 2.8 package's `Data.xml` and `EZUpgrade` header for what it is intended for. Then
+the firmware, the 700's own safe mode image and bootloader. Then this repository: `docs/host-client.md`'s
+arch 12 write sequence, which already named selector 6 as an update status byte at address 0, and
+`reference/concordance-notes.md` on arch 14's firmware size.
+
+**Five claims in the first draft of this section were wrong and were corrected before it landed**, by
+the second reviewer of the `finding` skill, and each is worth knowing as a shape. The draft said
+MyHarmony's failure was the update service's 404, from a branch MyHarmony never reaches for this
+family; that Harmony Desktop wrote nothing but the configuration, when external flash had not been
+read before its sync; that the 2.8 package is intended for `0x14:0x1C`, citing a `Data.xml` that says
+`0x15:0x1C`; that the `0x15C00` clamp is distinctive of the install routine, when a first match hid
+the same constant in every application image; and that the hole was a copy that failed on one page,
+which the routine's erase first order argues against. The blind reviewer re-measured every number
+above and agreed with all of them, which is the passenger rule again: the numbers were right and the
+sentences beside them were not.
+
+### Falsification
+
+A staged image at external `0x000000` that the safe mode image does not install when the status is 2, an
+install that writes outside internal `0x9000` to `0x1EC00`, or a remote that reads the status from any
+byte of the packet but the third after the command byte. On the remote, the reinstall not restoring the application, or
+changing anything outside the damaged page, was run and did not happen.
+
+### Where it lands
+
+* `packages/usb/src/firmware.ts`: the image header and checksum, read the remote's way.
+* `packages/usb/src/rails.ts`: `ARCHITECTURES_WITH_A_REINSTALL_TARGET`, `REINSTALL_MAX_IMAGE`, the door
+  and `assertReinstallAllowed`.
+* `packages/usb/src/protocol.ts` and `writes.ts`: `MISC_UPDATE_STATUS` and the two requests.
+* `packages/usb/src/remote.ts`: `readUpdateStatus` and `requestFirmwareReinstall`.
+* `packages/usb/bin/reinstall-firmware.ts`: the dry run and the commit.
+* `packages/usb/test/firmware.test.ts`: the images, the repair, the scope, and the rail's refusals.
+* `docs/usb-protocol.md`, the `recovering-a-remote` skill, `CLAUDE.md` and `todo.md`.

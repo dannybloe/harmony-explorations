@@ -29,7 +29,11 @@ import {
   FLASH_CHUNK_DATA,
   GET_VERSION,
   MISC_RAM,
+  MISC_UPDATE_STATUS,
   READ_FLASH,
+  UPDATE_STATUS_NEW,
+  softwareTypeFromVersion,
+  updateStatusReadRequest,
   WRITE_FLASH,
   WRITE_MISC,
   nextFlashSequence,
@@ -50,7 +54,9 @@ import {
   assertRamWriteAllowed,
   assertInvalidateAllowed,
   assertResetAllowed,
+  assertReinstallAllowed,
   assertSessionEndAllowed,
+  REINSTALL_MAX_IMAGE,
   type WritePermission,
 } from './rails.ts';
 // The four write encoders live in their own module, which `index.ts` does not re-export: see
@@ -62,6 +68,7 @@ import {
   invalidateRequest,
   writeFlashRequest,
   writeMiscRequest,
+  updateStatusWriteRequest,
 } from './writes.ts';
 import { authoriseReport } from './authorise.ts';
 import { IDENTITY_BYTES, IDENTITY_PAGE, identityAddress } from './identity.ts';
@@ -775,6 +782,76 @@ export class HarmonyRemote {
    */
   async resetDevice(p: WritePermission): Promise<void> {
     assertResetAllowed(p);
+    await this.send(escapeRequest(ESCAPE_RESET));
+  }
+
+  /**
+   * The arch 14 firmware update status byte, `B2 06 00`, which is a read. Section 295.
+   *
+   * 0 at rest, 2 while an image staged in external flash is waiting to be installed. Refused on any
+   * other architecture, since selector 6 is a different accessor elsewhere and a plausible byte from
+   * the wrong one is the failure `readRam` documents.
+   */
+  async readUpdateStatus(): Promise<number> {
+    if (this.architecture !== 14) {
+      throw new RemoteError(
+        `the update status byte is read on arch 14 only, and this remote is ${this.architecture ?? 'unpinned'}`,
+      );
+    }
+    const reply = await this.exchange(updateStatusReadRequest());
+    if (reply.kind !== 'misc' || reply.selector !== MISC_UPDATE_STATUS) {
+      throw new RemoteError(`the update status read answered with a ${reply.kind} reply`);
+    }
+    return reply.value;
+  }
+
+  /**
+   * Ask a remote in safe mode to **reinstall the application image already staged in its external
+   * flash**, and restart it so that it does. Section 295.
+   *
+   * This writes no flash. On arch 14 a firmware install is two halves: the host writes the new image
+   * into external flash at `0x000000`, and the remote's safe mode image copies it into internal flash
+   * at start up when the update status byte says 2. This sends only the second half, exactly as
+   * Logitech's template for skin 66 ends: `A3 06 00 02`, `B2 06 00` expecting 2 back, then the reset
+   * escape.
+   *
+   * **Everything the rail judges is read here, off the remote**, rather than handed in by a caller:
+   * the architecture and the software type off the version block, the unit off its identity block,
+   * and the staged image, so what the rail approves is what the remote holds. The caller supplies
+   * only the recorded identity of the unit it means. The staged copy is capped at
+   * `REINSTALL_MAX_IMAGE`, which is also the length read here, so all of what can be copied is checked.
+   * This took the architecture and the identity block from the caller until reviewer 2 of section
+   * 295 found that a caller's wrong architecture reached the status write before anything refused.
+   *
+   * No reply is waited for after the reset and the handle is finished, as with `resetDevice`.
+   */
+  async requestFirmwareReinstall(p: Pick<WritePermission, 'permittedUnit'>): Promise<void> {
+    const version = await this.getVersion();
+    const softwareType = softwareTypeFromVersion(version);
+    const architecture = architectureFromVersion(version);
+    if (architecture === undefined) {
+      throw new RemoteError('the version block does not say which architecture the remote is');
+    }
+    const identityBlock = await this.readUnitIdentity();
+    // In 32 KiB reads, since a `READ_FLASH` count is sixteen bits and the copy limit is not.
+    const staged = new Uint8Array(REINSTALL_MAX_IMAGE);
+    for (let at = 0; at < REINSTALL_MAX_IMAGE; at += 0x8000) {
+      staged.set(await this.readFlash(at, Math.min(0x8000, REINSTALL_MAX_IMAGE - at)), at);
+    }
+    assertReinstallAllowed(
+      { architecture, identityBlock, permittedUnit: p.permittedUnit },
+      { softwareType: softwareType ?? -1, staged },
+    );
+    const reply = await this.exchange(updateStatusWriteRequest(UPDATE_STATUS_NEW));
+    if (reply.kind !== 'ack' || reply.command !== WRITE_MISC) {
+      throw new RemoteError('the update status write was not acknowledged as WRITE_MISC');
+    }
+    const status = await this.readUpdateStatus();
+    if (status !== UPDATE_STATUS_NEW) {
+      throw new RemoteError(
+        `the update status reads back ${status}, not ${UPDATE_STATUS_NEW}: not restarting`,
+      );
+    }
     await this.send(escapeRequest(ESCAPE_RESET));
   }
 }

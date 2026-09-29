@@ -723,7 +723,7 @@ files already here rather than for incoming ones.
 
 ## Never write to a remote
 
-Read paths only, except on **five units**, deliberately and behind two flags, of which three have been written to. On the **spare Harmony
+Read paths only, except on **five units**, deliberately and behind two flags, of which three have had flash written. On the **spare Harmony
 One**: a block written back unchanged on 30 August 2026, section 222; a delay byte changed and
 reverted on 1 September, sections 236 and 237; a device added on 3 September, section 242, 25 blocks,
 after which the television answered it; and one power on delay raised the same day, section 247, two
@@ -732,12 +732,15 @@ block written back unchanged on 6 September, section 269, which is the second ar
 and needed no compiler, since nothing can compile a configuration for that model. On the **Harmony
 650**, a second hand unit which Danny says may be reprogrammed as the work needs: one block written back unchanged on
 27 September 2026, section 281, the first write to arch 14; and one power on delay raised and put back
-the same day, section 283, two blocks each way, live in the remote's memory straight after the restart. **No other remote has been written to and
+the same day, section 283, two blocks each way, live in the remote's memory straight after the restart. **No other remote has had flash written and
 no other may be**, which said "the spare is the only one that may be"<!--superseded--> until 6
 September 2026. **The Harmony 600 and the Harmony 700 may be written to since 29 September 2026**,
-Danny's decision that day, and neither has been yet: each first gets its identity and a whole region
-read into the lab, then one block back unchanged, then a real write, the order every unit here has
-taken. The 600 was excluded by name until then. His everyday Harmony One still is, and **the rail
+Danny's decision that day, and neither has had flash written yet: each first gets its identity and a
+whole region read into the lab, then one block back unchanged, then a real write, the order every unit
+here has taken. **The 700 took another road first**: it arrived stuck in safe mode, was sent one
+reinstall request, a `WRITE_MISC` and a restart that write no flash from the host, section 295, and
+has had its configuration rewritten by Harmony Desktop, so its lab dumps are its identity, its regions
+and the state after those two. The 600 was excluded by name until then. His everyday Harmony One still is, and **the rail
 that separates units is the unit check on the identity block**, since the 600 and the 650 report the
 same product id and architecture, and two Harmony Ones enumerate alike. These
 devices are irreplaceable. Note that patching a concordance
@@ -755,7 +758,17 @@ document:
 
 * **Firmware is never written.** `WRITE_FLASH` is restricted to the config region for the detected
   architecture (One `0x040000`, 600/700 `0x030000`) and a write outside it is refused by the
-  library, not by the user interface.
+  library, not by the user interface. **One path makes a remote install firmware and it writes none
+  from the host**, section 295: on a Harmony 700 in safe mode, the update status byte set to 2 plus a
+  restart makes the safe mode image copy the application **already staged** in the remote's own
+  external flash. Read on that model's 2.3 safe mode image; the rail admits arch 14 (Harmony 600 and
+  650 too), whose images carry part of the routine and are otherwise unread there. It sits behind
+  `HARMONY_FIRMWARE_REINSTALL=1` as well as `WRITES_ENABLED`, `requestFirmwareReinstall` reads the
+  architecture, the unit and the staged image off the remote itself, and `assertReinstallAllowed`
+  refuses unless the unit matches the record the caller names, it is in safe mode, and the staged
+  image verifies and fits the copy limit. Which records may be named is `reinstall-firmware.ts`'s own
+  list, the three arch 14 units. It repaired a Harmony 700 that arrived stuck in safe mode; the
+  `recovering-a-remote` skill holds the route.
 * **Five units may be written to and no others**: the **spare Harmony One** and the **Harmony 525**,
   Danny's decision of 5 September 2026, the **Harmony 650**, his decision of 27 September 2026, and
   the **Harmony 600** and the **Harmony 700**, his decision of 29 September 2026. The exclusion is the
@@ -799,9 +812,9 @@ document:
   which the existing model predicted: it keeps its configuration on a serial chip and executes nothing
   out of the block being erased, where arch 12 does and does restart, section 247.
   **The old wording said the spare Harmony One was the only write target**<!--superseded--> and that
-  arch 9 had none either. **Eight remotes are on the bench**: a programmed Harmony One, a Harmony 600, the spare Harmony
-  One, a Harmony 525, since 27 August 2026 a Harmony Touch, a Harmony 350 and a Harmony 300, and since
-  27 September 2026 a Harmony 650.
+  arch 9 had none either. **Nine remotes are on the bench**: a programmed Harmony One, a Harmony 600, the spare Harmony
+  One, a Harmony 525, since 27 August 2026 a Harmony Touch, a Harmony 350 and a Harmony 300, since
+  27 September 2026 a Harmony 650, and since 29 September 2026 a Harmony 700.
   This said four until 29 August 2026, twelve lines above an architecture table that dates the other
   three. None of the three changes the write argument, since none is arch 12 (Harmony One) and
   `openHarmony` refuses all three, which is why the stale count survived. **Arch 14 had no write
@@ -1947,6 +1960,16 @@ node packages/usb/bin/rehearse-block.ts --dump <image> --block 0x040000 [--commi
                        configuration is the running application firmware and nothing in that remote
                        refuses an erase of it. Sections 175, 221, 222, 267 and 269, plus the job 3
                        review in docs/review-before-first-write.md
+node packages/usb/bin/reinstall-firmware.ts --unit <label> [--commit]
+                       ask a Harmony 700 stuck in safe mode to reinstall the application already
+                       staged in its own external flash, section 295; it also takes the Harmony 600
+                       and 650, where the routine is only partly read. Without
+                       `--commit` it reads only: the unit against the lab record, the software type,
+                       the staged image's checksum and which pages of the installed one differ.
+                       `--commit` needs HARMONY_ENABLE_WRITES=1 **and** HARMONY_FIRMWARE_REINSTALL=1,
+                       sets the update status byte to 2 and restarts, and the remote does the copy.
+                       Sends no firmware and writes no flash from the host. Run once, on the Harmony
+                       700 that arrived in safe mode, and it came back running its application.
 HARMONY_ENABLE_WRITES=1 node packages/usb/bin/end-session-experiment.ts
                        THE ONLY SCRIPT HERE THAT SENDS A COMMAND WHICH IS NOT A READ, one
                        `0xE0 0x01`, which zeroes one variable and touches no storage. Refuses

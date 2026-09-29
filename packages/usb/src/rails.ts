@@ -14,9 +14,10 @@
  * the answer is no unless every condition is met.
  */
 
-import { ESCAPE_END_SESSION, ESCAPE_RESET, ESCAPE_SUB_COMMANDS, readVersion } from './protocol.ts';
+import { ESCAPE_END_SESSION, ESCAPE_RESET, ESCAPE_SUB_COMMANDS, SOFTWARE_TYPE_SAFE_MODE, readVersion } from './protocol.ts';
 import { compareIntendedVersion } from './compatible.ts';
 import { sameUnit } from './identity.ts';
+import { checkFirmwareImage } from './firmware.ts';
 import type { Compatibility, StatedVersion } from './compatible.ts';
 
 export class RailError extends Error {}
@@ -835,6 +836,107 @@ export function assertResetAllowed(p: WritePermission): void {
       `architecture ${p.architecture} may be written a block and not restarted over USB: its escape `
         + 'is traced but nothing here has sent it the reboot, and a flash demonstration buys no other '
         + 'path. Section 281.',
+    );
+  }
+}
+
+/**
+ * Architectures on which the remote may be asked to **reinstall its own staged firmware**: the
+ * firmware update status byte set to 2 and a restart. Section 295.
+ *
+ * **A list of its own, like every other path here.** Nothing is written to flash by this: the remote's
+ * safe mode image does the erase and the copy itself, from the image already sitting in its external
+ * flash, which is what it does at the end of every firmware install Logitech's software performs. It
+ * is still the most consequential thing this package can ask of a remote, since the application image
+ * is erased before the copy starts, so it gets a named door and a check of the staged image on top of
+ * the ordinary rails.
+ *
+ * `[14]` because the install routine was read on the Harmony 700's 2.3 safe mode image and the
+ * trigger in Logitech's template for skin 66, and nowhere else. Arch 12 (Harmony One) runs its
+ * application in place and has no staging copy; arch 9 (Harmony 525) is a different mechanism
+ * entirely, an EEPROM byte its bootloader reads, section 119, and entering its safe mode destroys
+ * the application.
+ */
+export const ARCHITECTURES_WITH_A_REINSTALL_TARGET: readonly number[] = [14];
+
+/**
+ * The largest image the arch 14 safe mode image will copy: it clamps the header's size to `0x15C00`,
+ * so the copy ends at internal `0x1EC00`, below the settings store and the identity block.
+ */
+export const REINSTALL_MAX_IMAGE = 0x15c00;
+
+/**
+ * The named door, beside `HARMONY_ENABLE_WRITES` rather than instead of it.
+ */
+export const FIRMWARE_REINSTALL: boolean = process.env['HARMONY_FIRMWARE_REINSTALL'] === '1';
+
+/**
+ * Throws unless the remote on the cable may be told to reinstall the image staged in its external
+ * flash. Section 295.
+ *
+ * Every condition is judged here, on facts read off the remote rather than asserted by a caller, which
+ * is the lesson of sections 224 and 225: `requestFirmwareReinstall` reads the identity block, the
+ * version block and the staged image itself and hands them in, and this computes the staged image's
+ * checksum itself. What a caller still chooses is `permittedUnit`, the record the unit is compared
+ * with, which is why `reinstall-firmware.ts` names the units it will take.
+ *
+ * * **Safe mode only.** The install routine was read in the safe mode image. What the application
+ *   does with the same byte is unread, and a remote whose application runs has no reason to be here.
+ * * **The staged image must verify, and fit.** The remote erases its application before it copies,
+ *   and it copies whatever length the staged header states up to its clamp. A staged image that does
+ *   not verify would be copied faithfully and then refused by the checksum test at the next start,
+ *   which is the state the remote is presumably already in, minus the application.
+ * * **The restart must be traced.** The reinstall happens at start up, so the same escape the config
+ *   writer ends with has to be one this architecture dispatches. That was read on the 0.2 application
+ *   builds, section 282, and this sends it to a safe mode image, whose escape handler is unread; it
+ *   restarted the one Harmony 700 it was sent to.
+ * * **The architecture list is wider than the reading.** The routine was read on the Harmony 700's 2.3
+ *   safe mode image; the 600's and 650's 0.2 images carry its status normalisation and are otherwise
+ *   unread there, and `[14]` admits them. Section 295 says so.
+ */
+export function assertReinstallAllowed(
+  p: Pick<WritePermission, 'architecture' | 'identityBlock' | 'permittedUnit'>,
+  remote: { readonly softwareType: number; readonly staged: Uint8Array },
+): void {
+  if (!WRITES_ENABLED) {
+    throw new RailError(
+      'writing is disabled: this build is read only (set HARMONY_ENABLE_WRITES=1 knowing why)',
+    );
+  }
+  if (!FIRMWARE_REINSTALL) {
+    throw new RailError(
+      'a firmware reinstall needs HARMONY_FIRMWARE_REINSTALL=1 as well as HARMONY_ENABLE_WRITES=1: '
+        + 'the remote erases its application before it copies the staged image over it',
+    );
+  }
+  assertUnitIsPermitted(p);
+  if (!ARCHITECTURES_WITH_A_REINSTALL_TARGET.includes(p.architecture)) {
+    throw new RailError(
+      `architecture ${p.architecture} has no reinstall target: the install routine was read on `
+        + `architecture ${ARCHITECTURES_WITH_A_REINSTALL_TARGET.join(', ')} only`,
+    );
+  }
+  const dispatched = ESCAPE_SUB_COMMANDS[p.architecture];
+  if (dispatched === undefined || !dispatched.includes(ESCAPE_RESET)) {
+    throw new RailError(`architecture ${p.architecture} has no reset escape read from its firmware`);
+  }
+  if (remote.softwareType !== SOFTWARE_TYPE_SAFE_MODE) {
+    throw new RailError(
+      `the remote reports software type ${remote.softwareType}, not safe mode: the install routine `
+        + 'was read in the safe mode image, and what a running application does with the byte is unread',
+    );
+  }
+  const staged = checkFirmwareImage(remote.staged);
+  if (!staged.verifies) {
+    throw new RailError(
+      'the image staged in external flash does not verify, so the remote would erase its application '
+        + 'and copy in an image its own start up check then refuses',
+    );
+  }
+  if (staged.size > REINSTALL_MAX_IMAGE) {
+    throw new RailError(
+      `the staged image is ${staged.size} bytes and the safe mode image copies at most `
+        + `${REINSTALL_MAX_IMAGE}, so it would install a truncated application`,
     );
   }
 }

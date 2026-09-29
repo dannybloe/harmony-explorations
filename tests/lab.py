@@ -179,6 +179,15 @@ IMAGES = {
     'h650_glow10_region': '20260928T1449Z-h650-glow10-region.bin',
     # After section 294's write, LG kijken's own device list.
     'h650_devicelist_region': '20260929T1032Z-h650-devicelist-region.bin',
+    # The bench Harmony 700 as it arrived, in safe mode, section 295.
+    'h700_internal_fe': '20260929T1243Z-h700-internal-fe-region.bin',
+    'h700_internal_ff': '20260929T1243Z-h700-internal-ff-region.bin',
+    'h700_staging_region': '20260929T1323Z-h700-staging-region.bin',
+    'h700_after_hd_internal_fe': '20260929T1315Z-h700-after-hd-internal-fe-region.bin',
+    'h700_after_hd_internal_ff': '20260929T1315Z-h700-after-hd-internal-ff-region.bin',
+    'h700_repaired_internal_fe': '20260929T1345Z-h700-repaired-internal-fe-region.bin',
+    'h700_repaired_internal_ff': '20260929T1345Z-h700-repaired-internal-ff-region.bin',
+    'h650_internal_fe': '20260927T0840Z-h650-internal-fe-region.bin',
     # Three snapshots of the 650's state variables, 108 bytes from data 0xE10 plus the stored sum:
     # at rest, after an activity was started off the cable, and after a bare restart. Section 283.
     'h650_ram_activity_restart': '20260927T1150Z-h650-ram-activity-restart.bin',
@@ -516,7 +525,11 @@ PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_confi
                       # And after it went to 10 seconds.
                       'h650_glow10_region',
                       # And after LG kijken got its own device list.
-                      'h650_devicelist_region')
+                      'h650_devicelist_region',
+                      # External flash of the bench Harmony 700 from 0x000000, kept for the staged
+                      # application; its container at 0x020000 is byte for byte `h700_gspm`.
+                      # Section 295.
+                      'h700_staging_region')
 
 CONTAINERS = (
     'h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'h525_config_2', 'one_config',

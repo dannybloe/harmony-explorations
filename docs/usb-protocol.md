@@ -747,7 +747,24 @@ well. So this selector is what closes that symptom, and those same bytes written
 for a sync every time.
 
 Selector `0x06` pairs with the read's `0x06`, calling `0x1AB96` where the read calls `0x1AB8A`,
-so it is a second address space of some kind. Not identified.
+so it is a second address space of some kind. On this 2.8 application image it is still not
+identified.
+
+**On the Harmony 700's 2.3 safe mode image it is the update status byte**, section 295, and it does
+not take the shape the table above gives. The parser reads the packet's bytes in order into `0xD09`,
+`0xD0B`, `0xD0A`, `0xD0D` and `0xD0C`, the chain sends 6 to `0x039B6`, and that arm takes `0xD0B` as a
+one byte index and `0xD0A` as a one byte value, so the value is the packet's **third** byte after the command byte, the fourth in all, and a
+sixteen bit address and value would store the address's low byte. Index 0 is data memory `0x100`.
+Logitech's `firmwareupgrade.xml` for skin 66 sends `A3 06 00 02`, reads it back with `B2 06 00`, reply
+`C2 06 02`, and restarts the remote with the escape's `0x02`; at start up the safe mode image's
+install routine at `0x02B90` copies the application staged at external `0x000000` into internal
+`0x9000` when the byte is 2 or 6, clamped to `0x15C00` bytes, and stores 0 back. `updateStatusWriteRequest`
+and `updateStatusReadRequest` in `packages/usb` build those bytes, and `requestFirmwareReinstall` sends
+them behind `assertReinstallAllowed`. **Sent to a Harmony 700 in safe mode on 29 September 2026** and
+it installed its own staged application and came back running it. The Harmony 600's and Harmony 650's
+0.2 safe mode images carry the routine's status normalisation, once each, inside a routine at
+`0x01A80` called from `0x0107E`; their selector 6 handlers and every safe mode image's escape handler
+are unread.
 
 ### READ_FLASH
 

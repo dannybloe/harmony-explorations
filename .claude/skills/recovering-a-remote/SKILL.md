@@ -12,10 +12,11 @@ success does not transfer to another.
 
 Three things frame it.
 
-**One write has been performed here**, section 222, and it put a block of a remote's own bytes back
-unchanged, so no route below has ever been exercised in anger and every one of them is a reading
-of firmware plus, in one case, a recovery somebody performed by hand from the private lab. A route
-that has not been exercised is a prediction.
+**Flash writes have been performed here since section 222, on three units, and one route below has
+been exercised in anger on a fourth**: the reinstall request, which writes no flash from the host and
+repaired a Harmony 700 that arrived stuck in safe mode, section 295. The rest are readings of firmware plus, in one case, a recovery somebody performed
+by hand from the private lab. This said "one write has been performed" until 29 September 2026, well
+after it stopped being true. A route that has not been exercised is a prediction.
 
 **Entering safe mode is not free on every model.** On the Harmony 525 it destroys the application
 firmware, and a power cycle does not leave it. That is the one-way door in this file and the reason
@@ -38,6 +39,35 @@ reading sat in every session's context to answer a question that only arises whe
 wrong or is about to.
 
 ## The routes
+
+* **A Harmony 700 stuck in safe mode can reinstall its own application**, section 295, and this is
+  the one route here that has been run to repair a remote. It was read on that model's 2.3 safe mode
+  image; the Harmony 600 and 650 are arch 14 too and the rail admits them, but on theirs only part of
+  the routine has been matched, so a run there is a new measurement. Read the symptom first: software
+  type 4 in the version block, the application at internal `0x9000` failing its checksum, and the
+  image at external `0x000000` verifying. That external copy is where an arch 14 firmware install
+  **stages** the application, and the safe mode image copies it into internal flash at start up when
+  the update status byte, data memory `0x100`, is 2. So a remote whose copy step failed still holds a
+  good image, and the repair sends no firmware at all:
+
+      node packages/usb/bin/reinstall-firmware.ts --unit <label>            # dry run, reads only
+      HARMONY_ENABLE_WRITES=1 HARMONY_FIRMWARE_REINSTALL=1 \
+        node packages/usb/bin/reinstall-firmware.ts --unit <label> --commit
+
+  The dry run prints the unit match against `../lab/units/<label>.txt`, the software type, whether
+  the staged image verifies and which 1 KiB pages of the installed one differ from it, and the status
+  byte. The commit sends `A3 06 00 02`, reads back 2 and restarts; the rail re-reads the staged image
+  itself and refuses unless it verifies and fits the `0x15C00` byte copy limit. Afterwards read the
+  internal pages again and compare, which is how the 700's repair was shown to have changed exactly
+  the damaged page. **Failure modes**: a power loss mid copy leaves safe mode, an erased application
+  and the staged copy untouched, so the same command runs again; a status that does not survive the
+  restart does nothing. **Logitech's clients did not repair it**: MyHarmony's sync failed, for a
+  reason not established, and Harmony Desktop's sync wrote a configuration and left the application
+  as it was. **If the staged image does not verify either**, this route is closed and nothing here
+  writes an application into external flash; the 2.8 package in the lab states two different flash
+  parts, `0x14:0x1C` in its upgrade header and `0x15:0x1C` in its `Data.xml`, so it is not a drop in
+  answer. The 600's and 650's 0.2 safe mode images carry the routine's status normalisation, and
+  their status handlers and every safe mode escape handler are unread.
 
 * Recovery paths first, and **check what the file actually holds before trusting its name**. On
   arch 12 `*-safe.bin` is flash `0x000000` to `0x010000`, which contains the safe mode `GSPM`

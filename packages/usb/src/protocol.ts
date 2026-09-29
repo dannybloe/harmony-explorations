@@ -195,6 +195,35 @@ export function readMiscRequest(selector: number, parameter: number): Uint8Array
 export const MISC_RAM = 0x07;
 
 /**
+ * `WRITE_MISC` and `READ_MISC` selector `0x06` on arch 14: the **firmware update status byte**, data
+ * memory `0x100`, which the safe mode image reads at start up to decide whether to install the
+ * application staged in external flash. Section 295.
+ *
+ * Its **address is one byte and its value is one byte**, which is not the shape `writeMiscRequest`
+ * sends. The safe mode image's `WRITE_MISC` parser reads the packet's bytes in order into
+ * `0xD09`, `0xD0B`, `0xD0A`, `0xD0D` and `0xD0C`, and the selector 6 arm stores `0xD0B` as the
+ * address and `0xD0A` as the value. So a sixteen bit address would put its low byte in the value.
+ * Logitech's own firmware upgrade template for skin 66 sends `A3 06 00 02` and `B2 06 00`, and
+ * `updateStatusWriteRequest` and `updateStatusReadRequest` build exactly those.
+ */
+export const MISC_UPDATE_STATUS = 0x06;
+
+/**
+ * The values of that byte the safe mode image acts on, from its install routine at `0x02B90` on the
+ * Harmony 700's 2.3 safe mode image: 2 means an image is staged and waiting, 4 is read as 2, and the
+ * routine writes 0 back when its copy is done. The classic client's `Protocol2.java` names 4
+ * `CODE_UPDATE_INTERRUPTED`, which is client sourced and would make reading it as 2 a retry; the
+ * firmware says only that the two take one path. 6, and 7 read as 6, take the same path and are unread beyond that.
+ */
+export const UPDATE_STATUS_NONE = 0x00;
+export const UPDATE_STATUS_NEW = 0x02;
+
+/** `B2 06 00`: read the update status byte, the shape Logitech's template sends. */
+export function updateStatusReadRequest(): Uint8Array {
+  return encodeRequest(READ_MISC, [MISC_UPDATE_STATUS, 0x00]);
+}
+
+/**
  * `WRITE_MISC` selector `0x02`, which concordance calls `invalidate_flash` and which touches no
  * flash at all on a Harmony One.
  *

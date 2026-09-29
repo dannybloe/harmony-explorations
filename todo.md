@@ -62,7 +62,7 @@ Plan: [003-how-an-activity-is-built.md](docs/plans/003-how-an-activity-is-built.
     - [x] Write it once the 650 is reassembled, with `write-config.ts` against `h650_config_region`, then press its screen items, its volume key in device mode, and Off: all six predictions hold (section 285)
     - [x] Read the 650's region back and register it as the next compare base: `h650_lg_region`, the written file byte for byte
     - [x] Skip the 650's welcome tour after a write: list 660's enter becomes a call to the tour's exit, written, the tour gone (section 286)
-    - [ ] Fix `deviceModeMaps`, which picks a help screen for the 700s' A/V switch because it skips a device mode with no key and counts an enter handler as one, and restate section 271's counts (section 285); waits for the bench 700's configuration, read only, as a third case
+    - [ ] Fix `deviceModeMaps`, which picks a help screen for the 700s' A/V switch because it skips a device mode with no key and counts an enter handler as one, and restate section 271's counts (section 285); the bench 700's configuration is in the lab now as a third case
   - [x] 1.4.4 A composed activity, which needed 1.2.9 first: "LG kijken" written, 14 blocks, and all eight predictions hold on the remote (section 291)
     - [x] Write the start variable, 52 on the 650, to 1 near the start of its enter list and to 0 at the end, as all 13 arch 14 activities do, or the inter device delay does not act: written with the screens and the activity runs, while whether the delay acts cannot be told by eye (sections 290 and 291)
     - [x] A region read of the 650 covering 0x110000 before the write, since the composed device's delays reach that block: `h650_pre144_region`, and `h650_post144_region` after (section 291)
@@ -142,9 +142,11 @@ After 3 produces something.
   - [ ] Write one block back unchanged with `rehearse-block.ts`
   - [ ] A real write with `write-config.ts`, whose cache drop and restart are read on the 600's own 0.2 build (section 282)
 - [ ] L7 The Harmony 700 as a write target, the same decision, once it is on the bench
-  - [ ] Read its identity, its firmware and its configuration, read only; the configuration is also the third case 1.4's `deviceModeMaps` item waits for
-  - [ ] Read the cache drop and the restart in that build, whose drop sets a second flag the 0.2 builds do not and half of which is unread (sections 282 and 283), and only then add the build to `write-config.ts`
-  - [ ] Record its identity as `h700`, read its whole configuration region, and write one block back unchanged with `rehearse-block.ts`
+  - [x] Read its identity, its firmware and its configuration, read only; the configuration is also the third case 1.4's `deviceModeMaps` item waits for
+  - [x] It arrived stuck in safe mode with one page of its application erased, and was repaired by making it reinstall its own staged copy, `reinstall-firmware.ts` (section 295)
+  - [ ] Read the cache drop and the restart in its build, 2.5 since the repair and in the lab as the staging read, whose drop may set a second flag the 0.2 builds do not (sections 282 and 283), and only then add 2.5 to `write-config.ts`
+  - [x] Record its identity as `h700` and read its whole configuration region
+  - [ ] Write one block back unchanged with `rehearse-block.ts`
   - [ ] A real write with `write-config.ts`
 
 ---

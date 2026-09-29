@@ -26,6 +26,7 @@ import {
   ESCAPE,
   MAX_PAYLOAD,
   MISC_INVALIDATE,
+  MISC_UPDATE_STATUS,
   ProtocolError,
   WRITE_FLASH,
   WRITE_FLASH_DATA,
@@ -73,6 +74,19 @@ export function eraseFlashRequest(address: number): Uint8Array {
  */
 export function invalidateRequest(): Uint8Array {
   return encodeRequest(WRITE_MISC, [MISC_INVALIDATE]);
+}
+
+/**
+ * `A3 06 00 <value>`: set the arch 14 firmware update status byte, the shape Logitech's template sends.
+ *
+ * One byte of address and one of value, **not** `writeMiscRequest`'s two and two, because the safe
+ * mode image takes the value from the packet's third byte; `MISC_UPDATE_STATUS` has the reading.
+ */
+export function updateStatusWriteRequest(value: number): Uint8Array {
+  if (!Number.isInteger(value) || value < 0 || value > 0xff) {
+    throw new ProtocolError(`update status ${value} is not a byte`);
+  }
+  return encodeRequest(WRITE_MISC, [MISC_UPDATE_STATUS, 0x00, value]);
 }
 
 /** `WRITE_MISC`: a selector, a 16-bit address and a 16-bit value. */
