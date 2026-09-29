@@ -38487,3 +38487,149 @@ check that no text any screen drew is lost but the menu's own old total.
 * `packages/codec/test/compose.test.ts`: the three places over the six Harmony One containers, both
   growths, the nine device list totals, and section 275's two totals.
 * `docs/config-format.md`, `todo.md` and `docs/status.md`.
+
+## 294. An arch 14 activity's own device list is the idle one with its devices first, and a composed activity now gets one
+
+**Asked for by `todo.md` 1.2.10**: section 290 composed an activity's two screens and pointed the key
+under Devices at the idle value's device list, which draws "Activities" where every real activity's own
+list draws "Activity", and lists the devices in the idle order. This section measures what an
+activity's own list consists of, composes it, and reproduces the compiler's thirteen.
+
+**Sources.** The four arch 14 user configurations, `h650_config_region`, `h600_config`,
+`calibration_h600` and `h700_config`, which hold the thirteen activities counted below, and
+`h650_glow10_region`, what the Harmony 650 holds after section 292, read for the composed activity on it
+and not counted. **Neither the classic client nor MyHarmony's source was opened**, the same reasoned
+exemption from decision 2 as section 293's: the lists are what Logitech's compiler wrote, and the
+compiler ran on their server. The firmware was not read: it draws what a page program states and enters
+what a case queues, which is all this needs.
+
+**Scope.** Arch 14 (Harmony 600, 650 and 700), where section 290 found the two records under Devices.
+Whether a Harmony One activity has a device list of its own is not measured here, and arch 8, 9 and 10
+are unchecked.
+
+### What an activity's own list is
+
+**Two records carry the same cases, keyed by every activity and the idle value**, 4 configurations of
+4, records 13 and 22 on the 650, 8 and 21 on `h600_config`, 9 and 15 on `calibration_h600`, 15 and 24
+on the 700. The key under Devices reads the first, scan 25 of every working screen; the second is
+reached only through a one case record, 32, 28, 23 and 34, which nothing the readers index names, so
+what it is for is open. The composer points both. The idle value's case enters the list whose every page ends in
+"Activities" at 35, 114; each activity's enters a list of its own, 13 of 13, whose every page ends in
+"Activity" at 39, 114, both in font 1.
+
+**Everything but the order is the idle list's**, 13 of 13 lists and 21 of 21 pages: the record's two
+entries, `0x72` under tag `0x99` and `0x73` under tag `0x2D`, the page count, how many rows each page holds,
+the backgrounds, the title and the page counter.
+
+**The order is the activity's devices first, in the order its enter list switches them on, then the
+rest in the idle list's order**, 13 of 13. The power writes sit in a list the enter list calls,
+`[KPN_Power=1 TV_Power=1]` on `h600_config`, on 12 of 13, and inline on the Harmony 700's Play Audio
+Cassette, whose one device is the receiver, so what decides between the two forms rests on that one
+case. A composed activity writes them inline whatever their number. A device reads as the list's row through
+`devices`, which ties a power variable to a device and a device to the mode its row enters.
+
+**A device with no power variable stands in that group as an instruction of opcode and operand zero**,
+3 of 13: Kodi in the 650's Kodi kijken, the Chromecast in `h600_config`'s Chromecast and the Roku in the
+700's Watch Roku. It is first in its group on all three and the device heads the list on all three, so
+"where the zero sits" and "a device without a power variable goes first" fit the same evidence.
+Nothing there says which device it is. On each of those three configurations exactly one device has no
+power variable, and `calibration_h600` has none, so it is that one by elimination, which is how the
+composer reads it; no configuration here has two, so its refusal of two is unexercised. The
+activity's keys agree where they can: Kodi kijken is the only activity sending Kodi's codes and Watch
+Roku the only one sending the Roku's, and the Chromecast has none.
+
+**A label is the idle list's instructions for that device, moved to its new corner**, 63 labels of 63
+and 74 text lines of 74, a two line label and its per label font select included. A label that changes
+column starts at x 3 or ends at x 125, as every corner layout device list label does, the two row
+lists centring theirs, and one that changes row moves
+by the 50 pixels between the rows, `FOUR_SLOT_LABEL_Y`. A font select is written only where the font
+changes, as the compiler does.
+
+**Two things the compiler does are not reproduced, and neither changes a pixel.** Each of its 63 rows
+runs a list of its own, `[7E device mode, write 1 into the device mode marker]`, every one byte
+identical to the idle list's row list for the same device, where the composer's rows run the idle
+list's. And a text line is stored either inline or as a reference to a shared copy: on 89 of the 164 text
+lines of the 21 pages the composed form differs from the compiler's, 56 of the 74 label lines, which
+the composer copies from the idle list, and 33 of the titles, counters and bottom words, the last
+copied from the activity list the word is taken from. So 16 of the 21 page programs differ in length
+and all 21 are the same instruction sequence, font selects included.
+
+### The calibration
+
+Every real activity's two cases were pointed back at the idle list and its list composed again: **21
+pages of 21 draw the compiler's raster exactly**, and on 13 of 13 every corner enters the same device
+mode. The control is the next activity's real list, which differs from the composed one on 13 of 13, so
+the comparison can tell two lists apart. `packages/codec/test/compose.test.ts`.
+
+**The blind re-measure agreed on every count here** and added two things: the order rule "the first
+device the enter list mentions, power or input" fits only 9 of 13, so it is the power writes that
+order the list; and each configuration's two row device list also says "Activity" and is entered by
+neither record.
+
+### The composer
+
+`composeActivityDeviceList` appends the mode through the step the other arch 14 screens share, and then
+changes the two cases' operand, a two byte poke each. It runs **after** `composeActivityMenuRow`: an
+activity is found through the menu row that starts it, and the first wiring ran it before the row existed
+and was refused. It refuses an activity whose key already opens something other than the idle list, a
+case program another key also runs, a configuration with no activity whose own list it can take the
+word from, and anything off the Harmony 600, 650 and 700. `compose-activity.ts` runs it and reads both
+cases back.
+
+On the 650, 600 and 700 configurations with a composed activity switching on one device, that device
+heads the list and the rest keep the idle order. On `h650_glow10_region`, **LG kijken**, the activity
+written in section 291, gets LG, Denon, PS3 and KPN, then Kodi and TV, which is its enter list's LG then
+Denon and the idle list's PS3, KPN, Kodi, TV, Denon and LG without those two. The result is 262 bytes longer,
+every byte is accounted for once, and it round trips. It spans 15 erase blocks and changes 14, all but
+the second: the first new bytes are in the third, the mode record lands in the sixth, and restated
+addresses reach the first.
+
+### On the Harmony 650
+
+**Written on 29 September 2026 and all six predictions held**, as reported from the remote: the ordinary
+screen after the restart; LG kijken starting the television and the Denon and ending on its screen;
+the key under Devices showing LG, Denon, PS3 and KPN on the first page and Kodi and TV on the second,
+with "Activity" at the bottom; LG from that list entering the LG's own device mode; the key under
+"Activity" leading back to LG kijken; and the other activities' lists and the idle one, "Activities",
+as before. So the second record's case, which nothing indexed reaches, did not have to be the one the
+key reads, and pointing both changed nothing else a person sees.
+
+**The first run stopped in its first block**: after the block's erase and 64 KiB of writes, the reply
+to the last report came back out of sequence, `expected 0x45, got 0x0 after 248 bytes`, and the script
+stopped as written, leaving that block this file's bytes and erased flash. The rerun recognised exactly
+that, rewrote the block and the other thirteen, and the whole configuration read back identical to the
+file. Nothing was restored from the lab and no battery came out. Why the reply was out of sequence is
+not established.
+
+### What is not composed
+
+* **A device without a power variable in a composed activity.** `composeActivity` writes targets, and
+  such a device cannot be one, so it takes its place among the rest rather than first.
+* **A Harmony One activity's own device list**, which is not measured.
+
+### Falsification
+
+A fifth arch 14 configuration whose activity list is not its idle list reordered, whose order puts a
+device the activity switches on after one it does not, or whose zero placeholder sits on a list with two
+devices lacking a power variable. The one on the remote, LG kijken's list not showing its devices
+first or not saying "Activity", was run and did not happen.
+
+### The reviewers
+
+The blind re-measure is recorded above. The prose audit re-ran every figure per configuration and per
+page and found them right, and seven sentences wider than their evidence, all corrected here: the text
+form differing on labels only, where it differs on 89 of 164 lines; the position rule stated for every
+device list, where the two row lists centre theirs; the placeholder "at its own position", where it is
+first on 3 of 3; the called list form stated generally, where it is 12 of 13; the elimination worded
+as tested against two candidates, which no configuration has; the LG missing from the 650's idle order;
+and the erase blocks explained by where the mode lands. It also found the row list copies and the
+placeholder's device asserted nowhere, which the calibration test now counts, 63 and 3.
+
+### Where it lands
+
+* `packages/codec/src/compose.ts`: `composeActivityDeviceList`.
+* `packages/codec/src/inventory.ts`: `fourSlotCellAt`, which the row labeller and the composer share.
+* `packages/codec/bin/compose-activity.ts`: the step, after the menu row, and its read back.
+* `packages/codec/test/compose.test.ts`: the calibration over the thirteen, the refusals, and the list
+  on the three configurations the end to end test composes a menu row on.
+* `docs/config-format.md`, `todo.md` and `docs/status.md`.

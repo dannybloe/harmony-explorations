@@ -111,7 +111,8 @@ import { irFrame } from './irframe.ts';
 import { blockOfStatedCode, statedCode, statedProtocol } from './stated.ts';
 import { TOUCH_AREA_LENGTH, type TouchArea, type TouchPage, touchPages } from './tables.ts';
 import {
-  deviceListRowMode, deviceListRows, deviceModeMarker, FOUR_SLOT_ITEMS, FOUR_SLOT_LABEL_Y,
+  deviceListRowMode, deviceListRows, deviceModeMarker, devices as deviceInventory, FOUR_SLOT_ITEMS,
+  fourSlotCellAt, FOUR_SLOT_LABEL_Y, POWER_PROPERTY,
   FOUR_SLOT_LEFT_X, FOUR_SLOT_RIGHT_END, FOUR_SLOT_ROWS, FOUR_SLOT_SCREEN_WIDTH, FOUR_SLOT_STORED_ORDER,
   TWO_ROW_LABEL_Y,
 } from './inventory.ts';
@@ -4293,10 +4294,11 @@ function appendValueMapCase(start: Container, map: number, key: number, program:
  * **What is not composed, and it is deliberate**: the help screen and the Remote Assistant's question.
  * Every real activity on the 650, `calibration_h600` and the 700 reaches its working screen through
  * the Remote Assistant's branch, and `h600_config`'s reach it directly, `[3F D000, 7E working]`. That
- * second form is the one a composed activity takes. **Nor is the activity's own device list**: the
- * key under Devices of a composed activity opens the idle value's, the one saying "Activities", its case
- * copied. Its centre key still leads back to the composed activity's working screen, through
- * `CurrentLocation` and the working screen record, under the word "Activities".
+ * second form is the one a composed activity takes. **Nor is the activity's own device list, here**:
+ * the key under Devices of a composed activity opens the idle value's, the one saying "Activities", its
+ * case copied, and `composeActivityDeviceList` then gives it a list of its own, section 294. Its centre
+ * key leads back to the composed activity's working screen either way, through `CurrentLocation` and
+ * the working screen record.
  *
  * **A name is spelled in the fonts the configuration has**, and each holds only the letters its own
  * texts use. The start up title's font is the one every start up title is drawn in, and the status and
@@ -4626,6 +4628,282 @@ function composeFourSlotActivityScreen(
     startVariable: starts.startVariable, flagVariable: starts.flagVariable, set,
     maps: [maps.working, ...maps.devices, maps.select], pages: pageCount,
   };
+}
+
+/** What `composeActivityDeviceList` built. */
+export interface ComposedActivityDeviceList {
+  bytes: Uint8Array;
+  /** The new device list, base slot 6. */
+  mode: number;
+  /** The device list it was copied from, the one the key under Devices opens while no activity runs. */
+  idleMode: number;
+  /** The device modes its rows enter, in the order they are drawn, page after page. */
+  order: number[];
+  /** The base slot 14 records whose case for the activity enters the new list. */
+  maps: number[];
+}
+
+/**
+ * The devices an activity switches on, as the device modes the device list enters for them, in the
+ * order its enter list switches them on.
+ *
+ * **The enter list's own instructions and the lists it calls, and no deeper**: a real one groups its
+ * power writes into a called list on 12 of 13, `h600_config`'s `[KPN_Power=1 TV_Power=1]`, and writes
+ * them inline on the one activity with a single device, as a composed one always does, and both are
+ * found at that depth. Deeper is the Remote Assistant's branch, whose
+ * lists this has no business reading a device out of.
+ *
+ * **A device with no power variable is a placeholder in that group**, an instruction of opcode and
+ * operand zero where its power write would be: Kodi on the Harmony 650, the Chromecast on the Harmony
+ * 600 and the Roku on the Harmony 700, first in its group on all three. Nothing in the enter list says
+ * which device it stands for, and on each of those configurations exactly one device on the list has
+ * no power variable, so it is that one, by elimination, and two such devices are refused rather than
+ * guessed between, a case no configuration here has. `composeActivity` never
+ * writes one, since a device without a power variable cannot be one of its targets.
+ */
+function activitySwitchedOn(c: Container, activity: number, starts: Arch14Starts, listed: readonly number[]): number[] {
+  const lists = c.actionLists() ?? [];
+  const set = starts.sets.get(activity);
+  const address = set === undefined ? undefined : handlerSets(c)?.addresses[set];
+  const enter = address === undefined ? undefined
+    : taggedList(c, address)?.entries.find((one) => one.tag === HANDLER_TAG_ENTER);
+  const enterList = enter === undefined ? undefined : lists[enter.operand];
+  if (enterList === undefined) throw new ComposeError(`activity ${activity} has no enter list to read its devices from`);
+
+  const power = new Map(deviceVariables(c).filter((one) => one.property === POWER_PROPERTY)
+    .map((one) => [one.index, one.device]));
+  const modeOf = new Map<number, number>();
+  const unpowered: number[] = [];
+  for (const device of deviceInventory(c)) {
+    if (device.mode === undefined || !listed.includes(device.mode)) continue;
+    const own = device.variables.filter((one) => power.has(one));
+    if (own.length === 0) unpowered.push(device.mode);
+    for (const variable of own) modeOf.set(variable, device.mode);
+  }
+
+  const out: number[] = [];
+  const add = (mode: number): void => { if (!out.includes(mode)) out.push(mode); };
+  const read = (instructions: readonly Instruction[], depth: number): void => {
+    for (const one of instructions) {
+      if (one.opcode === ACTION_LIST_INDEX_OPCODE && depth === 0) {
+        read(lists[one.operand] ?? [], depth + 1);
+      } else if (one.opcode === 0 && one.operand === 0) {
+        if (unpowered.length !== 1) {
+          throw new ComposeError(`activity ${activity} switches on a device with no power variable and `
+            + `${unpowered.length} devices on the list have none, so which one it is cannot be told`);
+        }
+        add(unpowered[0] as number);
+      } else if (one.opcode >= STATE_WRITE_BASE && one.operand !== 0) {
+        const mode = modeOf.get(one.opcode - STATE_WRITE_BASE);
+        if (mode !== undefined) add(mode);
+      }
+    }
+  };
+  read(enterList, 0);
+  return out;
+}
+
+/**
+ * Give a composed activity on a Harmony 600, 650 or 700 a device list of its own, and make the key
+ * under Devices open it.
+ *
+ * **Every activity on those remotes has one**, 13 of 13 on the four arch 14 user configurations,
+ * section 294: the list the key shows while an activity runs is the idle one's with the rows reordered,
+ * and its bottom word says "Activity" where the idle one's says "Activities". `composeActivityScreen`
+ * points a composed activity's key at the idle list, which works and draws the wrong word, and this
+ * replaces that with the list the compiler would have made.
+ *
+ * **The order is the activity's devices first**, in the order its enter list switches them on, **then
+ * the rest in the idle list's order**, 13 of 13. Nothing else moves: the pages hold as many rows each as
+ * the idle list's, so the page count, the page counters, the backgrounds and the record's own entries
+ * are the idle list's. Each label is the idle list's instructions for that device, fonts and all, moved
+ * to its new corner: a label that changes column starts at x 3 or ends at 125, and one that changes row
+ * moves by the rows' 50 pixels, which puts all 63 labels of the thirteen real lists where the compiler
+ * drew them. The rows run the idle list's own row lists, since a row list only enters its device's mode
+ * and the real lists hold byte identical copies of them.
+ *
+ * Run it after `composeActivity`, which writes the enter list the order is read from, and after
+ * `composeActivityMenuRow`, since an activity is found through the menu row that starts it. It refuses an
+ * activity whose key already opens something other than the idle list, and it needs one activity that
+ * already has a list of its own, to take the word "Activity" from.
+ */
+export function composeActivityDeviceList(c: Container, activity: number): ComposedActivityDeviceList {
+  if (c.architecture !== 14) {
+    throw new ComposeError("a device list of an activity's own is composed for the Harmony 600, 650 and 700 alone");
+  }
+  const starts = arch14Starts(c);
+  // Activities are found through the activity menu rows that start them, so a composed one is found
+  // only once `composeActivityMenuRow` has given it its row.
+  if (!starts.startup.has(activity)) {
+    throw new ComposeError(`${activity} is not an activity with a start up screen and a menu row`);
+  }
+  const maps = activityMaps(c, starts);
+  const valueRecords = valueMaps(c) ?? [];
+  const queuedFor = (map: number, key: number): Instruction | undefined => {
+    const target = valueRecords[map]?.entries.find(([one]) => one === key)?.[1];
+    return target === undefined ? undefined : caseQueued(c, target);
+  };
+  const idleModes = new Set(maps.devices.map((map) => queuedFor(map, starts.idle)?.operand));
+  const idleMode = [...idleModes][0];
+  if (idleModes.size !== 1 || idleMode === undefined) {
+    throw new ComposeError('the records under Devices do not agree on the idle device list');
+  }
+  for (const map of maps.devices) {
+    const one = queuedFor(map, activity);
+    if (one?.opcode !== ENTER_MODE || one.operand !== idleMode) {
+      throw new ComposeError(`record ${map}'s case for activity ${activity} does not open the idle device list`);
+    }
+  }
+  // A case program another key also runs would take that key to the new list too.
+  const ours = new Set(maps.devices.map((map) =>
+    valueRecords[map]?.entries.find(([one]) => one === activity)?.[1] as number));
+  for (const [index, record] of valueRecords.entries()) {
+    for (const [key, target] of record.entries) {
+      if (ours.has(target) && !(key === activity && maps.devices.includes(index))) {
+        throw new ComposeError(`record ${index}'s case for ${key} shares the program this would change`);
+      }
+    }
+  }
+  const template = (() => {
+    for (const [key] of valueRecords[maps.devices[0] as number]?.entries ?? []) {
+      const mode = queuedFor(maps.devices[0] as number, key)?.operand;
+      if (key !== starts.idle && key !== activity && mode !== undefined && mode !== idleMode) return mode;
+    }
+    throw new ComposeError('no activity here has a device list of its own to take the word "Activity" from');
+  })();
+
+  // The idle list: each page's rows in item order, the device mode and row list of each.
+  const lists = c.actionLists() ?? [];
+  const marker = deviceModeMarker(c);
+  const idleRecord = (modeRecords(c) ?? [])[idleMode];
+  if (idleRecord === undefined) throw new ComposeError(`mode ${idleMode} does not read`);
+  if (idleRecord.entries.some((entry) => entry.flags !== undefined)) {
+    throw new ComposeError("the idle device list's record is not in the narrow form");
+  }
+  const rowList = new Map<number, number>();
+  const cellOf = new Map<number, { page: number; item: number }>();
+  const perPage = idleRecord.pages.map((page, p) => {
+    const entries = taggedList(c, page.list)?.entries ?? [];
+    const layout = menuLayout(c, entries);
+    if (layout === undefined || layout.rows) throw new ComposeError('the idle device list is not in the corner layout');
+    const modes: number[] = [];
+    FOUR_SLOT_ITEMS.forEach((item, k) => {
+      const entry = entries.find((one) => (one.tag & SCAN_MASK) === item.scan);
+      if (entry === undefined) return;
+      const mode = deviceListRowMode(lists[entry.operand], c.architecture, marker);
+      if (mode === undefined || modes.length !== k) throw new ComposeError(`the idle device list's page ${p} is not rows filled in order`);
+      modes.push(mode);
+      rowList.set(mode, entry.operand);
+      cellOf.set(mode, { page: p, item: k });
+    });
+    return modes.length;
+  });
+  const idleOrder = [...cellOf.keys()];
+  const first = activitySwitchedOn(c, activity, starts, idleOrder);
+  const order = [...first, ...idleOrder.filter((mode) => !first.includes(mode))];
+  const pageModes = perPage.map((count, p) => {
+    const from = perPage.slice(0, p).reduce((sum, one) => sum + one, 0);
+    return order.slice(from, from + count);
+  });
+
+  const isText = (one: ScreenInstruction): boolean => one.opcode === OP_TEXT_AT || one.opcode === OP_TEXT_INLINE;
+  const mode = modeTable(c)?.addresses.length;
+  if (mode === undefined) throw new ComposeError('base slot 6 states no table');
+  let current = appendArch14Mode(c, mode, idleRecord.entries.map((entry) =>
+    ({ tag: entry.tag, operand: entry.operand, opcode: entry.opcode })),
+  pageModes.map((modes) => fourSlotPageList(modes.map((one) => rowList.get(one) as number))), (now) => {
+    const records = modeRecords(now) ?? [];
+    const programOf = (m: number, p: number): ScreenInstruction[] => {
+      const page = records[m]?.pages[p];
+      const program = page === undefined ? undefined : screenProgram(now, page.program);
+      if (program === undefined) throw new ComposeError(`mode ${m}'s page ${p} does not read`);
+      return program;
+    };
+    // The bottom word: the font and text after the closing bar, which are the last two instructions
+    // before the end on every device list page.
+    const shaped = (program: ScreenInstruction[], what: string): number => {
+      const bar = program.findLastIndex((one) => one.opcode === SCREEN_DRAW_IMAGE_AT);
+      if (bar < 0 || program.length !== bar + 4 || program[bar + 1]?.opcode !== OP_FONT
+          || !isText(program[bar + 2] as ScreenInstruction) || program[bar + 3]?.opcode !== OP_END) {
+        throw new ComposeError(`${what} does not end in its bar, a font and one word`);
+      }
+      return bar;
+    };
+    const word = programOf(template, 0);
+    const wordAt = shaped(word, `mode ${template}'s first page`);
+    // Every label line of the idle list, per device, with the font it is drawn in.
+    const lines = new Map<number, { font: number; instruction: ScreenInstruction }[]>();
+    const heads = idleRecord.pages.map((_, p) => {
+      const program = programOf(idleMode, p);
+      const bar = shaped(program, `the idle device list's page ${p}`);
+      const labelsFrom = 1 + program.findLastIndex((one, k) => k < bar && isText(one)
+        && fourSlotCellAt(one.operands[0] as number, one.operands[1] as number) === undefined);
+      let font = program.slice(0, labelsFrom).findLast((one) => one.opcode === OP_FONT)?.operands[0];
+      if (font === undefined) throw new ComposeError(`the idle device list's page ${p} selects no font`);
+      for (const one of program.slice(labelsFrom, bar)) {
+        if (one.opcode === OP_FONT) { font = one.operands[0] as number; continue; }
+        const cell = isText(one) ? fourSlotCellAt(one.operands[0] as number, one.operands[1] as number) : undefined;
+        const device = [...cellOf].find(([, at]) => at.page === p && at.item === cell)?.[0];
+        if (device === undefined) throw new ComposeError(`the idle device list's page ${p} draws something no row owns`);
+        lines.set(device, [...(lines.get(device) ?? []), { font, instruction: one }]);
+      }
+      return { program, labelsFrom, bar, font: program.slice(0, labelsFrom).findLast((one) => one.opcode === OP_FONT)?.operands[0] as number };
+    });
+    return pageModes.map((modes, p) => {
+      const head = heads[p] as (typeof heads)[number];
+      // Each piece is an instruction to copy, moved to (x, y) where it is a label, or a font select.
+      const pieces: ({ instruction: ScreenInstruction; x?: number; y?: number } | { font: number })[] = [];
+      let font = head.font;
+      modes.forEach((device, k) => {
+        const to = FOUR_SLOT_ITEMS[k] as (typeof FOUR_SLOT_ITEMS)[number];
+        const from = FOUR_SLOT_ITEMS[(cellOf.get(device) as { item: number }).item] as (typeof FOUR_SLOT_ITEMS)[number];
+        for (const line of lines.get(device) ?? []) {
+          if (line.font !== font) { pieces.push({ font: line.font }); font = line.font; }
+          const set = (fontSets(now) ?? [])[line.font];
+          const codes = line.instruction.opcode === OP_TEXT_INLINE ? line.instruction.glyphs
+            : glyphsReferencedBy(now, line.instruction);
+          if (set === undefined || codes === undefined) throw new ComposeError('a label of the idle list does not read');
+          const x = to.column === from.column ? line.instruction.operands[0] as number
+            : to.column === 0 ? FOUR_SLOT_LEFT_X : FOUR_SLOT_RIGHT_END - textWidth(now, set, [...codes]);
+          const y = (line.instruction.operands[1] as number)
+            + (FOUR_SLOT_LABEL_Y[to.row] as number) - (FOUR_SLOT_LABEL_Y[from.row] as number);
+          pieces.push({ instruction: line.instruction, x, y });
+        }
+      });
+      const kept = head.program.slice(0, head.labelsFrom);
+      const tail = [head.program[head.bar], word[wordAt + 1], word[wordAt + 2], head.program[head.bar + 3]] as ScreenInstruction[];
+      const size = (piece: (typeof pieces)[number]): number => ('font' in piece ? 2 : piece.instruction.length);
+      return {
+        length: [...kept, ...tail].reduce((sum, one) => sum + one.length, 0)
+          + pieces.reduce((sum, one) => sum + size(one), 0),
+        build: (shifted: (address: number) => number) => {
+          const out: number[] = [];
+          for (const one of kept) out.push(...copiedInstruction(now, one, shifted));
+          for (const piece of pieces) {
+            if ('font' in piece) { out.push(OP_FONT, piece.font); continue; }
+            const bytes = copiedInstruction(now, piece.instruction, shifted);
+            bytes[1] = piece.x as number;
+            bytes[2] = piece.y as number;
+            out.push(...bytes);
+          }
+          for (const one of tail) out.push(...copiedInstruction(now, one, shifted));
+          return new Uint8Array(out);
+        },
+      };
+    });
+  });
+
+  // The key under Devices: each record's case for the activity queues the new list instead. The
+  // operand is the instruction's first two bytes after the opcode, low byte first, as `caseQueued`
+  // reads them.
+  for (const map of maps.devices) {
+    const target = valueMaps(current)?.[map]?.entries.find(([one]) => one === activity)?.[1];
+    const at = target === undefined ? undefined : current.blobOffsetOf(target);
+    if (at === undefined) throw new ComposeError(`record ${map} lost its case for activity ${activity}`);
+    current.blob.set(new Writer(2).u16(mode).bytes, at + 1);
+  }
+  current = parse(current.blob);
+  return { bytes: restamped(current.blob), mode, idleMode, order, maps: [...maps.devices] };
 }
 
 /**

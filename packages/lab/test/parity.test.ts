@@ -80,7 +80,8 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // 120 since the reads either side of 1.4.4's composed activity, section 291.
   // 121 since the region after the screen light timer went to 20 seconds, section 292, 122 at 10.
   // 123 since the spare Harmony One's region before its four page activity menu, section 293.
-  assert.equal(Object.keys(pythonImages()).length, 123, 'every fixture tests/lab.py names');
+  // 124 since the 650's region after LG kijken's own device list, section 294.
+  assert.equal(Object.keys(pythonImages()).length, 124, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {
@@ -140,6 +141,7 @@ test('the two sides exclude the same fixtures from the parseable population', ()
   // composed device, section 285, and 25 with it after the tour skip, section 286, 27 with the reads
   // either side of 1.4.4, section 291, and 28 and 29 with the 20 and 10 second screen timers. 30 is
   // the spare's compare base for its four page activity menu write, section 293, the first shape.
-  assert.equal(names.length, 30, 'each one a container already counted, that container plus a known '
+  // 31 with the 650's region after section 294.
+  assert.equal(names.length, 31, 'each one a container already counted, that container plus a known '
     + 'edit, or a compare base whose remote is not yet in the corpus');
 });

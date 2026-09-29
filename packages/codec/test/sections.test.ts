@@ -235,6 +235,7 @@ const SCREEN_LIGHT: readonly [string, number, number][] = [
   ['h650_post144_region', 1, 8],
   ['h650_glow20_region', 1, 20],
   ['h650_glow10_region', 1, 10],
+  ['h650_devicelist_region', 1, 10],
   ['calibration_h600', 1, 20],
   ['h600_config', 1, 10],
   ['h700_config', 5, 10],

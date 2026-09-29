@@ -27,6 +27,7 @@ import {
   composeActivity,
   composeActivityMenuRow,
   composeActivityScreen,
+  composeActivityDeviceList,
   activityScreens,
   caseQueued,
   nextActivityValue,
@@ -83,11 +84,13 @@ import {
   bitmapAt,
   deviceModeMarker,
   devices,
+  FOUR_SLOT_ITEMS,
   touchPages,
   modePages,
   modeRecords,
   modeTable,
   pageListCopies,
+  renderPage,
   renderVariants,
   screenStrings,
   taggedList,
@@ -2441,6 +2444,7 @@ test('every arch 14 start up screen is one page binding nothing, and every worki
 test('an activity composed on a Harmony 650, 600 and 700 opens on a start up screen of its own and ends on a working screen of its own',
      skipUnless(...FOUR_SLOT_ACTIVITY_HOSTS), () => {
   let composed = 0;
+  let listedCount = 0;
   for (const name of FOUR_SLOT_ACTIVITY_HOSTS) {
     const c = parse(require_(name));
     const deviceMode = modeRecords(c)![deviceListRows(c)[0]!.mode]!;
@@ -2455,9 +2459,9 @@ test('an activity composed on a Harmony 650, 600 and 700 opens on a start up scr
     const screen = composeActivityScreen(c, activity, 'Play Audio', onPages);
     const middle = parse(screen.bytes);
     const counter = stateVariables(middle).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME))!;
-    const target = stateVariables(middle).find((one) =>
-      one.index > firmwareStateVariableMax(middle.architecture) && one.index !== counter.index
-      && (one.record?.second ?? 0) >= 1)!;
+    // A device's power variable, the last one named, so the device it switches on is not the idle
+    // list's first and the activity's own list has something to reorder.
+    const target = deviceVariables(middle).filter((one) => one.property === 'Power').at(-1)!;
     const built = composeActivity(middle, {
       label: 'Play Audio', targets: [{ variable: target.index, value: 1 }],
       screen: {
@@ -2465,8 +2469,22 @@ test('an activity composed on a Harmony 650, 600 and 700 opens on a start up scr
         startVariable: screen.startVariable, flagVariable: screen.flagVariable, set: screen.set,
       },
     });
-    const after = name === 'calibration_h600' ? parse(built.bytes)
-      : parse(composeActivityMenuRow(parse(built.bytes), built.label, built.set).bytes);
+    // The screen alone points the key under Devices at the idle list, and the device list step then
+    // gives the activity its own, section 294.
+    const unlisted = parse(built.bytes);
+    const unlistedMaps = valueMaps(unlisted)!;
+    for (const map of screen.maps!.slice(1, -1)) {
+      const queued = (key: number) => caseQueued(unlisted, unlistedMaps[map]!.entries.find(([one]) => one === key)![1]);
+      assert.deepEqual(queued(built.activity), queued(counter.record!.first), `${name}: record ${map} opens the idle list`);
+    }
+    if (name === 'calibration_h600') {
+      // No menu row is composed there, and an activity is found through the row that starts it.
+      assert.throws(() => composeActivityDeviceList(unlisted, built.activity), /not an activity with a start up screen and a menu row/);
+    }
+    const rowed = name === 'calibration_h600' ? unlisted
+      : parse(composeActivityMenuRow(unlisted, built.label, built.set).bytes);
+    const listed = name === 'calibration_h600' ? undefined : composeActivityDeviceList(rowed, built.activity);
+    const after = listed === undefined ? rowed : parse(listed.bytes);
     const report = coverage(after);
     assert.equal(report.accounted, report.total, `${name}: every byte is claimed`);
     assert.deepEqual(report.overlaps, [], `${name}: and no byte twice`);
@@ -2525,12 +2543,42 @@ test('an activity composed on a Harmony 650, 600 and 700 opens on a start up scr
     const idleFor = (map: number) => caseQueued(after, maps[map]!.entries.find(([key]) => key === counter.record!.first)![1]);
     const [workingMap, firstDevices, secondDevices, selectMap] = screen.maps!;
     assert.deepEqual(caseFor(workingMap!), { opcode: 0x7e, operand: screen.mode });
-    assert.deepEqual(caseFor(firstDevices!), idleFor(firstDevices!));
-    assert.deepEqual(caseFor(secondDevices!), idleFor(secondDevices!));
     assert.deepEqual(caseFor(selectMap!), { opcode: 0x1f, operand: 0xff00 | built.set });
     assert.equal(working.entries[0]!.operand, (firstDevices! << 8) | counter.index);
     composed += 1;
+    if (listed === undefined) continue;
+    assert.deepEqual(listed.maps, [firstDevices, secondDevices]);
+    assert.deepEqual(caseFor(firstDevices!), { opcode: 0x7e, operand: listed.mode });
+    assert.deepEqual(caseFor(secondDevices!), { opcode: 0x7e, operand: listed.mode });
+    assert.deepEqual(idleFor(firstDevices!), { opcode: 0x7e, operand: listed.idleMode });
+
+    // The activity's own device list: the device it switches on first, the rest in the idle list's
+    // order, as many rows to a page as the idle list, and "Activity" at the bottom.
+    const own = devices(after).find((one) => one.variables.includes(target.index))!.mode!;
+    const idleRows = records[listed.idleMode]!.pages.map((page) => taggedList(after, page.list)!.entries.length);
+    assert.deepEqual(listed.order, [own, ...listed.order.filter((one) => one !== own)]);
+    const idleOrder = records[listed.idleMode]!.pages.flatMap((page) => FOUR_SLOT_ITEMS.flatMap((item) =>
+      taggedList(after, page.list)!.entries.filter((one) => (one.tag & 0x3f) === item.scan)
+        .map((one) => lists[one.operand]![0]!.operand)));
+    assert.notEqual(idleOrder[0], own, `${name}: the switched on device is not already first`);
+    assert.deepEqual(listed.order.slice(1), idleOrder.filter((one) => one !== own));
+    const ownList = records[listed.mode]!;
+    assert.deepEqual(ownList.pages.map((page) => taggedList(after, page.list)!.entries.length), idleRows);
+    assert.deepEqual(ownList.pages.flatMap((page) => FOUR_SLOT_ITEMS.flatMap((item) =>
+      taggedList(after, page.list)!.entries.filter((one) => (one.tag & 0x3f) === item.scan)
+        .map((one) => lists[one.operand]![0]!.operand))), listed.order);
+    for (const page of ownList.pages) {
+      assert.equal(strings.filter((one) => one.program === page.program).at(-1)!.text, 'Activity');
+      for (const variant of renderVariants(after, page.program).variants) {
+        assert.equal(variant.page.glyphsMissing, 0);
+        assert.equal(variant.page.picturesMissing, 0);
+      }
+    }
+    assert.equal(strings.filter((one) => one.program === records[listed.idleMode]!.pages[0]!.program).at(-1)!.text,
+                 'Activities');
+    listedCount += 1;
   }
+  assert.equal(listedCount, 3);
   assert.equal(composed, 4);
   // And on the 650 with none, one and six commands: one page of each size a working screen has.
   const c = parse(require_('h650_config_region'));
@@ -2548,6 +2596,98 @@ test('an activity composed on a Harmony 650, 600 and 700 opens on a start up scr
       assert.equal(taggedList(after, page.list)!.entries.length <= 4, true);
     }
   }
+});
+
+test("an activity's own device list on a Harmony 600, 650 and 700 is the idle list with its devices first, 13 of 13",
+     skipUnless(...FOUR_SLOT_ACTIVITY_HOSTS), () => {
+  // Section 294. Every real activity's key under Devices is pointed back at the idle list and its
+  // list composed again from the idle one: the result draws the compiler's list pixel for pixel and
+  // enters the same device from every corner. The control is the next activity's real list, which a
+  // list composed for this one must not draw, or the comparison could not tell two lists apart.
+  const count = { activities: 0, pages: 0, identical: 0, rowsAgree: 0, controlsDiffer: 0, placeholders: 0,
+    rowCopies: 0, placeholderFirst: 0 };
+  for (const name of FOUR_SLOT_ACTIVITY_HOSTS) {
+    const c = parse(require_(name));
+    const maps = valueMaps(c)!;
+    const lists = c.actionLists()!;
+    const records = modeRecords(c)!;
+    const counter = stateVariables(c).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME))!;
+    const idle = counter.record!.first;
+    // The records under Devices: keyed by every activity and the idle value, every case entering a
+    // mode, and the idle value's list saying "Activities".
+    const strings = screenStrings(c, characterMap(c));
+    const says = (mode: number, word: string) => records[mode]!.pages.every((page) =>
+      strings.filter((one) => one.program === page.program).at(-1)?.text === word);
+    const underDevices = maps.flatMap((map, index) => {
+      const idleCase = map.entries.find(([key]) => key === idle);
+      const queued = idleCase === undefined ? undefined : caseQueued(c, idleCase[1]);
+      return map.ranges.length === 0 && queued?.opcode === 0x7e && says(queued.operand, 'Activities')
+        && map.entries.every(([, target]) => caseQueued(c, target)?.opcode === 0x7e) ? [index] : [];
+    });
+    assert.equal(underDevices.length, 2, `${name}: two records under Devices`);
+    const idleMode = caseQueued(c, maps[underDevices[0]!]!.entries.find(([key]) => key === idle)![1])!.operand;
+    const activities = maps[underDevices[0]!]!.entries.map(([key]) => key).filter((key) => key !== idle);
+    const rowsOf = (cc: Container, mode: number) => modeRecords(cc)![mode]!.pages.map((page) =>
+      FOUR_SLOT_ITEMS.flatMap((item) => taggedList(cc, page.list)!.entries
+        .filter((one) => (one.tag & 0x3f) === item.scan).map((one) => cc.actionLists()![one.operand]![0]!.operand)));
+    const drawn = (cc: Container, mode: number) => modeRecords(cc)![mode]!.pages.map((page) =>
+      JSON.stringify(renderPage(cc, page)!.raster));
+    activities.forEach((activity, k) => {
+      const real = caseQueued(c, maps[underDevices[0]!]!.entries.find(([key]) => key === activity)![1])!.operand;
+      assert.ok(says(real, 'Activity'), `${name}: activity ${activity}'s list says Activity`);
+      const back = new Uint8Array(c.blob);
+      for (const map of underDevices) {
+        const target = maps[map]!.entries.find(([key]) => key === activity)![1];
+        back.set([idleMode & 0xff, idleMode >> 8], c.blobOffsetOf(target)! + 1);
+      }
+      const listed = composeActivityDeviceList(parse(back), activity);
+      const after = parse(listed.bytes);
+      assert.equal(listed.idleMode, idleMode);
+      count.activities += 1;
+      const composedPages = drawn(after, listed.mode);
+      const realPages = drawn(c, real);
+      assert.equal(composedPages.length, realPages.length);
+      count.pages += realPages.length;
+      count.identical += composedPages.filter((one, p) => one === realPages[p]).length;
+      if (JSON.stringify(rowsOf(after, listed.mode)) === JSON.stringify(rowsOf(c, real))) count.rowsAgree += 1;
+      const other = caseQueued(c, maps[underDevices[0]!]!.entries
+        .find(([key]) => key === activities[(k + 1) % activities.length])![1])!.operand;
+      if (JSON.stringify(drawn(c, other)) !== JSON.stringify(composedPages)) count.controlsDiffer += 1;
+      // A device with no power variable stands in the enter list's power group as a zero instruction.
+      const enter = lists[taggedList(c, handlerSets(c)!.addresses[
+        activityBindings(c).find((one) => one.activity === activity)!.set]!)!.entries.find((one) => one.tag === 1)!.operand]!;
+      const group = enter[2]!.opcode === 0x7f ? lists[enter[2]!.operand]! : [enter[2]!];
+      count.placeholders += group.filter((one) => one.opcode === 0 && one.operand === 0).length;
+      // The device a zero stands for is the one device on the list with no power variable, and it heads
+      // the list, 3 of 3.
+      if (group[0]!.opcode === 0 && group[0]!.operand === 0) {
+        const powered = new Set(deviceVariables(c).filter((one) => one.property === 'Power').map((one) => one.device));
+        const unpowered = devices(c).filter((one) => one.mode !== undefined && rowsOf(c, idleMode).flat().includes(one.mode)
+          && !one.variables.some((variable) => powered.has(deviceVariables(c).find((v) => v.index === variable)?.device ?? '')));
+        assert.equal(unpowered.length, 1, `${name}: one device without a power variable`);
+        if (rowsOf(c, real)[0]![0] === unpowered[0]!.mode) count.placeholderFirst += 1;
+      }
+      // Each of the compiler's rows runs a list of its own, byte identical to the idle list's for that device.
+      const idleRowList = new Map(records[idleMode]!.pages.flatMap((page) => taggedList(c, page.list)!.entries
+        .map((one) => [lists[one.operand]![0]!.operand, one.operand] as const)));
+      for (const page of records[real]!.pages) {
+        for (const entry of taggedList(c, page.list)!.entries) {
+          const own = idleRowList.get(lists[entry.operand]![0]!.operand)!;
+          if (own !== entry.operand && JSON.stringify(lists[own]) === JSON.stringify(lists[entry.operand])) count.rowCopies += 1;
+        }
+      }
+    });
+  }
+  assert.deepEqual(count, { activities: 13, pages: 21, identical: 21, rowsAgree: 13, controlsDiffer: 13, placeholders: 3,
+    rowCopies: 63, placeholderFirst: 3 });
+});
+
+test('an activity device list is refused where the key under Devices already opens a list of its own',
+     skipUnless('h650_config_region', 'one_config'), () => {
+  const c = parse(require_('h650_config_region'));
+  assert.throws(() => composeActivityDeviceList(c, 0), /does not open the idle device list/);
+  assert.throws(() => composeActivityDeviceList(c, 7), /not an activity with a start up screen/);
+  assert.throws(() => composeActivityDeviceList(parse(require_('one_config')), 0), /Harmony 600, 650 and 700 alone/);
 });
 
 test('a Harmony One turns a list page with the buttons beside the display, which no page binds',

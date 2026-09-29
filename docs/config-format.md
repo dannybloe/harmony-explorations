@@ -725,6 +725,15 @@ entries: scan 25 as `0x72` on the first of the two records for the key under Dev
 | the key under Devices, 2 with the same cases | activities and idle | enter its own device list, "Activity" at the bottom | enter the one saying "Activities" |
 | keypad map, 1 | activities only | `0x1F` with `0xFF00 | entry`, its own, 13 of 13 | none |
 
+**An activity's own device list is the idle one reordered**, section 294, 13 of 13: the idle list's
+record entries, page count, rows per page, backgrounds, title and counter, with the activity's devices
+first in the order its enter list writes their power variables 1, then the rest in the idle list's
+order, and "Activity" at 39, 114 where the idle list has "Activities" at 35, 114, both in font 1. A
+device with no power variable stands in the enter list's power group as `00 0000`, 3 of 13. Each
+label is the idle list's instructions for that device moved to its new corner, x 3 or ending at 125 on
+a column change and 50 pixels on a row change, 63 of 63. Each row runs a list of its own, byte
+identical to the idle list's row list for that device, 63 of 63.
+
 Every device list's scan 25 evaluates a record keyed by `CurrentLocation` whose one case, for 0, queues
 the working screen record: the 17 those records enter and one more per configuration, 21 of 21. The
 Remote Assistant screen's "Turn off Assistant" writes 1 into the variable the chain before the working

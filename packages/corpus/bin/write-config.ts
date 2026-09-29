@@ -146,6 +146,8 @@ const H650_DUMPS = new Set([
   'h650_glow20_region',
   // And after it went to 10: the same two bytes again. The compare base after that.
   'h650_glow10_region',
+  // After section 294, LG kijken's own device list, written in two runs. The compare base after that.
+  'h650_devicelist_region',
 ]);
 
 /** A remote this may run against, per architecture read off the device. */

@@ -54,6 +54,7 @@ import {
   caseQueued,
   valueMaps,
   composeActivity,
+  composeActivityDeviceList,
   composeActivityMenuRow,
   composeActivityScreen,
   nextActivityValue,
@@ -161,7 +162,13 @@ const shown = composeActivityMenuRow(parse(built.bytes), built.label, built.set,
                                      iconLike === undefined ? {} : { iconLike });
 // A save is stamped with the moment of saving, base slot 3 and the clock's own state values.
 const builtAt = localTimestamp(new Date());
-const after = parse(saveEdits(parse(shown.bytes), [], builtAt).bytes);
+// On a Harmony 600, 650 or 700 the key under Devices gets the activity's own device list, its devices
+// first, section 294; composeActivityScreen pointed it at the idle one, which says "Activities". After
+// the menu row, since an activity is found through the row that starts it.
+const listed = screen !== undefined && before.architecture === 14
+  ? composeActivityDeviceList(parse(shown.bytes), built.activity)
+  : undefined;
+const after = parse(saveEdits(parse(listed?.bytes ?? shown.bytes), [], builtAt).bytes);
 
 // Read the result back with the same readers rather than trusting the composition.
 const nowBindings = activityBindings(after);
@@ -196,6 +203,12 @@ if (screen !== undefined && after.architecture === 14) {
   if (entered === undefined || caseQueued(after, entered)?.operand !== screen.mode) {
     fail('the working screen record does not name the composed working screen');
   }
+  for (const map of listed?.maps ?? []) {
+    const opened = caseOf(map);
+    if (opened === undefined || caseQueued(after, opened)?.operand !== listed?.mode) {
+      fail(`base slot 14 record ${map} does not open the activity's own device list`);
+    }
+  }
 }
 const report = coverage(after);
 if (report.accounted !== report.total) {
@@ -217,6 +230,10 @@ if (screen !== undefined && after.architecture === 14) {
   process.stdout.write(`working screen mode ${screen.mode}, ${screen.pages} page(s), start up screen mode `
     + `${screen.startupMode}, cases in base slot 14 records ${(screen.maps ?? []).join(', ')}, start sequence `
     + `variable ${screen.startVariable} and flag ${screen.flagVariable}\n`);
+  if (listed !== undefined) {
+    process.stdout.write(`device list mode ${listed.mode}, copied from ${listed.idleMode}, rows entering device `
+      + `modes ${listed.order.join(', ')}, opened by records ${listed.maps.join(', ')}\n`);
+  }
 } else if (screen !== undefined) {
   process.stdout.write(`working screen mode ${screen.mode}, pads on scans [${screen.scans.join(', ')}], `
     + `Devices key list ${screen.devicesList}, start up screen mode ${screen.startupMode}, `

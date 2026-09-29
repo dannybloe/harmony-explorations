@@ -1528,6 +1528,20 @@ const FOUR_SLOT_ROW_BANDS: readonly [number, number, number] = [16, 64, 112];
 const FOUR_SLOT_COLUMN_SPLIT = 64;
 
 /**
+ * The corner a line drawn at `(x, y)` belongs to, as an index into `FOUR_SLOT_ITEMS`, or undefined for
+ * a line above or below the two label rows, which is the title, the page counter and the bottom word.
+ * One place, because the reader pairs labels with rows by it and `composeActivityDeviceList` moves a
+ * label from one corner to another by it.
+ */
+export function fourSlotCellAt(x: number, y: number): number | undefined {
+  const row = FOUR_SLOT_ROW_BANDS.findIndex((top, k) =>
+    k < 2 && y >= top && y < (FOUR_SLOT_ROW_BANDS[k + 1] as number));
+  if (row < 0) return undefined;
+  const column = x < FOUR_SLOT_COLUMN_SPLIT ? 0 : 1;
+  return FOUR_SLOT_ITEMS.findIndex((one) => one.row === row && one.column === column);
+}
+
+/**
  * An arch 14 device list page's labels, paired with its rows by **cell** rather than by rank: two
  * labels share a line when they sit side by side, so the rank pairing arch 12 uses would read "TV
  * KPN" as one label. The lines of a cell join top to bottom, which is how a long name wraps.
@@ -1545,12 +1559,10 @@ function labelFourSlotRows(
       && one.text.trim().length >= SHORTEST_USEFUL_LABEL);
     for (const row of rows) {
       if (row.page !== pageIndex) continue;
-      const item = FOUR_SLOT_ITEMS.find((one) => one.scan === row.scan);
-      if (item === undefined) continue;
+      const item = FOUR_SLOT_ITEMS.findIndex((one) => one.scan === row.scan);
+      if (item < 0) continue;
       const inCell = lines
-        .filter((one) => (one.x < FOUR_SLOT_COLUMN_SPLIT ? 0 : 1) === item.column
-          && one.y >= (FOUR_SLOT_ROW_BANDS[item.row] as number)
-          && one.y < (FOUR_SLOT_ROW_BANDS[item.row + 1] as number))
+        .filter((one) => fourSlotCellAt(one.x, one.y) === item)
         .sort((a, b) => a.y - b.y);
       if (inCell.length > 0) row.label = inCell.map((one) => one.text.trim()).join(' ');
     }
@@ -2587,7 +2599,7 @@ export interface DeviceDelays {
  * `deviceVariables` splits a level 1 name into a device and a property, so this is that property's
  * spelling rather than a suffix match on the whole name.
  */
-const POWER_PROPERTY = 'Power';
+export const POWER_PROPERTY = 'Power';
 
 /** The transition that switches a device on: its off value to its on value. */
 const POWER_OFF = 0;
