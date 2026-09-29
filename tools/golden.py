@@ -214,8 +214,8 @@ CONTAINERS = (
     # application at its start, and the container at 0x020000 is byte for byte `h700_gspm`: a
     # duplicate on the same terms as the two above, read off a unit rather than cut out of a package.
     'h700_staging_region',
-    # The same range after a Harmony Desktop sync, byte for byte the one above. Section 296.
-    'h700_posthd_staging_region',
+    # The same range either side of a Harmony Desktop sync, byte for byte the one above. Section 296.
+    'h700_prehd_staging_region', 'h700_posthd_staging_region',
     # The blank staging region and the 2.8 staged one, section 297, the same container again.
     'h700_after_failed_stage_region', 'h700_28_staging_region',
 )

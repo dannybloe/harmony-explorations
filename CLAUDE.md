@@ -723,7 +723,7 @@ files already here rather than for incoming ones.
 
 ## Never write to a remote
 
-Read paths only, except on **five units**, deliberately and behind two flags, of which three have had flash written. On the **spare Harmony
+Read paths only, except on **five units**, deliberately and behind two flags, of which four have had flash written. On the **spare Harmony
 One**: a block written back unchanged on 30 August 2026, section 222; a delay byte changed and
 reverted on 1 September, sections 236 and 237; a device added on 3 September, section 242, 25 blocks,
 after which the television answered it; and one power on delay raised the same day, section 247, two
@@ -732,10 +732,10 @@ block written back unchanged on 6 September, section 269, which is the second ar
 and needed no compiler, since nothing can compile a configuration for that model. On the **Harmony
 650**, a second hand unit which Danny says may be reprogrammed as the work needs: one block written back unchanged on
 27 September 2026, section 281, the first write to arch 14; and one power on delay raised and put back
-the same day, section 283, two blocks each way, live in the remote's memory straight after the restart. **No other remote has had flash written and
+the same day, section 283, two blocks each way, live in the remote's memory straight after the restart. On the **Harmony 700**, its firmware staging region only, section 297, below. **No other remote has had flash written and
 no other may be**, which said "the spare is the only one that may be"<!--superseded--> until 6
 September 2026. **The Harmony 600 and the Harmony 700 may be written to since 29 September 2026**,
-Danny's decision that day, and neither has had flash written yet: each first gets its identity and a
+Danny's decision that day, and neither has had a configuration written yet: each first gets its identity and a
 whole region read into the lab, then one block back unchanged, then a real write, the order every unit
 here has taken. **The 700 took another road first**: it arrived stuck in safe mode, was sent one
 reinstall request, a `WRITE_MISC` and a restart that write no flash from the host, section 295, and
@@ -766,15 +766,20 @@ document:
   650 too), whose images carry part of the routine and are otherwise unread there. It sits behind
   `HARMONY_FIRMWARE_REINSTALL=1` as well as `WRITES_ENABLED`, `requestFirmwareReinstall` reads the
   architecture, the unit and the staged image off the remote itself, and `assertReinstallAllowed`
-  refuses unless the unit matches the record the caller names, it is in safe mode, and the staged
+  refuses unless the unit matches the record the caller names, it is in safe mode or running an
+  application build whose status byte handler is read, which is the 700's 2.5 alone, and the staged
   image verifies and fits the copy limit. Which records may be named is `reinstall-firmware.ts`'s own
   list, the three arch 14 units. It repaired a Harmony 700 that arrived stuck in safe mode; the
   `recovering-a-remote` skill holds the route. **And one path writes firmware into flash, the staging
-  region**, decision 18 and section 297: Logitech's own unmodified image, verifying, into external
-  `0x000000` to `0x020000` of an arch 14 remote, for its safe mode image to install. Behind
-  `HARMONY_FIRMWARE_STAGE=1` on top of the two flags, `assertStagingAllowed`, and a backup of that exact
-  region that must match the remote before anything is erased. It took the bench Harmony 700 from 2.5
-  to 2.8. Nothing writes the processor's flash, and this is not a route to modifying firmware.
+  region**, decision 18 and section 297: Logitech's own unmodified image into external `0x000000` to
+  `0x020000` of an arch 14 remote, for its safe mode image to install. Behind `HARMONY_FIRMWARE_STAGE=1`
+  on top of the two flags and `assertStagingAllowed`, which checks the unit, the mode and build, and
+  that the image verifies and fits. **Two things the documents require are not in the rail**: that the
+  image is Logitech's and unmodified, which a checksum with a public seed cannot show, and a backup of
+  that exact region matching the remote before anything is erased, which is `reinstall-firmware.ts`'s
+  check and not `stageFirmware`'s. It took the bench Harmony 700 from 2.5 to 2.8, and **there is no
+  permitted way back from 2.8** until that build's status byte handler is read or the remote is in
+  safe mode. Nothing writes the processor's flash, and this is not a route to modifying firmware.
 * **Five units may be written to and no others**: the **spare Harmony One** and the **Harmony 525**,
   Danny's decision of 5 September 2026, the **Harmony 650**, his decision of 27 September 2026, and
   the **Harmony 600** and the **Harmony 700**, his decision of 29 September 2026. The exclusion is the
@@ -1975,12 +1980,14 @@ node packages/usb/bin/reinstall-firmware.ts --unit <label> [--commit]
                        the staged image's checksum and which pages of the installed one differ.
                        `--commit` needs HARMONY_ENABLE_WRITES=1 **and** HARMONY_FIRMWARE_REINSTALL=1,
                        sets the update status byte to 2 and restarts, and the remote does the copy.
-                       Sends no firmware and writes no flash from the host. Run once, on the Harmony
-                       700 that arrived in safe mode, and it came back running its application.
+                       Without `--image` it sends no firmware and writes no flash from the host, and it
+                       was run so once, on the Harmony 700 that arrived in safe mode, which came back
+                       running its application.
                        With `--image <file> --backup <lab region read>` it first **stages** that image,
                        decision 18 and section 297, needing HARMONY_FIRMWARE_STAGE=1 as well: the backup
                        must equal the remote's staging region, or the region be erased and the backup
-                       hold a verifying image, before anything is erased. That took the bench 700 to 2.8.
+                       hold a verifying image, before anything is erased. Run twice so: the first stopped
+                       past its erase and installed nothing, the second took the bench 700 to 2.8.
 HARMONY_ENABLE_WRITES=1 node packages/usb/bin/end-session-experiment.ts
                        THE ONLY SCRIPT HERE THAT SENDS A COMMAND WHICH IS NOT A READ, one
                        `0xE0 0x01`, which zeroes one variable and touches no storage. Refuses

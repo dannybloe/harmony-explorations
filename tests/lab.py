@@ -190,6 +190,7 @@ IMAGES = {
     # Either side of a Harmony Desktop sync with the remote running 2.5, section 296.
     'h700_prehd_internal_fe': '20260929T1422Z-h700-prehd-internal-fe-region.bin',
     'h700_prehd_internal_ff': '20260929T1422Z-h700-prehd-internal-ff-region.bin',
+    'h700_prehd_staging_region': '20260929T1422Z-h700-prehd-staging-region.bin',
     'h700_posthd_internal_fe': '20260929T1426Z-h700-posthd-internal-fe-region.bin',
     'h700_posthd_internal_ff': '20260929T1426Z-h700-posthd-internal-ff-region.bin',
     'h700_posthd_staging_region': '20260929T1426Z-h700-posthd-staging-region.bin',
@@ -542,8 +543,8 @@ PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_confi
                       # application; its container at 0x020000 is byte for byte `h700_gspm`.
                       # Section 295.
                       'h700_staging_region',
-                      # The same range after a Harmony Desktop sync, byte for byte. Section 296.
-                      'h700_posthd_staging_region',
+                      # The same range either side of a Harmony Desktop sync, byte for byte. Section 296.
+                      'h700_prehd_staging_region', 'h700_posthd_staging_region',
                       # The blank and the 2.8 staged region, section 297, same container.
                       'h700_after_failed_stage_region', 'h700_28_staging_region')
 

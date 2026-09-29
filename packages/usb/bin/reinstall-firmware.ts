@@ -1,6 +1,7 @@
 /**
- * Ask an arch 14 remote stuck in safe mode to reinstall the application image already staged in its
- * own external flash. Section 295.
+ * Ask an arch 14 remote to reinstall the application image already staged in its own external flash,
+ * from safe mode, section 295, or from an application build whose status byte handler is read, which
+ * is the Harmony 700's 2.5 alone, section 297.
  *
  *   node packages/usb/bin/reinstall-firmware.ts --unit h700
  *   HARMONY_ENABLE_WRITES=1 HARMONY_FIRMWARE_REINSTALL=1 node packages/usb/bin/reinstall-firmware.ts \
@@ -9,7 +10,12 @@
  * With `--image <file> --backup <lab region read>` it first **stages** that image, section 297 and
  * decision 18: the backup must equal the remote's staging region as it stands, byte for byte, before
  * anything is erased, and `--commit` then also needs `HARMONY_FIRMWARE_STAGE=1`. This is how the
- * bench Harmony 700 was taken from 2.5 to 2.8, and the backup is the way back.
+ * bench Harmony 700 was taken from 2.5 to 2.8. The backup is what a way back would stage, and from
+ * 2.8 in application mode the rail refuses that until 2.8's status byte handler is read.
+ *
+ * **An erased region is accepted in place of an equal one** when the backup holds an image that
+ * verifies, which was written for the one run that stopped past its erase. That arm checks the backup
+ * verifies and nothing else, so any verifying image passes it, the one being staged included.
  *
  * ## Why this exists
  *

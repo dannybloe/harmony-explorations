@@ -18,6 +18,7 @@ import { fileURLToPath } from 'node:url';
 import { imagePath, skipUnless } from '@harmony/lab';
 
 import {
+  HarmonyRemote,
   REINSTALL_MAX_IMAGE,
   RailError,
   assertReinstallAllowed,
@@ -331,7 +332,7 @@ test('with writing enabled and the staging door shut, every staging case is refu
     lines.join('\n'));
 });
 
-test('with the staging door open, each condition refuses by itself and only the whole of it passes', () => {
+test('with the staging door open, each condition refuses by itself, and the whole of it passes from 2.5 and from safe mode', () => {
   const lines = withEnv({ HARMONY_ENABLE_WRITES: '1', HARMONY_FIRMWARE_STAGE: '1' }, STAGE_CASES).split('\n');
   const expected: [string, RegExp][] = [
     ['the whole of it', /^the whole of it: allowed$/],
@@ -357,7 +358,7 @@ test('the first stage run left the staging region blank and the embedded configu
     assert.deepEqual(after.subarray(0x20000), before.subarray(0x20000));
   });
 
-test('after staging and installing 2.8, the application is the 2.8 image and nothing else changed',
+test('after staging and installing 2.8, the application is the 2.8 image and nothing else in internal flash or the staging region changed',
   skipUnless('h700_28_internal_fe', 'h700_28_internal_ff', 'h700_posthd_internal_fe', 'h700_posthd_internal_ff',
     'h700_28_staging_region', 'h700_posthd_staging_region', 'h700_code'), () => {
     const image = lab('h700_code');
@@ -375,3 +376,119 @@ test('after staging and installing 2.8, the application is the 2.8 image and not
     assert.deepEqual(staged.subarray(0x20000), lab('h700_posthd_staging_region').subarray(0x20000),
       'the embedded configuration');
   });
+
+/**
+ * `stageFirmware` against a simulated Harmony 700 running 2.5, in a subprocess because the doors are
+ * read once at load. The simulation answers the way the protocol is documented to: a version block,
+ * the identity block out of internal page `0xFF`, flash read in chunks with their sequence bytes, the
+ * status byte, a 64 KiB erase per request and a write announced, sent in data packets and closed.
+ *
+ * **What it pins is the sequence**, which the first hardware run got wrong past its erase: the status
+ * byte goes to 0 before the first erase, exactly the two staging blocks are erased, no transfer
+ * announces more than a sixteen bit count, nothing restarts the remote, and the region reads back as
+ * the image padded with `0xFF`. `wide` makes the simulated erase clear 128 KiB, which is the control:
+ * the embedded configuration above the region changes and the method has to say so.
+ */
+const STAGE_RUN = `
+  const unit = new Uint8Array(64).fill(0xee, 0, 16);
+  for (let i = 16; i < 48; i += 1) unit[i] = (i * 7 + 1) & 0xff;
+  const length = 76672;
+  const img = new Uint8Array(length);
+  for (let i = 10; i < length; i += 1) img[i] = (i * 13) & 0xff;
+  img[4] = (length - 8) & 0xff; img[5] = ((length - 8) >> 8) & 0xff; img[6] = ((length - 8) >> 16) & 0xff; img[7] = 0x28;
+  img[8] = 0x48; img[9] = 0x47;
+  const sum = usb.firmwareImageChecksum(img);
+  img[0] = sum & 0xff; img[1] = sum >> 8;
+  const wide = process.env.STAGE_WIDE_ERASE === '1';
+
+  const flash = new Uint8Array(0x40000).fill(0xff);
+  for (let i = 0x20000; i < 0x30000; i += 1) flash[i] = (i * 5) & 0xff;
+  const pageFF = new Uint8Array(0x10000).fill(0xff);
+  pageFF.set(unit, usb.IDENTITY_OFFSET);
+  const log = [];
+  let status = 2, writeAt = -1, queue = [];
+  const reply = (...bytes) => { const r = new Uint8Array(64); r.set(bytes); queue.push(r); };
+  const stream = (source, from, count) => {
+    let seq, at = 0;
+    while (at < count) {
+      const n = [62, 30, 14, 6, 5, 4, 3, 2, 1].find((k) => k <= count - at);
+      seq = seq === undefined ? 1 : usb.nextFlashSequence(seq);
+      reply(0x60 | usb.nibbleForPayloadLength(n + 1), seq, ...source.subarray(from + at, from + at + n));
+      at += n;
+    }
+    reply(0xf0, 0x50);
+  };
+  const transport = {
+    async write(r) {
+      const code = r[0] & 0xf0;
+      const payload = r.subarray(1, 1 + usb.payloadLengthForNibble(r[0] & 0x0f));
+      if (code === 0x10) { log.push('version'); reply(0x28, ...usb.encodeVersionBlock({ firmware: 0x25, architecture: 14, softwareType: 0 })); }
+      else if (code === 0x50) {
+        const a = (payload[0] << 16) | (payload[1] << 8) | payload[2], n = (payload[3] << 8) | payload[4];
+        if (payload[0] === 0xff) stream(pageFF, a & 0xffff, n); else stream(flash, a, n);
+      }
+      else if (code === 0xa0) { status = payload[2]; log.push('status ' + status); reply(0xf0, 0xa0); }
+      else if (code === 0xb0) reply(0xc2, 0x06, status);
+      else if (code === 0xd0) {
+        const a = (payload[0] << 16) | (payload[1] << 8) | payload[2];
+        log.push('erase 0x' + a.toString(16));
+        flash.fill(0xff, a, a + (wide ? 0x20000 : 0x10000));
+        reply(0xf0, 0xd0);
+      }
+      else if (code === 0x30) {
+        writeAt = (payload[0] << 16) | (payload[1] << 8) | payload[2];
+        log.push('write 0x' + writeAt.toString(16) + ' count ' + ((payload[3] << 8) | payload[4]));
+      }
+      else if (code === 0x40) { flash.set(payload, writeAt); writeAt += payload.length; }
+      else if (r[0] === 0xf1 && r[1] === 0x30) reply(0xf0, 0x30);
+      else if (code === 0xe0) log.push('escape ' + payload[0]);
+      else log.push('unexpected 0x' + r[0].toString(16));
+    },
+    async read() { return queue.shift(); },
+    async close() {},
+  };
+  const remote = new usb.HarmonyRemote(transport, { timeoutMs: 1, idlePolls: 3 });
+  let outcome = 'staged';
+  try { await remote.stageFirmware({ permittedUnit: unit }, img); } catch (error) { outcome = 'threw: ' + error.message; }
+  const expected = new Uint8Array(0x20000).fill(0xff); expected.set(img, 0);
+  const region = flash.subarray(0, 0x20000).every((b, i) => b === expected[i]);
+  console.log(JSON.stringify({ outcome, log: log.filter((l) => l !== 'version'), region, status }));
+`;
+
+test('stageFirmware sets the status to 0, erases the two staging blocks, writes in sixteen bit transfers and restarts nothing', () => {
+  const run = JSON.parse(withEnv({ HARMONY_ENABLE_WRITES: '1', HARMONY_FIRMWARE_STAGE: '1', STAGE_WIDE_ERASE: '' }, STAGE_RUN));
+  assert.equal(run.outcome, 'staged');
+  assert.equal(run.region, true, 'the region reads as the image padded with 0xFF');
+  assert.equal(run.status, 0, 'nothing will install until the reinstall sets it to 2');
+  assert.deepEqual(run.log, [
+    'status 0', 'erase 0x0', 'erase 0x10000',
+    'write 0x0 count 32768', 'write 0x8000 count 32768', 'write 0x10000 count 11136',
+  ]);
+});
+
+test('an erase wider than a block is caught by the neighbour read, before the region compare', () => {
+  const run = JSON.parse(withEnv({ HARMONY_ENABLE_WRITES: '1', HARMONY_FIRMWARE_STAGE: '1', STAGE_WIDE_ERASE: '1' }, STAGE_RUN));
+  assert.equal(run.outcome, 'threw: the block above the staging region changed during the erase');
+});
+
+test('with the staging door shut, stageFirmware erases and writes nothing', () => {
+  const run = JSON.parse(withEnv({ HARMONY_ENABLE_WRITES: '1', HARMONY_FIRMWARE_STAGE: '', STAGE_WIDE_ERASE: '' }, STAGE_RUN));
+  assert.match(run.outcome, /^threw: staging a firmware image needs HARMONY_FIRMWARE_STAGE=1/);
+  assert.deepEqual(run.log, []);
+  assert.equal(run.status, 2);
+});
+
+test('with writing disabled, stageFirmware erases and writes nothing', () => {
+  const run = JSON.parse(withEnv({ HARMONY_ENABLE_WRITES: '', HARMONY_FIRMWARE_STAGE: '1', STAGE_WIDE_ERASE: '' }, STAGE_RUN));
+  assert.match(run.outcome, /^threw: writing is disabled/);
+  assert.deepEqual(run.log, []);
+});
+
+test('the unchecked erase and write are not reachable through a cast', () => {
+  // Section 297's reviewer: TypeScript's `private` is a compile time label, so a cast reached the
+  // erase with every door shut. `#` names are not on the prototype.
+  const names = Object.getOwnPropertyNames(HarmonyRemote.prototype);
+  for (const name of ['eraseFlashUnchecked', 'writeFlashUnchecked', 'setUpdateStatus']) {
+    assert.ok(!names.includes(name), name);
+  }
+});

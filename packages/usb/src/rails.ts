@@ -880,16 +880,19 @@ export const FIRMWARE_REINSTALL: boolean = process.env['HARMONY_FIRMWARE_REINSTA
  * checksum itself. What a caller still chooses is `permittedUnit`, the record the unit is compared
  * with, which is why `reinstall-firmware.ts` names the units it will take.
  *
- * * **Safe mode only.** The install routine was read in the safe mode image. What the application
- *   does with the same byte is unread, and a remote whose application runs has no reason to be here.
+ * * **Safe mode, or an application build whose status byte handler is read.** The install routine
+ *   was read in the safe mode image, section 295, and the byte's handler on the Harmony 700's 2.5
+ *   application, section 297; `assertStatusByteReadOn` is the check, keyed by the build's version
+ *   string per architecture and not by unit.
  * * **The staged image must verify, and fit.** The remote erases its application before it copies,
  *   and it copies whatever length the staged header states up to its clamp. A staged image that does
  *   not verify would be copied faithfully and then refused by the checksum test at the next start,
  *   which is the state the remote is presumably already in, minus the application.
  * * **The restart must be traced.** The reinstall happens at start up, so the same escape the config
  *   writer ends with has to be one this architecture dispatches. That was read on the 0.2 application
- *   builds, section 282, and this sends it to a safe mode image, whose escape handler is unread; it
- *   restarted the one Harmony 700 it was sent to.
+ *   builds, section 282, and this sends it to whatever is running, a safe mode image or the 2.5
+ *   application, neither of whose escape handlers is read; it restarted the one Harmony 700 it was
+ *   sent to, each time.
  * * **The architecture list is wider than the reading.** The routine was read on the Harmony 700's 2.3
  *   safe mode image; the 600's and 650's 0.2 images carry its status normalisation and are otherwise
  *   unread there, and `[14]` admits them. Section 295 says so.
@@ -950,7 +953,11 @@ export const STATUS_BYTE_READ_ON_APPLICATION: Readonly<Record<number, readonly s
 
 /**
  * Throws unless the status byte's handler has been read in the mode and build the remote is in:
- * safe mode, whose handler section 295 read, or an application build on the list above.
+ * safe mode, or an application build on the list above.
+ *
+ * **Safe mode passes for any unit of the architecture**, and section 295 read the handler on the
+ * Harmony 700's 2.3 safe mode image only, so the 600 and the 650 are admitted on an unread one. That
+ * is the width section 295 already recorded for the reinstall, carried here and not narrowed.
  */
 function assertStatusByteReadOn(
   architecture: number,
@@ -996,6 +1003,11 @@ export const FIRMWARE_STAGE: boolean = process.env['HARMONY_FIRMWARE_STAGE'] ===
  * * **The status byte first**: staging sets it to 0 before the erase, as Logitech's template does, so
  *   a restart during the write installs nothing. That byte's handler has to be read in the mode the
  *   remote is in, which is `assertStatusByteReadOn`.
+ *
+ * **What this does not check**, since the documents say more than the code does: that the image is
+ * Logitech's and unmodified, which a verifying checksum does not show, the seed and the algorithm
+ * being public; and that the region matches a lab backup, which is `reinstall-firmware.ts`'s check and
+ * not this function's. Both are the operator's, recorded in section 297.
  */
 export function assertStagingAllowed(
   p: Pick<WritePermission, 'architecture' | 'identityBlock' | 'permittedUnit'>,

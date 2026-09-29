@@ -610,9 +610,17 @@ remote and 2 in the second, which is what section 117 measured as a generator er
 
    **What prompted it.** The bench Harmony 700 was running 2.5, Logitech's services offered it no
    update, and the build this project has read most is 2.8. The install route was already read and
-   exercised, section 295, and the way back is the same route with the backup the rail demands.
+   exercised, section 295. **This said "the way back is the same route with the backup the rail
+   demands"<!--superseded--> and both halves were wrong**, found by section 297's reviewer: the rail
+   demands no backup, the script does, and from 2.8 in application mode the rail refuses, since that
+   build's status byte handler, `0x1AB96`, is unread. So there is no permitted way back today short of
+   reading it or starting from safe mode.
 
    **What it does not change.** Generating configuration files is still the route to everything, and
    this does not make firmware modification a route to anything. The rail is `assertStagingAllowed`,
    behind `HARMONY_FIRMWARE_STAGE` as well as `HARMONY_ENABLE_WRITES`, and `reinstall-firmware.ts`
-   takes a backup of the region that must match the remote before it erases anything.
+   takes a backup of the region that must match the remote before it erases anything. That the image
+   is Logitech's and unmodified is the operator's to hold to: the rail checks that it verifies, and a
+   checksum whose seed and algorithm are public does not show where an image came from. **The rail
+   admits any arch 14 unit**, the 600 and the 650 on safe mode status byte handlers nobody has read,
+   which is section 295's width carried over and not a reading.

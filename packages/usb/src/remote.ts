@@ -629,15 +629,20 @@ export class HarmonyRemote {
     betweenPacketsMs = 0,
   ): Promise<void> {
     assertFlashWriteAllowed(p, address, data.length);
-    await this.writeFlashUnchecked(address, data, betweenPacketsMs);
+    await this.#writeFlashUnchecked(address, data, betweenPacketsMs);
   }
 
   /**
    * The transfer behind `writeFlash`, with no rail of its own: every caller has passed one first.
    * `stageFirmware` is the other caller, behind `assertStagingAllowed`, which is why this is split out
    * rather than `writeFlash` growing a second permission.
+   *
+   * **Runtime private, `#`, and not TypeScript's `private`**, which is a compile time label: a cast
+   * reaches a `private` method on the prototype, and this one writes anywhere it is pointed.
+   * Section 297's reviewer found that, the shape of section 224. The class's older helpers are
+   * `private` still, `send` and `exchange` among them, which is the same hole and is open.
    */
-  private async writeFlashUnchecked(
+  async #writeFlashUnchecked(
     address: number,
     data: Uint8Array,
     betweenPacketsMs = 0,
@@ -673,11 +678,11 @@ export class HarmonyRemote {
 
   async eraseFlash(p: WritePermission, address: number): Promise<void> {
     assertEraseAllowed(p, address);
-    await this.eraseFlashUnchecked(address);
+    await this.#eraseFlashUnchecked(address);
   }
 
-  /** The erase behind `eraseFlash`, with no rail of its own, for the same reason as the write's. */
-  private async eraseFlashUnchecked(address: number): Promise<void> {
+  /** The erase behind `eraseFlash`, with no rail of its own, runtime private for the write's reason. */
+  async #eraseFlashUnchecked(address: number): Promise<void> {
     const reply = await this.exchange(eraseFlashRequest(address));
     if (reply.kind !== 'ack') throw new RemoteError('erase was not acknowledged');
     // Which command was acknowledged, not merely that something was. Section 139.
@@ -828,8 +833,10 @@ export class HarmonyRemote {
   }
 
   /**
-   * Ask a remote in safe mode to **reinstall the application image already staged in its external
-   * flash**, and restart it so that it does. Section 295.
+   * Ask a remote to **reinstall the application image already staged in its external flash**, and
+   * restart it so that it does. Section 295. It has to be in safe mode or running an application
+   * build whose status byte handler is read, section 297, which `assertReinstallAllowed` judges.
+   * The restart goes to whichever is running, and only the 0.2 builds' escape handler is read.
    *
    * This writes no flash. On arch 14 a firmware install is two halves: the host writes the new image
    * into external flash at `0x000000`, and the remote's safe mode image copies it into internal flash
@@ -878,7 +885,7 @@ export class HarmonyRemote {
   }
 
   /** Set the update status byte and read it back, refusing to go on unless it holds `value`. */
-  private async setUpdateStatus(value: number): Promise<void> {
+  async #setUpdateStatus(value: number): Promise<void> {
     const reply = await this.exchange(updateStatusWriteRequest(value));
     if (reply.kind !== 'ack' || reply.command !== WRITE_MISC) {
       throw new RemoteError('the update status write was not acknowledged as WRITE_MISC');
@@ -903,7 +910,13 @@ export class HarmonyRemote {
    * its identity block. The caller supplies the image and the recorded identity of the unit it means.
    *
    * **The block above is read before and after**, since `ERASE_FLASH` carries no count: the embedded
-   * configuration at the region's end must come through byte for byte, or this throws.
+   * configuration at the region's end must come through byte for byte, or this throws. That detects a
+   * wider sector and does not prevent one.
+   *
+   * **It takes no backup and checks none**: the rule that the region must match a lab read before
+   * anything is erased is `reinstall-firmware.ts`'s, so another caller of this method does not get it.
+   * The transfers are 32 KiB, which is not Logitech's 25200 nor the configuration writer's 3150;
+   * it worked once, section 297.
    */
   async stageFirmware(p: Pick<WritePermission, 'permittedUnit'>, image: Uint8Array): Promise<void> {
     const version = await this.getVersion();
@@ -925,14 +938,19 @@ export class HarmonyRemote {
       return out;
     };
     const before = await neighbour();
-    await this.setUpdateStatus(UPDATE_STATUS_NONE);
+    await this.#setUpdateStatus(UPDATE_STATUS_NONE);
     for (let block = region.start; block < region.end; block += 0x10000) {
-      await this.eraseFlashUnchecked(block);
+      await this.#eraseFlashUnchecked(block);
     }
     // In 32 KiB transfers, since a write's count is sixteen bits and an image is not. The first run
     // passed the whole image and was refused building its first packet, after the erase, section 297.
     for (let at = 0; at < image.length; at += 0x8000) {
-      await this.writeFlashUnchecked(region.start + at, image.subarray(at, Math.min(image.length, at + 0x8000)));
+      await this.#writeFlashUnchecked(region.start + at, image.subarray(at, Math.min(image.length, at + 0x8000)));
+    }
+    // The neighbour first, so that a mismatch in the region cannot hide a change above it.
+    const after = await neighbour();
+    if (after.some((byte, i) => byte !== before[i])) {
+      throw new RemoteError('the block above the staging region changed during the erase');
     }
     const expected = new Uint8Array(length).fill(0xff);
     expected.set(image, 0);
@@ -944,10 +962,6 @@ export class HarmonyRemote {
         `the staged region reads back different from the image at 0x${first.toString(16)}: `
           + 'the status byte is 0, so nothing will install; stage again or restore the backup',
       );
-    }
-    const after = await neighbour();
-    if (after.some((byte, i) => byte !== before[i])) {
-      throw new RemoteError('the block above the staging region changed during the erase');
     }
   }
 }

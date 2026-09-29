@@ -14,7 +14,8 @@ Three things frame it.
 
 **Flash writes have been performed here since section 222, on three units, and one route below has
 been exercised in anger on a fourth**: the reinstall request, which writes no flash from the host and
-repaired a Harmony 700 that arrived stuck in safe mode, section 295. The rest are readings of firmware plus, in one case, a recovery somebody performed
+repaired a Harmony 700 that arrived stuck in safe mode, section 295, and later, with Logitech's 2.8
+image staged first, section 297, installed a different build on it. The rest are readings of firmware plus, in one case, a recovery somebody performed
 by hand from the private lab. This said "one write has been performed" until 29 September 2026, well
 after it stopped being true. A route that has not been exercised is a prediction.
 
@@ -63,14 +64,14 @@ wrong or is about to.
   and the staged copy untouched, so the same command runs again; a status that does not survive the
   restart does nothing. **Logitech's clients did not repair it**: MyHarmony's sync failed, for a
   reason not established, and Harmony Desktop's sync wrote a configuration and left the application
-  as it was. **If the staged image does not verify either**, this route is closed and nothing here
-  writes an application into external flash; the 2.8 package in the lab states two different flash
+  as it was. **If the staged image does not verify either**, this route alone is closed, and staging
+  a verifying image first, below, is the other half; the 2.8 package in the lab states two different flash
   parts, `0x14:0x1C` in its upgrade header and `0x15:0x1C` in its `Data.xml`, so it is not a drop in
   answer. The 600's and 650's 0.2 safe mode images carry the routine's status normalisation, and
   their status handlers and every safe mode escape handler are unread.
   **The same route installs a different build**, decision 18 and section 297: `--image <file> --backup
   <region read>` stages a Logitech image first. That is how the bench 700 went from 2.5 to 2.8, and it
-  is also the way back, with the staging read taken before as the image. From application mode it
+  would be the way back, with the staging read taken before as the image, if it were permitted. From application mode it
   needs the build's status byte handler read, `STATUS_BYTE_READ_ON_APPLICATION`, which is 2.5 only;
   2.8's is unread, so going back from 2.8 means reading `0x1AB96` first or starting from safe mode.
 

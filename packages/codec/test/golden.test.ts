@@ -201,7 +201,8 @@ const CONTAINERS = [
   // The Harmony 700's external flash, kept for its staged application; the container at 0x020000 is
   // `h700_gspm`'s byte for byte, and on the same terms. Section 295.
   'h700_staging_region',
-  // The same range after a Harmony Desktop sync, byte for byte. Section 296.
+  // The same range either side of a Harmony Desktop sync, byte for byte. Section 296.
+  'h700_prehd_staging_region',
   'h700_posthd_staging_region',
   // The blank staging region and the 2.8 staged one, section 297, the same container again.
   'h700_after_failed_stage_region',
@@ -303,8 +304,9 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 10, section 292, and 78 since the spare Harmony One's region before its four page menu, 293,
   // and 79 since the 650's region after LG kijken's own device list, 294, and 80 since the Harmony
   // 700's external flash, whose container duplicates `h700_gspm`'s, 295, and 81 since the same range
-  // after section 296's sync, and 83 since section 297's blank and 2.8 staged regions.
-  assert.equal(present.length, 83, 'every vector, which is what `make golden` compares');
+  // after section 296's sync, and 83 since section 297's blank and 2.8 staged regions, and 84 since the staging read
+  // before that sync.
+  assert.equal(present.length, 84, 'every vector, which is what `make golden` compares');
   // 38 since the Harmony 895 landed: its key table reads with the existing reader even though
   // every other arch 10 reader is gated, which is what made section 177's keypad closure possible
   // without any arch 10 progress at all.
@@ -341,8 +343,8 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // before its four page menu, section 293, and 74 since the 650's after section 294: each keeps a
   // key table. 75 since the Harmony 700's external flash, section 295, whose container is
   // `h700_gspm`'s and has its key table, and 76 since that range after section 296's sync, and 78
-  // since section 297's two.
-  assert.equal(complete, 78, 'the vectors whose container has a key table at all');
+  // since section 297's two, and 79 since the read before that sync.
+  assert.equal(complete, 79, 'the vectors whose container has a key table at all');
 
   // **The number sender field, and why it needs its own guard.** It is an empty array on 30 vectors
   // and null on 8, with eight carrying a record since 30 August 2026, and this comment said 25 and 9
@@ -383,8 +385,9 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // spare's region before its four page menu, section 293, carries a number sender, so not 42; 42
   // since the 650's region after section 294, which carries none, and 43 since the Harmony 700's
   // external flash, section 295, whose container is `h700_gspm`'s and carries none, and 44 since that
-  // range after section 296's sync, and 46 since section 297's two.
-  assert.equal(senders.filter((one) => Array.isArray(one) && one.length === 0).length, 46);
+  // range after section 296's sync, and 46 since section 297's two, and 47 since the read before that
+  // sync.
+  assert.equal(senders.filter((one) => Array.isArray(one) && one.length === 0).length, 47);
   // **Four since the second compiled sample**, and the reason is the account rather than the request:
   // every configuration compiled from the account that carries favourite channels carries the sender
   // record too, whichever appliances are on it that day. Three of them were made deliberately for base
@@ -452,8 +455,9 @@ test('the list above covers exactly what the Python side writes a vector for', (
   // 75 since the reads either side of 1.4.4, section 291, 77 since the 20 and 10 second timers, and
   // 78 since the spare's region before its four page menu, section 293, and 79 since the 650's
   // after section 294, and 80 since the Harmony 700's external flash, section 295, and 81 since that
-  // range after section 296's sync, and 83 since section 297's two.
-  assert.equal(python.length, 83, 'the golden vectors, which is what `make golden` prints');
+  // range after section 296's sync, and 83 since section 297's two, and 84 since the read before that
+  // sync.
+  assert.equal(python.length, 84, 'the golden vectors, which is what `make golden` prints');
   assert.deepEqual([...CONTAINERS].sort(), python.sort());
 });
 

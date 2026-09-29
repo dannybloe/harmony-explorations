@@ -56,9 +56,11 @@ class TheSyncAppendsTwoRecordsAndTouchesNoFirmware(unittest.TestCase):
 
     def test_the_firmware_page_and_the_staging_chip_are_unchanged(self):
         lab.require('h700_prehd_internal_fe', 'h700_posthd_internal_fe', 'h700_staging_region',
-                    'h700_posthd_staging_region')
+                    'h700_prehd_staging_region', 'h700_posthd_staging_region')
         self.assertEqual(lab.load('h700_posthd_internal_fe'), lab.load('h700_prehd_internal_fe'))
-        self.assertEqual(lab.load('h700_posthd_staging_region'), lab.load('h700_staging_region'))
+        self.assertEqual(lab.load('h700_posthd_staging_region'), lab.load('h700_prehd_staging_region'))
+        # And the read immediately before the sync is section 295's, so nothing moved in between.
+        self.assertEqual(lab.load('h700_prehd_staging_region'), lab.load('h700_staging_region'))
 
 
 if __name__ == '__main__':

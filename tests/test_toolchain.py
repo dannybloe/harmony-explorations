@@ -218,7 +218,7 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # 35 since `tests/test_status_screens.py`, section 249.
         # 37 since `tests/test_harmony_525_region.py`, section 270.
         # 42 since `tests/test_harmony_700_settings_store.py`, section 296.
-        self.assertEqual(len(files), 42, 'the Python test files')
+        self.assertEqual(len(files), 43, 'the Python test files')
         with_block = 0
         for path in files:
             with open(path, encoding='utf-8') as handle:
@@ -238,7 +238,7 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # 35 since `tests/test_harmony_525_region.py`, section 270, which carries one.
         # 39 since `tests/test_firmware_state_block.py`, section 284.
         # 40 since `tests/test_harmony_700_settings_store.py`, section 296, which carries one.
-        self.assertEqual(with_block, 40,
+        self.assertEqual(with_block, 41,
                          'files carrying a __main__ block, of %d' % len(files))
 
 
@@ -665,7 +665,7 @@ class APythonBoundOnACorpusTotalIsExact(unittest.TestCase):
         found, scanned = self._bounds()
         # 37 since `tests/test_harmony_525_region.py`, section 270.
         # 42 since `tests/test_harmony_700_settings_store.py`, section 296.
-        self.assertEqual(len(scanned), 42, 'Python test files, which moves when one is added')
+        self.assertEqual(len(scanned), 43, 'Python test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):
@@ -1638,7 +1638,11 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # **37 on 29 September 2026**: `todo.md`, whose items for the Harmony 600's and the Harmony
         # 700's first writes name `rehearse-block.ts`. It is withheld already, as one of the files
         # that restate the sequence, so nothing widens and the list was re-read before this moved.
-        self.assertEqual(len(stating), 37,
+        #
+        # **38 with section 297's review**: `packages/usb/test/firmware.test.ts`, whose simulated
+        # remote answers an erase, an announced write, its data packets and its close. It is inside
+        # `packages/usb/`, withheld whole, so nothing widens; the list was re-read before this moved.
+        self.assertEqual(len(stating), 38,
                          'the number of files stating the write path moved, so re-read the withhold '
                          'list before restamping this: %s' % stating)
 

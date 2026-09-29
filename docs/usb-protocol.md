@@ -766,6 +766,15 @@ it installed its own staged application and came back running it. The Harmony 60
 `0x01A80` called from `0x0107E`; their selector 6 handlers and every safe mode image's escape handler
 are unread.
 
+**On the Harmony 700's 2.5 application it is the same byte**, section 297: the selector chain at
+`0x0C314` sends 6 to `0x0C364`, which moves the packet's third byte, as `0xD5F`, into `0x102` and its
+fourth, as `0xD5E`, into `0x103`, and calls `0x19868`, which stores `0x103` into `0x100` when `0x102`
+is 0. So `A3 06 00 02` means the same to the running application as to the safe mode image, which is
+what Logitech's template assumes when it sends it in either mode. **Sent to that application once**,
+with the escape's `0x02` after it, and the safe mode image installed the staged 2.8 at the restart;
+the 2.5 application's escape handler is unread. On 2.8 the arm is at `0x0C400` and calls `0x1AB96`,
+the same routine the paragraph above names, still not identified. `tests/test_harmony_700_status_byte.py`.
+
 ### READ_FLASH
 
 The one command version 1 of the application actually needs. Addresses are the 700 2.8 image.
