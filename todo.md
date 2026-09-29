@@ -148,7 +148,7 @@ After 3 produces something.
   - [x] Read the cache drop and the restart in its build, 2.8, and add it to `write-config.ts`: the drop is 0.2's at other addresses plus section 283's flag, the restart section 97's (section 299)
   - [x] Read the 2.8 application's status byte routine, `0x1AB96`, and the 2.5 restart, before staging on it from application mode again (section 298)
   - [x] Record its identity as `h700` and read its whole configuration region
-  - [ ] Write one block back unchanged with `rehearse-block.ts`
+  - [x] Write one block back unchanged with `rehearse-block.ts` (section 300)
   - [ ] A real write with `write-config.ts`
 
 ---

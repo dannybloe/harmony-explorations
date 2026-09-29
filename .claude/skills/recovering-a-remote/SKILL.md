@@ -12,8 +12,9 @@ success does not transfer to another.
 
 Three things frame it.
 
-**Flash writes have been performed here since section 222, on three units, and one route below has
-been exercised in anger on a fourth**: the reinstall request, which writes no flash from the host and
+**Flash writes have been performed here since section 222, on four units, the fourth being a Harmony
+700 whose staging region and then one configuration block were written, sections 297 and 300, and one
+route below has been exercised in anger on it**: the reinstall request, which writes no flash from the host and
 repaired a Harmony 700 that arrived stuck in safe mode, section 295, and later, with Logitech's 2.8
 image staged first, section 297, installed a different build on it. The rest are readings of firmware plus, in one case, a recovery somebody performed
 by hand from the private lab. This said "one write has been performed" until 29 September 2026, well

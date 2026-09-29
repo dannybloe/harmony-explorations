@@ -39166,7 +39166,8 @@ build that already took a new value without one.
 The Harmony 700's target in `write-config.ts` names build 2.8, so a commit on it is no longer refused
 for its build. **Nothing can be written to it yet**: its region reads are still unregistered as dumps,
 so the writer refuses it for having none, and `todo.md`'s next item is a block written back unchanged
-with `rehearse-block.ts` first.
+with `rehearse-block.ts` first. Section 300 registered its 2.8 configuration region as the rehearsal's
+dump and wrote that block; `write-config.ts` still names no dump for it.
 
 ### Scope, decision 16
 
@@ -39197,3 +39198,72 @@ settings store changes on a drop followed by an erase anywhere but `0x030000`.
   relocation as a one to one map, the tables per build, and a control that the comparison sees the
   whole arm's difference.
 * `packages/usb/test/rehearsal.test.ts`: the writer's build list.
+
+## 300. The Harmony 700's first configuration block, written back unchanged
+
+`todo.md` L7's next step, and the fourth unit to take it after the spare Harmony One, the Harmony 525
+and the Harmony 650, sections 222, 269 and 281: one 64 KiB erase block of the remote's own bytes,
+erased and written back unchanged. The unit runs Logitech's 2.8, installed by section 297.
+
+### The dump
+
+The read of the configuration region's first `0x120000` bytes from `0x030000`, taken after 2.8 was
+installed, is the rehearsal's dump for the Harmony 700, `h700_28_config_region`. The region runs to
+`0x200000`, and the read covers the whole configuration plus erased flash to `0x150000`. It starts
+with a container that passes the Python reader's container checks and that ends at `0x13554C`, so the block at `0x030000` is
+configuration: 64366 of its 65536 bytes are not `0xFF`, which matters because writing `0xFF` back over
+an erase cannot be told from not writing at all. It is kept out of the corpus like the 650's regions,
+since whether the 700's configuration joins every corpus wide total is a decision of its own.
+
+### The run
+
+1. The identity read off the unit matched the `h700` record, and the version block said firmware 2.8.
+2. A dry run read the block and found it byte for byte equal to the dump, and wrote nothing. Its
+   output was not kept, and commit `f6a02a4` records it.
+3. With `--commit` the rehearsal read the neighbouring blocks `0x020000`, which holds the safe mode
+   configuration, and `0x040000`; erased `0x030000` and read it back as all ones; read both neighbours
+   again, identical; and wrote the block in 21 transfers of up to 3150 bytes, reading it back identical.
+4. The same `0x120000` bytes were then read again by the region reader, in a new session, and have the
+   same SHA-256 as the dump, `3172757d...`. This is a weaker end than section 281's: there a different
+   reader took it, where here the region reader and the rehearsal's read back both go through the same
+   flash read call, so what it adds is a fresh session and the megabyte past the block.
+
+Nothing was sent beyond the erase, the writes and the reads, so no cache drop and no restart. The
+remote answered every transfer of the run, and the region read after it opened it again; between the
+two nothing was recorded. Its screen was not observed.
+
+**What the two region reads can and cannot show**, which the blind reviewer set out. They agree over
+all 1152 KiB, so nothing else in `0x030000` to `0x150000` changed either. But two identical reads fit
+a write that did nothing as well as one that happened, so that the block was erased rests on the run's
+own read of all ones, and the neighbour at `0x020000` lies outside both reads, so its check rests on
+the run's compare alone. And the reads are of external flash: this architecture copies its
+configuration into internal program memory, and neither that copy nor the staging region was read
+afterwards, so "unchanged" is about the chip the write went to.
+
+### Scope, decision 16
+
+One arch 14 unit, the Harmony 700, on build 2.8, one block. The 64 KiB erase block is measured on this
+unit's part now as well as on the 650's, both reporting flash id `15:1C`, with one limit on the lower
+side: the block at `0x020000` holds content only in its first 7115 bytes, so an erase reaching into the
+rest of it would not have shown, and that side rests on the part's block alignment. Above, the block at
+`0x040000` has 64957 bytes that are not `0xFF` and was unchanged. What the remote does after a
+write that changes something, with the drop and restart section 299 read, is `todo.md`'s next item and
+not tested by a write that changes nothing.
+
+### Sources checked before the work
+
+Sections 222, 269, 281 and 299; the lab's reads of this unit. Logitech's client was not read: the
+sequence is this project's own rehearsal, already run on three units.
+
+### Falsification
+
+A read of the region that differs from the dump anywhere, or a neighbouring block that changed across
+the erase.
+
+### Where it lands
+
+* `packages/usb/bin/rehearse-block.ts`: the Harmony 700 names `h700_28_config_region`.
+* `tests/test_arch14_write_target.py`: the two region reads are identical, the block written holds
+  configuration from its first byte, and the run's own output records the erase, the neighbour check
+  and the read back.
+* The run's output is in the lab beside the reads, `h700_rehearsal_log`.

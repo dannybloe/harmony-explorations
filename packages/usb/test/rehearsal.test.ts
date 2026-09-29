@@ -194,7 +194,8 @@ test('the rehearsal names five units and keys them by the architecture off the r
   // (Harmony 525) the three constants a comparison needs. Before that the script had one hardcoded
   // label and one hardcoded dump set. **Three since 27 September 2026**, section 281: the Harmony 650
   // is arch 14's. **Five since Danny's decision of 29 September 2026**: the Harmony 600 and the
-  // Harmony 700 join it, each with its own unit record and its own dumps, none registered yet.
+  // Harmony 700 join it, each with its own unit record and its own dumps, the 700's registered since
+  // section 300 and the 600's not yet.
   const text = rehearsalScript();
   assert.match(text, /const TARGETS: Readonly<Record<number, readonly Target\[\]>>/);
   assert.match(text, /9: \[\{ model: 'the Harmony 525', unitLabel: 'h525'/);

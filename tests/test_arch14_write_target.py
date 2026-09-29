@@ -896,5 +896,51 @@ class TheVariablesBankAcrossABareRestart(unittest.TestCase):
                          (0xE10, 0xD2D))
 
 
+class TheHarmony700sFirstBlockWentBackUnchanged(unittest.TestCase):
+    """Section 300: block `0x030000` of the Harmony 700, running 2.8, erased and written back unchanged.
+
+    Two identical reads fit a write that did nothing as well as one that happened, so the erase and
+    the neighbour check rest on the run's own output, which is read here too. The region reads are
+    the other end: the same `0x120000` bytes from `0x030000`, before and in a new session after.
+    """
+
+    REGION = 0x030000
+
+    def setUp(self):
+        lab.require('h700_28_config_region', 'h700_after_rehearsal_region', 'h700_rehearsal_log')
+        self.before = lab.load('h700_28_config_region')
+        self.after = lab.load('h700_after_rehearsal_region')
+        self.log = lab.load('h700_rehearsal_log').decode('utf-8')
+
+    def test_the_region_reads_back_byte_for_byte(self):
+        self.assertEqual(len(self.before), 0x120000)
+        self.assertEqual(self.after, self.before)
+
+    def test_the_block_written_was_configuration_and_not_erased_flash(self):
+        # A block of 0xFF written back over an erase would pass a compare on a write that did nothing,
+        # so the claim needs the block to hold content: a container that passes its own checks starts
+        # at its first byte and runs past its end.
+        from harmony import gspm
+        self.assertEqual(self.before[:4], b'GSPM')
+        container = gspm.parse(self.before)
+        self.assertTrue(container.all_checks_pass)
+        self.assertEqual(container.flash_base, self.REGION)
+        self.assertGreater(container.end_addr, self.REGION + 0x10000)
+        self.assertEqual(sum(1 for byte in self.before[:0x10000] if byte != 0xFF), 64366)
+
+    def test_the_run_erased_checked_both_neighbours_and_read_the_block_back(self):
+        for line in ('unit identity', 'which matches the recorded h700',
+                     'erasing 0x30000',
+                     'erased, and the block reads back as all ones',
+                     'the erase stayed inside its own block, measured on both sides',
+                     'the block reads back byte for byte identical to the dump'):
+            self.assertIn(line, self.log)
+        writes = re.findall(r'^writing (\d+) bytes at 0x([0-9a-f]+)$', self.log, re.M)
+        self.assertEqual(len(writes), 21)
+        self.assertEqual(sum(int(n) for n, _ in writes), 0x10000)
+        self.assertEqual(int(writes[0][1], 16), self.REGION)
+        # And nothing else was sent: no drop and no restart.
+        self.assertNotRegex(self.log, r'(?i)invalidat|restart|reset|drop')
+
 if __name__ == '__main__':
     unittest.main()

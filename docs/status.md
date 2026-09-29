@@ -564,7 +564,7 @@ finding.
 
 `todo.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 299<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 300<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and flash has been written on four units**, the first in section 222:
@@ -574,7 +574,7 @@ performed" long after it stopped being true; the spare Harmony One, the Harmony 
 have all been written since, and a Harmony 700 was sent one reinstall request, section 295, which
 writes no flash from the host, and then had Logitech's 2.8 image staged into its external flash and
 installed by its own safe mode image, section 297, which is the one write outside a configuration
-region, decision 18. `GET_VERSION`, `READ_MISC`
+region, decision 18, and then had one configuration block written back unchanged, section 300. `GET_VERSION`, `READ_MISC`
 and `READ_FLASH` run from our own host code on both bench architectures, a config read matches each
 unit's lab dump byte for byte, and the four remotes this library can open are fully read and verified
 against their backups: user config, application firmware, safe mode, and the internal pages where the architecture

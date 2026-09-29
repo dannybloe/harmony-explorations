@@ -17,8 +17,9 @@
  * **Five since 29 September 2026**, by Danny's decision that day: the Harmony 600 and the Harmony 700,
  * both arch 14, beside the 650. Three units of one architecture enumerate alike, so the architecture
  * no longer picks the unit: the **dump** names which one is expected, and the identity block read off
- * the remote has to match that unit's record. Neither has a dump or a record in the lab yet, so both
- * are refused until their first region read is registered. The everyday Harmony One stays excluded.
+ * the remote has to match that unit's record. The 600 has neither a dump nor a record in the lab yet,
+ * so it is refused until its first region read is registered; the 700 has both, and one block written
+ * back, section 300. The everyday Harmony One stays excluded.
  *
  * **What arch 9 does not get with it** is a reset at the end: nothing has read the Harmony 525's
  * escape dispatcher. Arch 14 may be restarted since section 282. This script sends none either way: `writeBlock` erases, writes and verifies, and

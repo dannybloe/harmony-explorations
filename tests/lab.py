@@ -203,6 +203,10 @@ IMAGES = {
     # Its configuration region read on 2.8, from 0x030000: the compare base for the 700's first block
     # written back unchanged, excluded from the corpus like the 650's regions.
     'h700_28_config_region': '20260929T1541Z-h700-28-config-region-region.bin',
+    # The same region read after block 0x030000 was written back unchanged, section 300.
+    'h700_after_rehearsal_region': '20260929T1923Z-h700-after-rehearsal-config-region-region.bin',
+    # And the rehearsal's own output for that write, which is the only record that it erased.
+    'h700_rehearsal_log': '20260929T1922Z-h700-block-030000-rehearsal-run.log',
     'h650_internal_fe': '20260927T0840Z-h650-internal-fe-region.bin',
     # Three snapshots of the 650's state variables, 108 bytes from data 0xE10 plus the stored sum:
     # at rest, after an activity was started off the cable, and after a bare restart. Section 283.
@@ -544,6 +548,8 @@ PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_confi
                       'h650_devicelist_region',
                       # The Harmony 700's configuration region on 2.8, for the same reason.
                       'h700_28_config_region',
+                      # And after its first block was written back unchanged, section 300.
+                      'h700_after_rehearsal_region',
                       # External flash of the bench Harmony 700 from 0x000000, kept for the staged
                       # application; its container at 0x020000 is byte for byte `h700_gspm`.
                       # Section 295.

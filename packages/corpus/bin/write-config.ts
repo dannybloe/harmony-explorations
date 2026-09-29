@@ -198,7 +198,8 @@ const TARGETS: Readonly<Record<number, readonly Target[]>> = {
     // The same build as the 650, `600-0.2-code-base0x9000-COMPLETE.bin`, read off this unit.
     { model: 'the Harmony 600', unitLabel: 'h600', dumps: H600_DUMPS, sequenceReadOn: ['0.2'] },
     // 2.8, which it runs since section 297: the drop is read in section 299 and the restart in 97.
-    // Its dumps are still none, so nothing can be written to it until a region read is registered.
+    // Its dumps here are still none, so this writer refuses it until one is registered; the
+    // rehearsal has its own, section 300.
     { model: 'the Harmony 700', unitLabel: 'h700', dumps: H700_DUMPS, sequenceReadOn: ['2.8'] },
   ],
 };

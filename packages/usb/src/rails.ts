@@ -75,9 +75,10 @@ export const CONFIG_REGION_BASE: Readonly<Record<number, number>> = {
 /**
  * Architectures that have a write target at all.
  *
- * Eight remotes are on the bench: a programmed Harmony One, a Harmony 600, a spare Harmony One, a
+ * Nine remotes are on the bench: a programmed Harmony One, a Harmony 600, a spare Harmony One, a
  * Harmony 525, since 27 August 2026 a Harmony Touch, a Harmony 350 and a Harmony 300, none of which
- * this library can even open, and since 27 September 2026 a Harmony 650. **Three units may be
+ * this library can even open, since 27 September 2026 a Harmony 650, and since 29 September 2026 a
+ * Harmony 700. **Three units may be
  * written to**: the spare Harmony One, which is arch 12, and the Harmony 525, which is arch 9, by
  * Danny's decision of 5 September 2026, and the Harmony 650, which is arch 14, by his decision of 27
  * September. **Five since 29 September 2026**: the Harmony 600 and the Harmony 700, both arch 14, by
