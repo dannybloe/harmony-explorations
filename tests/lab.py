@@ -200,6 +200,9 @@ IMAGES = {
     'h700_28_internal_fe': '20260929T1541Z-h700-28-internal-fe-region.bin',
     'h700_28_internal_ff': '20260929T1541Z-h700-28-internal-ff-region.bin',
     'h700_28_staging_region': '20260929T1541Z-h700-28-staging-region.bin',
+    # Its configuration region read on 2.8, from 0x030000: the compare base for the 700's first block
+    # written back unchanged, excluded from the corpus like the 650's regions.
+    'h700_28_config_region': '20260929T1541Z-h700-28-config-region-region.bin',
     'h650_internal_fe': '20260927T0840Z-h650-internal-fe-region.bin',
     # Three snapshots of the 650's state variables, 108 bytes from data 0xE10 plus the stored sum:
     # at rest, after an activity was started off the cable, and after a bare restart. Section 283.
@@ -539,6 +542,8 @@ PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_confi
                       'h650_glow10_region',
                       # And after LG kijken got its own device list.
                       'h650_devicelist_region',
+                      # The Harmony 700's configuration region on 2.8, for the same reason.
+                      'h700_28_config_region',
                       # External flash of the bench Harmony 700 from 0x000000, kept for the staged
                       # application; its container at 0x020000 is byte for byte `h700_gspm`.
                       # Section 295.

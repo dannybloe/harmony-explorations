@@ -203,10 +203,10 @@ test('the rehearsal names five units and keys them by the architecture off the r
   assert.match(text, /\{ model: 'the Harmony 600', unitLabel: 'h600', dumps: H600_DUMPS \}/);
   assert.match(text, /\{ model: 'the Harmony 700', unitLabel: 'h700', dumps: H700_DUMPS \}/);
   assert.match(text, /const H650_DUMPS = new Set<string>\(\[\s*'h650_region_030000',\s*\]\);/);
-  // No dumps yet for the two new units, so neither can be compared, and so neither written, until a
-  // region read of it is registered.
+  // No dump yet for the 600, so it cannot be compared, and so not written, until a region read of it
+  // is registered. The 700 has one, its configuration region as read on 2.8.
   assert.match(text, /const H600_DUMPS = new Set<string>\(\[\]\);/);
-  assert.match(text, /const H700_DUMPS = new Set<string>\(\[\]\);/);
+  assert.match(text, /const H700_DUMPS = new Set<string>\(\[\s*(\/\/[^\n]*\n\s*)*'h700_28_config_region',\s*\]\);/);
   // Keyed by what the device says, and within an architecture by the dump, which the identity check
   // then holds to: an argument alone would let an operator point one unit's allow list at another.
   assert.match(text, /const targets = TARGETS\[architecture\];/);

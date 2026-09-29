@@ -188,6 +188,9 @@ export const IMAGES: Readonly<Record<string, string>> = {
   h700_28_internal_fe: '20260929T1541Z-h700-28-internal-fe-region.bin',
   h700_28_internal_ff: '20260929T1541Z-h700-28-internal-ff-region.bin',
   h700_28_staging_region: '20260929T1541Z-h700-28-staging-region.bin',
+  // Its configuration region read on 2.8, from 0x030000: the compare base for the 700's first block
+  // written back unchanged, excluded from the corpus like the 650's regions.
+  h700_28_config_region: '20260929T1541Z-h700-28-config-region-region.bin',
   // The 650's internal page 0xFE, whose safe mode image carries the same install routine.
   h650_internal_fe: '20260927T0840Z-h650-internal-fe-region.bin',
   // Three snapshots of the 650's state variables across an activity and a bare restart, section 283.
@@ -539,6 +542,8 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
     'h650_glow10_region',
     // And after LG kijken got its own device list, section 294.
     'h650_devicelist_region',
+    // The Harmony 700's configuration region on 2.8, for the same reason.
+    'h700_28_config_region',
     // External flash of the bench Harmony 700 from 0x000000, kept for the staged application at its
     // start. The container at 0x020000 is byte for byte `h700_gspm`, the embedded config the 2.8
     // package carries as its region 3, so counting it would count that one twice. Section 295.
