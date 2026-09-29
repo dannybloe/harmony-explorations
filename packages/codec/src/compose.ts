@@ -95,7 +95,7 @@ import {
   powerOnDelays,
   QUEUE_INTER_DEVICE_DELAY,
 } from './inventory.ts';
-import { characterMap } from './text.ts';
+import { characterMap, decode, glyphsReferencedBy, screenStrings } from './text.ts';
 import { type FontSet, fontSets, glyphOf } from './font.ts';
 import {
   IR_CLASS_STREAM,
@@ -115,7 +115,7 @@ import {
   FOUR_SLOT_LEFT_X, FOUR_SLOT_RIGHT_END, FOUR_SLOT_ROWS, FOUR_SLOT_SCREEN_WIDTH, FOUR_SLOT_STORED_ORDER,
   TWO_ROW_LABEL_Y,
 } from './inventory.ts';
-import { relocate } from './relocate.ts';
+import { excise, relocate } from './relocate.ts';
 import { Writer } from './emit.ts';
 import {
   VALUE_MAP_COUNT_WIDTH, VALUE_MAP_KEY_WIDTH, VALUE_MAP_SECTION_COUNT_WIDTH, VALUE_MAP_SLOT,
@@ -1727,6 +1727,63 @@ function sameRectangle(a: TouchArea, b: TouchArea): boolean {
 }
 
 /**
+ * The hit page offering exactly `wanted`, area for area and code for code: an existing one where the
+ * configuration has it, and otherwise one composed after the last, and its index in the table, which
+ * is what a page record's lead byte states.
+ *
+ * **One step for every menu page builder**, since the device list's and the activity menu's each
+ * carried a copy of it until section 293 added a third caller. Composed the way both did it: the table
+ * gains a pointer first, at an existing page, so the census knows the slot before the areas exist;
+ * then the areas and the header go in after the last hit page, each area ending in its own address;
+ * then the pointer is swapped in place.
+ */
+function withHitPage(
+  start: Container, wanted: readonly (readonly [number, TouchArea])[],
+): { container: Container; lead: number } {
+  let current = start;
+  const hits = touchPages(current);
+  const any = hits?.records[0];
+  if (hits === undefined || any === undefined) throw new ComposeError('the hit map stopped reading');
+  const found = hits.records.findIndex((page) => page.areas.length === wanted.length
+    && wanted.every(([code, want], k) => page.areas[k]?.code === code
+      && sameRectangle(page.areas[k] as TouchArea, want)));
+  if (found >= 0) return { container: current, lead: found };
+  const lead = hits.records.length;
+  // Not `appendTableEntries`: that helper wants the slot's whole extent to be the table, and here the
+  // section's extent runs on past the pointers, so the table is grown off what `touchPages` read
+  // instead, a byte of count and three per page.
+  const tableAt = hits.start + hits.length;
+  const grownTable = relocate(current, tableAt, 3);
+  grownTable.bytes.set(new Writer(3).u24(any.address).bytes, tableAt);
+  grownTable.bytes[hits.start] = hits.records.length + 1;
+  current = parse(grownTable.bytes);
+  const before = touchPages(current);
+  if (before === undefined) throw new ComposeError('the hit map stopped reading');
+  const at = Math.max(...before.records.map((page) => page.start + page.length));
+  const base = current.flashBase + at;
+  const page = new Writer(wanted.length * TOUCH_AREA_LENGTH + 1 + 3 * wanted.length);
+  wanted.forEach(([code, want], k) => {
+    page.u16(want.x).u16(want.width).u16(want.y).u16(want.height).u8(code)
+      .u24(base + TOUCH_AREA_LENGTH * k);
+  });
+  page.u8(wanted.length);
+  wanted.forEach((_, k) => { page.u24(base + TOUCH_AREA_LENGTH * k); });
+  const hole = relocate(current, at, page.bytes.length);
+  hole.bytes.set(page.bytes, at);
+  const placed = parse(hole.bytes);
+  const table = touchPages(placed);
+  if (table === undefined) throw new ComposeError('the hit map stopped reading');
+  placed.blob.set(new Writer(3).u24(base + wanted.length * TOUCH_AREA_LENGTH).bytes,
+                  table.start + 1 + 3 * lead);
+  current = parse(placed.blob);
+  const grown = touchPages(current)?.records[lead];
+  if (grown === undefined || grown.areas.length !== wanted.length) {
+    throw new ComposeError('the composed hit page does not read back');
+  }
+  return { container: current, lead };
+}
+
+/**
  * Add a one row page to a device list menu whose last page is full, section 240, the way
  * Logitech's compiler lays a seventh device out: pages of three and the last page short.
  *
@@ -1777,46 +1834,9 @@ function composeMenuPage(
     [MENU_EDGE_SCANS[0], areaOf(MENU_EDGE_SCANS[0])],
     [MENU_EDGE_SCANS[1], areaOf(MENU_EDGE_SCANS[1])],
   ];
-  let lead = hits.records.findIndex((page) => page.areas.length === wanted.length
-    && wanted.every(([code, want], k) => page.areas[k]?.code === code
-      && sameRectangle(page.areas[k] as TouchArea, want)));
-  if (lead < 0) {
-    // None with this geometry, so one is composed: the table gains a pointer first, at an existing
-    // page, so the census knows the slot; then the areas and the header go in after the last hit
-    // page, each area ending in its own address; then the pointer is swapped in place.
-    lead = hits.records.length;
-    // Not `appendTableEntries`: that helper wants the slot's whole extent to be the table, and
-    // here the section's extent runs on past the pointers, so the table is grown off what
-    // `touchPages` read instead, a byte of count and three per page.
-    const tableAt = hits.start + hits.length;
-    const grownTable = relocate(current, tableAt, 3);
-    grownTable.bytes.set(new Writer(3).u24(full.address).bytes, tableAt);
-    grownTable.bytes[hits.start] = hits.records.length + 1;
-    current = parse(grownTable.bytes);
-    const before = touchPages(current);
-    if (before === undefined) throw new ComposeError('the hit map stopped reading');
-    const at = Math.max(...before.records.map((page) => page.start + page.length));
-    const base = current.flashBase + at;
-    const page = new Writer(wanted.length * TOUCH_AREA_LENGTH + 1 + 3 * wanted.length);
-    wanted.forEach(([code, want], k) => {
-      page.u16(want.x).u16(want.width).u16(want.y).u16(want.height).u8(code)
-        .u24(base + TOUCH_AREA_LENGTH * k);
-    });
-    page.u8(wanted.length);
-    wanted.forEach((_, k) => { page.u24(base + TOUCH_AREA_LENGTH * k); });
-    const hole = relocate(current, at, page.bytes.length);
-    hole.bytes.set(page.bytes, at);
-    const placed = parse(hole.bytes);
-    const table = touchPages(placed);
-    if (table === undefined) throw new ComposeError('the hit map stopped reading');
-    placed.blob.set(new Writer(3).u24(base + wanted.length * TOUCH_AREA_LENGTH).bytes,
-                    table.start + 1 + 3 * lead);
-    current = parse(placed.blob);
-    const grown = touchPages(current)?.records[lead];
-    if (grown === undefined || grown.areas.length !== wanted.length) {
-      throw new ComposeError('the composed hit page does not read back');
-    }
-  }
+  const hitPage = withHitPage(current, wanted);
+  current = hitPage.container;
+  const lead = hitPage.lead;
 
   // 2. What the page copies off the menu: the bottom key's binding, the chrome call, the row
   // background and icon, the fonts, and whatever the page draws after its rows, which is the
@@ -2042,7 +2062,344 @@ function composeMenuPage(
   const swapOff = swapRecord === undefined ? undefined : placed.blobOffsetOf(swapRecord.address);
   if (swapRecord === undefined || swapOff === undefined) throw new ComposeError('a menu entry moved out of reach');
   placed.blob.set(new Writer(3).u24(pageRecordAddress).bytes, swapOff + 6 + 3 * (swapRecord.pageCount - 1));
-  return parse(placed.blob);
+  // 6. The paging: the header's total restated, the new page's number where the one it was copied
+  // from had none, and the page turn keys brought back if the menu had one page. Until section 293
+  // this function stopped at step 5 and left "2 pages" on nine device lists of three on the spare.
+  return paginate(parse(placed.blob), menu);
+}
+
+/**
+ * Where a multi page screen's header draws its page total, and the word after it, `(x, y)` of the
+ * first glyph, on arch 12 (Harmony One). Every page of such a screen draws its own number on row 18
+ * ending where the `/` at `MENU_COUNTER_SLASH_X` begins, and the header it calls draws the total and
+ * "pages" after them, so the screen reads "2/3 pages". Section 293, over the six Harmony One
+ * containers: the header's total equals the page count on 58 of 58 multi page screens, and none of
+ * the 598 one page screens' headers draws a total.
+ */
+const MENU_TOTAL_XY: readonly [number, number] = [0x17, 0x12];
+const MENU_TOTAL_WORD_X = 0x23;
+/** The two page turn keys, the rectangles either side of the display, section 275. */
+const PAGE_TURN_SCANS: readonly number[] = MENU_EDGE_SCANS;
+
+/** The glyphs a text instruction draws, inline or by reference, or undefined for anything else. */
+function textGlyphs(c: Container, one: ScreenInstruction): Uint8Array | undefined {
+  if (one.opcode === OP_TEXT_INLINE) return one.glyphs;
+  if (one.opcode === OP_TEXT_AT) return glyphsReferencedBy(c, one);
+  return undefined;
+}
+
+/** The text instruction a program draws at `(x, y)`, its index and the font in effect there. */
+function textAt(
+  program: readonly ScreenInstruction[], x: number, y: number,
+): { index: number; font: number | undefined } | undefined {
+  let font: number | undefined;
+  for (let index = 0; index < program.length; index += 1) {
+    const one = program[index] as ScreenInstruction;
+    if (one.opcode === OP_FONT) font = one.operands[0];
+    if ((one.opcode === OP_TEXT_INLINE || one.opcode === OP_TEXT_AT)
+        && one.operands[0] === x && one.operands[1] === y) {
+      return { index, font };
+    }
+  }
+  return undefined;
+}
+
+/**
+ * A page's own number: the text drawn on the counter's row left of the slash. **It is not at a fixed
+ * place**, since the number is right aligned against the slash: it ends at x 18 on every page of every
+ * multi page Harmony One screen, a "4" starting at 12 because its glyph is a pixel wider and a "10" at
+ * 8. So it is found by its row and its side of the slash, and placed by its width. Section 293.
+ */
+function numberAt(
+  program: readonly ScreenInstruction[],
+): { index: number; font: number | undefined } | undefined {
+  let font: number | undefined;
+  for (let index = 0; index < program.length; index += 1) {
+    const one = program[index] as ScreenInstruction;
+    if (one.opcode === OP_FONT) font = one.operands[0];
+    if ((one.opcode === OP_TEXT_INLINE || one.opcode === OP_TEXT_AT)
+        && one.operands[1] === MENU_COUNTER_XY[1] && (one.operands[0] as number) < MENU_COUNTER_SLASH_X) {
+      return { index, font };
+    }
+  }
+  return undefined;
+}
+
+/** The screen program a page calls first, its header, as an address, or undefined without one. */
+function headerOf(c: Container, page: ModePage): number | undefined {
+  const first = screenProgram(c, page.program)?.[0];
+  return first?.opcode === OP_CALL ? u24(first.operands, 0) : undefined;
+}
+
+/**
+ * Where a page's counter is drawn: the page's own program, or, on a device list page that closes on
+ * a switch, the program its arms jump back to, which is the byte after the switch on 80 of 80 such
+ * pages, 73 of them on screens of several pages. **That is not always where the number is**: on 7 of the 73 what follows is a second switch, so
+ * the walk follows the arms until they rejoin at a program that ends plainly. Section 293.
+ */
+function counterProgram(c: Container, page: ModePage): number {
+  let at = page.program;
+  for (let hops = 0; hops < 8; hops += 1) {
+    const closing = (screenProgram(c, at) ?? []).at(-1);
+    if (closing?.opcode !== OP_SWITCH) return at;
+    const arm = closing.targets[0] === undefined ? undefined : screenProgram(c, closing.targets[0]);
+    const jump = arm?.at(-1);
+    if (jump?.opcode !== SCREEN_JUMP || jump.targets[0] === undefined) {
+      throw new ComposeError('a page\'s switch has an arm that does not jump back');
+    }
+    at = jump.targets[0];
+  }
+  throw new ComposeError('a page\'s switches do not rejoin');
+}
+
+/** What a configuration's own multi page screens draw their paging in, read rather than assumed. */
+interface PagingStyle {
+  /** The font a page's number and slash are drawn in. */
+  counterFont: number;
+  /** The font the header's total and word are drawn in. */
+  totalFont: number;
+  /** The word after the total, in this configuration's language. */
+  word: string;
+}
+
+/**
+ * The paging style of a configuration, off the first multi page screen that draws all of it.
+ *
+ * **A font holds only the glyphs its configuration draws**, section 275, so the digits, the slash and
+ * the word are spelled in the fonts a screen of this configuration already spells them in, and the
+ * word is read rather than written in English. A configuration with no multi page screen at all has
+ * nothing to copy, and paging is refused rather than drawn in a font that may not have the glyphs.
+ */
+function pagingStyle(c: Container): PagingStyle {
+  const map = characterMap(c);
+  if (map === undefined) throw new ComposeError('the config carries no character map');
+  for (const record of modeRecords(c) ?? []) {
+    const first = record.pages[0];
+    if (record.pages.length < 2 || first === undefined) continue;
+    const header = headerOf(c, first);
+    if (header === undefined) continue;
+    const headerProgram = screenProgram(c, header) ?? [];
+    const total = textAt(headerProgram, ...MENU_TOTAL_XY);
+    const word = textAt(headerProgram, MENU_TOTAL_WORD_X, MENU_TOTAL_XY[1]);
+    const counter = numberAt(screenProgram(c, counterProgram(c, first)) ?? []);
+    if (total?.font === undefined || word === undefined || counter?.font === undefined) continue;
+    const glyphs = textGlyphs(c, headerProgram[word.index] as ScreenInstruction);
+    if (glyphs === undefined) continue;
+    return { counterFont: counter.font, totalFont: total.font, word: decode(glyphs, map) };
+  }
+  throw new ComposeError('no screen in this config has more than one page, so there is no paging '
+    + 'to copy the fonts and the word from');
+}
+
+/**
+ * Make a screen's paging agree with its page count, after pages were added to it: every page draws
+ * its own number, the header draws the total, and a screen of more than one page no longer deadens
+ * the two page turn keys. **Arch 12 (Harmony One) only**, which is where all three were measured,
+ * section 293.
+ *
+ * **One step shared by both menus that grow pages**, the device list's `composeMenuPage` and the
+ * activity menu's `composeActivityMenuPage`, which is decision 17's rule: builders stay separate and
+ * what they share is a step. It exists because each of the three is a way to produce a screen the
+ * remote accepts and mishandles, and two of them happened:
+ *
+ * * **The page turn keys.** A one page screen binds both in its mode record's own list, 598 of 598 on
+ *   the six Harmony One containers, and a multi page one binds neither, 0 of 58. Grow a one page menu
+ *   to two and leave them, and the second page cannot be reached, with every count closing. Every one
+ *   page **list** menu binds them to the null instruction, but 67 other one page screens run a list
+ *   there, so a binding that does something is refused rather than cut.
+ * * **The total.** The header states it, so a page added without restating it leaves "2 pages" on a
+ *   screen of three. `composeMenuPage` did exactly that to nine device lists on the spare Harmony One,
+ *   which this step now restates.
+ * * **The numbers.** A one page screen draws no counter at all, so its first page gains one, and a
+ *   page composed from a one page screen's last page has none to copy.
+ *
+ * What is written is spelled in the fonts `pagingStyle` finds, inline, or in the nearest font of the
+ * same height where that one lacks a glyph. A number or total already there is kept when it reads
+ * right; otherwise an inline one is drawn again and one drawn by reference is pointed at a string that
+ * reads right. A page whose program does not end the way the corpus ends one is refused.
+ */
+export function paginate(start: Container, menu: number): Container {
+  if (start.architecture !== 12) throw new ComposeError('paging is composed for the Harmony One alone');
+  let current = start;
+  const recordOf = (): ModeRecord => {
+    const record = modeRecords(current)?.[menu];
+    if (record === undefined) throw new ComposeError(`menu ${menu} stopped reading`);
+    return record;
+  };
+  const count = recordOf().pages.length;
+  if (count < 2) throw new ComposeError(`menu ${menu} has one page, so there is nothing to page`);
+  const style = pagingStyle(current);
+  const map = characterMap(current);
+  if (map === undefined) throw new ComposeError('the config carries no character map');
+  // A text in `preferred` where that font has the glyphs, and otherwise in the font of nearest height
+  // that has them, `fontThatSpells`'s rule for a label: a configuration's font carries only the glyphs
+  // it draws, and the spare Harmony One's activity menu header draws its total in font 4, in which no
+  // text of that configuration contains a 4, while its one four page screen draws "4" in font 11. The font it lands in is returned, so the caller switches to it and back.
+  const spell = (preferred: number, text: string): { font: number; codes: number[] } => {
+    const font = fontThatSpells(current, map, text, preferred);
+    const set = (fontSets(current) ?? [])[font];
+    if (set === undefined) throw new ComposeError(`the config does not carry font ${font}`);
+    return { font, codes: codesFor(map, current, set, text, font) };
+  };
+  const inline = (x: number, y: number, codes: readonly number[]): number[] =>
+    [OP_TEXT_INLINE, x, y, ...codes, 0];
+  // How wide a text is in the font `spell` puts it in, which is where a right aligned number starts.
+  const width = (preferred: number, text: string): number => {
+    const { font, codes } = spell(preferred, text);
+    return textWidth(current, (fontSets(current) ?? [])[font] as FontSet, codes);
+  };
+  // A text drawn at `(x, y)` reading `text`, in the font in effect, `current`, and back to it after.
+  const drawn = (x: number, y: number, text: string, preferred: number, current_: number | undefined): number[] => {
+    const { font, codes } = spell(preferred, text);
+    const back = font !== current_ && current_ !== undefined ? [OP_FONT, current_] : [];
+    return [...(font === current_ ? [] : [OP_FONT, font]), ...inline(x, y, codes), ...back];
+  };
+  // Insert `bytes` at blob offset `at`, which must be an instruction boundary the caller chose.
+  const insert = (at: number, bytes: readonly number[]): void => {
+    const hole = relocate(current, at, bytes.length);
+    hole.bytes.set(bytes, at);
+    current = parse(restamped(hole.bytes));
+  };
+  // Keep a text that reads `want`. Otherwise an inline one is cut and drawn again, in a font that has
+  // the glyphs, and one drawn by reference is pointed at a string this configuration already draws
+  // reading `want`, since its bytes may be another draw's and a pointer field cannot be cut.
+  const restate = (
+    one: ScreenInstruction, font: number | undefined, want: string, what: string, endsAt?: number,
+  ): void => {
+    const glyphs = textGlyphs(current, one);
+    if (glyphs !== undefined && decode(glyphs, map) === want) {
+      // Right text, and a right aligned one also has to sit right: `composeMenuPage` draws a new
+      // page's number at x 13, which is right for 1 to 9 except a 4 and wrong for 10 and up. The x
+      // is the instruction's own operand, so moving it touches no borrower's glyphs.
+      if (endsAt === undefined || font === undefined) return;
+      const at = endsAt - width(font, want);
+      if (one.operands[0] === at) return;
+      const bytes = Uint8Array.from(current.blob);
+      bytes[one.start + 1] = at;
+      current = parse(restamped(bytes));
+      return;
+    }
+    if (font === undefined) throw new ComposeError(`menu ${menu}'s ${what} is drawn before any font is chosen`);
+    // A right aligned text moves when its width does, which a page number's does going from 9 to 10.
+    const x = endsAt === undefined ? one.operands[0] as number : endsAt - width(font, want);
+    const y = one.operands[1] as number;
+    if (one.opcode === OP_TEXT_INLINE) {
+      // Other draws may borrow these glyphs by reference, which the compiler does for any two equal
+      // strings: on the spare Harmony One the third page's own "3" is the header's. Each borrower is
+      // pointed at another string reading what it reads first, or the cut would take its text away.
+      const run = current.flashBase + one.start + 3;
+      const runEnd = current.flashBase + one.start + one.length;
+      for (const borrower of screenStrings(current, map)) {
+        if (borrower.referencedFrom === undefined || borrower.referencedFrom < run
+            || borrower.referencedFrom >= runEnd) continue;
+        const set = (fontSets(current) ?? [])[borrower.font];
+        const home = screenStrings(current, map).find((other) => other.text === borrower.text
+          && other.referencedFrom === undefined && other.at !== one.start && set !== undefined
+          && [...(textGlyphs(current, screenProgram(current, current.flashBase + other.at)?.[0] ?? one)
+            ?? [])].every((code) => glyphOf(current, set, code) !== undefined));
+        if (home === undefined) {
+          throw new ComposeError(`menu ${menu}'s ${what} is borrowed by a draw of ${borrower.text} that `
+            + 'no other string could take over');
+        }
+        const bytes = Uint8Array.from(current.blob);
+        bytes.set(new Writer(3).u24(current.flashBase + home.at + 3).bytes, borrower.at + 3);
+        current = parse(restamped(bytes));
+      }
+      const cut = excise(current, one.start, one.length);
+      current = parse(restamped(cut.bytes));
+      insert(one.start, drawn(x, y, want, font, font));
+      return;
+    }
+    if (one.opcode !== OP_TEXT_AT) throw new ComposeError(`menu ${menu}'s ${what} is not a text`);
+    const { font: into } = spell(font, want);
+    const set = (fontSets(current) ?? [])[into];
+    const target = screenStrings(current, map).find((other) => {
+      if (other.text !== want || set === undefined) return false;
+      const codes = textGlyphs(current, screenProgram(current, current.flashBase + other.at)?.[0] ?? one);
+      return codes !== undefined && [...codes].every((code) => glyphOf(current, set, code) !== undefined);
+    });
+    if (target === undefined) {
+      throw new ComposeError(`menu ${menu}'s ${what} is drawn by reference and no string reads ${want}`);
+    }
+    const bytes = Uint8Array.from(current.blob);
+    bytes.set(new Writer(3).u24(target.referencedFrom ?? current.flashBase + target.at + 3).bytes, one.start + 3);
+    bytes[one.start + 1] = x;
+    current = parse(restamped(bytes));
+    if (into !== font) {
+      // The font after the reference first, so the one before it does not move it.
+      insert(one.start + one.length, [OP_FONT, font]);
+      insert(one.start, [OP_FONT, into]);
+    }
+  };
+
+  // 1. The page turn keys, cut out of the mode record's own list one entry at a time. The count byte
+  // is restated after each cut, since the census has to read the list as it was to move the rest.
+  for (;;) {
+    const record = recordOf();
+    const list = taggedList(current, record.start);
+    if (list === undefined) throw new ComposeError(`menu ${menu}'s record list does not read`);
+    const at = list.entries.findIndex((entry) => PAGE_TURN_SCANS.includes(entry.tag & SCAN_MASK));
+    if (at < 0) break;
+    if (list.wide) throw new ComposeError(`menu ${menu}'s record list is the wide form, which is not cut`);
+    const entry = list.entries[at] as { opcode: number; operand: number };
+    if (entry.opcode !== 0 || entry.operand !== 0) {
+      throw new ComposeError(`menu ${menu} runs something on a page turn key, which paging would drop`);
+    }
+    const off = current.blobOffsetOf(record.start);
+    if (off === undefined) throw new ComposeError(`menu ${menu}'s record moved out of reach`);
+    const cut = excise(current, off + 1 + 4 * at, 4);
+    cut.bytes[off] = list.entries.length - 1;
+    current = parse(restamped(cut.bytes));
+  }
+
+  // 2. The header's total. Every page calls one header and no two screens share one, 656 screens and
+  // 656 headers on the six Harmony One containers, so restating it changes this screen and no other.
+  const headers = new Set(recordOf().pages.map((page) => headerOf(current, page)));
+  const header = [...headers][0];
+  if (headers.size !== 1 || header === undefined) {
+    throw new ComposeError(`menu ${menu}'s pages do not all call one header`);
+  }
+  const headerProgram = screenProgram(current, header) ?? [];
+  const total = textAt(headerProgram, ...MENU_TOTAL_XY);
+  if (total !== undefined) {
+    restate(headerProgram[total.index] as ScreenInstruction, total.font, String(count), 'page total');
+  } else {
+    // A one page screen's header, which ends in a return and the end marker: the total and the word
+    // go in before the return, and the font it had is put back after them.
+    const back = headerProgram.at(-2);
+    if (back?.opcode !== OP_RETURN || headerProgram.at(-1)?.opcode !== OP_END) {
+      throw new ComposeError(`menu ${menu}'s header does not end the way the corpus ends one`);
+    }
+    const before = headerProgram.slice(0, -2).findLast((one) => one.opcode === OP_FONT)?.operands[0];
+    insert(back.start, [
+      ...drawn(...MENU_TOTAL_XY, String(count), style.totalFont, undefined),
+      ...drawn(MENU_TOTAL_WORD_X, MENU_TOTAL_XY[1], style.word, style.totalFont, undefined),
+      ...(before === undefined ? [] : [OP_FONT, before]),
+    ]);
+  }
+
+  // 3. Every page's own number and slash, in page order, re-reading the record after each insertion.
+  for (let k = 0; k < count; k += 1) {
+    const page = recordOf().pages[k] as ModePage;
+    const where = counterProgram(current, page);
+    const program = screenProgram(current, where) ?? [];
+    const number = numberAt(program);
+    if (number !== undefined) {
+      restate(program[number.index] as ScreenInstruction, number.font, String(k + 1), `page ${k + 1}'s number`,
+              MENU_COUNTER_SLASH_X);
+      continue;
+    }
+    const closing = program.at(-1);
+    if (closing?.opcode !== OP_END) {
+      throw new ComposeError(`menu ${menu}'s page ${k + 1} draws no number and does not end plainly`);
+    }
+    insert(closing.start, [
+      ...drawn(MENU_COUNTER_SLASH_X - width(style.counterFont, String(k + 1)), MENU_COUNTER_XY[1],
+               String(k + 1), style.counterFont, undefined),
+      ...drawn(MENU_COUNTER_SLASH_X, MENU_COUNTER_XY[1], '/', style.counterFont, undefined),
+    ]);
+  }
+  return current;
 }
 
 /**
@@ -3257,11 +3614,10 @@ export interface ComposeActivityRowOptions {
  * function's refusals. Arch 8 (Harmony 880 and 885) and arch 9 (Harmony 525) are refused, the 525
  * binding its activities to keys rather than to a list.
  *
- * **It fills a page rather than adding one.** A menu's last page is grown to the next row slot, and
- * a menu whose last page already holds three is refused rather than given a fourth page, because a
- * new page needs a page counter, a second pool copy and a mode page count, none of which has been
- * measured on an activity menu. That refusal is the honest boundary of what is built, and it does
- * not bite on the two configurations chapter 1 targets, whose activity menu holds one row of three.
+ * **It fills the last page, and adds one when that page is full**, `composeActivityMenuPage`, since
+ * section 293. Until then a full last page was refused, because a new page needs a page counter, a
+ * pool copy, a page count and, on a menu of one page, the page turn keys brought back, none of which
+ * had been measured on an activity menu; that is `todo.md` 1.2.2.
  */
 export function composeActivityMenuRow(
   c: Container, label: string, set: number, options: ComposeActivityRowOptions = {},
@@ -3305,11 +3661,10 @@ export function composeActivityMenuRow(
   if (startLayout === undefined) {
     throw new ComposeError("the activity menu's last page is not a row layout this knows");
   }
-  if (startLayout.rows.length >= ACTIVITY_ROWS) {
-    throw new ComposeError(
-      `the activity menu's last page already draws ${ACTIVITY_ROWS} rows, and adding a page is not built`);
-  }
-  const rank = startLayout.rows.length;
+  // A full last page gets a new page after it, `composeActivityMenuPage`, and the label's font is then
+  // read off the last row of the full page, which is what `rank` names below.
+  const full = startLayout.rows.length >= ACTIVITY_ROWS;
+  const rank = full ? ACTIVITY_ROWS : startLayout.rows.length;
   const scan = MENU_FIRST_SCAN + startLayout.content.length;
 
   // The label is spelled before anything moves, so an unspellable name refuses with the container
@@ -3355,6 +3710,15 @@ export function composeActivityMenuRow(
   rowHole.bytes.set(rowBytes.bytes, rowAt);
   current = parse(appendTableEntries(
     parse(rowHole.bytes), actionSlot, [current.flashBase + rowAt]));
+
+  if (full) {
+    const paged = composeActivityMenuPage(current, menu, rowList, rowFont, labelCodes, options.iconLike);
+    current = paged.container;
+    return {
+      bytes: restamped(current.blob), menu, page: pageIndexOf(), rowList, scan: paged.scan,
+      scans: [paged.scan], rowLists: 1,
+    };
+  }
 
   // 2. The hit page, one rectangle wider. An existing page with exactly this geometry is reused
   // where the config has one, which is what the corpus's own three row pages are; otherwise one is
@@ -3519,6 +3883,161 @@ function composeFourSlotActivityRow(
 }
 
 /**
+ * Add a one row page to the activity menu, whose last page is full, and put the row on it: the
+ * Harmony One's (arch 12) counterpart of `composeMenuPage`, and `todo.md` 1.2.2, section 293.
+ *
+ * **A separate builder from the device list's**, decision 17, because the page is not the same page:
+ * an activity menu page offers two bottom keys where a device list page offers one, and draws their
+ * labels itself. What the two share are steps: `withHitPage` for the rectangles and `paginate` for
+ * the counter, the header's total and the page turn keys. Four insertions, each leaving the container
+ * parseable, in the order `composeMenuPage` uses and for its reasons:
+ *
+ * 1. a hit page offering the full page's two bottom keys and its top row, in their stored order, so
+ *    the keys keep their scans and the row takes the next one, which is Logitech's own one row page;
+ * 2. the page list, row first and then the keys bound as the last page binds them, and its pool copy
+ *    right after the last page's, since the copies pair with the pages positionally, section 69;
+ * 3. three bytes in the mode entry for the page's pointer, a placeholder until the record exists;
+ * 4. the block after the last page record: the program, which calls the menu's header, draws the two
+ *    key labels the first page draws and then the row, and the page record.
+ */
+function composeActivityMenuPage(
+  start: Container, menu: number, rowList: number, rowFont: number, labelCodes: readonly number[],
+  iconLike: string | undefined,
+): { container: Container; scan: number } {
+  let current = start;
+  const recordOf = (): ModeRecord => {
+    const record = modeRecords(current)?.[menu];
+    if (record === undefined) throw new ComposeError('the activity menu stopped reading');
+    return record;
+  };
+  const last = recordOf().pages.at(-1);
+  const lastTouch = last === undefined ? undefined : touchPageOf(current, last);
+  const layout = lastTouch === undefined ? undefined : activityPageLayout(lastTouch);
+  if (last === undefined || layout === undefined) {
+    throw new ComposeError("the activity menu's last page is not a row layout this knows");
+  }
+
+  // 1. The rectangles: the last page's content in stored order with every row but the top one left
+  // out, then the two edges. The codes are positional, so the keys keep theirs where they come first.
+  const top = layout.rows[0] as TouchArea;
+  const kept = layout.content.filter((area) => !layout.rows.includes(area) || area === top);
+  const wanted = [...kept, ...layout.edges].map((area, k) =>
+    [k < kept.length ? MENU_FIRST_SCAN + k : MENU_EDGE_SCANS[k - kept.length] as number, area] as const);
+  const scan = MENU_FIRST_SCAN + kept.indexOf(top);
+  const hitPage = withHitPage(current, wanted);
+  current = hitPage.container;
+
+  // 2. The list: the row, then each key bound to what the last page binds it to, under its new scan.
+  // The page is read again, since step 1 may have moved every list above the hit map.
+  const lastMoved = recordOf().pages.at(-1);
+  const lastList = lastMoved === undefined ? undefined : taggedList(current, lastMoved.list);
+  if (lastList === undefined || lastList.wide) {
+    throw new ComposeError("the activity menu's page list is not the narrow form the corpus uses");
+  }
+  const keyEntries = layout.keys.map((key) => {
+    const bound = lastList.entries.filter((entry) => (entry.tag & SCAN_MASK) === key.code);
+    if (bound.length !== 1) {
+      throw new ComposeError(`the activity menu's last page binds its key ${key.code} ${bound.length} times`);
+    }
+    return { scan: MENU_FIRST_SCAN + kept.indexOf(key), entry: bound[0] as TaggedEntry };
+  });
+  const listBytes = new Writer(1 + 4 * (1 + keyEntries.length)).u8(1 + keyEntries.length)
+    .u8(0x80 | scan).u16(rowList).u8(ACTION_LIST_INDEX_OPCODE);
+  for (const one of keyEntries) listBytes.u8(0x80 | one.scan).u16(one.entry.operand).u8(one.entry.opcode);
+  const lastIndex = modePages(current).findIndex((one) => one.address === recordOf().pages.at(-1)?.address);
+  const copyOff = pageListCopies(current)[lastIndex];
+  const copyLength = copyOff === undefined ? undefined : taggedList(current, copyOff + current.flashBase)?.length;
+  if (copyOff === undefined || copyLength === undefined) {
+    throw new ComposeError("the activity menu's last page has no pool copy");
+  }
+  const copyHole = relocate(current, copyOff + copyLength, listBytes.bytes.length);
+  copyHole.bytes.set(listBytes.bytes, copyOff + copyLength);
+  current = parse(copyHole.bytes);
+  const listAt = Math.max(...modePages(current).map((page) => {
+    const off = current.blobOffsetOf(page.list);
+    const list = taggedList(current, page.list);
+    return off === undefined || list === undefined ? 0 : off + list.length;
+  }));
+  const listHole = relocate(current, listAt, listBytes.bytes.length);
+  listHole.bytes.set(listBytes.bytes, listAt);
+  current = parse(listHole.bytes);
+
+  // 3. The entry's new pointer, at the last page until the record exists, and the count with it.
+  const entry = recordOf();
+  const entryOff = current.blobOffsetOf(entry.address);
+  const lastNow = entry.pages.at(-1);
+  if (entryOff === undefined || lastNow === undefined) throw new ComposeError('the activity menu moved out of reach');
+  const slotAt = entryOff + 6 + 3 * entry.pageCount;
+  const pageListAddress = current.flashBase + listAt + (listAt >= slotAt ? 3 : 0);
+  const entryHole = relocate(current, slotAt, 3);
+  entryHole.bytes.set(new Writer(3).u24(lastNow.address).bytes, slotAt);
+  entryHole.bytes.set(new Writer(2).u16(entry.pageCount + 1).bytes, entryOff + 4);
+  current = parse(entryHole.bytes);
+
+  // 4. The block, everything it embeds read here, after the relocations above.
+  const pages = recordOf().pages;
+  const realLast = pages[entry.pageCount - 1];
+  const first = pages[0];
+  const realLastOff = realLast === undefined ? undefined : current.blobOffsetOf(realLast.address);
+  if (realLast === undefined || first === undefined || realLastOff === undefined) {
+    throw new ComposeError('an activity menu page moved out of reach');
+  }
+  const firstProgram = screenProgram(current, first.program) ?? [];
+  const header = headerOf(current, first);
+  if (header === undefined) throw new ComposeError("the activity menu's first page calls no header");
+  // The key labels: what the first page draws between its header call and its first row, which is
+  // fonts and the two labels on the activity menu of every Harmony One configuration in the lab that
+  // has one, section 293.
+  const firstRow = firstProgram.findIndex((one) => one.opcode === OP_IMAGE);
+  const keyLabels = firstProgram.slice(1, firstRow);
+  if (firstRow < 0 || keyLabels.some((one) => one.opcode !== OP_FONT
+      && one.opcode !== OP_TEXT_INLINE && one.opcode !== OP_TEXT_AT)) {
+    throw new ComposeError("the activity menu's first page does not draw its keys before its rows");
+  }
+  const bg = pictureDrawnAt(current, first.program, ...MENU_ROW1_BG);
+  const icon = iconLike === undefined
+    ? pictureDrawnAt(current, first.program,
+      MENU_ROW1_BG[0] + MENU_ICON_OFFSET[0], MENU_ROW1_BG[1] + MENU_ICON_OFFSET[1])
+    : activityRowIcon(current, iconLike);
+  if (bg === undefined || icon === undefined) {
+    throw new ComposeError("the activity menu's first page draws no row this can copy");
+  }
+  const blockAt = realLastOff + 7;
+  const base = current.flashBase + blockAt;
+  const labelsLength = keyLabels.reduce((sum, one) => sum + one.length, 0);
+  const programLength = 4 + labelsLength + 6 + 6 + 2 + 3 + labelCodes.length + 1 + 1;
+  const blockLength = programLength + 7;
+  const shifted = (address: number): number => (address >= base ? address + blockLength : address);
+  const block = new Writer(blockLength);
+  block.u8(OP_CALL).u24(shifted(header));
+  for (const one of keyLabels) {
+    const bytes = Uint8Array.from(current.blob.slice(one.start, one.start + one.length));
+    if (one.opcode === OP_TEXT_AT) bytes.set(new Writer(3).u24(shifted(u24(bytes, 3))).bytes, 3);
+    bytes.forEach((byte) => block.u8(byte));
+  }
+  block.u8(OP_IMAGE).u8(MENU_ROW1_BG[0]).u8(MENU_ROW1_BG[1]).u24(shifted(bg));
+  block.u8(OP_IMAGE).u8(MENU_ROW1_BG[0] + MENU_ICON_OFFSET[0]).u8(MENU_ROW1_BG[1] + MENU_ICON_OFFSET[1])
+    .u24(shifted(icon));
+  block.u8(OP_FONT).u8(rowFont);
+  block.u8(OP_TEXT_INLINE).u8(MENU_LABEL_X).u8(MENU_ROW1_LABEL_Y);
+  labelCodes.forEach((code) => block.u8(code));
+  block.u8(0);
+  block.u8(OP_END);
+  block.u8(hitPage.lead).u24(shifted(pageListAddress)).u24(base);
+  if (block.bytes.length !== blockLength) {
+    throw new ComposeError(`the activity page block is ${block.bytes.length} bytes, not the ${blockLength} counted`);
+  }
+  const blockHole = relocate(current, blockAt, blockLength);
+  blockHole.bytes.set(block.bytes, blockAt);
+  const placed = parse(blockHole.bytes);
+  const swap = modeRecords(placed)?.[menu];
+  const swapOff = swap === undefined ? undefined : placed.blobOffsetOf(swap.address);
+  if (swap === undefined || swapOff === undefined) throw new ComposeError('the activity menu moved out of reach');
+  placed.blob.set(new Writer(3).u24(base + programLength).bytes, swapOff + 6 + 3 * (swap.pageCount - 1));
+  return { container: paginate(parse(restamped(placed.blob)), menu), scan };
+}
+
+/**
  * Point the activity menu's last page at a hit page carrying one more row, composing one if the
  * configuration has none.
  *
@@ -3547,42 +4066,9 @@ function withActivityHitPage(start: Container, menu: number, rank: number): Cont
   const wanted: readonly TouchArea[] = [...layout.content, added, ...layout.edges];
   const codes = wanted.map((_, k) =>
     (k < wanted.length - 2 ? MENU_FIRST_SCAN + k : MENU_EDGE_SCANS[k - (wanted.length - 2)] as number));
-  let lead = hits.records.findIndex((page) => page.areas.length === wanted.length
-    && wanted.every((want, k) => page.areas[k]?.code === codes[k]
-      && sameRectangle(page.areas[k] as TouchArea, want)));
-  if (lead < 0) {
-    lead = hits.records.length;
-    // The table gains its pointer first, at an existing page, so the census knows the slot before
-    // the areas exist; then the page is written after the last one; then the pointer is swapped.
-    const tableAt = hits.start + hits.length;
-    const grownTable = relocate(current, tableAt, 3);
-    grownTable.bytes.set(new Writer(3).u24(old.address).bytes, tableAt);
-    grownTable.bytes[hits.start] = hits.records.length + 1;
-    current = parse(grownTable.bytes);
-    const before = touchPages(current);
-    if (before === undefined) throw new ComposeError('the hit map stopped reading');
-    const at = Math.max(...before.records.map((page) => page.start + page.length));
-    const base = current.flashBase + at;
-    const written = new Writer(wanted.length * TOUCH_AREA_LENGTH + 1 + 3 * wanted.length);
-    wanted.forEach((want, k) => {
-      written.u16(want.x).u16(want.width).u16(want.y).u16(want.height).u8(codes[k] as number)
-        .u24(base + TOUCH_AREA_LENGTH * k);
-    });
-    written.u8(wanted.length);
-    wanted.forEach((_, k) => { written.u24(base + TOUCH_AREA_LENGTH * k); });
-    const hole = relocate(current, at, written.bytes.length);
-    hole.bytes.set(written.bytes, at);
-    const placed = parse(hole.bytes);
-    const table = touchPages(placed);
-    if (table === undefined) throw new ComposeError('the hit map stopped reading');
-    placed.blob.set(new Writer(3).u24(base + wanted.length * TOUCH_AREA_LENGTH).bytes,
-                    table.start + 1 + 3 * lead);
-    current = parse(placed.blob);
-    const grown = touchPages(current)?.records[lead];
-    if (grown === undefined || grown.areas.length !== wanted.length) {
-      throw new ComposeError('the composed activity hit page does not read back');
-    }
-  }
+  const hitPage = withHitPage(current, wanted.map((want, k) => [codes[k] as number, want] as const));
+  current = hitPage.container;
+  const lead = hitPage.lead;
   // The lead byte, in place and last, so nothing above moves it again.
   const at = current.blobOffsetOf(pageOf().address);
   if (at === undefined) throw new ComposeError('the activity menu page moved out of reach');

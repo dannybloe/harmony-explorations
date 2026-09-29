@@ -35228,8 +35228,11 @@ The rule inverted what a guess would have said, and it is exact on all four cont
 | more than one page | **neither, on 0 of 58** |
 
 596 modes, 1076 bindings, every one of them a press. And what the great majority bind is the **null
-instruction**, opcode 0 with operand 0: 962 of the 1076, with 64 running a beep and an enter and the
-rest a handful of other shapes.
+instruction**, opcode 0 with operand 0: 966 of the 1076, with 64 running a beep and an enter and the
+other 46 three shapes of list: 30 of three null instructions, and 8 each of two shapes opening with
+`0x7f`, which run a further list. **This said 962 until section 293**, which recounted it while testing the
+same rule over the safe mode images too; nothing had asserted the figure, and the rule it supports is
+unaffected.
 
 So the paging is a **default** the firmware provides, and a screen with nowhere to page **switches it
 off** by binding the keys to nothing. A screen with several pages says nothing and gets the default.
@@ -38304,3 +38307,156 @@ and two test titles and an off arch 14 assertion that could not fail. Each is co
   lists: `h650_glow20_region` and `h650_glow10_region`, the second the two bytes again and what the
   650 holds at the end of this section.
 * `docs/config-format.md`, section 43's open question, `todo.md` and `docs/status.md`.
+
+## 293. A Harmony One screen states its paging in three places, and a composed activity past a full menu now opens a page
+
+**Asked for by `todo.md` 1.2.2**: a fourth activity on a Harmony One whose activity menu page already
+holds three was refused, on the ground that a new page needs a counter, a pool copy, a page count and,
+since section 275, the two page turn keys undeadened. This section measures what a page count consists
+of, composes it, and finds that the same step had been missing from the device list composer since
+section 241.
+
+**Sources.** The six Harmony One containers of the corpus, both safe mode images included, and two
+lab configurations outside it, `one_spare_poweroff_base` and `calibration_one`, read for the font and
+borrowing cases and not counted below. **Neither the classic client nor MyHarmony's source was
+opened**, which is a reasoned exemption from decision 2 rather than a check: the layout is what
+Logitech's compiler wrote and the compiler ran on their server, so neither client should hold it. The firmware was not read for this: it draws what a screen program states, which is all these
+rules need, and whether it also reads the page count anywhere else is unread.
+
+**Scope.** Arch 12 (Harmony One) only. Arch 14 (Harmony 600, 650 and 700) draws its counter as three
+texts at y 2 of the page itself, `docs/config-format.md`, and nothing here composes a page on it, which
+is why the calibration Harmony 600's full menu is still refused. Arch 8, 9 and 10 are unchecked.
+
+### The three places
+
+A mode of several pages states its page count three times, and nothing ties them together, since each
+is a text a screen program draws:
+
+1. **The header states the total.** Every page of a mode opens by calling one program, its header, and
+   on a mode of several pages that header draws the total at `(0x17, 0x12)` and the word `pages` at x
+   `0x23` on the same row. **58 of 58** modes of several pages, every total equal to the page count.
+   The position does not move for a total of 10 or 14.
+2. **Each page states its own number, right aligned against a slash.** The slash is at x 18 on row 18,
+   and the number ends exactly where the slash begins: a `1` to `9` of width 5 starts at 13, a `4`,
+   whose glyph is a pixel wider, at 12, a `10` at 8 and a `14` at 7. Every page of all 58 modes, in
+   every font the six containers use for it. A fixed x of 13, which is what `composeMenuPage` writes
+   and what the first version of this step looked for, is wrong on each `4` and on every number from
+   10 up, 38 of the 240 pages; `paginate` moves a number that reads right but sits wrong.
+3. **A mode of one page binds both page turn keys in its record's own list**, section 275: **598 of
+   598** one page modes and **0 of 58** multi page ones. **531** of the modes bind both to the null
+   instruction, including all 12 one page list menus, 1086 of the 1196 bindings; the other 67 name a
+   list on one key or both, 15 of them only lists of three null instructions. `paginate` refuses to
+   cut anything but the null instruction, which is conservative on those 15.
+
+A mode of one page draws neither a total nor a number, 598 of 598, and its header ends in a return and
+the end marker, 598 of 598, so the total and the word go in before the return.
+
+**No two modes share a header**, 656 modes and 656 distinct headers across the six containers, which is
+what makes restating a total in place a change to one screen.
+
+**Where a page draws its number is not always its own program.** A device list page closes on a switch
+on the bottom key's state, and the arms jump back to the byte after the switch, 73 of 73 such pages of
+multi page modes in the four user configurations, and 80 of 80 counting one page modes. The number is drawn there on 66 of them. **On the other 7 a second switch
+follows**, straight away on a page of the everyday Harmony One's mode 176 and after a picture and a
+label on both pages of one two page mode in each of the other three configurations, and the number is
+drawn where the second one's arms rejoin. So the reader follows the arms until they rejoin at a program
+that ends plainly. The first version of the corpus test took the program after the first switch, and
+stopped at the first of the seven, which is why this said one page until the blind reviewer counted
+seven.
+
+### Two things a writer meets that the rules do not say
+
+**A font carries only the glyphs its configuration draws**, section 275's rule for labels, and it
+applies to digits: the spare Harmony One's activity menu header draws its total in font 4, and no text
+of that configuration in font 4 contains a `4`, while its one four page screen draws its total in font
+11. `paginate` uses `fontThatSpells`, the font of nearest height that has the glyphs, and switches back
+afterwards.
+
+**The compiler shares equal strings by reference**, section 121, and a total is a short string: on the
+spare Harmony One the activity menu header's inline `3` is what 14 other draws point at: eleven page
+numbers on other screens, another screen's header total, and three texts elsewhere. So restating the
+header's total by cutting it out would take the `3` off all fourteen. `excise`, added to
+`relocate.ts` as its mirror, refuses a cut that a pointer lands in, which is how this surfaced; the
+step now points every borrower at another inline string reading the same text in a font that has its
+glyphs before it cuts, and refuses when none exists.
+
+### What was wrong on the spare Harmony One
+
+`composeMenuPage`, which gave every device list a third page when the spare's seventh device was
+composed in section 241, drew no total. The nine device list headers of that configuration still state
+`2` over three pages. It is the configuration built for that write, laid over the region read before it,
+and not a read back, so what the spare holds rests on the write record, which verified it byte for byte. Nothing else about those pages was wrong: their numbers and slashes were drawn.
+`composeMenuPage` now ends in the same step as the activity menu, and the section 241 test asserts all
+nine read `3` with numbers `1` to `3`.
+
+### What is composed
+
+`paginate(container, menu)`, one step shared by both composers that grow pages, decision 17's rule:
+cut the page turn bindings out of the record's list, restate or insert the header's total and word,
+and restate or insert each page's number and slash. An inline text that reads wrong is cut and drawn
+again, and one drawn by reference is pointed at a string that reads right, since a pointer field
+belongs to its instruction and cannot be cut.
+
+`composeActivityMenuPage` is the activity menu's new page: one row, the page's two bottom keys bound
+the way the last page binds them, a pool copy after the last page's copy, a hit page offering the
+last page's two keys and its top row in the order the last page stores them, reused where the
+configuration already has one exactly like it and composed otherwise, and a program that calls the menu's header,
+draws the key labels and then the row. `composeActivityMenuRow` calls it when the last page holds
+three rows instead of refusing.
+
+**Which scan the new row answers to differs per configuration and that is correct**: a fresh Harmony
+One's activity menu page stores its two bottom keys before its rows, so the new page's row is scan 50,
+and the spare's last page stores its top row first, so it is 48. Both found an existing hit page of
+that shape. Section 275 said a row is recognised by geometry and never by
+its code, and the test asserts the top row's rectangle rather than a number.
+
+Two growths, both read back through the corpus readers:
+
+| | before | composed | after |
+|---|---|---|---|
+| `one_config_unprogrammed` | one activity, one page | three | two pages, header `2 pages`, `1/` and `2/` |
+| `one_spare_poweroff_base` | eight activities, three pages | two | four pages, header `4 pages`, `4` at x 12 |
+
+Both account for every byte, overlap nowhere, pass the trailer check and round trip through the
+emitter, and `activityNames` finds every activity, old and new. Neither has been written to a remote.
+
+### Section 275 recounted
+
+Section 275 gave the null bindings as 962 of 1076. They are **966**: 64 run a beep and an enter and the
+other 46 are three shapes of list. Nothing had asserted either number; both are now asserted in the
+test of that section's rule, and the rule is unaffected.
+
+### Open
+
+* **A composed device's own mode is a one page screen without the page turn bindings**, 1 of the 263
+  one page modes of `one_spare_poweroff_base`. What the firmware's default paging does on a screen
+  with one page is unread.
+* Pages on arch 14, and the calibration Harmony 600's full menu.
+
+### Falsification
+
+A multi page Harmony One screen whose header total differs from its page count, or whose number does
+not end at x 18; a one page one that draws either; two modes calling one header; or the spare Harmony
+One's activity menu, written with a fourth page, not paging to it.
+
+### The reviewers
+
+The blind re-measure reproduced every count above over the six containers and the nine stale totals on
+the spare's configuration, and found that **seven** pages chain two switches where this said one, the
+first corpus test having stopped at the first of them. The prose audit found the spare's missing `4`
+explained by a screen count its own four page screen refutes, the borrowers of the header's `3`
+understated as one where they are fourteen, section 275's correction calling lists "nothing visible"
+that run further lists, modes and bindings mixed in one figure, two docstrings carrying counts no
+population gives, a statement that the spare holds a file that is a built file, and a defect: a number
+that read right was kept wherever it sat, so a composed `4` or `10` at x 13 would have stayed there.
+`paginate` now moves it. Each is corrected, the new figures are asserted, and the growth tests now
+check that no text any screen drew is lost but the menu's own old total.
+
+### Where it lands
+
+* `packages/codec/src/relocate.ts`: `excise`, with a round trip against `relocate` over the samples.
+* `packages/codec/src/compose.ts`: `paginate`, `composeActivityMenuPage`, and the device list composer
+  ending in `paginate`.
+* `packages/codec/test/compose.test.ts`: the three places over the six Harmony One containers, both
+  growths, the nine device list totals, and section 275's two totals.
+* `docs/config-format.md`, `todo.md` and `docs/status.md`.

@@ -563,7 +563,7 @@ finding.
 
 `todo.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 292<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 293<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and one write has been performed**, section 222: one 64 KiB block of the
@@ -827,6 +827,16 @@ figures common to both carry `fact:` markers, so `make facts` moves every copy t
 cannot drift apart; what a reader should not expect is two independent statements of one measurement.
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
+
+**A Harmony One's activity menu can now grow a page, section 293.** Its menu shows three activities to
+a page, and a fourth used to be refused. Now it opens a new page, and the menu says so in the three
+places a Harmony One configuration does: "2 pages" at the top, "1/", "2/" on each page, and the two
+touch keys beside the display no longer switched off, which is what every Harmony One screen of several
+pages in the corpus does. Composed on a fresh Harmony One's
+configuration and on the spare's, which went from three pages to four, with everything reading back;
+not written to a remote yet. The same work found that the device lists given a third page earlier
+state "2 pages" at the top in the configuration written to the spare, and that is fixed for the next
+write.
 
 **How long a Harmony 650's screen stays lit is a timer in its configuration, section 292.** Logitech's
 software called the setting GlowTime and offered it for the Harmony 600 and 700; on the 650 it was 8 seconds, and

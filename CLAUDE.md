@@ -2136,7 +2136,7 @@ file.
 | a record's carrier period is truncated, not rounded | `floor(1e9 / f)` nanoseconds, per record rather than per device |
 | a picture's position is implied by everything before it | inserting or resizing one moves every later address |
 | every mode page's tagged list has a second copy | nothing reads it and an editor must still change both. Its position is implied, not stated |
-| a one page screen deadens the two page turn keys | so growing a menu from one page to two must **undo** that, or the second page is unreachable while every count closes and both checksums pass. Both keys on 538 of 538 single page modes, neither on 0 of 58 multi page ones, arch 12 (Harmony One) |
+| a one page screen deadens the two page turn keys | so growing a menu from one page to two must **undo** that, or the second page is unreachable while every count closes and both checksums pass. Both keys on 538 of 538 single page modes, neither on 0 of 58 multi page ones, arch 12 (Harmony One). The header's total and each page's number have to be restated too, section 293. `paginate` |
 | a section's size is not the gap to the next pointer | base slot 5's group arrays sit inside base slot 4's gap |
 | the log area's writer refuses out of range rather than erroring | and on arch 12 (Harmony One) a good config is what disarms it |
 | a glyph and an encoded picture cannot be re-encoded | several control streams draw the same image, so carry anything unchanged through byte for byte |

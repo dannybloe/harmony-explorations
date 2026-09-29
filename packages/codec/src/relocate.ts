@@ -146,3 +146,68 @@ export function relocate(
 
   return { bytes, rewritten };
 }
+
+/**
+ * Remove `count` bytes at blob offset `at` and return a container that means the same, less them.
+ *
+ * **`relocate`'s mirror, and it exists for one structure first**: a one page screen deadens the two
+ * page turn keys with entries in its mode record's own tagged list, 598 of 598 one page modes of the
+ * six Harmony One containers, 531 of them both null, and a menu that grows to a second page has to lose
+ * them or its second page cannot be reached. Rebinding them to something else instead would be a
+ * list no compiled configuration carries, so the entries are cut, which is a length change that
+ * shrinks.
+ *
+ * The same census does the work, in the other direction: everything above the cut moves down by
+ * `count`, every pointer landing above it is rewritten, `end_addr` shrinks and the checksum is
+ * recomputed last. **What it refuses is what makes a cut unsafe and an insertion never is**: a
+ * pointer field inside the removed bytes, since the field itself would vanish, and a pointer landing
+ * inside them, since the thing it names would. A pointer landing exactly on `at + count` is fine and
+ * moves to `at`. Like `relocate`, the choice of `at` is the caller's: cutting through an implied
+ * chain produces a file that parses and means something else, so a caller cuts whole entries at a
+ * stated boundary and its own check is what shows the readers agree afterwards.
+ */
+export function excise(c: Container, at: number, count: number): Relocated {
+  if (!Number.isInteger(at) || !Number.isInteger(count) || count <= 0) {
+    throw new RelocateError(`a cut removes a positive whole number of bytes, not ${count}`);
+  }
+  const floor = relocationFloor(c);
+  const ceiling = c.blob.length - TRAILER_CHECKSUM_OFFSET;
+  if (at < floor || at + count > ceiling) {
+    throw new RelocateError(
+      `a cut of ${count} at ${at} is outside the content, which runs from ${floor} to ${ceiling}`);
+  }
+
+  const refusals: string[] = [];
+  const census = pointers(c, refusals);
+  if (refusals.length > 0) {
+    throw new RelocateError(`the census disagrees with its readers: ${refusals[0]}`);
+  }
+  const end = at + count;
+  for (const p of census) {
+    if (p.at < end && p.at + POINTER_WIDTH > at) {
+      throw new RelocateError(`a cut of ${count} at ${at} removes the ${p.holder} field at ${p.at}`);
+    }
+    if (p.lands !== undefined && p.lands >= at && p.lands < end) {
+      throw new RelocateError(
+        `a cut of ${count} at ${at} removes what the ${p.holder} field at ${p.at} names`);
+    }
+  }
+
+  const bytes = new Uint8Array(c.blob.length - count);
+  bytes.set(c.blob.subarray(0, at), 0);
+  bytes.set(c.blob.subarray(end), at);
+
+  const rewritten: RewrittenField[] = [];
+  for (const p of census) {
+    if (p.lands === undefined || p.lands < end) continue;
+    const fieldAt = p.at >= end ? p.at - count : p.at;
+    bytes.set(new Writer(POINTER_WIDTH).u24(p.target - count).bytes, fieldAt);
+    rewritten.push({ at: fieldAt, to: p.target - count, holder: p.holder });
+  }
+
+  bytes.set(new Writer(4).u32(u32(c.blob, 4) - count).bytes, 4);
+  bytes.set(new Writer(2).u16(trailerChecksum(bytes)).bytes,
+            bytes.length - TRAILER_CHECKSUM_OFFSET);
+
+  return { bytes, rewritten };
+}

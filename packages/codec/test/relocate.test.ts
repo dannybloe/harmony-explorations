@@ -30,6 +30,8 @@ import {
   RelocateError,
   TRAILER_CHECKSUM_OFFSET,
   claims,
+  screenStrings,
+  excise,
   inventory,
   parse,
   PICTURE_BANK_BIAS,
@@ -193,4 +195,37 @@ test('a relocation refuses what the survey cannot vouch for', skipUnless('one_co
   // so neither side is a place to insert.
   assert.throws(() => relocate(c, 0, DELTA), RelocateError);
   assert.throws(() => relocate(c, c.blob.length, DELTA), RelocateError);
+});
+
+// `excise` is `relocate` run backwards, so the strongest check it can have is that: insert filler,
+// cut the same bytes out again, and the container comes back byte for byte, on every sample the
+// insertion itself is checked on and at both of its offsets. That holds only if the cut rewrote
+// exactly the fields the insertion did, by exactly the same amount, and restamped the same two.
+for (const name of [...SAMPLES, ...MADE]) {
+  test(`${name} comes back byte for byte when the inserted bytes are cut out again`,
+       skipUnless(name), () => {
+    const before = parse(load(name) as Uint8Array);
+    for (const { name: where, at } of offsetsOf(before)) {
+      const grown = parse(relocate(before, at, DELTA, { fill: 0xa5 }).bytes);
+      const back = excise(grown, at, DELTA);
+      assert.equal(back.bytes.length, before.blob.length, where);
+      assert.ok(Buffer.from(back.bytes).equals(Buffer.from(before.blob)), `${where}: the bytes differ`);
+    }
+  });
+}
+
+test('a cut refuses to remove a pointer field or anything a pointer names', skipUnless('one_config'), () => {
+  const c = parse(load('one_config') as Uint8Array);
+  assert.throws(() => excise(c, relocationFloor(c), 0), RelocateError);
+  assert.throws(() => excise(c, 0, DELTA), RelocateError);
+  // A cut reaching into the trailer is outside the content, as an insertion there is.
+  assert.throws(() => excise(c, c.blob.length - TRAILER_CHECKSUM_OFFSET - 1, 4), /outside the content/);
+  // The first insertable byte is where the first structure past the key table begins, which a
+  // pointer names, so cutting even one byte there is refused as removing what that pointer names.
+  assert.throws(() => excise(c, relocationFloor(c), 1), /names/);
+  // And a cut through a pointer field itself: the three address bytes of a text drawn by reference,
+  // whose target lies elsewhere, so it is the field check that refuses and not the landing check.
+  const borrower = screenStrings(c).find((one) => one.referencedFrom !== undefined && one.at > relocationFloor(c));
+  assert.ok(borrower !== undefined, 'one_config draws no text by reference above the floor');
+  assert.throws(() => excise(c, borrower.at + 3, 3), /removes the .* field at/);
 });

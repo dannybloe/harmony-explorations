@@ -91,6 +91,8 @@ import {
   renderVariants,
   screenStrings,
   taggedList,
+  glyphsReferencedBy,
+  decode,
   Container,
   compiledBlockWords,
   bitmapReference,
@@ -1186,6 +1188,11 @@ test('the spare Harmony One config gets a third device list page on every menu, 
     // Activity`; menu 253, the list shown while an activity runs, draws its key plain and renders once.
     const rendered = renderVariants(after, added3.program);
     assert.equal(rendered.variants.length, menu === 253 ? 1 : 2, `menu ${menu}'s bottom key states`);
+    // And it pages. Section 293: the header said "2 pages" on all nine until `paginate` restated it,
+    // which is what the configuration written to the spare Harmony One with its seventh device holds.
+    const paging = pagingOf(after, menu);
+    assert.deepEqual([paging.total, paging.numbers, paging.ends, paging.turnKeys],
+                     ['3', ['1', '2', '3'], [18, 18, 18], 0], `menu ${menu}'s paging`);
     for (const variant of rendered.variants) {
       assert.equal(variant.page.glyphsMissing, 0, `menu ${menu} draws every glyph`);
       assert.equal(variant.page.picturesMissing, 0, `menu ${menu} draws every picture`);
@@ -1490,6 +1497,144 @@ test('the activity composer refuses what would produce a container that merely p
  * Named once here so the layout claim and the composer claim below cannot walk different corpora,
  * which is the drift `TheCorpusWidePopulationsAgree` exists to catch.
  */
+/**
+ * How a Harmony One screen states its paging, read the way section 293 measured it: the header every
+ * page calls draws the total at (0x17, 0x12) and the word after it at x 0x23, and each page draws
+ * its own number on row 18 ending where the slash at x 18 begins. `ends` is where each number's last
+ * glyph column stops, which is the right alignment the rule is about.
+ */
+function pagingOf(c: Container, menu: number): {
+  total: string | undefined; word: string | undefined; numbers: string[]; ends: number[]; starts: number[];
+  slashes: number; turnKeys: number; header: number | undefined; switched: number; chained: number;
+} {
+  const map = characterMap(c)!;
+  const sets = fontSets(c) ?? [];
+  const record = modeRecords(c)![menu]!;
+  const text = (one: { opcode: number; glyphs?: Uint8Array }) =>
+    decode((one.opcode === 5 ? one.glyphs : glyphsReferencedBy(c, one as never)) ?? new Uint8Array(), map);
+  const first = screenProgram(c, record.pages[0]!.program)![0]!;
+  const header = first.opcode === 0x16
+    ? first.operands[0]! | (first.operands[1]! << 8) | (first.operands[2]! << 16) : undefined;
+  const headerProgram = header === undefined ? [] : screenProgram(c, header) ?? [];
+  const on = (program: typeof headerProgram, x: number, y: number) =>
+    program.find((one) => (one.opcode === 4 || one.opcode === 5) && one.operands[0] === x && one.operands[1] === y);
+  const total = on(headerProgram, 0x17, 0x12);
+  const word = on(headerProgram, 0x23, 0x12);
+  const numbers: string[] = [];
+  const ends: number[] = [];
+  const starts: number[] = [];
+  let slashes = 0;
+  let switched = 0;
+  let chained = 0;
+  for (const page of record.pages) {
+    // A device list page closes on a switch and draws its counter where the arms jump back to,
+    // after a second switch on 7 pages of the four user configurations.
+    let program = screenProgram(c, page.program) ?? [];
+    if (program.at(-1)?.opcode === 0x12) switched += 1;
+    for (let hop = 0; program.at(-1)?.opcode === 0x12; hop += 1) {
+      if (hop === 1) chained += 1;
+      const jump = screenProgram(c, program.at(-1)!.targets[0]!)!.at(-1)!;
+      assert.equal(jump.opcode, 0x14, 'a switch arm that does not jump back');
+      program = screenProgram(c, jump.targets[0]!) ?? [];
+    }
+    let font = -1;
+    for (const one of program) {
+      if (one.opcode === 0x10) font = one.operands[0]!;
+      if ((one.opcode !== 4 && one.opcode !== 5) || one.operands[1] !== 18) continue;
+      if (one.operands[0] === 18 && text(one) === '/') slashes += 1;
+      if (one.operands[0]! >= 18) continue;
+      numbers.push(text(one));
+      starts.push(one.operands[0]!);
+      const codes = one.opcode === 5 ? one.glyphs! : glyphsReferencedBy(c, one)!;
+      ends.push(one.operands[0]! + [...codes].reduce((sum, code) => sum + glyphOf(c, sets[font]!, code)!.width, 0));
+    }
+  }
+  const turnKeys = record.entries.filter((entry) => [46, 47].includes(entry.tag & SCAN_MASK)).length;
+  return {
+    total: total === undefined ? undefined : text(total), word: word === undefined ? undefined : text(word),
+    numbers, ends, starts, slashes, turnKeys, header, switched, chained,
+  };
+}
+
+/** The Harmony One containers of the corpus, both safe mode images included. */
+const HARMONY_ONE_CONTAINERS = [
+  'one_safemode', 'one34_region2', 'one_config', 'one_config_unprogrammed', 'one_spare_before_sync',
+  'one_spare_after_sync',
+] as const;
+
+test('a Harmony One screen of several pages states its total in its header and its number against the slash, and one of one page states neither',
+     skipUnless(...HARMONY_ONE_CONTAINERS), () => {
+  // Section 293, what `paginate` writes. Three places carry a screen's paging and all three have to
+  // agree with its page count, since each is a text a screen program draws or a binding it states.
+  let single = 0;
+  let several = 0;
+  let deadened = 0;
+  let switched = 0;
+  let chained = 0;
+  let switchedSingle = 0;
+  let bindings = 0;
+  let nullBindings = 0;
+  let onlyNullLists = 0;
+  let pages = 0;
+  let notAt13 = 0;
+  for (const name of HARMONY_ONE_CONTAINERS) {
+    const c = parse(require_(name));
+    // No two modes share a header, which is what lets a total be restated in place.
+    const headers = new Set<number>();
+    const records = modeRecords(c) ?? [];
+    const lists = c.actionLists() ?? [];
+    records.forEach((record, menu) => {
+      const paging = pagingOf(c, menu);
+      assert.ok(paging.header !== undefined, `${name}: mode ${menu} calls no header`);
+      headers.add(paging.header);
+      if (record.pages.length === 1) {
+        single += 1;
+        assert.equal(paging.total, undefined, `${name}: one page mode ${menu} draws a total`);
+        assert.deepEqual(paging.numbers, [], `${name}: one page mode ${menu} draws a number`);
+        // Its header ends in a return and the end marker, which is where `paginate` puts a total.
+        const tail = (screenProgram(c, paging.header) ?? []).slice(-2).map((one) => one.opcode);
+        assert.deepEqual(tail, [0x17, 0x00], `${name}: one page mode ${menu}'s header does not end plainly`);
+        assert.equal(paging.turnKeys, 2, `${name}: one page mode ${menu} leaves the page turn keys unbound`);
+        const bound = record.entries.filter((entry) => [46, 47].includes(entry.tag & SCAN_MASK));
+        const isNull = (entry: { opcode: number; operand: number }) => entry.opcode === 0 && entry.operand === 0;
+        bindings += bound.length;
+        nullBindings += bound.filter(isNull).length;
+        switchedSingle += paging.switched;
+        if (bound.every(isNull)) deadened += 1;
+        // The rest name a list; on some every list named is three null instructions.
+        else if (bound.every((entry) => isNull(entry) || (entry.opcode === 0x7f
+          && lists[entry.operand]?.length === 3 && lists[entry.operand]!.every(isNull)))) onlyNullLists += 1;
+        return;
+      }
+      several += 1;
+      switched += paging.switched;
+      chained += paging.chained;
+      pages += record.pages.length;
+      notAt13 += paging.starts.filter((x) => x !== 13).length;
+      assert.equal(paging.total, String(record.pages.length), `${name}: mode ${menu}'s total`);
+      assert.equal(paging.word, 'pages', `${name}: mode ${menu}'s word`);
+      assert.deepEqual(paging.numbers, record.pages.map((_, k) => String(k + 1)), `${name}: mode ${menu}'s numbers`);
+      assert.deepEqual(paging.ends, record.pages.map(() => 18), `${name}: mode ${menu}'s numbers end at the slash`);
+      assert.equal(paging.slashes, record.pages.length, `${name}: mode ${menu}'s slashes`);
+      assert.equal(paging.turnKeys, 0, `${name}: mode ${menu} deadens a page turn key`);
+    });
+    assert.equal(headers.size, records.length, `${name}: two modes share a header`);
+  }
+  assert.equal(single, 598, 'one page modes, 30 on each safe mode image and 538 in the four user configs');
+  assert.equal(several, 58, 'modes of more than one page, none of them on a safe mode image');
+  // Most bind both to the null instruction; the rest run a list on one key or both, which is why
+  // `paginate` refuses to cut a binding that does something.
+  assert.equal(deadened, 531, 'one page modes binding both page turn keys to nothing');
+  assert.deepEqual([bindings, nullBindings], [1196, 1086], 'one page modes\' page turn bindings, and the null ones');
+  assert.equal(onlyNullLists, 15, 'of the other 67, those naming only lists of three null instructions');
+  // Where the number is drawn: after a switch on 73 pages of screens of several pages and 7 of one,
+  // and after a second switch on 7 of the 73.
+  assert.deepEqual([switched, chained, switchedSingle], [73, 7, 7]);
+  // A fixed x of 13 is wrong wherever the number is not one glyph of width 5.
+  assert.equal(pages, 240);
+  assert.equal(notAt13, 38, 'pages whose number does not start at 13');
+});
+
 const ACTIVITY_MENU_HOSTS = [
   'one_config', 'one_config_unprogrammed', 'one_spare_before_sync', 'one_spare_after_sync',
 ];
@@ -1654,13 +1799,114 @@ test('the activity menu composer refuses what would render and start nothing',
   // A model whose activities sit on keys rather than on a menu, where nothing here applies.
   assert.throws(() => composeActivityMenuRow(parse(require_('h525_config')), 'Play Game', 0),
                 /Harmony One, 600, 650 and 700 alone/);
-  // And a page that is already full, which is a refusal and not a second page: three rows fit and
-  // adding a page needs a counter, a pool copy and a page count nobody has measured on this menu.
+  // And a page that is already full is not one of these. **This asserted a refusal** until section
+  // 293, on the ground that a second page needs a counter, a pool copy and a page count nobody had
+  // measured on this menu. All three are measured now, so the fourth row opens a second page and
+  // lands on its top row; the test below asserts the page whole.
   let full = parse(require_('one_config_unprogrammed').slice());
   full = parse(composeActivityMenuRow(full, 'Two', 7).bytes);
   full = parse(composeActivityMenuRow(full, 'Three', 7).bytes);
-  assert.throws(() => composeActivityMenuRow(full, 'Four', 7), /already draws 3 rows/);
+  const fourth = composeActivityMenuRow(full, 'Four', 7);
+  assert.equal(fourth.page, 1);
+  assert.ok(onTopRow(parse(fourth.bytes), fourth.menu, fourth.page, fourth.scan), 'the fourth is on the top row');
 });
+
+/**
+ * Whether `scan` on a menu page is the top row's rectangle, the one the first page's highest area
+ * has. By geometry and not by number, because a code is an area's position in its hit page and a new
+ * page keeps the order its menu's last page stores its areas in: a fresh Harmony One's stores the two
+ * bottom keys first, so the new row is 50, and the spare's stores its top row first, so it is 48.
+ */
+function onTopRow(c: Container, menu: number, page: number, scan: number): boolean {
+  const record = modeRecords(c)![menu]!;
+  const areas = (k: number) => touchPageOf(c, record.pages[k]!)!.areas;
+  const top = areas(0).reduce((best, area) => (area.y > best.y ? area : best));
+  const area = areas(page).find((one) => one.code === scan);
+  return area !== undefined && [area.x, area.y, area.width, area.height].join()
+    === [top.x, top.y, top.width, top.height].join();
+}
+
+/** Compose `labels` as activities one after another, each put on the activity menu, as a user would. */
+function composeActivities(start: Container, labels: readonly string[]): {
+  container: Container; menu: number; placed: { page: number; scan: number }[];
+} {
+  let c = start;
+  let menu = -1;
+  const placed: { page: number; scan: number }[] = [];
+  for (const label of labels) {
+    const counter = stateVariables(c).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME));
+    const target = stateVariables(c)
+      .find((one) => one.index > firmwareStateVariableMax(c.architecture) && one.index !== counter?.index)!;
+    const built = composeActivity(c, { label, targets: [{ variable: target.index, value: 1 }], keys: [{ scan: 20, list: 0 }] });
+    const shown = composeActivityMenuRow(parse(built.bytes), built.label, built.set);
+    c = parse(shown.bytes);
+    menu = shown.menu;
+    placed.push({ page: shown.page, scan: shown.scan });
+  }
+  return { container: c, menu, placed };
+}
+
+// The last column is what no screen draws any more: the menu's own old total, where it had one.
+for (const [host, labels, pages, replaced] of [
+  // A fresh Harmony One: one activity, so two fill the page and the third opens a second one, whose
+  // header had no total to restate and whose first page drew no number.
+  ['one_config_unprogrammed', ['Two', 'Three', 'Four'], 2, []],
+  // The spare Harmony One as it stood with eight activities over three pages. The ninth fills the
+  // third and the tenth opens a fourth, whose "4" the page total font does not carry and whose "3"
+  // in the header other pages' numbers borrow by reference.
+  ['one_spare_poweroff_base', ['Nine', 'Ten'], 4, ['23,18,3']],
+] as const) {
+  test(`${host}: an activity past a full activity menu opens a new page, and the menu pages`, skipUnless(host), () => {
+    const before = parse(require_(host));
+    const namesBefore = activityNames(before).map((one) => one.name);
+    const { container: after, menu, placed } = composeActivities(before, labels);
+    const record = modeRecords(after)![menu]!;
+    assert.equal(record.pages.length, pages);
+    assert.equal(placed.at(-1)!.page, pages - 1, 'the last one opens the new page');
+    assert.ok(onTopRow(after, menu, pages - 1, placed.at(-1)!.scan), 'on its top row');
+
+    // The paging the corpus states on all 58 of its multi page Harmony One screens.
+    const paging = pagingOf(after, menu);
+    assert.equal(paging.total, String(pages));
+    assert.equal(paging.word, 'pages');
+    assert.deepEqual(paging.numbers, record.pages.map((_, k) => String(k + 1)));
+    assert.deepEqual(paging.ends, record.pages.map(() => 18), 'every number ends at the slash');
+    assert.equal(paging.slashes, pages);
+    assert.equal(paging.turnKeys, 0, 'the page turn keys are live, or the new page cannot be reached');
+
+    // Every activity still reads, the new ones included, and the file holds together.
+    assert.deepEqual(activityNames(after).map((one) => one.name).sort(), [...namesBefore, ...labels].sort());
+    const report = coverage(after);
+    assert.equal(report.accounted, report.total, 'every byte is claimed');
+    assert.deepEqual(report.overlaps, [], 'and no byte twice');
+    assert.ok(trailerAgrees(after));
+    assert.equal(roundTrip(after).equal, true, 'the emitter reproduces the composed file');
+
+    // And the new page draws: every glyph and picture. An activity menu page's bottom keys have one
+    // state, so one variant.
+    const variants = renderVariants(after, record.pages.at(-1)!.program).variants;
+    assert.equal(variants.length, 1);
+    for (const variant of variants) {
+      assert.equal(variant.page.glyphsMissing, 0);
+      assert.equal(variant.page.picturesMissing, 0);
+    }
+
+    // Nothing any screen drew before reads differently now, except this menu's own total. That is
+    // the check on the draws borrowing the old total's glyphs, fourteen of them on the spare, which
+    // `paginate` points elsewhere before cutting it.
+    const drawn = (c: Container) => {
+      const counts = new Map<string, number>();
+      for (const one of screenStrings(c)) {
+        const key = `${one.x},${one.y},${one.text}`;
+        counts.set(key, (counts.get(key) ?? 0) + 1);
+      }
+      return counts;
+    };
+    const now = drawn(after);
+    const lost = [...drawn(before)].filter(([key, n]) => (now.get(key) ?? 0) < n).map(([key]) => key);
+    assert.deepEqual(lost, [...replaced], 'a text some screen drew is gone');
+  });
+}
 
 /** The four arch 14 user configurations, one each; the second Harmony 700 one repeats the first. */
 const FOUR_SLOT_ACTIVITY_HOSTS = ['h650_config_region', 'h600_config', 'calibration_h600', 'h700_config'] as const;
@@ -2377,6 +2623,8 @@ test('a screen with one page deadens the two page turn keys, and one with severa
   // is the trap `CLAUDE.md` names about `keyCodes` versus `pageScans`, met a third time, so this
   // walks every tagged list in the container instead. Section 275.
   const PRESS = 2;
+  let recordBindings = 0;
+  let nothing = 0;
   for (const name of ACTIVITY_MENU_HOSTS) {
     const c = parse(require_(name));
     const sets = handlerSets(c);
@@ -2419,12 +2667,17 @@ test('a screen with one page deadens the two page turn keys, and one with severa
           assert.ok(scan !== 46 && scan !== 47, `${name}: a page binds scan ${scan}`);
         }
       }
+      recordBindings += bound.length;
+      nothing += bound.filter((entry) => entry.opcode === 0 && entry.operand === 0).length;
       assert.equal(bound.length, record.pages.length === 1 ? 2 : 0,
                    `${name}: mode ${modes - 1} has ${record.pages.length} pages and binds `
                    + `${bound.length} page turn keys`);
     }
     assert.ok(modes > 0, `${name}: the mode walk found nothing to walk`);
   }
+  // Section 275's totals, which were prose alone until section 293 found the second one stated as 962.
+  assert.equal(recordBindings, 1076);
+  assert.equal(nothing, 966, 'bindings to the null instruction');
 });
 
 test('adding a page to a one page list menu has to undeaden its two page turn keys',

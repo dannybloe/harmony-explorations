@@ -1588,12 +1588,32 @@ it reports only bindings that end in an infrared code and answers 0 for these sc
   giving the two scans different lists, `0x0f` with `0xFFA0` against `0xFFA1`, undecoded.
 * **A mode record's own tagged list, exactly when the mode has one page.** Both keys on 538 of 538
   single page modes and neither on 0 of 58 multi page ones, 1076 bindings, every one a press, and
-  962 of them the **null instruction** of opcode 0 with operand 0.
+  966 of them the **null instruction** of opcode 0 with operand 0, which said 962 until section 293
+  recounted it.
 
 So paging is a default the firmware supplies and a screen with nowhere to page turns it **off**. A
 writer that adds a second page to a one page menu must remove those two null bindings, or the new
 page is unreachable while every count closes and both checksums pass. All 12 one page list menus here
 carry them.
+
+**A mode of several pages states its page count in two more places**, section 293, arch 12 only, over
+the six Harmony One containers:
+
+```
+header (the program every page calls first, one per mode, 656 of 656 distinct)
+  op 4 or 5 at (0x17, 0x12)   the total, equal to the page count, 58 of 58; absent on a one page mode
+  op 4 or 5 at (0x23, 0x12)   the word, "pages" on all six
+  op 0x17; op 0               a one page mode's header ends here, 598 of 598
+each page, in its own program or where its switch arms rejoin, after a second switch on 7 of 73
+  op 4 or 5 at (18 - w, 18)   its number, right aligned: w is the text's width in its font, so a "4"
+                              starts at 12 and a "10" at 8; every page of all 58
+  op 4 or 5 at (18, 18)       "/"
+```
+
+A one page mode draws neither the total nor a number. **531 of the 598 bind both page turn keys to the
+null instruction**, 1086 of 1196 bindings; the other 67 name a list on one key or both, 15 of them only
+lists of three null instructions, so a writer that cuts only the null instruction is conservative. The total, the numbers and the bindings are independent, so a page added without restating the
+header leaves the old total drawn, which is what the spare Harmony One's nine device lists carry.
 
 **The rectangles at `y` 271 are the two physical buttons below the display**, and which of them a
 page enables is the difference between the two list menus, measured over the same containers:

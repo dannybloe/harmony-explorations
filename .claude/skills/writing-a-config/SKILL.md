@@ -278,7 +278,7 @@ produce a config the remote accepts and mishandles.
   them**, 0 over 778 pages, so paging is a default the firmware supplies. What a screen can do is
   switch that default off, and a screen with one page does: both keys on **538 of 538** single page
   modes and neither on **0 of 58** multi page ones, 1076 bindings over four containers, every one a
-  press, in the **mode record's own** tagged list rather than a page's, and 962 of them the **null
+  press, in the **mode record's own** tagged list rather than a page's, and 966 of them the **null
   instruction** of opcode 0 with operand 0. So a writer growing a menu from one page to two has to
   remove those two bindings. Leave them and the file closes every count this project can check,
   passes both checksums, renders every page identically, and the second page cannot be reached. All
