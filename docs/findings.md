@@ -38913,7 +38913,8 @@ installs an application; the processor's own flash was written by the remote.
   terms of section 295 and Logitech's template, byte 3 of `A3 06 00 02` is the index, 0, and byte 4 the
   value, 2, so it sets the same byte to 2 that the safe mode image reads, and the read
   back before the restart is what would have caught it otherwise. The 2.8 application's arm, at
-  `0x0C400`, has the same shape and calls `0x1AB96`; that routine is not read.
+  `0x0C400`, has the same shape and calls `0x1AB96`; that routine was not read here, and section 298
+  reads it.
 
 ### The run, twice
 
@@ -38936,8 +38937,9 @@ deviation.
 
 **The second run completed**: staged, read back identical over the whole 128 KiB, status byte 2 read
 back, restarted, and the remote came back reporting **firmware 2.8, software type 0**. Both runs sent the
-restart to the running 2.5 application, whose escape handler is **not read**: the rail checks the escape
-list per architecture, which section 282 read on the 0.2 builds. It restarted the remote.
+restart to the running 2.5 application, whose escape handler was **not read** then: the rail checks the
+escape list per architecture, which section 282 read on the 0.2 builds. It restarted the remote, and
+section 298 reads the handler, the same code as 2.8's at other addresses.
 
 ### What the remote holds afterwards
 
@@ -38965,8 +38967,9 @@ One Harmony 700, from 2.5 to 2.8. The staging path is the safe mode image's inst
 **The rail is wider than that reading, as section 295's is**: it admits any arch 14 unit in safe mode,
 so the 600 and the 650, whose safe mode status byte handlers are unread, and an application build by
 its version string alone, `STATUS_BYTE_READ_ON_APPLICATION` being `['2.5']` per architecture. A remote
-running 2.8 cannot be staged from application mode until that build's `0x1AB96` is read, so **there is
-no permitted way back from 2.8 today** short of that reading or of starting from safe mode. Whether 2.8 behaves correctly on this unit in use
+running 2.8 could not be staged from application mode until that build's `0x1AB96` was read, so there
+was no permitted way back from 2.8 when this section was written. **Section 298 reads it**, and the
+rail admits 2.8 now. Whether 2.8 behaves correctly on this unit in use
 is Danny's observation to make, not this section's.
 
 ### Sources checked before the work
@@ -38993,3 +38996,114 @@ flash, or a remote that did not report 2.8 afterwards. None happened.
   against a fake transport, which pins the transfer split the first run lacked.
 * `tests/test_harmony_700_status_byte.py`: the 2.5 application's selector 6 arm and `0x19868`, decoded.
 * `docs/decisions.md` decision 18, `CLAUDE.md`, the `recovering-a-remote` skill and `todo.md`.
+
+## 298. The Harmony 700's 2.8 application handles the update status byte as 2.5 does, and both builds' restart is read
+
+Section 297 left the rail refusing to stage on a Harmony 700 running 2.8 from application mode,
+because that build's handler for the update status byte, `0x1AB96`, was unread, and it recorded that
+the restart it had sent was to a 2.5 application whose escape handler was unread too. Both are read
+now, off Logitech's 2.8 image and off the 2.5 application as it sat in the unit's internal flash.
+
+### The status byte
+
+| | 2.5 | 2.8 |
+|---|---|---|
+| `WRITE_MISC` selector chain | `0x0C314` | `0x0C3AA` |
+| cases | 1, 2, 5, 6, 7, 8, 9, 10, 11 | the same |
+| selector 6 | `0x0C364` | `0x0C400` |
+| the arm | `MOVFF 0xD5E,0x103`, `MOVFF 0xD5F,0x102`, `CALL` | the same |
+| the store | `0x19868` | `0x1AB96` |
+
+The store is five instructions on both: `MOVLB 1`, `MOVF 0x102,W`, `BNZ`, `MOVFF 0x103,0x100`,
+`RETURN`. So on both builds `A3 06 00 02` puts 2 into data memory `0x100`, the byte the safe mode
+image reads at start up, section 295.
+
+**The store is the only direct write to `0x100` in either build.** One routine reads it, `0x1985C` on
+2.5 and `0x1AB8A` on 2.8, which is `READ_MISC` selector 6's, returning `0x100` when its index at
+`0x101` is 0; the tracer misses that read because its bank tracking stops at the `BNZ` before it. For
+writes the tracer reports six sites in each, the store's `MOVFF` and five whose banks it only infers: a `BTG` just after an undecodable word,
+and four `MULWF`s inside runs of `MULWF` and `NOP`, which is a table of small bytes decoded as
+instructions. All five are data the linear scan walked into. The store has two callers in each, the
+arm and one more.
+
+**The other caller is in the application's start up.** It is a routine with one caller, which the
+blind reviewer followed up from the entry point, and in both builds it clears the restart flag below, calls a routine whose first instruction is `BTFSS RCON,4`,
+and only when that returns 0, which is when `RI` is set and so the last reset was not a `RESET`
+instruction, clears `0x103` and `0x102` and calls the store, putting 0 into `0x100`. So after the
+escape's own `RESET` the byte is not touched by the application, and after any other kind of start,
+a power on among them, the application clears it. The safe mode image runs before the application
+either way, so this does not decide whether an install happens; it is what clears a 2 left behind.
+Section 295 found the safe mode image storing 0 back after its copy, which is the other half. The
+routine then sets RCON's four flags again.
+
+### The restart
+
+Section 97 read 2.8's: the escape's sub-commands 2 and 3 set a flag at `0x6FF`, whose one reader puts
+the top level mode at `0x3A5` to 3, and mode 3 is a wait of `0x01F4`, a poll, a finishing call and
+`RESET` at `0x1642C`. **2.5 is the same code at other addresses**:
+
+| | 2.5 | 2.8 |
+|---|---|---|
+| escape handler, mask `0xF0` and compare `0xE0` | `0x0BCBC` | `0x0BD52` |
+| sub-command chain, 2 and 3 to | `0x0BCFC` | `0x0BD92` |
+| the flag | `0x1FF` | `0x6FF` |
+| its reader, mode to 3 | `0x15398` | `0x16336` |
+| the mode | `0x754` | `0x3A5` |
+| mode 3 | `0x15470` | `0x1640E` |
+| `RESET` | `0x1548E` | `0x1642C` |
+
+The 2.5 handler is at `0x0BCBC`, which is the address section 282 gives for the Harmony 600's and
+650's 0.2 builds, and its flag is `0x1FF` like theirs, so 2.5 sits with 0.2 in layout there and 2.8
+moved. Each chain here starts at the first `XORLW` after the `MOVF` that loads the switched variable,
+`0xD5D` for the selector, `0xD07` for the sub-command and the mode variable for the mode, which is how
+`chains.py` says a start is found; the cases that come out, 1, 2, 3 and 5 for the escape, are what
+section 97 reads on 2.8.
+
+**One path can replace the restart**, found by the blind reviewer: straight after the flag reader, six
+predicates are called, and if all six return nonzero the mode becomes 2 instead of 3. The first, at
+`0x15BDA` on 2.5 and `0x17252` on 2.8, returns 0 whenever the USB peripheral is enabled and not
+suspended, so during a session the restart stands. The other five are unread. The wait is `0x01F4`
+counts of a timer whose unit is unread.
+
+### What changes
+
+`STATUS_BYTE_READ_ON_APPLICATION` is `['2.5', '2.8']` for arch 14, so the staging and reinstall rails
+admit a Harmony 700 running 2.8 without safe mode. **That reopens the way back** section 297 said was
+closed. The 2.5 image the unit arrived with exists only inside its staging reads, the first 71552
+bytes of `h700_staging_region`, which verify and equal what was installed at `0x9000`; passed whole
+the script refuses it, since an image has to verify at its own length. Cut to that length as `--image`,
+with a fresh read of the region as `--backup`, which `read-region.ts` takes with `--anywhere` because
+`0x000000` is outside the configuration region, `reinstall-firmware.ts` would stage and install it.
+Nothing was sent to the remote for this section.
+
+**A host can reach the same byte another way**: `WRITE_MISC` selector 7 writes any data address, and
+`0x100` is one. The rails refuse selector 7 on arch 14, `ARCHITECTURES_WITH_A_RAM_WRITE_TARGET`.
+
+### Scope, decision 16
+
+The Harmony 700's 2.5 and 2.8 application builds. The Harmony 600's and 650's 0.2 builds' restart is
+section 282's; their status byte handler in application mode and every safe mode image's escape
+handler remain unread, so the rail's safe mode width, section 297, is unchanged. **The application
+list is wider than the reading too**: it is keyed by the version string per architecture, so a 600 or
+650 reporting 2.5 or 2.8 would pass on a reading made on the 700's builds. The builds read on those two
+units are 0.2, and the 650's package is 0.4.
+
+### Sources checked before the work
+
+Sections 97, 282, 295 and 297; the 2.8 image `h700_code` and the 2.5 application read off the unit;
+Logitech's `firmwareupgrade.xml` for skin 66, for the sequence the reading has to support. The client
+was not read further: the question was what the firmware does with a packet whose bytes are known.
+
+### Falsification
+
+A 2.8 remote in application mode that does not hold 2 in `0x100` after `A3 06 00 02`, read back with
+`B2 06 00`, which the reinstall already checks before it restarts; or one that does not restart on
+the escape's `0x02`.
+
+### Where it lands
+
+* `packages/usb/src/rails.ts`: `STATUS_BYTE_READ_ON_APPLICATION` gains `'2.8'`.
+* `tests/test_harmony_700_status_byte.py`: both builds, one address table each, the status byte arm
+  and store, the escape to `RESET`, and the start up clearing path.
+* `packages/usb/test/firmware.test.ts`: 2.8 allowed for staging and reinstall, and 2.3 in application
+  mode refused, since no application build of that number is read.

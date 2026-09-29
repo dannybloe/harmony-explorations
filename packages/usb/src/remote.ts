@@ -836,7 +836,8 @@ export class HarmonyRemote {
    * Ask a remote to **reinstall the application image already staged in its external flash**, and
    * restart it so that it does. Section 295. It has to be in safe mode or running an application
    * build whose status byte handler is read, section 297, which `assertReinstallAllowed` judges.
-   * The restart goes to whichever is running, and only the 0.2 builds' escape handler is read.
+   * The restart goes to whichever is running; the 0.2, 2.5 and 2.8 applications' escape handlers are
+   * read, sections 282, 298 and 97, and no safe mode image's.
    *
    * This writes no flash. On arch 14 a firmware install is two halves: the host writes the new image
    * into external flash at `0x000000`, and the remote's safe mode image copies it into internal flash

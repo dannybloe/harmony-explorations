@@ -746,9 +746,10 @@ battery came out. That run also sent the reset escape at the end, so the control
 well. So this selector is what closes that symptom, and those same bytes written without it had asked
 for a sync every time.
 
-Selector `0x06` pairs with the read's `0x06`, calling `0x1AB96` where the read calls `0x1AB8A`,
-so it is a second address space of some kind. On this 2.8 application image it is still not
-identified.
+Selector `0x06` pairs with the read's `0x06`, calling `0x1AB96` where the read calls `0x1AB8A`.
+**It is the update status byte**, section 298: `0x1AB96` stores the value into data memory `0x100`
+when the index is 0, and `0x1AB8A` returns `0x100` when its index is 0 and 0 otherwise. This said it
+was "a second address space of some kind" and not identified, until that reading.
 
 **On the Harmony 700's 2.3 safe mode image it is the update status byte**, section 295, and it does
 not take the shape the table above gives. The parser reads the packet's bytes in order into `0xD09`,
@@ -772,8 +773,9 @@ fourth, as `0xD5E`, into `0x103`, and calls `0x19868`, which stores `0x103` into
 is 0. So `A3 06 00 02` means the same to the running application as to the safe mode image, which is
 what Logitech's template assumes when it sends it in either mode. **Sent to that application once**,
 with the escape's `0x02` after it, and the safe mode image installed the staged 2.8 at the restart;
-the 2.5 application's escape handler is unread. On 2.8 the arm is at `0x0C400` and calls `0x1AB96`,
-the same routine the paragraph above names, still not identified. `tests/test_harmony_700_status_byte.py`.
+and section 298 reads the 2.5 application's escape handler, the same code as 2.8's at other
+addresses. On 2.8 the arm is at `0x0C400` and calls `0x1AB96`, the same five instructions.
+`tests/test_harmony_700_status_byte.py`.
 
 ### READ_FLASH
 

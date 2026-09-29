@@ -71,9 +71,9 @@ wrong or is about to.
   their status handlers and every safe mode escape handler are unread.
   **The same route installs a different build**, decision 18 and section 297: `--image <file> --backup
   <region read>` stages a Logitech image first. That is how the bench 700 went from 2.5 to 2.8, and it
-  would be the way back, with the staging read taken before as the image, if it were permitted. From application mode it
-  needs the build's status byte handler read, `STATUS_BYTE_READ_ON_APPLICATION`, which is 2.5 only;
-  2.8's is unread, so going back from 2.8 means reading `0x1AB96` first or starting from safe mode.
+  is the way back: the 2.5 image the unit arrived with, cut out of its first staging read, as the image,
+  and a fresh read of the region as it stands as the backup. From application mode it needs the build's
+  status byte handler read, `STATUS_BYTE_READ_ON_APPLICATION`, which is 2.5 and 2.8, section 298.
 
 * Recovery paths first, and **check what the file actually holds before trusting its name**. On
   arch 12 `*-safe.bin` is flash `0x000000` to `0x010000`, which contains the safe mode `GSPM`

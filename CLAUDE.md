@@ -767,7 +767,7 @@ document:
   `HARMONY_FIRMWARE_REINSTALL=1` as well as `WRITES_ENABLED`, `requestFirmwareReinstall` reads the
   architecture, the unit and the staged image off the remote itself, and `assertReinstallAllowed`
   refuses unless the unit matches the record the caller names, it is in safe mode or running an
-  application build whose status byte handler is read, which is the 700's 2.5 alone, and the staged
+  application build whose status byte handler is read, the 700's 2.5 and 2.8, and the staged
   image verifies and fits the copy limit. Which records may be named is `reinstall-firmware.ts`'s own
   list, the three arch 14 units. It repaired a Harmony 700 that arrived stuck in safe mode; the
   `recovering-a-remote` skill holds the route. **And one path writes firmware into flash, the staging
@@ -777,9 +777,9 @@ document:
   that the image verifies and fits. **Two things the documents require are not in the rail**: that the
   image is Logitech's and unmodified, which a checksum with a public seed cannot show, and a backup of
   that exact region matching the remote before anything is erased, which is `reinstall-firmware.ts`'s
-  check and not `stageFirmware`'s. It took the bench Harmony 700 from 2.5 to 2.8, and **there is no
-  permitted way back from 2.8** until that build's status byte handler is read or the remote is in
-  safe mode. Nothing writes the processor's flash, and this is not a route to modifying firmware.
+  check and not `stageFirmware`'s. It took the bench Harmony 700 from 2.5 to 2.8, and the way back is
+  the same route since section 298 read 2.8's status byte handler and restart, with the 2.5 image cut to
+  its 71552 bytes out of the unit's first staging read, since no standalone copy exists. Nothing writes the processor's flash, and this is not a route to modifying firmware.
 * **Five units may be written to and no others**: the **spare Harmony One** and the **Harmony 525**,
   Danny's decision of 5 September 2026, the **Harmony 650**, his decision of 27 September 2026, and
   the **Harmony 600** and the **Harmony 700**, his decision of 29 September 2026. The exclusion is the

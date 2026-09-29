@@ -613,8 +613,9 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    exercised, section 295. **This said "the way back is the same route with the backup the rail
    demands"<!--superseded--> and both halves were wrong**, found by section 297's reviewer: the rail
    demands no backup, the script does, and from 2.8 in application mode the rail refuses, since that
-   build's status byte handler, `0x1AB96`, is unread. So there is no permitted way back today short of
-   reading it or starting from safe mode.
+   build's status byte handler, `0x1AB96`, was unread. Section 298 reads it, the same code as 2.5's,
+   so the way back is the same route now, with the 2.5 image cut to its 71552 bytes out of the unit's
+   first staging read and a fresh read of the region as the backup.
 
    **What it does not change.** Generating configuration files is still the route to everything, and
    this does not make firmware modification a route to anything. The rail is `assertStagingAllowed`,

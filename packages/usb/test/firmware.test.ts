@@ -253,6 +253,7 @@ const CASES = `
     'running its application': [{ architecture: 14, identityBlock: unit, permittedUnit: unit }, { softwareType: 0, staged: good }],
     'running 2.5': [{ architecture: 14, identityBlock: unit, permittedUnit: unit }, { softwareType: 0, firmware: '2.5', staged: good }],
     'running 2.8': [{ architecture: 14, identityBlock: unit, permittedUnit: unit }, { softwareType: 0, firmware: '2.8', staged: good }],
+    'running 2.3': [{ architecture: 14, identityBlock: unit, permittedUnit: unit }, { softwareType: 0, firmware: '2.3', staged: good }],
     'a staged image that does not verify': [{ architecture: 14, identityBlock: unit, permittedUnit: unit }, { softwareType: 4, staged: broken }],
     'a staged image past the copy limit': [{ architecture: 14, identityBlock: unit, permittedUnit: unit }, { softwareType: 4, staged: tooLong }],
   };
@@ -264,12 +265,12 @@ const CASES = `
 
 test('with writing enabled and the reinstall door shut, every case is still refused', () => {
   const lines = withEnv({ HARMONY_ENABLE_WRITES: '1', HARMONY_FIRMWARE_REINSTALL: '' }, CASES).split('\n');
-  assert.equal(lines.length, 8);
+  assert.equal(lines.length, 9);
   assert.ok(lines.every((line) => line.includes(': refused: a firmware reinstall needs HARMONY_FIRMWARE_REINSTALL=1')),
     lines.join('\n'));
 });
 
-test('with both flags, each condition refuses by itself and only the whole of it passes', () => {
+test('with both flags, each condition refuses by itself, and the whole of it passes from safe mode, 2.5 and 2.8', () => {
   const lines = withEnv({ HARMONY_ENABLE_WRITES: '1', HARMONY_FIRMWARE_REINSTALL: '1' }, CASES).split('\n');
   // Each refusal is matched on its own reason, so a case refused for some other reason fails here.
   const expected: [string, RegExp][] = [
@@ -277,9 +278,10 @@ test('with both flags, each condition refuses by itself and only the whole of it
     ['another unit', /^another unit: refused: the remote on the cable is not the unit/],
     ['arch 12', /^arch 12: refused: architecture 12 has no reinstall target/],
     ['running its application', /^running its application: refused: the remote reports software type 0/],
-    // The application's own status byte handler is read on 2.5 only, section 297.
+    // The application's own status byte handler is read on 2.5 and 2.8, sections 297 and 298.
     ['running 2.5', /^running 2.5: allowed$/],
-    ['running 2.8', /^running 2.8: refused: .*application builds 2\.5 only/],
+    ['running 2.8', /^running 2.8: allowed$/],
+    ['running 2.3', /^running 2.3: refused: .*application builds 2\.5, 2\.8 only/],
     ['a staged image that does not verify', /: refused: the image staged in external flash does not verify/],
     ['a staged image past the copy limit', /: refused: the staged image is \d+ bytes and the safe mode image copies at most/],
   ];
@@ -315,6 +317,7 @@ const STAGE_CASES = `
     'another unit': [{ ...p, identityBlock: other }, running25, exact],
     'arch 12': [{ ...p, architecture: 12 }, running25, exact],
     'running 2.8': [p, { softwareType: 0, firmware: '2.8' }, exact],
+    'running 2.3': [p, { softwareType: 0, firmware: '2.3' }, exact],
     'an image with bytes past its end': [p, running25, padded],
     'an image that does not verify': [p, running25, broken],
     'an image past the copy limit': [p, running25, tooLong],
@@ -327,19 +330,20 @@ const STAGE_CASES = `
 
 test('with writing enabled and the staging door shut, every staging case is refused', () => {
   const lines = withEnv({ HARMONY_ENABLE_WRITES: '1', HARMONY_FIRMWARE_STAGE: '' }, STAGE_CASES).split('\n');
-  assert.equal(lines.length, 8);
+  assert.equal(lines.length, 9);
   assert.ok(lines.every((line) => line.includes(': refused: staging a firmware image needs HARMONY_FIRMWARE_STAGE=1')),
     lines.join('\n'));
 });
 
-test('with the staging door open, each condition refuses by itself, and the whole of it passes from 2.5 and from safe mode', () => {
+test('with the staging door open, each condition refuses by itself, and the whole of it passes from 2.5, 2.8 and safe mode', () => {
   const lines = withEnv({ HARMONY_ENABLE_WRITES: '1', HARMONY_FIRMWARE_STAGE: '1' }, STAGE_CASES).split('\n');
   const expected: [string, RegExp][] = [
     ['the whole of it', /^the whole of it: allowed$/],
     ['in safe mode', /^in safe mode: allowed$/],
     ['another unit', /: refused: the remote on the cable is not the unit/],
     ['arch 12', /: refused: architecture 12 has no staging region/],
-    ['running 2.8', /: refused: .*application builds 2\.5 only/],
+    ['running 2.8', /^running 2.8: allowed$/],
+    ['running 2.3', /: refused: .*application builds 2\.5, 2\.8 only/],
     ['an image with bytes past its end', /: refused: the image to stage does not verify at its own stated length/],
     ['an image that does not verify', /: refused: the image to stage does not verify at its own stated length/],
     ['an image past the copy limit', /: refused: the image is \d+ bytes and the safe mode image copies at most/],

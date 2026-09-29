@@ -882,17 +882,18 @@ export const FIRMWARE_REINSTALL: boolean = process.env['HARMONY_FIRMWARE_REINSTA
  *
  * * **Safe mode, or an application build whose status byte handler is read.** The install routine
  *   was read in the safe mode image, section 295, and the byte's handler on the Harmony 700's 2.5
- *   application, section 297; `assertStatusByteReadOn` is the check, keyed by the build's version
- *   string per architecture and not by unit.
+ *   and 2.8 applications, sections 297 and 298; `assertStatusByteReadOn` is the check, keyed by the
+ *   build's version string per architecture and not by unit, so a 600 or 650 reporting either number
+ *   would pass on a reading made on the 700's builds.
  * * **The staged image must verify, and fit.** The remote erases its application before it copies,
  *   and it copies whatever length the staged header states up to its clamp. A staged image that does
  *   not verify would be copied faithfully and then refused by the checksum test at the next start,
  *   which is the state the remote is presumably already in, minus the application.
  * * **The restart must be traced.** The reinstall happens at start up, so the same escape the config
  *   writer ends with has to be one this architecture dispatches. That was read on the 0.2 application
- *   builds, section 282, and this sends it to whatever is running, a safe mode image or the 2.5
- *   application, neither of whose escape handlers is read; it restarted the one Harmony 700 it was
- *   sent to, each time.
+ *   builds, section 282, and this sends it to whatever is running. The 700's 2.5 and 2.8
+ *   applications' escape handlers are read too, sections 298 and 97, and no safe mode image's is; it
+ *   restarted the one Harmony 700 it was sent to, each time.
  * * **The architecture list is wider than the reading.** The routine was read on the Harmony 700's 2.3
  *   safe mode image; the 600's and 650's 0.2 images carry its status normalisation and are otherwise
  *   unread there, and `[14]` admits them. Section 295 says so.
@@ -946,9 +947,14 @@ export function assertReinstallAllowed(
  * to `0x19868`, which stores its low byte into data memory `0x100` when its high byte is 0, so
  * `A3 06 00 02` sets the same byte the safe mode image reads. Logitech's template for skin 66 sends
  * that sequence to a remote in either mode.
+ *
+ * **2.8 since section 298**: the same chain at `0x0C3AA`, the same arm at `0x0C400` and the same five
+ * instructions at `0x1AB96`, and in both builds that store is the only direct write to `0x100`. Both
+ * builds' restart is read as well, 2.8's in section 97 and 2.5's in section 298, which is what a
+ * reinstall sends after the status byte.
  */
 export const STATUS_BYTE_READ_ON_APPLICATION: Readonly<Record<number, readonly string[]>> = {
-  14: ['2.5'],
+  14: ['2.5', '2.8'],
 };
 
 /**
