@@ -739,8 +739,9 @@ Danny's decision that day, and neither has had flash written yet: each first get
 whole region read into the lab, then one block back unchanged, then a real write, the order every unit
 here has taken. **The 700 took another road first**: it arrived stuck in safe mode, was sent one
 reinstall request, a `WRITE_MISC` and a restart that write no flash from the host, section 295, and
-has had its configuration rewritten by Harmony Desktop, so its lab dumps are its identity, its regions
-and the state after those two. The 600 was excluded by name until then. His everyday Harmony One still is, and **the rail
+has had its configuration rewritten by Harmony Desktop, and was then taken from firmware 2.5 to 2.8 by
+staging Logitech's image, section 297, so its lab dumps are its identity, its regions and the state
+after each of those. The 600 was excluded by name until then. His everyday Harmony One still is, and **the rail
 that separates units is the unit check on the identity block**, since the 600 and the 650 report the
 same product id and architecture, and two Harmony Ones enumerate alike. These
 devices are irreplaceable. Note that patching a concordance
@@ -768,7 +769,12 @@ document:
   refuses unless the unit matches the record the caller names, it is in safe mode, and the staged
   image verifies and fits the copy limit. Which records may be named is `reinstall-firmware.ts`'s own
   list, the three arch 14 units. It repaired a Harmony 700 that arrived stuck in safe mode; the
-  `recovering-a-remote` skill holds the route.
+  `recovering-a-remote` skill holds the route. **And one path writes firmware into flash, the staging
+  region**, decision 18 and section 297: Logitech's own unmodified image, verifying, into external
+  `0x000000` to `0x020000` of an arch 14 remote, for its safe mode image to install. Behind
+  `HARMONY_FIRMWARE_STAGE=1` on top of the two flags, `assertStagingAllowed`, and a backup of that exact
+  region that must match the remote before anything is erased. It took the bench Harmony 700 from 2.5
+  to 2.8. Nothing writes the processor's flash, and this is not a route to modifying firmware.
 * **Five units may be written to and no others**: the **spare Harmony One** and the **Harmony 525**,
   Danny's decision of 5 September 2026, the **Harmony 650**, his decision of 27 September 2026, and
   the **Harmony 600** and the **Harmony 700**, his decision of 29 September 2026. The exclusion is the
@@ -1684,7 +1690,8 @@ more popular remote. On arch 14 every config byte read passes through one SPI pr
 reads are scattered everywhere. Decode arch 14, then port. **Use `600-0.2-code-base0x9000-COMPLETE.bin`
 for the bench remote**: the 600 image is no longer truncated, it was read off the remote and its own
 header checksum verifies over all 70336 bytes. The 700 2.8 image stays the reference for anything
-about the 700 itself, and as a second arch 14 sample.
+about the 700 itself, and as a second arch 14 sample, and since section 297 it is also what the bench
+Harmony 700 runs.
 
 ## Commands
 
@@ -1970,6 +1977,10 @@ node packages/usb/bin/reinstall-firmware.ts --unit <label> [--commit]
                        sets the update status byte to 2 and restarts, and the remote does the copy.
                        Sends no firmware and writes no flash from the host. Run once, on the Harmony
                        700 that arrived in safe mode, and it came back running its application.
+                       With `--image <file> --backup <lab region read>` it first **stages** that image,
+                       decision 18 and section 297, needing HARMONY_FIRMWARE_STAGE=1 as well: the backup
+                       must equal the remote's staging region, or the region be erased and the backup
+                       hold a verifying image, before anything is erased. That took the bench 700 to 2.8.
 HARMONY_ENABLE_WRITES=1 node packages/usb/bin/end-session-experiment.ts
                        THE ONLY SCRIPT HERE THAT SENDS A COMMAND WHICH IS NOT A READ, one
                        `0xE0 0x01`, which zeroes one variable and touches no storage. Refuses

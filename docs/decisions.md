@@ -600,3 +600,19 @@ remote and 2 in the second, which is what section 117 measured as a generator er
     of it sat in every session to argue a question that arises once a year. It is the plan
     of record that holds decisions, and this is one.*
 
+
+18. **Logitech's own firmware may be staged on an arch 14 remote for it to install, and on nothing
+   else.** *Taken by Danny on 29 September 2026, prompted by sections 295 and 297.* It is the one
+   exception to "firmware is never written", and it is narrow on purpose: an image Logitech built,
+   unmodified and verifying, written into the external flash region an arch 14 remote installs an
+   application from, `0x000000` to `0x020000`, for the remote's own safe mode image to copy in. Nothing
+   here writes the processor's flash, and nothing modifies an image.
+
+   **What prompted it.** The bench Harmony 700 was running 2.5, Logitech's services offered it no
+   update, and the build this project has read most is 2.8. The install route was already read and
+   exercised, section 295, and the way back is the same route with the backup the rail demands.
+
+   **What it does not change.** Generating configuration files is still the route to everything, and
+   this does not make firmware modification a route to anything. The rail is `assertStagingAllowed`,
+   behind `HARMONY_FIRMWARE_STAGE` as well as `HARMONY_ENABLE_WRITES`, and `reinstall-firmware.ts`
+   takes a backup of the region that must match the remote before it erases anything.

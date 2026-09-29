@@ -174,6 +174,19 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // restored and nothing else changed.
   h700_repaired_internal_fe: '20260929T1345Z-h700-repaired-internal-fe-region.bin',
   h700_repaired_internal_ff: '20260929T1345Z-h700-repaired-internal-ff-region.bin',
+  // Either side of a Harmony Desktop sync with the remote running 2.5, section 296: the firmware and
+  // the staging chip untouched, and two records appended to the settings store in page 0xFF.
+  h700_prehd_internal_fe: '20260929T1422Z-h700-prehd-internal-fe-region.bin',
+  h700_prehd_internal_ff: '20260929T1422Z-h700-prehd-internal-ff-region.bin',
+  h700_posthd_internal_fe: '20260929T1426Z-h700-posthd-internal-fe-region.bin',
+  h700_posthd_internal_ff: '20260929T1426Z-h700-posthd-internal-ff-region.bin',
+  h700_posthd_staging_region: '20260929T1426Z-h700-posthd-staging-region.bin',
+  // Section 297: the staging region blank after a stage run stopped past its erase, then the unit
+  // after 2.8 was staged and installed, its application the 2.8 image and nothing else changed.
+  h700_after_failed_stage_region: '20260929T1538Z-h700-after-failed-stage-region.bin',
+  h700_28_internal_fe: '20260929T1541Z-h700-28-internal-fe-region.bin',
+  h700_28_internal_ff: '20260929T1541Z-h700-28-internal-ff-region.bin',
+  h700_28_staging_region: '20260929T1541Z-h700-28-staging-region.bin',
   // The 650's internal page 0xFE, whose safe mode image carries the same install routine.
   h650_internal_fe: '20260927T0840Z-h650-internal-fe-region.bin',
   // Three snapshots of the 650's state variables across an activity and a bare restart, section 283.
@@ -528,7 +541,12 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
     // External flash of the bench Harmony 700 from 0x000000, kept for the staged application at its
     // start. The container at 0x020000 is byte for byte `h700_gspm`, the embedded config the 2.8
     // package carries as its region 3, so counting it would count that one twice. Section 295.
-    'h700_staging_region'];
+    'h700_staging_region',
+    // The same range after a Harmony Desktop sync, byte for byte the read above. Section 296.
+    'h700_posthd_staging_region',
+    // The blank staging region and the 2.8 staged one, section 297, whose container at 0x020000 is
+    // `h700_gspm`'s like the others.
+    'h700_after_failed_stage_region', 'h700_28_staging_region'];
 
 const cache = new Map<string, string[]>();
 

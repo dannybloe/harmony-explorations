@@ -896,7 +896,7 @@ export const FIRMWARE_REINSTALL: boolean = process.env['HARMONY_FIRMWARE_REINSTA
  */
 export function assertReinstallAllowed(
   p: Pick<WritePermission, 'architecture' | 'identityBlock' | 'permittedUnit'>,
-  remote: { readonly softwareType: number; readonly staged: Uint8Array },
+  remote: { readonly softwareType: number; readonly firmware?: string; readonly staged: Uint8Array },
 ): void {
   if (!WRITES_ENABLED) {
     throw new RailError(
@@ -920,12 +920,7 @@ export function assertReinstallAllowed(
   if (dispatched === undefined || !dispatched.includes(ESCAPE_RESET)) {
     throw new RailError(`architecture ${p.architecture} has no reset escape read from its firmware`);
   }
-  if (remote.softwareType !== SOFTWARE_TYPE_SAFE_MODE) {
-    throw new RailError(
-      `the remote reports software type ${remote.softwareType}, not safe mode: the install routine `
-        + 'was read in the safe mode image, and what a running application does with the byte is unread',
-    );
-  }
+  assertStatusByteReadOn(p.architecture, remote);
   const staged = checkFirmwareImage(remote.staged);
   if (!staged.verifies) {
     throw new RailError(
@@ -937,6 +932,103 @@ export function assertReinstallAllowed(
     throw new RailError(
       `the staged image is ${staged.size} bytes and the safe mode image copies at most `
         + `${REINSTALL_MAX_IMAGE}, so it would install a truncated application`,
+    );
+  }
+}
+
+/**
+ * The application builds whose own `WRITE_MISC` selector 6 handler has been read, per architecture,
+ * so that the update status byte may be set while the remote runs normally rather than in safe mode.
+ * Section 297: on the Harmony 700's 2.5 the arm at `0x0C364` hands the packet's sixteen bit address
+ * to `0x19868`, which stores its low byte into data memory `0x100` when its high byte is 0, so
+ * `A3 06 00 02` sets the same byte the safe mode image reads. Logitech's template for skin 66 sends
+ * that sequence to a remote in either mode.
+ */
+export const STATUS_BYTE_READ_ON_APPLICATION: Readonly<Record<number, readonly string[]>> = {
+  14: ['2.5'],
+};
+
+/**
+ * Throws unless the status byte's handler has been read in the mode and build the remote is in:
+ * safe mode, whose handler section 295 read, or an application build on the list above.
+ */
+function assertStatusByteReadOn(
+  architecture: number,
+  remote: { readonly softwareType: number; readonly firmware?: string },
+): void {
+  if (remote.softwareType === SOFTWARE_TYPE_SAFE_MODE) return;
+  const builds = STATUS_BYTE_READ_ON_APPLICATION[architecture] ?? [];
+  if (remote.softwareType === 0 && remote.firmware !== undefined && builds.includes(remote.firmware)) return;
+  throw new RailError(
+    `the remote reports software type ${remote.softwareType} and firmware ${remote.firmware ?? 'unknown'}: `
+      + 'the status byte handler was read in the safe mode image and in the application builds '
+      + `${builds.join(', ') || 'none'} only`,
+  );
+}
+
+/**
+ * Where an arch 14 remote stages an application image before installing it: external flash from
+ * `0x000000`, Logitech's region 2 for skin 66, up to the embedded configuration at `0x020000`, their
+ * region 3. Two 64 KiB erase blocks, and the copy limit fits inside them.
+ */
+export const STAGING_REGION: Readonly<Record<number, { readonly start: number; readonly end: number }>> = {
+  14: { start: 0x000000, end: 0x020000 },
+};
+
+/**
+ * The named door for writing a firmware image into the staging region. Beside `WRITES_ENABLED` and
+ * `HARMONY_FIRMWARE_REINSTALL`, not instead of them.
+ */
+export const FIRMWARE_STAGE: boolean = process.env['HARMONY_FIRMWARE_STAGE'] === '1';
+
+/**
+ * Throws unless `image` may be written into the staging region of the remote on the cable. Section
+ * 297, and **the one place this project writes flash outside a configuration region**, Danny's
+ * decision of 29 September 2026, decision 18.
+ *
+ * * **The staging region and nothing else**, erased whole and in 64 KiB blocks, so neither the embedded
+ *   configuration at `0x020000` nor anything in the processor is reachable from here. The processor's
+ *   own flash is written by the remote's safe mode image, at start up, and only from what is staged.
+ * * **Only an image that verifies**, by the same check the safe mode image makes after its copy, and
+ *   within its copy limit. An image that did not verify would be copied and then refused at start up,
+ *   leaving safe mode running with the application erased, which the reinstall can still repair from
+ *   a good staged image but not from this one.
+ * * **The status byte first**: staging sets it to 0 before the erase, as Logitech's template does, so
+ *   a restart during the write installs nothing. That byte's handler has to be read in the mode the
+ *   remote is in, which is `assertStatusByteReadOn`.
+ */
+export function assertStagingAllowed(
+  p: Pick<WritePermission, 'architecture' | 'identityBlock' | 'permittedUnit'>,
+  remote: { readonly softwareType: number; readonly firmware?: string },
+  image: Uint8Array,
+): void {
+  if (!WRITES_ENABLED) {
+    throw new RailError(
+      'writing is disabled: this build is read only (set HARMONY_ENABLE_WRITES=1 knowing why)',
+    );
+  }
+  if (!FIRMWARE_STAGE) {
+    throw new RailError(
+      'staging a firmware image needs HARMONY_FIRMWARE_STAGE=1 as well as HARMONY_ENABLE_WRITES=1: '
+        + 'it erases the staged copy the reinstall repairs a remote from',
+    );
+  }
+  assertUnitIsPermitted(p);
+  const region = STAGING_REGION[p.architecture];
+  if (region === undefined) {
+    throw new RailError(`architecture ${p.architecture} has no staging region read from its firmware`);
+  }
+  assertStatusByteReadOn(p.architecture, remote);
+  const check = checkFirmwareImage(image);
+  if (!check.verifies || check.size !== image.length) {
+    throw new RailError(
+      'the image to stage does not verify at its own stated length, so the remote would refuse it '
+        + 'after copying it in',
+    );
+  }
+  if (check.size > REINSTALL_MAX_IMAGE || check.size > region.end - region.start) {
+    throw new RailError(
+      `the image is ${check.size} bytes and the safe mode image copies at most ${REINSTALL_MAX_IMAGE}`,
     );
   }
 }
@@ -978,7 +1070,11 @@ export function assertDeliberateHangAllowed(count: number): void {
 }
 
 /**
- * The firmware is never written, by any path.
+ * The firmware is never written, by any path but one.
+ *
+ * The exception is `assertStagingAllowed`: an image Logitech built, verified, written into the
+ * staging region of an arch 14 remote for its own safe mode image to install, decision 18. Nothing
+ * here writes the processor's flash, and nothing modifies an image.
  *
  * There is no permission object that makes this return, which is why it takes none. It exists so
  * that a caller reaching for a firmware write finds a refusal with a reason attached rather than

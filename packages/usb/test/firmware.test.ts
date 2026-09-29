@@ -250,6 +250,8 @@ const CASES = `
     'another unit': [{ architecture: 14, identityBlock: other, permittedUnit: unit }, { softwareType: 4, staged: good }],
     'arch 12': [{ architecture: 12, identityBlock: unit, permittedUnit: unit }, { softwareType: 4, staged: good }],
     'running its application': [{ architecture: 14, identityBlock: unit, permittedUnit: unit }, { softwareType: 0, staged: good }],
+    'running 2.5': [{ architecture: 14, identityBlock: unit, permittedUnit: unit }, { softwareType: 0, firmware: '2.5', staged: good }],
+    'running 2.8': [{ architecture: 14, identityBlock: unit, permittedUnit: unit }, { softwareType: 0, firmware: '2.8', staged: good }],
     'a staged image that does not verify': [{ architecture: 14, identityBlock: unit, permittedUnit: unit }, { softwareType: 4, staged: broken }],
     'a staged image past the copy limit': [{ architecture: 14, identityBlock: unit, permittedUnit: unit }, { softwareType: 4, staged: tooLong }],
   };
@@ -261,7 +263,7 @@ const CASES = `
 
 test('with writing enabled and the reinstall door shut, every case is still refused', () => {
   const lines = withEnv({ HARMONY_ENABLE_WRITES: '1', HARMONY_FIRMWARE_REINSTALL: '' }, CASES).split('\n');
-  assert.equal(lines.length, 6);
+  assert.equal(lines.length, 8);
   assert.ok(lines.every((line) => line.includes(': refused: a firmware reinstall needs HARMONY_FIRMWARE_REINSTALL=1')),
     lines.join('\n'));
 });
@@ -274,6 +276,9 @@ test('with both flags, each condition refuses by itself and only the whole of it
     ['another unit', /^another unit: refused: the remote on the cable is not the unit/],
     ['arch 12', /^arch 12: refused: architecture 12 has no reinstall target/],
     ['running its application', /^running its application: refused: the remote reports software type 0/],
+    // The application's own status byte handler is read on 2.5 only, section 297.
+    ['running 2.5', /^running 2.5: allowed$/],
+    ['running 2.8', /^running 2.8: refused: .*application builds 2\.5 only/],
     ['a staged image that does not verify', /: refused: the image staged in external flash does not verify/],
     ['a staged image past the copy limit', /: refused: the staged image is \d+ bytes and the safe mode image copies at most/],
   ];
@@ -282,3 +287,91 @@ test('with both flags, each condition refuses by itself and only the whole of it
     assert.ok(lines[i]!.startsWith(name) && pattern.test(lines[i]!), lines[i]);
   });
 });
+
+/** The staging rail's cases, section 297, in a subprocess like the reinstall's. */
+const STAGE_CASES = `
+  const unit = new Uint8Array(64).fill(0xee, 0, 16);
+  for (let i = 16; i < 48; i += 1) unit[i] = (i * 7 + 1) & 0xff;
+  const other = unit.slice(); other[20] ^= 0xff;
+  const image = (length, padTo) => {
+    const out = new Uint8Array(padTo).fill(0xff);
+    for (let i = 10; i < length; i += 1) out[i] = (i * 13) & 0xff;
+    out[4] = (length - 8) & 0xff; out[5] = ((length - 8) >> 8) & 0xff; out[6] = ((length - 8) >> 16) & 0xff; out[7] = 0x28;
+    out[8] = 0x48; out[9] = 0x47;
+    const sum = usb.firmwareImageChecksum(out.subarray(0, length));
+    out[0] = sum & 0xff; out[1] = sum >> 8;
+    return out;
+  };
+  const exact = image(4000, 4000);
+  const padded = image(4000, 8000);
+  const broken = exact.slice(); broken[100] ^= 1;
+  const tooLong = image(usb.REINSTALL_MAX_IMAGE + 0x400, usb.REINSTALL_MAX_IMAGE + 0x400);
+  const p = { architecture: 14, identityBlock: unit, permittedUnit: unit };
+  const running25 = { softwareType: 0, firmware: '2.5' };
+  const cases = {
+    'the whole of it': [p, running25, exact],
+    'in safe mode': [p, { softwareType: 4 }, exact],
+    'another unit': [{ ...p, identityBlock: other }, running25, exact],
+    'arch 12': [{ ...p, architecture: 12 }, running25, exact],
+    'running 2.8': [p, { softwareType: 0, firmware: '2.8' }, exact],
+    'an image with bytes past its end': [p, running25, padded],
+    'an image that does not verify': [p, running25, broken],
+    'an image past the copy limit': [p, running25, tooLong],
+  };
+  for (const [name, [perm, remote, img]] of Object.entries(cases)) {
+    try { usb.assertStagingAllowed(perm, remote, img); console.log(name + ': allowed'); }
+    catch (error) { console.log(name + ': refused: ' + error.message); }
+  }
+`;
+
+test('with writing enabled and the staging door shut, every staging case is refused', () => {
+  const lines = withEnv({ HARMONY_ENABLE_WRITES: '1', HARMONY_FIRMWARE_STAGE: '' }, STAGE_CASES).split('\n');
+  assert.equal(lines.length, 8);
+  assert.ok(lines.every((line) => line.includes(': refused: staging a firmware image needs HARMONY_FIRMWARE_STAGE=1')),
+    lines.join('\n'));
+});
+
+test('with the staging door open, each condition refuses by itself and only the whole of it passes', () => {
+  const lines = withEnv({ HARMONY_ENABLE_WRITES: '1', HARMONY_FIRMWARE_STAGE: '1' }, STAGE_CASES).split('\n');
+  const expected: [string, RegExp][] = [
+    ['the whole of it', /^the whole of it: allowed$/],
+    ['in safe mode', /^in safe mode: allowed$/],
+    ['another unit', /: refused: the remote on the cable is not the unit/],
+    ['arch 12', /: refused: architecture 12 has no staging region/],
+    ['running 2.8', /: refused: .*application builds 2\.5 only/],
+    ['an image with bytes past its end', /: refused: the image to stage does not verify at its own stated length/],
+    ['an image that does not verify', /: refused: the image to stage does not verify at its own stated length/],
+    ['an image past the copy limit', /: refused: the image is \d+ bytes and the safe mode image copies at most/],
+  ];
+  assert.equal(lines.length, expected.length, lines.join('\n'));
+  expected.forEach(([name, pattern], i) => {
+    assert.ok(lines[i]!.startsWith(name) && pattern.test(lines[i]!), lines[i]);
+  });
+});
+
+test('the first stage run left the staging region blank and the embedded configuration above it alone',
+  skipUnless('h700_after_failed_stage_region', 'h700_posthd_staging_region'), () => {
+    const after = lab('h700_after_failed_stage_region');
+    const before = lab('h700_posthd_staging_region');
+    assert.ok(after.subarray(0, 0x20000).every((b) => b === 0xff), 'both staging blocks erased');
+    assert.deepEqual(after.subarray(0x20000), before.subarray(0x20000));
+  });
+
+test('after staging and installing 2.8, the application is the 2.8 image and nothing else changed',
+  skipUnless('h700_28_internal_fe', 'h700_28_internal_ff', 'h700_posthd_internal_fe', 'h700_posthd_internal_ff',
+    'h700_28_staging_region', 'h700_posthd_staging_region', 'h700_code'), () => {
+    const image = lab('h700_code');
+    const before = internal('h700_posthd_internal_fe', 'h700_posthd_internal_ff');
+    const after = internal('h700_28_internal_fe', 'h700_28_internal_ff');
+    const end = 0x9000 + image.length;
+    assert.deepEqual(after.subarray(0x9000, end), image);
+    assert.deepEqual([checkFirmwareImage(after.subarray(0x9000)).version, checkFirmwareImage(after.subarray(0x9000)).verifies],
+      ['2.8', true]);
+    assert.deepEqual(after.subarray(0, 0x9000), before.subarray(0, 0x9000), 'bootloader and safe mode');
+    assert.deepEqual(after.subarray(end), before.subarray(end), 'everything above the application');
+    const staged = lab('h700_28_staging_region');
+    assert.deepEqual(staged.subarray(0, image.length), image);
+    assert.ok(staged.subarray(image.length, 0x20000).every((b) => b === 0xff), 'the rest of the region erased');
+    assert.deepEqual(staged.subarray(0x20000), lab('h700_posthd_staging_region').subarray(0x20000),
+      'the embedded configuration');
+  });

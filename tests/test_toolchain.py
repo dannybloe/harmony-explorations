@@ -217,7 +217,8 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # 34 since `tests/test_write_sequence.py`, section 247.
         # 35 since `tests/test_status_screens.py`, section 249.
         # 37 since `tests/test_harmony_525_region.py`, section 270.
-        self.assertEqual(len(files), 41, 'the Python test files')
+        # 42 since `tests/test_harmony_700_settings_store.py`, section 296.
+        self.assertEqual(len(files), 42, 'the Python test files')
         with_block = 0
         for path in files:
             with open(path, encoding='utf-8') as handle:
@@ -236,7 +237,8 @@ class TheRunnerSeesEveryTest(unittest.TestCase):
         # and the two that do not are named in the comment above rather than left to a tolerance.
         # 35 since `tests/test_harmony_525_region.py`, section 270, which carries one.
         # 39 since `tests/test_firmware_state_block.py`, section 284.
-        self.assertEqual(with_block, 39,
+        # 40 since `tests/test_harmony_700_settings_store.py`, section 296, which carries one.
+        self.assertEqual(with_block, 40,
                          'files carrying a __main__ block, of %d' % len(files))
 
 
@@ -662,7 +664,8 @@ class APythonBoundOnACorpusTotalIsExact(unittest.TestCase):
     def test_the_pattern_still_matches_a_known_bound(self):
         found, scanned = self._bounds()
         # 37 since `tests/test_harmony_525_region.py`, section 270.
-        self.assertEqual(len(scanned), 41, 'Python test files, which moves when one is added')
+        # 42 since `tests/test_harmony_700_settings_store.py`, section 296.
+        self.assertEqual(len(scanned), 42, 'Python test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):

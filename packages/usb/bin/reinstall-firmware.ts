@@ -6,6 +6,11 @@
  *   HARMONY_ENABLE_WRITES=1 HARMONY_FIRMWARE_REINSTALL=1 node packages/usb/bin/reinstall-firmware.ts \
  *     --unit h700 --commit
  *
+ * With `--image <file> --backup <lab region read>` it first **stages** that image, section 297 and
+ * decision 18: the backup must equal the remote's staging region as it stands, byte for byte, before
+ * anything is erased, and `--commit` then also needs `HARMONY_FIRMWARE_STAGE=1`. This is how the
+ * bench Harmony 700 was taken from 2.5 to 2.8, and the backup is the way back.
+ *
  * ## Why this exists
  *
  * A Harmony 700 arrived showing the safe mode screen after every start. Its application image at
@@ -60,6 +65,7 @@ import {
   REINSTALL_MAX_IMAGE,
 } from '../src/index.ts';
 import { unitIdentity, unitIdentityPath } from '@harmony/lab';
+import { readFileSync } from 'node:fs';
 
 /** A refusal an operator reads, thrown so that the `finally` below still closes the device. */
 class Refusal extends Error {}
@@ -79,6 +85,12 @@ const UNITS = ['h600', 'h650', 'h700'];
 
 const unitLabel = argument('unit');
 const commit = process.argv.includes('--commit');
+const imagePath = argument('image');
+const backupPath = argument('backup');
+if ((imagePath === undefined) !== (backupPath === undefined)) {
+  process.stderr.write('--image and --backup go together: staging erases the copy the backup restores\n');
+  process.exit(2);
+}
 if (unitLabel === undefined || !/^[a-z0-9_]+$/.test(unitLabel)) {
   process.stderr.write('usage: reinstall-firmware.ts --unit <label> [--commit]\n');
   process.exit(2);
@@ -130,7 +142,7 @@ async function main(): Promise<void> {
     assertUnitIsPermitted({ identityBlock, permittedUnit });
     process.stdout.write(`unit identity ${unitIdentityText(identityBlock).slice(0, 8)}..., which matches `
       + `the recorded ${unitLabel}\n`);
-    if (softwareType !== SOFTWARE_TYPE_SAFE_MODE) {
+    if (imagePath === undefined && softwareType !== SOFTWARE_TYPE_SAFE_MODE) {
       throw new Refusal('the remote is not in safe mode, so there is nothing for this to repair');
     }
 
@@ -142,25 +154,64 @@ async function main(): Promise<void> {
     const check = checkFirmwareImage(staged);
     process.stdout.write(`staged image at external 0x000000: version ${check.version}, ${check.size} `
       + `bytes, ${check.verifies ? 'verifies' : 'DOES NOT VERIFY'}\n`);
-    if (!check.verifies || check.size > REINSTALL_MAX_IMAGE) {
+    const stagedUsable = check.verifies && check.size <= REINSTALL_MAX_IMAGE;
+    // A repair installs what is staged, so it needs a usable staged image. A stage replaces it, so
+    // what is there now only matters against the backup, below.
+    if (imagePath === undefined && !stagedUsable) {
       throw new Refusal('the staged image cannot be installed as it stands');
     }
-    const installed = await installedImage(remote, check.size);
-    const installedCheck = checkFirmwareImage(installed);
-    const pages = new Set<number>();
-    for (let i = 0; i < check.size; i += 1) {
-      if (installed[i] !== staged[i]) pages.add((0x9000 + i) & ~0x3ff);
+    if (stagedUsable) {
+      const installed = await installedImage(remote, check.size);
+      const installedCheck = checkFirmwareImage(installed);
+      const pages = new Set<number>();
+      for (let i = 0; i < check.size; i += 1) {
+        if (installed[i] !== staged[i]) pages.add((0x9000 + i) & ~0x3ff);
+      }
+      process.stdout.write(`installed image at internal 0x9000: version ${installedCheck.version}, `
+        + `${installedCheck.verifies ? 'verifies' : 'does not verify'}; `
+        + `${pages.size} KiB page(s) differ from the staged one`
+        + `${pages.size > 0 ? `: ${[...pages].map((p) => `0x${p.toString(16)}`).join(', ')}` : ''}\n`);
     }
-    process.stdout.write(`installed image at internal 0x9000: version ${installedCheck.version}, `
-      + `${installedCheck.verifies ? 'verifies' : 'does not verify'}; `
-      + `${pages.size} KiB page(s) differ from the staged one`
-      + `${pages.size > 0 ? `: ${[...pages].map((p) => `0x${p.toString(16)}`).join(', ')}` : ''}\n`);
     process.stdout.write(`update status byte: ${await remote.readUpdateStatus()}\n`);
+
+    let image: Uint8Array | undefined;
+    if (imagePath !== undefined && backupPath !== undefined) {
+      image = new Uint8Array(readFileSync(imagePath));
+      const imageCheck = checkFirmwareImage(image);
+      process.stdout.write(`image to stage: version ${imageCheck.version}, ${imageCheck.size} bytes of `
+        + `${image.length}, ${imageCheck.verifies ? 'verifies' : 'DOES NOT VERIFY'}\n`);
+      if (!imageCheck.verifies || imageCheck.size !== image.length) {
+        throw new Refusal('the image does not verify at its own length, so it cannot be staged');
+      }
+      // The whole staging region, 128 KiB, against the backup, which is what makes it a way back.
+      const current = new Uint8Array(0x20000);
+      for (let at = 0; at < current.length; at += 0x8000) current.set(await remote.readFlash(at, 0x8000), at);
+      const backup = new Uint8Array(readFileSync(backupPath)).subarray(0, 0x20000);
+      const same = backup.length === current.length && backup.every((byte, i) => byte === current[i]);
+      // An erased region is what a stage interrupted after its erase leaves, which the first run of
+      // this did, section 297. The backup is then accepted as the way back only if it holds an image
+      // that verifies, since there is nothing on the remote left to compare it with.
+      const erased = current.every((byte) => byte === 0xff);
+      const backupImage = checkFirmwareImage(backup);
+      process.stdout.write(`backup ${backupPath}: ${same ? 'equals' : 'DIFFERS FROM'} the staging region `
+        + `on the remote${erased ? ', which is erased' : ''}; its image is ${backupImage.version}, `
+        + `${backupImage.verifies ? 'verifying' : 'NOT VERIFYING'}\n`);
+      if (!same && !(erased && backupImage.verifies)) {
+        throw new Refusal('the backup is not what the remote holds, so it is no way back');
+      }
+      process.stdout.write(`plan: status byte 0, erase 0x000000 and 0x010000, write ${image.length} bytes, `
+        + 'read 128 KiB back and compare, status byte 2, restart\n');
+    }
 
     if (!commit) {
       process.stdout.write('dry run: nothing was sent that changes the remote. --commit sets the '
         + 'update status to 2 and restarts it, and the remote copies the staged image in itself.\n');
       return;
+    }
+    if (image !== undefined) {
+      process.stdout.write('staging the image\n');
+      await remote.stageFirmware({ permittedUnit }, image);
+      process.stdout.write('staged and read back identical\n');
     }
     process.stdout.write('sending the update status 2 and the restart\n');
     await remote.requestFirmwareReinstall({ permittedUnit });

@@ -83,7 +83,8 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // 124 since the 650's region after LG kijken's own device list, section 294.
   // 129 since the Harmony 700's internal pages twice and its staging region, section 295, and 132
   // with its pages after the repair and the 650's page 0xFE beside them.
-  assert.equal(Object.keys(pythonImages()).length, 132, 'every fixture tests/lab.py names');
+  // 137 with the five reads either side of section 296's sync, 141 with section 297's four.
+  assert.equal(Object.keys(pythonImages()).length, 141, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {
@@ -144,7 +145,8 @@ test('the two sides exclude the same fixtures from the parseable population', ()
   // either side of 1.4.4, section 291, and 28 and 29 with the 20 and 10 second screen timers. 30 is
   // the spare's compare base for its four page activity menu write, section 293, the first shape.
   // 31 with the 650's region after section 294, and 32 with the Harmony 700's external flash, kept for
-  // its staged application, whose container is `h700_gspm`'s, section 295.
-  assert.equal(names.length, 32, 'each one a container already counted, that container plus a known '
+  // its staged application, whose container is `h700_gspm`'s, section 295, and 33 with the same range
+  // after section 296's sync, and 35 with the blank and the 2.8 staged regions of section 297.
+  assert.equal(names.length, 35, 'each one a container already counted, that container plus a known '
     + 'edit, or a compare base whose remote is not yet in the corpus');
 });

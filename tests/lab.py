@@ -187,6 +187,18 @@ IMAGES = {
     'h700_after_hd_internal_ff': '20260929T1315Z-h700-after-hd-internal-ff-region.bin',
     'h700_repaired_internal_fe': '20260929T1345Z-h700-repaired-internal-fe-region.bin',
     'h700_repaired_internal_ff': '20260929T1345Z-h700-repaired-internal-ff-region.bin',
+    # Either side of a Harmony Desktop sync with the remote running 2.5, section 296.
+    'h700_prehd_internal_fe': '20260929T1422Z-h700-prehd-internal-fe-region.bin',
+    'h700_prehd_internal_ff': '20260929T1422Z-h700-prehd-internal-ff-region.bin',
+    'h700_posthd_internal_fe': '20260929T1426Z-h700-posthd-internal-fe-region.bin',
+    'h700_posthd_internal_ff': '20260929T1426Z-h700-posthd-internal-ff-region.bin',
+    'h700_posthd_staging_region': '20260929T1426Z-h700-posthd-staging-region.bin',
+    # The staging region blank after the first stage run stopped past its erase, and the unit after
+    # the second staged and installed 2.8. Section 297.
+    'h700_after_failed_stage_region': '20260929T1538Z-h700-after-failed-stage-region.bin',
+    'h700_28_internal_fe': '20260929T1541Z-h700-28-internal-fe-region.bin',
+    'h700_28_internal_ff': '20260929T1541Z-h700-28-internal-ff-region.bin',
+    'h700_28_staging_region': '20260929T1541Z-h700-28-staging-region.bin',
     'h650_internal_fe': '20260927T0840Z-h650-internal-fe-region.bin',
     # Three snapshots of the 650's state variables, 108 bytes from data 0xE10 plus the stored sum:
     # at rest, after an activity was started off the cable, and after a bare restart. Section 283.
@@ -529,7 +541,11 @@ PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_confi
                       # External flash of the bench Harmony 700 from 0x000000, kept for the staged
                       # application; its container at 0x020000 is byte for byte `h700_gspm`.
                       # Section 295.
-                      'h700_staging_region')
+                      'h700_staging_region',
+                      # The same range after a Harmony Desktop sync, byte for byte. Section 296.
+                      'h700_posthd_staging_region',
+                      # The blank and the 2.8 staged region, section 297, same container.
+                      'h700_after_failed_stage_region', 'h700_28_staging_region')
 
 CONTAINERS = (
     'h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'h525_config_2', 'one_config',

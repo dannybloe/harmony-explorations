@@ -144,7 +144,9 @@ After 3 produces something.
 - [ ] L7 The Harmony 700 as a write target, the same decision, once it is on the bench
   - [x] Read its identity, its firmware and its configuration, read only; the configuration is also the third case 1.4's `deviceModeMaps` item waits for
   - [x] It arrived stuck in safe mode with one page of its application erased, and was repaired by making it reinstall its own staged copy, `reinstall-firmware.ts` (section 295)
-  - [ ] Read the cache drop and the restart in its build, 2.5 since the repair and in the lab as the staging read, whose drop may set a second flag the 0.2 builds do not (sections 282 and 283), and only then add 2.5 to `write-config.ts`
+  - [x] Taken from firmware 2.5 to 2.8 by staging Logitech's image and letting it install itself, decision 18 (section 297)
+  - [ ] Read the cache drop and the restart in its build, 2.8 since section 297 and the reference image, whose drop sets a second flag the 0.2 builds do not and half of which is unread (sections 282 and 283), and only then add 2.8 to `write-config.ts`
+  - [ ] Read the 2.8 application's status byte routine, `0x1AB96`, before staging on it from application mode again (section 297)
   - [x] Record its identity as `h700` and read its whole configuration region
   - [ ] Write one block back unchanged with `rehearse-block.ts`
   - [ ] A real write with `write-config.ts`

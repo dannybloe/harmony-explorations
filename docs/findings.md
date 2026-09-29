@@ -38810,3 +38810,165 @@ changing anything outside the damaged page, was run and did not happen.
 * `packages/usb/bin/reinstall-firmware.ts`: the dry run and the commit.
 * `packages/usb/test/firmware.test.ts`: the images, the repair, the scope, and the rail's refusals.
 * `docs/usb-protocol.md`, the `recovering-a-remote` skill, `CLAUDE.md` and `todo.md`.
+
+## 296. A Harmony Desktop sync on a running Harmony 700 writes no firmware and appends two records to its settings store
+
+The bench Harmony 700 of section 295, running its 2.5 application after the repair, synced once more with
+Harmony Desktop to see whether it would offer a firmware update. **It offered none.** Four areas were read
+off the remote immediately before and immediately after, all read only.
+
+| area | before and after |
+|---|---|
+| external flash `0x000000` to `0x030000`, where an install stages an image | byte for byte identical, and identical to section 295's read of it |
+| internal page `0xFE`, the bootloader, safe mode image and the application's start | byte for byte identical |
+| internal page `0xFF`, the rest of the application and the settings store | three bytes differ, all in the store |
+| the configuration region from `0x030000` | rewritten: a new compile of the account, the same length, every structural check passing, measured on the lab reads and not asserted by a test here |
+
+The version block reads firmware 2.5 and software type 0 on both sides.
+
+### The settings store
+
+Section 282 read the store's format: two 1 KiB blocks at `0x01EC00` and `0x01F000`, a four byte header,
+then two byte records, setting then value, appended, the latest record winning. On this unit the first
+block held twelve records as it arrived, every one for setting `0x80`: four pairs of `0xF8` then `0xFF`,
+and two pairs of `0xFE` then `0xFF`. The same twelve were there after the first Harmony Desktop sync,
+which ran with the remote in safe mode, after the reinstall of section 295, and before this sync.
+
+**This sync appended two more, `0xFE` and then `0xFF`**, at `0x01EC1C`, three bytes changed because the
+last value is `0xFF`, which is erased flash. The second block stays erased, so nothing was copied.
+
+What that fits, and what it does not settle:
+
+* **The `0xFE` is section 282's path.** That section read, on the 0.2 builds, that the first erase after a
+  cache drop, if it is at `0x030000`, clears bit 0 of setting `0x80` and writes it back, and a write that
+  changes nothing writes nothing. Here the latest value was `0xFF`, so clearing bit 0 changes it. Whether
+  this sync sent a drop is not known, since only its effects were observed, and the path is not read on
+  the 2.5 build.
+* **What writes the `0xFF` back is unread.** Section 282 named two candidates it did not trace, a settings
+  write driven over USB and the `WRITE_MISC` selector `0x0A` that concordance sends around its erases.
+* **On the 600 and the 650 the latest value is `0xFE`**, section 282, which is what a drop and an erase
+  without the second step would leave, and this project's writer has written both of them. On this 700
+  the history reads as syncs that set the bit back each time. That is a fit to three units, not a
+  reading.
+* **The safe mode sync appended nothing**, and neither did the reinstall. So on this unit the store is
+  written by the running application and not by the safe mode image, which fits section 282 having read
+  its writer in an application image.
+
+**For a writer**, which is the part to carry: our own configuration write on this 700 would append a
+record here too, and the store holds 510 before it copies. What setting `0x80` means is unread.
+
+### Scope, decision 16
+
+Measured on one Harmony 700 running 2.5. The store's format is section 282's, read on the 0.2 builds of
+the 600 and the 650; that the 2.5 build keeps the same format rests on these reads parsing under it.
+
+### Sources checked before the work
+
+Section 282 for the store, section 295 for the earlier reads of this unit. Logitech's clients were not
+read for this: the question was what one sync did, and the reads answer it.
+
+### Falsification
+
+A read of the staging chip or of page `0xFE` that differs across a sync that offered no update, or store
+records that were not appended by a sync.
+
+### Where it lands
+
+* `tests/test_harmony_700_settings_store.py`: the store in every read of the unit, the two records and
+  the three bytes, and the firmware page and staging chip unchanged.
+* The five reads, `h700_prehd_*` and `h700_posthd_*`, in `tests/lab.py` and `packages/lab`; the staging
+  read joins `PARSEABLE_EXCLUDED` and the golden vectors, its container being `h700_gspm`'s.
+
+## 297. The bench Harmony 700 was taken from firmware 2.5 to 2.8 by staging Logitech's image and letting it install itself
+
+Danny's decision of 29 September 2026, decision 18: the one route by which this project writes flash
+outside a configuration region, for this purpose on this unit. What was written is Logitech's own 2.8
+application image, unmodified, into the region of external flash from which the remote's safe mode image
+installs an application; the processor's own flash was written by the remote.
+
+### The evidence that 2.8 suits this unit, gathered first
+
+* **The flash part.** Section 295 found the 2.8 package stating `0x14:0x1C` in its upgrade header and
+  `0x15:0x1C` in its `Data.xml`, and this unit reports `15:1C`. Section 108 had already read, on the 700
+  2.8 image, the table of flash parts that build accepts: capacity code `0x15` with EON's `0x1C` is on it,
+  sized 2 MiB. So the build accepts this part, and the header's `0x14` is the package's target, not a
+  limit of the firmware. The configuration on this unit ends above 1 MiB, which a 1 MiB part could not
+  hold, so a build that could not size the part would have shown it.
+* **The sequence.** Logitech's `firmwareupgrade.xml` for skin 66: `WriteRamStart`, the status byte to 0,
+  read back; `EraseFlash` over the image's length in 64 KiB blocks from region 2, `0x000000`;
+  `WriteFlash`; `WriteRamComplete`, the status byte to 2, read back; `Reset`.
+* **The status byte in the running application.** The template sends it to a remote in either mode, and
+  section 295 read only the safe mode image's handler. On the 2.5 application the `WRITE_MISC` selector
+  chain is at `0x0C314`, the same address as on the 650's 0.2 build, and sends 6 to `0x0C364`, which puts
+  the packet's sixteen bit address, low byte in `0xD5E` and high byte in `0xD5F`, into `0x103` and `0x102`
+  and calls `0x19868`. That routine stores `0x103` into data memory `0x100` when `0x102` is 0. So
+  `A3 06 00 02`, address `0x0002`, sets the same byte to 2 that the safe mode image reads, and the read
+  back before the restart is what would have caught it otherwise. The 2.8 application's arm, at
+  `0x0C400`, has the same shape and calls `0x1AB96`; that routine is not read.
+
+### The run, twice
+
+`reinstall-firmware.ts --unit h700 --image <2.8 image> --backup <staging read> --commit`, behind
+`HARMONY_ENABLE_WRITES`, `HARMONY_FIRMWARE_REINSTALL` and a new door, `HARMONY_FIRMWARE_STAGE`. The
+backup is the staging region read off this unit immediately before, which the script requires to equal
+the remote's region before it erases anything.
+
+**The first run stopped past its erase.** It set the status byte to 0, erased both staging blocks, and
+then refused to build its first write packet, because a write's count is sixteen bits and it had passed
+the whole 76672 byte image. A read showed the region blank and the embedded configuration above it
+unchanged; the remote kept running 2.5, and with the status byte 0 nothing would install. The write now
+goes in 32 KiB transfers, and the script accepts an erased region in place of an equal one only when the
+backup itself holds an image that verifies.
+
+**The second run completed**: staged, read back identical over the whole 128 KiB, status byte 2 read
+back, restarted, and the remote came back reporting **firmware 2.8, software type 0**.
+
+### What the remote holds afterwards
+
+| area | against the reads before the run |
+|---|---|
+| internal `0x9000` onward, the application | byte for byte the 2.8 image, 76672 bytes, verifying |
+| internal `0x0000` to `0x9000`, bootloader and safe mode | unchanged |
+| internal flash above the new application, the settings store and the identity block included | unchanged |
+| external `0x000000` to `0x020000` | the 2.8 image, then erased |
+| external `0x020000`, the embedded configuration | unchanged, and still byte for byte the 2.8 package's region 3 |
+| the user configuration from `0x030000` | unchanged |
+
+The install copied exactly the image and nothing else. Everything from its end, `0x01BB80`, upward was
+erased flash before the run apart from the settings store and the identity block, and reads identical
+afterwards. The 2.5 build's last programmed byte was at `0x01A757` and the 2.8 image's is at `0x01BB5D`,
+its final 34 bytes being `0xFF`, so the bytes that changed run from `0x9000` to `0x01BB5D`.
+
+Off the cable the remote comes up normally on 2.8, on Danny's word after trying it; that is an observation
+of the screen and a few keys and not a test of every feature the build carries.
+
+### Scope, decision 16
+
+One Harmony 700, from 2.5 to 2.8. The staging path is the safe mode image's install routine read on the
+700's 2.3 safe mode image, section 295, and the application's status byte handler on its 2.5 build. The
+rail admits arch 14 staging only from safe mode or from an application build on
+`STATUS_BYTE_READ_ON_APPLICATION`, which is `['2.5']`, so a remote running 2.8 cannot be staged from
+application mode until that build's `0x1AB96` is read. Whether 2.8 behaves correctly on this unit in use
+is Danny's observation to make, not this section's.
+
+### Sources checked before the work
+
+Logitech's `firmwareupgrade.xml` for skin 66 and the 2.8 package's two statements of its target; section
+108's flash part table on the 2.8 image; the 2.5 application image read off this unit, section 295, for
+the status byte handler.
+
+### Falsification
+
+An application area after the install that differs from the image, a change anywhere else in either
+flash, or a remote that did not report 2.8 afterwards. None happened.
+
+### Where it lands
+
+* `packages/usb/src/rails.ts`: `STAGING_REGION`, `FIRMWARE_STAGE`, `assertStagingAllowed`, and
+  `STATUS_BYTE_READ_ON_APPLICATION`, which the reinstall rail consults too.
+* `packages/usb/src/remote.ts`: `stageFirmware`, and the erase and write split into unchecked halves that
+  only a method that has passed a rail calls.
+* `packages/usb/bin/reinstall-firmware.ts`: `--image` and `--backup`.
+* `packages/usb/test/firmware.test.ts`: the staging rail's refusals, the application builds, the blank
+  region and the state after the install.
+* `docs/decisions.md` decision 18, `CLAUDE.md`, the `recovering-a-remote` skill and `todo.md`.
