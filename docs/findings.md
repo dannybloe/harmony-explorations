@@ -39889,6 +39889,35 @@ to half a millisecond, so the change is real; what else sets that gap is not est
 power code is sent between the two, heard at 21.12 seconds with six repeats, and code 41 follows at
 22.62.
 
+### The configuration's delay, heard
+
+To make the change too large to hide, section 303's file was written again, `PowerOnDelay_79993804` at 45
+tenths, the same two blocks and the same rails, the whole configuration read back identical. This time
+nothing saved stands over it: after the bench test variable 67 held **45**. The test heard KPN code 35
+to code 41 at **5.520 seconds** on the receiver's clock, against 2.508 at 15 tenths: **3.012 seconds
+longer for the 3.0 written**. The page named neither KPN frame, the receiver merging their opening
+flashes as in section 303, so they are named by position and shape: the first frame's flashes are the
+earlier run's frame 32 exactly, and the second opens the burst whose other two frames are each one flash
+from the earlier burst's. The 1.5 second file then went back the same way, read back identical.
+
+So on this unit the configuration's power on delay governs once no saved value stands over it, and a
+change large enough is heard in full. The 15 against 10 run's 0.104 seconds stays unexplained; the
+television's power code, sent seven times between the two KPN codes, is a candidate nobody has tested.
+
+### The television's seven copies, a prediction before the Harmony 650 is read
+
+The television on this configuration is a Panasonic, identified 80 of 80 against one codeset in
+Logitech's catalogue, the TX-P42GT30E range. Of its 81 stored codes 79 hold 3 copies of the frame, which
+is the `:3` every command of that codeset states, and two hold **7**: codes 42 and 49, `PowerOn` and
+`PowerOff`. Code 4 is the same `PowerOn` frame at 3 copies. Nothing in the archive states 7: the device
+files name only a codeset, and the family's definition has `PressMinimumRepeats` and
+`HoldMinimumRepeats` null. Logitech's account model has a power feature whose power on and off actions
+are `IRPressAction`s with a `Duration`, which would compile to more copies. Danny is adding the same
+model to the Harmony 650 through MyHarmony, in an activity, with its power settings left as offered.
+**Prediction, written before that configuration is read: its `PowerOn` and `PowerOff` used by the
+activity hold 7 copies, and the rest 3**, which would make 7 the account's default for this device
+rather than a setting of the 600's account. If they hold 3, the 600's 7 is that account's own.
+
 ### Scope, decision 16
 
 Sent on the Harmony 600 alone, so the reply, the landing and the read back are measured there only. The
@@ -39922,7 +39951,8 @@ and the order of section 304's "the remote is what caught it".
 ### Falsification
 
 A successful write answering 4; a record landing anywhere but the first free one; a store read back that
-differs from the prediction; after a start, variable 67 holding anything but the configuration's 15.
+differs from the prediction; after a start, variable 67 holding anything but the configuration's 15; at
+45 tenths, a gap that does not move by the 3.0 seconds written.
 
 ### Where it lands
 

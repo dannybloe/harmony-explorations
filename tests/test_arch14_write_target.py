@@ -1558,5 +1558,28 @@ class TheHarmony600sSavedKpnDelayWasClearedOverUsb(unittest.TestCase):
         self.assertEqual(rx[43] - rx[32], 2507743)
 
 
+    def test_with_nothing_saved_the_configuration_s_45_is_held_and_heard_three_seconds_longer(self):
+        names = ('h600_kpn45_second_write_log', 'h600_delay_ir_kpn45_heard', 'h600_ram_after_kpn45_second',
+                 'h600_kpn15_second_restore_log', 'h600_delay_ir_monitor_after')
+        lab.require(*names)
+        for log in ('h600_kpn45_second_write_log', 'h600_kpn15_second_restore_log'):
+            text = lab.load(log).decode('utf-8')
+            self.assertIn('2 byte(s) differ from', text)
+            self.assertIn('the whole configuration reads back byte for byte identical to the file', text)
+            self.assertIn('the restart is sent', text)
+        held = TheHarmony600sDelayWriteWasOverriddenByItsSettingsStore
+        bank = _bank(lab.load('h600_ram_after_kpn45_second').decode('utf-8'))
+        at = held()._at(held.KPN_POWER_ON) - 0xE00
+        self.assertEqual(bank[at] | bank[at + 1] << 8, 45)
+        # KPN code 35 to code 41, the frames named by position and shape as in section 303: 61's flashes
+        # are 32's exactly, and 72 opens the burst that 43 opened. 2.508 seconds at 15 tenths, 5.520 at 45.
+        run = json.loads(lab.load('h600_delay_ir_kpn45_heard'))
+        presses = {p['frame']['seq']: p for p in run['steps'][1]['presses']}
+        self.assertEqual(presses[72]['atMs'] - presses[61]['atMs'], 5503)
+        rx = TheHarmony700sDelayWriteWasHeardAndWentBack._receiver_clock(lab.load('h600_delay_ir_monitor_after'))
+        self.assertEqual(rx[72] - rx[61], 5520083)
+        self.assertEqual((rx[72] - rx[61]) - (rx[43] - rx[32]), 3012340)
+
+
 if __name__ == '__main__':
     unittest.main()

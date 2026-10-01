@@ -234,6 +234,12 @@ export const IMAGES: Readonly<Record<string, string>> = {
   h600_delay_ir_cleared: '20261001T134324Z-ir-test-harmony-600-the-kpn-box-s-power-on-delay.json',
   h600_ram_after_clear: '20261001T1400Z-h600-ram-e00-after-clear.txt',
   h600_settings_read_after_start: '20261001T1401Z-h600-settings-read-after-start.txt',
+  // The configuration's delay raised to 45 again with nothing saved over it, heard, and put back,
+  // section 305.
+  h600_kpn45_second_write_log: '20261001T1420Z-h600-kpn45-second-write-run.log',
+  h600_delay_ir_kpn45_heard: '20261001T140541Z-ir-test-harmony-600-the-kpn-box-s-power-on-delay.json',
+  h600_ram_after_kpn45_second: '20261001T1440Z-h600-ram-e00-after-kpn45-second.txt',
+  h600_kpn15_second_restore_log: '20261001T1442Z-h600-kpn15-second-restore-write-run.log',
   // The same region read after block 0x030000 was written back unchanged, section 300.
   h700_after_rehearsal_region: '20260929T1923Z-h700-after-rehearsal-config-region-region.bin',
   // And the rehearsal's own output for that write, which is the only record that it erased.

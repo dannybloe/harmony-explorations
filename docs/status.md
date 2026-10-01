@@ -852,6 +852,8 @@ fixed. **Writing it works**, section 305: four writes emptied the 600's saved KP
 back exactly as predicted, and the remote's own lookup now reports the slot empty. After a battery pull the
 remote holds the configuration's 1.5 seconds in memory where it held 1.0, so the clear worked; the
 bench test's gap grew by only a tenth of a second against the half second, which is not explained yet.
+With the configuration's delay then raised to 4.5 seconds, the gap grew by 3.01 seconds for the 3.0
+written, so the configuration's delay governs on that unit once nothing saved stands over it.
 
 **A changed setting on the Harmony 700 is heard on the air, section 301.** How long the remote waits
 after switching the Denon on was raised from six seconds to nine, written to the remote, and put back.
