@@ -1235,8 +1235,9 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
         # programmed Harmony 300 was read, section 265. 75 since the rebuild from the composers
         # alone, section 279, which is a folder inside `work/plan-1.3/` named on that row. 78 since
         # `work/plan-1.2.2/` and the region read it was built off, section 293. 79 since
-        # `work/plan-1.2.10/`, section 294. 80 since `work/plan-L7/`, section 301.
-        self.assertEqual(len(named), 80, "lab paths the register names, as at 1 October 2026")
+        # `work/plan-1.2.10/`, section 294. 80 since `work/plan-L7/`, section 301. 81 since `work/plan-L6/`, the
+        # Harmony 600's delay write.
+        self.assertEqual(len(named), 81, "lab paths the register names, as at 1 October 2026")
         for path in sorted(named):
             with self.subTest(path=path):
                 if '*' in path:
@@ -1329,9 +1330,10 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
         # device differential beside it, section 263, and 51 since the Harmony 300, section 264.
         # 55 since `work/plan-1.2.2/`, the four page activity menu, section 293, and 56 since
         # `work/plan-1.2.10/`, the 650's activity device list, section 294, and 57 since
-        # `work/plan-L7/`, the Harmony 700's delay write, section 301.
-        self.assertEqual(len(rows), 57)
-        self.assertEqual(len(dict(rows)), 57, 'a duplicated path would make a query ambiguous')
+        # `work/plan-L7/`, the Harmony 700's delay write, section 301, and 58 since `work/plan-L6/`,
+        # the Harmony 600's.
+        self.assertEqual(len(rows), 58)
+        self.assertEqual(len(dict(rows)), 58, 'a duplicated path would make a query ambiguous')
         self.assertNotIn('unseen', dict(rows), 'the status legend is not an artefact')
 
     def test_a_query_is_answered_by_ancestors_and_by_descendants(self):

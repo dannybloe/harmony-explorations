@@ -203,6 +203,8 @@ export const IMAGES: Readonly<Record<string, string>> = {
   h600_rehearsal_log: '20261001T0908Z-h600-block-030000-rehearsal-run.log',
   h600_after_rehearsal_region: '20261001T0910Z-h600-after-rehearsal-config-region-region.bin',
   h600_after_rehearsal_low: '20261001T0910Z-h600-after-rehearsal-low-region.bin',
+  // After the KPN box's power on delay was raised from 15 to 45 tenths: two bytes moved.
+  h600_kpn45_region: '20261001T0948Z-h600-kpn45-config-region-region.bin',
   // The same region read after block 0x030000 was written back unchanged, section 300.
   h700_after_rehearsal_region: '20260929T1923Z-h700-after-rehearsal-config-region-region.bin',
   // And the rehearsal's own output for that write, which is the only record that it erased.
@@ -584,6 +586,8 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
     // to is the safe mode one at 0x020000. Section 302.
     'h600_external_region',
     'h600_after_rehearsal_low',
+    // And after the KPN box's power on delay was raised to 45 tenths.
+    'h600_kpn45_region',
     // And after its first block was written back unchanged, section 300.
     'h700_after_rehearsal_region',
     // And after its Denon's power on delay was raised to 90 tenths.

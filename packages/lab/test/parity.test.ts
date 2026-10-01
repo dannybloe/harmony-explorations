@@ -87,8 +87,8 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // 154 with section 301's nine: the region after the delay write and after its revert, the three
   // write journals, the three infrared runs and the bench's monitor log. 155 with the Harmony 600's
   // configuration region before its first write, and 159 with section 302's external flash read,
-  // rehearsal output and the two reads after it, and 161 with its two internal page reads.
-  assert.equal(Object.keys(pythonImages()).length, 161, 'every fixture tests/lab.py names');
+  // rehearsal output and the two reads after it, and 161 with its two internal page reads, and 162 with its region after the KPN delay write.
+  assert.equal(Object.keys(pythonImages()).length, 162, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {
@@ -156,6 +156,6 @@ test('the two sides exclude the same fixtures from the parseable population', ()
   // and its revert, and 41 with the Harmony 600's region before its first write, whose container is
   // `h600_config`, and 42 with that region after section 302's write, and 44 with the 600's two
   // external flash reads from 0x000000, whose container is the safe mode one.
-  assert.equal(names.length, 44, 'each one a container already counted, that container plus a known '
+  assert.equal(names.length, 45, 'each one a container already counted, that container plus a known '
     + 'edit, or a compare base whose remote is not yet in the corpus');
 });

@@ -169,6 +169,9 @@ const H600_DUMPS = new Set<string>([
   // the 0x200000 ceiling, identical to the read before that rehearsal. The compare base for the
   // 600's first configuration write.
   'h600_after_rehearsal_region',
+  // After the 600's first real write, the KPN box's power on delay raised from 15 to 45 tenths: the
+  // two bytes the file changed and nothing else. The compare base for putting it back.
+  'h600_kpn45_region',
 ]);
 const H700_DUMPS = new Set<string>([
   // Read straight after section 300 put block 0x030000 back unchanged: the 2.8 configuration, the
