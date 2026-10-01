@@ -1154,5 +1154,199 @@ class TheHarmony600sFirstBlockWentBackUnchanged(unittest.TestCase):
         self.assertEqual(int(writes[0][1], 16), self.REGION)
         self.assertNotRegex(self.log, r'(?i)invalidat|restart|reset|drop')
 
+
+def _bank(text):
+    """A `read-ram.ts` dump of bank `0xE00` as 256 bytes."""
+    rows = re.findall(r'^0x(e[0-9a-f]0)  ((?:[0-9a-f]{2} ){15}[0-9a-f]{2})', text, re.M)
+    data = bytes.fromhex(''.join(row for _, row in rows).replace(' ', ''))
+    assert [int(at, 16) for at, _ in rows] == list(range(0xE00, 0xF00, 0x10))
+    return data
+
+
+def _store_slots(page_ff):
+    """The settings store's latest value per setting, from page `0xFF`, section 282's format: a four
+    byte header at `0xEC00` and then two byte records, setting then value, the latest one winning."""
+    block = page_ff[0xEC00:0xF000]
+    latest = {}
+    for at in range(4, len(block), 2):
+        setting, value = block[at], block[at + 1]
+        if (setting, value) != (0xFF, 0xFF):
+            latest[setting] = value
+    return latest
+
+
+class TheHarmony600sDelayWriteWasOverriddenByItsSettingsStore(unittest.TestCase):
+    """Section 303: the KPN box's power on delay on the Harmony 600, 15 tenths to 45 and back, unheard.
+
+    The flash took the value and the remote never used it, because the configuration's own start up
+    lists copy a value saved in the settings store over the one the configuration states, and this
+    unit's store held one for exactly that delay, from before any write of ours. The configuration
+    half, saving and restoring on every arch 14 container, is `packages/codec/test/settingsstore.test.ts`.
+    """
+
+    REGION = 0x030000
+    RECORD = 0x0553A9
+    TRAILER = 0x0E4360
+    #: State variables of `h600_config`, by index: the KPN box's power on delay, the PS3's inter device
+    #: delay, and the scratch variable the restore reads into.
+    KPN_POWER_ON, PS_INTER_DEVICE, SCRATCH = 67, 62, 59
+    BANK = 0xE10
+
+    def _at(self, index, narrow=55):
+        return self.BANK + (index if index < narrow else narrow + 2 * (index - narrow))
+
+    def test_the_raise_moved_the_delay_and_the_trailer_and_the_revert_put_the_region_back(self):
+        names = ('h600_after_rehearsal_region', 'h600_kpn45_region', 'h600_kpn15_restored_region')
+        lab.require(*names)
+        before, raised, restored = (lab.load(name) for name in names)
+        moved = [self.REGION + i for i, (a, b) in enumerate(zip(before, raised)) if a != b]
+        self.assertEqual(moved, [self.RECORD, self.TRAILER])
+        at, end = self.RECORD - self.REGION, self.TRAILER - self.REGION
+        self.assertEqual((before[at], raised[at]), (15, 45))
+        # Two fields, two ends: the trailer byte moved by exactly what the delay byte moved by. The
+        # delay is the high byte of its little endian word here, and the trailer starts at an odd
+        # address, 0xE435F, so its high byte is the even one that moved.
+        self.assertEqual((at % 2, end % 2), (1, 0))
+        self.assertEqual(before[end] ^ raised[end], 15 ^ 45)
+        self.assertEqual(restored, before)
+        from harmony import gspm
+        table = gspm.parse(raised).state_table()
+        self.assertEqual(table.entries.index(self.RECORD), self.KPN_POWER_ON)
+        self.assertEqual((table.narrow, table.wide), (55, 19))
+
+    def test_both_writes_ran_the_whole_sequence(self):
+        names = ('h600_kpn45_write_log', 'h600_kpn15_restore_write_log')
+        lab.require(*names)
+        for name in names:
+            log = lab.load(name).decode('utf-8')
+            for line in ('which matches the recorded h600',
+                         'dropping the cached region descriptors',
+                         'erasing 0x50000', 'erasing 0xe0000',
+                         'the whole configuration reads back byte for byte identical to the file',
+                         'the restart is sent'):
+                self.assertIn(line, log, name)
+            self.assertEqual(log.count('the erase stayed inside its own block, measured on both sides'), 2)
+            writes = re.findall(r'^writing (\d+) bytes at 0x([0-9a-f]+)$', log, re.M)
+            self.assertEqual((len(writes), sum(int(n) for n, _ in writes)), (42, 0x20000))
+
+    def test_the_gap_did_not_move_on_either_clock(self):
+        # KPN code 35, the box's power code, to the first frame of code 41, its next command. The
+        # opening frame of 41 was damaged in the first run and of 35 in the second, so the frames are
+        # named by their sequence numbers in each run rather than by what the page matched them to.
+        clock = TheHarmony700sDelayWriteWasHeardAndWentBack._receiver_clock
+        runs = (('h600_delay_ir_before', 'h600_delay_ir_monitor_before'),
+                ('h600_delay_ir_after', 'h600_delay_ir_monitor_after'))
+        lab.require(*(name for pair in runs for name in pair))
+        host, receiver = [], []
+        for run_name, monitor_name in runs:
+            run = json.loads(lab.load(run_name))
+            self.assertEqual(run['name'], "Harmony 600, the KPN box's power on delay")
+            presses = {p['frame']['seq']: p for p in run['steps'][1]['presses']}
+            rx = clock(lab.load(monitor_name))
+            host.append(presses[12]['atMs'] - presses[1]['atMs'])
+            receiver.append(rx[12] - rx[1])
+        self.assertEqual(host, [2406, 2427])
+        self.assertEqual(receiver, [2403804, 2403320])
+        # 30 tenths were written; the receiver's own clock moved by half a millisecond.
+        self.assertLess(abs(receiver[1] - receiver[0]), 1000)
+
+    def test_memory_holds_the_stored_values_through_the_write_a_battery_pull_and_the_revert(self):
+        names = ('h600_ram_after_kpn45', 'h600_ram_after_battery_pull', 'h600_ram_after_restore')
+        lab.require(*names)
+        for name in names:
+            bank = _bank(lab.load(name).decode('utf-8'))
+            word = lambda index: bank[self._at(index) - 0xE00] | bank[self._at(index) - 0xE00 + 1] << 8
+            self.assertEqual(word(self.KPN_POWER_ON), 10, name)
+            self.assertEqual(word(self.PS_INTER_DEVICE), 15, name)
+            # The scratch the restore reads into holds the store's "nothing here" answer, `0xFEFD`.
+            self.assertEqual(word(self.SCRATCH), 0xFEFD, name)
+            # Section 283's sum over bytes 18 to 191 of the array, seeded 0xA5, is valid in each.
+            total = 0xA5
+            for byte in bank[0x22:0xD0]:
+                total ^= byte
+            self.assertEqual(total, bank[0xD2], name)
+        # The battery pull reloaded the variables an activity moves, so the remote did start again:
+        # the variable at 0xE3B read 4 after the write and 0 after the pull, its configuration value.
+        after = _bank(lab.load('h600_ram_after_kpn45').decode('utf-8'))
+        pulled = _bank(lab.load('h600_ram_after_battery_pull').decode('utf-8'))
+        self.assertEqual((after[0x3B], pulled[0x3B]), (4, 0))
+
+    def test_the_store_held_those_two_values_before_any_write_and_the_other_two_units_hold_none(self):
+        lab.require('h600_internal_ff_region', 'h650_page_ff', 'h700_28_internal_ff')
+        latest = _store_slots(lab.load('h600_internal_ff_region'))
+        # Two tables of five four byte slots, settings 0x00 to 0x13 for power on delays and 0x18 to
+        # 0x2B for inter device delays, each a big endian key and a big endian value.
+        slots = {}
+        for table, base in (('power on', 0x00), ('inter device', 0x18)):
+            for slot in range(5):
+                raw = bytes(latest.get(base + 4 * slot + k, 0xFF) for k in range(4))
+                if raw != b'\xff' * 4:
+                    slots[(table, slot)] = (int.from_bytes(raw[:2], 'big'), int.from_bytes(raw[2:], 'big'))
+        self.assertEqual(slots, {('power on', 2): (0x0EDC, 10), ('inter device', 2): (0x0E26, 15)})
+        # Keys 3804 and 3622 are the KPN box's and the PS3's, settingsstore.test.ts.
+        self.assertEqual((0x0EDC, 0x0E26), (3804, 3622))
+        for name in ('h650_page_ff', 'h700_28_internal_ff'):
+            self.assertEqual(set(_store_slots(lab.load(name))), {0x80}, name)
+
+    def test_the_firmware_stores_reads_and_sweeps_keyed_values_from_four_action_list_instructions(self):
+        lab.require('h600_code_complete')
+        code = lab.load('h600_code_complete')
+        at = lambda address: isa.decode(code, address - BASE, BASE)
+        # 0x7A: the operand into the accumulator at 0x205 and 0x206.
+        self.assertEqual(at(0xE968).fields['k'], 0x7A)
+        self.assertEqual((at(0xE972).fields, at(0xE976).fields),
+                         ({'src': 0x2B2, 'dst': 0x205}, {'src': 0x2B3, 'dst': 0x206}))
+        # 0x6C: the operand as the value, by way of 0xD0D and 0xD0E, and the keyed write at 0xE03A.
+        self.assertEqual(at(0xEC7C).fields['k'], 0x6C)
+        self.assertEqual([at(a).fields for a in (0xEC82, 0xEC86, 0xEC8A, 0xEC8E)],
+                         [{'src': 0x2B3, 'dst': 0xD0E}, {'src': 0x2B2, 'dst': 0xD0D},
+                          {'src': 0xD0D, 'dst': 0x0A0}, {'src': 0xD0E, 'dst': 0x0A1}])
+        self.assertEqual(at(0xEC92).fields['target'], 0xE03A)
+        # 0x0F with an operand byte of 0x40 to 0x4F: the keyed read at 0xE1DE, its bit 0 the table.
+        self.assertEqual((at(0xF0A8).fields['k'], at(0xF1C0).fields['k']), (0x0F, 0x40))
+        self.assertEqual(at(0xF1C8).fields, {'src': 0x2B2, 'dst': 0x0A2})
+        self.assertEqual(at(0xF1CC).fields['target'], 0xE1DE)
+        # 0x07 with 0xF3 and 0xF2: clear the marks, and erase every slot no read marked.
+        self.assertEqual(at(0xF1DA).fields['k'], 0x07)
+        self.assertEqual([(at(a).fields['k'], at(a + 6).fields['target']) for a in (0xF2EE, 0xF2FA)],
+                         [(0xF3, 0xE24E), (0xF2, 0xE28C)])
+        self.assertEqual((at(0xE2C4).fields['target'], at(0xE2CE).fields['target']), (0xDF3A, 0xDE70))
+        # The table select: slots from 0x18 to 0x2C for one table and from 0x00 to 0x14 for the other.
+        self.assertEqual([at(a).fields['k'] for a in (0xDDDA, 0xDDE6, 0xDDF4)], [0x18, 0x2C, 0x14])
+
+    def test_the_configuration_restores_the_kpn_box_s_delay_from_list_1_and_its_delay_page_saves_the_defaults(self):
+        lab.require('h600_config')
+        from harmony import gspm
+        c = gspm.parse(lab.load('h600_config'))
+        lists = c.action_lists()
+        flat = lambda index: [(i.opcode, i.operand) for i in lists[index]]
+        # The start up list calls the per device reads between a 0x07 0xFFF3 and a 0x07 0xFFF2.
+        boot = flat(1476)
+        self.assertEqual((boot[0], boot[-1]), ((0x07, 0xFFF3), (0x07, 0xFFF2)))
+        self.assertIn((0x7F, 154), boot)
+        self.assertIn((0x7F, 1476), flat(1))
+        # Read the KPN box's slot into the scratch, and when it is not 0xFEFD read it again into
+        # its power on delay.
+        self.assertEqual(flat(154), [(0x7A, 0x0EDC), (0x0F, 0xFF40), (0x1F, 0xED00 | self.SCRATCH), (0x7F, 172)])
+        self.assertEqual(flat(172), [(0x7A, 0xFEFD), (0x7F, 3044)])
+        self.assertEqual(flat(3044), [(0x70, 0x0100 | self.SCRATCH), (0x7F, 3043)])
+        self.assertEqual(flat(3043), [(0x7A, 0x0EDC), (0x0F, 0xFF40), (0x1F, 0xED00 | self.KPN_POWER_ON)])
+        # Saving: two keys of mode page 183, the delay page, run identical lists that copy the KPN box's
+        # two Default variables, 70 and 71, into its delays, 67 and 64, and then run both saving tables.
+        # So this route saves the defaults and cannot be what stored the 10; the defaults' values are
+        # asserted in packages/codec/test/settingsstore.test.ts.
+        page = c.mode_pages()[183]
+        keys = {e.tag: e.operand for e in c.tagged_list(page.list_address) if e.opcode == 0x7F}
+        self.assertEqual(keys, {0x88: 4802, 0x82: 4803})
+        self.assertEqual(flat(4802), flat(4803))
+        self.assertEqual(flat(4802)[0], (0x7F, 695))
+        self.assertEqual(flat(695), [(0x7F, 106), (0x7F, 495)])
+        self.assertEqual(flat(106), [(0x7F, 1805), (0x7F, 1030)])
+        self.assertEqual((flat(1805), flat(1030)),
+                         ([(0x1F, 0xF000 | 70), (0x1F, 0xEE00 | self.KPN_POWER_ON)],
+                          [(0x1F, 0xF000 | 71), (0x1F, 0xEE00 | 64)]))
+        self.assertEqual(flat(495), [(0x7F, 703), (0x7F, 506)])
+        self.assertEqual((flat(703), flat(506)), ([(0x72, 0x0F00 | self.KPN_POWER_ON)], [(0x72, 0x0900 | 64)]))
+
 if __name__ == '__main__':
     unittest.main()

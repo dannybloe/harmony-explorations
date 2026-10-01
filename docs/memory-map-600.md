@@ -19,7 +19,7 @@ This is where the remote actually runs.
 | `0xFE` `+0x0000` | 3880 used of 4096 | the **bootloader**, no header of its own, reset vector at zero. Scans the keypad and compares two codes, `0x14` and `0x2C`, section 87. It carries the same **USB flash programmer** as the Harmony One's, twelve commands with the same erase bound of `0x001000`, section 189 | read off the remote |
 | `0xFE` `+0x1000` | 24320 | the **safe mode image**, version 0.2 | own checksum verifies |
 | `0xFE` `+0x9000` | 70336 | the **application firmware**, version 0.2, entry point `0x01A26E`, continuing into the next page and ending at `0xFF` `+0xA2C0` | own checksum verifies over all of it |
-| `0xFF` `+0xEC00` | 2048, of which 121 used on this unit | the **settings store**: two 1 KiB blocks, `+0xEC00` and `+0xF000`, used one at a time, each a four byte header, `fc ff 00 00`, then two byte records, setting then value, appended in order. 59 records on this unit, the second block erased. What the settings mean is unread, except that an erase at `0x030000` after a cache drop clears bit 0 of setting `0x80` | `findings.md` section 282 |
+| `0xFF` `+0xEC00` | 2048, of which 121 used on this unit | the **settings store**: two 1 KiB blocks, `+0xEC00` and `+0xF000`, used one at a time, each a four byte header, `fc ff 00 00`, then two byte records, setting then value, appended in order. 59 records on this unit, the second block erased. Settings `0x00` to `0x13` and `0x18` to `0x2B` are two tables of five saved delays, power on and inter device, each slot a big endian key and value, which the configuration copies over its own at start; two are live on this unit, the KPN box's power on delay at 10 tenths and the PS3's inter device delay at 15, section 303. An erase at `0x030000` after a cache drop clears bit 0 of setting `0x80` | `findings.md` sections 282 and 303 |
 | `0xFF` `+0xF400` | 48 | the **identity block**: three GUIDs at `+0x00`, `+0x10` and `+0x20`, big endian, and the fourth field erased rather than zero filled | all three match `concordance -i` for that unit |
 | `0xFF` `+0xF580` | 4 | unidentified | |
 | `0xFF` `+0xF640` | 12 | unidentified | |
@@ -90,9 +90,9 @@ The 600 was not measured.
 
 ## What is not established
 
-* **What the settings in the store at `0xFF` `+0xEC00` mean**, section 282 having read its layout
-  and its writer, and what is in the four small records after the identity block. Offsets and
-  lengths only.
+* **What setting `0x80` in the store at `0xFF` `+0xEC00` means**, section 282 having read its layout
+  and section 303 settings `0x00` to `0x2B`, and what is in the four small records after the identity
+  block. Offsets and lengths only.
 * **The two unexamined stretches of external flash** named above.
 * **What the 83 bytes are** that separate the 600's safe mode config from the 700's. They sit almost
   entirely in the `LWJL` key table, which is the expected place for two different keypads to differ,

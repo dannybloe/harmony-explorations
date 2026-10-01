@@ -564,7 +564,7 @@ finding.
 
 `todo.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 302<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 303<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and flash has been written on five units**, the first in section 222:
@@ -576,7 +576,8 @@ writes no flash from the host, and then had Logitech's 2.8 image staged into its
 installed by its own safe mode image, section 297, which is the one write outside a configuration
 region, decision 18, and then had one configuration block written back unchanged, section 300, and its Denon's power on delay
 raised and put back, section 301, the change heard by an infrared receiver both ways; and the Harmony
-600 had one configuration block written back unchanged after a full backup, section 302. `GET_VERSION`, `READ_MISC`
+600 had one configuration block written back unchanged after a full backup, section 302, and its KPN box's power on
+delay raised and put back, section 303, which landed and was overridden by a delay saved on the remote. `GET_VERSION`, `READ_MISC`
 and `READ_FLASH` run from our own host code on both bench architectures, a config read matches each
 unit's lab dump byte for byte, and the four remotes this library could open when this sentence was written are fully read and verified
 against their backups: user config, application firmware, safe mode, and the internal pages where the architecture
@@ -835,6 +836,14 @@ figures common to both carry `fact:` markers, so `make facts` moves every copy t
 cannot drift apart; what a reader should not expect is two independent statements of one measurement.
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
+
+**A delay saved on the remote itself wins over the configuration, section 303.** The Harmony 600's
+KPN box was given a wait of 4.5 seconds instead of 1.5 and the remote kept waiting 1.0, the same to half
+a millisecond on the infrared receiver. The remote keeps a small table of saved delays, and the
+configuration Logitech compiles copies that table over its own values when the remote starts: seen
+across three starts on the 600, and the 650 and 700 carry the same programs. The 600 had two such delays saved, from before this project touched it,
+and the Harmony 650 and 700, whose changes did take effect, had none. So an editor for these remotes
+has to read that table before it can say what a delay is.
 
 **A changed setting on the Harmony 700 is heard on the air, section 301.** How long the remote waits
 after switching the Denon on was raised from six seconds to nine, written to the remote, and put back.

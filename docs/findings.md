@@ -36565,7 +36565,9 @@ On the two units, read off page `0xFF`, records counted after the header:
 
 So on both, setting `0x80`'s latest value already has bit 0 clear, and an erase at `0x030000` after a
 drop writes nothing to the store. A block holds 510 records, so neither unit is near the copy, let
-alone the reformat. What any setting means is unread.
+alone the reformat. What any setting means is unread. **Section 303 reads settings `0x00` to `0x2B`**: two
+tables of saved delays, keyed per device, which the configuration copies over its own at every start;
+those are 56 of the 600's 59 records and none of the 650's.
 
 **The consequence for a writer, and it matters for 1.4.2.** The flag is consumed by the **first**
 erase after the drop, wherever it is, and only an erase at exactly `0x030000` touches the store.
@@ -39472,3 +39474,188 @@ block that changed across the erase.
   application and the safe mode configuration already in the lab, and the run's own output records
   the erase, the neighbour check and the read back.
 * The backup and its notes are in the lab, `20261001T0900Z-h600-backup-NOTES.md` beside the reads.
+
+## 303. A delay saved on an arch 14 remote overrides the configuration's, and the Harmony 600 had one for the delay we changed
+
+`todo.md` L6's third item: the Harmony 600's first configuration change, the KPN box's power on delay
+raised from 15 tenths to 45 and put back, in the four rounds sections 301 and this one share: test off
+the cable, write on it, test off it, put back on it. **The write landed and was not heard**, and the
+reason is a mechanism of Logitech's that no section had described: the configuration saves a delay
+into the remote's settings store, section 282, and at start copies a saved value over the one it
+states. This unit's store held one for exactly that delay, from before any write of ours.
+
+### The write
+
+`set-delay.ts` changed one byte, `PowerOnDelay_79993804`'s `first` at `0x0553A9`, which is state
+variable 67, wide, `narrow` 55; `write-config.ts` wrote the two blocks it and the trailer checksum sit
+in, `0x050000` and `0x0E0000`, with the drop, both neighbours checked, the whole configuration read
+back identical and the restart. A region read afterwards differs from the one before in those two
+bytes, the trailer's high byte at `0x0E4360` having moved by `15 ^ 45`. The revert was the same run the
+other way, and the region read after it has the SHA-256 of the read before the first write.
+
+### What the receiver heard
+
+The bench test of the same name, "TV kijken" from everything off. The activity sends the KPN box its
+power code, code 35, then the television's, then the box's next command, code 41, and section 236's
+rule says the box's delay holds that last one back. The interval from the first frame of code 35 to the
+first frame of code 41:
+
+| run | delay in the flash | computer's clock | receiver's clock |
+|---|---|---|---|
+| before | 15 | 2406 ms | 2403804 us |
+| after the raise | 45 | 2427 ms | 2403320 us |
+
+Half a millisecond apart on the receiver's clock, against three seconds written. The television's
+power code sits between the two in both runs at the same offsets on the receiver's clock, 0.936 s
+after the box's and 1.468 s before its next command, each within a millisecond of the other run. Several KPN frames in each run arrived damaged at the
+opening, the receiver merging flashes, so the page named neither frame measured and they are
+identified here by their place in the run: after the damaged opening, their flashes have the pattern
+of code 35's and code 41's undamaged frames. So the identification rests on position and on that
+pattern rather than on a match. Codes 3 and 41 of this configuration are the same frames.
+
+### What the remote held
+
+`READ_MISC` selector 7 over bank `0xE00`, three times: after the raise, after a battery pull, and after
+the revert. All three read the same two delays differently from the configuration, and every other
+delay variable as it states:
+
+| variable | configuration | memory |
+|---|---|---|
+| 67, the KPN box's power on delay | 45, then 15 | 10 in all three reads |
+| 62, the PS3's inter device delay | 5 | 15 in all three reads |
+
+Section 283's sum over the array is valid in all three. The battery pull did restart the remote and
+reload its variables, which the bank shows: `TV_InputType` and `TV_Input`, which an activity had moved
+to 4, read 0 afterwards, their configuration's value, and the clock had moved back, while 67 and 62 kept 10 and 15. Scratch
+variable 59 holds `0xFEFD` throughout, which is what the store answers for a key it does not hold.
+
+### The store
+
+Page `0xFF` from `0xEC00`, in the backup taken before any write of ours. Read in section 282's format,
+setting then value, the latest record winning, settings `0x00` to `0x2B` are **two tables of five four
+byte slots**, each slot a big endian key and a big endian value: `0x00` to `0x13` for power on delays,
+`0x18` to `0x2B` for inter device delays. Two slots are live:
+
+| table | slot | key | value |
+|---|---|---|---|
+| power on | 2 | `0x0EDC`, 3804 | 10 |
+| inter device | 2 | `0x0E26`, 3622 | 15 |
+
+Every other slot is `0xFF`. Of the 59 records, 56 are these settings and the rest setting `0x80`. The
+history is three keys no device of the present configuration has, `0x3EA3` to `0x3EA5`, in slots 0 to
+2: the power on value under `0x3EA3` written eight times, the others once or twice. Then slot 2 of each
+table is taken by the present keys, and the last sixteen records erase slots 0 and 1 of both tables,
+which is the footprint the purge below would leave. **The Harmony 650's and the
+Harmony 700's stores hold no record but setting `0x80`**, which is the closure: the two units whose
+delay change took effect, sections 283 and 301, have nothing saved, and the one whose change did not
+has a saved value for exactly the variable changed and for one other, which is the other variable that
+disagreed.
+
+### What the firmware does with it, the 600's 0.2 image
+
+* `0xDDD4` picks a table, slots `0x18` to `0x2B` or `0x00` to `0x13`. `0xDFB2` finds the slot whose
+  key matches.
+* `0xE03A` writes a keyed value, into the matching slot or the first free one, through section 282's
+  write at `0xDB60`. The action list interpreter reaches it at `0xEC92` for **opcode `0x6C`**: the value is
+  the operand, bit 15 selects the inter device table, and the key is the interpreter's accumulator at
+  `0x205`.
+* **Opcode `0x7A`** puts its operand in that accumulator, `0xE972`.
+* `0xE1DE` reads a keyed value into the accumulator, `0xFEFD` when absent, and marks the slot it
+  found. **Opcode `0x0F`** reaches it at `0xF1CC` for an operand byte of `0x40` to `0x4F`, bit 0
+  selecting the table.
+* **Opcode `0x07`** with `0xF3` clears the marks, `0xE24E`, and with `0xF2` erases every slot no read
+  marked, `0xE28C`, calling `0xDF3A` and then `0xDE70`.
+
+### What the configuration does with it
+
+Read on all four arch 14 configurations here, `h600_config`, `calibration_h600`, the Harmony 650's and
+the Harmony 700's:
+
+* **Saving.** Every delay variable the compiler emitted, its `Default` copies aside, has a value map
+  whose case for value v runs `[0x7A key, 0x6C v]`, with bit 15 of the value set for an inter device
+  delay. It is section 288's unread map: most delay variables have it beside one other, and one
+  device's on the 600 and one variable on the 700 have it alone. One key per device, shared by its two delays,
+  distinct between devices.
+* **Restoring.** For every saved delay a list `[0x7A key, 0x0F 0xFF40 or 0xFF41, 0x1F 0xED00 |
+  variable]` reads the slot back into the variable. On the 600 it is reached from list 1476, which
+  opens with `0x07 0xFFF3` and ends with `0x07 0xFFF2`, through a guard: list 154 reads the KPN box's
+  slot into variable 59 and only when that is not `0xFEFD` does list 3043 read it into variable 67.
+  1476 is called from list 1, which nothing in the configuration calls; **that the firmware runs list 1
+  at start is inferred** from the bank after the battery pull, reloaded and still holding the store's
+  values. The same holds on `calibration_h600` and the 650. **On the 700 the restore hangs off list 2
+  instead**, whose shape is the 600's list 1, while its list 1 is `[0x07 0xFFFC, 0xAC 0]`, and its 2.8
+  firmware is unread here, so which list it runs at start is open. The purge of slots no read marked is
+  read, not exercised, and consistent with the store's history above.
+* 8 of 8 delay variables on the 600 are saved and restored, 6 of 6 on `calibration_h600`, 10 of 10 on
+  the 700, and 10 of 12 on the 650. The two that are not belong to the device this project composed
+  in section 285: the composer emits sections 287 and 288's tables and neither program.
+
+**What saves.** Mode page 183 is drawn "KPN / Set to default / Change Delay / Back", and two of its
+keys run lists 4802 and 4803, which are identical: list 106 copies `DefaultPowerOnDelay_79993804`, 15,
+into variable 67 and `DefaultInterDeviceDelay_79993804`, 5, into variable 64, and then both of the KPN
+box's saving tables run. **So the route found saves 15 and 5 and cannot have written the 10.** The same
+configuration draws Help pages, among them "KPN does not seem to switch inputs correctly in
+activities. Fix it now", with no saving reached from either measured here. **Which route wrote 10 and
+15 is not established.** Danny does not remember
+setting a delay on the remote. A Help fix lengthening a delay fits the PS3's 5 to 15 and not the KPN
+box's 15 to 10.
+
+**The key** is a measurement and not a rule: the device identifier's last four digits fit the 600,
+`calibration_h600` and the 650, and its last five fit the 650 and the 700 and fail on the other two.
+The 650's identifiers fit both readings, so the corpus does not choose between them. How the compiler
+chooses it is unread.
+
+### What follows for a writer
+
+On arch 14 a delay has two homes, and on the 600 the saved one won across three starts; the 650 holds
+the same programs and the same store routines, and the 700 holds the programs under list 2. A writer that changes a
+delay in the configuration changes nothing on a unit with a saved value for it, and nothing in the
+configuration says whether there is one; the store does, in internal program memory, which a read over
+USB reaches and the write rails do not. The ways to change it that exist are the remote's own screens.
+Sections 236, 283 and 301 stand as written: none of those units had a saved value for the delay
+changed.
+
+### Scope, decision 16
+
+Firmware: the Harmony 600's 0.2 image. The configuration programs: all four arch 14 configurations
+here. Stores: the three arch 14 units, measured. The 650's 0.2 build is byte identical in the store's
+routines, section 282, and the 700's 2.8 is not read for this, which matters because its restore
+hangs off a different list. Arch 12 (Harmony One) and arch 9
+(Harmony 525) keep a delay inline, section 235, and draw no delay pages, so none of this is checked
+there and nothing suggests it applies.
+
+### Sources checked before the work
+
+Sections 234, 236, 282, 283, 288 and 301, and the lab's reads of the three units. Logitech's client,
+MyHarmony's decompiled source: its delay fields, `PowerFeature` and the activity roles, and its
+`RemoteSettings` contracts are account data compiled into the configuration, and the search found no
+code writing the store; its USB layer is not part of that source, so the search does not cover a sync
+writing the store over USB, which the 0.2 build can do from command states `0xB2` and `0xB3`, section
+282, unread.
+
+### The two reviews
+
+The blind re-measure, given the question and the lab and not this text, reproduced the two memory
+mismatches, the store's two live slots, the opcodes and the interval on both clocks, and added that its
+identification of the two KPN frames rested on position rather than a match, which the section now
+says. The sentence audit corrected six claims before this landed: the restore hangs off list 2 on the
+700 and not list 1; the delay page's route saves the defaults and so cannot have written the 10; a
+delay variable's saving map is not always its second; the key rule fits two readings on the 650; the
+damaged frames were several, not one per run; and the store's history fits the purge rather than
+showing nothing.
+
+### Falsification
+
+An arch 14 unit with an empty store whose delay change is not heard; a saved value that the variable
+does not hold after a start; a configuration whose saving table writes another device's key.
+
+### Where it lands
+
+* `tests/test_arch14_write_target.py`: the two bytes and the revert, both runs' journals, the gap on both
+  clocks, the three bank reads, the three stores, the firmware's four opcodes and table select, and the
+  600's restore and saving chains.
+* `packages/codec/test/settingsstore.test.ts`: saving and restoring on all four configurations, the
+  composed device's absence, and the key's digits.
+* `docs/config-format.md`, `docs/memory-map-600.md` and the `writing-a-config` skill: the structured fact
+  and the rail.
+* The lab note is `work/plan-L6/settings-store-NOTES.md`.

@@ -2160,8 +2160,33 @@ the trailer checksum. **The record's `second` does not bound it**: it is 65277 o
 the Harmony 650's and Harmony 700's configurations, and the range is the 451 case table's, 0 to 450.
 `setPowerOnDelayVariable` in `packages/codec/src/edit.ts` refuses anything else. Written to the Harmony
 650 and the Harmony 700 and put back, the new value in force after the writer's restart on both,
-measured in memory on the first and by infrared timing on the second; the Harmony 600 is unchecked.
-[findings.md](findings.md) sections 283 and 301.
+measured in memory on the first and by infrared timing on the second. **On the Harmony 600 the same
+edit landed and was not used**, because a value saved on the remote wins, below. [findings.md](findings.md)
+sections 283, 301 and 303.
+
+**A delay saved on the remote overrides the configuration's at start**, arch 14, measured across three
+starts on the Harmony 600:
+
+| | instructions | effect |
+|---|---|---|
+| save | `0x7A key`, `0x6C value` | store `value` under `key` in the settings store; bit 15 of the value selects the inter device table |
+| restore | `0x7A key`, `0x0F 0xFF40` or `0x0F 0xFF41`, `0x1F 0xED00 \| variable` | read the slot for `key` into the accumulator, `0xFEFD` when absent, and write it into the delay variable |
+| sweep | `0x07 0xFFF3` ... `0x07 0xFFF2` | clear the marks, restore, then erase every slot no read marked (read, not exercised; the 600's store history fits it) |
+
+* Every delay variable the compiler emits, its `Default` copies aside, carries a value map whose case
+  for v is a list `[0x7A key, 0x6C v]` (`| 0x8000` for an inter device delay); one key per device,
+  shared by its two delays. On `h600_config` the remote's own delay page reaches it through "Set to
+  default", which saves the default values; what saved anything else is **unestablished**.
+* The restore lists hang off list 1 on `h600_config`, through 1476, on `calibration_h600` and on the
+  650, and off list 2 on the 700, whose 2.8 firmware is unread for this. That the firmware runs that
+  list at start is inferred.
+* The key: the device identifier's last four digits fit the 600's two configurations and the 650's,
+  its last five fit the 650's and the 700's; the rule is **unconfirmed**.
+* The store itself, internal `0x01EC00`: settings `0x00` to `0x13` are five power on slots and `0x18` to
+  `0x2B` five inter device slots, each a big endian key and a big endian value, `0xFF` when empty.
+* `composeDevice` emits neither program, so a composed device's delays are not saved or restored.
+
+`packages/codec/test/settingsstore.test.ts`. [findings.md](findings.md) section 303.
 
 `deviceDelays`, `powerOnInstructions` and `deviceIdOfGroup` in `packages/codec/src/inventory.ts`.
 [findings.md](findings.md) sections 234 and 235.

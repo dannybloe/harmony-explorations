@@ -205,6 +205,20 @@ export const IMAGES: Readonly<Record<string, string>> = {
   h600_after_rehearsal_low: '20261001T0910Z-h600-after-rehearsal-low-region.bin',
   // After the KPN box's power on delay was raised from 15 to 45 tenths: two bytes moved.
   h600_kpn45_region: '20261001T0948Z-h600-kpn45-config-region-region.bin',
+  // The region after it was put back, the same SHA-256 as before the first write, and the two write
+  // journals, copied out of `work/plan-L6/`.
+  h600_kpn15_restored_region: '20261001T1027Z-h600-kpn15-restored-config-region-region.bin',
+  h600_kpn45_write_log: '20261001T0945Z-h600-kpn45-write-run.log',
+  h600_kpn15_restore_write_log: '20261001T1024Z-h600-kpn15-restore-write-run.log',
+  // The state variable bank over USB: after the raise, after a battery pull, after the revert.
+  h600_ram_after_kpn45: '20261001T1030Z-h600-ram-e00-after-kpn45.txt',
+  h600_ram_after_battery_pull: '20261001T1045Z-h600-ram-e00-after-battery-pull.txt',
+  h600_ram_after_restore: '20261001T1100Z-h600-ram-e00-after-restore.txt',
+  // The bench test before and after the raise, and the monitor logs each run's frames are in.
+  h600_delay_ir_before: '20261001T093603Z-ir-test-harmony-600-the-kpn-box-s-power-on-delay.json',
+  h600_delay_ir_after: '20261001T100643Z-ir-test-harmony-600-the-kpn-box-s-power-on-delay.json',
+  h600_delay_ir_monitor_before: '20261001T0934Z-ir-monitor.jsonl',
+  h600_delay_ir_monitor_after: '20261001T0940Z-ir-monitor.jsonl',
   // The same region read after block 0x030000 was written back unchanged, section 300.
   h700_after_rehearsal_region: '20260929T1923Z-h700-after-rehearsal-config-region-region.bin',
   // And the rehearsal's own output for that write, which is the only record that it erased.
@@ -588,6 +602,8 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
     'h600_after_rehearsal_low',
     // And after the KPN box's power on delay was raised to 45 tenths.
     'h600_kpn45_region',
+    // And after it was put back.
+    'h600_kpn15_restored_region',
     // And after its first block was written back unchanged, section 300.
     'h700_after_rehearsal_region',
     // And after its Denon's power on delay was raised to 90 tenths.

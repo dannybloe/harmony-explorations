@@ -734,10 +734,11 @@ and needed no compiler, since nothing can compile a configuration for that model
 27 September 2026, section 281, the first write to arch 14; and one power on delay raised and put back
 the same day, section 283, two blocks each way, live in the remote's memory straight after the restart. On the **Harmony 700**, its firmware staging region, section 297, below, and one configuration block written back unchanged on 29 September 2026, section 300, and the Denon's power on delay raised and put back on 1 October 2026, section 301, two blocks each way, the change heard by an infrared receiver both times. On the **Harmony 600**, after a full backup of
 both internal pages and the whole external flash, one configuration block written back unchanged on
-1 October 2026, section 302. **No other remote has had flash written and
+1 October 2026, section 302, and the KPN box's power on delay raised and put back the same day, section 303,
+which landed in flash and was overridden by a delay saved on the remote. **No other remote has had flash written and
 no other may be**, which said "the spare is the only one that may be"<!--superseded--> until 6
 September 2026. **The Harmony 600 and the Harmony 700 may be written to since 29 September 2026**,
-Danny's decision that day, and the 600 has not had a configuration changed by this project yet, the 700 since section 301: each first gets its identity and a
+Danny's decision that day, and both have had a configuration changed since, sections 301 and 303: each first gets its identity and a
 whole region read into the lab, then one block back unchanged, then a real write, the order every unit
 here has taken. **The 700 took another road first**: it arrived stuck in safe mode, was sent one
 reinstall request, a `WRITE_MISC` and a restart that write no flash from the host, section 295, and
@@ -2196,6 +2197,7 @@ file.
 | a record's three block pointers are once, held and tail | slot 1 repeats for as long as the key is down, so its trailing gap **is** the repeat rate. A duration word caps at 32767 us |
 | how many times a press sends the code is the **ratio** of the first two blocks | so changing it adds or removes a whole copy and its gap, which is a length change and goes through `relocate.ts`. Reading the first block's copies alone gets a two code family wrong: 6 copies and 2 is the same 3 sends as 3 copies and 1 |
 | a power on delay holds back one device, not the sequence | so raising it does nothing at all unless that activity sends the same device a later command, which 37<!--fact:delay_unfelt--> of 129<!--fact:delay_pairs--> activity and device pairs here do not. An editor that presents it as a pause in the activity is wrong about most of them |
+| on arch 14 a delay saved on the remote wins at start | the configuration copies a saved value over its own `first` at start, seen across three on the Harmony 600, so a changed delay does nothing on a unit with one saved for it, and only the remote's settings store says which have one. The Harmony 600 had two, section 303 |
 | a frame can be written, and its tail is emitted for the families that have a rule and copied otherwise | 140 distinct tail shapes, a rule for 29<!--fact:protocol_tails--> of the rhythm table's 37<!--fact:protocol_measured--> measured entries plus 33<!--fact:protocol_tails_stated--> derived from Logitech's own statement, and none for the rest. 226 records hold a second, different code in the tail |
 | a record's carrier period is truncated, not rounded | `floor(1e9 / f)` nanoseconds, per record rather than per device |
 | a picture's position is implied by everything before it | inserting or resizing one moves every later address |

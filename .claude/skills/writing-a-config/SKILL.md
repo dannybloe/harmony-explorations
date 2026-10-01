@@ -151,6 +151,16 @@ produce a config the remote accepts and mishandles.
   of an activity and a device it switches on can never show that device's delay. So a writer may
   change the byte, and an interface that calls it a pause in the activity is wrong for a quarter of
   them.
+* **On arch 14 a delay saved on the remote wins over the configuration's at start**, section 303,
+  measured across three starts on the Harmony 600. Logitech's compiler gives every delay a table that
+  saves its value into the remote's settings store under a per device key, `0x7A key, 0x6C value`,
+  reached from the remote's own delay page, and lists that read a saved value back into the variable,
+  which hang off list 1 on the 600 and the 650 and off list 2 on the 700. So raising
+  `PowerOnDelay_<id>`'s `first` changes nothing on a unit that has one saved for that device: the
+  Harmony 600's KPN box went to 45 tenths in flash and the remote kept 10, the same to half a
+  millisecond on the receiver. **Read the store before writing a delay**, internal `0x01EC00`, settings
+  `0x00` to `0x13` and `0x18` to `0x2B`; the Harmony 650 and 700 hold none. A composed device gets
+  neither program, so its delays are not saved, which is `todo.md` L10.
 * **How many times a press sends the code is the ratio between the first two blocks**, section 258, so
   changing it is not a same length edit. The first block holds the code as many times as a press sends
   it and the second holds one press's worth, and 1913 of 1913 records that name both divide whole. Two

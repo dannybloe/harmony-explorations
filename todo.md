@@ -136,10 +136,10 @@ After 3 produces something.
 - [ ] L3 `GET_VERSION` field 6 and field 9's accessor, the two fields of twelve with no reading
 - [x] L4 A second arch 14 remote: the Harmony 650, arch 14's write target, while the Harmony 600 stayed excluded until L6 (section 281)
 - [ ] L5 A black screen on the Harmony 650 after unplugging, once, after the write of a 20 second screen timer, cleared by a battery pull with the configuration intact; not seen after the next write (section 292)
-- [ ] L6 The Harmony 600 as a write target, Danny's decision of 29 September 2026, while the everyday Harmony One stays excluded
+- [x] L6 The Harmony 600 as a write target, Danny's decision of 29 September 2026, while the everyday Harmony One stays excluded
   - [x] Record its identity as `h600` with `read-identity.ts --record` and read its whole configuration region into the lab, with both internal pages and the whole external flash beside it
   - [x] Write one block back unchanged with `rehearse-block.ts` (section 302)
-  - [ ] A real write with `write-config.ts`, whose cache drop and restart are read on the 600's own 0.2 build (section 282)
+  - [x] A real write with `write-config.ts`: the KPN box's power on delay raised and put back; it landed and the remote kept a delay saved on it instead (section 303)
 - [x] L7 The Harmony 700 as a write target, the same decision, once it is on the bench
   - [x] Read its identity, its firmware and its configuration, read only; the configuration is also the third case 1.4's `deviceModeMaps` item waits for
   - [x] It arrived stuck in safe mode with one page of its application erased, and was repaired by making it reinstall its own staged copy, `reinstall-firmware.ts` (section 295)
@@ -149,6 +149,9 @@ After 3 produces something.
   - [x] Record its identity as `h700` and read its whole configuration region
   - [x] Write one block back unchanged with `rehearse-block.ts` (section 300)
   - [x] A real write with `write-config.ts`: the Denon's power on delay raised and put back, heard by the bench's infrared receiver (section 301)
+- [ ] L9 A delay saved on a Harmony 600, 650 or 700 wins over the configuration's: read the USB settings route at command states `0xB2` and `0xB3`, how the compiler picks a device's key, and what wrote the Harmony 600's two saved delays, before deciding how an editor shows or replaces one (section 303)
+- [ ] L10 `composeDevice` emits no save and restore lists for a device composed for a Harmony 600, 650 or 700, so its delays changed on the remote are lost at the next start (section 303)
+- [ ] L11 The bench's infrared monitor names no KPN frame whose first flashes the receiver merged, which happened in both runs of section 303; match such a frame by its tail (section 303)
 - [ ] L8 Flash reads stop out of sequence now and then in a write run, two and four whole chunks on the Harmony 700 and eleven on the 650 and the spare Harmony One, which is section 223's host side drop; what holds the reader up is open, and the writer's journal does not record the error that stopped it (section 301)
 
 ---
