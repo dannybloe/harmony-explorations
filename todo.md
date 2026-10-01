@@ -137,7 +137,7 @@ After 3 produces something.
 - [x] L4 A second arch 14 remote: the Harmony 650, arch 14's write target, while the Harmony 600 stayed excluded until L6 (section 281)
 - [ ] L5 A black screen on the Harmony 650 after unplugging, once, after the write of a 20 second screen timer, cleared by a battery pull with the configuration intact; not seen after the next write (section 292)
 - [ ] L6 The Harmony 600 as a write target, Danny's decision of 29 September 2026, while the everyday Harmony One stays excluded
-  - [ ] Record its identity as `h600` with `read-identity.ts --record` and read its whole configuration region into the lab
+  - [x] Record its identity as `h600` with `read-identity.ts --record` and read its whole configuration region into the lab, with both internal pages and the whole external flash beside it
   - [ ] Write one block back unchanged with `rehearse-block.ts`
   - [ ] A real write with `write-config.ts`, whose cache drop and restart are read on the 600's own 0.2 build (section 282)
 - [x] L7 The Harmony 700 as a write target, the same decision, once it is on the bench
