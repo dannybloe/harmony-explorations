@@ -198,6 +198,11 @@ reasoning instead of querying.
   `deviceId` 0 and `globalDeviceVersionId.Value` set to the archive's own `globalDeviceId`. Measured
   a read on 1 October 2026, section 305, with the account record identical before and after; the
   version id an account record names is refused. `GetGlobalFeatures` answers access denied.
+  Two more catalogue reads answer on the `GlobalDeviceManager` base, both keyed by the **version id**
+  (`Value` plus `VersionId`, as `CopyFeaturesFromGlobalDevice` reports it): `GetGlobalDevices` with
+  `deviceVersionIds`, the entry's delays and minimum repeats, and `GetInputInfo` with `versionIds`, its
+  input type and named inputs. `DeviceManager/GetGlobalDevices` with plain ids answers an internal
+  error. Replies in `responses/20261001-catalogue-reads/`.
 * **Button maps**: `RemoteManager/GetButtonMaps` and the `ActivityButtonMap` records, which is
   where `reference/button-maps.md` came from, via the account that generated the calibration
   configs.
