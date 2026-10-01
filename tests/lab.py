@@ -203,6 +203,18 @@ IMAGES = {
     # Its configuration region read on 2.8, from 0x030000: the compare base for the 700's first block
     # written back unchanged, excluded from the corpus like the 650's regions.
     'h700_28_config_region': '20260929T1541Z-h700-28-config-region-region.bin',
+    # The Harmony 600's configuration region from 0x030000 to the 0x200000 ceiling, read before
+    # anything was written to it, and the compare base for its first block rehearsal. Its container
+    # is `h600_config` exactly, which is why it is out of the corpus.
+    'h600_config_region': '20261001T0900Z-h600-config-region-region.bin',
+    # Section 302: the whole external flash before, the rehearsal's own output for block 0x030000,
+    # and the two reads after it in a new session, the region and the 192 KiB below it.
+    'h600_external_region': '20261001T0859Z-h600-external-region.bin',
+    'h600_internal_fe_region': '20261001T0857Z-h600-internal-fe-region.bin',
+    'h600_internal_ff_region': '20261001T0857Z-h600-internal-ff-region.bin',
+    'h600_rehearsal_log': '20261001T0908Z-h600-block-030000-rehearsal-run.log',
+    'h600_after_rehearsal_region': '20261001T0910Z-h600-after-rehearsal-config-region-region.bin',
+    'h600_after_rehearsal_low': '20261001T0910Z-h600-after-rehearsal-low-region.bin',
     # The same region read after block 0x030000 was written back unchanged, section 300.
     'h700_after_rehearsal_region': '20260929T1923Z-h700-after-rehearsal-config-region-region.bin',
     # And the rehearsal's own output for that write, which is the only record that it erased.
@@ -564,6 +576,14 @@ PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_confi
                       'h650_devicelist_region',
                       # The Harmony 700's configuration region on 2.8, for the same reason.
                       'h700_28_config_region',
+                      # The Harmony 600's region before its first write, whose container is
+                      # `h600_config` exactly.
+                      'h600_config_region',
+                      # And after its first block was written back unchanged, section 302.
+                      'h600_after_rehearsal_region',
+                      # External flash of the 600 from 0x000000, whole and its first 192 KiB: the
+                      # container they parse to is the safe mode one at 0x020000. Section 302.
+                      'h600_external_region', 'h600_after_rehearsal_low',
                       # And after its first block was written back unchanged, section 300.
                       'h700_after_rehearsal_region',
                       # And after its Denon's power on delay was raised to 90 tenths.

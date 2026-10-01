@@ -138,7 +138,7 @@ After 3 produces something.
 - [ ] L5 A black screen on the Harmony 650 after unplugging, once, after the write of a 20 second screen timer, cleared by a battery pull with the configuration intact; not seen after the next write (section 292)
 - [ ] L6 The Harmony 600 as a write target, Danny's decision of 29 September 2026, while the everyday Harmony One stays excluded
   - [x] Record its identity as `h600` with `read-identity.ts --record` and read its whole configuration region into the lab, with both internal pages and the whole external flash beside it
-  - [ ] Write one block back unchanged with `rehearse-block.ts`
+  - [x] Write one block back unchanged with `rehearse-block.ts` (section 302)
   - [ ] A real write with `write-config.ts`, whose cache drop and restart are read on the 600's own 0.2 build (section 282)
 - [x] L7 The Harmony 700 as a write target, the same decision, once it is on the bench
   - [x] Read its identity, its firmware and its configuration, read only; the configuration is also the third case 1.4's `deviceModeMaps` item waits for

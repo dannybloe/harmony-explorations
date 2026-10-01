@@ -723,7 +723,7 @@ files already here rather than for incoming ones.
 
 ## Never write to a remote
 
-Read paths only, except on **five units**, deliberately and behind two flags, of which four have had flash written. On the **spare Harmony
+Read paths only, except on **five units**, deliberately and behind two flags, all five of which have had flash written. On the **spare Harmony
 One**: a block written back unchanged on 30 August 2026, section 222; a delay byte changed and
 reverted on 1 September, sections 236 and 237; a device added on 3 September, section 242, 25 blocks,
 after which the television answered it; and one power on delay raised the same day, section 247, two
@@ -732,7 +732,9 @@ block written back unchanged on 6 September, section 269, which is the second ar
 and needed no compiler, since nothing can compile a configuration for that model. On the **Harmony
 650**, a second hand unit which Danny says may be reprogrammed as the work needs: one block written back unchanged on
 27 September 2026, section 281, the first write to arch 14; and one power on delay raised and put back
-the same day, section 283, two blocks each way, live in the remote's memory straight after the restart. On the **Harmony 700**, its firmware staging region, section 297, below, and one configuration block written back unchanged on 29 September 2026, section 300, and the Denon's power on delay raised and put back on 1 October 2026, section 301, two blocks each way, the change heard by an infrared receiver both times. **No other remote has had flash written and
+the same day, section 283, two blocks each way, live in the remote's memory straight after the restart. On the **Harmony 700**, its firmware staging region, section 297, below, and one configuration block written back unchanged on 29 September 2026, section 300, and the Denon's power on delay raised and put back on 1 October 2026, section 301, two blocks each way, the change heard by an infrared receiver both times. On the **Harmony 600**, after a full backup of
+both internal pages and the whole external flash, one configuration block written back unchanged on
+1 October 2026, section 302. **No other remote has had flash written and
 no other may be**, which said "the spare is the only one that may be"<!--superseded--> until 6
 September 2026. **The Harmony 600 and the Harmony 700 may be written to since 29 September 2026**,
 Danny's decision that day, and the 600 has not had a configuration changed by this project yet, the 700 since section 301: each first gets its identity and a
@@ -1956,7 +1958,7 @@ node packages/usb/bin/rehearse-block.ts --dump <image> --block 0x040000 [--commi
                        with the lab dump, and print what a write would send. **Five units**: the spare
                        Harmony One, the Harmony 525 since 6 September 2026, the Harmony 650 since
                        27 September, section 281, and the Harmony 600 and the Harmony 700 since 29
-                       September, the 700 with a registered dump and one block written back, section 300, and the 600 with none yet. The dump names the unit and the
+                       September, each with a registered dump and one block written back, sections 300 and 302. The dump names the unit and the
                        identity read off the remote has to match it, since three arch 14 units
                        enumerate alike. **All of them may be written**, which
                        said "only the first may be written"<!--superseded--> for the few hours before

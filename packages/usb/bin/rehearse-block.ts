@@ -246,10 +246,13 @@ const H650_DUMPS = new Set<string>([
 /**
  * The Harmony 600's and the Harmony 700's region reads. Danny's decision of 29 September 2026 made
  * both writable, and an empty list is what keeps a unit from being compared, and so from being
- * written, before the lab holds its bytes: the 600's still is. The 700's is its configuration region
- * as read after 2.8 was installed, section 297.
+ * written, before the lab holds its bytes. The 700's is its configuration region as read after 2.8
+ * was installed, section 297; the 600's is its region from 0x030000 to the ceiling, read beside a
+ * full backup of both internal pages and the whole external flash before anything was written.
  */
-const H600_DUMPS = new Set<string>([]);
+const H600_DUMPS = new Set<string>([
+  'h600_config_region',
+]);
 const H700_DUMPS = new Set<string>([
   // The configuration region read on 2.8 after section 297 installed it, from 0x030000 for 1.1 MB.
   'h700_28_config_region',

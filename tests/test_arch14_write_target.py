@@ -1087,5 +1087,72 @@ class TheHarmony700sDelayWriteWasHeardAndWentBack(unittest.TestCase):
         host = lambda seq: datetime.datetime.fromisoformat(frames[seq]['at'].replace('Z', '+00:00'))
         self.assertEqual(round((host(repeat) - host(power)).total_seconds() * 1000), 22)
 
+
+class TheHarmony600sFirstBlockWentBackUnchanged(unittest.TestCase):
+    """Section 302: block `0x030000` of the Harmony 600, on 0.2, erased and written back unchanged.
+
+    The same shape as section 300's on the 700, with one end that one lacked: the whole external
+    flash was read before, and afterwards in two reads that together cover it, so the neighbour below
+    the block, the safe mode configuration at `0x020000`, is checked by a read and not only by the run.
+    """
+
+    REGION = 0x030000
+
+    def setUp(self):
+        lab.require('h600_config_region', 'h600_external_region', 'h600_rehearsal_log',
+                    'h600_after_rehearsal_region', 'h600_after_rehearsal_low', 'h600_config')
+        self.before = lab.load('h600_config_region')
+        self.external = lab.load('h600_external_region')
+        self.after = lab.load('h600_after_rehearsal_region')
+        self.low = lab.load('h600_after_rehearsal_low')
+        self.log = lab.load('h600_rehearsal_log').decode('utf-8')
+
+    def test_the_whole_external_flash_reads_back_byte_for_byte(self):
+        self.assertEqual((len(self.external), len(self.before), len(self.low)), (0x200000, 0x1D0000, 0x30000))
+        # Two separate reads of the region before agree; and the two after cover the
+        # whole chip between them and agree with the backup.
+        self.assertEqual(self.external[self.REGION:], self.before)
+        self.assertEqual(self.low + self.after, self.external)
+
+    def test_the_block_written_was_configuration_and_its_container_is_h600_config(self):
+        from harmony import gspm
+        container = gspm.parse(self.before)
+        self.assertTrue(container.all_checks_pass)
+        self.assertEqual((container.flash_base, container.end_addr), (self.REGION, 0xE4361))
+        # A block of 0xFF written back over an erase would pass on a write that did nothing.
+        self.assertEqual(sum(1 for byte in self.before[:0x10000] if byte != 0xFF), 65127)
+        # This remote's concordance dump holds the same container, end marker included, so the
+        # configuration on the remote is the one in the corpus.
+        wrapped = lab.load('h600_config')
+        at = wrapped.find(b'GSPM')
+        self.assertEqual(len(wrapped) - at, 738149)
+        self.assertEqual(wrapped[at:], self.before[:len(wrapped) - at])
+
+    def test_the_backup_holds_the_0_2_application_and_the_safe_mode_configuration(self):
+        # A backup that a restore could use: the application in internal program memory from
+        # 0xFE +0x9000 and staged in external flash at 0x000000, and the safe mode container at
+        # external 0x020000, each byte for byte the image the lab already held.
+        lab.require('h600_internal_fe_region', 'h600_internal_ff_region', 'h600_code_complete',
+                    'h600_safemode_gspm')
+        internal = lab.load('h600_internal_fe_region') + lab.load('h600_internal_ff_region')
+        app, safe = lab.load('h600_code_complete'), lab.load('h600_safemode_gspm')
+        self.assertEqual(len(internal), 0x20000)
+        self.assertEqual(internal[0x9000:0x9000 + len(app)], app)
+        self.assertEqual(self.external[:len(app)], app)
+        self.assertEqual(self.external[0x20000:0x20000 + len(safe)], safe)
+
+    def test_the_run_erased_checked_both_neighbours_and_read_the_block_back(self):
+        for line in ('which matches the recorded h600',
+                     'erasing 0x30000',
+                     'erased, and the block reads back as all ones',
+                     'the erase stayed inside its own block, measured on both sides',
+                     'the block reads back byte for byte identical to the dump'):
+            self.assertIn(line, self.log)
+        writes = re.findall(r'^writing (\d+) bytes at 0x([0-9a-f]+)$', self.log, re.M)
+        self.assertEqual(len(writes), 21)
+        self.assertEqual(sum(int(n) for n, _ in writes), 0x10000)
+        self.assertEqual(int(writes[0][1], 16), self.REGION)
+        self.assertNotRegex(self.log, r'(?i)invalidat|restart|reset|drop')
+
 if __name__ == '__main__':
     unittest.main()

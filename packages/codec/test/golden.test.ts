@@ -130,6 +130,10 @@ const CONTAINERS = [
   'h700_after_rehearsal_region',
   'h700_delay90_region',
   'h700_delay60_restored_region',
+  'h600_config_region',
+  'h600_after_rehearsal_region',
+  'h600_external_region',
+  'h600_after_rehearsal_low',
   // The two configs Logitech compiled to a specification we wrote, section 132: the only samples
   // whose devices and activities were chosen before the bytes existed, so a disagreement between the
   // two implementations about them would be a disagreement about a known answer.
@@ -311,8 +315,10 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // after section 296's sync, and 83 since section 297's blank and 2.8 staged regions, and 84 since the staging read
   // before that sync, and 85 since the 700's configuration region on 2.8, and 86 since
   // that region after section 300's write, and 88 since the reads after section 301's delay write
-  // and its revert.
-  assert.equal(present.length, 88, 'every vector, which is what `make golden` compares');
+  // and its revert, and 89 since the Harmony 600's region before its first write, and 90
+  // since that region after section 302's write, and 92 since its two external flash reads from
+  // 0x000000, which parse to the safe mode container.
+  assert.equal(present.length, 92, 'every vector, which is what `make golden` compares');
   // 38 since the Harmony 895 landed: its key table reads with the existing reader even though
   // every other arch 10 reader is gated, which is what made section 177's keypad closure possible
   // without any arch 10 progress at all.
@@ -351,8 +357,9 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // `h700_gspm`'s and has its key table, and 76 since that range after section 296's sync, and 78
   // since section 297's two, and 79 since the read before that sync, and 80 since the 700's
   // configuration region on 2.8, and 81 since that region after section 300's write, and 83 since the
-  // two after section 301's delay write and its revert.
-  assert.equal(complete, 83, 'the vectors whose container has a key table at all');
+  // two after section 301's delay write and its revert, and 84 since the Harmony 600's region, and 85
+  // since that region after section 302's write, and 87 since its two reads from 0x000000.
+  assert.equal(complete, 87, 'the vectors whose container has a key table at all');
 
   // **The number sender field, and why it needs its own guard.** It is an empty array on 30 vectors
   // and null on 8, with eight carrying a record since 30 August 2026, and this comment said 25 and 9
@@ -395,8 +402,11 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // external flash, section 295, whose container is `h700_gspm`'s and carries none, and 44 since that
   // range after section 296's sync, and 46 since section 297's two, and 47 since the read before that
   // sync, and 48 since the 700's configuration region on 2.8, and 49 since that region after section 300's write,
-  // and 51 since the two after section 301's delay write and its revert.
-  assert.equal(senders.filter((one) => Array.isArray(one) && one.length === 0).length, 51);
+  // and 51 since the two after section 301's delay write and its revert, and 52 since the Harmony
+  // 600's region, whose container is `h600_config` and declares none, and 53 since that region after
+  // section 302's write, and 55 since its two reads from 0x000000, whose safe mode container
+  // declares none.
+  assert.equal(senders.filter((one) => Array.isArray(one) && one.length === 0).length, 55);
   // **Four since the second compiled sample**, and the reason is the account rather than the request:
   // every configuration compiled from the account that carries favourite channels carries the sender
   // record too, whichever appliances are on it that day. Three of them were made deliberately for base
@@ -466,8 +476,10 @@ test('the list above covers exactly what the Python side writes a vector for', (
   // after section 294, and 80 since the Harmony 700's external flash, section 295, and 81 since that
   // range after section 296's sync, and 83 since section 297's two, and 84 since the read before that
   // sync, and 85 since the 700's configuration region on 2.8, and 86 since that
-  // region after section 300's write, and 88 since the two after section 301's write and revert.
-  assert.equal(python.length, 88, 'the golden vectors, which is what `make golden` prints');
+  // region after section 300's write, and 88 since the two after section 301's write and revert, and
+  // 89 since the Harmony 600's region before its first write, and 90 since that region after 302's,
+  // and 92 since its two external flash reads from 0x000000.
+  assert.equal(python.length, 92, 'the golden vectors, which is what `make golden` prints');
   assert.deepEqual([...CONTAINERS].sort(), python.sort());
 });
 

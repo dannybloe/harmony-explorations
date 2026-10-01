@@ -39398,3 +39398,77 @@ that moves with it, or a region read after the revert that differs from the one 
 * `tests/test_arch14_write_target.py`: the region reads, the checksum's consistency, the record's
   maximum, both writes' journals and the stopped one's, the three runs' gaps on both clocks, and the
   receiver's clock against a repeat.
+
+## 302. The Harmony 600's first configuration block, written back unchanged
+
+`todo.md` L6's second item, and the fifth unit to take it after the spare Harmony One, the Harmony
+525, the Harmony 650 and the Harmony 700, sections 222, 269, 281 and 300: one 64 KiB erase block of
+the remote's own bytes, erased and written back unchanged. The unit runs 0.2, skin 71, hardware 1.1.
+
+### The backup, before anything was sent
+
+The identity block was recorded as `h600`; it differs from the four other unit records, which matters
+because the 650 and the 700 report the same product id. Then, all reads: internal program memory
+pages `0xFE` and `0xFF`, the whole 2 MiB external flash, and the configuration region again from
+`0x030000` to the `0x200000` ceiling as a separate read, `h600_config_region`. The two reads agree
+over that range. The container at `0x030000` passes the Python reader's checks and ends at `0xE4361`,
+and it is byte for byte, end marker included, the container in this remote's concordance dump,
+`h600_config`, so the configuration on the unit is the one already in the corpus. The internal pages from
+`0xFE +0x9000` and external `0x000000` both hold `600-0.2-code-base0x9000-COMPLETE.bin` exactly, and
+external `0x020000` the safe mode configuration already in the lab. The block at `0x030000` has 65127
+of its 65536 bytes not `0xFF`, so writing it back can be told apart from not writing.
+
+### The run
+
+1. The identity read off the unit matched `h600`, and the version block said firmware 0.2.
+2. A dry run read the block and found it equal to `h600_config_region`, and wrote nothing.
+3. With `--commit` the rehearsal read the neighbours `0x020000`, the safe mode configuration, and
+   `0x040000`; erased `0x030000` and read it back as all ones; read both neighbours again, identical;
+   and wrote the block in 21 transfers of up to 3150 bytes, reading it back identical.
+4. In a new session, the region from `0x030000` to the ceiling and the 192 KiB below it were read again,
+   by the region reader, which goes through the same flash read call as the rehearsal's read back.
+   Together they are the whole external flash, and they are byte for byte the backup read before the
+   run.
+
+Nothing was sent beyond the erase, the writes and the reads, so no cache drop and no restart. Its screen
+was not observed.
+
+**What the reads after it show that section 300's could not**: the neighbour below, which on that
+unit lay outside both region reads, is confirmed here by a read in a new session as well as by the
+run's own compare, which checks its content and not the erase's lower edge. What they cannot show is
+the same as there: two identical reads fit a write that did nothing,
+so that the block was erased rests on the run's read of all ones, and neither the internal copy of
+the configuration this architecture keeps nor the internal pages were read afterwards, so "unchanged"
+is about the external chip.
+
+### Scope, decision 16
+
+One arch 14 unit, the Harmony 600, on 0.2, one block. The 64 KiB erase block is now measured on three
+arch 14 units, the 650, the 700 and this one, all reporting flash id `15:1C`, with section 300's limit on
+the lower side here too: the block at `0x020000` holds content only in its first 7115 bytes, so an
+erase reaching into the rest of it would not have shown. Above, `0x040000` has 64522 bytes that are
+not `0xFF` and was unchanged. What the remote does after
+a write that changes something is `todo.md` L6's third item and not tested by a write that changes
+nothing.
+
+### Sources checked before the work
+
+Sections 222, 269, 281 and 300, and the lab's reads of this unit, the August configuration read and
+the 0.2 images among them. Logitech's client was not read: the sequence is this project's own
+rehearsal, already run on four units.
+
+### Falsification
+
+A read of the external flash after the run that differs from the backup anywhere, or a neighbouring
+block that changed across the erase.
+
+### Where it lands
+
+* `packages/usb/bin/rehearse-block.ts`: the Harmony 600 names `h600_config_region`.
+* `packages/corpus/bin/write-config.ts`: the Harmony 600's compare base is the region read after the
+  run, `h600_after_rehearsal_region`.
+* `tests/test_arch14_write_target.py`: the whole external flash reads back as the backup, the block
+  written holds the configuration and it is `h600_config`'s container, the backup holds the 0.2
+  application and the safe mode configuration already in the lab, and the run's own output records
+  the erase, the neighbour check and the read back.
+* The backup and its notes are in the lab, `20261001T0900Z-h600-backup-NOTES.md` beside the reads.

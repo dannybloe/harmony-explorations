@@ -564,10 +564,10 @@ finding.
 
 `todo.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 301<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 302<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
-**The read path works, and flash has been written on four units**, the first in section 222:
+**The read path works, and flash has been written on five units**, the first in section 222:
 one 64 KiB block of the spare Harmony One's own configuration, erased and put back unchanged on 30
 August 2026, verified over the block and over the whole configuration. This said "one write has been
 performed" long after it stopped being true; the spare Harmony One, the Harmony 525 and the Harmony 650
@@ -575,9 +575,10 @@ have all been written since, and a Harmony 700 was sent one reinstall request, s
 writes no flash from the host, and then had Logitech's 2.8 image staged into its external flash and
 installed by its own safe mode image, section 297, which is the one write outside a configuration
 region, decision 18, and then had one configuration block written back unchanged, section 300, and its Denon's power on delay
-raised and put back, section 301, the change heard by an infrared receiver both ways. `GET_VERSION`, `READ_MISC`
+raised and put back, section 301, the change heard by an infrared receiver both ways; and the Harmony
+600 had one configuration block written back unchanged after a full backup, section 302. `GET_VERSION`, `READ_MISC`
 and `READ_FLASH` run from our own host code on both bench architectures, a config read matches each
-unit's lab dump byte for byte, and the four remotes this library can open are fully read and verified
+unit's lab dump byte for byte, and the four remotes this library could open when this sentence was written are fully read and verified
 against their backups: user config, application firmware, safe mode, and the internal pages where the architecture
 serves them, no differences. What is
 verified is that each backup is faithful; **restoring from one has never been tried.**

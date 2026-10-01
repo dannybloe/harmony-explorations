@@ -161,10 +161,15 @@ const H650_DUMPS = new Set([
 
 /**
  * The Harmony 600's and the Harmony 700's region reads. Danny's decision of 29 September 2026 made
- * both writable, and an empty list is what keeps a unit from being written before the lab holds bytes
- * to restore it from, so the 600's stays empty until its first region is read and registered.
+ * both writable, and an empty list is what kept a unit from being written before the lab held bytes
+ * to restore it from. The 600's first is section 302's.
  */
-const H600_DUMPS = new Set<string>([]);
+const H600_DUMPS = new Set<string>([
+  // Read straight after section 302 put block 0x030000 back unchanged: the configuration region to
+  // the 0x200000 ceiling, identical to the read before that rehearsal. The compare base for the
+  // 600's first configuration write.
+  'h600_after_rehearsal_region',
+]);
 const H700_DUMPS = new Set<string>([
   // Read straight after section 300 put block 0x030000 back unchanged: the 2.8 configuration, the
   // whole region to 0x150000, identical to the read before that rehearsal. The compare base for the

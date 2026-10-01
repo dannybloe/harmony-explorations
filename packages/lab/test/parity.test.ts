@@ -85,8 +85,10 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // with its pages after the repair and the 650's page 0xFE beside them.
   // 137 with the five reads either side of section 296's sync, 141 with section 297's four, and 142 with the staging read before that sync, 143 with the 700's configuration region on 2.8, 144 with that region after section 300's write, 145 with that write's output.
   // 154 with section 301's nine: the region after the delay write and after its revert, the three
-  // write journals, the three infrared runs and the bench's monitor log.
-  assert.equal(Object.keys(pythonImages()).length, 154, 'every fixture tests/lab.py names');
+  // write journals, the three infrared runs and the bench's monitor log. 155 with the Harmony 600's
+  // configuration region before its first write, and 159 with section 302's external flash read,
+  // rehearsal output and the two reads after it, and 161 with its two internal page reads.
+  assert.equal(Object.keys(pythonImages()).length, 161, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {
@@ -151,7 +153,9 @@ test('the two sides exclude the same fixtures from the parseable population', ()
   // after section 296's sync, and 35 with the blank and the 2.8 staged regions of section 297, and 36 with the staging
   // read before section 296's sync, and 37 with the Harmony 700's configuration region on 2.8, and 38
   // with that region after section 300's write, and 40 with the two after section 301's delay write
-  // and its revert.
-  assert.equal(names.length, 40, 'each one a container already counted, that container plus a known '
+  // and its revert, and 41 with the Harmony 600's region before its first write, whose container is
+  // `h600_config`, and 42 with that region after section 302's write, and 44 with the 600's two
+  // external flash reads from 0x000000, whose container is the safe mode one.
+  assert.equal(names.length, 44, 'each one a container already counted, that container plus a known '
     + 'edit, or a compare base whose remote is not yet in the corpus');
 });

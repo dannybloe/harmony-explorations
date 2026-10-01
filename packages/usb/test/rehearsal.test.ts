@@ -204,9 +204,9 @@ test('the rehearsal names five units and keys them by the architecture off the r
   assert.match(text, /\{ model: 'the Harmony 600', unitLabel: 'h600', dumps: H600_DUMPS \}/);
   assert.match(text, /\{ model: 'the Harmony 700', unitLabel: 'h700', dumps: H700_DUMPS \}/);
   assert.match(text, /const H650_DUMPS = new Set<string>\(\[\s*'h650_region_030000',\s*\]\);/);
-  // No dump yet for the 600, so it cannot be compared, and so not written, until a region read of it
-  // is registered. The 700 has one, its configuration region as read on 2.8.
-  assert.match(text, /const H600_DUMPS = new Set<string>\(\[\]\);/);
+  // The 600's is its configuration region read before anything was written to it, and the 700's
+  // its configuration region as read on 2.8.
+  assert.match(text, /const H600_DUMPS = new Set<string>\(\[\s*'h600_config_region',\s*\]\);/);
   assert.match(text, /const H700_DUMPS = new Set<string>\(\[\s*(\/\/[^\n]*\n\s*)*'h700_28_config_region',\s*\]\);/);
   // Keyed by what the device says, and within an architecture by the dump, which the identity check
   // then holds to: an argument alone would let an operator point one unit's allow list at another.
@@ -225,9 +225,9 @@ test('the config writer refuses a commit on a firmware build whose drop and rest
   assert.match(text, /unitLabel: 'h650', dumps: H650_DUMPS, sequenceReadOn: \['0\.2'\] \}/);
   assert.match(text, /unitLabel: 'h600', dumps: H600_DUMPS, sequenceReadOn: \['0\.2'\] \}/);
   assert.match(text, /unitLabel: 'h700', dumps: H700_DUMPS, sequenceReadOn: \['2\.8'\] \}/);
-  // What each may be written against. The 600 has no region read yet, so nothing can be written to it;
-  // the 700's is the read taken straight after section 300 put its first block back unchanged.
-  assert.match(text, /const H600_DUMPS = new Set<string>\(\[\]\);/);
+  // What each may be written against: for the 600 and the 700 the read taken straight after its
+  // first block went back unchanged, sections 302 and 300, and the 700's after its delay write too.
+  assert.match(text, /const H600_DUMPS = new Set<string>\(\[\s*(\/\/[^\n]*\n\s*)*'h600_after_rehearsal_region',\s*\]\);/);
   assert.match(text, /const H700_DUMPS = new Set<string>\(\[\s*(\/\/[^\n]*\n\s*)*'h700_after_rehearsal_region',\s*(\/\/[^\n]*\n\s*)*'h700_delay90_region',\s*\]\);/);
   assert.match(text, /if \(commit && !unit\.sequenceReadOn\.includes\(identity\.firmware\)\) \{\s*throw new Refusal/);
   assert.match(text, /const unit = units\.find\(\(one\) => one\.dumps\.has\(dumpName\)\);/);
