@@ -231,6 +231,10 @@ IMAGES = {
     'h600_delay_ir_after': '20261001T100643Z-ir-test-harmony-600-the-kpn-box-s-power-on-delay.json',
     'h600_delay_ir_monitor_before': '20261001T0934Z-ir-monitor.jsonl',
     'h600_delay_ir_monitor_after': '20261001T0940Z-ir-monitor.jsonl',
+    # The settings store read over USB, section 304: the first run, which refused the first reply on a
+    # status byte this library had misread, and the run after the correction, 41 of 41 agreeing.
+    'h600_settings_read_refused': '20261001T1300Z-h600-settings-read.txt',
+    'h600_settings_read': '20261001T1310Z-h600-settings-read.txt',
     # The same region read after block 0x030000 was written back unchanged, section 300.
     'h700_after_rehearsal_region': '20260929T1923Z-h700-after-rehearsal-config-region-region.bin',
     # And the rehearsal's own output for that write, which is the only record that it erased.

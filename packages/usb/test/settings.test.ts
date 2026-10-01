@@ -47,24 +47,27 @@ test('a settings read sends 0x13 0xB2 0x00 and the setting, and the transport cl
 });
 
 test('the reply is taken from the seventh byte of an exact frame and anything else is an error', async () => {
-  const { transport, written } = scripted([report(0xf0, 0x11, 0xb2, 0x04, 0x01, 0x01, 0x0e)]);
+  // The frame the Harmony 600 answered with for setting 0, with setting 8's value from the lab dump.
+  const { transport, written } = scripted([report(0xf0, 0x11, 0xb2, 0x01, 0x01, 0x01, 0x0e)]);
   const remote = new HarmonyRemote(transport, { timeoutMs: 1, architecture: 14 });
   assert.equal(await remote.readSetting(0x08), 0x0e);
   assert.equal(written.length, 1);
 
   // A frame that differs anywhere is refused with its bytes, and so is the error status.
   for (const wrong of [
-    report(0xf0, 0x11, 0xb3, 0x04, 0x01, 0x01, 0x0e),
-    report(0xf0, 0x11, 0xb2, 0x04, 0x00, 0x01, 0x0e),
+    report(0xf0, 0x11, 0xb3, 0x01, 0x01, 0x01, 0x0e),
+    report(0xf0, 0x11, 0xb2, 0x01, 0x00, 0x01, 0x0e),
     report(0xf0, 0x0e),
     report(0x28, 0x02),
   ]) {
     const remote = new HarmonyRemote(scripted([wrong]).transport, { timeoutMs: 1, architecture: 14 });
     await assert.rejects(() => remote.readSetting(0x08), /setting 0x8: not a settings read reply/);
   }
-  const failed = new HarmonyRemote(scripted([report(0xf0, 0x11, 0xb2, 0x01, 0x01, 0x01, 0x0e)]).transport,
+  // A 4 in the fourth byte is what a command that clears the firmware's flag answers, a successful
+  // settings write among them, so it is not a settings read reply.
+  const other = new HarmonyRemote(scripted([report(0xf0, 0x11, 0xb2, 0x04, 0x01, 0x01, 0x0e)]).transport,
     { timeoutMs: 1, architecture: 14 });
-  await assert.rejects(() => failed.readSetting(0x08), /reports status 1/);
+  await assert.rejects(() => other.readSetting(0x08), /answers 4 where every read answers 1/);
 });
 
 test('a settings read is refused off arch 14 and on an unpinned remote, and sends nothing', async () => {

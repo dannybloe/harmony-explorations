@@ -845,8 +845,10 @@ across three starts on the 600, and the 650 and 700 carry the same programs. The
 and the Harmony 650 and 700, whose changes did take effect, had none. So an editor for these remotes
 has to read that table before it can say what a delay is. A computer can read and replace that table over
 the cable, section 304: the firmware of the 600, 650 and 700 answers a version request carrying a
-payload as a settings command. That is read in the firmware and has not been tried on a remote, and
-reading it showed the library's read only filter would have let such a write through, which is fixed.
+payload as a settings command. Reading the 600's table that way gave the same 41 values as the copy
+of its memory in the lab, both saved delays included; writing it has not been tried. Reading the
+firmware also showed the library's read only filter would have let such a write through, which is
+fixed.
 
 **A changed setting on the Harmony 700 is heard on the air, section 301.** How long the remote waits
 after switching the Denon on was raised from six seconds to nine, written to the remote, and put back.

@@ -39696,14 +39696,34 @@ and clear `0x202` and `0x35` clears an interrupt enable; the rest are unread.
 Both the lookup, `0xDA12`, and the append, `0xDB6E`, refuse a sixteen bit setting of `0xFF` or more,
 the lookup answering `0xFF` and the append returning 5 and writing nothing, so the high byte must be 0;
 a refused read answers the same `0xFF` as an empty slot. **The reply is seven bytes**, built at
-`0xD172` and then `0xCD68`: `0xF0`, `0x11`, the sub-command, a status byte that is 4 or 1 when an error
-flag is set, `0x01`, `0x01`, and the value. For `0xB3` the value is the write routine's return code
-rather than the setting. A byte outside the gate's ranges is answered `0xF0 0x0E`. The framing is read
-and has not been seen on a remote.
+`0xD172` and then `0xCD68`: `0xF0`, `0x11`, the sub-command, a byte derived from the flag `0xD4B`,
+`0x01`, `0x01`, and the value. **That fourth byte is always 1 on a settings read**, which this section
+first gave as "a status byte that is 4, or 1 when an error flag is set"<!--superseded-->: the execution
+path sets `0xD4B` to 1 at `0xC65C` before it dispatches on the state, the settings read never clears it,
+and the builder answers 1 for a set flag. 4 is what a command that clears the flag answers, the settings
+write on success among them. The wrong reading came from the builder read without its caller, and the
+remote is what caught it, below. For `0xB3` the value is the write routine's return code rather than
+the setting. A byte outside the gate's ranges is answered `0xF0 0x0E`.
 
 So **a saved delay is four settings**, section 303's slot: reading one is four `0xB2` requests and
 replacing or clearing one is four `0xB3` requests, `0xFF` being what the purge writes into a slot.
 Each `0xB3` appends a record to the remote's own program memory, which is a write.
+
+### Read off the Harmony 600
+
+`packages/usb/bin/read-settings.ts`, on the bench 600 on 1 October 2026: forty one `0x13 0xB2` reads,
+the two delay tables and setting `0x80`. The first run stopped on its first reply, `f0 11 b2 01 01 01
+ff`, which is the frame the firmware builds, with setting 0's empty slot as its value, refused because
+the reader expected 4 in the fourth byte. With the reader corrected to the reading above, **41 of 41
+settings agree with the store's latest values in the page `0xFF` dump taken before any write of
+ours**: the KPN box's power on slot, key `0x0EDC`, at 10 tenths, the PS3's inter device slot, key
+`0x0E26`, at 15, every other delay setting erased, and setting `0x80` at `0xFE`. So the route, the
+request and the reply are measured on one unit, and the store held still across section 303's two
+configuration writes and a battery pull.
+
+The script ran once before this by mistake, while its error messages were being checked with the
+remote attached and unannounced; it sent the same reads and its output was not seen. The remote still
+enumerated afterwards and the runs above read it normally.
 
 ### Which units
 
@@ -39734,8 +39754,9 @@ by command byte is defeated by what the payload selects.
 ### Scope, decision 16
 
 Read on the 600's and the 650's 0.2 images and the 700's 2.8, absent from the Harmony One's 3.4, and
-unread on the Harmony 525. Not sent to any remote: the framing and the effect on a running unit are
-the firmware's statement.
+unread on the Harmony 525. The read is measured on the Harmony 600 alone; on the 650 and 700 it is the
+firmware's statement, and the 700's reply builder is not read. The write, `0xB3`, has been sent to no
+remote.
 
 ### Sources checked before the work
 

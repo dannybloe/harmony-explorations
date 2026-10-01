@@ -90,7 +90,8 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // rehearsal output and the two reads after it, and 161 with its two internal page reads, and 162 with its region after the KPN delay write,
   // and 172 with that region put back, the two write journals, three memory reads and two bench runs
   // with their monitor logs, section 303.
-  assert.equal(Object.keys(pythonImages()).length, 172, 'every fixture tests/lab.py names');
+  // 174 with the two settings store reads over USB, section 304.
+  assert.equal(Object.keys(pythonImages()).length, 174, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {

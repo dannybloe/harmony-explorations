@@ -77,22 +77,33 @@ export function settingsReadRequest(setting: number): Uint8Array {
 }
 
 /**
- * The reply to a settings read, as the 0.2 firmware builds it, section 304: `0xF0 0x11 0xB2 status
- * 0x01 0x01 value`. **Read off the firmware and not yet seen on a remote**, so this is strict: a
- * reply that differs anywhere in its frame is an error carrying the bytes, rather than a value taken
- * from whichever position looked plausible. `decodeReply` would read it as a bare acknowledgement of
- * a command `0x11` and drop the rest, which is why it has its own reader.
+ * The reply to a settings read, section 304: `0xF0 0x11 0xB2 0x01 0x01 0x01 value`. Read off the 0.2
+ * firmware and **seen on the Harmony 600** on 1 October 2026. Strict on purpose: a reply that differs
+ * anywhere in its frame is an error carrying the bytes, rather than a value taken from whichever
+ * position looked plausible. `decodeReply` would read it as a bare acknowledgement of a command
+ * `0x11` and drop the rest, which is why it has its own reader.
  */
 export const SETTINGS_REPLY_FRAME: readonly number[] = [0xf0, 0x11, SETTINGS_READ];
-/** The status byte the firmware writes when its error flag is clear; 1 when it is set. */
-export const SETTINGS_REPLY_OK = 0x04;
+/**
+ * The fourth byte of a settings read's reply, which is always 1.
+ *
+ * **This said 4, as the value when an error flag is clear, and the first read off a remote refused
+ * on it.** The flag is `0xD4B`, which the execution path sets to 1 at `0xC65C` before it dispatches
+ * on the state, and which the settings read never clears, so the byte the reply builder derives from
+ * it is 1 on every settings read. The 4 is what a command that clears the flag answers, the settings
+ * write on success among them. So it is not a status of the read at all, and the reading that it was
+ * came from reading the builder without the code in front of it.
+ */
+export const SETTINGS_READ_STATUS = 0x01;
 
 export function decodeSettingsReply(report: Uint8Array): number {
   const head = [...report.subarray(0, 7)];
   const shown = head.map((b) => b.toString(16).padStart(2, '0')).join(' ');
   const framed = SETTINGS_REPLY_FRAME.every((b, i) => report[i] === b) && report[4] === 0x01 && report[5] === 0x01;
   if (!framed) throw new ProtocolError(`not a settings read reply: ${shown}`);
-  if (report[3] !== SETTINGS_REPLY_OK) throw new ProtocolError(`the settings read reports status ${report[3]}: ${shown}`);
+  if (report[3] !== SETTINGS_READ_STATUS) {
+    throw new ProtocolError(`the settings read answers ${report[3]} where every read answers 1: ${shown}`);
+  }
   return report[6] as number;
 }
 

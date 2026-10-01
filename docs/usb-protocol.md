@@ -316,11 +316,13 @@ have an argument parser and 54 an executor. Read so far:
 | `0x12 0xB9 byte` | write the byte to data memory `0x200` |
 | `0x11 0xBD` | program `0xFFFE` into internal `0x01F6C0` when that word's bit 0 is set |
 
-`hi` must be 0 for `0xB2` and `0xB3`: both store routines refuse a setting of `0xFF` or more. The reply
-is seven bytes, `0xF0 0x11 sub status 0x01 0x01 value`, and `0xF0 0x0E` for a byte outside the
-ranges.
+`hi` must be 0 for `0xB2` and `0xB3`: both store routines refuse a setting of `0xFF` or more. A
+settings read answers seven bytes, `0xF0 0x11 0xB2 0x01 0x01 0x01 value`, **measured on the Harmony
+600** with all 41 delay settings agreeing with a dump of its store; the fourth byte is 4 for a command
+that clears the firmware's flag, the settings write on success among them, and `0xF0 0x0E` answers a
+byte outside the ranges.
 
-The framing is read and not yet seen on a remote. The Harmony One's handler reads no payload. **The
+The Harmony One's handler reads no payload. **The
 transport's allow list passes `0x10` bare and the settings read `0x13 0xB2`, and nothing else in the
 family,** since section 304, because keying on the high nibble
 had let `0xB3`, `0xB1` and `0xBD` through as reads. Most of the other states are unread.

@@ -1433,5 +1433,26 @@ class AVersionRequestWithAPayloadIsASettingsAndMemoryCommandOnArch14(unittest.Te
         self.assertEqual((at_one(0x264B4).fields['k'], at_one(0x264B6).fields['k'], at_one(0x264B8).fields['f']),
                          (0x02, 0x01, 0x84))
 
+    def test_the_600_answered_the_settings_read_in_the_firmware_s_frame_and_41_of_41_agree_with_its_dump(self):
+        lab.require('h600_settings_read_refused', 'h600_settings_read', 'h600_internal_ff_region')
+        # The first run: the frame exactly as built at 0xD172 and 0xCD68, with 1 in the fourth byte,
+        # which this library had expected to be 4 and refused. Setting 0 is an empty slot, 0xFF.
+        refused = lab.load('h600_settings_read_refused').decode('utf-8')
+        self.assertIn('f0 11 b2 01 01 01 ff', refused)
+        # The flag behind that byte is set at the head of every execution, 0xC65C, and the settings
+        # read never clears it, so 1 is every read's answer.
+        _, at = self._image('h600_code_complete')
+        self.assertEqual((at(0xC65E).fields['k'], at(0xC660).fields['f']), (0x01, 0x4B))
+        # The run after the correction: the two saved delays and setting 0x80, and every one of the
+        # 41 settings equal to the store's latest value in the page 0xFF dump.
+        text = lab.load('h600_settings_read').decode('utf-8')
+        self.assertIn('power on slot 2: key 0x0edc (3804), value 10 tenths', text)
+        self.assertIn('inter device slot 2: key 0x0e26 (3622), value 15 tenths', text)
+        self.assertIn('setting 0x80: 0xfe', text)
+        self.assertIn('against h600_internal_ff_region: 41 of 41 agree', text)
+        self.assertTrue(text.rstrip().endswith('exit 0'))
+        latest = _store_slots(lab.load('h600_internal_ff_region'))
+        self.assertEqual((latest[0x08], latest[0x09], latest[0x0B]), (0x0E, 0xDC, 10))
+
 if __name__ == '__main__':
     unittest.main()
