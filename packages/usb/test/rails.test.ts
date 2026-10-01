@@ -950,9 +950,23 @@ test('a mutating report cannot reach a remote without a rail behind it', async (
   await assert.rejects(() => guarded.write(encodeRequest(0x20)), TransportError,
     'an unclassified command was sent');
 
-  // Exactly two reports got through: the read and the authorised erase.
-  assert.equal(sent.length, 2);
-  assert.deepEqual(sent.map((r) => (r[0] as number) & 0xf0), [READ_FLASH, ERASE_FLASH]);
+  // **A version request with a payload is not a read**, section 304: on arch 14 its first byte is a
+  // sub-command, `0xB3` appends a settings record and `0xB1` writes data memory. Both keyed on the
+  // high nibble and went through as reads until then. The bare request still passes, below.
+  await assert.rejects(() => guarded.write(Uint8Array.of(0x14, 0xb3, 0x00, 0x08, 0x0a)), TransportError,
+    'a settings write went through as a version request');
+  await assert.rejects(() => guarded.write(Uint8Array.of(0x14, 0xb1, 0x0e, 0x5f, 0x2d)), TransportError,
+    'a data memory write went through as a version request');
+  await assert.rejects(() => guarded.write(Uint8Array.of(0x13, 0xb2, 0x00, 0x08)), TransportError,
+    'a payload carrying version request was classified as a read');
+  await assert.rejects(() => guarded.write(Uint8Array.of(0x11, 0xbd)), TransportError,
+    'a program memory write went through as a version request');
+  await guarded.write(encodeRequest(0x10));
+
+  // Exactly three reports got through: the read, the authorised erase and the bare version request.
+  assert.equal(sent.length, 3);
+  assert.deepEqual(sent.map((r) => (r[0] as number) & 0xf0), [READ_FLASH, ERASE_FLASH, 0x10]);
+  assert.equal(sent[2]![0], 0x10, "the version request that passed carried a payload");
 });
 
 test('the only function returning a path to real hardware returns a guarded transport', async () => {

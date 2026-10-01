@@ -951,6 +951,12 @@ document:
   opcodes `0x65` and `0x66`, and it is bounded three ways in the firmware; structurally, arch 14
   writes over a chip its firmware does not live on and arch 12 implements neither opcode. No config
   in the corpus emits either.
+* **A version request with a payload is not a read**, section 304. On arch 14 (Harmony 600, 650 and
+  700) `0x1N` with a nonzero length nibble makes its first payload byte the command state, `0xB3`
+  writing the settings store in internal program memory, `0xB1` any byte of data memory and `0xBD` a
+  word of program memory, and the transport's allow list keyed on the high nibble passed all three as
+  reads until then. `isReadOnlyReport` passes `0x10` only
+  bare.
 * **Flash is not the only write path.** `WRITE_MISC` selector `0x07` writes a byte into the data
   memory of a running remote, and its address reaches the special function registers, which on this
   MCU family are a PIC18's self programming path; `assertRamWriteAllowed` bounds it below that page

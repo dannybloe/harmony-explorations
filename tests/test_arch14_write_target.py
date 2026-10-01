@@ -1348,5 +1348,90 @@ class TheHarmony600sDelayWriteWasOverriddenByItsSettingsStore(unittest.TestCase)
         self.assertEqual(flat(495), [(0x7F, 703), (0x7F, 506)])
         self.assertEqual((flat(703), flat(506)), ([(0x72, 0x0F00 | self.KPN_POWER_ON)], [(0x72, 0x0900 | 64)]))
 
+
+class AVersionRequestWithAPayloadIsASettingsAndMemoryCommandOnArch14(unittest.TestCase):
+    """Section 304: the settings store is read and written over USB by `0x1N` with a payload.
+
+    `GET_VERSION` is `0x10`. With a nonzero length nibble the handler reads a payload byte and makes it
+    the command state when it lies in `0x10` to `0x35` or `0xA0` to `0xC5`; twenty such sub-commands are
+    parsed. `0xB2` reads one setting and `0xB3` writes one, through the store routines section 282 read,
+    and `0xB1` writes a byte of data memory while it is being parsed. The 650's 0.2 build is byte
+    identical over this whole path to the 600's; the 700's 2.8 carries the same pair at other addresses.
+    The Harmony One's handler reads no payload at all.
+    """
+
+    SUB_COMMANDS = {0xB9, 0xB3, 0xB2, 0xB1, 0xB0, 0xAF, 0xAE, 0xAD, 0xAC, 0xA1, 0xA3, 0x34, 0x2F,
+                    0x30, 0xA0, 0xB4, 0xC5, 0x21, 0x20, 0x1F}
+
+    def _image(self, name):
+        code = lab.load(name)
+        return code, (lambda address: isa.decode(code, address - BASE, BASE))
+
+    def test_on_the_600_and_650_a_payload_byte_becomes_the_state_and_twenty_states_have_a_parser(self):
+        lab.require('h600_code_complete', 'h650_bench_code')
+        for name in ('h600_code_complete', 'h650_bench_code'):
+            with self.subTest(name):
+                code, at = self._image(name)
+                # A zero length nibble is the version request; anything else reads a byte and gates it.
+                self.assertEqual((at(0xBD6A).mnemonic, at(0xBD6A).fields['f'], at(0xBD6C).fields['target']),
+                                 ('MOVF', 0x01, 0xBD7C))  # MOVF 0xD01 under MOVLB 0xD, the length nibble
+                self.assertEqual(at(0xBD68).fields['k'], 0x0D)
+                self.assertEqual(at(0xBD8C).fields['target'], 0xBC4E)
+                self.assertEqual([at(a).fields['k'] for a in (0xBC54, 0xBC5E, 0xBC62, 0xBC6A)],
+                                 [0x10, 0x35, 0xA0, 0xC5])
+                self.assertEqual(at(0xBC6E).fields, {'src': 0x726, 'dst': 0x1C1})
+                table = chains.chain_table(code, BASE, 0xBD96, 32)
+                self.assertEqual(set(table), self.SUB_COMMANDS)
+                self.assertEqual((table[0xB1], table[0xB2], table[0xB3]), (0xC0EC, 0xC11E, 0xC13C))
+                # The main loop's dispatch on the state: 66 cases, 54 in the gate's ranges, and 0xBD,
+                # which has no parser, programs the word at 0x01F6C0 through 0x197F2.
+                dispatch = chains.chain_table(code, BASE, 0xC684, 80)
+                in_range = {v for v in dispatch if 0x10 <= v <= 0x35 or 0xA0 <= v <= 0xC5}
+                self.assertEqual((len(dispatch), len(in_range), len(in_range - self.SUB_COMMANDS)), (66, 54, 34))
+                self.assertEqual((dispatch[0xBD], at(0xD036).fields['target']), (0xD036, 0x197F2))
+                self.assertEqual([at(a).fields['k'] for a in (0x197F4, 0x197F8, 0x197FC)], [0xC0, 0xF6, 0x01])
+                self.assertEqual(at(0x19828).fields['target'], 0x19CD8)
+
+    def test_0xb2_reads_a_setting_0xb3_writes_one_and_0xb1_writes_memory_while_parsing(self):
+        lab.require('h600_code_complete', 'h650_bench_code')
+        for name in ('h600_code_complete', 'h650_bench_code'):
+            with self.subTest(name):
+                code, at = self._image(name)
+                # 0xB2 and 0xB3 parse a sixteen bit setting number, high byte first; 0xB3 then a value.
+                # Each a MOVWF into bank 1, so the operand is the low byte of 0x1C7, 0x1C6 and 0x1CF.
+                self.assertEqual([(at(a - 2).fields['k'], at(a).fields['f']) for a in (0xC12C, 0xC138)],
+                                 [(1, 0xC7), (1, 0xC6)])
+                self.assertEqual([(at(a - 2).fields['k'], at(a).fields['f']) for a in (0xC14A, 0xC156, 0xC16C)],
+                                 [(1, 0xC7), (1, 0xC6), (1, 0xCF)])
+                # Executed later: the lookup section 282 read, and the write that copies and retries.
+                self.assertEqual((at(0xCCEA).fields['k'], at(0xCCFA).fields['target']), (0xB2, 0xDA04))
+                self.assertEqual((at(0xCD04).fields['k'], at(0xCD18).fields['target']), (0xB3, 0xDD16))
+                self.assertEqual(at(0xCD14).fields, {'src': 0x1CF, 'dst': 0x08F})
+                # 0xB1: an address and a byte, stored through FSR0 at parse time, with no bound.
+                self.assertEqual([at(a).fields for a in (0xC110, 0xC114, 0xC118)],
+                                 [{'src': 0xD58, 'dst': 0xFE9}, {'src': 0xD59, 'dst': 0xFEA},
+                                  {'src': 0xD5A, 'dst': 0xFEF}])
+                # The lookup refuses a sixteen bit setting of 0xFF or more: low byte against 0xFF,
+                # then the high byte with borrow.
+                self.assertEqual((at(0xDA12).fields['k'], at(0xDA14).fields['f']), (0xFF, 0x08A))
+                self.assertEqual((at(0xDA18).mnemonic, at(0xDA18).fields['f'], at(0xDA1A).mnemonic),
+                                 ('SUBWFB', 0x08B, 'BNC'))
+
+    def test_the_700s_2_8_reads_and_writes_the_same_store_and_the_one_s_version_handler_reads_no_payload(self):
+        lab.require('h700_code', 'one34_code')
+        _, at = self._image('h700_code')
+        self.assertEqual((at(0xCDA6).fields['k'], at(0xCDB6).fields['target']), (0xB2, 0x1155C))
+        self.assertEqual((at(0xCDC0).fields['k'], at(0xCDD4).fields['target']), (0xB3, 0x1186E))
+        # The 2.8 lookup starts at program memory 0x01EC00 like the 0.2 one.
+        self.assertEqual([at(a).fields['k'] for a in (0x11580, 0x11584)], [0xEC, 0x01])
+        # The Harmony One's version handler sets state 1 and reads nothing more.
+        one = lab.load('one34_code')
+        at_one = lambda address: isa.decode(one, address - 0x20000, 0x20000)
+        self.assertEqual([at_one(a).mnemonic for a in (0x264B4, 0x264B6, 0x264B8, 0x264C0)],
+                         ['MOVLB', 'MOVLW', 'MOVWF', 'BRA'])
+        # MOVLB 2 then MOVWF 0x84: state 1 into 0x284, the One's command state variable.
+        self.assertEqual((at_one(0x264B4).fields['k'], at_one(0x264B6).fields['k'], at_one(0x264B8).fields['f']),
+                         (0x02, 0x01, 0x84))
+
 if __name__ == '__main__':
     unittest.main()

@@ -55,6 +55,24 @@ export const READ_ONLY_COMMANDS: ReadonlySet<number> = new Set([
   READ_MISC,
 ]);
 
+/**
+ * Whether a whole report only reads, which is narrower than its command being on the list above.
+ *
+ * **`GET_VERSION` reads only when it carries no payload**, section 304. On arch 14 (Harmony 600, 650
+ * and 700) a `0x1N` report with a nonzero length nibble is not a version request at all: its first
+ * payload byte becomes the command state, from `0x10` to `0x35` or `0xA0` to `0xC5`, among them
+ * `0xB1`, which writes any byte of data memory while the report is still being parsed, `0xB3`, which
+ * appends a record to the settings store in the remote's own program memory, and `0xBD`, which
+ * programs a word of it with no argument at all. Keying on the high nibble alone let both through as
+ * reads. Every version request this library sends is the bare `0x10`, so nothing it does is refused.
+ */
+export function isReadOnlyReport(report: Uint8Array): boolean {
+  const first = report[0] ?? 0;
+  const command = first & 0xf0;
+  if (!READ_ONLY_COMMANDS.has(command)) return false;
+  return command !== GET_VERSION || (first & 0x0f) === 0;
+}
+
 export const COMMAND_NAMES: Readonly<Record<number, string>> = {
   [GET_VERSION]: 'GET_VERSION',
   [WRITE_FLASH]: 'WRITE_FLASH',

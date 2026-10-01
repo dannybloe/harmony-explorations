@@ -8,7 +8,7 @@
  */
 
 import { takeAuthorisation } from './authorise.ts';
-import { READ_ONLY_COMMANDS } from './protocol.ts';
+import { isReadOnlyReport } from './protocol.ts';
 
 export class TransportError extends Error {}
 
@@ -64,7 +64,7 @@ export function guardMutations(inner: Transport): GuardedTransport {
       // Consumed whether or not it is needed, so a permission cannot be left lying about for a
       // later report, and looked up by identity rather than read off this object.
       const pending = takeAuthorisation(guarded);
-      if (!READ_ONLY_COMMANDS.has(command)) {
+      if (!isReadOnlyReport(report)) {
         if (pending === undefined || !sameBytes(pending, report)) {
           throw new TransportError(
             `refusing to send command 0x${command.toString(16)} to a remote: it only reads on the ` +

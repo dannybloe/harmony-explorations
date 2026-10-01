@@ -564,7 +564,7 @@ finding.
 
 `todo.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 303<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 304<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and flash has been written on five units**, the first in section 222:
@@ -843,7 +843,10 @@ a millisecond on the infrared receiver. The remote keeps a small table of saved 
 configuration Logitech compiles copies that table over its own values when the remote starts: seen
 across three starts on the 600, and the 650 and 700 carry the same programs. The 600 had two such delays saved, from before this project touched it,
 and the Harmony 650 and 700, whose changes did take effect, had none. So an editor for these remotes
-has to read that table before it can say what a delay is.
+has to read that table before it can say what a delay is. A computer can read and replace that table over
+the cable, section 304: the firmware of the 600, 650 and 700 answers a version request carrying a
+payload as a settings command. That is read in the firmware and has not been tried on a remote, and
+reading it showed the library's read only filter would have let such a write through, which is fixed.
 
 **A changed setting on the Harmony 700 is heard on the air, section 301.** How long the remote waits
 after switching the Denon on was raised from six seconds to nine, written to the remote, and put back.

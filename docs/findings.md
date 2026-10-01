@@ -39659,3 +39659,104 @@ does not hold after a start; a configuration whose saving table writes another d
 * `docs/config-format.md`, `docs/memory-map-600.md` and the `writing-a-config` skill: the structured fact
   and the rail.
 * The lab note is `work/plan-L6/settings-store-NOTES.md`.
+
+## 304. The settings store is read and written over USB by a version request carrying a payload, and the read only allow list let it through
+
+`todo.md` L9's first question, after section 303: a delay saved on the remote wins over the
+configuration's, so an editor has to be able to read the store and replace an entry. Section 282
+found that the 0.2 build reaches the store from command states `0xB2` and `0xB3` and did not trace
+what sets them. Read here on the Harmony 600's 0.2 image.
+
+### How a host reaches those states
+
+**The command is `GET_VERSION`, `0x10`, with a nonzero length nibble.** The idle dispatch sends `0x10`
+to `0x0BD68`, which tests the length nibble at `0xBD6A`: zero is the version request every client
+sends, state 1. Anything else reads the first payload byte, `0xBD80`, and calls `0xBC4E`, which sets
+the state to `0x0E` and then to that byte when it lies in `0x10` to `0x35` or in `0xA0` to `0xC5`.
+That is 76 possible states. A switch at `0xBD96` parses arguments for twenty of them, decoded with
+`chains.py`: `0x1F`, `0x20`, `0x21`, `0x2F`, `0x30`, `0x34`, `0xA0`, `0xA1`, `0xA3`, `0xAC` to `0xAF`,
+`0xB0` to `0xB4`, `0xB9` and `0xC5`; its default leaves the state set. The work happens later from the
+state, like every other command, in the main loop's dispatch at `0xC684`, which has 66 cases, 54 of
+them in the gate's ranges. **34 of those 54 have no parser and run on whatever their variables hold**,
+and `0xBC6E` is the only writer of the state that is not a constant, so this family is their only way
+in. One of them writes: **`0xBD`**, `0xD036`, calls `0x197F2`, which reads the program word at
+`0x01F6C0` and, when its bit 0 is set, programs `0xFFFE` there through `0x19CD8`, a table write with
+`EECON1` and the `0x55 0xAA` unlock. So `0x11 0xBD` writes internal program memory with no argument.
+On the bench 600 that word already reads `fe ff`, so it would write nothing there. `0xC3` and `0xC4` set
+and clear `0x202` and `0x35` clears an interrupt enable; the rest are unread.
+
+| sub-command | request after it | parsed at | executed | what it does |
+|---|---|---|---|---|
+| `0xB2` | setting, sixteen bits, high byte first | `0xC11E` | `0xCCEA`, `0xDA04` | read one setting: the lookup of section 282, the latest record winning |
+| `0xB3` | setting, sixteen bits, then one value byte | `0xC13C` | `0xCD04`, `0xDD16` | write one setting: append a record, copying to the other block or reformatting both when full, section 282 |
+| `0xB1` | address, high byte first, then one byte | `0xC0EC` | at parse time | store the byte through `FSR0`, which keeps twelve bits of the address: anywhere in data memory, the special function registers and the command state included, with no check |
+| `0xB0` | address, sixteen bits | `0xC0CE` | `0xCCD4` | read one byte of data memory |
+| `0xB9` | one byte | `0xC170` | at parse time | store it at data memory `0x200` |
+
+Both the lookup, `0xDA12`, and the append, `0xDB6E`, refuse a sixteen bit setting of `0xFF` or more,
+the lookup answering `0xFF` and the append returning 5 and writing nothing, so the high byte must be 0;
+a refused read answers the same `0xFF` as an empty slot. **The reply is seven bytes**, built at
+`0xD172` and then `0xCD68`: `0xF0`, `0x11`, the sub-command, a status byte that is 4 or 1 when an error
+flag is set, `0x01`, `0x01`, and the value. For `0xB3` the value is the write routine's return code
+rather than the setting. A byte outside the gate's ranges is answered `0xF0 0x0E`. The framing is read
+and has not been seen on a remote.
+
+So **a saved delay is four settings**, section 303's slot: reading one is four `0xB2` requests and
+replacing or clearing one is four `0xB3` requests, `0xFF` being what the purge writes into a slot.
+Each `0xB3` appends a record to the remote's own program memory, which is a write.
+
+### Which units
+
+The Harmony 650's 0.2 build is byte identical to the 600's over the gate, the sub-command switch, the
+parsers, the executors, the reply and the store routines, `0xDA04` to `0xDE70`, though the two images
+differ elsewhere. The Harmony 700's 2.8 carries the same gate plus a third range, `0xD0` to `0xD6`,
+at `0xBCF8`, with executors for those in its dispatch at `0xC720`, the same twenty parsers at `0xBE2C`,
+and `0xB2` at `0xCDA6` calling the lookup at `0x1155C`, which starts at `0x01EC00`, and `0xB3` at `0xCDC0` calling the write at
+`0x1186E`. The Harmony One's 3.4 version handler, `0x264B4`, sets state 1 and branches out without
+reading a payload, so the family is not on arch 12 (Harmony One). The Harmony 525's images do not
+carry the gate's signature and its handler is unread.
+
+### What it meant for the rails
+
+`guardMutations` classified a report by its high nibble, so every `0x1N` report passed as a read.
+`0x14 0xB3 ...` would have appended a settings record, `0x14 0xB1 ...` written any byte of a running
+remote's data memory, and `0x11 0xBD` programmed a word of internal program memory, with writing
+disabled and no rail asked, on a Harmony 600, 650 or 700. Nothing
+here ever sent one. **The allow list now passes `GET_VERSION` only bare**, `isReadOnlyReport` in
+`packages/usb/src/protocol.ts`, and the transport test refuses the three shapes and still passes
+`0x10`; with the old classification put back, it fails on the first of them. Every version request
+this library sends is the bare one. The lesson is section 224's again in a new place: a classification
+by command byte is defeated by what the payload selects.
+
+### Scope, decision 16
+
+Read on the 600's and the 650's 0.2 images and the 700's 2.8, absent from the Harmony One's 3.4, and
+unread on the Harmony 525. Not sent to any remote: the framing and the effect on a running unit are
+the firmware's statement.
+
+### Sources checked before the work
+
+Sections 97, 282, 296 and 303 and `docs/usb-protocol.md`. Both reviewers ran: the blind one, without
+this text, found the same route on all three images, the Harmony One's absence and the hole in the allow
+list, and added `0xB9`; the sentence audit corrected the count of reachable states, found `0xBD`, the
+700's third range, the reply's full framing, the twelve bit reach of `0xB1` and the second refusal of a
+high setting byte, all re-read here before they landed. Logitech's classic client: its HID command
+classes in the lab's `PROTOCOL-CONSTANTS.md` name an EEPROM read and write as selector 0 of `0xB0` and
+`0xA0`, which the arch 14 firmware does not service, and nothing using `0x10` with a payload. MyHarmony's
+decompiled source has the account side's `RemoteSettings` and no USB layer. Harmony Desktop's per skin
+templates hold no `0x1N` request with a payload, and the `0xB2` they hold is `READ_MISC` with two
+bytes. So the route is the firmware's alone, and no Logitech client here is seen to use it.
+
+### Falsification
+
+A Harmony 600, 650 or 700 that answers `0x13 0xB2 0x00 0x08` with anything other than the store's
+latest value for setting 8, `0x0E` on the 600; or a store that gains no record after an `0xB3`. The
+transport now refuses that read too, since it carries a payload, so trying it needs a named door that
+does not exist yet.
+
+### Where it landed
+
+* `packages/usb/src/protocol.ts` and `transport.ts`: `isReadOnlyReport`, and the guard uses it.
+* `packages/usb/test/rails.test.ts`: the three refusals and the bare request passing.
+* `tests/test_arch14_write_target.py`, `AVersionRequestWithAPayloadIsASettingsAndMemoryCommandOnArch14`.
+* `docs/usb-protocol.md`, `todo.md` L9 and `CLAUDE.md`'s rail.
