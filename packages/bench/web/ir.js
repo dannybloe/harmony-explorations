@@ -358,7 +358,8 @@ function plannedSteps() {
 
 function expectLabel(want) {
   const devices = typeof want.device === 'string' ? [want.device] : want.device;
-  return `${devices.join(' or ')} · ${want.command}${(want.times ?? 1) > 1 ? ` ×${want.times}` : ''}`;
+  const what = want.command ?? `code ${want.code}`;
+  return `${devices.join(' or ')} · ${what}${(want.times ?? 1) > 1 ? ` ×${want.times}` : ''}`;
 }
 
 /**

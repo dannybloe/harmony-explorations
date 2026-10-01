@@ -24,8 +24,15 @@ import type { HeardFrame, IrMonitor } from './irmonitor.ts';
 export interface Expectation {
   /** The device, as the configurations name it; several names when the remotes disagree, `TV` and `LG`. */
   readonly device: string | readonly string[];
-  /** Logitech's command name, `VolumeUp`, as the monitor reports it. */
-  readonly command: string;
+  /**
+   * Logitech's command name, `VolumeUp`, as the monitor reports it. Or, for a device whose codes the
+   * catalogue cannot name, the code number instead, with the configuration it is a number in: code
+   * numbers are per configuration, so the same KPN box is code 35 on one remote and something else
+   * on the next. A definition gives one of the two.
+   */
+  readonly command?: string;
+  readonly code?: number;
+  readonly config?: string;
   /** How many separate presses of it, default one. A held key is one press with repeats. */
   readonly times?: number;
   /** The pause before it, since the previous command of the step, in milliseconds, as `[least, most]`. */
@@ -81,9 +88,9 @@ export interface Run {
   file: string | undefined;
 }
 
-/** The device and command names a press carries, one per bench remote that holds it. */
-function namesOf(frame: HeardFrame): { device: string; command: string | undefined }[] {
-  return frame.matches.map((one) => ({ device: one.device, command: one.command }));
+/** The device and command names a press carries, and its code number per configuration, one per bench remote that holds it. */
+function namesOf(frame: HeardFrame): { device: string; command: string | undefined; config: string; code: number }[] {
+  return frame.matches.map((one) => ({ device: one.device, command: one.command, config: one.config, code: one.code }));
 }
 
 /**
@@ -99,7 +106,8 @@ function devicesOf(want: Expectation): string[] {
 }
 
 function labelOf(want: Expectation): string {
-  return `${devicesOf(want).join(' or ')} · ${want.command}${(want.times ?? 1) > 1 ? ` ×${want.times}` : ''}`;
+  const what = want.command ?? `code ${want.code} of ${want.config}`;
+  return `${devicesOf(want).join(' or ')} · ${what}${(want.times ?? 1) > 1 ? ` ×${want.times}` : ''}`;
 }
 
 export function judge(step: Pick<RunStep, 'expect' | 'presses'>): Verdict[] {
@@ -110,7 +118,9 @@ export function judge(step: Pick<RunStep, 'expect' | 'presses'>): Verdict[] {
     const devices = devicesOf(want);
     const label = labelOf(want);
     const fits = (press: RunPress) => !press.frame.bare && namesOf(press.frame).some((one) =>
-      devices.includes(one.device.toLowerCase()) && one.command?.toLowerCase() === want.command.toLowerCase());
+      devices.includes(one.device.toLowerCase()) && (want.command !== undefined
+        ? one.command?.toLowerCase() === want.command.toLowerCase()
+        : one.config === want.config && one.code === want.code));
     let found = 0;
     let firstAt: RunPress | undefined;
     for (let i = cursor; i < step.presses.length && found < (want.times ?? 1); i += 1) {

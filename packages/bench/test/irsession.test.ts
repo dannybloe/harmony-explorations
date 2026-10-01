@@ -92,6 +92,17 @@ test('expectations are looked for in order, by device and command, either spelli
   assert.equal(swapped[1]!.detail, 'heard 0 of 1');
 });
 
+test('a command the catalogue cannot name is expected by its code, and only in the configuration given', () => {
+  const step = {
+    expect: [{ device: 'KPN', code: 35, config: 'bench_remote' }],
+    presses: [{ frame: frame(0, [{ ...match('KPN', undefined), code: 35 }]), repeats: 0, atMs: 0 }],
+  };
+  assert.deepEqual(judge(step), [{ expected: 'kpn · code 35 of bench_remote', ok: true, detail: 'heard at 0.00 s' }]);
+  // The same number in another configuration is another command.
+  const elsewhere = judge({ ...step, expect: [{ device: 'KPN', code: 35, config: 'other_remote' }] });
+  assert.equal(elsewhere[0]!.ok, false);
+});
+
 test('a count is separate presses, and a pause outside its window fails a command that was heard', () => {
   const twice = judge({
     expect: [{ device: 'TV', command: 'VolumeUp', times: 3 }],
@@ -212,7 +223,13 @@ test('every test definition in the repository is well formed', () => {
       for (const want of step.expect ?? []) {
         const devices: readonly string[] = typeof want.device === 'string' ? [want.device] : want.device;
         assert.ok(devices.length > 0 && devices.every((one) => typeof one === 'string' && one !== ''), id);
-        assert.equal(typeof want.command, 'string', id);
+        // A command name, or a code number with the configuration it is a number in, never both.
+        if (want.command !== undefined) {
+          assert.equal(typeof want.command, 'string', id);
+          assert.equal(want.code, undefined, id);
+        } else {
+          assert.ok(Number.isInteger(want.code) && typeof want.config === 'string', `${id} names neither a command nor a code`);
+        }
         if (want.times !== undefined) assert.ok(Number.isInteger(want.times) && want.times > 0, id);
         if (want.pauseMs !== undefined) assert.ok(want.pauseMs.length === 2 && want.pauseMs[0] <= want.pauseMs[1], id);
       }

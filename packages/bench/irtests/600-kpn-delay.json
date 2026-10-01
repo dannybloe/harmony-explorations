@@ -1,0 +1,16 @@
+{
+  "name": "Harmony 600, the KPN box's power on delay",
+  "description": "TV kijken from everything off, for the time between the KPN box switching on and the second command it is sent, which is the KPN box's power on delay at work. The TV gets only its power code in this activity, so its own delay cannot be heard here and the KPN box's is the one to change. The catalogue names no KPN code, so they are expected by number. Run before and after the delay is changed; the difference is the change. Keep the remote pointed at the Flirc throughout.",
+  "steps": [
+    { "instruction": "On the Harmony 600, press Off and wait until the remote is done, so everything starts from off" },
+    {
+      "instruction": "Start TV kijken and wait until the remote is done, about fifteen seconds",
+      "expect": [
+        { "device": "KPN", "code": 35, "config": "h600_config" },
+        { "device": "TV", "command": "PowerOn" },
+        { "device": "KPN", "code": 41, "config": "h600_config" }
+      ]
+    },
+    { "instruction": "Press Off and wait until the remote is done" }
+  ]
+}
