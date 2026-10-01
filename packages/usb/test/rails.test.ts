@@ -957,15 +957,26 @@ test('a mutating report cannot reach a remote without a rail behind it', async (
     'a settings write went through as a version request');
   await assert.rejects(() => guarded.write(Uint8Array.of(0x14, 0xb1, 0x0e, 0x5f, 0x2d)), TransportError,
     'a data memory write went through as a version request');
-  await assert.rejects(() => guarded.write(Uint8Array.of(0x13, 0xb2, 0x00, 0x08)), TransportError,
-    'a payload carrying version request was classified as a read');
+  // An unclassified sub-command is refused even when it only reads, `0xB0` being a data memory read:
+  // the family is an allow list of one, since most of its 76 states are unread.
+  await assert.rejects(() => guarded.write(Uint8Array.of(0x13, 0xb0, 0x0e, 0x5f)), TransportError,
+    'an unclassified version request sub-command was classified as a read');
   await assert.rejects(() => guarded.write(Uint8Array.of(0x11, 0xbd)), TransportError,
     'a program memory write went through as a version request');
   await guarded.write(encodeRequest(0x10));
+  // The settings read is classified by its second byte and passes, with exactly its three bytes; the
+  // same sub-command with a longer payload, and the write beside it at the same length, do not.
+  await guarded.write(Uint8Array.of(0x13, 0xb2, 0x00, 0x08));
+  await assert.rejects(() => guarded.write(Uint8Array.of(0x14, 0xb2, 0x00, 0x08, 0x0a)), TransportError,
+    'a settings read with a fourth payload byte was classified as a read');
+  await assert.rejects(() => guarded.write(Uint8Array.of(0x13, 0xb3, 0x00, 0x08)), TransportError,
+    'a three byte settings write was classified as a read');
 
-  // Exactly three reports got through: the read, the authorised erase and the bare version request.
-  assert.equal(sent.length, 3);
-  assert.deepEqual(sent.map((r) => (r[0] as number) & 0xf0), [READ_FLASH, ERASE_FLASH, 0x10]);
+  // Exactly four reports got through: the read, the authorised erase, the bare version request and
+  // the settings read.
+  assert.equal(sent.length, 4);
+  assert.deepEqual(sent.map((r) => (r[0] as number) & 0xf0), [READ_FLASH, ERASE_FLASH, 0x10, 0x10]);
+  assert.deepEqual([...sent[3]!.subarray(0, 2)], [0x13, 0xb2]);
   assert.equal(sent[2]![0], 0x10, "the version request that passed carried a payload");
 });
 

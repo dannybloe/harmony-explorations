@@ -955,8 +955,8 @@ document:
   700) `0x1N` with a nonzero length nibble makes its first payload byte the command state, `0xB3`
   writing the settings store in internal program memory, `0xB1` any byte of data memory and `0xBD` a
   word of program memory, and the transport's allow list keyed on the high nibble passed all three as
-  reads until then. `isReadOnlyReport` passes `0x10` only
-  bare.
+  reads until then. `isReadOnlyReport` passes `0x10` bare and
+  the settings read `0x13 0xB2`, classified by its second byte, and refuses every other payload.
 * **Flash is not the only write path.** `WRITE_MISC` selector `0x07` writes a byte into the data
   memory of a running remote, and its address reaches the special function registers, which on this
   MCU family are a PIC18's self programming path; `assertRamWriteAllowed` bounds it below that page

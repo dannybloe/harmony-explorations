@@ -39722,9 +39722,12 @@ carry the gate's signature and its handler is unread.
 `0x14 0xB3 ...` would have appended a settings record, `0x14 0xB1 ...` written any byte of a running
 remote's data memory, and `0x11 0xBD` programmed a word of internal program memory, with writing
 disabled and no rail asked, on a Harmony 600, 650 or 700. Nothing
-here ever sent one. **The allow list now passes `GET_VERSION` only bare**, `isReadOnlyReport` in
-`packages/usb/src/protocol.ts`, and the transport test refuses the three shapes and still passes
-`0x10`; with the old classification put back, it fails on the first of them. Every version request
+here ever sent one. **The allow list now passes `GET_VERSION` bare, and with a payload only as the
+settings read `0x13 0xB2`**, classified by its second byte, `isReadOnlyReport` in
+`packages/usb/src/protocol.ts`; the transport test refuses the writing shapes, a longer `0xB2` and a
+three byte `0xB3`, and passes `0x10` and the read; with the old classification put back, it fails on
+the first of them. The read was refused for a while as a side effect of passing `0x10` only bare,
+until Danny asked why and it was classified on purpose. Every version request
 this library sends is the bare one. The lesson is section 224's again in a new place: a classification
 by command byte is defeated by what the payload selects.
 
@@ -39751,8 +39754,7 @@ bytes. So the route is the firmware's alone, and no Logitech client here is seen
 
 A Harmony 600, 650 or 700 that answers `0x13 0xB2 0x00 0x08` with anything other than the store's
 latest value for setting 8, `0x0E` on the 600; or a store that gains no record after an `0xB3`. The
-transport now refuses that read too, since it carries a payload, so trying it needs a named door that
-does not exist yet.
+read passes the transport; the write is refused and needs a rail of its own.
 
 ### Where it landed
 

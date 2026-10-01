@@ -321,7 +321,8 @@ is seven bytes, `0xF0 0x11 sub status 0x01 0x01 value`, and `0xF0 0x0E` for a by
 ranges.
 
 The framing is read and not yet seen on a remote. The Harmony One's handler reads no payload. **The
-transport's allow list passes `0x10` only bare** since section 304, because keying on the high nibble
+transport's allow list passes `0x10` bare and the settings read `0x13 0xB2`, and nothing else in the
+family,** since section 304, because keying on the high nibble
 had let `0xB3`, `0xB1` and `0xBD` through as reads. Most of the other states are unread.
 
 ### A command is parsed in one place and executed in another

@@ -56,6 +56,14 @@ export const READ_ONLY_COMMANDS: ReadonlySet<number> = new Set([
 ]);
 
 /**
+ * The one `GET_VERSION` sub-command classified as a read: `0x13 0xB2 hi lo`, read one setting of the
+ * settings store, section 304. Its executor calls the store's lookup and answers; the lookup marks and
+ * erases nothing, which is the start up read at `0xE1DE` and a different routine. Exactly three payload
+ * bytes, so no longer report riding on `0xB2` is admitted.
+ */
+export const SETTINGS_READ = 0xb2;
+
+/**
  * Whether a whole report only reads, which is narrower than its command being on the list above.
  *
  * **`GET_VERSION` reads only when it carries no payload**, section 304. On arch 14 (Harmony 600, 650
@@ -63,14 +71,19 @@ export const READ_ONLY_COMMANDS: ReadonlySet<number> = new Set([
  * payload byte becomes the command state, from `0x10` to `0x35` or `0xA0` to `0xC5`, among them
  * `0xB1`, which writes any byte of data memory while the report is still being parsed, `0xB3`, which
  * appends a record to the settings store in the remote's own program memory, and `0xBD`, which
- * programs a word of it with no argument at all. Keying on the high nibble alone let both through as
- * reads. Every version request this library sends is the bare `0x10`, so nothing it does is refused.
+ * programs a word of it with no argument at all. Keying on the high nibble alone let all three through
+ * as reads. So the bare `0x10` passes, and so does the settings read `0x13 0xB2`, which is classified
+ * by its second byte, and every other payload is refused. It is an allow list of one sub-command
+ * rather than a refusal of the three writes found, for the reason `READ_ONLY_COMMANDS` gives: most of
+ * the 76 states a payload can select are unread.
  */
 export function isReadOnlyReport(report: Uint8Array): boolean {
   const first = report[0] ?? 0;
   const command = first & 0xf0;
   if (!READ_ONLY_COMMANDS.has(command)) return false;
-  return command !== GET_VERSION || (first & 0x0f) === 0;
+  if (command !== GET_VERSION) return true;
+  const length = first & 0x0f;
+  return length === 0 || (length === 3 && report[1] === SETTINGS_READ);
 }
 
 export const COMMAND_NAMES: Readonly<Record<number, string>> = {
