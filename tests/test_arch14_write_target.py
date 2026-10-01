@@ -1529,5 +1529,34 @@ class TheHarmony600sSavedKpnDelayWasClearedOverUsb(unittest.TestCase):
         self.assertFalse(any('FAILED' in line or 'stopped' in line for line in journal))
 
 
+    def test_after_a_start_the_kpn_box_s_delay_is_the_configuration_s_and_the_gap_moved_a_tenth(self):
+        lab.require('h600_ram_after_clear', 'h600_ram_after_battery_pull', 'h600_settings_read_after_start',
+                    'h600_delay_ir_cleared', 'h600_delay_ir_monitor_after')
+        held = TheHarmony600sDelayWriteWasOverriddenByItsSettingsStore
+        at = held()._at
+        def word(bank, index):
+            return bank[at(index) - 0xE00] | bank[at(index) - 0xE00 + 1] << 8
+        before = _bank(lab.load('h600_ram_after_battery_pull').decode('utf-8'))
+        after = _bank(lab.load('h600_ram_after_clear').decode('utf-8'))
+        # Variable 67 held the saved 10 after section 303's battery pull and holds the configuration's
+        # 15 after this one; the PS3's saved 15 is unchanged and the restore's scratch reads "absent".
+        self.assertEqual([word(b, held.KPN_POWER_ON) for b in (before, after)], [10, 15])
+        self.assertEqual(word(after, held.PS_INTER_DEVICE), 15)
+        self.assertEqual(word(after, held.SCRATCH), 0xFEFD)
+        text = lab.load('h600_settings_read_after_start').decode('utf-8')
+        self.assertIn('inter device slot 2: key 0x0e26 (3622), value 15 tenths', text)
+        self.assertNotIn('power on slot', text)
+        # The bench test: KPN code 35 to code 41 on the receiver's clock, 2.404 and 2.403 seconds before,
+        # 2.508 now. A fifth of the half second written, which this does not explain.
+        clock = TheHarmony700sDelayWriteWasHeardAndWentBack._receiver_clock
+        run = json.loads(lab.load('h600_delay_ir_cleared'))
+        self.assertEqual(run['name'], "Harmony 600, the KPN box's power on delay")
+        self.assertEqual([v['ok'] for v in run['steps'][1]['verdicts']], [True, True, True])
+        presses = {p['frame']['seq']: p for p in run['steps'][1]['presses']}
+        self.assertEqual(presses[43]['atMs'] - presses[32]['atMs'], 2513)
+        rx = clock(lab.load('h600_delay_ir_monitor_after'))
+        self.assertEqual(rx[43] - rx[32], 2507743)
+
+
 if __name__ == '__main__':
     unittest.main()

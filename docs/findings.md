@@ -39870,9 +39870,24 @@ four settings through the remote's lookup, and then with it:
   `0x0E26` at 15, is untouched;
 * the remote enumerated afterwards, by an enumeration whose output was not filed.
 
-**What is not measured yet is the effect**: that after a start the KPN box's delay is the configuration's
-again. That needs the remote off the cable and the infrared test of section 303, which is a separate
-step, per the bench's alternation of cable and test.
+### After a start
+
+Danny took the batteries out, ran section 303's bench test off the cable, and plugged the remote back in
+for two reads:
+
+* **Variable 67, the KPN box's power on delay, holds 15**, the configuration's value, where it held the
+  saved 10 after section 303's battery pull. The restore's scratch, variable 59, holds `0xFEFD`, the
+  firmware's answer for an absent key, so the guard skipped the copy as section 303 read it should. The
+  PS3's inter device delay still holds its saved 15.
+* The store read over USB holds the PS3's slot and no power on slot, so the start's sweep wrote nothing
+  back.
+
+So the clear did what it was for, on the remote's own memory. **The bench test moved less than the
+delay did.** KPN code 35 to code 41 was 2.404 and 2.403 seconds on the receiver's clock in section 303's
+two runs, and is 2.508 now: 0.104 seconds longer, where the delay grew by 0.5. The two earlier runs agree
+to half a millisecond, so the change is real; what else sets that gap is not established here. The TV's
+power code is sent between the two, heard at 21.12 seconds with six repeats, and code 41 follows at
+22.62.
 
 ### Scope, decision 16
 
@@ -39907,12 +39922,13 @@ and the order of section 304's "the remote is what caught it".
 ### Falsification
 
 A successful write answering 4; a record landing anywhere but the first free one; a store read back that
-differs from the prediction; after a start, the KPN box's delay still 10 tenths.
+differs from the prediction; after a start, variable 67 holding anything but the configuration's 15.
 
 ### Where it lands
 
 * `tests/test_arch14_write_target.py`: the codes, the flag, the word programming and the copy on the
-  last record on both 0.2 images, and the four records against the filed stores and journal.
+  last record on both 0.2 images, the four records against the filed stores and journal, and after the
+  start the variable, the store and the gap.
 * `packages/usb/test/settings.test.ts`: the request, the reply, the prediction and its refusals, the rail
   in a subprocess with each flag shut and with both open, and the read back against the prediction.
 * `docs/usb-protocol.md`, `docs/config-format.md` and `CLAUDE.md`'s list of what has been written.

@@ -849,8 +849,9 @@ payload as a settings command. Reading the 600's table that way gave the same 41
 of its memory in the lab, both saved delays included. Reading the
 firmware also showed the library's read only filter would have let such a write through, which is
 fixed. **Writing it works**, section 305: four writes emptied the 600's saved KPN delay, the table read
-back exactly as predicted, and the remote's own lookup now reports the slot empty, so at its next start
-the configuration's 1.5 seconds should apply; hearing that is the next test.
+back exactly as predicted, and the remote's own lookup now reports the slot empty. After a battery pull the
+remote holds the configuration's 1.5 seconds in memory where it held 1.0, so the clear worked; the
+bench test's gap grew by only a tenth of a second against the half second, which is not explained yet.
 
 **A changed setting on the Harmony 700 is heard on the air, section 301.** How long the remote waits
 after switching the Denon on was raised from six seconds to nine, written to the remote, and put back.

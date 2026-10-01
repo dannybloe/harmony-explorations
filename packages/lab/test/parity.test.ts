@@ -91,8 +91,9 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // and 172 with that region put back, the two write journals, three memory reads and two bench runs
   // with their monitor logs, section 303.
   // 174 with the two settings store reads over USB, section 304, and 177 with the store before and
-  // after the KPN slot was cleared and that write's journal, section 305.
-  assert.equal(Object.keys(pythonImages()).length, 177, 'every fixture tests/lab.py names');
+  // after the KPN slot was cleared and that write's journal, section 305, and 180 with the bench test,
+  // the variable bank and the store read after the start that followed it.
+  assert.equal(Object.keys(pythonImages()).length, 180, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {
