@@ -2185,8 +2185,15 @@ starts on the Harmony 600:
 * The store itself, internal `0x01EC00`: settings `0x00` to `0x13` are five power on slots and `0x18` to
   `0x2B` five inter device slots, each a big endian key and a big endian value, `0xFF` when empty.
 * `composeDevice` emits neither program, so a composed device's delays are not saved or restored.
+* **Over USB**, section 305: `0x14 0xB3 0x00 setting value` appends one record at the first record
+  from offset 4 whose setting byte is `0xFF`, and writes nothing when the setting already holds the
+  value. A slot is emptied by four such writes of `0xFF`, key first, which is the order the firmware's
+  own purge uses. A write landing on the block's last record makes the firmware copy the store to the
+  other block, which erases internal program memory, so a writer keeps clear of it. Measured on the
+  Harmony 600; the 0.2 path is byte identical on the 650.
 
-`packages/codec/test/settingsstore.test.ts`. [findings.md](findings.md) section 303.
+`packages/codec/test/settingsstore.test.ts` and `packages/usb/test/settings.test.ts`.
+[findings.md](findings.md) sections 303 to 305.
 
 `deviceDelays`, `powerOnInstructions` and `deviceIdOfGroup` in `packages/codec/src/inventory.ts`.
 [findings.md](findings.md) sections 234 and 235.

@@ -564,7 +564,7 @@ finding.
 
 `todo.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 304<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 305<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and flash has been written on five units**, the first in section 222:
@@ -846,9 +846,11 @@ and the Harmony 650 and 700, whose changes did take effect, had none. So an edit
 has to read that table before it can say what a delay is. A computer can read and replace that table over
 the cable, section 304: the firmware of the 600, 650 and 700 answers a version request carrying a
 payload as a settings command. Reading the 600's table that way gave the same 41 values as the copy
-of its memory in the lab, both saved delays included; writing it has not been tried. Reading the
+of its memory in the lab, both saved delays included. Reading the
 firmware also showed the library's read only filter would have let such a write through, which is
-fixed.
+fixed. **Writing it works**, section 305: four writes emptied the 600's saved KPN delay, the table read
+back exactly as predicted, and the remote's own lookup now reports the slot empty, so at its next start
+the configuration's 1.5 seconds should apply; hearing that is the next test.
 
 **A changed setting on the Harmony 700 is heard on the air, section 301.** How long the remote waits
 after switching the Denon on was raised from six seconds to nine, written to the remote, and put back.

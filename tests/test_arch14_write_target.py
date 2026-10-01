@@ -1454,5 +1454,80 @@ class AVersionRequestWithAPayloadIsASettingsAndMemoryCommandOnArch14(unittest.Te
         latest = _store_slots(lab.load('h600_internal_ff_region'))
         self.assertEqual((latest[0x08], latest[0x09], latest[0x0B]), (0x0E, 0xDC, 10))
 
+
+class TheHarmony600sSavedKpnDelayWasClearedOverUsb(unittest.TestCase):
+    """Section 305: the settings write `0x14 0xB3`, read and then sent to the Harmony 600.
+
+    The append at `0xDB60` refuses a setting of `0xFF` or more with 5, returns 0 unwritten for a value
+    the setting already holds, finds the first record from offset 4 whose setting byte is `0xFF`,
+    programs the two bytes as one word and reads them back, 7 on a mismatch, 4 when the block is full,
+    and copies the store to the other block when the write lands on the last record. A success answers
+    1 in the reply's fourth byte, because the executor clears the flag behind it only for a nonzero
+    code. Four writes emptied the KPN box's power on slot, and the store read back is the prediction.
+    """
+
+    def _image(self, name):
+        code = lab.load(name)
+        return lambda address: isa.decode(code, address - BASE, BASE)
+
+    def test_the_append_returns_0_on_success_and_the_reply_answers_1_for_it(self):
+        lab.require('h600_code_complete', 'h650_bench_code')
+        for name in ('h600_code_complete', 'h650_bench_code'):
+            with self.subTest(name):
+                at = self._image(name)
+                # The executor stores the code at 0xD67 and clears the flag 0xD4B only when it is nonzero.
+                self.assertEqual([at(a).mnemonic for a in (0xCD22, 0xCD24, 0xCD28)], ['MOVF', 'BZ', 'CLRF'])
+                self.assertEqual((at(0xCD22).fields['f'], at(0xCD28).fields['f']), (0x67, 0x4B))
+                # The builder answers 4 and then 1 when the flag is set.
+                self.assertEqual((at(0xD176).fields['k'], at(0xD17C).fields['f'], at(0xD182).fields['k']),
+                                 (0x04, 0x2A, 0x01))
+                # The append's return codes, each a MOVLW before the branch to its RETURN at 0xDD14.
+                self.assertEqual({a: at(a).fields['k'] for a in (0xDB7C, 0xDBF0, 0xDC50, 0xDC7C, 0xDCC8, 0xDCE6, 0xDD10)},
+                                 {0xDB7C: 5, 0xDBF0: 6, 0xDC50: 0, 0xDC7C: 4, 0xDCC8: 7, 0xDCE6: 7, 0xDD10: 0})
+                self.assertEqual(at(0xDC22).fields['target'], 0xDA04)  # the lookup before the write
+
+    def test_the_append_programs_one_word_at_the_first_free_record_and_copies_on_the_last(self):
+        lab.require('h600_code_complete', 'h650_bench_code')
+        for name in ('h600_code_complete', 'h650_bench_code'):
+            with self.subTest(name):
+                at = self._image(name)
+                self.assertEqual(at(0xDC58).fields['target'], 0xD368)  # the first free record
+                # From offset 2, stepping by two before each read, so 4 is the first one tried; a
+                # setting byte of 0xFF is free, and 0x400 is the end.
+                self.assertEqual((at(0xD3D2).fields['k'], at(0xD404).fields['k'], at(0xD412).fields['k']),
+                                 (0x02, 0xFF, 0x04))
+                # Word programming: EECON1 0x24, then the 0x55 0xAA unlock and WR.
+                self.assertEqual((at(0xDCAA).fields['k'], at(0xDCAC).fields['f'], at(0xDCAE).fields['target']),
+                                 (0x24, 0xA6, 0xD276))
+                self.assertEqual((at(0xD282).fields['k'], at(0xD286).fields['k']), (0x55, 0xAA))
+                # A write ending at offset 0x400 copies the store to the other block.
+                self.assertEqual((at(0xDCF0).fields['k'], at(0xDCF8).fields['target']), (0x04, 0xD442))
+
+    def test_four_writes_appended_the_four_records_predicted_and_emptied_the_kpn_slot(self):
+        lab.require('h600_settings_before_clear', 'h600_settings_after_clear', 'h600_settings_clear_journal',
+                    'h600_internal_ff_region')
+        before = lab.load('h600_settings_before_clear')
+        after = lab.load('h600_settings_after_clear')
+        page = lab.load('h600_internal_ff_region')
+        # The store had not moved since the backup taken before section 303's writes.
+        self.assertEqual(before, page[0xEC00:0xF400])
+        changed = [i for i in range(len(before)) if before[i] != after[i]]
+        self.assertEqual(changed, [0x7A, 0x7C, 0x7E, 0x80])
+        self.assertEqual(after[0x7A:0x82], bytes([0x08, 0xFF, 0x09, 0xFF, 0x0A, 0xFF, 0x0B, 0xFF]))
+        # Placed at 0xEC00 of a page, which is where `_store_slots` reads the active block.
+        latest_before, latest_after = (_store_slots(b'\xff' * 0xEC00 + store) for store in (before, after))
+        self.assertEqual([latest_before[s] for s in (0x08, 0x09, 0x0A, 0x0B)], [0x0E, 0xDC, 0x00, 0x0A])
+        self.assertEqual([latest_after[s] for s in (0x08, 0x09, 0x0A, 0x0B)], [0xFF] * 4)
+        # The PS3's inter device slot is untouched.
+        self.assertEqual([latest_after[s] for s in (0x20, 0x21, 0x22, 0x23)], [0x0E, 0x26, 0x00, 0x0F])
+        journal = lab.load('h600_settings_clear_journal').decode('utf-8').splitlines()
+        # Whole lines, so a run that stopped part way ('sent 4 of 4 writes, stopped: ...') fails here.
+        for line in ('sent 4 of 4 writes', 'read back against the prediction: 2048 of 2048 bytes agree',
+                     "the remote's lookup now answers 0xff 0xff 0xff 0xff"):
+            self.assertIn(line, journal)
+        self.assertEqual(journal[-1], "the slot is empty, on the store's bytes and through the remote's own lookup")
+        self.assertFalse(any('FAILED' in line or 'stopped' in line for line in journal))
+
+
 if __name__ == '__main__':
     unittest.main()

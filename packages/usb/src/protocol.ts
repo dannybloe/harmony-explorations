@@ -90,9 +90,14 @@ export const SETTINGS_REPLY_FRAME: readonly number[] = [0xf0, 0x11, SETTINGS_REA
  * **This said 4, as the value when an error flag is clear, and the first read off a remote refused
  * on it.** The flag is `0xD4B`, which the execution path sets to 1 at `0xC65C` before it dispatches
  * on the state, and which the settings read never clears, so the byte the reply builder derives from
- * it is 1 on every settings read. The 4 is what a command that clears the flag answers, the settings
- * write on success among them. So it is not a status of the read at all, and the reading that it was
- * came from reading the builder without the code in front of it.
+ * it is 1 on every settings read. The 4 is what a command that clears the flag answers. So it is not a
+ * status of the read at all, and the reading that it was came from reading the builder without the code
+ * in front of it.
+ *
+ * **This went on to say the settings write answers 4 on success, and that was wrong too**, found when
+ * the write was read before it was ever sent: its executor at `0xCD04` clears the flag only when the
+ * write routine returns nonzero, and the routine returns 0 on success, so a successful write answers 1
+ * and a failed one 4. `decodeSettingsWriteReply` is built on the corrected reading.
  */
 export const SETTINGS_READ_STATUS = 0x01;
 
@@ -105,6 +110,50 @@ export function decodeSettingsReply(report: Uint8Array): number {
     throw new ProtocolError(`the settings read answers ${report[3]} where every read answers 1: ${shown}`);
   }
   return report[6] as number;
+}
+
+/**
+ * The settings write, `0x14 0xB3 0x00 setting value`, section 304. **Not a read**, and nothing in
+ * `isReadOnlyReport` lets it through: it reaches a remote only through `HarmonyRemote.writeSettings`,
+ * behind `assertSettingsWriteAllowed`, and its encoder is `settingsWriteRequest` in `writes.ts`, which
+ * the barrel does not export.
+ *
+ * Read on the 0.2 build before it was ever sent. The parser at `0xC13C` takes the setting high byte
+ * first and then the value; the executor at `0xCD04` calls `0xDD16`, which calls the append at
+ * `0xDB60`. That refuses a setting of `0xFF` or more with 5 and an absent active block with 6, returns
+ * **0 without writing** when the setting already holds the value, finds the block's first free record
+ * and programs the two bytes there as one word, `EECON1` `0x24` and the `0x55 0xAA` unlock at `0xD276`,
+ * reads them back and returns 7 on a mismatch, and returns 4 when the block has no free record, which
+ * `0xDD16` answers by copying the latest values to the other block, `0xD442`, and trying again, and
+ * when that is still 4 by erasing both blocks and formatting block 0, which loses every saved setting,
+ * and trying once more. **A write landing on the block's last record also starts the copy**, at
+ * `0xDCF8`, so an erase of internal program memory can follow a write that answers success. Section 305.
+ */
+export const SETTINGS_WRITE = 0xb3;
+
+/** What the write routine returns, by the number its reply carries. Read at `0xDB60`. */
+export const SETTINGS_WRITE_CODES: Readonly<Record<number, string>> = {
+  0: 'written, or already holding the value',
+  4: 'the store has no free record, even after the firmware copied it and then erased and formatted both blocks',
+  5: 'the setting is 0xFF or more',
+  6: 'neither block of the store is active',
+  7: 'the bytes read back differ from the bytes written',
+};
+
+/**
+ * The reply to a settings write: `0xF0 0x11 0xB3`, then 1 when the routine returned 0 and 4 when it did
+ * not, `0x01 0x01`, and the return code. Throws on anything but success, with the code's meaning.
+ */
+export function decodeSettingsWriteReply(report: Uint8Array): void {
+  const shown = [...report.subarray(0, 7)].map((b) => b.toString(16).padStart(2, '0')).join(' ');
+  const framed = report[0] === 0xf0 && report[1] === 0x11 && report[2] === SETTINGS_WRITE
+    && report[4] === 0x01 && report[5] === 0x01;
+  if (!framed) throw new ProtocolError(`not a settings write reply: ${shown}`);
+  const code = report[6] as number;
+  if (report[3] === SETTINGS_READ_STATUS && code === 0) return;
+  throw new ProtocolError(
+    `the settings write answered code ${code}, ${SETTINGS_WRITE_CODES[code] ?? 'which is unread'}: ${shown}`,
+  );
 }
 
 /**

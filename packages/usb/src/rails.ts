@@ -18,6 +18,8 @@ import { ESCAPE_END_SESSION, ESCAPE_RESET, ESCAPE_SUB_COMMANDS, SOFTWARE_TYPE_SA
 import { compareIntendedVersion } from './compatible.ts';
 import { sameUnit } from './identity.ts';
 import { checkFirmwareImage } from './firmware.ts';
+import { DELAY_SETTINGS, predictStoreAfter } from './settings.ts';
+import type { SettingWrite } from './settings.ts';
 import type { Compatibility, StatedVersion } from './compatible.ts';
 
 export class RailError extends Error {}
@@ -1137,5 +1139,87 @@ export function assertFirstWriteAllowed(): void {
         'is the first write this project has performed, on an irreplaceable unit, and the restore ' +
         'route it relies on has never been exercised',
     );
+  }
+}
+
+/**
+ * The architectures whose settings store may be written over USB, section 304. Its own list, like the
+ * reset escape's and the RAM write's, because a flash demonstration buys nothing here: the store is
+ * internal program memory, two 1 KiB blocks from `0x01EC00`, which no other rail covers and no
+ * `WRITE_FLASH` reaches.
+ */
+export const ARCHITECTURES_WITH_A_SETTINGS_WRITE_TARGET: readonly number[] = [14];
+
+/**
+ * The firmware builds whose settings write is read, per architecture: the 0.2 builds of the Harmony
+ * 600 and 650, byte identical over the whole path, section 304. The Harmony 700's 2.8 reaches its own
+ * append at `0x1186E`, which is not read, so it is refused.
+ */
+export const SETTINGS_WRITE_READ_ON: Readonly<Record<number, readonly string[]>> = {
+  14: ['0.2'],
+};
+
+/** The named door, beside `HARMONY_ENABLE_WRITES` rather than instead of it. */
+export const SETTINGS_WRITE_DOOR: boolean = process.env['HARMONY_SETTINGS_WRITE'] === '1';
+
+/**
+ * Throws unless `writes` may be appended to the settings store of the remote on the cable. Sections 304
+ * and 305.
+ *
+ * Every condition is judged on facts `HarmonyRemote.writeSettings` reads off the remote, the lesson of
+ * sections 224 and 225; what a caller chooses is the unit record and the writes.
+ *
+ * * **The store's address is the firmware's choice and not the host's.** A `0xB3` request carries a
+ *   setting and a value and nothing else, and the append programs them at the store's next free record,
+ *   so no request can name another address. What a request can do that this refuses is start the copy
+ *   between the store's blocks, which erases a block of internal program memory two blocks below the
+ *   identity block, or the erase of both blocks behind a full store, which loses every saved setting: `predictStoreAfter` refuses any write that would fill the block, and any store not
+ *   in the shape every unit here is in.
+ * * **Only the delay settings**, `0x00` to `0x13` and `0x18` to `0x2B`, whose meaning is read, section
+ *   303. The rest of the 255 are unread, and setting `0x80` is among them.
+ * * **At most eight writes**, two slots' worth, so a run is short enough to read back whole.
+ */
+export function assertSettingsWriteAllowed(
+  p: Pick<WritePermission, 'architecture' | 'identityBlock' | 'permittedUnit'>,
+  remote: { readonly firmware?: string; readonly store: Uint8Array },
+  writes: readonly SettingWrite[],
+): void {
+  if (!WRITES_ENABLED) {
+    throw new RailError(
+      'writing is disabled: this build is read only (set HARMONY_ENABLE_WRITES=1 knowing why)',
+    );
+  }
+  if (!SETTINGS_WRITE_DOOR) {
+    throw new RailError(
+      'a settings write needs HARMONY_SETTINGS_WRITE=1 as well as HARMONY_ENABLE_WRITES=1: it '
+        + 'programs the remote\'s own internal program memory, which no other rail covers',
+    );
+  }
+  assertUnitIsPermitted(p);
+  if (!ARCHITECTURES_WITH_A_SETTINGS_WRITE_TARGET.includes(p.architecture)) {
+    throw new RailError(`architecture ${p.architecture} has no settings store this may write`);
+  }
+  const builds = SETTINGS_WRITE_READ_ON[p.architecture] ?? [];
+  if (remote.firmware === undefined || !builds.includes(remote.firmware)) {
+    throw new RailError(
+      `the remote runs firmware ${remote.firmware ?? 'unknown'}, and the settings write is read on `
+        + `${builds.join(', ') || 'no build'} only`,
+    );
+  }
+  if (writes.length === 0 || writes.length > 8) {
+    throw new RailError(`a settings write takes one to eight records, and this is ${writes.length}`);
+  }
+  for (const { setting, value } of writes) {
+    if (!DELAY_SETTINGS.includes(setting)) {
+      throw new RailError(`setting 0x${setting.toString(16)} is not a delay setting, and the others are unread`);
+    }
+    if (!Number.isInteger(value) || value < 0 || value > 0xff) {
+      throw new RailError(`a setting holds one byte, and ${value} is not one`);
+    }
+  }
+  try {
+    predictStoreAfter(remote.store, writes);
+  } catch (error: unknown) {
+    throw new RailError(`refusing the settings write: ${error instanceof Error ? error.message : String(error)}`);
   }
 }

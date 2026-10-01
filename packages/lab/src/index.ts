@@ -223,6 +223,12 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // status byte this library had misread, and the run after the correction, 41 of 41 agreeing.
   h600_settings_read_refused: '20261001T1300Z-h600-settings-read.txt',
   h600_settings_read: '20261001T1310Z-h600-settings-read.txt',
+  // The store's two blocks before and after the KPN box's saved delay was cleared over USB, and the
+  // write's journal, section 305. The two names above sort after these and were read before them: their
+  // stamps are labels, not the time of the read.
+  h600_settings_before_clear: '20261001T1306Z-h600-settings-before.bin',
+  h600_settings_after_clear: '20261001T1306Z-h600-settings-after.bin',
+  h600_settings_clear_journal: '20261001T1306Z-h600-settings-journal.txt',
   // The same region read after block 0x030000 was written back unchanged, section 300.
   h700_after_rehearsal_region: '20260929T1923Z-h700-after-rehearsal-config-region-region.bin',
   // And the rehearsal's own output for that write, which is the only record that it erased.

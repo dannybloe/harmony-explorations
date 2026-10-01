@@ -735,7 +735,10 @@ and needed no compiler, since nothing can compile a configuration for that model
 the same day, section 283, two blocks each way, live in the remote's memory straight after the restart. On the **Harmony 700**, its firmware staging region, section 297, below, and one configuration block written back unchanged on 29 September 2026, section 300, and the Denon's power on delay raised and put back on 1 October 2026, section 301, two blocks each way, the change heard by an infrared receiver both times. On the **Harmony 600**, after a full backup of
 both internal pages and the whole external flash, one configuration block written back unchanged on
 1 October 2026, section 302, and the KPN box's power on delay raised and put back the same day, section 303,
-which landed in flash and was overridden by a delay saved on the remote. **No other remote has had flash written and
+which landed in flash and was overridden by a delay saved on the remote; that saved delay was then
+cleared over USB, section 305, four records appended to the settings store in its internal program
+memory, the first append to that store from a host, with its own rail, `assertSettingsWriteAllowed`,
+behind `HARMONY_SETTINGS_WRITE=1`. **No other remote has had flash written and
 no other may be**, which said "the spare is the only one that may be"<!--superseded--> until 6
 September 2026. **The Harmony 600 and the Harmony 700 may be written to since 29 September 2026**,
 Danny's decision that day, and both have had a configuration changed since, sections 301 and 303: each first gets its identity and a

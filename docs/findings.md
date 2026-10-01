@@ -39629,9 +39629,10 @@ there and nothing suggests it applies.
 Sections 234, 236, 282, 283, 288 and 301, and the lab's reads of the three units. Logitech's client,
 MyHarmony's decompiled source: its delay fields, `PowerFeature` and the activity roles, and its
 `RemoteSettings` contracts are account data compiled into the configuration, and the search found no
-code writing the store; its USB layer is not part of that source, so the search does not cover a sync
-writing the store over USB, which the 0.2 build can do from command states `0xB2` and `0xB3`, section
-282, unread.
+code writing the store. This went on to say its USB layer "is not part of that source"<!--superseded-->,
+which section 305's review found wrong: `Web.Driver` in the same tree holds its HID command builder and
+per skin templates. They carry no settings command and no template for skin 71, so the conclusion that
+nothing there writes the store over USB stands, on a search this section did not make.
 
 ### The two reviews
 
@@ -39700,14 +39701,16 @@ a refused read answers the same `0xFF` as an empty slot. **The reply is seven by
 `0x01`, `0x01`, and the value. **That fourth byte is always 1 on a settings read**, which this section
 first gave as "a status byte that is 4, or 1 when an error flag is set"<!--superseded-->: the execution
 path sets `0xD4B` to 1 at `0xC65C` before it dispatches on the state, the settings read never clears it,
-and the builder answers 1 for a set flag. 4 is what a command that clears the flag answers, the settings
-write on success among them. The wrong reading came from the builder read without its caller, and the
-remote is what caught it, below. For `0xB3` the value is the write routine's return code rather than
-the setting. A byte outside the gate's ranges is answered `0xF0 0x0E`.
+and the builder answers 1 for a set flag. The wrong reading came from the builder read without its
+caller, and the remote is what caught it, below. 4 is what a command that clears the flag answers. This
+went on to say "the settings write on success among them"<!--superseded-->, and section 305 corrects it,
+from the executor read before any write was sent: it clears the flag only for a nonzero return code, so
+a successful write answers 1 and a failed one 4. For `0xB3` the value is the write routine's return code rather than the setting. A byte outside the gate's ranges is answered `0xF0 0x0E`.
 
 So **a saved delay is four settings**, section 303's slot: reading one is four `0xB2` requests and
 replacing or clearing one is four `0xB3` requests, `0xFF` being what the purge writes into a slot.
-Each `0xB3` appends a record to the remote's own program memory, which is a write.
+Each `0xB3` that changes a setting's value appends a record to the remote's own program memory, which
+is a write; one carrying the value the setting already holds writes nothing, section 305.
 
 ### Read off the Harmony 600
 
@@ -39755,8 +39758,8 @@ by command byte is defeated by what the payload selects.
 
 Read on the 600's and the 650's 0.2 images and the 700's 2.8, absent from the Harmony One's 3.4, and
 unread on the Harmony 525. The read is measured on the Harmony 600 alone; on the 650 and 700 it is the
-firmware's statement, and the 700's reply builder is not read. The write, `0xB3`, has been sent to no
-remote.
+firmware's statement, and the 700's reply builder is not read. The write, `0xB3`, had been sent to no
+remote when this was written; section 305 sent four to the Harmony 600.
 
 ### Sources checked before the work
 
@@ -39774,7 +39777,8 @@ bytes. So the route is the firmware's alone, and no Logitech client here is seen
 ### Falsification
 
 A Harmony 600, 650 or 700 that answers `0x13 0xB2 0x00 0x08` with anything other than the store's
-latest value for setting 8, `0x0E` on the 600; or a store that gains no record after an `0xB3`. The
+latest value for setting 8, `0x0E` on the 600; or a store that gains no record after an `0xB3` that
+changes a value. The
 read passes the transport; the write is refused and needs a rail of its own.
 
 ### Where it landed
@@ -39783,3 +39787,132 @@ read passes the transport; the write is refused and needs a rail of its own.
 * `packages/usb/test/rails.test.ts`: the three refusals and the bare request passing.
 * `tests/test_arch14_write_target.py`, `AVersionRequestWithAPayloadIsASettingsAndMemoryCommandOnArch14`.
 * `docs/usb-protocol.md`, `todo.md` L9 and `CLAUDE.md`'s rail.
+
+## 305. The settings store written over USB: the Harmony 600's saved KPN delay cleared, and on the 0.2 build a successful write answers 1
+
+`todo.md` L9 after section 304: an editor that changes a delay on an arch 14 remote has to be able to
+replace or remove one the remote saved, since a saved value wins at every start, section 303. Danny asked
+for the KPN box's saved power on delay on the Harmony 600 to be cleared, so that the configuration's own
+value applies again. That needs the `0x14 0xB3` write, which section 304 found and did not send.
+
+### The write, read before it was sent
+
+On the Harmony 600's 0.2 image. The 650's is byte identical over everything below: the gate and parsers
+`0xBC4E` to `0xBE96` and `0xC0CE` to `0xC1A0`, the execution path `0xC65C` to `0xC700` and `0xCCD4` to
+`0xCDA0`, the reply builder `0xD172` to `0xD220`, the store routines `0xD276` to `0xDE70`, and the
+helpers they call at `0x10CB0`, `0x1598A`, `0x19906`, `0x19960` and `0x19C06` to `0x19D12`, which is a
+wider range than section 304 compared:
+
+* The parser at `0xC13C` takes the setting, high byte first, and a value; the executor at `0xCD04`
+  calls `0xDD16`, which calls the append at `0xDB60`, and the executor then stores the return code at
+  `0xD67`, `0xCD1E`, and **clears the flag `0xD4B` only when the code is nonzero**, `0xCD24`. So a success answers `0xF0 0x11 0xB3 0x01
+  0x01 0x01 0x00` and a failure the same frame with 4 in the fourth byte and the code in the seventh.
+  Section 304 had the success as 4; that is corrected there in place.
+* `0xDB60` refuses a setting of `0xFF` or more, code 5, and a store with no active block, 6. It looks the
+  setting up, `0xDA04`, and **returns 0 without writing** when it already holds the value. Otherwise
+  `0xD368` finds the first record from offset 4 whose setting byte is `0xFF`, code 4 when there is none,
+  and the two bytes are programmed there as one word, `EECON1` `0x24` and the `0x55 0xAA` unlock at
+  `0xD276`, then read back, code 7 on a mismatch.
+* **Three paths erase, and none shows in the reply.** A write that ends at offset `0x400`, the block's
+  last record, starts the copy at `0xDCF8` after it succeeded: `0xD442` copies the latest value of every
+  setting into the other block and erases the old one, `0xD330` from `0xD7DC`, a 1 KiB erase, and the
+  write still answers 0. Code 4 makes `0xDD16` run the same copy and try again; if that is still 4 it
+  erases **both** blocks, `0xDD5E` to `0xDDAC`, formats block 0 with `0xD804` and tries once more, which
+  loses every saved setting. So a host sees 4 only when all of that failed. The old block is two blocks
+  below the identity block. The rail below keeps every write away from all three.
+* **A slot is free to the save when its key's high byte reads `0xFF`**, `0xE0D0` to `0xE0EA`: the
+  lookup answers `0x00FF` for it, which is also its answer for an absent setting. The purge's own test at
+  `0xDE94` compares a lookup against `0xFFFF` and cannot fire, since a lookup's high byte is always 0. So the
+  first of the four writes below already frees the slot for the save. That the restore's keyed lookup
+  then misses it rests on the key no longer matching, which holds for every key a configuration here
+  uses, none of them having a high byte of `0xFF`.
+
+**No request names an address.** A `0xB3` carries a setting and a value; where the record lands is the
+firmware's choice, so the only thing a host can do wrong in placement is start the copy.
+
+### What clearing is
+
+Four writes of `0xFF`, the slot's key high, key low, value high and value low, which is the order and
+the value of the firmware's own purge, `0xE28C` calling `0xDE70`, which writes a slot's four settings in
+ascending order. The store's history has runs of that shape, `8=ff 9=ff a=ff b=ff` for slot position 2,
+which held key `0x3EA4` then rather than the KPN box's, and later `0=ff` to `7=ff` and `18=ff` to
+`1f=ff`; section 303 found that history consistent with the purge, and who wrote those records is not
+established. The first write alone already frees the slot, by the test above. **Why an empty slot gives the configuration back its value** is section 303's guard on
+the Harmony 600's configuration: list 154 reads the KPN box's slot into variable 59, and only when that
+is not `0xFEFD`, the firmware's answer for an absent key, does list 3043 copy it into variable 67, the
+delay. So with the slot empty, variable 67 keeps what base slot 13 seeds it with. That takes effect at
+the next start, which runs the restore; until then variable 67 holds the 10 the last start gave it.
+
+### The rail
+
+`assertSettingsWriteAllowed` in `packages/usb/src/rails.ts`, judged on what `writeSettings` reads off the
+remote, behind `HARMONY_ENABLE_WRITES=1` and its own door, `HARMONY_SETTINGS_WRITE=1`: the unit against
+its lab record; arch 14 on its own list; firmware 0.2, since the 700's 2.8 append at `0x1186E` is unread;
+the forty delay settings only; one to eight writes; and a store in the shape all three arch 14 units are
+in, block 0's header `fc ff 00 00`, block 1 erased, records contiguous, with no write reaching the last
+record. `predictStoreAfter` in `packages/usb/src/settings.ts` models the append, unchanged values
+included, and is what the read back is compared with. The encoder is in `writes.ts`, which the barrel
+does not export.
+
+### On the Harmony 600
+
+`packages/usb/bin/write-settings.ts`, first without `--commit`, which read the unit, the store and the
+four settings through the remote's lookup, and then with it:
+
+* the store before the write is byte for byte the store in the page `0xFF` backup taken before section
+  303's writes: 59 records, 451 free, the KPN box's power on slot 2 at key `0x0EDC` and 10 tenths;
+* four writes sent and **all four accepted** by `decodeSettingsWriteReply`, which passes only the frame
+  `F0 11 B3 01 01 01 00`, so each answered status 1 and code 0, the corrected reading and not the one
+  section 304 first gave. The replies themselves were not filed; the script journals them since;
+* the two blocks read back are the prediction, **2048 of 2048 bytes**: four records at `0x7A`, of which
+  only the four setting bytes changed, since a value of `0xFF` is already what erased flash holds;
+* the remote's lookup answers `0xFF` for all four settings, and the PS3's inter device slot, key
+  `0x0E26` at 15, is untouched;
+* the remote enumerated afterwards, by an enumeration whose output was not filed.
+
+**What is not measured yet is the effect**: that after a start the KPN box's delay is the configuration's
+again. That needs the remote off the cable and the infrared test of section 303, which is a separate
+step, per the bench's alternation of cable and test.
+
+### Scope, decision 16
+
+Sent on the Harmony 600 alone, so the reply, the landing and the read back are measured there only. The
+650's 0.2 build is byte identical over the ranges above, so they are the firmware's statement there, and
+the rail admits it. The 700's 2.8 is refused, its append being unread.
+Arch 12 (Harmony One) has no such command family and arch 9 (Harmony 525) is unread, section 304.
+
+### Sources checked before the work
+
+Sections 282, 303 and 304; the 0.2 image, above. Logitech's own templates in the mirrored Harmony
+Desktop client and MyHarmony's own, in its decompiled `Web.Driver`, beside its HID command builder: no
+template exists for skin 71, the 600, and skin 66's, the 700's, carries `0xB2` only as the firmware
+update status read, `B2 06 00`; no template carries `0xB3` or a version request with a payload. So the
+firmware is the only source for this write. Section 303 had said MyHarmony's source holds no USB layer,
+which the review below found wrong, and it is corrected there.
+
+### The two reviews
+
+The blind re-measure, given the question, the two images and the filed stores and not this text,
+reproduced the frame, the five codes, the landing at the first free record, the copy on the last record,
+the 650's identity over the path and the read back byte for byte, and added the double erase behind code
+4, which this section now describes. The sentence audit corrected nine claims before this landed: two
+sentences of section 304 that an unchanged value refutes; this project's first write "outside external
+flash", which section 295's reinstall already was, where what is new is the first append to the
+settings store; the purge stated as the history's author; MyHarmony's source said to hold no USB layer,
+in section 303 too; the success claimed as filed when it was inferred, and a test that would have passed
+a run that stopped; the code 4 path; the library treating only `0xFFFF` as an empty key where the
+firmware tests the high byte; the 650 identity cited over a narrower range than the one that matters;
+and the order of section 304's "the remote is what caught it".
+
+### Falsification
+
+A successful write answering 4; a record landing anywhere but the first free one; a store read back that
+differs from the prediction; after a start, the KPN box's delay still 10 tenths.
+
+### Where it lands
+
+* `tests/test_arch14_write_target.py`: the codes, the flag, the word programming and the copy on the
+  last record on both 0.2 images, and the four records against the filed stores and journal.
+* `packages/usb/test/settings.test.ts`: the request, the reply, the prediction and its refusals, the rail
+  in a subprocess with each flag shut and with both open, and the read back against the prediction.
+* `docs/usb-protocol.md`, `docs/config-format.md` and `CLAUDE.md`'s list of what has been written.

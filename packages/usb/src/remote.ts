@@ -35,6 +35,7 @@ import {
   UPDATE_STATUS_NONE,
   readVersion,
   decodeSettingsReply,
+  decodeSettingsWriteReply,
   settingsReadRequest,
   softwareTypeFromVersion,
   updateStatusReadRequest,
@@ -61,6 +62,7 @@ import {
   assertReinstallAllowed,
   assertSessionEndAllowed,
   assertStagingAllowed,
+  assertSettingsWriteAllowed,
   REINSTALL_MAX_IMAGE,
   STAGING_REGION,
   type WritePermission,
@@ -75,8 +77,11 @@ import {
   writeFlashRequest,
   writeMiscRequest,
   updateStatusWriteRequest,
+  settingsWriteRequest,
 } from './writes.ts';
 import { authoriseReport } from './authorise.ts';
+import { STORE_BLOCK_BYTES, STORE_OFFSET_IN_PAGE } from './settings.ts';
+import type { SettingWrite } from './settings.ts';
 import { IDENTITY_BYTES, IDENTITY_PAGE, identityAddress } from './identity.ts';
 import type { Transport } from './transport.ts';
 
@@ -839,6 +844,58 @@ export class HarmonyRemote {
     } catch (error) {
       throw new RemoteError(`setting 0x${setting.toString(16)}: ${(error as Error).message}`);
     }
+  }
+
+  /** The settings store's two blocks, internal program memory `0x01EC00` to `0x01F400`, read. */
+  async readSettingsStore(): Promise<Uint8Array> {
+    return this.readInternalMemory(0xff, STORE_OFFSET_IN_PAGE, 2 * STORE_BLOCK_BYTES);
+  }
+
+  /**
+   * Append `writes` to an arch 14 remote's settings store, one `0x14 0xB3` each, and return the store
+   * as it was before and as it is after. Section 304.
+   *
+   * **Everything the rail judges is read here, off the remote**: the architecture and the firmware build
+   * off the version block, the unit off its identity block, and the store itself, whose shape decides
+   * whether the firmware's append does what `predictStoreAfter` says. The caller supplies the recorded
+   * identity of the unit it means and the writes.
+   *
+   * **It stops at the first reply that is not a success** and still reads the store back, so a caller
+   * sees what landed. It does not compare the result with the prediction: that is the caller's, as the
+   * compare after a flash write is, so that the check is made by whoever states what was meant.
+   */
+  async writeSettings(
+    p: Pick<WritePermission, 'permittedUnit'>,
+    writes: readonly SettingWrite[],
+  ): Promise<{ before: Uint8Array; after: Uint8Array; replies: Uint8Array[]; error?: string }> {
+    const version = await this.getVersion();
+    const architecture = architectureFromVersion(version);
+    if (architecture === undefined) {
+      throw new RemoteError('the version block does not say which architecture the remote is');
+    }
+    const identityBlock = await this.readUnitIdentity();
+    const before = await this.readSettingsStore();
+    assertSettingsWriteAllowed(
+      { architecture, identityBlock, permittedUnit: p.permittedUnit },
+      { firmware: readVersion(version).firmware, store: before },
+      writes,
+    );
+    // Every reply is kept, the failing one included, so a caller can file what the remote said rather
+    // than what this inferred from it. Section 305's run filed none, and its review asked for them.
+    const replies: Uint8Array[] = [];
+    let error: string | undefined;
+    for (const { setting, value } of writes) {
+      const report = await this.exchangeRaw(settingsWriteRequest(setting, value));
+      replies.push(report.slice(0, 7));
+      try {
+        decodeSettingsWriteReply(report);
+      } catch (failure) {
+        error = `setting 0x${setting.toString(16)}: ${(failure as Error).message}`;
+        break;
+      }
+    }
+    const after = await this.readSettingsStore();
+    return error === undefined ? { before, after, replies } : { before, after, replies, error };
   }
 
   /**

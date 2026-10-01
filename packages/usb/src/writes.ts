@@ -26,8 +26,11 @@ import {
   ESCAPE,
   MAX_PAYLOAD,
   MISC_INVALIDATE,
+  GET_VERSION,
   MISC_UPDATE_STATUS,
   ProtocolError,
+  SETTING_MAX,
+  SETTINGS_WRITE,
   WRITE_FLASH,
   WRITE_FLASH_DATA,
   WRITE_MISC,
@@ -185,4 +188,15 @@ export function writeFlashRequests(address: number, data: Uint8Array): Uint8Arra
   }
   out.push(doneRequest(WRITE_FLASH));
   return out;
+}
+
+/** `0x14 0xB3 0x00 setting value`: append one record to the arch 14 settings store. Section 304. */
+export function settingsWriteRequest(setting: number, value: number): Uint8Array {
+  if (!Number.isInteger(setting) || setting < 0 || setting > SETTING_MAX) {
+    throw new ProtocolError(`setting ${setting} is outside 0 to 0x${SETTING_MAX.toString(16)}`);
+  }
+  if (!Number.isInteger(value) || value < 0 || value > 0xff) {
+    throw new ProtocolError(`a setting holds one byte, and ${value} is not one`);
+  }
+  return encodeRequest(GET_VERSION, [SETTINGS_WRITE, 0x00, setting, value]);
 }

@@ -319,8 +319,15 @@ have an argument parser and 54 an executor. Read so far:
 `hi` must be 0 for `0xB2` and `0xB3`: both store routines refuse a setting of `0xFF` or more. A
 settings read answers seven bytes, `0xF0 0x11 0xB2 0x01 0x01 0x01 value`, **measured on the Harmony
 600** with all 41 delay settings agreeing with a dump of its store; the fourth byte is 4 for a command
-that clears the firmware's flag, the settings write on success among them, and `0xF0 0x0E` answers a
-byte outside the ranges.
+that clears the firmware's flag, and `0xF0 0x0E` answers a byte outside the ranges. **A settings write
+answers `0xF0 0x11 0xB3 0x01 0x01 0x01 0x00` on success**, section 305, measured on the Harmony 600
+with four writes; a failure answers 4 in the fourth byte and the append's code in the seventh, 5 for a
+setting of `0xFF` or more, 6 for no active block, 7 for a read back mismatch, and 4 for a full store only
+after the firmware has copied it, then erased and formatted both blocks, and still found no room. A write
+carrying the value the setting holds writes nothing and answers success, and so does a write onto the
+block's last record, which the firmware follows with a copy and an erase. It
+reaches a remote only through `HarmonyRemote.writeSettings`, behind `HARMONY_ENABLE_WRITES=1` and
+`HARMONY_SETTINGS_WRITE=1`.
 
 The Harmony One's handler reads no payload. **The
 transport's allow list passes `0x10` bare and the settings read `0x13 0xB2`, and nothing else in the
