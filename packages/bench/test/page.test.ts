@@ -18,7 +18,9 @@
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import type { AddressInfo } from 'node:net';
 
 import { chromium, type Browser } from 'playwright';
@@ -26,6 +28,8 @@ import { LAB, load } from '@harmony/lab';
 
 import { Bench, type BenchDeps } from '../src/bench.ts';
 import { HOST, createServer } from '../src/server.ts';
+import { IrMonitor } from '../src/irmonitor.ts';
+import { IrSessions } from '../src/irsession.ts';
 
 /** The page itself, which is what this test is about, so it is served from the source tree. */
 const WEB_ROOT = new URL('../web', import.meta.url).pathname;
@@ -214,5 +218,85 @@ test('the page draws a screen, and the browser is what says so', skip, async () 
   } finally {
     await browser?.close();
     await new Promise<void>((done) => server.close(() => done()));
+  }
+});
+
+/** The infrared page needs no lab and no receiver: a listener the test speaks for, and a temporary test. */
+const irSkip = !enabled
+  ? { skip: 'set HARMONY_PAGE_TESTS=1 to drive a browser' }
+  : chrome === undefined
+    ? { skip: 'no Chrome to drive, and no browser is downloaded on purpose' }
+    : {};
+
+test('the infrared page shows one mode at a time, and a test is a checklist that ticks', irSkip, async () => {
+  // **Two things this guards, both found by looking rather than by a test.** The modes swap panels with
+  // the `hidden` attribute, and a panel that sets its own `display` beats that attribute, so in Test
+  // mode the signal panel stayed on screen drawn over the timeline; only a browser applies a stylesheet.
+  // And a test showed nothing until Start, where the person doing it expected the list of steps first.
+  const dir = mkdtempSync(join(tmpdir(), 'bench-irpage-'));
+  writeFileSync(join(dir, 'three-steps.json'), JSON.stringify({
+    name: 'Three steps', description: 'For the page test.',
+    steps: [
+      { instruction: 'Press Off' },
+      { instruction: 'Start TV kijken', expect: [{ device: 'TV', command: 'PowerOn' }] },
+      { instruction: 'Press Off again' },
+    ],
+  }));
+  let feed: (line: string) => void = () => {};
+  const source = { start(onLine: (line: string) => void) { feed = onLine; }, stop() {} };
+  const monitor = new IrMonitor(source, () => ({ match: () => [], guess: () => [] }), () => new Date(), undefined);
+  const runs = new IrSessions(monitor, () => new Date(), () => undefined, (run) => monitor.publish({ type: 'run', run }));
+  const server = createServer(new Bench(deps()), WEB_ROOT, monitor, { runs, tests: dir });
+  await new Promise<void>((done) => server.listen(0, HOST, done));
+  const { port } = server.address() as AddressInfo;
+  let browser: Browser | undefined;
+  try {
+    browser = await chromium.launch({ executablePath: chrome as string });
+    const page = await browser.newPage();
+    const complaints: string[] = [];
+    page.on('console', (message) => {
+      if (message.type() === 'error') complaints.push(message.text());
+    });
+    page.on('pageerror', (error) => complaints.push(String(error)));
+    await page.goto(`http://127.0.0.1:${port}/ir.html`);
+    await until(async () => (await page.locator('#status').textContent() ?? '').includes('listening'),
+      'the page never said it was listening');
+
+    // A code nobody holds, heard: it is listed, and Live shows it with its signal.
+    feed('+1000000');
+    feed('+9000 -4500 ' + '+560 -1690 '.repeat(16) + '+560 -560 '.repeat(16) + '+560');
+    await until(async () => (await page.locator('#list li').count()) === 1, 'the heard code was not listed');
+    assert.equal(await page.locator('#signal').isVisible(), true);
+
+    await page.getByRole('button', { name: 'Test', exact: true }).click();
+    // One mode's panels and not the other's: this is the overlap.
+    assert.equal(await page.locator('#signal').isVisible(), false, 'the signal panel is still drawn in Test mode');
+    assert.equal(await page.locator('#last').isVisible(), false);
+    assert.equal(await page.locator('#run').isVisible(), true);
+    assert.equal(await page.locator('#timeline').isVisible(), true);
+
+    // Picked, not started: every step is already there, none ticked.
+    const steps = page.locator('#run-steps li');
+    await until(async () => (await steps.count()) === 3, 'the checklist did not show before Start');
+    assert.equal(await page.locator('#run-steps input:checked').count(), 0);
+    assert.match(await steps.nth(1).textContent() ?? '', /listening for TV · PowerOn/);
+
+    await page.getByRole('button', { name: 'Start test' }).click();
+    await until(async () => (await steps.nth(0).getAttribute('class')) === 'current', 'step 1 is not marked current');
+    // Ticking the open step is the same as Done: it is checked and the next one opens.
+    await steps.nth(0).locator('input').check();
+    await until(async () => (await steps.nth(1).getAttribute('class')) === 'current', 'ticking did not move on');
+    assert.equal(await steps.nth(0).locator('input').isChecked(), true);
+
+    await page.getByRole('button', { name: 'Abandon' }).click();
+    await until(async () => (await page.locator('#run-summary').textContent() ?? '').startsWith('Abandoned'),
+      'an abandoned test did not say so');
+    assert.match(await steps.nth(2).textContent() ?? '', /not reached/);
+
+    assert.deepEqual(complaints, [], 'the browser complained');
+  } finally {
+    await browser?.close();
+    await new Promise<void>((done) => server.close(() => done()));
+    rmSync(dir, { recursive: true, force: true });
   }
 });

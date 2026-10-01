@@ -1,0 +1,93 @@
+/* The infrared monitor's dashboard: the last command large, every command in a scrolling list beside
+   it, and the raw signal underneath. Colours come from app.css so both pages read alike. */
+
+/* The modes switch panels with the `hidden` attribute, and a panel that sets its own `display` beats the
+   browser's rule for that attribute, so a hidden flex panel stayed on screen on top of the one replacing
+   it. This puts the attribute back in charge on this page. */
+[hidden] { display: none !important; }
+
+body.dashboard { max-width: none; padding: 0 1.25rem 1.25rem; height: 100vh; display: flex; flex-direction: column; }
+
+.bar { display: flex; align-items: center; gap: 1rem; padding: 0.9rem 0; border-bottom: 1px solid var(--line); }
+.bar h1 { font-size: 1.15rem; }
+.bar .spacer { flex: 1; }
+.bar a { color: var(--accent); font-size: 0.85rem; }
+.counts { color: var(--dim); font-size: 0.85rem; }
+.pill { font-size: 0.8rem; padding: 0.1rem 0.6rem; border-radius: 999px; border: 1px solid var(--line); color: var(--dim); }
+.pill.ok { color: var(--ok); border-color: var(--ok); }
+.pill.bad { color: var(--bad); border-color: var(--bad); }
+button[aria-pressed='true'] { color: var(--ok); border-color: var(--ok); }
+
+.grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 24rem;
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas: 'last history' 'signal history';
+  gap: 1rem;
+  padding-top: 1rem;
+}
+#last { grid-area: last; }
+#history { grid-area: history; display: flex; flex-direction: column; min-height: 0; }
+#signal { grid-area: signal; display: flex; flex-direction: column; min-height: 0; }
+
+.card { border: 1px solid var(--line); border-radius: 8px; padding: 0.9rem 1rem; }
+.card h2 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--dim); margin-bottom: 0.6rem; }
+section.card { border-top: 1px solid var(--line); }
+
+.big { font-size: 1.8rem; font-weight: 600; margin: 0 0 0.3rem; }
+.big.unknown { color: var(--bad); }
+#holders { margin: 0 0 0.9rem; display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.chip { font-size: 0.75rem; padding: 0.05rem 0.5rem; border: 1px solid var(--line); border-radius: 4px; color: var(--dim); }
+
+.facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); gap: 0.6rem 1.2rem; margin: 0; }
+.facts div { display: flex; flex-direction: column; }
+.facts dt { font-size: 0.75rem; color: var(--dim); }
+.facts dd { margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 1rem; }
+.facts dd.off { color: var(--bad); }
+
+.list { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1; min-height: 0; }
+.list li { display: grid; grid-template-columns: 6.5rem 1fr auto; gap: 0.5rem; padding: 0.35rem 0.4rem;
+  border-bottom: 1px solid var(--line); cursor: pointer; font-size: 0.85rem; align-items: baseline; }
+.list li:hover { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+.list li[aria-selected='true'] { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.list li.unknown .what { color: var(--bad); }
+.list .when { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--dim); font-size: 0.8rem; }
+.list .held { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--dim); font-size: 0.8rem; }
+
+#wave svg { display: block; width: 100%; height: auto; margin: 0.25rem 0 0.5rem; }
+#wave .heard { fill: var(--accent); }
+#wave .stored { fill: var(--dim); }
+#wave text { fill: var(--dim); font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.scroll { overflow-y: auto; flex: 1; min-height: 0; }
+#durations td.off { color: var(--bad); }
+
+/* Record and Test take the two left panels: the run's controls where the last command was, the
+   timeline where the signal was. */
+#run { grid-area: last; }
+#timeline { grid-area: signal; display: flex; flex-direction: column; min-height: 0; }
+.modes { display: flex; gap: 0.3rem; }
+/* A test is a checklist: a box per step, ticked when the step is done, the current one outlined. */
+.steps { list-style: none; margin: 0.75rem 0 0; padding: 0; font-size: 0.9rem; max-height: 22rem; overflow-y: auto; }
+.steps li { display: grid; grid-template-columns: 1.5rem 1fr; column-gap: 0.4rem; padding: 0.4rem 0.5rem; border-radius: 4px; }
+.steps li > :not(input) { grid-column: 2; }
+.steps input[type='checkbox'] { margin: 0.2rem 0 0; width: 1rem; height: 1rem; accent-color: var(--ok); }
+.steps li.current { outline: 2px solid var(--accent); font-weight: 600; }
+.steps li.current input { cursor: pointer; }
+.steps li.done .instruction { color: var(--dim); }
+.steps li.pending .instruction { color: var(--dim); }
+.steps .verdict { display: block; font-weight: 400; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.8rem; }
+.steps .verdict.ok { color: var(--ok); }
+.steps .verdict.bad { color: var(--bad); }
+.steps .verdict.wait { color: var(--dim); }
+.steps .heard { display: block; font-weight: 400; color: var(--dim); font-size: 0.8rem; }
+.summary { font-weight: 600; margin: 0.75rem 0 0; }
+.summary.ok { color: var(--ok); }
+.summary.bad { color: var(--bad); }
+#lanes svg { display: block; width: 100%; height: auto; margin: 0.25rem 0 0.5rem; }
+#lanes .press { fill: var(--accent); }
+#lanes .press.unknown { fill: var(--bad); }
+#lanes .boundary { stroke: var(--line); stroke-width: 1; }
+#lanes text { fill: var(--dim); font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
+#test-pick { padding: 0.2rem; background: transparent; color: inherit; border: 1px solid var(--line); border-radius: 4px; }

@@ -6,42 +6,10 @@
 // Kept as an ES module rather than inline script so FreeHarmony can lift it into an Electron
 // renderer later without untangling it from the page.
 
+import { $, api, clear, el, hex, row } from './dom.js';
+
 /** @type {number | undefined} */
 let selected;
-
-const $ = (id) => /** @type {HTMLElement} */ (document.getElementById(id));
-
-function clear(node) {
-  while (node.firstChild) node.removeChild(node.firstChild);
-  return node;
-}
-
-function el(tag, text, className) {
-  const node = document.createElement(tag);
-  if (text !== undefined) node.textContent = String(text);
-  if (className !== undefined) node.className = className;
-  return node;
-}
-
-function row(table, cells) {
-  const tr = document.createElement('tr');
-  for (const cell of cells) tr.append(cell instanceof Node ? cell : el('td', cell));
-  table.append(tr);
-  return tr;
-}
-
-const hex = (value, width = 2) => `0x${value.toString(16).padStart(width, '0')}`;
-
-async function api(path, body) {
-  const response = await fetch(path, {
-    method: body === undefined ? 'GET' : 'POST',
-    headers: body === undefined ? {} : { 'content-type': 'application/json' },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.message ?? `${response.status}`);
-  return data;
-}
 
 async function refreshRemotes() {
   const remotes = await api('/api/remotes');

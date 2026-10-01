@@ -1,0 +1,11 @@
+{
+  "name": "Harmony 650, the four activities",
+  "description": "What each of the 650's activities sends when it starts, and what Off sends. No expectations yet: this records the reference for later runs.",
+  "steps": [
+    { "instruction": "On the Harmony 650, start TV kijken and wait until the remote is done" },
+    { "instruction": "Start Kodi kijken and wait until the remote is done" },
+    { "instruction": "Start LG kijken and wait until the remote is done" },
+    { "instruction": "Start LG WebOS and wait until the remote is done" },
+    { "instruction": "Press Off and wait until the remote is done" }
+  ]
+}

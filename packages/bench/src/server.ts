@@ -17,6 +17,8 @@ import { extname, join, normalize } from 'node:path';
 import { encodePng } from '@harmony/codec';
 
 import type { Bench } from './bench.ts';
+import type { IrMonitor } from './irmonitor.ts';
+import { testDefinitions, type IrSessions } from './irsession.ts';
 
 /** Loopback only. Not `0.0.0.0`, not the machine's address, not configurable. */
 export const HOST = '127.0.0.1';
@@ -96,12 +98,59 @@ function favicon(): Uint8Array {
   return encodePng(side, side, bytes);
 }
 
-export function createServer(bench: Bench, webRoot: string): Server {
+export function createServer(
+  bench: Bench, webRoot: string, monitor?: IrMonitor, sessions?: { runs: IrSessions; tests: string },
+): Server {
   const root = normalize(webRoot);
   return createHttpServer((req, res) => {
     void (async () => {
       const url = new URL(req.url ?? '/', `http://${HOST}`);
       try {
+        // The infrared monitor, `irmonitor.ts`. A stream of what the receiver hears, as server sent
+        // events, and the recent history for a page that opens later. Listening starts on the first
+        // subscriber and takes no arguments, so no route can make the receiver's tool do anything but
+        // listen.
+        if (req.method === 'GET' && url.pathname === '/api/ir/events') {
+          if (monitor === undefined) return json(res, 404, { message: 'no infrared monitor in this bench' });
+          res.writeHead(200, {
+            'content-type': 'text/event-stream; charset=utf-8',
+            'cache-control': 'no-store',
+            connection: 'keep-alive',
+          });
+          const send = (event: unknown) => res.write(`data: ${JSON.stringify(event)}\n\n`);
+          send({ type: 'status', ...monitor.status });
+          const unsubscribe = monitor.subscribe(send);
+          req.on('close', () => { unsubscribe(); });
+          monitor.start();
+          return;
+        }
+        // Recordings and tests, `irsession.ts`. These write a run file into the lab when a run stops
+        // and nothing anywhere else: the monitor only listens, so no remote is reached from here.
+        if (url.pathname.startsWith('/api/ir/run') || url.pathname === '/api/ir/tests') {
+          if (sessions === undefined) return json(res, 404, { message: 'no recordings in this bench' });
+          if (req.method === 'GET' && url.pathname === '/api/ir/tests') {
+            return json(res, 200, testDefinitions(sessions.tests));
+          }
+          if (req.method === 'GET' && url.pathname === '/api/ir/run') return json(res, 200, sessions.runs.current ?? null);
+          if (req.method === 'POST' && url.pathname === '/api/ir/run/start') {
+            const body = await readBody(req);
+            const kind = body['kind'] === 'test' ? 'test' : 'recording';
+            if (kind === 'recording') {
+              const name = String(body['name'] ?? '').trim() || 'recording';
+              return json(res, 200, sessions.runs.start('recording', name));
+            }
+            const id = String(body['test'] ?? '');
+            const found = testDefinitions(sessions.tests).find((one) => one.id === id);
+            if (found === undefined) return json(res, 400, { message: `no test called ${id}` });
+            return json(res, 200, sessions.runs.start('test', found.definition.name, found.definition));
+          }
+          if (req.method === 'POST' && url.pathname === '/api/ir/run/next') return json(res, 200, sessions.runs.next());
+          if (req.method === 'POST' && url.pathname === '/api/ir/run/stop') return json(res, 200, sessions.runs.stop());
+        }
+        if (req.method === 'GET' && url.pathname === '/api/ir/recent') {
+          if (monitor === undefined) return json(res, 404, { message: 'no infrared monitor in this bench' });
+          return json(res, 200, { ...monitor.status, frames: monitor.recent() });
+        }
         if (req.method === 'GET' && url.pathname === '/api/remotes') {
           return json(res, 200, await bench.remotes());
         }
@@ -177,6 +226,13 @@ export function createServer(bench: Bench, webRoot: string): Server {
             'GET /api/screen',
             'GET /api/variants',
             'GET /api/log',
+            'GET /api/ir/events',
+            'GET /api/ir/recent',
+            'GET /api/ir/tests',
+            'GET /api/ir/run',
+            'POST /api/ir/run/start',
+            'POST /api/ir/run/next',
+            'POST /api/ir/run/stop',
             'POST /api/identify',
             'POST /api/inventory',
             'POST /api/read',

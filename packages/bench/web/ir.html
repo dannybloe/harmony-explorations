@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Infrared monitor</title>
+    <!-- The same policy as the bench page, for the same reasons; see index.html. -->
+    <meta
+      http-equiv="content-security-policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'"
+    />
+    <link rel="icon" href="/favicon.png" />
+    <link rel="stylesheet" href="/app.css" />
+    <link rel="stylesheet" href="/ir.css" />
+  </head>
+  <body class="dashboard">
+    <!--
+      The infrared monitor, packages/bench/src/irmonitor.ts: what a remote sends, heard through the
+      Flirc receiver on this Mac, named against the bench remotes' own configurations and Logitech's
+      catalogue. It only listens.
+    -->
+    <header class="bar">
+      <h1>Infrared monitor</h1>
+      <nav class="modes" aria-label="mode">
+        <button type="button" data-mode="live" aria-pressed="true">Live</button>
+        <button type="button" data-mode="record" aria-pressed="false">Record</button>
+        <button type="button" data-mode="test" aria-pressed="false">Test</button>
+      </nav>
+      <span id="status" class="pill">connecting</span>
+      <span class="counts mono"><span id="count-presses">0</span> commands,
+        <span id="count-unknown">0</span> unknown</span>
+      <span class="spacer"></span>
+      <button id="live" type="button" aria-pressed="true">following live</button>
+      <button id="clear" type="button">clear</button>
+      <a href="/">bench</a>
+    </header>
+
+    <main class="grid">
+      <section id="last" class="card">
+        <h2 id="last-title">Last command</h2>
+        <p id="empty" class="hint">Point a remote at the Flirc and press a key.</p>
+        <div id="last-body" hidden>
+          <p id="name" class="big"></p>
+          <p id="holders"></p>
+          <dl id="facts" class="facts"></dl>
+          <div id="guesses" hidden></div>
+        </div>
+      </section>
+
+      <!-- Record and Test: the controls and the step being done, then the run as a timeline. -->
+      <section id="run" class="card" hidden>
+        <h2 id="run-title">Recording</h2>
+        <div id="run-setup">
+          <p id="record-setup">
+            <label>name <input id="record-name" type="text" placeholder="for example: TV kijken start" /></label>
+          </p>
+          <div id="test-setup" hidden>
+            <p><label>test <select id="test-pick"></select></label></p>
+            <p id="test-about" class="hint"></p>
+          </div>
+          <button id="run-start" type="button">Start</button>
+        </div>
+        <div id="run-live" hidden>
+          <p id="run-step" class="hint mono"></p>
+          <p id="run-instruction" class="big"></p>
+          <p>
+            <button id="run-next" type="button">Next</button>
+            <button id="run-stop" type="button">Stop</button>
+            <span id="run-clock" class="mono dim"></span>
+          </p>
+        </div>
+        <!-- Test only: every step as a checklist, from the moment a test is picked. -->
+        <ol id="run-steps" class="steps"></ol>
+        <p id="run-summary"></p>
+        <p id="run-file" class="hint mono"></p>
+      </section>
+
+      <section id="timeline" class="card" hidden>
+        <h2>Timeline</h2>
+        <div id="lanes"></div>
+        <div class="scroll">
+          <table id="run-table"></table>
+        </div>
+      </section>
+
+      <section id="history" class="card">
+        <h2>All commands</h2>
+        <ol id="list" class="list"></ol>
+      </section>
+
+      <section id="signal" class="card">
+        <h2>Signal, heard and stored</h2>
+        <p id="signal-head" class="hint mono"></p>
+        <div id="wave"></div>
+        <div class="scroll">
+          <table id="durations"></table>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="/ir.js"></script>
+  </body>
+</html>

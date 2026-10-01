@@ -10,12 +10,13 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { AddressInfo } from 'node:net';
 
-import { Bench, createServer, HOST, type BenchDeps } from '../src/index.ts';
+import { Bench, createServer, HOST, IrMonitor, IrSessions, type BenchDeps } from '../src/index.ts';
 
 const WEB_ROOT = fileURLToPath(new URL('../web/', import.meta.url));
 
@@ -68,9 +69,9 @@ test('it binds to loopback and not to anything else', async () => {
   });
 });
 
-test('the page and its two assets are served, and nothing above them is', async () => {
+test('both pages and their assets are served, and nothing above them is', async () => {
   await withServer(async (base) => {
-    for (const path of ['/', '/app.js', '/app.css']) {
+    for (const path of ['/', '/app.js', '/app.css', '/dom.js', '/ir.html', '/ir.js', '/ir.css']) {
       const response = await fetch(base + path);
       assert.equal(response.status, 200, path);
     }
@@ -83,7 +84,7 @@ test('the page and its two assets are served, and nothing above them is', async 
   });
 });
 
-test('the route table is nine routes, every one of them a read', async () => {
+test('the route table is sixteen routes, and none of them reaches a remote', async () => {
   // **The count is enumerated now, and it was never six.** This was called `six reads and nothing
   // that writes`, asserted neither the count nor the table, and checked "nothing that writes" by
   // 404ing four guessed names, which cannot see a write route somebody adds under a fifth name. The
@@ -94,6 +95,10 @@ test('the route table is nine routes, every one of them a read', async () => {
     .sort();
   assert.deepEqual(declared, [
     'GET /api/configs',
+    'GET /api/ir/events',
+    'GET /api/ir/recent',
+    'GET /api/ir/run',
+    'GET /api/ir/tests',
     'GET /api/log',
     'GET /api/remotes',
     'GET /api/screen',
@@ -101,12 +106,17 @@ test('the route table is nine routes, every one of them a read', async () => {
     'GET /favicon.png',
     'POST /api/identify',
     'POST /api/inventory',
+    'POST /api/ir/run/next',
+    'POST /api/ir/run/start',
+    'POST /api/ir/run/stop',
     'POST /api/read',
   ]);
-  // A POST here is a browser handing over arguments, not a write: `/api/read` reads flash,
+  // A POST here is a browser handing over arguments, not a write to a remote: `/api/read` reads flash,
   // `/api/identify` reads the version block and `/api/inventory` parses a file the lab already
   // holds. Nothing in `packages/bench` reaches a write path, and `packages/usb`'s rails are what
-  // would refuse it if it did.
+  // would refuse it if it did. The seven infrared routes were added on 1 October 2026 and touch no
+  // remote at all: they listen to a receiver, and the three run routes keep a run and file it in the
+  // lab when it stops, the same kind of filing `/api/read` does.
   assert.equal(declared.filter((one) => /write|erase|command/i.test(one)).length, 0);
 
   await withServer(async (base) => {
@@ -195,14 +205,19 @@ test('the page\'s content security policy covers every kind of thing the page lo
   //
   // So this reads the page and demands a directive for each kind of resource it actually references.
   // Add an `audio` tag to the page and this fails until the policy mentions it.
-  const html = readFileSync(join(WEB_ROOT, 'index.html'), 'utf8');
+  for (const page of ['index.html', 'ir.html']) checkPolicy(page);
+});
+
+/** One page's policy against what that page loads. */
+function checkPolicy(page: string): void {
+  const html = readFileSync(join(WEB_ROOT, page), 'utf8');
   const policy = /content="([^"]*default-src[^"]*)"/.exec(html)?.[1];
-  assert.ok(policy !== undefined, 'the page has no policy at all');
+  assert.ok(policy !== undefined, `${page} has no policy at all`);
   const directives = new Map(policy.split(';').map((one) => {
     const [name, ...sources] = one.trim().split(/\s+/);
     return [name as string, sources];
   }));
-  assert.deepEqual(directives.get('default-src'), ["'none'"], 'the default has to be nothing');
+  assert.deepEqual(directives.get('default-src'), ["'none'"], `${page}: the default has to be nothing`);
   const needed: Array<[RegExp, string]> = [
     [/<img\b/, 'img-src'],
     [/<script\b/, 'script-src'],
@@ -214,15 +229,15 @@ test('the page\'s content security policy covers every kind of thing the page lo
   for (const [pattern, directive] of needed) {
     if (!pattern.test(html)) continue;
     assert.ok(directives.has(directive),
-      `the page uses ${pattern.source} and the policy has no ${directive}`);
+      `${page} uses ${pattern.source} and its policy has no ${directive}`);
     assert.deepEqual(directives.get(directive), ["'self'"], `${directive} should be 'self' alone`);
   }
   // And the two escapes that would make the policy decorative. The page test polls with a passed
   // function rather than an evaluated string precisely so that `unsafe-eval` is not needed.
-  assert.ok(!policy.includes('unsafe-'), 'no unsafe source is allowed');
+  assert.ok(!policy.includes('unsafe-'), `${page}: no unsafe source is allowed`);
   // The icon is a route rather than a data URI, which is what lets img-src stay at 'self'.
-  assert.match(html, /<link rel="icon" href="\/favicon\.png"/);
-});
+  assert.match(html, /<link rel="icon" href="\/favicon\.png"/, page);
+}
 
 test('the icon is drawn by the server, so nothing asks for a file that is not there', async () => {
   await withServer(async (base) => {
@@ -236,4 +251,54 @@ test('the icon is drawn by the server, so nothing asks for a file that is not th
     assert.equal(view.getUint32(16), 16);
     assert.equal(view.getUint32(20), 16);
   });
+});
+
+test('the infrared routes run a test over HTTP, and a bench without a receiver says it has none', async () => {
+  // Without a monitor the infrared routes answer 404 with a reason rather than starting anything.
+  await withServer(async (base) => {
+    for (const path of ['/api/ir/recent', '/api/ir/tests', '/api/ir/run']) {
+      const response = await fetch(base + path);
+      assert.equal(response.status, 404, path);
+    }
+  });
+
+  const dir = mkdtempSync(join(tmpdir(), 'bench-ir-'));
+  try {
+    writeFileSync(join(dir, 'two-steps.json'), JSON.stringify({
+      name: 'Two steps',
+      steps: [{ instruction: 'Press Off' }, { instruction: 'Start TV kijken' }],
+    }));
+    // A listener that never hears anything: the routes are about the run, not about the receiver.
+    const silent = { start() {}, stop() {} };
+    const monitor = new IrMonitor(silent, () => ({ match: () => [], guess: () => [] }), () => new Date(), undefined);
+    const runs = new IrSessions(monitor, () => new Date('2026-10-01T06:00:00.000Z'), () => undefined, () => {});
+    const server = createServer(new Bench(deps()), WEB_ROOT, monitor, { runs, tests: dir });
+    await new Promise<void>((resolve) => server.listen(0, HOST, resolve));
+    const { port } = server.address() as AddressInfo;
+    const base = `http://${HOST}:${port}`;
+    const post = (path: string, body: unknown) => fetch(base + path, {
+      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body),
+    });
+    const postJson = async (path: string, body: unknown): Promise<any> => (await post(path, body)).json();
+    try {
+      assert.deepEqual((await getJson(`${base}/api/ir/tests`)).map((one: { id: string }) => one.id), ['two-steps']);
+      assert.equal(await getJson(`${base}/api/ir/run`), null);
+      assert.equal((await post('/api/ir/run/start', { kind: 'test', test: 'no-such-test' })).status, 400);
+
+      const started = await postJson('/api/ir/run/start', { kind: 'test', test: 'two-steps' });
+      assert.equal(started.name, 'Two steps');
+      // A second start while one is open is refused, not a second run.
+      assert.equal((await post('/api/ir/run/start', { kind: 'recording', name: 'x' })).status, 500);
+      const next = await postJson('/api/ir/run/next', {});
+      assert.equal(next.current, 1);
+      // Next on the last step is the end of the test.
+      const done = await postJson('/api/ir/run/next', {});
+      assert.ok(done.endedAt !== undefined);
+      assert.equal((await getJson(`${base}/api/ir/run`)).endedAt, done.endedAt);
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

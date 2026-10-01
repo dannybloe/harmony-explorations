@@ -1,0 +1,12 @@
+{
+  "name": "Spare Harmony One, four activities",
+  "description": "What four of the spare Harmony One's activities send when they start one after the other, from everything off, and what Off sends. No expectations yet: this records the reference for later runs. Keep the remote pointed at the Flirc throughout.",
+  "steps": [
+    { "instruction": "On the spare Harmony One, press Off and wait until the remote is done, so everything starts from off" },
+    { "instruction": "On the touch screen, start TV kijken and wait until the remote is done" },
+    { "instruction": "Start LG kijken and wait until the remote is done" },
+    { "instruction": "Start Kodi kijken and wait until the remote is done" },
+    { "instruction": "Start PlayStation 3 and wait until the remote is done" },
+    { "instruction": "Press Off and wait until the remote is done" }
+  ]
+}

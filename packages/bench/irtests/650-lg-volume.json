@@ -1,0 +1,15 @@
+{
+  "name": "Harmony 650, LG volume in device mode",
+  "description": "A smoke test of the test runner itself: device mode on the Harmony 650, the LG television's volume up and down.",
+  "steps": [
+    { "instruction": "On the Harmony 650, press Devices and choose the LG television" },
+    {
+      "instruction": "Press Volume up three times, briefly",
+      "expect": [{ "device": ["TV", "LG"], "command": "VolumeUp", "times": 3 }]
+    },
+    {
+      "instruction": "Hold Volume down for about two seconds",
+      "expect": [{ "device": ["TV", "LG"], "command": "VolumeDown" }]
+    }
+  ]
+}

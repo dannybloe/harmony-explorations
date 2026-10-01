@@ -1272,7 +1272,11 @@ packages/corpus/                TS: read a config off a remote and file it, read
                                 to check the one field the remote itself checks. It is the write
                                 path's first caller outside that package, which is why the blind
                                 review's withhold list gained a row for it
-packages/bench/                 TS: the bench instrument, a server plus a page in web/
+packages/bench/                 TS: the bench instrument, a server plus two pages in web/. The
+                                second, ir.html, is the infrared monitor: what a Flirc USB receiver
+                                hears, named against the bench remotes' configurations, plus
+                                recordings and a test runner whose step lists live in irtests/ and
+                                whose runs are filed in the lab. It only listens; never `sendir`
 packages/probe/                 TS: the contribution probe, a report with shape and no contents
 ```
 
@@ -1852,7 +1856,13 @@ make bench         start the bench instrument on 127.0.0.1:8731, Ctrl-C to stop.
                    config the lab already holds, with no remote attached: devices, activities, and
                    what each button sends including the repeat interval of a held key, plus the
                    **drawn screen** of any page beside the keys that page binds, `GET /api/screen`,
-                   made out of the bytes per request rather than read off disk
+                   made out of the bytes per request rather than read off disk. **`/ir.html` is
+                   the infrared monitor**, which starts the Flirc's own listener when the page
+                   opens: a test written in packages/bench/irtests is performed at the bench, step
+                   by step, and its run lands in the lab's reads/ for a session to compare against
+                   what the configuration says it sends. Firmware 4.9.7 of the Flirc dropped the
+                   long Denon codes without a trace and 4.10.7 reports them, so check its version
+                   before blaming a remote for a silent step
 make probe         structural report about an attached remote; PROBE_ARGS=--file <config>
 make all           everything except ghidra and bench
 ```
