@@ -45,7 +45,9 @@ import {
   taggedList,
 } from './sections.ts';
 import type { StateRecord, TaggedEntry } from './sections.ts';
-import { FIRMWARE_STATE_VARIABLES, powerOnInstructions } from './inventory.ts';
+import {
+  deviceIdOfGroup, FIRMWARE_STATE_VARIABLES, POWER_ON_DELAY_CASES, powerOnInstructions, stateVariables,
+} from './inventory.ts';
 import {
   CLOCK_FIELDS_OFFSET,
   CLOCK_FIELD_COUNT,
@@ -517,6 +519,58 @@ export function setPowerOnDelay(c: Container, group: number, tenths: number): Ed
     start: off,
     bytes: Uint8Array.from([tenths]),
     owner: `power on delay of group ${group}`,
+  }];
+}
+
+/**
+ * One device's power on delay where it is a **stored setting** rather than an instruction, in tenths of
+ * a second: the Harmony 600, 650 and 700.
+ *
+ * On those remotes a delay is a base slot 13 state variable, `PowerOnDelay_<device id>`, and the value
+ * is the record's `first`, which the firmware seeds the running variable from, section 234. So the edit
+ * is two bytes of a record and not the `0x7C` operand `setPowerOnDelay` edits on the other architectures,
+ * where the same delay is written into the device's power on list.
+ *
+ * **Its calibration is the Harmony 650's own write**, section 283: the Denon's delay raised from 60 to
+ * 90 by a script that was not kept, and read back off the remote. This reproduces that region read byte
+ * for byte from the read before it, which is the test.
+ *
+ * Only `PowerOnDelay` moves. `DefaultPowerOnDelay` is what the slider's reset returns to and the 650's
+ * write left it alone, so this does too.
+ *
+ * **The ceiling is 450 and it is not the record's.** The variable states 65277 as its highest value,
+ * which bounds nothing anybody chose. What bounds a delay is how it is spent: the device's on transition
+ * maps the variable through a table of `POWER_ON_DELAY_CASES` entries, 0 to 45 seconds, section 288,
+ * and the remote draws exactly that many strings for its slider. A value past the table has no case,
+ * so it is refused here rather than written and left to whatever the firmware does with a miss.
+ * The first version of this said "the record's own stated maximum, 450", which nobody had read; the
+ * refusal test found 65277.
+ */
+export function setPowerOnDelayVariable(c: Container, group: number, tenths: number): Edit[] {
+  const id = deviceIdOfGroup(c).get(group);
+  if (id === undefined) {
+    throw new EditError(`no device with infrared group ${group} has a Logitech device identifier here`);
+  }
+  const variable = stateVariables(c).find((one) => one.label === `PowerOnDelay_${id}`);
+  const record = variable?.record;
+  if (variable === undefined || record === undefined) {
+    throw new EditError(`group ${group} has no PowerOnDelay variable, so its delay is not a stored setting`);
+  }
+  if (!Number.isInteger(tenths) || tenths < 0) {
+    throw new EditError('a delay is a whole number of tenths of a second');
+  }
+  if (tenths >= POWER_ON_DELAY_CASES || tenths > record.second) {
+    throw new EditError(
+      `${tenths} tenths is past the ${POWER_ON_DELAY_CASES - 1} the delay table has a case for, 45 seconds`,
+    );
+  }
+  const off = c.blobOffsetOf(record.address);
+  if (off === undefined) throw new EditError(`the PowerOnDelay record of group ${group} is outside the container`);
+  // `first` is the record's opening u16, little endian, as `clockStateEdits` writes it.
+  return [{
+    start: off,
+    bytes: Uint8Array.from([tenths & 0xff, tenths >>> 8]),
+    owner: `power on delay variable of group ${group}`,
   }];
 }
 

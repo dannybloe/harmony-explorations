@@ -2155,6 +2155,14 @@ second 451 case table on the same variable, whose cases call lists, **unconfirme
 `powerOnDelays` and `powerOnDelayCases`; `composeDevice` emits the list, the variable and the table on
 arch 14.
 
+**Changing an arch 14 delay is a two byte edit of the record's `first`**, `u16` little endian, plus
+the trailer checksum. **The record's `second` does not bound it**: it is 65277 on the Denon's record in
+the Harmony 650's and Harmony 700's configurations, and the range is the 451 case table's, 0 to 450.
+`setPowerOnDelayVariable` in `packages/codec/src/edit.ts` refuses anything else. Written to the Harmony
+650 and the Harmony 700 and put back, the new value in force after the writer's restart on both,
+measured in memory on the first and by infrared timing on the second; the Harmony 600 is unchecked.
+[findings.md](findings.md) sections 283 and 301.
+
 `deviceDelays`, `powerOnInstructions` and `deviceIdOfGroup` in `packages/codec/src/inventory.ts`.
 [findings.md](findings.md) sections 234 and 235.
 

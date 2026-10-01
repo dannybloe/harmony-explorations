@@ -225,6 +225,10 @@ test('the config writer refuses a commit on a firmware build whose drop and rest
   assert.match(text, /unitLabel: 'h650', dumps: H650_DUMPS, sequenceReadOn: \['0\.2'\] \}/);
   assert.match(text, /unitLabel: 'h600', dumps: H600_DUMPS, sequenceReadOn: \['0\.2'\] \}/);
   assert.match(text, /unitLabel: 'h700', dumps: H700_DUMPS, sequenceReadOn: \['2\.8'\] \}/);
+  // What each may be written against. The 600 has no region read yet, so nothing can be written to it;
+  // the 700's is the read taken straight after section 300 put its first block back unchanged.
+  assert.match(text, /const H600_DUMPS = new Set<string>\(\[\]\);/);
+  assert.match(text, /const H700_DUMPS = new Set<string>\(\[\s*(\/\/[^\n]*\n\s*)*'h700_after_rehearsal_region',\s*(\/\/[^\n]*\n\s*)*'h700_delay90_region',\s*\]\);/);
   assert.match(text, /if \(commit && !unit\.sequenceReadOn\.includes\(identity\.firmware\)\) \{\s*throw new Refusal/);
   assert.match(text, /const unit = units\.find\(\(one\) => one\.dumps\.has\(dumpName\)\);/);
 });

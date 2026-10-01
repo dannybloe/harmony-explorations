@@ -1,0 +1,15 @@
+{
+  "name": "Harmony 700, the Denon's power on delay",
+  "description": "TV kijken from everything off, for the time between the Denon switching on and its input command, which is the Denon's power on delay at work. Run before and after the delay is changed; the difference is the change. Keep the remote pointed at the Flirc throughout.",
+  "steps": [
+    { "instruction": "On the Harmony 700, press Off and wait until the remote is done, so everything starts from off" },
+    {
+      "instruction": "Start TV kijken and wait until the remote is done, about fifteen seconds",
+      "expect": [
+        { "device": "TV", "command": "PowerOn" },
+        { "device": "Denon", "command": "InputCbl/Sat" }
+      ]
+    },
+    { "instruction": "Press Off and wait until the remote is done" }
+  ]
+}

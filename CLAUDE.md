@@ -732,10 +732,10 @@ block written back unchanged on 6 September, section 269, which is the second ar
 and needed no compiler, since nothing can compile a configuration for that model. On the **Harmony
 650**, a second hand unit which Danny says may be reprogrammed as the work needs: one block written back unchanged on
 27 September 2026, section 281, the first write to arch 14; and one power on delay raised and put back
-the same day, section 283, two blocks each way, live in the remote's memory straight after the restart. On the **Harmony 700**, its firmware staging region, section 297, below, and one configuration block written back unchanged on 29 September 2026, section 300. **No other remote has had flash written and
+the same day, section 283, two blocks each way, live in the remote's memory straight after the restart. On the **Harmony 700**, its firmware staging region, section 297, below, and one configuration block written back unchanged on 29 September 2026, section 300, and the Denon's power on delay raised and put back on 1 October 2026, section 301, two blocks each way, the change heard by an infrared receiver both times. **No other remote has had flash written and
 no other may be**, which said "the spare is the only one that may be"<!--superseded--> until 6
 September 2026. **The Harmony 600 and the Harmony 700 may be written to since 29 September 2026**,
-Danny's decision that day, and neither has had a configuration changed by this project yet: each first gets its identity and a
+Danny's decision that day, and the 600 has not had a configuration changed by this project yet, the 700 since section 301: each first gets its identity and a
 whole region read into the lab, then one block back unchanged, then a real write, the order every unit
 here has taken. **The 700 took another road first**: it arrived stuck in safe mode, was sent one
 reinstall request, a `WRITE_MISC` and a restart that write no flash from the host, section 295, and

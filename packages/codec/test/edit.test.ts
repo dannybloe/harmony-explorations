@@ -46,6 +46,8 @@ import {
   setParameter,
   skipIntroductionTour,
   setPowerOnDelay,
+  setPowerOnDelayVariable,
+  deviceDelays,
   setTimerDuration,
   taggedList,
   timers,
@@ -848,6 +850,43 @@ test('a delay past what one instruction carries is refused rather than truncated
     assert.throws(() => setPowerOnDelay(c, 0, 1.5), EditError);
     // And 100 itself is allowed, so the bound is the cap and not one below it.
     assert.equal(setPowerOnDelay(c, 0, 100).length, 1);
+  });
+
+test('a stored delay edit reproduces the Harmony 650\'s own write byte for byte',
+  skipUnless('h650_config_region', 'h650_delay90_region'), () => {
+    // **The calibration case.** Section 283 raised the 650's Denon delay from 60 to 90 tenths with a
+    // script that was not kept, wrote it, and read the region back as `h650_delay90_region`. This
+    // edit, applied to the read before, has to give that read exactly: the same two bytes and nothing
+    // else, which is the independent answer a delay edit can be held to.
+    const before = parse(require_('h650_config_region'));
+    const after = parse(require_('h650_delay90_region'));
+    const denon = deviceDelays(before).find((one) => one.name === 'Denon');
+    assert.ok(denon !== undefined && denon.source === 'variable');
+    assert.equal(denon.powerOn, 60);
+    const report = applyEdits(before, setPowerOnDelayVariable(before, denon.group, 90));
+    assert.equal(report.changed.length, 2, 'the delay and the trailer checksum');
+    assert.deepEqual(diffRanges(report.bytes, after.blob), [], 'not the bytes the remote holds after the write');
+    // And only PowerOnDelay moved: the default the slider resets to is left as the 650's write left it.
+    const edited = deviceDelays(parse(report.bytes)).find((one) => one.name === 'Denon');
+    assert.deepEqual([edited?.powerOn, edited?.defaultPowerOn], [90, 60]);
+  });
+
+test('a stored delay edit refuses a delay past the 45 second table, and a Harmony One, whose devices have no stored delay',
+  skipUnless('h700_28_config_region', 'one_spare_20260830'), () => {
+    const c = parse(require_('h700_28_config_region'));
+    const denon = deviceDelays(c).find((one) => one.name === 'Denon');
+    assert.ok(denon !== undefined);
+    // 450, the 45 seconds the remote's own strings offer, is the highest; one more is refused.
+    assert.equal(setPowerOnDelayVariable(c, denon.group, 450).length, 1);
+    assert.throws(() => setPowerOnDelayVariable(c, denon.group, 451), EditError);
+    assert.throws(() => setPowerOnDelayVariable(c, denon.group, -1), EditError);
+    assert.throws(() => setPowerOnDelayVariable(c, denon.group, 1.5), EditError);
+    assert.throws(() => setPowerOnDelayVariable(c, denon.group, 451), /past the 450/);
+    // A Harmony One states its delays inline, so this edit has nothing to write there. It is refused
+    // at the first step, since a Harmony One's devices carry no Logitech identifier for a stored
+    // delay to be named by; the refusal of an identified device with no variable has no case here.
+    const one = parse(require_('one_spare_20260830'));
+    assert.throws(() => setPowerOnDelayVariable(one, 0, 50), /has a Logitech device identifier/);
   });
 
 test('a device that states no inline delay is refused', skipUnless('h600_config'), () => {

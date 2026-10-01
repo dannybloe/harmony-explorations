@@ -39267,3 +39267,134 @@ the erase.
   configuration from its first byte, and the run's own output records the erase, the neighbour check
   and the read back.
 * The run's output is in the lab beside the reads, `h700_rehearsal_log`.
+
+## 301. The Harmony 700's first configuration change: a power on delay raised and put back, and both heard
+
+`todo.md` L7's last item: a real write to the Harmony 700 with `write-config.ts`, the unit running
+Logitech's 2.8, section 297. The change is the one the Harmony 650 took in section 283, the Denon
+receiver's power on delay from 60 tenths to 90 and back, and this time the effect was **timed on
+the air**: an infrared receiver on the bench, a Flirc, logged every frame the remote sent while Danny ran
+the same activity before the write, after it and after the revert.
+
+### The edit, and what bounds it
+
+On arch 14 a delay is a stored setting, base slot 13's `PowerOnDelay_<identifier>`, sections 234 and
+235, so the edit is that record's `first`, a little endian `u16`. `setPowerOnDelayVariable` in
+`packages/codec/src/edit.ts` is the editor, and `set-delay.ts` now picks it or `setPowerOnDelay`, the
+inline `0x7C` editor of the other architectures, by what `deviceDelays` says the device holds.
+
+**The record's own maximum bounds nothing.** Its `second` is 65277 on the Denon's record here, so a
+writer that took the record's range as the delay's would accept 6527 seconds. What a delay can be is
+what the device's 451 case table has a case for, 0 to 450 tenths, section 288, and the editor refuses
+451. The first version of the editor checked the record's maximum and accepted 451, which its own
+refusal test caught before anything was written.
+
+**Calibration**: applied to the Harmony 650's region read from before section 283's write, with the
+Denon set to 90, the editor's output is
+byte for byte the region the 650 held after section 283's write, which was made by a script that was
+not kept. On the 700 the edit is two bytes: the delay at flash `0x6C652`, base slot 13 entry 79, a
+wide variable above `narrow` 62, and the trailer checksum's low byte at `0x13554A`. Both offsets are
+even from the container's base, so the checksum, an XOR of little endian words, has to move by exactly
+what the delay moved by, and it does: `0x3C ^ 0x5A` and `0x6B ^ 0x0D` are both `0x66`. Both bytes
+came out of this project's editor, so that is a check of its own checksum arithmetic and not an
+independent closure.
+
+### The writes
+
+Each went through the whole sequence, section 299: the identity read off the unit matched `h700`; a
+dry run compared both blocks to be erased with the lab's region read and found them equal, except
+that for the revert's completing run one of them held the erased flash a stopped run had left, which
+the writer recognised; then the cache drop, the two erases at `0x060000` and `0x130000` each with
+both neighbours read before and after, 21 transfers per block, the whole configuration read back identical to the file, and the
+restart. The first erase is not the configuration's first block, so the drop's flag was spent there and
+the settings store was not consulted, section 282.
+
+A region read of `0x120000` bytes from `0x030000` after the raise differs from the one before it in
+those two bytes and nowhere else, and the read after the revert is byte for byte the read before the
+raise. **The build timestamp was deliberately not restamped**, as in section 283, because
+`set-delay.ts` exists to make a change whose only difference is the one asked for; so this is not a
+save, and the clock the remote showed after each restart was not observed.
+
+**Two reads stopped out of sequence**, both on this unit and neither during a write report. The
+revert's first dry run stopped comparing `0x130000`, `expected 0x56, got 0x78 after 310 bytes`, and
+the rerun passed. The revert's first commit stopped after erasing `0x060000` and reading it back as all
+ones, on the next read, which in the writer's order is the re-read of the neighbour below,
+`expected 0x33, got 0x77 after 1116 bytes`. The rerun recognised that block as erased with nothing
+written, sent its own cache drop, rewrote both blocks and completed, and the region read after it is
+the one quoted above. **Both gaps are whole chunks**, two and four, by section 223's arithmetic, the
+sequence advancing by `0x11` per chunk; section 223 traced that shape on the spare Harmony One to the
+host's USB library discarding reports while its reader is held up, and sections 278 and 294 met it
+again at eleven chunks each. That fits here and was not reproduced on this unit, and what held the
+reader up is not known. The journal of the stopped run ends on the erase's own check: the error went
+to the terminal and not into the journal, so the journal does not say why its run stopped.
+
+### What the remote did
+
+The remote runs no application while it is on the cable, so each test ran off it, between the writes:
+Off, then TV kijken, then Off. **Two clocks time it, and they disagree in ways worth stating.** The
+bench stamps each frame with the computer's clock when the receiver's listener reports it, which is
+after the frame has ended and comes in bursts: the television's power code and its repeat arrived 22
+milliseconds apart. The receiver's own clock is the listener's frame durations plus the silences it
+reports between frames, chained from the first frame of a run, and it puts that same pair 106.8
+apart, close to the 108 milliseconds at which an NEC style code repeats, which is the shape these
+frames have. Over each whole run, 17 to 19 seconds, the receiver's clock comes out 0.6 to 0.7% longer
+than the computer's.
+
+The Denon frame timed is the first one heard from it, the 700's Denon code 2, which is what the
+Denon's power on list sends; the television's is its `PowerOn`, code 4.
+
+| run | Denon on to Denon input, computer | the same, receiver | television on to input, computer | the same, receiver |
+|---|---|---|---|---|
+| before, Denon 60 tenths | 6.651 s | 6.593 s | 5.405 s | 5.414 s |
+| after the raise, 90 tenths | 9.646 s | 9.615 s | 5.416 s | 5.421 s |
+| after the revert, 60 tenths | 6.650 s | 6.595 s | 5.403 s | 5.418 s |
+
+**The Denon's gap moved by three seconds up and three down, for 3.0 written**: 2.995 and 2.996 on the
+computer's clock, 3.021 and 3.019 on the receiver's, which is the receiver's 0.7% over three seconds.
+The television's, whose delay of 50 tenths nobody touched, moved by at most 13 milliseconds on either
+clock. So on this unit the stored setting is what the remote waits on, and a new value is in force
+straight after the writer's restart, in both directions, without a battery pull. That is section
+283's result on the 650 reached by a second route: there the variable was read in the remote's
+memory, here the remote's behaviour was heard. The computer's clock bursts by tens of milliseconds, so
+a difference of a few milliseconds is below what either figure can resolve.
+
+**Neither gap equals its stored delay, and the excess is not explained.** In the first run, on the
+receiver's clock and measured from the start of each power code, the Denon's exceeds 6.0 seconds by
+593 milliseconds and the television's exceeds 5.0 by 414. Measured from the end of each power code,
+the Denon's heard with five repeats and the television's with one, they still exceed it by 237 and
+295. So the repeats do not account for it, and the difference between runs, where the excess
+cancels, is what this finding rests on.
+
+One further run was started and stopped before any step, and is in the lab unregistered.
+
+### Scope, decision 16
+
+Arch 14 on the Harmony 700's 2.8, one device's delay, both directions, measured by infrared; the Harmony
+650 on 0.2 by memory reads, section 283. The Harmony 600 is not checked: it has no region read
+registered, so the writer refuses it, `todo.md` L6. Arch 12 (Harmony One) keeps the delay inline
+and was measured by section 236; arch 9 (Harmony 525) is not checked.
+
+### Sources checked before the work
+
+Sections 223, 234, 235, 236, 282, 283, 288, 299 and 300, the 650's region reads, the lab's reads of
+this unit, and the bench's monitor log of the day, for the receiver's clock. Logitech's client was not
+read: what a delay means came from their service in section 235, and the write sequence is this
+project's own, `write-config.ts` having been run before on two units, the spare Harmony One and the
+Harmony 650.
+
+### Falsification
+
+A Denon gap after the raise that is not about three seconds longer than before it, a television gap
+that moves with it, or a region read after the revert that differs from the one before the raise.
+
+### Where it lands
+
+* `packages/codec/src/edit.ts`: `setPowerOnDelayVariable`, with
+  `packages/codec/test/edit.test.ts` holding the 650 calibration and the refusals.
+* `packages/codec/bin/set-delay.ts` picks the editor by where the device holds its delay.
+* `packages/corpus/bin/write-config.ts`: the Harmony 700's compare bases are the region read before
+  the raise and the one after it.
+* `packages/bench/irtests/700-denon-delay.json`: the test that was run.
+* `tests/test_arch14_write_target.py`: the region reads, the checksum's consistency, the record's
+  maximum, both writes' journals and the stopped one's, the three runs' gaps on both clocks, and the
+  receiver's clock against a repeat.

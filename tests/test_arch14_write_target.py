@@ -19,6 +19,8 @@ under its own record, so what this establishes now is that the check can tell th
 what keeps a write meant for one off the other.
 """
 
+import datetime
+import json
 import os
 import pathlib
 import re
@@ -941,6 +943,149 @@ class TheHarmony700sFirstBlockWentBackUnchanged(unittest.TestCase):
         self.assertEqual(int(writes[0][1], 16), self.REGION)
         # And nothing else was sent: no drop and no restart.
         self.assertNotRegex(self.log, r'(?i)invalidat|restart|reset|drop')
+
+
+class TheHarmony700sDelayWriteWasHeardAndWentBack(unittest.TestCase):
+    """Section 301: the Denon's power on delay on the Harmony 700, 60 tenths to 90 and back.
+
+    Two ends with nothing in common. The region reads say what the flash holds: two bytes moved
+    and then moved back. The infrared runs, timed by a receiver on the bench while the remote was
+    off the cable, say what the remote did with it: the gap between the Denon switching on and its
+    input command grew by three seconds and shrank by three, while the television's own gap, whose
+    delay nobody touched, stayed where it was.
+    """
+
+    REGION = 0x030000
+    RECORD = 0x6C652
+    TRAILER = 0x13554A
+
+    def test_the_raise_moved_the_delay_and_the_trailer_and_the_revert_put_both_back(self):
+        lab.require('h700_after_rehearsal_region', 'h700_delay90_region', 'h700_delay60_restored_region')
+        before = lab.load('h700_after_rehearsal_region')
+        raised = lab.load('h700_delay90_region')
+        restored = lab.load('h700_delay60_restored_region')
+        self.assertEqual(len(raised), len(before))
+        moved = [self.REGION + i for i, (a, b) in enumerate(zip(before, raised)) if a != b]
+        self.assertEqual(moved, [self.RECORD, self.TRAILER])
+        at, end = self.RECORD - self.REGION, self.TRAILER - self.REGION
+        self.assertEqual((before[at] | before[at + 1] << 8, raised[at] | raised[at + 1] << 8), (60, 90))
+        # The closure: the trailer checksum is an XOR of little endian words, and both offsets are
+        # even from the container's base, so the checksum's low byte has to move by exactly what the
+        # delay's low byte moved by. Two fields, so two ends.
+        self.assertEqual(at % 2, end % 2)
+        self.assertEqual(before[end] ^ raised[end], before[at] ^ raised[at])
+        self.assertEqual(restored, before)
+
+    def test_the_byte_is_a_wide_state_variable_whose_stated_maximum_is_65277(self):
+        # So the 0 to 450 tenths a delay can take come from the device's 451 case table and not from
+        # the record; the refusal past 450 is tested in packages/codec/test/edit.test.ts.
+        lab.require('h700_delay90_region')
+        from harmony import gspm
+        region = lab.load('h700_delay90_region')
+        table = gspm.parse(region).state_table()
+        index = table.entries.index(self.RECORD)
+        self.assertEqual((index, table.narrow, table.wide), (79, 62, 23))
+        self.assertFalse(table.is_narrow(index))
+        at = self.RECORD - self.REGION
+        self.assertEqual(region[at + 2] | region[at + 3] << 8, 65277)
+
+    def test_both_writes_ran_the_whole_sequence_and_the_stopped_one_ended_after_an_erase(self):
+        names = ('h700_delay90_write_log', 'h700_delay60_write_log', 'h700_delay60_stopped_log')
+        lab.require(*names)
+        raised, restored, stopped = (lab.load(name).decode('utf-8') for name in names)
+        for log in (raised, restored):
+            for line in ('which matches the recorded h700',
+                         'dropping the cached region descriptors',
+                         'erasing 0x60000', 'erasing 0x130000',
+                         'the whole configuration reads back byte for byte identical to the file',
+                         'the restart is sent'):
+                self.assertIn(line, log)
+            self.assertEqual(log.count('the erase stayed inside its own block, measured on both sides'), 2)
+            writes = re.findall(r'^writing (\d+) bytes at 0x([0-9a-f]+)$', log, re.M)
+            self.assertEqual(len(writes), 42)
+            self.assertEqual(sum(int(n) for n, _ in writes), 0x20000)
+        # The rerun saw what the stopped run left: the first block erased, and the second untouched.
+        self.assertIn('0x60000 holds erased flash, so an earlier run erased it and wrote nothing', restored)
+        # The journal of the run that stopped ends on the erase's own check. The read that failed was
+        # the neighbour check after it, and its error went to the terminal and not to this file.
+        self.assertTrue(stopped.rstrip().endswith('erased, and the block reads back as all ones'))
+        self.assertNotIn('writing ', stopped)
+
+    @staticmethod
+    def _press(run, device, command):
+        """The first press in the activity's step that matches the 700's own code of `device`.
+
+        A Denon power code has no catalogue name, so `command` None picks the press matching the
+        device under no command name: code 2, which is what the Denon's power on list sends.
+        """
+        return next(p for p in run['steps'][1]['presses']
+                    if any(m['config'] == 'h700_28_config_region' and m['device'] == device
+                           and m.get('command') == command for m in p['frame']['matches']))
+
+    @staticmethod
+    def _receiver_clock(monitor):
+        """Each frame's start in microseconds on the receiver's own clock, by sequence number.
+
+        The listener reports a frame's durations and then the silence before the next one, so a start
+        is the previous start plus the previous frame's length plus that silence. The chain restarts
+        at a frame with no silence before it, which only the first frame of a session has.
+        """
+        starts, at, previous = {}, None, None
+        for line in monitor.decode('utf-8').splitlines():
+            frame = json.loads(line)
+            if 'seq' not in frame:
+                continue
+            if at is None or frame.get('gapUs') is None:
+                at = 0
+            else:
+                at += sum(p['us'] for p in previous['pulses']) + frame['gapUs']
+            starts[frame['seq']] = at
+            previous = frame
+        return starts
+
+    def test_the_denon_gap_moved_by_the_three_seconds_written_and_the_television_s_did_not(self):
+        names = ('h700_delay_ir_before', 'h700_delay_ir_after', 'h700_delay_ir_restored')
+        lab.require(*names, 'h700_delay_ir_monitor')
+        runs = [json.loads(lab.load(name)) for name in names]
+        rx = self._receiver_clock(lab.load('h700_delay_ir_monitor'))
+        pairs = {'denon': ('Denon', None, 'InputCbl/Sat'), 'tv': ('TV', 'PowerOn', 'InputHdmi1')}
+        host, receiver = {}, {}
+        for key, (device, first, then) in pairs.items():
+            host[key], receiver[key] = [], []
+            for run in runs:
+                start, end = self._press(run, device, first), self._press(run, device, then)
+                host[key].append(end['atMs'] - start['atMs'])
+                receiver[key].append(rx[end['frame']['seq']] - rx[start['frame']['seq']])
+        for run in runs:
+            self.assertEqual(run['name'], "Harmony 700, the Denon's power on delay")
+            self.assertTrue(all(step['reached'] for step in run['steps']))
+            self.assertEqual([v['ok'] for v in run['steps'][1]['verdicts']], [True, True])
+        # The computer's clock in milliseconds, which the page shows, and the receiver's in
+        # microseconds, which the log can rebuild.
+        self.assertEqual(host, {'denon': [6651, 9646, 6650], 'tv': [5405, 5416, 5403]})
+        self.assertEqual(receiver, {'denon': [6593454, 9614538, 6595493], 'tv': [5413629, 5421314, 5417609]})
+        # The stored change is 30 tenths each way. The computer's clock is late by a burst of tens of
+        # milliseconds and the receiver's runs 0.6 to 0.7% long against it, so the band is the two
+        # instruments and not a tolerance on the remote.
+        for clock, unit in ((host, 1), (receiver, 1000)):
+            denon, tv = clock['denon'], clock['tv']
+            self.assertLess(abs((denon[1] - denon[0]) - 3000 * unit), 30 * unit)
+            self.assertLess(abs((denon[1] - denon[2]) - 3000 * unit), 30 * unit)
+            self.assertLess(max(tv) - min(tv), 20 * unit)
+
+    def test_the_receiver_s_clock_spaces_a_repeat_as_the_family_does_and_the_computer_s_does_not(self):
+        # The calibration for preferring the receiver's clock within a run: the television's power code
+        # and its repeat, about 108 ms apart in the family it belongs to.
+        lab.require('h700_delay_ir_before', 'h700_delay_ir_monitor')
+        monitor = lab.load('h700_delay_ir_monitor')
+        rx = self._receiver_clock(monitor)
+        frames = {f['seq']: f for f in map(json.loads, monitor.decode('utf-8').splitlines()) if 'seq' in f}
+        power = self._press(json.loads(lab.load('h700_delay_ir_before')), 'TV', 'PowerOn')['frame']['seq']
+        repeat = power + 1
+        self.assertEqual(frames[repeat]['repeatOf'], power)
+        self.assertEqual(rx[repeat] - rx[power], 106772)
+        host = lambda seq: datetime.datetime.fromisoformat(frames[seq]['at'].replace('Z', '+00:00'))
+        self.assertEqual(round((host(repeat) - host(power)).total_seconds() * 1000), 22)
 
 if __name__ == '__main__':
     unittest.main()

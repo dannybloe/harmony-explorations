@@ -160,12 +160,20 @@ const H650_DUMPS = new Set([
 ]);
 
 /**
- * The Harmony 600's and the Harmony 700's region reads, empty until each unit's first one is read and
- * registered. Danny's decision of 29 September 2026 made both writable, and an empty list is what
- * keeps either from being written before the lab holds bytes to restore it from.
+ * The Harmony 600's and the Harmony 700's region reads. Danny's decision of 29 September 2026 made
+ * both writable, and an empty list is what keeps a unit from being written before the lab holds bytes
+ * to restore it from, so the 600's stays empty until its first region is read and registered.
  */
 const H600_DUMPS = new Set<string>([]);
-const H700_DUMPS = new Set<string>([]);
+const H700_DUMPS = new Set<string>([
+  // Read straight after section 300 put block 0x030000 back unchanged: the 2.8 configuration, the
+  // whole region to 0x150000, identical to the read before that rehearsal. The compare base for the
+  // 700's first configuration write.
+  'h700_after_rehearsal_region',
+  // After the 700's first real write, the Denon's power on delay raised from 60 to 90 tenths: the two
+  // bytes the file changed and nothing else. The compare base for putting it back.
+  'h700_delay90_region',
+]);
 
 /** A remote this may run against, per architecture read off the device. */
 interface Target {
@@ -198,8 +206,7 @@ const TARGETS: Readonly<Record<number, readonly Target[]>> = {
     // The same build as the 650, `600-0.2-code-base0x9000-COMPLETE.bin`, read off this unit.
     { model: 'the Harmony 600', unitLabel: 'h600', dumps: H600_DUMPS, sequenceReadOn: ['0.2'] },
     // 2.8, which it runs since section 297: the drop is read in section 299 and the restart in 97.
-    // Its dumps here are still none, so this writer refuses it until one is registered; the
-    // rehearsal has its own, section 300.
+    // Its first configuration change, a power on delay raised and put back, is section 301.
     { model: 'the Harmony 700', unitLabel: 'h700', dumps: H700_DUMPS, sequenceReadOn: ['2.8'] },
   ],
 };

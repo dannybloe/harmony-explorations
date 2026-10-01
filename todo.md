@@ -140,7 +140,7 @@ After 3 produces something.
   - [ ] Record its identity as `h600` with `read-identity.ts --record` and read its whole configuration region into the lab
   - [ ] Write one block back unchanged with `rehearse-block.ts`
   - [ ] A real write with `write-config.ts`, whose cache drop and restart are read on the 600's own 0.2 build (section 282)
-- [ ] L7 The Harmony 700 as a write target, the same decision, once it is on the bench
+- [x] L7 The Harmony 700 as a write target, the same decision, once it is on the bench
   - [x] Read its identity, its firmware and its configuration, read only; the configuration is also the third case 1.4's `deviceModeMaps` item waits for
   - [x] It arrived stuck in safe mode with one page of its application erased, and was repaired by making it reinstall its own staged copy, `reinstall-firmware.ts` (section 295)
   - [x] Taken from firmware 2.5 to 2.8 by staging Logitech's image and letting it install itself, decision 18 (section 297)
@@ -148,7 +148,8 @@ After 3 produces something.
   - [x] Read the 2.8 application's status byte routine, `0x1AB96`, and the 2.5 restart, before staging on it from application mode again (section 298)
   - [x] Record its identity as `h700` and read its whole configuration region
   - [x] Write one block back unchanged with `rehearse-block.ts` (section 300)
-  - [ ] A real write with `write-config.ts`
+  - [x] A real write with `write-config.ts`: the Denon's power on delay raised and put back, heard by the bench's infrared receiver (section 301)
+- [ ] L8 Flash reads stop out of sequence now and then in a write run, two and four whole chunks on the Harmony 700 and eleven on the 650 and the spare Harmony One, which is section 223's host side drop; what holds the reader up is open, and the writer's journal does not record the error that stopped it (section 301)
 
 ---
 

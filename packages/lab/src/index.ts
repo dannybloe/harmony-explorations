@@ -195,6 +195,22 @@ export const IMAGES: Readonly<Record<string, string>> = {
   h700_after_rehearsal_region: '20260929T1923Z-h700-after-rehearsal-config-region-region.bin',
   // And the rehearsal's own output for that write, which is the only record that it erased.
   h700_rehearsal_log: '20260929T1922Z-h700-block-030000-rehearsal-run.log',
+  // The same region after the 700's first real configuration write, the Denon's power on delay from
+  // 60 to 90 tenths: two bytes differ from the read above. The compare base for putting it back.
+  h700_delay90_region: '20261001T0758Z-h700-delay90-region.bin',
+  // The 700's Denon power on delay write, section 301: the writer's own output for the raise to 90
+  // tenths, for the revert's first attempt that stopped on a read after its first erase, and for
+  // the rerun that completed it; the region read after the revert, byte for byte the read before
+  // the raise; and the three infrared test runs, before, after and restored.
+  h700_delay90_write_log: '20261001T0756Z-h700-delay90-write-run.log',
+  h700_delay60_stopped_log: '20261001T0810Z-h700-delay60-restore-stopped-run.log',
+  h700_delay60_write_log: '20261001T0811Z-h700-delay60-restore-write-run.log',
+  h700_delay60_restored_region: '20261001T0813Z-h700-delay60-restored-region.bin',
+  h700_delay_ir_before: '20261001T073229Z-ir-test-harmony-700-the-denon-s-power-on-delay.json',
+  h700_delay_ir_after: '20261001T080353Z-ir-test-harmony-700-the-denon-s-power-on-delay.json',
+  h700_delay_ir_restored: '20261001T081524Z-ir-test-harmony-700-the-denon-s-power-on-delay.json',
+  // The bench's monitor log of that day, every frame with the receiver's own durations and gaps.
+  h700_delay_ir_monitor: '20261001T0625Z-ir-monitor.jsonl',
   // The 650's internal page 0xFE, whose safe mode image carries the same install routine.
   h650_internal_fe: '20260927T0840Z-h650-internal-fe-region.bin',
   // Three snapshots of the 650's state variables across an activity and a bare restart, section 283.
@@ -550,6 +566,10 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
     'h700_28_config_region',
     // And after its first block was written back unchanged, section 300.
     'h700_after_rehearsal_region',
+    // And after its Denon's power on delay was raised to 90 tenths.
+    'h700_delay90_region',
+    // And after it was put back, section 301.
+    'h700_delay60_restored_region',
     // External flash of the bench Harmony 700 from 0x000000, kept for the staged application at its
     // start. The container at 0x020000 is byte for byte `h700_gspm`, the embedded config the 2.8
     // package carries as its region 3, so counting it would count that one twice. Section 295.

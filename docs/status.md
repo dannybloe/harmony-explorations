@@ -564,7 +564,7 @@ finding.
 
 `todo.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 300<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 301<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and flash has been written on four units**, the first in section 222:
@@ -574,7 +574,8 @@ performed" long after it stopped being true; the spare Harmony One, the Harmony 
 have all been written since, and a Harmony 700 was sent one reinstall request, section 295, which
 writes no flash from the host, and then had Logitech's 2.8 image staged into its external flash and
 installed by its own safe mode image, section 297, which is the one write outside a configuration
-region, decision 18, and then had one configuration block written back unchanged, section 300. `GET_VERSION`, `READ_MISC`
+region, decision 18, and then had one configuration block written back unchanged, section 300, and its Denon's power on delay
+raised and put back, section 301, the change heard by an infrared receiver both ways. `GET_VERSION`, `READ_MISC`
 and `READ_FLASH` run from our own host code on both bench architectures, a config read matches each
 unit's lab dump byte for byte, and the four remotes this library can open are fully read and verified
 against their backups: user config, application firmware, safe mode, and the internal pages where the architecture
@@ -833,6 +834,14 @@ figures common to both carry `fact:` markers, so `make facts` moves every copy t
 cannot drift apart; what a reader should not expect is two independent statements of one measurement.
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
+
+**A changed setting on the Harmony 700 is heard on the air, section 301.** How long the remote waits
+after switching the Denon on was raised from six seconds to nine, written to the remote, and put back.
+An infrared receiver on the bench timed the activity each time: from the Denon switching on to its
+input command took about 6.6 seconds, then 9.6, then 6.6 again, three seconds each way, while the
+television's gap, whose wait nobody touched, stayed at 5.4 seconds throughout. It is the Harmony 700's
+first written configuration change, and the first change on any remote whose effect was timed by an
+infrared receiver; earlier ones were watched on the bench or read out of the remote's memory.
 
 **A composed activity on a Harmony 600, 650 or 700 now gets a device list of its own, section 294.**
 Pressing the key under Devices during an activity shows the list of devices with that activity's own
