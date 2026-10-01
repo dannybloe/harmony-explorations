@@ -1931,6 +1931,11 @@ node packages/usb/bin/read-file.ts --file <path> [--product 0xc12b] [--device <p
                        other. A path off that list needs `HARMONY_FILE_PATH_EXPERIMENT=1`, because on
                        this protocol a path can be an action. **What it prints may identify a unit**,
                        so the output stays on a terminal. Opens the device.
+node packages/usb/bin/read-settings.ts [--product 0xc122] [--compare <lab page ff dump>]
+                       read the saved delays out of a Harmony 600, 650 or 700's settings store,
+                       forty one `0x13 0xB2` reads, and compare them with a lab dump of the same
+                       unit's internal page `0xFF`. Section 304. All reads; a reply in any shape but
+                       the one the firmware states stops the run with its bytes. Opens the device.
 node packages/corpus/bin/read-config.ts --label <name> [--product 0xc121]
                        reads the whole config off a remote and files it in the lab.
                        Opens the device, unlike the two above, so reach for it deliberately.

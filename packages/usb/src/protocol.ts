@@ -63,6 +63,39 @@ export const READ_ONLY_COMMANDS: ReadonlySet<number> = new Set([
  */
 export const SETTINGS_READ = 0xb2;
 
+/** The highest setting the store will look up: both of its routines refuse `0xFF` and above. */
+export const SETTING_MAX = 0xfe;
+
+/** `0x13 0xB2 0x00 setting`: read one setting of the arch 14 settings store. Section 304. */
+export function settingsReadRequest(setting: number): Uint8Array {
+  if (!Number.isInteger(setting) || setting < 0 || setting > SETTING_MAX) {
+    // Refused rather than sent, because the remote answers a refused lookup with `0xFF`, which is
+    // also what an empty slot holds: the reply could not say which one happened.
+    throw new ProtocolError(`setting ${setting} is outside 0 to 0x${SETTING_MAX.toString(16)}`);
+  }
+  return encodeRequest(GET_VERSION, [SETTINGS_READ, 0x00, setting]);
+}
+
+/**
+ * The reply to a settings read, as the 0.2 firmware builds it, section 304: `0xF0 0x11 0xB2 status
+ * 0x01 0x01 value`. **Read off the firmware and not yet seen on a remote**, so this is strict: a
+ * reply that differs anywhere in its frame is an error carrying the bytes, rather than a value taken
+ * from whichever position looked plausible. `decodeReply` would read it as a bare acknowledgement of
+ * a command `0x11` and drop the rest, which is why it has its own reader.
+ */
+export const SETTINGS_REPLY_FRAME: readonly number[] = [0xf0, 0x11, SETTINGS_READ];
+/** The status byte the firmware writes when its error flag is clear; 1 when it is set. */
+export const SETTINGS_REPLY_OK = 0x04;
+
+export function decodeSettingsReply(report: Uint8Array): number {
+  const head = [...report.subarray(0, 7)];
+  const shown = head.map((b) => b.toString(16).padStart(2, '0')).join(' ');
+  const framed = SETTINGS_REPLY_FRAME.every((b, i) => report[i] === b) && report[4] === 0x01 && report[5] === 0x01;
+  if (!framed) throw new ProtocolError(`not a settings read reply: ${shown}`);
+  if (report[3] !== SETTINGS_REPLY_OK) throw new ProtocolError(`the settings read reports status ${report[3]}: ${shown}`);
+  return report[6] as number;
+}
+
 /**
  * Whether a whole report only reads, which is narrower than its command being on the list above.
  *

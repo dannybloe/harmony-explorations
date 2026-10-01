@@ -34,6 +34,8 @@ import {
   UPDATE_STATUS_NEW,
   UPDATE_STATUS_NONE,
   readVersion,
+  decodeSettingsReply,
+  settingsReadRequest,
   softwareTypeFromVersion,
   updateStatusReadRequest,
   WRITE_FLASH,
@@ -178,12 +180,17 @@ export class HarmonyRemote {
   }
 
   private async exchange(request: Uint8Array): Promise<Reply> {
+    return decodeReply(await this.exchangeRaw(request));
+  }
+
+  /** Send a request and return the first report that comes back, undecoded. */
+  private async exchangeRaw(request: Uint8Array): Promise<Uint8Array> {
     await this.send(request);
     for (let poll = 0; poll < this.idlePolls; poll += 1) {
       const report = await this.transport.read(this.timeoutMs);
       if (report !== undefined) {
         this.answeredOnce = true;
-        return decodeReply(report);
+        return report;
       }
     }
     throw new RemoteError(
@@ -810,6 +817,28 @@ export class HarmonyRemote {
   async resetDevice(p: WritePermission): Promise<void> {
     assertResetAllowed(p);
     await this.send(escapeRequest(ESCAPE_RESET));
+  }
+
+  /**
+   * One setting of the arch 14 settings store, `0x13 0xB2 0x00 setting`, which is a read. Section 304.
+   *
+   * A saved delay is four of these, section 303: `latestSettings` and `delaySlots` in `settings.ts`
+   * read the same thing out of a lab dump, so the two can be compared. Refused on any other
+   * architecture, since on the Harmony One the same report is a version request with stray bytes and
+   * elsewhere it is unread.
+   */
+  async readSetting(setting: number): Promise<number> {
+    if (this.architecture !== 14) {
+      throw new RemoteError(
+        `the settings store is read on arch 14 only, and this remote is ${this.architecture ?? 'unpinned'}`,
+      );
+    }
+    const report = await this.exchangeRaw(settingsReadRequest(setting));
+    try {
+      return decodeSettingsReply(report);
+    } catch (error) {
+      throw new RemoteError(`setting 0x${setting.toString(16)}: ${(error as Error).message}`);
+    }
   }
 
   /**

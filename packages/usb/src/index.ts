@@ -20,3 +20,4 @@ export * from './models.ts';
 // The second protocol, for the family openHarmony refuses. Read paths only, section 198.
 export * from './filepipe.ts';
 export * from './firmware.ts';
+export * from './settings.ts';
