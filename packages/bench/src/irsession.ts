@@ -117,10 +117,11 @@ export function judge(step: Pick<RunStep, 'expect' | 'presses'>): Verdict[] {
   for (const want of step.expect) {
     const devices = devicesOf(want);
     const label = labelOf(want);
-    const fits = (press: RunPress) => !press.frame.bare && namesOf(press.frame).some((one) =>
+    const names = (press: RunPress) => namesOf(press.frame).some((one) =>
       devices.includes(one.device.toLowerCase()) && (want.command !== undefined
         ? one.command?.toLowerCase() === want.command.toLowerCase()
         : one.config === want.config && one.code === want.code));
+    const fits = (press: RunPress) => !press.frame.bare && names(press);
     let found = 0;
     let firstAt: RunPress | undefined;
     for (let i = cursor; i < step.presses.length && found < (want.times ?? 1); i += 1) {
@@ -130,7 +131,13 @@ export function judge(step: Pick<RunStep, 'expect' | 'presses'>): Verdict[] {
       cursor = i + 1;
     }
     if (found < (want.times ?? 1)) {
-      out.push({ expected: label, ok: false, detail: `heard ${found} of ${want.times ?? 1}` });
+      // Still a failure, since a trailing frame alone proves nothing for a family whose trailing frame
+      // every code shares. But saying it was there tells a person at the bench that the command most
+      // likely went out and its opening frame was not recognised, which on the Harmony 600's KPN box
+      // was a receiver merging the first two flashes into one, rather than that nothing was sent.
+      const trailing = step.presses.slice(cursor).find((one) => one.frame.bare && names(one));
+      const also = trailing === undefined ? '' : `, only a trailing frame at ${(trailing.atMs / 1000).toFixed(2)} s`;
+      out.push({ expected: label, ok: false, detail: `heard ${found} of ${want.times ?? 1}${also}` });
       continue;
     }
     let ok = true;

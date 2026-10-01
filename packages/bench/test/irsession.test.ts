@@ -121,9 +121,11 @@ test('a bare repeat never counts as the command it might follow', () => {
   // A held key's trailing frame heard alone matches every code of its family, so it proves nothing.
   const verdicts = judge({
     expect: [{ device: 'TV', command: 'VolumeUp' }],
-    presses: [press(0, 'TV', 'VolumeUp', { bare: true })],
+    presses: [press(1500, 'TV', 'VolumeUp', { bare: true })],
   });
   assert.equal(verdicts[0]!.ok, false);
+  // It is named in the verdict, so a missed opening frame does not read as nothing sent.
+  assert.equal(verdicts[0]!.detail, 'heard 0 of 1, only a trailing frame at 1.50 s');
 });
 
 test('a test run puts each press in the step that was open, attaches repeats, and leaves the run in the lab', () => {
