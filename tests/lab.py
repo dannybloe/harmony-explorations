@@ -252,6 +252,11 @@ IMAGES = {
     'h600_delay_ir_kpn45_heard': '20261001T140541Z-ir-test-harmony-600-the-kpn-box-s-power-on-delay.json',
     'h600_ram_after_kpn45_second': '20261001T1440Z-h600-ram-e00-after-kpn45-second.txt',
     'h600_kpn15_second_restore_log': '20261001T1442Z-h600-kpn15-second-restore-write-run.log',
+    # The Harmony 650 programmed through MyHarmony with the same Panasonic television as the 600, its whole
+    # configuration read over USB, and that account record's power settings for every device on it,
+    # section 305: the television's PowerOn and PowerOff held for 1000 ms and no other device's held.
+    'h650_panasonic_config': '20261001T1434Z-h650-panasonic-config.bin',
+    'h650_panasonic_account_features': '20261001-h650-account-power-features.json',
     # The same region read after block 0x030000 was written back unchanged, section 300.
     'h700_after_rehearsal_region': '20260929T1923Z-h700-after-rehearsal-config-region-region.bin',
     # And the rehearsal's own output for that write, which is the only record that it erased.
@@ -631,6 +636,10 @@ PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_confi
                       'h700_delay90_region',
                       # And after it was put back, section 301.
                       'h700_delay60_restored_region',
+                      # The Harmony 650's configuration after the Panasonic television was added
+                      # through MyHarmony, section 305, out of the corpus for the reason
+                      # `h650_config_region` is: whether the 650 joins it is a decision of its own.
+                      'h650_panasonic_config',
                       # External flash of the bench Harmony 700 from 0x000000, kept for the staged
                       # application; its container at 0x020000 is byte for byte `h700_gspm`.
                       # Section 295.

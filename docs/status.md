@@ -854,6 +854,12 @@ remote holds the configuration's 1.5 seconds in memory where it held 1.0, so the
 bench test's gap grew by only a tenth of a second against the half second, which is not explained yet.
 With the configuration's delay then raised to 4.5 seconds, the gap grew by 3.01 seconds for the 3.0
 written, so the configuration's delay governs on that unit once nothing saved stands over it.
+The Panasonic television on that remote sends its power on and off codes seven times where every other
+code goes three times, and the account explains it: MyHarmony holds those two for one second, apparently
+by default, and seven
+copies of about 135 milliseconds fit in a second where eight do not. Predicted before the Harmony 650 was
+programmed with the same television, and the 650 came back with the same two codes at seven, word for
+word, and every other at three.
 
 **A changed setting on the Harmony 700 is heard on the air, section 301.** How long the remote waits
 after switching the Denon on was raised from six seconds to nine, written to the remote, and put back.

@@ -39904,7 +39904,7 @@ So on this unit the configuration's power on delay governs once no saved value s
 change large enough is heard in full. The 15 against 10 run's 0.104 seconds stays unexplained; the
 television's power code, sent seven times between the two KPN codes, is a candidate nobody has tested.
 
-### The television's seven copies, a prediction before the Harmony 650 is read
+### The television's seven copies, predicted before the Harmony 650 was read, and confirmed
 
 The television on this configuration is a Panasonic, identified 80 of 80 against one codeset in
 Logitech's catalogue, the TX-P42GT30E range. Of its 81 stored codes 79 hold 3 copies of the frame, which
@@ -39917,6 +39917,35 @@ model to the Harmony 650 through MyHarmony, in an activity, with its power setti
 **Prediction, written before that configuration is read: its `PowerOn` and `PowerOff` used by the
 activity hold 7 copies, and the rest 3**, which would make 7 the account's default for this device
 rather than a setting of the 600's account. If they hold 3, the 600's 7 is that account's own.
+
+**Confirmed.** The 650 was read whole over USB after the sync, 1016225 bytes. The television is its second device group,
+named `Panasonic_TV` by the configuration's own strings, 85 codes: two at 7 copies, codes 9 and 10, and
+83 at 3. The two are the 600's codes 49 and 42 **word for word**, so the same `PowerOff` and `PowerOn`
+blocks, and neither names a held block, so a press of either is the whole block. The LG television on
+the same remote, group 0, holds all 83 of its codes at 1 copy, its power codes included.
+
+**What the account says explains the number.** `UserFeatureManager/GetUserFeatures`, a read, for every
+device on the 650's account record: the television's power feature holds `PowerOn` and `PowerOff` as
+`IRPressAction`s with `Duration` **1000**, and none of the other seven power actions on that record,
+on four devices, states one, `null` on each; Kodi has no power actions. One copy of either code lasts
+134.6 ms and 136.4 ms, a frame and its gap, the blocks being 942306 and 954486 microseconds for seven,
+so seven fit in a second and an eighth would not. That is the closure, the count off the frames against
+the duration off the account, with nothing in common between the two. **The margin is thin**: without
+the gap after the last copy, an eighth `PowerOn` would take 1002.1 ms, 2.1 ms over. The archive states
+no power feature for any of its devices, so the account is the only source.
+
+**The 1000 looks supplied by the service rather than entered, unconfirmed.** On the 650's record the
+television's power feature has `Id` 0 and `DateModified` null, as the PlayStation's does, where the four
+features that were saved carry an id and a date. The other two records on the same login holding this
+model carry the same 1000: one unsaved in the same way, and one saved, its `PowerOnDelay` changed to
+8000, still holding 1000. The 600's own account record was not read, so its 7 is tied to a duration by
+the identical blocks and not by a capture.
+
+What it does not settle. Seven is consistent with the compiler sending as many copies as fit inside the
+duration and with any rule that lands between seven and eight, and one duration on one codeset cannot
+tell those apart. Three records on one login are one value seen three times rather than three
+samples. And the PlayStation's codes at 36 and 30
+copies stand with no duration stated, so a duration is not the only thing that raises a count.
 
 ### Scope, decision 16
 
@@ -39948,11 +39977,19 @@ a run that stopped; the code 4 path; the library treating only `0xFFFF` as an em
 firmware tests the high byte; the 650 identity cited over a narrower range than the one that matters;
 and the order of section 304's "the remote is what caught it".
 
+The television's seven copies had their own pair. The blind re-measure reproduced every count on both
+files, the identical blocks and the 1000 ms as the only duration stated. The sentence audit found the
+fit test comparing against a literal rather than the account's duration, the thin margin, an unfiled
+claim about the read, the six devices where Kodi has no power actions, the three records being one login
+and the 600's own record unread, and the unsaved feature as evidence the text had understated; all are
+corrected above.
+
 ### Falsification
 
 A successful write answering 4; a record landing anywhere but the first free one; a store read back that
 differs from the prediction; after a start, variable 67 holding anything but the configuration's 15; at
-45 tenths, a gap that does not move by the 3.0 seconds written.
+45 tenths, a gap that does not move by the 3.0 seconds written; a power code held for a stated duration
+whose stored copies overrun it, or leave room for another.
 
 ### Where it lands
 
@@ -39961,4 +39998,7 @@ differs from the prediction; after a start, variable 67 holding anything but the
   start the variable, the store and the gap.
 * `packages/usb/test/settings.test.ts`: the request, the reply, the prediction and its refusals, the rail
   in a subprocess with each flag shut and with both open, and the read back against the prediction.
+* `packages/codec/test/irframe.test.ts`: the television's two seven copy codes on the 650 and the 600,
+  word for word the same, every other code of it at three, the LG at one, and the 1000 ms on the
+  account's capture as the only duration any power action states.
 * `docs/usb-protocol.md`, `docs/config-format.md` and `CLAUDE.md`'s list of what has been written.

@@ -1733,3 +1733,83 @@ test('no record reads as both a pulse distance frame and a biphase one',
   assert.equal(pulse, 3838, 'the pulse distance population moved');
   assert.equal(both, 0, 'a record reads as both, so one of the two readers is too permissive');
 });
+
+/**
+ * A Panasonic television's power codes are sent as many times as fit in the hold its account states,
+ * section 305.
+ *
+ * On the Harmony 600 the television stores `PowerOn` and `PowerOff` at seven copies and its other codes
+ * at three, which is what Logitech's codeset states for every command. The Harmony 650 was then
+ * programmed through MyHarmony with the same model, and the prediction written before that configuration was read
+ * was seven for the two power codes and three for the rest. The account record behind the 650 is what
+ * explains it: its power feature holds `PowerOn` and `PowerOff` for 1000 ms, and none of the other
+ * seven power actions on that record, on four devices, states a hold; Kodi has none. One copy of either code lasts about 134.6 ms, so seven fit in a
+ * second and an eighth would not, which is the closure: the count read off the frames against the
+ * duration read off the account, two sources with nothing in common.
+ *
+ * What it does not settle: whether the compiler floors or merely stays under, since 1000 ms between
+ * seven and eight copies is consistent with both, and why the PlayStation's codes stand at 36 and 30
+ * with no hold stated. And whether 1000 ms is MyHarmony's default for this device or was set on the
+ * account is not something these bytes say.
+ */
+test('a Panasonic television sends its power codes as many times as fit in the 1000 ms its account holds them',
+  skipUnless('h650_panasonic_config', 'h650_panasonic_account_features', 'h600_kpn15_restored_region'), () => {
+    // The account: of every power action on the record exactly two state a duration, and both belong to
+    // the television, device 83914102, whose catalogue entry is 304807.
+    const features = JSON.parse(readFileSync(imagePath('h650_panasonic_account_features')!, 'utf8')) as {
+      GetUserFeaturesResult: { Key: { Value: number }; Value: { __type: string; [k: string]: unknown }[] }[];
+    };
+    type Action = { IRCommandName?: string; Duration: number | null };
+    const held: string[] = [];
+    for (const device of features.GetUserFeaturesResult) {
+      for (const feature of device.Value) {
+        if (!feature.__type.startsWith('PowerFeature')) continue;
+        for (const list of ['PowerOnActions', 'PowerOffActions', 'PowerToggleActions'] as const) {
+          for (const action of (feature[list] as Action[] | null) ?? []) {
+            if (action.Duration !== null) held.push(`${device.Key.Value} ${action.IRCommandName}=${action.Duration}`);
+          }
+        }
+      }
+    }
+    assert.equal(features.GetUserFeaturesResult.length, 6, 'six devices on the 650\'s account record');
+    assert.deepEqual(held.sort(), ['83914102 PowerOff=1000', '83914102 PowerOn=1000']);
+    const holdUs = 1000 * 1000;
+
+    const copiesOf = (c: ReturnType<typeof parse>, group: number) => irGroups(c)![group]!.addresses.map((record) => {
+      const [once, again] = irHeaderPointers(c, record);
+      const words = irBlockWords(c, once!)!;
+      return {
+        copies: blockCopies(words),
+        held: again ? blockCopies(irBlockWords(c, again)!) : 0,
+        us: words.reduce((sum, w) => sum + (w & 0x7fff), 0),
+        words,
+      };
+    });
+
+    // The 650: the television is its second group, 85 codes. Two at seven, every other at three.
+    const h650 = mustLoad('h650_panasonic_config');
+    const tv650 = copiesOf(h650, 1);
+    assert.equal(tv650.length, 85);
+    assert.deepEqual(tv650.flatMap((r, i) => (r.copies === 7 ? [i] : [])), [9, 10]);
+    assert.equal(tv650.filter((r) => r.copies === 3).length, 83);
+    // The two seven copy codes repeat nothing while held, so a press of them is the whole block.
+    assert.deepEqual([tv650[9]!.held, tv650[10]!.held], [0, 0]);
+    // The closure: how many whole copies of each code, its gap included, fit inside the hold the account
+    // states. Without the last gap an eighth copy of `PowerOn` would overrun by about 2 ms, so the
+    // margin is thin and the rule is one codeset's.
+    for (const r of [tv650[9]!, tv650[10]!]) assert.equal(Math.floor(holdUs / (r.us / r.copies)), r.copies);
+    assert.deepEqual([tv650[9]!.us, tv650[10]!.us], [954486, 942306]);
+
+    // The LG television on the same remote holds no power hold on the account, and its power codes are
+    // at one copy like all of its 83 codes.
+    const lg = copiesOf(h650, 0);
+    assert.equal(lg.length, 83);
+    assert.equal(lg.filter((r) => r.copies === 1).length, 83);
+
+    // The 600: the same two blocks, word for word, at codes 42 and 49 of its 81.
+    const tv600 = copiesOf(mustLoad('h600_kpn15_restored_region'), 0);
+    assert.equal(tv600.length, 81);
+    assert.deepEqual(tv600.flatMap((r, i) => (r.copies === 7 ? [i] : [])), [42, 49]);
+    assert.deepEqual(tv600[42]!.words, tv650[10]!.words);
+    assert.deepEqual(tv600[49]!.words, tv650[9]!.words);
+  });
