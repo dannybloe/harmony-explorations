@@ -39934,11 +39934,20 @@ the duration off the account, with nothing in common between the two. **The marg
 the gap after the last copy, an eighth `PowerOn` would take 1002.1 ms, 2.1 ms over. The archive states
 no power feature for any of its devices, so the account is the only source.
 
-**The 1000 looks supplied by the service rather than entered, unconfirmed.** On the 650's record the
+**The 1000 is the catalogue's, and Logitech's service hands it out.** On the 650's record the
 television's power feature has `Id` 0 and `DateModified` null, as the PlayStation's does, where the four
-features that were saved carry an id and a date. The other two records on the same login holding this
-model carry the same 1000: one unsaved in the same way, and one saved, its `PowerOnDelay` changed to
-8000, still holding 1000. The 600's own account record was not read, so its 7 is tied to a duration by
+features that were saved carry an id and a date; the other two records on the same login holding this
+model carry the same 1000, one unsaved in the same way and one saved with its `PowerOnDelay` changed to
+8000. That pointed at the catalogue and is now read off it: `UserFeatureManager/CopyFeaturesFromGlobalDevice`,
+called the way MyHarmony's add device flow calls it, device id 0 and the catalogue entry's id, returns the
+same power feature with `Duration` 1000 on `PowerOn` and `PowerOff`, `Id` 0 and an unpersisted device.
+The id it takes is **the archive's own `globalDeviceId`**, 219481 for this model, and the reply names
+version 4 of entry 304807, the id the account record carries; called with 304807 it is refused with a
+fault from `GetGlobalDevice`. It wrote nothing measurable: the account record's device list and the
+television's features read identical before and after both calls. MyHarmony's decompiled client sets no
+power action duration anywhere; its power settings page loads the actions from the service and saves them
+back unchanged. So the chain is catalogue, then account, then Logitech's compiler, and the remote only
+ever sees the seven copies. The 600's own account record was not read, so its 7 is tied to a duration by
 the identical blocks and not by a capture.
 
 What it does not settle. Seven is consistent with the compiler sending as many copies as fit inside the
@@ -39982,7 +39991,7 @@ files, the identical blocks and the 1000 ms as the only duration stated. The sen
 fit test comparing against a literal rather than the account's duration, the thin margin, an unfiled
 claim about the read, the six devices where Kodi has no power actions, the three records being one login
 and the 600's own record unread, and the unsaved feature as evidence the text had understated; all are
-corrected above.
+corrected above. The catalogue half was then measured rather than inferred, by the call above.
 
 ### Falsification
 
@@ -39999,6 +40008,7 @@ whose stored copies overrun it, or leave room for another.
 * `packages/usb/test/settings.test.ts`: the request, the reply, the prediction and its refusals, the rail
   in a subprocess with each flag shut and with both open, and the read back against the prediction.
 * `packages/codec/test/irframe.test.ts`: the television's two seven copy codes on the 650 and the 600,
-  word for word the same, every other code of it at three, the LG at one, and the 1000 ms on the
-  account's capture as the only duration any power action states.
+  word for word the same, every other code of it at three, the LG at one, the 1000 ms on the
+  account's capture as the only duration any power action states, and the same 1000 ms on the
+  catalogue's own entry.
 * `docs/usb-protocol.md`, `docs/config-format.md` and `CLAUDE.md`'s list of what has been written.

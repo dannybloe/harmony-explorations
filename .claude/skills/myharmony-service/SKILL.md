@@ -193,6 +193,11 @@ reasoning instead of querying.
   `make analyze`. **Retired as evidence for a rhythm** (section 160): it names families correctly
   for durations their compiler would never emit, and it is wrong about families outright (section
   162). Lab captured codes **may** be sent to it; that permission is standing, do not re-ask.
+* **A catalogue device's features**, power, inputs and the hold time of a power command, which the
+  third party archive does not carry: `UserFeatureManager/CopyFeaturesFromGlobalDevice` with
+  `deviceId` 0 and `globalDeviceVersionId.Value` set to the archive's own `globalDeviceId`. Measured
+  a read on 1 October 2026, section 305, with the account record identical before and after; the
+  version id an account record names is refused. `GetGlobalFeatures` answers access denied.
 * **Button maps**: `RemoteManager/GetButtonMaps` and the `ActivityButtonMap` records, which is
   where `reference/button-maps.md` came from, via the account that generated the calibration
   configs.

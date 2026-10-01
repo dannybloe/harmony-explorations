@@ -257,6 +257,8 @@ IMAGES = {
     # section 305: the television's PowerOn and PowerOff held for 1000 ms and no other device's held.
     'h650_panasonic_config': '20261001T1434Z-h650-panasonic-config.bin',
     'h650_panasonic_account_features': '20261001-h650-account-power-features.json',
+    # And the catalogue's own features for that model, copied the way MyHarmony's add device flow does.
+    'h650_panasonic_catalogue_features': 'CopyFeaturesFromGlobalDevice_219481.json',
     # The same region read after block 0x030000 was written back unchanged, section 300.
     'h700_after_rehearsal_region': '20260929T1923Z-h700-after-rehearsal-config-region-region.bin',
     # And the rehearsal's own output for that write, which is the only record that it erased.

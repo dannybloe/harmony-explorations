@@ -855,8 +855,8 @@ bench test's gap grew by only a tenth of a second against the half second, which
 With the configuration's delay then raised to 4.5 seconds, the gap grew by 3.01 seconds for the 3.0
 written, so the configuration's delay governs on that unit once nothing saved stands over it.
 The Panasonic television on that remote sends its power on and off codes seven times where every other
-code goes three times, and the account explains it: MyHarmony holds those two for one second, apparently
-by default, and seven
+code goes three times, and the account explains it: Logitech's catalogue holds those two for one second,
+which its service copies onto an account and its compiler turns into copies, and seven
 copies of about 135 milliseconds fit in a second where eight do not. Predicted before the Harmony 650 was
 programmed with the same television, and the 650 came back with the same two codes at seven, word for
 word, and every other at three.

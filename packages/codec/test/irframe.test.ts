@@ -1753,7 +1753,8 @@ test('no record reads as both a pulse distance frame and a biphase one',
  * account is not something these bytes say.
  */
 test('a Panasonic television sends its power codes as many times as fit in the 1000 ms its account holds them',
-  skipUnless('h650_panasonic_config', 'h650_panasonic_account_features', 'h600_kpn15_restored_region'), () => {
+  skipUnless('h650_panasonic_config', 'h650_panasonic_account_features', 'h650_panasonic_catalogue_features',
+    'h600_kpn15_restored_region'), () => {
     // The account: of every power action on the record exactly two state a duration, and both belong to
     // the television, device 83914102, whose catalogue entry is 304807.
     const features = JSON.parse(readFileSync(imagePath('h650_panasonic_account_features')!, 'utf8')) as {
@@ -1774,6 +1775,17 @@ test('a Panasonic television sends its power codes as many times as fit in the 1
     assert.equal(features.GetUserFeaturesResult.length, 6, 'six devices on the 650\'s account record');
     assert.deepEqual(held.sort(), ['83914102 PowerOff=1000', '83914102 PowerOn=1000']);
     const holdUs = 1000 * 1000;
+
+    // And the catalogue: the same two holds, copied off the model's entry with no device behind them, so
+    // the account's value is the catalogue's and not something entered.
+    const catalogue = JSON.parse(readFileSync(imagePath('h650_panasonic_catalogue_features')!, 'utf8')) as {
+      CopyFeaturesFromGlobalDeviceResult: { __type: string; [k: string]: unknown }[];
+    };
+    const power = catalogue.CopyFeaturesFromGlobalDeviceResult.filter((f) => f.__type.startsWith('PowerFeature'));
+    assert.equal(power.length, 1);
+    assert.deepEqual((['PowerOnActions', 'PowerOffActions'] as const).flatMap((list) =>
+      (power[0]![list] as Action[]).map((a) => `${a.IRCommandName}=${a.Duration}`)), ['PowerOn=1000', 'PowerOff=1000']);
+    assert.deepEqual(power[0]!['DeviceId'], { IsPersisted: false, Value: 0 });
 
     const copiesOf = (c: ReturnType<typeof parse>, group: number) => irGroups(c)![group]!.addresses.map((record) => {
       const [once, again] = irHeaderPointers(c, record);
