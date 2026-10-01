@@ -129,9 +129,8 @@ After 3 produces something.
 
 ## Loose ends, not part of a chapter
 
-- [ ] L1 **A sequence long enough to hang a remote has no refusal in the code.** The only rail on this
-      page with nothing behind it: no bound in `packages/codec`, no test, no section. Nothing composed
-      here may be written to a remote until it has a number and a refusal
+- [x] L1 A sequence long enough to hang a remote is refused: the action queue holds forty instructions,
+      and `assertQueueFits` in `packages/codec` bounds the peak depth, with its test (section 238)
 - [ ] L2 Excavate the lab: discovery is done, the reading phase is left, in tag order.
       Method and grid: [lab-excavation.md](docs/lab-excavation.md)
 - [ ] L3 `GET_VERSION` field 6 and field 9's accessor, the two fields of twelve with no reading
