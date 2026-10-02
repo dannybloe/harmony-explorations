@@ -40018,4 +40018,10 @@ whose stored copies overrun it, or leave room for another.
   word for word the same, every other code of it at three, the LG at one, the 1000 ms on the
   account's capture as the only duration any power action states, and the same 1000 ms on the
   catalogue's own entry.
+* `packages/codec/src/driving.ts` reads those rules out of the archive's version 2 for any device:
+  timing, power, inputs, channel entry and states, five step shapes as four kinds, refusing any field or
+  shape outside the set surveyed over all 276236 records. `packages/codec/test/driving.test.ts` compares
+  the television's record with both service replies field for field, and walks the whole archive with
+  exact counts: 3234 devices hold a power press for a stated time, 49 steps hold with no time, 14 of them
+  naming digits rather than a command.
 * `docs/usb-protocol.md`, `docs/config-format.md` and `CLAUDE.md`'s list of what has been written.

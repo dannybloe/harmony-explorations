@@ -440,8 +440,9 @@ class ATypeScriptSampleLoopStatesItsPopulation(unittest.TestCase):
         # 63 since `packages/bench/test/irmonitor.test.ts` and `irsession.test.ts`: the infrared
         # monitor and its test runner, fed by hand rather than by a receiver. 64 since
         # `packages/codec/test/settingsstore.test.ts`, section 303.
-        # 65 since `packages/usb/test/settings.test.ts`, section 304.
-        self.assertEqual(scanned, 65, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
+        # 65 since `packages/usb/test/settings.test.ts`, section 304, 66 since
+        # `packages/codec/test/driving.test.ts`, section 305.
+        self.assertEqual(scanned, 66, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
         self.assertEqual(
             {name: len(lines) for name, lines in counted.items()},
             TYPESCRIPT_LOOPS_ALLOWED_TO_SKIP_A_SAMPLE,
@@ -569,8 +570,9 @@ class ABoundOnACorpusTotalIsExact(unittest.TestCase):
         # 63 since `packages/bench/test/irmonitor.test.ts` and `irsession.test.ts`: the infrared
         # monitor and its test runner, fed by hand rather than by a receiver. 64 since
         # `packages/codec/test/settingsstore.test.ts`, section 303.
-        # 65 since `packages/usb/test/settings.test.ts`, section 304.
-        self.assertEqual(len(scanned), 65, 'TypeScript test files, which moves when one is added')
+        # 65 since `packages/usb/test/settings.test.ts`, section 304, 66 since
+        # `packages/codec/test/driving.test.ts`, section 305.
+        self.assertEqual(len(scanned), 66, 'TypeScript test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):
@@ -1240,8 +1242,8 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
         # alone, section 279, which is a folder inside `work/plan-1.3/` named on that row. 78 since
         # `work/plan-1.2.2/` and the region read it was built off, section 293. 79 since
         # `work/plan-1.2.10/`, section 294. 80 since `work/plan-L7/`, section 301. 81 since `work/plan-L6/`, the
-        # Harmony 600's delay write.
-        self.assertEqual(len(named), 81, "lab paths the register names, as at 1 October 2026")
+        # Harmony 600's delay write. 82 since `work/ir-archive-raw/`, section 305.
+        self.assertEqual(len(named), 82, "lab paths the register names, as at 2 October 2026")
         for path in sorted(named):
             with self.subTest(path=path):
                 if '*' in path:
@@ -1335,9 +1337,10 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
         # 55 since `work/plan-1.2.2/`, the four page activity menu, section 293, and 56 since
         # `work/plan-1.2.10/`, the 650's activity device list, section 294, and 57 since
         # `work/plan-L7/`, the Harmony 700's delay write, section 301, and 58 since `work/plan-L6/`,
-        # the Harmony 600's.
-        self.assertEqual(len(rows), 58)
-        self.assertEqual(len(dict(rows)), 58, 'a duplicated path would make a query ambiguous')
+        # the Harmony 600's, and 59 since `work/ir-archive-raw/`, the infrared archive's raw capture,
+        # section 305.
+        self.assertEqual(len(rows), 59)
+        self.assertEqual(len(dict(rows)), 59, 'a duplicated path would make a query ambiguous')
         self.assertNotIn('unseen', dict(rows), 'the status legend is not an artefact')
 
     def test_a_query_is_answered_by_ancestors_and_by_descendants(self):

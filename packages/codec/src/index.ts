@@ -57,6 +57,9 @@ export * from './metadata.ts';
 // definitions and `catalogue.ts` their device catalogue, out of the same public checkout.
 export * from './archive.ts';
 export * from './catalogue.ts';
+// And how to drive a catalogue device, from the archive's schema version 2: power, inputs, channel
+// entry, states and timing, section 305.
+export * from './driving.ts';
 // Pronto Hex, which is not the archive's format but is how the comparison against it is made, and is
 // the interchange spelling anybody importing or exporting one command will reach for.
 export * from './pronto.ts';

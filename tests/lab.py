@@ -259,6 +259,8 @@ IMAGES = {
     'h650_panasonic_account_features': '20261001-h650-account-power-features.json',
     # And the catalogue's own features for that model, copied the way MyHarmony's add device flow does.
     'h650_panasonic_catalogue_features': 'CopyFeaturesFromGlobalDevice_219481.json',
+    # And that catalogue entry's own timing record, read off the service the same day.
+    'h650_panasonic_catalogue_device': 'GlobalDeviceManager_GetGlobalDevices.json',
     # The same region read after block 0x030000 was written back unchanged, section 300.
     'h700_after_rehearsal_region': '20260929T1923Z-h700-after-rehearsal-config-region-region.bin',
     # And the rehearsal's own output for that write, which is the only record that it erased.
