@@ -97,3 +97,19 @@ anticipate.
   to change anything, nor from counting frames that start inside the hold, which gives three too.
 * **Rounding up is refuted** by the control, where it gives 8, and the control is the only record that
   refutes it.
+
+## Addendum: the television's own remote, predicted before listening
+
+Written on 2 October 2026 before the run, for a bench session with the Flirc receiver, the Panasonic
+TX-P42GT30E's original remote and the Harmony 650. Section 306 says what Logitech's compiler emits;
+this asks what the remote the television came with does.
+
+* **The Harmony 650** starting the activity that switches the television on sends `PowerOn` as seven
+  frames, 134.6 ms apart, about 0.94 s in all, and its frames are the 650's configuration's.
+* **The original remote's power button sends a toggle code**, the catalogue's `PowerToggle` and not
+  `PowerOn`, since such remotes have one standby button.
+* **Held, it repeats the frame for as long as the button is down**, at about the same 134.6 ms spacing,
+  since the spacing is the family's frame and gap and not something the Harmony adds.
+* **A quick tap sends fewer frames than seven.** How many is not predicted.
+* **Whether the television switches on from a quick tap is not predicted.** If it does, the catalogue's
+  one second is a margin of Logitech's; if it needs the button held, the one second is the television's.

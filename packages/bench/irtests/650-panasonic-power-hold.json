@@ -1,0 +1,13 @@
+{
+  "name": "The Panasonic television's power button: its own remote against the Harmony 650",
+  "description": "How many power frames the TX-P42GT30E's original remote sends for a tap and for a hold, against the seven the Harmony 650 sends, section 306 and the addendum in docs/predictions-power-hold.md. Keep each remote pointed at the Flirc. The frame count per step is the measurement, so the steps carry no count.",
+  "steps": [
+    { "instruction": "With the original Panasonic remote, tap Volume up once, briefly. This is only to check the receiver hears that remote" },
+    { "instruction": "With the television off, tap the original remote's Power button once, as quickly as you can, and note whether the television switches on" },
+    { "instruction": "Once it is on, tap Power once quickly again, so it is off" },
+    { "instruction": "Hold the original remote's Power button down for about two seconds, then release, and note whether the television switches on" },
+    { "instruction": "Tap Power once to switch it off again, and wait until it is off" },
+    { "instruction": "On the Harmony 650, start the activity that switches the Panasonic on, and wait until the remote is done" },
+    { "instruction": "Press Off on the Harmony 650 and wait until the remote is done" }
+  ]
+}
