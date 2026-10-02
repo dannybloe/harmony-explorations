@@ -185,3 +185,36 @@ Quasar SP2717T 7. So the television's seven is not the television's alone. Wheth
 cannot be said: all eight records are the same three Panasonic power codes, byte identical in all four
 codesets, so family, code and codeset are not separated, section 307. Both rounds' predictions were wrong
 on every row they predicted, in opposite directions.
+
+## Fourth compile: which of section 307's three readings
+
+Written on 2 October 2026 before the compile. Section 307 left three readings that fit every record
+after the fact: a **stated length**, `ceil(hold / length)` with the length the definition's
+`TotalLength` or else its header, trailer and every bit at its average length; a **long gap**, frames
+ending inside the hold where the gap after a frame is longer than the frame and starting inside it
+otherwise; and the **device record**, ending inside where the catalogue device carries `states` or
+`channelTuning` and starting inside otherwise. Three devices, each chosen so that **one** reading
+predicts a count the other two do not, all on the first test account's Harmony 700 record. Spacing and
+frame are the compiled ones where an earlier compile measured them, the Panasonic's, and the catalogue's
+Pronto otherwise.
+
+| device | step | family | hold ms | frame ms | spacing ms | starts | ends | stated length | long gap | device record |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Panasonic TX-D37LT84F | on, PowerOn | PanasonicV2 48 Bit | 2500 | 59.8 | 134.6 | 19 | 19 | **18** | 19 | 19 |
+| Sony KE-50MR1E | on, PowerOn | Sony 12 Bit | 1000 | 19.9 | 45.1 | 23 | 22 | 23 | **22** | 23 |
+| Sony KE-50MR1E | off, PowerOff | Sony 12 Bit | 1000 | 20.5 | 45.1 | 23 | 22 | 23 | **22** | 23 |
+| Thomson 25DT60H | on, "1" | Philips RECS80 11 Bit | 1500 | 65.9 | 121.4 | 13 | 12 | 13 | 13 | **12** |
+
+* **TX-D37LT84F**: its `PowerOn` is the bench television's code byte for byte, so its frames are known,
+  and at 2500 ms both counting rules give 19 with at least 17 ms to spare. The stated length, 143.3 ms,
+  gives 18 with 64 ms to spare. Its device record carries neither field. Its `PowerOff` is held 1500 ms
+  too and separates nothing, its twelfth frame starting within a millisecond of the hold.
+* **KE-50MR1E**: a Sony family whose gap is longer than its frame and which is not Panasonic's, with no
+  device fields; the stated `TotalLength` is 45.0 ms. The margins are about 9 to 11 ms, against about
+  0.1 ms per frame between the catalogue's waveform and a compile.
+* **25DT60H**: a family that counts starts, section 307's Mivar, on a device that carries `states`. Its
+  power on step sends the digit 1, held.
+
+**The prediction is the stated length**: 18, 23, 23 and 13, since it is the only reading that fits all
+earlier records with no floor. Each device refutes one reading if it shows that reading's count, and one
+that shows neither of its two counts refutes all three.
