@@ -261,6 +261,8 @@ export const IMAGES: Readonly<Record<string, string>> = {
   h700_power_hold_compile_2: '20261002-h700-power-hold-2-compile.EzHex',
   h650_power_hold_compile_2: '20261002-h650-power-hold-2-compile.EzHex',
   h700_power_hold_compile_3: '20261002-h700-power-hold-3-compile.EzHex',
+  // A fourth, section 308: three devices on the 700, each chosen so one of section 307's readings stood alone.
+  h700_power_hold_compile_4: '20261002-h700-power-hold-4-compile.EzHex',
   // The Panasonic television's original remote, power taps and holds, as the bench infrared monitor heard
   // them, cut out of its running log so the window cannot grow, section 306.
   panasonic_original_remote_power: '20261002T1148Z-panasonic-original-remote-power.jsonl',
@@ -667,6 +669,7 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
     // remote ever held either, section 306.
     'h700_power_hold_compile', 'h650_power_hold_compile',
     'h700_power_hold_compile_2', 'h650_power_hold_compile_2', 'h700_power_hold_compile_3',
+    'h700_power_hold_compile_4',
     // External flash of the bench Harmony 700 from 0x000000, kept for the staged application at its
     // start. The container at 0x020000 is byte for byte `h700_gspm`, the embedded config the 2.8
     // package carries as its region 3, so counting it would count that one twice. Section 295.

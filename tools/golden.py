@@ -142,6 +142,7 @@ CONTAINERS = (
     'h700_power_hold_compile_2',
     'h650_power_hold_compile_2',
     'h700_power_hold_compile_3',
+    'h700_power_hold_compile_4',
     # The two configs Logitech compiled to a specification we wrote, section 132. They are out of the
     # corpus wide claim lists, deliberately, and they belong here for the same reason the arch 9 safe
     # mode container does: a golden vector is a cheap check between two implementations and costs the

@@ -40035,8 +40035,10 @@ whose stored copies overrun it, or leave room for another.
 
 ## 306. A power press held for a stated time is a frame count the compiler fits to the hold
 
-**Corrected by section 307, the same day.** This section's rule, frames ending inside the hold, holds
-for the Panasonic power codes and not for the compiler: five other families count the frames that
+**Corrected by sections 307 and 308, the same day.** Section 308 has the rule: as many frames as start
+inside the hold on the frame lengths Logitech's definition states, which needs no floor at 300 ms. This
+section's own rule, frames ending inside the hold, holds for the Panasonic power codes and not for the
+compiler: five other families count the frames that
 **start** inside the hold. Its measurements stand; its generalisation does not, and the three families
 here other than the television's give the same count under both readings, so nothing in this section
 could have shown it. The heading said "is as many frames as end inside the hold"<!--superseded--> until then.
@@ -40181,7 +40183,13 @@ press sends more than one frame would separate the floor from counting starts.
 * The two compiles are lab fixtures `h700_power_hold_compile` and `h650_power_hold_compile`, out of the
   corpus since no remote ever held them, and in the golden vectors.
 
-## 307. A held power press counts the frames that start inside the hold in five families, and one fewer for the Panasonic power codes, for a reason not established
+## 307. A held power press counts the frames that start inside the hold in five families, and one fewer for the Panasonic power codes
+
+**Corrected by section 308, the same day.** The two groups below are one rule seen through the lengths
+codes are sent at: every held record holds as many frames as start inside the hold on the lengths
+Logitech's definition states, and the Panasonic power codes are sent shorter than their family's stated
+length. That was the first of the three readings below, and a fourth compile chosen to separate them
+confirmed it alone. The measurements here stand. The heading ended "and one fewer for the Panasonic power codes, for a reason not established"<!--superseded--> until then.
 
 **2 October 2026, todo L9.** Section 306 put five catalogue devices through Logitech's compiler and
 read "as many frames as end inside the hold", the gap after the last allowed to run past it. Only the
@@ -40257,8 +40265,9 @@ of them fitted to these records and none tested ahead:
   codes are sent 134.6 to 136.4 ms apart, which is why fewer of them fit; for the other families the two
   lengths are close enough not to matter. It gives every count of sections 306 and 307, 20 of the 22 held
   records, **including the TX-29AK40F's three at 300 ms with no floor**, and misses the JVC's two, 112
-  against 111. Those fit only if the JVC's first frame, which carries a lead in the definition gives no
-  length for, is counted at its compiled 57.6 ms. The averaged length is this project's construction and
+  against 111. Those fit only if the JVC's first frame, which carries a lead in, is counted at its
+  compiled 57.6 ms. This said the definition gives no length for that lead in<!--superseded--> until section 308: it
+  does, a `CodeSegments` entry of 8400 and 4200 us, which makes the stated first frame 57.6 ms. The averaged length is this project's construction and
   not a number Logitech states.
 * **A gap longer than the frame.** The Panasonic codes leave 74.8 ms after a frame of about 60 ms; all five
   families that count starts leave a gap shorter than their frame. One family against five.
@@ -40310,7 +40319,8 @@ three steps unnamed; and "nothing rests on a pin" overlooked the group.
 
 A held record of a Panasonic power code that counts starts where the readings part by more than a
 millisecond, or one of the five families counting ends. For the stated length reading: any held record
-whose count is not `ceil(hold / length)`, beyond the JVC's first frame.
+whose count is not `ceil(hold / length)`, beyond the JVC's first frame, which section 308 accounts for
+from the definition's own opening segment.
 
 ### Where it lands
 
@@ -40323,3 +40333,121 @@ whose count is not `ceil(hold / length)`, beyond the JVC's first frame.
 * `reference/superseded.md`, section 306's general rule.
 * The three compiles are lab fixtures `h700_power_hold_compile_2`, `h650_power_hold_compile_2` and
   `h700_power_hold_compile_3`, out of the corpus and in the golden vectors.
+
+## 308. A held power press holds as many frames as start inside the hold, on the frame lengths Logitech's definition states
+
+**2 October 2026, todo L9.** Section 307 left three readings, none tested ahead. The **long gap** and the
+**device record** fit every held record, each needing an ordinary press as a floor at 300 ms; the
+**stated length** fit every one but the JVC's two. A fourth round, one compile, was chosen so that each
+reading predicted, on one device, a count the other two did not, predictions committed first in
+`docs/predictions-power-hold.md`, the three devices added to the first test account's Harmony 700 record,
+compiled, and removed again, the account's 78 ids identical afterwards.
+
+| device | step | family | hold ms | stated length | long gap | device record | compiled |
+|---|---|---|---|---|---|---|---|
+| Panasonic TX-D37LT84F | on, PowerOn | PanasonicV2 48 Bit | 2500 | **18** | 19 | 19 | 18 |
+| Sony KE-50MR1E | on, PowerOn | Sony 12 Bit | 1000 | 23 | **22** | 23 | 23 |
+| Sony KE-50MR1E | off, PowerOff | Sony 12 Bit | 1000 | 23 | **22** | 23 | 23 |
+| Thomson 25DT60H | on, "1" | Philips RECS80 11 Bit | 1500 | 13 | 13 | **12** | 13 |
+
+The bold count is the one each row was chosen for. **The stated length was right on all four and each
+other reading was wrong on the row chosen to test it.** The TX-D37LT84F's `PowerOn` is the bench
+television's code byte for byte, on a fifth codeset, and at 2500 ms both of section 307's counting rules
+give 19, with at least 17 ms to spare on the compiled lengths, so its 18 is neither: it is the stated
+length alone. Its `PowerOff`, held 1500 ms, holds 11, which refutes the device record reading as well but
+only by 0.1 ms, its twelfth sent frame starting at 1499.90 ms.
+
+**The rule.** A held power press holds as many frames as **start** inside the hold, where every frame is
+given the length the protocol definition states for it rather than the length it is sent at: its
+segment's `TotalLength` where the definition gives one, and otherwise the segment's header, its trailer
+and every bit at the mean of its two cell lengths. A frame is the definition's `KeyCode`: its `Start`
+segments, then its `Repeat` for as long as the hold lasts, and an opening segment with no payload is part
+of the frame after it. **That last clause was added after the compile**, to recover the JVC, which the
+rule as predicted missed by one: its definition opens with a `CodeSegments` entry `JVC 16 Bit
+KeyCodeStart`, 8400 and 4200 us and no payload, so its first frame is stated at 57.6 ms and every later
+one at its `TotalLength` of 45 ms. Those are exactly the compiled spacings section 306 measured, and the
+12.6 ms is a number the definition states rather than one fitted, so the closure is real while the shape
+of the clause is fitted. Without it the rule gives 25 of 27.
+
+**That one rule gives all 27 held records of the six compiles in four rounds**, ten families and sixteen
+devices, and it is why section 307 saw two groups. On 13 of the 27 records, eight families, the stated
+length and the sent length agree to 0.01 ms, since the compiler renders a code from the same definition;
+the Memorex family is sent 1.1 ms short of its stated 109.9 ms and gives the same count either way. On
+those 14 the rule and counting sent starts cannot be told apart. The Panasonic power codes are sent
+134.6 and 136.4 ms apart against a stated 143.3 ms, 7 to 9 ms short, their 48 bits being 32 and 34 of
+them the shorter cell, so fewer stated frames fit, which section 307 read as counting the frames that end
+inside the hold. **The floor section 306 needed is not needed either**: the TX-29AK40F's three at 300 ms
+is `ceil(300 / 143.31)`.
+
+**The mean is preferred and not identified.** Giving every bit its shorter cell gets 12 of the 27 and
+its longer cell 18. Eleven records do not depend on the bit length at all, the ten in families that state
+a `TotalLength` and the Barco's, whose two Magnavox cells are both 1780 us; the shorter cell adds the
+TX-29AK40F at 300 ms and the longer adds the seven Panasonic records at 1000 ms. On the Panasonic family
+the holds bound the length to at least 142.86 and under 147.06 ms, anything from 24 to 28 long bits out of
+48, and the mean, 143.31, sits 0.45 ms above the bottom, which the seven records at 1000 ms set: a stated
+length 0.32% shorter flips all seven.
+
+**The evidence out of sample is one record.** The stated length and the mean cell were read off records
+already compiled, the bench television's seven among them, so those are fitted points and not
+calibration. What the fourth round predicted ahead and only this reading got right is the TX-D37LT84F's
+18 at 2500 ms, plus its `PowerOff` by 0.1 ms; the Sony and the Thomson refute the other two readings but
+agree with counting sent starts. **And one reading the round did not exclude**: the Panasonic power codes
+holding as many whole copies as fit, `floor(hold / sent spacing)` with an ordinary press as a floor, and
+every other family counting starts, also gives all 27, 18 at 2500 ms included. The stated length wins on
+being one rule with no floor and no family exception, not by elimination. A family whose codes are not
+complemented and are sent well away from their mean length, held long enough for the two to part, would
+test it.
+
+### Independent closure and calibration
+
+The lengths come out of Logitech's protocol definitions in the archive and the counts out of their
+compiles, but on 14 of the 27 records the compiler sent exactly what the definition states, so only the
+Panasonic records separate the two sources. The JVC's first frame is the closure: the 12.6 ms by which its
+compiled first spacing exceeds the rest is stated in its definition. There is no calibration case in the
+strict sense, as above.
+
+### Scope, decision 16
+
+Compiled for a Harmony 700 and a Harmony 650, arch 14, and nothing else. Ten families, sixteen devices
+with a held step, 27 held records of the test devices; the account's own devices on those records are
+not examined. Three of the families carry a toggle bit, the Magnavox, RECS80 and Thomson ones, five
+records. Families with several repeat segments or more than two cells are unmeasured, and whether a hold
+shorter than an ordinary press can send fewer frames is still unanswered, which no record needs.
+
+### Sources checked before the work
+
+The archive's protocol definitions, all of `IRSegments`, `CodeSegments` and `KeyCode`, sections 305 to
+307 and `docs/predictions-power-hold.md`. Section 305 found MyHarmony's client sets no power duration,
+so the count is the service's compiler and no client or firmware holds it.
+
+### The two reviews
+
+Run on the whole diff before the commit. The blind re-measurement found the same records and, from the
+definitions alone, the same rule, 25 of 25 rows, and named its weakness: the mean rests on one family. The
+sentence audit confirmed the 27 and found sixteen things wrong around them, all corrected here or in place:
+"four compiles" where there are six in four rounds; section 307 said to have left three readings that fit
+every record when the stated length missed the JVC; section 307's JVC sentence and falsification clause
+uncorrected; the 12 and 18 attributed to the wrong records; "identified" for a window; "most codes" for 13
+of 27; a calibration claim for fitted points; the floored whole copy reading not mentioned; toggle
+families called unmeasured; "fewer frames" stated for every Panasonic record where the TX-29AK40F gets 3
+either way; "about 9 ms" for 7 to 9; the `PowerOff` said to separate nothing; a control described and not
+in the test, and per row match counts not asserted, which left the marks clause untested; section 305's
+test comment stating section 307's reading; section 305's whole copy explanation in `docs/status.md`; and
+the test's title claiming every held record when it lists the test devices'.
+
+### Falsification
+
+A held power record whose frame count differs from the frames that start inside the hold on the
+definition's stated lengths. A family whose codes are sent well away from their mean length, held long
+enough, would separate this from counting whole sent copies.
+
+### Where it lands
+
+* `packages/codec/test/irframe.test.ts`, the stated length test: all 27 held records of the test devices
+  in sections 306 to 308, each found by its catalogue code, marks and spaces both since the Sony family
+  spells its bits in its marks, how many records match asserted per row, each count computed from the
+  definition and required to match, and three controls counted: the shorter cell 12, the longer 18, the
+  lead in left off 25. Dropping the marks from the match fails it.
+* Sections 306 and 307 corrected in place.
+* `docs/config-format.md`, the held power entry, restated.
+* The compile is the lab fixture `h700_power_hold_compile_4`, out of the corpus and in the golden vectors.

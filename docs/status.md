@@ -564,7 +564,7 @@ finding.
 
 `todo.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 307<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 308<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and flash has been written on five units**, the first in section 222:
@@ -856,14 +856,17 @@ With the configuration's delay then raised to 4.5 seconds, the gap grew by 3.01 
 written, so the configuration's delay governs on that unit once nothing saved stands over it.
 The Panasonic television on that remote sends its power on and off codes seven times where every other
 code goes three times, and the account explains it: Logitech's catalogue holds those two for one second,
-which its service copies onto an account and its compiler turns into copies, and seven
-copies of about 135 milliseconds fit in a second where eight do not. Predicted before the Harmony 650 was
+which its service copies onto an account and its compiler turns into copies: seven copies start inside
+the second when each is timed at the 143.3 milliseconds the code family's definition states, and an eighth
+would not. Predicted before the Harmony 650 was
 programmed with the same television, and the 650 came back with the same two codes at seven, word for
 word, and every other at three. Twelve more devices with holds from 0.3 to 15 seconds, put through
-Logitech's compiler, show the count is fitted to the hold in two ways: the television's power codes,
-the same three codes on four Panasonic codesets, send as many as finish inside the hold, five other
-families as many as start inside it, sections 306 and 307. What decides is open; one rule fitted after
-the fact explains all but one device. Whether a short hold can send fewer than an ordinary press is open.
+Logitech's compiler, and a fourth round chosen to tell three explanations apart, show one rule: as
+many copies as start inside the hold, timing each copy at the length Logitech's own protocol definition
+states rather than the length it is sent at, sections 306 to 308. It gives all 27 held records. The
+television's codes are sent 7 to 9 ms shorter than their family's stated length, which is why they get
+one copy fewer than a plain count would give. One record was predicted ahead that only this rule got
+right, and a second reading, whole copies for the Panasonic codes alone, still fits as well.
 At the bench the television itself needs its power button held for about half a second, four repeats,
 so Logitech's second is a margin of about two; the 650's device mode Power On, three repeats, leaves it
 off.

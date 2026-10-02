@@ -216,5 +216,14 @@ Pronto otherwise.
   power on step sends the digit 1, held.
 
 **The prediction is the stated length**: 18, 23, 23 and 13, since it is the only reading that fits all
-earlier records with no floor. Each device refutes one reading if it shows that reading's count, and one
+earlier records with no floor. That was wrong as written: the stated length missed the JVC's two by one, which
+section 308 recovers from the definition's opening segment after the compile. Each device refutes one reading if it shows that reading's count, and one
 that shows neither of its two counts refutes all three.
+
+### Scored: the stated length, on all four
+
+Compiled the same day, section 308. TX-D37LT84F 18, KE-50MR1E 23 and 23, 25DT60H 13: the stated length's
+count on every row, and each of the other two readings wrong on the row chosen to test it. The
+TX-D37LT84F's `PowerOff`, which separates the device record reading only by 0.1 ms, holds 11. Recomputed with the JVC family's opening
+segment joined to its first frame, the stated length gives all 27 held records of the six compiles, the
+JVC's included.
