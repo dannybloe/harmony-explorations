@@ -125,3 +125,27 @@ Two bench runs and the live monitor, section 306.
 * **Whether a tap switches the television on**, not predicted: it does not. It needs four frames, about
   0.46 s, and three are not enough, which is also why the 650's device mode Power On, three frames, leaves
   it off. So the television does need the button held, and Logitech's one second is about twice that.
+
+## Second compile: end inside against start inside, off the Panasonic family
+
+Written on 2 October 2026 before the compile, after section 306 left "end inside" against "start inside"
+resting on one television. **The short hold test planned first was dropped as unable to answer**: across
+the 4154 held power steps in the catalogue whose code is one frame, every one where a hold too short to
+fill a press could matter gives the same count under a press's floor and under counting starts, the
+Legend LEC-4017 at 100 ms included, three either way. So that question has no catalogue device that can
+tell, and these five ask the other one, in five families none of which is Panasonic's own. 1251 of the
+4154 steps sit where the two readings part.
+
+Frame and spacing are off the catalogue's Pronto code; margin is how far the hold sits from the nearest
+boundary of either reading, so a millisecond between compile and Pronto cannot flip a row.
+
+| record | device | family | power | command | hold ms | frame ms | spacing ms | end inside | start inside | margin ms |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Harmony 700 | Pioneer DEH-P47DH | Pioneer 32 Bit | toggle | Source | 2000 | 64.3 | 89.5 | 22 | 23 | 31.0 |
+| Harmony 700 | Mivar 14_M3_TVD | Philips RECS80 11 Bit | on | PowerOn | 1000 | 68.4 | 121.4 | 8 | 9 | 28.8 |
+| Harmony 700 | Thomson DSI-4400 | Thomson 12 Bit Toggle | toggle | PowerToggle | 500 | 45.7 | 79.9 | 6 | 7 | 20.6 |
+| Harmony 650 | Dell 2300MP | Memorex 32 Bit | toggle | PowerToggle | 2000 | 66.0 | 109.0 | 18 | 19 | 28.0 |
+| Harmony 650 | Panasonic TX-28A1U | Technics 22 Bit | toggle | PowerToggle | 1500 | 70.7 | 113.0 | 13 | 14 | 31.0 |
+
+**The prediction is "end inside" on all five.** Any row at its "start inside" count refutes it for that
+family, and a row at neither says the rule is wrong outright.
