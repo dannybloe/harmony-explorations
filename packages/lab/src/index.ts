@@ -259,6 +259,10 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // The Panasonic television's original remote, power taps and holds, as the bench infrared monitor heard
   // them, cut out of its running log so the window cannot grow, section 306.
   panasonic_original_remote_power: '20261002T1148Z-panasonic-original-remote-power.jsonl',
+  // A bench run timing how long the Panasonic's Power must be held to switch it on, from its own remote
+  // and from the Harmony 650, and that run's slice of the monitor log, section 306.
+  panasonic_power_threshold_run: '20261002T115945Z-ir-test-panasonic-television-how-long-must-power-be-held-and-what-the-harmony-650-sends.json',
+  panasonic_power_threshold_frames: '20261002T1159Z-panasonic-power-threshold.jsonl',
   // The same region read after block 0x030000 was written back unchanged, section 300.
   h700_after_rehearsal_region: '20260929T1923Z-h700-after-rehearsal-config-region-region.bin',
   // And the rehearsal's own output for that write, which is the only record that it erased.

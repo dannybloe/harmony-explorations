@@ -40101,6 +40101,26 @@ there and came back at seven, its two held blocks word for word the ones section
 the 600. On the 650's own compile the television's blocks are the same set as before, at other record
 indices, 4 and 54 against 9 and 10.
 
+### What the television itself needs, heard at the bench
+
+The Panasonic TX-P42GT30E is on the bench with its original remote, and two runs with the Flirc receiver
+put numbers on both ends. **Its own remote's power button sends the catalogue's `PowerToggle`**, once or
+twice for a tap and then again every 134 ms for as long as it is held: twelve bursts of 2, 2, 2, 8, 3, 2,
+48, 2, 13, 2, 8 and 3 frames, median interval 134 ms over 83 intervals, against the Harmony's 134.6 ms.
+The receiver's timestamps are the host's and jitter from 112 to 151 ms.
+
+**The television switches on from four frames and not from three.** With it off before every step: a tap,
+one frame, did nothing; about half a second, four frames, switched it on; eight and eleven did too; the
+Harmony 650's device mode Power On, an ordinary press of three frames, did nothing; and the 650's activity,
+the held record's seven frames, switched it on. Four frames last about 0.46 s from the first mark to the
+last, so the catalogue's one second, seven frames and 0.87 s, is close to twice what this unit needs.
+Switching it off took a tap of two frames each time. Whether the television came on is what was seen at
+the bench, not an instrument reading, and it is one unit.
+
+**The device mode consequence is practical**: on this television a power key that sends the ordinary
+press does nothing, so a device page's power key wants the held record, which Logitech's own compile did
+not give it.
+
 ### Independent closure and calibration
 
 The holds and minimum repeats are read out of the archive's schema version 2, the frames out of
@@ -40145,6 +40165,8 @@ press sends more than one frame would separate the floor from counting starts.
   nine above their minimum found again by shape, the 300 ms record tied to its command's ordinary press,
   and the whole copy and start readings counted where they fail. Its control, the 300 ms record pinned to
   a digit's record instead, fails on the catalogue match.
+* `packages/codec/test/irframe.test.ts` again, twice more: the original remote's taps and holds and their
+  spacing against the Harmony's, and the threshold run's frames per step with what was seen at the bench.
 * `docs/config-format.md`, beside how many times a press sends the code.
 * The two compiles are lab fixtures `h700_power_hold_compile` and `h650_power_hold_compile`, out of the
   corpus since no remote ever held them, and in the golden vectors.

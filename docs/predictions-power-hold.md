@@ -113,3 +113,15 @@ this asks what the remote the television came with does.
 * **A quick tap sends fewer frames than seven.** How many is not predicted.
 * **Whether the television switches on from a quick tap is not predicted.** If it does, the catalogue's
   one second is a margin of Logitech's; if it needs the button held, the one second is the television's.
+
+### Scored, the same day
+
+Two bench runs and the live monitor, section 306.
+
+* **The Harmony 650 sends seven `PowerOn` frames** from the activity, about 0.13 s apart: right.
+* **The original remote sends `PowerToggle`**: right.
+* **Held, it repeats at the same spacing**: right, median 134 ms against 134.6.
+* **A tap sends fewer than seven**: right, one or two.
+* **Whether a tap switches the television on**, not predicted: it does not. It needs four frames, about
+  0.46 s, and three are not enough, which is also why the 650's device mode Power On, three frames, leaves
+  it off. So the television does need the button held, and Logitech's one second is about twice that.

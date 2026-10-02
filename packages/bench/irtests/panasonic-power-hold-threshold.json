@@ -1,0 +1,14 @@
+{
+  "name": "Panasonic television: how long must Power be held, and what the Harmony 650 sends",
+  "description": "Each step is one press on the TX-P42GT30E's original remote, from the television off, of a stated length; note after each whether the television switched on. The monitor log keeps every frame, so the frames per step are counted from it afterwards. Then the Harmony 650's own power on, for the seven frames of section 306. Keep each remote pointed at the Flirc.",
+  "steps": [
+    { "instruction": "Television off. Original remote: tap Volume up once, briefly, to check the receiver hears it" },
+    { "instruction": "Television off. Original remote: tap Power once, as short as you can. Note whether the television switched on; if it did, switch it off before the next step" },
+    { "instruction": "Television off. Hold Power for about half a second. Note whether it switched on; if so, switch it off before the next step" },
+    { "instruction": "Television off. Hold Power for about one second. Note whether it switched on; if so, switch it off before the next step" },
+    { "instruction": "Television off. Hold Power for about one and a half seconds. Note whether it switched on; if so, switch it off before the next step" },
+    { "instruction": "Television off. On the Harmony 650, press Devices, choose the Panasonic television, and press Power once, briefly. Note whether it switched on; if so, switch it off with the original remote" },
+    { "instruction": "Television off. On the Harmony 650, start the activity that switches the Panasonic on and wait until the remote is done. Note whether the television switched on" },
+    { "instruction": "Press Off on the Harmony 650 and wait until the remote is done" }
+  ]
+}

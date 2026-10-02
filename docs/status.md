@@ -862,6 +862,9 @@ programmed with the same television, and the 650 came back with the same two cod
 word, and every other at three. Four more devices with holds from 0.3 to 15 seconds, put through
 Logitech's compiler, give the rule: as many frames as finish inside the hold, section 306. Whether a
 short hold can send fewer than an ordinary press rests on one recording and is open.
+At the bench the television itself needs its power button held for about half a second, four repeats,
+so Logitech's second is a margin of about two; the 650's device mode Power On, three repeats, leaves it
+off.
 
 **A changed setting on the Harmony 700 is heard on the air, section 301.** How long the remote waits
 after switching the Denon on was raised from six seconds to nine, written to the remote, and put back.

@@ -2042,3 +2042,50 @@ test('the Panasonic\'s own remote repeats its power code at the Harmony\'s spaci
     assert.equal(Math.round(harmony * 10), 1346);
     assert.ok(intervals[0]! < harmony && harmony < intervals.at(-1)!, 'the Harmony spacing sits inside what the receiver heard');
   });
+
+/**
+ * Section 306, what the television itself needs. A bench run with the television off before every step:
+ * Power on its own remote for a tap and for about half, one and one and a half seconds, then the Harmony
+ * 650's device mode Power On and its activity. The frames per step are counted out of the monitor log by
+ * the run's own step windows; whether the television came on is what was seen at the bench, written here
+ * as data because no instrument recorded it.
+ */
+test('the Panasonic switches on from four power frames and not from three, and the Harmony\'s held seven clear it',
+  skipUnless('panasonic_power_threshold_run', 'panasonic_power_threshold_frames', 'h650_panasonic_config'), () => {
+    const run = JSON.parse(readFileSync(imagePath('panasonic_power_threshold_run')!, 'utf8')) as {
+      startedAt: string; steps: { instruction: string; startedMs: number; endedMs: number }[];
+    };
+    type Line = { at: string; matches?: { device?: string; command?: string }[] };
+    const lines = readFileSync(imagePath('panasonic_power_threshold_frames')!, 'utf8').trim().split('\n')
+      .map((one) => JSON.parse(one) as Line);
+    const start = Date.parse(run.startedAt);
+    // The first burst of the television's power code in each step, frames less than 0.4 s apart. What
+    // follows it in a step is switching the television off again.
+    const firstBurst = (step: number) => {
+      const { startedMs, endedMs } = run.steps[step]!;
+      const power = lines.filter((one) => {
+        const at = Date.parse(one.at) - start;
+        return at >= startedMs && at < endedMs && one.matches?.some((m) => m.device === 'TV' && /^Power/.test(m.command ?? ''));
+      });
+      const burst = power.length === 0 ? [] : [power[0]!];
+      for (const one of power.slice(1)) {
+        if (Date.parse(one.at) - Date.parse(burst.at(-1)!.at) > 400) break;
+        burst.push(one);
+      }
+      return `${burst[0]?.matches?.find((m) => m.device === 'TV')?.command} ${burst.length}`;
+    };
+    // Steps 2 to 7: a tap, about half, one and one and a half seconds on the original remote, then the
+    // Harmony 650's device mode Power On and its activity.
+    const heard = [1, 2, 3, 4, 5, 6].map(firstBurst);
+    assert.deepEqual(heard, ['PowerToggle 1', 'PowerToggle 4', 'PowerToggle 8', 'PowerToggle 11', 'PowerOn 3', 'PowerOn 7']);
+    const cameOn = [false, true, true, true, false, true];
+    const frames = heard.map((one) => Number(one.split(' ')[1]));
+    const on = frames.filter((_, i) => cameOn[i]);
+    const off = frames.filter((_, i) => !cameOn[i]);
+    assert.deepEqual([Math.max(...off), Math.min(...on)], [3, 4]);
+    // The device mode Power On is an ordinary press, three frames, which is not enough; the activity's is
+    // the held record of seven, the configuration's own count.
+    const h650 = parse(require_('h650_panasonic_config'));
+    const copies = [9, 10].map((record) => blockCopies(irBlockWords(h650, irHeaderPointers(h650, irGroups(h650)![1]!.addresses[record]!)[0]!)!));
+    assert.deepEqual(copies, [7, 7]);
+  });
