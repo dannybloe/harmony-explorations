@@ -40133,6 +40133,13 @@ the bench, not an instrument reading, and it is one unit.
 press does nothing, so a device page's power key wants the held record, which Logitech's own compile did
 not give it.
 
+**Which key that was**, added on Danny's word and checked against the configuration: the Power On
+pressed was the soft key beside the display on the television's device page, not the keypad's power
+button. In the 650's configuration the television's device mode binds its three power commands to
+screen keys only, `PowerOn`, `PowerToggle` and `PowerOff`, each an ordinary press record with a held
+block, and no keypad key sends any of them, which agrees with the physical power button doing nothing
+in device mode on this remote.
+
 ### Independent closure and calibration
 
 The holds and minimum repeats are read out of the archive's schema version 2, the frames out of
