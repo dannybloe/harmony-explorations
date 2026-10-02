@@ -39966,7 +39966,9 @@ What it does not settle. Seven is consistent with the compiler sending as many c
 duration and with any rule that lands between seven and eight, and one duration on one codeset cannot
 tell those apart. Three records on one login are one value seen three times rather than three
 samples. And the PlayStation's codes at 36 and 30
-copies stand with no duration stated, so a duration is not the only thing that raises a count.
+copies stand with no duration stated, so a duration is not the only thing that raises a count. Section
+306 measures four more devices: as many frames as end inside the hold, never fewer than an ordinary
+press sends, the floor resting on one record.
 
 ### Scope, decision 16
 
@@ -40030,3 +40032,119 @@ whose stored copies overrun it, or leave room for another.
   exact counts: 3234 devices hold a power press for a stated time, 49 steps hold with no time, 14 of them
   naming digits rather than a command.
 * `docs/usb-protocol.md`, `docs/config-format.md` and `CLAUDE.md`'s list of what has been written.
+
+## 306. A power press held for a stated time is as many frames as end inside the hold
+
+**2 October 2026, todo L9.** Section 305 found one catalogue device whose power codes Logitech's compiler
+sends seven times, and tied the seven to a one second hold its catalogue states. One codeset could not
+say what the rule is. This puts four more catalogue devices through Logitech's own compiler, with holds
+from 300 ms to 15 seconds, plus the section 305 television as the control, and reads the result.
+Predictions were written and committed first, `docs/predictions-power-hold.md`, and are scored there.
+
+**The route needs no remote.** The five devices were added to the first test account's Harmony 700 and
+Harmony 650 records through the device door, `UpdateMultiple`, each record was compiled by
+`StartCompileWithLocaleAndSettings` and the file taken as a download, and the five were removed again
+with `DeleteDevices`. Read back afterwards, every record on the account holds the same device ids and the
+same activity ids as before; that is the household read, and device settings were not compared. Two of
+the throwaway records on the second account were tried first and both refused a new device,
+`CanAddAnotherDeviceToAccount`, "Cannot add device to the remote attached to the account". All twelve of
+those records carry the Harmony 525's serial, and that the refusal is about the 525 is a guess: the
+message names no reason, the device count is under that model's twelve, and the account's one record of
+another model was not tried.
+
+| device | family | hold ms | min repeats | frames | last frame ends | one more would end |
+|---|---|---|---|---|---|---|
+| Panasonic TX-P42GT30E, PowerOn | PanasonicV2 48 Bit | 1000 | 3 | 7 | 867.50 ms | 1002.12 ms |
+| Panasonic TX-P42GT30E, PowerOff | PanasonicV2 48 Bit | 1000 | 3 | 7 | 879.68 ms | 1016.04 ms |
+| Barco 6300, PowerToggle | Magnavox 13 Bit | 15000 | 3 | 130 | 14989.70 ms | 15105.72 ms |
+| JVC DLA-HD10KU, PowerOn and PowerOff | JVC 16 Bit | 5000 | 3 | 111 | 4986.80 ms | 5031.80 ms |
+| Knoll HDP-1100, on | Toshiba 32 Bit | 800 | 1 | 8 | 766.85 ms | 874.71 ms |
+| Knoll HDP-1100, off | Toshiba 32 Bit | 500 | 1 | 5 | 443.25 ms | 551.12 ms |
+| Panasonic TX-29AK40F, PowerToggle | PanasonicV2 48 Bit | 300 | 3 | 3 | 329.05 ms | |
+
+Ten held records: the television's two codes on each compile, the Barco's one, the JVC's two, the Knoll's
+two and the TX-29AK40F's one. A frame is what lies between two spaces over 10 ms, the shortest gap between
+frames here being 20.8 ms and the longest space inside one about 4.5 ms; so the JVC family, a 36.8 ms
+frame with its header and then 24.2 ms repeats without it, spaced 57.6 ms and then 45.0 ms, counts 111,
+and the `Toshiba 32 Bit` family, a 67.65 ms frame and then 11.79 ms repeat frames, spaced 107.9 ms,
+counts 8 and 5.
+
+**Every step of a power action list is a record of its own, and the hold sets how many frames it holds.**
+Such a record has no lead in and no held block, which is the shape of any power step and not of a held
+one: the Barco's power on step, which states no hold, is record 22 beside the held record 32, with three
+frames, and the LG television's two power steps on the 650, no hold either, hold two frames each, a frame
+and one repeat frame, which is what that family's ordinary press sends. The ordinary press of the same
+command keeps a record of its own with its lead in and its held block, for all seven held commands.
+
+**The rule that fits all ten: as many frames as end inside the hold, the gap after the last allowed to
+run past it, and never fewer than an ordinary press sends.** On the nine records above their device's
+minimum, the last frame ends inside the hold and one more at the same spacing would not. The tenth, the
+300 ms Panasonic, holds three frames where two end inside 300 ms, which is what its ordinary press sends.
+**That floor rests on that one record and is not separated from two other readings**: a power step with
+no hold has the same three frames, so the hold may simply have been too short to change anything, and
+counting the frames that **start** inside the hold gives three there with no floor at all. The floor is in
+an ordinary press's frames rather than in `pressMinRepeats` frames, since the LG's minimum of 1 is two
+frames in its family.
+
+**What separates "end inside" from "start inside" is the television alone.** Counting frames that start
+inside the hold gives 130, 111, 8, 5 and 3, matching six of the ten records, and 8 on the television's
+four, where seven are sent. Its eighth `PowerOn` frame would end 2.12 ms past the second and its eighth
+`PowerOff` 16.04 ms past, so the distinction is real and rests on one codeset with a thin margin on one
+code. Counting whole copies with their gaps, which section 305 could not tell from either, gives 129 for
+the Barco, 110 for the JVC and 7 and 4 for the Knoll, one short on five of the nine records above their
+minimum; it agrees only on the television. Rounding up gives 8 on the television. The predictions took
+the catalogue's Pronto first section as one copy, which gave 86 for the JVC, whose compiler repeats the
+shorter frame of its second section, and 3 for the Knoll, whose first section holds two frames.
+
+**The hold belongs to the device and not to an activity.** The television on the 700 was in no activity
+there and came back at seven, its two held blocks word for word the ones section 305 read on the 650 and
+the 600. On the 650's own compile the television's blocks are the same set as before, at other record
+indices, 4 and 54 against 9 and 10.
+
+### Independent closure and calibration
+
+The holds and minimum repeats are read out of the archive's schema version 2, the frames out of
+Logitech's compile, and the two meet in nothing but Logitech's database. The television was meant as the
+calibration case, its count known before; it turned out to be the only point separating "end inside"
+from "start inside", so it is a measurement the rule rests on rather than a check of it.
+
+### Scope, decision 16
+
+Compiled for a Harmony 700 and a Harmony 650 only, arch 14. What Logitech's compiler emits for a held
+power press on arch 12 (Harmony One) or any other architecture is unchecked. Four protocol families, five
+devices, ten held records.
+
+### Sources checked before the work
+
+The archive, for every device's holds and minimum repeats; section 305, which found MyHarmony's client
+sets no power action duration, so the compile is the only source of the count; and the corpus, where the
+PlayStation's codes at 36 and 30 copies stand with no duration and stay unexplained.
+
+### The two reviews
+
+Run on the whole diff before the commit. The blind re-measurement found the same ten records, the same
+counts and the same rule, and raised that the 300 ms record cannot tell a floor from a hold too short to
+matter. The sentence audit re-measured every figure in the table and found nothing wrong in it, and found
+nine things wrong around it and some smaller wording, all corrected above: the record counts disagreed with each other, "five more
+devices" counted the control, the floor was stated in `pressMinRepeats` frames although the LG's power
+steps contradict that, the separate record was attributed to the hold although every power step has one,
+"settles" overstated a rule that the television alone separates from rounding up, the Pronto explanation
+was wrong for the JVC, "frame" was used for a spacing, "all refuse" was two of twelve with a guessed
+cause, and the test claimed a shape check over groups it did not cover.
+
+### Falsification
+
+A held power record whose frame count is neither an ordinary press's nor the number of frames that end
+inside its hold, on any device or architecture. A hold shorter than one frame on a device whose ordinary
+press sends more than one frame would separate the floor from counting starts.
+
+### Where it lands
+
+* `packages/codec/test/irframe.test.ts`, the held frame test: holds from the archive, frames from the two
+  compiles, every pinned record's first frame matched against the catalogue's code for its command, the
+  nine above their minimum found again by shape, the 300 ms record tied to its command's ordinary press,
+  and the whole copy and start readings counted where they fail. Its control, the 300 ms record pinned to
+  a digit's record instead, fails on the catalogue match.
+* `docs/config-format.md`, beside how many times a press sends the code.
+* The two compiles are lab fixtures `h700_power_hold_compile` and `h650_power_hold_compile`, out of the
+  corpus since no remote ever held them, and in the golden vectors.

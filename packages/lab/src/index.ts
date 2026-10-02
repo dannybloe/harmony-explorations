@@ -252,6 +252,10 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // The archive's raw capture of every catalogue device's features, a release asset of the archive and
   // not in its checkout: what its projected action lists are checked against for order, section 305.
   ir_archive_raw_features: 'device_features_raw.jsonl.gz',
+  // Logitech's own compiles of the first test account's Harmony 700 and Harmony 650 records with five
+  // catalogue devices added for the purpose, each holding a power press for a stated time, section 306.
+  h700_power_hold_compile: '20261002-h700-power-hold-compile.EzHex',
+  h650_power_hold_compile: '20261002-h650-power-hold-compile.EzHex',
   // The same region read after block 0x030000 was written back unchanged, section 300.
   h700_after_rehearsal_region: '20260929T1923Z-h700-after-rehearsal-config-region-region.bin',
   // And the rehearsal's own output for that write, which is the only record that it erased.
@@ -647,6 +651,9 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
     // section 305, out of the corpus for the reason
     // `h650_config_region` is: whether the 650 joins it is a decision of its own.
     'h650_panasonic_config',
+    // Two compiles of account records carrying test devices that were removed straight afterwards, so no
+    // remote ever held either, section 306.
+    'h700_power_hold_compile', 'h650_power_hold_compile',
     // External flash of the bench Harmony 700 from 0x000000, kept for the staged application at its
     // start. The container at 0x020000 is byte for byte `h700_gspm`, the embedded config the 2.8
     // package carries as its region 3, so counting it would count that one twice. Section 295.

@@ -1,7 +1,8 @@
 # Predictions: how Logitech's compiler turns a held power press into copies
 
-Written on 2 October 2026, before the compile they predict, for todo item L9. Scored below once the
-compiled files are read.
+Written on 2 October 2026, before the compile they predict, for todo item L9, and scored below against
+it. **B's principle was right and most of its counts were wrong**: a copy is a frame, and on one record an
+ordinary press's worth is a floor.
 
 ## The question
 
@@ -10,8 +11,8 @@ schema version 2. Section 305 found one case: a Panasonic television held for 10
 holds as seven copies of each power code, and seven copies of 134.6 ms is the most that fits in a second.
 One codeset is not a rule. This tests it on devices whose stated holds run from 300 ms to 15 seconds,
 with Logitech's own compiler, by putting catalogue devices on two account records and compiling each.
-The throwaway records were the first choice and Logitech refused to add to them, since every one was
-registered with the Harmony 525's serial and the service treats that model as unsupported. So the
+The throwaway records were the first choice and Logitech refused to add to the two tried, which, like
+all twelve, carry the Harmony 525's serial; why it refused is not stated in its reply. So the
 devices go on the first test account's Harmony 650 and Harmony 700 records, for the compile only, and
 are removed afterwards. No remote is involved.
 
@@ -70,4 +71,29 @@ own copy length, the control excepted if it shows the hold is not applied at all
 
 ## Scoring
 
-Not yet scored.
+Scored on 2 October 2026 against the two compiles, section 306. **The principle of B was right and every
+count it gave from the catalogue's waveforms but two was wrong**, for two reasons this document did not
+anticipate.
+
+| device | hold ms | A | B | compiled | |
+|---|---|---|---|---|---|
+| TX-P42GT30E, both codes, both records | 1000 | 7 | 7 or 8 | 7 | the control, right under A and under B on the compiled lengths |
+| TX-29AK40F | 300 | 2 | 2 | 3 | wrong under both, and right under rounding up, which the control refutes |
+| JVC DLA-HD10KU, both codes | 5000 | 86 | 87 | 111 | wrong unit: 111 frames, the first 57.6 ms and every later one 45.0 |
+| Barco 6300 | 15000 | 129 | 130 | 130 | B right, A one short |
+| Knoll HDP-1100, on | 800 | 3 | 4 | 8 | wrong unit: a frame and seven repeat frames of 107.9 ms |
+| Knoll HDP-1100, off | 500 | | | 5 | not predicted; its off list holds the code three times at 500 ms |
+
+* **The control came back at 7 on both records**, with no activity using the television on the 700, so
+  the hold is applied to the device and not to an activity's power step.
+* **The rule is B's, stated in frames**: as many frames as **end** inside the hold, the gap after the last
+  one running past it, which on the compiled lengths fits the nine held records above their minimum
+  exactly. There are ten; the tenth is the 300 ms row.
+* **The unit was wrong.** This document took the catalogue's Pronto first section as one copy. For the
+  JVC and the Knoll families the compiler repeats a shorter frame after the first, and it counts those,
+  so a copy is a frame and not the Pronto section.
+* **The floor was not predicted at all.** At 300 ms two frames end inside the hold and the compiler sends
+  three, what that device's ordinary press sends. One record cannot tell that floor from a hold too short
+  to change anything, nor from counting frames that start inside the hold, which gives three too.
+* **Rounding up is refuted** by the control, where it gives 8, and the control is the only record that
+  refutes it.

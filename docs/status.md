@@ -564,7 +564,7 @@ finding.
 
 `todo.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 305<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 306<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and flash has been written on five units**, the first in section 222:
@@ -859,7 +859,9 @@ code goes three times, and the account explains it: Logitech's catalogue holds t
 which its service copies onto an account and its compiler turns into copies, and seven
 copies of about 135 milliseconds fit in a second where eight do not. Predicted before the Harmony 650 was
 programmed with the same television, and the 650 came back with the same two codes at seven, word for
-word, and every other at three.
+word, and every other at three. Four more devices with holds from 0.3 to 15 seconds, put through
+Logitech's compiler, give the rule: as many frames as finish inside the hold, section 306. Whether a
+short hold can send fewer than an ordinary press rests on one recording and is open.
 
 **A changed setting on the Harmony 700 is heard on the air, section 301.** How long the remote waits
 after switching the Denon on was raised from six seconds to nine, written to the remote, and put back.

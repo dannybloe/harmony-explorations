@@ -137,6 +137,8 @@ CONTAINERS = (
     'h600_kpn45_region',
     'h600_kpn15_restored_region',
     'h650_panasonic_config',
+    'h700_power_hold_compile',
+    'h650_power_hold_compile',
     # The two configs Logitech compiled to a specification we wrote, section 132. They are out of the
     # corpus wide claim lists, deliberately, and they belong here for the same reason the arch 9 safe
     # mode container does: a golden vector is a cheap check between two implementations and costs the

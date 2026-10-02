@@ -137,6 +137,8 @@ const CONTAINERS = [
   'h600_kpn45_region',
   'h600_kpn15_restored_region',
   'h650_panasonic_config',
+  'h700_power_hold_compile',
+  'h650_power_hold_compile',
   // The two configs Logitech compiled to a specification we wrote, section 132: the only samples
   // whose devices and activities were chosen before the bytes existed, so a disagreement between the
   // two implementations about them would be a disagreement about a known answer.
@@ -323,7 +325,8 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 0x000000, which parse to the safe mode container, and 93 since the region after its KPN delay write,
   // and 94 since that region put back, section 303, and 95 since the Harmony 650's configuration after
   // the Panasonic television was added to it, section 305.
-  assert.equal(present.length, 95, 'every vector, which is what `make golden` compares');
+  // 97 since section 306's two compiles with the power hold test devices.
+  assert.equal(present.length, 97, 'every vector, which is what `make golden` compares');
   // 38 since the Harmony 895 landed: its key table reads with the existing reader even though
   // every other arch 10 reader is gated, which is what made section 177's keypad closure possible
   // without any arch 10 progress at all.
@@ -366,7 +369,8 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // since that region after section 302's write, and 87 since its two reads from 0x000000, and 88
   // since the region after its KPN delay write, and 89 since that region put back, and 90 since the
   // Harmony 650's configuration with the Panasonic television, section 305.
-  assert.equal(complete, 90, 'the vectors whose container has a key table at all');
+  // 92 since section 306's two compiles.
+  assert.equal(complete, 92, 'the vectors whose container has a key table at all');
 
   // **The number sender field, and why it needs its own guard.** It is an empty array on 30 vectors
   // and null on 8, with eight carrying a record since 30 August 2026, and this comment said 25 and 9
@@ -414,7 +418,8 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // section 302's write, and 55 since its two reads from 0x000000, whose safe mode container
   // declares none, and 56 since the region after its KPN delay write, and 57 since it was put back, and
   // 58 since the Harmony 650's configuration with the Panasonic television, which declares none either.
-  assert.equal(senders.filter((one) => Array.isArray(one) && one.length === 0).length, 58);
+  // 60 since section 306's two compiles, neither of which declares one.
+  assert.equal(senders.filter((one) => Array.isArray(one) && one.length === 0).length, 60);
   // **Four since the second compiled sample**, and the reason is the account rather than the request:
   // every configuration compiled from the account that carries favourite channels carries the sender
   // record too, whichever appliances are on it that day. Three of them were made deliberately for base
@@ -488,7 +493,8 @@ test('the list above covers exactly what the Python side writes a vector for', (
   // 89 since the Harmony 600's region before its first write, and 90 since that region after 302's,
   // and 92 since its two external flash reads from 0x000000, and 93 since its KPN delay write, and 94
   // since it was put back, and 95 since the 650's configuration with the Panasonic television.
-  assert.equal(python.length, 95, 'the golden vectors, which is what `make golden` prints');
+  // 97 since section 306's two compiles.
+  assert.equal(python.length, 97, 'the golden vectors, which is what `make golden` prints');
   assert.deepEqual([...CONTAINERS].sort(), python.sort());
 });
 
