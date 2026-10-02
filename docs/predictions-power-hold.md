@@ -35,7 +35,7 @@ where it differs.
 | Harmony 665 | Panasonic TX-P42GT30E | on | PowerOn | 1000 | 133.7 | 74.8 | 7 | (8) |
 | Harmony 665 | Panasonic TX-P42GT30E | off | PowerOff | 1000 | 135.4 | 74.8 | 7 | 7 |
 | Harmony 665 | Panasonic TX-29AK40F | toggle | PowerToggle | 300 | 133.7 | 74.8 | 2 | 2 |
-| Harmony 665 | Panasonic TX-28PM10 | toggle | PowerToggle | 3600 | 133.7 | 74.8 | 26 | 27 |
+| Harmony 665 | JVC DLA-HD10KU | on and off | PowerOn, PowerOff | 5000 | 57.6 | 20.8 | 86 | 87 |
 | Harmony 665 | Barco 6300 | off | PowerToggle | 15000 | 115.9 | 92.9 | 129 | 130 |
 | Harmony 650 | Mitsubishi CS-40FX1 | toggle | PowerToggle | 1200 | 53.7 | 27.7 | 22 | 22 |
 | Harmony 650 | Knoll HDP-1100 | on | PowerToggle | 800 | 216.0 | 96.1 | 3 | 4 |
@@ -45,9 +45,12 @@ What each row is for:
 * **TX-P42GT30E** is the control. It is the section 305 television, so it must come out at 7 and 7. If
   it comes out at 1, the hold is applied only where an activity powers the device, since these records'
   activities do not include it, and the rest of the table measures nothing until that is fixed.
-* **TX-29AK40F and TX-28PM10** share a codeset family with the control and hold 300 ms and 3600 ms. The
-  short one tells rounding down from rounding up (3 under rounding up). The long one is where A and B
-  part by a whole copy, with 124 ms of margin under A.
+* **TX-29AK40F** shares a protocol family with the control and holds 300 ms, which tells rounding down
+  from rounding up (3 under rounding up). A Panasonic TX-28PM10 holding 3600 ms was the first choice for
+  where A and B part, and was replaced before anything was sent: it shares its command set with the
+  TX-29AK40F, and the tool that adds devices refuses a command set a record already holds.
+* **JVC DLA-HD10KU** holds both power codes 5000 ms, a fourth family with a short copy, and A and B part
+  by one copy with 45 ms of margin under A.
 * **Barco 6300** holds for 15 seconds, the longest in the catalogue, in a different protocol family. A
   cap on the number of copies, or on a block's length, would show here as a count well under 129.
 * **Mitsubishi CS-40FX1** is a third family, with a short copy, so many copies in little time.
