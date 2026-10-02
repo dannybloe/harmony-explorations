@@ -46,9 +46,17 @@ import { statedCode, type StatedCode, type StatedItem } from './stated.ts';
  *
  * A different value is a refusal and not a warning: the layout of a definition is what every duration
  * here is read out of, so a changed schema means the numbers may be right, wrong or absent with nothing
- * to tell them apart. Pinned commit `d84df0b`, 30 August 2026, 684 definitions.
+ * to tell them apart. Pinned commit `d84df0b`, 30 August 2026, 684 definitions, at version 1.
+ *
+ * **Version 2 was re-read before it was accepted**, commit `f85f217`, and it is additive: against
+ * `d84df0b` nothing under `codesets/` or `protocols/` changed, and in `devices/` every one of the
+ * 276236 records lost exactly one line, its `model`, which came back with the same value and a comma
+ * because new blocks follow it: `timing`, and on most records `power`, `inputs`, `channelTuning` and
+ * `states`, the device features Logitech's service hands out per catalogue entry, section 305. So
+ * every field this reader takes is byte for byte what version 1 held, and the new blocks are read by
+ * nothing here yet.
  */
-export const ARCHIVE_SCHEMA_VERSION = 1;
+export const ARCHIVE_SCHEMA_VERSION = 2;
 
 /** An atom of a segment: `Type` 1 is carrier on, 0 is carrier off, and `Value` is microseconds. */
 interface Atom {

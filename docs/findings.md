@@ -39909,8 +39909,8 @@ television's power code, sent seven times between the two KPN codes, is a candid
 The television on this configuration is a Panasonic, identified 80 of 80 against one codeset in
 Logitech's catalogue, the TX-P42GT30E range. Of its 81 stored codes 79 hold 3 copies of the frame, which
 is the `:3` every command of that codeset states, and two hold **7**: codes 42 and 49, `PowerOn` and
-`PowerOff`. Code 4 is the same `PowerOn` frame at 3 copies. Nothing in the archive states 7: the device
-files name only a codeset, and the family's definition has `PressMinimumRepeats` and
+`PowerOff`. Code 4 is the same `PowerOn` frame at 3 copies. Nothing in the archive stated 7 at the
+time, its version 1: the device files named only a codeset, and the family's definition has `PressMinimumRepeats` and
 `HoldMinimumRepeats` null. Logitech's account model has a power feature whose power on and off actions
 are `IRPressAction`s with a `Duration`, which would compile to more copies. Danny is adding the same
 model to the Harmony 650 through MyHarmony, in an activity, with its power settings left as offered.
@@ -39931,8 +39931,15 @@ on four devices, states one, `null` on each; Kodi has no power actions. One copy
 134.6 ms and 136.4 ms, a frame and its gap, the blocks being 942306 and 954486 microseconds for seven,
 so seven fit in a second and an eighth would not. That is the closure, the count off the frames against
 the duration off the account, with nothing in common between the two. **The margin is thin**: without
-the gap after the last copy, an eighth `PowerOn` would take 1002.1 ms, 2.1 ms over. The archive states
-no power feature for any of its devices, so the account is the only source.
+the gap after the last copy, an eighth `PowerOn` would take 1002.1 ms, 2.1 ms over. The archive stated
+no power feature for any of its devices when this was written, at schema version 1, so the account was
+the only source. **It states them now**: its author added the features to every device record after
+this project told him of the call below, schema version 2, and the television's record carries
+`power.on` and `power.off` with `durationMs` 1000, `powerOnDelay` 5000, `inputDelay` 1000, the twelve
+inputs, two digit channels, both states, and the delays and repeats, every one equal to what the service
+answered here. Across the archive 3234 of 276236 devices hold a power press for a stated time, 2220 of
+them for 1000 ms and 1788 for 2000. Version 2 changed nothing this project's reader takes, which
+`ARCHIVE_SCHEMA_VERSION`'s docstring records.
 
 **The 1000 is the catalogue's, and Logitech's service hands it out.** On the 650's record the
 television's power feature has `Id` 0 and `DateModified` null, as the PlayStation's does, where the four

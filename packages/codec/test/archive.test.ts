@@ -56,7 +56,10 @@ test('the archive states a schema version, and an unknown one is refused', () =>
   // The refusal is the whole guard, so it is asserted before anything is read through it. A reader that
   // carries on against a layout it does not know produces durations nobody can tell from correct ones.
   const fake = mkdtempSync(join(tmpdir(), 'harmony-archive-'));
-  writeFileSync(join(fake, 'manifest.json'), JSON.stringify({ schemaVersion: 2, counts: {} }));
+  // One past the pinned version rather than a literal: the literal was 2, and it stopped being a later
+  // version the day the archive published version 2 and the pin moved to it.
+  writeFileSync(join(fake, 'manifest.json'),
+    JSON.stringify({ schemaVersion: ARCHIVE_SCHEMA_VERSION + 1, counts: {} }));
   assert.throws(() => archiveManifest(fake), ArchiveError, 'a later schema version must refuse');
   const empty = mkdtempSync(join(tmpdir(), 'harmony-archive-'));
   assert.throws(() => archiveManifest(empty), ArchiveError, 'no manifest at all must refuse');

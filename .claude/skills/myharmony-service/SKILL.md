@@ -194,7 +194,7 @@ reasoning instead of querying.
   for durations their compiler would never emit, and it is wrong about families outright (section
   162). Lab captured codes **may** be sent to it; that permission is standing, do not re-ask.
 * **A catalogue device's features**, power, inputs and the hold time of a power command, which the
-  third party archive does not carry: `UserFeatureManager/CopyFeaturesFromGlobalDevice` with
+  third party archive carries itself since its schema version 2, so read it there first: `UserFeatureManager/CopyFeaturesFromGlobalDevice` with
   `deviceId` 0 and `globalDeviceVersionId.Value` set to the archive's own `globalDeviceId`. Measured
   a read on 1 October 2026, section 305, with the account record identical before and after; the
   version id an account record names is refused. `GetGlobalFeatures` answers access denied.
