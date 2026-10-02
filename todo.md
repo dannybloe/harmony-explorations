@@ -96,6 +96,7 @@ Plan: [003-how-an-activity-is-built.md](docs/plans/003-how-an-activity-is-built.
   - [x] 4.3.1 One device, six commands, catalogue to remote, television answered (section 242)
   - [ ] 4.3.2 A full device of ninety commands
   - [ ] 4.3.3 Several devices at once
+  - [ ] 4.3.4 A power step the catalogue holds for a stated time, composed as its own record of as many frames as end inside the hold, and a device page's power keys pointed at it too, which Logitech's compile does not do: the Harmony 650's device mode Power On sends three frames and leaves the Panasonic off, which needs four; measured on arch 14 only (section 306)
 
 ## 5. Learning codes
 
