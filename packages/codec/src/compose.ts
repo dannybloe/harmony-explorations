@@ -108,7 +108,7 @@ import {
 import type { Pulse } from './irframe.ts';
 import { IR_TABLE_SLOT, irGroups } from './ir.ts';
 import { irFrame } from './irframe.ts';
-import { blockOfStatedCode, statedCode, statedProtocol } from './stated.ts';
+import { blockOfStatedCode, heldBlockOfStatedCode, statedCode, statedProtocol } from './stated.ts';
 import { TOUCH_AREA_LENGTH, type TouchArea, type TouchPage, touchPages } from './tables.ts';
 import {
   deviceListRowMode, deviceListRows, deviceModeMarker, devices as deviceInventory, FOUR_SLOT_ITEMS,
@@ -144,6 +144,24 @@ export interface ComposeCommand {
    * ones, so a caller that knows better says so here.
    */
   readonly leadInUs?: number;
+  /**
+   * A power step the catalogue holds for this many milliseconds, sections 306 to 309: the record is
+   * `heldBlockOfStatedCode`'s, its frames counted for the hold, with no lead in and no held block,
+   * the way Logitech's compiler writes one. `held` and `leadInUs` do not apply and are refused.
+   */
+  readonly holdMs?: number;
+}
+
+/**
+ * One step of a power action as the catalogue states it: a command, and how long it is held where the
+ * catalogue says, `DriveStep` in `driving.ts`. A step held for a time gets a record of its own holding
+ * the frames that time sends, section 309; a step that is not still gets a record of its own, the
+ * ordinary press without its lead in silence, which is what every power step record Logitech compiled
+ * for the Harmony 650 holds, measured on three devices word for word.
+ */
+export interface ComposePowerStep {
+  readonly stated: string;
+  readonly holdMs?: number;
 }
 
 /** The lead-in the generator gives a command nothing says more about, measured in phase 7. */
@@ -162,18 +180,28 @@ export const COMPILED_LEAD_IN_US = 50000;
  * remainder under 16384 gives back one maximal and the last two words share their sum, smaller
  * half first. 50000 is `32767, 17233`; 40222 is `20111, 20111`; 500000 is fourteen maximals then
  * `20631, 20631`.
+ *
+ * **The microsecond comes off the trailing gap before the gap is split, not after**, section 309.
+ * This carved it off the last word of the split until 2 October 2026, which gives the same words
+ * except where the split ends in a balanced pair whose total is odd: the Panasonic family's 74801 is
+ * `32767, 21016, 21017, 1` in every compile and was `32767, 21017, 21016, 1` here. Over every block
+ * of the corpus and the compiles, carving first is the only spelling that fits on thousands and
+ * carving last is the only one on none.
  */
 export function compiledBlockWords(pulses: readonly Pulse[], leadInUs = 0): IrPulse[] {
   const led = leadInUs > 0 ? [{ mark: false, us: leadInUs }, ...pulses] : [...pulses];
   const words: IrPulse[] = [];
-  for (const pulse of led) {
+  // The trailing gap gives up its last microsecond first, then the rest is spelled like any silence.
+  const lastAt = led.length - 1;
+  const carved = lastAt >= 0 && !led[lastAt]!.mark && led[lastAt]!.us >= 2;
+  for (const [at, pulse] of led.entries()) {
     if (pulse.mark) {
       // A mark over the ceiling is spelt maximal first like blockWordsOf spells it; none of the
       // corpus's marks reach the ceiling, so the arm exists for completeness rather than evidence.
       words.push(...blockWordsOf([pulse]));
       continue;
     }
-    let left = pulse.us;
+    let left = carved && at === lastAt ? pulse.us - 1 : pulse.us;
     while (left > IR_PULSE_MAX) {
       const remainder = left - IR_PULSE_MAX;
       if (remainder < (IR_PULSE_MAX + 1) / 2) {
@@ -187,11 +215,7 @@ export function compiledBlockWords(pulses: readonly Pulse[], leadInUs = 0): IrPu
     }
     if (left > 0) words.push({ mark: false, microseconds: left });
   }
-  const last = words[words.length - 1];
-  if (last !== undefined && !last.mark && last.microseconds >= 2) {
-    words[words.length - 1] = { mark: false, microseconds: last.microseconds - 1 };
-    words.push({ mark: false, microseconds: 1 });
-  }
+  if (carved) words.push({ mark: false, microseconds: 1 });
   return words;
 }
 
@@ -292,6 +316,18 @@ export function composeIrGroup(
     if (entry === undefined) {
       throw new ComposeError(`no measured rhythm for ${read.family}, so nothing can be sent`);
     }
+    if (command.holdMs !== undefined) {
+      if (command.held === true || (command.leadInUs ?? 0) !== 0) {
+        throw new ComposeError('a held power step has no held block and no lead in');
+      }
+      const block = heldBlockOfStatedCode(read, command.holdMs);
+      if (block === undefined) {
+        throw new ComposeError(`${command.stated} cannot be composed held for ${command.holdMs} ms: `
+          + 'its family has no measured press block or stated segment lengths, or the hold is shorter than a press');
+      }
+      built.push({ periodNs: entry.periodNs, once: irBuildBlock(compiledBlockWords(block)) });
+      continue;
+    }
     const once = blockOfStatedCode(read, undefined, 'once');
     if (once === undefined) {
       throw new ComposeError(`${read.family} has no measured whole block, so nothing can be sent`);
@@ -384,6 +420,15 @@ export interface ComposeDevice {
   /** Which command is the power toggle, driving the device's one state variable. Default 0. */
   readonly power?: number;
   /**
+   * The catalogue's power on and power off steps, each composed as a record of its own, section 309,
+   * which the power variable's two transitions then send in place of `commands[power]`'s list. The two
+   * may be the same step, a toggle, and then share one record. Absent means `power` is sent both ways,
+   * which is what a composed device did before and what sends an ordinary press where Logitech's
+   * catalogue asks for a held one: three frames where the Harmony 650's Panasonic needs four.
+   */
+  readonly powerOn?: ComposePowerStep;
+  readonly powerOff?: ComposePowerStep;
+  /**
    * Arch 14 only: the inter device delay in tenths of a second, 0 to 20, which a start sequence
    * queues in front of each of this device's commands. Default `INTER_DEVICE_DELAY_DEFAULT`.
    */
@@ -400,6 +445,12 @@ export interface ComposedDevice {
   group: number;
   /** The base slot 10 list index per command, which is what a binding's 0x7f names. */
   lists: readonly number[];
+  /**
+   * The send lists of the power steps, where `powerOn` and `powerOff` were given: what the power
+   * variable runs, and what a device page's power keys should name so that they send what the
+   * catalogue asks for rather than an ordinary press. Equal for a toggle.
+   */
+  powerSteps?: { on?: number; off?: number };
   /** The device's power variable, in base slot 13's numbering. */
   variable: number;
   /**
@@ -547,8 +598,24 @@ export function composeDevice(c: Container, device: ComposeDevice): ComposedDevi
   }
   if (c.architecture === undefined) throw new ComposeError('the container states no architecture');
 
+  // The power steps, each a record after the commands, one per distinct step so that a toggle's two
+  // transitions send one record, as Logitech's compile of a toggle does.
+  const stepKey = (step: ComposePowerStep) => `${step.stated}|${step.holdMs ?? ''}`;
+  const steps: ComposePowerStep[] = [];
+  for (const step of [device.powerOn, device.powerOff]) {
+    if (step !== undefined && !steps.some((one) => stepKey(one) === stepKey(step))) steps.push(step);
+  }
+  const stepIndex = (step: ComposePowerStep | undefined) =>
+    step === undefined ? undefined : device.commands.length + steps.findIndex((one) => stepKey(one) === stepKey(step));
+  const sends: ComposeCommand[] = [
+    ...device.commands,
+    ...steps.map((step): ComposeCommand => (step.holdMs === undefined
+      ? { stated: step.stated, held: false, leadInUs: 0 }
+      : { stated: step.stated, holdMs: step.holdMs })),
+  ];
+
   // The infrared half, then everything else on the reparsed result.
-  const group = composeIrGroup(c, device.commands);
+  const group = composeIrGroup(c, sends);
 
   // One action list per command, in a hole below the action table, each named by a pointer appended
   // to the table. The list index is what the transitions below and phase 6's screen bindings point
@@ -580,12 +647,13 @@ export function composeDevice(c: Container, device: ComposeDevice): ComposedDevi
   // laid out after the sends: delay, then load and condition for command 0, then for command 1;
   // then the power on delay list and the list the power variable runs to switch the device on,
   // which calls the power command and then that delay list.
-  const n = device.commands.length;
+  // Every record gets a send list, the power steps' after the commands', so `n` counts both.
+  const n = sends.length;
   const firstList = actionTable.values.length;
   const sendBytes = delay === undefined ? 7 : 10;
   const delayList = firstList + n;
   const loadList = (k: number): number => delayList + 1 + 2 * k;
-  const bodies: Writer[] = device.commands.map((_, k) => {
+  const bodies: Writer[] = sends.map((_, k) => {
     const send = new Writer(sendBytes).u8(delay === undefined ? 2 : 3);
     if (delay !== undefined) send.u16(loadList(k)).u8(ACTION_LIST_INDEX_OPCODE);
     return send
@@ -597,7 +665,7 @@ export function composeDevice(c: Container, device: ComposeDevice): ComposedDevi
   if (delay !== undefined) {
     const spacing = delay.interDevice;
     bodies.push(new Writer(4).u8(1).u16((spacing.table << 8) | spacing.variable).u8(MAP_VALUE_OPCODE));
-    device.commands.forEach((_, k) => {
+    sends.forEach((_, k) => {
       bodies.push(new Writer(7).u8(2)
         .u16(delay.loadOperand).u8(STATE_BAND)
         .u16(loadList(k) + 1).u8(ACTION_LIST_INDEX_OPCODE));
@@ -608,7 +676,7 @@ export function composeDevice(c: Container, device: ComposeDevice): ComposedDevi
     const waits = delay.powerOn;
     bodies.push(new Writer(4).u8(1).u16((waits.table << 8) | waits.variable).u8(MAP_VALUE_OPCODE));
     bodies.push(new Writer(7).u8(2)
-      .u16(firstList + power).u8(ACTION_LIST_INDEX_OPCODE)
+      .u16(firstList + (stepIndex(device.powerOn) ?? power)).u8(ACTION_LIST_INDEX_OPCODE)
       .u16(powerDelayList).u8(ACTION_LIST_INDEX_OPCODE));
   }
   const listsAt = actionTable.start;
@@ -637,12 +705,13 @@ export function composeDevice(c: Container, device: ComposeDevice): ComposedDevi
   const recordLength = STATE_RECORD_HEADER + STATE_VALUE_LENGTH * 2;
   const recordAt = stateRecordEnd(current);
   const recordHole = relocate(current, recordAt, recordLength);
-  const powerList = firstList + power;
-  const switchOn = delay === undefined ? powerList : onList;
+  const onSend = firstList + (stepIndex(device.powerOn) ?? power);
+  const offSend = firstList + (stepIndex(device.powerOff) ?? power);
+  const switchOn = delay === undefined ? onSend : onList;
   const record = new Writer(recordLength)
     .u16(0).u16(1).u16(2).u8(0)
     .u8(0).u16(0).u16(1).u16(switchOn).u8(ACTION_LIST_INDEX_OPCODE)
-    .u8(0).u16(1).u16(0).u16(powerList).u8(ACTION_LIST_INDEX_OPCODE);
+    .u8(0).u16(1).u16(0).u16(offSend).u8(ACTION_LIST_INDEX_OPCODE);
   recordHole.bytes.set(record.bytes, recordAt);
   const recordAddress = current.flashBase + recordAt;
   current = parse(recordHole.bytes);
@@ -725,6 +794,10 @@ export function composeDevice(c: Container, device: ComposeDevice): ComposedDevi
     bytes: restamped(named.blob),
     group: group.group,
     lists: device.commands.map((_, k) => firstList + k),
+    ...(steps.length === 0 ? {} : { powerSteps: {
+      ...(device.powerOn === undefined ? {} : { on: onSend }),
+      ...(device.powerOff === undefined ? {} : { off: offSend }),
+    } }),
     variable,
     ...delays,
   };

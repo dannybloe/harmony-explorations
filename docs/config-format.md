@@ -2771,10 +2771,22 @@ that wants byte identity with a compiled config follows them, and `compiledBlock
 * **Every once block opens with a lead in silence**, 2032 of 2032 across four samples spanning both
   generator eras: 50 ms on most commands, 500 ms or a second on the ones that get a settling time.
   A held block never leads, 0 of 67.
+* **A held power step's record is the ordinary press's frames cycled to the count**, section 309: no lead
+  in, the frames carrying the code's first slot once and the second slot's cycled to section 308's
+  count, each followed by the gap the press gives it, the last gap getting back the microsecond the press
+  ends in. 26 of 27 held records rebuilt word for word, arch 14 only; `heldBlockOfStatedCode`, which
+  assumes the press's frames are the code's walk in order.
+* **A power step without a hold is the ordinary press without its lead in**, the same words otherwise,
+  three devices of one compile for the Harmony 650.
 * **A duration too long for one word is spelt as maximal 32767 us words with the remainder balanced
   across the last two, smaller half first, and no word below half the maximum**: 50000 is
   `32767, 17233`; 40222 is `20111, 20111`; 500000 is fourteen maximals then `20631, 20631`.
-* **The trailing gap donates its final microsecond** to a closing 1 us word, `..., 30543, 1`.
+* **The trailing gap gives up its final microsecond before it is split**, and the microsecond closes the
+  block as a 1 us word: `..., 30543, 1`, and the Panasonic family's 74801 is `32767, 21016, 21017, 1`.
+  Carving the last word after the split gives the same words except where the split ends in a balanced
+  pair whose total is odd, and there it is wrong: over the corpus containers with infrared and the six
+  power hold compiles, carving first alone fits 1757 blocks on arch 8, 12 and 14 and carving after alone
+  fits none, section 309. Arch 9 (Harmony 525) blocks end in no microsecond at all.
 
 Respelling every merged space run of every block reproduces the three Harmony One compiles exactly,
 492, 415 and 415 blocks.

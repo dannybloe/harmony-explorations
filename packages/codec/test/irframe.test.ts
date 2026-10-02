@@ -37,8 +37,9 @@ import { biphaseFrames, blockCopies, frameKey, frameSegments, framesOfPulses, fr
          timingsOfFrame }
   from '../src/irframe.ts';
 import { pulsesOfWords } from '../src/irda.ts';
+import { compiledBlockWords } from '../src/compose.ts';
 import { keyCodes } from '../src/inventory.ts';
-import { heldFramesOfStatedCode, pulsesOfStatedCode, statedProtocol, timingsOf } from '../src/stated.ts';
+import { heldBlockOfStatedCode, heldFramesOfStatedCode, pulsesOfStatedCode, statedProtocol, timingsOf } from '../src/stated.ts';
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 
@@ -2269,6 +2270,8 @@ test('every held power record of the test devices in sections 306 to 308 holds a
     const seen: string[] = [];
     const matched: number[] = [];
     const fits = { shortest: 0, mean: 0, longest: 0, nolead: 0 };
+    const refused: string[] = [];
+    let rebuilt = 0;
     for (const one of ROWS) {
       const driving = catalogueDriving(IR_ARCHIVE!, one.slug, one.file);
       const step = driving.power![one.power]!.find((each) => each.kind === 'send' && each.holdMs !== undefined);
@@ -2281,12 +2284,14 @@ test('every held power record of the test devices in sections 306 to 308 holds a
       const family = command.protocol;
       const want = catalogueFrameSignature(one.slug, one.file, step.command, true);
       const c = load(one.fixture);
-      const counts = irGroups(c)![one.group]!.addresses.flatMap((record) => {
+      const records = irGroups(c)![one.group]!.addresses.flatMap((record) => {
         const [once, again] = irHeaderPointers(c, record);
         if (again) return [];
-        const frames = heldFramesOf(irBlockWords(c, once!)!);
-        return frameSignature(frames[0]!.shape, true) === want ? [frames.length] : [];
+        const words = irBlockWords(c, once!)!;
+        const frames = heldFramesOf(words);
+        return frameSignature(frames[0]!.shape, true) === want ? [{ frames: frames.length, words }] : [];
       });
+      const counts = records.map((each) => each.frames);
       assert.ok(counts.length > 0, `${one.file} ${one.power}: a record sends ${step.command}`);
       // A device that holds one command for two different times, the Knoll's toggle at 800 and 500 ms, has
       // a record for each: the longer hold takes the record with more frames.
@@ -2300,6 +2305,16 @@ test('every held power record of the test devices in sections 306 to 308 holds a
       // The library's count, from the generated table and the code's own slots, against this test's own
       // reading of the raw definition: two derivations that share nothing but the archive.
       assert.equal(heldFramesOfStatedCode(command.keycode, step.holdMs!), held, `${one.file} ${one.power} library`);
+      // And the block itself, word for word against the record Logitech's compiler wrote, terminator
+      // included. A family with no measured press block is refused rather than built.
+      const block = heldBlockOfStatedCode(command.keycode, step.holdMs!);
+      if (block === undefined) refused.push(`${one.file} ${family}`);
+      else {
+        const built = [...compiledBlockWords(block).map((w) => (w.mark ? IR_PULSE_MARK : 0) | w.microseconds), 0];
+        assert.ok(records.some((each) => each.frames === held && each.words.length === built.length
+          && each.words.every((w, i) => w === built[i])), `${one.file} ${one.power}: the composed held block is the compiled one`);
+        rebuilt += 1;
+      }
       seen.push(`${one.file} ${one.power} ${step.holdMs} ${held}`);
       matched.push(counts.length);
     }
@@ -2315,4 +2330,8 @@ test('every held power record of the test devices in sections 306 to 308 holds a
       'TX-D37LT84F on 2500 18', 'TX-D37LT84F off 1500 11', 'KE-50MR1E on 1000 23', 'KE-50MR1E off 1000 23', '25DT60H on 1500 13',
     ]);
     assert.deepEqual(fits, { shortest: 12, mean: 27, longest: 18, nolead: 25 });
+    // The Technics family is one of those whose definition does not state how many copies a press sends,
+    // so the table holds no press block for it to build from.
+    assert.equal(rebuilt, 26);
+    assert.deepEqual(refused, ['TX-28A1U Technics 22 Bit']);
   });

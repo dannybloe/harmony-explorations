@@ -463,6 +463,24 @@ export function segmentIdOf(item: StatedItem): string {
 }
 
 /**
+ * A stated code's segments as their stated lengths, `[microseconds, closes a frame]`, its first slot and
+ * its second, or undefined where the family has no stated lengths, a slot names a segment it does not
+ * hold, or the second slot closes no frame. The one walk `heldFramesOfStatedCode` and
+ * `heldBlockOfStatedCode` share, so the count and the block cannot disagree about where a frame ends.
+ */
+function segmentWalkOf(read: StatedCode):
+  { start: readonly (readonly [number, boolean])[]; repeat: readonly (readonly [number, boolean])[] } | undefined {
+  const table = SEGMENT_LENGTHS[read.family];
+  if (table === undefined) return undefined;
+  const lengths = (items: readonly StatedItem[]) => items.map((one) => table[segmentIdOf(one)]);
+  const start = lengths(read.groups[0] ?? []);
+  const repeat = lengths(read.groups[1] ?? []);
+  if ([...start, ...repeat].some((one) => one === undefined)) return undefined;
+  if (!repeat.some((one) => one![1])) return undefined;
+  return { start: start as (readonly [number, boolean])[], repeat: repeat as (readonly [number, boolean])[] };
+}
+
+/**
  * How many frames Logitech's compiler puts in a power step held for `holdMs`, section 308.
  *
  * **The frames that start inside the hold, each timed at the length the definition states**: the code's
@@ -474,18 +492,14 @@ export function segmentIdOf(item: StatedItem): string {
  * Undefined where the family has no stated lengths, a slot names a segment it does not hold, or the
  * second slot closes no frame, which would never end. **Nothing here applies a floor**: whether a hold
  * shorter than an ordinary press sends fewer frames than the press is unmeasured, so a caller composing
- * one has to decide, and `heldPressOfStatedCode` refuses.
+ * one has to decide, and `heldBlockOfStatedCode` refuses.
  */
 export function heldFramesOfStatedCode(code: string | StatedCode, holdMs: number): number | undefined {
   const read = typeof code === 'string' ? statedCode(code) : code;
   if (read === undefined || !(holdMs > 0)) return undefined;
-  const table = SEGMENT_LENGTHS[read.family];
-  if (table === undefined) return undefined;
-  const lengths = (items: readonly StatedItem[]) => items.map((one) => table[segmentIdOf(one)]);
-  const start = lengths(read.groups[0] ?? []);
-  const repeat = lengths(read.groups[1] ?? []);
-  if ([...start, ...repeat].some((one) => one === undefined)) return undefined;
-  if (!repeat.some((one) => one![1])) return undefined;
+  const walk = segmentWalkOf(read);
+  if (walk === undefined) return undefined;
+  const { start, repeat } = walk;
   const hold = holdMs * 1000;
   let at = 0;
   let pending = 0;
@@ -574,4 +588,82 @@ export function blockOfStatedCode(
   // stage two; a tail asking for a frame the code does not state is a refusal inside the encoder.
   try { return pulsesOfBlock(shape, read.frames, block); }
   catch { return undefined; }
+}
+
+/** A space longer than this ends a frame, the same boundary `statedSegmentLengths` closes a frame on. */
+const HELD_FRAME_GAP_US = 10000;
+
+/**
+ * The block of a power step the catalogue holds for `holdMs`: as many frames as Logitech's compiler puts
+ * in it, `heldFramesOfStatedCode`, laid out the way its held records are, section 309.
+ *
+ * **What their records hold**, read off all 27 held records of sections 306 to 308: one block and no
+ * held or tail pointer, no lead in silence, and the ordinary press's frames, the ones carrying the code's
+ * first slot once and the second slot's cycled to the count, each followed by the gap the press gives
+ * it. The press's last gap carries the microsecond every block ends in, so that frame's gap between
+ * frames is one microsecond shorter, and the held block's last gap gets the microsecond back.
+ * `compiledBlockWords` then spells it as it spells every block.
+ *
+ * Built out of the press block rather than out of the frames afresh, because the press already carries
+ * every per family choice: a lead in that only the first frame sends, a code whose first slot is another
+ * frame, literal tail words. **It assumes the press's frames are the code's walk in order**, the first
+ * slot's frames and then the second slot's, and checks only that there are enough of them: a family
+ * whose press repeated its first slot would cycle the wrong frame.
+ *
+ * Undefined, rather than a guess, where the count is; where the table has no press block for the family;
+ * where the code's second slot ends in a segment that closes no frame; where the press holds fewer frames
+ * than the first slot's plus one cycle of the second's; and where the hold would send fewer frames than
+ * an ordinary press, since whether a hold that short sends less than a press is unmeasured. Measured on
+ * arch 14 (Harmony 650 and 700) only.
+ */
+export function heldBlockOfStatedCode(
+  code: string | StatedCode, holdMs: number, periodNs?: number,
+): Pulse[] | undefined {
+  const read = typeof code === 'string' ? statedCode(code) : code;
+  if (read === undefined) return undefined;
+  const count = heldFramesOfStatedCode(read, holdMs);
+  const walk = segmentWalkOf(read);
+  const press = blockOfStatedCode(read, periodNs, 'once');
+  if (count === undefined || walk === undefined || press === undefined) return undefined;
+  // How many frames carry part of the first slot, a segment that closes none joining the frame after it,
+  // and how many the second slot's cycle is.
+  const startCloses = walk.start.filter((one) => one[1]).length;
+  const pendingStart = walk.start.length > 0 && !walk.start.at(-1)![1];
+  const once = startCloses + (pendingStart ? 1 : 0);
+  const cycle = walk.repeat.filter((one) => one[1]).length;
+  if (walk.repeat.length > 0 && !walk.repeat.at(-1)![1]) return undefined;
+  // The press cut into frames, each with the gap after it as one space: a literal tail spells a long gap
+  // as several words, and a zero word is no interval at all.
+  const frames: Pulse[][] = [];
+  let current: Pulse[] = [];
+  let inGap = false;
+  for (const pulse of press) {
+    if (pulse.us === 0) continue;
+    if (inGap && pulse.mark) {
+      frames.push(current);
+      current = [];
+      inGap = false;
+    }
+    if (inGap) {
+      const last = current.at(-1)!;
+      current[current.length - 1] = { mark: false, us: last.us + pulse.us };
+      continue;
+    }
+    current.push({ ...pulse });
+    if (!pulse.mark && pulse.us > HELD_FRAME_GAP_US) inGap = true;
+  }
+  if (current.length > 0) frames.push(current);
+  // The press's own last gap carries the microsecond its spelling ends in, so the gap between frames is
+  // one shorter, which is what every held record's middle gaps are.
+  const tail = frames.at(-1)?.at(-1);
+  if (tail === undefined || tail.mark) return undefined;
+  frames[frames.length - 1]![frames.at(-1)!.length - 1] = { mark: false, us: tail.us - 1 };
+  if (frames.length < once + cycle || count < frames.length) return undefined;
+  const out: Pulse[] = [];
+  for (let i = 0; i < count; i += 1) {
+    out.push(...(i < once ? frames[i]! : frames[once + ((i - once) % cycle)]!).map((one) => ({ ...one })));
+  }
+  const last = out.at(-1)!;
+  out[out.length - 1] = { mark: false, us: last.us + 1 };
+  return out;
 }

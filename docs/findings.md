@@ -23298,7 +23298,9 @@ on most commands and 500 ms or a second on the ones that get a settling time; he
 carries the rule. And a block's words are spelled under the **half word rule**: a long silence is
 maximal words and a remainder, no word may fall below half the maximum, so a remainder under 16384
 gives back one maximal and the last two words share their sum, smaller half first; the trailing gap
-then donates its final microsecond to a closing one microsecond word. 50000 is `32767, 17233`; 40222
+then donates its final microsecond to a closing one microsecond word, **before** it is split, which
+`compiledBlockWords` got the wrong way round until section 309 and which only a balanced pair with an odd
+total can show, so nothing composed here showed it. 50000 is `32767, 17233`; 40222
 is `20111, 20111`; 500000 is fourteen maximals then `20631, 20631`. Respelling every merged space run
 of every block reproduces the file exactly on **all three Harmony One compiles this account has
 produced**, 492 of 492, 415 of 415 and 415 of 415 blocks; on `compiled_protocols` and `one_config`
@@ -40451,3 +40453,117 @@ enough, would separate this from counting whole sent copies.
 * Sections 306 and 307 corrected in place.
 * `docs/config-format.md`, the held power entry, restated.
 * The compile is the lab fixture `h700_power_hold_compile_4`, out of the corpus and in the golden vectors.
+
+## 309. A held power record is its press's frames cycled to the count, and every block's trailing microsecond comes off before its gap is split
+
+**2 October 2026, todo 4.3.4.** Section 308 says how many frames a held power step holds. This is what
+the record holding them looks like, read off the same 27 held records, and composed: our own held block
+for each step, built from nothing but the catalogue's stated code and its hold, is the record Logitech's
+compiler wrote **word for word, terminator included, on 26 of the 27**. The 27th is refused rather than
+built, below. Building it found that `compiledBlockWords`, the speller every composed block goes through,
+had the order of its last step wrong, which is corrected here and in section 174.
+
+**The layout.** One block, no held or tail pointer, no lead in silence, as section 306 found. The frames
+are the ordinary press's: the frames carrying part of the code's first slot once, then the second slot's
+frames cycled until the count is reached, so a lead in that only the first frame sends stays on the
+first frame, the JVC's. Each frame keeps the gap the press gives it, and the press's last gap gives up
+the microsecond every block ends in, which the held block's last gap gets back. On 7 of the 9 families
+rebuilt that makes every gap between frames one microsecond shorter than the press's last; the Toshiba
+family's first frame keeps its own shorter gap, 40222 us, and the Memorex press our table builds is a
+single frame, so its gap between frames is derived from its last rather than read off a second one.
+
+**The trailing microsecond comes off before the gap is split, in every block, not only a held one.** A
+gap too long for one word is maximal words and a remainder under the half word rule, section 174, and
+the block's last gap ends in a 1 us word. `compiledBlockWords` split the whole gap and then took the
+microsecond off the last word; Logitech's compiler takes it off first and splits the rest. The two
+spellings part only where the split ends in a balanced pair whose total is odd: the Panasonic family's
+74801 us is `32767 21016 21017 1` in every compile and was `32767 21017 21016 1` here. Odd remainders
+spelled as one word, the Toshiba family's 96077 or RECS80's 52982 and 55522, come out alike either way.
+This first looked like a second rule for held records, since our press disagreed with their held
+record; their own **press** records are spelled the held way too, which the blind review found, and so
+does every block whose trailing silence is one quantity: over the corpus containers with infrared and
+the six power hold compiles, carving first alone fits **1757** blocks and carving after alone fits
+**none**, 515 of the 1757 on arch 8 (Harmony 880 and 885), 11 on arch 12 (Harmony One) and 1231 on arch
+14 (Harmony 600, 650 and 700). On 7037 more the two agree, 607 end in a run of several quantities that
+no single respelling reproduces, and the 656 that end in no microsecond are the Harmony 525's 646 and ten
+others. Section 174's three Harmony One compiles respelled exactly because none of their composed gaps
+was a balanced odd pair, which is how the order went unseen.
+
+**The refusal is the Technics 22 Bit family**, the TX-28A1U's toggle: a stated row of the rhythm table,
+section 228, carrying no block, since its definition does not state how many copies a press sends. The
+record's 14 frames are counted right by section 308 all the same, and the record ends in the same 1 us
+word.
+
+**A power step without a hold is the ordinary press without its lead in.** Logitech's compile writes a
+record per power step whether held or not, and on the Harmony 650's second compile the three devices
+checked, its KPN box, Denon and LG television, each have a power step record whose words are an ordinary
+press record's of the same code with its lead in dropped, word for word. A press record with a held
+block has a step record without one.
+
+**So a composed device can switch the way Logitech's does.** `composeDevice` takes the catalogue's power
+on and off as steps, each composed as a record of its own, held or not, and the device's power variable
+sends them in place of the first command's ordinary press. Composed onto the Harmony 650's own
+configuration, the Panasonic television's two step records are Logitech's two records for it word for
+word. `compose-device.ts` reads the steps out of the catalogue when the power action is one send, and
+points the device page's power pads at them too, which Logitech's compile does not do and which is the
+reason for todo 4.3.4.
+
+### Independent closure and calibration
+
+The count comes from section 308's rule over Logitech's definitions and the frames from our rhythm table;
+the compiled words come from their compiler. The closure is limited to the frames, every mark and space
+matching across 26 records and nine families, the Sony family spelling its bits in its marks and the
+Magnavox family's half cells left unmerged as their generator writes them. The layout, cycling the
+second slot and moving the microsecond, was read off these records, so it is fitted, and the next compile
+of a held power step is the out of sample test. The spelling order is not fitted: it was found on one
+family and then measured over every block of the corpus, where it is told apart on three architectures.
+
+### Scope, decision 16
+
+The held layout: arch 14 (Harmony 650 and 700) compiles only, the same 27 records as section 308.
+Families with several repeat segments or more than two cells are not among them, a hold shorter than an
+ordinary press is refused, and `heldBlockOfStatedCode` assumes the press's frames are the code's walk in
+order, checking only that there are enough of them. The spelling: arch 8, 12 and 14, and arch 9 does not
+end a block in a microsecond. The power step without a hold: three devices of one arch 14 compile.
+
+### Sources checked before the work
+
+Sections 174 and 306 to 308, `compiledBlockWords` and the compiled records of the six compiles. No client
+or firmware is involved: section 305 found the count is the service's compiler.
+
+### The two reviews
+
+The blind re-measurement, given the records and not our answer, described the same layout and rebuilt 26
+of 26 from our press and 27 of 27 from each group's own compiled press record, the Technics one
+included, and found that their press records are spelled the held way, which turned a held record rule
+into a correction of `compiledBlockWords`. It also found that our table builds a one frame press for the
+Memorex 32 Bit family where Logitech's compiled press of the Dell 2300MP holds three, which does not
+affect the held record and is todo L13. The sentence audit confirmed the counts and found eight things,
+all corrected: the condition under which the two spellings part, stated as an odd remainder where it is
+a balanced pair with an odd total; the gap between frames claimed for every family where it holds on 7 of
+9; the spelling rule resting on one gap length, which the corpus measurement now answers; "one rule seen
+twice" overstated, which the correction now makes true; the 1 us word said to distinguish a held record,
+which every block has; the closure claimed for the layout as well as the frames; four points in the
+function's docstring; and the unchecked assumption that the press's frames are the walk in order, now
+documented.
+
+### Falsification
+
+A compiled held power record that differs by one word from the block built for its stated code and hold,
+in a family this table holds a press block for; or a compiled block whose trailing silence is one
+quantity and is spelled with the microsecond carved off after the split.
+
+### Where it lands
+
+* `heldBlockOfStatedCode` in `packages/codec/src/stated.ts`, sharing its segment walk with
+  `heldFramesOfStatedCode` so the count and the block cannot disagree about where a frame ends.
+* `compiledBlockWords` in `packages/codec/src/compose.ts`, carving first, and `composeDevice` taking
+  `powerOn` and `powerOff` steps; `compose-device.ts` reading them out of the catalogue.
+* `packages/codec/test/irframe.test.ts`, section 308's test: every held record rebuilt and compared word
+  for word, 26 rebuilt and the Technics one refused, both asserted.
+* `packages/codec/test/compose.test.ts`: the corpus wide spelling count with its per architecture split;
+  the 74801 case in the spelling test; and the Harmony 650's television composed with its two held steps,
+  both records Logitech's word for word, a toggle sharing one record, a step without a hold being the
+  press without its lead in, and a hold shorter than a press refused. Carving after the split fails all
+  four tests.
+* Section 174 corrected in place, and `docs/config-format.md` under how the generator spells a block.

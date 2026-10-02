@@ -25,6 +25,14 @@
  * `--power-on-delay` and `--inter-device-delay` in tenths of a second, 0 to 450 and 0 to 20, and
  * without them what most compiled devices carry, 15 and 5.
  *
+ * **A power step the catalogue holds for a time is composed as Logitech composes it**, section 309: a
+ * record of its own holding the frames that hold sends, which the device's power variable sends when it
+ * switches the device on or off. A television that needs its power button held, the Harmony 650's
+ * Panasonic, stays off for an ordinary press. **The device page's power keys send those records too**,
+ * which Logitech's compile does not do, since a device mode Power On of three frames leaves that
+ * television off. Only a power action that is one send is composed this way; anything longer is
+ * reported and the first command toggles the power as before, and `--no-power-steps` asks for that.
+ *
  * It deliberately does not stamp the build timestamp, for `set-delay.ts`'s reason: a timestamp is
  * right for a save and wrong for an exercise whose output should differ from its input only in the
  * places this prints.
@@ -36,6 +44,9 @@ import { IR_ARCHIVE } from '@harmony/lab';
 import {
   catalogueCommands,
   catalogueDevice,
+  catalogueDriving,
+  type ComposePowerStep,
+  type DriveStep,
   composeDevice,
   composeDeviceScreen,
   coverage,
@@ -109,6 +120,31 @@ const commands = wanted.map((name) => {
 process.stdout.write(`${device.manufacturer} ${device.model}: ${available.length} commands in the `
   + `catalogue, ${commands.length} asked for\n`);
 
+// The catalogue's power on and off, each composed as its own record where it is a single send, section
+// 309. A toggle device states one action for both.
+const driving = catalogueDriving(IR_ARCHIVE, manufacturer, model);
+const single = (name: string, steps: readonly DriveStep[] | undefined):
+  { step: ComposePowerStep; command: string } | undefined => {
+  if (steps === undefined) return undefined;
+  const [only] = steps;
+  if (steps.length !== 1 || only === undefined || only.kind !== 'send') {
+    process.stdout.write(`power ${name} is ${steps.length} catalogue steps, not one send, so it is not composed `
+      + 'as a step of its own\n');
+    return undefined;
+  }
+  const keycode = byName.get(only.command) ?? fail(`the catalogue's power ${name} sends ${only.command}, which the codeset lacks`);
+  return { command: only.command, step: { stated: keycode, ...(only.holdMs === undefined ? {} : { holdMs: only.holdMs }) } };
+};
+const steps = process.argv.includes('--no-power-steps') ? {} : {
+  on: single('on', driving.power?.on ?? driving.power?.toggle),
+  off: single('off', driving.power?.off ?? driving.power?.toggle),
+};
+for (const [name, one] of Object.entries(steps)) {
+  if (one === undefined) continue;
+  process.stdout.write(`power ${name}: ${one.command}`
+    + (one.step.holdMs === undefined ? ', an ordinary press' : `, held ${one.step.holdMs} ms`) + '\n');
+}
+
 const before = parse(new Uint8Array(readFileSync(input)));
 const wasDevices = inventory(before).devices;
 process.stdout.write(`${input}: ${before.blob.length} bytes, ${wasDevices.length} devices `
@@ -126,6 +162,8 @@ const powerOnDelay = tenths('power-on-delay');
 const interDeviceDelay = tenths('inter-device-delay');
 const composed = composeDevice(before, {
   label, commands, power: 0,
+  ...(steps.on === undefined ? {} : { powerOn: steps.on.step }),
+  ...(steps.off === undefined ? {} : { powerOff: steps.off.step }),
   ...(powerOnDelay === undefined ? {} : { powerOnDelay }),
   ...(interDeviceDelay === undefined ? {} : { interDeviceDelay }),
 });
@@ -141,8 +179,15 @@ if (!process.argv.includes('--no-power-off')) {
   process.stdout.write(`power variable ${composed.variable} joins all off list ${joined.allOff} and `
     + `${joined.enterLists.length} activity enter lists as 0\n`);
 }
+// A pad for a power command sends the power step's record, where there is one, rather than the
+// ordinary press: the reason the step exists is that the press is not enough for this device.
+const padList = (k: number): number => {
+  if (wanted[k] === steps.on?.command && composed.powerSteps?.on !== undefined) return composed.powerSteps.on;
+  if (wanted[k] === steps.off?.command && composed.powerSteps?.off !== undefined) return composed.powerSteps.off;
+  return composed.lists[k] as number;
+};
 const screen = composeDeviceScreen(withDevice, label,
-  labels.map((name, k) => ({ label: name, list: composed.lists[k] as number })),
+  labels.map((name, k) => ({ label: name, list: padList(k) })),
   { ...(iconLike === undefined ? {} : { iconLike }), ...(keysLike === undefined ? {} : { keysLike }) });
 // **A save is stamped with the moment of saving**, base slot 3 and the clock's seven state values,
 // which is the rail that separates a save from a round trip. The first device written to a remote

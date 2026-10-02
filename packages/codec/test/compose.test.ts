@@ -58,6 +58,7 @@ import {
   irBlockWords,
   irGroups,
   irHeaderPointers,
+  irRecordBlocks,
   mergedIntervals,
   parse,
   roundTrip,
@@ -98,6 +99,7 @@ import {
   decode,
   Container,
   compiledBlockWords,
+  payloadOf,
   bitmapReference,
 } from '../src/index.ts';
 
@@ -839,6 +841,77 @@ test('a device composed on the Harmony 650 switches on with a power on delay in 
                 ComposeError);
 });
 
+/**
+ * Section 309, todo 4.3.4: a device composed with the catalogue's power steps switches with the records
+ * Logitech's compiler writes for them. The known answer is the Harmony 650's own television, the
+ * Panasonic TX-P42GT30E, compiled onto the 650's record with its catalogue holds in section 307: power
+ * on and off are each held for a second, and the compiler wrote a record of seven frames for each. The
+ * composed device's two step records are those two records word for word, and its power variable sends
+ * them where it used to send the ordinary press, which is three frames and leaves that television off.
+ */
+test('a device composed on the Harmony 650 with held power steps switches with the records Logitech compiles for them',
+     skipUnless('h650_config_region', 'h650_power_hold_compile_2'), () => {
+  const ON = 'G:PanasonicV2 48 Bit:()(0x400401007C7D)():3';
+  const OFF = 'G:PanasonicV2 48 Bit:()(0x40040100FCFD)():3';
+  const pristine = parse(require_('h650_config_region'));
+  const commands = [{ stated: ON, held: false }, { stated: OFF, held: false }];
+  const device = composeDevice(pristine, {
+    label: 'Plasma', commands, power: 0, powerOn: { stated: ON, holdMs: 1000 }, powerOff: { stated: OFF, holdMs: 1000 },
+  });
+  const after = parse(device.bytes);
+  const report = coverage(after);
+  assert.equal(report.accounted, report.total, 'every byte is claimed');
+  assert.deepEqual(report.overlaps, [], 'and no byte twice');
+  assert.ok(trailerAgrees(after));
+  assert.equal(roundTrip(after).equal, true, 'the emitter reproduces the composed file');
+  assertStateTableConsistent(after);
+
+  // Four records: the two commands, then the two steps, each step one block with no held block.
+  const compiled = parse(payloadOf(require_('h650_power_hold_compile_2')));
+  const wordsAt = (c: Container, group: number, record: number) => {
+    const [once, held, tail] = irHeaderPointers(c, irGroups(c)![group]!.addresses[record]!);
+    return { words: irBlockWords(c, once!)!, held, tail };
+  };
+  assert.equal(irGroups(after)![device.group]!.addresses.length, 4);
+  for (const [record, theirs] of [[2, 54], [3, 4]] as const) {
+    const mine = wordsAt(after, device.group, record);
+    assert.equal(mine.held, 0);
+    assert.equal(mine.tail, 0);
+    assert.deepEqual(mine.words, wordsAt(compiled, 5, theirs).words, `step record ${record} is Logitech's record ${theirs}`);
+  }
+  // The ordinary presses keep their lead in and are not the step records.
+  assert.equal(wordsAt(after, device.group, 0).words[0]! & IR_PULSE_MARK, 0);
+
+  // The power variable: off sends the off step's list, on runs the list that sends the on step's and
+  // then the power on delay. Both step lists send their own record and nothing else.
+  const sendOf = (list: number) => after.actionLists()![list]!.filter((one) => one.opcode === 0x7d).map((one) => one.operand);
+  const transitions = stateRecords(after)![device.variable]!.values;
+  const on = transitions.find((one) => one.from === 0 && one.to === 1)!;
+  const off = transitions.find((one) => one.from === 1 && one.to === 0)!;
+  assert.equal(off.operand, device.powerSteps!.off);
+  assert.equal(on.operand, device.powerOnDelay!.on);
+  assert.deepEqual(after.actionLists()![on.operand]!.map((one) => one.operand),
+                   [device.powerSteps!.on, device.powerOnDelay!.list]);
+  assert.deepEqual(sendOf(device.powerSteps!.on!), [(device.group << 8) | 2]);
+  assert.deepEqual(sendOf(device.powerSteps!.off!), [(device.group << 8) | 3]);
+  assert.deepEqual(device.lists, [device.lists[0], device.lists[0]! + 1], 'the commands keep the first lists');
+
+  // A toggle held for one time is one step: one record, and both transitions send it.
+  const toggle = composeDevice(pristine, {
+    label: 'Plasma', commands, power: 0, powerOn: { stated: ON, holdMs: 1000 }, powerOff: { stated: ON, holdMs: 1000 },
+  });
+  assert.equal(irGroups(parse(toggle.bytes))![toggle.group]!.addresses.length, 3);
+  assert.equal(toggle.powerSteps!.on, toggle.powerSteps!.off);
+  // A step without a hold is the ordinary press with no lead in: in that compile the KPN box's power step,
+  // record 17 of its group, is its ordinary press, record 25, with the lead in gone. And a hold shorter
+  // than a press is refused, since whether it sends fewer frames than a press is unmeasured.
+  const plain = composeDevice(pristine, { label: 'Plasma', commands, power: 0, powerOn: { stated: ON }, powerOff: { stated: OFF } });
+  const press = wordsAt(parse(plain.bytes), plain.group, 0).words;
+  assert.deepEqual(wordsAt(parse(plain.bytes), plain.group, 2).words, press.slice(press.findIndex((w) => (w & IR_PULSE_MARK) !== 0)));
+  assert.throws(() => composeDevice(pristine, { label: 'Plasma', commands, power: 0, powerOn: { stated: ON, holdMs: 100 } }),
+                ComposeError);
+});
+
 test('a device composed on the Harmony 650 opens every command in the compiler\'s shape and order',
      skipUnless('h650_config_region'), () => {
   const pristine = parse(require_('h650_config_region'));
@@ -1042,6 +1115,15 @@ test('the composed television is the one Logitech compiles, block for block',
  * word rule for a long silence, and the one microsecond word a trailing gap ends in. Each example
  * is a value read off their compiles, section 174.
  */
+/** The containers the block spelling is measured over: the corpus's with infrared, and the six compiles. */
+const SPELLING_POPULATION = [
+  'one_config', 'one_config_unprogrammed', 'h600_config', 'h700_config', 'h700_config_2',
+  'h525_config', 'h525_config_2', 'arch8_config_a', 'arch8_config_b', 'arch8_config_c', 'arch8_config_d',
+  'one_spare_before_sync', 'one_spare_after_sync',
+  'h700_power_hold_compile', 'h650_power_hold_compile', 'h700_power_hold_compile_2',
+  'h650_power_hold_compile_2', 'h700_power_hold_compile_3', 'h700_power_hold_compile_4',
+];
+
 test('a composed block is spelled the way the generator spells one', () => {
   const words = (pulses: { mark: boolean; us: number }[], lead = 0): [boolean, number][] =>
     compiledBlockWords(pulses, lead).map((w) => [w.mark, w.microseconds]);
@@ -1064,6 +1146,62 @@ test('a composed block is spelled the way the generator spells one', () => {
                    [[true, 500], [false, 32767], [false, 32767], [false, 30543], [false, 1]]);
   assert.deepEqual(words([{ mark: true, us: 500 }, { mark: false, us: 552 }]),
                    [[true, 500], [false, 551], [false, 1]]);
+  // **The microsecond comes off before the split**, section 309: the Panasonic family's 74801 is spelled
+  // with its balanced pair smaller half first, which carving the last word afterwards would reverse.
+  assert.deepEqual(words([{ mark: true, us: 500 }, { mark: false, us: 74801 }]),
+                   [[true, 500], [false, 32767], [false, 21016], [false, 21017], [false, 1]]);
+});
+
+/**
+ * Section 309: every compiled block whose trailing silence is one quantity ends it the way
+ * `compiledBlockWords` does, the microsecond carved off before the rest is split. Over the corpus
+ * containers with infrared and the six power hold compiles, carving first is the only spelling that fits
+ * 1757 blocks and carving after the split the only one that fits none; on 7037 the two agree, and 607
+ * end in a run that is several quantities, a frame's last space or a biphase half cell beside the gap,
+ * which no single respelling can reproduce. The Harmony 525's blocks end in no microsecond at all.
+ */
+test('every compiled block gives its trailing gap\'s last microsecond up before the gap is split',
+     skipUnless(...SPELLING_POPULATION), () => {
+  // The words a gap of `us`, the closing microsecond included, gets each way. `compiledBlockWords` carves
+  // first; spelling `us` plus one that way and dropping its closing word leaves `us` split whole.
+  const gap = (us: number) => compiledBlockWords([{ mark: true, us: 1 }, { mark: false, us }]).slice(1)
+    .map((w) => w.microseconds);
+  const carvedFirst = gap;
+  const carvedLast = (us: number) => {
+    const whole = gap(us + 1).slice(0, -1);
+    return [...whole.slice(0, -1), whole.at(-1)! - 1, 1];
+  };
+  const tally = { both: 0, first: 0, last: 0, neither: 0, none: 0 };
+  const perArch = new Map<number, number>();
+  for (const name of SPELLING_POPULATION) {
+    const bytes = require_(name);
+    let c: Container;
+    try { c = parse(bytes); } catch { c = parse(payloadOf(bytes)); }
+    const seen = new Set<number>();
+    for (const group of irGroups(c) ?? []) {
+      for (const record of group.addresses) {
+        for (const block of irRecordBlocks(c, record)) {
+          if (block === 0 || seen.has(block)) continue;
+          seen.add(block);
+          const words = irBlockWords(c, block)!;
+          const body = words.at(-1) === 0 ? words.slice(0, -1) : words;
+          if (body.at(-1) !== 1) { tally.none += 1; continue; }
+          let from = body.length - 1;
+          while (from > 0 && (body[from - 1]! & IR_PULSE_MARK) === 0) from -= 1;
+          const tail = body.slice(from).join();
+          const total = body.slice(from).reduce((sum, w) => sum + w, 0);
+          const first = carvedFirst(total).join() === tail;
+          const last = carvedLast(total).join() === tail;
+          if (first && !last) perArch.set(c.architecture!, (perArch.get(c.architecture!) ?? 0) + 1);
+          tally[first && last ? 'both' : first ? 'first' : last ? 'last' : 'neither'] += 1;
+        }
+      }
+    }
+  }
+  assert.deepEqual(tally, { both: 7037, first: 1757, last: 0, neither: 607, none: 656 });
+  // Carving first is told apart on all three architectures that end a block in a microsecond: arch 8
+  // (Harmony 880 and 885), arch 12 (Harmony One) and arch 14 (Harmony 600, 650 and 700).
+  assert.deepEqual([...perArch].sort((a, b) => a[0] - b[0]), [[8, 515], [12, 11], [14, 1231]]);
 });
 
 /**

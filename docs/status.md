@@ -564,7 +564,7 @@ finding.
 
 `todo.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 308<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 309<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and flash has been written on five units**, the first in section 222:
@@ -867,6 +867,11 @@ states rather than the length it is sent at, sections 306 to 308. It gives all 2
 television's codes are sent 7 to 9 ms shorter than their family's stated length, which is why they get
 one copy fewer than a plain count would give. One record was predicted ahead that only this rule got
 right, and a second reading, whole copies for the Panasonic codes alone, still fits as well.
+The library now builds such a record from the catalogue's code and hold, and it comes out as Logitech's
+compiler wrote it, word for word, on 26 of the 27; the 27th is a family whose press it cannot build yet.
+A device composed with its catalogue power steps sends those records when it switches, and building them
+found our general block speller ending one family's codes with two words in the wrong order, now fixed
+and checked over every block in the corpus, section 309.
 At the bench the television itself needs its power button held for about half a second, four repeats,
 so Logitech's second is a margin of about two; the 650's device mode Power On, three repeats, leaves it
 off.
