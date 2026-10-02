@@ -2002,3 +2002,43 @@ test('a held power press is as many frames as end inside the hold, and the one h
       assert.deepEqual(found, [...pinned], `${file}`);
     }
   });
+
+/**
+ * Section 306, from the other end: the television's own remote. Its power button, heard by the bench
+ * infrared receiver, sends the catalogue's `PowerToggle` at least twice for a quick tap and then again at
+ * the same spacing for as long as it is held, so the Harmony's seven frames for a one second hold are what
+ * holding the original button for a second sends. That the television needs the button held for about a
+ * second to switch on is what was seen at the bench, and is not in this file.
+ *
+ * The receiver's timestamps are the host's, so a single interval jitters; the median is the measurement,
+ * and the Harmony's own spacing, read out of the 650's configuration, sits inside the spread.
+ */
+test('the Panasonic\'s own remote repeats its power code at the Harmony\'s spacing for as long as it is held',
+  skipUnless('panasonic_original_remote_power', 'h650_panasonic_config'), () => {
+    type Line = { at: string; pulses?: unknown[]; matches?: { command?: string }[] };
+    const lines = readFileSync(imagePath('panasonic_original_remote_power')!, 'utf8').trim().split('\n')
+      .map((one) => JSON.parse(one) as Line);
+    const power = lines.filter((one) => one.matches?.some((m) => m.command === 'PowerToggle'))
+      .map((one) => Date.parse(one.at));
+    // A burst is frames less than 0.4 s apart; a tap and the next press are seconds apart.
+    const bursts: number[][] = [];
+    for (const at of power) {
+      const last = bursts.at(-1);
+      if (last && at - last.at(-1)! <= 400) last.push(at);
+      else bursts.push([at]);
+    }
+    assert.deepEqual(bursts.map((one) => one.length), [2, 2, 2, 8, 3, 2, 48, 2, 13, 2, 8, 3]);
+    // A tap is never a single frame.
+    assert.equal(Math.min(...bursts.map((one) => one.length)), 2);
+    const intervals = bursts.flatMap((one) => one.slice(1).map((at, i) => at - one[i]!)).sort((a, b) => a - b);
+    assert.equal(intervals.length, 83);
+    const median = intervals[Math.floor(intervals.length / 2)]!;
+    assert.equal(median, 134);
+    // The Harmony 650's held PowerOn: seven copies in 942306 us, one copy every 134.6 ms.
+    const h650 = parse(require_('h650_panasonic_config'));
+    const [once] = irHeaderPointers(h650, irGroups(h650)![1]!.addresses[10]!);
+    const words = irBlockWords(h650, once!)!;
+    const harmony = words.reduce((sum, w) => sum + (w & 0x7fff), 0) / blockCopies(words) / 1000;
+    assert.equal(Math.round(harmony * 10), 1346);
+    assert.ok(intervals[0]! < harmony && harmony < intervals.at(-1)!, 'the Harmony spacing sits inside what the receiver heard');
+  });

@@ -256,6 +256,9 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // catalogue devices added for the purpose, each holding a power press for a stated time, section 306.
   h700_power_hold_compile: '20261002-h700-power-hold-compile.EzHex',
   h650_power_hold_compile: '20261002-h650-power-hold-compile.EzHex',
+  // The Panasonic television's original remote, power taps and holds, as the bench infrared monitor heard
+  // them, cut out of its running log so the window cannot grow, section 306.
+  panasonic_original_remote_power: '20261002T1148Z-panasonic-original-remote-power.jsonl',
   // The same region read after block 0x030000 was written back unchanged, section 300.
   h700_after_rehearsal_region: '20260929T1923Z-h700-after-rehearsal-config-region-region.bin',
   // And the rehearsal's own output for that write, which is the only record that it erased.
