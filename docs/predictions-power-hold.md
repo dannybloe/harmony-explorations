@@ -149,3 +149,29 @@ boundary of either reading, so a millisecond between compile and Pronto cannot f
 
 **The prediction is "end inside" on all five.** Any row at its "start inside" count refutes it for that
 family, and a row at neither says the rule is wrong outright.
+
+### Scored: the second compile refutes "end inside"
+
+All five came out at their "start inside" count: Pioneer 23, Mivar 9, Thomson 7, Dell 19, Technics 14.
+"Start inside" also fits every record of the first compile but the television's four, which hold 7
+where it gives 8. Logitech's definitions do not separate the television's family from the rest: its
+`IsFullSequence` is unset, as it is for three families that follow "start inside", and no catalogue
+timing of the television's lands where its count needs it.
+
+## Third compile: is the television's 7 its family's or its own
+
+Written before the compile. Three more devices in the television's family, `PanasonicV2 48 Bit`, on
+other codesets, on the Harmony 700.
+
+| device | power | command | hold ms | end inside | start inside |
+|---|---|---|---|---|---|
+| Panasonic TH-42PA30 | on | PowerOn | 1500 | 11 | 12 |
+| Panasonic CS-29FJ20S | toggle | PowerToggle | 1500 | 11 | 12 |
+| Quasar SP2717T | toggle | PowerToggle | 1000 | 7 on compiled lengths, 8 on the catalogue's | 8 |
+
+The two at 1500 ms are 29 ms from either boundary. The Quasar repeats the television's case on another
+device: the catalogue's own waveform puts an eighth frame's end inside the second, the compiled lengths
+2 ms outside it, as on the television.
+
+**The prediction is "start inside" for all three**, which would make the television's 7 its own and not
+its family's. If the two at 1500 ms come out at 11, the family follows another rule.
