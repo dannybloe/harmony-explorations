@@ -1808,9 +1808,9 @@ test('a Panasonic television sends its power codes as many times as fit in the 1
     // The two seven copy codes repeat nothing while held, so a press of them is the whole block.
     assert.deepEqual([tv650[9]!.held, tv650[10]!.held], [0, 0]);
     // The closure: how many whole copies of each code fit inside the hold the account states. Without
-    // the last gap an eighth copy of `PowerOn` would overrun by about 2 ms, so the margin is thin. The
-    // rule as measured over four more devices, section 306, is that the last frame has to **end**
-    // inside the hold and its gap may run past it, which agrees with the count here and is tested below.
+    // the last gap an eighth copy of `PowerOn` would overrun by about 2 ms, so the margin is thin. For
+    // these Panasonic power codes the last frame has to **end** inside the hold and its gap may run past
+    // it, sections 306 and 307, while five other families count the frames that start inside it.
     for (const r of [tv650[9]!, tv650[10]!]) assert.equal(Math.floor(holdUs / (r.us / r.copies)), r.copies);
     assert.deepEqual([tv650[9]!.us, tv650[10]!.us], [954486, 942306]);
 
@@ -1828,6 +1828,63 @@ test('a Panasonic television sends its power codes as many times as fit in the 1
     assert.deepEqual(tv600[49]!.words, tv650[9]!.words);
   });
 
+// Helpers for sections 306 and 307, which read a held power record's frames and tie it to the catalogue.
+// Frame start and end times in a block, on merged intervals, so a pause spelled as several words
+// counts as one space. Each frame keeps its mark and space durations so two can be compared.
+const heldFramesOf = (words: readonly number[]) => {
+  const out: { start: number; end: number; shape: number[] }[] = [];
+  let t = 0;
+  let start = -1;
+  let markEnd = 0;
+  let shape: number[] = [];
+  for (const one of mergedIntervals(pulsesOfWords(words))) {
+    if (one.mark) {
+      if (start < 0) start = t;
+      t += one.us;
+      markEnd = t;
+      shape.push(one.us);
+    } else {
+      t += one.us;
+      if (start < 0) continue;
+      if (one.us > 10000) {
+        out.push({ start, end: markEnd, shape });
+        start = -1;
+        shape = [];
+      } else {
+        shape.push(one.us);
+      }
+    }
+  }
+  if (start >= 0) out.push({ start, end: markEnd, shape });
+  return out;
+};
+// A frame as its marks and its spaces read long or short, which is enough to tell one code from
+// another within a family and needs no decode.
+// A frame's spaces are grouped into classes of lengths within a fifth of each other and numbered by size,
+// so a family that spells a bit as two long spaces is read as precisely as one using a short and a long.
+const frameSignature = (shape: readonly number[]) => {
+  const spaces = shape.filter((_, i) => i % 2 === 1);
+  const classes: number[] = [];
+  for (const us of [...spaces].sort((a, b) => a - b)) if (classes.length === 0 || us > classes.at(-1)! * 1.2) classes.push(us);
+  const classOf = (us: number) => classes.filter((one) => one <= us * 1.2).length - 1;
+  return shape.map((us, i) => (i % 2 === 0 ? 'm' : String(classOf(us)))).join('');
+};
+const catalogueFrameSignature = (slug: string, file: string, command: string) => {
+  const device = JSON.parse(readFileSync(join(IR_ARCHIVE!, 'devices', slug, `${file}.json`), 'utf8')) as { codeset: string };
+  const codes = (JSON.parse(readFileSync(join(IR_ARCHIVE!, device.codeset), 'utf8')) as {
+    commands: { name: string; pronto: string }[];
+  }).commands;
+  const words = codes.find((one) => one.name === command)!.pronto.split(' ').map((w) => parseInt(w, 16));
+  const period = words[1]! * 0.241246;
+  const shape: number[] = [];
+  for (let i = 4; i < words.length; i += 1) {
+    const us = words[i]! * period;
+    if (i % 2 === 1 && us > 10000) break;
+    shape.push(us);
+  }
+  return frameSignature(shape);
+};
+
 /**
  * Section 306: how Logitech's compiler turns a catalogue power press held for a stated time into frames.
  * Four catalogue devices with holds from 300 ms to 15 seconds and the section 305 television as the
@@ -1836,7 +1893,9 @@ test('a Panasonic television sends its power codes as many times as fit in the 1
  * device's minimum repeats are read out of the archive here, and the frames out of the compiles, so the
  * two ends of every comparison come from sources with nothing in common past Logitech's database.
  *
- * **The rule: as many frames as end inside the hold**, the gap after the last one allowed to run past it.
+ * **On this compile: as many frames as end inside the hold**, the gap after the last one allowed to run
+ * past it. That is not the compiler's rule: section 307 found five families counting the frames that start
+ * inside the hold, and the three families here other than the television's give the same count either way.
  * A frame is what lies between two spaces over 10 ms, so a family that sends a different repeat frame
  * after the first, JVC's and the `Toshiba 32 Bit` one, counts its repeats too. Nine of the ten held
  * records are above their device's minimum and fit it exactly. The tenth, a 300 ms hold, holds what the
@@ -1851,55 +1910,8 @@ test('a Panasonic television sends its power codes as many times as fit in the 1
  * exactly one other record in the group, the ordinary press that carries a lead in and a held block, and
  * it holds as many frames as that press.
  */
-test('a held power press is as many frames as end inside the hold, and the one hold shorter than a press sends a press',
+test('on section 306\'s compiles every held power record above its minimum ends inside the hold, and the one hold shorter than a press sends a press',
   needing(skipWithoutIrArchive(), skipUnless('h700_power_hold_compile', 'h650_power_hold_compile')), () => {
-    // Frame start and end times in a block, on merged intervals, so a pause spelled as several words
-    // counts as one space. Each frame keeps its mark and space durations so two can be compared.
-    const framesOf = (words: readonly number[]) => {
-      const out: { start: number; end: number; shape: number[] }[] = [];
-      let t = 0;
-      let start = -1;
-      let markEnd = 0;
-      let shape: number[] = [];
-      for (const one of mergedIntervals(pulsesOfWords(words))) {
-        if (one.mark) {
-          if (start < 0) start = t;
-          t += one.us;
-          markEnd = t;
-          shape.push(one.us);
-        } else {
-          t += one.us;
-          if (start < 0) continue;
-          if (one.us > 10000) {
-            out.push({ start, end: markEnd, shape });
-            start = -1;
-            shape = [];
-          } else {
-            shape.push(one.us);
-          }
-        }
-      }
-      if (start >= 0) out.push({ start, end: markEnd, shape });
-      return out;
-    };
-    // A frame as its marks and its spaces read long or short, which is enough to tell one code from
-    // another within a family and needs no decode.
-    const signature = (shape: readonly number[]) => shape.map((us, i) => (i % 2 === 0 ? 'm' : us > 900 ? '1' : '0')).join('');
-    const catalogueSignature = (slug: string, file: string, command: string) => {
-      const device = JSON.parse(readFileSync(join(IR_ARCHIVE!, 'devices', slug, `${file}.json`), 'utf8')) as { codeset: string };
-      const codes = (JSON.parse(readFileSync(join(IR_ARCHIVE!, device.codeset), 'utf8')) as {
-        commands: { name: string; pronto: string }[];
-      }).commands;
-      const words = codes.find((one) => one.name === command)!.pronto.split(' ').map((w) => parseInt(w, 16));
-      const period = words[1]! * 0.241246;
-      const shape: number[] = [];
-      for (let i = 4; i < words.length; i += 1) {
-        const us = words[i]! * period;
-        if (i % 2 === 1 && us > 10000) break;
-        shape.push(us);
-      }
-      return signature(shape);
-    };
     type Held = { fixture: string; group: number; record: number; slug: string; file: string; power: 'on' | 'off' | 'toggle' };
     const HELD: Held[] = [
       { fixture: 'h700_power_hold_compile', group: 6, record: 39, slug: 'Panasonic', file: 'TX-P42GT30E', power: 'on' },
@@ -1931,10 +1943,10 @@ test('a held power press is as many frames as end inside the hold, and the one h
       assert.equal(again ?? 0, 0, `${where} repeats nothing while held`);
       const words = irBlockWords(c, once!)!;
       assert.ok(words[0]! & IR_PULSE_MARK, `${where} opens on a mark, with no lead in`);
-      const frames = framesOf(words);
+      const frames = heldFramesOf(words);
       // The record is the named command's: its first frame spells the catalogue's own code for it, each
       // space read as long or short, with as many marks. That is what makes the pin a claim.
-      assert.equal(signature(frames[0]!.shape), catalogueSignature(held.slug, held.file, step.command), `${where} is ${step.command}`);
+      assert.equal(frameSignature(frames[0]!.shape), catalogueFrameSignature(held.slug, held.file, step.command), `${where} is ${step.command}`);
       const inside = frames.filter((one) => one.end <= holdUs).length;
       const startsInside = frames.length === 1 ? 1 : (() => {
         // Frames whose start falls inside the hold, the spacing extended past the block's end.
@@ -1961,7 +1973,7 @@ test('a held power press is as many frames as end inside the hold, and the one h
         const same = irGroups(c)![held.group]!.addresses.flatMap((_, index) => {
           if (index === held.record) return [];
           const [first] = blocks(c, held.group, index);
-          const theirs = framesOf(irBlockWords(c, first!)!);
+          const theirs = heldFramesOf(irBlockWords(c, first!)!);
           return theirs.length > 0 && JSON.stringify(theirs[0]!.shape) === key ? [index] : [];
         });
         assert.equal(same.length, 1, `${where}: one ordinary press of the same command`);
@@ -1969,7 +1981,7 @@ test('a held power press is as many frames as end inside the hold, and the one h
         assert.ok(pressHeld, `${where}: the ordinary press repeats while held`);
         const pressWords = irBlockWords(c, pressOnce!)!;
         assert.ok(!(pressWords[0]! & IR_PULSE_MARK), `${where}: the ordinary press opens on a lead in`);
-        assert.equal(frames.length, framesOf(pressWords).length, `${where}: as many frames as the press`);
+        assert.equal(frames.length, heldFramesOf(pressWords).length, `${where}: as many frames as the press`);
       }
       seen.push(`${held.file} ${held.power} ${frames.length}`);
     }
@@ -1997,7 +2009,7 @@ test('a held power press is as many frames as end inside the hold, and the one h
       const minimum = catalogueDriving(IR_ARCHIVE!, slug, file).timing.pressMinRepeats;
       const found = irGroups(c)![group]!.addresses.flatMap((_, index) => {
         const [once, again] = blocks(c, group, index);
-        return !again && framesOf(irBlockWords(c, once!)!).length > minimum ? [index] : [];
+        return !again && heldFramesOf(irBlockWords(c, once!)!).length > minimum ? [index] : [];
       });
       assert.deepEqual(found, [...pinned], `${file}`);
     }
@@ -2088,4 +2100,77 @@ test('the Panasonic switches on from four power frames and not from three, and t
     const h650 = parse(require_('h650_panasonic_config'));
     const copies = [9, 10].map((record) => blockCopies(irBlockWords(h650, irHeaderPointers(h650, irGroups(h650)![1]!.addresses[record]!)[0]!)!));
     assert.deepEqual(copies, [7, 7]);
+  });
+
+/**
+ * Section 307: two groups on these compiles. Two more rounds of section 306's method, five catalogue
+ * devices in five families chosen where counting the frames that end inside the hold and counting those
+ * that start inside it part by a frame, then three more devices in the Panasonic television's own family.
+ * The Harmony 650's own television rides along in the second round, its two codes held again. Each held record is found in its group by its first frame spelling the catalogue's code, so the group is
+ * pinned and the record within it is not, and each must satisfy the reading named for its row and not the
+ * other.
+ *
+ * The rows marked `end` are all Panasonic power codes, three codes byte identical across four codesets, so
+ * this does not tell a family's rule from a code's. The TH-42PA30's power off parts the readings by 0.09 ms
+ * on the compiled lengths; the other three `end` rows carry the claim with room.
+ *
+ * `start` means the last frame starts inside the hold and one more would not; `end` means the last frame
+ * ends inside it and one more would not. Every row parts the two, so each is a test of which one holds.
+ * What decides between them is not found: nothing in Logitech's protocol definitions marks the
+ * Panasonic family apart from the five that count starts, and the readings that fit are fitted after the
+ * fact, section 307.
+ */
+test('on section 307\'s compiles a held power press counts the frames that start inside the hold in five families and those that end inside it for the Panasonic power codes',
+  needing(skipWithoutIrArchive(), skipUnless('h700_power_hold_compile_2', 'h650_power_hold_compile_2', 'h700_power_hold_compile_3')), () => {
+    type Row = { fixture: string; group: number; slug: string; file: string; power: 'on' | 'off' | 'toggle'; family: string; reading: 'start' | 'end' };
+    const ROWS: Row[] = [
+      { fixture: 'h700_power_hold_compile_2', group: 1, slug: 'Pioneer', file: 'DEH-P47DH', power: 'toggle', family: 'Pioneer 32 Bit', reading: 'start' },
+      { fixture: 'h700_power_hold_compile_2', group: 3, slug: 'Mivar', file: '14_M3_TVD', power: 'on', family: 'Philips RECS80 11 Bit', reading: 'start' },
+      { fixture: 'h700_power_hold_compile_2', group: 3, slug: 'Mivar', file: '14_M3_TVD', power: 'off', family: 'Philips RECS80 11 Bit', reading: 'start' },
+      { fixture: 'h700_power_hold_compile_2', group: 7, slug: 'Thomson', file: 'DSI-4400', power: 'toggle', family: 'Thomson 12 Bit Toggle', reading: 'start' },
+      { fixture: 'h650_power_hold_compile_2', group: 0, slug: 'Dell', file: '2300MP', power: 'toggle', family: 'Memorex 32 Bit', reading: 'start' },
+      { fixture: 'h650_power_hold_compile_2', group: 7, slug: 'Panasonic', file: 'TX-28A1U', power: 'toggle', family: 'Technics 22 Bit', reading: 'start' },
+      // The Harmony 650's own television, still on that record, compiled again.
+      { fixture: 'h650_power_hold_compile_2', group: 5, slug: 'Panasonic', file: 'TX-P42GT30E', power: 'on', family: 'PanasonicV2 48 Bit', reading: 'end' },
+      { fixture: 'h650_power_hold_compile_2', group: 5, slug: 'Panasonic', file: 'TX-P42GT30E', power: 'off', family: 'PanasonicV2 48 Bit', reading: 'end' },
+      { fixture: 'h700_power_hold_compile_3', group: 1, slug: 'Panasonic', file: 'TH-42PA30', power: 'on', family: 'PanasonicV2 48 Bit', reading: 'end' },
+      { fixture: 'h700_power_hold_compile_3', group: 1, slug: 'Panasonic', file: 'TH-42PA30', power: 'off', family: 'PanasonicV2 48 Bit', reading: 'end' },
+      { fixture: 'h700_power_hold_compile_3', group: 4, slug: 'Panasonic', file: 'CS-29FJ20S', power: 'toggle', family: 'PanasonicV2 48 Bit', reading: 'end' },
+      { fixture: 'h700_power_hold_compile_3', group: 3, slug: 'Quasar', file: 'SP2717T', power: 'toggle', family: 'PanasonicV2 48 Bit', reading: 'end' },
+    ];
+    const containers = new Map<string, ReturnType<typeof parse>>();
+    const load = (name: string) => containers.get(name) ?? containers.set(name, parse(payloadOf(require_(name)))).get(name)!;
+    const seen: string[] = [];
+    for (const row of ROWS) {
+      const driving = catalogueDriving(IR_ARCHIVE!, row.slug, row.file);
+      const step = driving.power![row.power]!.find((one) => one.kind === 'send' && one.holdMs !== undefined);
+      assert.ok(step && step.kind === 'send', `${row.file} ${row.power} states a held press`);
+      const device = JSON.parse(readFileSync(join(IR_ARCHIVE!, 'devices', row.slug, `${row.file}.json`), 'utf8')) as { codeset: string };
+      const codes = (JSON.parse(readFileSync(join(IR_ARCHIVE!, device.codeset), 'utf8')) as { commands: { name: string; protocol: string }[] }).commands;
+      assert.equal(codes.find((one) => one.name === step.command)!.protocol, row.family, `${row.file} ${step.command}`);
+      const want = catalogueFrameSignature(row.slug, row.file, step.command);
+      const c = load(row.fixture);
+      // The held record: no held block, and its first frame is the command's.
+      const found = irGroups(c)![row.group]!.addresses.flatMap((record) => {
+        const [once, again] = irHeaderPointers(c, record);
+        if (again) return [];
+        const frames = heldFramesOf(irBlockWords(c, once!)!);
+        return frames.length > driving.timing.pressMinRepeats && frameSignature(frames[0]!.shape) === want ? [frames] : [];
+      });
+      assert.equal(found.length, 1, `${row.file} ${row.power}: one held record`);
+      const frames = found[0]!;
+      const holdUs = step.holdMs! * 1000;
+      const last = frames.at(-1)!;
+      const spacing = last.start - frames.at(-2)!.start;
+      const startsInside = last.start < holdUs && last.start + spacing >= holdUs;
+      const endsInside = last.end <= holdUs && last.end + spacing > holdUs;
+      assert.ok(startsInside !== endsInside, `${row.file} ${row.power}: the two readings part here`);
+      assert.equal(startsInside ? 'start' : 'end', row.reading, `${row.file} ${row.power}`);
+      seen.push(`${row.file} ${row.power} ${step.holdMs} ${frames.length}`);
+    }
+    assert.deepEqual(seen, [
+      'DEH-P47DH toggle 2000 23', '14_M3_TVD on 1000 9', '14_M3_TVD off 2000 17', 'DSI-4400 toggle 500 7',
+      '2300MP toggle 2000 19', 'TX-28A1U toggle 1500 14', 'TX-P42GT30E on 1000 7', 'TX-P42GT30E off 1000 7',
+      'TH-42PA30 on 1500 11', 'TH-42PA30 off 1500 11', 'CS-29FJ20S toggle 1500 11', 'SP2717T toggle 1000 7',
+    ]);
   });

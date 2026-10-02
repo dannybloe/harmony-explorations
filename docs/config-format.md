@@ -2745,16 +2745,22 @@ the ratio: `pressMinimumRepeats` on 39 of Logitech's 1368 protocol definition re
 `HoldMinRepeats` is 0 on all 24 device records captured and `HoldMinimumRepeats` is null on all 684
 definitions, which is consistent with the held block always holding exactly one press.
 
-**A power press held for a stated time is as many frames as end inside the hold**, section 306. Every
-step of a power action list is a record of its own, with no lead in and no held block, holding what an
-ordinary press sends; the ordinary press of the same command keeps its own record. Where Logitech's
-catalogue states the step with a duration, the compiler fills that record with as many frames as **end**
-inside it, the gap after the last allowed to run past it. A frame is what lies between spaces over 10 ms,
-so a family that repeats a shorter frame counts those repeats. Measured on ten records of five devices in
-four protocol families, compiled for a Harmony 700 and a Harmony 650, arch 14 only. **Unconfirmed**: that
-the count never falls below what an ordinary press sends rests on one record, which a hold too short to
-matter would explain as well; and "end inside" against "start inside" is separated by one television's
-two codes.
+**A power press held for a stated time is a frame count fitted to the hold, and how it is fitted
+differs between codes**, sections 306 and 307. Every step of a power action list is a record of its own, with no
+lead in and no held block, holding what an ordinary press sends; the ordinary press of the same command
+keeps its own record. Where Logitech's catalogue states the step with a duration, the compiler fills that
+record with frames up to the duration: for the three Panasonic power codes of `PanasonicV2 48 Bit`,
+the same in four codesets, as many as **end** inside it, and in `Pioneer 32 Bit`, `Philips RECS80 11 Bit`,
+`Thomson 12 Bit Toggle`, `Memorex 32 Bit` and `Technics 22 Bit`, one device each, as many as **start**
+inside it. A frame is what lies between spaces over 10 ms, so a family that repeats a
+shorter frame counts those repeats. Measured on twenty held records compiled for a Harmony 700 and a
+Harmony 650, arch 14 only. **Unknown**: what decides the reading, whether family, code or codeset,
+since Logitech's protocol definitions mark nothing that separates them, and so the reading of anything not
+measured. **Unconfirmed**, fitted after the fact: `ceil(hold / length)` with the length the definition's
+`TotalLength`, or else its header, trailer and every bit at its average length, gives 20 of the 22 held
+records and misses the JVC's two by one. **Unconfirmed**: that the count never falls below what an
+ordinary press sends, which one Panasonic codeset needs for the end reading, three at 300 ms and seven at
+1000 ms, and which no catalogue step whose code is one frame can separate from counting starts.
 
 **How Logitech's generator spells a block**, section 174. These are the generator's conventions
 rather than format constraints, since the firmware plays any legal spelling identically; a writer

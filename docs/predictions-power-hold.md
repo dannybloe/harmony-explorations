@@ -134,7 +134,8 @@ the 4154 held power steps in the catalogue whose code is one frame, every one wh
 fill a press could matter gives the same count under a press's floor and under counting starts, the
 Legend LEC-4017 at 100 ms included, three either way. So that question has no catalogue device that can
 tell, and these five ask the other one, in five families none of which is Panasonic's own. 1251 of the
-4154 steps sit where the two readings part.
+4154 steps sit where the two readings part; a reviewer's re-measurement gives 1254, the
+boundary handling differing.
 
 Frame and spacing are off the catalogue's Pronto code; margin is how far the hold sits from the nearest
 boundary of either reading, so a millisecond between compile and Pronto cannot flip a row.
@@ -161,7 +162,8 @@ timing of the television's lands where its count needs it.
 ## Third compile: is the television's 7 its family's or its own
 
 Written before the compile. Three more devices in the television's family, `PanasonicV2 48 Bit`, on
-other codesets, on the Harmony 700.
+other codesets, on the Harmony 700. Three other codesets, it turned out, and the Quasar's is the codeset
+of the first compile's TX-29AK40F.
 
 | device | power | command | hold ms | end inside | start inside |
 |---|---|---|---|---|---|
@@ -175,3 +177,11 @@ device: the catalogue's own waveform puts an eighth frame's end inside the secon
 
 **The prediction is "start inside" for all three**, which would make the television's 7 its own and not
 its family's. If the two at 1500 ms come out at 11, the family follows another rule.
+
+### Scored: the third compile refutes "start inside" for the television's family
+
+All four held records came out at their "end inside" count: TH-42PA30 11 and 11, CS-29FJ20S 11,
+Quasar SP2717T 7. So the television's seven is not the television's alone. Whether it is its family's
+cannot be said: all eight records are the same three Panasonic power codes, byte identical in all four
+codesets, so family, code and codeset are not separated, section 307. Both rounds' predictions were wrong
+on every row they predicted, in opposite directions.

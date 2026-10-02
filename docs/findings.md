@@ -39967,8 +39967,8 @@ duration and with any rule that lands between seven and eight, and one duration 
 tell those apart. Three records on one login are one value seen three times rather than three
 samples. And the PlayStation's codes at 36 and 30
 copies stand with no duration stated, so a duration is not the only thing that raises a count. Section
-306 measures four more devices: as many frames as end inside the hold, never fewer than an ordinary
-press sends, the floor resting on one record.
+306 measures four more devices and section 307 eight more: the count is the frames that start inside the
+hold in five families and those that end inside it in the television's own.
 
 ### Scope, decision 16
 
@@ -40033,7 +40033,13 @@ whose stored copies overrun it, or leave room for another.
   naming digits rather than a command.
 * `docs/usb-protocol.md`, `docs/config-format.md` and `CLAUDE.md`'s list of what has been written.
 
-## 306. A power press held for a stated time is as many frames as end inside the hold
+## 306. A power press held for a stated time is a frame count the compiler fits to the hold
+
+**Corrected by section 307, the same day.** This section's rule, frames ending inside the hold, holds
+for the Panasonic power codes and not for the compiler: five other families count the frames that
+**start** inside the hold. Its measurements stand; its generalisation does not, and the three families
+here other than the television's give the same count under both readings, so nothing in this section
+could have shown it. The heading said "is as many frames as end inside the hold"<!--superseded--> until then.
 
 **2 October 2026, todo L9.** Section 305 found one catalogue device whose power codes Logitech's compiler
 sends seven times, and tied the seven to a one second hold its catalogue states. One codeset could not
@@ -40076,7 +40082,7 @@ frames, and the LG television's two power steps on the 650, no hold either, hold
 and one repeat frame, which is what that family's ordinary press sends. The ordinary press of the same
 command keeps a record of its own with its lead in and its held block, for all seven held commands.
 
-**The rule that fits all ten: as many frames as end inside the hold, the gap after the last allowed to
+**The rule that fits all ten, and which section 307 shows holds only for the Panasonic power codes: as many frames as end inside the hold, the gap after the last allowed to
 run past it, and never fewer than an ordinary press sends.** On the nine records above their device's
 minimum, the last frame ends inside the hold and one more at the same spacing would not. The tenth, the
 300 ms Panasonic, holds three frames where two end inside 300 ms, which is what its ordinary press sends.
@@ -40086,7 +40092,9 @@ counting the frames that **start** inside the hold gives three there with no flo
 an ordinary press's frames rather than in `pressMinRepeats` frames, since the LG's minimum of 1 is two
 frames in its family.
 
-**What separates "end inside" from "start inside" is the television alone.** Counting frames that start
+**What separates "end inside" from "start inside" here is the television alone**, and section 307 found
+the same three Panasonic power codes counting ends on three more codesets while five other families count
+starts. Counting frames that start
 inside the hold gives 130, 111, 8, 5 and 3, matching six of the ten records, and 8 on the television's
 four, where seven are sent. Its eighth `PowerOn` frame would end 2.12 ms past the second and its eighth
 `PowerOff` 16.04 ms past, so the distinction is real and rests on one codeset with a thin margin on one
@@ -40155,7 +40163,9 @@ cause, and the test claimed a shape check over groups it did not cover.
 ### Falsification
 
 A held power record whose frame count is neither an ordinary press's nor the number of frames that end
-inside its hold, on any device or architecture. A hold shorter than one frame on a device whose ordinary
+inside its hold, on any device or architecture. **Met the same day**: section 307's Pioneer holds 23
+frames where 22 end inside its hold and an ordinary press sends 3, and five more records like it. A hold
+shorter than one frame on a device whose ordinary
 press sends more than one frame would separate the floor from counting starts.
 
 ### Where it lands
@@ -40170,3 +40180,146 @@ press sends more than one frame would separate the floor from counting starts.
 * `docs/config-format.md`, beside how many times a press sends the code.
 * The two compiles are lab fixtures `h700_power_hold_compile` and `h650_power_hold_compile`, out of the
   corpus since no remote ever held them, and in the golden vectors.
+
+## 307. A held power press counts the frames that start inside the hold in five families, and one fewer for the Panasonic power codes, for a reason not established
+
+**2 October 2026, todo L9.** Section 306 put five catalogue devices through Logitech's compiler and
+read "as many frames as end inside the hold", the gap after the last allowed to run past it. Only the
+Panasonic television separated that from counting the frames that **start** inside the hold, so two more
+rounds were run by the same method, predictions committed first in `docs/predictions-power-hold.md`, the
+devices added to the first test account's Harmony 700 and Harmony 650 records, compiled, and removed
+again, the account's device and activity ids identical afterwards each time.
+
+**A hold too short to fill an ordinary press is not separable from counting starts in the catalogue.**
+Across the 4154 held power steps in the archive whose code is one frame, three are short enough for it to
+matter, the Legend LEC-4017 at 100 ms and two Panasonic televisions at 300 ms, the TX-29AK40F and the
+TX28PS500, and each gives three whether the press is a floor or the starts are counted. The 100 ms Legend
+planned for it was therefore not run. A reviewer checked the 229 steps whose code is a frame and one
+repeat frame as well, and none separates the two either.
+
+**Second round, five families none of which is the television's**, each where the two readings part by a
+frame with at least 18 ms to spare on the catalogue's own waveforms:
+
+| device | family | step | hold ms | ends inside | starts inside | compiled |
+|---|---|---|---|---|---|---|
+| Pioneer DEH-P47DH | Pioneer 32 Bit | toggle, Source | 2000 | 22 | 23 | 23 |
+| Mivar 14 M3 TVD | Philips RECS80 11 Bit | on, PowerOn | 1000 | 8 | 9 | 9 |
+| Mivar 14 M3 TVD | Philips RECS80 11 Bit | off, PowerOff | 2000 | 16 | 17 | 17 |
+| Thomson DSI-4400 | Thomson 12 Bit Toggle | toggle | 500 | 6 | 7 | 7 |
+| Dell 2300MP | Memorex 32 Bit | toggle | 2000 | 18 | 19 | 19 |
+| Panasonic TX-28A1U | Technics 22 Bit | toggle | 1500 | 13 | 14 | 14 |
+
+All six count starts. Five rows were predicted, all "ends inside", and all five were wrong; the Mivar's
+power off was not predicted. The TX-28A1U is a Panasonic television too, so whatever decides is not the
+manufacturer.
+
+**Third round, three more devices in the television's family**, `PanasonicV2 48 Bit`, on three other
+codesets, the Quasar's being the codeset of section 306's TX-29AK40F:
+
+| device | step | hold ms | ends inside | starts inside | compiled |
+|---|---|---|---|---|---|
+| Panasonic TH-42PA30 | on, PowerOn | 1500 | 11 | 12 | 11 |
+| Panasonic TH-42PA30 | off, PowerOff | 1500 | 11 | 12 | 11 |
+| Panasonic CS-29FJ20S | toggle | 1500 | 11 | 12 | 11 |
+| Quasar SP2717T | toggle | 1000 | 7 | 8 | 7 |
+
+All four count ends. Three rows were predicted, all "starts inside", and all three were wrong; the
+TH-42PA30's power off was not predicted, and it parts the two readings by **0.09 ms** on the compiled
+lengths, its twelfth frame starting at 1499.91 ms, so that row is barely evidence and the other three
+carry it. The Quasar repeats the television's case on another device: on the catalogue's own waveform an
+eighth frame would end inside the second, on the compiled lengths 2.12 ms outside it, and it holds seven.
+The second round's compile of the Harmony 650 also carried that remote's own Panasonic television, and its
+two held records came back at seven again, records 4 and 54 of its group.
+
+**So two groups, and what the second one is cannot be named from these.** Five families count starts,
+six held records, one device each. Ten held records count ends, over four codesets, and they are **the
+same three codes**: every one is a Panasonic power code, `PowerOn`, `PowerOff` or `PowerToggle`, and the
+three have byte identical Pronto codes in all four codesets. So "per family", "per code" and "per
+codeset lineage" cannot be told apart here. Three more families, section 306's Barco, JVC and Knoll, give
+the same count either way. The reading of anything not measured is unknown.
+
+**And within one codeset, ends inside needs a floor.** The Quasar and section 306's TX-29AK40F share a
+codeset and its `PowerToggle`. At 1000 ms it holds seven, the count of frames that end inside; at 300 ms
+it holds three where two end inside and three start inside. So either an ordinary press's frames are a
+floor, as section 306 read it, or the ends reading does not hold for this code at every length.
+
+**What decides is not found, and three readings fit after the fact.** Logitech's protocol definitions
+mark nothing that separates the Panasonic codes' family from the five: `IsFullSequence` is set on the
+Pioneer and Memorex families and unset on the RECS80, Thomson and Technics ones and on the Panasonic one;
+`HoldDelay`, `HoldMinimumRepeats` and `PressMinimumRepeats` are unset, the flags and attributes empty and
+`SendingType` 0 on all six. No catalogue timing of the devices separates them either: the minimum repeats
+are 3 on all nine devices that part the readings, and the inter key delays overlap. What does fit, each
+of them fitted to these records and none tested ahead:
+
+* **A frame length Logitech states rather than the one it sends.** Count `ceil(hold / length)`, where the
+  length is the definition's `TotalLength` if it states one, and otherwise its header, its trailer and
+  every bit at the average of its two lengths. For `PanasonicV2 48 Bit` that is 143.3 ms where the power
+  codes are sent 134.6 to 136.4 ms apart, which is why fewer of them fit; for the other families the two
+  lengths are close enough not to matter. It gives every count of sections 306 and 307, 20 of the 22 held
+  records, **including the TX-29AK40F's three at 300 ms with no floor**, and misses the JVC's two, 112
+  against 111. Those fit only if the JVC's first frame, which carries a lead in the definition gives no
+  length for, is counted at its compiled 57.6 ms. The averaged length is this project's construction and
+  not a number Logitech states.
+* **A gap longer than the frame.** The Panasonic codes leave 74.8 ms after a frame of about 60 ms; all five
+  families that count starts leave a gap shorter than their frame. One family against five.
+* **The device record.** All four devices that count ends carry `states` or `channelTuning` in the
+  catalogue, and none of the five that count starts carries either. Probably a confound, since nothing
+  explains why a device's states would change a frame count.
+
+A compile that separates them needs a family that states no `TotalLength` and whose codes are sent well
+away from the averaged length, a family other than the Panasonic one with a gap longer than its frame,
+and a device with `states` in a family that counts starts.
+
+**What it means for a composer.** Where the two readings part, a composer that counts starts sends one
+frame more than Logitech's compiler for the Panasonic power codes, and one that counts ends sends one
+fewer for the five families. On the Panasonic television section 306 heard that seven is nearly twice
+the four it needs, so a frame either way changes nothing there; it changes whether a composed block is
+byte identical to Logitech's. For a family not measured, that the count is one of the two readings at all
+is an assumption.
+
+### Independent closure and calibration
+
+The holds and families are read out of the archive, the frames out of Logitech's compiles. Every held
+record is found by its first frame spelling the catalogue's code for that command, inside the group the
+device compiled to, so the group is pinned and the record within it is not. The calibration case is
+section 306's television, whose four records the third round's four reproduce.
+
+### Scope, decision 16
+
+Compiled for a Harmony 700 and a Harmony 650, arch 14, and nothing else. Five families counting starts,
+one device each, and the Panasonic power codes counting ends on four codesets.
+
+### Sources checked before the work
+
+The archive's protocol definitions for every family, each device's record and timing, and section 306.
+
+### The two reviews
+
+Run on the whole diff before the commit. The blind re-measurement reproduced every count and the split,
+found the 650's own television in the second round's compile, and proposed the stated frame length
+reading above. The sentence audit re-measured every table and found twelve things wrong around them, all
+corrected above or in section 306: the group counting ends is three codes and not a family of devices; the
+TX-29AK40F at 300 ms contradicts ends inside without a floor; the trailing gap was said not to decide when
+it separates all six; the device record separates them too; the TH-42PA30's power off parts by 0.09 ms;
+section 306's falsification clause was met and unmarked, and its test's docstring and this section's
+account of it still stated ends inside as the rule; the dead phrasing was not in
+`reference/superseded.md`; "every row" counted unpredicted rows as predictions; the floor population was
+three steps unnamed; and "nothing rests on a pin" overlooked the group.
+
+### Falsification
+
+A held record of a Panasonic power code that counts starts where the readings part by more than a
+millisecond, or one of the five families counting ends. For the stated length reading: any held record
+whose count is not `ceil(hold / length)`, beyond the JVC's first frame.
+
+### Where it lands
+
+* `packages/codec/test/irframe.test.ts`, the two groups test: twelve held records of the two later rounds,
+  the 650's own television's two among them, each found by its catalogue code in its group, each required to follow its group's reading and not the
+  other, the two readings parting on every row. Its control, the Pioneer labelled as counting ends, fails.
+* Section 306's test is rescoped to that compile's records: nine end inside the hold and the 300 ms one
+  sends a press.
+* `docs/config-format.md`, the held power entry, restated.
+* `reference/superseded.md`, section 306's general rule.
+* The three compiles are lab fixtures `h700_power_hold_compile_2`, `h650_power_hold_compile_2` and
+  `h700_power_hold_compile_3`, out of the corpus and in the golden vectors.
