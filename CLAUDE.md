@@ -1199,6 +1199,10 @@ docs/predictions-sequence-delay.md
                                 compiles away, and the unit is tenths of a second. Neither document
                                 was named in this map until then, which is how one of them sat
                                 unscored for six days after the measurement
+docs/predictions-power-hold.md
+                                how Logitech's compiler turns a catalogue power press held for a
+                                stated time into copies of the code, seven devices on two throwaway
+                                records, written before their compile for todo L9
 docs/plans/001-generating-configs.md                    the earlier proposal, superseded, kept for its arguments
 docs/emulator-design.md         design for the emulator harness, deferred, not built
 src/harmony/                    the research library, see below
