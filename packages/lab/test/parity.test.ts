@@ -95,8 +95,8 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // the variable bank and the store read after the start that followed it, and 184 with the 45 written
   // again, heard and put back, and 186 with the Harmony 650's configuration after the same television
   // was added to it and that account record's power settings, and 187 with the catalogue's own,
-  // and 188 with that catalogue entry's timing record.
-  assert.equal(Object.keys(pythonImages()).length, 188, 'every fixture tests/lab.py names');
+  // and 188 with that catalogue entry's timing record, and 189 with the archive's raw features capture.
+  assert.equal(Object.keys(pythonImages()).length, 189, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {

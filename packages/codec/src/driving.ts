@@ -32,13 +32,16 @@ import { join } from 'node:path';
 import { ArchiveError, archiveManifest } from './archive.ts';
 
 /**
- * One step of an action list. A list is performed in order, and every actionable field below is one.
+ * One step of an action list. A list is performed in order, and every actionable field below is one. The
+ * archive's order is the service's own step numbering rather than its array position, checked on every
+ * power, input switching and channel entry list, section 305.
  *
  * Five shapes in the archive, mapped to four kinds:
  *
  * - a bare string is `send`, the command of that name from the device's codeset, sent as one press;
  * - `{command, durationMs}` is `send` with `holdMs`, the command kept going for that long. **This is the
- *   field section 305 is about**: Logitech's compiler turns it into as many copies of the code as fit;
+ *   field section 305 is about**: Logitech's compiler turns it into as many copies of the code as fit.
+ *   The service also states a duration of 0, and the archive writes that as a bare string;
  * - `{hold}` is `hold`, a press held for a time nobody stated. Its operand is passed through as written,
  *   and it is not always a command that exists: on 14 of the 49 the archive holds it is digits, such as
  *   `1000`, and on the one device checked, BenQ's MW851UST, its codeset has no command of that name. The

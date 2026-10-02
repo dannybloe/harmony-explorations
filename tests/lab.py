@@ -261,6 +261,9 @@ IMAGES = {
     'h650_panasonic_catalogue_features': 'CopyFeaturesFromGlobalDevice_219481.json',
     # And that catalogue entry's own timing record, read off the service the same day.
     'h650_panasonic_catalogue_device': 'GlobalDeviceManager_GetGlobalDevices.json',
+    # The archive's raw capture of every catalogue device's features, a release asset of the archive and
+    # not in its checkout: what its projected action lists are checked against for order, section 305.
+    'ir_archive_raw_features': 'device_features_raw.jsonl.gz',
     # The same region read after block 0x030000 was written back unchanged, section 300.
     'h700_after_rehearsal_region': '20260929T1923Z-h700-after-rehearsal-config-region-region.bin',
     # And the rehearsal's own output for that write, which is the only record that it erased.

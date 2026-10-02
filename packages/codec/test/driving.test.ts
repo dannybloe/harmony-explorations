@@ -8,13 +8,15 @@
  * name rather than being skipped.
  */
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync } from 'node:fs';
+import { createReadStream, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { createInterface } from 'node:readline';
+import { createGunzip } from 'node:zlib';
 import test from 'node:test';
 import { IR_ARCHIVE, imagePath, needing, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
 import { ArchiveError, archiveManifest } from '../src/archive.ts';
 import { catalogueDriving, deviceDriving, driveSteps } from '../src/driving.ts';
-import type { DriveStep } from '../src/driving.ts';
+import type { DeviceDriving, DriveStep } from '../src/driving.ts';
 
 /** A minimal version 2 record, made up: only the timing block every record carries. */
 const TIMING = {
@@ -179,4 +181,70 @@ test('every device record in the archive reads, and the power and input counts a
     assert.equal(digitHolds, 14);
     assert.equal(named, 209007);
     assert.equal(inputs, 1089512);
+  });
+
+/**
+ * The archive's step order against the service's own. Its author's notes say an action list's order is the
+ * steps' `Order` field and not their position in the array, on a small share of lists, so a projection that
+ * kept array position would turn a power toggle's press, wait, press into press, press, wait. Measured over
+ * the raw capture the archive was projected from: 3884 of 477079 lists are stored out of order, and every
+ * one of them reads in `Order` sequence through this reader. A hold of 0 ms is projected as a plain press,
+ * which the comparison follows. Only the lists a device states once are compared, power, input switching
+ * and channel entry, not the per input and per state ones. The capture is a release asset rather than part
+ * of the checkout, 329 MB, so this skips without it.
+ */
+test('the archive puts every power, input and channel action list in the service\'s own step order',
+  needing(skipWithoutIrArchive(), skipUnless('ir_archive_raw_features')), async () => {
+    const where = new Map<number, string>();
+    const root = join(IR_ARCHIVE!, 'devices');
+    for (const slug of readdirSync(root)) {
+      for (const row of JSON.parse(readFileSync(join(root, slug, 'index.json'), 'utf8')) as { f: string; id: number }[]) {
+        where.set(row.id, join(root, slug, row.f));
+      }
+    }
+    type Action = { __type: string; Order?: number; IRCommandName?: string; Duration?: number | null;
+      StateName?: string; StateValue?: string; Delay?: number };
+    const step = (one: Action): DriveStep => {
+      const kind = one.__type.split(':')[0];
+      if (kind === 'IRPressAction') {
+        return one.Duration ? { kind: 'send', command: one.IRCommandName!, holdMs: one.Duration }
+          : { kind: 'send', command: one.IRCommandName! };
+      }
+      if (kind === 'IRDevAction') return { kind: 'state', state: one.StateName!, value: one.StateValue! };
+      if (kind === 'IRDelayAction') return { kind: 'wait', ms: one.Delay! };
+      if (kind === 'IRHoldAction') return { kind: 'hold', command: one.IRCommandName! };
+      throw new Error(`unknown action ${one.__type}`);
+    };
+    // The service's list name against the reader's, per feature.
+    const lists: Record<string, [keyof DeviceDriving, Record<string, string>]> = {
+      PowerFeature: ['power', { PowerOnActions: 'on', PowerOffActions: 'off', PowerToggleActions: 'toggle', PowerOnResetActions: 'onReset' }],
+      InputFeature: ['inputs', { NextActions: 'next', PreviousActions: 'previous', StartActions: 'start', FinishActions: 'finish' }],
+      ChannelTuningFeature: ['channelTuning', { StartActions: 'start', FinishActions: 'finish', GreaterTenActions: 'greaterTen', GreaterHundredActions: 'greaterHundred' }],
+    };
+    let compared = 0;
+    let shuffled = 0;
+    const lines = createInterface({ input: createReadStream(imagePath('ir_archive_raw_features')!).pipe(createGunzip()) });
+    for await (const line of lines) {
+      const raw = JSON.parse(line) as { id: number; features?: ({ __type: string } & Record<string, unknown>)[] | null };
+      const file = where.get(raw.id);
+      assert.ok(file !== undefined, `device ${raw.id} is in the capture and not in the archive`);
+      let read: DeviceDriving | undefined;
+      for (const feature of raw.features ?? []) {
+        const mapping = lists[feature.__type.split(':')[0]!];
+        if (mapping === undefined) continue;
+        const [block, names] = mapping;
+        for (const [served, ours] of Object.entries(names)) {
+          const actions = feature[served] as Action[] | null | undefined;
+          if (!actions || actions.length === 0) continue;
+          read ??= deviceDriving(JSON.parse(readFileSync(file, 'utf8')));
+          const sorted = [...actions].sort((a, b) => (a.Order ?? 0) - (b.Order ?? 0));
+          if (sorted.some((one, i) => one !== actions[i])) shuffled += 1;
+          const projected = (read[block] as Record<string, unknown> | undefined)?.[ours];
+          assert.deepEqual(projected, sorted.map(step), `device ${raw.id}, ${served}`);
+          compared += 1;
+        }
+      }
+    }
+    assert.equal(compared, 477079);
+    assert.equal(shuffled, 3884);
   });

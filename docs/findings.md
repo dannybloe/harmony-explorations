@@ -39939,7 +39939,12 @@ this project told him of the call below, schema version 2, and the television's 
 inputs, two digit channels, both states, and the delays and repeats, every one equal to what the service
 answered here. Across the archive 3234 of 276236 devices hold a power press for a stated time, 2220 of
 them for 1000 ms and 1788 for 2000. Version 2 changed nothing this project's reader takes, which
-`ARCHIVE_SCHEMA_VERSION`'s docstring records.
+`ARCHIVE_SCHEMA_VERSION`'s docstring records. **Its step order is the service's**, checked against the raw
+capture it was projected from, a release asset of the archive: the service stores 3884 of 477079 power,
+input switching and channel entry lists out of order, its author's notes say the steps' `Order` field is
+authoritative, and the archive holds every one of them in `Order` sequence, where array position would
+have turned a power toggle's press, wait, press into press, press, wait. It projects a hold of 0 ms as a
+plain press. The per input and per state lists were not compared.
 
 **The 1000 is the catalogue's, and Logitech's service hands it out.** On the 650's record the
 television's power feature has `Id` 0 and `DateModified` null, as the PlayStation's does, where the four
