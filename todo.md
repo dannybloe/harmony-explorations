@@ -91,6 +91,7 @@ Plan: [003-how-an-activity-is-built.md](docs/plans/003-how-an-activity-is-built.
 - [ ] 4.1 FreeHarmony: how a device is stored in our own library
 - [ ] 4.2 FreeHarmony: convert Logitech's database records into that format
   - [x] 4.2.1 Read a device's driving rules out of the archive, schema version 2: timing, power, inputs, channel tuning and states, `driving.ts`; a catalogue question, so no architecture applies (section 305)
+  - [ ] 4.2.2 Ask the archive's author whether his converter sorts every action list on `Order`, per input and per state lists included; once he confirms, delete the 329 MB raw features file from the lab and mark its register row as fetch from the release when needed (section 305)
 - [ ] 4.3 Turn device information into a compilation that works on a remote
   - [x] 4.3.1 One device, six commands, catalogue to remote, television answered (section 242)
   - [ ] 4.3.2 A full device of ninety commands
