@@ -38,7 +38,7 @@ import { biphaseFrames, blockCopies, frameKey, frameSegments, framesOfPulses, fr
   from '../src/irframe.ts';
 import { pulsesOfWords } from '../src/irda.ts';
 import { keyCodes } from '../src/inventory.ts';
-import { pulsesOfStatedCode, statedProtocol, timingsOf } from '../src/stated.ts';
+import { heldFramesOfStatedCode, pulsesOfStatedCode, statedProtocol, timingsOf } from '../src/stated.ts';
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 
@@ -2274,8 +2274,11 @@ test('every held power record of the test devices in sections 306 to 308 holds a
       const step = driving.power![one.power]!.find((each) => each.kind === 'send' && each.holdMs !== undefined);
       assert.ok(step && step.kind === 'send', `${one.file} ${one.power} states a held press`);
       const device = JSON.parse(readFileSync(join(IR_ARCHIVE!, 'devices', one.slug, `${one.file}.json`), 'utf8')) as { codeset: string };
-      const codes = (JSON.parse(readFileSync(join(IR_ARCHIVE!, device.codeset), 'utf8')) as { commands: { name: string; protocol: string }[] }).commands;
-      const family = codes.find((each) => each.name === step.command)!.protocol;
+      const codes = (JSON.parse(readFileSync(join(IR_ARCHIVE!, device.codeset), 'utf8')) as {
+        commands: { name: string; protocol: string; keycode: string }[];
+      }).commands;
+      const command = codes.find((each) => each.name === step.command)!;
+      const family = command.protocol;
       const want = catalogueFrameSignature(one.slug, one.file, step.command, true);
       const c = load(one.fixture);
       const counts = irGroups(c)![one.group]!.addresses.flatMap((record) => {
@@ -2294,6 +2297,9 @@ test('every held power record of the test devices in sections 306 to 308 holds a
       for (const bit of ['shortest', 'mean', 'longest'] as const) if (statedFrames(family, step.holdMs!, bit) === held) fits[bit] += 1;
       if (statedFrames(family, step.holdMs!, 'mean', false) === held) fits.nolead += 1;
       assert.equal(statedFrames(family, step.holdMs!, 'mean'), held, `${one.file} ${one.power} ${family}`);
+      // The library's count, from the generated table and the code's own slots, against this test's own
+      // reading of the raw definition: two derivations that share nothing but the archive.
+      assert.equal(heldFramesOfStatedCode(command.keycode, step.holdMs!), held, `${one.file} ${one.power} library`);
       seen.push(`${one.file} ${one.power} ${step.holdMs} ${held}`);
       matched.push(counts.length);
     }

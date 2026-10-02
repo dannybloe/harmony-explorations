@@ -21,6 +21,7 @@ import { pulsesOfBiphaseFrame, pulsesOfBlock, pulsesOfCellFrame, pulsesOfFrame, 
   type BiphaseTimings, type CellTimings, type FrameTimings, type Pulse }
   from './irframe.ts';
 import { PROTOCOLS, type StatedProtocol } from './protocols.ts';
+import { SEGMENT_LENGTHS } from './segmentlengths.ts';
 
 /**
  * One code as Logitech's database states it, read as the grammar it is.
@@ -450,6 +451,57 @@ export function pulsesOfStatedCode(
   const timings: FrameTimings = closing === undefined ? base : { ...base, closing };
   if (timings.carries === 'mark' && timings.closing === undefined) return undefined;
   return pulsesOfFrame(timings, bits, value);
+}
+
+/**
+ * Which segment of its family's definition a stated item names: a frame by its position digit, a word by
+ * itself. The one place the mapping lives, since `archive.ts` resolves a code's cycles with it and
+ * `heldFramesOfStatedCode` resolves its lengths, and the two must name the same segments.
+ */
+export function segmentIdOf(item: StatedItem): string {
+  return item.kind === 'frame' ? String(item.frame.index) : item.word;
+}
+
+/**
+ * How many frames Logitech's compiler puts in a power step held for `holdMs`, section 308.
+ *
+ * **The frames that start inside the hold, each timed at the length the definition states**: the code's
+ * first slot, then its second for as long as it takes, a segment that does not close a frame joining the
+ * frame after it. `SEGMENT_LENGTHS` holds the lengths and `statedSegmentLengths` in `archive.ts` says
+ * how they are read. It reproduces all 27 held records of the six compiles sections 306 to 308 read,
+ * ten families, arch 14 (Harmony 650 and 700) only.
+ *
+ * Undefined where the family has no stated lengths, a slot names a segment it does not hold, or the
+ * second slot closes no frame, which would never end. **Nothing here applies a floor**: whether a hold
+ * shorter than an ordinary press sends fewer frames than the press is unmeasured, so a caller composing
+ * one has to decide, and `heldPressOfStatedCode` refuses.
+ */
+export function heldFramesOfStatedCode(code: string | StatedCode, holdMs: number): number | undefined {
+  const read = typeof code === 'string' ? statedCode(code) : code;
+  if (read === undefined || !(holdMs > 0)) return undefined;
+  const table = SEGMENT_LENGTHS[read.family];
+  if (table === undefined) return undefined;
+  const lengths = (items: readonly StatedItem[]) => items.map((one) => table[segmentIdOf(one)]);
+  const start = lengths(read.groups[0] ?? []);
+  const repeat = lengths(read.groups[1] ?? []);
+  if ([...start, ...repeat].some((one) => one === undefined)) return undefined;
+  if (!repeat.some((one) => one![1])) return undefined;
+  const hold = holdMs * 1000;
+  let at = 0;
+  let pending = 0;
+  let frames = 0;
+  for (let i = 0; ; i += 1) {
+    const [us, closes] = (i < start.length ? start[i] : repeat[(i - start.length) % repeat.length])!;
+    // A frame starts where the first of its segments does, a lead in included, and only a frame that
+    // starts inside the hold is sent.
+    if (pending === 0 && at >= hold) return frames;
+    pending += us;
+    if (closes) {
+      frames += 1;
+      at += pending;
+      pending = 0;
+    }
+  }
 }
 
 /**

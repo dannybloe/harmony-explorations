@@ -36,7 +36,7 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets silhouettes all clean protocols prontocheck catalogue emitcheck myharmony-model model-pdf model-diagram model-activity model-cluster
+.PHONY: help test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets silhouettes all clean protocols segmentlengths prontocheck catalogue emitcheck myharmony-model model-pdf model-diagram model-activity model-cluster
 
 BENCH_PORT ?= 8731
 
@@ -272,6 +272,13 @@ model-cluster:
 
 protocols:
 	@node packages/codec/bin/protocols.ts $(PROTOCOLS_ARGS)
+
+# Every family's segment lengths as Logitech's definitions state them, which is what a held power press
+# is counted against, section 308. Reads the public archive checkout only, no lab and no network, so the
+# same archive always gives the same file. SEGMENTLENGTHS_ARGS=--write regenerates
+# packages/codec/src/segmentlengths.ts.
+segmentlengths:
+	@node packages/codec/bin/segmentlengths.ts $(SEGMENTLENGTHS_ARGS)
 
 # The strongest check our infrared encoder gets, section 230: build the waveform for every command in
 # Logitech's own catalogue and compare it against the one their renderer produced, both sections. Two

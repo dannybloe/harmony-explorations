@@ -39,7 +39,7 @@ import type {
 import { pulsesOfBlock } from './irframe.ts';
 // A value import and not only a type: `waveformOfArchiveCommand` composes the keycode reader with the
 // rest. The dependency runs one way, `stated.ts` importing nothing from here.
-import { statedCode, type StatedCode, type StatedItem } from './stated.ts';
+import { segmentIdOf, statedCode, type StatedCode, type StatedItem } from './stated.ts';
 
 /**
  * The archive schema this converter was written against.
@@ -73,6 +73,8 @@ interface Encoding {
 interface Segment {
   readonly Name: string | null;
   readonly Header: readonly Atom[] | null;
+  /** A code segment's literal durations. Absent on an infrared segment, which states a payload instead. */
+  readonly Atoms?: readonly Atom[] | null;
   readonly Payload: {
     readonly Encodings: readonly Encoding[] | null;
     /**
@@ -924,6 +926,105 @@ export function segmentRefs(protocol: ArchiveProtocol): Map<string, SegmentRef> 
 }
 
 /**
+ * One segment's length as the definition states it, and whether it closes a frame, section 308.
+ *
+ * **What a held power press is counted against.** Logitech's compiler fills a power step held for a
+ * stated time with as many frames as **start** inside it, and it times each frame at the length the
+ * definition states rather than the one the code is sent at: a segment's `TotalLength` where it has one,
+ * and otherwise its header, its trailer and every bit at the **mean** of its two cell lengths, since
+ * the compiler does not look at which bits a given code sets. All 27 held records of six compiles
+ * follow it, and only the Panasonic power codes separate it from the sent lengths, their 48 bits being
+ * mostly the shorter cell. The mean is preferred over the shorter and longer cell, 27 against 12 and 18,
+ * and not identified: on that one family anything from 24 to 28 long bits of 48 fits.
+ *
+ * **`closes` is whether the segment ends a frame**, meaning its last duration is a silence over 10 ms,
+ * the gap that separates frames everywhere else here. A segment that does not close is part of the frame
+ * after it, which is the JVC family's opening `KeyCodeStart`: 8400 and 4200 microseconds, after which
+ * the first frame is stated at 57.6 ms and compiled at exactly that. A padded segment, one stating a
+ * `TotalLength`, always closes, its padding being the gap.
+ */
+export interface StatedSegmentLength {
+  readonly us: number;
+  readonly closes: boolean;
+}
+
+/** The gap between two frames: a silence longer than this separates them, as in `irframe.ts`. */
+const FRAME_GAP_US = 10000;
+
+/**
+ * Every segment of a definition with a length the rule above can state, keyed the way a stated code
+ * names it, `segmentRefs`. A payload segment with other than two cells and no `TotalLength` is left out,
+ * the mean of two cells being all section 308 measured, and a caller needing it then refuses.
+ */
+export function statedSegmentLengths(protocol: ArchiveProtocol): Map<string, StatedSegmentLength> {
+  const sum = (atoms: readonly Atom[] | null | undefined) => (atoms ?? []).reduce((total, one) => total + one.Value, 0);
+  const closesOn = (atoms: readonly Atom[]) => {
+    const last = atoms[atoms.length - 1];
+    return last !== undefined && last.Type === 0 && last.Value > FRAME_GAP_US;
+  };
+  const byName = new Map<string, Segment>();
+  for (const one of [...(protocol.definition.IRSegments ?? []), ...(protocol.definition.CodeSegments ?? [])]) {
+    if (one.Name !== null && !byName.has(one.Name)) byName.set(one.Name, one);
+  }
+  const out = new Map<string, StatedSegmentLength>();
+  for (const [id, ref] of segmentRefs(protocol)) {
+    const segment = ref.SegmentName === null ? undefined : byName.get(ref.SegmentName);
+    if (segment === undefined) continue;
+    if (segment.TotalLength !== null && segment.TotalLength > 0) {
+      out.set(id, { us: segment.TotalLength, closes: true });
+      continue;
+    }
+    const payload = segment.Payload;
+    if (payload !== null && payload.Encodings !== null && payload.Encodings.length > 0) {
+      const cells = payload.Encodings.map((one) => sum(one.Atoms));
+      if (cells.length !== 2 || payload.NumberOfBits === null) continue;
+      out.set(id, {
+        us: sum(segment.Header) + sum(segment.Trailer) + payload.NumberOfBits * (cells[0]! + cells[1]!) / 2,
+        closes: closesOn(segment.Trailer ?? []),
+      });
+      continue;
+    }
+    // A code segment states its durations literally; one that states none in `Atoms` states them as a
+    // header and a trailer, which is how the JVC lead in is written, both forms holding the same two.
+    const atoms = segment.Atoms !== undefined && segment.Atoms !== null && segment.Atoms.length > 0
+      ? segment.Atoms : [...(segment.Header ?? []), ...(segment.Trailer ?? [])];
+    if (atoms.length === 0) continue;
+    out.set(id, { us: sum(atoms), closes: closesOn(atoms) });
+  }
+  return out;
+}
+
+/**
+ * The text of `src/segmentlengths.ts` as the archive at `root` states it, which `bin/segmentlengths.ts`
+ * writes and a test compares the checked in file against.
+ */
+export function segmentLengthsModule(root: string): string {
+  const rows = archiveProtocols(root)
+    .map((protocol) => ({ family: protocol.name, lengths: statedSegmentLengths(protocol) }))
+    .filter((one) => one.lengths.size > 0)
+    .sort((a, b) => a.family.localeCompare(b.family));
+  const quote = (text: string) => `'${text.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
+  const body = rows.map(({ family, lengths }) => {
+    const ids = [...lengths].sort(([a], [b]) => a.localeCompare(b))
+      .map(([id, one]) => `${quote(id)}: [${one.us}, ${one.closes}]`).join(', ');
+    return `  ${quote(family)}: { ${ids} },`;
+  }).join('\n');
+  return `/**
+ * Every protocol family's segment lengths as Logitech's own definitions state them: microseconds, and
+ * whether the segment closes a frame. What a held power press is counted against, section 308, read by
+ * \`heldFramesOfStatedCode\` in \`stated.ts\`.
+ *
+ * **Generated by \`packages/codec/bin/segmentlengths.ts --write\` from the infrared archive alone, do not
+ * edit by hand.** \`statedSegmentLengths\` in \`archive.ts\` says how each length is read. A segment is
+ * keyed the way a stated code names it, its position digit or its word.
+ */
+export const SEGMENT_LENGTHS: Readonly<Record<string, Readonly<Record<string, readonly [number, boolean]>>>> = {
+${body}
+};
+`;
+}
+
+/**
  * The three cycles **one command** states, in the shape the definition states its own default in.
  *
  * **A definition's `KeyCode` is the family's default and a command may name other segments**, which is
@@ -943,7 +1044,7 @@ export function keyCodeOfStatedCode(
   const group = (items: readonly StatedItem[]): SegmentRef[] | undefined => {
     const out: SegmentRef[] = [];
     for (const one of items) {
-      const ref = refs.get(one.kind === 'frame' ? String(one.frame.index) : one.word);
+      const ref = refs.get(segmentIdOf(one));
       if (ref === undefined) return undefined;
       out.push(ref);
     }
