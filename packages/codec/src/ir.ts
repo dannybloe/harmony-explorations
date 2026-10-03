@@ -680,8 +680,11 @@ export const IR_QUANTITY_OPCODE = 0x7c;
  * The largest value one `IR_QUANTITY_OPCODE` instruction may carry.
  *
  * Not a guess from the data: the firmware refuses to fold a new request into a queued one whose
- * value is already this, so a larger quantity has to be spelled as several instructions. The
- * corpus never exceeds it in 21882 uses.
+ * value is already this, so a larger power on delay is spelled as several instructions, and the
+ * twelve containers section 70 counted never exceed it in 21882 uses. **It does not cap a single
+ * instruction**, section 327: Logitech's compiler writes a sequence's 20 second wait on the Harmony
+ * One as one `0x7C` of 200, so a reader must not treat a larger value as malformed, and whether the
+ * remote waits the whole of it is unmeasured.
  */
 export const IR_QUANTITY_CAP = 100;
 

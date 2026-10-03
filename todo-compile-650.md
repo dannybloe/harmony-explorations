@@ -55,7 +55,7 @@ copied. **Every chapter ends with a configuration that works on the 650.**
 ## 4. What else the test setup uses
 
 - [ ] 4.1 Favourite channels, up to 23 on the 650, under Favorites in the Watch TV activity, four to a page, each a number or a logo: both forms, the number sender and the spelled out one, read on the Harmony One only (sections 154 and 156); nothing composes them
-- [ ] 4.2 Sequences, on their own and as steps in an activity's start, composed within the queue limit `assertQueueFits` already enforces (section 238)
+- [ ] 4.2 Sequences, on their own and as steps in an activity's start, composed within the queue limit `assertQueueFits` already enforces (section 238); `composeSequence` built and calibrated on the Harmony One's four compiles, its arch 14 form inferred and listed in `ARCH14_INFERRED` (section 327); on the 650 still to hear KPN 1, 2 s, KPN 2, 20 s, KPN Red from one press of Red
 - [ ] 4.3 The three settings MyHarmony lists for the 650, at the values chosen
   - [x] 4.3.1 How long the screen stays lit: timer 1 (section 292)
   - [ ] 4.3.2 RemoteAssistant, set off, since 3.13 leaves the assistant out

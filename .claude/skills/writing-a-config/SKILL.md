@@ -226,8 +226,8 @@ produce a config the remote accepts and mishandles.
   carries three byte identical copies at three addresses, and nothing in the format requires that, so
   editing a digit's instruction in place needs the same check base slot 5's duration blocks need: who
   else names this table. The accounting and the emitter both deduplicate by address for that reason.
-* **A sequence at Logitech's own stated limit can hang a remote for good**, measured on 23 August 2026 and
-  deliberately not a finding, by Danny's call: the notes sit in the lab beside the config,
+* **A sequence at Logitech's own stated limit can hang a remote for good**, measured on 23 August 2026. The
+  hang itself is deliberately not a finding, by Danny's call, and the notes sit in the lab beside the config,
   `../lab/reads/20260823T1408Z-onres-sequence-NOTES.md`, so a session that finds no section for it must not
   conclude it is unread. A 25 step sequence, their maximum, expands to roughly 55 three byte instructions
   in one action list, and heavy tapping of the touch panel while it runs hung a Harmony One three times
@@ -251,6 +251,15 @@ produce a config the remote accepts and mishandles.
   account peaks at 22 or below. So the sequence leaves five slots for every key press, state change and
   display event the remote still has to queue where an ordinary config leaves eighteen, and nothing has
   been measured in between. A softer bound than 40 is a decision rather than a reading.
+
+  **The shape is a finding, section 327, and `composeSequence` in `packages/codec/src/sequence.ts` builds
+  one** and refuses through `assertQueueFits`. A command is one call of its send list, a pause one `0x7C`
+  per device the activity switches on, in the order its start does, and there is one list per binding.
+  Three things a writer gets wrong otherwise. A device's sequence sends carry its **inter key delay**, so
+  the spare Harmony One's set top box, at 200 ms, calls lists at 2 where its device mode keys call lists
+  at 1. A 20 second wait is **one** `0x7C` of 200, which is what Logitech's compiler wrote, and not runs of
+  100. And on arch 14 (Harmony 600, 650 and 700) no compile holds a sequence, so five parts of the form
+  are inferences, named in `ARCH14_INFERRED`, until one does.
 * **Two erase blocks is the floor for any edit, not a page binding's quirk**, section 237. The
   trailer checksum sits at the far end of the container and `applyEdits` restamps it, so a one byte
   change to a device's power on delay moves `0x083BFD` and `0x1D6B66` on the spare Harmony One, 1.3
