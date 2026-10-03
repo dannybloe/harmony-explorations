@@ -102,6 +102,12 @@ import {
   compiledBlockWords,
   payloadOf,
   bitmapReference,
+  compilerCaseOrder,
+  deviceIds,
+  nextDeviceIdentifier,
+  POWER_ON_DELAY_VALUES,
+  SEND_PRELUDE_LOAD,
+  sendPreludeCondition,
 } from '../src/index.ts';
 import { startAndFlag, startTargets, tagFiveMisfit, tagFiveShape } from './tagfive.ts';
 
@@ -4303,4 +4309,211 @@ test('the composed activity read back off the Harmony 650 is a fourth row, on Ko
   assert.deepEqual(after.slice(3), [[4, 106, 'LG kijken', 79]]);
   // Kodi kijken is the second page's other row, at the top.
   assert.deepEqual(after[0], [0, 106, 'Kodi kijken', 35]);
+});
+
+/*
+ * ---- What the arch 14 device composer builds instead of copying, section 319 ----
+ *
+ * todo-compile-650 6.2.1 to 6.2.3: the command prelude's operands, the power on delay table's case
+ * order and a new device's identifier. Each is asserted against every Logitech compile of a Harmony
+ * 600, 650 or 700 the lab holds, `ARCH14_LISTS`, so the generated value is the one their compiler
+ * writes rather than one that merely works.
+ */
+
+test('the compiler stores every base slot 14 record\'s cases in one hash order, which compilerCaseOrder generates',
+     skipWithoutLab(), () => {
+  // The claim is over every record of two or more cases, not only the delay tables, because a rule
+  // fitted to the two tables it is used for would say nothing about whether it is the generator's.
+  let records = 0;
+  let unsorted = 0;
+  let ascendingFits = 0;
+  const bySize = new Map<number, number>();
+  for (const name of ARCH14_LISTS) {
+    const c = parse(payloadOf(require_(name)));
+    for (const record of valueMaps(c)!) {
+      const keys = record.entries.map(([key]) => key);
+      if (keys.length < 2) continue;
+      records += 1;
+      bySize.set(keys.length, (bySize.get(keys.length) ?? 0) + 1);
+      assert.deepEqual(compilerCaseOrder(keys), keys, `${name}: a record of ${keys.length} cases`);
+      const ascending = [...keys].sort((a, b) => a - b);
+      if (ascending.join() === keys.join()) ascendingFits += 1;
+      else unsorted += 1;
+    }
+  }
+  assert.equal(records, 410);
+  // The control: ascending order, the obvious alternative, fits only records too small to tell.
+  assert.equal(unsorted, 332, 'the records the order is visible in');
+  assert.equal(ascendingFits, 78);
+  assert.equal(bySize.get(21), 166, 'the 0 to 20 records, inter device delay tables among them');
+  assert.equal(bySize.get(451), 166, 'the 0 to 450 records, power on delay tables among them');
+  // The two constants the composer uses are this order, and the inter device one is the literal it
+  // replaced.
+  assert.deepEqual([...INTER_DEVICE_DELAY_VALUES],
+                   [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 16, 19, 18, 20]);
+  assert.equal(POWER_ON_DELAY_VALUES.length, POWER_ON_DELAY_CASES);
+  assert.deepEqual(POWER_ON_DELAY_VALUES.slice(16, 24), [17, 16, 19, 18, 21, 20, 23, 22]);
+  assert.deepEqual(POWER_ON_DELAY_VALUES.slice(-3), [450, 449, 448]);
+  // Refused outside the key sets the order is pinned on, whose table size is unknown. The second is
+  // the case where a later Java 7 table stays at 16 slots and puts 16 first, where the hash alone
+  // would put it last.
+  assert.throws(() => compilerCaseOrder([0, 16]), RangeError);
+  assert.throws(() => compilerCaseOrder([2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 16]), RangeError);
+  assert.throws(() => compilerCaseOrder([1, 1]), RangeError);
+  assert.deepEqual(compilerCaseOrder([0, 15]), [0, 15]);
+});
+
+test('every power on delay table Logitech compiled is in the generated order, the one the composer writes',
+     skipWithoutLab(), () => {
+  let tables = 0;
+  for (const name of ARCH14_LISTS) {
+    const c = parse(payloadOf(require_(name)));
+    for (const one of powerOnDelays(c)) {
+      assert.deepEqual(powerOnDelayCases(c, one.table)!.map((k) => k.value), [...POWER_ON_DELAY_VALUES], name);
+      tables += 1;
+    }
+  }
+  assert.equal(tables, 71, 'the thirteen compiles\' devices with a Power variable, the 700 pair counted twice');
+  // And a composed device's table is in it, on the 650's own configuration.
+  const host = parse(require_('h650_config_region'));
+  const device = composeDevice(host, { label: 'LG', commands: TELEVISION, power: 0 });
+  const table = device.powerOnDelay!.table;
+  assert.deepEqual(powerOnDelayCases(parse(device.bytes), table)!.map((k) => k.value), [...POWER_ON_DELAY_VALUES]);
+});
+
+/** The activity handler sets the thirteen compiles hold between them, each configuration's counted. */
+const ACTIVITIES_ON_ARCH14_LISTS = 40;
+
+test('the composer refuses an arch 14 configuration whose preludes or power on tables are not the ones it builds',
+     skipUnless('h650_config_region'), () => {
+  // The controls for the two checks that replaced copying: what the configuration holds is compared
+  // with what is built, so one byte off in either makes the composer refuse rather than write a
+  // device that disagrees with the rest.
+  const pristine = parse(require_('h650_config_region'));
+  const compose = (blob: Uint8Array) => composeDevice(parse(blob), { label: 'LG', commands: TELEVISION, power: 0 });
+
+  // One prelude's load gets 2 instead of 1: the operand's low byte, after the list's count byte.
+  const prelude = sendPreludes(pristine)[0]!;
+  const actionLists = pristine.pointerArrayAt(archSlot(14, 10))!; // base slot 10, the action lists
+  const loadAt = pristine.blobOffsetOf(actionLists.values[prelude.load]!)! + 1;
+  const loadWrong = pristine.blob.slice();
+  assert.equal(loadWrong[loadAt], 0x01);
+  loadWrong[loadAt] = 0x02;
+  assert.equal(sendPreludes(parse(loadWrong))[0]!.loadOperand, 0xfb02, 'the edit lands on the load');
+  assert.throws(() => compose(loadWrong), /prelude is not the one built/);
+
+  // One power on table gets its first two keys swapped, 0 and 1: past the record's lead byte and
+  // its two byte count, a case is a two byte key and a three byte address.
+  const table = powerOnDelays(pristine)[0]!.table;
+  const caseAt = pristine.blobOffsetOf(valueMaps(pristine)![table]!.address)! + 3;
+  const orderWrong = pristine.blob.slice();
+  [orderWrong[caseAt], orderWrong[caseAt + 5]] = [orderWrong[caseAt + 5]!, orderWrong[caseAt]!];
+  assert.deepEqual(powerOnDelayCases(parse(orderWrong), table)!.slice(0, 2).map((k) => k.value), [1, 0]);
+  assert.throws(() => compose(orderWrong), /power on delay table in another order/);
+});
+
+test('every command prelude Logitech compiled is the built load and a condition on the start variable the activities raise',
+     skipWithoutLab(), () => {
+  // The start variable is read here off the activities, independently of the composer: every
+  // activity's enter list sets one variable to 1 as its second step and back to 0 as its last.
+  let preludes = 0;
+  let sends = 0;
+  let activities = 0;
+  for (const name of ARCH14_LISTS) {
+    const c = parse(payloadOf(require_(name)));
+    const lists = c.actionLists()!;
+    const sets = handlerSets(c)!;
+    const raised = new Set<number>();
+    for (const set of new Set(activityBindings(c).map((one) => one.set))) {
+      const enter = taggedList(c, sets.addresses[set]!)!.entries.find((one) => one.tag === 1)!;
+      const list = lists[enter.operand]!;
+      const head = list[1]!;
+      const foot = list.at(-1)!;
+      assert.ok(head.opcode >= 0x80 && head.operand === 1 && foot.opcode === head.opcode && foot.operand === 0,
+                `${name}: activity ${set} brackets its start with one variable`);
+      raised.add(head.opcode - 0x80);
+      activities += 1;
+    }
+    assert.equal(raised.size, 1, `${name}: one start variable`);
+    const start = [...raised][0]!;
+    const found = sendPreludes(c);
+    sends += lists.filter((list) => list.some((one) => one.opcode === 0x7d)).length;
+    preludes += found.length;
+    for (const one of found) {
+      assert.equal(one.loadOperand, SEND_PRELUDE_LOAD, `${name}: list ${one.list}'s load`);
+      assert.equal(one.conditionOperand, sendPreludeCondition(start), `${name}: list ${one.list}'s condition`);
+    }
+  }
+  assert.equal(sends, 6100);
+  assert.equal(preludes, sends, 'every send list opens with the prelude');
+  assert.equal(activities, ACTIVITIES_ON_ARCH14_LISTS);
+  assert.equal(SEND_PRELUDE_LOAD, 0xfb01);
+  assert.equal(sendPreludeCondition(52), 52, 'equality, one arm, high byte 0');
+  assert.throws(() => sendPreludeCondition(256), RangeError);
+});
+
+/**
+ * The compiles of the two test accounts, each a family whose members share some devices and differ
+ * in others: the Harmony 650's and the Harmony 700's on the test account, sections 306 to 308.
+ */
+const IDENTIFIER_FAMILIES = [
+  ['h650_config_region', 'h650_panasonic_config', 'h650_power_hold_compile', 'h650_power_hold_compile_2'],
+  ['h700_28_config_region', 'h700_power_hold_compile', 'h700_power_hold_compile_2', 'h700_power_hold_compile_3',
+   'h700_power_hold_compile_4'],
+] as const;
+
+test('on the two test accounts, a device one compile holds and another lacks is numbered above every device both hold',
+     skipUnless(...IDENTIFIER_FAMILIES.flat()), () => {
+  // What `nextDeviceIdentifier`'s one past the highest follows: Logitech numbers a device added to an
+  // account above everything the account already has. This is the stronger, symmetric form, which
+  // assumes nothing about which compile came first and also says the devices removed again were the
+  // recent ones; that second half is how these two accounts were used, not a rule of Logitech's. Two
+  // accounts are all there is: no other account here has a pair of compiles holding different devices.
+  const added = new Set<number>();
+  for (const family of IDENTIFIER_FAMILIES) {
+    const held = family.map((name) => new Set(deviceIds(parse(payloadOf(require_(name))))));
+    held.forEach((one, a) => held.forEach((other, b) => {
+      if (a === b) return;
+      const shared = [...one].filter((id) => other.has(id));
+      assert.ok(shared.length > 0, `${family[a]} and ${family[b]} share devices`);
+      for (const id of one) {
+        if (other.has(id)) continue;
+        assert.ok(id > Math.max(...shared), `${family[a]}'s ${id} is above what it shares with ${family[b]}`);
+        added.add(id);
+      }
+    }));
+  }
+  assert.equal(added.size, 17);
+});
+
+test('on the 650\'s two configurations a composed device holds what copying gave it: the operands, the order, the identifier',
+     skipUnless('h650_config_region', 'h650_plasma_base', 'one_config'), () => {
+  // Section 319 changed where the three come from and not what they are, so a device composed now
+  // carries exactly what the copies would have: the host's own prelude operands, its own power on
+  // tables' order, and one past its highest identifier. The whole composed file was compared byte for
+  // byte before and after the change, on these two and three more hosts; that is not pinned here,
+  // since the composer's other parts keep moving and a hash would fail for their sake. The second host
+  // is the region read holding `h650_panasonic_config`'s compile, so these are two compiles of the 650.
+  for (const [name, expected] of [['h650_config_region', 83908304], ['h650_plasma_base', 83914103]] as const) {
+    const host = parse(require_(name));
+    const own = sendPreludes(host);
+    const ownOrders = new Set(powerOnDelays(host).map((one) => powerOnDelayCases(host, one.table)!.map((k) => k.value).join()));
+    assert.equal(ownOrders.size, 1, `${name}: one order of its own`);
+    assert.equal(nextDeviceIdentifier(host), expected, name);
+    assert.equal(expected, Math.max(...deviceIds(host)) + 1);
+
+    const device = composeDevice(host, { label: 'LG', commands: TELEVISION, power: 0 });
+    const after = parse(device.bytes);
+    const mine = sendPreludes(after).filter((one) => one.group === device.group);
+    assert.equal(mine.length, TELEVISION.length);
+    for (const one of mine) {
+      assert.equal(one.loadOperand, own[0]!.loadOperand, `${name}: the host's own load`);
+      assert.equal(one.conditionOperand, own[0]!.conditionOperand, `${name}: the host's own condition`);
+    }
+    assert.equal(powerOnDelayCases(after, device.powerOnDelay!.table)!.map((k) => k.value).join(), [...ownOrders][0]);
+    assert.equal(device.delay!.identifier, expected);
+    assert.ok(deviceIds(after).includes(expected), `${name}: the names carry it`);
+  }
+  // A configuration naming no identifier is refused rather than given a first one of ours.
+  assert.throws(() => nextDeviceIdentifier(parse(require_('one_config'))), ComposeError);
 });

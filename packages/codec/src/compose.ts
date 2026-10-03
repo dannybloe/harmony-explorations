@@ -83,6 +83,7 @@ import {
   firmwareStateVariableMax,
   KEY_EVENT_SHIFT,
   stateVariables,
+  deviceIds,
   sendPreludes,
   interDeviceDelayCases,
   CONDITION_OPCODE,
@@ -90,10 +91,13 @@ import {
   MAP_VALUE_OPCODE,
   POWER_ON_DELAY_CASES,
   POWER_ON_DELAY_CHUNK,
+  POWER_ON_DELAY_VALUES,
   powerOnDelayAmounts,
   powerOnDelayCases,
   powerOnDelays,
   QUEUE_INTER_DEVICE_DELAY,
+  SEND_PRELUDE_LOAD,
+  sendPreludeCondition,
 } from './inventory.ts';
 import { characterMap, decode, glyphsReferencedBy, screenStrings } from './text.ts';
 import { type FontSet, fontSets, glyphOf } from './font.ts';
@@ -826,10 +830,23 @@ export function composeDevice(c: Container, device: ComposeDevice): ComposedDevi
  * the device with no delay; a composed device has one power command, so it sends that.
  *
  * A composed device gets the same pieces the compiler gives one, and nothing is shared with another
- * device except the start sequence variable, which is the configuration's. The load and the condition
- * are copied off the configuration's own preludes, and the power on table's case order off one of its
- * own tables, rather than restated, and the composer refuses a configuration whose preludes disagree
- * or which has neither to copy.
+ * device except the start sequence variable, which is the configuration's. **Since section 319 none
+ * of the three is copied**: the load and the condition are built, `SEND_PRELUDE_LOAD` and
+ * `sendPreludeCondition` over the start variable the configuration's activities raise, both tables'
+ * case order is `compilerCaseOrder`'s, and the identifier is `nextDeviceIdentifier`'s. Until then the
+ * operands were copied off the configuration's own preludes and the power on order off one of its own
+ * tables. **Two of the three are checked against what the configuration holds**: its preludes against
+ * the built operands, and its power on tables against the built order, a disagreement being refused
+ * rather than either side picked. The identifier is checked against nothing, since it only has to be
+ * new, and the configuration's inter device tables are not checked against `INTER_DEVICE_DELAY_VALUES`.
+ *
+ * **What the change did to the refusals**, all in `composeDelays`. Two went: a configuration with no
+ * power on delay table to copy an order off, and one whose first prelude's table did not read as an
+ * inter device delay table, neither of which the composer needs any more. One came: the start variable
+ * is read off the activities through `arch14Starts`, so composing a device on arch 14 now needs at
+ * least one activity, every activity's enter list in the shape that reader accepts. Each of the
+ * thirteen compiles has one; a configuration with no activity was composable before and is refused
+ * now, with nothing in it to say which variable its commands should test.
  *
  * **What is deliberately not composed**: the device's other six delay variables, the defaults and the
  * two counter and flag pairs; the second table each device carries on each of its two delay
@@ -1038,12 +1055,50 @@ function queueing(operand: number, opcode: number): Uint8Array {
 }
 
 /**
+ * The identifier a device composed onto `c` takes, section 319: one more than the highest any of the
+ * configuration's variable names carries.
+ *
+ * **What an identifier is**: Logitech's own key for the device on the account, eight digits, which
+ * the compiler writes into the names of the device's delay variables, `PowerOnDelay_<identifier>`.
+ * Nothing in the remote reads a name, and the composer emits none of section 303's programs that save
+ * a device's delays in the settings store under a key of its own, so for a composed device it only has
+ * to be a number no other device here carries, in the shape `stateVariables` reads back as an
+ * identifier. Whether that key is derived from the identifier is unexamined, and matters once those
+ * programs are composed.
+ *
+ * **Why one past the highest rather than any free number**: it is what Logitech's own numbering does
+ * to a configuration. Their identifiers look like one counter on their side: the two test accounts'
+ * devices interleave, 83915449 to 83915451 added on the Harmony 700's and 83915452 and 83915453 on the
+ * 650's. On those two accounts' compiles, a device one compile holds and another of the same account
+ * lacks is numbered above every device both hold, 17 such devices of 17; that is stronger than "added
+ * devices come last", since it also says the devices removed again were the recent ones, which is how
+ * the test accounts were used. Two accounts only, and no third has a pair of compiles. One past the
+ * highest is that rule with their counter's gaps left out: the actual next identifiers were 5798 and
+ * 1349 above it. This reads which numbers are taken, which is the input every composer reads to place
+ * anything; the number itself is built, and is checked against nothing else in the configuration.
+ *
+ * A configuration that names no identifier is refused: a first identifier would be a choice of ours
+ * with nothing to measure it against, and composing onto such a configuration has not come up.
+ */
+export function nextDeviceIdentifier(c: Container): number {
+  const identifiers = deviceIds(c);
+  if (identifiers.length === 0) throw new ComposeError('no variable here names a device identifier');
+  const identifier = Math.max(...identifiers) + 1;
+  // `stateVariables` reads six digits or more as an identifier and the compiler writes eight, so a
+  // ninth digit would still read back; a number that would not is refused rather than written.
+  if (!Number.isSafeInteger(identifier) || String(identifier).length < 6) {
+    throw new ComposeError(`${identifier} would not read back as a device identifier`);
+  }
+  return identifier;
+}
+
+/**
  * Give a device on arch 14 its two delays: the variables, their names, the power on table's chunk
  * lists, and the two tables. The lists that name the tables are `composeDevice`'s.
  *
- * Both variables carry one identifier, one more than the highest the configuration's names carry,
- * which is how the devices are numbered on the 650 and on `calibration_h600` and not on the 600 or
- * the 700. It is host side only: nothing in the remote reads a name.
+ * Both variables carry `nextDeviceIdentifier`'s identifier. The prelude's operands are built from the
+ * start variable, which is the one thing about them the configuration decides, and both tables take
+ * `compilerCaseOrder`'s case order; section 319.
  */
 function composeDelays(c: Container, group: number, interDevice: number, powerOn: number): ComposedDelays {
   if (!Number.isInteger(interDevice) || !INTER_DEVICE_DELAY_VALUES.includes(interDevice)) {
@@ -1052,30 +1107,27 @@ function composeDelays(c: Container, group: number, interDevice: number, powerOn
   if (!Number.isInteger(powerOn) || powerOn < 0 || powerOn >= POWER_ON_DELAY_CASES) {
     throw new ComposeError(`a power on delay is 0 to 450 tenths of a second, not ${powerOn}`);
   }
-  const preludes = sendPreludes(c);
-  const model = preludes[0];
-  if (model === undefined) throw new ComposeError('no command here opens with the arch 14 prelude to copy');
-  for (const one of preludes) {
-    if (one.loadOperand !== model.loadOperand || one.conditionOperand !== model.conditionOperand) {
-      throw new ComposeError(`the preludes of lists ${model.list} and ${one.list} disagree`);
+  // The prelude's operands, built: the load is a constant and the condition compares the start
+  // sequence variable, which is the one the configuration's activities raise for the length of their
+  // start, section 289. The configuration's own preludes are checked against it, so a configuration
+  // whose commands test some other variable is refused rather than given a second one.
+  const loadOperand = SEND_PRELUDE_LOAD;
+  const conditionOperand = sendPreludeCondition(arch14Starts(c).startVariable);
+  for (const one of sendPreludes(c)) {
+    if (one.loadOperand !== loadOperand || one.conditionOperand !== conditionOperand) {
+      throw new ComposeError(`list ${one.list}'s prelude is not the one built for this configuration`);
     }
   }
-  if (interDeviceDelayCases(c, model.table) === undefined) {
-    throw new ComposeError(`base slot 14 record ${model.table} does not read as a delay table`);
-  }
-  // The power on table's case order, off the configuration's own: one order on all 15 here, and a
-  // configuration whose tables disagree is refused rather than one of them picked.
-  const orders = new Set(powerOnDelays(c).map((one) =>
-    (powerOnDelayCases(c, one.table) ?? []).map((k) => k.value).join(',')));
-  const order = [...orders][0]?.split(',').map(Number);
-  if (orders.size === 0) throw new ComposeError('no device here has a power on delay table to copy');
-  if (orders.size !== 1 || order === undefined || order.length !== POWER_ON_DELAY_CASES) {
-    throw new ComposeError('the power on delay tables here do not agree on one order of 451 cases');
+  // The power on table's case order, built; the configuration's own tables are checked against it
+  // for the same reason, one order on all 71 of the thirteen compiles.
+  const order = POWER_ON_DELAY_VALUES;
+  for (const one of powerOnDelays(c)) {
+    if ((powerOnDelayCases(c, one.table) ?? []).map((k) => k.value).join() !== order.join()) {
+      throw new ComposeError(`base slot 14 record ${one.table} is a power on delay table in another order`);
+    }
   }
 
-  const identifiers = stateVariables(c).flatMap((one) => one.deviceId === undefined ? [] : [one.deviceId]);
-  if (identifiers.length === 0) throw new ComposeError('no variable here names a device identifier');
-  const identifier = Math.max(...identifiers) + 1;
+  const identifier = nextDeviceIdentifier(c);
 
   // The variables, power on first, which is the order the compiler numbers them in on 9 of the 15
   // devices and not a rule; nothing reads the order.
@@ -1118,7 +1170,7 @@ function composeDelays(c: Container, group: number, interDevice: number, powerOn
   }
   return {
     bytes: current.blob, identifier,
-    loadOperand: model.loadOperand, conditionOperand: model.conditionOperand,
+    loadOperand, conditionOperand,
     interDevice: { variable: spaced.variable, table: inter.table },
     powerOn: { variable: powered.variable, table: power.table },
   };

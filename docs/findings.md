@@ -37551,7 +37551,10 @@ on 23 tables of 23. It is not the delay tables' own order: every base slot 14 re
 exactly 0 to 20 has it, 36 of 36 on the four distinct configurations, and the prose auditor found wider
 records continuing the same pairwise swaps. The order means nothing to the remote, whose walk stops at
 the one key that matches; a hash table's iteration order inside the generator would produce it, which
-is a guess. The composer reproduces it because it costs nothing.
+is a guess. The composer reproduces it because it costs nothing. **Section 319 measured the guess**:
+every base slot 14 record of two or more cases on the thirteen arch 14 compiles is stored ascending by
+the supplemental hash Java's `HashMap` used in Java 6 and 7, and the walk was read on the Harmony 600's
+image as well as the 700's. That the generator is a Java hash map stays an identification.
 
 ### Composed
 
@@ -37563,7 +37566,8 @@ is a guess. The composer reproduces it because it costs nothing.
    20, and anything else is refused. Its identifier is one more than the highest the configuration's
    names carry. The identifiers are consecutive on the 650 and on `calibration_h600` and not on the 600
    or the 700, so this follows two accounts of four; a name is host side, so the remote reads none of
-   it.
+   it. Section 319 gives the rule a better footing than consecutiveness: Logitech numbers a device
+   added to an account above every device the account holds.
 2. the table, a base slot 14 record after the last record and its 21 programs after the last record's
    programs. **Last and last**, because on all five configurations a record's address rises with its
    index and so does its first program's, and the last record's end and its programs' end are where
@@ -37574,7 +37578,9 @@ is a guess. The composer reproduces it because it costs nothing.
 3. the lists: each command's send list opens with a call to its own `load`, the lists are laid out as
    the sends, then the device's `delay`, then `load` and `condition` for each command in turn. `load`'s
    and `condition`'s operands are copied off the configuration's own preludes, and the composer refuses a
-   configuration whose preludes disagree about either, or which has none.
+   configuration whose preludes disagree about either, or which has none. **Built rather than copied
+   since section 319**, which drops the refusal of a configuration with none and adds one of a
+   configuration with no activity.
 
 **Two mistakes in the first version, both caught by the byte accounting before anything was written.**
 The table's header pointer was written at an offset read before the record's insertion moved the header,
@@ -37706,6 +37712,8 @@ unread. Not composed.
    anything else is refused. `compose-device.ts` takes `--power-on-delay` and `--inter-device-delay`.
 2. the 350 lists for the cases above 100, contiguous and in the case order, which is copied off the
    configuration's own tables; the composer refuses a configuration whose tables disagree on it.
+   **Generated since section 319**, `compilerCaseOrder`, with the configuration's own tables checked
+   against it instead.
 3. the table, after the last record with its programs after the last record's, through the same
    insertion as the inter device table, which is one function now, `appendValueMap`.
 4. the delay list and the on list, and the power variable's off to on transition runs the on list, where
@@ -41708,3 +41716,153 @@ from `relocate`'s.
   longer than two bytes, a piece twice, a reference to a piece not laid out, a NULL slot given content
   and a stated slot left empty.
 * `docs/config-format.md`, "What decides each byte of the frame on arch 14".
+
+## 319. What the arch 14 device composer copied, built instead: the prelude's operands, the case order and the identifier
+
+**Date:** 3 October 2026. **Status:** confirmed by calibration against Logitech's own compiles and, for
+the case order's meaning, by the firmware; the composed output is unchanged byte for byte. Corrected
+the same day after the sentence audit, whose nine points are folded in below.
+
+**Todo `todo-compile-650.md` 6.2.1 to 6.2.3.** The device composer of sections 285, 287 and 288 took
+three things off the configuration it was given rather than building them: the operands of every
+command's prelude, the order of the power on delay table's 451 cases, and the new device's identifier.
+Each is now generated. **Two of the three are checked against what the configuration holds**: its
+preludes against the built operands and its power on tables against the built order, a disagreement
+being refused. The identifier is checked against nothing, since it only has to be new, and the
+configuration's own inter device delay tables are not checked against the generated 0 to 20 order.
+
+**Sources checked**: the firmware, the Harmony 600's 0.2 image and the Harmony 700's 2.8, for the
+lookup that walks a base slot 14 record; this document, sections 34, 39, 287, 288, 289, 303 and 313.
+Logitech's client was not consulted: all three are what their compiler wrote, and the compiler ran on
+their server, section 293's reasoned exemption. **The population** is the thirteen arch 14 compiles
+section 312 lists, each configuration counted, so the Harmony 700 pair counts twice and the test
+accounts' compiles share devices.
+
+**Scope, decision 16.** Arch 14 (Harmony 600, 650 and 700) only. The prelude does not exist on arch 8,
+9 or 12, section 287, and neither do the delay tables or the identifiers. The case order is undecided
+on those three, below, and unscored on arch 10, which `valueMaps` does not read.
+
+### The prelude's operands are constants around one variable
+
+A command's prelude, section 287, is a `load` list `[0x1F operand, 0x7F condition]` and a `condition`
+list `[0x71 operand, 0x7F delay]`. Over the thirteen, 6100 send lists, every one opens with the prelude,
+and:
+
+| operand | value | count |
+|---|---|---|
+| `load`'s `0x1F` | `0xFB01`: sub opcode `0xFB`, load the byte register, with 1 | 6100 of 6100 |
+| `condition`'s `0x71`, high byte | 0: comparison 0, equality with the byte register, bit 15 clear, one arm | 6100 of 6100 |
+| `condition`'s `0x71`, low byte | the start variable `S` | 6100 of 6100 |
+
+`S` is read independently of the preludes: every activity's enter list writes 1 into one variable as its
+second step, after its start up screen, and 0 into the same variable as its last, 40 activities of 40,
+one variable per configuration, section 289; and every prelude's condition names that variable. So
+nothing in either operand is a choice but `S`, and `S` is the configuration's own, raised by its
+activities. The composer builds `load` as `SEND_PRELUDE_LOAD` and `condition` as
+`sendPreludeCondition(S)`, `S` from the composer's existing reader of the activities' start lists,
+`arch14Starts`; where `S` itself comes from when there is no configuration to compose onto is
+`todo-compile-650.md` 6.2.4.
+
+### The case order is a hash order, and the firmware ignores it
+
+**The firmware's exact match walks a record from its first case and leaves the walk at the first equal
+key.** `0x72` on the Harmony 600 loads the variable's value into `0x759`/`0x75A` and the record index
+into `0x758` at `0x0EA68` and calls `0x19A2E`, which reads the two byte count, then per case reads the
+two byte key, compares both bytes with the value, and on a match sets a flag and leaves the loop;
+otherwise it steps over the three byte address and counts down. Only when no case matched does it go on,
+at `0x19AAC`, to a second pass over the range table, comparing the value against each range's two bounds.
+The Harmony 700's `0x1B30A`, section 39, has the same opcodes in the same order; its operands differ, the
+value at `0x3BB`/`0x3BC`, the index at `0x3BA`, its scratch parameters three bytes higher, and every
+callee at another address. So with distinct keys the order cannot change what the remote does, and the
+stored order is the compiler's alone.
+
+**The compiler's order is ascending by `k ^ (k >>> 4) ^ (k >>> 7)`, and two orderings pin it.** Every
+base slot 14 record of two or more cases on the thirteen fits, 410 of 410, but the count overstates the
+evidence. The 332 records the order is visible in hold only two key sets, the 21 values 0 to 20 in 166
+records and the 451 values 0 to 450 in 166, and each set is stored in one identical order every time. The
+other 78, of 2 to 8 cases keyed by activities and the like, have every key below 16, where the hash is
+the key itself; ascending order fits exactly those 78 and fails the 332, so they say nothing about the
+rule. The formula is the supplemental hash Java's `HashMap` applied in Java 6 and 7, whose other two
+terms, `>>> 20` and `>>> 12`, are zero below 4096, and a hash map walks its slots in index order; so
+**that their generator iterated a Java hash map keyed by the case value is an identification, not a
+reading**. The 21 case order, 0 to 15, 17, 16, 19, 18, 20, is section 287's literal, now generated, and
+the 451 case order is the one all 71 power on delay tables hold.
+
+**No table size is guessed.** A hash map masks the hash to its table size, and their table's size is
+not known: Java 6 grows it at three quarters full, later Java 7 updates only when the slot a key lands
+in is taken as well, and the starting size is the caller's. The two rules part on key sets this corpus
+does not hold: the keys 2 to 13 and 16, inserted ascending, stay in a table of 16 under the second, where
+16 lands in slot 1 and comes out first, and the hash alone puts it last. So `compilerCaseOrder` accepts
+only what is pinned, key sets all below 16 and the runs 0 to 20 and 0 to 450, and refuses anything else.
+The hash itself is invertible, so distinct keys never share one; a duplicate key is refused as such.
+
+**Undecided on arch 8, 9 and 12.** Their 65 records of two or more cases, over the Harmony One's four
+containers, the Harmony 525's two and the six arch 8 ones, the Harmony 880's and 885's among them, all
+have keys below 16, the largest 9, so they are ascending and fit either rule. Arch 10 (Harmony 890 and
+895) is not scored, having no base slot 14 reader.
+
+### The identifier is one past the highest, and Logitech's own numbering is why
+
+An identifier is Logitech's key for a device on the account, written into the names of its delay
+variables. The remote reads no name, and the composer emits none of section 303's programs that save a
+device's delays in the settings store under a key of its own, so for a composed device the identifier
+has to be a number no other device here carries, which `stateVariables` reads back as an identifier.
+Whether that key is derived from the identifier is not examined here, and matters once those programs
+are composed.
+
+**Logitech numbers a device added to an account above every device the account holds.** The rule
+`nextDeviceIdentifier` follows is that temporal one. What the test measures is stronger and symmetric:
+on the two test accounts, the Harmony 650's four compiles and the Harmony 700's five, in every pair of
+compiles of one account a device one holds and the other lacks is numbered above every device both
+hold, 17 such devices of 17. That also says the devices removed again were the recently added ones,
+which is how these accounts were used and not a rule of Logitech's. Two accounts are the whole
+evidence: the Harmony 700 pair holds identical identifiers, and `h600_config` and `calibration_h600`
+have no partner. The identifiers look like one counter on Logitech's side, since the two accounts
+interleave: 83915449 to 83915451 added on the 700's, then 83915452 and 83915453 on the 650's.
+
+One past the highest is that rule with the counter's gaps left out, which nothing could know: the
+identifiers Logitech actually gave next were 83914102 against one past the highest of 83908304, 5798
+above, and 83915452 against 83914103, 1349 above. A configuration naming no identifier is refused, since
+a first identifier would be a number of ours with nothing to measure it against.
+
+### What changed in the refusals
+
+All in `composeDelays`. Two refusals went, both of things the composer no longer needs: a configuration
+with no power on delay table to copy an order off, and one whose first prelude's table did not read as
+an inter device delay table. One came: `S` is read off the activities through `arch14Starts`, so
+composing a device on arch 14 now needs at least one activity, with every activity's enter list in the
+shape that reader accepts. Each of the thirteen compiles has that; a configuration with no activity was
+composable before and is refused now, since nothing in it says which variable its commands should test.
+
+### Byte identical
+
+The composer's output did not move. On `h650_config_region`, `h650_plasma_base`, `h600_config`,
+`calibration_h600` and `h700_config`, three compositions each: a device with the default delays, one
+with a power on delay of 150 and an inter device delay of 20, and a second device onto the first. All
+15 files have the same SHA-256 before and after the change. A fourth call per host, made without naming
+a power command, is not a fourth variant, since the power command defaults to the first, and its file
+equals the first on every host. `h650_plasma_base` is the region read holding `h650_panasonic_config`'s
+compile. The sentence audit repeated the comparison independently on ten hosts, 40 files of 40 equal.
+That comparison is not pinned in a test, because the composer's other parts keep moving and a pinned
+hash would fail for their sake; the test pins the provenance instead, that a device composed on the
+650's two compiles carries the host's own operands, the host's own order and one past its highest
+identifier.
+
+### Falsification
+
+An arch 14 compile with a send list whose prelude loads anything but 1 or compares anything but the
+activities' start variable for equality; a base slot 14 record of two or more cases out of the hash
+order; a compile of an account holding a device numbered below one an earlier compile of it lacked.
+
+### Where it lands
+
+* `packages/codec/src/inventory.ts`: `compilerCaseOrder`, `INTER_DEVICE_DELAY_VALUES` generated by it,
+  `POWER_ON_DELAY_VALUES`, `SEND_PRELUDE_LOAD`, `sendPreludeCondition`.
+* `packages/codec/src/compose.ts`: `composeDelays` builds all three and checks the configuration's
+  preludes and power on tables against them; `nextDeviceIdentifier`.
+* `packages/codec/test/compose.test.ts`: the hash order on 410 records with the ascending control and
+  the refusals outside the pinned key sets, the 71 power on tables, the 6100 preludes against the
+  activities' start variable, the identifiers over the two accounts, the copy equivalence on the 650's
+  two compiles, and the composer's two refusals, each by a one byte edit.
+* `docs/config-format.md`, base slot 14 and the arch 14 command lists; sections 287 and 288 corrected
+  in place.

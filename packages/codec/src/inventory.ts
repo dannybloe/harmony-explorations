@@ -965,16 +965,58 @@ export const BYTE_REGISTER_LOAD = 0xfb;
  */
 export const QUEUE_INTER_DEVICE_DELAY = 0x67;
 /**
- * The values an inter device delay table has a case for, 0 to 20 tenths of a second, **in the order
- * the compiler stores them**: every table of the kind on the five arch 14 containers, 23 tables of
- * 23, and each case's program sits in the same order. The order changes nothing, since the keys are
- * distinct and the walk stops at the one that matches; it is reproduced because it costs nothing and
- * looks like a hash table's iteration order in the generator rather than a choice. A variable
- * holding more than 20 matches no case and queues nothing.
+ * The order Logitech's compiler stores a base slot 14 record's cases in, generated rather than copied
+ * off a record, section 319.
+ *
+ * **Ascending by `k ^ (k >>> 4) ^ (k >>> 7)`**, which is the supplemental hash Java's `HashMap`
+ * applied in Java 6 and 7 (its `>>> 20` and `>>> 12` terms are zero below 4096), so the generator
+ * most likely iterated a hash map keyed by the value. That identification is an inference; the order
+ * is a measurement, and **it rests on two orderings**. Every record of two or more cases on the
+ * thirteen arch 14 compiles fits, 410 of 410, but the 332 that are not ascending hold only two key
+ * sets, 0 to 20 in 166 records and 0 to 450 in 166, each stored in one identical order every time.
+ * The other 78 have every key below 16, where the hash is the key itself and the order ascending, so
+ * they fit any rule that leaves small keys in place.
+ *
+ * **The order means nothing to the remote**: the lookup `0x72` reaches, `0x19A2E` on the Harmony 600's
+ * 0.2 image and `0x1B30A` on the Harmony 700's 2.8, walks the cases from the first and leaves the
+ * walk at the first whose key equals the value, trying the range table only when none did. It is
+ * reproduced so that a composed record is the compiler's byte for byte, and costs nothing.
+ *
+ * **Refused outside what is pinned**: a key set whose keys are all below 16, or exactly 0 to 20, or
+ * exactly 0 to 450. A hash map also masks the hash to its table size, and how big their table was is
+ * not known: Java 6 grows it at three quarters full, later Java 7 updates only when the slot a key
+ * lands in is taken as well, and the starting size is the caller's. Under the second rule the keys 2
+ * to 13 and 16, inserted ascending, stay in a table of 16 where 16 lands in slot 1 and comes out
+ * first, while this function would put it last. So no table size is guessed here; the two orders it
+ * is used for are the measured ones, and a wider key set waits for a compile that holds one.
  */
-export const INTER_DEVICE_DELAY_VALUES: readonly number[] = [
-  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 16, 19, 18, 20,
-];
+export function compilerCaseOrder(keys: readonly number[]): number[] {
+  // The supplemental hash, all four terms, so the formula is the one the identification names. It is
+  // invertible, so distinct keys never share a hash; a shared slot needs the mask refused below.
+  const hash = (key: number): number => {
+    const h = key ^ (key >>> 20) ^ (key >>> 12);
+    return h ^ (h >>> 7) ^ (h >>> 4);
+  };
+  if (keys.some((key) => !Number.isInteger(key) || key < 0)) {
+    throw new RangeError('a case key is a whole number from 0');
+  }
+  if (new Set(keys).size !== keys.length) throw new RangeError('a record cannot hold a case key twice');
+  // The key sets the order is pinned on: all small, or a run from 0 of one of the two measured lengths.
+  const isRun = (length: number): boolean => keys.length === length && keys.every((key) => key < length);
+  if (!keys.every((key) => key < 16) && !isRun(21) && !isRun(451)) {
+    throw new RangeError('no compile here pins the order of this key set, whose table size is unknown');
+  }
+  return [...keys].sort((a, b) => hash(a) - hash(b));
+}
+
+/**
+ * The values an inter device delay table has a case for, 0 to 20 tenths of a second, **in the order
+ * the compiler stores them**, which is `compilerCaseOrder`'s: 0 to 15, 17, 16, 19, 18, 20, on every
+ * table of the kind, and each case's program sits in the same order. A variable holding more than 20
+ * matches no case and queues nothing. This was a literal list until section 319 generated it.
+ */
+export const INTER_DEVICE_DELAY_VALUES: readonly number[] =
+  compilerCaseOrder(Array.from({ length: 21 }, (_, value) => value));
 
 /**
  * What an arch 14 command does before it sends, read whole, section 287.
@@ -1057,6 +1099,33 @@ export function sendPreludes(c: Container): SendPrelude[] {
   return out;
 }
 
+/**
+ * The value a prelude's `load` puts in the byte register, which its `condition` then compares the
+ * start variable against: 1, the value the start sequence holds the variable at while it runs.
+ */
+const SEND_PRELUDE_LOADED = 1;
+/**
+ * A prelude's `load` operand, built rather than copied, section 319: `0x1F` sub opcode `0xFB`, load
+ * the byte register, with 1. `0xFB01` on 6100 preludes of 6100 send lists over the thirteen arch 14
+ * compiles, where each configuration's own lists are counted and the Harmony 700 pair twice.
+ */
+export const SEND_PRELUDE_LOAD = (BYTE_REGISTER_LOAD << 8) | SEND_PRELUDE_LOADED;
+/** `0x71`'s comparison field, operand bits 8 to 11, for equality with the byte register; section 34. */
+const CONDITION_EQUAL = 0;
+/**
+ * A prelude's `condition` operand for a configuration whose start sequence variable is `start`,
+ * section 319: compare `start` for equality with what `load` put in the byte register, one arm, so
+ * the delay list runs only inside a start sequence. Every bit but the variable's is a constant: the
+ * high byte is 0 on 6100 of 6100, and the low byte is the variable each configuration's activities
+ * set to 1 at the head of their start and back to 0 at its foot, section 289.
+ */
+export function sendPreludeCondition(start: number): number {
+  if (!Number.isInteger(start) || start < 0 || start > 0xff) {
+    throw new RangeError(`a start sequence variable is one byte, not ${start}`);
+  }
+  return (CONDITION_EQUAL << 8) | start;
+}
+
 /** One case of an inter device delay table: the value it matches and what it queues. */
 export interface InterDeviceDelayCase {
   value: number;
@@ -1101,6 +1170,13 @@ export const POWER_ON_DELAY_CHUNK = 100;
  * the 15 devices with a `Power` variable on the four distinct arch 14 configurations.
  */
 export const POWER_ON_DELAY_CASES = 451;
+/**
+ * The values a power on delay table has a case for, in the order the compiler stores them, which is
+ * `compilerCaseOrder`'s, section 319: one order on all 71 power on tables of the thirteen arch 14
+ * compiles. The composer copied it off the configuration's own tables until then.
+ */
+export const POWER_ON_DELAY_VALUES: readonly number[] =
+  compilerCaseOrder(Array.from({ length: POWER_ON_DELAY_CASES }, (_, value) => value));
 
 /**
  * An arch 14 device's power on delay, read from the list its `Power` variable runs when it goes

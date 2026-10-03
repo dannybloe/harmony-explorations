@@ -71,9 +71,9 @@ copied. **Every chapter ends with a configuration that works on the 650.**
 
 - [x] 6.1 List what each composer copies out of the configuration it is given: the list is 6.2's sub-items, checked against `compose.ts`
 - [ ] 6.2 Build each of those ourselves, and write and check the setup again as in 5.2
-  - [ ] 6.2.1 The command prelude's operands, copied off the configuration's own preludes
-  - [ ] 6.2.2 The power on delay table's case order, copied off one of its own tables
-  - [ ] 6.2.3 A new device's identifier, one past the highest in the configuration
+  - [x] 6.2.1 The command prelude's operands: the constant load and a test of the start variable, built and checked against the configuration's own (section 319)
+  - [x] 6.2.2 The power on delay table's case order: the compiler's hash order, generated (section 319)
+  - [x] 6.2.3 A new device's identifier, one past the highest in the configuration, computed (section 319)
   - [ ] 6.2.4 The start variable and the flag every activity sets, read off existing activities' start lists (`arch14Starts`)
   - [ ] 6.2.5 The activity counter variable and the four records keyed by activity, cases appended to them (`activityMaps`)
   - [ ] 6.2.6 Device page chrome and page programs (`fourSlotTemplate`, `fourSlotPageProgram`), backgrounds chosen by majority

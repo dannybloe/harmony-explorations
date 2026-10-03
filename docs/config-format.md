@@ -837,6 +837,12 @@ for the device's own group, so tables differ per device in that byte only, store
 start sequence reading above, which is inferred from three of the 650's 31 writers. `sendPreludes`
 and `interDeviceDelayCases`; `composeDevice` emits all of it on arch 14.
 
+**Both operands are constants around the start variable**, section 319, over the thirteen arch 14
+compiles, 6100 send lists of 6100 opening with the prelude: `load` is `0xFB01` on all of them, and
+`condition` is `0x0000 | S`, equality and one arm, `S` being the variable every activity's enter list
+sets to 1 as its second step, after the start up screen, and to 0 as its last, 40 activities of 40, one `S` per configuration.
+`SEND_PRELUDE_LOAD` and `sendPreludeCondition`.
+
 **The container's key table is the first mode record**, byte for byte: same offset, same count,
 same four byte entries. The tagged list encoding and the key table encoding are one encoding.
 
@@ -1086,6 +1092,24 @@ Records share their tails: a few addresses point into the middle of a longer rec
 a record of their own, so two records can overlap by design.
 
 The range table is empty in eleven of the fifteen configs; the other four carry one range each.
+
+**The cases are stored in a hash order, on arch 14**, section 319: ascending by
+`k ^ (k >>> 4) ^ (k >>> 7)`; 0 to 15, 17, 16, 19, 18, 20 for 0 to 20. All 410 records with two or
+more cases over the thirteen arch 14 compiles fit, but **two orderings pin it**: the 332 that are not
+ascending hold only the key sets 0 to 20 and 0 to 450, 166 records each, each set in one identical
+order, and the other 78 have every key below 16, where the hash is the key itself. The firmware's exact
+match walks the cases in stored order and leaves at the first equal key, trying the range table only
+when none matched, `0x19A2E` on the Harmony 600's 0.2 image and `0x1B30A` on the Harmony 700's 2.8, so
+the order changes nothing on the remote and a writer reproduces it to match the compiler byte for byte.
+That the generator iterated a Java hash map is an inference from the formula, which is that map's
+supplemental hash in Java 6 and 7. **The map's table size is unknown**, and Java 6 and later Java 7
+updates grow it differently, so a key set the corpus does not hold may come out in another order: keys
+2 to 13 and 16 would put 16 first under the second rule. `compilerCaseOrder` therefore accepts only key
+sets all below 16 and the runs 0 to 20 and 0 to 450, and refuses the rest.
+**Undecided on arch 8, 9 and 12**: their 65 records of two or more cases, over the Harmony One's four
+containers, the Harmony 525's two and the six arch 8 ones, all have keys below 16, the largest 9, so
+they are ascending and fit either rule. Arch 10 is not scored, having no reader here.
+`compilerCaseOrder`.
 
 **An activity's working screen, arch 12 (Harmony One)**, section 279. One record here is keyed by
 `CurrentActivityState` and holds, per activity, the two instruction screen program
@@ -2258,7 +2282,8 @@ list that calls a send list of the device and then a list of one `0x72` on `Powe
 15 of 15 devices; the off transition sends a code of the device with no delay. The table's 451 cases
 queue the value as `0x7C` quantities for the device's group, a hundred at a time: 0 an end alone, 1 to
 100 one `0x7C`, 101 to 450 a call to a list of the device's own holding hundreds and a remainder, the
-350 lists contiguous in the table's case order, which is one order on all 15. Each device also has a
+350 lists contiguous in the table's case order, which is one order on all 15, and `compilerCaseOrder`'s
+on all 71 of the thirteen arch 14 compiles, section 319 and base slot 14 above. Each device also has a
 second 451 case table on the same variable, whose cases call lists, **unconfirmed** in purpose.
 `powerOnDelays` and `powerOnDelayCases`; `composeDevice` emits the list, the variable and the table on
 arch 14.
