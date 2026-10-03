@@ -32,6 +32,11 @@ home in one of the two files.
   - [ ] 3.1.4 The Harmony Touch's eleven, among them screen brightness and screen timeout
   - [ ] 3.1.5 The Harmony One's and the Harmony 525's, which Logitech's service does not list
 - [ ] 3.2 Read and change them from FreeHarmony
+- [ ] 3.3 Help and the Remote Assistant on the Harmony 600, 650 and 700, postponed from the 650's compile track, which builds without them
+  - [ ] 3.3.1 Help, short press, per activity: the "Attempting to fix" screen that resends power and inputs, then a question per device ("Is the TV on?") that resends that command
+  - [ ] 3.3.2 Help held five seconds: the delay fixing menu, with a picker row and five delay screens per device
+  - [ ] 3.3.3 Help's per device parts: the "Is the X off?" question for Off, the four counters the answers bump, and the "Fix it now" wizards All Off offers once a counter is high enough
+  - [ ] 3.3.4 The Remote Assistant: one screen per activity, a branch on one variable before the working screen, and a shared screen for Off and after a sync
 
 ## 4. The app
 
@@ -80,6 +85,10 @@ The Harmony One is a different type, with a touch screen and its own screens, so
 - [ ] 6.11 Five documents call the spare Harmony One's first configuration a factory configuration; it is a Logitech compile with one television and one activity, so correct the claim in place and add the wording to `reference/superseded.md`
 - [ ] 6.12 Whether Logitech compiles a configuration with no activities, or none at all; MyHarmony greys out its Sync button without activities, but our compile call never goes through the button
 - [ ] 6.13 Six Python tests fail on the Harmony 650 and 700 compiles the long press work added to the lab, and the golden vector list lacks `h650_plasma_base`: the EzHex population counts 23 against 17, and the per config checks on those six files
+- [ ] 6.14 The composer reads a code's digit widths from the family name, where the archive reader takes them from Logitech's definition; 52,517 catalogue commands are refused for it
+- [ ] 6.15 Release blocks and toggle bits as Logitech renders them: about 4,360 writable catalogue commands differ from Logitech's own rendering
+- [ ] 6.16 A repeat count for the families whose definition states none, GoVideo and Panasonic 48 Bit first, which would unlock about 165,000 commands
+- [x] 6.17 Toolchain checks walk `.claude/worktrees/`, so an agent's worktree fails the facts, prose and write review checks until it is removed
 
 ## 7. Done, carried over from todo.md
 

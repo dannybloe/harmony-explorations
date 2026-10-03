@@ -19,7 +19,7 @@ copied. **Every chapter ends with a configuration that works on the 650.**
 
 - [x] 1.1 Write a whole configuration to the 650: erase, write, read back and compare, restart (sections 281 to 283)
 - [x] 1.2 Skip the welcome tour after a write (section 286)
-- [ ] 1.3 Stamp the clock and the build timestamp at every write, and check what the 650 does with them; read on the Harmony One only so far (sections 111 and 130)
+- [ ] 1.3 Every write to the 650 stamps the clock records and the build timestamp, small edits included, since every restart puts its clock back to the stamp (section 310)
 - [ ] 1.4 Choose the test setup: devices and activities that between them use every feature in chapters 2 to 4, passthrough device and favourites included. No real device is needed, since the bench's infrared receiver hears what the remote sends
 - [ ] 1.5 Choose the starting setup out of it: part of the test setup, with at least one activity and names that hold every letter the whole test setup needs
 - [ ] 1.6 Have Logitech compile it for the 650, read it into the lab, write it back unchanged and register it as the compare base
@@ -31,7 +31,7 @@ copied. **Every chapter ends with a configuration that works on the 650.**
 - [ ] 2.3 A new device list page when the last one is full: refused today, and the 650's list is full (was L14)
 - [ ] 2.4 A full device: every command the catalogue holds, on as many device mode pages as it takes (was 4.3.2)
 - [ ] 2.5 A device's inputs: its input states and the commands that select them, directly or by stepping through them in order; the catalogue's are read (`driving.ts`, section 305), composing them is not started
-- [ ] 2.6 Every infrared code of the test setup can be written: most catalogue only families state no repeat count and are refused, and `make protocols --write` no longer reproduces its table (todo-later 6.5)
+- [ ] 2.6 Every infrared code of the test setup can be written: four in five catalogue commands do today, and the test setup is chosen from devices that compose completely
 - [ ] 2.7 Several devices composed at once into one configuration (was 4.3.3)
 
 ## 3. Activities
@@ -44,11 +44,11 @@ copied. **Every chapter ends with a configuration that works on the 650.**
 - [ ] 3.6 Set each device to the input the activity needs; works today only for a device whose input states came from Logitech's compile, waits on 2.5
 - [ ] 3.7 The activity's key map built from its roles, volume to one device and channels to another, rather than copied from an existing activity
 - [ ] 3.8 The activity's own screen pages: the commands it labels on the screen
-- [ ] 3.9 Tag 5 of an activity's binding entry: what fires it; the composer points it at the enter list by default (`docs/how-an-activity-is-built.md`)
+- [ ] 3.9 Picking the running activity again: Logitech gives it a list of its own, the inputs and the working screen without the start up screen or power; ours replays the whole start (tag 5)
 - [ ] 3.10 Leave devices on when switching activities, an option MyHarmony offers the 650: what it changes in the configuration
-- [ ] 3.11 The three activity keys, Watch TV, Watch a Movie and Listen to Music, start the activity of that kind; the More Activities key opens the menu
-- [ ] 3.12 Help for an activity: pressing Help asks per device whether it is on and on the right input and resends the commands, holding it five seconds opens advanced help; both depend on the setup
-- [ ] 3.13 The Remote Assistant's questions when an activity starts; the composed activity skips them today (section 291)
+- [ ] 3.11 Put an activity on Watch TV, Watch a Movie or Listen to Music: one entry in the key map that is always installed; an activity with no key stays on the menu, and an empty key shows the "add an Activity" screen
+- [ ] 3.12 A new activity menu page: a row can be added today only while the menu holds an odd number of at least three activities, so a second composed activity is refused
+- [ ] 3.13 No help and no Remote Assistant: the Help key does nothing in our configuration and every activity goes straight to its working screen, as the Harmony 600's configuration without an assistant already does; help is postponed to todo-later 3.3
 - [ ] 3.14 A passthrough device in an activity, one a signal passes through unaltered
 
 ## 4. What else the test setup uses
@@ -57,14 +57,14 @@ copied. **Every chapter ends with a configuration that works on the 650.**
 - [ ] 4.2 Sequences, on their own and as steps in an activity's start, composed within the queue limit `assertQueueFits` already enforces (section 238)
 - [ ] 4.3 The three settings MyHarmony lists for the 650, at the values chosen
   - [x] 4.3.1 How long the screen stays lit: timer 1 (section 292)
-  - [ ] 4.3.2 RemoteAssistant, the question after an activity starts
+  - [ ] 4.3.2 RemoteAssistant, set off, since 3.13 leaves the assistant out
   - [ ] 4.3.3 TiltSensor, waking when picked up
 - [ ] 4.4 Save and restore lists, so a delay changed on the remote survives the next start (was L10)
 
 ## 5. Milestone: the test setup, composed on the starting configuration
 
 - [ ] 5.1 Compose the rest of the test setup onto 1.6's starting configuration and write it
-- [ ] 5.2 Check it against the same test setup compiled by Logitech: every key and every screen item, in every activity and in device mode, shows the same and sends the same infrared, as the bench's receiver hears it
+- [ ] 5.2 Check it against the same test setup compiled by Logitech: every key and every screen item, in every activity and in device mode, shows the same and sends the same infrared, as the bench's receiver hears it, Help and the Remote Assistant apart
 
 ## 6. The composers copy nothing
 
@@ -75,8 +75,8 @@ copied. **Every chapter ends with a configuration that works on the 650.**
 
 - [ ] 7.1 Probe: write an almost empty configuration to the 650 and record what the remote demands at minimum, so screens it does not need are not built
 - [ ] 7.2 Categorise every screen left: the same on every 650, dynamic, or depending on the configuration; done when every byte of the screen sections is attributed to one of the three
-- [ ] 7.3 The screen records for the device list, the activity menu, Off and the help pages, each page with its second copy (section 69)
-- [ ] 7.4 Build the standard screens the probe shows are needed: the fixed parts of help, the setup and status screens, and the welcome tour if it cannot simply be skipped
+- [ ] 7.3 The screen records for the device list, the activity menu and Off, each page with its second copy (section 69)
+- [ ] 7.4 Build the standard screens the probe shows are needed: the setup and status screens, and the welcome tour if it cannot simply be skipped
 
 ## 8. Text and fonts
 
@@ -93,7 +93,7 @@ copied. **Every chapter ends with a configuration that works on the 650.**
 - [ ] 10.1 The frame: cookies, format word, the architecture record, the section table and every address, the end address, the trailer checksum (was 3.1)
 - [ ] 10.2 The firmware's own wiring: the shared action lists every activity runs, base slot 9's fixed prefix and leftover entry, base slot 8's leading list, the event map, the log area's three numbers, which only the Harmony One's firmware writes to, the parameter block, the timers
 - [ ] 10.3 The state variables: the firmware's own 0 to 17, the header's narrow and wide, the value map and the name tree
-- [ ] 10.4 The key table after the end marker: read its two unread fields, then generate it
+- [ ] 10.4 Mode 0, the screen for an empty activity key: its table after the end marker is one constant on every 600 and 650, emitted as is
 - [ ] 10.5 Place the pictures and glyph sets (was 3.2)
 - [ ] 10.6 A setup description in, a whole container out; the description is FreeHarmony's own format, todo-later 1.1 (was 3.3)
 

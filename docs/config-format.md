@@ -3316,12 +3316,17 @@ own record's `first` at `0x2A266`. Base slot 3 is the epoch the firmware subtrac
 Logitech's generator stamps both from the same moment, which is why the measurement looked like a
 copy. The live reading is under base slot 13 above.
 
+**The boot read of three bytes at index 10 fills the counter of time since the build, not the
+clock**, on the Harmony One, 600 and 700 images, `docs/findings.md` section 310: the same variable the
+subtraction below writes. What it loads is `EF 00 00` in every container the lab holds, which is unexplained.
+
 **And it subtracts the record from that clock**, accumulating the difference in seconds and in days, so
 the remote can compute how long ago the config was built. The subtraction skips the weekday on both
 sides because the firmware derives it.
 
-**A writer stamps this record with the moment it writes.** A stale timestamp is a wrong clock on the
-remote's screen after every power cycle, by exactly the staleness. Reproducing an input config's
+**A writer stamps this record with the moment it writes**, together with base slot 13's clock records,
+which are where a stale moment shows: a wrong clock on the remote's screen after every power cycle, by
+exactly the staleness, and on the Harmony 650 after every restart. Reproducing an input config's
 timestamp is right for a round trip and wrong for a save, and that distinction is executable:
 `FIELD_RULES` in `packages/codec/src/edit.ts` lists every field whose treatment on a write is not
 "carry it unchanged", `applyEdits` is the faithful path and `saveEdits` stamps. **`emit.ts` is neither

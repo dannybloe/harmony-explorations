@@ -4150,7 +4150,11 @@ So the alignment rule in `docs/config-format.md`, derived from three fingerprint
 is how the firmware actually addresses the table. Arch 12 has more sites than arch 14 has, 24
 against 19, because it has two more slots to reach.
 
-### Base slot 3 seeds the real time clock
+### Base slot 3 seeds the real time clock<!--superseded-->
+
+*Corrected by section 310: the three bytes go into the counter of time since the build and not into
+the clock, on all three images; Timer 1 is started whether or not they were read. The clock is base
+slot 13's records 0 to 6, section 138. The paragraph below is left as it was written.*
 
 Its consumer is five instructions long and unambiguous, on all three images:
 
@@ -4163,7 +4167,7 @@ CLRF TMR1H ; CLRF TMR1L ; BSF T1CON,0
 
 Timer 1 with its own oscillator is the standard PIC18 real time clock. Section 21 read slot 3 as an
 eleven byte build timestamp on the strength of a corpus search and a weekday closure; the consumer
-loads three of its bytes and starts the clock from them. The reading is confirmed from the
+loads three of its bytes and starts the clock from them. The reading is confirmed from the<!--superseded-->
 hardware, on the 700, the 600 and the One.
 
 ### Base slot 15 has a size the firmware demands
@@ -40599,3 +40603,85 @@ quantity and is spelled with the microsecond carved off after the split.
   press without its lead in, and a hold shorter than a press refused. Carving after the split fails all
   four tests.
 * Section 174 corrected in place, and `docs/config-format.md` under how the generator spells a block.
+
+## 310. Base slot 3's boot read fills the counter of time since the build, and the clock comes from base slot 13 on the Harmony 650 too
+
+**Todo `todo-compile-650.md` 1.3**: what a configuration writer must stamp for the Harmony 650, and
+whether it matters there. Section 138 established on the Harmony One that the clock is base slot 13's
+records 0 to 6, seeded from each record's `first`, and section 274 found the same seeder on arch 14.
+What was left was section 38's other routine, which reads three bytes of base slot 3 at boot and
+starts Timer 1, and which section 38 read as starting the clock from those bytes.
+
+**Sources checked**: the firmware, on the Harmony 600's 0.2 image, the 650's own 0.2 image, the
+Harmony 700's 2.8 and the Harmony One's 3.4; Logitech's client, where `docs/host-client.md` already
+records that it sets the clock over USB by writing variables 0 to 6 and nothing more was found in the
+MyHarmony source; and this document, sections 21, 38, 111, 130, 138, 274, 283 and 284.
+
+### What the boot read does
+
+The routine section 38 quoted seeks base slot 3, indexes it at 10, and hands its three byte reader a
+destination from two literals before starting Timer 1. That destination is, per image:
+
+| image | consumer | destination | the only `MOVFF 0x01F` store into it |
+|---|---|---|---|
+| Harmony One 3.4 | `0x278E8` | `0xF2D` | `0x27F44`, `MOVFF 0x01F`, inside section 138's epoch subtraction at `0x27F20` |
+| Harmony 600 0.2 | `0x1043C` | `0x06F` | `0x10A90`, `MOVFF 0x01F`, inside `0x10A6A` |
+| Harmony 700 2.8 | `0x14956` | `0xF0F` | `0x14FAA`, `MOVFF 0x01F` |
+
+So on three images and two architectures the boot read fills the **same variable the time since build
+routine writes**, which is the variable section 138 described as how long ago the configuration was
+built. It is not the clock: the only routines writing the clock's bytes on the 600 are the seconds
+tick, the weekday update and the day and month rollover are the **direct** writers of the clock's
+bytes on the 600; minutes, hours and the year are written only through a pointer, by the seeder among
+others, and none of the direct writers takes anything from base
+slot 3. The Harmony 650's 0.2 image holds the same clock routines instruction for instruction, the only
+difference being a division helper called 12 bytes lower. **The Timer 1 start is outside the gate**:
+the read sits behind a test of bits 2 and 1 of `0x68B` (`0x68E` on the 700, `0x1A4` on the One), whose
+false arm branches straight to `CLRF TMR1H`, on all three images, so Timer 1 runs whether or not base
+slot 3 was read.
+
+**What the read loads is odd and is not explained.** Index 10 is the second byte of the `0xEFBF`
+terminator, so the three bytes are `EF 00 00` in every container the lab holds, the Harmony One's
+included, rather than the three zero tail bytes at 11 to 13. Nothing visible depends on it.
+
+The time since build routine is reached on arch 14 from three places: action instruction `0x07` with
+`0xF9` in its low byte, the setter of state variable 0 when it is set silently, and a dispatcher that
+reads or writes single bytes of the counter. **`0x07 0xF9` occurs in none of the 29 arch 14
+configurations in the lab that hold action lists, and in every Harmony One configuration**, counted by
+the sentence audit, so on the 600, 650 and 700 nothing in a configuration asks for it.
+
+### What a writer stamps for the Harmony 650
+
+Base slot 13's records 0 to 6, the year's maximum, and on a 31st the day's maximum, which is what
+`clockStateEdits` already writes, plus base slot 3 at the same moment for the counter. **It matters
+more on the 650 than on the Harmony One**: section 283 saw every restart of the 650's 0.2 build put
+the clock back to the configuration's stamp, a USB restart with nothing written included, so a stale
+stamp is a wrong clock after every restart and not only after a battery pull.
+
+### Scope, decision 16
+
+The destination closure holds on the Harmony One 3.4, the Harmony 600 0.2 and the Harmony 700 2.8; the
+650's 0.2 image is the 600's for these routines. Not checked: the 650's 0.4 package and the Harmony
+525, and nothing here ran on hardware. Two things stay open: why the 0.2 build reseeds at every
+restart although its sum check matched, section 283's question, and the seeder's second caller on the
+600 at `0x0F390`, which, if it fires at run time, would also reset the clock.
+
+### Falsification
+
+A base slot 3 boot read whose destination's only `MOVFF 0x01F` store lies outside the time since build
+routine on any of the three images; or, on the 650, a configuration whose base slot 3 and records 0 to
+6 hold different times, which after a restart shows base slot 3's time on the clock.
+
+### Where it lands
+
+* `tests/test_interpreter.py`, `TestSlotThreesBootConsumer`, renamed from `TestSlotThreeIsTheClock`:
+  the destination read out of each consumer's own literals, its low byte, has exactly one `MOVFF 0x01F`
+  store, at the address stated as the time since build routine's, on all three images. A wrong address
+  fails it. The gate and the routine's own seek of base slot 3 are read here and not asserted.
+* Reviewed by a sentence audit before landing, which corrected six sentences at the scope they stated:
+  the other writers of the counter, the clock's direct versus pointer writers, "byte for byte" for the
+  650's clock routines, the gate's two bits, the population behind `EF 00 00`, and the counts of
+  `0x07 0xF9`.
+* Section 38's paragraph corrected in place, and its two phrasings in `reference/superseded.md`.
+* `docs/config-format.md` under base slot 3.
+

@@ -807,11 +807,41 @@ class TestTheSlotMapOnArch12(unittest.TestCase):
         self.assertEqual(sum(sites.values()), 24)
 
 
-class TestSlotThreeIsTheClock(unittest.TestCase):
-    """findings.md section 38: the consumer reads three bytes and starts Timer 1."""
+class TestSlotThreesBootConsumer(unittest.TestCase):
+    """findings.md sections 38 and 310: base slot 3's boot consumer reads three bytes and starts Timer 1.
+
+    It was called `TestSlotThreeIsTheClock` until section 310, which is the claim section 38 made and
+    section 138 had already killed for the Harmony One: the clock is base slot 13's records, and the
+    three bytes this routine reads go into the counter of time since the build, not into the clock.
+    """
 
     CONSUMERS = {'h700_code': (0x9000, 0x14956), 'h600_code_complete': (0x9000, 0x1043C),
                  'one34_code': (0x20000, 0x278E8)}
+
+    # Where each image's time since build routine stores into the same counter: a MOVFF from the
+    # scratch byte 0x01F. On the Harmony One that is inside section 138's epoch subtraction at
+    # 0x27F20, on the Harmony 600 inside 0x10A6A, on the Harmony 700 at the 2.8 build's copy.
+    SINCE_BUILD_STORES = {'h700_code': 0x14FAA, 'h600_code_complete': 0x10A90,
+                          'one34_code': 0x27F44}
+
+    def test_the_three_bytes_go_to_the_time_since_build_counter(self):
+        """Section 310: the destination the boot consumer hands its reader has exactly one MOVFF store
+        from 0x01F, at the address stated as the time since build routine's, on three images and two
+        architectures.
+
+        The destination's low byte is read out of the consumer itself, the two MOVLW literals that
+        follow the index of 10, and the store is found by tracing the whole image for that address, so
+        the two ends come from different code. That the store's routine seeks base slot 3 is read in
+        the section and not asserted here."""
+        lab.require(*self.CONSUMERS)
+        for name, (base, addr) in self.CONSUMERS.items():
+            with self.subTest(image=name):
+                literals = literals_at(name, base, addr, 24)
+                at = literals.index(10)
+                destination = literals[at + 1] | (literals[at + 2] << 8)
+                hits = trace.trace(lab.load(name), base, [destination])[destination]
+                stores = [h.addr for h in hits if h.kind == 'MOVFF WRITE' and h.detail == '<- 0x01F']
+                self.assertEqual(stores, [self.SINCE_BUILD_STORES[name]])
 
     def test_the_consumer_starts_timer_one(self):
         # The population up front, so a partial lab skips this whole test rather than shrinking its
