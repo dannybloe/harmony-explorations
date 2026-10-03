@@ -42652,7 +42652,7 @@ the same label on that device's Devices screen.
   corner label census with the widths either side of the band as its control.
 * `docs/config-format.md` under base slot 9, and `reference/button-maps.md` for the arrows.
 
-## NNN. Base slots 0, 13 and 14 are built from a description, and the name tree's order is a hash order of the variable index
+## 324. Base slots 0, 13 and 14 are built from a description, and the name tree's order is a hash order of the variable index
 
 **Date:** 3 October 2026. **Status:** confirmed by construction over the thirteen arch 14 compiles
 section 312 lists, with a blind control, two mutations of the generator that fail, and alternative

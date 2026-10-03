@@ -1,5 +1,5 @@
 /**
- * Base slots 0, 13 and 14 built from a description, `todo-compile-650.md` 10.3, section NNN, measured
+ * Base slots 0, 13 and 14 built from a description, `todo-compile-650.md` 10.3, section 324, measured
  * against Logitech's own compiles.
  *
  * **The measurement is a round trip through a description that leaves out what the generator owns.**

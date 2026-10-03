@@ -1164,7 +1164,7 @@ directly or through the lists it calls, up to three calls down. `allOffList`.
 
 **On arch 14 every record leads with 2 and has no range table**, 501 of 501 over the thirteen compiles,
 and no address points into another record, so `buildValueMap` writes each record whole from its cases.
-[findings.md](findings.md) section NNN.
+[findings.md](findings.md) section 324.
 
 Read with `gspm.value_maps` and `gspm.value_map_reference`. [findings.md](findings.md) section 39.
 
@@ -2400,7 +2400,7 @@ one:
 `inputPlan`, `composeDeviceInputs`, `activityStartTargets` and `deviceStateMachines` in
 `packages/codec/src/inputs.ts`; `packages/codec/test/inputs.test.ts`.
 
-**Built from a description, arch 14**, [findings.md](findings.md) section NNN. `buildStateTables` in
+**Built from a description, arch 14**, [findings.md](findings.md) section 324. `buildStateTables` in
 `packages/codec/src/statetables.ts` rebuilds all thirteen arch 14 compiles' base slots 0, 13 and 14
 byte for byte. What it generates rather than carries:
 
@@ -3206,7 +3206,7 @@ Two properties hold corpus wide and are what make this a tree rather than a list
 
 Level 2 appears on arch 8 and arch 9 only, holding a small menu under `HarmonyAssistant`.
 
-**The order Logitech's compiler stores the nodes in**, [findings.md](findings.md) section NNN. Level
+**The order Logitech's compiler stores the nodes in**, [findings.md](findings.md) section 324. Level
 0 first, `Root` then `State` on the arch 12 and 14 configurations measured and those two then
 `HarmonyAssistant` on the arch 8 and 9 ones. The exceptions are containers that are not a user
 configuration: the Harmony 525's safe mode container and the one in its firmware package hold one
@@ -3225,7 +3225,7 @@ pinned from below only. All 22 distinct trees Logitech built on arch 8, 9, 12 an
 nodes over 35 files, show no step down either, and the twenty that `compose.ts` gave a node all do.
 No arch 14 tree has a tie in a bucket, and `nameTreeOrder` refuses one; on arch 8 and 12 ten distinct
 pairs tie, fifteen times over ten trees, and every time the larger index is stored first, which is
-recorded and not adopted, section NNN. Arch 10 (Harmony 890 and 895) has no name tree. Nothing on the
+recorded and not adopted, section 324. Arch 10 (Harmony 890 and 895) has no name tree. Nothing on the
 remote reads the order; `buildNameTree` reproduces it.
 
 A level 1 name is three parts, `<label>_<qualifier>_<values>`:
