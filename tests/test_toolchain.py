@@ -444,7 +444,7 @@ class ATypeScriptSampleLoopStatesItsPopulation(unittest.TestCase):
         # `packages/codec/test/driving.test.ts`, section 305. 67 since `packages/codec/test/tagfive.ts`,
         # section 313's tag 5 check shared by the corpus test and the composer's, which is a helper
         # rather than a test file and is counted because the glob reads every `.ts` under `test/`.
-        self.assertEqual(scanned, 67, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
+        self.assertEqual(scanned, 69, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
         self.assertEqual(
             {name: len(lines) for name, lines in counted.items()},
             TYPESCRIPT_LOOPS_ALLOWED_TO_SKIP_A_SAMPLE,
@@ -575,7 +575,7 @@ class ABoundOnACorpusTotalIsExact(unittest.TestCase):
         # 65 since `packages/usb/test/settings.test.ts`, section 304, 66 since
         # `packages/codec/test/driving.test.ts`, section 305. 67 since `packages/codec/test/tagfive.ts`,
         # section 313, a shared helper rather than a test file.
-        self.assertEqual(len(scanned), 67, 'TypeScript test files, which moves when one is added')
+        self.assertEqual(len(scanned), 69, 'TypeScript test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):

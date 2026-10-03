@@ -42,6 +42,11 @@ export * from './render.ts';
 export * from './png.ts';
 export * from './coverage.ts';
 export * from './edit.ts';
+// Which activity the three activity keys start on a Harmony 600, 650 or 700, and the same length edits
+// that move one, section 314. Beside `edit.ts` because that is what these are.
+export * from './activitykeys.ts';
+// Mode 0's key list, the table after the end marker, generated from its rule, section 311.
+export * from './modezero.ts';
 export * from './queue.ts';
 export * from './growth.ts';
 export * from './relocate.ts';

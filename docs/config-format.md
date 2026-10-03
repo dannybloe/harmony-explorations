@@ -976,6 +976,22 @@ are the same eleven.
 
 Read with `handlerSetRoles` in `packages/codec/src/inventory.ts`.
 
+**Entry 1 holds the activity keys on arch 14** (Harmony 600, 650 and 700), [findings.md](findings.md)
+section 314. It is a prefix entry nothing selects, and its press entries for the three activity keys
+are one of two four byte forms in all 13 Logitech compiles measured:
+
+| key | scan | press entry |
+|---|---|---|
+| Watch TV | 5 | `80+scan`, `FF00 + n`, `1F`: select entry `n`, an activity's key map |
+| Watch a Movie | 1 | the same |
+| Listen to Music | 7 | the same, or `80+scan`, `p`, `7F`: call list `p` = `[07 FFFD, 7E m]`, push the mode and enter the "add an Activity" mode `m` (mode 0 on the 600 and 650, mode 4 on the 700) |
+
+Both forms are the same length, so putting an activity on a key or emptying one is a same length
+edit: `setActivityKey` and `clearActivityKey` in `packages/codec/src/activitykeys.ts`, and
+`composeActivity`'s `activityKey`. **Emptying needs list `p` to exist already**: Logitech compiles it
+only while some key is empty, 6 of the 13, which are two setups, and adding it is a length change, so the edit refuses on a
+configuration without it. Arch 12 (Harmony One) is not compared.
+
 Read with `gspm.handler_sets` and `gspm.handler_index`. [findings.md](findings.md) section 39.
 
 ### Base slot 14: the state value map
@@ -4099,7 +4115,9 @@ entering mode 0; a page with no text on a Harmony 700, whose placeholder is mode
 level is low!" on a Harmony One. An entry of `00 00 00` is a deliberate swallow: the key matches, the
 all zero instruction is dropped, and nothing below it sees the key.
 
-**A writer emits it as a constant per model**, and these are the constants:
+**A writer emits it as a constant per model**, and these are the constants. On arch 14 the writer
+generates it rather than copying it, `modeZeroKeyList` in `packages/codec/src/modezero.ts`, ordered by
+the hash rule under "The order is a hash table's bucket order" below:
 
 | model | entries | content | containers carrying exactly these bytes |
 |---|---|---|---|
@@ -4156,14 +4174,28 @@ which cell a code is, not which printed button sits in that cell. Section 133 me
 not follow from the codes either, since no divisor puts a Harmony 600's digit row on one line.
 Recovering it needs the board, which is how the arch 8 lattice above was corroborated.
 
-### Arch 8 and arch 12 share a canonical code ordering
+### The order is a hash table's bucket order
+
+The list after the end marker stores its entries in ascending `hash(tag) & (capacity - 1)`, with
+`hash(t) = t ^ (t >>> 7) ^ (t >>> 4)` and a capacity of 16 doubled while the count exceeds three
+quarters of it: `java.util.HashMap` in Java 6 and 7. No step down on any of the 39 such lists of two or
+more entries in the parseable corpus, 12 distinct and six of them contained in no other, on arch 8, 10,
+12, 14 and 16. The hash is pinned term by term; the capacity only in places, and the starting 16 is
+Java's default rather than a measurement. Other tagged lists are not asserted, and the Harmony 525's
+safe mode container's mode 0 list breaks the rule. Two tags in one bucket
+keep an order the rule does not give, and 33 of the 39 hold such a tie; mode 0's list on a Harmony
+600, 650 and 700 holds none, so `modeZeroKeyList` generates it. [findings.md](findings.md) section 315.
+
+### Arch 8 and arch 12 share a code ordering, because they share the hash
 
 47 `(event, scan)` pairs appear in both the One's table and the arch 8 table, and on that shared
 subset the two list them in the **same order**, with exactly one adjacent transposition: the One
 has scan 6 with no event bits, then press of scan 14, then scan 7 with no event bits, where arch 8
 has the two no-event codes together. Drop press of scan 14 and the sequences are identical. Pinned
 in `tests/test_gspm.py`, and unaffected by the corrected reading, which is worth noting because
-the finding was originally derived under the wrong one.
+the finding was originally derived under the wrong one. **Section 315 explains it**: both lists sit in
+128 buckets of the same hash, and the transposition is a tie, scan 7 with no event bits and the press
+of scan 14 both falling in bucket 7.
 
 Codes unique to each, which is presumably the physical difference between the two remotes:
 
@@ -4171,11 +4203,11 @@ Codes unique to each, which is presumably the physical difference between the tw
 |---|---|
 | `0x84` `0x89` `0x93` `0x9C` `0x9E` `0xA7` `0xAF` `0xB1` | `0xA9` `0xB6` `0xB8` `0xB9` `0xBA` `0xBB` `0xBD` `0xBE` `0xBF` |
 
-Consequence, and it is the reason this matters: the ordering looks like Logitech's canonical
-key order rather than anything per model. Establishing which physical button each code belongs
-to on one remote should therefore carry most of the way to the others. Upstream reports the
-same relationship between arch 8 and arch 9, 41 codes of 51 shared in order, which is
-independent support for the same conclusion.
+> **Corrected by section 315.** This said the ordering "looks like Logitech's canonical key
+> order"<!--superseded--> and that a button identified on one remote would therefore carry to the others. The order
+> is the hash's, so it says nothing about which button a code is. Upstream's arch 8 against arch 9
+> agreement, 41 codes of 51 in order, is untested here, and the one arch 9 list a reviewer measured,
+> the Harmony 525's safe mode list, does not follow the hash.
 
 ### The arch 14 table does describe that remote's keypad, after all
 
@@ -4214,9 +4246,10 @@ Whatever binds a key to an action, it is not this table. Two configs of the same
 owner recorded reassigning three buttons between them carry a byte identical key table, all 163
 records. See [findings.md](findings.md) section 16.
 
-That leaves the table looking like a description of the remote's own keypad and event capability,
-which is consistent with it being identical across the four arch 8 samples and across both One
-samples. The remaining `u16` and `flags` fields are still unexplained.
+That left the table looking like a description of the remote's own keypad and event capability.
+
+> **Answered by section 311**: it is mode 0's own tagged list, the `u16` an instruction's operand and
+> the byte called flags its opcode, which is the reading at the top of this part.
 
 ## Infrared parameter block
 

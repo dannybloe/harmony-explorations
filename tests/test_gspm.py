@@ -422,15 +422,16 @@ class TestKeyTableAcrossArchitectures(unittest.TestCase):
         self.assertEqual(virtual(arch8), [0x06, 0x07, 0x2D])
         self.assertEqual(virtual(one), [0x06, 0x07, 0x2D])
 
-    def test_arch8_and_arch12_share_a_canonical_code_ordering(self):
+    def test_arch8_and_arch12_share_a_code_ordering(self):
         """
         47 codes appear in both tables, and on that shared subset the two architectures list
         them in the same order apart from one adjacent transposition: the One has 0x06 0x8E
         0x07 where arch 8 has 0x06 0x07 0x8E. Drop 0x8E and the sequences are identical.
 
-        That matters for the button mapping problem. If the ordering is Logitech's canonical
-        key order rather than anything per model, then establishing which physical button
-        each code belongs to on one remote carries most of the way to the others.
+        Section 315 explains it and corrects what this test used to be called: both lists are a
+        hash table's bucket order over 128 buckets, and 0x07 and 0x8E share bucket 7, so the
+        transposition is a tie. The order is the hash's and carries nothing about which button a
+        code is, which is the reading this docstring used to offer for the button mapping problem.
         """
         one = [k.event_code for k in gspm.parse(lab.load('one_config')).keys]
         arch8 = [k.event_code for k in gspm.parse(lab.load('arch8_config_a')).keys]

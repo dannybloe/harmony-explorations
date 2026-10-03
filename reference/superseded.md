@@ -32,6 +32,7 @@ and leave this table alone.
 
 | phrase | superseded by | what is true instead |
 |---|---|---|
+| `Logitech's canonical key order` | section 315, corrected 3 October 2026 | a key list's order is the bucket order of a hash table keyed by the tag, `t ^ (t >>> 7) ^ (t >>> 4)` over a power of two capacity, so two lists agreeing on their shared codes says nothing about which button a code is |
 | `the only place in the format where an action says` | section 278, corrected 24 September 2026 | `0x7D` names its device and **so does the `0x7C` paired with it**, whose high byte is the same device on every send list of the corpus, and a send without it is not transmitted from an activity's transition on the spare Harmony One |
 | `why the transition does not fire` | section 278, corrected 24 September 2026 | the composed activity's transition **did** fire, shown by pointing it at an existing paired list and watching the television come on. What failed was the bare send in the list it ran |
 | `arch 9 (Harmony 525) guards per variable instead` | section 276, corrected 7 September 2026 | that is section 274's reading of the **seeder** and does not transfer to the bound check: the Harmony 525 carries the identical seven instructions at `0x04B32` with two callers, as do all six images in the lab. What is genuinely unmeasured on arch 9 is the boot **fill** |

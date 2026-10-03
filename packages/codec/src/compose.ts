@@ -117,6 +117,8 @@ import {
   TWO_ROW_LABEL_Y,
 } from './inventory.ts';
 import { excise, relocate } from './relocate.ts';
+import { type ActivityKey, activityKeyEntry, setActivityKey } from './activitykeys.ts';
+import { applyEdits } from './edit.ts';
 import { Writer } from './emit.ts';
 import {
   VALUE_MAP_COUNT_WIDTH, VALUE_MAP_KEY_WIDTH, VALUE_MAP_SECTION_COUNT_WIDTH, VALUE_MAP_SLOT,
@@ -1164,6 +1166,15 @@ export interface ComposeActivity {
    */
   readonly leaveList?: number;
   /**
+   * The activity key to put the new activity on, Watch TV, Watch a Movie or Listen to Music, section
+   * 314. Harmony 600, 650 and 700 only, where it is one entry in base slot 9 entry 1 and a same length
+   * edit made by `setActivityKey` after everything else here. Omitted leaves every key as it was, and
+   * the activity is reachable from the menu only, which is what an activity on no key is on those
+   * models. Whatever the key did before is replaced, an activity included; that one keeps its own
+   * menu row and loses only the key.
+   */
+  readonly activityKey?: ActivityKey;
+  /**
    * What tag 5 runs. Tag 5 is on all 50 activities and **always runs a real list**, so it cannot be
    * the null instruction the way tag 2 can. What fires it is read now, section 313: the activity
    * switch runs it when the activity asked for is the one already running, so it is what picking the
@@ -1343,6 +1354,16 @@ export function composeActivity(c: Container, activity: ComposeActivity): Compos
   }
   if (variable.index >= STATE_WRITE_LIMIT) {
     throw new ComposeError('the activity counter is past the index a state write can carry');
+  }
+  if (activity.activityKey !== undefined) {
+    // Checked before anything is built, so a key this configuration cannot take refuses the whole
+    // composition rather than leaving a composed activity and a refusal behind. It is the same location
+    // the edit at the end uses: the architecture, entry 1 and the key's press entry.
+    try {
+      activityKeyEntry(c, activity.activityKey);
+    } catch (error) {
+      throw new ComposeError(`the activity cannot go on ${activity.activityKey}: ${(error as Error).message}`);
+    }
   }
 
   // Every list index a caller hands over is checked against base slot 10 before anything is
@@ -1607,8 +1628,20 @@ export function composeActivity(c: Container, activity: ComposeActivity): Compos
     nameHole.bytes.set(new Writer(3).u24(current.frameLength + grew).bytes, treeStart + 2);
   }
 
+  // ---- 5. the activity key, when one was asked for ----
+  //
+  // Last, because it is the one same length edit here and the only step that needs every structure
+  // above to read: it checks that `set` is an activity by reading the enter handler this function just
+  // wrote. `applyEdits` recomputes the trailer itself, so the restamp before it is what lets its own
+  // check, that the input's checksum agrees with its bytes, pass.
+  let bytes = restamped(nameHole.bytes);
+  if (activity.activityKey !== undefined) {
+    const finished = parse(bytes);
+    bytes = applyEdits(finished, setActivityKey(finished, activity.activityKey, set)).bytes;
+  }
+
   return {
-    bytes: restamped(nameHole.bytes), activity: value, set, enterList, selectList, resumeList,
+    bytes, activity: value, set, enterList, selectList, resumeList,
     label: activity.label,
   };
 }

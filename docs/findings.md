@@ -1346,7 +1346,7 @@ seeing `AHCM` and `MCHA` and pattern matching too fast: the marker on arch 9 is 
 the right answer for the wrong reason on the one sample that exercised it. Markers are now a
 recorded per architecture fact, asserted against the data rather than computed from it.
 
-### Arch 8 and arch 12 share a canonical key ordering, with one transposition
+### Arch 8 and arch 12 share a canonical key ordering, with one transposition<!--superseded-->
 
 47 event codes appear in both the One's 55-entry table and arch 8's 56-entry table. On that
 shared subset, the two architectures list them in the same order, with a single adjacent
@@ -1364,14 +1364,23 @@ Codes unique to one side are presumably the physical difference between the remo
 
 Why this matters more than it looks. The order is not sorted, not grouped by row in any obvious
 way, and yet two architectures separated by several hardware generations agree on it. The
-straightforward reading is that this is Logitech's canonical key ordering, carried forward
+straightforward reading is that this is Logitech's canonical key ordering, carried forward<!--superseded-->
 across models. If that holds, then establishing which physical button each code belongs to on
 **one** remote transfers most of the way to the others, and that is the problem
 harmony-decompiler is currently blocked on after three failed attempts. Independent support:
 they report the same relationship between arch 8 and arch 9, 41 shared codes of 51, in order.
 
-The four arch 8 configs also carry a byte-identical key table, which is worth stating because
+> **Corrected by section 315.** The shared order is the bucket order of a hash table keyed by the
+> tag, `t ^ (t >>> 7) ^ (t >>> 4)` over 128 buckets for both lists, so any two lists of one capacity
+> agree on every shared code that has a bucket to itself, whatever buttons those codes are, and the
+> order says nothing about buttons. The transposition is a tie: `0x07` and `0x8E` are both bucket 7. The observation stands;
+> the reading of it as a key order that carries button identity does not.
+
+The four arch 8 configs also carry a byte-identical key table, which is worth stating because<!--superseded-->
 those same four files differ from each other in 73 to 84 percent of their bytes.
+
+> **Corrected by section 311**, noted while section 315 was written: the four carry the same 56 events
+> in the same order and differ in 2 of 56 operands, so the tables are not byte identical.
 
 ### The EZHex wrapper verifies its own split
 
@@ -1796,10 +1805,13 @@ is the two key recovery combination. So the difference between the architectures
 than an artefact: arch 14 enumerates every event type per key and the older architectures record
 only presses.
 
-The earlier finding that arch 8 and arch 12 **share a canonical ordering** survives unchanged: 47
+The earlier finding that arch 8 and arch 12 **share a canonical ordering** survives unchanged: 47<!--superseded-->
 `(event, scan)` pairs in common, in identical order once press of scan 14 is dropped. Worth stating
 explicitly, since that finding was originally derived under the wrong reading and could easily have
 been an artefact of it. It is not.
+
+> **Section 315**: the sharing survives and the word canonical does not. The order is a hash table's
+> bucket order, which is why it survives any reading of the tag's bits.
 
 Upstream's own words for this, from discussion 6, are "Bit 7 was never part of the matrix address",
 with the same three event flags. They reached it by reading their architecture's firmware at
@@ -41034,3 +41046,126 @@ and getting anything but the activity named.
 
 * `packages/codec/test/inventory.test.ts`, "an activity key is one select in base slot 9 entry 1": the
   table above, counted.
+
+## 315. The list after the end marker is stored in a hash table's bucket order, so mode 0's list can be generated
+
+**Todo `todo-compile-650.md` 10.4**: mode 0's list after the end marker, emitted from a rule rather than
+copied. Section 311 established the population and the one instruction that is not a swallow, and
+left the **order** as something a writer copies "for byte equality". A generator needs it as a rule.
+
+**Sources checked**: this document, sections 17, 52 and 311, and the comparison earlier in this
+document headed "Arch 8 and arch 12 share a canonical key ordering". The firmware is not the source
+here, since section 311 read that its lookup takes the first equal tag and the order changes nothing on
+the remote. Logitech's client was not consulted: the order is the compiler's, and the compiler ran on
+Logitech's servers and is not in the lab. Measured over the parseable population
+`packages/codec/test/gspm.test.ts` walks, 48 containers, and re-measured blind by a reviewer who was
+given the question and not this answer and found the same rule, the same counts and the same pins.
+
+### The rule
+
+The list after the end marker stores its entries in ascending
+
+    hash(tag) & (capacity - 1),   hash(t) = t ^ (t >>> 7) ^ (t >>> 4)
+
+where the capacity is 16, doubled while the entry count exceeds three quarters of it. That is
+`java.util.HashMap` in Java 6 and 7: its supplemental hash is `h ^= (h >>> 20) ^ (h >>> 12); h ^ (h >>> 7)
+^ (h >>> 4)`, whose first two terms are zero for a key below 4096, its iterator walks the bucket array
+from index 0 upwards, and the table starts at 16 buckets and doubles past a load factor of 0.75. Java 1.4
+and 5 hashed differently and fail every list here; Java 8 and later hash a value this small to itself,
+which is the identity row below. That Logitech's compiler is written in Java is an inference from this
+alone.
+
+| what | count |
+|---|---|
+| containers in the population | 48 |
+| with a list of two or more entries after the end marker | 39, on arch 8, 10, 12, 14 and 16 |
+| distinct lists among them | 12 |
+| of which contained in no other list | 6, and 5 of those are independent of the Harmony 600's: the Harmony 895's 59, the Harmony One's 55 and three arch 16 lists of 9, 11 and 13 |
+| lists with a step down at their own capacity | **0 of 39** |
+| at half that capacity | 9 of 39: the four arch 14 lists and the five arch 16 ones |
+| at double that capacity | 33 of 39, exactly the 33 that hold a tie at their own capacity |
+| with the tag itself as the hash | 39 of 39 |
+| with `t ^ (t >>> 4)` | 39 of 39 |
+| with `t ^ (t >>> 7)` | 37 of 39 |
+
+The other nine containers hold no list there that this reader takes: the Harmony 525's four, whose
+family the reader does not read at the marker at all, the three arch 14 safe mode containers, and the
+two cut out of the Harmony 880 and 885 firmware images. The list sizes are counts of containers, and
+the twelve distinct lists nest heavily: the 700's is the 600's plus tag `0x06`, and the arch 8 and 10
+lists sit inside one another, so the evidence is the six outermost lists rather than 39 containers.
+
+**How tightly the capacity is pinned, which is less than the rule states.** The hash is pinned: every
+term of it is needed, by the rows above. The capacity is pinned only in places. The arch 16 lists of 11
+and 13 entries fit 16 and 32 buckets and fail at the other, so the threshold lies between 11 and 13
+entries in 16 buckets, a load factor in [0.6875, 0.8125). The 55 to 59 entry lists fail at 256 and fit
+both 64 and 128, so their capacity is pinned from above only. **The starting capacity of 16 is Java's
+default, adopted rather than measured**: the only list below 7 entries holds 2 and fits any capacity.
+And Java 7 resizes only when the bucket being filled is occupied, so there the capacity is not purely a
+function of the count; the blind reviewer's simulation of that rule ends the 55 to 59 entry lists at 64
+buckets and fails them on their ties, which leans towards Java 6.
+
+### What it does not give
+
+**Two tags in one bucket.** Java 6 puts a new entry at the head of its bucket's chain, so a bucket
+iterates in the reverse of insertion order, and each resize reverses a shared bucket again. 33 of the 39
+lists hold a tie: the Harmony One's 55 entries sit in 128 buckets with three, `0x06` beside the press of
+scan 15 in bucket 6, `0x07` beside the press of scan 14 in bucket 7, and `0x2D` beside the press of scan
+36 in bucket 47. The blind reviewer simulated Java 6 with the tags inserted in ascending order and
+reproduced 25 of the 39 lists exactly, every arch 12, 14 and 16 one, and failed one pair in each of the
+14 arch 8 and arch 10 lists, `0x07` and `0x8E`, which those lists store the other way round. That
+simulation is the reviewer's and is not asserted here, since the insertion order is an assumption that
+fails on two architectures. So `keyListOrder` refuses a tie rather than guessing, and the Harmony One's
+list is not generated. **Mode 0's list on a Harmony 600, 650 and 700 has no tie**: at 256 buckets the
+hash is a bijection on a byte, since it leaves the high nibble as it is and XORs into the low nibble a
+function of the high one.
+
+**Other key lists, unconfirmed here.** The second reviewer scored the same rule on every other tagged
+list of the parseable corpus at its own capacity, base slot 9's, the mode records' and the pages', and
+reports no step down on arch 8, 12 and 14, none on the clean arch 10 reads, and none on the Harmony 525's
+user configurations; and **a counterexample**: the Harmony 525's safe mode container, whose mode 0 list
+of 47 entries steps down 21 times at 128 buckets and at least 19 times at every capacity from 16 to 256,
+and whose base slot 9 lists fail too. None of that is asserted by a test here, so the claim of this
+section stays the list after the end marker on arch 8, 10, 12, 14 and 16.
+
+### What it corrects
+
+Earlier in this document, "Arch 8 and arch 12 share a canonical key ordering" read the shared order of
+the One's and arch 8's lists as "Logitech's canonical key ordering"<!--superseded-->, and drew from it
+that establishing which physical button a code belongs to on one remote would transfer to the others.
+**The order is the hash's**, so two lists of one capacity agree on every shared code that sits in a
+bucket of its own, whatever buttons the codes are, and the agreement carries no information about
+buttons. The one transposition that section found is a tie: `0x07` and the press of scan 14, `0x8E`, are
+both bucket 7 of 128. Upstream's arch 8 against arch 9 agreement is untested here, and the only arch 9
+list in the lab that could test it, the Harmony 525's safe mode list above, does not follow the rule.
+The rule produced the right observation and the wrong reading of it.
+
+### For a writer
+
+`modeZeroKeyList` in `packages/codec/src/modezero.ts` emits the list for the Harmony 600 and 650, and
+for the Harmony 700 given the state variable its leading entry sets, byte equal to every sample of
+those models named below. Those ten samples carry one ordering between them, the 600's, plus the 700's
+tag `0x06` in bucket 6. A list of another population can be ordered by `keyListOrder` as long as it has
+no tie.
+
+### Scope, decision 16
+
+The order rule is measured on the list after the end marker on arch 8, 10, 12, 14 and 16. On arch 9 the
+reader takes no list there, and the one arch 9 mode 0 list measured by a reviewer breaks the rule. The
+generator is arch 14 only.
+
+### Falsification
+
+A Logitech compiled list after the end marker that steps down in bucket order at the capacity the rule
+gives; a list of 11 entries or fewer laid out in 32 buckets, or of 13 to 24 in 16; or a Harmony 600, 650
+or 700 list that differs from `modeZeroKeyList`.
+
+### Where it lands
+
+* `packages/codec/test/gspm.test.ts`, "every key list after the end marker is stored in the bucket order
+  of a hash on its tags": the table above, counted, the three reduced hashes included.
+* `packages/codec/test/modezero.test.ts`: the generated list byte equal to `h600_config`,
+  `calibration_h600`, `h650_config_region`, `h650_panasonic_config` and the two Harmony 650 compiles of
+  section 306, and to four Harmony 700 samples given their variables; the same entries in tag order and
+  in two reduced hashes' orders as controls that fail; the hash, the capacity steps and the refusal of a
+  tie.
+* `docs/config-format.md` under the key table: the rule, and the correction of the canonical order.

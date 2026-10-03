@@ -28,6 +28,8 @@ import {
   archSlot,
   baseSlot,
   findClockRecords,
+  keyListCapacity,
+  keyListHash,
   parse,
   recoverFlashBase,
   trailerChecksum,
@@ -911,3 +913,47 @@ test('arch 16 places eight slots and refuses the other twelve', () => {
   assert.equal(baseSlot(16, 11), 16, 'raw slot 11 is the number sender, section 262');
   assert.equal(baseSlot(16, 10), 15, 'raw slot 10 is the parameter block');
 });
+
+test('every key list after the end marker is stored in the bucket order of a hash on its tags',
+  skipWithoutLab(), () => {
+    // Section 315. A list's entries sit in ascending `hash(tag) & (capacity - 1)`, the hash and the
+    // growth rule of java.util.HashMap in Java 6 and 7, which is what lets `modeZeroKeyList` generate
+    // mode 0's list in Logitech's order rather than copy it. Two tags in one bucket keep an order the
+    // rule does not give, so a tie passes and only a step down fails.
+    const all = parseable();
+    assert.equal(all.length, PARSEABLE);
+    const lists = all
+      .map(({ name, container }) => ({ name, arch: container.architecture, tags: container.keys.map((one) => one.eventCode) }))
+      // A list of one entry, or none, has no order to hold: the Harmony 525's four, which this reader
+      // does not read at the marker, three arch 14 safe mode containers and two cut out of firmware.
+      .filter((one) => one.tags.length >= 2);
+    assert.equal(lists.length, 39);
+    // Twelve distinct lists, since a list repeats across reads and compiles of one model, and they nest:
+    // the 700's is the 600's plus tag 6, and the arch 8 and 10 lists sit inside one another. So the
+    // independent evidence is fewer than twelve; section 315 counts six lists contained in no other.
+    assert.equal(new Set(lists.map((one) => one.tags.join(','))).size, 12);
+    assert.deepEqual([...new Set(lists.map((one) => one.arch).filter((one) => one !== undefined))].sort((a, b) => a! - b!),
+                     [8, 10, 12, 14, 16]);
+    const inverted = (tags: number[], bucket: (tag: number) => number): boolean =>
+      tags.some((tag, k) => k > 0 && bucket(tag) < bucket(tags[k - 1]!));
+    const failing = (capacity: (count: number) => number, hash: (tag: number) => number = keyListHash): string[] =>
+      lists.filter(({ tags }) => inverted(tags, (tag) => hash(tag) & (capacity(tags.length) - 1))).map(({ name }) => name);
+    assert.deepEqual(failing(keyListCapacity), [], 'no list steps down at its own capacity');
+    // The calibration, the rule scored against its neighbours. Half the capacity breaks the four arch
+    // 14 lists and the five arch 16 ones; double breaks every list with a tie, 33 of them, the arch 16
+    // five included, so arch 16 pins the capacity from both sides. And without the hash, buckets keyed
+    // by the tag itself, every list fails.
+    const archOf = new Map(lists.map(({ name, arch }) => [name, arch]));
+    const half = failing((count) => keyListCapacity(count) / 2);
+    assert.equal(half.length, 9);
+    assert.deepEqual(half.map((name) => archOf.get(name)).sort(), [14, 14, 14, 14, 16, 16, 16, 16, 16]);
+    assert.equal(failing(keyListCapacity, (tag) => tag).length, 39);
+    // And every term of the hash is needed: either reduced form breaks nearly every list.
+    assert.equal(failing(keyListCapacity, (tag) => tag ^ (tag >>> 4)).length, 39);
+    assert.equal(failing(keyListCapacity, (tag) => tag ^ (tag >>> 7)).length, 37);
+    // How many lists hold a tie, whose order inside its bucket is the open part, and that they are
+    // exactly the ones double the capacity breaks.
+    const tied = lists.filter(({ tags }) => new Set(tags.map((tag) => keyListHash(tag) & (keyListCapacity(tags.length) - 1))).size < tags.length);
+    assert.equal(tied.length, 33);
+    assert.deepEqual(failing((count) => keyListCapacity(count) * 2), tied.map(({ name }) => name));
+  });
