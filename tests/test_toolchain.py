@@ -1242,8 +1242,9 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
         # alone, section 279, which is a folder inside `work/plan-1.3/` named on that row. 78 since
         # `work/plan-1.2.2/` and the region read it was built off, section 293. 79 since
         # `work/plan-1.2.10/`, section 294. 80 since `work/plan-L7/`, section 301. 81 since `work/plan-L6/`, the
-        # Harmony 600's delay write. 82 since `work/ir-archive-raw/`, section 305.
-        self.assertEqual(len(named), 82, "lab paths the register names, as at 2 October 2026")
+        # Harmony 600's delay write. 82 since `work/ir-archive-raw/`, section 305, and 83 since
+        # `work/plan-4.3.4/`, the Harmony 650's long press version write, section 309.
+        self.assertEqual(len(named), 83, "lab paths the register names, as at 3 October 2026")
         for path in sorted(named):
             with self.subTest(path=path):
                 if '*' in path:
@@ -1339,8 +1340,9 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
         # `work/plan-L7/`, the Harmony 700's delay write, section 301, and 58 since `work/plan-L6/`,
         # the Harmony 600's, and 59 since `work/ir-archive-raw/`, the infrared archive's raw capture,
         # section 305.
-        self.assertEqual(len(rows), 59)
-        self.assertEqual(len(dict(rows)), 59, 'a duplicated path would make a query ambiguous')
+        # 60 since `work/plan-4.3.4/`, section 309.
+        self.assertEqual(len(rows), 60)
+        self.assertEqual(len(dict(rows)), 60, 'a duplicated path would make a query ambiguous')
         self.assertNotIn('unseen', dict(rows), 'the status legend is not an artefact')
 
     def test_a_query_is_answered_by_ancestors_and_by_descendants(self):
