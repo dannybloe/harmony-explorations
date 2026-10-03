@@ -2940,6 +2940,48 @@ class TestThePictureBank(unittest.TestCase):
             self.assertIsNone(c.picture_run(start + delta), f'offset {delta:+d} should not walk')
 
 
+class TestReselectingTheRunningActivityFiresTagFive(unittest.TestCase):
+    """findings.md section 313: what fires an activity's tag 5 list.
+
+    The activity switch compares the running activity with the one asked for. When they differ it
+    runs the running one's list with tag 2, makes the new one current and runs it with tag 1; when
+    they are the same it runs it with tag 5 and nothing else. So tag 5 is picking the activity that is
+    already running, which section 273 and `ACTIVITY_START_TAG`'s docstring had left open.
+    """
+
+    # The routine's entry per image, and the two variables it compares: the running activity and the
+    # one asked for, both read off the listings in section 313.
+    SWITCHES = {'h600_code_complete': (0x9000, 0x0E798, 0x217, 0x2A8),
+                'h700_code': (0x9000, 0x0EB7E, 0x120, 0x1B1),
+                'one34_code': (0x20000, 0x24E28, 0xE22, 0xEB3)}
+
+    def test_the_same_activity_gets_tag_five_and_a_different_one_two_then_one(self):
+        lab.require(*self.SWITCHES)
+        for name, (base, addr, running, asked) in self.SWITCHES.items():
+            with self.subTest(image=name):
+                code = lab.load(name)
+                offset = addr - base
+                listing, at = [], {}
+                for _ in range(16):
+                    instr = isa.decode(code, offset, base)
+                    at[id(instr)] = base + offset
+                    listing.append(instr)
+                    offset += 2 * instr.words
+                # The tags it stores, in order: 2 for the activity being left, 1 for the new one,
+                # and 5 on the arm taken when the two are equal.
+                self.assertEqual([i.fields['k'] for i in listing if i.mnemonic == 'MOVLW'], [2, 1, 5])
+                # The comparison is the running activity against the one asked for, and equality
+                # branches straight to the arm loading 5, whose bank select sits just in front of it.
+                self.assertEqual([i.mnemonic for i in listing[1:4]], ['MOVF', 'SUBWF', 'BZ'])
+                self.assertEqual({listing[1].fields['f'], listing[2].fields['f']},
+                                 {running & 0xFF, asked & 0xFF})
+                five = next(i for i in listing if i.mnemonic == 'MOVLW' and i.fields['k'] == 5)
+                self.assertEqual(listing[3].fields.get('target'), at[id(five)] - 2)
+                # And the new activity becomes current only on the other arm.
+                copies = [i for i in listing if i.mnemonic == 'MOVFF']
+                self.assertIn((asked, running), [(i.fields['src'], i.fields['dst']) for i in copies])
+
+
 def literals_at(name, base, addr, count):
     """The MOVLW literals in a window, stopping at the first RETURN."""
     code = lab.load(name)

@@ -40879,3 +40879,143 @@ in, or whose rows do not enter the new device's mode.
   taking a seventh, and four devices onto `h650_config_region` keeping every other screen's text; the
   section 285 refusal test rewritten to what is true now.
 * `docs/config-format.md`, the `writing-a-config` skill, `todo-compile-650.md` and `todo.md`.
+
+## 313. Tag 5 is picking the activity that is already running, and what Logitech puts there
+
+**Todo `todo-compile-650.md` 3.9.** Section 273 measured what an activity's tag 5 list writes and
+`ACTIVITY_START_TAG`'s docstring what it sends, and both left open what fires it. The docstring guessed
+"the shape of a 'fix it' chain"<!--superseded-->, which this refutes.
+
+**Sources checked**: the firmware, on the Harmony 600's 0.2 image, the Harmony 700's 2.8 and the
+Harmony One's 3.4; this document, sections 72, 273, 289, 290 and 311. Logitech's client was not consulted, since
+the remote decides which tag runs.
+
+### What fires it
+
+One routine switches activity, at `0x0E798` on the Harmony 600, `0x0EB7E` on the Harmony 700 and
+`0x24E28` on the Harmony One, and it is the same instruction sequence on all three. It compares the
+running activity, `0x217` on the 600, with the one asked for, `0x2A8`. When they differ it runs the
+running activity's list with tag 2, copies the new one into the running variable and runs it with tag
+1. When they are the same it runs it with tag **5** and nothing else. So tag 5 is what happens when the
+activity menu, or an activity key, picks the activity that is already on: both select with `1F`
+and `0xFF00` plus the entry, section 289 for the menu rows and section 314 for the keys, and that select
+is what writes the asked for activity, at `0x0EE5A` on the 600. Action `0x07` with `0xFE` reaches tag 5
+too, by another route, sections 72 and 311. No action list in the lab carries it, none of 31177 action
+`0x07` instructions over the 95 containers holding action lists, but key entries do: 40 entries of
+`07 FFFE` in 11 containers, every one on arch 8 (Harmony 880 and 885) or arch 10 (Harmony 890 and 895),
+the keys of a "System Options" page. None is on arch 9, 12 or 14 (Harmony 525, Harmony One, Harmony 600,
+650 and 700).
+
+### What Logitech's compiler puts there
+
+Measured against the same activity's tag 1 over fourteen Harmony 600, 650 and 700 containers: the
+thirteen Logitech compiles section 312 names, and `h650_post144_region`, which carries an activity of
+ours and whose composer also edited the other three activities' tag 1 lists, leaving their tag 5 lists
+as compiled. 44 activities, 43 of which follow one rule, and since some containers repeat a setup that
+is 21 of 22 distinct activities in the first nine containers this was measured on:
+
+* the start up screen, tag 1's first step, is left out;
+* the list opens by setting `S` to 1 and closes by setting it to 0, as tag 1 does, `S` being section
+  289's start variable, one per configuration and shared by its activities;
+* every other step is one of tag 1's: every input step stays, inline or a call; no power write
+  remains, inline or in a list it calls; the write of `CurrentActivityState`, which is already right,
+  goes; and section 290's flag `F`, one variable per configuration, is set to 1 as in tag 1;
+* the working screen step runs directly, where tag 1 reaches it through a list deferred behind
+  `3F D000`. Where the configuration has no Remote Assistant, as on `h600_config`, that step enters the
+  working screen; where it has one, it is the assistant's branch.
+
+The forty fourth is the activity our composer added to the Harmony 650, whose tag 5 points at its enter
+list, which is section 273's default and starts the whole activity again. So on the remote, picking
+our activity a second time should show its start up screen again where one of Logitech's does not.
+Whether it also resends power codes turns on whether writing a variable's current value fires its
+transition, which is unread. Both are predictions for the bench, not measured.
+
+### For a writer
+
+Tag 5 for a composed activity: `S := 1`, the enter list's input steps, `F := 1`, the working screen
+step, `S := 0`. No start up screen, no power, no `CurrentActivityState`, no `3F D000`.
+
+### Scope, decision 16
+
+The switch routine is read on arch 12 and arch 14. The Harmony 525's image is not checked, and the
+arch 8 image was matched by pattern only. The compiler's rule is measured on arch 14 alone; the Harmony
+One's tag 5 lists are not compared here.
+
+### Falsification
+
+A Logitech compiled arch 14 activity whose tag 5 holds a power list, the start up screen or the
+activity write; an image whose switch routine stores 5 on the differing arm; or, on the Harmony 650,
+re-picking a Logitech activity showing its start up screen.
+
+### Where it lands
+
+* `tests/test_interpreter.py`, `TestReselectingTheRunningActivityFiresTagFive`: the compare and the
+  tags 2, 1 and 5 on three images.
+* `packages/codec/test/inventory.test.ts`, "picking the running activity again runs tag 5": 43 of 44,
+  and the misfit named. A sentence audit of the first draft widened it from nine containers to
+  fourteen, added the inline power and input checks, and corrected the start variable and `F`, which
+  the draft called per activity.
+* `ACTIVITY_START_TAG`'s docstring corrected in place.
+
+## 314. Which activity a key starts is one entry in a key map that is always installed
+
+**Todo `todo-compile-650.md` 3.11**: putting an activity on Watch TV, Watch a Movie or Listen to Music.
+
+**Sources checked**: this document, sections 34, 39, 145, 271, 272, 273, 289, 290 and 311; the Harmony 600's 0.2 firmware for
+the select instruction, through section 313's switch routine; Logitech's client for where the choice
+comes from. The configuration answers the format question and the account answers which key.
+
+### Where it is
+
+Base slot 9's entry 1 is one of section 272's prefix entries, which the configuration never selects:
+none of the action lists in the thirteen Harmony 600, 650 and 700 compiles below carries `1F FF01`
+either, nor any tagged list. That the firmware installs it is an inference from the activity keys
+answering from every screen; where it does is unread.
+Its press entries for the activity keys are the whole story:
+
+| key | scan | press entry in 13 Logitech compiles |
+|---|---|---|
+| Watch TV | 5 | `1F` with operand `0xFF00` plus `n`, select activity entry `n`, 13 of 13 |
+| Watch a Movie | 1 | the same, 13 of 13 |
+| Listen to Music | 7 | the same in 7; in the other 6, a call to `[07 FFFD, 7E p]`, push the mode and enter the "add an Activity" placeholder `p`, which is mode 0 on the 600 and 650 and mode 4 on the 700 |
+| More Activities, unmeasured | 4 | a call to `[v := 0, 72 r]`, 13 of 13: `v` is section 289's device mode marker and `72` the state value map lookup of sections 34 and 39, through a one case record keyed by `CurrentLocation`, the operand the device list's centre key runs too. Where it leads is unread here |
+
+The thirteen are `h600_config`, `calibration_h600`, `h650_config_region`, `h650_panasonic_config`, the
+two Harmony 650 and four Harmony 700 power hold compiles of sections 306 to 308, `h700_config`,
+`h700_config_2` and `h700_28_config_region`. Every `n` names an entry `handlerSetRoles` calls an
+activity. That select is the instruction the activity menu's rows use too, so a key and a row run
+section 313's switch routine identically: a second press of the running activity's key gives tag 5.
+Scan 5 is Watch TV and scan 1 Watch a Movie by the activity each selects in `calibration_h600`, whose
+entries are named "Watch TV" and "Watch a Movie", against the account's root button map, section 145,
+which binds those two buttons to those activities. Scan 7 is Listen to Music by elimination, and scan 4
+being More Activities is not measured.
+
+### Where the choice comes from
+
+The configuration does not say why an activity is on a key, and nothing in an activity's own bytes
+says it is a "watch TV" kind. Logitech's account keeps a root button map naming hard buttons and the
+activity on each; the only capture, the calibration account's, names two, `WatchTVActivity` and
+`MovieActivity`, and its compile agrees on both, section 145. That MyHarmony edits it on its activity
+button page is client sourced and not checked. An
+activity on no key is reachable from the menu only.
+
+### For a writer
+
+Putting an activity on a key, or moving it, is one four byte entry in base slot 9 entry 1, a same
+length edit: tag `0x80` plus the scan, operand `0xFF00` plus `n`, opcode `0x1F`. Taking a key away needs the
+placeholder list, which a configuration holds only while some key is empty.
+
+### Scope, decision 16
+
+Measured on arch 14 only. The Harmony One's activity keys are not compared here.
+
+### Falsification
+
+A Logitech compiled arch 14 configuration whose activity key enters an activity by any other
+instruction, or whose entry 1 is selected by something; on the remote, pressing a key after this edit
+and getting anything but the activity named.
+
+### Where it lands
+
+* `packages/codec/test/inventory.test.ts`, "an activity key is one select in base slot 9 entry 1": the
+  table above, counted.

@@ -65,6 +65,7 @@ import {
   touchPageOf,
   modePages,
   screenStrings,
+  modeRecords,
   taggedList,
   archSlot,
   deviceCount,
@@ -2110,6 +2111,141 @@ test("tag 5's state writes are a subset of the enter list's, and are often none"
   assert.equal(writesAnything, 26);
   assert.equal(isAPrefix, 28);
   assert.equal(isANonEmptyPrefix, 4);
+});
+
+/**
+ * Section 313's population: the thirteen Harmony 600, 650 and 700 compiles section 312 names, plus the
+ * one container carrying an activity of ours, which is the test's own counterexample.
+ */
+const RESELECT_CONTAINERS = ['h600_config', 'calibration_h600', 'h650_config_region',
+  'h650_panasonic_config', 'h650_post144_region', 'h700_config', 'h700_config_2',
+  'h700_28_config_region', 'h650_power_hold_compile', 'h650_power_hold_compile_2',
+  'h700_power_hold_compile', 'h700_power_hold_compile_2', 'h700_power_hold_compile_3',
+  'h700_power_hold_compile_4'];
+
+test("picking the running activity again runs tag 5: the start without its screen, power or activity write",
+     skipUnless(...RESELECT_CONTAINERS), () => {
+  // Section 313. The firmware runs tag 5 when the activity asked for is the one already running,
+  // which `tests/test_interpreter.py` reads on three images. This is what Logitech's compiler puts
+  // there on arch 14, measured against the same activity's tag 1, so a composer can build it.
+  const ENTER_MODE = 0x7e;
+  const key = (one: { opcode: number; operand: number }) => `${one.opcode}:${one.operand}`;
+  let activities = 0;
+  let shaped = 0;
+  const misfits: string[] = [];
+  for (const name of RESELECT_CONTAINERS) {
+    const c = parse(require_(name));
+    const sets = handlerSets(c);
+    const lists = c.actionLists();
+    assert.ok(sets !== undefined && lists !== undefined, name);
+    const roles = handlerSetRoles(c);
+    const names = new Map((nameNodes(c) ?? []).map((one) => [one.index, one.name]));
+    const writes = (list: readonly { opcode: number }[], test: RegExp) => list.some((one) =>
+      one.opcode >= STATE_WRITE_BASE && test.test(names.get(one.opcode - STATE_WRITE_BASE) ?? ''));
+    sets.addresses.forEach((address, index) => {
+      if (roles[index] !== 'activity') return;
+      activities += 1;
+      const handlers = new Map((taggedList(c, address)?.entries ?? [])
+        .filter((one) => (one.tag & EVENT_MASK) === 0).map((one) => [one.tag, one]));
+      const start = lists[handlers.get(1)?.operand ?? -1] ?? [];
+      const again = lists[handlers.get(5)?.operand ?? -1] ?? [];
+      // Tag 1 reaches its working screen through a list deferred behind `3F D000`; tag 5 runs that
+      // list's second step directly, which is the screen itself where the configuration has no Remote
+      // Assistant, as on `h600_config`, and the assistant's branch where it has one. What tag 5 never
+      // holds is tag 1's opening step, the start up screen.
+      const deferred = start.filter((one) => one.opcode === ACTION_LIST_INDEX_OPCODE)
+        .map((one) => lists[one.operand] ?? [])
+        .find((one) => one[0]?.opcode === 0x3f && one[0]?.operand === 0xd000);
+      const working = deferred?.[1];
+      // The start variable: tag 1's first write of 1, which tag 5 must open with and close at 0.
+      const variable = start.find((one) => one.opcode >= STATE_WRITE_BASE && one.operand === 1);
+      const inStart = new Set(start.map(key));
+      const calledByAgain = again.filter((one) => one.opcode === ACTION_LIST_INDEX_OPCODE)
+        .map((one) => lists[one.operand] ?? []);
+      const ok = start[0]?.opcode === ENTER_MODE
+        && !again.some((one) => key(one) === key(start[0]!))
+        && variable !== undefined
+        && key(again[0] ?? { opcode: -1, operand: -1 }) === key(variable)
+        && key(again.at(-1) ?? { opcode: -1, operand: -1 }) === key({ opcode: variable.opcode, operand: 0 })
+        && working !== undefined && again.some((one) => key(one) === key(working))
+        && again.every((one) => inStart.has(key(one)) || key(one) === key(working!))
+        && !writes(again, new RegExp(`^${ACTIVITY_STATE_NAME}`))
+        // No power write, inline or in a list tag 5 calls, where tag 1 has both.
+        && !writes(again, /_Power_\d+$/)
+        && !calledByAgain.some((one) => writes(one, /_Power_\d+$/))
+        // And every input step of tag 1, inline or a call to a list writing an input, is in tag 5.
+        && start.filter((one) => (one.opcode >= STATE_WRITE_BASE && /_Input_\d+$/.test(names.get(
+          one.opcode - STATE_WRITE_BASE) ?? '')) || (one.opcode === ACTION_LIST_INDEX_OPCODE
+          && writes(lists[one.operand] ?? [], /_Input_\d+$/)))
+          .every((one) => again.some((other) => key(other) === key(one)));
+      if (ok) shaped += 1; else misfits.push(`${name}:${index}`);
+    });
+  }
+  assert.equal(activities, 44);
+  assert.equal(shaped, 43);
+  // The one that does not fit is the activity our composer added to the Harmony 650, whose tag 5
+  // still points at its enter list, section 273's default.
+  assert.deepEqual(misfits, ['h650_post144_region:9']);
+});
+
+/**
+ * Section 314's population: every Harmony 600, 650 and 700 configuration Logitech compiled that the lab
+ * holds once each, the same thirteen as section 312's.
+ */
+const ACTIVITY_KEY_CONTAINERS = ['h600_config', 'calibration_h600', 'h650_config_region',
+  'h650_panasonic_config', 'h650_power_hold_compile', 'h650_power_hold_compile_2', 'h700_config',
+  'h700_config_2', 'h700_28_config_region', 'h700_power_hold_compile', 'h700_power_hold_compile_2',
+  'h700_power_hold_compile_3', 'h700_power_hold_compile_4'];
+
+test('an activity key is one select in base slot 9 entry 1, or the placeholder when it has none',
+     skipUnless(...ACTIVITY_KEY_CONTAINERS), () => {
+  // Section 314. Entry 1 is one of section 272's prefix entries, which nothing in a configuration
+  // selects, and its press entries for Watch TV, Watch a Movie and Listen to Music, scans 5, 1 and 7,
+  // either select an activity's own entry with `1F FF00 + n` or call `[07 FFFD, 7E p]`, push the mode
+  // and enter the "add an Activity" placeholder. More Activities, scan 4, calls a list that sets one
+  // state variable to 0 and then runs `0x72`.
+  const SELECT = 0x1f;
+  const PUSH = 0x07;
+  const ENTER_MODE = 0x7e;
+  const tally = new Map<string, number>();
+  let selectsEntryOne = 0;
+  for (const name of ACTIVITY_KEY_CONTAINERS) {
+    const c = parse(require_(name));
+    const sets = handlerSets(c);
+    const lists = c.actionLists();
+    assert.ok(sets !== undefined && lists !== undefined, name);
+    const roles = handlerSetRoles(c);
+    for (const list of lists) {
+      selectsEntryOne += list.filter((one) => one.opcode === SELECT && one.operand === 0xff01).length;
+    }
+    // The placeholder is the mode whose one page writes "add an Activity", found by its text so the
+    // test does not assume which mode number a model uses.
+    const programs = new Set(screenStrings(c, characterMap(c))
+      .filter((one) => /add an Activity on/.test(one.text)).map((one) => one.program));
+    const placeholder = (modeRecords(c) ?? []).findIndex((record) =>
+      record.pages.some((page) => programs.has(page.program)));
+    const entries = taggedList(c, sets.addresses[1]!)?.entries ?? [];
+    for (const scan of [5, 1, 7, 4]) {
+      const entry = entries.find((one) => one.tag === (KEY_EVENT_PRESS << 6 | scan));
+      const list = entry?.opcode === ACTION_LIST_INDEX_OPCODE ? lists[entry.operand] ?? [] : [];
+      let kind = 'other';
+      if (entry?.opcode === SELECT && entry.operand >> 8 === 0xff
+          && roles[entry.operand & 0xff] === 'activity') kind = 'selects an activity';
+      else if (list.length === 2 && list[0]!.opcode === PUSH && list[0]!.operand === 0xfffd
+               && list[1]!.opcode === ENTER_MODE && list[1]!.operand === placeholder) kind = 'placeholder';
+      else if (list.length === 2 && list[0]!.opcode >= STATE_WRITE_BASE && list[0]!.operand === 0
+               && list[1]!.opcode === 0x72) kind = 'a write of 0, then 0x72';
+      tally.set(`${scan} ${kind}`, (tally.get(`${scan} ${kind}`) ?? 0) + 1);
+    }
+  }
+  assert.equal(selectsEntryOne, 0, 'nothing in a configuration selects entry 1');
+  assert.deepEqual(Object.fromEntries([...tally].sort()), {
+    '1 selects an activity': 13,
+    '4 a write of 0, then 0x72': 13,
+    '5 selects an activity': 13,
+    '7 placeholder': 6,
+    '7 selects an activity': 7,
+  });
 });
 
 test('adding an activity is a name tree length edit on one of the fifteen',

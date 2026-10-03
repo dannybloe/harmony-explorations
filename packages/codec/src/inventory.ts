@@ -2826,10 +2826,13 @@ export function powerOnInstructions(c: Container): Map<number, PowerOnInstructio
  * the inputs, switching off what the activity does not want and finally writing
  * `CurrentActivityState`.
  *
- * The other two are named by what they do rather than guessed at. Tag 5 exists on the same 92 set
- * entries and re-sends **only** the input commands, with no power change, which is the shape of a
- * "fix it" chain; tag 2 writes state variables and reaches 5 sends in the whole corpus. Neither is
- * read further here, because neither carries a power on delay.
+ * The other two are named by what fires them, section 313: the activity switch runs the activity
+ * being left with tag 2 and the one being entered with tag 1, and when the activity asked for is the
+ * one already running it runs it with tag **5** instead. Tag 5 exists on the same 92 set entries and
+ * re-sends **only** the input commands, with no power change. This docstring called that the shape of
+ * a fix it chain<!--superseded--> while what fires it was unread. Tag 2 writes state variables and
+ * reaches 5 sends in the whole corpus. Neither is read further here, because neither carries a power
+ * on delay.
  */
 export const ACTIVITY_START_TAG = 1;
 

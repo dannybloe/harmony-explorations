@@ -105,7 +105,7 @@ the same three:
 |---|---|
 | 1 | **enter**: run when the activity starts. This is the whole of the start sequence |
 | 2 | **leave**: run when it stops. Cancels the timers and restores the display |
-| 5 | a third handler. **What it does is read** and what fires it is not: it re-sends the inputs with no power change, which is the shape of a "fix it" chain |
+| 5 | the activity picked again while it is already running, section 313: it re-sends the inputs with no power change and goes to the working screen, directly or through the Remote Assistant's branch, without the start up screen. This row called it "the shape of a 'fix it' chain"<!--superseded--> while what fires it was unread |
 
 *The check that can fail*: every activity entry has all three.
 
