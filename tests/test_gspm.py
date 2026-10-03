@@ -3331,5 +3331,128 @@ class TestTheKeyTableIsModeZerosInstructions(unittest.TestCase):
         self.assertEqual(at(0xF230), ('DECF', 0x07))
 
 
+class TheModeSwitchTakesItsNumberFromThreePlaces(unittest.TestCase):
+    """findings.md section NNN, the firmware half: on every arch 14 build in the lab, the routine that
+    makes a mode current is called from exactly four places, and the number each one hands it comes
+    from an `0x7E` instruction's operand, the mode stack, or the event map's value or fallback. Nothing
+    else writes the argument and nothing else writes the current mode.
+
+    The configuration half, that no `0x7E` and no event map entry names the two row device list, is
+    `packages/codec/test/tworowlist.test.ts`. Together they are why nothing a person does on a Harmony
+    600, 650 or 700 shows that list. The one route left is the host's: a queued action instruction over
+    USB, command state `0x34`, asserted below so that the claim is scoped to the keypad and not to the
+    remote.
+
+    The tracer sees `MOVFF` and banked access and not access through `FSR`, so "nothing else writes"
+    is about direct writes; the mode stack is the one indirect source, and its entries are pushed from
+    the current mode itself."""
+
+    BASE = 0x9000
+    # The routine's first four instructions, the same bytes on every build: select bank 13, clear
+    # 0xD3E, and load 0xFE to compare the current mode with the "none" value.
+    PROLOGUE = bytes([0x0D, 0x01, 0x3E, 0x6B, 0xFE, 0x0E])
+    # Per build: the mode switch, its four callers in address order (the 0x7E handler, the stack pop,
+    # the event map walker's match and its fallback), the current mode register and the argument
+    # register, each a two byte pair of which the low byte is named, the writers of the current mode,
+    # and what each write of the argument copies from. Section 36 named the 700's pair, section 311
+    # the 600's switch and stack.
+    BUILDS = {
+        'h600_code_complete': dict(
+            switch=0x147BA, callers=[0x0E8FA, 0x0F26E, 0x14C10, 0x14C42],
+            current=0x0A8, argument=0x0AD, current_writers=[0x1477C, 0x14802, 0x14816],
+            sources=[(0x0E8F2, 0x2B2), (0x0F266, 0xFEE), (0x14C08, 0xD1A), (0x14C3A, 0xD14)]),
+        'h650_bench_code': dict(
+            switch=0x147BA, callers=[0x0E8FA, 0x0F26E, 0x14C10, 0x14C42],
+            current=0x0A8, argument=0x0AD, current_writers=[0x1477C, 0x14802, 0x14816],
+            sources=[(0x0E8F2, 0x2B2), (0x0F266, 0xFEE), (0x14C08, 0xD1A), (0x14C3A, 0xD14)]),
+        'h650_code': dict(
+            switch=0x1654C, callers=[0x0ECD8, 0x0F6B2, 0x169A2, 0x169D4],
+            current=0x0D4, argument=0x0D9, current_writers=[0x1650E, 0x16594, 0x165A8],
+            sources=[(0x0ECD0, 0x1BB), (0x0F6AA, 0xFEE), (0x1699A, 0xD1A), (0x169CC, 0xD14)]),
+        'h700_code': dict(
+            switch=0x1679E, callers=[0x0ECEA, 0x0F6C4, 0x16BF4, 0x16C26],
+            current=0xF28, argument=0xF2D, current_writers=[0x16760, 0x167E6, 0x167FA],
+            sources=[(0x0ECE2, 0x1BB), (0x0F6BC, 0xFEE), (0x16BEC, 0xD1A), (0x16C1E, 0xD14)]),
+    }
+
+    def test_one_mode_switch_and_four_callers_on_every_arch14_build(self):
+        lab.require(*self.BUILDS)
+        from harmony.pic18 import trace
+        for name, build in self.BUILDS.items():
+            with self.subTest(build=name):
+                code = lab.load(name)
+                found = [m.start() + self.BASE for m in re.finditer(re.escape(self.PROLOGUE), code)]
+                self.assertEqual(found, [build['switch']])
+                hits = trace.xrefs(code, self.BASE, [build['switch']])[build['switch']]
+                self.assertEqual(sorted(x.addr for x in hits), build['callers'])
+
+    def test_the_argument_comes_from_an_0x7e_the_stack_or_the_event_map(self):
+        lab.require(*self.BUILDS)
+        from harmony.pic18 import isa, trace
+        for name, build in self.BUILDS.items():
+            with self.subTest(build=name):
+                code = lab.load(name)
+                low = build['argument']
+                accesses = trace.trace(code, self.BASE, [low])[low]
+                writes = [(a.addr, int(a.detail.split('0x')[1], 16))
+                          for a in accesses if a.kind == 'MOVFF WRITE']
+                self.assertEqual(writes, build['sources'])
+                # And no other kind of write reaches it, a MOVWF or a CLRF, so the four are the only four.
+                self.assertEqual([a.addr for a in accesses if 'WRITE' in a.kind], [w for w, _ in build['sources']])
+                # The first caller is the 0x7E handler: the opcode byte compared with the literal 0x7E
+                # immediately before it loads the operand.
+                handler = build['sources'][0][0]
+                compare = isa.decode(code, handler - 6 - self.BASE, self.BASE)
+                self.assertEqual((compare.mnemonic, compare.fields['k']), ('MOVLW', 0x7E))
+
+    def test_only_the_mode_switch_and_its_reset_write_the_current_mode(self):
+        lab.require(*self.BUILDS)
+        from harmony.pic18 import trace
+        for name, build in self.BUILDS.items():
+            with self.subTest(build=name):
+                code = lab.load(name)
+                low = build['current']
+                writers = [a.addr for a in trace.trace(code, self.BASE, [low])[low] if 'WRITE' in a.kind]
+                self.assertEqual(writers, build['current_writers'])
+                # Two of the three set it to "none", 0xFEFE, and the third copies the argument in.
+                last = trace.trace(code, self.BASE, [low])[low]
+                copy = [a for a in last if a.addr == build['current_writers'][-1]][0]
+                self.assertEqual((copy.kind, copy.detail), ('MOVFF WRITE', '<- 0x%03X' % build['argument']))
+
+    # Command state 0x34, which a version request with a payload selects, section 304: its parser reads
+    # three payload bytes and hands them to the routine that pushes an action instruction onto the
+    # forty slot queue, the same routine the action list runner's own enqueue jumps to, section 34. Per
+    # build: the sub-command switch, the parser, and the enqueue it calls.
+    QUEUE_FROM_HOST = {
+        'h600_code_complete': (0xBD96, 0xBEBE, 0xE628, [0x0E68E, 0x0F3C6]),
+        'h650_bench_code': (0xBD96, 0xBEBE, 0xE628, [0x0E68E, 0x0F3C6]),
+        'h650_code': (0xBE2C, 0xBF54, 0xE9FC, [0x0EA62, 0x0F80A]),
+        'h700_code': (0xBE2C, 0xBF54, 0xEA0E, [0x0EA74, 0x0F81C]),
+    }
+
+    def test_a_host_can_queue_an_action_instruction_through_command_state_0x34(self):
+        lab.require(*self.QUEUE_FROM_HOST)
+        from harmony.pic18 import chains, isa, trace
+        for name, (switch, parser, enqueue, tails) in self.QUEUE_FROM_HOST.items():
+            with self.subTest(build=name):
+                code = lab.load(name)
+                table = chains.chain_table(code, self.BASE, switch)
+                self.assertEqual(table[0x34], parser)
+                self.assertEqual(len(table), 20, 'the twenty parsed states of section 304')
+                # The parser: three payload reads, three copies into the instruction the enqueue
+                # takes, then the call, all within its first 0x34 bytes.
+                calls = []
+                for addr, ins in isa.iter_instructions(code[parser - self.BASE:parser - self.BASE + 0x38], parser):
+                    if ins.mnemonic == 'CALL':
+                        calls.append(ins.fields['target'])
+                self.assertEqual(calls[3], enqueue)
+                # And the enqueue is the one configuration instructions take: on the 700 the first of
+                # its two GOTOs ends 0x0EA5A, which section 34 read as the routine that reads one
+                # instruction of an action list and hands it on, at the same place on the other builds;
+                # what jumps in from the second is not read.
+                gotos = [x.addr for x in trace.xrefs(code, self.BASE, [enqueue])[enqueue] if x.mnemonic == 'GOTO']
+                self.assertEqual(gotos, tails)
+
+
 if __name__ == '__main__':
     unittest.main()

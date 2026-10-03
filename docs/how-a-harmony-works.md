@@ -68,6 +68,12 @@ devices by pressing the center button below **Devices**", where Devices is a wor
 the screen. The traced drawing of a Harmony 600 in `reference/silhouettes/` therefore has no such key and
 must not grow one.
 
+**A Harmony 600, 650 or 700 shows its devices four to a screen, one in each corner**, under the
+centre key's "Devices". Logitech's compiler also writes a second device list into every one of their
+configurations, two devices to a screen, and **nothing on the remote opens it**: no key, no screen and
+no event names it, section NNN. So an interface drawing these remotes draws the corner list, and a new
+screen of devices appears at the fifth device and the ninth.
+
 **"Current Activity" is one model's wording**, the Harmony One's. The 600 writes "Activity", the 525
 uses its own Activities key, and on an 885 you press DEVICE again. So an interface must not print that
 phrase as though it were the product's vocabulary.

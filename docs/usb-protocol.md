@@ -3,7 +3,8 @@
 **Status: derived from the firmware, and now read back off a remote.** The transport is complete and
 quoted from the device's own descriptors. The command layer has its dispatch table, its length
 nibble mapping, its state machine, and the request and response layout of every command. Live RAM
-over USB works and event injection does not exist.
+over USB works, event injection does not exist, and on arch 14 an action instruction can be queued
+through command state `0x34`, section NNN, read and never sent.
 
 **Section 4 is the part a host measured**, on **both architectures**: the programmed Harmony 600 and
 the spare Harmony One. Read only. `GET_VERSION`, `READ_MISC` and `READ_FLASH` have run, the flash read
@@ -315,6 +316,7 @@ have an argument parser and 54 an executor. Read so far:
 | `0x13 0xB0 hi lo` | read a byte of data memory |
 | `0x12 0xB9 byte` | write the byte to data memory `0x200` |
 | `0x11 0xBD` | program `0xFFFE` into internal `0x01F6C0` when that word's bit 0 is set |
+| `0x14 0x34 opcode hi lo` | push the action instruction `opcode` with operand `hi lo` onto the forty slot action queue, at parse time, through the push the configuration's own instructions take; on the 600 and 650 0.2, the 650 0.4 and the 700 2.8. Section NNN, read and never sent |
 
 `hi` must be 0 for `0xB2` and `0xB3`: both store routines refuse a setting of `0xFF` or more. A
 settings read answers seven bytes, `0xF0 0x11 0xB2 0x01 0x01 0x01 value`, **measured on the Harmony
@@ -731,8 +733,10 @@ project is read only, so it belongs in the rails rather than in the toolkit. See
 
 **And `0x03` is not in the chain at all.** libconcord's header names `MISC_QUEUE_ACTION` as
 `0x03` and `MISC_QUEUE_EVENT` as `0x09`. On the strength of those names, arch 14 does not
-implement action queueing, and implements event queueing as a no-op that reports success. Either
-way **there is no event injection here**, so driving the remote from the host is not available
+implement action queueing<!--superseded--> through `WRITE_MISC`, and implements event queueing as a
+no-op that reports success. **Corrected by section NNN**: the action queue is reachable another way,
+command state `0x34`, in the table of the version request's payload family above. Either
+way **there is no event injection here**, so driving the remote from the host is not available<!--superseded-->
 and the button mapping experiment has to be done by hand at the keypad, as the roadmap already
 assumed.
 
@@ -1760,7 +1764,8 @@ to settle, and a list that only ever grows is not a status.
 * **Which `MISC` items the firmware services**, and whether `MISC_RAM` works in normal mode: yes,
   four read selectors and nine write ones, and RAM is selector `0x07` and not upstream's `0x06`.
 * **Whether `MISC_QUEUE_ACTION` and `MISC_QUEUE_EVENT` exist**: `0x03` is unhandled and `0x09` is a
-  no-op that reports success, so there is no event injection.
+  no-op that reports success, so there is no event injection. **An action can be queued all the same**,
+  through command state `0x34`, section NNN.
 * **The response layout of each command**: the table above, from the state handlers rather than the
   parsers.
 * **GET_VERSION's block is twelve fields**, by two independent counts. **Eleven of the twelve now

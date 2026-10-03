@@ -807,7 +807,9 @@ number to recompute. Answered entries are corrected in place below rather than d
   the scanner's linear index to config event codes, is answered: the codes carry the index directly,
   section 89 and the step 6 narrative above.
 * Whether the firmware implements event injection over USB. **Answered no on arch 14**, in this
-  document's own step 6 narrative; arch 12 unexamined and nothing wants it.
+  document's own step 6 narrative; arch 12 unexamined and nothing wants it. **Queueing an action
+  instruction is another matter**: arch 14 does it through command state `0x34`, section NNN, read and
+  never sent.
 * **What the log area holds.** Base slot 2 is named, section 47, so the pointer table is complete.
   **One of the five append cases is read**, section 111: case 3's six bytes are the clock's own fields
   copied in descending significance, so its record is a timestamp. What remains is the other four, and
@@ -859,6 +861,13 @@ whose lists are all full, gives screens drawn the same way as the ones Logitech'
 device configuration with every check passing; not written to the remote yet, and the script that would
 write it still stops on that configuration's build timestamp, which Logitech wrote with a day of month of
 0 on the 1st of October and our reader refuses. That is a separate open item.
+
+**The list that shows two devices to a screen is one nobody can open, section NNN.** Logitech's
+compiler writes it into every Harmony 600, 650 and 700 configuration, wired like the others, and
+nothing on the remote leads to it: no button, no screen and no event names it, and the firmware only
+opens a screen something names, short of a command a computer could send over the cable. The lists people see are the four to a screen ones under "Devices". So
+the new screen a seventh device opens on the 650 matches Logitech and cannot be looked at; seeing a
+new screen open on the remote needs a list going from four devices to five.
 
 **A delay saved on the remote itself wins over the configuration, section 303.** The Harmony 600's
 KPN box was given a wait of 4.5 seconds instead of 1.5 and the remote kept waiting 1.0, the same to half
