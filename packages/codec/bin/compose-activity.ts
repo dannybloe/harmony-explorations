@@ -5,6 +5,12 @@
  *       --targets 51=1 --keys 3:4809,4:4810,9:4813,19:4811,20:4812 --icon-like 'LG WebOS' \
  *       --pads Power:4808,Mute:4813 --startup-like 'LG WebOS'
  *
+ * Or from roles, section NNN, the way Logitech's compiler builds one: `--roles volume=3,control=1`
+ * names the devices by group, and the keypad is the volume device's three volume keys and the
+ * control device's own map for the rest; `--commands 1:Teletext,0:Netflix` names the screen's
+ * commands by device group and the label the device's own screen draws them under. Either replaces
+ * `--keys` or `--pads`, and giving both of a pair is refused.
+ *
  * The counterpart of `compose-device.ts` and the same job for chapter 1: run the composition on a
  * real configuration and print every check somebody should read before the result goes near a
  * remote. `composeActivity` builds what the remote **runs** and `composeActivityMenuRow` builds what
@@ -50,6 +56,8 @@ import {
   assertQueueFits,
   assertStateTableConsistent,
   activityPowerTargets,
+  activityKeysFromRoles,
+  activityScreenRows,
   activityScreens,
   caseQueued,
   valueMaps,
@@ -114,6 +122,27 @@ const pads = padsArg === '' ? [] : padsArg.split(',').map((one) => {
 });
 
 const before = parse(new Uint8Array(readFileSync(input)));
+
+// Section NNN: the keypad from roles and the screen from commands, in place of the two lists above.
+const rolesArg = argument('roles');
+const commandsArg = argument('commands');
+if (rolesArg !== undefined && keys.length > 0) fail('--roles builds the keypad, so --keys is not also taken');
+if (commandsArg !== undefined && pads.length > 0) fail('--commands builds the screen, so --pads is not also taken');
+if (rolesArg !== undefined) {
+  const roles = Object.fromEntries(rolesArg.split(',').map((one) => {
+    const [role, group] = one.split('=');
+    if ((role !== 'volume' && role !== 'control') || group === undefined) fail(`${one} is not volume=<group> or control=<group>`);
+    return [role, Number(group)];
+  }));
+  keys.push(...activityKeysFromRoles(before, roles));
+}
+if (commandsArg !== undefined) {
+  pads.push(...activityScreenRows(before, commandsArg.split(',').map((one) => {
+    const cut = one.indexOf(':');
+    if (cut <= 0) fail(`${one} is not <group>:<label>`);
+    return { group: Number(one.slice(0, cut)), label: one.slice(cut + 1) };
+  })));
+}
 const named = new Set(targets.map((one) => one.variable));
 const othersOff = process.argv.includes('--leave-others-on') ? [] : activityPowerTargets(
   before, targets.filter((one) => one.value !== 0).map((one) => one.variable),

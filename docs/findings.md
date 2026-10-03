@@ -42451,3 +42451,203 @@ the one its date has.
   `docs/config-format.md`, `docs/host-client.md`, `docs/status.md`, `CLAUDE.md`, the
   `writing-a-config` skill and `docs/memory-map-525.md`; the dead phrasings in
   `reference/superseded.md`.
+
+## NNN. An activity's key map is two roles over the devices' own maps, and its screen is their own screen items
+
+**Todo `todo-compile-650.md` 3.7 and 3.8**: the activity's key map built from its roles, volume to one
+device and channels to another, and the activity's own screen pages, the commands it labels there.
+`composeActivity` copied both from an existing activity until now.
+
+**Sources checked**: this document, sections 120, 151, 271, 273, 279, 285, 290, 312, 314, 315 and 319;
+`reference/button-maps.md`; the thirteen arch 14 compiles of section 314, holding 40 activities;
+`docs/myharmony/model.md` on roles, `ActivityFunctionMap` and the activity button map; four captures of
+Logitech's service in the lab, read only, all filed 13 August 2026: the calibration Harmony 600's account
+record's `MapList` (activity button maps and function maps), `GetButtonMaps_skin71` (device button maps,
+whose device ids are the Harmony One record's), and the calibration Harmony One record's `ActivityList`,
+its roles, and `MapList`. A live read of the Harmony 650 and 700 records' maps was attempted and failed
+at login, so their stated maps are not in hand.
+
+### What Logitech states
+
+An activity on the platform is roles: `DisplayActivityRole`, `VolumeActivityRole`,
+`ChannelChangingActivityRole`, `PlayMovieActivityRole` and others, each naming a device. Its button map
+names a device and a command per hard button and lists its soft buttons, the screen commands, in order.
+On the calibration Harmony 600's record both activities' maps put `VolumeUp`, `VolumeDown` and
+`VolumeMute` on the receiver and **all 36 other hard buttons on one device**: the television in "Watch
+TV", and the disc player in "Watch a Movie". The 600 capture states maps and not roles; on the Harmony
+One record set up with the same three devices and two activities the roles are display and channel
+changing on the television for the first, and display on the television with play movie on the disc
+player for the second, so the display device holds no key in "Watch a Movie". The soft buttons on the
+Harmony 600's record, 8 and 7, are all that one device's, and are in exactly the order its screen draws
+them. Its function maps say the split in Logitech's own terms: an activity's map takes the `Volume` group
+from one device and the rest from another.
+
+### What the compiler writes, key by key
+
+Roles are not in the configuration, so they are read off the sends, `activityRolesFromSends`: the device
+VolumeUp sends to, and the device most other keys send to. On the calibration Harmony 600 that gives the
+devices the stated button maps give, which checks the reading of the configuration against the record
+and is close to circular as a check of the rule. Then, over all 40 activities:
+
+* **the keys run the device's own lists**: of the 1328 activity key bindings, all of which send
+  infrared, 1254 run the very base slot 10 list some key of a device's own map runs, section 271, and
+  none runs a copy of one. Of the other 74, 5 run a list on a device's own screen page and 69 send codes
+  nothing in device mode sends; 64 of the 74 are in the three hand customised configurations below and
+  one is in each of the other ten;
+* **the volume keys are the volume device's own and every other key is the control device's own**. On
+  14, 15 and 16 that holds in all 40, and no other key goes to the volume device. Three refinements
+  follow, of which two are fitted to one activity:
+  * UpArrow and DownArrow, scans 26 and 27, bound to nothing in 56 of the 82 devices' own maps, take the
+    device's DirectionUp and DirectionDown, scans 50 and 42, when its own map leaves them unbound. Which
+    scan is which button is decided by the Harmony 600's stated device maps, below;
+  * where a device's own map runs its DirectionUp and DirectionDown lists on ChannelUp and ChannelDown,
+    as the disc player's does, the activity puts SkipForward and SkipBack there, scans 38 and 21;
+  * where the device's own screen has an item labelled `Exit`, the Exit key runs it, the device's own map
+    having given that key to `Cancel`.
+
+  The second and third fire on one activity of the 40, the calibration "Watch a Movie", and are right
+  there, 2 keys and 1. That is a fit, and what makes it more than one is Logitech's own statement: the
+  calibration Harmony One record's maps give the same disc player `Exit` to `Cancel` and `ChannelUp` to
+  `DirectionUp` in its own map and `ChannelUp` to `SkipForward` and `Exit` to `Exit` in the activity, and
+  its television's own map has no `UpArrow` where the activity has `UpArrow` to `DirectionUp`. It is the
+  same disc player, so the population does not widen.
+
+Built that way, `activityKeysFromRoles`, the 40 sets score **1241 keys the same, 53 running another list,
+34 that Logitech binds and the rule does not, and 70 that the rule binds and Logitech does not**. All of
+the difference sits in 20 activities, and **the other 20 are Logitech's key for key**, both calibration
+activities among them and two customised ones that bind only the volume keys. The 20:
+
+* **"TV kijken" on the test account's Harmony 650 and 700 records**, the same activity in nine compiles,
+  four keys each: Select runs another command of the same set top box, and Info and the two arrows are
+  unbound. PanaWatch drives the same box on three of those records and matches whole there, so the
+  device's own map is not the cause. Why is not established. These nine are also exactly the nine sets
+  whose bucket ties are in the other order, below, so the set was built differently from the rest, which
+  points at an edit on the account. LG WebOS was imported onto those records from the same Harmony One
+  and matches, so the import alone does not explain it.
+* **the 11 activities of the three hand customised configurations that bind more than volume**: all three
+  of Danny's own Harmony 600 and four of the five on each copy of the contributed Harmony 700. Only PS3's
+  single key, PrevChannel, is asserted key by key; the others are asserted as differing. One is a
+  different case: that Harmony 600's "Chromecast" drives a device with no infrared, and its only other
+  keys, Play and Pause, send two other television commands, so the television is read as the control
+  device and its whole map is predicted.
+
+**The refinements change 65 keys, only ever scans 12, 26, 27, 31 and 32, and 39 of the changes are
+right.** All 26 wrong ones are the arrow fallback, on the ten "TV kijken", the nine and Danny's Harmony
+600's, on "Chromecast", and on the contributed pair's "Watch TV". Counted by distinct activity the arrow
+fallback is right on five, the two calibration activities, "Kodi kijken", "LG WebOS" and "PanaWatch", and
+wrong on four. Without the refinements the calibration "Watch a Movie" is wrong on Exit and both channel
+keys and lacks both arrows.
+
+**Control**: the same 40 with the two roles swapped match 3 keys.
+
+**The 40 are fewer independent cases than they look.** The test account's "TV kijken", "LG WebOS",
+"Kodi kijken" and "PanaWatch" are each compiled three to nine times, so the 40 are about 14 distinct
+activities.
+
+**The order of a set's entries is not built here.** They are ascending in the bucket order of section
+315 on 40 of 40 activity sets, every one with ties. Inside a bucket `0x8C` precedes `0x05` in 26 and
+follows it in 9, and the 9 are the nine "TV kijken" copies, which is one activity; what decides it is not
+established. `composeActivity` writes the set.
+
+### Which scan is the arrow
+
+`reference/button-maps.md` left scans 26 and 50, and 27 and 42, as two symmetric pairs on the Harmony 600,
+since every activity in the two calibration configurations gives both members one command. The device
+maps break it. Logitech's stated device button maps for the three calibration devices, the capture
+`GetButtonMaps_skin71`, give each of them `DirectionUp` and `DirectionDown` and no `UpArrow` and no
+`DownArrow`; and in `calibration_h600` each of the three devices' own mode records binds 26 and 27 to the
+null instruction where 50 and 42 send its DirectionUp and DirectionDown. So 26 is `UpArrow`, 27
+`DownArrow`, 50 `DirectionUp` and 42 `DirectionDown`, on the Harmony 600. That capture names the device
+records of the calibration Harmony One's account, set up with the same three devices, which is a gap
+between the two sources this does not close. The Harmony 650 and 700 compiles are scored here on the same scan
+table, which the key score supports and nothing else here checks.
+
+### What the compiler writes, screen by screen
+
+On the ten compiles that are not hand customised, **every item on every activity's working screen is an
+item of a device's own screen pages: the same list under the same label**. That is 64 items counted per
+copy, 23 distinct items on six distinct activity screens, five of them not empty. So a screen command is
+named by its device and its label, `activityScreenRows`, and resolved to that item. On the customised
+three, 16 of 101 are; the rest are commands and labels a user built.
+
+**Which commands, and in what order, is not derived.** It is the platform's soft button list, a default
+suggestion or the user's choice, and on the calibration Harmony 600 the screen's order is exactly the
+stated soft button order. That order is not the bucket order of anything tried: the calibration
+selections are one device's commands in an order no hash of their names or function numbers gives. So
+the selection is an input and the layout is the composer's: four a page, top left, top right, bottom
+left, bottom right, `ceil(n / 4)` pages and at least one, a counter only past one page.
+
+Composed from each activity's own commands in order with `composeActivityScreen`, 38 of the 40 compose
+and **41 of their 47 working screen pages are Logitech's** in pictures, fonts, texts, places and
+bindings, counted per copy, texts compared by value since the compiler often draws a string by reference
+to an equal one, section 312. The record entries match on 38 of 38 and the start up title on 38 of 38.
+The six other pages are two each of three customised activities, and each of those has a page Logitech
+leaves short before its last, a gap the user left that a list of commands cannot state, so every later
+command sits one corner earlier in ours; no activity that matches has such a page. The two refused are
+the same contributed activity in both copies, below.
+
+### How a label is fitted
+
+Three things the composer refused or did not know, now measured:
+
+* **A corner label breaks onto two lines** the way a word wrap does. The population is the labels drawn in
+  their page's most common font where a corner label sits, one line at y 40 or 90, two at 25 and 40 or 75
+  and 90, a left one from x 3 and a right one ending at 125 line by line, counted once per configuration,
+  label and place: 2037, 1156 on one line and 880 on two, 2036 measurable, the other a glyph the
+  character map does not name. That is 422 distinct texts. A label without a space stays whole, one within
+  58 pixels stays whole, and a wider one breaks at spaces with as many words to a line as fit within 58.
+  Every width from 55 to 58 reproduces all 2036. The band's edges are three distinct labels, `TV Vol+` at
+  55 in the contributed Harmony 700 the widest whole label with a space, and `Sony TV` in the calibration
+  and `TV Input` in the contributed pair at 59 the narrowest broken; only 8 distinct labels stay whole
+  with a space in them, and on the nine test account compiles every label with a space is broken and the
+  narrowest is 63, so those constrain nothing below. The composer takes the band's top. "As many words as
+  fit" is tested by one distinct label, `Rcvr V-` over `Aux`; every other two line label has one space. A
+  single word of 59 stays whole, so the rule is not one width for every label; measuring a label with a
+  space as if it had a trailing one against 59 to 62 is the same rule spelled the other way.
+* **No corner label line in that font is wider than 59 pixels.** `Antenna`, 60 in it, is drawn by the
+  compiler in another font, in the contributed pair, which is the one case of the kind and corrects
+  `FOUR_SLOT_LABEL_MAX` from 60, a limit the composer had set itself, to 59. 890 corner cells are drawn in
+  a font other than their page's most common one, most of them help and dialog text, 60 of them cut with
+  `..`, and the choice is not "smaller when too wide": 128 are as wide or wider in their own font, and 16
+  on device pages would fit the page's font. Choosing a font is not built, and a label too wide for two
+  lines of the page's font is refused, which is what refuses the contributed Harmony 700's "Watch TV" in
+  both copies.
+* **The start up title breaks the same way at 123 pixels** onto y 5 and 19, each line centred: `Starting
+  Watch a` over `Movie` and `Starting Play Audio` over `Cassette`, at the x the compiler draws them. The
+  37 one line start up titles of the 13, 10 distinct, are all centred and none is wider than 123,
+  `Starting Watch Bluray` in the contributed pair; the broken ones, three titles and two distinct, are
+  130 and 163 whole, so where from 124 to 130 the break begins is not known.
+
+The device page composer is unchanged and still draws a label on one line; only its limit moved to 59.
+
+### Scope, decision 16
+
+Measured on arch 14, the Harmony 600, 650 and 700, and built for it: the screen half is those three's
+four corner layout. The Harmony One's activities have the same roles on the platform and are not scored
+here.
+
+### Falsification
+
+A Logitech compile whose activity, without a user's hand in it, puts a non volume key on a device other
+than the one most of its keys use; a label with a space of 55 pixels or less that the compiler breaks,
+or one of 59 or more that it keeps whole; on the remote, a key of a composed activity that sends
+something other than what the same key sends on that device's own Devices page.
+
+### For the hardware check
+
+Nothing here has been on a remote. On the Harmony 650, an activity composed with
+`compose-activity.ts --roles volume=<receiver>,control=<set top box> --commands ...` must send, key by
+key, the receiver's own VolumeUp, VolumeDown and Mute, and on every other key what the same key sends on
+the box's own Devices page, UpArrow and DownArrow sending the box's DirectionUp and DirectionDown. Its
+screen must draw the chosen commands in the four corners in the order given, each running the command of
+the same label on that device's Devices screen.
+
+### Where it lands
+
+* `packages/codec/src/activityroles.ts`: the roles, the key map, the screen rows, the inference.
+* `packages/codec/src/compose.ts`: the two line corner label and start up title, the 59 pixel limit.
+* `packages/codec/bin/compose-activity.ts`: `--roles` and `--commands`.
+* `packages/codec/test/activityroles.test.ts`: the stated map's devices, the key score with every
+  differing activity named, the swapped control, the refinements' account, the screen score, and the
+  corner label census with the widths either side of the band as its control.
+* `docs/config-format.md` under base slot 9, and `reference/button-maps.md` for the arrows.
