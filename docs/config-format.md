@@ -688,6 +688,17 @@ own screens draw too, 3 of 3, and none of the 6 one item device pages beside it,
 the menu's own that no page outside the menu draws, 4 menus of 4. So a page growing from one activity to
 two takes the full page's picture.
 
+**An activity menu's paging is its counter and nothing else**, section 316, on the thirteen arch 14
+configurations Logitech compiled: no counter on 6 of 6 one page menus, `n/m` on 16 of 16 pages of the 7
+multi page ones at x `0x6A`, `0x71`, `0x76`, **the corner lists' positions and not a two row device
+list's**, in the font the device mode pages draw their counters in, 7 menus of 7, and the record list
+`0x72` under tags `0x99` and `0x84` and `0x73` under tag `0x2D` at one page and at several, 13 of 13. A
+page of one activity holds it on scans 8 and 2, label centred at y 35, and draws **the picture the
+activities' working screens draw on a page of one command or none**, 4 of 4, which is neither its menu's
+first page picture nor any device list page's; a full page after the first draws the first page's
+picture, 5 of 5. A page added to a full menu copies the last page's chrome; a menu of one page gains the
+counter right after its title.
+
 **Every arch 14 activity's enter list opens with its own start up screen**, "Starting" and its name,
 then writes 1 into the variable every command's delay step tests, and ends by writing 0 into it, 13 of
 13, section 289. So the inter device delay acts only inside an activity's start.

@@ -48,7 +48,7 @@ copied. **Every chapter ends with a configuration that works on the 650.**
 - [ ] 3.9 Picking the running activity again: Logitech gives it a list of its own, the inputs and the working screen without the start up screen or power; ours replays the whole start (tag 5, section 313)
 - [ ] 3.10 Leave devices on when switching activities, an option MyHarmony offers the 650: what it changes in the configuration
 - [ ] 3.11 Put an activity on Watch TV, Watch a Movie or Listen to Music: one entry in the key map that is always installed; an activity with no key stays on the menu, and an empty key shows the "add an Activity" screen (section 314); `setActivityKey` and `clearActivityKey` built, on the 650 still to see a moved key start its activity, and an emptied key needs a base whose compile left one empty
-- [ ] 3.12 A new activity menu page: a row can be added today only while the menu holds an odd number of at least three activities, so a second composed activity is refused
+- [ ] 3.12 A new activity menu page when the last one is full: composed and calibrated against Logitech's own menus (section 316); on the 650 still to check that it pages to the new page, every counter reads n/m and the new row starts its activity
 - [ ] 3.13 No help and no Remote Assistant: the Help key does nothing in our configuration and every activity goes straight to its working screen, as the Harmony 600's configuration without an assistant already does; help is postponed to todo-later 3.3
 - [ ] 3.14 A passthrough device in an activity, one a signal passes through unaltered
 

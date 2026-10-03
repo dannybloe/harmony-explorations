@@ -309,7 +309,11 @@ produce a config the remote accepts and mishandles.
   and binds only the keys whose frame one of the new commands sends. A device list whose last page is
   full gets a new page, and **every page of that list then has to count to the new total**, `n/m` on
   the title's line, a list of one page gaining a counter it did not have, section 312: a page added
-  without it reads `2/3` on a list of four. That was refused until then. Two refusals are deliberate: a
+  without it reads `2/3` on a list of four. That was refused until then. **The activity menu pages the
+  same way and is not a two row device list**, section 316: its counter sits at the corner lists' x,
+  and its new page draws the working screens' one command picture rather than its last page's, so a
+  composer that took both from the device list's two row rule would write a page that parses and draws
+  the counter and background no Logitech compile has. `FourSlotNewPage` is where the two differ. Two refusals are deliberate: a
   tenth page, whose counter would be two digits drawn further left, and a label wider than sixty pixels,
   the composer's own limit, the widest compiled corner label being 59. **Restating a counter digit can
   take a digit other screens borrow**: the compiler draws a string inline once and points every equal

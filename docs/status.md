@@ -564,7 +564,7 @@ finding.
 
 `todo.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 315<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 316<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and flash has been written on five units**, the first in section 222:
@@ -837,6 +837,18 @@ cannot drift apart; what a reader should not expect is two independent statement
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
 
+**An activity can now be added to a Harmony 600, 650 or 700 whose activity menu is full, section
+316.** The menu shows two activities to a screen, so it could only take a new one while its last screen
+had room, and a second composed activity on the Harmony 650 was refused. The composer now opens a new
+screen there, with the activity on its top row, the same background Logitech gives a screen holding one
+activity, and "3/3" in the corner with every earlier screen restated. Checked against Logitech's own
+work: a fifth activity added to the 650's four gives a third screen drawn the way Logitech drew the
+Harmony 700's third for five, and a fourth added to the 650's three gives exactly the two screens
+of Logitech's own 650 compile holding those three and one more. Built and read back on the 650's configurations with two
+and three activities added, every check passing; not written to the remote yet. One configuration still
+refuses, the calibration Harmony 600, because none of its screens draws the background a screen of one
+activity needs.
+
 **A device can now be added to a Harmony 600, 650 or 700 whose device list is full, section 312.** The
 list of devices on these remotes shows four, or two, to a screen, and a seventh device on the Harmony
 650 has nowhere to go on its two row list, so it was refused. The composer now opens a new screen at
@@ -948,7 +960,9 @@ the composer now shares the step that adds an item to a page between the two men
 differ: pressing the row selects the activity rather than opening a device, and a full page has a
 background of its own, which a page holding one activity has to take once a second activity joins it. Built and
 read back on the 650, 600 and 700 configurations with every check passing; the calibration 600 is
-refused because its only page is full and adding a page is not built. It has not been pressed on a
+refused because its only page is full and adding a page is not built (built since section 316, which
+refuses the calibration 600 for another reason: none of its screens draws the background a new page
+needs). It has not been pressed on a
 remote yet. Looking at the activities for this also showed that every one of the thirteen opens with a
 "Starting" screen of its own, and switches on, for the length of its start up, the setting every
 command's delay step tests. So the composed activity will have to do the same, or the delay between

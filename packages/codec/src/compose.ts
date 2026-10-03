@@ -3269,9 +3269,29 @@ const TWO_ROW_COUNTER_X: readonly [number, number, number] = [0x63, 0x6a, 0x6f];
  */
 const FOUR_SLOT_MAX_PAGES = 9;
 
-/** The three x positions a menu's page counter sits at, by its layout. */
+/**
+ * The three x positions a **device list's** page counter sits at, by its layout. The activity menu is
+ * the exception that makes this a device list rule rather than a layout rule: it is a two row layout
+ * and draws its counter where the corner lists do, `FOUR_SLOT_COUNTER_X`, on all 16 pages of the 7
+ * multi page activity menus Logitech compiled for the Harmony 600, 650 and 700 here, section 316.
+ */
 function fourSlotCounterX(rows: boolean): readonly [number, number, number] {
   return rows ? TWO_ROW_COUNTER_X : FOUR_SLOT_COUNTER_X;
+}
+
+/**
+ * What differs between the two arch 14 menus when one opens a page, and nothing else does: where the
+ * counter sits, which font it falls back on where no page of the menu draws one yet, and which picture
+ * a page holding one item draws. The step itself, `openFourSlotMenuPage`, is shared, decision 17.
+ *
+ * `background` is asked **after** every insertion the step makes below the page, since a picture
+ * address read earlier is stale by them; it gets the menu's last full page's own picture, which is the
+ * answer on a two row device list and not on the activity menu.
+ */
+interface FourSlotNewPage {
+  counterX: readonly [number, number, number];
+  counterDefault: number;
+  background: (now: Container, lastPicture: number | undefined) => number | undefined;
 }
 
 /**
@@ -3285,8 +3305,9 @@ const FOUR_SLOT_CHROME_OPCODES: ReadonlySet<number> = new Set([
 ]);
 
 /**
- * A new last page on an arch 14 device list menu whose last page is full, holding the one item being
- * added, and every page of the menu then counting to the new total, section 312. The arch 14
+ * A new last page on an arch 14 menu whose last page is full, holding the one item being added, and
+ * every page of the menu then counting to the new total: a device list's, section 312, and the
+ * activity menu's, section 316, whose differences are the caller's `FourSlotNewPage`. The arch 14
  * counterpart of the Harmony One's `composeMenuPage`, and **the page is the one Logitech's compiler
  * writes**: composed on a configuration whose lists are full, the new pages are instruction for
  * instruction the pages the compiler wrote on a configuration with one device more, once font numbers
@@ -3302,7 +3323,9 @@ const FOUR_SLOT_CHROME_OPCODES: ReadonlySet<number> = new Set([
  *   the labels the bottom bar and its word, which is "Activities" on the idle list and "Activity" on
  *   each activity's own, section 294. So the copy is per menu and not from one template;
  * * **a corner page holding one item draws the one item background**, the device mode pages' own,
- *   and a two row page draws the picture every page of its list draws, whatever it holds, section 285;
+ *   and a two row device list page draws the picture every page of its list draws, whatever it holds,
+ *   section 285. The activity menu is two row and is the exception: its page of one activity draws the
+ *   activities' working screens' one command background, section 316. Which is the caller's say;
  * * **the item takes the first place**: top left at x 3 and y 40 on a corner page, the top row's two
  *   buttons and a centred label at y 35 on a two row one, each binding running a row list of its own
  *   and the page's pool copy others, as `growFourSlotMenu` binds a grown item;
@@ -3323,11 +3346,11 @@ const FOUR_SLOT_CHROME_OPCODES: ReadonlySet<number> = new Set([
  * section 69; the list at the end of the page list run; the entry's count and a placeholder pointer;
  * the program and its six byte page record right after the last page's record, where the compiler
  * keeps them, which is the entry's own offset; and the swap. Every address the block embeds is read
- * after the last insertion below it, and `singleOf` is asked for the background then too.
+ * after the last insertion below it, and `paging.background` is asked for the background then too.
  */
 function openFourSlotMenuPage(
   start: Container, menu: number, firstRowList: number, codes: readonly number[], font: number,
-  counterDefault: number, singleOf: (c: Container) => number | undefined,
+  paging: FourSlotNewPage,
 ): { container: Container; bound: number } {
   let current = start;
   const recordOf = (): ModeRecord => {
@@ -3348,10 +3371,11 @@ function openFourSlotMenuPage(
   if (total > FOUR_SLOT_MAX_PAGES) {
     throw new ComposeError(`menu ${menu} would have ${total} pages, and a counter of two digits is not composed`);
   }
-  const counterX = fourSlotCounterX(layout.rows);
+  const counterX = paging.counterX;
   // The counter's font: the menu's own where a page already draws one, which on every configuration
-  // here is also the device mode pages' counter font that the caller passes as the default.
-  let counterFont = counterDefault;
+  // here is also the device mode pages' counter font that the caller passes as the default, for the
+  // device lists and for the 7 multi page activity menus alike, section 316.
+  let counterFont = paging.counterDefault;
   for (const page of before.pages) {
     const number = textAt(screenProgram(current, page.program) ?? [], counterX[0], FOUR_SLOT_TITLE_XY[1]);
     if (number?.font !== undefined) { counterFont = number.font; break; }
@@ -3442,7 +3466,7 @@ function openFourSlotMenuPage(
   }
   const head = program.slice(1, title.index + 1);
   const tail = program.slice(bar);
-  const background = layout.rows ? bitmapReference(program[0] as ScreenInstruction) : singleOf(current);
+  const background = paging.background(current, bitmapReference(program[0] as ScreenInstruction));
   if (background === undefined) {
     throw new ComposeError(`no page here draws the background a new page of menu ${menu} needs`);
   }
@@ -3493,17 +3517,18 @@ function openFourSlotMenuPage(
 
   // 6. Every page counts to the new total, and the page that had none, a menu's only page, gains one.
   return {
-    container: paginateFourSlot(parse(placed.blob), menu, layout.rows, counterFont),
+    container: paginateFourSlot(parse(placed.blob), menu, counterX, counterFont),
     bound: nextRow - firstRowList,
   };
 }
 
 /**
  * Make an arch 14 menu's page counters agree with its page count: every page draws `n/m` on the
- * title's line, its own number and the total, at the layout's three positions. **Arch 14's whole
- * paging is the counter**, where the Harmony One's `paginate` also restates a header total and
- * undeadens two keys: an arch 14 page carries its own chrome and calls no header, and a device list's
- * record list is the same whatever its page count, `openFourSlotMenuPage`.
+ * title's line, its own number and the total, at the three positions `x` the caller states, which are
+ * per menu and not per layout, `FourSlotNewPage`. **Arch 14's whole paging is the counter**, where the
+ * Harmony One's `paginate` also restates a header total and undeadens two keys: an arch 14 page carries
+ * its own chrome and calls no header, and a device list's record list is the same whatever its page
+ * count, `openFourSlotMenuPage`, as the activity menu's is, section 316.
  *
  * A page with a counter has its number and total restated through `pageTexts`, so a total drawn by
  * reference is pointed at a string reading the new one, which the new page's own inline total
@@ -3511,12 +3536,14 @@ function openFourSlotMenuPage(
  * is a menu's only page before it gained a second, gets one inserted right after its title, in the
  * counter font, the font in effect before being put back when what follows does not select its own.
  * That is the shape of every first page of a two page corner list on the 650 and the 700: title,
- * counter font, the three texts, label font, labels.
+ * counter font, the three texts, label font, labels, and of every first page of a multi page activity
+ * menu, section 316.
  */
-function paginateFourSlot(start: Container, menu: number, rows: boolean, counterFont: number): Container {
+function paginateFourSlot(
+  start: Container, menu: number, x: readonly [number, number, number], counterFont: number,
+): Container {
   if (start.architecture !== 14) throw new ComposeError('this paging is arch 14\'s');
   const t = pageTexts(start, menu);
-  const x = fourSlotCounterX(rows);
   const y = FOUR_SLOT_TITLE_XY[1];
   const count = modeRecords(t.current)?.[menu]?.pages.length ?? 0;
   if (count < 2) throw new ComposeError(`menu ${menu} has one page, so there is nothing to count`);
@@ -3874,8 +3901,13 @@ function composeFourSlotDeviceScreen(
     if (layout === undefined) throw new ComposeError(`menu ${menu} changed layout while being grown`);
     const grown = layout.used < layout.capacity
       ? growFourSlotMenu(current, menu, nextRow, menuCodes, template.labelFont, 'corners')
-      : openFourSlotMenuPage(current, menu, nextRow, menuCodes, template.labelFont, template.counterFont,
-                             (now) => fourSlotTemplate(now, options.keysLike).single);
+      : openFourSlotMenuPage(current, menu, nextRow, menuCodes, template.labelFont, {
+        counterX: fourSlotCounterX(layout.rows),
+        counterDefault: template.counterFont,
+        // A two row list's new page draws what its last page draws; a corner page holding one device
+        // the device mode pages' one item background, section 312.
+        background: (now, last) => (layout.rows ? last : fourSlotTemplate(now, options.keysLike).single),
+      });
     if (layout.used >= layout.capacity) pagesAdded.push(menu);
     current = grown.container;
     nextRow += grown.bound;
@@ -4339,6 +4371,66 @@ export function composeActivityMenuRow(
 }
 
 /**
+ * The picture a page of the arch 14 activity menu holding **one** activity draws, section 316: the
+ * background the activities' working screens draw on a page holding one command or none, by majority
+ * over those pages. All 4 such menu pages on the thirteen Logitech compiles for the Harmony 600, 650
+ * and 700 draw it, one each on `h650_config_region`, `h600_config`, `h700_config` and `h700_config_2`,
+ * the last two compiled for one account; none of the 4 draws its menu's first page picture, the device
+ * mode pages' one item picture or any device list page's picture.
+ *
+ * The working screens are the modes the cases of one base slot 14 record enter: keyed by activities on
+ * the menu and the idle value, every activity's case entering a mode and the idle value's not, which
+ * is `activityMaps`'s `working` record. **Found here rather than through `activityMaps`**, which
+ * demands the keys be exactly the menu's activities and the idle value and every activity's start the
+ * compiler's shape, `arch14Starts`. Neither holds while activities are being composed: a row is
+ * composed for an activity not on the menu yet, whose working screen `compose-activity.ts` composes
+ * first and so adds its case to the record, and an activity composed without screens is on the menu
+ * with no case and an enter list of another shape. So this asks only that the record have a case for
+ * the idle value and for at least one activity on the menu, and that every case but the idle value's
+ * enter a mode. The picture it finds is the one Logitech's page of one activity draws on every compile
+ * that has such a page, which the calibration in `compose.test.ts` asserts by finding the working
+ * screens another way, by their titles.
+ *
+ * Undefined where no record or several fit, or where no working screen page holds one command or
+ * none, which is `calibration_h600`, so that the caller refuses rather than drawing another picture.
+ */
+function activityMenuSingle(c: Container): number | undefined {
+  const idle = stateVariables(c).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME))?.record?.first;
+  const onMenu = new Set(activityBindings(c).map((one) => one.activity));
+  if (idle === undefined || onMenu.size === 0) return undefined;
+  const records = modeRecords(c) ?? [];
+  const candidates: number[][] = [];
+  for (const map of valueMaps(c) ?? []) {
+    if (map.ranges.length !== 0) continue;
+    const keys = map.entries.map(([key]) => key);
+    if (!keys.includes(idle) || !keys.some((key) => onMenu.has(key))) continue;
+    const modes: number[] = [];
+    let fits = true;
+    for (const [key, target] of map.entries) {
+      const queued = caseQueued(c, target);
+      const enters = queued?.opcode === ENTER_MODE;
+      // The idle value's case enters no mode on the working record and does on the key under
+      // Devices', which is what tells the two apart, section 290.
+      if (key === idle ? enters : !enters) { fits = false; break; }
+      if (key !== idle) modes.push((queued as Instruction).operand);
+    }
+    if (fits) candidates.push(modes);
+  }
+  if (candidates.length !== 1) return undefined;
+  const counts = new Map<number, number>();
+  for (const mode of new Set(candidates[0])) {
+    for (const page of records[mode]?.pages ?? []) {
+      if ((taggedList(c, page.list)?.entries.length ?? 0) > 1) continue;
+      const first = screenProgram(c, page.program)?.[0];
+      const picture = first?.opcode === OP_IMAGE ? bitmapReference(first) : undefined;
+      if (picture !== undefined) counts.set(picture, (counts.get(picture) ?? 0) + 1);
+    }
+  }
+  // The most drawn, the lowest address on a tie, as `workingTemplate14` picks its own.
+  return [...counts].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0]?.[0];
+}
+
+/**
  * The activity menu row on arch 14 (Harmony 600, 650 and 700), section 289: one row on the menu's
  * last page, bound to both buttons of that row, its label centred.
  *
@@ -4355,9 +4447,23 @@ export function composeActivityMenuRow(
  *   pages' picture. So a page that grows from one activity to two takes its menu's full page picture,
  *   which means a menu of one page and one activity is refused: there is no full page to take it from.
  *
- * No icon, since the arch 14 menu draws none, so `iconLike` is refused rather than ignored. A full last
- * page is refused too: a new page needs a page counter on every page of the menu, added where the menu
- * has one page and renumbered otherwise, which is `todo.md` 1.2.2's arch 12 work and not built here.
+ * No icon, since the arch 14 menu draws none, so `iconLike` is refused rather than ignored.
+ *
+ * **A full last page gets a new page, since section 316**, through the step the device lists open
+ * theirs with, `openFourSlotMenuPage`: the activity on the top row's two buttons, its label centred at
+ * y 35, the menu's own chrome, and a counter on every page. Until then a full page was refused, so a
+ * menu could take a row only while it held an odd number of activities, and a second composed activity
+ * on the Harmony 650 was refused. Two things are the activity menu's own and are what this passes:
+ *
+ * * **the counter sits where a corner list's does**, `FOUR_SLOT_COUNTER_X`, though the layout is two
+ *   row: 16 pages of 16 on the 7 multi page activity menus Logitech compiled here;
+ * * **the new page draws the activities' working screens' one command background**,
+ *   `activityMenuSingle`, which every page holding one activity draws, 4 of 4, and not its menu's first
+ *   page picture, which a two row device list's new page would copy.
+ *
+ * So the page count alternates what a row does: an odd number of activities leaves a last page with
+ * one, which the next row fills, and an even number a full one, which the next row opens a page past.
+ * What stays refused is a menu of one activity on one page, whose full page picture no page draws yet.
  */
 function composeFourSlotActivityRow(
   c: Container, label: string, set: number, menu: number, marker: Instruction,
@@ -4373,9 +4479,19 @@ function composeFourSlotActivityRow(
   if (layout === undefined || !layout.rows) {
     throw new ComposeError("the activity menu's last page is not the two row layout");
   }
-  if (layout.used >= layout.capacity) {
-    throw new ComposeError("the activity menu's last page is full, and a new menu page is not composed "
-      + 'on arch 14');
+  // A full last page gets a page after it, and both refusals that can stop it are made here, before
+  // anything moves: a tenth page, whose counter would be two digits, and a configuration whose working
+  // screens draw no one command background, which is the picture the new page needs. `calibration_h600`
+  // is that configuration, every page of its two activities' working screens holding three commands or
+  // four.
+  const full = layout.used >= layout.capacity;
+  if (full && record.pages.length + 1 > FOUR_SLOT_MAX_PAGES) {
+    throw new ComposeError(`the activity menu would need page ${record.pages.length + 1}, and a counter of `
+      + 'two digits is not composed');
+  }
+  if (full && activityMenuSingle(c) === undefined) {
+    throw new ComposeError("the activity menu's last page is full, and no working screen page holding one "
+      + 'command or none draws the background a page of one activity needs');
   }
 
   // The label's font: the one in effect at the closing bar of the page being grown, which is its
@@ -4404,8 +4520,9 @@ function composeFourSlotActivityRow(
   }
 
   // 1. The row lists: select the entry, write 0 into the marker. One per button on the page and one
-  // per button on its copy, identical, below base slot 10's table with their pointers appended.
-  const scans = [...(FOUR_SLOT_ROWS[layout.used] as readonly number[])];
+  // per button on its copy, identical, below base slot 10's table with their pointers appended. A new
+  // page puts the row on the top row, so two buttons either way.
+  const scans = [...(FOUR_SLOT_ROWS[full ? 0 : layout.used] as readonly number[])];
   const rowLists = 2 * scans.length;
   const actionSlot = archSlot(14, ACTION_TABLE_SLOT);
   const actionTable = c.pointerArrayAt(actionSlot);
@@ -4421,8 +4538,16 @@ function composeFourSlotActivityRow(
     Array.from({ length: rowLists }, (_, k) => c.flashBase + rowAt + k * oneRow.length)));
 
   // 2. The page grows by the row, its copy first, and a page that held one activity takes the
-  // picture its menu's full pages draw.
-  const grown = growFourSlotMenu(current, menu, rowList, codes, font, 'both');
+  // picture its menu's full pages draw. Or a full page gets a page after it holding the row, and every
+  // page counts to the new total: in the menu's own counter font where a page draws one, and otherwise
+  // in the device mode pages' counter font, which is the menu's on all 7 multi page menus, section 316.
+  const grown = full
+    ? openFourSlotMenuPage(current, menu, rowList, codes, font, {
+      counterX: FOUR_SLOT_COUNTER_X,
+      counterDefault: fourSlotTemplate(current, undefined).counterFont,
+      background: (now) => activityMenuSingle(now),
+    })
+    : growFourSlotMenu(current, menu, rowList, codes, font, 'both');
   if (grown.bound !== rowLists) {
     throw new ComposeError(`${grown.bound} row lists bound against the ${rowLists} written`);
   }

@@ -41169,3 +41169,186 @@ or 700 list that differs from `modeZeroKeyList`.
   in two reduced hashes' orders as controls that fail; the hash, the capacity steps and the refusal of a
   tie.
 * `docs/config-format.md` under the key table: the rule, and the correction of the canonical order.
+
+## 316. An arch 14 activity menu opens a page when its last one is full, and the page is the one Logitech compiles
+
+**Date:** 3 October 2026. **Status:** confirmed by construction and by calibration against Logitech's own
+compiles; not yet written to a remote.
+
+**Asked for by `todo-compile-650.md` 3.12**: the arch 14 activity menu composer of section 289 could
+only fill a last page holding one activity, so a menu took a row only while it held an odd number of
+activities, three or more, and a second composed activity on the Harmony 650 was refused. Section 312
+opened pages on the device lists; this applies that step to the activity menu.
+
+**Sources.** The thirteen arch 14 compiles section 312 lists, Logitech's work all of them:
+`h650_config_region`, `h650_panasonic_config`, `h600_config`, `calibration_h600`, `h700_config`,
+`h700_config_2`, `h700_28_config_region`, and the two Harmony 650 and four Harmony 700 power hold compiles
+of sections 306 and 307. Read first: sections 289, 290, 293, 294 and 312 of this document and the code
+they landed. **Neither client nor firmware was opened**, section 293's reasoned exemption: the layout is
+what the compiler wrote, and the compiler ran on Logitech's server. How the remote turns a page is the
+firmware's and unread, as it was for section 312.
+
+**Scope, decision 16.** Arch 14 (Harmony 600, 650 and 700) only. The Harmony One's activity menu pages
+are section 293, and nothing else has an activity menu composer.
+
+### What an activity menu's paging is, on the thirteen
+
+Every one of the thirteen has one activity menu, two activities to a page on both buttons of a row,
+section 289. Six hold one page: `calibration_h600`, `h700_28_config_region` and the four Harmony 700
+power hold compiles, two activities each. Seven hold several: `h650_config_region`, `h600_config` and
+the two Harmony 650 power hold compiles two pages each, `h650_panasonic_config` two, and `h700_config` and
+`h700_config_2` three each, sixteen pages between them.
+
+| | count |
+|---|---|
+| one page menus drawing no counter | 6 of 6 |
+| pages of multi page menus drawing `n/m` at x `0x6A`, `0x71`, `0x76` | 16 of 16 |
+| multi page menus drawing their counter in one font, a font the device mode pages draw their counters in | 7 of 7 |
+| menus whose record list is `0x72` under tags `0x99` and `0x84` and `0x73` under tag `0x2D` | 13 of 13: 6 of one page, 7 of several |
+| pages holding one activity, on scans 8 and 2 with one label centred at y 35 | 4 of 4 |
+| of those, drawing the picture the activities' working screens draw on a page of one command or none | 4 of 4 |
+| of those, drawing their menu's first page picture, the device mode pages' one item picture, or any device list page's picture | 0 of 4, each |
+| full pages after the first drawing their menu's first page picture | 5 of 5 |
+
+The four pages of one activity are one each on `h650_config_region`, `h600_config`, `h700_config` and
+`h700_config_2`, the last two compiled for one account; the five full pages after the first one each on
+`h650_panasonic_config`, the two Harmony 650 power hold compiles, `h700_config` and `h700_config_2`.
+
+So **an activity menu's paging is its counter and nothing else**, as a device list's is, and the record
+list does not change with the page count. The activity menu is a two row layout and differs from a two
+row device list in exactly two places, both measured above: its counter sits where a **corner** list's
+does, where a two row device list draws it at `0x63`, `0x6A`, `0x6F`; and its page of one activity draws
+neither its menu's full page picture nor a device list's but the working screens' one command picture,
+section 289's "a picture the activities' own screens draw too" named. A full page draws the menu's first
+page picture, so a page that fills takes it, which `growFourSlotMenu` has done since section 289.
+
+The working screens are found in the test by their **title**, the activity's menu label, and by the
+composer through the base slot 14 record that enters them, so the two routes share nothing but the
+container.
+
+**Which counter font Logitech would choose for a menu that had none is not measured**: no compile pair
+here is one account's menu at one page and at two. The composer takes the device mode pages' counter
+font, which is the menu's own on all 7 menus that have one.
+
+### What is composed
+
+`composeFourSlotActivityRow` opens a page on a full last page where it refused, through section 312's
+step, `openFourSlotMenuPage`, and fills a page of one activity as before. What differs per menu is now
+the caller's, `FourSlotNewPage`: the counter's three x positions, the font it falls back on, and the
+background of a page holding one item. The device list passes what section 312 measured; the activity
+menu passes `FOUR_SLOT_COUNTER_X`, the device mode pages' counter font, and `activityMenuSingle`.
+`paginateFourSlot` takes the x positions rather than a layout, since the layout does not decide them.
+
+**The new page** copies its menu's last page's chrome, the queued `0x73` included, puts the activity on
+the top row's two buttons with its label centred at y 35 in the last page's label font, or the nearest
+that spells it, and draws a counter; every other page is restated to the new total, and a menu of one
+page gains a counter after its title.
+
+**`activityMenuSingle`** finds the working screens' base slot 14 record by what its cases do, as
+`activityMaps` does, without that function's two demands, that the keys be exactly the menu's activities
+and the idle value and every activity's start the compiler's shape. Neither holds while activities are
+composed: `compose-activity.ts` composes an activity's working screen before its row, so the record
+already has a case for an activity not on the menu, and an activity composed without screens is on the
+menu with no case and an enter list of another shape. It asks for a case for the idle value entering no
+mode, a case for at least one activity on the menu, every other case entering a mode, and exactly one
+such record.
+
+**Refused, before anything moves**: a tenth page, whose counter would be two digits; and a full menu on a
+configuration where no working screen page holds one command or none, so that there is no picture for
+the new page. `calibration_h600` is that configuration: every page of its two activities' working screens
+holds three commands or four, so its third activity is still refused, now for that reason. A menu of one
+activity on one page stays refused, section 289, since its full page picture is drawn by no page yet.
+
+### The calibration
+
+Logitech's compiles hold menus of two, three, four and five activities, so each even one has a compile
+of one activity more to be compared with. Pages are compared instruction for instruction after section
+312's `pageShape` normalisation, fonts as roles by first appearance and a label as its place, with the
+counter read at the activity menu's positions and the background named through the title route.
+
+* **Two activities on one page, plus one**, on the five such compiles that have a working screen page of
+  one command or none, `h700_28_config_region` and the four Harmony 700 power hold compiles: the second
+  page is Logitech's page of one activity, and the first page up to its labels is a first page of
+  Logitech's multi page menus. **Plus one more**, the second page is Logitech's full page after the
+  first.
+* **Four on two full pages, plus one**, on `h650_panasonic_config` and the two Harmony 650 power hold
+  compiles: the third page is Logitech's page of one activity, the second Logitech's full page after the
+  first, the first's head a first page's.
+* **The same model, page for page**: `h650_config_region`'s three activities plus one are
+  `h650_panasonic_config`'s two pages exactly, Logitech's own Harmony 650 compile holding those three
+  activities and a fourth, PanaWatch.
+* **The Harmony 600**: `h600_config`'s three plus one fill its second page, equal to the 650 and 700
+  full page after the first with the 600's own queued instruction, since no 600 compile has a full
+  second page.
+
+**Logitech's four pages of one activity read as two shapes**, and they differ in one instruction, the
+queued `0x73` each of them carries: operand 1 on `h600_config`'s and 2 on the other three, a value the new
+page copies from its own menu's last page. Both shapes and the one difference are asserted.
+
+**The controls.** No page of one activity Logitech wrote reads as one of its full pages after the first
+or as one of its first pages, so matching the first set is not matching anything. A wrong total fails: the composed
+second page's total pointed by hand at a `1` reads `total reading 1` and matches nothing. And two wrong
+composers were run by hand and not committed, each failing both the calibration and the 650 test below:
+the two row device list's counter positions, and the last page's own picture as the new page's
+background, which is what a two row device list's new page draws.
+
+Two differences are kept, as sections 294 and 312 kept them: the composed counter texts are inline where
+the compiler points at an equal string, and the row lists are appended to base slot 10 rather than
+numbered in stored order.
+
+### On the Harmony 650's configurations
+
+Each activity composed whole, as `compose-activity.ts` composes one: its start up and working screens,
+the activity, its menu row and its own device list. Onto `h650_config_region`, three activities: the
+first fills its second page, the second opens a third, the third fills it. Onto `h650_plasma_base`, four
+on two full pages: the first opens a third page, the second fills it, the third opens a fourth. After each
+of the six compositions: every page of the menu reads `n/m` at the three positions, the record list is
+unchanged, the last page draws the working single while it holds one activity and the first page's
+picture once it holds two, every page and its copy agree entry by entry, every row list the row wrote is
+bound once, every menu page draws with no glyph or picture missing, the checksum agrees, the emitter
+round trips, the accounting leaves unclaimed only what the input did, which on `h650_plasma_base` is
+section 312's day 0 timestamp, the state table is consistent, and every text of every screen that was
+there before, the menu's apart, reads as before in the same font at the same place.
+
+`compose-activity.ts` itself, run on `h650_plasma_base`, composes the row and stops at its save, on that
+same timestamp, which is `todo-compile-650.md` 1.3.1. Run on `h650_devicelist_region`, section 294's
+configuration with four activities on two full pages, it writes a file whose activity is on the third
+page's top row.
+
+### What the Harmony 650 has to show
+
+Not run. Written to the 650 with an activity on a new page: the ordinary screen after the restart; the
+activity menu reading `1/3`, `2/3` and `3/3` in its top right corner; paging reaching the third page, the
+new activity alone on its top row with nothing missing from the screen; either button beside it
+starting that activity, its "Starting" screen and its devices; the first two pages as they were. With a
+second activity composed after it, that one on the third page's bottom row, starting itself.
+
+### Falsification
+
+A Logitech compiled arch 14 configuration whose multi page activity menu draws its counter elsewhere,
+whose one page menu draws one, whose page of one activity draws another picture, or whose record list
+changes with the page count; on the 650, a third page that does not page in, a counter not `n/m`, or a
+row on it that starts another activity.
+
+### The reviewer's questions, asked of these sentences
+
+Every count above is per page or per menu as its row says, and was re-run at that level: the 16 counters
+per page, the 7 fonts per menu, the 13 record lists per menu, the 4 pictures per page. "Every one of the
+thirteen has one activity menu" is per configuration and the test finds one menu per configuration. "An
+activity menu's paging is its counter and nothing else" rests on the record list being 13 of 13 at both
+page counts and on the calibration's page for page agreement; that the firmware reads nothing else when it turns a page is
+not measured, as in section 312. The rule for the new page's picture is not fitted to the pages it came from alone: the
+composer's route finds it through base slot 14, the test's through titles, and the calibration holds on
+the ten compiles composed onto. The first draft of `activityMenuSingle`'s docstring said "three configurations of two
+models"; it is four compiles of three models, corrected before commit. No title claims more than its
+body: the paging test's tally names each count it asserts.
+
+### Where it lands
+
+* `packages/codec/src/compose.ts`: `FourSlotNewPage`, `openFourSlotMenuPage` and `paginateFourSlot`
+  taking it, `composeFourSlotDeviceScreen` passing section 312's values, `activityMenuSingle`, and
+  `composeFourSlotActivityRow` opening a page where it refused.
+* `packages/codec/test/compose.test.ts`: the paging rule over the thirteen, the calibration with its
+  controls, two and three activities onto the two 650 configurations, and section 289's refusal test
+  rewritten to what refuses `calibration_h600` now.
+* `docs/config-format.md`, the `writing-a-config` skill, `todo-compile-650.md` and `docs/status.md`.
