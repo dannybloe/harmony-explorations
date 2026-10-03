@@ -495,11 +495,14 @@ export function setTimerDuration(c: Container, index: number, seconds: number): 
  * is the single `0x7C` at the top level of the action list that device's `Power` variable runs on
  * its 0 to 1 transition, `powerOnInstructions`.
  *
- * **`tenths` is capped at 100 and that is the firmware's cap, not a field width.** A byte holds 255,
- * but the enqueueing worker folds two consecutive quantities for one device by taking the larger
- * **except** at 100, where it pushes a second entry instead, section 70. So a value above 100 is
- * spelled out as several instructions, which is a length change and not a byte edit, and a caller
- * asking for one here is asking for something this function cannot honestly do.
+ * **`tenths` is capped at 100, which no inline power on delay here exceeds, not a field width.** A byte
+ * holds 255, and the enqueueing worker folds two consecutive quantities for one device by taking the
+ * larger **except** at 100, where it pushes a second entry instead, section 70. No inline power on delay
+ * on arch 8, 9 or 12 exceeds 100, and a larger one spelled out would be a length change and not a byte
+ * edit. Logitech's compiler does write a single `0x7C` above 100 for a sequence's pause on the Harmony
+ * One, section NNN, and the Harmony 350's factory configuration holds one of 170 in an unread list, but
+ * whether the remote honours one is unmeasured, so a caller asking for one here is asking for something
+ * this function cannot honestly do.
  *
  * **What it will not tell you is whether the delay does anything**, section 236. The quantity holds
  * back the next command to its own device and nothing else, so in an activity that sends that device

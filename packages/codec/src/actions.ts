@@ -281,7 +281,7 @@ const MAIN: ReadonlyMap<number, MainEntry> = new Map<number, MainEntry>([
   [0x79, means('add the operand to the accumulator', 34)],
   [0x7a, means('load the accumulator with the operand', 34)],
   [0x7b, means('build an instruction at runtime and queue it', 34)],
-  [0x7c, means('a per device quantity, capped at 100', 70)],
+  [0x7c, means('a per device delay in tenths, folded no further than 100', 70)],
   [0x7d, means('send an infrared code', 33)],
   [0x7e, means('enter the base slot 6 mode the operand indexes', 37)],
   [0x7f, means('run the base slot 10 action list the operand indexes', 34)],

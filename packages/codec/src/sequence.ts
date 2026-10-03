@@ -8,16 +8,27 @@
  * `Actions`, `Name` and `SequenceId`, the actions being `ButtonCommandAction` and `ButtonDelayAction`,
  * `docs/myharmony/model.md`.
  *
- * **What it compiles to, read off the one configuration that holds one**, the spare Harmony One after
- * Danny authored two on 23 August 2026, `one_spare_20260830`, against the account's own statement of
- * the same two sequences, captured that evening. Section NNN:
+ * **What it compiles to, read off the four compiles that hold one**, the spare Harmony One's account after
+ * Danny authored two on 23 August 2026, `one_spare_20260830` and the three protocol campaign compiles,
+ * against a capture of the same two sequences' steps taken that evening from a second account record.
+ * Section NNN:
  *
  * * **one action list**, each command step a `0x7F` call of that command's send list and each pause step
  *   a `0x7C` per device of the activity, carrying the wait in tenths of a second, section 235;
  * * every distinct command gets **one** send list, shared by every step and every copy that sends it,
- *   `{0x7D, 0x7C}` with the device's **inter key delay** as the quantity: the set top box's are all 2
- *   where the same box's device mode keys carry 1, and the account states its inter key delay as 200
- *   milliseconds, the television's and the receiver's as 100, whose lists carry 1;
+ *   `{0x7D, 0x7C}` with the device's **inter key delay** as the quantity: the 16 set top box lists a
+ *   step calls are all 2 where the same box's device mode keys carry 1, and the account states its
+ *   inter key delay as 200 milliseconds, the television's and the receiver's as 100, whose lists carry
+ *   1. That box is the only separating device in the sequences;
+ * * **the record a command sends is one of its own**, a single block record with no held block, where
+ *   the key for the same command sends a two block one: the compile added one per command it lacked,
+ *   six for the set top box and one each for the television and the receiver. Over the whole
+ *   configuration every list sending a record of two or more blocks carries 1, 380 of them, and every
+ *   list carrying anything else sends a single block one, so the quantity may belong to the record's
+ *   shape rather than to the sequence. The single block lists are not uniform: the receiver's carry 10
+ *   on 19 and 1 on 10, so they do not all carry the inter key delay either. **This composer makes no
+ *   record**: it sends the record the caller names, so a sequence composed from a key's record sends a
+ *   two block one where Logitech's would not;
  * * the pause names **the activity's devices**, not the device the neighbouring step sends to: the
  *   Netflix sequence sends to the set top box alone and its one pause names all three devices;
  * * a pause is never merged with the next one, and a pause at the end is kept;
@@ -37,9 +48,9 @@
  * the configuration that results, goes through `assertQueueFits`, section 238: a sequence is spooled
  * into the remote's forty instruction action queue whole, so a long one with many pauses on a three
  * device activity fills the ring and the remote silently drops the rest. Logitech's own editor allows
- * 25 steps, and a 25 step sequence with fourteen pauses on a three device activity is 25 + 14 * 2 = 53
- * instructions in one list, which their compiler would emit and the remote would truncate. So this
- * composer refuses by the queue and never by a step count. The one sequence that hung a Harmony One
+ * 25 steps, and a 25 step sequence of 11 commands and 14 pauses on a three device activity is
+ * 11 + 14 * 3 = 53 instructions in one list, within the step limit their editor states; no such
+ * sequence has been compiled, and the remote would drop what does not fit. So this composer refuses by the queue and never by a step count. The one sequence that hung a Harmony One
  * peaked at 35 of the 40, under the ceiling, so passing this rail is not a promise the remote copes:
  * the softer bound is a decision nobody has taken, section 238.
  */
@@ -93,7 +104,7 @@ export const ARCH14_INFERRED: readonly string[] = [
   'a screen copy carries no beeper, since no screen item on a Harmony 600, 650 or 700 opens with one',
   'a wait over ten seconds is one 0x7C, as the Harmony One compile wrote its 20 seconds, and not runs of 100',
   "a command's send carries the device's inter key delay, as on the Harmony One; on arch 14 Logitech gives that "
-    + 'amount to power steps and to some digit copies, section 320, and every command a list at 1',
+    + 'amount to power steps and to some digit copies, section 320, and most commands a list at 1',
 ];
 
 /** One step of a sequence, in the order a person authored it. */
@@ -111,14 +122,16 @@ export interface ComposeSequence {
   /**
    * The infrared groups a pause names, in the order it names them: the activity's devices, which
    * `activityPauseGroups` reads off the activity's start. Taken from the caller because the rule is
-   * measured on one activity, where two readings fit, see that function.
+   * measured on one activity, in four compiles, see that function.
    */
   readonly pauseGroups: readonly number[];
   /**
    * Each sent device's inter key delay in tenths of a second, keyed by infrared group, which is the
    * quantity a sequence's send carries. Logitech's catalogue and account state it per device, in
    * milliseconds, and it varies, 100 to 500 on the one account measured, so there is no default: a
-   * group a step sends to and this does not name is refused.
+   * group a step sends to and this does not name is refused. For a device composed from the catalogue
+   * it is `interKeyDelay` of `catalogueDevicePower`'s answer, already in tenths, section 320, which is the
+   * amount Logitech's arch 14 compiles give every power step of such a device.
    */
   readonly interKeyDelays: Readonly<Record<number, number>>;
   /**
@@ -173,11 +186,13 @@ export function sequenceBody(
 /**
  * The devices an activity switches on, as infrared groups, in the order its start switches them.
  *
- * **This is the pause's device list on the one sample, and it is one of two readings that fit.** The
- * Harmony One's TV kijken switches on the television, the set top box and the receiver in that order,
- * groups 3, 2 and 0, and every pause of both sequences names exactly those three in exactly that order.
- * Descending group number gives the same order there, so the sample does not choose between them; the
- * account's own `PowerOnOrder`, receiver first, does **not** fit and is not used. A device the activity
+ * **This is the pause's device list on all four compiles that hold a sequence.** The Harmony One's TV
+ * kijken switches on the television, the set top box and the receiver in that order, and every pause of
+ * both sequences names exactly those three in exactly that order: groups 3, 2 and 0 on the spare's own
+ * compile, and 6, 14 and 9, then 4, 14 and 6, then 2, 7 and 4 on the three protocol compiles, whose
+ * added devices renumber them. So descending group order, which fits the first, fails the other three.
+ * The order of the activity's roles in the account is the same order in all four and is not separated;
+ * the account's own `PowerOnOrder`, receiver first, does **not** fit and is not used. A device the activity
  * uses that has no power variable, a media player for instance, is outside this list, and whether a
  * pause names it is unmeasured: in the sample all three devices have one.
  *

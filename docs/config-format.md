@@ -3780,6 +3780,36 @@ of the corpus. `packages/codec/src/queue.ts` computes it and `assertQueueFits` r
 reports follows `0x7F` only and is therefore a lower bound, since a write to a state variable also
 pushes. `docs/findings.md` section 238.
 
+#### A sequence is one action list of calls and per device pauses
+
+**Confirmed on arch 12 (Harmony One) from four compiles of one account holding the same two sequences,
+five of each compile's six lists reproduced instruction for instruction from the account's statement of
+their steps; inferred on arch 14, unconfirmed, since no compile in the lab for a Harmony 600, 650 or 700
+holds one.**
+[findings.md](findings.md) section NNN.
+
+| step | what a list holds |
+|---|---|
+| a command | one `0x7F` call of that command's send list `{0x7D, 0x7C}`, whose `0x7C` is the device's **inter key delay** in tenths, so a device at 200 ms calls lists at 2 where its device mode keys call lists at 1. The one separating device in the sequences is that one; the send is a single block record of its own where the key's is two blocks, and the composer makes no record |
+| a pause | one `0x7C (group << 8) \| tenths` per device the **activity** switches on, in the order its start switches them on, whatever device the neighbouring steps send to. Four of four compiles, three of them with the devices renumbered |
+| a pause of 20 seconds | one `0x7C` of 200 per device, not runs of 100 |
+| two pauses in a row, and a pause at the end | kept as written, not merged |
+
+* **One send list per distinct command**, shared by every step and every copy that sends it.
+* **One copy of the list per binding.** On arch 12 a screen button's copy opens with the beeper
+  `0x75 0x0FCA` and has the page's second copy; a key's copy has none. No screen item on arch 14 opens
+  with the beeper, so its copy is taken to be the key's.
+* **On arch 14 every send list opens with its delay step**, section 287, and a send list a sequence
+  needs that the compile lacks, a code with no list at the quantity asked for, is three lists: the send, its private load, its private condition calling
+  the device's one shared delay list.
+* **One copy of MySequence carries one extra call at the front**, the set top box command the
+  activity's same key sent before the sequence was bound to it. Not composed.
+* **A sequence inside an activity's start does not exist** in Logitech's schema, whose enter actions are
+  a command, a channel or a delay, and no sample holds one.
+* **The rail is the action queue**, `assertQueueFits`: a sequence is spooled whole, so 11 commands and
+  14 pauses on a three device activity is 53 instructions, past the forty, inside the 25 step limit
+  Logitech's editor states. `composeSequence` refuses it.
+
 #### Arch 9 re-validates the configuration on opcode `0x1F` to `0x3E` with operand high byte `0xC0` to `0xCF`
 
 **Confirmed on arch 9 only**, from the firmware, sections 254 and 255. **Section 254 gave this as an
@@ -3878,13 +3908,17 @@ Architecture 12 has an analogous pair, `{0x75 a; 0x7E b}`, with one group and a 
 neither the same size nor contiguous, so the structure does not transfer as it stands.
 [findings.md](findings.md) section 28.
 
-#### `0x7C` is a per device delay in tenths of a second, capped at 100
+#### `0x7C` is a per device delay in tenths of a second, folded no further than 100
 
 **Confirmed on four architectures, and on two firmware images.** The operand is
 `{ u8 group; u8 value }`: the group is an infrared group, and in 21882 uses across twelve
-containers it is always one the config's infrared table has. The value is 0 to 100 and never more.
+containers it is always one the config's infrared table has. ~~The value is 0 to 100 and never more.~~<!--superseded-->
+**The value is 0 to 100 in those twelve, and Logitech's compiler writes 200 in one instruction** for a
+sequence's 20 second wait on the Harmony One, twelve times in one configuration, [findings.md](findings.md)
+section NNN.
 
-**The cap is enforced by the firmware, not by convention.** `0x7C`'s handler is `0x7D`'s handler
+**The fold stops at 100 in the firmware**, which is all the firmware shows; it does not cap a single
+instruction. `0x7C`'s handler is `0x7D`'s handler
 with one bit set: `0x13102` against `0x130E0` on the Harmony 700, `0x26F96` against `0x26F74` on
 the Harmony One, sharing a worker. Both hand the operand to the same infrared queue, a circular
 buffer of 30 bytes holding `{ u8 tag; u8 value }` entries where the tag is `kind << 4 | group`;
@@ -3896,12 +3930,17 @@ tag matches: the larger value wins and the smaller is dropped. **The fold is ref
 queued value is already 100**, which pushes a second entry instead, and that is the mechanism that
 makes a quantity above 100 expressible at all. [findings.md](findings.md) section 70.
 
-Two rails follow. A writer must **spell out a value above 100** rather than emit it whole, and a
-config can hold at most **sixteen infrared groups**, because the tag's low nibble carries the
-group. The corpus tops out at seven.
+Two rails follow. ~~A writer must **spell out a value above 100** rather than emit it whole~~: the
+fold is refused at 100 and a **single** entry is not capped, and Logitech's own compiler emits a
+sequence's pause whole on the Harmony One, section NNN. No inline power on delay on arch 8, 9 or 12
+exceeds 100 and arch 14 spells its larger ones out, so the rail stands for a delay and not for a
+pause. Whether the remote waits the full value of one instruction
+above 100 is unmeasured. A config can hold at most **sixteen infrared groups**, because the tag's low
+nibble carries the group. The corpus tops out at seven.
 
-Every use is in one of two shapes: lists made of nothing but `0x7C`, or as the third instruction of
-`{0x7F, 0x7D, 0x7C}`. In a pure list of length `k`, every operand but the last has low byte 100 and
+On arch 14 every use is in one of two shapes: lists made of nothing but `0x7C`, or as the third
+instruction of `{0x7F, 0x7D, 0x7C}`. Other architectures also use it bare, a power on delay and a
+sequence's pause among them. In a pure list of length `k`, every operand but the last has low byte 100 and
 the whole list keeps one group, so it reads as `(k - 1) * 100 + n`:
 
 | length | lists per group | remainders | value |

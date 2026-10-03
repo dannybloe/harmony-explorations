@@ -901,7 +901,8 @@ for (const [name, count, hits] of UNNAMED) {
 
 /**
  * `[sample, uses, infrared groups]`. findings.md section 70: opcode `0x7C` carries a per group
- * quantity capped at 100, and its group is always one the infrared table has.
+ * quantity, at most 100 in these samples, and its group is always one the infrared table has. Not
+ * at most 100 everywhere: a sequence's pause on the spare Harmony One is one `0x7C` of 200, section NNN.
  *
  * The same closure section 33 used for `0x7D`, applied to its companion: the operand is checked
  * against a table it was not derived from.
@@ -931,7 +932,7 @@ for (const [name, uses, groups, largest] of QUANTITY) {
         const value = i.operand & 0xff;
         assert.ok(group < groups, `group ${group} against ${groups} infrared groups`);
         assert.ok(group < IR_MAX_GROUPS, 'the queue tag has four bits for the group');
-        assert.ok(value <= IR_QUANTITY_CAP, `value ${value} above the cap the firmware enforces`);
+        assert.ok(value <= IR_QUANTITY_CAP, `value ${value} above 100, which these samples never exceed`);
         highest = Math.max(highest, value);
       }
     }

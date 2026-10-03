@@ -3,13 +3,14 @@
  *
  * Section NNN, todo-compile-650 4.2. Three kinds of claim:
  *
- * - **The Harmony One calibration.** The spare Harmony One's `one_spare_20260830` holds the two
- *   sequences Danny authored, and the account's own statement of their steps was captured the same
- *   evening, `GetButtonMaps.json`, in the vendor's words: device, command name, wait in seconds. Each
- *   is composed again from those steps and compared with Logitech's lists instruction for instruction,
- *   against wrong readings that a sample this size could otherwise hide.
- * - **The arch 14 absence.** None of the thirteen Harmony 600, 650 and 700 compiles holds a sequence,
- *   asserted, so the day one does this file fails and says the arch 14 form can now be calibrated.
+ * - **The Harmony One calibration.** Four compiles of the spare Harmony One's account hold the two
+ *   sequences Danny authored, and a capture of their steps from a second account record was taken the
+ *   same evening, `GetButtonMaps.json`, in the vendor's words: device, command name, wait in seconds.
+ *   Each is composed again from those steps and compared with Logitech's lists instruction for
+ *   instruction, against wrong readings that a sample this size could otherwise hide.
+ * - **The arch 14 absence.** None of the thirteen Harmony 600, 650 and 700 compiles holds a pause across
+ *   several devices, asserted, so the day one does this file fails and says the arch 14 form can now be
+ *   calibrated. A sequence with no pause, or on a one device activity, would not be seen by this.
  * - **The composer on the Harmony 650**: the lists it appends, the key binding, and the refusal of a
  *   sequence the action queue cannot hold, section 238, at the exact boundary.
  */
@@ -38,6 +39,19 @@ function open(name: string): Container {
   const bytes = require_(name);
   try { return parse(bytes); } catch { return parse(payloadOf(bytes)); }
 }
+
+/**
+ * Every compile in the lab holding a sequence: the spare Harmony One's own, and the three of the same
+ * account for the protocol campaign, whose added devices renumber the activity's three.
+ */
+const SEQUENCE_COMPILES = ['one_spare_20260830', 'compiled_protocols', 'compiled_protocols_2',
+                           'compiled_protocols_3'] as const;
+
+/** The groups each compile's pauses name, television, set top box, receiver, as read off the lists. */
+const PAUSE_GROUPS: Record<string, number[]> = {
+  one_spare_20260830: [3, 2, 0], compiled_protocols: [6, 14, 9], compiled_protocols_2: [4, 14, 6],
+  compiled_protocols_3: [2, 7, 4],
+};
 
 const CALL = 0x7f;
 const QUANTITY = 0x7c;
@@ -108,31 +122,33 @@ const body = (c: Container, list: number): Instruction[] => (c.actionLists() ?? 
 const same = (a: readonly Instruction[], b: readonly Instruction[]): boolean =>
   a.length === b.length && a.every((one, k) => one.opcode === b[k]?.opcode && one.operand === b[k]?.operand);
 
-test('the spare Harmony One holds six sequence lists, two sequences in three bindings, and nothing else does',
-     skipUnless('one_spare_20260830', 'one_spare_myharmony'), () => {
-  const after = parse(require_('one_spare_20260830'));
+test('each compile holding the two sequences has six sequence lists in four bindings, and the account\'s compile before them has none',
+     skipUnless('one_spare_myharmony', ...SEQUENCE_COMPILES), () => {
   const before = parse(require_('one_spare_myharmony'));
   // Before Danny authored them, the same unit's compile held none: the control that the shape is the
   // sequences' and not something every Harmony One configuration carries.
   assert.deepEqual(pauseShaped(before), []);
-  const lists = pauseShaped(after);
-  assert.equal(lists.length, 6);
-  // Two open with the screen item's beeper and are bound on a page; their second copies are the page
-  // lists' copies, section 69. The other two are a key's, with no beeper.
-  const beeped = lists.filter((one) => body(after, one)[0]?.opcode === SCREEN_ITEM_BEEP.opcode);
-  assert.equal(beeped.length, 4);
+  for (const name of SEQUENCE_COMPILES) {
+    const after = parse(require_(name));
+    const lists = pauseShaped(after);
+    assert.equal(lists.length, 6, name);
+    // Four open with the screen item's beeper: each sequence's screen item and that page's second copy,
+    // section 69. The other two are MySequence's two key copies, with no beeper.
+    const beeped = lists.filter((one) => body(after, one)[0]?.opcode === SCREEN_ITEM_BEEP.opcode);
+    assert.equal(beeped.length, 4, name);
+  }
 });
 
-test('none of the thirteen Harmony 600, 650 and 700 compiles holds a sequence, so their form is carried over',
+test('none of the thirteen Harmony 600, 650 and 700 compiles holds a pause across devices, so their form is carried over',
      skipUnless(...ARCH14), () => {
   // **This is the assertion that makes the arch 14 composer an inference**, and it is written to fail
-  // the day a compile with a sequence arrives: then the four entries of `ARCH14_INFERRED` can be
+  // the day a compile with a sequence arrives: then the five entries of `ARCH14_INFERRED` can be
   // scored rather than carried.
   for (const name of ARCH14) assert.deepEqual(pauseShaped(open(name)), [], name);
   assert.equal(ARCH14_INFERRED.length, 5);
 });
 
-test('no screen item on a Harmony 600, 650 or 700 opens with the beeper every Harmony One screen item opens with',
+test('no screen item on a Harmony 600, 650 or 700 opens with the beeper every spare Harmony One screen item opens with',
      skipUnless('one_spare_20260830', ...ARCH14), () => {
   // The ground for the third inference: a sequence's screen copy on arch 14 is its key copy.
   const opened = (c: Container): { all: number; beeped: number } => {
@@ -189,90 +205,103 @@ function commandsOf(c: Container, sequence: Authored, list: number, groups: read
   return out;
 }
 
-test('composed again from the account\'s steps, both sequences come back as Logitech compiled them',
-     skipUnless('one_spare_20260830'), () => {
-  const c = parse(require_('one_spare_20260830'));
-  const tv = activities(c).find((one) => one.name === 'TV kijken');
-  assert.ok(tv !== undefined);
-  const groups = activityPauseGroups(c, tv.set);
-  // The television, the set top box and the receiver, in the order the activity switches them on.
-  assert.deepEqual(groups, [3, 2, 0]);
+test('composed again from the account\'s steps, five of each compile\'s six sequence lists come back as Logitech compiled them, on all four',
+     skipUnless(...SEQUENCE_COMPILES), () => {
+  let descendingFits = 0;
+  for (const name of SEQUENCE_COMPILES) {
+    const c = parse(require_(name));
+    const tv = activities(c).find((one) => one.name === 'TV kijken');
+    assert.ok(tv !== undefined);
+    const groups = activityPauseGroups(c, tv.set);
+    // The television, the set top box and the receiver, in the order the activity switches them on,
+    // whatever numbers the compile gave them: the three protocol compiles renumber all three.
+    const byName = (wanted: string): number => devices(c).find((one) => one.name === wanted)?.group as number;
+    const [tvGroup, boxGroup, receiverGroup] = [byName('TV'), byName('KPN'), byName('Denon')];
+    assert.deepEqual(groups, [tvGroup, boxGroup, receiverGroup], name);
+    assert.deepEqual(groups, PAUSE_GROUPS[name], name);
+    if (JSON.stringify(groups) === JSON.stringify([...groups].sort((a, b) => b - a))) descendingFits += 1;
 
-  const sequences = authored();
-  assert.deepEqual(sequences.map((one) => [one.name, one.steps.length]), [['Netflix', 6], ['MySequence', 25]]);
-  const [netflix, mine] = sequences as [Authored, Authored];
+    const sequences = authored();
+    assert.deepEqual(sequences.map((one) => [one.name, one.steps.length]), [['Netflix', 6], ['MySequence', 25]]);
+    const [netflix, mine] = sequences as [Authored, Authored];
 
-  // The compiled copies, found by binding rather than by number: the key copies are the activity's,
-  // the screen copies a page's.
-  const lists = pauseShaped(c);
-  const keyCopies = lists.filter((one) => body(c, one)[0]?.opcode !== SCREEN_ITEM_BEEP.opcode);
-  const mineKey = keyCopies.find((one) => body(c, one).length === 33) as number;
-  const commands = commandsOf(c, mine, mineKey, groups);
-  const netflixScreen = lists.find((one) => body(c, one).length === 9) as number;
-  for (const [key, value] of commandsOf(c, netflix, netflixScreen, groups)) {
-    // The second sequence names two commands the first does, and they resolve to the same lists.
-    const shared = commands.get(key);
-    if (shared !== undefined) assert.deepEqual(value, shared, `${key} across the two sequences`);
-    commands.set(key, value);
+    // The compiled copies, found by binding rather than by number: the key copies are the activity's,
+    // the screen copies a page's.
+    const lists = pauseShaped(c);
+    const keyCopies = lists.filter((one) => body(c, one)[0]?.opcode !== SCREEN_ITEM_BEEP.opcode);
+    const mineKey = keyCopies.find((one) => body(c, one).length === 33) as number;
+    const commands = commandsOf(c, mine, mineKey, groups);
+    const netflixScreen = lists.find((one) => body(c, one).length === 9) as number;
+    for (const [key, value] of commandsOf(c, netflix, netflixScreen, groups)) {
+      // The second sequence names two commands the first does, and they resolve to the same lists.
+      const shared = commands.get(key);
+      if (shared !== undefined) assert.deepEqual(value, shared, `${key} across the two sequences`);
+      commands.set(key, value);
+    }
+    // Seventeen in MySequence, and Netflix adds Red: its 2 and 0 are MySequence's.
+    assert.equal(commands.size, 18, 'eighteen distinct commands over the two sequences');
+    // Each device of the account resolves to one group, and the three are the activity's three.
+    const perDevice = new Map<string, Set<number>>();
+    for (const [key, { group }] of commands) {
+      const device = key.split(':')[0] as string;
+      perDevice.set(device, (perDevice.get(device) ?? new Set()).add(group));
+    }
+    assert.deepEqual([...perDevice.values()].map((one) => [...one]).flat().sort((a, b) => a - b),
+                     [...groups].sort((a, b) => a - b));
+
+    const stepsOf = (sequence: Authored): SequenceStep[] => sequence.steps.map((step) => ('seconds' in step
+      ? { pause: step.seconds * 10 }
+      : { send: commands.get(`${step.device}:${step.command}`) as { group: number; code: number } }));
+
+    // Each device's inter key delay as the compiling account record states it, joined to the
+    // configuration's devices by name. Captured after the compiles, so the settings as they then stood.
+    const interKeyDelays = accountInterKeyDelays(c, groups);
+    assert.deepEqual(interKeyDelays, { [tvGroup]: 1, [boxGroup]: 2, [receiverGroup]: 1 });
+    const composed = composeSequence(c, { steps: stepsOf(mine), pauseGroups: groups, interKeyDelays,
+                                          copies: ['key', 'screen'] });
+    const netflixComposed = composeSequence(c, { steps: stepsOf(netflix), pauseGroups: groups, interKeyDelays,
+                                                 copies: ['screen', 'screen'] });
+    // Every send list already exists, and it is the one Logitech's copies call.
+    assert.deepEqual(composed.created, []);
+    assert.deepEqual(netflixComposed.created, []);
+    const out = parse(composed.bytes);
+    const outNetflix = parse(netflixComposed.bytes);
+    const [key, screen] = composed.lists as [number, number];
+    assert.ok(same(body(out, key), body(c, mineKey)), 'MySequence, the key copy');
+    const mineScreens = lists.filter((one) => body(c, one).length === 34
+      && body(c, one)[0]?.opcode === SCREEN_ITEM_BEEP.opcode);
+    assert.equal(mineScreens.length, 2, 'the screen copy and its page copy');
+    for (const one of mineScreens) assert.ok(same(body(out, screen), body(c, one)), 'MySequence, a screen copy');
+    const netflixScreens = lists.filter((one) => body(c, one).length === 9);
+    assert.equal(netflixScreens.length, 2);
+    for (const [k, one] of netflixScreens.entries()) {
+      assert.ok(same(body(outNetflix, netflixComposed.lists[k] as number), body(c, one)), 'Netflix, a screen copy');
+    }
+    // 34 deep at most. Section 238's 35, the figure the hang was set against, is the sixth list's below,
+    // whose one extra call comes first and so sits on top of the whole body.
+    assert.equal(composed.peak, 34);
+    // **The control on the quantity**: the set top box's own device mode lists carry 1, and reusing them,
+    // which is what the first version of this composer did, appends lists Logitech did not write.
+    const atOne = composeSequence(c, { steps: stepsOf(mine), pauseGroups: groups,
+                                       interKeyDelays: { ...interKeyDelays, [boxGroup]: 1 } });
+    assert.ok(atOne.created.length > 0);
+    assert.ok(!same(body(parse(atOne.bytes), atOne.lists[0] as number), body(c, mineKey)));
+
+    // **The sixth list is not reproduced and that is a finding, not a gap in the test.** The other key,
+    // scan 17, runs the body after one more call: a set top box command, the one the activity's scan 17
+    // sent before the sequence was bound to it.
+    const other = keyCopies.find((one) => one !== mineKey) as number;
+    assert.equal(body(c, other).length, 34);
+    assert.ok(same(body(c, other).slice(1), body(c, mineKey)));
+    const lead = (body(c, other)[0] as Instruction);
+    assert.equal(lead.opcode, CALL);
+    const leadSends = infraredCodesPerList(c).get(lead.operand) ?? [];
+    assert.equal(leadSends.length, 1);
+    assert.equal(leadSends[0]?.group, boxGroup);
+    if (name === 'one_spare_20260830') assert.deepEqual(leadSends, [{ group: 2, code: 26 }]);
   }
-  // Seventeen in MySequence, and Netflix adds Red: its 2 and 0 are MySequence's.
-  assert.equal(commands.size, 18, 'eighteen distinct commands over the two sequences');
-  // Each device of the account resolves to one group, and the three are the activity's three.
-  const perDevice = new Map<string, Set<number>>();
-  for (const [key, { group }] of commands) {
-    const device = key.split(':')[0] as string;
-    perDevice.set(device, (perDevice.get(device) ?? new Set()).add(group));
-  }
-  assert.deepEqual([...perDevice.values()].map((one) => [...one]).flat().sort(), [0, 2, 3]);
-
-  const stepsOf = (sequence: Authored): SequenceStep[] => sequence.steps.map((step) => ('seconds' in step
-    ? { pause: step.seconds * 10 }
-    : { send: commands.get(`${step.device}:${step.command}`) as { group: number; code: number } }));
-
-  // Each device's inter key delay as the account states it, joined to the configuration's devices by
-  // name. **That capture is eight days younger than the compile**, taken after the devices were added
-  // again under new identifiers, so it is the same three devices' settings and not the same records.
-  const interKeyDelays = accountInterKeyDelays(c, groups);
-  assert.deepEqual(interKeyDelays, { 0: 1, 2: 2, 3: 1 });
-  const composed = composeSequence(c, { steps: stepsOf(mine), pauseGroups: groups, interKeyDelays,
-                                        copies: ['key', 'screen'] });
-  const netflixComposed = composeSequence(c, { steps: stepsOf(netflix), pauseGroups: groups, interKeyDelays,
-                                               copies: ['screen', 'screen'] });
-  // Every send list already exists, and it is the one Logitech's copies call.
-  assert.deepEqual(composed.created, []);
-  assert.deepEqual(netflixComposed.created, []);
-  const out = parse(composed.bytes);
-  const outNetflix = parse(netflixComposed.bytes);
-  const [key, screen] = composed.lists as [number, number];
-  assert.ok(same(body(out, key), body(c, mineKey)), 'MySequence, the key copy');
-  const mineScreens = lists.filter((one) => body(c, one).length === 34
-    && body(c, one)[0]?.opcode === SCREEN_ITEM_BEEP.opcode);
-  assert.equal(mineScreens.length, 2, 'the screen copy and its page copy');
-  for (const one of mineScreens) assert.ok(same(body(out, screen), body(c, one)), 'MySequence, a screen copy');
-  const netflixScreens = lists.filter((one) => body(c, one).length === 9);
-  assert.equal(netflixScreens.length, 2);
-  for (const [k, one] of netflixScreens.entries()) {
-    assert.ok(same(body(outNetflix, netflixComposed.lists[k] as number), body(c, one)), 'Netflix, a screen copy');
-  }
-  // 34 deep at most. Section 238's 35, the figure the hang was set against, is the sixth list's below,
-  // whose one extra call comes first and so sits on top of the whole body.
-  assert.equal(composed.peak, 34);
-  // **The control on the quantity**: the set top box's own device mode lists carry 1, and reusing them,
-  // which is what the first version of this composer did, appends lists Logitech did not write.
-  const atOne = composeSequence(c, { steps: stepsOf(mine), pauseGroups: groups,
-                                     interKeyDelays: { ...interKeyDelays, 2: 1 } });
-  assert.ok(atOne.created.length > 0);
-  assert.ok(!same(body(parse(atOne.bytes), atOne.lists[0] as number), body(c, mineKey)));
-
-  // **The sixth list is not reproduced and that is a finding, not a gap in the test.** The other key,
-  // scan 17, runs the body after one more call: the set top box's own scan 17 command, the list its
-  // device mode binds to that key. Why the compiler put it there is unread.
-  const other = keyCopies.find((one) => one !== mineKey) as number;
-  assert.equal(body(c, other).length, 34);
-  assert.ok(same(body(c, other).slice(1), body(c, mineKey)));
-  const lead = (body(c, other)[0] as Instruction);
-  assert.equal(lead.opcode, CALL);
-  assert.deepEqual(infraredCodesPerList(c).get(lead.operand), [{ group: 2, code: 26 }]);
+  // **The control on the order**: descending group number fits the spare's own compile and no other.
+  assert.equal(descendingFits, 1);
 });
 
 test('the wrong readings of a pause each fail to reproduce MySequence', skipUnless('one_spare_20260830'), () => {
@@ -309,7 +338,7 @@ test('the wrong readings of a pause each fail to reproduce MySequence', skipUnle
 
 test('Logitech wrote the 20 second pause as one 0x7C of 200, past the hundred section 70 read as never exceeded',
      skipUnless('one_spare_20260830'), () => {
-  // A correction to section 70's corpus statement, which held over the five containers it counted.
+  // A correction to section 70's corpus statement, which held over the twelve containers it counted.
   const c = parse(require_('one_spare_20260830'));
   const values = (c.actionLists() ?? []).flat().filter((one) => one.opcode === QUANTITY)
     .map((one) => one.operand & 0xff).filter((value) => value > 100);
@@ -326,8 +355,8 @@ test('a sequence composed onto the Harmony 650: a missing send list is made with
   assert.ok(tv !== undefined);
   const groups = activityPauseGroups(c, tv.set);
   assert.deepEqual(groups, [0, 1, 3]);
-  // Every code of this configuration has a send list at 1, so a list is made only for a device whose
-  // inter key delay is not 1: the set top box here at 2, as the spare Harmony One's set top box was.
+  // Most codes of this configuration have a send list at 1, 369 of 419, so the case that makes a list is
+  // a device whose inter key delay is not 1: the set top box here at 2, as the spare Harmony One's was.
   const codes = infraredCodesPerList(c);
   // A set top box code with no list at 2, found rather than named: its digits have lists at its own
   // inter key delay already, section 320's digit copies.

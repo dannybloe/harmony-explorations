@@ -8138,7 +8138,9 @@ four architectures, every high byte is below that config's infrared group count,
 That is the closure section 33 used for `0x7D`, applied to a table this operand was not derived
 from, and the group counts vary from 1 to 7 across the corpus so it is not vacuous.
 
-**The value never exceeds the cap.** 0 to 100 everywhere, never 101, in all 21882.
+~~**The value never exceeds the cap.** 0 to 100 everywhere, never 101, in all 21882.~~ **True of the twelve
+containers counted and not of Logitech's compiler**, section NNN: the spare Harmony One's compile of a hand
+authored sequence holds twelve `0x7C` of 200, a 20 second wait written as one instruction per device.
 
 **And arch 14 spells the whole range out.** Its configs carry a generated table of lists made of
 nothing but this opcode, `(g,100)` repeated then a remainder:
@@ -8180,9 +8182,13 @@ section read the queue before the dispatcher. What it means is still open.
 
 ### The rails it yields
 
-* **The value is capped at 100 by the firmware**, not by convention. A writer emitting 150 in one
+* ~~**The value is capped at 100 by the firmware**, not by convention. A writer emitting 150 in one
   instruction gets a queue entry the sender will treat as 150 only if nothing folds it, and the
-  fold rule is written against the cap. Spell it out.
+  fold rule is written against the cap. Spell it out.~~ **The firmware refuses to fold past 100 and does
+  not cap a single entry**, which is all the code above shows, and Logitech's compiler writes a sequence's
+  20 second wait on the Harmony One as one `0x7C` of 200, section NNN. Whether the remote then waits the whole 20 seconds is
+  unmeasured. No inline power on delay on arch 8, 9 or 12 exceeds 100, arch 14 spells 101 to 450 out in
+  its tables, and `setPowerOnDelay` still refuses past 100.
 * **A config cannot have more than sixteen infrared groups**, because the queue tag is
   `kind << 4 | group`. The corpus tops out at seven, so nothing has met this, and a generator that
   did would corrupt the tag rather than fail.
@@ -43106,3 +43112,223 @@ device has an earlier one; a counter or title off the stated places.
 * `packages/codec/test/devicemode.test.ts`: the rules on their own, the size table as the union, the
   twenty with every difference named, the held out LG, the composer page for page and the control.
 * `docs/config-format.md`, under the device mode pages on arch 14.
+
+## NNN. A sequence is one action list of calls and per device pauses: five of its six lists composed again exactly on the Harmony One, and inferred on the Harmony 600, 650 and 700
+
+A sequence is what Logitech's software calls a macro: up to 25 steps, each a command to one device or a
+wait in whole seconds, bound to a key or a screen button inside an activity. Every compiled sequence in
+the lab is one of two Danny authored on the spare Harmony One's account on 23 August 2026 so the delay
+encoding could be read. The lab note beside them read the pause's unit off them, section 235 settled the
+same unit from power on delays, and section 238 priced the queue a long one fills while saying it does
+not explain the hang one of them caused. What was never written up is the shape. This section is that shape, scored by
+composing both sequences again from the account's own statement of their steps, and the composer that
+does it, `composeSequence`, for todo-compile-650 4.2.
+
+### The sources, and why the calibration is independent
+
+* `one_spare_20260830`, the spare Harmony One's configuration as read on 30 August 2026, which still
+  holds both sequences; `one_spare_myharmony`, the same unit's compile before they were authored, is the
+  control and holds none.
+* `compiled_protocols`, `compiled_protocols_2` and `compiled_protocols_3`, three later compiles of the
+  same account with further devices added for the protocol campaign, section 165. Each holds the same
+  six lists, and the added devices renumber the activity's three: its television, set top box and
+  receiver are groups 6, 14 and 9, then 4, 14 and 6, then 2, 7 and 4. That is what makes the order of a
+  pause's devices testable, below. A fifth read of the same account, the lab's
+  `20260823T1930Z-one-baseline.bin`, holds them too and is not registered.
+* `GetButtonMaps.json` in the lab's `work/myharmony/responses-account2`, a capture taken the evening
+  they were authored, which states each sequence as Logitech's editor holds it: an
+  ordered list of a device identifier and a command **name**, or a `Duration` in seconds. **It is a second
+  account record's copy and not the compiling record's**: its activities carry another record's account
+  identifier, a Harmony 700 record created on the same account that evening, and the button map holding
+  the sequences names an activity that capture calls "Heos/Spotify", where the compiled sequences sit in
+  TV kijken. So the capture states the steps and not where they are bound, and the join to the compile
+  is by the steps alone: each authored command is matched to the call at its position, and every
+  repeated and shared command then agrees. `Netflix` is
+  six steps, `2`, `0`, `0`, `Red`, `Red` and a wait of 5; `MySequence` is 25, 21 commands and waits of
+  1, 2, 3 and 20 seconds.
+* `GetDevicesInAccount_20260831.json`, the compiling record's own device list, for each device's
+  `InterKeyDelay` in milliseconds, joined to the configuration by device name. It was captured after
+  the compile, so it states the settings as they stood then.
+* The lab's `20260823T1930Z-interkeydelay-PREDICTIONS.md`, which measured the same quantity on the same
+  account before this section: over all lists, a device's single send quantity is its inter key delay
+  in tenths, 4 for the one device at 400 ms and 2 for the two at 200, with the three at 100 ms
+  indistinguishable from 1.
+
+The configuration names no command and the account states no list, so the join between them is the
+calibration's first claim rather than an assumption: each authored command is matched to the call at its
+position under the reading below, and everything the matching does not decide is then checked, which is
+every pause, every repeated command and the second sequence.
+
+### What it compiles to
+
+| | what Logitech's compiler wrote |
+|---|---|
+| a sequence | **one** action list, the steps in authored order |
+| a command step | one `0x7F` call of that command's send list, `{0x7D, 0x7C}` |
+| a pause step | one `0x7C (group << 8) \| tenths` for **every device the activity switches on**, in the order the activity's start switches them on: groups 3, 2 and 0, the television, the set top box and the receiver |
+| two pauses in a row | two runs, not merged; a pause at the end is kept |
+| a wait of 20 seconds | **one** `0x7C` of 200 per device, not a run of 100s |
+| a command used twice | one send list, called by every step and every copy that sends it: 18 distinct commands over the two sequences, the `2` and `0` Netflix shares with MySequence resolving to the same lists |
+| the send list's quantity | the device's **inter key delay** in tenths: every set top box list a sequence step calls carries 2, 16 of 16, where the box's device mode keys call 30 lists all carrying 1, and the account states the box at 200 ms and the television and the receiver at 100. The seventeenth set top box list in the sequence lists is the extra call below, at 1 |
+| the record a command sends | **one of its own**, a single block record with no held block, where the key for the same command sends a two block one: the compile added one per command the device lacked, six set top box records and one each for the television and the receiver |
+| a binding | one copy of the list per binding. A screen button's copy opens with the beeper `0x75 0x0FCA`, as all 929 screen items that call a list in this configuration do, and has the page's second copy, section 69; a key's copy has no beeper |
+
+**The quantity may belong to the record's shape rather than to the sequence.** Over the whole
+configuration every list sending a record of two or more blocks carries 1, 380 of them, and every list
+carrying anything else sends a single block record: the set top box's 17 at 2, the PS3's 12 at 2 and
+the media centre's 10 at 4, against account inter key delays of 200, 200 and 400 ms. Not uniformly:
+the receiver's single block lists carry 10 on 19 and 1 on 10, and two of the PS3's carry 1. So "a
+sequence's send carries the inter key delay" and "a single block record's send carries it" fit the
+sequences equally, and the composer, which makes no record and sends whichever the caller names, is
+right for both only when the caller names a single block record.
+
+**The order of a pause's devices is the order the activity's start switches them on**, and the three
+protocol compiles are what separate it from the obvious alternatives, since their added devices
+renumber the activity's three. Start order fits 4 of 4 compiles; descending group order fits 1 of 4,
+the spare's own, and ascending 0 of 4. The account's `PowerOnOrder`, receiver first, fits none. One
+reading is not separated: the order of the activity's roles in the account, television, set top box,
+receiver, is the start's order in all four, since it is one activity. On the Harmony 650's TV kijken
+the start's order is groups 0, 1 and 3, which is what the composer uses there.
+
+**The pause names the activity's devices and not the device of the neighbouring step.** Netflix sends to
+the set top box alone and its one pause still names all three. The lab note records the behaviour that
+goes with it, timed at the bench on the day: Netflix ran in 8 seconds with its 5 second pause, so a pause
+costs its value once and not once per device. That timing is the note's and is not asserted here.
+
+**Reproduced instruction for instruction, on all four compiles.** `composeSequence` given the authored
+steps, the activity's devices and the account's inter key delays appends no send list: every one it asks
+for already exists, and the lists it builds equal Logitech's for MySequence's first key copy, both its
+screen copies and both of Netflix's, five of the six. The sixth is below. The deepest the key copy runs
+in the action queue is 34 instructions.
+
+### The controls
+
+Each is a reading a sample this size could otherwise hide, and each fails to reproduce MySequence's key
+copy:
+
+| wrong reading | |
+|---|---|
+| the wait in whole seconds | fails |
+| the devices in ascending group order | fails |
+| one `0x7C` per pause, for the first device | fails |
+| the set top box alone, the device most steps send to | fails |
+| consecutive pauses merged into one wait | fails |
+| the set top box's send lists at 1, its device mode quantity | fails, and appends lists Logitech did not write |
+
+The last is the one that mattered: the composer's first version reused the box's ordinary lists, and
+the account's inter key delay is what the compile follows. **Within the sequences it rests on one
+device**: the television and the receiver are at 100 ms, where the inter key delay and a constant 1
+cannot be told apart, so the set top box at 200 ms is the only separating case, the same device in all
+four compiles. Outside the sequences the lab's prediction note separates it on two more devices, the
+console's 12 single sends at 2 and the media player's 10 at 4. Section 320's measurement on Logitech's
+power steps on the Harmony 650 and 700 is consistent with it. **One device contradicts it outside the
+sequences**: the receiver, at 100 ms, has 19 single block lists carrying 10, unexplained, and what a
+sequence would send for one of those commands is untested.
+
+### What is not reproduced, and is named rather than fitted
+
+**MySequence's second key copy carries one extra call at the front.** It is bound to scan 17 and runs the
+whole body after a call of the set top box's group 2 code 26, the list that box's device mode binds to
+the same key. **It is the command that key sent in the activity before the sequence was bound**: in
+`one_spare_myharmony` the activity's scan 17 sent a byte identical record, numbered two lower before the
+compile inserted records. The other key copy is on scan 13, which the activity did not bind before. So
+the reading is that a sequence bound to a key the activity already uses keeps that key's command in
+front, on one key of each kind, which is a reading and not a rule. That one call is what puts this copy
+at 35 deep, the configuration's deepest list and the figure section 238 reports, against 34 for the
+other; which copy was run during the hangs is not recorded. The composer does not produce
+it: `bindKeyToList` replaces a key's binding.
+
+### A correction to section 70: the compiler itself writes a `0x7C` above 100
+
+Section 70 read `0x7C`'s value as 0 to 100 everywhere and never 101, over the twelve containers it counted,
+and gave a writer the rail to spell a larger value out as runs of 100. Each of the four Harmony One
+compiles holding the sequences has **twelve** `0x7C` of 200, the 20 second wait once per device in each
+of MySequence's four lists, and no other value above 100. A thirteenth container, the Harmony 350's
+factory configuration, has one `0x7C` of 170 in a list shaped like a power on transition, which is arch
+16 and unread here. So the corpus statement was a fact about those containers, and Logitech's own
+compiler does not follow the rail. Section 70's reading of the firmware's fold is unaffected: it refuses to
+fold into an entry already at 100, which says nothing about a single entry above it. **Whether the remote
+waits the full 20 seconds on one instruction of 200 is unmeasured.** The composer emits what the compiler
+emitted, up to 255; `setPowerOnDelay` keeps its refusal above 100, since that edits a different field
+in place and no inline power on delay on the Harmony One exceeds 100.
+
+### On the Harmony 600, 650 and 700, an inference with its parts named
+
+**None of the thirteen arch 14 compiles in the lab holds a sequence.** None has a run of `0x7C` carrying
+one wait across several devices, which every pause on the Harmony One is, and the test asserting that is
+written to fail the day one arrives. So the arch 14 form is **inferred**, and `ARCH14_INFERRED` names the
+five parts carried over:
+
+1. the list shape, one list of calls and per device pauses;
+2. the pause's devices and their order, the activity's in the order its start switches them on;
+3. a screen copy with no beeper, since **no** screen item that calls a list opens with one on any of the
+   thirteen, where all 929 on the spare Harmony One do and every one on all fourteen Harmony One
+   configurations with screens does;
+4. a wait over ten seconds as one `0x7C`;
+5. the send at the device's inter key delay, which section 320 supports on arch 14 for power steps and
+   for the uncalled digit copies at the inter key delay that some devices carry.
+
+What differs on arch 14 is not inferred, because it is read: every send list opens with a `0x7F` delay
+step of three lists, section 287, the load and condition pair private to each command and the delay list
+shared per device. Most codes already have a send list at quantity 1, not all: 369 of the Harmony 650's
+419, 184 of the Harmony 600's 186 and 325 of the Harmony 700's 350, the rest only at 0, 2, 4 or 10. So a
+list is made wherever no list of that code carries the quantity asked for, and then `composeSequence`
+makes the triple, its condition calling the device's one delay list with the operands that device's
+other pairs carry. It
+refuses a device whose sends call several delay lists or carry several operands, since which one a new
+send should take is not read.
+
+### Not composed: a sequence as a step in an activity's start
+
+Logitech's own schema has no such thing. An activity's enter actions are a command, a channel or a delay,
+`docs/myharmony/model.md`, and no capture or compile here holds a non empty list of them. So the route
+the todo item names does not exist in the product as far as anything here shows, and nothing composes it.
+
+### The refusal
+
+The composer refuses by the action queue and never by a step count: every list it builds and the whole
+configuration after it go through `assertQueueFits`, section 238. On the Harmony 650's TV kijken, 37 sends
+of the set top box peak at exactly 40 and 38 are refused. **Logitech's own step limit is not a safe
+bound**: 25 steps, 11 commands and 14 pauses on a three device activity, is 11 + 14 * 3 = 53 instructions
+in one list, refused on the Harmony 650 and on the Harmony One alike, and within the 25 step limit their
+editor states. No such sequence has been compiled. A pause
+of 0 or above 255 tenths, a command for a device with no inter key delay given, and any architecture but
+12 and 14 are refused as well.
+
+### What would settle the arch 14 form
+
+Two compiles on the test account's Harmony 650 record, neither performed here, since this work writes to
+no account:
+
+* a sequence authored inside an activity of three devices, with a device among them that has no power
+  variable, a 20 second wait, two waits in a row, a command for a device whose inter key delay is not
+  100 ms and one of the receiver's commands whose only list carries 10, and bound to a key and to a
+  screen button;
+* separately, an activity whose start carries an added command and an added delay, which would show
+  where Logitech puts what its schema calls enter actions.
+
+### Scope, decision 16
+
+Measured on arch 12 (Harmony One), four compiles of one account holding the same two sequences. Inferred
+on arch 14 (Harmony 600, 650 and 700), five parts named. Arch 9 (Harmony 525) has no compile to read,
+section 145, and is refused. Arch 8 (Harmony 880 and 885) and arch 10 (Harmony 890 and 895) are not
+checked.
+
+**One more open point, from section 70's fold rule rather than from any sample.** A pause names its
+devices in turn, so two pauses in a row never put two waits for one device next to each other in the
+queue. On an activity of **one** device they would, and the fold would keep the larger rather than add
+them. No sequence on a one device activity has been compiled, so what Logitech writes there is unknown.
+
+### Falsification
+
+A compiled sequence whose pause names devices other than the activity's or in another order; a command
+step that is not one call; a sequence's send list whose quantity is not its device's inter key delay; or an arch 14
+compile whose sequence differs from the composer's output in any of the five named parts.
+
+### Where it lands
+
+* `packages/codec/src/sequence.ts`: `composeSequence`, `sequenceBody`, `activityPauseGroups`,
+  `bindKeyToList`, `ARCH14_INFERRED`.
+* `packages/codec/test/sequence.test.ts`: the absence on arch 14, the calibration, the controls, the 200,
+  the composer on the Harmony 650 and the refusal at the boundary.
+* `docs/config-format.md`, under `0x7C` and base slot 10, and section 70 corrected in place.
