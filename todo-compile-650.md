@@ -20,7 +20,7 @@ copied. **Every chapter ends with a configuration that works on the 650.**
 - [x] 1.1 Write a whole configuration to the 650: erase, write, read back and compare, restart (sections 281 to 283)
 - [x] 1.2 Skip the welcome tour after a write (section 286)
 - [ ] 1.3 Every write to the 650 stamps the clock records and the build timestamp, small edits included, since every restart puts its clock back to the stamp (section 310)
-  - [ ] 1.3.1 Read a build timestamp Logitech stamped on the 1st of a month, day of month 0 with the previous day's weekday, which our reader refuses and which stops the device composer's save on the 650's current configuration (section 312)
+  - [x] 1.3.1 Read a build timestamp Logitech stamped on the 1st of a month: the day counts from 0 and the weekday from Sunday, so day 0 is the 1st and every date we read or wrote before was a day off; the 650 runs a day ahead until its next write (section 322)
 - [ ] 1.4 Choose the test setup: devices and activities that between them use every feature in chapters 2 to 4, passthrough device and favourites included. No real device is needed, since the bench's infrared receiver hears what the remote sends
 - [ ] 1.5 Choose the starting setup out of it: part of the test setup, with at least one activity and names that hold every letter the whole test setup needs
 - [ ] 1.6 Have Logitech compile it for the 650, read it into the lab, write it back unchanged and register it as the compare base
