@@ -127,6 +127,7 @@ CONTAINERS = (
     'h650_glow10_region',
     'h650_devicelist_region',
     'h650_plasma_base',
+    'h650_seventh_base',
     'h700_28_config_region',
     'h700_after_rehearsal_region',
     'h700_delay90_region',

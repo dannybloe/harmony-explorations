@@ -50,6 +50,7 @@ import {
   TRAILER_CHECKSUM_OFFSET,
   archRecordExtent,
   clockRecordFields,
+  isSyncDayZeroStamp,
   trailerChecksum,
 } from './gspm.ts';
 import { countedPointers } from './valuemap.ts';
@@ -335,8 +336,13 @@ export function rebuilds(c: Container): Rebuild[] {
   // The fields come from `clockRecordFields`, which is also what `edit.ts` stamps with. Each of them
   // derived the weekday itself until 10 August 2026, with a different spelling of the same epoch.
   const clockAt = sectionStart(3);
-  if (clockAt !== undefined && c.builtAt !== undefined) {
-    const fields = clockRecordFields(c.builtAt);
+  const clockOff = clockAt === undefined ? undefined : c.blobOffsetOf(clockAt);
+  // The day 0 stamp a MyHarmony sync writes on the 1st of a month has no date to rebuild it from, so
+  // its seven fields are carried through as they are, todo-compile-650 1.3.1. Nothing else is.
+  const dayZero = c.builtAt === undefined && clockOff !== undefined && isSyncDayZeroStamp(c.blob, clockOff)
+    ? c.blob.slice(clockOff + 2, clockOff + 9) : undefined;
+  if (clockAt !== undefined && (c.builtAt !== undefined || dayZero !== undefined)) {
+    const fields = dayZero ?? clockRecordFields(c.builtAt!);
     if (fields === undefined) throw new GspmError(`slot 3 holds an unencodable ${c.builtAt}`);
     // Fourteen bytes: the record, then the three zeros the section carries past it. Written as
     // zeros rather than copied, so a tail that is not zero fails the round trip. Section 84.

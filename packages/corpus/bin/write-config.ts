@@ -160,6 +160,8 @@ const H650_DUMPS = new Set([
   // Before section 309's test device with held power steps: the Panasonic configuration as MyHarmony
   // left it. The compare base for that write.
   'h650_plasma_base',
+  // After section 309's one byte write: the compare base for the seventh device, todo-compile-650 2.3.
+  'h650_seventh_base',
 ]);
 
 /**

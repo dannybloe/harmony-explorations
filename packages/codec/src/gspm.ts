@@ -945,6 +945,30 @@ export function clockRecord(blob: Uint8Array, off: number): string | undefined {
 }
 
 /**
+ * Whether the slot 3 record at `off` is the one shape a MyHarmony sync was seen to write that
+ * `clockRecord` refuses: a day of month of **0**, with the weekday of the day before the 1st.
+ *
+ * Measured once, todo-compile-650 1.3.1: the Harmony 650's configuration synced through MyHarmony on
+ * 1 October 2026 reads `1b 20 0e 00 04 09 1a`, while Logitech's compiles fetched straight from the
+ * service that same day read day 1 and weekday 5. Which convention the remote itself counts in is
+ * still open, so this does not interpret the value: it only says the record is a well framed stamp
+ * that a writer may overwrite, which is all `timestampEdit` needs. Every other field has to be in
+ * range, so anything else unreadable is still refused.
+ */
+export function isSyncDayZeroStamp(blob: Uint8Array, off: number): boolean {
+  if (!matchesAt(blob, off, CLOCK_COOKIE)) return false;
+  if (!matchesAt(blob, off + 9, CLOCK_END)) return false;
+  const [second, minute, hour, day, dow, month] = [2, 3, 4, 5, 6, 7].map((k) => u8(blob, off + k)) as [
+    number, number, number, number, number, number,
+  ];
+  const year = 2000 + u8(blob, off + 8);
+  if (day !== 0 || month > 11 || hour > 23 || minute > 59 || second > 59) return false;
+  // Day 0 of a month, rolled over by Date.UTC, is the last day of the month before.
+  const days = Math.floor((Date.UTC(year, month, 0) - CLOCK_EPOCH_MS) / MS_PER_DAY);
+  return ((days % 7) + 7) % 7 === dow;
+}
+
+/**
  * The one place a `builtAt` string is spelled, `YYYY-MM-DDTHH:MM:SS` with every field padded.
  *
  * It was spelled twice, here and in `edit.ts`'s `localTimestamp`, each with its own `padStart`

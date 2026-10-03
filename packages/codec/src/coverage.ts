@@ -24,7 +24,7 @@
  * A sentence stating a property the file does not have is worse than no sentence, because the next
  * reader has no reason to check.
  */
-import { BINDING_SLOT, CLOCK_RECORD_LENGTH, CLOCK_SECTION_LENGTH, Container,
+import { BINDING_SLOT, CLOCK_RECORD_LENGTH, CLOCK_SECTION_LENGTH, Container, isSyncDayZeroStamp,
   EMPTY_FRAME_LENGTH, FRAME_END_LENGTH, INSTRUCTION_LENGTH, SECTION_ITEM_SIZE, SECTION_TABLE_OFFSET,
   archRecordExtent, archSlot }
   from './gspm.ts';
@@ -215,7 +215,12 @@ export function claims(c: Container, withPictures = true, refusals: string[] = [
   // containers, which is why they are claimed here and written as zeros by the emitter rather than
   // carried. A tail that is not zero is not this section's, so the claim falls back to the record.
   const clock = slot(3);
-  if (clock !== undefined && c.builtAt !== undefined) {
+  const clockOff = clock === undefined ? undefined
+    : c.blobOffsetOf((c.sections[clock] as { address: number }).address);
+  // The day 0 stamp of a MyHarmony sync on the 1st is a stamp in every other respect and is claimed
+  // as one, todo-compile-650 1.3.1; `builtAt` stays undefined since what date it means is open.
+  if (clock !== undefined && (c.builtAt !== undefined
+      || (clockOff !== undefined && isSyncDayZeroStamp(c.blob, clockOff)))) {
     const address = (c.sections[clock] as { address: number }).address;
     const off = c.blobOffsetOf(address);
     const length = c.sectionLength(clock);

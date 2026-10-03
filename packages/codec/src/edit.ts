@@ -61,6 +61,7 @@ import {
   archSlot,
   clockRecord,
   clockRecordFields,
+  isSyncDayZeroStamp,
   timestampOf,
   trailerChecksum,
 } from './gspm.ts';
@@ -337,9 +338,11 @@ export function timestampEdit(c: Container, builtAt: string): Edit[] {
   }
   const off = c.blobOffsetOf(section.address);
   if (off === undefined) throw new EditError('base slot 3 is outside the container');
-  if (clockRecord(c.blob, off) === undefined) {
+  if (clockRecord(c.blob, off) === undefined && !isSyncDayZeroStamp(c.blob, off)) {
     // A save that silently stamped nothing is the failure this whole distinction is about, so an
     // unreadable record is refused rather than overwritten: whatever is there is not what we think.
+    // The one exception is the day 0 stamp a MyHarmony sync writes on the 1st of a month, which is a
+    // stamp in every other respect and which every write replaces anyway, todo-compile-650 1.3.1.
     throw new EditError('base slot 3 does not hold a clock record, so it is not ours to overwrite');
   }
   if (bytes.length !== CLOCK_FIELD_COUNT) throw new EditError('the record is seven fields');
