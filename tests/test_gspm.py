@@ -3235,5 +3235,100 @@ class TestTheHarmony350SlotMapIsPartialAndRefusesTheRest(unittest.TestCase):
 
 
 
+
+
+def _key_table(name):
+    """The table after the end marker as `(tag, operand, opcode)` triples, read straight off the
+    bytes: a count, then four bytes per entry, the operand little endian. Section 311."""
+    data = lab.load(name)
+    at = data.find(b'LWJL')
+    count = data[at + 4]
+    return [(data[at + 5 + 4 * k], data[at + 6 + 4 * k] | data[at + 7 + 4 * k] << 8,
+             data[at + 8 + 4 * k]) for k in range(count)]
+
+
+class TestTheKeyTableIsModeZerosInstructions(unittest.TestCase):
+    """findings.md section 311: the table after the end marker is mode 0's own list of key events,
+    each carrying one action list instruction, and on a model it is one constant.
+
+    Named samples rather than the whole corpus, since the claim is per model; section 311 gives the
+    corpus wide grouping, 19 containers on the 600 and 650 and 34 on the Harmony One."""
+
+    SIX_FIFTY = ('h600_config', 'calibration_h600', 'h650_config_region', 'h650_panasonic_config')
+    SEVEN_HUNDRED = ('h700_config', 'h700_config_2', 'h700_28_config_region', 'h700_power_hold_compile')
+    ONE = ('one_config', 'one_config_unprogrammed', 'one_spare_after_sync', 'calibration_one')
+
+    def test_the_600_and_650_table_swallows_every_key_but_one(self):
+        """162 entries, every scan 1 to 54 in all three events, each an empty instruction except the
+        press of scan 25, which pops the mode stack: `07 FFFC`. The same bytes on both models."""
+        lab.require(*self.SIX_FIFTY)
+        tables = [_key_table(n) for n in self.SIX_FIFTY]
+        for name, table in zip(self.SIX_FIFTY, tables):
+            with self.subTest(config=name):
+                self.assertEqual(table, tables[0])
+                self.assertEqual(len(table), 162)
+                self.assertEqual(sorted(t for t, _, _ in table),
+                                 sorted(e << 6 | s for e in (1, 2, 3) for s in range(1, 55)))
+                self.assertEqual([(t, o, c) for t, o, c in table if (o, c) != (0, 0)],
+                                 [(0x80 | 25, 0xFFFC, 0x07)])
+
+    # The state variable each sample's enter handler sets, which is the one byte the three variants
+    # differ in. Section 311.
+    SEVEN_HUNDRED_VARIABLE = {'h700_config': 40, 'h700_config_2': 40, 'h700_28_config_region': 44,
+                              'h700_power_hold_compile': 43}
+
+    def test_the_700_table_differs_in_its_first_entry(self):
+        """163 entries: an enter handler that sets one state variable to 1, whose number the compiler
+        chooses, then the 600's 162 key events in the 600's order, every one of them empty, the press of
+        scan 25 included."""
+        lab.require(*self.SEVEN_HUNDRED, 'h600_config')
+        six = _key_table('h600_config')
+        for name in self.SEVEN_HUNDRED:
+            with self.subTest(config=name):
+                table = _key_table(name)
+                self.assertEqual(len(table), 163)
+                self.assertEqual(table[0], (0x06, 1, 0x80 | self.SEVEN_HUNDRED_VARIABLE[name]))
+                self.assertEqual(table[1:], [(t, 0, 0) for t, _, _ in six])
+
+    def test_the_harmony_one_table_calls_a_list_per_entry(self):
+        """55 entries, each `0x7F` calling the action list numbered by its own position."""
+        lab.require(*self.ONE)
+        tables = [_key_table(n) for n in self.ONE]
+        for name, table in zip(self.ONE, tables):
+            with self.subTest(config=name):
+                self.assertEqual(table, tables[0])
+                self.assertEqual([(o, c) for _, o, c in table], [(k, 0x7F) for k in range(55)])
+
+    def test_the_600_firmware_pushes_on_fffd_and_pops_on_fffc(self):
+        """The instruction scan 25's entry carries: action instruction 0x07 compares its operand's low
+        byte with 0xFC and 0xFD, and the two arms raise and lower the mode stack's index at 0x207."""
+        lab.require('h600_code_complete')
+        from harmony.pic18 import isa
+        code = lab.load('h600_code_complete')
+
+        def at(addr):
+            instr = isa.decode(code, addr - 0x9000, 0x9000)
+            return instr.mnemonic, instr.fields.get('k', instr.fields.get('f'))
+
+        def target(addr):
+            return isa.decode(code, addr - 0x9000, 0x9000).fields['target']
+
+        # That this is instruction 0x07's handler: the opcode byte at 0x2B4 compared with 7.
+        self.assertEqual(at(0xF1DA), ('MOVLW', 0x07))
+        self.assertEqual(at(0xF1DC), ('SUBWF', 0xB4))
+        # The operand's low byte at 0x2B2 against 0xFC and 0xFD, ordered compares: below 0xFC leaves,
+        # 0xFC itself goes to the arm at 0xF230, and 0xFD falls through to the one at 0xF210.
+        self.assertEqual(at(0xF204), ('MOVLW', 0xFC))
+        self.assertEqual(target(0xF208), 0xF276)
+        self.assertEqual(at(0xF20A), ('MOVLW', 0xFD))
+        self.assertEqual(target(0xF20E), 0xF230)
+        # 0xFD's arm addresses the stack at 0x208 plus twice the index, stores, and raises the index.
+        self.assertEqual(at(0xF21C), ('MOVLW', 0x08))
+        self.assertEqual(at(0xF220), ('MOVLW', 0x02))
+        self.assertEqual(at(0xF22C), ('INCF', 0x07))
+        # 0xFC's arm lowers it.
+        self.assertEqual(at(0xF230), ('DECF', 0x07))
+
+
 if __name__ == '__main__':
     unittest.main()

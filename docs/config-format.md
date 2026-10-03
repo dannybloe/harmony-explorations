@@ -4075,9 +4075,28 @@ bitmaps.
 
 ```
 u8   event_code    event type in the top two bits, scan code in the rest
-u16  ?             values are small and architecture dependent, meaning not established
-u8   flags         meaning not established
+u16  operand       the operand of one action list instruction
+u8   opcode        that instruction's opcode
 ```
+
+**It is mode 0's own tagged list**, section 52, and each entry is a key event with one action list
+instruction, run when mode 0 is on screen and the event matches. `docs/findings.md` section 311, read
+in the Harmony 600's 0.2 firmware. Mode 0 is the "Use the Harmony setup software to add an Activity on
+this button" screen on a Harmony 600 and 650, which an empty activity key opens by pushing the mode and
+entering mode 0; a page with no text on a Harmony 700, whose placeholder is mode 4; and "The battery
+level is low!" on a Harmony One. An entry of `00 00 00` is a deliberate swallow: the key matches, the
+all zero instruction is dropped, and nothing below it sees the key.
+
+**A writer emits it as a constant per model**, and these are the constants:
+
+| model | entries | content | containers carrying exactly these bytes |
+|---|---|---|---|
+| Harmony 600 and 650 | 162 | every scan 1 to 54 as release, press and repeat, each `00 00 00`, except the press of scan 25, `FC FF 07`: instruction `0x07` with `0xFFFC`, pop the mode stack | 19 |
+| Harmony 700 | 163 | an enter handler, tag `0x06`, setting one state variable to 1 (opcode `0x80` plus its number, which the compiler chooses: 40, 43 or 44 so far), then the 600's 162 key events in the same order, all `00 00 00`, scan 25 included | 10, in 3 variants by that one byte |
+| Harmony One | 55 | each `0x7F`, calling the action list numbered by its own position, 0 to 54 | 34, every user configuration |
+
+Elsewhere it is not one constant: arch 8, 10 and 16 samples agree in some pairs and differ in others,
+section 311 lists which.
 
 An **event code is not a matrix address.** The top two bits are the event type and the rest is
 the keypad scanner's own scan code:
@@ -4095,10 +4114,10 @@ key, which made the arch 14 table describe a keypad that cannot exist. See
 
 | Sample | count | Shape |
 |---|---|---|
-| 700 user config, arch 14 | 163 | scan codes 1 to 54 in each of release, press and repeat, plus `0x06` with no event bits. `flags` is `0x00` or `0xA8`. |
-| 600 user config, arch 14 | 162 | exactly 54 scan codes times 3 event types, nothing else. `flags` is `0x00` or `0x07`. |
-| One user config, arch 12 | 55 | 52 press codes plus `0x06`, `0x07`, `0x2D` with no event bits. No release or repeat entries at all. `flags` is `0x7F` throughout. |
-| 88x class config, arch 8 | 56 | 53 press codes plus the same three. Identical in all four arch 8 samples. |
+| 700 user config, arch 14 | 163 | scan codes 1 to 54 in each of release, press and repeat, plus `0x06` with no event bits. The opcode is `0x00` or `0xA8`. |
+| 600 user config, arch 14 | 162 | exactly 54 scan codes times 3 event types, nothing else. The opcode is `0x00` or `0x07`. |
+| One user config, arch 12 | 55 | 52 press codes plus `0x06`, `0x07`, `0x2D` with no event bits. No release or repeat entries at all. The opcode is `0x7F` throughout. |
+| 88x class config, arch 8 | 56 | 53 press codes plus the same three, in the same order on `arch8_config_a` to `_d` and `arch8_config_880`, with operands differing in 2 of 56; `arch8_config_885` has 58 entries, section 311. |
 | One safe-mode config | 2 | press of scan 47 and scan 46. A two button recovery UI. |
 | 700 `Region_3` | 0 | empty |
 | 525 config, arch 9 | n/a | the byte where a count would sit after `CMAH` is zero, so no table is claimed there. Arch 9 binds its keys in the mode records instead, see below |

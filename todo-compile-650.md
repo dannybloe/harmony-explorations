@@ -93,7 +93,7 @@ copied. **Every chapter ends with a configuration that works on the 650.**
 - [ ] 10.1 The frame: cookies, format word, the architecture record, the section table and every address, the end address, the trailer checksum (was 3.1)
 - [ ] 10.2 The firmware's own wiring: the shared action lists every activity runs, base slot 9's fixed prefix and leftover entry, base slot 8's leading list, the event map, the log area's three numbers, which only the Harmony One's firmware writes to, the parameter block, the timers
 - [ ] 10.3 The state variables: the firmware's own 0 to 17, the header's narrow and wide, the value map and the name tree
-- [ ] 10.4 Mode 0, the screen for an empty activity key: its table after the end marker is one constant on every 600 and 650, emitted as is
+- [ ] 10.4 Mode 0, the screen for an empty activity key: its table after the end marker is one constant on every 600 and 650, emitted as is (section 311)
 - [ ] 10.5 Place the pictures and glyph sets (was 3.2)
 - [ ] 10.6 A setup description in, a whole container out; the description is FreeHarmony's own format, todo-later 1.1 (was 3.3)
 

@@ -40685,3 +40685,93 @@ routine on any of the three images; or, on the 650, a configuration whose base s
 * Section 38's paragraph corrected in place, and its two phrasings in `reference/superseded.md`.
 * `docs/config-format.md` under base slot 3.
 
+## 311. The table after the end marker is mode 0's key list of single instructions, and a constant on each model
+
+**Todo `todo-compile-650.md` 10.4**: the table that follows the end marker had two fields with no
+reading, a `u16` and a byte called flags, and a configuration built from nothing has to emit it.
+
+**Sources checked**: the firmware, the Harmony 600's 0.2 image; this document, sections 17, 48, 52,
+73, 271, 290 and 294. Logitech's client was not consulted: the table is interpreted by the firmware and
+the image answers it. Measured over every sample `tests/lab.py` names, and audited by a second
+reviewer, whose corrections are folded in below.
+
+### What the two fields are
+
+Section 52 had already found that this table is **mode 0's own tagged list**, the first record of the
+mode table, and `docs/config-format.md` kept describing it as a free standing key table. Read as a
+tagged list, each entry is a key event and **one action list instruction**: the `u16` is the
+instruction's operand and the byte its opcode. On the Harmony 600 a key press is resolved down a stack
+of key maps from the top, `0xE692`, and for the current mode the page's list is tried and then the mode
+record's own list, `0x14910`, both through one runner at `0x19E42` that reports a match on the first
+equal tag without looking at the opcode; section 271 read the same lookup on the Harmony 700's 2.8. The
+queue routine at `0xE628` then drops an instruction whose three bytes are all zero. So a `00 00 00`
+entry is a swallow: the key is matched, nothing is queued, and nothing below it on the stack sees it.
+No entry anywhere has opcode `0x00` with a nonzero operand.
+
+The one entry on a Harmony 600 or 650 that is not a swallow is instruction `0x07` with operand
+`0xFFFC`. Instruction `0x07`'s handler, `0xF1DA`, compares the operand's low byte with `0xFF`, `0xFE`,
+`0xFC` and `0xFD` in turn. `0xFD` stores the current mode on a stack at `0x208`, two bytes an entry
+indexed by `0x207`, and raises the index at `0xF22C`; `0xFC` lowers it at `0xF230` and returns to the
+stored mode through the mode switch at `0x147BA`, unless the entry is `0xFEFE`. The value pushed is the
+mode number, which the mode switch seeks in base slot 6. Section 73 read the pushed value as a register
+pair on another image; on the 600 it is the mode. The `0xFE` arm runs the current activity with tag 5,
+which is section 313.
+
+### What mode 0 is
+
+| model | mode 0 shows | entries | containers with these bytes |
+|---|---|---|---|
+| Harmony 600 and 650 | "Use the Harmony setup software to add an Activity on this button", with "Exit" | 162, every one `00 00 00` but the press of scan 25, `FC FF 07` | 19 |
+| Harmony 700 | no text; the render is a charging battery | 163: tag `0x06` setting one state variable to 1, then the 600's 162 events in the 600's order, all `00 00 00` | 10, in three variants differing only in that variable's number, 40, 43 or 44 |
+| Harmony One | "The battery level is low!", with "OK" | 55, each `0x7F` calling the action list numbered by its own position | 34, every user configuration |
+
+The screens are read with `screenStrings` off mode 0's one page, which no earlier section had done. On
+the Harmony 600 and 650 mode 0 is the placeholder an empty activity key opens: `calibration_h600`, with
+two activities, binds its empty key to `[07 FFFD, 7E 0]`, push the mode and enter mode 0, and the press
+of scan 25 in mode 0 pops back. Scan 25 is the centre key under the display, sections 290 and 294, where
+the working screens write "Devices" and mode 0 writes "Exit" on the same row; it is not the 600's hard
+Exit key, which is scan 12. On the Harmony 700 the placeholder is mode 4, so its mode 0 is something
+else, and the Harmony One's mode 0 is its low battery warning.
+
+**The 19 on the 600 and 650** are ten distinct containers by content: six Logitech compiles,
+`h600_config`, `calibration_h600`, `h650_config_region`, `h650_panasonic_config` and the two Harmony 650
+compiles of section 306 no remote ever held, plus reads of the 600 and 650 after our own writes, and
+re-reads equal to a compile. **The 34 on the Harmony One** are its user configurations; the safe mode
+container, `one34_region2` and the vendor region's embedded configuration carry a two entry table of
+swallows instead.
+
+**Not a constant elsewhere, and not always different either.** The arch 8 samples `arch8_config_a` to
+`_d` carry the same 56 events in the same order and differ in 2 of 56 operands, `arch8_config_880` has
+the same 56 events, and `arch8_config_885` has 58. On arch 10 `h890_config` and `h890_config_2`, two
+different configurations, carry identical 57 entry tables and `h895_config` has 59. On arch 16
+`h350_config` and `h350_three_devices_config` agree and the other three differ. The arch 14 safe mode
+containers carry an empty table and the Harmony 525's safe mode container 47 entries, each `0x7F`; the
+Harmony 525's user configurations have the same structure with an empty mode 0 list.
+
+### For a writer
+
+The Harmony 650 takes the 600 and 650 table verbatim: a count of 162 and the entries in their stored
+order. The order changes nothing, since no tag repeats and the first match wins, and it is copied for
+byte equality. Mode 0's record, page and screen program come with it and are not part of this table.
+
+### Scope, decision 16
+
+The firmware reading is the Harmony 600's 0.2 image, with section 271's read of the lookup on the
+700's 2.8. The constancy is measured on arch 12 and 14 and refuted on arch 8, 10 and 16. Open: how the
+Harmony 700's compiler picks its variable, and what its mode 0 is for.
+
+### Falsification
+
+A Harmony 600 or 650 configuration whose table differs, a European model or another firmware build
+included; a 700 table differing anywhere but its first entry's opcode; or, on hardware, a key doing
+something while the "add an Activity" screen is up, scan 25 apart.
+
+### Where it lands
+
+* `tests/test_gspm.py`, `TestTheKeyTableIsModeZerosInstructions`: the 600 and 650 table identical on
+  four Logitech compiles with exactly one entry that is not a swallow; the 700's first entry with its
+  variable per sample and the 600's events in order on four; the Harmony One's 55 calls on four; and
+  the 600 firmware's instruction `0x07` arms, which compare branches where and which raises the index.
+  The counts of 19, 10 and 34 are this section's and are not asserted.
+* `docs/config-format.md` under the key table, with the constants per model, and the arch 8 row's
+  "identical" narrowed to the order of the events.
