@@ -41,6 +41,10 @@ export * from './language.ts';
 export * from './render.ts';
 export * from './png.ts';
 export * from './coverage.ts';
+// Which screen bytes are the same on every configuration of a model, which draw run time state, and
+// which follow from the setup. After the coverage, since it cuts up what the byte accounting claims.
+// Section 317.
+export * from './screencategories.ts';
 export * from './edit.ts';
 // Which activity the three activity keys start on a Harmony 600, 650 or 700, and the same length edits
 // that move one, section 314. Beside `edit.ts` because that is what these are.

@@ -88,7 +88,7 @@ copied. **Every chapter ends with a configuration that works on the 650.**
 ## 7. Screens built by us
 
 - [ ] 7.1 Probe: write an almost empty configuration to the 650 and record what the remote demands at minimum, so screens it does not need are not built
-- [ ] 7.2 Categorise every screen left: the same on every 650, dynamic, or depending on the configuration; done when every byte of the screen sections is attributed to one of the three
+- [x] 7.2 Categorise every screen left: the same on every 650, dynamic, or depending on the configuration; every screen byte of the four 650 compiles is attributed to exactly one, about three quarters fixed (section 317)
 - [ ] 7.3 The screen records for the device list, the activity menu and Off, each page with its second copy (section 69)
 - [ ] 7.4 Build the standard screens the probe shows are needed: the setup and status screens, and the welcome tour if it cannot simply be skipped
 

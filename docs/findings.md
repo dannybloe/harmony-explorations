@@ -41352,3 +41352,228 @@ body: the paging test's tally names each count it asserts.
   controls, two and three activities onto the two 650 configurations, and section 289's refusal test
   rewritten to what refuses `calibration_h600` now.
 * `docs/config-format.md`, the `writing-a-config` skill, `todo-compile-650.md` and `docs/status.md`.
+
+## 317. Every screen byte of a Harmony 650 configuration is fixed, dynamic or the setup's, and seven tenths to three quarters is fixed
+
+**Todo `todo-compile-650.md` 7.2**: categorise every screen left as the same on every 650, dynamic, or
+depending on the configuration, done when every byte of the screen sections is attributed to one of the
+three.
+
+**Sources checked**: this document, sections 52, 66, 69, 285, 286, 289, 290, 311 and 313, for the
+readers the cut rests on; the four Harmony 650 configurations Logitech compiled, the five Harmony 700
+and two Harmony 600 compiles for the reach of the answer. Neither the firmware nor Logitech's client was
+read: the question is what their compiler emits, which the compiles answer, and nothing here claims
+how the remote draws any of it. An earlier pass at this question by another agent, whose scripts were
+read and not reused, is scored at the end.
+
+### The answer, per configuration
+
+A **screen byte** is one the byte accounting gives base slot 6 (the mode table and every mode's record,
+entry, pages, page lists and their second copies), base slot 7 (the font table, its set headers and
+every glyph), base slot 11 (the program table, every screen program and every picture outside the bank),
+the picture bank, or base slot 17's two bytes in front of the bank. Base slot 14, the value map, is left
+out: its records name programs and draw nothing, and the programs they name are counted under base slot
+11.
+
+| configuration | devices | activities | screen bytes | fixed | dynamic | setup |
+|---|---|---|---|---|---|---|
+| `h650_config_region` | 5 | 3 | 628447 | 471329, 75.0% | 13391, 2.1% | 143727, 22.9% |
+| `h650_panasonic_config` | 6 | 4 | 645496 | 471328, 73.0% | 13391, 2.1% | 160777, 24.9% |
+| `h650_power_hold_compile` | 8 | 4 | 679481 | 471328, 69.4% | 13391, 2.0% | 194762, 28.7% |
+| `h650_power_hold_compile_2` | 8 | 4 | 681067 | 471328, 69.2% | 13391, 2.0% | 196348, 28.8% |
+
+Every byte lands in exactly one unit and every unit gets one category, on all four. The units' ranges
+are checked disjoint, and their sum equals what `coverage` gives those owners; that equality is a
+consistency check and not an independent closure, since `screenUnits` takes its bytes from the same
+claims `coverage` counts and throws on a gap. **Fixed is the same size on all four to within one byte,
+dynamic exactly, and setup grows** with the devices and activities. Dynamic's equal size is a test the
+cut did not set itself, since dynamic never consults the census; fixed's is largely set by the census,
+which admits a unit only if its look occurs equally often in all four. The one byte between 471329 and
+471328 is mode 215, a tour screen: on `h650_config_region` its string "TV." is stored inline where the
+other three point at another program's copy.
+
+What each category holds, on `h650_config_region`:
+
+| category | what | units | bytes |
+|---|---|---|---|
+| fixed | pictures | 15 | 433559 |
+| fixed | glyphs drawn by fixed or dynamic screens | 235 | 28602 |
+| fixed | the firmware's screens at the head of the mode table, binding a whole keypad | 7 | 5011 |
+| fixed | the same head's status screens, binding nothing | 37 | 1940 |
+| fixed | the introduction tour | 10 | 1699 |
+| fixed | Off | 1 | 285 |
+| fixed | the font set holding only such glyphs | 1 | 231 |
+| fixed | base slot 17's two bytes | 1 | 2 |
+| dynamic | switching programs: the battery icons and the two delay countdowns | 5 | 12447 |
+| dynamic | pictures only those programs draw | 4 | 944 |
+| setup | glyphs only setup screens draw | 487 | 61393 |
+| setup | glyphs fixed screens draw whose count differs in another compile | 7 | 308 |
+| setup | other modes: help, Remote Assistant, the activity menu, working screens | 216 | 28633 |
+| setup | case programs of a value map keyed by a device's delay or by the running activity | 4284 | 21404 |
+| setup | case programs of a lookup the reader ties to no device or activity | 468 | 2336 |
+| setup | the mode, program and font tables, whose lengths count the setup | 3 | 15184 |
+| setup | a device's own mode | 5 | 8297 |
+| setup | font set headers | 17 | 3927 |
+| setup | device lists | 5 | 1352 |
+| setup | an activity's start up screen | 3 | 893 |
+
+**The unit is what a generator emits whole**, so a category is decided per unit and not per byte: a
+mode with everything it owns and every program reachable from it; a base slot 11 entry no value map
+names, with what it reaches, which is what a page's queued `0x73` runs and which is what dynamic means
+here; a program a value map case names; a picture, a glyph, a font set header, a table. No program byte
+is reached from two units on any of the thirteen arch 14 compiles, so no shared unit was needed, and the
+classifier would make one rather than count a byte twice.
+
+### What fixed means
+
+Fixed is **the same look**, which is one of two strengths of "the same", and 7.2 asked which:
+
+* **look** replaces every address by what it addresses, a glyph code by the glyph's own bytes, a font
+  index by that font's height; drops the operand of an action instruction that indexes a table the
+  configuration numbers; keeps an instruction writing a state variable and its value while dropping
+  which variable, for every variable including the firmware's own 0 to 17; and keeps a switch on a
+  state variable above 17 while dropping its number. Two units with one look draw the same pixels and
+  bind the same keys to the same kinds of instruction.
+* **verbatim** replaces addresses and nothing else.
+
+Of the 55 fixed modes, **40 are verbatim and 15 have the same look and other bytes**, on each of the
+four. One differs only in the operand of an instruction indexing a numbered table, four only in which
+state variable an instruction on their key list writes, and ten are tour screens that differ in their
+font index and an index operand, four of them also in glyph codes or string storage. Over all fixed
+units of `h650_config_region` it is 292 verbatim, 466120 bytes, against 15 re-encoded, 5209 bytes, and
+5208 on the other three. So a generator can emit fixed screens as constants **only after** it has
+numbered the configuration's fonts, glyphs, action lists and state variables, and then has to write
+those numbers in.
+
+**The rendered pixels are the closure**, by a route that shares no code with the normal form: each of
+the 55 fixed modes of `h650_config_region`, rendered page by page with `renderPage`, draws the same
+pixels as its twin in each of the other three, 165 pairs of 165. A mode's own program, which runs
+before its pages, is not rendered on its own.
+
+### Why structure decides and the census refuses
+
+Fixed needs two things to agree: **structure** says a unit may be fixed, and a **census** of the four
+finds it the same number of times in each. Structure allows the firmware's head of the mode table (the
+modes before the first whose own list has between 1 and 100 entries, split into those binding a keypad
+and those binding nothing), the introduction tour, Off, pictures, base slot 17's bytes, a case program
+of a lookup the reader ties to no device or activity, glyphs a fixed or dynamic unit draws and a font
+set holding only those. Everything else is setup by structure, and each unit carries the reason.
+
+**A census alone is wrong on this population and it was measured**: 166 modes that structure makes the
+setup's occur exactly as often in all four configurations, 166 in each, because the four are one
+household's devices and three of its activities. "Is the Denon set to the Media Player input?" is in
+every one. So four compiles cannot tell a fixed screen from a screen about a device all four happen to
+hold, and the census is used only to refuse: a structurally eligible unit whose count differs, or whose
+look any member makes setup by structure, is setup. Every one of the 55 eligible modes passes it on all
+four.
+
+**The refusals are not empty**, and they are where structure alone would have been wrong in the other
+direction. On `h650_config_region` 7 glyphs, 308 bytes, that fixed modes draw occur 6 times against 7,
+or once against twice, in the eight device compiles, which carry one more font set; and 468 case
+programs of lookups the reader ties to no device or activity, 2336 bytes, are refused, 467 because the
+same look is a keyed case elsewhere and one because it is absent from another compile. Per compile the
+two counts are 7 and 468, 7 and 470, 9 and 474, 9 and 474. Whether any of those 468 would stay the same
+in a household with other devices is not settled by four compiles of one household.
+
+### Glyphs follow the text
+
+A font set holds only the letters its screens use: every set states 76 codes and fills between 13 and
+66 of them on these four. So which glyphs a configuration carries follows from the text its screens
+draw, and a glyph only setup screens draw is setup. The census agrees with that only partly, for the
+reason the modes gave: all 729 glyphs of `h650_config_region` recur byte identical, at the same font
+height, in each of the other three, because the household is the same, while the two eight device
+compiles carry 804 and 820 glyphs, of which 747 and 789 recur in the other three.
+
+### How far it reaches, decision 16
+
+Measured on arch 14 only, and "the same on every 650" was measured on four 650s. Beyond them:
+
+* **The 2026 Harmony 700 compiles**, five of them: 53 of the 55 fixed modes occur in every one. The two
+  that do not are the tour's welcome, mode 216, which names the model, and mode 4, one of the seven head
+  modes binding a keypad, which draws no text; why that one differs is not read. All 19 pictures occur
+  byte identical in all five, and so do the five dynamic programs, in look.
+* **The two older Harmony 700 compiles**, built in 2021 and 2023, carry 3 of the 19 pictures.
+* **The two Harmony 600 compiles**: none of the 55 fixed modes occurs in either, and 2 of the 19
+  pictures occur in both, `calibration_h600` being a 2026 compile. So the picture set belongs to the
+  model and the service generation together, and a 600 needs its own census before anything of this is
+  reused for it.
+* **The Harmony One and every other architecture**: not checked. `screenUnits` returns undefined off
+  arch 14, because its roles rest on readers checked on arch 14 shapes and a Harmony One's pages call
+  shared programs, which would need a shared unit with no meaning of its own. The refusal is tested on
+  the Harmony One and the Harmony 525.
+
+The mode roles themselves are checked on all thirteen arch 14 compiles: one Off, one start up screen per
+activity, one mode per device, ten tour screens, a head of 44 modes on the 600 and 650 and 49 on the 700,
+and no shared program bytes.
+
+### Reviewer 1, blind
+
+A second agent, given the question and the corpus and not this section, measured with its own scripts
+and reached the same screen byte totals on all four, the same 19 pictures at 434503 bytes (433559 fixed
+and 944 dynamic here), all in the bank, the same five unnamed base slot 11 entries at 12447 bytes with
+four pictures of 944, the same 44 head modes and 10 tour screens rendering identically, and the same 729
+glyphs on `h650_config_region`. It matched the remaining modes by rendered pixels as a set rather than
+by count, and found 219 of `h650_config_region`'s 226 present in all three others, which is the census
+problem above in another measure: 226 is this section's 216 other modes, 5 device modes and 5 device
+lists. It also found the five dynamic programs' variable numbers differ per configuration, which is what
+the look abstracts, and that the tour is shown on `h650_config_region` and skipped on the other three;
+whether that is why its "TV." is stored differently is not traced.
+
+### Reviewer 2, the sentences
+
+A third agent audited this section's prose against the corpus. It found eleven sentences wrong or
+overclaiming in the first draft, all corrected above: the setup glyphs and case programs were each one
+row hiding a census refusal; four re-encoded modes were said to differ in a switch where they differ in a
+state write, and the look's folding of every write was unstated; the tour's byte was said to be two
+shared strings where it is one inline string; the picture set was called a property of the service
+generation alone, which the 2026 Harmony 600 compile refutes; the heading and "the same size on all
+four" read one configuration's figure as all four's; the claim that fixed's equal size was a test the
+cut did not set ignored that the census sets it; the coverage equality was called independent; the
+rendered closure counted 55 comparisons of a configuration with itself; and four of the todo
+consequences below overreached.
+
+### The earlier pass, scored
+
+It reported 80.4% fixed, 2.1% dynamic and 17.5% setup on `h650_config_region`, and its script as it
+stands gives 84.8% fixed. Its screen byte total, 628447, and its 19 byte identical pictures agree with
+this section, and its dynamic figure agrees to the rounding. The fixed figures disagree for three
+reasons, each measured: it counted every glyph fixed, 90303 bytes, where 61701 of them are setup here;
+it counted a second Off, the Remote Assistant's "Do you want to turn off your system now?", 147 bytes,
+which is a help screen; and it counted the one font set holding only fixed glyphs, 231 bytes, as setup.
+Its 56 fixed screens are this section's 55 plus that second Off; its 16 fixed in look but not in bytes,
+against 15 here, was not traced screen by screen.
+
+### Falsification
+
+A fifth Harmony 650 compile, from another household, in which any of the 55 fixed modes, the 19
+pictures or the five dynamic programs is absent or has another look; one in which a mode structure
+calls setup is the same in every 650 compile including households with none of these devices, which
+would mean structure is too strict; or a fixed mode whose pages render differently from its twin's.
+
+### Where it lands
+
+* `packages/codec/src/screencategories.ts`: `screenUnits`, `modeRoles`, `screenCensus`,
+  `attributeScreens` and `screenCategoryTotals`, exported from the codec.
+* `packages/codec/test/screencategories.test.ts`: the per configuration totals with coverage and no
+  overlaps, the 55 fixed modes by role and strength, the 165 rendered pairs, the 166 a census alone
+  would admit, the glyphs and case programs the census refuses, the dynamic units and their reach, the
+  cross model counts, the roles on thirteen compiles, and the refusal off arch 14.
+* `docs/config-format.md`, "The screen sections by category, arch 14".
+* For `todo-compile-650.md`, without ticking anything:
+  * 7.1: the 55 fixed modes and 19 pictures are what Logitech emits whatever the setup, which is the
+    probe's candidate list; whether the remote needs them is still the probe's question.
+  * 7.3: its screens are setup by this cut except Off, which is fixed; the device lists and the activity
+    menu have to be composed.
+  * 7.4: the standard screens it names are among the 55 fixed modes, 44 head modes and 10 tour
+    screens, and 15 of the 55 need the configuration's own numbers written in.
+  * 8.1: the fixed screens' text is identical on all four, so generated text can be checked against it;
+    help and Remote Assistant text is setup.
+  * 8.2: on `h650_config_region` 235 glyphs are fixed and 494 setup, 487 of them drawn only by setup
+    screens, and 17 of its 18 font set headers are setup.
+  * 9.1: all 19 pictures are byte identical on every 650 and every 2026 Harmony 700 compile, and 4 of
+    them are drawn only by the dynamic programs switching on state variable 17; that they are battery
+    icons is this project's reading of their size and that variable, not checked against the firmware.
+  * 9.2: base slot 16 declares no number sender on any of the four and none of their pictures is setup,
+    so they say nothing about logos.
+  * 3.13 leaves help and Remote Assistant out, and their screens are among the 216 other modes, which
+    then need no generator; how many of the 216 they are is not counted here.

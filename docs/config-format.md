@@ -1720,6 +1720,36 @@ blocks on 48 to 50 with the bar on 51 and 52.
 Read with `gspm.touch_pages` and `gspm.Container.touch_hit`, or in TypeScript with `touchPages`,
 `touchPageOf` and `touchOwner`. [findings.md](findings.md) sections 45 and 125.
 
+### The screen sections by category, arch 14
+
+**Screen bytes** are the bytes the byte accounting gives base slots 6, 7 and 11, the picture bank and
+base slot 17's two bytes on arch 14 (`SCREEN_OWNERS`). Base slot 14 is excluded. Each is in exactly one
+**unit**, the thing a generator emits whole, and each unit is one of three categories:
+
+| category | means | units on a Harmony 650 |
+|---|---|---|
+| fixed | emitted for every setup, content independent of it | the 44 head modes of the mode table (7 binding a keypad, 37 binding nothing), the 10 tour modes, Off, 15 of the 19 pictures, the glyphs those and the dynamic programs draw where their count agrees across compiles, the font set holding only such glyphs, base slot 17's two bytes |
+| dynamic | draws state the remote holds at run time, by switching on a state variable | the 5 base slot 11 entries no value map names (three icons switching on state variable 17, read here as the battery, and the two delay countdowns) and the 4 pictures only they draw |
+| setup | exists, repeats or holds content because of the devices, activities and names | device modes, device lists, start up screens, help, Remote Assistant, the activity menu and working screens, every case program (keyed by a device's delay or the running activity, or refused by the census), glyphs only setup screens draw and the few whose count varies, the other font set headers, the three tables whose lengths count modes, programs or fonts |
+
+**Fixed means the same look**: addresses, glyph codes, font indices, the operands of instructions that
+index a numbered table, which variable a state write writes, and the number of a switched state
+variable above 17 are placement and abstracted away.
+On the Harmony 650, 40 of the 55 fixed modes are also byte identical once relocated and 15 have to be
+re-encoded with the configuration's own numbers.
+
+| configuration | screen bytes | fixed | dynamic | setup |
+|---|---|---|---|---|
+| `h650_config_region` | 628447 | 471329 | 13391 | 143727 |
+| `h650_panasonic_config` | 645496 | 471328 | 13391 | 160777 |
+| `h650_power_hold_compile` | 679481 | 471328 | 13391 | 194762 |
+| `h650_power_hold_compile_2` | 681067 | 471328 | 13391 | 196348 |
+
+Fixed is per model and per service generation: 53 of the 55 fixed modes and all 19 pictures recur on
+the 2026 Harmony 700 compiles, none of the modes and 2 of the pictures on the Harmony 600's. Arch 14
+only; the Harmony One is not checked. Read with `screenUnits`, `attributeScreens` and
+`screenCategoryTotals`. [findings.md](findings.md) section 317.
+
 ### Base slot 15: the parameter block
 
 **Confirmed on the twelve containers whose architecture has a firmware reading of the guard**, six
