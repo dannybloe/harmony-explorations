@@ -163,7 +163,7 @@ After 3 produces something.
 - [ ] L12 `make protocols --write` against today's lab no longer reproduces `src/protocols.ts`: a measured row's counts move (Kreatel 164 to 276) and four tests fail, so the table is held at its committed state until the drift is read
 - [ ] L13 `blockOfStatedCode` builds a one frame press for the Memorex 32 Bit family where Logitech's compiled press of the Dell 2300MP holds three (section 309)
 - [ ] L14 Composing a device onto a Harmony 600, 650 or 700 whose device list's last page is full is refused, since a new device list page is composed on the Harmony One only; the Harmony 650 with six devices is there now (section 309)
-- [ ] L15 Point an existing device's power keys at the held records its configuration already holds, as an edit rather than by hand, so a device Logitech compiled gets what a composed one does (section 309)
+- [ ] L15 Make the Harmony 650 fix a library function: where a device's power keys in device mode send the short press but the configuration also holds the long held version the activity uses, point those keys at the held version (section 309)
 - [ ] L8 Flash reads stop out of sequence now and then in a write run, two and four whole chunks on the Harmony 700 and eleven on the 650 and the spare Harmony One, which is section 223's host side drop; what holds the reader up is open, and the writer's journal does not record the error that stopped it (section 301)
 
 ---
