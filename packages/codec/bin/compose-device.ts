@@ -47,6 +47,16 @@
  * where `--label` would be too long for the device list. A command whose code cannot be composed is
  * left out and listed.
  *
+ * **`--inputs` composes the device's inputs too**, section 321, Harmony 600, 650 and 700 only: the
+ * `<label>_Input_<n>` variable and the catalogue's state variables with every transition its rules
+ * state, `composeDeviceInputs`. The commands those transitions send are composed as records of the
+ * device whether or not `--commands` names them, since a transition can only send a record the device
+ * has, and they are not put on the screen: a page shows what `--commands` asks for and nothing more.
+ * The input variable and its values are printed, because that variable and a value are what an
+ * activity's `--targets` names to put the device on an input. Added for the combined bench file of
+ * todo-compile-650 2.5 and 3.6, which needed a catalogue device with inputs on a configuration that
+ * gets a screen page, and the library had both halves with no command line that joined them.
+ *
  * It deliberately does not stamp the build timestamp, for `set-delay.ts`'s reason: a timestamp is
  * right for a save and wrong for an exercise whose output should differ from its input only in the
  * places this prints.
@@ -65,7 +75,10 @@ import {
   composeDevice,
   composeDeviceScreen,
   composableKeycode,
+  composeDeviceInputs,
+  commandIndex,
   coverage,
+  inputPlan,
   deviceModeLayout,
   devices,
   inventory,
@@ -180,6 +193,35 @@ if (!process.argv.includes('--no-power-steps')) {
   }
 }
 
+// --inputs, section 321: the commands the catalogue's input rules send, appended as records after the
+// commands asked for and named the way the rules name them, so `composeDeviceInputs` can find each one
+// by name. A command already asked for is not composed twice: the rules' spelling is matched without
+// case, `commandIndex`, which is how the input composer itself looks a command up.
+const withInputs = process.argv.includes('--inputs');
+const plan = withInputs ? inputPlan(driving) : undefined;
+const inputNames: string[] = [...wanted];
+const inputCommands: { stated: string }[] = [];
+if (plan !== undefined) {
+  const catalogueNames = [...byName.keys()];
+  const sent = new Set([...plan.states, ...(plan.input === undefined ? [] : [plan.input])]
+    .flatMap((one) => one.transitions.flatMap((t) => t.steps.flatMap((s) => (s.kind === 'send' ? [s.command] : [])))));
+  for (const name of sent) {
+    try {
+      commandIndex(inputNames, name);
+      continue;
+    } catch (error) {
+      if (!(error instanceof ComposeError)) throw error;
+    }
+    const keycode = byName.get(catalogueNames[commandIndex(catalogueNames, name)] as string) as string;
+    if (!composableKeycode(keycode)) fail(`the inputs send ${name}, whose code does not compose`);
+    inputNames.push(name);
+    inputCommands.push({ stated: keycode });
+  }
+  process.stdout.write(`inputs: ${plan.input?.values.length ?? 0} input value(s), ${plan.states.length} state(s), `
+    + `${inputCommands.length} command(s) composed for them that the screen does not show: `
+    + `${inputNames.slice(wanted.length).join(', ') || 'none'}\n`);
+}
+
 const before = parse(new Uint8Array(readFileSync(input)));
 const wasDevices = inventory(before).devices;
 process.stdout.write(`${input}: ${before.blob.length} bytes, ${wasDevices.length} devices `
@@ -197,7 +239,7 @@ const tenths = (name: string): number | undefined => {
 const powerOnDelay = tenths('power-on-delay') ?? power?.powerOnDelay;
 const interDeviceDelay = tenths('inter-device-delay') ?? power?.interDeviceDelay;
 const composed = composeDevice(before, {
-  label, commands, power: powerIndex,
+  label, commands: [...commands, ...inputCommands], power: powerIndex,
   ...(power === undefined ? {} : {
     powerOn: power.powerOn, powerOff: power.powerOff, interKeyDelay: power.interKeyDelay,
   }),
@@ -210,6 +252,21 @@ if (composed.powerOnDelay !== undefined && composed.delay !== undefined) {
     + `${composed.delay.table}, identifier ${composed.delay.identifier}\n`);
 }
 let withDevice = parse(composed.bytes);
+// The inputs go in before the power variable joins the off lists, which is the order the input
+// composer's own test uses: its variables are inserted at `narrow`, below which the power variable
+// already sits, so nothing `joinPowerOff` names moves.
+if (plan !== undefined) {
+  const inputs = composeDeviceInputs(withDevice, { device: composed, label, commandNames: inputNames, driving });
+  withDevice = parse(inputs.bytes);
+  if (inputs.input !== undefined) {
+    process.stdout.write(`input variable ${inputs.input.variable}: `
+      + `${[...inputs.input.values].map(([name, value]) => `${value} ${name}`).join(', ')}\n`);
+  }
+  for (const [name, state] of inputs.states) {
+    process.stdout.write(`state ${name} variable ${state.variable}: `
+      + `${[...state.values].map(([one, value]) => `${value} ${one}`).join(', ')}\n`);
+  }
+}
 if (!process.argv.includes('--no-power-off')) {
   const joined = joinPowerOff(withDevice, composed.variable);
   withDevice = parse(joined.bytes);
