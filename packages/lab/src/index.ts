@@ -160,6 +160,9 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // After section 294's write, LG kijken's own device list: the written file byte for byte and the
   // rest of the block at 0x110000 erased. The compare base after that.
   h650_devicelist_region: '20260929T1032Z-h650-devicelist-region.bin',
+  // The 650 before a test device with held power steps was written, section 309: `h650_panasonic_config`
+  // byte for byte and erased flash after it, seventeen blocks from 0x030000. The compare base for it.
+  h650_plasma_base: '20261002T1408Z-h650-pre-plasma-region-region.bin',
   // The bench Harmony 700 as it arrived, in safe mode, section 295: both internal program memory pages,
   // whose application at 0x9000 fails its checksum with the 1 KiB page at 0x10000 erased, and the
   // external flash below its configuration, whose staged application at 0x000000 verifies. The same two
@@ -670,6 +673,8 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
     'h700_power_hold_compile', 'h650_power_hold_compile',
     'h700_power_hold_compile_2', 'h650_power_hold_compile_2', 'h700_power_hold_compile_3',
     'h700_power_hold_compile_4',
+    // The 650's region before section 309's test device, whose container is `h650_panasonic_config`.
+    'h650_plasma_base',
     // External flash of the bench Harmony 700 from 0x000000, kept for the staged application at its
     // start. The container at 0x020000 is byte for byte `h700_gspm`, the embedded config the 2.8
     // package carries as its region 3, so counting it would count that one twice. Section 295.

@@ -157,6 +157,9 @@ const H650_DUMPS = new Set([
   'h650_glow10_region',
   // After section 294, LG kijken's own device list, written in two runs. The compare base after that.
   'h650_devicelist_region',
+  // Before section 309's test device with held power steps: the Panasonic configuration as MyHarmony
+  // left it. The compare base for that write.
+  'h650_plasma_base',
 ]);
 
 /**

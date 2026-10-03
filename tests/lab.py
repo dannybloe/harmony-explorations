@@ -179,6 +179,7 @@ IMAGES = {
     'h650_glow10_region': '20260928T1449Z-h650-glow10-region.bin',
     # After section 294's write, LG kijken's own device list.
     'h650_devicelist_region': '20260929T1032Z-h650-devicelist-region.bin',
+    'h650_plasma_base': '20261002T1408Z-h650-pre-plasma-region-region.bin',
     # The bench Harmony 700 as it arrived, in safe mode, section 295.
     'h700_internal_fe': '20260929T1243Z-h700-internal-fe-region.bin',
     'h700_internal_ff': '20260929T1243Z-h700-internal-ff-region.bin',
@@ -670,6 +671,8 @@ PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_confi
                       'h700_power_hold_compile', 'h650_power_hold_compile',
                       'h700_power_hold_compile_2', 'h650_power_hold_compile_2', 'h700_power_hold_compile_3',
                       'h700_power_hold_compile_4',
+                      # The 650's region before section 309's test device.
+                      'h650_plasma_base',
                       # External flash of the bench Harmony 700 from 0x000000, kept for the staged
                       # application; its container at 0x020000 is byte for byte `h700_gspm`.
                       # Section 295.

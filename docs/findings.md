@@ -40515,6 +40515,25 @@ word. `compose-device.ts` reads the steps out of the catalogue when the power ac
 points the device page's power pads at them too, which Logitech's compile does not do and which is the
 reason for todo 4.3.4.
 
+### On the Harmony 650, the television's own Power On key
+
+**The held record switches the television on from device mode, where the ordinary press does not.**
+Composing a seventh device onto the Harmony 650 was refused, its device list's last page being full and
+a new one not composed on arch 14, so the same question was put to the device already there. On the
+650's configuration as MyHarmony left it, section 305's, the television's device mode Power On is a screen
+key beside the display whose list sends record 7 of its group, the ordinary press of `PowerOn`, three
+frames behind a 50 ms lead in and with a held block. The same group already holds Logitech's held record
+for that code, record 10, seven frames, which the activity's power step sends. The key and its pool copy
+are the only references to that list, and the list is the only send of record 7, so one byte, the send's
+record index from 7 to 10, plus the trailer checksum, points the key at the held record and changes
+nothing else. The region was read first, `h650_plasma_base`, and matched section 305's configuration byte
+for byte; the write took two erase blocks, `0x070000` and `0x120000`, each erase stayed inside its block
+on both sides, the whole configuration read back identical to the file, and the remote was restarted.
+**Off the cable, with the television off, that key switched it on**, where section 305 saw the same key
+on the same configuration leave it off. Seen at the bench by Danny, without the Flirc receiver this time,
+so the seven frames are what the configuration says the key sends rather than what was measured on the
+air. One television, one remote, arch 14 (Harmony 650) only.
+
 ### Independent closure and calibration
 
 The count comes from section 308's rule over Logitech's definitions and the frames from our rhythm table;

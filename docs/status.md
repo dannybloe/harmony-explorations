@@ -871,7 +871,8 @@ The library now builds such a record from the catalogue's code and hold, and it 
 compiler wrote it, word for word, on 26 of the 27; the 27th is a family whose press it cannot build yet.
 A device composed with its catalogue power steps sends those records when it switches, and building them
 found our general block speller ending one family's codes with two words in the wrong order, now fixed
-and checked over every block in the corpus, section 309.
+and checked over every block in the corpus, section 309. On the Harmony 650 itself, pointing the
+television's device mode Power On key at the held version, one byte, made it switch the television on.
 At the bench the television itself needs its power button held for about half a second, four repeats,
 so Logitech's second is a margin of about two; the 650's device mode Power On, three repeats, leaves it
 off.
