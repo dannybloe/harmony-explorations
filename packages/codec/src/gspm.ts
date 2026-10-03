@@ -206,14 +206,21 @@ export function archRecordExtent(room: number | undefined): number {
  *
  * ```
  * +0x00  u16  0xADDF
- * +0x02  u8   second, minute, hour, day of month, day of week, month (0 = January)
+ * +0x02  u8   second, minute, hour, day of month (0 = the 1st), day of week (0 = Sunday),
+ *             month (0 = January)
  * +0x08  u8   year, offset from 2000
  * +0x09  u16  0xEFBF
  * ```
  *
- * The field assignment is not a reading, it is a search result: of the 48 permutations of the four
- * date bytes times two month bases times seven weekday offsets, exactly one is consistent with
- * every sample. See `docs/findings.md` section 21.
+ * The field assignment was a search result, section 21: of the 48 permutations of the four date
+ * bytes times two month bases times seven weekday offsets, exactly one is consistent with every
+ * sample. **The search could not see how the day is counted**, section 322, because a day counted from
+ * 0 with a Sunday based weekday and a day counted from 1 with a Saturday based one accept the same
+ * bytes, a day apart, on every stamp except one made on the 1st of a month, which stores a day of 0.
+ * No container held one until 1 October 2026. The firmware settles it: every image read carries a
+ * month end routine whose last valid day is 30 for a 31 day month and 29 for a 30 day one, and
+ * Logitech's classic client writes the day minus one. So the day and the weekday both count from 0,
+ * Sunday for the weekday, and this project read every date one day early until 3 October 2026.
  */
 export const CLOCK_RECORD_SLOT = 3;
 export const CLOCK_COOKIE = new Uint8Array([0xdf, 0xad]);
@@ -225,12 +232,34 @@ export const CLOCK_RECORD_LENGTH = 11;
  * not part of the framing. `docs/findings.md` section 84.
  */
 export const CLOCK_SECTION_LENGTH = 14;
+/** The seven fields of the slot 3 record sit here, after the `0xADDF` cookie. */
+export const CLOCK_FIELDS_OFFSET = 2;
+export const CLOCK_FIELD_COUNT = 7;
+/** The year is a `u8` offset from 2000, so this is the whole range the record can express. */
+export const CLOCK_FIRST_YEAR = 2000;
+export const CLOCK_LAST_YEAR = CLOCK_FIRST_YEAR + 0xff;
+
 /**
- * Day of week is stored as days since 1 January 2000 modulo 7, which is why 0 means Saturday: that
- * date was one. The same epoch explains the year offset, so two fields agree on one anchor.
+ * The last valid **stored** day of `month` (0 = January) in year `2000 + yearOffset`, as the firmware
+ * states it: 30 for a 31 day month, 29 for a 30 day one, and for February 28 when `yearOffset & 3` is
+ * zero and 27 otherwise. Section 322.
+ *
+ * Read out of the month end routine, which is the same code on all nine firmware images in the lab,
+ * five architectures: the Harmony One 3.4 at `0x28072`, the Harmony 600 0.2 and the bench 650's 0.2
+ * at `0x10BC0`, the 650's 0.4 at `0x14E90`, the Harmony 700 2.8 at `0x150DA`, the Harmony 525 at
+ * `0x4180`, the Harmony 880 and 885 at `0x156EA` and the Harmony 350 1.4 at `0x14382`. An `XORLW` chain picks April, June, September and
+ * November (3, 5, 8 and 10) and February (1), and each arm compares the stored day against one
+ * literal. So the stored day is counted from 0, and this is what a reader refuses past and an encoder
+ * never writes past. `tests/test_clock_counting.py` reads the limits out of each image.
+ *
+ * **The leap test is the firmware's and not the calendar's**: `year & 3`, which disagrees with the
+ * Gregorian rule in 2100 and 2200, both inside the record's range. A date the calendar does not have
+ * is refused separately, so 29 February 2100 reads as nothing rather than as 1 March.
  */
-export const CLOCK_EPOCH_MS = Date.UTC(2000, 0, 1);
-export const MS_PER_DAY = 86400000;
+export function clockLastDayIndex(month: number, yearOffset: number): number {
+  if (month === 1) return (yearOffset & 3) === 0 ? 28 : 27;
+  return [3, 5, 8, 10].includes(month) ? 29 : 30;
+}
 
 /**
  * The pointer table is one table across architectures, with per architecture insertions rather
@@ -920,9 +949,16 @@ export function frameLength(blob: Uint8Array, off: number): number | undefined {
  * the value carries no timezone: it is whatever clock wrote it. Going through `Date` would attach
  * one and then the golden vectors would depend on where the tests run.
  *
- * Undefined rather than an error for anything that does not fit, including a stored day of week
- * that disagrees with the date. That check is the reason to trust the reading at all, so it stays
- * in the parser rather than only in a test.
+ * **The stored day is counted from 0 and the weekday from Sunday**, section 322, so the date is the
+ * stored day plus one. This read the stored day as the date and the weekday as days since 1 January
+ * 2000, which is the same bytes on every date the corpus held, so every date this project reported
+ * was one day early and a stamp made on the 1st of a month, a stored 0, was refused outright. That
+ * refusal is what exposed it, todo-compile-650 1.3.1.
+ *
+ * Undefined rather than an error for anything that does not fit: a stored day past the firmware's own
+ * last index for its month, `clockLastDayIndex`, a date the calendar does not have, or a stored day of
+ * week that disagrees with the date. That last check is the reason to trust the reading at all, so it
+ * stays in the parser rather than only in a test.
  */
 export function clockRecord(blob: Uint8Array, off: number): string | undefined {
   if (!matchesAt(blob, off, CLOCK_COOKIE)) return undefined;
@@ -930,42 +966,23 @@ export function clockRecord(blob: Uint8Array, off: number): string | undefined {
   const second = u8(blob, off + 2);
   const minute = u8(blob, off + 3);
   const hour = u8(blob, off + 4);
-  const day = u8(blob, off + 5);
+  const stored = u8(blob, off + 5);
   const dow = u8(blob, off + 6);
   const month = u8(blob, off + 7);
-  const year = 2000 + u8(blob, off + 8);
-  if (month > 11 || day < 1 || day > 31 || hour > 23 || minute > 59 || second > 59) return undefined;
-  const utc = Date.UTC(year, month, day, hour, minute, second);
-  const back = new Date(utc);
-  // Rejects a day that its month does not have, which Date.UTC would roll over instead.
-  if (back.getUTCMonth() !== month || back.getUTCDate() !== day) return undefined;
-  const days = Math.floor((Date.UTC(year, month, day) - CLOCK_EPOCH_MS) / MS_PER_DAY);
-  if (((days % 7) + 7) % 7 !== dow) return undefined;
+  const yearOffset = u8(blob, off + 8);
+  const year = CLOCK_FIRST_YEAR + yearOffset;
+  if (month > 11 || hour > 23 || minute > 59 || second > 59) return undefined;
+  // The firmware's own limit, which is what makes a stored 30 in April a refusal and not the 31st.
+  if (stored > clockLastDayIndex(month, yearOffset)) return undefined;
+  const day = stored + 1;
+  const date = new Date(Date.UTC(year, month, day));
+  // Rejects a date the calendar does not have, which Date.UTC would roll over instead. Past the limit
+  // above, only 29 February of a year the firmware's `& 3` calls leap and the calendar does not, 2100
+  // and 2200, can reach here.
+  if (date.getUTCMonth() !== month || date.getUTCDate() !== day) return undefined;
+  // Sunday is 0, which is JavaScript's own convention, so the weekday needs no epoch at all.
+  if (date.getUTCDay() !== dow) return undefined;
   return timestampOf(year, month + 1, day, hour, minute, second);
-}
-
-/**
- * Whether the slot 3 record at `off` is the one shape a MyHarmony sync was seen to write that
- * `clockRecord` refuses: a day of month of **0**, with the weekday of the day before the 1st.
- *
- * Measured once, todo-compile-650 1.3.1: the Harmony 650's configuration synced through MyHarmony on
- * 1 October 2026 reads `1b 20 0e 00 04 09 1a`, while Logitech's compiles fetched straight from the
- * service that same day read day 1 and weekday 5. Which convention the remote itself counts in is
- * still open, so this does not interpret the value: it only says the record is a well framed stamp
- * that a writer may overwrite, which is all `timestampEdit` needs. Every other field has to be in
- * range, so anything else unreadable is still refused.
- */
-export function isSyncDayZeroStamp(blob: Uint8Array, off: number): boolean {
-  if (!matchesAt(blob, off, CLOCK_COOKIE)) return false;
-  if (!matchesAt(blob, off + 9, CLOCK_END)) return false;
-  const [second, minute, hour, day, dow, month] = [2, 3, 4, 5, 6, 7].map((k) => u8(blob, off + k)) as [
-    number, number, number, number, number, number,
-  ];
-  const year = 2000 + u8(blob, off + 8);
-  if (day !== 0 || month > 11 || hour > 23 || minute > 59 || second > 59) return false;
-  // Day 0 of a month, rolled over by Date.UTC, is the last day of the month before.
-  const days = Math.floor((Date.UTC(year, month, 0) - CLOCK_EPOCH_MS) / MS_PER_DAY);
-  return ((days % 7) + 7) % 7 === dow;
 }
 
 /**
@@ -1057,12 +1074,6 @@ export function recoverFlashBase(blob: Uint8Array, addresses: number[]): number 
   return candidates.size === 1 ? [...candidates][0] : undefined;
 }
 
-/** The seven fields of the slot 3 record sit here, after the `0xADDF` cookie. */
-export const CLOCK_FIELDS_OFFSET = 2;
-export const CLOCK_FIELD_COUNT = 7;
-/** The year is a `u8` offset from 2000, so this is the whole range the record can express. */
-export const CLOCK_FIRST_YEAR = 2000;
-export const CLOCK_LAST_YEAR = CLOCK_FIRST_YEAR + 0xff;
 /** `YYYY-MM-DDTHH:MM:SS`, which is what `clockRecord` returns and what this takes back. */
 const TIMESTAMP = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})$/;
 
@@ -1074,6 +1085,12 @@ const TIMESTAMP = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})$/;
  * themselves with a different spelling of the same epoch. That is the shape of defect this project
  * bans for the opcode table: two copies of one derivation, both plausible, diverging quietly. So
  * there is one encoder, one decoder, and a test that walks the corpus asserting they are inverses.
+ *
+ * **The day is written counted from 0 and the weekday from Sunday**, section 322, which is how the
+ * remote counts both. This wrote the day of the month itself until 3 October 2026, so every
+ * configuration this project stamped set the remote's clock one day ahead: on the spare Harmony One
+ * every save from section 242 on, and on the Harmony 650 every save from section 285 on. A round trip
+ * never showed it, because the decoder made the same mistake in the other direction.
  *
  * The day of week is **computed** rather than taken from the caller, because `clockRecord` refuses a
  * record whose weekday disagrees with its date and that refusal is the reason to trust the whole
@@ -1091,13 +1108,15 @@ export function clockRecordFields(builtAt: string): Uint8Array | undefined {
   if (year < CLOCK_FIRST_YEAR || year > CLOCK_LAST_YEAR) return undefined;
   if (month < 1 || month > 12 || day < 1) return undefined;
   if (hour > 23 || minute > 59 || second > 59) return undefined;
-  const utc = new Date(Date.UTC(year, month - 1, day));
+  const date = new Date(Date.UTC(year, month - 1, day));
   // Rejects a day its month does not have, which Date.UTC rolls over instead.
-  if (utc.getUTCMonth() !== month - 1 || utc.getUTCDate() !== day) return undefined;
-  const days = Math.floor((utc.getTime() - CLOCK_EPOCH_MS) / MS_PER_DAY);
-  const weekday = ((days % 7) + 7) % 7;
+  if (date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return undefined;
+  // And a day the firmware would not hold. The calendar check above already covers every date, since
+  // the two limits differ only where the firmware's `& 3` allows a 29 February the calendar does not,
+  // but stating it keeps the encoder's range the decoder's by construction rather than by argument.
+  if (day - 1 > clockLastDayIndex(month - 1, year - CLOCK_FIRST_YEAR)) return undefined;
   return new Uint8Array([
-    second, minute, hour, day, weekday, month - 1, year - CLOCK_FIRST_YEAR,
+    second, minute, hour, day - 1, date.getUTCDay(), month - 1, year - CLOCK_FIRST_YEAR,
   ]);
 }
 

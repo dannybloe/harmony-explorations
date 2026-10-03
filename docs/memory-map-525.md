@@ -288,7 +288,8 @@ three architectures on the bench carry the same eleven byte record and only arch
 so this is one round of hardware on a Harmony 525 (arch 9), read only, with the batteries pulled and
 replaced at 11:53 local on 13 August 2026.
 
-The bench remote's own config was built at **2013-10-01T18:40:44**, which is what makes the reading
+The bench remote's own config was built at **2013-10-02T18:40:44**, which this gave as the 1st until
+`docs/findings.md` section 322 found the day counted from 0, and which is what makes the reading
 cheap: nothing about today resembles it, so the seven field values are a signature rather than a
 coincidence. As stored, `2c 28 12 01 03 09 0d`, being second 44, minute 40, hour 18, day 1, day of week
 3, month 9 counted from zero and year 13.

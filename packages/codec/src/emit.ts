@@ -50,7 +50,6 @@ import {
   TRAILER_CHECKSUM_OFFSET,
   archRecordExtent,
   clockRecordFields,
-  isSyncDayZeroStamp,
   trailerChecksum,
 } from './gspm.ts';
 import { countedPointers } from './valuemap.ts';
@@ -323,9 +322,10 @@ export function rebuilds(c: Container): Rebuild[] {
   }
 
   // Section slot 3's timestamp, and the day of week byte is the interesting one: it is derived
-  // rather than stored back, so emitting it recomputes days since 1 January 2000 modulo 7 and the
-  // round trip is a second confirmation of section 21's field assignment, on every container that
-  // has one.
+  // rather than stored back, so emitting it recomputes the weekday from the date and the round trip
+  // is a second confirmation of section 21's field assignment, on every container that has one.
+  // Since section 322 that is the Sunday based weekday of the stored day plus one, which is the same
+  // byte the Saturday based reading gave on every date both could read.
   //
   // **`c.builtAt` on purpose, which is the round trip and not a save.** The remote sets its clock
   // from this record, section 111, so writing a config back with the timestamp it came in with is
@@ -335,14 +335,13 @@ export function rebuilds(c: Container): Rebuild[] {
   //
   // The fields come from `clockRecordFields`, which is also what `edit.ts` stamps with. Each of them
   // derived the weekday itself until 10 August 2026, with a different spelling of the same epoch.
+  //
+  // A stamp made on the 1st of a month, a stored day of 0, used to be carried through unread here,
+  // because the reader refused it. Section 322 is what made it a date like any other, so nothing is
+  // carried now.
   const clockAt = sectionStart(3);
-  const clockOff = clockAt === undefined ? undefined : c.blobOffsetOf(clockAt);
-  // The day 0 stamp a MyHarmony sync writes on the 1st of a month has no date to rebuild it from, so
-  // its seven fields are carried through as they are, todo-compile-650 1.3.1. Nothing else is.
-  const dayZero = c.builtAt === undefined && clockOff !== undefined && isSyncDayZeroStamp(c.blob, clockOff)
-    ? c.blob.slice(clockOff + 2, clockOff + 9) : undefined;
-  if (clockAt !== undefined && (c.builtAt !== undefined || dayZero !== undefined)) {
-    const fields = dayZero ?? clockRecordFields(c.builtAt!);
+  if (clockAt !== undefined && c.builtAt !== undefined) {
+    const fields = clockRecordFields(c.builtAt);
     if (fields === undefined) throw new GspmError(`slot 3 holds an unencodable ${c.builtAt}`);
     // Fourteen bytes: the record, then the three zeros the section carries past it. Written as
     // zeros rather than copied, so a tail that is not zero fails the round trip. Section 84.

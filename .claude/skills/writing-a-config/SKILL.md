@@ -81,16 +81,16 @@ produce a config the remote accepts and mishandles.
   stores into several of 13 to 17 itself. So the rail is to reuse
   none of that block, `firmwareStateVariableMax`, and their values differ per architecture, so a carried
   over config must keep each architecture's own. Section 138 said thirteen for every architecture, having
-  measured the boundary on two Harmony 525 configs. **It is eight values and
-  sometimes nine, not seven**, which building the rail found rather than reading it. **Five** maxima are
-  constants, `59, 59, 23, 6, 11`. Two move with their value and both have to be stamped: the year's is
-  that year plus one, and the day of the month's is 30 in every container here because none was built on
-  a 31st, so a save on a 31st writes a day of 31 into a variable whose stated range stops at 30. Either
-  one left unstamped is a config declaring a value outside its own variable's range. This page said
-  "six maxima are constants"<!--superseded--> until 29 August 2026, having found the year's and missed
-  the day's, and `packages/codec/src/sections.ts` carries the day half with the note that it cost
-  nothing but asking for the 31st. `clockStateEdits` in `packages/codec/src/edit.ts`, and it refuses a
-  base slot 13 whose other maxima are not the clock's.
+  measured the boundary on two Harmony 525 configs. **It is eight values, not seven**, which building
+  the rail found rather than reading it. **Six** maxima are constants, `59, 59, 23, 30, 6, 11`, and the
+  year's moves with its value and has to be stamped: it is that year plus one, and left unstamped it is a
+  config declaring a value outside its own variable's range. **The day of the month counts from 0 and
+  the weekday from Sunday**, `docs/findings.md` section 322, so the 31st is stored as 30 and fits.
+  This page said the day's maximum moved too, that a save on a 31st writes a day of 31 against a range
+  that stops at 30<!--superseded-->, and the writer raised it; that came from reading the day from 1, it
+  set every clock we wrote a day ahead, and `h700_config` was built on a 31st and stores 30 against 30.
+  A save now writes at most 30 and puts an old save's 31 back to 30. `clockStateEdits` in
+  `packages/codec/src/edit.ts`, and it refuses a base slot 13 whose other maxima are not the clock's.
 * **Base slot 3's timestamp is stamped at write time, not copied**, section 111: an arch 12 remote's
   clock holds this value at every boot, so a stale timestamp is a wrong clock by exactly its staleness.
   The rail holds on the other architectures too without needing their measurement, because stamping the

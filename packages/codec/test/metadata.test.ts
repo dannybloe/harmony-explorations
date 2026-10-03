@@ -483,11 +483,11 @@ test('a device costs an arch 16 container one entry, and the infrared table is s
   // column a claim rather than a coincidence, and one is a different **compiler**, which is what
   // section 265 needed a second read to see.
   const expected: Readonly<Record<string, readonly [number, number, number, string]>> = {
-    h350_config: [3, 8, 6, '2026-07-20'],
-    h350_programmed_config: [4, 8, 8, '2026-09-04'],
-    h350_three_devices_config: [3, 8, 6, '2026-09-04'],
-    h300_config: [2, 4, 0, '2011-05-03'],
-    h300_programmed_config: [4, 4, 8, '2026-09-04'],
+    h350_config: [3, 8, 6, '2026-07-21'],
+    h350_programmed_config: [4, 8, 8, '2026-09-05'],
+    h350_three_devices_config: [3, 8, 6, '2026-09-05'],
+    h300_config: [2, 4, 0, '2011-05-04'],
+    h300_programmed_config: [4, 4, 8, '2026-09-05'],
   };
   let walked = 0;
   for (const [name, [devices, maxDevices, slotEight, built]] of Object.entries(expected)) {

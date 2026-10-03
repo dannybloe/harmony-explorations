@@ -52,7 +52,11 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Sixty three have been found and corrected so far. **The newest is in section 226**, and it is a claim
+Sixty four have been found and corrected so far. **The newest is in section 322**: the clock record's
+day of the month counts from 0 and its weekday from Sunday, and section 21's reading of the same bytes,
+a day counted from 1 and a weekday from a Saturday epoch, fitted every stamp as well because it named
+each date a day early. So every build date here was a day early and every configuration our writer
+stamped set its remote's clock a day ahead. **The one before it is in section 226**, and it is a claim
 of ours restated in code for three days after `docs/findings.md` had corrected it: the rehearsal's dump
 allow list plus its byte compare were said to identify the unit on the cable, where they prove content,
 so another Harmony One whose selected block happened to match would have passed as the spare. **The
@@ -1546,8 +1550,9 @@ older dump, and that file's own timestamp is 2024-10-12 against 2026-08-04 for t
 `harmony700-2.EZHex` was taken as the earlier of the two. Everything below is stated in that
 direction, older to newer.
 
-Section 21 contradicts it. Each config carries its own build timestamp, and they read 2021-07-30
-for `harmony700.EZHex` against 2023-04-22 for `harmony700-2.EZHex`, which is the opposite order.
+Section 21 contradicts it. Each config carries its own build timestamp, and they read 2021-07-31
+for `harmony700.EZHex` against 2023-04-23 for `harmony700-2.EZHex`, which is the opposite order. Both
+dates read a day earlier until section 322, which moved them and not their order.
 The discrepancy is unresolved and section 21 sets out what does and does not bear on it. Nothing
 below has been rewritten, because the direction here rests on the contributor's own statement, which is
 better evidence about provenance than a byte is. But **every "older to newer" in this section is
@@ -2499,6 +2504,14 @@ resolving it.**
 
 ## 21. Slot 3 says when the config was built, and the weekday proves it
 
+> **Corrected on 3 October 2026, section 322.** The field assignment stands; how two of its fields
+> count does not. The day of the month is counted from 0 and the weekday from Sunday, so every date this
+> section gave was one day early, and the closure below, a Saturday epoch over the stored day, is the
+> same byte as the Sunday count of the day after, which is why it held on every sample. The search
+> never had the day's base among its candidates, and widened by it, it finds two solutions; the firmware
+> chooses. The dates in the table and the text are corrected in place. The note below that section 58
+> confirmed this independently was wrong too: its known date came from this reading.
+
 Base slot 3 is an eleven byte record framed by a cookie pair of its own, `0xADDF` opening and
 `0xEFBF` nine bytes later. It holds a timestamp. Layout is in `docs/config-format.md`.
 
@@ -2529,6 +2542,10 @@ and a table would not.
 
 ### The closure
 
+> **Superseded by section 322**: the closure held, and it did not decide what it was taken to decide.
+> On the stored day plus one, which is the date, the weekday byte is the Sunday based weekday; the
+> Saturday epoch below is that same number one day back.
+
 The surviving assignment says the weekday byte is `0` for a Saturday. That looks arbitrary until
 you notice the year is stored as an offset from 2000, and that **1 January 2000 was a Saturday**.
 The weekday byte is days since that date modulo 7:
@@ -2546,17 +2563,17 @@ weekday disagrees with its date reads as absent.
 
 | Sample | arch | built at |
 |---|---|---|
-| One safe mode config, dumped off a remote | 12 | 2007-10-24 02:22:08 |
-| One safe mode config, extracted from firmware 3.4 | 12 | 2007-10-24 02:22:08 |
-| Factory config inside 700 firmware 2.8 | 14 | 2009-04-15 01:58:02 |
-| Harmony 700 user config | 14 | 2021-07-30 14:30:00 |
-| Harmony 700 user config, second | 14 | 2023-04-22 00:03:06 |
-| Harmony One user config, programmed unit | 12 | 2023-07-07 10:46:47 |
-| Harmony 600 user config | 14 | 2023-07-15 12:29:04 |
-| Harmony One user config, spare unit | 12 | 2023-07-28 13:27:33 |
-| Harmony 525 config | 9 | 2024-01-21 20:20:44 |
-| arch 8 config a | 8 | 2024-06-19 23:36:03 |
-| arch 8 configs b, c, d | 8 | 2024-06-25 17:43:46, 18:16:36, 18:41:48 |
+| One safe mode config, dumped off a remote | 12 | 2007-10-25 02:22:08 |
+| One safe mode config, extracted from firmware 3.4 | 12 | 2007-10-25 02:22:08 |
+| Factory config inside 700 firmware 2.8 | 14 | 2009-04-16 01:58:02 |
+| Harmony 700 user config | 14 | 2021-07-31 14:30:00 |
+| Harmony 700 user config, second | 14 | 2023-04-23 00:03:06 |
+| Harmony One user config, programmed unit | 12 | 2023-07-08 10:46:47 |
+| Harmony 600 user config | 14 | 2023-07-16 12:29:04 |
+| Harmony One user config, spare unit | 12 | 2023-07-29 13:27:33 |
+| Harmony 525 config | 9 | 2024-01-22 20:20:44 |
+| arch 8 config a | 8 | 2024-06-20 23:36:03 |
+| arch 8 configs b, c, d | 8 | 2024-06-26 17:43:46, 18:16:36, 18:41:48 |
 
 The first two rows are the check that no single file could give: **two files obtained by completely
 different routes, a dump off a remote and a region extracted from a firmware package, agree to the
@@ -2569,8 +2586,8 @@ reading was not fitted to.
 
 This document has said since section 15 that three of the four arch 8 configs were "generated about
 ten minutes apart". That figure did not come from the configs. The configs now say 17:43:46,
-18:16:36 and 18:41:48 on 2024-06-25, so **33 and 25 minutes apart**, with the fourth six days
-earlier on 2024-06-19.
+18:16:36 and 18:41:48 on 2024-06-26, so **33 and 25 minutes apart**, with the fourth six days
+earlier on 2024-06-20.
 
 The point being made survives and is slightly strengthened: three configs generated within an hour
 of each other, by one person in one sitting, differ in 73 to 84 percent of their bytes. Logitech's
@@ -2582,8 +2599,8 @@ Section 16 states the direction of the Harmony 700 controlled pair, older to new
 in that section is stated in that direction. It rests on the contributor's own words, that the comment
 attachment is the older dump, plus file timestamps of 2024-10-12 against 2026-08-04.
 
-The records disagree. `harmony700.EZHex` reads 2021-07-30 and `harmony700-2.EZHex` reads
-2023-04-22, which puts the file section 16 calls the older one **21 months later**.
+The records disagree. `harmony700.EZHex` reads 2021-07-31 and `harmony700-2.EZHex` reads
+2023-04-23, which puts the file section 16 calls the older one **21 months later**.
 
 What can be said:
 
@@ -2627,8 +2644,8 @@ was built**.
 
 That is also what fixes the encoding of the clock's own seven bytes, since a subtraction pairs each one
 with a record field whose meaning is already confirmed on sixteen samples, including the zero based
-month and the Saturday epoch weekday. Section 111 has the measurement, on a remote whose clock was
-reading its own config's build date.
+month and the weekday. Section 111 has the measurement, on a remote whose clock was reading its own
+config's build date. That the day too is zero based, and the weekday Sunday based, is section 322.
 
 ## 22. The internal read window is two pages, and one of them holds the remote's identity
 
@@ -6581,8 +6598,8 @@ sync, and both reads either side were ours, through `packages/corpus/bin/read-co
 
 ### The service compiles
 
-The new config's build timestamp, recovered by our own reader from slot 3, is **2026-08-06
-13:54:22**. It is 94327 bytes larger than the one it replaced, it holds a device that was not there
+The new config's build timestamp, recovered by our own reader from slot 3, is **2026-08-07
+13:54:22**, which this section gave as the 6th until section 322. It is 94327 bytes larger than the one it replaced, it holds a device that was not there
 before, and every container check passes. A cache cannot produce that, because nothing had ever
 compiled this combination of devices for this remote.
 
@@ -6602,7 +6619,7 @@ device. Instead the previous owner's television is gone and almost every count m
 | | before | after |
 |---|---|---|
 | bytes | 1232237 | 1326564 |
-| built | 2023-07-28 13:27:33 | 2026-08-06 13:54:22 |
+| built | 2023-07-29 13:27:33 | 2026-08-07 13:54:22 |
 | infrared records | 97 | **125** |
 | mode records | 111 | 106 |
 | action lists | 2141 | 2079 |
@@ -6657,10 +6674,14 @@ Section 21 placed the seven fields of the build timestamp by picking the only on
 assignments that fits the corpus. A fit is not a confirmation: every config in the corpus arrived
 with its stamp and no way to check it against anything.
 
-This one was compiled while we watched. The owner made the change on **6 August 2026** and the
-reader recovers **2026-08-06 13:54:22** without being told. The day of week byte closes too, and on
-two different values: the record stores 6 for the 2023 config, a Friday, and 5 for the 2026 one, a
-Thursday, matching days since 1 January 2000 modulo 7 in both cases.
+> **Corrected by section 322.** This said the change was made on 6 August and that the reader
+> recovered that date, and the date came from the reader: the account above puts the change and the sync
+> on 7 August. The stamp reads 2026-08-07 13:54:22 now, the stored weekdays 6 and 5 are a Saturday and a
+> Friday counted from Sunday, and the confirmation is real only since the day is counted from 0.
+
+This one was compiled while we watched, on **7 August 2026**, and the reader recovers **2026-08-07
+13:54:22** without being told. The day of week byte closes too, and on two different values: the
+record stores 6 for the 2023 config, a Saturday, and 5 for the 2026 one, a Friday, counted from Sunday.
 
 It also bears on the open contradiction. Section 21 refuses to order two configs of one remote by
 their stamp, because doing so contradicts the recorded direction of the Harmony 700 pair. **This
@@ -14239,13 +14260,14 @@ computes the difference in days. Line the two up against the record in
 | `+0x02` | second, 0 to 59 | `0x108` |
 | `+0x03` | minute | `0x109` |
 | `+0x04` | hour, 24 hour | `0x10A` |
-| `+0x05` | day of month, 1 to 31 | `0x10B` |
-| `+0x06` | day of week, 0 = Saturday | **skipped**, which is what the extra advance is |
+| `+0x05` | day of month, 0 to 30, section 322 | `0x10B` |
+| `+0x06` | day of week, 0 = Sunday, section 322 | **skipped**, which is what the extra advance is |
 | `+0x07` | month, 0 = January | `0x10D` |
 | `+0x08` | year, offset from 2000 | `0x10E` |
 
 So the clock's seven data memory bytes carry **exactly base slot 3's encoding, field for field**,
-including its two unusual choices: a zero based month and a weekday counted from a Saturday epoch.
+including its unusual choices: a zero based month, a zero based day and a weekday counted from Sunday,
+section 322.
 `0x10C` is the derived one, which is why the subtraction skips it on both sides.
 
 | address | field | measured | how it is confirmed |
@@ -14253,10 +14275,15 @@ including its two unusual choices: a zero based month and a weekday counted from
 | `0x108` | second | 47, 55, 3, 11, 23, 31 | the firmware's own modulo 60 loop, and the wrap was observed |
 | `0x109` | minute | 53, 53, **54**, 54, 54, 54 | it carried in the same read where the second wrapped |
 | `0x10A` | hour | 18 | the carry chain above the minute |
-| `0x10B` | day of month | 6 | paired with record `+0x05`, which is 1 to 31 |
-| `0x10C` | day of week | 5, and 6 August 2026 is a Thursday | the calendar's own output, under the record's epoch |
+| `0x10B` | day of month | 6, so the 7th | paired with record `+0x05`, which is 0 to 30 |
+| `0x10C` | day of week | 5, and 7 August 2026 is a Friday | the calendar's own output, counted from Sunday |
 | `0x10D` | month, 0 = January | 7, so August | the month grouping above, and record `+0x07` |
 | `0x10E` | year since 2000 | 26 | compared against 90 and 100, and record `+0x08` |
+
+> **Corrected by section 322: the first pass was right.** The date is 7 August 2026. The correction
+> below overrode a reading of the firmware, the calendar's `INCF`, with section 21's fit to the corpus,
+> and that fit could not tell a zero based day from a one based one. Every date this section gives is a
+> day early, and is left as written below this note.
 
 **The date is therefore 6 August 2026 and this section read it as the 7th first.** The first pass took
 the calendar's `INCF ...,W` as evidence that the day field is zero based, which fixed the weekday's
@@ -17410,8 +17437,8 @@ reading worked.
 | 0 | second | 59 |
 | 1 | minute | 59 |
 | 2 | hour | 23 |
-| 3 | day of the month | 30 |
-| 4 | day of the week, where 0 is a Saturday | 6 |
+| 3 | day of the month, 0 for the 1st, section 322 | 30 |
+| 4 | day of the week, where 0 is a Sunday, section 322 | 6 |
 | 5 | month, zero based | 11 |
 | 6 | year since 2000 | that year plus one |
 
@@ -17424,9 +17451,10 @@ no freedom left in the assignment: a wrong one shows up immediately as a second 
 Two independent things hold it up. Section 74 had already read three of these out of a different
 language: action list opcode `0x07` band `0xF8` steps a date held in state variables 3, 5 and 6, which
 is exactly the day, month and year above, established from the firmware without looking at a config.
-And the weekday's zero being a Saturday is not a convention chosen to make the numbers fit: base slot
-3's own day of week byte is days since 1 January 2000 modulo 7, section 21, and 1 January 2000 was a
-Saturday. Two records, two encodings, one epoch.
+> **Corrected by section 322.** This said the weekday's zero is a Saturday, from base slot 3's own
+> epoch, 1 January 2000. Both records count the weekday from Sunday and the day from 0, which is the
+> same pair of bytes as the old reading on every container, because that reading took each date a day
+> early. The agreement between the two records stands; what they agree on is a Sunday.
 
 ### What that changes
 
@@ -18265,8 +18293,8 @@ same, since all three carry the same eleven byte record and only arch 12 had bee
 committed on 13 August 2026 before anything was read, and the batteries were pulled and replaced at
 11:53 local so that the remote would have chosen its clock afresh.
 
-Its own config was built at **2013-10-01T18:40:44**, which is what made the reading cheap: nothing about
-2026 resembles it, so the seven stored fields `2c 28 12 01 03 09 0d` are a signature rather than a
+Its own config was built at **2013-10-02T18:40:44**, which this gave as the 1st until section 322 found
+the day counted from 0, and which is what made the reading cheap: nothing about 2026 resembles it, so the seven stored fields `2c 28 12 01 03 09 0d` are a signature rather than a
 coincidence.
 
 ### Prediction 1 is refuted, and the refutation has a control
@@ -18659,6 +18687,10 @@ raises the **year's** maximum to that year plus one, because the year's maximum 
 The day's maximum is not a constant either. It is 30 in every container here, and a config saved on a
 31st gets `first = 31` with a maximum of 30, which is a value outside the variable's own declared range,
 written by our own editor and passing every check the remote makes.
+
+> **Corrected by section 322: this item was our own misreading.** The day is counted from 0, so the
+> 31st is stored as 30 and fits the maximum every container declares. `h700_config` was built on 31 July
+> 2021 and stores 30 against 30, which is what the generator does on a 31st. The raise below is gone.
 
 The day is stamped with its maximum now, the same way the year is, and `CLOCK_DAY_INDEX` names the one
 index this applies to. **What Logitech's own generator does on a 31st is unknown and marked
@@ -19854,7 +19886,8 @@ name, or a two word instruction whose real trailing word is not `0xFxxx`, which 
 read here is not the encoding. For base slot 15's continuation: an arch 12 container
 whose twelve bytes past group 9 are not those twelve, or any container with a tenth group whose own body
 runs into them, either of which would say the offsets are not the structure. For the day maximum: a Logitech generated config
-built on a 31st, which would settle by measurement what is currently our choice.
+built on a 31st, which would settle by measurement what is currently our choice. It was in the corpus
+already, `h700_config`, and section 322 is what it settled.
 
 For entry 23: a Harmony 525 config emitting `0x3F` with a high byte in `0xB0` to `0xCF`, which would
 move that ladder from latent to live; a container whose font set header and glyph heights disagree,
@@ -21746,7 +21779,7 @@ saw. The remote was then on this machine's bus.
 ### What the clock excludes, which is the part worth having
 
 The remote's live clock read `1e 32 0c 16 00 07 1a` at state variables 0 to 6, and the config it had
-booted from is stamped 2026-08-22 12:02:52. Under section 111 an arch 12 remote seeds those seven
+booted from is stamped 2026-08-23 12:02:52, which this gave as the 22nd until section 322. Under section 111 an arch 12 remote seeds those seven
 variables from base slot 3's timestamp at every boot, so the two are comparable field by field:
 
 | | config | live | |
@@ -27273,6 +27306,10 @@ under headings that say so. Each of those was written up in draft here and then 
 One thing is genuinely absent, and it is in `hid/services/` rather than `hid/commands/`, which is the
 half of the layer the register's status did not distinguish.
 
+> **Corrected by section 322.** The first and third disagreements below were this project's: the day
+> is stored counted from 0 and the weekday from Sunday, exactly as the client writes them. Only the
+> second, the month's index on architectures 9 and 14, remains a disagreement.
+
 **The clock is read and written over USB by name, and the client disagrees with the corpus about two
 of its fields.** `hid/services/time/TimeHidService.java` reads state variables 0 to 6 in order as
 second, minute, hour, day of month, day of week, month and year, which is base slot 13's first seven
@@ -27286,8 +27323,9 @@ data memory. Three details do not agree, and all three are recorded rather than 
 * the client skips the day of week on every architecture except 8 and 12, taking the month from index
   4 and the year from index 5 instead. Base slot 13 puts the month at index 5 on architecture 9
   (Harmony 525) and architecture 14 (Harmony 600 and 700) as well, measured: `h525_config_2` stores 3,
-  9, 13 at indices 4, 5 and 6 for a build stamped 1 October 2013, where 3 is the weekday under the
-  record's own epoch, 9 is the zero based month and 13 is the year since 2000.
+  9, 13 at indices 4, 5 and 6 for a build stamped 2 October 2013, where 3 is the weekday counted from
+  Sunday, 9 is the zero based month and 13 is the year since 2000. This gave the 1st and the record's
+  own epoch until section 322.
 * the client writes the weekday as Java's `DAY_OF_WEEK` minus one, which counts from Sunday, where
   section 111 fixed the record's epoch on a **Saturday** by pairing each byte with a config field.
 
@@ -31246,10 +31284,15 @@ the save, and a Harmony One resets its clock to that stamp at every boot, sectio
 half hour since the battery pull is 15:42, shown in twelve hour form. So the rail that a save is
 stamped with the moment of saving, base slot 3 and the clock's seven state values, fired exactly as
 written, and `compose-device.ts` applies `saveEdits` now. **The day name is a lead.** The stamp's
-weekday byte is 0, which section 21 reads as Saturday, days since 1 January 2000 modulo 7, and the
+weekday byte is 0, which section 21 reads as Saturday, days since 1 January 2000 modulo 7<!--superseded-->, and the
 remote showed Sunday. The byte is what the corpus says it is; what the firmware names it is a table
 this project has not read, and the second candidate, stamped Thursday 3 September with a byte of 5,
 shows either `Thu` or `Fri` at its first boot and settles it.
+
+> **Settled by section 322.** The remote was right: the weekday counts from Sunday and the day from 0,
+> so the stamp above is Sunday 23 August 2026, not Saturday the 22nd. The save of 3 September stored a
+> day of 3 and a weekday of 5, which the firmware reads as Friday 4 September, a day ahead of the date
+> it was saved on.
 
 The existing activity still works as it did, so the other check is ticked.
 
@@ -31258,7 +31301,8 @@ The existing activity still works as it did, so the other check is ticked.
 `work/20260903-one-spare-plus-lg-2.bin`, from the same 30 August input: the same device with labels
 `Power`, `Vol+`, `Vol-`, `Ch+`, `Ch-` and `Mute`, every one centred on its pad in the render, stamped
 `2026-09-03T11:22:35`, 1668291 bytes, 25 blocks again. **It is on the remote and its clock is right**,
-observed by Danny after a battery pull, which is the check the rail exists for: base slot 3 and the
+observed by Danny after a battery pull (by section 322 that stamp is Friday 4 September to the remote,
+so what was right was the time of day; whether the date was looked at is not recorded), which is the check the rail exists for: base slot 3 and the
 clock's seven state values stamped at save time, and a remote that resets its clock to that stamp at
 every boot then boots on the correct date and time.
 
@@ -31597,9 +31641,13 @@ picks that screen; it says why the remote stays in it.
 
 **Step 8 is why a concordance written remote has the right time**, and it carries a wrinkle worth
 recording rather than acting on: concordance fills the day of week field from the host's `tm_wday`,
-which counts **Sunday as 0**, where base slot 3's own field is days since 1 January 2000 modulo 7,
+which counts **Sunday as 0**, where base slot 3's own field was read as days since 1 January 2000 modulo 7<!--superseded-->,
 which makes **Saturday 0** and is validated against all 21 containers. Two conventions, one field.
 That is a lead for section 242's day name puzzle and it is not settled here.
+
+> **Settled by section 322**: one convention. The field counts from Sunday, as concordance writes it, and
+> the day from 0, which concordance writes too, `ht.day - 1` beside the `tm_wday` above; the Saturday
+> reading was the same bytes a day early.
 
 ### The transfer size, which is changed
 
@@ -33740,11 +33788,14 @@ neither model nor capability.
 
 | container | built | devices | raw slot 6 | raw slot 8 | twice the devices |
 |---|---|---|---|---|---|
-| Harmony 350 as found | 2026-07-20 | 3 | 4 | 6 | 6 |
-| Harmony 350, four devices | 2026-09-04 | 4 | 5 | 8 | 8 |
-| Harmony 350, three devices | 2026-09-04 | 3 | 4 | 6 | 6 |
-| Harmony 300 as found | **2011-05-03** | 2 | 3 | **0** | 4 |
-| Harmony 300, four devices | 2026-09-04 | 4 | 5 | 8 | 8 |
+| Harmony 350 as found | 2026-07-21 | 3 | 4 | 6 | 6 |
+| Harmony 350, four devices | 2026-09-05 | 4 | 5 | 8 | 8 |
+| Harmony 350, three devices | 2026-09-05 | 3 | 4 | 6 | 6 |
+| Harmony 300 as found | **2011-05-04** | 2 | 3 | **0** | 4 |
+| Harmony 300, four devices | 2026-09-05 | 4 | 5 | 8 | 8 |
+
+The dates were each a day earlier until section 322 found the day counted from 0; the rule above does
+not depend on them, only on 2011 against 2026.
 
 **The uncontrolled variable is fifteen years of compiler.** Four of the five configurations were built
 by Logitech's current service and agree; the one that disagrees was built in 2011, and it happened to
@@ -40673,8 +40724,9 @@ the sentence audit, so on the 600, 650 and 700 nothing in a configuration asks f
 
 ### What a writer stamps for the Harmony 650
 
-Base slot 13's records 0 to 6, the year's maximum, and on a 31st the day's maximum, which is what
-`clockStateEdits` already writes, plus base slot 3 at the same moment for the counter. **It matters
+Base slot 13's records 0 to 6 and the year's maximum, which is what
+`clockStateEdits` already writes (this said "and on a 31st the day's maximum"<!--superseded--> too, which section 322
+removed), plus base slot 3 at the same moment for the counter. **It matters
 more on the 650 than on the Harmony One**: section 283 saw every restart of the 650's 0.2 build put
 the clock back to the configuration's stamp, a USB restart with nothing written included, so a stale
 stamp is a wrong clock after every restart and not only after a battery pull.
@@ -40879,11 +40931,12 @@ grown to three items on their second page and the two row list given a fourth pa
 `4/4`, the record list unchanged, every page drawn with nothing missing, every page's copy agreeing, all 14
 row lists bound once, the checksum agreeing and the emitter round tripping. Its accounting has the same 14
 unclaimed bytes the input has, and the audit found what they are: base slot 3's build timestamp, which
-Logitech's compiler wrote on 1 October 2026 with a day of month of **0** and the weekday of 30
-September. `clockRecord` requires a day of at least 1 and rejects it, so the bytes go unclaimed, and
-that same rejection is why **`compose-device.ts` does not yet run on it**: its save step refuses,
-`base slot 3 does not hold a clock record`. This section first called those bytes an infrared run, which
-was a guess. The day of 0 is todo-compile-650 1.3.1 and not this.
+a MyHarmony sync wrote on 1 October 2026 with a day of month of **0**, which is how the 1st is stored:
+section 322 found the day counted from 0 and the weekday from Sunday, so the stamp is Thursday 1 October.
+This said the weekday was that of 30 September<!--superseded--> and that the reader rejected the day, which it
+did until section 322, so the bytes went unclaimed and **`compose-device.ts` refused to save it**,
+`base slot 3 does not hold a clock record`. Both are gone. This section first called those bytes an
+infrared run, which was a guess.
 
 ### Falsification
 
@@ -41315,12 +41368,12 @@ of the six compositions: every page of the menu reads `n/m` at the three positio
 unchanged, the last page draws the working single while it holds one activity and the first page's
 picture once it holds two, every page and its copy agree entry by entry, every row list the row wrote is
 bound once, every menu page draws with no glyph or picture missing, the checksum agrees, the emitter
-round trips, the accounting leaves unclaimed only what the input did, which on `h650_plasma_base` is
-section 312's day 0 timestamp, the state table is consistent, and every text of every screen that was
+round trips, the accounting leaves unclaimed only what the input did, which on `h650_plasma_base` was
+section 312's day 0 timestamp until section 322 found it is how the 1st is stored, the state table is consistent, and every text of every screen that was
 there before, the menu's apart, reads as before in the same font at the same place.
 
-`compose-activity.ts` itself, run on `h650_plasma_base`, composes the row and stops at its save, on that
-same timestamp, which is `todo-compile-650.md` 1.3.1. Run on `h650_devicelist_region`, section 294's
+`compose-activity.ts` itself, run on `h650_plasma_base`, composes the row and stopped at its save, on that
+same timestamp, which is `todo-compile-650.md` 1.3.1 and which section 322 removed. Run on `h650_devicelist_region`, section 294's
 configuration with four activities on two full pages, it writes a file whose activity is on the third
 page's top row.
 
@@ -41667,6 +41720,11 @@ reason below. So the frame needs no alignment rule, and has none.
    `todo-compile-650.md` 1.3.1's open item. `clockRecordFields` computes the weekday from a real date and
    cannot produce it, and `clockRecord` refuses it. The frame carries the seven field bytes as given for
    that one case; its base slot 13 clock records state the same day 0, so the two agree.
+
+   > **Corrected by section 322.** It names a real date, Thursday 1 October 2026: the day counts from
+   > 0 and the weekday from Sunday. The six "stamped on 1 October" were made on 2 October, read a day
+   > early. `clockRecord` reads it, `clockRecordFields` produces it, and no compile is laid out from
+   > field bytes any more.
 3. **The order of the body and of what is parked in front of a table.** Carried, not derived: nothing on
    the remote reads an order, every piece being reached through an address, so the order is Logitech's
    emission order and reproducing it is a composer's question rather than the frame's. What has no
@@ -41978,7 +42036,8 @@ frames and Off the same seven `PowerOff` frames. An ordinary press would be thre
 50 tenths for this television, is not visible in that run, because the composed activity sends the
 television nothing after switching it on, section 291's rail. `compose-device.ts` composes and saves
 the Panasonic onto the 650's region read from before the Panasonic was first added, once main's
-acceptance of a sync's day 0 stamp is in, and onto `h650_config_region`; the run is unperformed.
+acceptance of a sync's day 0 stamp is in (section 322 replaced that acceptance with a reader that counts
+the day from 0), and onto `h650_config_region`; the run is unperformed.
 
 ### Independent closure and calibration
 
@@ -42191,3 +42250,859 @@ variable already holds the value is read on the Harmony One only.
 * `packages/codec/test/inputs.test.ts`: the census above, the activity order, the plan's rules and
   refusals, the calibration table, and the composed activity.
 * `packages/codec/src/inputs.ts`, `docs/config-format.md` under base slot 13.
+
+## 322. The clock counts the day of the month from 0 and the weekday from Sunday, so every date here was a day early
+
+**Every build date this project has reported was one day early, and every configuration it stamped set
+the remote's clock one day ahead.** Base slot 3's eleven byte record and base slot 13's clock records 0
+to 6 store the day of the month counted from **0**, so the 1st is 0 and the 31st is 30, and the day of
+the week counted from **Sunday** as 0. This project read the same bytes as a day counted from 1 and a
+weekday counted from a Saturday epoch, 1 January 2000, section 21. The two readings name dates a day
+apart and each finds the stored weekday consistent with its own date, so on every stamp the corpus held
+they were indistinguishable. What told them apart was a stamp on the 1st of a month: a MyHarmony sync of
+the Harmony 650 on 1 October 2026 stored a day of 0, the reader refused it, and the device composer could
+not save that configuration, todo-compile-650 1.3.1.
+
+### Sources checked before the work
+
+Logitech's classic client, the firmware, and this document. The client's time service,
+`hid/services/time/TimeHidService.java`, is the square section 209 crossed: it reads the stored day
+**plus one** and writes the calendar day **minus one**, and writes the weekday as Java's `DAY_OF_WEEK`
+minus one, which counts from Sunday. Section 209 recorded both as places where the client disagreed with
+the corpus; the client was right both times. Concordance agrees about both, independently: its clock
+writer in `libconcord/remote.cpp` stores `ht.day - 1`, the calendar day of the month less one, and the
+weekday from `tm_wday`, Sunday 0. Section 245 noticed the weekday and wrote it up as a disagreement. MyHarmony's client sets a
+time for a different product with .NET's `DayOfWeek`, Sunday 0 again, in a message that is not this
+record and says nothing about how this one counts the day. Client sourced, decision 2, and the firmware
+below is what makes it more than that.
+
+### The firmware states the last day of each month as an index
+
+Every firmware image in the lab carries one month end routine, the same code on all nine, five
+architectures: the Harmony One 3.4 at `0x28072`, the Harmony 600 0.2 and the bench 650's 0.2 at
+`0x10BC0`, the 650's 0.4 at `0x14E90`, the Harmony 700 2.8 at `0x150DA`, the Harmony 525 at `0x4180`, the
+Harmony 880 and 885 at `0x156EA`, and the Harmony 350 1.4 at `0x14382`. The last was found by this
+section's blind reviewer after the first draft had scoped arch 16 out. It copies state variables 3, 5 and 6, the day, the month and the
+year, switches on the month with an `XORLW` chain whose cases are 3, 5, 8, 10 and 1, and compares the
+stored day on each arm against one literal:
+
+| months, zero based | the arm's literal | last day by the calendar |
+|---|---|---|
+| 0, 2, 4, 6, 7, 9, 11 | 30 | 31 |
+| 3, 5, 8, 10 | 29 | 30 |
+| 1, when `year & 3` is zero | 28 | 29 |
+| 1, otherwise | 27 | 28 |
+
+**Every literal is one less than the length of its month.** A day counted from 1 would need 31 and 30.
+So the stored day is an index. The routine has two modes: in the one the weekday routine calls it in, a
+day past the index is clamped to it; in the one `0x27B62` calls it in on the Harmony One, it rolls to 0
+and the month advances. In that second mode February's compare is 27 whatever the year, so stepping
+forward treats every February as 28 days; read, not run on hardware, and recorded because nothing else
+here depends on it.
+
+The Harmony One's weekday routine, `0x27F78`, section 111's calendar, opens with `INCF` on the day and
+on the month before computing anything: it turns both indices into calendar numbers. Its arithmetic,
+transcribed and run over every date from 2000 to 2089, 32873 of them, gives the Sunday based weekday of
+the stored day plus one on every one. **Section 111 read that `INCF` on its first pass as evidence the day
+was zero based, which was right, and then took it back** on the strength of section 21's fit: a reading
+of the firmware gave way to a fit to the corpus, which is the wrong way round.
+
+### Every stamp with a date known from outside the record decodes to it
+
+Twenty three containers have a build date recorded by something other than the stamp: the date a lab
+manifest, directory or file name, or file time gives for the read or fetch, or the date the calibration
+pair was made. That is every registered sample with such a date that this section found; the Harmony
+700's first read after Harmony Desktop is the same stamp as `h700_28_config_region` and is not a
+registered sample. All twenty three decode to that date under this reading. Under the old one, twenty two
+come out a day early and the last, the 650's sync of 1 October, does not read at all.
+
+| container | known date | reads now | read before |
+|---|---|---|---|
+| `one_spare_after_sync` | 7 August 2026, its `META.md` | 2026-08-07 | 2026-08-06 |
+| `calibration_one`, `calibration_h600` | 13 August 2026, sections 121 and 125 | 2026-08-13 | 2026-08-12 |
+| `one_spare_myharmony` | 23 August 2026, its `META.md` | 2026-08-23 | 2026-08-22 |
+| `calibration_favchannels`, `calibration_favzero` | 23 August 2026, their directories | 2026-08-23 | 2026-08-22 |
+| `compiled_protocols`, `_2` and `_3` | 24 August 2026, their files and directories | 2026-08-24 | 2026-08-23 |
+| `phase7_before`, `phase7_after` | 25 August 2026, their directory | 2026-08-25 | 2026-08-24 |
+| `h650_config_region` | 27 September 2026, the 650's first read | 2026-09-27 | 2026-09-26 |
+| `h700_28_config_region` | 29 September 2026, its read | 2026-09-29 | 2026-09-28 |
+| `h650_panasonic_config` | 1 October 2026, its read | 2026-10-01 | refused |
+| the six power hold compiles, sections 306 to 308 | 2 October 2026, their directories | 2026-10-02 | 2026-10-01 |
+| `h350_programmed_config`, `h350_three_devices_config`, `h300_programmed_config` | 5 September 2026, their files and the commits of sections 262, 263 and 265 | 2026-09-05 | 2026-09-04 |
+
+The arch 16 three are more than a date match. Section 263's container is the Harmony 350 after a device
+was removed from the configuration section 262 read off it at 12:13 on 5 September, with the questions
+about the removal committed before the read. The old reading built it on the 4th, before the
+configuration it was made from had been read.
+
+Section 58's own known date was the 6th, and it was not independent: that section's account of what
+was done puts the change and the sync on 7 August, and the 6th came from the stamp itself, read a day
+early. So the confirmation section 21 cited was the reader confirming itself.
+
+**The remote's own screen agreed before anyone asked it.** Section 242 saw a Harmony One booted on a
+stamp whose weekday byte was 0 show `Sun 3:42`, and recorded the day name as a puzzle because section 21
+said 0 was a Saturday. It is a Sunday, 23 August 2026, which is what that stamp reads as now.
+
+**The day's maximum agrees, and the 31st is a consequence rather than evidence.** Base slot 13 states
+the day's maximum as 30 in every one of the 88 containers in the lab that carry the record, and a day
+counted from 1 could not reach the 31st under it. Under this reading Logitech's generator has met a 31st:
+`h700_config` was built on 31 July 2021, which the old reading took for the 30th, and it stores 30 in
+both records against that maximum of 30. That stored 30 fits either reading, so it decides nothing by
+itself; what it settles is section 139's note that no config was built on a 31st and that what the
+generator does on one is unknown, both of which were the misreading.
+
+### What changes
+
+* **The readers**, `clockRecord` in `packages/codec/src/gspm.ts` and `clock_record` in
+  `src/harmony/gspm.py`: the date is the stored day plus one, a stored day past `clockLastDayIndex` for
+  its month is refused, and the weekday is checked counted from Sunday. Both refuse a date the calendar
+  does not have, which matters only for 29 February 2100 and 2200, which the firmware's `& 3` allows.
+* **The encoder**, `clockRecordFields`, writes the day minus one and `getUTCDay()`, and every save
+  through `timestampEdit` and `clockStateEdits` follows.
+* **The 31st is no longer special.** `clockStateEdits` raised the day's maximum to 31 on a 31st, a repair
+  for a value only our own misreading could write. A save writes at most 30 now, and a configuration an
+  old save left at 31 is put back to 30.
+* **The stopgap goes**: `isSyncDayZeroStamp` let the writer, the byte accounting and the emitter accept
+  the 650's day 0 stamp as a well framed record of unknown meaning. Its docstring said Logitech's compiles
+  of that same day read day 1; they were the power hold compiles of the day after, which is why they read
+  one more.
+* **The golden vectors**: `built_at` moved in 100 of 103, three of them reading for the first time, the
+  650's day 0 containers; the other three are Harmony 890 reads that carry no readable stamp either way.
+
+### Which remotes our writes left a day ahead
+
+A save stamps the moment of saving into both records, through `saveEdits`, which `compose-device.ts` and
+`compose-activity.ts` both call, and the Harmony One and the Harmony 650 put their clock back to that
+stamp, at every boot on the One, section 111, and at every restart on the 650, section 283. So each save
+of ours set the clock one day ahead, at this machine's local time. That holds for every save in the lab;
+a save on the last day of a month would have stored an index past the firmware's limit, which the remote
+clamps or rolls over rather than reading as a day ahead, and none was made on such a day.
+
+* **The spare Harmony One**, every save since `compose-device.ts` began stamping in section 242. The last
+  of its regions in the lab, `one_spare_page4_base`, was stamped on 24 September and the remote reads it as
+  Friday 25 September 17:12:56.
+* **The Harmony 650**, the saves behind `h650_lg_region`, `h650_post144_region` and `h650_devicelist_region`, and the write
+  of 3 October 2026, stamped `2026-10-03T16:06:12` local by the old encoder: stored as day 3 and weekday
+  0, which the remote reads as Sunday 4 October 16:06:12. Its write journal records the whole
+  configuration read back identical and the restart sent; no read of the remote's clock followed, so what
+  it shows now is predicted from that and not observed.
+* **Not the Harmony 600, the 700 or the 525.** Their writes went through the faithful path, which keeps
+  the input's stamp, so they carry Logitech's own stamps, correctly read.
+
+### The hour, measured and not settled
+
+Our writer stamps local time, `localTimestamp`. Whether Logitech's stamps are local time, UTC or
+something else cannot be settled from what the lab holds, and the first draft of this section tried
+with the wrong instrument. It compared each stamp with the time the file holding it was saved, and for
+most files that time is not a save moment: compiles extracted from an archive keep the archive entry's
+time, two calibration compiles 16 minutes apart share one modification time, and two power hold
+compiles share another. Those rows put stamps an hour after the file that holds them in August and on
+5 September, and a few minutes after it in October, which says more about the file times than about the
+stamps.
+
+The rows with a recorded read time are four, each against the first read of the stamp:
+
+| container | stamp minus the read time, UTC |
+|---|---|
+| `h650_config_region`, the 650's first read on 27 September | -0.3 minutes |
+| `h700_28_config_region`, its first read after Harmony Desktop on 29 September | +3.8 |
+| `h650_panasonic_config`, 1 October | -1.7 |
+| `one_spare_myharmony`, against its manifest's read time | +17.0 |
+
+Three sit within four minutes of UTC on either side and the fourth is 17 minutes after a read that took
+53 seconds, while falling 3 seconds before that file's modification time, which is recorded and not
+explained. Read as local summer time, UTC+2, the 5 September Harmony 350 and 300 compiles would come 10
+and 43 minutes before the files of the reads of the configurations they replaced, which a compile can
+only do if it was made before the remote it was for was read. **Open**: which clock and zone Logitech stamps in, and so
+whether our local stamps put the remote's time of day where Logitech's would. Nothing here was measured
+on a remote's screen.
+
+### Scope, decision 16
+
+The month end routine is read on arch 8, 9, 12, 14 and 16, every image in the lab. The weekday
+routine's `INCF` and its arithmetic are read on arch 12 only; the blind reviewer reports the same
+routine on the other images and that is not asserted here. The stamps with known dates span arch 12, 14
+and 16.
+Arch 10 has no clock routine read here and no stamp with a known date; its containers carry the same
+record and decode the same way.
+
+### Falsification
+
+A firmware image whose month end compare is 31 for a long month; a Logitech stamp storing a day equal
+to its month's length; a stamp whose stored weekday is the Sunday based weekday of the stored day itself
+rather than of the day after; or a Harmony One booted on a stamp of ours showing a day name other than
+the one its date has.
+
+### Where it lands
+
+* `tests/test_clock_counting.py`: the limits read out of all nine images; the weekday routine's
+  `INCF`s on full addresses and its arithmetic with every constant read out of the image; the twenty
+  three known dates, the old reading a day early on twenty two and blind on the last; the 31st on
+  `h700_config`; and the reader's refusals on synthetic records.
+* `tests/test_gspm.py`: section 21's search widened by the day's base finds two solutions, which is
+  why the corpus could not decide; the weekday byte asserted as the Sunday count.
+* `tests/test_clock.py`, `tests/test_sync_pair.py`, `tests/test_host_client.py`: the dates a day later,
+  and section 209's two disagreements rewritten as agreements.
+* `packages/codec/test/gspm.test.ts`, `edit.test.ts`, `inventory.test.ts`, `metadata.test.ts`: the same
+  in TypeScript, including the 650's own stamp encoded byte for byte, `1b 20 0e 00 04 09 1a`;
+  `frame.test.ts`: no arch 14 compile is laid out from raw stamp bytes any more, where one was.
+* Corrected in place: sections 16, 21, 58, 111, 130, 137, 139, 155, 209, 242, 245, 265, 310, 312, 316,
+  318 and 320;
+  `docs/config-format.md`, `docs/host-client.md`, `docs/status.md`, `CLAUDE.md`, the
+  `writing-a-config` skill and `docs/memory-map-525.md`; the dead phrasings in
+  `reference/superseded.md`.
+
+## 323. An activity's key map is two roles over the devices' own maps, and its screen is their own screen items
+
+**Todo `todo-compile-650.md` 3.7 and 3.8**: the activity's key map built from its roles, volume to one
+device and channels to another, and the activity's own screen pages, the commands it labels there.
+`composeActivity` copied both from an existing activity until now.
+
+**Sources checked**: this document, sections 120, 151, 271, 273, 279, 285, 290, 312, 314, 315 and 319;
+`reference/button-maps.md`; the thirteen arch 14 compiles of section 314, holding 40 activities;
+`docs/myharmony/model.md` on roles, `ActivityFunctionMap` and the activity button map; four captures of
+Logitech's service in the lab, read only, all filed 13 August 2026: the calibration Harmony 600's account
+record's `MapList` (activity button maps and function maps), `GetButtonMaps_skin71` (device button maps,
+whose device ids are the Harmony One record's), and the calibration Harmony One record's `ActivityList`,
+its roles, and `MapList`. A live read of the Harmony 650 and 700 records' maps was attempted and failed
+at login, so their stated maps are not in hand.
+
+### What Logitech states
+
+An activity on the platform is roles: `DisplayActivityRole`, `VolumeActivityRole`,
+`ChannelChangingActivityRole`, `PlayMovieActivityRole` and others, each naming a device. Its button map
+names a device and a command per hard button and lists its soft buttons, the screen commands, in order.
+On the calibration Harmony 600's record both activities' maps put `VolumeUp`, `VolumeDown` and
+`VolumeMute` on the receiver and **all 36 other hard buttons on one device**: the television in "Watch
+TV", and the disc player in "Watch a Movie". The 600 capture states maps and not roles; on the Harmony
+One record set up with the same three devices and two activities the roles are display and channel
+changing on the television for the first, and display on the television with play movie on the disc
+player for the second, so the display device holds no key in "Watch a Movie". The soft buttons on the
+Harmony 600's record, 8 and 7, are all that one device's, and are in exactly the order its screen draws
+them. Its function maps say the split in Logitech's own terms: an activity's map takes the `Volume` group
+from one device and the rest from another.
+
+### What the compiler writes, key by key
+
+Roles are not in the configuration, so they are read off the sends, `activityRolesFromSends`: the device
+VolumeUp sends to, and the device most other keys send to. On the calibration Harmony 600 that gives the
+devices the stated button maps give, which checks the reading of the configuration against the record
+and is close to circular as a check of the rule. Then, over all 40 activities:
+
+* **the keys run the device's own lists**: of the 1328 activity key bindings, all of which send
+  infrared, 1254 run the very base slot 10 list some key of a device's own map runs, section 271, and
+  none runs a copy of one. Of the other 74, 5 run a list on a device's own screen page and 69 send codes
+  nothing in device mode sends; 64 of the 74 are in the three hand customised configurations below and
+  one is in each of the other ten;
+* **the volume keys are the volume device's own and every other key is the control device's own**. On
+  14, 15 and 16 that holds in all 40, and no other key goes to the volume device. Three refinements
+  follow, of which two are fitted to one activity:
+  * UpArrow and DownArrow, scans 26 and 27, bound to nothing in 56 of the 82 devices' own maps, take the
+    device's DirectionUp and DirectionDown, scans 50 and 42, when its own map leaves them unbound. Which
+    scan is which button is decided by the Harmony 600's stated device maps, below;
+  * where a device's own map runs its DirectionUp and DirectionDown lists on ChannelUp and ChannelDown,
+    as the disc player's does, the activity puts SkipForward and SkipBack there, scans 38 and 21;
+  * where the device's own screen has an item labelled `Exit`, the Exit key runs it, the device's own map
+    having given that key to `Cancel`.
+
+  The second and third fire on one activity of the 40, the calibration "Watch a Movie", and are right
+  there, 2 keys and 1. That is a fit, and what makes it more than one is Logitech's own statement: the
+  calibration Harmony One record's maps give the same disc player `Exit` to `Cancel` and `ChannelUp` to
+  `DirectionUp` in its own map and `ChannelUp` to `SkipForward` and `Exit` to `Exit` in the activity, and
+  its television's own map has no `UpArrow` where the activity has `UpArrow` to `DirectionUp`. It is the
+  same disc player, so the population does not widen.
+
+Built that way, `activityKeysFromRoles`, the 40 sets score **1241 keys the same, 53 running another list,
+34 that Logitech binds and the rule does not, and 70 that the rule binds and Logitech does not**. All of
+the difference sits in 20 activities, and **the other 20 are Logitech's key for key**, both calibration
+activities among them and two customised ones that bind only the volume keys. The 20:
+
+* **"TV kijken" on the test account's Harmony 650 and 700 records**, the same activity in nine compiles,
+  four keys each: Select runs another command of the same set top box, and Info and the two arrows are
+  unbound. PanaWatch drives the same box on three of those records and matches whole there, so the
+  device's own map is not the cause. Why is not established. These nine are also exactly the nine sets
+  whose bucket ties are in the other order, below, so the set was built differently from the rest, which
+  points at an edit on the account. LG WebOS was imported onto those records from the same Harmony One
+  and matches, so the import alone does not explain it.
+* **the 11 activities of the three hand customised configurations that bind more than volume**: all three
+  of Danny's own Harmony 600 and four of the five on each copy of the contributed Harmony 700. Only PS3's
+  single key, PrevChannel, is asserted key by key; the others are asserted as differing. One is a
+  different case: that Harmony 600's "Chromecast" drives a device with no infrared, and its only other
+  keys, Play and Pause, send two other television commands, so the television is read as the control
+  device and its whole map is predicted.
+
+**The refinements change 65 keys, only ever scans 12, 26, 27, 31 and 32, and 39 of the changes are
+right.** All 26 wrong ones are the arrow fallback, on the ten "TV kijken", the nine and Danny's Harmony
+600's, on "Chromecast", and on the contributed pair's "Watch TV". Counted by distinct activity the arrow
+fallback is right on five, the two calibration activities, "Kodi kijken", "LG WebOS" and "PanaWatch", and
+wrong on four. Without the refinements the calibration "Watch a Movie" is wrong on Exit and both channel
+keys and lacks both arrows.
+
+**Control**: the same 40 with the two roles swapped match 3 keys.
+
+**The 40 are fewer independent cases than they look.** The test account's "TV kijken", "LG WebOS",
+"Kodi kijken" and "PanaWatch" are each compiled three to nine times, so the 40 are about 14 distinct
+activities.
+
+**The order of a set's entries is not built here.** They are ascending in the bucket order of section
+315 on 40 of 40 activity sets, every one with ties. Inside a bucket `0x8C` precedes `0x05` in 26 and
+follows it in 9, and the 9 are the nine "TV kijken" copies, which is one activity; what decides it is not
+established. `composeActivity` writes the set.
+
+### Which scan is the arrow
+
+`reference/button-maps.md` left scans 26 and 50, and 27 and 42, as two symmetric pairs on the Harmony 600,
+since every activity in the two calibration configurations gives both members one command. The device
+maps break it. Logitech's stated device button maps for the three calibration devices, the capture
+`GetButtonMaps_skin71`, give each of them `DirectionUp` and `DirectionDown` and no `UpArrow` and no
+`DownArrow`; and in `calibration_h600` each of the three devices' own mode records binds 26 and 27 to the
+null instruction where 50 and 42 send its DirectionUp and DirectionDown. So 26 is `UpArrow`, 27
+`DownArrow`, 50 `DirectionUp` and 42 `DirectionDown`, on the Harmony 600. That capture names the device
+records of the calibration Harmony One's account, set up with the same three devices, which is a gap
+between the two sources this does not close. The Harmony 650 and 700 compiles are scored here on the same scan
+table, which the key score supports and nothing else here checks.
+
+### What the compiler writes, screen by screen
+
+On the ten compiles that are not hand customised, **every item on every activity's working screen is an
+item of a device's own screen pages: the same list under the same label**. That is 64 items counted per
+copy, 23 distinct items on six distinct activity screens, five of them not empty. So a screen command is
+named by its device and its label, `activityScreenRows`, and resolved to that item. On the customised
+three, 16 of 101 are; the rest are commands and labels a user built.
+
+**Which commands, and in what order, is not derived.** It is the platform's soft button list, a default
+suggestion or the user's choice, and on the calibration Harmony 600 the screen's order is exactly the
+stated soft button order. That order is not the bucket order of anything tried: the calibration
+selections are one device's commands in an order no hash of their names or function numbers gives. So
+the selection is an input and the layout is the composer's: four a page, top left, top right, bottom
+left, bottom right, `ceil(n / 4)` pages and at least one, a counter only past one page.
+
+Composed from each activity's own commands in order with `composeActivityScreen`, 38 of the 40 compose
+and **41 of their 47 working screen pages are Logitech's** in pictures, fonts, texts, places and
+bindings, counted per copy, texts compared by value since the compiler often draws a string by reference
+to an equal one, section 312. The record entries match on 38 of 38 and the start up title on 38 of 38.
+The six other pages are two each of three customised activities, and each of those has a page Logitech
+leaves short before its last, a gap the user left that a list of commands cannot state, so every later
+command sits one corner earlier in ours; no activity that matches has such a page. The two refused are
+the same contributed activity in both copies, below.
+
+### How a label is fitted
+
+Three things the composer refused or did not know, now measured:
+
+* **A corner label breaks onto two lines** the way a word wrap does. The population is the labels drawn in
+  their page's most common font where a corner label sits, one line at y 40 or 90, two at 25 and 40 or 75
+  and 90, a left one from x 3 and a right one ending at 125 line by line, counted once per configuration,
+  label and place: 2037, 1156 on one line and 880 on two, 2036 measurable, the other a glyph the
+  character map does not name. That is 422 distinct texts. A label without a space stays whole, one within
+  58 pixels stays whole, and a wider one breaks at spaces with as many words to a line as fit within 58.
+  Every width from 55 to 58 reproduces all 2036. The band's edges are three distinct labels, `TV Vol+` at
+  55 in the contributed Harmony 700 the widest whole label with a space, and `Sony TV` in the calibration
+  and `TV Input` in the contributed pair at 59 the narrowest broken; only 8 distinct labels stay whole
+  with a space in them, and on the nine test account compiles every label with a space is broken and the
+  narrowest is 63, so those constrain nothing below. The composer takes the band's top. "As many words as
+  fit" is tested by one distinct label, `Rcvr V-` over `Aux`; every other two line label has one space. A
+  single word of 59 stays whole, so the rule is not one width for every label; measuring a label with a
+  space as if it had a trailing one against 59 to 62 is the same rule spelled the other way.
+* **No corner label line in that font is wider than 59 pixels.** `Antenna`, 60 in it, is drawn by the
+  compiler in another font, in the contributed pair, which is the one case of the kind and corrects
+  `FOUR_SLOT_LABEL_MAX` from 60, a limit the composer had set itself, to 59. 890 corner cells are drawn in
+  a font other than their page's most common one, most of them help and dialog text, 60 of them cut with
+  `..`, and the choice is not "smaller when too wide": 128 are as wide or wider in their own font, and 16
+  on device pages would fit the page's font. Choosing a font is not built, and a label too wide for two
+  lines of the page's font is refused, which is what refuses the contributed Harmony 700's "Watch TV" in
+  both copies.
+* **The start up title breaks the same way at 123 pixels** onto y 5 and 19, each line centred: `Starting
+  Watch a` over `Movie` and `Starting Play Audio` over `Cassette`, at the x the compiler draws them. The
+  37 one line start up titles of the 13, 10 distinct, are all centred and none is wider than 123,
+  `Starting Watch Bluray` in the contributed pair; the broken ones, three titles and two distinct, are
+  130 and 163 whole, so where from 124 to 130 the break begins is not known.
+
+The device page composer is unchanged and still draws a label on one line; only its limit moved to 59.
+
+### Scope, decision 16
+
+Measured on arch 14, the Harmony 600, 650 and 700, and built for it: the screen half is those three's
+four corner layout. The Harmony One's activities have the same roles on the platform and are not scored
+here.
+
+### Falsification
+
+A Logitech compile whose activity, without a user's hand in it, puts a non volume key on a device other
+than the one most of its keys use; a label with a space of 55 pixels or less that the compiler breaks,
+or one of 59 or more that it keeps whole; on the remote, a key of a composed activity that sends
+something other than what the same key sends on that device's own Devices page.
+
+### For the hardware check
+
+Nothing here has been on a remote. On the Harmony 650, an activity composed with
+`compose-activity.ts --roles volume=<receiver>,control=<set top box> --commands ...` must send, key by
+key, the receiver's own VolumeUp, VolumeDown and Mute, and on every other key what the same key sends on
+the box's own Devices page, UpArrow and DownArrow sending the box's DirectionUp and DirectionDown. Its
+screen must draw the chosen commands in the four corners in the order given, each running the command of
+the same label on that device's Devices screen.
+
+### Where it lands
+
+* `packages/codec/src/activityroles.ts`: the roles, the key map, the screen rows, the inference.
+* `packages/codec/src/compose.ts`: the two line corner label and start up title, the 59 pixel limit.
+* `packages/codec/bin/compose-activity.ts`: `--roles` and `--commands`.
+* `packages/codec/test/activityroles.test.ts`: the stated map's devices, the key score with every
+  differing activity named, the swapped control, the refinements' account, the screen score, and the
+  corner label census with the widths either side of the band as its control.
+* `docs/config-format.md` under base slot 9, and `reference/button-maps.md` for the arrows.
+
+## 324. Base slots 0, 13 and 14 are built from a description, and the name tree's order is a hash order of the variable index
+
+**Date:** 3 October 2026. **Status:** confirmed by construction over the thirteen arch 14 compiles
+section 312 lists, with a blind control, two mutations of the generator that fail, and alternative
+rules scored with their split; nothing built this way has been written to a remote, and nothing needs
+to be for what is claimed here, since the result is byte identical to files already in the lab. Both
+reviewers ran on the whole diff; the blind one reproduced every number below, and the sentence audit's
+points are folded in, the main ones named under "What the review changed".
+
+**Todo `todo-compile-650.md` 10.3.** Section 318's frame lays a container out from pieces, and the
+pieces of base slot 0 (the name tree), base slot 13 (the state variables) and base slot 14 (the value
+maps) could only come out of a Logitech compile. `packages/codec/src/statetables.ts` builds them from a
+description: the configuration's own variables and value maps go in, and everything the format or the
+firmware decides is generated.
+
+**Sources checked**: this document, sections 39, 73, 86, 120, 130, 138, 234, 276, 277, 280, 284, 288,
+301, 315, 318, 319 and 322, and the thirteen compiles. Neither firmware nor client was opened: every rule
+below is an order or a constant Logitech's compiler wrote, and the compiler ran on their server,
+section 293's reasoned exemption. The firmware's own use of these slots was read in the sections
+named, and base slot 0 is not sought by it at all.
+
+### The measurement
+
+`takeApart` cuts each compile into pieces, `describeStateTables` reads back only what a composer would
+supply, `buildStateTables` builds the three slots' pieces, `withStateTables` puts them where
+Logitech's sat, and `layOutContainer` lays the container out again. **13 of 13 come back byte for
+byte.** The description carries 1051 variables and 501 value maps over the thirteen.
+
+**The blind control** overwrites, in a copy of the pieces, the bytes the generator claims to own:
+records 7 to 17 and the first two byte variable whole, the header's `wide` and repeated `narrow`, the
+operand and opcode of the clock's three increments, the value count at the end of every level 1 name,
+the order of the name tree's nodes (reversed), and every value map's lead byte and case order
+(reversed). The description read off that copy still rebuilds **13 of 13** byte for byte, so none of
+those bytes reached the generator. What it leaves is what the description needs: the header's `count`
+and `narrow`, read to find the records and to know which index is the generator's, the increments'
+`from` and `to`, and the level 0 nodes. Two mutations of the generator itself were run by hand and each
+fails the rebuild on the first compile: the name tree in index order, and record 9's maximum changed
+from 7 to 6.
+
+### What is generated
+
+| what | rule | over the thirteen |
+|---|---|---|
+| records 7 to 17 | `[first, max]` constants, no transitions: `0/2, 0/3, 5/7, 0/7, 0/32, 0/1, 0/32, 1/1, 0/3, 0/1, 0/3` | 13 of 13 |
+| the clock's transitions | the minute, the day and the month each `{-2 to 0, 0x1F 0xF2nn}`, incrementing the hour, the month and the year respectively, section 73's reading of `0xF2`; the hour `{-2 to 0, 0x7F list}`, a list `[0x1F 0xF203, 0x1F 0xF204]` incrementing the day and the weekday; second, weekday and year none | 13 of 13; the list's index is 12 on six compiles, 13 on one, 18 on two and 19 on four, and is the caller's |
+| the first two byte variable | index `narrow`, `first` 0, maximum 65277, no transitions, unnamed, stored straight after record 17 | 13 of 13; what it is for is **unread** |
+| a variable's width | one byte up to a maximum of 100, two bytes from 254 | per compile, the widest one byte maximum above the firmware's block is 100 and the narrowest two byte one 254, 13 of 13; **the line between them is not pinned**, and a maximum from 101 to 253 is refused |
+| the header | `count`, `narrow`, `wide`, `narrow`, from the widths | section 276 |
+| a variable's name | its stem, `_`, and its maximum plus one | section 86 |
+| the name tree's level 0 | `Root` index 0, `State` index 1, first in the file | 13 of 13 |
+| the name tree's level 1 order | ascending `(i ^ (i >>> 4) ^ (i >>> 7)) & (capacity - 1)` of the variable index, the capacity 16 doubled while the node count exceeds three quarters of it | 13 of 13 |
+| a value map's case order | `compilerCaseOrder`, section 319 | 501 of 501 records, but the order is visible only in the 332 holding the key sets 0 to 20 and 0 to 450; the other 169 hold one case or keys below 16, where it is ascending |
+| a value map's lead byte and range table | 2, and no range | 501 of 501 |
+
+The clock's day of the month counts from 0, section 322, so its rollover to 0 is the 1st and the
+increment it fires is the month's; the generator carries the clock's values and maxima and takes no
+position on how they count.
+
+The rest is the description: the clock's seven values and maxima and the hour's list, which are the
+stamping rule's and base slot 10's; each variable's stem, value, maximum and transitions in stored
+order; the order of the variables' indices within each width; and each value map's cases by value,
+each naming a piece.
+
+### The name tree is a hash map keyed by the variable index, and the capacity is pinned in places
+
+Section 315 found Java 6's `HashMap` bucket order in the key list after the end marker. The name
+tree's level 1 nodes follow the same hash of the **variable index** they name:
+
+| order tried | fits |
+|---|---|
+| the rule, at its capacity | 13 of 13 |
+| ascending index | 0 of 13 |
+| the hash at half the capacity | 0 of 13 |
+| the hash at double the capacity | 11 of 13 |
+
+**Only the two Harmony 600 trees pin the capacity from above**: 32 and 41 nodes, they fit 64 buckets
+and fail at 128. The eleven others hold 51 to 90 nodes, fail at 64, and fit 128 and every larger
+capacity alike, since all their indices are below 128 and the hash is then the same order however wide
+the table; so for them the capacity is pinned from below only. At 64 buckets the table therefore doubles
+past a count between 41 and 51, a load factor in `[0.641, 0.797)`, which with section 315's
+`[0.6875, 0.8125)` leaves `[0.6875, 0.797)` for Java's 0.75. If one compiler built the other
+architectures' trees too, a Harmony One tree of 12 nodes that fits 16 buckets and fails at 32 and one of
+25 that fits 64 and fails at 32 narrow it to `[0.75, 0.78125)`. That the key is a boxed integer index
+rather than the name is the reading that fits; nothing names the map.
+
+**No tree of the thirteen has a tie**, and the generator refuses one. Ties do occur on arch 8 and 12:
+ten distinct pairs, fifteen occurrences over ten distinct Logitech trees of the Harmony One and the
+Harmony 880 and 885, at 16 and 32 buckets, and in every occurrence the larger index is stored first. That is not adopted: a Java 6 table
+inserted in ascending order puts the later key first only for a pair that never shared a bucket before
+the last resize, since a resize reverses a chain, and `49` and `19`, which share bucket 2 at 16 buckets
+as well as bucket 18 at 32, are stored larger first too. So the insertion order is not established, and
+an arch 14 tie stays a refusal until a compile holds one.
+
+**The same order holds on every name tree Logitech built in the lab**: 35 files on arch 8, 9, 12 and
+16, the Harmony 880 and 885, the Harmony 525, the Harmony One and the Harmony 300 and 350, hold 22
+distinct trees of 2 to 25 level 1 nodes, and all 22 show no step down at the rule's capacity while none
+is ascending. Three of the 22 are the Harmony 300 and 350's, of 2 to 5 nodes, which say little. Those of arch 8 and 9 carry a third level 0 node, `HarmonyAssistant`, and level 2 nodes the
+generator does not build. Arch 10 (Harmony 890 and 895) has no name tree. **The only trees that break
+it are ours**: all twenty configurations in the lab that `compose.ts` gave a node, thirteen on the spare
+Harmony One and seven on the Harmony 650, because it appends the node rather than placing it. Those ran on the remote,
+which agrees with nothing on it reading base slot 0.
+
+### The index order is not a hash order of the names
+
+Which variable gets which index within a width is carried. Over the thirteen, the named variables in
+index order step down at the rule's capacity under Java's `String` hash of the whole name about as often
+as not, under both Java 6's and Java 8's supplemental hash: of 831 adjacent pairs, 408 and 413 step down. Four
+other spellings of the name, at six capacities from 16 to 1024, did no better, in a measurement the
+test does not repeat. The records are stored in index order except the first two
+byte variable and, on 11 of the 13, a trailing run of the highest one byte records, device input and
+state variables such as `TV_TVInput_3`, stored after the two byte ones: one record on five compiles, two
+on two, and 3, 5, 9 and 13 on one each. So the index is largely the emission order, and what decides
+it is open. The transitions of a record are carried in stored order as well; for a device's inputs that
+order is `inputs.ts`'s question, section 321.
+
+### What it corrects
+
+Sections 86 and 120 measured a record's value at most its maximum, "at most `second` in all 735
+records", which holds for the population measured then and **not** for the thirteen:
+in `h650_power_hold_compile_2`, `DefaultPowerOnDelay_83915542` holds 65535 under a maximum of 254. So the
+generator does not refuse a value above its maximum, since that would reject Logitech's own output;
+keeping the clock inside its range stays `edit.ts`'s rail.
+
+### Also built, from a smaller description
+
+`deviceDelayVariables(identifier, delays)` gives a device's eight delay variables, section 234: the two
+delays and their defaults as two byte variables with maxima 65277 and 254, and the four counters
+beside them as one byte variables, 0 under maxima of 5, 3, 100 and 100. All 83 devices on the thirteen
+hold exactly these, 664 variables. `activityStateVariables(n)` gives `CurrentActivityState_0` holding
+and bounded by the activity count and `CurrentLocation` at 0 of 0; the count is checked against
+`activityNames`, which reads the activities off the menu rather than off base slot 13, 13 of 13.
+
+### Scope, decision 16
+
+The generator is arch 14 only, the Harmony 600, 650 and 700, where every constant above was measured,
+and several do not transfer. On arch 8 and 12 (Harmony 880 and 885, Harmony One) records 7 to 12 and 15
+to 17 hold arch 14's values while 13 and 14 do not, `1/1` and `0/1` on the 880 and 885 and `1/1` and
+`2/4` on the One against arch 14's `0/32` and `1/1`; arch 9 (Harmony 525) differs from record 8 on. The
+`0/65277` variable at index `narrow` exists on arch 8, 9 and 12 as well, as the only two byte variable,
+so the width rule cannot be scored there, and their one byte variables reach a maximum of 121, inside
+the gap refused here. The name tree's level 1 order is seen on every architecture with a name tree,
+above.
+
+### What the review changed
+
+The audit found the first draft's "no tree here has a tie" true of the thirteen and false of the lab,
+the other architectures scored on ten files of the 35 the lab holds, with one factory tree counted
+twice, "one more record stored apart" wrong on six of the eleven, the double capacity and
+ascending case controls presented without their split, and the arch 10 and the records 13 to 17 scope
+sentences short of what one command could say. Each is corrected above. The blind reviewer reproduced
+every count in the draft, and noticed the stored apart run independently.
+
+### What this does not establish
+
+* What the first two byte variable is for, and what records 7 to 17 hold beyond section 138's arch 12
+  readings.
+* Where between 100 and 254 a maximum makes a variable two bytes wide on arch 14. That the line has to
+  do with the firmware's `0xFE` fill, section 276, is a guess and is not tested.
+* The order of a tie in the name tree, what decides the index order, and the order of a record's
+  transitions.
+* Anything on the remote: base slot 0 is read by no firmware, and the other two are byte identical to
+  compiles that ran.
+
+### Falsification
+
+An arch 14 compile whose base slots 0, 13 or 14 the round trip does not reproduce; a Logitech name tree
+whose level 1 nodes step down in bucket order at the capacity the rule gives; an arch 14 one byte
+variable with a maximum of 254 or more, or a two byte one with 100 or less; records 7 to 17 or the first
+two byte variable stating other values on an arch 14 compile.
+
+### Where it lands
+
+* `packages/codec/src/statetables.ts`: `buildStateTables`, `describeStateTables`, `withStateTables`,
+  `nameTreeOrder`, `isWideVariable`, `deviceDelayVariables`, `activityStateVariables`.
+* `packages/codec/test/statetables.test.ts`: the thirteen byte for byte, the blind control, the name
+  tree order and its alternatives with their split, the Logitech trees of the other architectures and
+  the ties in them, the composed trees that break the order, the names' string hash, the case order with
+  the ascending control, the constants and width bounds, the clock's transitions and the hour's list,
+  the stored order, the device and activity variables, and the refusals.
+* `docs/config-format.md` under base slots 0, 13 and 14.
+
+## 325. A whole device's device mode is laid out by rules: hard keys by preference, the screen sorted, labels sized down a ladder of six
+
+**Logitech's compiler puts a catalogue device's whole command list into device mode by rules this
+section reads off its output, and the composer now builds a whole device by them.** Every hard key takes
+the first of a short list of command names that the device has; the screen opens with the power
+commands and a fixed short list, then runs through every command no key holds, **sorted**, case folded
+with hyphens passed over; each label goes in the largest of six text sizes where it fits on one line or
+split over two; the title is cut to what the page counter leaves; and the counter's total ends at the
+right edge. Scored against twenty devices Logitech compiled from its catalogue, the rules reproduce
+every key, every page count and every counter, and all but named items, labels and titles; on one
+further device, held out, everything, once it had corrected the order's treatment of a hyphen.
+todo-compile-650 2.4. Arch 14 only: Harmony 600, 650 and 700.
+
+### Sources checked before the work
+
+Logitech's MyHarmony client and the firmware, decision 2. MyHarmony's decompiled client holds the
+interface's own names for the buttons and nothing about which command a key takes or how a device mode
+is paged: the configuration arrives compiled from the service, section 58. The firmware draws what the
+configuration states, section 285, so it cannot say why a command is on a page. What corroborates the
+key half is the test account's own button maps, captured off Logitech's service for skin 71, which state
+the defaults the service assigned `calibration_h600`'s Denon AVR-1912 and Panasonic Blu-ray: Exit is
+Return on the receiver and Cancel on the player, Info is DirectionDown on the receiver, Guide and Select
+are Enter on the receiver and OK on the player, Channel Up is TuneUp on the receiver and DirectionUp on
+the player. Every one agrees with the table below. Those devices are in the population, so the agreement
+is expected either way; what it adds is that the service states these as its own assignments, so **a
+key taking a direction or a confirm as a fallback reads as the compiler's default** and not an edit,
+which rests on nobody having edited those two devices' buttons on the account.
+
+### The population
+
+Twenty devices Logitech compiled from its catalogue, in seven of the thirteen arch 14 configurations of
+section 312: seventeen test devices of the six power hold compiles, sections 306 to 308, on the Harmony
+650 and 700 records, and the three devices of `calibration_h600`, section 121. They are nineteen
+catalogue entries, since the Panasonic TX-P42GT30E is on both records. The thirteen are the population
+of the size table below only. Each is named from its own catalogue
+codeset in the archive, the first of each command name in catalogue order, and its device mode is read
+as a key map and a run of corner pages, section 285. Each compiled record is identified as a catalogue
+command by its once block, built from the command's stated code and compared word for word, falling
+back per record to the decoded frame value. 128 pages, 476 screen items, 734 label lines.
+
+**Held out**: the Harmony 650 account's own LG OLED65G26LA, as Logitech compiled it into
+`h650_power_hold_compile` and into `h650_config_region`, its catalogue entry pinned in `inputs.test.ts`:
+7 pages, 28 items and 36 keys in each, so 56 items and 72 keys over the two. The rules were fitted
+before it was scored, and it corrected one of them, the order below, so for that rule it is in sample
+now. The same
+account's Denon AVR-X4800H is deliberately not a sample: its device mode draws labels no catalogue name
+spells, `down`, `left`, `right`, `up` and `okidoki`, and puts the arrows on the screen, so its button
+map was edited on the account.
+
+### The keys
+
+A device mode binds up to 41 hard keys besides the four corners, 37 at most on any device here, and **each takes the first of a short
+preference list of catalogue names that the device has**, or nothing:
+
+| key | scan | preference |
+|---|---|---|
+| Menu | 10 | Menu, Home |
+| Exit | 12 | Cancel, Exit, Clear, Return |
+| Number plus | 19 | Clear, `.`, `*` |
+| Skip back, Skip forward | 21, 38 | ChapterPrev or ChapterNext, then SkipBack or SkipForward |
+| Rewind, Fast forward | 22, 30 | Rewind or FastForward, then the iPod form |
+| Channel up | 31 | ChannelUp, NextDisc, TuneUp, DirectionUp |
+| Channel down | 32 | ChannelDown, PreviousDisc, TuneDown, DirectionDown |
+| Guide | 33 | Guide, Select, Enter, OK |
+| Info | 36 | Info, Display, DirectionDown |
+| Stop | 40 | Stop, Pause, iPodStop, Return |
+| Previous channel | 43 | ChannelPrev, Cancel, Return |
+| Play | 44 | Play, Select, iPodPlay, Enter |
+| Pause | 46 | Pause, Select, iPodPause |
+| Select | 51 | Select, OK, Enter, Stop |
+| Enter | 54 | NumberEnter |
+
+and the rest one name each: the four colours, the ten digits, volume up and down, mute, Record, PageUp,
+PageDown and the four directions. **The lists are fitted, and thinly**: each is the shortest order
+consistent with every device offering more than one candidate, and only Menu, Exit, the two channel
+keys, Guide, Info, Stop, Previous channel, Play, Pause and Select have such a device. On Number plus,
+the skip keys and rewind and fast forward no device offers two candidates, so their order is a choice;
+and most fallbacks rest on one device each, Menu's Home on the Sony KDL-32W705B among them, while
+NumberEnter is the only Enter candidate any device offered. A command name no device here carries is
+never put on a key, which is the safe direction, since it lands on the screen. 546 of 546 key bindings
+agree, and 72 of 72 on the held out LG. A binding agrees when the record it sends carries the chosen
+name among its catalogue names, and on 6 of the 546 one record carries two of that key's own
+candidates, the TX-29AK40F's, the Pioneer's and the Quasar's channel keys, so those 6 do not test the
+order.
+
+### The screen and its order
+
+The screen holds every command no hard key holds, four to a page, filling top left, top right, bottom
+left, bottom right, section 285, **opening with these whether or not a key also holds them**:
+
+```
+PowerToggle PowerOn PowerOff Teletext List Home Eject Subtitle Aspect Timer Return
+NextDisc PreviousDisc Triangle Circle Square Cross
+```
+
+Return is on the screen whatever key holds it: on the Previous channel key on three devices and on the
+Stop key on four. That order is the pairs the population shows, and several are never decided by it
+and are ordered by choice: Home, Eject and Subtitle against Aspect and Timer, Eject against Subtitle,
+and List against everything after Teletext. The four
+PlayStation symbols are read off the Harmony 650's own PlayStation 3, a user configuration.
+
+**Everything after is sorted case folded, hyphens passed over, then by character code**: `i-Manual`
+after `Football`, `InputHdmi2` before `InputHDMI3` before `InputHdmi4`, `InputVideo 1/MD` between
+`InputVideo` and `InputVideo1`, a space below a digit. The hyphen is the held out LG's correction: its
+`In-Start` and `In-Stop` follow `InputTv`, which they would precede if the hyphen counted. 474 of 476
+items are in the compile's place on its page.
+
+**Neither the catalogue's order nor a hash order.** The Java 6 and 7 `HashMap` bucket order sections 315
+and 319 found elsewhere puts 197 of 364 adjacent pairs of the sorted run in bucket order at the best of
+three capacities, on the nineteen devices whose order the rules reproduce item for item, about half as a
+random order would, and one device wholly. **The archive's own order is close to sorted**: of its 364
+adjacent pairs of the same commands, 354 are in sorted order, so catalogue order is the stronger rival
+and the control below is built on it. What tells the two apart is the ten pairs the archive has out of
+order, and the compile sorts all ten. Both counts are a scratch measurement and not asserted. **What is
+sorted is the label**, which for a catalogue device is the command's name: the Denon above has `okidoki`
+between `ModeVirtual` and `Option`, and `okidoki` sends Enter, which sorted by command would stand under
+E.
+
+### Labels
+
+**A label goes in the first of six sizes where it fits**, largest first: heights 15, 14 (a wider face),
+14, 13, 11 and 10, each a table of glyph widths. A configuration carries only the glyphs its texts use,
+so a size is several font sets with the same widths, `h650_config_region` holding six of the title's
+size, and **the table is the union over the thirteen arch 14 configurations**: 167 font sets, no two sets
+of a size disagreeing about a character. That last holds partly by construction, since a set is given a
+size only when every glyph it carries has the table's width; the sets of a label height given no size
+disagree with every size of their height on 14 to 58 characters, so none is a near miss. Every one of
+the 734 label lines is drawn in one of the six.
+
+* **It fits on one line** when it is at most 59 pixels wide, the widest one line label drawn. A label
+  that could be split is held to 58: of the four labels exactly 59 wide in the largest size, the one with
+  nowhere to break, `Program`, stays whole, and `WakeUp`, `ChLevel` and `InputAm` are split. That limit
+  is fitted to one width and reads as a tie rule, not a second limit.
+* **It is split** at spaces the way a word wrap does, as many words to a line as fit within 58, the
+  spaces at the breaks dropped; or with no space at its first word boundary: after a hyphen not
+  followed by another, or between a lower case letter and an upper case one or a digit, unless that
+  letter is followed by a hyphen. A slash is no boundary: `Tv/Radio` goes down a size. It must come to
+  two lines, each within 59.
+  **The wrap is section 323's rule**, measured on the corner labels of every mode page of the same
+  thirteen configurations in each page's most common font, 1742 of its 2037 labels on device mode pages
+  by this section's blind reviewer's count, and this section first had the first space instead. The two
+  agree on every label of two words, and on every one of the 338 distinct catalogue names of this
+  population's devices: changing to the wrap moved none of the counts below. They differ only on three
+  words or more. The one label measured on which they differ, `Rcvr V-` over `Aux` on an activity's page
+  of `h700_config`, is the wrap's, and since most of section 323's population is device mode pages, the
+  device mode rule is **taken** to be the wrap; no device mode label here tells the two apart. Weakly for
+  it: `Pip Channel Down` is drawn `Pip`, `Channel`, the wrap's first two lines and not the first space's
+  `Pip`, `Channel Down`, in a size neither rule explains, and `Pip Channel Up` in the fifth size pins the
+  wrap's limit below 59, since `Pip Channel` is 59 there and stays apart.
+  **It is still two implementations**, `fourSlotLabelLines` in `compose.ts` measuring with one font
+  set's own glyphs and `wrapAtSpaces` in `devicemode.ts` with the size table, and they share the wrap
+  and not the rest: the first never splits a label without a space. That is the state the rule about
+  two copies of a derivation warns of. Open: one of them should call the other.
+* **Where no size holds it**, it goes in the smallest, split at its first space or word boundary rather
+  than wrapped, each part cut to its longest prefix that fits with `..` after it.
+
+A one line label sits at y 40 or 90; a two line one starts 15 higher with its second line one font
+height below, which is section 285's 25 and 75. Left labels start at x 3, and a right label's lines each
+**end** at 125, measured line by line. 470 of 474 labels agree in size, split, text and place, and 56 of
+56 on the held out LG.
+
+### The title and the counter
+
+**The counter is three texts on the title's line, y 2, in the title's size**: the total ends at 125, the
+slash, 5 pixels wide, right before it and the page number right before the slash, 7 pixels a digit, so
+`1/24` is at 99, 106 and 111. A mode of one page has none. 128 of 128.
+
+**The title is the device's name in the third size, cut to a limit that fits the widest counter its
+mode draws less a gap of 3**, a reading of two measured limits rather than anything stated: the limit
+is `125 - 2 * 7 * digits(total) - 5 - 3`, 103 under a one digit total and 89 under two, and a name
+over it becomes its longest prefix that fits with `..` after it. That is what cuts `Sony KE-50MR1E` to
+`Sony KE-50M..` on its 23 pages, where nine would have kept it whole. 125 of 128 titles agree. **The
+limit is pinned from both sides on each total and untested in between**: under a one digit total the
+widest cut title is 103 and the narrowest that would have kept one more character 104, under two digits
+89 and 90, but no device's whole name is between 98 and 106 pixels wide, so "kept whole at 103 or less"
+fits and is not tested in that band. A one page mode's limit is unmeasured; its widest title is 97.
+
+### The blind re-measure
+
+This section's blind reviewer measured the seven compiles without this section's rules or code: 51
+device modes over all their devices, the account's own included, 1540 corner labels. It found the
+counter's three places, the title's two limits, the 59 pixel line, the label heights and places and
+the leading list as stated here, and of the sort orders it tried, **case folded with hyphens passed
+over is the only one with no violation**, over 1269 adjacent pairs, once a label split over two lines
+is compared as its name with the space the split dropped: plain case folding fails on six pairs, all
+hyphens, `InputBluetooth` before `InputBlu-ray` on the account's Denon in all six power hold compiles
+and `InputTv` before `In-Start` on the LG in all six; passing over slashes as well fails on `Tv/Radio`
+before `TvPause`. Numbers sort as text, `F1`, `F10` to `F14`, `F2`, on the account's Kodi. It also
+names the account's devices whose labels no catalogue command spells, the Denon above and the KPN box's
+`MyNewComm..`, which is why neither is a sample here.
+
+### What differs, named and counted
+
+| what | where | count |
+|---|---|---|
+| the archive's name is not the compile's | TH-42PA30: the archive's `Pip` is drawn `Multi`, `Window` and sorted as `MultiWindow` | 2 items |
+| a character with no width and no code | `J`: the CS-29FJ20S's `AspectJust`, and the JVC DLA-HD10KU's title on its 3 pages; `#`: the Blu-ray player's | 2 labels, 3 titles |
+| `-/--` drawn `-/` | TH-42PA30, one line, the rest dropped | 1 label |
+| `Pip Channel Down` drawn `Pip`, `Channel` in the second size | Sony KE-50MR1E, a three word label that fits no size | 1 label |
+
+**None of these is a rule read wrongly on evidence that could correct it**: the compiles do draw a glyph
+for `J` and for `#`, but the character map names no code for either, so the glyph cannot be filed
+under its character, the table holds no width for them, and the rules decline to measure them rather
+than guess; the last two are one label each, too few to state a rule for.
+
+### The composer
+
+`composeDeviceScreen` takes a `compiled` option, a title and a key map, under which it draws the pages
+by these rules, `compiledDeviceModePages`: the title, the counter, each label in its size and place, the
+labels of one size on one page sharing one font set that spells them all, and the key map binding the
+hard keys to the lists the rules chose and every other key to nothing. A two digit counter is drawn
+there, where the composer's own layout still refuses one. A text the rules cannot lay out, or that no
+font set of its size spells, is **reported** as substituted and drawn as best the configuration allows:
+a character the character map does not know is dropped and the rest cut to fit, so the JVC's title is
+drawn without its `J` and `AspectJust` as `Aspect..`, and a label of nothing else, the Blu-ray's `#`,
+is left empty. `compose-device.ts --full` composes a
+whole catalogue device this way, leaving out and listing the commands whose codes do not compose.
+
+Scored by composing each of the twenty into its own compile and reading both modes out of the result:
+
+| | agree |
+|---|---|
+| devices composed | 19 of 20 |
+| keys | 527 of 527 |
+| items | 466 of 468 |
+| labels | 462 of 466 |
+| titles | 123 of 126 |
+| counters, backgrounds | 126 of 126 each |
+| page programs, instruction kinds and font sizes | 121 of 126 |
+
+The program comparison sees each instruction's kind, a text drawn inline and one by reference counted
+as one kind, and each font select as the size it selects; it does not compare operands, places or
+glyph codes, which the label and title rows do. The Panasonic TX-28A1U composes nothing: its codes are
+of a family with no whole block the rhythm table can build. The three substitutions are exactly the
+three unmeasurable texts. The named differences sit on nine pages, and the five programs that differ are
+all among them; the other four, the JVC's three titles and the TH-42PA30's `-/`, differ in text only.
+
+**The control fails**: the same composer with the screen in catalogue order, on one device each of the
+Harmony 600, 650 and 700, agrees on 2 of 155 items, so the comparison sees the order. It agrees on 111
+of 111 keys by construction, both runs using one key map.
+
+### On the Harmony 650
+
+`h650-seventh-composed`, the configuration last written to the Harmony 650, with the Panasonic
+TX-P42GT30E composed whole as a further device titled "Panasonic TV": 63 of its 63 commands compose, 7
+pages, 37 keys. Beside Logitech's own Panasonic TV in the same file, compiled from the same catalogue
+entry, all 7 pages draw the same texts at the same places in the same sizes, every corner sends the
+same infrared frame, and all 37 keys send the same frames. Every byte is accounted for, the trailer
+checksum agrees and the emitter rebuilds it. A scratch comparison, not asserted, and in sample, since
+this is the population's own TX-P42GT30E. Not written to the remote.
+
+### Scope, decision 16
+
+Arch 14 only, Harmony 600, 650 and 700, which is the whole population. Arch 12 (Harmony One) is not read
+here; arch 9 (Harmony 525) has no compile to read, section 145. **Everything above is fitted in sample**
+but for the held out LG, one device of 28 items read in two compiles, and that device corrected the
+order. Only one mode has a single page, the Mivar's, so "no counter on one page" rests on one device.
+
+### Falsification
+
+A compiled catalogue device whose screen breaks the sort with no named cause; a label drawn on one line
+wider than 59, or split where it fits on one; a hard key taking a command later in its list while the
+device has an earlier one; a counter or title off the stated places.
+
+### Where it lands
+
+* `packages/codec/src/devicemode.ts`: the key table, the screen order, the size table, labels, title,
+  counter.
+* `packages/codec/src/compose.ts`: `compiledDeviceModePages` and `compiledPageProgram`, and the
+  `compiled` option of `composeDeviceScreen`; `packages/codec/bin/compose-device.ts --full`.
+* `packages/codec/test/devicemode.test.ts`: the rules on their own, the size table as the union, the
+  twenty with every difference named, the held out LG, the composer page for page and the control.
+* `docs/config-format.md`, under the device mode pages on arch 14.

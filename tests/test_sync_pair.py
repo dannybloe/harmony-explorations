@@ -26,14 +26,16 @@ PAIR = ('one_spare_before_sync', 'one_spare_after_sync')
 # proceed without one.
 REQUESTED = 'one device, a Denon AV receiver, plus one activity'
 
-# Section 21: the day of week byte is days since this date modulo 7.
-CLOCK_EPOCH = datetime.date(2000, 1, 1)
-
-# The build stamps, and for the second one the date is known independently: the
-# change was made on 6 August 2026 and synced it on the 7th.
+# The build stamps, and for the second one the date is known independently: the change and the sync
+# were both made on 7 August 2026, which is the date this pair's META.md records.
+#
+# **Both read a day later than they did**, section 322: the stored day counts from 0. This said the
+# change was made on 6 August and synced on the 7th<!--superseded-->, and the 6th came from the stamp
+# itself, read a day early, rather than from anything recorded at the time; the lab's own note for the
+# pair gives one date, the 7th. So this test confirmed the reader against the reader.
 BUILT = {
-    'one_spare_before_sync': datetime.datetime(2023, 7, 28, 13, 27, 33),
-    'one_spare_after_sync': datetime.datetime(2026, 8, 6, 13, 54, 22),
+    'one_spare_before_sync': datetime.datetime(2023, 7, 29, 13, 27, 33),
+    'one_spare_after_sync': datetime.datetime(2026, 8, 7, 13, 54, 22),
 }
 
 # Slot 0's tree of state variable names, which is where a config says what it is for. The previous
@@ -95,18 +97,20 @@ class TestTheBuildTimestamp(unittest.TestCase):
         """
         The independent case section 21 did not have. Every other config in the corpus arrived
         with its stamp and no way to check it; this one was compiled while we watched, on
-        6 August 2026, and the reader recovers that date without being told.
+        7 August 2026, and the reader recovers that date without being told. It recovered the 6th
+        until section 322, which is what a reader a day early does.
         """
         lab.require('one_spare_after_sync')
         self.assertEqual(container('one_spare_after_sync').built_at.date(),
-                         datetime.date(2026, 8, 6))
+                         datetime.date(2026, 8, 7))
 
     def test_the_day_of_week_byte_closes_on_both(self):
         """
         The stored byte against the arithmetic, read out of the record rather than taken from the
         reader. `clock_record` applies this check itself and returns None when it fails, so going
         through `built_at` would only assert that the parser ran its own test. The byte is at
-        +0x06 in the record, after second, minute, hour and day of month.
+        +0x06 in the record, after second, minute, hour and day of month. Counted from Sunday,
+        section 322.
         """
         from harmony import gspm
         lab.require(*PAIR)
@@ -115,7 +119,7 @@ class TestTheBuildTimestamp(unittest.TestCase):
                 c = container(name)
                 at = c.blob.find(gspm.CLOCK_COOKIE + bytes([expected.second, expected.minute]))
                 self.assertNotEqual(at, -1, 'the clock record is not where its cookie says')
-                self.assertEqual(c.blob[at + 6], (expected.date() - CLOCK_EPOCH).days % 7)
+                self.assertEqual(c.blob[at + 6], (expected.weekday() + 1) % 7)
 
     def test_the_stamps_order_the_pair_correctly(self):
         """

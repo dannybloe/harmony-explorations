@@ -411,9 +411,11 @@ derived: nothing on the remote reads an order. The parking above is Logitech's h
 thirteen compiles; two configurations of ours park more in front of base slots 5 and 9 and ran on the
 Harmony 650, sections 285 and 291. Whether the firmware needs the key table or the picture bank where
 they are is open: section 311 reads it reaching mode 0 through base slot 6, and every picture is also
-reached by a screen program's address. One compile's build timestamp states day 0 of October with 30
-September's weekday where six others stamped that day state day 1; it is carried as its seven field
-bytes, since the encoder cannot produce it.
+reached by a screen program's address. Every compile's build timestamp is laid out from its time.
+**Corrected by section 322**: this said one compile states day 0 of October with 30 September's
+weekday<!--superseded--> and was carried as field bytes. The day counts from 0, so that stamp is
+Thursday 1 October and the encoder produces it; the six said to be stamped that day were made on the
+2nd.
 
 ## Sections
 
@@ -715,6 +717,25 @@ running a row list of its own, its label at y 35 or 79 and `x = floor((128 - wid
 pages all draw one picture, the corner lists' crossed one on the 650 and 700s and one of its own on the
 600, and carry no queued `0x73`. **Every row list is bound once**: 300 of 300, none shared between two
 buttons or between a page and its copy.
+
+**What a compiled catalogue device puts where**, section 325, on twenty devices Logitech compiled from
+its catalogue, in seven of the thirteen configurations of section 312, plus one held out; the rules are
+read off the output and `devicemode.ts` is their executable form:
+
+| what | rule | agree |
+|---|---|---|
+| hard keys | each of 41 scans takes the first name of its preference list the device has, else nothing; `HARD_KEYS`, fitted | 546 of 546 |
+| screen, first | `PowerToggle PowerOn PowerOff Teletext List Home Eject Subtitle Aspect Timer Return NextDisc PreviousDisc Triangle Circle Square Cross`, those the device has, whether or not a key holds them | 474 of 476 items, both rows |
+| screen, rest | every command no key holds, sorted lower cased with `-` removed, then lower cased; stable | |
+| label size | the first of six sizes, heights 15, 14 wide, 14, 13, 11, 10, where it is at most 59 on one line, 58 if it could split, or split with both parts at most 59; else the smallest, each part cut to a prefix plus `..` | 470 of 474 labels |
+| label split | at spaces as a word wrap within 58, the corner label rule of section 323; with no space, after `-` not followed by `-`, or lower case then upper case or digit unless that is followed by `-`; never at `/`; two lines at most; where no size holds it, the smallest, split at the first space or boundary | |
+| label place | one line at y 40 or 90, two from 25 or 75 one font height apart; left from x 3, right each line ending at 125 | |
+| counter | size 14, y 2: total ending at 125, `/` (5 px) before it, page before that, digits 7 px; none on one page | 128 of 128 |
+| title | size 14, x 0, y 2; whole if at most `125 - 14 * digits(total) - 8`, else the longest prefix plus `..` that is | 125 of 128 |
+
+Unconfirmed: the key lists and several pairs of the leading list are fitted to this population or
+ordered by choice; the title limit is a fit of two measured limits. The character map names no code
+for `J` or `#`, so the table holds no width for either and a label holding one is not laid out.
 
 **The activity menu is the two row layout too**, section 289, on the four configurations: each
 activity on both buttons of one row, 13 of 13, its label centred at y 35 or 79, 13 of 13, and each
@@ -1052,6 +1073,38 @@ edit: `setActivityKey` and `clearActivityKey` in `packages/codec/src/activitykey
 only while some key is empty, 6 of the 13, which are two setups, and adding it is a length change, so the edit refuses on a
 configuration without it. Arch 12 (Harmony One) is not compared.
 
+**An activity's key map is built from two roles on arch 14** (Harmony 600, 650 and 700),
+[findings.md](findings.md) section 323, measured on the 40 activities of the 13 Logitech compiles:
+
+| keys | press entry runs |
+|---|---|
+| VolumeUp, VolumeDown, Mute (scans 14, 15, 16) | the **volume** device's own device mode list for that scan |
+| every other scan | the **control** device's own device mode list for that scan: the channel changing device, else the one that plays |
+| UpArrow, DownArrow (26, 27), unbound in the control device's own map | its DirectionUp, DirectionDown lists (50, 42); right on 5 distinct activities and wrong on 4 |
+| ChannelUp, ChannelDown (31, 32), where its own map runs the DirectionUp and DirectionDown lists there | its SkipForward, SkipBack lists (38, 21); fires on one activity, the calibration disc player's, and agrees with Logitech's stated map there |
+| Exit (12), where the control device's own screen has an item labelled `Exit` | that item's list; the same one activity |
+
+The **same base slot 10 list** as the device's own map, never a copy: 1254 of the 1328 activity key
+bindings, and none of the other 74 runs a list with the same codes. The result is Logitech's set key
+for key on 20 of the 40 activities, about 14 distinct; the other 20 are the nine copies of one activity
+on the test account's 650 and 700 records, four keys each, and 11 activities of the three hand
+customised configurations. A display device that neither changes channels nor plays contributes no
+key. Scans 26 and 27 are `UpArrow` and `DownArrow` and 50 and 42 the pad's, decided from the device
+maps, `reference/button-maps.md`. `activityKeysFromRoles` in
+`packages/codec/src/activityroles.ts`. Help (scan 3, release and repeat) is not built.
+
+**An activity's screen commands are its devices' own screen items**, same section: on the ten
+compiles that are not hand customised, every working screen item, 64 per copy and 23 distinct, is an item of one
+device's own screen pages, the same list under the same label, so a command is named by its device
+and label (`activityScreenRows`). Which commands, and in which order, is the platform's soft button
+list and an input. They fill four corners a page in the order given, and a label is broken onto two
+lines as the compiler breaks one: kept whole without a space or within 58 pixels, else greedily at
+spaces within 58, any threshold from 55 to 58 placing all 2036 measured corner labels (422 distinct, the
+band's edges three of them), at y 25 and 40 (75 and 90 in the bottom row), each line placed on its own.
+No corner label line in the page's label font is wider than 59 pixels, and the one 60 pixel word is
+drawn in another font, which is not composed. The start up title breaks the
+same way at 123 pixels onto y 5 and 19, each line centred.
+
 Read with `gspm.handler_sets` and `gspm.handler_index`. [findings.md](findings.md) section 39.
 
 ### Base slot 14: the state value map
@@ -1127,6 +1180,10 @@ devices or more, arch 8, 9, 12 and 14, naming every `Power` variable; none where
 The walk is from `CurrentLocation`'s record, whose one case, value 0, queues the call, so the switch off
 is conditional on it. Every activity's enter list writes every one of those variables, 1 or 0,
 directly or through the lists it calls, up to three calls down. `allOffList`.
+
+**On arch 14 every record leads with 2 and has no range table**, 501 of 501 over the thirteen compiles,
+and no address points into another record, so `buildValueMap` writes each record whole from its cases.
+[findings.md](findings.md) section 324.
 
 Read with `gspm.value_maps` and `gspm.value_map_reference`. [findings.md](findings.md) section 39.
 
@@ -2153,14 +2210,16 @@ corpus, with `max` equal to the field's own maximum.
 | 0 | second | 59 |
 | 1 | minute | 59 |
 | 2 | hour | 23 |
-| 3 | day of the month | 30 |
-| 4 | day of the week, 0 is a Saturday | 6 |
+| 3 | day of the month, 0 is the 1st | 30 |
+| 4 | day of the week, 0 is a Sunday | 6 |
 | 5 | month, zero based | 11 |
 | 6 | year since 2000 | that year plus one |
 
 Section 74 read 3, 5 and 6 as a date from the action list language alone, which is an independent
-route to three of the seven, and the weekday epoch is base slot 3's own: days since 1 January 2000,
-which was a Saturday. Base slot 0 names none of the seven in any container.
+route to three of the seven. The day and the weekday count as base slot 3's do, the day from 0 and the
+weekday from Sunday, `docs/findings.md` section 322; this said the weekday was days since 1 January
+2000, a Saturday, which named every date a day early. Base slot 0 names none of the seven in any
+container.
 
 **These records are the clock itself, not a copy of it**, section 138. On arch 12 state variable `n`
 lives at data memory `0x108 + n`, so records 0 to 6 are the seven bytes section 111 measured on a
@@ -2194,19 +2253,16 @@ timestamp, and **reuse none of the firmware's block for anything**: 0 to 17 on a
 to 12 on arch 9, section 284. A carried over config sets the remote's clock to when the old config was
 made.
 
-**Two of the seven maxima move with their value**, so a save writes eight values and sometimes nine
-rather than seven. **Five** of the maxima are constants, `59, 59, 23, 6, 11` for the second, minute,
-hour, weekday and month. The year's is that year plus one and therefore always moves: stamping the
+**One of the seven maxima moves with its value**, so a save writes eight values rather than seven.
+**Six** of the maxima are constants, `59, 59, 23, 30, 6, 11` for the second, minute, hour, day of the
+month, weekday and month. The year's is that year plus one and therefore always moves: stamping the
 year alone leaves a config declaring a value outside the variable's own range, since built in 2023 the
-record is 23 with a max of 24, and saved in 2026 it would be 26 in a range that stops at 24. **And the
-day of the month is the second such place**, which this paragraph missed until 29 August 2026 while
-saying "six of the maxima are fixed"<!--superseded-->: the day's maximum is 30 in every container here, because none
-was built on a 31st, so a save on a 31st writes a one based day of 31 into a variable whose stated
-range stops at 30. `edit.ts` stamps `max(30, day)` there, which is the year's treatment applied to the
-same shape; that choice is ours and is marked unconfirmed, since what Logitech's generator does on
-such a day is unknown and the corpus bounds the maximum below without saying anything about the
-ceiling. No remote has been watched mishandling that, so this
-is a rail taken from the format's own rule rather than from an observed failure. The transitions those
+record is 23 with a max of 24, and saved in 2026 it would be 26 in a range that stops at 24.
+**Corrected by section 322**: this said the day of the month was a second such place, that a save on
+a 31st writes a day of 31 against a maximum of 30, and `edit.ts` stamped `max(30, day)`. The day counts
+from 0, so the 31st is stored as 30 and fits; `h700_config` was built on a 31st and stores 30 against
+30. A save writes at most 30 now, and a configuration an old save left at 31 is put back to 30.
+The transitions those
 records carry are **not** touched: they are the same skeleton in every container, one each on the
 minute, hour, day and month records and none on the other three, and the only part that varies between
 configs is which base slot 10 list a `0x7F` names. `clockStateEdits` in `packages/codec/src/edit.ts`,
@@ -2362,6 +2418,28 @@ one:
 
 `inputPlan`, `composeDeviceInputs`, `activityStartTargets` and `deviceStateMachines` in
 `packages/codec/src/inputs.ts`; `packages/codec/test/inputs.test.ts`.
+
+**Built from a description, arch 14**, [findings.md](findings.md) section 324. `buildStateTables` in
+`packages/codec/src/statetables.ts` rebuilds all thirteen arch 14 compiles' base slots 0, 13 and 14
+byte for byte. What it generates rather than carries:
+
+| what | value on arch 14 |
+|---|---|
+| records 7 to 17, `first / max` | `0/2, 0/3, 5/7, 0/7, 0/32, 0/1, 0/32, 1/1, 0/3, 0/1, 0/3`, no transitions |
+| the clock's transitions | minute, day, month: `{-2 to 0, 0x1F 0xF2nn}` incrementing hour, month, year; hour: `{-2 to 0, 0x7F list}`, the list `[0x1F 0xF203, 0x1F 0xF204]` incrementing day and weekday, its index the configuration's |
+| index `narrow` | `first` 0, max 65277, no transitions, unnamed, stored straight after record 17; purpose **unread** |
+| a variable's width | one byte for a maximum up to 100, two from 254; **between is unpinned** and refused |
+| a device's eight delay variables | `PowerOnDelay` and `InterDeviceDelay` max 65277, their `Default` copies max 254, all two bytes; `PowerOnDelayFlagCounter` 0/5, `InterDeviceDelayFlagCounter` 0/3, both `FixingTriggered` 0/100, one byte; 83 of 83 devices, `deviceDelayVariables` |
+| `CurrentActivityState_0` and `CurrentLocation` | the activity count for both value and max, and 0/0, `activityStateVariables` |
+
+Carried: which variables there are, their stems, values, maxima and transitions in stored order, and
+the order of their indices within each width, which no hash of their names fits. **A value can exceed
+its maximum**: `DefaultPowerOnDelay` holds 65535 under 254 for one device of
+`h650_power_hold_compile_2`, so "at most `second`" holds for the population of sections 86 and 120 and
+not for every compile. The constants are arch 14's: on arch 8 and 12 records 7 to 12 and 15 to 17
+hold the same values while 13 and 14 hold `1/1, 0/1` (Harmony 880 and 885) and `1/1, 2/4` (Harmony
+One), arch 9 differs from record 8 on, and on all three the `0/65277` variable at index `narrow` is the only
+two byte one while one byte maxima reach 121, inside the gap refused here.
 
 Read with `gspm.state_table`, `gspm.state_records` and `gspm.state_index`; `stateTable` and
 `stateRecords` in `packages/codec`.
@@ -3147,6 +3225,28 @@ Two properties hold corpus wide and are what make this a tree rather than a list
 
 Level 2 appears on arch 8 and arch 9 only, holding a small menu under `HarmonyAssistant`.
 
+**The order Logitech's compiler stores the nodes in**, [findings.md](findings.md) section 324. Level
+0 first, `Root` then `State` on the arch 12 and 14 configurations measured and those two then
+`HarmonyAssistant` on the arch 8 and 9 ones. The exceptions are containers that are not a user
+configuration: the Harmony 525's safe mode container and the one in its firmware package hold one
+level 1 node, then `State`, then `Root`, and the Harmony 880 and 885 firmware containers hold `State`
+before `Root`.
+Then level 1 in ascending
+
+    (i ^ (i >>> 4) ^ (i >>> 7)) & (capacity - 1),   i the variable index
+
+with the capacity 16 doubled while the level 1 node count exceeds three quarters of it: Java 6's
+`HashMap` keyed by the index, the rule section 315 found for the key list after the end marker. 13 of
+13 arch 14 compiles fit and none fits in index order. The two Harmony 600 trees, 32 and 41 nodes, fit
+64 buckets and fail at 128, which pins their capacity from both sides; the eleven of 51 to 90 nodes fail
+at 64 and fit at 128 and every wider table alike, since their indices are all below 128, so theirs is
+pinned from below only. All 22 distinct trees Logitech built on arch 8, 9, 12 and 16, 2 to 25 level 1
+nodes over 35 files, show no step down either, and the twenty that `compose.ts` gave a node all do.
+No arch 14 tree has a tie in a bucket, and `nameTreeOrder` refuses one; on arch 8 and 12 ten distinct
+pairs tie, fifteen times over ten trees, and every time the larger index is stored first, which is
+recorded and not adopted, section 324. Arch 10 (Harmony 890 and 895) has no name tree. Nothing on the
+remote reads the order; `buildNameTree` reproduces it.
+
 A level 1 name is three parts, `<label>_<qualifier>_<values>`:
 
 * **`values` is the variable's range**, the `max` field of its base slot 13 record plus one, in all
@@ -3465,8 +3565,8 @@ An eleven byte framed record:
 +0x02  u8       second         0 to 59
 +0x03  u8       minute
 +0x04  u8       hour           24 hour
-+0x05  u8       day of month   1 to 31
-+0x06  u8       day of week    0 = Saturday, 1 = Sunday, ... 6 = Friday
++0x05  u8       day of month   0 to 30, so the date is this plus one
++0x06  u8       day of week    0 = Sunday, 1 = Monday, ... 6 = Saturday
 +0x07  u8       month          0 = January
 +0x08  u8       year           offset from 2000
 +0x09  u16      0xEFBF         terminator
@@ -3477,10 +3577,18 @@ result rather than a reading: of the 24 permutations of the four date bytes, tim
 bases, times seven weekday offsets, **exactly one is consistent with every sample**. See
 `docs/findings.md` section 21.
 
-The day of week is not an independent field. It equals **days since 1 January 2000, modulo 7**,
-which is why 0 means Saturday: that date was one. So the weekday encoding and the year offset
-agree on a single epoch, and that agreement is the numeric closure behind this whole reading. A
-record whose weekday disagrees with its date is refused rather than reported, in both parsers.
+The day of week is not an independent field. It is the weekday of the date, counted from Sunday as
+0, and the date is the stored day **plus one**: the firmware's month end routine compares the stored
+day against one less than each month's length on every image read, arch 8, 9, 12, 14 and 16, and twenty three
+stamps with a date known from outside decode to it, `docs/findings.md` section 322. A record whose
+weekday disagrees with its date, or whose day is past its month's last index, is refused rather than
+reported, in both parsers.
+
+**Corrected on 3 October 2026, section 322.** This said the day was 1 to 31 and the weekday days
+since 1 January 2000 modulo 7<!--superseded-->, 0 being a Saturday, and called that the closure behind the reading. The
+same bytes read that way name the day before, and the weekday closes on that day exactly as the Sunday
+count closes on the real one, so the corpus could not tell them apart. A stamp on the 1st, stored as
+0, could, and the old reading refused it.
 
 The cookie pair is **unique in every blob**, unlike slot 0's `0xFEED`, which occurs about once
 per 64 KiB by chance. So this record can be located without a length field.
@@ -3495,7 +3603,8 @@ section's own tail rather than part of the framing, and a writer emits them as z
 **The remote's clock agrees with it at every boot, and does not come from it.** Measured: a Harmony
 One was power cycled and read 90 seconds later, and it held this record's date exactly and its time
 plus 90 seconds. So the clock's seven data memory bytes at `0x108` to `0x10E` carry **this record's
-encoding field for field**, including the zero based month and the Saturday epoch weekday.
+encoding field for field**, including the zero based month, the zero based day and the Sunday based
+weekday.
 
 **Corrected on 29 August 2026.** This said the firmware initialises the clock from base slot 3 and
 that "the code that performs the copy has not been located", so the mechanism was behavioural. Both
@@ -3529,8 +3638,9 @@ Two things worth having for free:
 
 * Every config in the corpus can now be dated, which is provenance nobody has to record by hand.
   The two Harmony One factory configs, one dumped off a remote and one extracted from firmware
-  3.4, agree to the second at 2007-10-24 02:22:08, and the factory config inside Harmony 700
-  firmware 2.8 reads 2009-04-15, both matching when those models shipped.
+  3.4, agree to the second at 2007-10-25 02:22:08, and the factory config inside Harmony 700
+  firmware 2.8 reads 2009-04-16, both matching when those models shipped. Both read a day earlier
+  until section 322.
 * The application gets a "built on" field for a config it reads over USB, where there is no EZHex
   header to take one from.
 

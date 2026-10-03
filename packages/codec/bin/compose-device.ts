@@ -38,6 +38,15 @@
  * too**, which Logitech's compile does not do, since a device mode Power On of three frames leaves that
  * television off.
  *
+ * **`--full` puts the whole device in**, section 325: every command the catalogue holds whose code
+ * composes, on as many device mode pages as it takes, laid out the way Logitech's compiler lays a device
+ * out, `devicemode.ts`. The hard keys get the commands the compiler gives them, the screen opens with the
+ * power commands and a short fixed list and then runs sorted, each label is sized and split by the
+ * compiler's rules, the title is cut to what the counter leaves, and the counter has two digits where it
+ * needs them. `--commands` and `--labels` are then not given; `--title` names the device on its pages
+ * where `--label` would be too long for the device list. A command whose code cannot be composed is
+ * left out and listed.
+ *
  * It deliberately does not stamp the build timestamp, for `set-delay.ts`'s reason: a timestamp is
  * right for a save and wrong for an exercise whose output should differ from its input only in the
  * places this prints.
@@ -55,7 +64,9 @@ import {
   ComposeError,
   composeDevice,
   composeDeviceScreen,
+  composableKeycode,
   coverage,
+  deviceModeLayout,
   devices,
   inventory,
   irGroups,
@@ -91,18 +102,18 @@ const output = argument('out') ?? fail('--out is where the result goes');
 const manufacturer = argument('manufacturer') ?? fail('--manufacturer names the catalogue folder');
 const model = argument('model') ?? fail('--model names the catalogue device');
 const label = argument('label') ?? fail('--label is what the config will call it');
-const wanted = (argument('commands') ?? fail('--commands is a comma separated list')).split(',');
+// The whole device, laid out as the compiler lays it out, section 325; or the commands asked for.
+const full = process.argv.includes('--full');
+if (full && (argument('commands') !== undefined || argument('labels') !== undefined)) {
+  fail('--full takes every command the catalogue holds, so --commands and --labels are not given');
+}
+const title = argument('title') ?? label;
 // Which existing device list row's icon the new row wears, by its drawn label: a television gets
 // the television's. Without it the first row's icon is copied, whatever device that is.
 const iconLike = argument('icon-like');
 // Arch 14: which device list row's device mode the new key map copies its keys from, by label. A
 // key sending the frame one of the new commands sends is bound to it, every other key to nothing.
 const keysLike = argument('keys-like');
-// What each pad says, in the commands' order. The catalogue's own names are the default and the
-// long ones do not fit an 81 pixel pad, section 242, so a real device page passes `--labels`.
-const labels = argument('labels')?.split(',') ?? wanted;
-if (labels.length !== wanted.length) fail('--labels needs one label per command, in the same order');
-
 if (IR_ARCHIVE === undefined) {
   fail('no infrared archive: clone logitech-harmony-ir-archive beside this repository, '
     + 'or set HARMONY_IR_ARCHIVE');
@@ -114,17 +125,37 @@ const device = catalogueDevice(IR_ARCHIVE, manufacturer, model);
 const available = catalogueCommands(IR_ARCHIVE, device.codeset ?? fail('the device states no codeset'));
 const byName = new Map<string, string>();
 for (const command of available) if (!byName.has(command.name)) byName.set(command.name, command.keycode);
+// Under --full: every name the catalogue holds, first of each, and of those the ones whose code
+// composes, in catalogue order. The layout is computed over all of them, as the compiler's is, and a
+// command left out simply leaves its place to the next.
+const layout = full ? deviceModeLayout([...byName.keys()]) : undefined;
+const leftOut = full ? [...byName].filter(([, keycode]) => !composableKeycode(keycode)).map(([name]) => name) : [];
+const wanted = full
+  ? [...byName].filter(([, keycode]) => composableKeycode(keycode)).map(([name]) => name)
+  : (argument('commands') ?? fail('--commands is a comma separated list, or --full for every command')).split(',');
+if (wanted.length === 0) fail(`${manufacturer} ${model} has no command whose code composes`);
+// What each pad says, in the commands' order. The catalogue's own names are the default and the
+// long ones do not fit an 81 pixel pad, section 242, so a real device page passes `--labels`.
+const labels = argument('labels')?.split(',') ?? wanted;
+if (labels.length !== wanted.length) fail('--labels needs one label per command, in the same order');
 const commands = wanted.map((name) => {
   const keycode = byName.get(name);
   if (keycode === undefined) {
     fail(`${manufacturer} ${model} has no command called ${name}. It has: `
       + [...byName.keys()].sort().join(', '));
   }
-  // The power toggle must not repeat when held; everything else here is a key you hold down.
+  // The power toggle must not repeat when held; everything else here is a key you hold down. Under
+  // --full the power commands are the ones named so, and every other command repeats where its family
+  // has a held block and sends once where it has none, rather than refusing the whole device.
+  if (full) return { stated: keycode, ...(name.startsWith('Power') ? { held: false } : {}) };
   return { stated: keycode, held: name !== wanted[0] };
 });
+// The command the power variable sends both ways where the catalogue's power steps are not used: the
+// first asked for, or under --full the power toggle where the catalogue has one.
+const powerIndex = full ? Math.max(0, wanted.indexOf('PowerToggle')) : 0;
 process.stdout.write(`${device.manufacturer} ${device.model}: ${available.length} commands in the `
-  + `catalogue, ${commands.length} asked for\n`);
+  + `catalogue, ${commands.length} ${full ? 'compose' : 'asked for'}\n`);
+if (leftOut.length > 0) process.stdout.write(`left out, their codes do not compose: ${leftOut.join(', ')}\n`);
 
 // The catalogue's power and delays, section 320: the steps that switch it on and off, each a record of
 // its own, and the three delays its entry states. A statement no compile shows composed stops here.
@@ -166,7 +197,7 @@ const tenths = (name: string): number | undefined => {
 const powerOnDelay = tenths('power-on-delay') ?? power?.powerOnDelay;
 const interDeviceDelay = tenths('inter-device-delay') ?? power?.interDeviceDelay;
 const composed = composeDevice(before, {
-  label, commands, power: 0,
+  label, commands, power: powerIndex,
   ...(power === undefined ? {} : {
     powerOn: power.powerOn, powerOff: power.powerOff, interKeyDelay: power.interKeyDelay,
   }),
@@ -194,9 +225,32 @@ const padList = (k: number): number => {
   if (power?.offCommands.includes(name) && composed.powerSteps?.off !== undefined) return composed.powerSteps.off;
   return composed.lists[k] as number;
 };
-const screen = composeDeviceScreen(withDevice, label,
-  labels.map((name, k) => ({ label: name, list: padList(k) })),
-  { ...(iconLike === undefined ? {} : { iconLike }), ...(keysLike === undefined ? {} : { keysLike }) });
+// Under --full the screen is the compiler's order and the keys its choice, both over the commands that
+// composed. The power pads and power keys still run the power actions, which is the one place the
+// page deliberately differs from Logitech's, for the reason above.
+const listOfName = (name: string): number | undefined => {
+  const k = wanted.indexOf(name);
+  return k < 0 ? undefined : padList(k);
+};
+const rows = layout === undefined
+  ? labels.map((name, k) => ({ label: name, list: padList(k) }))
+  : layout.screen.flatMap((name) => {
+    const list = listOfName(name);
+    return list === undefined ? [] : [{ label: name, list }];
+  });
+const keyLists = new Map<number, number>();
+for (const [scan, name] of layout?.keys ?? []) {
+  const list = listOfName(name);
+  if (list !== undefined) keyLists.set(scan, list);
+}
+const screen = composeDeviceScreen(withDevice, label, rows, {
+  ...(iconLike === undefined ? {} : { iconLike }), ...(keysLike === undefined ? {} : { keysLike }),
+  ...(layout === undefined ? {} : { compiled: { title, keys: keyLists } }),
+});
+if ((screen.substituted ?? []).length > 0) {
+  process.stdout.write('drawn in another size than the compiler\'s, for want of a glyph or a width: '
+    + `${(screen.substituted ?? []).join(', ')}\n`);
+}
 // **A save is stamped with the moment of saving**, base slot 3 and the clock's seven state values,
 // which is the rail that separates a save from a round trip. The first device written to a remote
 // carried its input's stamp, and after a battery pull the remote's clock showed 22 August, section

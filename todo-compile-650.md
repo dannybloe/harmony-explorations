@@ -20,7 +20,7 @@ copied. **Every chapter ends with a configuration that works on the 650.**
 - [x] 1.1 Write a whole configuration to the 650: erase, write, read back and compare, restart (sections 281 to 283)
 - [x] 1.2 Skip the welcome tour after a write (section 286)
 - [ ] 1.3 Every write to the 650 stamps the clock records and the build timestamp, small edits included, since every restart puts its clock back to the stamp (section 310)
-  - [ ] 1.3.1 Read a build timestamp Logitech stamped on the 1st of a month, day of month 0 with the previous day's weekday, which our reader refuses and which stops the device composer's save on the 650's current configuration (section 312)
+  - [x] 1.3.1 Read a build timestamp Logitech stamped on the 1st of a month: the day counts from 0 and the weekday from Sunday, so day 0 is the 1st and every date we read or wrote before was a day off; the 650 runs a day ahead until its next write (section 322)
 - [ ] 1.4 Choose the test setup: devices and activities that between them use every feature in chapters 2 to 4, passthrough device and favourites included. No real device is needed, since the bench's infrared receiver hears what the remote sends
 - [ ] 1.5 Choose the starting setup out of it: part of the test setup, with at least one activity and names that hold every letter the whole test setup needs
 - [ ] 1.6 Have Logitech compile it for the 650, read it into the lab, write it back unchanged and register it as the compare base
@@ -30,7 +30,7 @@ copied. **Every chapter ends with a configuration that works on the 650.**
 - [x] 2.1 Compose a device from Logitech's catalogue: its infrared codes, its power variable, a device mode screen and key map, a row on the device list (section 285)
 - [ ] 2.2 Power on and off as the catalogue states them, the long press version included: composed against the 650's file, and on the remote only Logitech's own long press version, reached by a one byte edit (section 309); composed from the catalogue and calibrated on 17 of 18 power hold devices (section 320), on the 650 still to run `packages/bench/irtests/650-composed-power.json`
 - [ ] 2.3 A new device list page when the last one is full: composed and calibrated against Logitech's own lists (section 312). On the 650 the seventh device's row enters its device, both list pages read n/m and its screens send the LG codes the Flirc expects; still to see a page **opened** on a list a person reaches, which on a corner list happens only at the fifth device, since the one page the seventh opened is on the two row list nothing enters (was L14)
-- [ ] 2.4 A full device: every command the catalogue holds, on as many device mode pages as it takes (was 4.3.2)
+- [ ] 2.4 A full device: every command the catalogue holds, on as many device mode pages as it takes (was 4.3.2); composed the way Logitech lays it out, 527 of 527 keys and 466 of 468 screen items on 19 devices (section 325); on the 650 still to see `lab/work/h650-full-device.bin`, a whole Panasonic TV on 7 pages
 - [ ] 2.5 A device's inputs: its input states and the commands that select them, directly or by stepping through them in order; the catalogue's are read (`driving.ts`, section 305) and composed, 174 of 175 of Logitech's transitions matched on ten devices (`inputs.ts`, section 321); on the 650 still to hear an activity put the LG on HDMI 1
 - [ ] 2.6 Every infrared code of the test setup can be written: four in five catalogue commands do today, and the test setup is chosen from devices that compose completely
 - [ ] 2.7 Several devices composed at once into one configuration (was 4.3.3)
@@ -43,8 +43,8 @@ copied. **Every chapter ends with a configuration that works on the 650.**
 - [x] 3.4 Off switches every device off (section 291)
 - [ ] 3.5 A device's power on delay and the delay between devices, seen to act: composed (sections 287 and 288), but the activity written gave the delay nothing to hold back (section 291)
 - [ ] 3.6 Set each device to the input the activity needs; composed for a catalogue device too since section 321; on the 650 still to hear power, then the input, in that order
-- [ ] 3.7 The activity's key map built from its roles, volume to one device and channels to another, rather than copied from an existing activity
-- [ ] 3.8 The activity's own screen pages: the commands it labels on the screen
+- [ ] 3.7 The activity's key map built from its roles, volume to one device and channels to another, rather than copied from an existing activity: built (`activityroles.ts`), exactly Logitech's on 20 of 40 compiled activities with every difference named (section 323); on the 650 still to hear the role-built keys
+- [ ] 3.8 The activity's own screen pages: the commands it labels on the screen; built from a list of device commands, 41 of 47 pages identical to Logitech's (section 323); on the 650 still to see the pages and hear their codes
 - [ ] 3.9 Picking the running activity again: Logitech gives it a list of its own, the inputs and the working screen without the start up screen or power; ours replays the whole start (tag 5, section 313)
 - [ ] 3.10 Leave devices on when switching activities, an option MyHarmony offers the 650: what it changes in the configuration
 - [ ] 3.11 Put an activity on Watch TV, Watch a Movie or Listen to Music: one entry in the key map that is always installed; an activity with no key stays on the menu, and an empty key shows the "add an Activity" screen (section 314); `setActivityKey` and `clearActivityKey` built, on the 650 still to see a moved key start its activity, and an emptied key needs a base whose compile left one empty
@@ -106,7 +106,7 @@ copied. **Every chapter ends with a configuration that works on the 650.**
 
 - [x] 10.1 The frame: cookies, format word, the architecture record, the section table and every address, the end address, the trailer checksum; `layOutContainer` rebuilds all 13 Logitech compiles byte for byte, the skin and build time given (section 318, was 3.1)
 - [ ] 10.2 The firmware's own wiring: the shared action lists every activity runs, base slot 9's fixed prefix and leftover entry, base slot 8's leading list, the event map, the log area's three numbers, which only the Harmony One's firmware writes to, the parameter block, the timers
-- [ ] 10.3 The state variables: the firmware's own 0 to 17, the header's narrow and wide, the value map and the name tree
+- [x] 10.3 The state variables: the firmware's own 0 to 17, the header's narrow and wide, the value map and the name tree; generated from a description, byte for byte on all 13 Logitech compiles (section 324)
 - [x] 10.4 Mode 0, the screen for an empty activity key: its table after the end marker is generated by `modeZeroKeyList`, byte equal to every 600, 650 and 700 sample (sections 311 and 315)
 - [ ] 10.5 Place the pictures and glyph sets (was 3.2)
 - [ ] 10.6 A setup description in, a whole container out; the description is FreeHarmony's own format, todo-later 1.1 (was 3.3)

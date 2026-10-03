@@ -103,7 +103,8 @@ its write position recovered at boot by scanning for the last byte that is not `
 parsed without the file header Logitech's software supplied. Slot 0 is the container's only
 `0xFEED`/`0xBEEF` frame, and slot 3 is a second framed record holding **the date and time the
 config was built**, decoded by a search that only one field assignment survives and confirmed by a
-weekday byte that is days since 1 January 2000 modulo 7. Six more are count prefixed arrays of three byte flash pointers, proved
+weekday byte that is the date's weekday counted from Sunday, the day itself being counted from 0,
+`docs/findings.md` section 322, which found every date this project had reported a day early. Six more are count prefixed arrays of three byte flash pointers, proved
 to be pointers by a controlled pair of configs from one remote in which every entry moved by
 exactly the layout shift. One of those six is the **action list table**: on the Harmony 700 it
 addresses 8037 lists holding 19651 instructions, and all but four consecutive entries sit exactly
@@ -564,7 +565,7 @@ finding.
 
 `todo.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 321<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 325<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and flash has been written on five units**, the first in section 222:
@@ -857,8 +858,8 @@ the end of every full list, with "4/4" in the corner and every earlier screen re
 whose lists are all full, gives screens drawn the same way as the ones Logitech's compiler drew for the
 650's five devices, down to where each piece of text sits. Built and read back on the 650's current six
 device configuration with every check passing; not written to the remote yet, and the script that would
-write it still stops on that configuration's build timestamp, which Logitech wrote with a day of month of
-0 on the 1st of October and our reader refuses. That is a separate open item.
+write it stopped on that configuration's build timestamp, which Logitech wrote with a day of month of
+0 on the 1st of October and our reader refused. Section 322 found the day counted from 0, so it reads now.
 
 **A delay saved on the remote itself wins over the configuration, section 303.** The Harmony 600's
 KPN box was given a wait of 4.5 seconds instead of 1.5 and the remote kept waiting 1.0, the same to half
@@ -1881,7 +1882,7 @@ section 130**, because it made the question "which variable is this" unavoidable
 seven records are the firmware's clock**, `first` being the value a variable holds when the config is
 generated, and all seven equal the corresponding field of base slot 3's build timestamp in all 21
 containers. Section 74 had read three of them as a date from the action list language alone, and the
-weekday's zero is base slot 3's own epoch, a Saturday. That also generalises section 120's idle value:
+weekday counts as base slot 3's does, from Sunday, section 322, where this said a Saturday. That also generalises section 120's idle value:
 it is the generated value, and for `CurrentActivityState` the two coincide because nothing is running
 when a config is compiled.
 
