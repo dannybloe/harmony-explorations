@@ -1,6 +1,6 @@
 /**
  * An activity's keypad map and screen commands, built from its **roles** rather than copied from
- * another activity. Harmony 600, 650 and 700, section NNN.
+ * another activity. Harmony 600, 650 and 700, section 323.
  *
  * Logitech's platform states an activity as roles, `docs/myharmony/model.md`: a device that shows the
  * picture, one that takes the volume, one that changes channels or plays the film. Its compiler turns

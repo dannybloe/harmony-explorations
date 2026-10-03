@@ -1,6 +1,6 @@
 /**
  * An activity's keypad map and screen built from its roles, scored against Logitech's own compiles of
- * the same activities, section NNN. Harmony 600, 650 and 700.
+ * the same activities, section 323. Harmony 600, 650 and 700.
  *
  * The population is the 13 compiles section 312 measured, which hold 40 activities. Each activity's
  * roles are read off its own sends, `activityRolesFromSends`, since no configuration states them; the

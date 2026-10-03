@@ -1055,7 +1055,7 @@ only while some key is empty, 6 of the 13, which are two setups, and adding it i
 configuration without it. Arch 12 (Harmony One) is not compared.
 
 **An activity's key map is built from two roles on arch 14** (Harmony 600, 650 and 700),
-[findings.md](findings.md) section NNN, measured on the 40 activities of the 13 Logitech compiles:
+[findings.md](findings.md) section 323, measured on the 40 activities of the 13 Logitech compiles:
 
 | keys | press entry runs |
 |---|---|

@@ -3156,14 +3156,14 @@ export function composeDeviceScreen(
 
 /**
  * The widest line a corner label draws in its page's label font, 59 pixels. This was 60 and was
- * described as the composer's own limit rather than a measurement, until section NNN measured it:
+ * described as the composer's own limit rather than a measurement, until section 323 measured it:
  * the widest such line on the 13 Logitech compiles for the Harmony 600, 650 and 700 is 59,
  * `Simplink`, and `Antenna`, 60 pixels in that font, is drawn by the compiler in another font, the one
  * case of the kind. Choosing a font is not composed, so a line past this is refused.
  */
 const FOUR_SLOT_LABEL_MAX = 59;
 /**
- * Where the compiler breaks a corner label onto a second line, section NNN. Over the 13 Logitech
+ * Where the compiler breaks a corner label onto a second line, section 323. Over the 13 Logitech
  * compiles for the Harmony 600, 650 and 700, the labels drawn in their page's most common font where a
  * corner label sits, one line at y 40 or 90 or two at 25 and 40 or 75 and 90, number 2037 counted once
  * per configuration, label and place, 422 distinct texts, and one rule places all 2036 whose width
@@ -5217,7 +5217,7 @@ const STARTUP_TITLE_Y = 5;
 /**
  * The widest title a start up screen draws on one line, 123 pixels, the widest of the 11 one line
  * titles among the 13 on the four arch 14 user configurations. A longer one wraps onto a second line
- * at y 19, `STARTUP_TITLE_SECOND_Y`, and since section NNN that is composed: the words break greedily
+ * at y 19, `STARTUP_TITLE_SECOND_Y`, and since section 323 that is composed: the words break greedily
  * at this width and each line is centred on its own, which reproduces both titles the 13 Logitech
  * compiles wrap, `Starting Watch a` over `Movie` and `Starting Play Audio` over `Cassette`, at the x
  * they are drawn at. Those two are 130 and 163 pixels whole, so where from 124 to 130 the break
@@ -5465,7 +5465,7 @@ function composeFourSlotActivityScreen(
   if (titleWidth > titleRoom) {
     throw new ComposeError(`'${label}' is ${titleWidth} pixels wide and the working screen's title holds ${titleRoom}`);
   }
-  // Each label broken the way the compiler breaks a corner label, section NNN: one line or two.
+  // Each label broken the way the compiler breaks a corner label, section 323: one line or two.
   const rowLines = rows.map((row) => fourSlotLabelLines(charMap, c, setOf(device.labelFont), device.labelFont, row.label));
   const existingLists = c.actionLists()?.length ?? 0;
   for (const row of rows) {

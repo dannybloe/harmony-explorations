@@ -43,8 +43,8 @@ copied. **Every chapter ends with a configuration that works on the 650.**
 - [x] 3.4 Off switches every device off (section 291)
 - [ ] 3.5 A device's power on delay and the delay between devices, seen to act: composed (sections 287 and 288), but the activity written gave the delay nothing to hold back (section 291)
 - [ ] 3.6 Set each device to the input the activity needs; composed for a catalogue device too since section 321; on the 650 still to hear power, then the input, in that order
-- [ ] 3.7 The activity's key map built from its roles, volume to one device and channels to another, rather than copied from an existing activity
-- [ ] 3.8 The activity's own screen pages: the commands it labels on the screen
+- [ ] 3.7 The activity's key map built from its roles, volume to one device and channels to another, rather than copied from an existing activity: built (`activityroles.ts`), exactly Logitech's on 20 of 40 compiled activities with every difference named (section 323); on the 650 still to hear the role-built keys
+- [ ] 3.8 The activity's own screen pages: the commands it labels on the screen; built from a list of device commands, 41 of 47 pages identical to Logitech's (section 323); on the 650 still to see the pages and hear their codes
 - [ ] 3.9 Picking the running activity again: Logitech gives it a list of its own, the inputs and the working screen without the start up screen or power; ours replays the whole start (tag 5, section 313)
 - [ ] 3.10 Leave devices on when switching activities, an option MyHarmony offers the 650: what it changes in the configuration
 - [ ] 3.11 Put an activity on Watch TV, Watch a Movie or Listen to Music: one entry in the key map that is always installed; an activity with no key stays on the menu, and an empty key shows the "add an Activity" screen (section 314); `setActivityKey` and `clearActivityKey` built, on the 650 still to see a moved key start its activity, and an emptied key needs a base whose compile left one empty

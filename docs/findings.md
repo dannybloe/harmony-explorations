@@ -42452,7 +42452,7 @@ the one its date has.
   `writing-a-config` skill and `docs/memory-map-525.md`; the dead phrasings in
   `reference/superseded.md`.
 
-## NNN. An activity's key map is two roles over the devices' own maps, and its screen is their own screen items
+## 323. An activity's key map is two roles over the devices' own maps, and its screen is their own screen items
 
 **Todo `todo-compile-650.md` 3.7 and 3.8**: the activity's key map built from its roles, volume to one
 device and channels to another, and the activity's own screen pages, the commands it labels there.

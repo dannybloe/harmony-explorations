@@ -68,7 +68,7 @@ so a key neither activity binds to a decodable code is never reached.
 | 26, 50 | `DirectionUp` and `UpArrow` | two scans against two buttons, and every activity gives both the same command |
 | 27, 42 | `DirectionDown` and `DownArrow` | two scans against two buttons, and every activity gives both the same command |
 
-**Decided since `docs/findings.md` section NNN, from the device maps rather than the activities**: 26 is
+**Decided since `docs/findings.md` section 323, from the device maps rather than the activities**: 26 is
 `UpArrow`, 27 `DownArrow`, 50 `DirectionUp` and 42 `DirectionDown`. Logitech's stated device button maps
 for the three calibration devices have `DirectionUp` and `DirectionDown` and no `UpArrow` or
 `DownArrow`, and each device's own mode record in `calibration_h600` binds 26 and 27 to nothing and 50

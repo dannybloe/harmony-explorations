@@ -80,6 +80,6 @@ export * from './inputs.ts';
 // Pronto Hex, which is not the archive's format but is how the comparison against it is made, and is
 // the interchange spelling anybody importing or exporting one command will reach for.
 export * from './pronto.ts';
-// An activity's keypad map and screen commands from its roles, section NNN. After `compose.ts`, whose
+// An activity's keypad map and screen commands from its roles, section 323. After `compose.ts`, whose
 // rows and errors it uses.
 export * from './activityroles.ts';

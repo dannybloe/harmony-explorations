@@ -5,7 +5,7 @@
  *       --targets 51=1 --keys 3:4809,4:4810,9:4813,19:4811,20:4812 --icon-like 'LG WebOS' \
  *       --pads Power:4808,Mute:4813 --startup-like 'LG WebOS'
  *
- * Or from roles, section NNN, the way Logitech's compiler builds one: `--roles volume=3,control=1`
+ * Or from roles, section 323, the way Logitech's compiler builds one: `--roles volume=3,control=1`
  * names the devices by group, and the keypad is the volume device's three volume keys and the
  * control device's own map for the rest; `--commands 1:Teletext,0:Netflix` names the screen's
  * commands by device group and the label the device's own screen draws them under. Either replaces
@@ -123,7 +123,7 @@ const pads = padsArg === '' ? [] : padsArg.split(',').map((one) => {
 
 const before = parse(new Uint8Array(readFileSync(input)));
 
-// Section NNN: the keypad from roles and the screen from commands, in place of the two lists above.
+// Section 323: the keypad from roles and the screen from commands, in place of the two lists above.
 const rolesArg = argument('roles');
 const commandsArg = argument('commands');
 if (rolesArg !== undefined && keys.length > 0) fail('--roles builds the keypad, so --keys is not also taken');
