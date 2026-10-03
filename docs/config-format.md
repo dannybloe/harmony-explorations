@@ -718,6 +718,25 @@ pages all draw one picture, the corner lists' crossed one on the 650 and 700s an
 600, and carry no queued `0x73`. **Every row list is bound once**: 300 of 300, none shared between two
 buttons or between a page and its copy.
 
+**What a compiled catalogue device puts where**, section 323, on twenty devices Logitech compiled from
+its catalogue, in seven of the thirteen configurations of section 312, plus one held out; the rules are
+read off the output and `devicemode.ts` is their executable form:
+
+| what | rule | agree |
+|---|---|---|
+| hard keys | each of 41 scans takes the first name of its preference list the device has, else nothing; `HARD_KEYS`, fitted | 546 of 546 |
+| screen, first | `PowerToggle PowerOn PowerOff Teletext List Home Eject Subtitle Aspect Timer Return NextDisc PreviousDisc Triangle Circle Square Cross`, those the device has, whether or not a key holds them | 474 of 476 items, both rows |
+| screen, rest | every command no key holds, sorted lower cased with `-` removed, then lower cased; stable | |
+| label size | the first of six sizes, heights 15, 14 wide, 14, 13, 11, 10, where it is at most 59 on one line, 58 if it could split, or split with both parts at most 59; else the smallest, each part cut to a prefix plus `..` | 470 of 474 labels |
+| label split | first space, dropped; else after `-` not followed by `-`, or lower case then upper case or digit unless that is followed by `-`; never at `/` | |
+| label place | one line at y 40 or 90, two from 25 or 75 one font height apart; left from x 3, right each line ending at 125 | |
+| counter | size 14, y 2: total ending at 125, `/` (5 px) before it, page before that, digits 7 px; none on one page | 128 of 128 |
+| title | size 14, x 0, y 2; whole if at most `125 - 14 * digits(total) - 8`, else the longest prefix plus `..` that is | 125 of 128 |
+
+Unconfirmed: the key lists and several pairs of the leading list are fitted to this population or
+ordered by choice; the title limit is a fit of two measured limits. The character map names no code
+for `J` or `#`, so the table holds no width for either and a label holding one is not laid out.
+
 **The activity menu is the two row layout too**, section 289, on the four configurations: each
 activity on both buttons of one row, 13 of 13, its label centred at y 35 or 79, 13 of 13, and each
 binding and each copy's binding running a row list of its own, 52 of 52:

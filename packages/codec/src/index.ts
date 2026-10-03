@@ -77,6 +77,9 @@ export * from './devicepower.ts';
 // And what those rules become in a configuration: a device's input and state variables, composed and
 // read back, section 321. After `compose.ts` and `driving.ts`, which it builds on.
 export * from './inputs.ts';
+// And how the compiler lays a whole device out in device mode: which commands go to the keys and which
+// to the screen pages, in what order, and how a label is sized and split, section 323.
+export * from './devicemode.ts';
 // Pronto Hex, which is not the archive's format but is how the comparison against it is made, and is
 // the interchange spelling anybody importing or exporting one command will reach for.
 export * from './pronto.ts';

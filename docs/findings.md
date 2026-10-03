@@ -42451,3 +42451,261 @@ the one its date has.
   `docs/config-format.md`, `docs/host-client.md`, `docs/status.md`, `CLAUDE.md`, the
   `writing-a-config` skill and `docs/memory-map-525.md`; the dead phrasings in
   `reference/superseded.md`.
+
+## 323. A whole device's device mode is laid out by rules: hard keys by preference, the screen sorted, labels sized down a ladder of six
+
+**Logitech's compiler puts a catalogue device's whole command list into device mode by rules this
+section reads off its output, and the composer now builds a whole device by them.** Every hard key takes
+the first of a short list of command names that the device has; the screen opens with the power
+commands and a fixed short list, then runs through every command no key holds, **sorted**, case folded
+with hyphens passed over; each label goes in the largest of six text sizes where it fits on one line or
+split over two; the title is cut to what the page counter leaves; and the counter's total ends at the
+right edge. Scored against twenty devices Logitech compiled from its catalogue, the rules reproduce
+every key, every page count and every counter, and all but named items, labels and titles; on one
+further device, held out, everything, once it had corrected the order's treatment of a hyphen.
+todo-compile-650 2.4. Arch 14 only: Harmony 600, 650 and 700.
+
+### Sources checked before the work
+
+Logitech's MyHarmony client and the firmware, decision 2. MyHarmony's decompiled client holds the
+interface's own names for the buttons and nothing about which command a key takes or how a device mode
+is paged: the configuration arrives compiled from the service, section 58. The firmware draws what the
+configuration states, section 285, so it cannot say why a command is on a page. What corroborates the
+key half is the test account's own button maps, captured off Logitech's service for skin 71, which state
+the defaults the service assigned `calibration_h600`'s Denon AVR-1912 and Panasonic Blu-ray: Exit is
+Return on the receiver and Cancel on the player, Info is DirectionDown on the receiver, Guide and Select
+are Enter on the receiver and OK on the player, Channel Up is TuneUp on the receiver and DirectionUp on
+the player. Every one agrees with the table below. Those devices are in the population, so the agreement
+is expected either way; what it adds is that the service states these as its own assignments, so **a
+key taking a direction or a confirm as a fallback reads as the compiler's default** and not an edit,
+which rests on nobody having edited those two devices' buttons on the account.
+
+### The population
+
+Twenty devices Logitech compiled from its catalogue, in seven of the thirteen arch 14 configurations of
+section 312: seventeen test devices of the six power hold compiles, sections 306 to 308, on the Harmony
+650 and 700 records, and the three devices of `calibration_h600`, section 121. They are nineteen
+catalogue entries, since the Panasonic TX-P42GT30E is on both records. The thirteen are the population
+of the size table below only. Each is named from its own catalogue
+codeset in the archive, the first of each command name in catalogue order, and its device mode is read
+as a key map and a run of corner pages, section 285. Each compiled record is identified as a catalogue
+command by its once block, built from the command's stated code and compared word for word, falling
+back per record to the decoded frame value. 128 pages, 476 screen items, 734 label lines.
+
+**Held out**: the Harmony 650 account's own LG OLED65G26LA, as Logitech compiled it into
+`h650_power_hold_compile` and into `h650_config_region`, its catalogue entry pinned in `inputs.test.ts`:
+7 pages, 28 items and 36 keys in each, so 56 items and 72 keys over the two. The rules were fitted
+before it was scored, and it corrected one of them, the order below, so for that rule it is in sample
+now. The same
+account's Denon AVR-X4800H is deliberately not a sample: its device mode draws labels no catalogue name
+spells, `down`, `left`, `right`, `up` and `okidoki`, and puts the arrows on the screen, so its button
+map was edited on the account.
+
+### The keys
+
+A device mode binds up to 41 hard keys besides the four corners, 37 at most on any device here, and **each takes the first of a short
+preference list of catalogue names that the device has**, or nothing:
+
+| key | scan | preference |
+|---|---|---|
+| Menu | 10 | Menu, Home |
+| Exit | 12 | Cancel, Exit, Clear, Return |
+| Number plus | 19 | Clear, `.`, `*` |
+| Skip back, Skip forward | 21, 38 | ChapterPrev or ChapterNext, then SkipBack or SkipForward |
+| Rewind, Fast forward | 22, 30 | Rewind or FastForward, then the iPod form |
+| Channel up | 31 | ChannelUp, NextDisc, TuneUp, DirectionUp |
+| Channel down | 32 | ChannelDown, PreviousDisc, TuneDown, DirectionDown |
+| Guide | 33 | Guide, Select, Enter, OK |
+| Info | 36 | Info, Display, DirectionDown |
+| Stop | 40 | Stop, Pause, iPodStop, Return |
+| Previous channel | 43 | ChannelPrev, Cancel, Return |
+| Play | 44 | Play, Select, iPodPlay, Enter |
+| Pause | 46 | Pause, Select, iPodPause |
+| Select | 51 | Select, OK, Enter, Stop |
+| Enter | 54 | NumberEnter |
+
+and the rest one name each: the four colours, the ten digits, volume up and down, mute, Record, PageUp,
+PageDown and the four directions. **The lists are fitted, and thinly**: each is the shortest order
+consistent with every device offering more than one candidate, and only Menu, Exit, the two channel
+keys, Guide, Info, Stop, Previous channel, Play, Pause and Select have such a device. On Number plus,
+the skip keys and rewind and fast forward no device offers two candidates, so their order is a choice;
+and most fallbacks rest on one device each, Menu's Home on the Sony KDL-32W705B among them, while
+NumberEnter is the only Enter candidate any device offered. A command name no device here carries is
+never put on a key, which is the safe direction, since it lands on the screen. 546 of 546 key bindings
+agree, and 72 of 72 on the held out LG. A binding agrees when the record it sends carries the chosen
+name among its catalogue names, and on 6 of the 546 one record carries two of that key's own
+candidates, the TX-29AK40F's, the Pioneer's and the Quasar's channel keys, so those 6 do not test the
+order.
+
+### The screen and its order
+
+The screen holds every command no hard key holds, four to a page, filling top left, top right, bottom
+left, bottom right, section 285, **opening with these whether or not a key also holds them**:
+
+```
+PowerToggle PowerOn PowerOff Teletext List Home Eject Subtitle Aspect Timer Return
+NextDisc PreviousDisc Triangle Circle Square Cross
+```
+
+Return is on the screen whatever key holds it: on the Previous channel key on three devices and on the
+Stop key on four. That order is the pairs the population shows, and several are never decided by it
+and are ordered by choice: Home, Eject and Subtitle against Aspect and Timer, Eject against Subtitle,
+and List against everything after Teletext. The four
+PlayStation symbols are read off the Harmony 650's own PlayStation 3, a user configuration.
+
+**Everything after is sorted case folded, hyphens passed over, then by character code**: `i-Manual`
+after `Football`, `InputHdmi2` before `InputHDMI3` before `InputHdmi4`, `InputVideo 1/MD` between
+`InputVideo` and `InputVideo1`, a space below a digit. The hyphen is the held out LG's correction: its
+`In-Start` and `In-Stop` follow `InputTv`, which they would precede if the hyphen counted. 474 of 476
+items are in the compile's place on its page.
+
+**Neither the catalogue's order nor a hash order.** The Java 6 and 7 `HashMap` bucket order sections 315
+and 319 found elsewhere puts 197 of 364 adjacent pairs of the sorted run in bucket order at the best of
+three capacities, on the nineteen devices whose order the rules reproduce item for item, about half as a
+random order would, and one device wholly. **The archive's own order is close to sorted**: of its 364
+adjacent pairs of the same commands, 354 are in sorted order, so catalogue order is the stronger rival
+and the control below is built on it. What tells the two apart is the ten pairs the archive has out of
+order, and the compile sorts all ten. Both counts are a scratch measurement and not asserted. **What is
+sorted is the label**, which for a catalogue device is the command's name: the Denon above has `okidoki`
+between `ModeVirtual` and `Option`, and `okidoki` sends Enter, which sorted by command would stand under
+E.
+
+### Labels
+
+**A label goes in the first of six sizes where it fits**, largest first: heights 15, 14 (a wider face),
+14, 13, 11 and 10, each a table of glyph widths. A configuration carries only the glyphs its texts use,
+so a size is several font sets with the same widths, `h650_config_region` holding six of the title's
+size, and **the table is the union over the thirteen arch 14 configurations**: 167 font sets, no two sets
+of a size disagreeing about a character. That last holds partly by construction, since a set is given a
+size only when every glyph it carries has the table's width; the sets of a label height given no size
+disagree with every size of their height on 14 to 58 characters, so none is a near miss. Every one of
+the 734 label lines is drawn in one of the six.
+
+* **It fits on one line** when it is at most 59 pixels wide, the widest one line label drawn. A label
+  that could be split is held to 58: of the four labels exactly 59 wide in the largest size, the one with
+  nowhere to break, `Program`, stays whole, and `WakeUp`, `ChLevel` and `InputAm` are split. That limit
+  is fitted to one width and reads as a tie rule, not a second limit.
+* **It is split** at its first space, the space dropped, or with no space at its first word boundary:
+  after a hyphen not followed by another, or between a lower case letter and an upper case one or a
+  digit, unless that letter is followed by a hyphen. A slash is no boundary: `Tv/Radio` goes down a size.
+  Both halves must fit 59.
+* **Where no size holds it**, it goes in the smallest, split if it can be, each part cut to its longest
+  prefix that fits with `..` after it.
+
+A one line label sits at y 40 or 90; a two line one starts 15 higher with its second line one font
+height below, which is section 285's 25 and 75. Left labels start at x 3, and a right label's lines each
+**end** at 125, measured line by line. 470 of 474 labels agree in size, split, text and place, and 56 of
+56 on the held out LG.
+
+### The title and the counter
+
+**The counter is three texts on the title's line, y 2, in the title's size**: the total ends at 125, the
+slash, 5 pixels wide, right before it and the page number right before the slash, 7 pixels a digit, so
+`1/24` is at 99, 106 and 111. A mode of one page has none. 128 of 128.
+
+**The title is the device's name in the third size, cut to a limit that fits the widest counter its
+mode draws less a gap of 3**, a reading of two measured limits rather than anything stated: the limit
+is `125 - 2 * 7 * digits(total) - 5 - 3`, 103 under a one digit total and 89 under two, and a name
+over it becomes its longest prefix that fits with `..` after it. That is what cuts `Sony KE-50MR1E` to
+`Sony KE-50M..` on its 23 pages, where nine would have kept it whole. 125 of 128 titles agree. **The
+limit is pinned from both sides on each total and untested in between**: under a one digit total the
+widest cut title is 103 and the narrowest that would have kept one more character 104, under two digits
+89 and 90, but no device's whole name is between 98 and 106 pixels wide, so "kept whole at 103 or less"
+fits and is not tested in that band. A one page mode's limit is unmeasured; its widest title is 97.
+
+### The blind re-measure
+
+This section's blind reviewer measured the seven compiles without this section's rules or code: 51
+device modes over all their devices, the account's own included, 1540 corner labels. It found the
+counter's three places, the title's two limits, the 59 pixel line, the label heights and places and
+the leading list as stated here, and of the sort orders it tried, **case folded with hyphens passed
+over is the only one with no violation**, over 1269 adjacent pairs, once a label split over two lines
+is compared as its name with the space the split dropped: plain case folding fails on six pairs, all
+hyphens, `InputBluetooth` before `InputBlu-ray` on the account's Denon in all six power hold compiles
+and `InputTv` before `In-Start` on the LG in all six; passing over slashes as well fails on `Tv/Radio`
+before `TvPause`. Numbers sort as text, `F1`, `F10` to `F14`, `F2`, on the account's Kodi. It also
+names the account's devices whose labels no catalogue command spells, the Denon above and the KPN box's
+`MyNewComm..`, which is why neither is a sample here.
+
+### What differs, named and counted
+
+| what | where | count |
+|---|---|---|
+| the archive's name is not the compile's | TH-42PA30: the archive's `Pip` is drawn `Multi`, `Window` and sorted as `MultiWindow` | 2 items |
+| a character with no width and no code | `J`: the CS-29FJ20S's `AspectJust`, and the JVC DLA-HD10KU's title on its 3 pages; `#`: the Blu-ray player's | 2 labels, 3 titles |
+| `-/--` drawn `-/` | TH-42PA30, one line, the rest dropped | 1 label |
+| `Pip Channel Down` drawn `Pip`, `Channel` in the second size | Sony KE-50MR1E, a three word label that fits no size | 1 label |
+
+**None of these is a rule read wrongly on evidence that could correct it**: the compiles do draw a glyph
+for `J` and for `#`, but the character map names no code for either, so the glyph cannot be filed
+under its character, the table holds no width for them, and the rules decline to measure them rather
+than guess; the last two are one label each, too few to state a rule for.
+
+### The composer
+
+`composeDeviceScreen` takes a `compiled` option, a title and a key map, under which it draws the pages
+by these rules, `compiledDeviceModePages`: the title, the counter, each label in its size and place, the
+labels of one size on one page sharing one font set that spells them all, and the key map binding the
+hard keys to the lists the rules chose and every other key to nothing. A two digit counter is drawn
+there, where the composer's own layout still refuses one. A text the rules cannot lay out, or that no
+font set of its size spells, is **reported** as substituted and drawn as best the configuration allows:
+a character the character map does not know is dropped and the rest cut to fit, so the JVC's title is
+drawn without its `J` and `AspectJust` as `Aspect..`, and a label of nothing else, the Blu-ray's `#`,
+is left empty. `compose-device.ts --full` composes a
+whole catalogue device this way, leaving out and listing the commands whose codes do not compose.
+
+Scored by composing each of the twenty into its own compile and reading both modes out of the result:
+
+| | agree |
+|---|---|
+| devices composed | 19 of 20 |
+| keys | 527 of 527 |
+| items | 466 of 468 |
+| labels | 462 of 466 |
+| titles | 123 of 126 |
+| counters, backgrounds | 126 of 126 each |
+| page programs, instruction kinds and font sizes | 121 of 126 |
+
+The program comparison sees each instruction's kind, a text drawn inline and one by reference counted
+as one kind, and each font select as the size it selects; it does not compare operands, places or
+glyph codes, which the label and title rows do. The Panasonic TX-28A1U composes nothing: its codes are
+of a family with no whole block the rhythm table can build. The three substitutions are exactly the
+three unmeasurable texts. The named differences sit on nine pages, and the five programs that differ are
+all among them; the other four, the JVC's three titles and the TH-42PA30's `-/`, differ in text only.
+
+**The control fails**: the same composer with the screen in catalogue order, on one device each of the
+Harmony 600, 650 and 700, agrees on 2 of 155 items, so the comparison sees the order. It agrees on 111
+of 111 keys by construction, both runs using one key map.
+
+### On the Harmony 650
+
+`h650-seventh-composed`, the configuration last written to the Harmony 650, with the Panasonic
+TX-P42GT30E composed whole as a further device titled "Panasonic TV": 63 of its 63 commands compose, 7
+pages, 37 keys. Beside Logitech's own Panasonic TV in the same file, compiled from the same catalogue
+entry, all 7 pages draw the same texts at the same places in the same sizes, every corner sends the
+same infrared frame, and all 37 keys send the same frames. Every byte is accounted for, the trailer
+checksum agrees and the emitter rebuilds it. A scratch comparison, not asserted, and in sample, since
+this is the population's own TX-P42GT30E. Not written to the remote.
+
+### Scope, decision 16
+
+Arch 14 only, Harmony 600, 650 and 700, which is the whole population. Arch 12 (Harmony One) is not read
+here; arch 9 (Harmony 525) has no compile to read, section 145. **Everything above is fitted in sample**
+but for the held out LG, one device of 28 items read in two compiles, and that device corrected the
+order. Only one mode has a single page, the Mivar's, so "no counter on one page" rests on one device.
+
+### Falsification
+
+A compiled catalogue device whose screen breaks the sort with no named cause; a label drawn on one line
+wider than 59, or split where it fits on one; a hard key taking a command later in its list while the
+device has an earlier one; a counter or title off the stated places.
+
+### Where it lands
+
+* `packages/codec/src/devicemode.ts`: the key table, the screen order, the size table, labels, title,
+  counter.
+* `packages/codec/src/compose.ts`: `compiledDeviceModePages` and `compiledPageProgram`, and the
+  `compiled` option of `composeDeviceScreen`; `packages/codec/bin/compose-device.ts --full`.
+* `packages/codec/test/devicemode.test.ts`: the rules on their own, the size table as the union, the
+  twenty with every difference named, the held out LG, the composer page for page and the control.
+* `docs/config-format.md`, under the device mode pages on arch 14.
