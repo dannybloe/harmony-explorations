@@ -100,3 +100,4 @@ The Harmony One is a different type, with a touch screen and its own screens, so
 - [x] 7.6 The Harmony 700 repaired out of safe mode and taken from firmware 2.5 to 2.8 (sections 295 to 299)
 - [x] 7.7 The settings store on the Harmony 600, 650 and 700 read and written over USB, and the 600's saved delay cleared (sections 304 and 305)
 - [x] 7.8 A device's power variable below narrow (section 277), and the firmware's own state variables 0 to 17 (section 284)
+- [ ] Two copies of the corner label wrap rule, `fourSlotLabelLines` in compose.ts and `wrapAtSpaces` in devicemode.ts: make it one (section 325)

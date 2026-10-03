@@ -718,7 +718,7 @@ pages all draw one picture, the corner lists' crossed one on the 650 and 700s an
 600, and carry no queued `0x73`. **Every row list is bound once**: 300 of 300, none shared between two
 buttons or between a page and its copy.
 
-**What a compiled catalogue device puts where**, section NNN, on twenty devices Logitech compiled from
+**What a compiled catalogue device puts where**, section 325, on twenty devices Logitech compiled from
 its catalogue, in seven of the thirteen configurations of section 312, plus one held out; the rules are
 read off the output and `devicemode.ts` is their executable form:
 

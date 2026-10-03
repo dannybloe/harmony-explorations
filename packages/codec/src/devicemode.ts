@@ -1,7 +1,7 @@
 /**
  * How Logitech's compiler lays a whole device out in device mode on arch 14 (Harmony 600, 650 and
  * 700): which commands go to the keypad, which to the screen and in what order, how a label is sized
- * and split over two lines, how a title is cut, and where the page counter sits. Section NNN.
+ * and split over two lines, how a title is cut, and where the page counter sits. Section 325.
  *
  * **Every rule here is read off the compiler's output and none off its code.** The population is the
  * twenty devices Logitech compiled from its catalogue for the test accounts, in seven of the thirteen
@@ -9,7 +9,7 @@
  * devices of `calibration_h600`, nineteen catalogue entries since one is on two records. Each
  * device's commands are named from the archive's own codeset, and its device mode is then read as a key
  * map and a run of screen pages. `test/devicemode.test.ts` scores every rule against all twenty and names
- * every difference; the counts live there and in section NNN, not here.
+ * every difference; the counts live there and in section 325, not here.
  *
  * Three things a reader should know before trusting it, each said again where it bites:
  *
@@ -290,7 +290,7 @@ export interface LabelLayout {
  * smallest. On a label of two words too wide for one line this is the first space; it differs only on
  * three or more, and the one label measured on which the two differ, `Rcvr V-` over `Aux` on an
  * activity's page, is the reason it is a wrap: section 323's corner labels, most of them on device mode
- * pages, and this module read the same compiler, and this is the rule both agree on, section NNN.
+ * pages, and this module read the same compiler, and this is the rule both agree on, section 325.
  */
 function wrapAtSpaces(sizeOf: LabelSize, text: string): string[] | undefined {
   const lines: string[] = [];

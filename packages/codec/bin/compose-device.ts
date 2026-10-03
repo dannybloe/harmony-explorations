@@ -38,7 +38,7 @@
  * too**, which Logitech's compile does not do, since a device mode Power On of three frames leaves that
  * television off.
  *
- * **`--full` puts the whole device in**, section NNN: every command the catalogue holds whose code
+ * **`--full` puts the whole device in**, section 325: every command the catalogue holds whose code
  * composes, on as many device mode pages as it takes, laid out the way Logitech's compiler lays a device
  * out, `devicemode.ts`. The hard keys get the commands the compiler gives them, the screen opens with the
  * power commands and a short fixed list and then runs sorted, each label is sized and split by the
@@ -102,7 +102,7 @@ const output = argument('out') ?? fail('--out is where the result goes');
 const manufacturer = argument('manufacturer') ?? fail('--manufacturer names the catalogue folder');
 const model = argument('model') ?? fail('--model names the catalogue device');
 const label = argument('label') ?? fail('--label is what the config will call it');
-// The whole device, laid out as the compiler lays it out, section NNN; or the commands asked for.
+// The whole device, laid out as the compiler lays it out, section 325; or the commands asked for.
 const full = process.argv.includes('--full');
 if (full && (argument('commands') !== undefined || argument('labels') !== undefined)) {
   fail('--full takes every command the catalogue holds, so --commands and --labels are not given');

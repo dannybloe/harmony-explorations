@@ -2823,7 +2823,7 @@ export interface ComposeScreenOptions {
   keysLike?: string;
   /**
    * Arch 14 only: lay the device mode out the way Logitech's compiler does, `devicemode.ts`, section
-   * NNN, rather than with one label font and a key map copied from another device. The rows' labels
+   * 325, rather than with one label font and a key map copied from another device. The rows' labels
    * are then sized, split and cut by the compiler's rules and drawn in a font of the size those rules
    * pick, the title is `title` cut to what the page counter leaves, a counter of two digits is drawn
    * where the compiler draws one, and the key map is `keys`, a list per scan, with every other key
@@ -4050,7 +4050,7 @@ interface CompiledPage {
  * all, a character the character map does not know is dropped and the rest drawn whole or cut with `..`,
  * the template's font first, and a text with nothing left is drawn empty. Either way it is named in
  * `substituted`, so the difference from the compiler's page is reported rather than silent. On the
- * twenty devices of section NNN all three substitutions take the second route. A text that no font
+ * twenty devices of section 325 all three substitutions take the second route. A text that no font
  * spells any part of is refused, as `codesFor` refuses anywhere else.
  */
 function compiledDeviceModePages(
@@ -4094,7 +4094,7 @@ function compiledDeviceModePages(
       { font: number; codes: number[] } => {
     substituted.push(what);
     // A character the configuration's character map has no code for cannot be drawn by anything here,
-    // `J` on every arch 14 configuration, section NNN, so it is left out rather than refusing the page.
+    // `J` on every arch 14 configuration, section 325, so it is left out rather than refusing the page.
     const known = new Set(map.codes.values());
     text = [...text].filter((ch) => known.has(ch)).join('');
     // Nothing left to draw, a label of `#` alone: the item is bound and drawn without a label.

@@ -42833,7 +42833,7 @@ two byte variable stating other values on an arch 14 compile.
   the stored order, the device and activity variables, and the refusals.
 * `docs/config-format.md` under base slots 0, 13 and 14.
 
-## NNN. A whole device's device mode is laid out by rules: hard keys by preference, the screen sorted, labels sized down a ladder of six
+## 325. A whole device's device mode is laid out by rules: hard keys by preference, the screen sorted, labels sized down a ladder of six
 
 **Logitech's compiler puts a catalogue device's whole command list into device mode by rules this
 section reads off its output, and the composer now builds a whole device by them.** Every hard key takes
