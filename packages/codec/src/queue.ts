@@ -3,8 +3,10 @@
  *
  * **A Harmony does not interpret an action list. It spools one into a ring and drains it.** The
  * ring holds 120 bytes, which is exactly 40 three byte instructions, and it is the only one: a
- * key press, a state change, a display band announcement and the host's own `MISC_QUEUE_ACTION`
- * all push into the same 40 slots that a running activity or sequence is occupying. Section 34
+ * key press, a state change, a display band announcement and an action queued by the host, which
+ * on arch 14 is command state `0x34` of a version request with a payload (section 326) and not the
+ * `WRITE_MISC` selector libconcord calls `MISC_QUEUE_ACTION`, all push into the same 40 slots that a
+ * running activity or sequence is occupying. Section 34
  * found the ring on arch 14 (Harmony 600 and 700) and section 238 read the rest of the machine on
  * arch 12 (Harmony One), where the hazard was measured.
  *

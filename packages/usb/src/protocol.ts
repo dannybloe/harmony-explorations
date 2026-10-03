@@ -314,7 +314,9 @@ export function readMiscRequest(selector: number, parameter: number): Uint8Array
  * `0x06` on this architecture is a different accessor entirely, so taking the upstream number on
  * faith would have read the wrong thing and still returned a plausible byte. `0x03`, which
  * upstream calls `MISC_QUEUE_ACTION`, is not in the chain at all, and `0x09`,
- * `MISC_QUEUE_EVENT`, is accepted and does nothing. So there is no event injection.
+ * `MISC_QUEUE_EVENT`, is accepted and does nothing. So there is no event injection. An action can be
+ * queued all the same, by command state `0x34` of a version request with a payload, section 326,
+ * which `isReadOnlyReport` refuses like every other payload state.
  */
 export const MISC_RAM = 0x07;
 

@@ -737,6 +737,21 @@ Unconfirmed: the key lists and several pairs of the leading list are fitted to t
 ordered by choice; the title limit is a fit of two measured limits. The character map names no code
 for `J` or `#`, so the table holds no width for either and a label holding one is not laid out.
 
+**Nothing enters the two row list**, section 326, on the thirteen arch 14 compiles: no `0x7E` anywhere
+in the container names its mode, counted as the bytes `lo hi 0x7E` over the whole file, 0 on every
+compile against at least one for every corner list and every row menu, 232 lists; no event map value
+is it; no page or program is shared with another mode; and no configuration instruction is a run time
+builder, `0x7B` or an opcode `0x1F` to `0x3E` with operand high byte `0xF7`. The firmware's mode switch
+has four direct callers and takes its number only from an `0x7E` operand, the event map's value or
+fallback, or the mode stack, on all five arch 14 application builds; a host can also queue an `0x7E`
+through command state `0x34` or write the mode bytes through `0xB1`, neither a route for a person. Its mode, per compile: 166 `h600_config`, 167
+`calibration_h600`, 179 `h650_config_region`, 226 `h650_panasonic_config`, 325 and 337 the 650's two
+power hold compiles, 283 both `h700_config`, 166 `h700_28_config_region`, 297, 295, 295 and 297 the
+700's four. Its record list is `0x72` under tag `0x99`, the corner lists' centre key operand. A page
+composed into it matches Logitech and is not visible on a remote; the corner lists, four to a page, are
+the device lists a person reaches, along with the Help key's "Select device" picker, whose rows run
+`0x7E` directly and which section 326 does not count as a corner list.
+
 **The activity menu is the two row layout too**, section 289, on the four configurations: each
 activity on both buttons of one row, 13 of 13, its label centred at y 35 or 79, 13 of 13, and each
 binding and each copy's binding running a row list of its own, 52 of 52:
@@ -3750,8 +3765,9 @@ list's length.
 
 **Every push into a full ring is discarded with no error.** All three push routines test the count
 first and return, and the two that report anything are called from code that ignores the answer. The
-ring is shared: a key press, a state change, a display band announcement and the host's own
-`MISC_QUEUE_ACTION` push into the same forty slots a running activity occupies.
+ring is shared: a key press, a state change, a display band announcement and an
+action queued by the host, command state `0x34` on arch 14, section 326, push into the same forty
+slots a running activity occupies.
 
 So a config states an implicit demand, the deepest its own lists go, and a config whose demand
 exceeds forty is one the remote accepts and silently does less than.
@@ -4207,7 +4223,9 @@ what the opcodes are executed by, so it constrains every reading of them.
 
 An action list is spooled into a **circular queue of 120 bytes, exactly 40 three byte
 instructions**, and drained by a separate loop. Same size on both images. The host can push into
-the same queue over USB, which is what `MISC_QUEUE_ACTION` is for.
+the same queue over USB: on arch 14 through command state `0x34`, a version request with a payload,
+and not `WRITE_MISC` selector 3, which libconcord calls `MISC_QUEUE_ACTION` and arch 14 leaves
+unhandled, section 326.
 
 The dispatch is a **binary search on the opcode**, not a jump table and not an `XORLW` chain. Its
 boundaries:
