@@ -1681,10 +1681,12 @@ skins and all seven disagreements were inferences of ours, so the vendor figures
 claim is that **no sample reaches any stated maximum**.
 
 **Slot 3 holds the config's build timestamp**, an eleven byte record framed by `0xADDF` and
-`0xEFBF`, whose day of week byte is days since 1 January 2000 modulo 7. That closure is why the
-seven byte field assignment is believed; the assignment itself is the only one of 336 candidates
-that fits the corpus, and **confirmed independently in section 58** against a config compiled while
-we watched, on a date known before it was read. `docs/findings.md` section 21. Do not use it to
+`0xEFBF`. **The day of the month counts from 0 and the day of week from Sunday**, section 322, read
+in the firmware's month end routine on five architectures and on twenty three stamps with a date known from
+outside. Section 21's reading, a day from 1 and a weekday as days since 1 January 2000<!--superseded-->,
+fitted the same bytes by naming every date a day early, and section 58's confirmation of it took its
+known date from the stamp itself. The seven byte field assignment still stands: it is the only one of
+336 candidates that fits the corpus. `docs/findings.md` section 21. Do not use it to
 order two configs of the same remote: it contradicts the recorded direction of the Harmony 700 pair
 and that is unresolved, though the section 58 pair, whose direction was observed rather than
 recorded, is ordered correctly by it.
@@ -2203,7 +2205,7 @@ file.
 |---|---|
 | base slot 13's `narrow` and `wide` size the state variable storage, and `count` does not | so appending a variable moves **two** words of that header. The firmware allocates `narrow + 2 * wide` and paints `0xFE` over everything above it at each boot, while the seeding loop runs over `count`, so raising the count alone buys a variable that is seeded and then erased, silently. Ours did: the device appeared on the menu, beeped and started nothing. `assertStateTableConsistent` |
 | every send is paired with a `0x7C` naming the same device | emit `{0x7D, 0x7C}`, never the send alone. All 4267<!--fact:send_lists--> send lists of the user configurations are the pair and none is bare, and a bare one sends from a key press and **nothing** from an activity's transition, measured on the spare Harmony One, section 278. On arch 14 each also opens with a `0x7F` delay step of three lists, and the composer emits it, section 287 |
-| base slot 13's first seven records are the clock | stamp them, and reuse none of the firmware's block: 0 to 17 on arch 8, 12 and 14 (Harmony 880 and 885, Harmony One, Harmony 600, 650 and 700) and 0 to 12 on arch 9 (Harmony 525), section 284. Eight values and nine on a 31st, since the year's maximum always moves with it and the day of the month's moves too. Arch 9 (Harmony 525) keeps its own |
+| base slot 13's first seven records are the clock | stamp them, and reuse none of the firmware's block: 0 to 17 on arch 8, 12 and 14 (Harmony 880 and 885, Harmony One, Harmony 600, 650 and 700) and 0 to 12 on arch 9 (Harmony 525), section 284. Eight values, since the year's maximum always moves with it; the day counts from 0, so a 31st is 30 and its maximum stays 30, section 322. Arch 9 (Harmony 525) keeps its own |
 | base slot 3's timestamp is stamped at write time | never copied. The one field where a round trip and a save differ |
 | `end_addr` is restamped when anything changes length | the only header field that moves with a section's growth |
 | a read can insert bytes without losing any | a config that parses is not a config that arrived. Every read of an arch 10 (Harmony 890) remote here came back with surplus chunks, and neither the trailer checksum nor the end marker catches a duplicated run of zeroes on its own |

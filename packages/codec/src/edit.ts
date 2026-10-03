@@ -61,7 +61,6 @@ import {
   archSlot,
   clockRecord,
   clockRecordFields,
-  isSyncDayZeroStamp,
   timestampOf,
   trailerChecksum,
 } from './gspm.ts';
@@ -130,8 +129,8 @@ export const FIELD_RULES: readonly FieldRule[] = [
     field: 'base slot 3 day of week byte',
     policy: 'recompute-always',
     section: 21,
-    why: 'derived from the date as days since 1 January 2000 modulo 7, and both parsers refuse a '
-      + 'record where it disagrees, so a stamped date has to bring its own weekday',
+    why: 'derived from the date, counted from Sunday as 0 as the firmware counts it, section 322, and '
+      + 'both parsers refuse a record where it disagrees, so a stamped date has to bring its own weekday',
   },
   {
     field: 'base slot 13 records 0 to 6, the firmware clock',
@@ -303,6 +302,12 @@ export function applyEdits(c: Container, edits: Edit[]): EditReport {
  * remote displays it as the time of day, so a save wants the wall clock of whoever is saving rather
  * than UTC. `clockRecord` stays zone free on the way back out, which is what keeps the golden
  * vectors independent of where the tests run, so the two are not symmetrical on purpose.
+ *
+ * **Which zone Logitech stamps in is open, and it does not look like the saver's**, section 322: a
+ * MyHarmony sync of the Harmony 650 stamped 14:32:27 and the remote was read at 14:34:08 UTC on the
+ * same day, so that stamp was within two minutes of UTC and could not have been the local time of
+ * this bench, two hours later. Other Logitech stamps sit an hour or more from UTC either way, so no
+ * single zone explains all of them. This stays local until the remote's own display says otherwise.
  */
 export function localTimestamp(when: Date): string {
   // Through `timestampOf`, beside `clockRecord`, because this used to spell the same padded format
@@ -338,11 +343,11 @@ export function timestampEdit(c: Container, builtAt: string): Edit[] {
   }
   const off = c.blobOffsetOf(section.address);
   if (off === undefined) throw new EditError('base slot 3 is outside the container');
-  if (clockRecord(c.blob, off) === undefined && !isSyncDayZeroStamp(c.blob, off)) {
+  if (clockRecord(c.blob, off) === undefined) {
     // A save that silently stamped nothing is the failure this whole distinction is about, so an
     // unreadable record is refused rather than overwritten: whatever is there is not what we think.
-    // The one exception is the day 0 stamp a MyHarmony sync writes on the 1st of a month, which is a
-    // stamp in every other respect and which every write replaces anyway, todo-compile-650 1.3.1.
+    // A stamp made on the 1st of a month, a stored day of 0, had an exception here while the reader
+    // refused it; section 322 made it an ordinary date, so there is no exception any more.
     throw new EditError('base slot 3 does not hold a clock record, so it is not ours to overwrite');
   }
   if (bytes.length !== CLOCK_FIELD_COUNT) throw new EditError('the record is seven fields');
@@ -397,16 +402,20 @@ export function clockStateEdits(c: Container, builtAt: string): Edit[] {
     const name = `slot-13 ${FIRMWARE_STATE_VARIABLES[index] ?? index}`;
     const most = CLOCK_STATE_MAXIMA[index];
     const value = fields[index] as number;
-    // The maximum this record should declare once the field is stamped. Two of the seven move: the
-    // year's is that year plus one, and the day's is 30 until a save happens on a 31st, when the one
-    // based day would otherwise sit outside its own variable's range. Section 130 and the note on
-    // `CLOCK_STATE_MAXIMA`; the day half was found by asking for 2026-08-31 and reading back
-    // `first=31, second=30`, which is the exact failure the year's repair exists to prevent.
-    const stamped = most === undefined ? value + 1 : Math.max(most, value);
+    // The maximum this record should declare once the field is stamped. Only the year's moves: it is
+    // that year plus one. Section 130 and the note on `CLOCK_STATE_MAXIMA`.
+    //
+    // **The day's used to move too, and that was this project's own mistake.** Read as counted from
+    // 1, a save on a 31st wrote a day of 31 into a variable whose maximum is 30, so this raised the
+    // maximum to 31. The day is counted from 0, section 322, so the 31st is stored as 30 and the 30
+    // that every container declares is exactly the last day of a long month, which is also the
+    // firmware's own limit. A save never writes a day above 30 now, so the maximum stays put.
+    const stamped = most === undefined ? value + 1 : most;
     // Whatever declares a different range is not the clock, so it is refused rather than stamped:
     // the same reasoning as refusing a base slot 3 that does not hold a readable clock record. The
-    // year is deliberately not checked, because its maximum is what this repairs, and the day accepts
-    // its own raised maximum too or a config saved on a 31st could never be saved again.
+    // year is deliberately not checked, because its maximum is what this repairs. The day still
+    // accepts a maximum of 31, which only a save of ours on a 31st under the old reading can have
+    // written, so that such a config can be saved again and gets its maximum put back to 30.
     if (most !== undefined && record.second !== most
         && !(index === CLOCK_DAY_INDEX && record.second === most + 1)) {
       throw new EditError(
@@ -418,7 +427,8 @@ export function clockStateEdits(c: Container, builtAt: string): Edit[] {
     if (off === undefined) throw new EditError(`${name} is outside the container`);
     // `first` at +0x00 and `second` at +0x02, so a field whose maximum moves is one adjacent four byte
     // edit rather than two, which also keeps them from being reported as separate changed runs. For
-    // the day that edit usually writes the 30 that is already there, which changes no byte.
+    // the day that edit writes the 30 that is already there, which changes no byte, except on a config
+    // an old save of ours left at 31, which it repairs.
     const bytes = most === undefined || index === CLOCK_DAY_INDEX
       ? [value & 0xff, value >>> 8, stamped & 0xff, stamped >>> 8]
       : [value & 0xff, value >>> 8];

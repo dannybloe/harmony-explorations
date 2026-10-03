@@ -166,20 +166,46 @@ ARCH_VERSION_WORD_END = 4
 # needing a length to validate it.
 #
 #     +0x00  u16  0xADDF
-#     +0x02  u8   second, minute, hour, day of month, day of week, month (0 = January)
+#     +0x02  u8   second, minute, hour, day of month (0 = the 1st), day of week (0 = Sunday),
+#                 month (0 = January)
 #     +0x08  u8   year, offset from 2000
 #     +0x09  u16  0xEFBF
 #
-# The field assignment is not a reading, it is a search result: of the 48 permutations of the four
-# date bytes times two month bases times seven weekday offsets, exactly one is consistent with
-# every sample. See `docs/findings.md` section 21.
+# The field assignment was a search result, section 21: of the 48 permutations of the four date
+# bytes times two month bases times seven weekday offsets, exactly one is consistent with every
+# sample. **The search could not see how the day is counted**, section 322: a day counted from 0 with
+# a Sunday based weekday and a day counted from 1 with a Saturday based one accept the same bytes, a
+# day apart, on every stamp except one made on the 1st of a month, which stores a day of 0 and which
+# no container held until 1 October 2026. The firmware's month end routine settles it, on all
+# nine images in the lab, and so do Logitech's classic client and concordance, which both write the
+# day minus one.
 CLOCK_RECORD_SLOT = 3
 CLOCK_COOKIE = b'\xdf\xad'
 CLOCK_END = b'\xbf\xef'
 CLOCK_RECORD_LENGTH = 11
-# Day of week is stored as days since this date modulo 7, which is why 0 means Saturday: this
-# date was one. The same epoch explains the year offset, so two fields agree on one anchor.
-CLOCK_EPOCH = datetime.date(2000, 1, 1)
+# The year is a u8 offset from this one, so it is the first year the record can hold.
+CLOCK_FIRST_YEAR = 2000
+# The months the firmware's month end routine gives 30 days, zero based: April, June, September and
+# November. Its `XORLW` chain picks exactly these, and February, section 322.
+CLOCK_THIRTY_DAY_MONTHS = frozenset((3, 5, 8, 10))
+CLOCK_FEBRUARY = 1
+
+
+def clock_last_day_index(month: int, year_offset: int) -> int:
+    """The last valid **stored** day of `month` (0 = January), as the firmware states it.
+
+    30 for a 31 day month, 29 for a 30 day one, and for February 28 when `year_offset & 3` is zero
+    and 27 otherwise. Read out of the month end routine, the same code on all nine firmware images
+    in the lab over five architectures, `tests/test_clock_counting.py`. Section 322, and
+    `clockLastDayIndex` in `packages/codec` is the TypeScript twin, which the golden vectors hold to
+    this one through every container's `built_at`.
+
+    The leap test is the firmware's `& 3` and not the calendar's, so the two disagree in 2100 and
+    2200, both inside the record's range; `clock_record` refuses a date the calendar lacks as well.
+    """
+    if month == CLOCK_FEBRUARY:
+        return 28 if (year_offset & 3) == 0 else 27
+    return 29 if month in CLOCK_THIRTY_DAY_MONTHS else 30
 
 # The pointer table is one table across architectures, with per architecture insertions rather
 # than a per architecture meaning. Arch 9 and arch 14 carry the base layout of 20 slots, whose
@@ -3018,21 +3044,31 @@ def recover_flash_base(blob: bytes, addresses: List[int]) -> Optional[int]:
 def clock_record(blob: bytes, off: int) -> Optional[datetime.datetime]:
     """The timestamp in the slot 3 record at `off`, or None if there is not one there.
 
-    Returns None rather than raising for anything that does not fit, including a stored day of
-    week that disagrees with the date. That check is the reason to trust the reading at all, so
-    it stays in the parser rather than only in a test: a record that fails it is not a record
+    **The stored day is counted from 0 and the weekday from Sunday**, section 322, so the date is
+    the stored day plus one. This read the stored day as the date and the weekday as days since 1
+    January 2000, which is the same bytes on every date the corpus held, so every date it returned
+    was a day early and a stamp made on the 1st of a month, a stored 0, came back as None.
+
+    Returns None rather than raising for anything that does not fit: a stored day past the
+    firmware's last index for its month, a date the calendar does not have, or a stored day of
+    week that disagrees with the date. That last check is the reason to trust the reading at all,
+    so it stays in the parser rather than only in a test: a record that fails it is not a record
     this code understands.
     """
     if blob[off:off + 2] != CLOCK_COOKIE:
         return None
     if blob[off + 9:off + 11] != CLOCK_END:
         return None
-    second, minute, hour, day, dow, month, year = blob[off + 2:off + 9]
+    second, minute, hour, stored, dow, month, year = blob[off + 2:off + 9]
+    if month > 11 or stored > clock_last_day_index(month, year):
+        return None
     try:
-        stamp = datetime.datetime(2000 + year, month + 1, day, hour, minute, second)
+        stamp = datetime.datetime(CLOCK_FIRST_YEAR + year, month + 1, stored + 1,
+                                  hour, minute, second)
     except ValueError:
         return None
-    if (stamp.date() - CLOCK_EPOCH).days % 7 != dow:
+    # Python's own weekday() is Monday based, so Sunday = 0 is one step round from it.
+    if (stamp.weekday() + 1) % 7 != dow:
         return None
     return stamp
 

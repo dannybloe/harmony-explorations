@@ -19,6 +19,8 @@ import {
   ARCH_RECORD_SLOT,
   EVENT_NONE,
   EVENT_PRESS,
+  CLOCK_COOKIE,
+  CLOCK_END,
   CLOCK_RECORD_LENGTH,
   CLOCK_RECORD_SLOT,
   FLASH_BASE_ALIGNMENT,
@@ -27,6 +29,8 @@ import {
   SECTION_TABLE_OFFSET,
   archSlot,
   baseSlot,
+  clockLastDayIndex,
+  clockRecord,
   findClockRecords,
   keyListCapacity,
   keyListHash,
@@ -385,7 +389,47 @@ test('the two One factory configs agree on their timestamp to the second', () =>
   const b = load('one34_region2');
   if (a === undefined || b === undefined) return;
   assert.equal(parse(a).builtAt, parse(b).builtAt);
-  assert.equal(parse(a).builtAt, '2007-10-24T02:22:08');
+  assert.equal(parse(a).builtAt, '2007-10-25T02:22:08');
+});
+
+/** A bare clock record, for the reader's limits without a lab: second 0, minute 0, hour 12. */
+function clockBytes(stored: number, weekday: number, month: number, year: number): Uint8Array {
+  return Uint8Array.from([...CLOCK_COOKIE, 0, 0, 12, stored, weekday, month, year, ...CLOCK_END]);
+}
+
+test('the stored day counts from 0 and the weekday from Sunday, which is how the firmware counts', () => {
+  // Section 322. The firmware's month end routine stops a long month at index 30 and a short one at
+  // 29, on every image read, and `tests/test_clock_counting.py` reads that out of the images; this is
+  // the TypeScript reader's half, mirroring the Python one, so the two cannot drift.
+  //
+  // 1 October 2026 is stored as day 0 with weekday 4, a Thursday: what a MyHarmony sync wrote on the
+  // Harmony 650, which the reader refused while it took the stored day for the date.
+  assert.equal(clockRecord(clockBytes(0, 4, 9, 26), 0), '2026-10-01T12:00:00');
+  for (let month = 0; month < 12; month += 1) {
+    for (const year of [24, 25]) {
+      const last = clockLastDayIndex(month, year);
+      const date = new Date(Date.UTC(2000 + year, month, last + 1));
+      // The last index reads, and it is the last day of the month by the calendar.
+      assert.equal(date.getUTCMonth(), month, `${month}/${year}`);
+      assert.equal(new Date(Date.UTC(2000 + year, month, last + 2)).getUTCMonth(), (month + 1) % 12);
+      assert.notEqual(clockRecord(clockBytes(last, date.getUTCDay(), month, year), 0), undefined);
+      // One past it is refused, whatever weekday it claims.
+      for (let weekday = 0; weekday < 7; weekday += 1) {
+        assert.equal(clockRecord(clockBytes(last + 1, weekday, month, year), 0), undefined);
+      }
+    }
+  }
+  // The firmware's leap test is `year & 3`, so it calls 2100 leap where the calendar does not, and
+  // 29 February 2100 then reads as nothing rather than rolling over to 1 March.
+  assert.equal(clockLastDayIndex(1, 100), 28);
+  for (let weekday = 0; weekday < 7; weekday += 1) {
+    assert.equal(clockRecord(clockBytes(28, weekday, 1, 100), 0), undefined);
+  }
+});
+
+test('the 650 stamp a sync wrote on the 1st reads as the 1st', skipUnless('h650_panasonic_config'), () => {
+  // The stamp that exposed the misreading, todo-compile-650 1.3.1, through the whole parser.
+  assert.equal(parse(require_('h650_panasonic_config')).builtAt, '2026-10-01T14:32:27');
 });
 
 test('a day of week that disagrees with the date is refused', skipUnless('one_config'), () => {
@@ -608,10 +652,10 @@ test('the arch 10 clock record sits one slot later, and reading it is what dated
     // land inside fifteen minutes of one afternoon: one person at one sitting, compiling what they
     // had. The arch 8 date was already read and believed; the two arch 10 ones come out of a slot the
     // arch 8 map does not use, so nothing could have been adjusted to make them agree.
-    assert.equal(parse(load('arch8_config_880') as Uint8Array).builtAt, '2025-05-14T21:25:34');
+    assert.equal(parse(load('arch8_config_880') as Uint8Array).builtAt, '2025-05-15T21:25:34');
     // The second Harmony 890 is a damaged read, section 122, and its record survives anyway.
-    assert.equal(parse(load('h890_config_2') as Uint8Array).builtAt, '2025-05-14T21:37:44');
-    assert.equal(parse(load('h890_config') as Uint8Array).builtAt, '2025-05-14T21:40:26');
+    assert.equal(parse(load('h890_config_2') as Uint8Array).builtAt, '2025-05-15T21:37:44');
+    assert.equal(parse(load('h890_config') as Uint8Array).builtAt, '2025-05-15T21:40:26');
   });
 
 /**
