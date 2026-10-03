@@ -179,6 +179,8 @@ IMAGES = {
     'h650_glow10_region': '20260928T1449Z-h650-glow10-region.bin',
     # After section 294's write, LG kijken's own device list.
     'h650_devicelist_region': '20260929T1032Z-h650-devicelist-region.bin',
+    # The 650 as it stood before section 309's one byte write, with six devices: the compare base
+    # for that write and the configuration its long press version was composed against.
     'h650_plasma_base': '20261002T1408Z-h650-pre-plasma-region-region.bin',
     # The bench Harmony 700 as it arrived, in safe mode, section 295.
     'h700_internal_fe': '20260929T1243Z-h700-internal-fe-region.bin',

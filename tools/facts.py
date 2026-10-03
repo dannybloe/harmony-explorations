@@ -93,7 +93,10 @@ def is_correction(line):
 QUOTED = '<!--superseded-->'
 
 
-SKIP_DIRECTORIES = ('.git', 'node_modules', 'dist', '__pycache__')
+# `worktrees` is `.claude/worktrees/`, where an agent working in isolation keeps a whole second
+# checkout. Its documents are this repository's at another commit, so walking them reported every
+# superseded phrase twice and failed the check, and the commit hook with it, until the worktree went.
+SKIP_DIRECTORIES = ('.git', 'node_modules', 'dist', '__pycache__', 'worktrees')
 # What the phrase check reads beyond the documents. Not the number check: a `fact:` marker belongs in
 # prose, where a reader sees the value, and a source file that wanted one would be stating a corpus
 # total in a comment instead of computing it.

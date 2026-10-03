@@ -1488,7 +1488,9 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
     STRICT_MARKERS = MARKERS + ('0x4A', 'ERASE_FLASH', 'WRITE_FLASH')
 
     SWEPT_SUFFIXES = ('.md', '.ts', '.py', '.txt')
-    SKIP_DIRS = {'node_modules', '.git', '.pnpm', 'dist', '__pycache__', 'var'}
+    # `worktrees` is `.claude/worktrees/`, an agent's second checkout, which states the write path
+    # exactly as this one does and is not a document anybody hands over.
+    SKIP_DIRS = {'node_modules', '.git', '.pnpm', 'dist', '__pycache__', 'var', 'worktrees'}
 
     def _document(self):
         with io.open(self.DOC, encoding='utf-8') as handle:

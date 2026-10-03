@@ -145,7 +145,7 @@ pyright:
 # House convention: no em-dashes and no en-dashes in anything published here. `node_modules` is excluded
 # because it holds other people's documents, and until playwright arrived nothing in there had one.
 prose:
-	@fail=0; for f in $$(find . -name '*.md' -not -path './.git/*' -not -path './node_modules/*'); do \
+	@fail=0; for f in $$(find . -name '*.md' -not -path './.git/*' -not -path './node_modules/*' -not -path './.claude/worktrees/*'); do \
 	  n=$$($(PYTHON) -c "import sys;d=open(sys.argv[1]).read();print(sum(d.count(c) for c in '—–'))" $$f); \
 	  if [ "$$n" != "0" ]; then echo "$$f: $$n"; fail=1; fi; done; \
 	  if [ $$fail = 0 ]; then echo "prose clean"; else exit 1; fi

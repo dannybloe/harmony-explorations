@@ -166,6 +166,17 @@ class TestArch12RegionSplit(unittest.TestCase):
         self.assertTrue(firmware.verify_checksum(code))
 
 
+# Six files named `.EzHex` that are not EzHex at all: section 306 saved the bare `GSPM` container
+# out of each compile's ZIP under the name the download carries, so they have no XML header and
+# no declared checksum, and every check in this class would fail on them for a reason that says
+# nothing about the EzHex format. Named rather than detected, since detecting would need the lab
+# loaded while the class is defined, and a fresh clone has none.
+BARE_CONTAINERS_NAMED_EZHEX = (
+    'h650_power_hold_compile', 'h650_power_hold_compile_2', 'h700_power_hold_compile',
+    'h700_power_hold_compile_2', 'h700_power_hold_compile_3', 'h700_power_hold_compile_4')
+_BARE = BARE_CONTAINERS_NAMED_EZHEX
+
+
 class TestEzHexHeader(unittest.TestCase):
     """
     A config EZHex is self-verifying: the header states the payload length and a checksum, so
@@ -191,10 +202,12 @@ class TestEzHexHeader(unittest.TestCase):
     # measurement of the format. Excluding it by architecture would have thrown away the only clean
     # sample on the strength of its neighbours.
     # Inlined rather than referenced: a comprehension in a class body cannot see class level names.
+    BARE_CONTAINERS_NAMED_EZHEX = _BARE
     CONFIGS = tuple(sorted(
         n for n, f in lab.IMAGES.items()
         if f.lower().endswith('.ezhex')
-        and n not in ('h890_config', 'h890_config_2', 'h890_config_rescan', 'h890_config_2_rescan')))
+        and n not in ('h890_config', 'h890_config_2', 'h890_config_rescan', 'h890_config_2_rescan')
+        and n not in _BARE))
 
     def test_the_population_is_every_ezhex_in_the_lab_bar_arch_10(self):
         """The derivation, asserted, because a derived list can narrow as quietly as a written one.
@@ -205,10 +218,10 @@ class TestEzHexHeader(unittest.TestCase):
         and none of them counted. So the count is the claim and the four exclusions are named.
         """
         ez = {n for n, f in lab.IMAGES.items() if f.lower().endswith('.ezhex')}
-        self.assertEqual(len(ez), 17)
+        self.assertEqual(len(ez), 23)
         self.assertEqual(sorted(ez - set(self.CONFIGS)),
-                         ['h890_config', 'h890_config_2', 'h890_config_2_rescan',
-                          'h890_config_rescan'])
+                         sorted(['h890_config', 'h890_config_2', 'h890_config_2_rescan',
+                                 'h890_config_rescan', *self.BARE_CONTAINERS_NAMED_EZHEX]))
         self.assertEqual(len(self.CONFIGS), 13)
 
     def test_every_config_verifies_its_own_split(self):
