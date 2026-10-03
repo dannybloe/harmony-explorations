@@ -112,7 +112,7 @@ import { blockOfStatedCode, longPressBlockOfStatedCode, statedCode, statedProtoc
 import { TOUCH_AREA_LENGTH, type TouchArea, type TouchPage, touchPages } from './tables.ts';
 import {
   deviceListRowMode, deviceListRows, deviceModeMarker, devices as deviceInventory, FOUR_SLOT_ITEMS,
-  fourSlotCellAt, FOUR_SLOT_LABEL_Y, POWER_PROPERTY,
+  fourSlotCellAt, FOUR_SLOT_LABEL_Y, INPUT_PROPERTY, POWER_PROPERTY,
   FOUR_SLOT_LEFT_X, FOUR_SLOT_RIGHT_END, FOUR_SLOT_ROWS, FOUR_SLOT_SCREEN_WIDTH, FOUR_SLOT_STORED_ORDER,
   TWO_ROW_LABEL_Y,
 } from './inventory.ts';
@@ -257,7 +257,8 @@ const ACTION_TABLE_SLOT = 10;
 /** One past the highest variable a state write can name: the index is the opcode's low seven bits,
  *  `actions.ts`, so 128 is where the write becomes an instruction of a different band. */
 const STATE_WRITE_LIMIT = 128;
-/** Tag 5's handler, which no reading names, so it is spelled here rather than guessed at a call. */
+/** Tag 5's handler, what the activity switch runs when the activity asked for is the one already
+ *  running, section 313. Spelled here because the readers name only tag 1, `ACTIVITY_START_TAG`. */
 const HANDLER_TAG_RESUME = 5;
 // **`FIRMWARE_STATE_VARIABLE_MAX` is imported rather than restated**, and this file declared its own
 // `FIRMWARE_STATE_VARIABLE_MAX = 12` beside it until 6 September 2026. The two were equal and the pairing was
@@ -1164,9 +1165,27 @@ export interface ComposeActivity {
   readonly leaveList?: number;
   /**
    * What tag 5 runs. Tag 5 is on all 50 activities and **always runs a real list**, so it cannot be
-   * the null instruction the way tag 2 can, and what fires it is not established.
+   * the null instruction the way tag 2 can. What fires it is read now, section 313: the activity
+   * switch runs it when the activity asked for is the one already running, so it is what picking the
+   * running activity again from the menu or an activity key does. This said "what fires it is not
+   * established" until section 313.
    *
-   * What is measured is the envelope, section 273: **the state writes in a tag 5 list are a subset
+   * **On the Harmony 600, 650 and 700, with `screen` given, omitted builds Logitech's own shape**,
+   * section 313, measured on 43 of the 43 activities Logitech compiled for those models: the start
+   * variable set to 1, the enter list's **input** writes in the enter list's order, the flag set to 1,
+   * the working screen entered directly, and the start variable back to 0. No start up screen, no power
+   * write and no write of the activity counter, which is already right. Where tag 1 defers its working
+   * screen behind `3F D000` so it waits for the infrared ahead of it, tag 5 runs that step directly,
+   * which is Logitech's choice too; ours enters the working screen itself, because a composed activity
+   * has no Remote Assistant branch to run instead, the form `h600_config` compiles.
+   *
+   * **Elsewhere omitted still points it at the enter list**, section 273's default and the reasoning
+   * below, which replays the whole start including the start up screen. That includes the Harmony
+   * One: a first look, which is not a test, finds its own tag 5 lists follow the same rule once the
+   * lists they call are compared by content rather than by number, and until that is a test the
+   * Harmony One keeps the default.
+   *
+   * What is measured over every architecture is the envelope, section 273: **the state writes in a tag 5 list are a subset
    * of the enter list's, on 50 of 50**, and the subset is **empty** on 24 of them. One candidate
    * rule dies on that same measurement, so it is not used here: "the enter list without the power
    * writes" matches 0 of 50. A second, "a **prefix** of the enter list", was written up as dying
@@ -1217,6 +1236,11 @@ export interface ComposedActivity {
   enterList: number;
   /** The list a menu row has to run: it selects the set, and the set's tag 1 does the rest. */
   selectList: number;
+  /**
+   * The list tag 5 runs, picking the activity again while it runs: the caller's, the arch 14 list of
+   * Logitech's shape, or the enter list, in that order of preference. Section 313.
+   */
+  resumeList: number;
   /** The label, carried through for the screen half to draw. Nothing in these bytes holds it. */
   label: string;
 }
@@ -1434,7 +1458,41 @@ export function composeActivity(c: Container, activity: ComposeActivity): Compos
     new Writer(7).u8(2).u16(DEFERRED.operand).u8(DEFERRED.opcode)
       .u16(showList).u8(ACTION_LIST_INDEX_OPCODE).bytes,
   ];
-  const bodies = [enterBody.bytes, selectBody.bytes, ...extra];
+  // Tag 5, picking the running activity again, section 313. On arch 14 with a screen, and only when the
+  // caller names no list of its own, it gets a list of its own in Logitech's shape: `S := 1`, the input
+  // writes, `F := 1`, the working screen entered directly, `S := 0`. What it leaves out is the point:
+  // the start up screen, which tag 1 enters first and would show again to somebody who only picked the
+  // activity a second time; every power write, so nothing is switched; and the counter write, which
+  // already holds this activity. The inputs stay because Logitech keeps them. What they are for is a
+  // reading rather than a measurement: putting a device back on the activity's input after somebody
+  // changed it by hand, which needs a write of a variable's current value to fire its transition, and
+  // whether it does is unread, section 313.
+  //
+  // **An input is recognised by its name**, `deviceVariables`' property, since that is the only thing
+  // in the file that says what a variable tracks. A target whose property is neither is left out: no
+  // configuration Logitech compiled for these models writes any other property in a start, so there is
+  // no example to follow, and leaving it out keeps tag 5's writes inside tag 1's, which is the
+  // envelope section 273 measured on every architecture.
+  //
+  // The inputs are written **inline** in the targets' own order, the same instructions the enter list
+  // carries. Logitech's tag 5 reuses whatever tag 1 has, an inline write or a call to a list of them,
+  // and our tag 1 writes every target inline, so this is that rule applied to ours.
+  const ownResume = fourSlot && screen !== undefined && activity.resumeList === undefined;
+  const inputs = new Set(deviceVariables(c).filter((one) => one.property === INPUT_PROPERTY)
+    .map((one) => one.index));
+  const resumeTargets = activity.targets.filter((one) => inputs.has(one.variable));
+  const resumeBody = new Writer(1 + 3 * (4 + resumeTargets.length));
+  if (ownResume) {
+    resumeBody.u8(4 + resumeTargets.length);
+    resumeBody.u16(1).u8(STATE_WRITE_BASE + (screen.startVariable as number));
+    for (const target of resumeTargets) resumeBody.u16(target.value).u8(STATE_WRITE_BASE + target.variable);
+    resumeBody.u16(1).u8(STATE_WRITE_BASE + (screen.flagVariable as number));
+    resumeBody.u16(screen.workingMode).u8(ENTER_MODE);
+    resumeBody.u16(0).u8(STATE_WRITE_BASE + (screen.startVariable as number));
+  }
+  const bodies = [enterBody.bytes, selectBody.bytes, ...extra, ...(ownResume ? [resumeBody.bytes] : [])];
+  // It is the last list appended, so its index is the first list's plus everything before it.
+  const ownResumeList = firstList + bodies.length - 1;
 
   const listsAt = actionTable.start;
   const listsHole = relocate(current, listsAt, bodies.reduce((sum, one) => sum + one.length, 0));
@@ -1451,7 +1509,8 @@ export function composeActivity(c: Container, activity: ComposeActivity): Compos
   //
   // A tagged list in the narrow form: `u8 count` then `{ u8 tag; u16 operand; u8 opcode }`. Three
   // handlers of event type 0 and one press per key.
-  const resumeList = activity.resumeList ?? enterList;
+  // A caller's own list wins, then the arch 14 list built above, then section 273's default.
+  const resumeList = activity.resumeList ?? (ownResume ? ownResumeList : enterList);
   const entries: { tag: number; operand: number; opcode: number }[] = [
     { tag: HANDLER_TAG_ENTER, operand: enterList, opcode: ACTION_LIST_INDEX_OPCODE },
     activity.leaveList === undefined
@@ -1549,7 +1608,7 @@ export function composeActivity(c: Container, activity: ComposeActivity): Compos
   }
 
   return {
-    bytes: restamped(nameHole.bytes), activity: value, set, enterList, selectList,
+    bytes: restamped(nameHole.bytes), activity: value, set, enterList, selectList, resumeList,
     label: activity.label,
   };
 }

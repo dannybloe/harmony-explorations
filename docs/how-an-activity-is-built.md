@@ -110,15 +110,19 @@ the same three:
 *The check that can fail*: every activity entry has all three.
 
 **P3.** Tag 5 is present on every activity on every architecture, and a composer must emit it. **What
-fires it** is not established and is the largest hole in this document. What it **does** was already
+fires it** is read since section 313, picking the activity that is already running, and this called it
+the largest hole in this document until then. What it **does** was already
 read before this document was written, in `ACTIVITY_START_TAG`'s own docstring, and this section said
 it was unidentified for a day: over the corpus it re-sends the inputs with no power change.
 
 **Section 273 bounds what a composer may put there.** Tag 5 always runs a real list, so it cannot take
 the null instruction tag 2 can. Its **state writes** are a subset of the enter list's on 50 of 50, and
-the subset is **empty** on 24. So pointing tag 5 at the enter list, which `composeActivity` does when
-the caller says nothing, sits inside the measured envelope trivially; whether it is behaviourally
-right is still open.
+the subset is **empty** on 24. So pointing tag 5 at the enter list sits inside the measured envelope
+trivially, and it is not what Logitech compiles: it replays the whole start, start up screen and power
+writes included, where Logitech's re-pick leaves both out; what that looks like on a remote is still a
+prediction for the bench. `composeActivity` still does it where it cannot do better, and on the
+Harmony 600, 650 and 700 with a screen it builds Logitech's own list instead, section 313's rule: the
+start variable, the input writes, the flag and the working screen, nothing switched.
 
 Two tighter readings were checked. "The enter list without the power writes" matches 0 of 50 and is
 dead. "A prefix of the enter list" **holds on 28 of 50**, of which 24 are the empty case, so it is
@@ -318,7 +322,8 @@ composer badly wrong about an activity like that one, which is mostly its own bi
 
 ### What this leaves open
 
-* what tag 5 is for, which no specimen answered
+* what tag 5 is for, which no specimen answered, until section 313 read it in the firmware: picking
+  the activity that is already running
 * the 12 inline sends, now located on arch 8 and arch 9 and still unexplained
 * which physical keys the four arch 14 activity scan codes are, and why that architecture binds two
 * whether Logitech's generator renumbers activities on a full compile, which is what would decide

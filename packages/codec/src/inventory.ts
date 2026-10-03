@@ -2601,6 +2601,13 @@ export interface DeviceDelays {
  */
 export const POWER_PROPERTY = 'Power';
 
+/**
+ * The base slot 13 property whose value is the input a device is set to, the same split as
+ * `POWER_PROPERTY`. Section 313's rule for tag 5, picking the running activity again, is stated in
+ * these two words: every input write of the start stays and every power write goes.
+ */
+export const INPUT_PROPERTY = 'Input';
+
 /** The transition that switches a device on: its off value to its on value. */
 const POWER_OFF = 0;
 const POWER_ON = 1;

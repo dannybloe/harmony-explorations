@@ -40935,6 +40935,18 @@ transition, which is unread. Both are predictions for the bench, not measured.
 Tag 5 for a composed activity: `S := 1`, the enter list's input steps, `F := 1`, the working screen
 step, `S := 0`. No start up screen, no power, no `CurrentActivityState`, no `3F D000`.
 
+`composeActivity` builds this on arch 14 when it is given a screen and no tag 5 list of its own. The
+input steps are the targets whose variable's property is `Input`, inline and in the targets' order,
+and the working screen step is `7E` with the working mode, since a composed activity has no Remote
+Assistant branch. Checked on `h650_config_region`, `h600_config`, `calibration_h600` and
+`h700_config`: each host's first Logitech activity is rebuilt from the power and input writes of its
+own tag 1, and the composed tag 5 passes the same predicate as the 43 and equals the Logitech one step
+for step, the same variables written with the same values in the same order, once a call to a list
+of input writes is read as the writes it holds and the working screen step is named rather than
+compared. That step is `7E` in both on `h600_config` and the Remote Assistant's branch in Logitech's
+on the other three. Without a screen, and on every other architecture, the composer still points tag
+5 at the enter list.
+
 ### Scope, decision 16
 
 The switch routine is read on arch 12 and arch 14. The Harmony 525's image is not checked, and the
@@ -40954,7 +40966,10 @@ re-picking a Logitech activity showing its start up screen.
 * `packages/codec/test/inventory.test.ts`, "picking the running activity again runs tag 5": 43 of 44,
   and the misfit named. A sentence audit of the first draft widened it from nine containers to
   fourteen, added the inline power and input checks, and corrected the start variable and `F`, which
-  the draft called per activity.
+  the draft called per activity. Its predicate lives in `packages/codec/test/tagfive.ts` since the
+  composer started building the list, so the corpus test and the composer's test run one copy.
+* `packages/codec/test/compose.test.ts`, "picking a composed activity again on a Harmony 650, 600
+  and 700 runs the tag 5 list Logitech compiles": the composer's half, on four hosts.
 * `ACTIVITY_START_TAG`'s docstring corrected in place.
 
 ## 314. Which activity a key starts is one entry in a key map that is always installed

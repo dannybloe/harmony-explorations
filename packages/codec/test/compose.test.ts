@@ -15,6 +15,7 @@ import { IMAGES, PARSEABLE_EXCLUDED, load, require_, skipUnless, skipWithoutLab 
 import {
   ComposeError,
   DEVICE_QUANTITY_DEFAULT,
+  INPUT_PROPERTY,
   firmwareStateVariableMax,
   IR_PULSE_MARK,
   IR_PULSE_MAX,
@@ -102,6 +103,7 @@ import {
   payloadOf,
   bitmapReference,
 } from '../src/index.ts';
+import { startAndFlag, startTargets, tagFiveMisfit, tagFiveShape } from './tagfive.ts';
 
 /**
  * The goal device's commands, as the catalogue states them for the LG 42LM3400: power is a toggle
@@ -3085,6 +3087,89 @@ test('an activity composed on a Harmony 650, 600 and 700 opens on a start up scr
       assert.equal(taggedList(after, page.list)!.entries.length <= 4, true);
     }
   }
+});
+
+test('picking a composed activity again on a Harmony 650, 600 and 700 runs the tag 5 list Logitech compiles: its inputs and its working screen, nothing switched',
+     skipUnless(...FOUR_SLOT_ACTIVITY_HOSTS), () => {
+  // Section 313 and todo-compile-650 3.9. Each host's first Logitech activity is rebuilt by the
+  // composer from the device writes of its own tag 1, the same devices, the same values and the same
+  // order, so the two tag 5 lists can be compared instruction for instruction. What is normalised away
+  // is only what has to differ: the list numbers, and the working screen step, which is each activity's
+  // own mode and which on the Harmony 650 and 700 and `calibration_h600` is the Remote Assistant's
+  // branch where ours enters the screen itself, `tagFiveShape`.
+  let composed = 0;
+  for (const name of FOUR_SLOT_ACTIVITY_HOSTS) {
+    const c = parse(require_(name));
+    const reference = handlerSetRoles(c).indexOf('activity');
+    assert.ok(reference >= 0, `${name}: Logitech compiled an activity here`);
+    assert.equal(tagFiveMisfit(c, reference), undefined, `${name}: the reference has Logitech's shape`);
+    const targets = startTargets(c, reference);
+
+    const deviceMode = modeRecords(c)![deviceListRows(c)[0]!.mode]!;
+    const commands = deviceMode.pages.flatMap((page) => taggedList(c, page.list)!.entries.map((one) => one.operand));
+    // `calibration_h600` has no working screen page of one command or none to copy a background from,
+    // the reason the screen test above gives it four rows.
+    const rows = ['Power', 'Menu', 'Home', 'Info'].map((label, k) => ({ label, list: commands[k]! }));
+    const screen = composeActivityScreen(c, nextActivityValue(c), 'Play Audio', rows);
+    const built = composeActivity(parse(screen.bytes), {
+      label: 'Play Audio', targets,
+      screen: {
+        startupMode: screen.startupMode, workingMode: screen.mode, activity: screen.activity,
+        startVariable: screen.startVariable, flagVariable: screen.flagVariable, set: screen.set,
+      },
+    });
+    // The rest of the activity, so the check runs on what would be written: a menu row and its own
+    // device list where the host has a menu row to give it, which `calibration_h600` does not.
+    const rowed = name === 'calibration_h600' ? parse(built.bytes)
+      : parse(composeActivityMenuRow(parse(built.bytes), built.label, built.set).bytes);
+    const after = name === 'calibration_h600' ? rowed : parse(composeActivityDeviceList(rowed, built.activity).bytes);
+
+    // The same checks the corpus measurement makes of Logitech's 43, applied to ours.
+    // Without a menu row nothing binds the activity, so the role reader calls its entry the idle one;
+    // the tag 5 checks below read the entry directly and do not need the role.
+    assert.equal(handlerSetRoles(after)[built.set], name === 'calibration_h600' ? 'idle' : 'activity', name);
+    assert.equal(tagFiveMisfit(after, built.set), undefined, `${name}: the composed tag 5 has Logitech's shape`);
+    // Instruction for instruction against the reference, and the reference is untouched by the compose.
+    assert.deepEqual(tagFiveShape(after, built.set), tagFiveShape(c, reference), name);
+    assert.deepEqual(tagFiveShape(after, reference), tagFiveShape(c, reference), `${name}: the reference unchanged`);
+    // `S` and `F` are one per configuration, so both activities bracket their re-pick with the same two.
+    assert.deepEqual(startAndFlag(after, built.set), startAndFlag(c, reference), name);
+
+    // And literally: a list of its own, not the enter list, in exactly this order. The working screen is
+    // entered directly with `0x7E`, the form `h600_config` compiles, so there it is Logitech's opcode too.
+    assert.notEqual(built.resumeList, built.enterList);
+    const lists = after.actionLists()!;
+    const inputs = new Set(deviceVariables(after).filter((one) => one.property === INPUT_PROPERTY).map((one) => one.index));
+    assert.deepEqual(lists[built.resumeList]!.map((one) => [one.opcode, one.operand]), [
+      [0x80 + screen.startVariable!, 1],
+      ...targets.filter((one) => inputs.has(one.variable)).map((one) => [0x80 + one.variable, one.value]),
+      [0x80 + screen.flagVariable!, 1],
+      [0x7e, screen.mode],
+      [0x80 + screen.startVariable!, 0],
+    ]);
+    // Tag 1 is what it was: the start up screen first, every target, the deferred working screen.
+    const enter = lists[built.enterList]!;
+    assert.deepEqual(enter[0], { opcode: 0x7e, operand: screen.startupMode });
+    assert.equal(enter.length, 2 + targets.length + 1 + 3);
+
+    const report = coverage(after);
+    assert.equal(report.accounted, report.total, `${name}: every byte is claimed`);
+    assert.deepEqual(report.overlaps, [], `${name}: and no byte twice`);
+    assert.ok(trailerAgrees(after), name);
+    assert.equal(roundTrip(after).equal, true, `${name}: the emitter reproduces the composed file`);
+    assertStateTableConsistent(after);
+    composed += 1;
+  }
+  assert.equal(composed, 4);
+
+  // Where the shape cannot be built, section 273's default stays: with no screen there is no start
+  // variable, flag or working screen to bracket and enter, and a caller's own list always wins.
+  const c = parse(require_('h650_config_region'));
+  const target = deviceVariables(c).filter((one) => one.property === 'Power').at(-1)!;
+  const bare = composeActivity(c, { label: 'Play Audio', targets: [{ variable: target.index, value: 1 }] });
+  assert.equal(bare.resumeList, bare.enterList);
+  const given = composeActivity(c, { label: 'Play Audio', targets: [{ variable: target.index, value: 1 }], resumeList: 0 });
+  assert.equal(given.resumeList, 0);
 });
 
 test("an activity's own device list on a Harmony 600, 650 and 700 is the idle list with its devices first, 13 of 13",

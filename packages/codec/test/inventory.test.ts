@@ -83,6 +83,7 @@ import {
   stateVariables,
 } from '../src/index.ts';
 import { INLINE_DELAY_CONTAINERS } from '../bin/corpus.ts';
+import { tagFiveMisfit } from './tagfive.ts';
 
 /** `[sample, named variables, activities, devices, device ids in the names]`. */
 const INVENTORY: readonly [string, number, number, number, number][] = [
@@ -2127,64 +2128,29 @@ test("picking the running activity again runs tag 5: the start without its scree
      skipUnless(...RESELECT_CONTAINERS), () => {
   // Section 313. The firmware runs tag 5 when the activity asked for is the one already running,
   // which `tests/test_interpreter.py` reads on three images. This is what Logitech's compiler puts
-  // there on arch 14, measured against the same activity's tag 1, so a composer can build it.
-  const ENTER_MODE = 0x7e;
-  const key = (one: { opcode: number; operand: number }) => `${one.opcode}:${one.operand}`;
+  // there on arch 14, measured against the same activity's tag 1, so a composer can build it. The
+  // predicate is `tagFiveMisfit` in `tagfive.ts`, shared with the composer's test in
+  // `compose.test.ts` so the corpus's statement and the composer's check are one copy.
   let activities = 0;
   let shaped = 0;
   const misfits: string[] = [];
   for (const name of RESELECT_CONTAINERS) {
     const c = parse(require_(name));
     const sets = handlerSets(c);
-    const lists = c.actionLists();
-    assert.ok(sets !== undefined && lists !== undefined, name);
+    assert.ok(sets !== undefined && c.actionLists() !== undefined, name);
     const roles = handlerSetRoles(c);
-    const names = new Map((nameNodes(c) ?? []).map((one) => [one.index, one.name]));
-    const writes = (list: readonly { opcode: number }[], test: RegExp) => list.some((one) =>
-      one.opcode >= STATE_WRITE_BASE && test.test(names.get(one.opcode - STATE_WRITE_BASE) ?? ''));
-    sets.addresses.forEach((address, index) => {
+    sets.addresses.forEach((_, index) => {
       if (roles[index] !== 'activity') return;
       activities += 1;
-      const handlers = new Map((taggedList(c, address)?.entries ?? [])
-        .filter((one) => (one.tag & EVENT_MASK) === 0).map((one) => [one.tag, one]));
-      const start = lists[handlers.get(1)?.operand ?? -1] ?? [];
-      const again = lists[handlers.get(5)?.operand ?? -1] ?? [];
-      // Tag 1 reaches its working screen through a list deferred behind `3F D000`; tag 5 runs that
-      // list's second step directly, which is the screen itself where the configuration has no Remote
-      // Assistant, as on `h600_config`, and the assistant's branch where it has one. What tag 5 never
-      // holds is tag 1's opening step, the start up screen.
-      const deferred = start.filter((one) => one.opcode === ACTION_LIST_INDEX_OPCODE)
-        .map((one) => lists[one.operand] ?? [])
-        .find((one) => one[0]?.opcode === 0x3f && one[0]?.operand === 0xd000);
-      const working = deferred?.[1];
-      // The start variable: tag 1's first write of 1, which tag 5 must open with and close at 0.
-      const variable = start.find((one) => one.opcode >= STATE_WRITE_BASE && one.operand === 1);
-      const inStart = new Set(start.map(key));
-      const calledByAgain = again.filter((one) => one.opcode === ACTION_LIST_INDEX_OPCODE)
-        .map((one) => lists[one.operand] ?? []);
-      const ok = start[0]?.opcode === ENTER_MODE
-        && !again.some((one) => key(one) === key(start[0]!))
-        && variable !== undefined
-        && key(again[0] ?? { opcode: -1, operand: -1 }) === key(variable)
-        && key(again.at(-1) ?? { opcode: -1, operand: -1 }) === key({ opcode: variable.opcode, operand: 0 })
-        && working !== undefined && again.some((one) => key(one) === key(working))
-        && again.every((one) => inStart.has(key(one)) || key(one) === key(working!))
-        && !writes(again, new RegExp(`^${ACTIVITY_STATE_NAME}`))
-        // No power write, inline or in a list tag 5 calls, where tag 1 has both.
-        && !writes(again, /_Power_\d+$/)
-        && !calledByAgain.some((one) => writes(one, /_Power_\d+$/))
-        // And every input step of tag 1, inline or a call to a list writing an input, is in tag 5.
-        && start.filter((one) => (one.opcode >= STATE_WRITE_BASE && /_Input_\d+$/.test(names.get(
-          one.opcode - STATE_WRITE_BASE) ?? '')) || (one.opcode === ACTION_LIST_INDEX_OPCODE
-          && writes(lists[one.operand] ?? [], /_Input_\d+$/)))
-          .every((one) => again.some((other) => key(other) === key(one)));
-      if (ok) shaped += 1; else misfits.push(`${name}:${index}`);
+      if (tagFiveMisfit(c, index) === undefined) shaped += 1; else misfits.push(`${name}:${index}`);
     });
   }
   assert.equal(activities, 44);
   assert.equal(shaped, 43);
   // The one that does not fit is the activity our composer added to the Harmony 650, whose tag 5
-  // still points at its enter list, section 273's default.
+  // points at its enter list, section 273's default, which the composer used until it learned
+  // Logitech's shape. The container is what was written then, so it keeps the old shape; what the
+  // composer builds now is checked in `compose.test.ts`.
   assert.deepEqual(misfits, ['h650_post144_region:9']);
 });
 

@@ -3010,8 +3010,12 @@ A writer that changes the activity count changes both, and because the count is 
 **Tag 5's state writes are a subset of tag 1's**, on 50 of 50, and empty on 24, section 273. The
 tighter reading that they are a **prefix** holds on 28 of 50, 4 of the 26 that write anything, and on
 every activity of all four arch 8 containers. It always
-runs a real list and never the null instruction. What fires it is unread; what it does is a re-send of
-the inputs with no power change.
+runs a real list and never the null instruction. **What fires it is read**, section 313: the activity
+switch runs it when the activity asked for is the one already running. On arch 14 Logitech's compiler
+fills it with `S := 1`, tag 1's input steps, `F := 1`, the working screen step tag 1 defers taken
+directly, and `S := 0`, on 43 of 43 of its activities, with no start up screen, power write or activity
+write; `composeActivity` builds that list for an arch 14 activity with a screen. This said what fires
+it was unread until section 313.
 
 **The extra entry has no leave handler**, section 273, which is what lets it be recognised rather than
 only defined: it carries tags 1 and 5 on 15 of 15, where all 50 activity entries carry exactly 1, 2 and
