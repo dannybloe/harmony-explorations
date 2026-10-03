@@ -863,7 +863,7 @@ programmed with the same television, and the 650 came back with the same two cod
 word, and every other at three. Twelve more devices with holds from 0.3 to 15 seconds, put through
 Logitech's compiler, and a fourth round chosen to tell three explanations apart, show one rule: as
 many copies as start inside the hold, timing each copy at the length Logitech's own protocol definition
-states rather than the length it is sent at, sections 306 to 308. It gives all 27 held records. The
+states rather than the length it is sent at, sections 306 to 308. It gives all 27 of these long press versions. The
 television's codes are sent 7 to 9 ms shorter than their family's stated length, which is why they get
 one copy fewer than a plain count would give. One record was predicted ahead that only this rule got
 right, and a second reading, whole copies for the Panasonic codes alone, still fits as well.
@@ -872,7 +872,7 @@ compiler wrote it, word for word, on 26 of the 27; the 27th is a family whose pr
 A device composed with its catalogue power steps sends those records when it switches, and building them
 found our general block speller ending one family's codes with two words in the wrong order, now fixed
 and checked over every block in the corpus, section 309. On the Harmony 650 itself, pointing the
-television's device mode Power On key at the held version, one byte, made it switch the television on.
+television's device mode Power On key at the long press version, one byte, made it switch the television on.
 At the bench the television itself needs its power button held for about half a second, four repeats,
 so Logitech's second is a margin of about two; the 650's device mode Power On, three repeats, leaves it
 off.

@@ -39,7 +39,7 @@ import { biphaseFrames, blockCopies, frameKey, frameSegments, framesOfPulses, fr
 import { pulsesOfWords } from '../src/irda.ts';
 import { compiledBlockWords } from '../src/compose.ts';
 import { keyCodes } from '../src/inventory.ts';
-import { heldBlockOfStatedCode, heldFramesOfStatedCode, pulsesOfStatedCode, statedProtocol, timingsOf } from '../src/stated.ts';
+import { longPressBlockOfStatedCode, longPressFramesOfStatedCode, pulsesOfStatedCode, statedProtocol, timingsOf } from '../src/stated.ts';
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 
@@ -2304,10 +2304,10 @@ test('every held power record of the test devices in sections 306 to 308 holds a
       assert.equal(statedFrames(family, step.holdMs!, 'mean'), held, `${one.file} ${one.power} ${family}`);
       // The library's count, from the generated table and the code's own slots, against this test's own
       // reading of the raw definition: two derivations that share nothing but the archive.
-      assert.equal(heldFramesOfStatedCode(command.keycode, step.holdMs!), held, `${one.file} ${one.power} library`);
+      assert.equal(longPressFramesOfStatedCode(command.keycode, step.holdMs!), held, `${one.file} ${one.power} library`);
       // And the block itself, word for word against the record Logitech's compiler wrote, terminator
       // included. A family with no measured press block is refused rather than built.
-      const block = heldBlockOfStatedCode(command.keycode, step.holdMs!);
+      const block = longPressBlockOfStatedCode(command.keycode, step.holdMs!);
       if (block === undefined) refused.push(`${one.file} ${family}`);
       else {
         const built = [...compiledBlockWords(block).map((w) => (w.mark ? IR_PULSE_MARK : 0) | w.microseconds), 0];

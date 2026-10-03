@@ -160,6 +160,15 @@ instead of going through the number sender. Sections 154 and 156.
 `NEC2`, `Sony 12 Bit` and so on. `packages/codec/src/protocols.ts` is the measured table of them,
 and each entry states which route measured it. Sections 157 to 169.
 
+**long press version** (our name). A power code the remote sends over and over for a fixed time on
+one tap, as if the button on the device's own remote were held that long: a television whose
+catalogue entry says "hold power for one second" gets the code seven times. Logitech's compiler gives
+an activity's power step this version and gives device mode's power keys the ordinary press. Danny's
+name for it, asked for on 3 October 2026; the code calls it `longPressBlockOfStatedCode`, and sections
+306 to 309 call the same thing a held record. **Not the held block**, which is the part of a code that
+repeats while a key is kept down, as on volume, and not Logitech's own "long press" feature on later
+remotes, where holding a button runs a different action.
+
 **lead in** (our name). The silence Logitech's generator opens every once block with, 50 ms on most
 commands and longer on ones that get a settling time. A generator convention, not a format
 constraint. Section 174.

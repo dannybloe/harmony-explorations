@@ -40517,6 +40517,12 @@ reason for todo 4.3.4.
 
 ### On the Harmony 650, the television's own Power On key
 
+**Named the long press version from here on**, at Danny's request, in conversation, in `todo.md`, in
+`docs/status.md` and in the code, where the two functions are `longPressFramesOfStatedCode` and
+`longPressBlockOfStatedCode`. This section and the three before it call it a held record and keep that
+wording as written. It is not the held block, the repeat while a key is down.
+
+
 **The held record switches the television on from device mode, where the ordinary press does not.**
 Composing a seventh device onto the Harmony 650 was refused, its device list's last page being full and
 a new one not composed on arch 14, so the same question was put to the device already there. On the
@@ -40548,7 +40554,7 @@ family and then measured over every block of the corpus, where it is told apart 
 
 The held layout: arch 14 (Harmony 650 and 700) compiles only, the same 27 records as section 308.
 Families with several repeat segments or more than two cells are not among them, a hold shorter than an
-ordinary press is refused, and `heldBlockOfStatedCode` assumes the press's frames are the code's walk in
+ordinary press is refused, and `longPressBlockOfStatedCode` assumes the press's frames are the code's walk in
 order, checking only that there are enough of them. The spelling: arch 8, 12 and 14, and arch 9 does not
 end a block in a microsecond. The power step without a hold: three devices of one arch 14 compile.
 
@@ -40581,8 +40587,8 @@ quantity and is spelled with the microsecond carved off after the split.
 
 ### Where it lands
 
-* `heldBlockOfStatedCode` in `packages/codec/src/stated.ts`, sharing its segment walk with
-  `heldFramesOfStatedCode` so the count and the block cannot disagree about where a frame ends.
+* `longPressBlockOfStatedCode` in `packages/codec/src/stated.ts`, sharing its segment walk with
+  `longPressFramesOfStatedCode` so the count and the block cannot disagree about where a frame ends.
 * `compiledBlockWords` in `packages/codec/src/compose.ts`, carving first, and `composeDevice` taking
   `powerOn` and `powerOff` steps; `compose-device.ts` reading them out of the catalogue.
 * `packages/codec/test/irframe.test.ts`, section 308's test: every held record rebuilt and compared word

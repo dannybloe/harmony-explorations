@@ -108,7 +108,7 @@ import {
 import type { Pulse } from './irframe.ts';
 import { IR_TABLE_SLOT, irGroups } from './ir.ts';
 import { irFrame } from './irframe.ts';
-import { blockOfStatedCode, heldBlockOfStatedCode, statedCode, statedProtocol } from './stated.ts';
+import { blockOfStatedCode, longPressBlockOfStatedCode, statedCode, statedProtocol } from './stated.ts';
 import { TOUCH_AREA_LENGTH, type TouchArea, type TouchPage, touchPages } from './tables.ts';
 import {
   deviceListRowMode, deviceListRows, deviceModeMarker, devices as deviceInventory, FOUR_SLOT_ITEMS,
@@ -146,7 +146,7 @@ export interface ComposeCommand {
   readonly leadInUs?: number;
   /**
    * A power step the catalogue holds for this many milliseconds, sections 306 to 309: the record is
-   * `heldBlockOfStatedCode`'s, its frames counted for the hold, with no lead in and no held block,
+   * `longPressBlockOfStatedCode`'s, its frames counted for the hold, with no lead in and no held block,
    * the way Logitech's compiler writes one. `held` and `leadInUs` do not apply and are refused.
    */
   readonly holdMs?: number;
@@ -320,7 +320,7 @@ export function composeIrGroup(
       if (command.held === true || (command.leadInUs ?? 0) !== 0) {
         throw new ComposeError('a held power step has no held block and no lead in');
       }
-      const block = heldBlockOfStatedCode(read, command.holdMs);
+      const block = longPressBlockOfStatedCode(read, command.holdMs);
       if (block === undefined) {
         throw new ComposeError(`${command.stated} cannot be composed held for ${command.holdMs} ms: `
           + 'its family has no measured press block or stated segment lengths, or the hold is shorter than a press');

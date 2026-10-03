@@ -456,7 +456,7 @@ export function pulsesOfStatedCode(
 /**
  * Which segment of its family's definition a stated item names: a frame by its position digit, a word by
  * itself. The one place the mapping lives, since `archive.ts` resolves a code's cycles with it and
- * `heldFramesOfStatedCode` resolves its lengths, and the two must name the same segments.
+ * `longPressFramesOfStatedCode` resolves its lengths, and the two must name the same segments.
  */
 export function segmentIdOf(item: StatedItem): string {
   return item.kind === 'frame' ? String(item.frame.index) : item.word;
@@ -465,8 +465,8 @@ export function segmentIdOf(item: StatedItem): string {
 /**
  * A stated code's segments as their stated lengths, `[microseconds, closes a frame]`, its first slot and
  * its second, or undefined where the family has no stated lengths, a slot names a segment it does not
- * hold, or the second slot closes no frame. The one walk `heldFramesOfStatedCode` and
- * `heldBlockOfStatedCode` share, so the count and the block cannot disagree about where a frame ends.
+ * hold, or the second slot closes no frame. The one walk `longPressFramesOfStatedCode` and
+ * `longPressBlockOfStatedCode` share, so the count and the block cannot disagree about where a frame ends.
  */
 function segmentWalkOf(read: StatedCode):
   { start: readonly (readonly [number, boolean])[]; repeat: readonly (readonly [number, boolean])[] } | undefined {
@@ -492,9 +492,9 @@ function segmentWalkOf(read: StatedCode):
  * Undefined where the family has no stated lengths, a slot names a segment it does not hold, or the
  * second slot closes no frame, which would never end. **Nothing here applies a floor**: whether a hold
  * shorter than an ordinary press sends fewer frames than the press is unmeasured, so a caller composing
- * one has to decide, and `heldBlockOfStatedCode` refuses.
+ * one has to decide, and `longPressBlockOfStatedCode` refuses.
  */
-export function heldFramesOfStatedCode(code: string | StatedCode, holdMs: number): number | undefined {
+export function longPressFramesOfStatedCode(code: string | StatedCode, holdMs: number): number | undefined {
   const read = typeof code === 'string' ? statedCode(code) : code;
   if (read === undefined || !(holdMs > 0)) return undefined;
   const walk = segmentWalkOf(read);
@@ -594,8 +594,9 @@ export function blockOfStatedCode(
 const HELD_FRAME_GAP_US = 10000;
 
 /**
- * The block of a power step the catalogue holds for `holdMs`: as many frames as Logitech's compiler puts
- * in it, `heldFramesOfStatedCode`, laid out the way its held records are, section 309.
+ * The long press version of a power code, the block of a power step the catalogue holds for `holdMs`,
+ * which the remote sends whole on one tap: as many frames as Logitech's compiler puts
+ * in it, `longPressFramesOfStatedCode`, laid out the way its held records are, section 309.
  *
  * **What their records hold**, read off all 27 held records of sections 306 to 308: one block and no
  * held or tail pointer, no lead in silence, and the ordinary press's frames, the ones carrying the code's
@@ -616,12 +617,12 @@ const HELD_FRAME_GAP_US = 10000;
  * an ordinary press, since whether a hold that short sends less than a press is unmeasured. Measured on
  * arch 14 (Harmony 650 and 700) only.
  */
-export function heldBlockOfStatedCode(
+export function longPressBlockOfStatedCode(
   code: string | StatedCode, holdMs: number, periodNs?: number,
 ): Pulse[] | undefined {
   const read = typeof code === 'string' ? statedCode(code) : code;
   if (read === undefined) return undefined;
-  const count = heldFramesOfStatedCode(read, holdMs);
+  const count = longPressFramesOfStatedCode(read, holdMs);
   const walk = segmentWalkOf(read);
   const press = blockOfStatedCode(read, periodNs, 'once');
   if (count === undefined || walk === undefined || press === undefined) return undefined;

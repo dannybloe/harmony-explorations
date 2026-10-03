@@ -2754,7 +2754,7 @@ the duration. A frame's stated length is its segment's `TotalLength`, or else th
 and `NumberOfBits` times the mean of its two cell lengths; the frames are the definition's `KeyCode`, its
 `Start` segments and then its `Repeat` for as long as needed, an opening segment with no payload joining
 the frame after it. A frame is what lies between spaces over 10 ms, so a family that repeats a shorter
-frame counts those repeats. All 27 held records of the test devices in six compiles for a Harmony 700 and
+frame counts those repeats. All 27 long press versions of the test devices in six compiles for a Harmony 700 and
 a Harmony 650, ten families, arch 14 only. Where a code is sent much shorter than its stated length, the
 Panasonic power codes of `PanasonicV2 48 Bit` at 134.6 and 136.4 ms against 143.3, the hold can hold fewer
 frames than would start inside it at the sent length, as it does on 12 of their 13 records. **Unconfirmed**:
@@ -2771,10 +2771,10 @@ that wants byte identity with a compiled config follows them, and `compiledBlock
 * **Every once block opens with a lead in silence**, 2032 of 2032 across four samples spanning both
   generator eras: 50 ms on most commands, 500 ms or a second on the ones that get a settling time.
   A held block never leads, 0 of 67.
-* **A held power step's record is the ordinary press's frames cycled to the count**, section 309: no lead
+* **A held power step's record, the long press version, is the ordinary press's frames cycled to the count**, section 309: no lead
   in, the frames carrying the code's first slot once and the second slot's cycled to section 308's
   count, each followed by the gap the press gives it, the last gap getting back the microsecond the press
-  ends in. 26 of 27 held records rebuilt word for word, arch 14 only; `heldBlockOfStatedCode`, which
+  ends in. 26 of 27 rebuilt word for word, arch 14 only; `longPressBlockOfStatedCode`, which
   assumes the press's frames are the code's walk in order.
 * **A power step without a hold is the ordinary press without its lead in**, the same words otherwise,
   three devices of one compile for the Harmony 650.
