@@ -2262,9 +2262,14 @@ and `0x03` is unhandled.
 **Corrected by section NNN: a host can queue an action instruction on arch 14, by another command.**
 Command state `0x34`, selected by a version request with a payload, section 304, reads three bytes and
 pushes them onto the action queue through the routine the configuration's own instructions take, on
-the Harmony 600 and 650 0.2, the 650 0.4 and the 700 2.8. So "driving the remote from the host is not
-available"<!--superseded--> was wrong for actions: what is unhandled is `WRITE_MISC` selector 3, not
-action queueing. Queueing a key **event** is still unfound. Read, never sent.
+the Harmony 600 and 650 0.2, the 650 0.4 and the 700 2.5 and 2.8. So "driving the remote from the host
+is not available"<!--superseded--> was wrong for actions: what is unhandled is `WRITE_MISC` selector 3,
+not action queueing. **How the error came about**: the conclusion was drawn from one command, under
+upstream's name for the selector, and the sentence generalised a missing selector into a missing
+capability without looking for another command that reaches the queue; the version request's payload
+states were not read until section 304, and `0x34` not until section NNN. Command state `0xB1`, which
+writes any data byte, is a second host route to the same effect. Queueing a key **event** is still
+unfound. Read, never sent.
 
 The remaining request layouts came out of one derivation, each parser bounded by the next
 parser's entry address:
@@ -3751,9 +3756,10 @@ container alone. `0x0EA5A` reads three bytes and hands them on.
 | init, push, pop | `0x0E7D6`, `0x0E7F8`, `0x0E82C` | `0x0E3F4`, `0x0E416`, `0x0E44A` |
 
 120 bytes is **exactly 40 three byte instructions**, on both. So a config's action lists are a
-program that is spooled into a 40 instruction queue and drained by a separate loop, which is what
-`MISC_QUEUE_ACTION` in the USB command set is for: the host can push into the same queue. On arch
-14 that is command state `0x34` and not `WRITE_MISC` selector 3, which is unhandled there, section NNN.
+program that is spooled into a 40 instruction queue and drained by a separate loop, which is the
+queue libconcord's `MISC_QUEUE_ACTION` names for a host to push into. On arch 14 that selector,
+`WRITE_MISC` 3, is unhandled, and the host reaches the queue through command state `0x34` instead,
+section NNN.
 
 The executor is `0x0EB20` on the 700 and `0x0E73A` on the 600. It tests the queue for empty, pops
 three bytes into `0xD49`, `0xD4A`, `0xD4B` on both, and then:
@@ -40958,9 +40964,12 @@ a corner list, or whose rows do not enter the new device's mode.
 in"<!--superseded--> on the 650, which is the two row list's new page, and nothing on the remote enters
 that list: no `0x7E` in any arch 14 compile names it, no event map entry does, and the firmware makes a
 mode current from those two and the mode stack only. Composing into it matches Logitech and stays, but
-no person can page through it, so a page opened there cannot be seen. A corner list opens a page at
-the fifth device, which the 650's six device configuration is past, so the check on a remote needs a
-corner list going from four devices to five.
+no person can page through it, so a page opened there cannot be seen. A corner list opens its first new
+page at the fifth device, which the 650's six device configuration is past, so the check on a remote
+needs a corner list going from four devices to five. **How the error came about**: the two row list was
+the one list on the 650 that opened a page, so it was the one the falsification named, and this section
+took for granted that a list Logitech compiles is a list a person can reach, without asking what enters
+it; section 294 had already found that neither record of an activity does.
 
 ### Where it lands
 
@@ -42852,7 +42861,7 @@ two byte variable stating other values on an arch 14 compile.
 * `docs/config-format.md` under base slots 0, 13 and 14.
 ## NNN. The two row device list on a Harmony 600, 650 or 700 is compiled and nothing enters it
 
-**Date:** 3 October 2026. **Status:** confirmed in the configurations and in four firmware builds; not
+**Date:** 3 October 2026. **Status:** confirmed in the configurations and in five firmware builds; not
 checked on a remote, and nothing here needs a remote to check it.
 
 **Asked for by `todo-compile-650.md` 2.3.** Section 312 composed a new device list page where the last
@@ -42863,7 +42872,8 @@ hardware check is.
 **Sources, checked before the work.** Sections 36 and 37, which named the event map and the mode table;
 285 and 294, which found the two row list and said it is entered by neither record of an activity; 289
 and 316, the activity menu; 304, the command states; 311, the mode stack and the mode switch on the 600;
-312. The firmware images `h600_code_complete`, `h650_bench_code`, `h650_code` and `h700_code`. The
+312. The firmware images `h600_code_complete`, `h650_bench_code`, `h650_code` and `h700_code`, and the
+Harmony 700's 2.5 build cut out of the bench unit's internal flash as read before section 297. The
 manuals for the 600, 650 and 700 in the lab's `Docs`, whose text describes **one** device list, reached
 with the centre button from an activity or the activity menu, and paged with the arrows on the 650; a
 read only investigation before this section looked at their pictures, which draw a corner list only,
@@ -42902,30 +42912,40 @@ On every one of the thirteen and the seventh base:
   can sit, an action list, a tagged list entry, a timer and a screen program's queue instruction, so
   the three bytes `lo hi 0x7E` are searched over the whole container rather than through a reader. The
   count is **0**. A coincidental match could only make a mode look entered, so zero is the strong
-  direction. **The control is every other list in the same files**: all 53 corner device lists and all
-  179 row menus of the thirteen are named by at least one `0x7E`, 58 and 192 with the seventh base.
+  direction. **The control is the corner lists and row menus of the same files**: all 53 corner device
+  lists and all 179 row menus of the thirteen, 232 lists, are named by at least one `0x7E`, 58 and 192
+  with the seventh base. It is not a control for the firmware's own screens below the event block, two
+  bullets down.
 * **No event map entry names it.** The event map's thirty values and its fallback are 14 to 43 on the
   600 and 650 and 19 to 48 on the 700, contiguous, section 36, and the list sits far above.
 * **It is the only such mode above the event block.** Every other mode above the block is named by an
   `0x7E` somewhere in its file. Below the block sit the firmware's own numbered screens, "Update
   Successful", the learning prompt and "Unable to charge batteries" among them, and several of those
-  are named by no instruction the readers walk either; how they are shown is not read here. The byte
-  search says nothing down there, since a small mode number followed by `0x7E` turns up by
-  coincidence: it finds no enter for between none and three of them per configuration.
+  are named by no instruction the readers walk either, six to eight per configuration; how they are
+  shown is not read here. The byte search says little down there, since a small mode number followed
+  by `0x7E` turns up by coincidence: it finds no enter for between none and three of them per
+  configuration.
 * **Nothing shares its pages** with another mode, neither a page list nor a program, so its rows reach
   no screen through a mode that is entered.
-* **Nothing builds an instruction at run time.** `0x7B`, and `0x1F` with an `0xF7` operand, assemble
-  an instruction out of a variable, sections 34 and 72; neither occurs in any of the 441215 instructions
-  the readers walk over the fourteen files.
+* **No configuration instruction builds one at run time.** `0x7B`, and any opcode from `0x1F` to
+  `0x3E` whose operand's high byte is `0xF7`, assemble an instruction out of a variable, sections 34
+  and 72; neither occurs in any of the 441215 instructions the readers walk over the fourteen files.
+  That covers the configuration's own instructions only. The firmware pushes instructions of its own
+  onto the queue as well, through the enqueue below from eight call sites and through a second push
+  routine, `0xE650` on the 600's 0.2 build, from five; two of those sites, `0x1251A` and `0x16336`,
+  push an instruction copied out of data memory, a table walked from `0x3B7` to `0x3D5` and the three
+  bytes from `0xD3D`. None of them was traced to what fills those bytes.
 
 It is wired as a device list in every respect a key can see: a page per two devices, each device on
 both buttons of its row, "Activity" as the bottom word on every page, and its record's one entry the
-centre key's press, tag `0x99`, running the same `0x72` as every corner list's centre key.
+centre key's press, tag `0x99`, running the same `0x72` as every corner list's centre key. The corner
+lists' records carry one entry more, tag `0x2D` running a `0x73`, which the two row list's lacks; what
+it does is not read here.
 
 ### The firmware enters a mode from three places
 
-On the Harmony 600's 0.2 build the routine that makes a mode current is `0x147BA`, and it is called
-from exactly four places:
+On the Harmony 600's 0.2 build the routine that makes a mode current is `0x147BA`, and it has four
+direct callers, a `CALL`, `RCALL`, `GOTO` or branch whose stated target it is:
 
 | caller | what it hands over | from |
 |---|---|---|
@@ -42934,41 +42954,47 @@ from exactly four places:
 | `0x14C10` | the matched entry's value, `0xD1A` | the event map walker at `0x14BA4`, section 36 |
 | `0x14C42` | the fallback, `0xD14` | the same walker when no key matches |
 
-Those four are the only writes of the argument pair `0xAD`/`0xAE`, and the current mode, `0xA8`/`0xA9`,
-is written at `0x14816` from the argument and nowhere else but the two resets to `0xFEFE` at `0x1477C`
-and `0x14802`. The mode stack is pushed by `0x07 0xFFFD` from the current mode itself, so it can only
+Those four are the only direct writes of the argument pair `0xAD`/`0xAE`, each writing the low byte
+from its source and the high byte from the source's high byte, and the current mode, `0xA8`/`0xA9`, is
+written at `0x14816` from the argument and nowhere else but the two resets to `0xFEFE`, at `0x14802`
+inside the switch and at `0x1477C` in a routine of its own just before it. The mode stack is pushed by `0x07 0xFFFD` from the current mode itself, so it can only
 hand back a mode that was already current. **So a mode the firmware can make current is one an `0x7E`
-names, one the event map names, or one that was current before**, and the two row list is none of
-them. The tracer sees `MOVFF` and banked access and not `FSR`, so "nothing else writes" is about
-direct writes.
+names, one the event map names, or one that was current before**, as far as the code states its
+targets, and the two row list is none of them. Two things this cannot see: a computed jump into the
+switch, which no list of callers shows, and a write through `FSR`, since the tracer sees `MOVFF` and
+banked access only, so "nothing else writes" is about direct writes.
 
-**The same shape is on every arch 14 build in the lab**, located by the routine's first six bytes,
-which occur once in each:
+**The same shape is on every arch 14 application build in the lab**, located by the routine's first
+six bytes, which occur once in each:
 
 | build | mode switch | its four callers | current mode | argument |
 |---|---|---|---|---|
 | Harmony 600 0.2 | `0x147BA` | `0x0E8FA`, `0x0F26E`, `0x14C10`, `0x14C42` | `0x0A8` | `0x0AD` |
 | Harmony 650 0.2, the bench unit's | `0x147BA` | the 600's | `0x0A8` | `0x0AD` |
 | Harmony 650 0.4, the published one | `0x1654C` | `0x0ECD8`, `0x0F6B2`, `0x169A2`, `0x169D4` | `0x0D4` | `0x0D9` |
+| Harmony 700 2.5, the bench unit's before section 297 | `0x14AB8` | `0x0E90C`, `0x0F280`, `0x14F0E`, `0x14F40` | `0x6E7` | `0x6EC` |
 | Harmony 700 2.8 | `0x1679E` | `0x0ECEA`, `0x0F6C4`, `0x16BF4`, `0x16C26` | `0xF28` | `0xF2D` |
 
 On each the argument is written only by the four callers, from the instruction's operand, the stack,
-`0xD1A` and `0xD14`, and the current mode only by the switch and two resets. The 700's 2.5 build and
-every safe mode image were not checked.
+`0xD1A` and `0xD14`, and the current mode only by the switch and two resets. The safe mode images
+were not checked.
 
 ### A host can enter it, and that corrects section 19
 
 **Command state `0x34`** reads three payload bytes and hands them, as an opcode and an operand, to the
 routine that pushes an action instruction onto the forty slot queue: `0xBEBE` calling `0xE628` on the
-600 and the 650's 0.2, `0xBF54` calling `0xE9FC` on the 650's 0.4 and `0xEA0E` on the 700's 2.8,
-decoded out of the sub-command switch with `chains.py`. That push is the one configuration instructions
+600 and the 650's 0.2 and `0xE63A` on the 700's 2.5, `0xBF54` calling `0xE9FC` on the 650's 0.4 and
+`0xEA0E` on the 700's 2.8, decoded out of the sub-command switch with `chains.py`. Each first calls
+the routine that hands over the next payload byte three times. That push is the one configuration instructions
 take: on the 700, section 34's `0x0EA5A` reads one instruction of an action list and jumps into
 `0xEA0E`. Section 304 lists `0x34` among the twenty parsed states and left it unread; a version request
 with a payload selects it. **So a host can queue any action instruction, `7E` and a mode number
 included**, and section 19's reading that arch 14 does not implement action queueing<!--superseded-->
 holds for `WRITE_MISC` selector 3 and not for the remote: the queue is reached another way. Nothing here
-has sent it, and `isReadOnlyReport` refuses it, being a version request with a payload. It is no route
-for a person, so the conclusion stands for the keypad and the screen.
+has sent it, and `isReadOnlyReport` refuses it, being a version request with a payload. **Command
+state `0xB1` is a second route**, section 304: it writes any byte of data memory, which reaches the
+argument, the current mode and the mode stack directly. Neither is a route for a person, so the
+conclusion stands for the keypad and the screen.
 
 ### What it means for todo-compile-650 2.3
 
@@ -42976,23 +43002,30 @@ Composing into the two row list **matches Logitech**, so section 312's calibrati
 person can see it**, so a page opened there cannot be checked by looking at the remote. The lists a
 person reaches are the corner lists, which the centre key under "Devices" enters, the idle list when no
 activity runs and each activity's own when one does, section 294, four devices to a page, so a corner
-list opens a page at the **fifth** device, and at the ninth. The Harmony 650's current configuration has six devices, its
-corner lists holding four and two, so a seventh fills a page and opens none. **2.3's hardware check
-needs a corner list going from four devices to five**: a configuration for the 650 with four devices,
-or one whose corner lists are otherwise full, and a fifth composed onto it. The Help key's "Select
-device" picker, mode 165 on `h650_panasonic_config`, is a corner list of its own, two pages of four and
-two; it was looked at on that one configuration only.
+list opens its first new page at the **fifth** device; that every fourth one after it opens another
+is arithmetic, not a measurement. The Harmony 650's current configuration has six devices, its corner
+lists holding four and two, so a seventh fills a page and opens none. **2.3's hardware check needs a
+corner list going from four devices to five**: a configuration for the 650 with four devices, or one
+whose corner lists are otherwise full, and a fifth composed onto it.
+
+The Help key's "Select device" screen, **the picker**, is a third kind of device list and is on all
+thirteen compiles, modes 131, 119, 139, 165, 293, 314, 219, 219, 131, 269, 268, 270 and 282 in the
+table's order, one page on the two 600 compiles and two on the rest. Its rows run `0x7E` directly
+rather than calling a list, so this section's definitions leave it out of the corner lists, and section
+312's composer does not grow it; whether it has to is not answered here.
 
 ### Section 312, corrected in place
 
 Section 312 listed, as a way to falsify it, a composed fourth page on the 650 that does not page in.
 Nothing shows the two row list, so that half of its falsification cannot be tested on a remote; it is
-corrected there.
+corrected there, with how the error came about: section 312 grew the one list that opened a page and
+took for granted that a list Logitech compiles is a list a person can reach.
 
 ### Scope, decision 16
 
-Arch 14 only: the Harmony 600, 650 and 700, on every compile and every firmware build the lab holds
-for them. The Harmony One's device list has no two row twin and was not looked at for this.
+Arch 14 only: the Harmony 600, 650 and 700, on every compile and every application build the lab
+holds for them, five builds. The safe mode images were not checked. The Harmony One's device list has
+no two row twin and was not looked at for this.
 
 ### Falsification
 
@@ -43006,6 +43039,7 @@ remote, any key or screen sequence that shows a device list two to a page.
   control, the event block, the one mode above it nothing enters, the shared pages and the run time
   builders.
 * `tests/test_gspm.py`, `TheModeSwitchTakesItsNumberFromThreePlaces`: the switch, its four callers, the
-  argument's four sources, the current mode's three writers, and command state `0x34`, on all four builds.
+  argument's four sources with both bytes, the current mode's three writers, and command state `0x34`
+  with its three payload reads, on all five builds.
 * `docs/config-format.md` under the arch 14 device list, `docs/usb-protocol.md`, sections 19 and 312
   corrected in place, `docs/how-a-harmony-works.md`, `docs/status.md` and `todo-compile-650.md`.

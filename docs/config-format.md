@@ -720,15 +720,18 @@ buttons or between a page and its copy.
 
 **Nothing enters the two row list**, section NNN, on the thirteen arch 14 compiles: no `0x7E` anywhere
 in the container names its mode, counted as the bytes `lo hi 0x7E` over the whole file, 0 on every
-compile against at least one for every corner list and every other row menu; no event map value is it;
-no page or program is shared with another mode; and no `0x7B` or `0x1F 0xF7xx` run time builder
-exists. The firmware makes a mode current only from an `0x7E` operand, the event map's value or
-fallback, or the mode stack, on all four arch 14 builds. Its mode, per compile: 166 `h600_config`, 167
+compile against at least one for every corner list and every row menu, 232 lists; no event map value
+is it; no page or program is shared with another mode; and no configuration instruction is a run time
+builder, `0x7B` or an opcode `0x1F` to `0x3E` with operand high byte `0xF7`. The firmware's mode switch
+has four direct callers and takes its number only from an `0x7E` operand, the event map's value or
+fallback, or the mode stack, on all five arch 14 application builds; a host can also queue an `0x7E`
+through command state `0x34` or write the mode bytes through `0xB1`, neither a route for a person. Its mode, per compile: 166 `h600_config`, 167
 `calibration_h600`, 179 `h650_config_region`, 226 `h650_panasonic_config`, 325 and 337 the 650's two
 power hold compiles, 283 both `h700_config`, 166 `h700_28_config_region`, 297, 295, 295 and 297 the
 700's four. Its record list is `0x72` under tag `0x99`, the corner lists' centre key operand. A page
 composed into it matches Logitech and is not visible on a remote; the corner lists, four to a page, are
-the device lists a person reaches.
+the device lists a person reaches, along with the Help key's "Select device" picker, whose rows run
+`0x7E` directly and which section NNN does not count as a corner list.
 
 **The activity menu is the two row layout too**, section 289, on the four configurations: each
 activity on both buttons of one row, 13 of 13, its label centred at y 35 or 79, 13 of 13, and each

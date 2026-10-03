@@ -316,7 +316,7 @@ have an argument parser and 54 an executor. Read so far:
 | `0x13 0xB0 hi lo` | read a byte of data memory |
 | `0x12 0xB9 byte` | write the byte to data memory `0x200` |
 | `0x11 0xBD` | program `0xFFFE` into internal `0x01F6C0` when that word's bit 0 is set |
-| `0x14 0x34 opcode hi lo` | push the action instruction `opcode` with operand `hi lo` onto the forty slot action queue, at parse time, through the push the configuration's own instructions take; on the 600 and 650 0.2, the 650 0.4 and the 700 2.8. Section NNN, read and never sent |
+| `0x14 0x34 opcode hi lo` | push the action instruction `opcode` with operand `hi lo` onto the forty slot action queue, at parse time, through the push the configuration's own instructions take; on the 600 and 650 0.2, the 650 0.4 and the 700 2.5 and 2.8. Section NNN, read and never sent |
 
 `hi` must be 0 for `0xB2` and `0xB3`: both store routines refuse a setting of `0xFF` or more. A
 settings read answers seven bytes, `0xF0 0x11 0xB2 0x01 0x01 0x01 value`, **measured on the Harmony
@@ -735,10 +735,11 @@ project is read only, so it belongs in the rails rather than in the toolkit. See
 `0x03` and `MISC_QUEUE_EVENT` as `0x09`. On the strength of those names, arch 14 does not
 implement action queueing<!--superseded--> through `WRITE_MISC`, and implements event queueing as a
 no-op that reports success. **Corrected by section NNN**: the action queue is reachable another way,
-command state `0x34`, in the table of the version request's payload family above. Either
-way **there is no event injection here**, so driving the remote from the host is not available<!--superseded-->
-and the button mapping experiment has to be done by hand at the keypad, as the roadmap already
-assumed.
+command state `0x34`, in the table of the version request's payload family above. What stays is
+that **there is no event injection here**: a key event cannot be queued from the host, so the button
+mapping experiment has to be done by hand at the keypad, as the roadmap already assumed. This said
+"driving the remote from the host is not available"<!--superseded--> until section NNN, which
+generalised the missing selector into a missing capability.
 
 That conclusion carries the same caveat as everywhere else in this document: the names are
 upstream's, and upstream's `MISC_RAM 0x06` was already wrong for this architecture. What is

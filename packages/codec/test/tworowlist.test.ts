@@ -14,7 +14,13 @@
  * high, opcode, so `lo hi 0x7E` finds an enter of the mode wherever it is stored, including in a
  * structure no reader here walks. A coincidental match could only make a mode look entered, never hide
  * an enter, so a count of zero is the strong direction. The control is that the same search finds every
- * other list of the same configurations.
+ * corner device list and every row menu of the same configurations, 232 lists over the thirteen
+ * compiles. It is not a control for the firmware's own numbered screens below the event block, where a
+ * small mode number followed by `0x7E` turns up by coincidence.
+ *
+ * **What the run time builder check covers is the configuration's own instructions.** The firmware
+ * also pushes instructions of its own onto the action queue, from several places, and those are not
+ * traced here or in the section.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -156,7 +162,7 @@ test('each arch 14 compile has exactly one two row device list, at these mode nu
   }
 });
 
-test('nothing in an arch 14 compile enters its two row device list, and the same search finds every other list',
+test('nothing in an arch 14 compile enters its two row device list, and the same search finds every corner list and row menu',
      skipUnless(...NAMES), () => {
   let corners = 0;
   let menus = 0;
@@ -206,9 +212,11 @@ test('the two row device list shares no page with another mode, and no instructi
      skipUnless(...NAMES), () => {
   let walked = 0;
   // Two routes the raw search cannot see. A page list or program shared with an entered mode would
-  // put its rows on a screen through that mode; there is none. And `0x7B`, or `0x1F` with an `0xF7`
-  // operand, assembles an instruction out of a variable and queues it, sections 34 and 39, which
-  // could enter a mode no byte names; neither occurs anywhere a reader here can walk.
+  // put its rows on a screen through that mode; there is none. And `0x7B`, or any opcode from `0x1F`
+  // to `0x3E` with an operand whose high byte is `0xF7`, assembles an instruction out of a variable
+  // and queues it, sections 34 and 72: below `0x65` the operand is a second opcode field, and the band
+  // `0x1F` to `0x3E` dispatches on its high byte, of which `0xF7` is the builder. Either could enter a
+  // mode no byte names, and neither occurs anywhere a reader here can walk.
   for (const name of NAMES) {
     const c = parse(require_(name));
     const records = modeRecords(c)!;
@@ -220,7 +228,7 @@ test('the two row device list shares no page with another mode, and no instructi
     let builders = 0;
     const look = (one: { opcode: number; operand: number }): void => {
       walked += 1;
-      if (one.opcode === 0x7b || (one.opcode === 0x1f && one.operand >> 8 === 0xf7)) builders += 1;
+      if (one.opcode === 0x7b || (one.opcode >= 0x1f && one.opcode <= 0x3e && one.operand >> 8 === 0xf7)) builders += 1;
     };
     for (const list of c.actionLists()!) list.forEach(look);
     for (const address of handlerSets(c)!.addresses) taggedList(c, address)!.entries.forEach(look);

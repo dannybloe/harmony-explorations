@@ -323,5 +323,5 @@ produce a config the remote accepts and mishandles.
   the Harmony One's is geometry, and none of it transfers**: four labelled corners, scans 8, 2, 9 and 34
   filled in that order, right hand labels ending at x 125, and one device list per configuration drawn
   in two rows with centred labels. **Nothing on the remote enters that two row list**, section NNN: a
-  composer writes it to match Logitech, and a check on a remote has to use a corner list, which opens a
-  page at the fifth device.
+  composer writes it to match Logitech, and a check on a remote has to use a corner list, which opens
+  its first new page at the fifth device.
