@@ -121,10 +121,11 @@ test('every arch 14 compile is laid out again byte for byte from its pieces',
     const out = layOutContainer(layout);
     assert.equal(firstDifference(out.bytes, c.blob), undefined, `${name} differs`);
   }
-  // One of the thirteen states October with day 0 and 30 September's weekday, which the reader
-  // refuses and the frame carries as the seven field bytes. Six others stamped on 1 October state
-  // day 1, so this is not how Logitech writes the 1st; why that one reads so is open.
-  assert.equal(raw, 1);
+  // None of the thirteen needs its stamp carried as raw field bytes. One did, `h650_panasonic_config`,
+  // whose stored day of 0 the reader refused until section 322 found the day counted from 0: it is
+  // Thursday 1 October 2026, and laying it out from that time gives Logitech's own bytes back above.
+  assert.equal(raw, 0);
+  assert.equal(takeApart(containerOf('h650_panasonic_config')).builtAt, '2026-10-01T14:32:27');
 });
 
 /**

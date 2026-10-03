@@ -1058,8 +1058,11 @@ test('base slot 13 starts with the firmware\'s own clock, seeded from the build 
     // `second` is its maximum, so the first seven records are second, minute, hour, day, weekday,
     // month and year, and all seven agree with base slot 3's timestamp.
     //
-    // The weekday's zero being a Saturday is not fitted either: base slot 3's own day of week byte is
-    // days since 1 January 2000 modulo 7, section 21, and that day was a Saturday.
+    // The expected values are computed from the date here, not read back from base slot 3's bytes, so
+    // the comparison is against the calendar: the day counted from 0 and the weekday from Sunday,
+    // section 322, which is how the firmware's calendar counts both. This computed days since 1 January
+    // 2000 against the day itself<!--superseded-->, which is the same two numbers on every date in
+    // the corpus because the reader was a day early too.
     let agreeing = 0;
     for (const [name] of INVENTORY) {
       const data = require_(name);
@@ -1070,13 +1073,13 @@ test('base slot 13 starts with the firmware\'s own clock, seeded from the build 
       const [date, time] = c.builtAt.split('T') as [string, string];
       const [year, month, day] = date.split('-').map(Number) as [number, number, number];
       const [hour, minute, second] = time.split(':').map(Number) as [number, number, number];
-      const days = Math.floor((Date.UTC(year, month - 1, day) - Date.UTC(2000, 0, 1)) / 86400000);
+      const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
       const expected: Array<[number, number, number]> = [
         [0, second, 59],
         [1, minute, 59],
         [2, hour, 23],
-        [3, day, 30],
-        [4, days % 7, 6],
+        [3, day - 1, 30],
+        [4, weekday, 6],
         [5, month - 1, 11],
         [6, year - 2000, year - 2000 + 1],
       ];

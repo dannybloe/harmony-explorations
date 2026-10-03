@@ -152,9 +152,11 @@ export interface ContainerLayout {
   skin: number;
   /**
    * When the configuration is built, `YYYY-MM-DDTHH:MM:SS`, or the record's seven field bytes as
-   * stored for a stamp the reader refuses. One Logitech compile here states October with day 0 and
-   * 30 September's weekday, where six others stamped on 1 October state day 1, so the cause is open,
-   * `todo-compile-650.md` 1.3.1; reproducing that compile has to carry the bytes.
+   * stored for a stamp the reader refuses. Every compile in the lab reads now: the one that did not, a
+   * Harmony 650 sync stamped on 1 October with a stored day of 0, is how the 1st is stored, since the
+   * day counts from 0 and the weekday from Sunday, `docs/findings.md` section 322. This said it held
+   * 30 September's weekday and that six others stamped on 1 October stored day 1; those six were made
+   * on 2 October. The bytes path stays for a damaged stamp, which a layout must still carry.
    */
   builtAt: string | Uint8Array;
   /** Defaults to `LAYOUT_FLASH_BASE`. */
@@ -222,7 +224,7 @@ export function buildTimestampSection(builtAt: string | Uint8Array): Uint8Array 
  * address naming a piece that is not in the layout, a base slot 17 that is not exactly the bank's
  * two byte bias, and a base slot 13 clock that disagrees with the stamp. The result is parsed
  * before it is returned and every container check `parse` makes has to pass, except base slot 3's
- * own when the stamp is given as field bytes the reader refuses, the day 0 stamp above.
+ * own when the stamp is given as field bytes the reader refuses, which no compile here needs.
  */
 export function layOutContainer(layout: ContainerLayout): LaidOut {
   if (layout.architecture !== LAYOUT_ARCHITECTURE) {

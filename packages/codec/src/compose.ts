@@ -3155,11 +3155,76 @@ export function composeDeviceScreen(
  */
 
 /**
- * The screen is 128 pixels wide; a label may run from its edge to the middle and no further. This is
- * the composer's own limit and not a measurement: the widest corner label on the arch 14
- * configurations is 59 pixels, the compiler cutting a longer name with `..`.
+ * The widest line a corner label draws in its page's label font, 59 pixels. This was 60 and was
+ * described as the composer's own limit rather than a measurement, until section 323 measured it:
+ * the widest such line on the 13 Logitech compiles for the Harmony 600, 650 and 700 is 59,
+ * `Simplink`, and `Antenna`, 60 pixels in that font, is drawn by the compiler in another font, the one
+ * case of the kind. Choosing a font is not composed, so a line past this is refused.
  */
-const FOUR_SLOT_LABEL_MAX = 60;
+const FOUR_SLOT_LABEL_MAX = 59;
+/**
+ * Where the compiler breaks a corner label onto a second line, section 323. Over the 13 Logitech
+ * compiles for the Harmony 600, 650 and 700, the labels drawn in their page's most common font where a
+ * corner label sits, one line at y 40 or 90 or two at 25 and 40 or 75 and 90, number 2037 counted once
+ * per configuration, label and place, 422 distinct texts, and one rule places all 2036 whose width
+ * can be measured: a label with no space stays on one line, one no wider than this stays on one line,
+ * and a wider one breaks at spaces, greedily, putting on each line as many words as fit within this
+ * width. Any width from 55 to 58 reproduces all of them, the widest label left whole with a space in it
+ * being 55 pixels, `TV Vol+`, and the narrowest broken one 59, `Sony TV` and `TV Input`. So the
+ * threshold is known to lie in that band and not where in it, and the band rests on those three
+ * labels; this takes its top, which breaks the fewest. Breaking a label of three or more words is
+ * tested by one label, `Rcvr V-` over `Aux`.
+ *
+ * What it does not cover is a label the compiler draws in another font, which is not chosen by width
+ * alone and is not composed, so a label too wide for two lines of this font is refused.
+ */
+const FOUR_SLOT_WRAP_WIDTH = 58;
+/**
+ * A two line corner label's first line sits this far above where a one line label would, and its
+ * second line there: 25 and 40 in the top row, 75 and 90 in the bottom, on all 880 above. It is the
+ * label font's line height, so it holds for the font the composer draws labels in and no other.
+ */
+const FOUR_SLOT_LINE_RISE = 15;
+
+/**
+ * Break a corner label the way the compiler does, `FOUR_SLOT_WRAP_WIDTH`, and refuse what it would
+ * draw in another font: a third line, or a line wider than a corner holds. Returns the glyph codes
+ * per line, one or two.
+ */
+function fourSlotLabelLines(
+  map: NonNullable<ReturnType<typeof characterMap>>, c: Container, set: FontSet, font: number, label: string,
+): number[][] {
+  const width = (text: string): number => textWidth(c, set, codesFor(map, c, set, text, font));
+  const words = label.split(' ');
+  const lines: string[] = [];
+  if (!label.includes(' ') || width(label) <= FOUR_SLOT_WRAP_WIDTH) {
+    lines.push(label);
+  } else {
+    let current = '';
+    for (const word of words) {
+      const longer = current === '' ? word : `${current} ${word}`;
+      if (current !== '' && width(longer) > FOUR_SLOT_WRAP_WIDTH) {
+        lines.push(current);
+        current = word;
+      } else {
+        current = longer;
+      }
+    }
+    lines.push(current);
+  }
+  if (lines.length > 2) {
+    throw new ComposeError(`'${label}' breaks onto ${lines.length} lines and a corner holds two in its font: `
+      + 'give it a shorter label');
+  }
+  for (const line of lines) {
+    const wide = width(line);
+    if (wide > FOUR_SLOT_LABEL_MAX) {
+      throw new ComposeError(`'${line}' is ${wide} pixels wide and a corner holds ${FOUR_SLOT_LABEL_MAX}: `
+        + 'give it a shorter label');
+    }
+  }
+  return lines.map((line) => codesFor(map, c, set, line, font));
+}
 /**
  * The page counter's three glyphs, `n`, `/`, `m`, at these x on the title's y: a corner page's, when
  * its mode has two to nine pages, 98 of 98. A two row list's pages draw it at `0x63`, `0x6A`, `0x6F`
@@ -3781,7 +3846,16 @@ interface Arch14Program {
  */
 function fourSlotPageProgram(
   c: Container, template: FourSlotTemplate, measuring: FontSet,
-  page: { titleCodes: readonly number[]; counter?: readonly (readonly number[])[] | undefined; labels: readonly (readonly number[])[] },
+  page: {
+    titleCodes: readonly number[]; counter?: readonly (readonly number[])[] | undefined; labels: readonly (readonly number[])[];
+    /**
+     * A label's second line, per label, where it has one, from `fourSlotLabelLines`. The first line
+     * then sits one line height higher and the second where a one line label would, each placed on
+     * its own, so a right one ends at the edge line by line. Omitted, every label is one line, which
+     * is what every caller passed before the activity screen wrapped its labels.
+     */
+    second?: readonly (readonly number[] | undefined)[];
+  },
 ): Arch14Program {
   const text = (x: number, y: number, codes: readonly number[]): number[] =>
     [OP_TEXT_INLINE, x, y, ...codes, 0];
@@ -3794,8 +3868,15 @@ function fourSlotPageProgram(
   if (page.labels.length > 0) middle.push(OP_FONT, template.labelFont);
   page.labels.forEach((codes, k) => {
     const item = FOUR_SLOT_ITEMS[k] as (typeof FOUR_SLOT_ITEMS)[number];
-    const x = item.column === 0 ? FOUR_SLOT_LEFT_X : FOUR_SLOT_RIGHT_END - textWidth(c, measuring, codes);
-    middle.push(...text(x, FOUR_SLOT_LABEL_Y[item.row], codes));
+    const xOf = (line: readonly number[]): number =>
+      item.column === 0 ? FOUR_SLOT_LEFT_X : FOUR_SLOT_RIGHT_END - textWidth(c, measuring, line);
+    const second = page.second?.[k];
+    if (second === undefined) {
+      middle.push(...text(xOf(codes), FOUR_SLOT_LABEL_Y[item.row], codes));
+    } else {
+      middle.push(...text(xOf(codes), FOUR_SLOT_LABEL_Y[item.row] - FOUR_SLOT_LINE_RISE, codes));
+      middle.push(...text(xOf(second), FOUR_SLOT_LABEL_Y[item.row], second));
+    }
   });
   const copied = [...template.prefix.slice(1), ...template.suffix];
   const length = 1 + 5 + copied.reduce((sum, one) => sum + one.length, 0) + middle.length;
@@ -5135,10 +5216,16 @@ const STARTUP_TITLE_PREFIX = 'Starting ';
 const STARTUP_TITLE_Y = 5;
 /**
  * The widest title a start up screen draws on one line, 123 pixels, the widest of the 11 one line
- * titles among the 13 on the four arch 14 user configurations. A longer one wraps onto a second line at y 19, which this does not compose,
- * so this is the composer's own limit and a title past it is refused rather than wrapped.
+ * titles among the 13 on the four arch 14 user configurations. A longer one wraps onto a second line
+ * at y 19, `STARTUP_TITLE_SECOND_Y`, and since section 323 that is composed: the words break greedily
+ * at this width and each line is centred on its own, which reproduces both titles the 13 Logitech
+ * compiles wrap, `Starting Watch a` over `Movie` and `Starting Play Audio` over `Cassette`, at the x
+ * they are drawn at. Those two are 130 and 163 pixels whole, so where from 124 to 130 the break
+ * starts is not known, and this keeps the widest one line title measured, which is also the widest of
+ * the 37 one line titles on the 13 Logitech compiles, `Starting Watch Bluray`.
  */
 const STARTUP_TITLE_MAX = 123;
+const STARTUP_TITLE_SECOND_Y = 19;
 /** Below the title every start up screen draws the same three lines, from y 82 down, 13 of 13. */
 const STARTUP_FIXED_Y = 82;
 
@@ -5345,12 +5432,28 @@ function composeFourSlotActivityScreen(
     throw new ComposeError(`activity ${startupOf}'s start up screen is not the one page shape every arch 14 one has`);
   }
   const startupFont = startupProgram[1]?.operands[0] as number;
-  const startupCodes = codesFor(charMap, c, setOf(startupFont), STARTUP_TITLE_PREFIX + label, startupFont);
-  const startupWidth = textWidth(c, setOf(startupFont), startupCodes);
-  if (startupWidth > STARTUP_TITLE_MAX) {
-    throw new ComposeError(`'${STARTUP_TITLE_PREFIX}${label}' is ${startupWidth} pixels wide and a start up `
-      + `screen's one line holds ${STARTUP_TITLE_MAX}: give the activity a shorter label`);
+  // The start up title, broken greedily at STARTUP_TITLE_MAX onto at most two lines, each centred.
+  const startupWidthOf = (text: string): number =>
+    textWidth(c, setOf(startupFont), codesFor(charMap, c, setOf(startupFont), text, startupFont));
+  const startupLines: string[] = [];
+  for (const word of (STARTUP_TITLE_PREFIX + label).split(' ')) {
+    const last = startupLines.at(-1);
+    if (last !== undefined && startupWidthOf(`${last} ${word}`) <= STARTUP_TITLE_MAX) {
+      startupLines[startupLines.length - 1] = `${last} ${word}`;
+    } else {
+      startupLines.push(word);
+    }
   }
+  const startupTooWide = startupLines.find((line) => startupWidthOf(line) > STARTUP_TITLE_MAX);
+  if (startupLines.length > 2 || startupTooWide !== undefined) {
+    throw new ComposeError(`'${STARTUP_TITLE_PREFIX}${label}' does not fit a start up screen's two lines of `
+      + `${STARTUP_TITLE_MAX} pixels: give the activity a shorter label`);
+  }
+  const startupTitle = startupLines.map((line, k) => {
+    const codes = codesFor(charMap, c, setOf(startupFont), line, startupFont);
+    const x = Math.floor((FOUR_SLOT_SCREEN_WIDTH - textWidth(c, setOf(startupFont), codes)) / 2);
+    return [OP_TEXT_INLINE, x, k === 0 ? STARTUP_TITLE_Y : STARTUP_TITLE_SECOND_Y, ...codes, 0];
+  }).flat();
 
   // The working screen's text, refused before anything moves.
   const perPage = FOUR_SLOT_ITEMS.length;
@@ -5362,14 +5465,8 @@ function composeFourSlotActivityScreen(
   if (titleWidth > titleRoom) {
     throw new ComposeError(`'${label}' is ${titleWidth} pixels wide and the working screen's title holds ${titleRoom}`);
   }
-  const rowCodes = rows.map((row) => codesFor(charMap, c, setOf(device.labelFont), row.label, device.labelFont));
-  rows.forEach((row, k) => {
-    const wide = textWidth(c, setOf(device.labelFont), rowCodes[k] as number[]);
-    if (wide > FOUR_SLOT_LABEL_MAX) {
-      throw new ComposeError(`'${row.label}' is ${wide} pixels wide and a corner holds ${FOUR_SLOT_LABEL_MAX}: `
-        + 'give it a shorter label');
-    }
-  });
+  // Each label broken the way the compiler breaks a corner label, section 323: one line or two.
+  const rowLines = rows.map((row) => fourSlotLabelLines(charMap, c, setOf(device.labelFont), device.labelFont, row.label));
   const existingLists = c.actionLists()?.length ?? 0;
   for (const row of rows) {
     if (!Number.isInteger(row.list) || row.list < 0 || row.list >= existingLists) {
@@ -5401,8 +5498,7 @@ function composeFourSlotActivityScreen(
   let current = appendArch14Mode(c, startupMode, own(startupRecord.entries), [fourSlotPageList([])], (now) => {
     const nowProgram = screenProgram(now, (modeRecords(now)?.[startupTemplate]?.pages[0] as ModePage).program) ?? [];
     const copied = [nowProgram[0], nowProgram[1], ...nowProgram.slice(fixedFrom, -1)] as ScreenInstruction[];
-    const x = Math.floor((FOUR_SLOT_SCREEN_WIDTH - startupWidth) / 2);
-    const title = [OP_TEXT_INLINE, x, STARTUP_TITLE_Y, ...startupCodes, 0];
+    const title = startupTitle;
     return [{
       length: copied.reduce((sum, one) => sum + one.length, 0) + title.length + 1,
       build: (shifted) => new Uint8Array([
@@ -5429,7 +5525,8 @@ function composeFourSlotActivityScreen(
     return pageRows.map((onPage, p) => fourSlotPageProgram(now, template, measuring, {
       titleCodes,
       counter: pageCount > 1 ? [digitCodes(p + 1), slashCodes, digitCodes(pageCount)] : undefined,
-      labels: onPage.map((_, k) => rowCodes[p * perPage + k] as number[]),
+      labels: onPage.map((_, k) => (rowLines[p * perPage + k] as number[][])[0] as number[]),
+      second: onPage.map((_, k) => (rowLines[p * perPage + k] as number[][])[1]),
     }));
   });
 

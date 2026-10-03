@@ -20,7 +20,7 @@ copied. **Every chapter ends with a configuration that works on the 650.**
 - [x] 1.1 Write a whole configuration to the 650: erase, write, read back and compare, restart (sections 281 to 283)
 - [x] 1.2 Skip the welcome tour after a write (section 286)
 - [ ] 1.3 Every write to the 650 stamps the clock records and the build timestamp, small edits included, since every restart puts its clock back to the stamp (section 310)
-  - [ ] 1.3.1 Read a build timestamp Logitech stamped on the 1st of a month, day of month 0 with the previous day's weekday, which our reader refuses and which stops the device composer's save on the 650's current configuration (section 312)
+  - [x] 1.3.1 Read a build timestamp Logitech stamped on the 1st of a month: the day counts from 0 and the weekday from Sunday, so day 0 is the 1st and every date we read or wrote before was a day off; the 650 runs a day ahead until its next write (section 322)
 - [ ] 1.4 Choose the test setup: devices and activities that between them use every feature in chapters 2 to 4, passthrough device and favourites included. No real device is needed, since the bench's infrared receiver hears what the remote sends
 - [ ] 1.5 Choose the starting setup out of it: part of the test setup, with at least one activity and names that hold every letter the whole test setup needs
 - [ ] 1.6 Have Logitech compile it for the 650, read it into the lab, write it back unchanged and register it as the compare base
@@ -43,8 +43,8 @@ copied. **Every chapter ends with a configuration that works on the 650.**
 - [x] 3.4 Off switches every device off (section 291)
 - [ ] 3.5 A device's power on delay and the delay between devices, seen to act: composed (sections 287 and 288), but the activity written gave the delay nothing to hold back (section 291)
 - [ ] 3.6 Set each device to the input the activity needs; composed for a catalogue device too since section 321; on the 650 still to hear power, then the input, in that order
-- [ ] 3.7 The activity's key map built from its roles, volume to one device and channels to another, rather than copied from an existing activity
-- [ ] 3.8 The activity's own screen pages: the commands it labels on the screen
+- [ ] 3.7 The activity's key map built from its roles, volume to one device and channels to another, rather than copied from an existing activity: built (`activityroles.ts`), exactly Logitech's on 20 of 40 compiled activities with every difference named (section 323); on the 650 still to hear the role-built keys
+- [ ] 3.8 The activity's own screen pages: the commands it labels on the screen; built from a list of device commands, 41 of 47 pages identical to Logitech's (section 323); on the 650 still to see the pages and hear their codes
 - [ ] 3.9 Picking the running activity again: Logitech gives it a list of its own, the inputs and the working screen without the start up screen or power; ours replays the whole start (tag 5, section 313)
 - [ ] 3.10 Leave devices on when switching activities, an option MyHarmony offers the 650: what it changes in the configuration
 - [ ] 3.11 Put an activity on Watch TV, Watch a Movie or Listen to Music: one entry in the key map that is always installed; an activity with no key stays on the menu, and an empty key shows the "add an Activity" screen (section 314); `setActivityKey` and `clearActivityKey` built, on the 650 still to see a moved key start its activity, and an emptied key needs a base whose compile left one empty
