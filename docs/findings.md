@@ -41577,3 +41577,134 @@ would mean structure is too strict; or a fixed mode whose pages render different
     so they say nothing about logos.
   * 3.13 leaves help and Remote Assistant out, and their screens are among the 216 other modes, which
     then need no generator; how many of the 216 they are is not counted here.
+
+## 318. An arch 14 container's frame is laid out from its content, with the skin and the build time as arguments
+
+**Date:** 3 October 2026. **Status:** confirmed by construction over the thirteen arch 14 compiles the
+lab holds and over two configurations of ours that ran on the Harmony 650; nothing laid out this way
+has been written to a remote. An independent review audited every sentence of the first draft against
+the corpus and its objections are folded in: the key table and the picture bank had been called
+demanded by the firmware, the stamp on the first of a month had been generalised from one compile, and
+the parking had been read as a rule where it is a habit.
+
+**Asked for by `todo-compile-650.md` 10.1**: until now a configuration could only be made by editing one
+Logitech compiled, because the container's own arithmetic came with the file. `packages/codec/src/frame.ts`
+lays a container out from its content: `layOutContainer` takes the content as pieces whose address fields
+are symbolic, decides where every piece goes, and writes the cookies, `end_addr`, the format word, the
+section table, base slots 1 and 3, every address field and the trailer checksum itself.
+
+**Sources.** The thirteen configurations of section 312. The fields the frame writes were each read
+before, sections 20, 41, 84, 130, 182 and 194, and section 36 found the first case of a slot's bodies
+sitting in another slot's gap; what is new is that those readings are **sufficient**, which is a
+measurement over files. Neither client nor firmware was opened, section 293's reasoned exemption: the
+layout is what the compiler wrote, and the compiler ran on Logitech's server.
+
+**Scope, decision 16.** Arch 14 (Harmony 600, 650 and 700) only. Arch 12 (Harmony One) has 22 slots and
+its picture bank is found by a search rather than stated, section 62, so the fourth region below does not
+transfer as written; arch 8, 9 and 10 are not checked.
+
+### The measurement
+
+`takeApart` takes a container to pieces: it drops the header, the section table, base slots 1 and 3 and
+the trailer, and **zeroes every address field the census in `growth.ts` knows**, 14965 to 35198 per
+container, turning each into a reference to a piece and an offset. A piece is cut wherever an address
+lands on the start of a claimed structure, 10037 to 23417 pieces per container. Laying the pieces out
+again reproduces **13 of 13 containers byte for byte**. The frame's own fields are not in the input, so
+none of them can have been carried; what is in the input besides the pieces is three arguments, the
+skin, the build time and the flash base, and base slot 2's two outward addresses, `0x1E0000` and
+`0x200000`, which point outside the container and are carried as absolute references.
+
+### Where a piece goes, four regions
+
+| region | what decides its position | bytes, over the thirteen |
+|---|---|---|
+| the key table | immediately after the end marker, where every arch 14 container here has it and where our parsers read it, sections 52 and 172; section 311 reads the firmware reaching mode 0 through base slot 6, so whether the remote needs it there is open | 649 on the 600 and 650, 653 on the 700 |
+| the body | the caller's order; everything in it is reached through an address | 209946 to 575044, everything below base slot 0's name tree |
+| the tables | base slot 0 to 17 in slot order, each table preceded by what Logitech parks in front of it | 93243 to 179939, including the 21 bytes of base slots 1 and 3 the frame generates |
+| the picture bank | immediately after base slot 17's two bytes, which name the bank, section 62; every picture of the thirteen is also reached by a screen program's address, section 146, so whether the firmware needs the bank there is open | 401437 to 598368 |
+
+**What Logitech parks in front of a table is the same on all thirteen compiles**, and it is never the
+slot whose table precedes it:
+
+| in front of base slot | what | bytes |
+|---|---|---|
+| 5 | base slot 5's group arrays, section 36 | 570 to 2019 |
+| 7 | base slot 7's glyphs and font sets | 59914 to 112256 |
+| 9 | the mode pages' own tagged lists, which belong to base slot 6 | 1850 to 4102 |
+| 10 | some of base slot 10's action lists, the rest being in the body | 1363 to 3180 |
+| 15 | base slot 15's parameter groups | 103 on every one |
+
+Every other table has nothing in front of it, and every table is one piece.
+
+**That is Logitech's habit and not the remote's demand.** Two configurations this project composed park
+differently and ran on the Harmony 650: `h650_lg_region`, section 285, has base slot 5's duration blocks
+and headers in front of base slot 5 as well as its group arrays, and `h650_post144_region`, section 291,
+has that plus base slot 9's own lists in front of base slot 9. Both lay out again byte for byte, so the
+frame takes what is parked as part of the layout rather than computing it.
+
+**There is no padding and no alignment anywhere.** Every byte of 12 of the 13 containers is claimed by a
+structure, and on the thirteenth the 14 unclaimed bytes are base slot 3, which the reader refuses for the
+reason below. So the frame needs no alignment rule, and has none.
+
+### What could not be produced from the content
+
+1. **The skin, byte `+2` of base slot 1.** 72 on the four Harmony 650 compiles, 66 on the seven Harmony 700
+   compiles, and on the two Harmony 600 compiles **71 on one and 73 on the other**, the Harmony 600 and
+   the Harmony 600 EMEA, section 131. The content does not determine it, and which member of a regional
+   pair Logitech writes is still open. It is an argument to `layOutContainer`.
+2. **One build timestamp that names no real date.** `h650_panasonic_config` states October 2026, day 0,
+   weekday 4, which is 30 September's weekday under the record's own epoch. The six other compiles
+   stamped on 1 October state day 1, so this is not a rule about the first of a month, and its cause is
+   `todo-compile-650.md` 1.3.1's open item. `clockRecordFields` computes the weekday from a real date and
+   cannot produce it, and `clockRecord` refuses it. The frame carries the seven field bytes as given for
+   that one case; its base slot 13 clock records state the same day 0, so the two agree.
+3. **The order of the body and of what is parked in front of a table.** Carried, not derived: nothing on
+   the remote reads an order, every piece being reached through an address, so the order is Logitech's
+   emission order and reproducing it is a composer's question rather than the frame's. What has no
+   address, a mode page list's second copy or base slot 15's light band fields, is inside the piece in
+   front of it by construction, since a piece is cut only where an address lands.
+
+### The growth control
+
+On `h650_config_region`, 54 bytes of filler appended to base slot 4's table, and separately at the
+body's first byte. Each result equals what `relocate.ts` makes of the original with the same filler at
+the same offset, **byte for byte**, by two routes independent except for the census of address fields
+they share: relocate shifts a finished container and rewrites the fields it finds, the frame writes
+every field from where its target landed.
+Each result then reads as the original does, every claim shifted and the inventory unchanged, and round
+trips through the emitter. Base slots 5 to 17 move by 54 and 0 to 4 do not, and `end_addr` moves by 54.
+
+### The clock, and its control
+
+Base slot 13's clock records stamped on `h650_config_region` with `edit.ts`'s `clockStateEdits` for
+`2026-10-03T12:34:56`, then taken apart and laid out with that stamp, give exactly the bytes `saveEdits`
+gives. The same stamp laid out over the **unstamped** records is refused, naming record 0, the seconds,
+which states 42 where the stamp states 56. That refusal is a consistency rule of ours and not one the
+remote enforces: the remote's clock is seeded from base slot 13, section 310, so a save stamps both and
+a container whose two disagree is one where somebody stamped only one.
+
+### What this does not establish
+
+* **That the census is complete.** An address field the census does not know is carried as content; it
+  round trips, and only the growth control's reader comparison would see it moved wrongly, for whatever
+  the readers cover. `relocate.ts` has the same limit.
+* **Whether the remote needs the regions in this order.** None of the four is shown to be demanded by
+  the firmware: the key table and the picture bank sit where every container here has them and where
+  our readers look; that the tables follow the body and ascend is Logitech's habit and `parse`'s
+  `sections_ascend` check; and no differently ordered container has been written.
+
+### Falsification
+
+An arch 14 Logitech compile that `takeApart` and `layOutContainer` do not reproduce; a Logitech compile
+whose tables have something other than the table above in front of them; a filler growth that differs
+from `relocate`'s.
+
+### Where it lands
+
+* `packages/codec/test/frame.test.ts`: the thirteen byte for byte with every field zeroed first, the
+  table of what Logitech parks in front of each table, our two configurations that park differently,
+  the two growths against `relocate`, the stamp against `saveEdits` and its refusal, and the layouts
+  the frame refuses: another architecture, an unaligned base, a field outside its piece, a slot 17
+  longer than two bytes, a piece twice, a reference to a piece not laid out, a NULL slot given content
+  and a stated slot left empty.
+* `docs/config-format.md`, "What decides each byte of the frame on arch 14".

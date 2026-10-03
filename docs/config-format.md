@@ -372,6 +372,49 @@ bytes are not the config.
 Neither check is a validity test. A file can pass both and be wrong in ways nothing here detects; see
 the arch 9 device clone under [findings.md](findings.md) section 117.
 
+### What decides each byte of the frame on arch 14
+
+Arch 14 (Harmony 600, 650 and 700) only; [findings.md](findings.md) section 318. Laid out by
+`layOutContainer` in `packages/codec/src/frame.ts` and taken apart by `takeApart`, which reproduce all
+thirteen arch 14 compiles in the lab byte for byte with every address field zeroed first.
+
+| bytes | value | decided by |
+|---|---|---|
+| `0x00` | `GSPM` | constant |
+| `0x04` | `end_addr` | flash base plus the length less four |
+| `0x08` | `0x1400`, two bytes, then a zero | constant: twenty slots, section 194. Read as a `u32` it runs into `0x0B`, the first item's spare byte |
+| `0x0B` | twenty `{ 0; u24 }` items | where each table landed; base slots 18 and 19 NULL |
+| `0x5B` | `LWJL` | constant |
+| base slot 1 | `0e 0e` skin `0d 00 00 00` | the skin is an **input**: the two Harmony 600 compiles state 71 and 73 |
+| base slot 3 | `df ad` seven fields `bf ef 00 00 00` | the build time. The frame refuses a layout whose base slot 13 records 0 to 6 state other values, a consistency rule of ours |
+| every address field | `u24` | where its target landed |
+| `end - 6` | checksum | section 41, over whole 16 bit words |
+| `end - 4` | `PTYY` | constant |
+
+Where everything else goes, in order, with no padding anywhere:
+
+```
+0x5F             the key table, mode 0's record, where the parsers read it, section 52
+                 the body: every structure reached only through an address, in Logitech's order
+base slot 0..17  each table, preceded by what Logitech parks in front of it:
+                   5   base slot 5's group arrays
+                   7   base slot 7's glyphs and font sets
+                   9   the mode pages' own tagged lists
+                   10  some of base slot 10's action lists
+                   15  base slot 15's parameter groups
+                 the picture bank, immediately after base slot 17's two bytes, section 62
+end - 6          the trailer
+```
+
+The order of the body and which structures are parked in front of which table are carried, not
+derived: nothing on the remote reads an order. The parking above is Logitech's habit, the same on all
+thirteen compiles; two configurations of ours park more in front of base slots 5 and 9 and ran on the
+Harmony 650, sections 285 and 291. Whether the firmware needs the key table or the picture bank where
+they are is open: section 311 reads it reaching mode 0 through base slot 6, and every picture is also
+reached by a screen program's address. One compile's build timestamp states day 0 of October with 30
+September's weekday where six others stamped that day state day 1; it is carried as its seven field
+bytes, since the encoder cannot produce it.
+
 ## Sections
 
 **Every one of the twenty base slots is now accounted for.** Slots 0 and 1 are the header records,
