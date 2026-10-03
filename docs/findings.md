@@ -42655,9 +42655,11 @@ the same label on that device's Devices screen.
 ## NNN. Base slots 0, 13 and 14 are built from a description, and the name tree's order is a hash order of the variable index
 
 **Date:** 3 October 2026. **Status:** confirmed by construction over the thirteen arch 14 compiles
-section 312 lists, with a blind control and four alternative rules that fail; nothing built this way
-has been written to a remote, and nothing needs to be for what is claimed here, since the result is
-byte identical to files already in the lab.
+section 312 lists, with a blind control, two mutations of the generator that fail, and alternative
+rules scored with their split; nothing built this way has been written to a remote, and nothing needs
+to be for what is claimed here, since the result is byte identical to files already in the lab. Both
+reviewers ran on the whole diff; the blind one reproduced every number below, and the sentence audit's
+points are folded in, the main ones named under "What the review changed".
 
 **Todo `todo-compile-650.md` 10.3.** Section 318's frame lays a container out from pieces, and the
 pieces of base slot 0 (the name tree), base slot 13 (the state variables) and base slot 14 (the value
@@ -42666,7 +42668,7 @@ description: the configuration's own variables and value maps go in, and everyth
 firmware decides is generated.
 
 **Sources checked**: this document, sections 39, 73, 86, 120, 130, 138, 234, 276, 277, 280, 284, 288,
-301, 315, 318 and 319, and the thirteen compiles. Neither firmware nor client was opened: every rule
+301, 315, 318, 319 and 322, and the thirteen compiles. Neither firmware nor client was opened: every rule
 below is an order or a constant Logitech's compiler wrote, and the compiler ran on their server,
 section 293's reasoned exemption. The firmware's own use of these slots was read in the sections
 named, and base slot 0 is not sought by it at all.
@@ -42678,76 +42680,98 @@ supply, `buildStateTables` builds the three slots' pieces, `withStateTables` put
 Logitech's sat, and `layOutContainer` lays the container out again. **13 of 13 come back byte for
 byte.** The description carries 1051 variables and 501 value maps over the thirteen.
 
-**The blind control** overwrites, in a copy of the pieces, every byte the generator claims to own:
+**The blind control** overwrites, in a copy of the pieces, the bytes the generator claims to own:
 records 7 to 17 and the first two byte variable whole, the header's `wide` and repeated `narrow`, the
-operands of the clock's three increments, the value count at the end of every level 1 name, the order
-of the name tree's nodes (reversed), and every value map's lead byte and case order (reversed). The
-description read off that copy still rebuilds **13 of 13** byte for byte, so none of those bytes reached
-the generator. Two mutations of the generator itself were run by hand and each fails the rebuild on the
-first compile: the name tree in index order, and record 9's maximum changed from 7 to 6.
+operand and opcode of the clock's three increments, the value count at the end of every level 1 name,
+the order of the name tree's nodes (reversed), and every value map's lead byte and case order
+(reversed). The description read off that copy still rebuilds **13 of 13** byte for byte, so none of
+those bytes reached the generator. What it leaves is what the description needs: the header's `count`
+and `narrow`, read to find the records and to know which index is the generator's, the increments'
+`from` and `to`, and the level 0 nodes. Two mutations of the generator itself were run by hand and each
+fails the rebuild on the first compile: the name tree in index order, and record 9's maximum changed
+from 7 to 6.
 
 ### What is generated
 
 | what | rule | over the thirteen |
 |---|---|---|
 | records 7 to 17 | `[first, max]` constants, no transitions: `0/2, 0/3, 5/7, 0/7, 0/32, 0/1, 0/32, 1/1, 0/3, 0/1, 0/3` | 13 of 13 |
-| the clock's transitions | minute, day and month each `{-2 to 0, 0x1F 0xF2nn}`, incrementing the hour, month and year, section 73's reading of `0xF2`; the hour `{-2 to 0, 0x7F list}`, a list `[0x1F 0xF203, 0x1F 0xF204]` incrementing the day and weekday; second, weekday and year none | 13 of 13; the list's index is 12, 13, 18 or 19 and is the caller's |
+| the clock's transitions | the minute, the day and the month each `{-2 to 0, 0x1F 0xF2nn}`, incrementing the hour, the month and the year respectively, section 73's reading of `0xF2`; the hour `{-2 to 0, 0x7F list}`, a list `[0x1F 0xF203, 0x1F 0xF204]` incrementing the day and the weekday; second, weekday and year none | 13 of 13; the list's index is 12 on six compiles, 13 on one, 18 on two and 19 on four, and is the caller's |
 | the first two byte variable | index `narrow`, `first` 0, maximum 65277, no transitions, unnamed, stored straight after record 17 | 13 of 13; what it is for is **unread** |
-| a variable's width | one byte up to a maximum of 100, two bytes from 254 | the widest one byte maximum above the firmware's block is 100 and the narrowest two byte one 254; **the line between them is not pinned**, and a maximum from 101 to 253 is refused |
+| a variable's width | one byte up to a maximum of 100, two bytes from 254 | per compile, the widest one byte maximum above the firmware's block is 100 and the narrowest two byte one 254, 13 of 13; **the line between them is not pinned**, and a maximum from 101 to 253 is refused |
 | the header | `count`, `narrow`, `wide`, `narrow`, from the widths | section 276 |
 | a variable's name | its stem, `_`, and its maximum plus one | section 86 |
 | the name tree's level 0 | `Root` index 0, `State` index 1, first in the file | 13 of 13 |
 | the name tree's level 1 order | ascending `(i ^ (i >>> 4) ^ (i >>> 7)) & (capacity - 1)` of the variable index, the capacity 16 doubled while the node count exceeds three quarters of it | 13 of 13 |
-| a value map's case order | `compilerCaseOrder`, section 319 | 501 of 501 records |
+| a value map's case order | `compilerCaseOrder`, section 319 | 501 of 501 records, but the order is visible only in the 332 holding the key sets 0 to 20 and 0 to 450; the other 169 hold one case or keys below 16, where it is ascending |
 | a value map's lead byte and range table | 2, and no range | 501 of 501 |
+
+The clock's day of the month counts from 0, section 322, so its rollover to 0 is the 1st and the
+increment it fires is the month's; the generator carries the clock's values and maxima and takes no
+position on how they count.
 
 The rest is the description: the clock's seven values and maxima and the hour's list, which are the
 stamping rule's and base slot 10's; each variable's stem, value, maximum and transitions in stored
 order; the order of the variables' indices within each width; and each value map's cases by value,
 each naming a piece.
 
-### The name tree is a hash map keyed by the variable index, and here the capacity is pinned
+### The name tree is a hash map keyed by the variable index, and the capacity is pinned in places
 
-Section 315 found Java 6's `HashMap` bucket order in the key list after the end marker, with the
-capacity pinned only in places. The name tree's level 1 nodes follow the same hash of the **variable
-index** they name, and the two Harmony 600 compiles pin the capacity where that section could not:
+Section 315 found Java 6's `HashMap` bucket order in the key list after the end marker. The name
+tree's level 1 nodes follow the same hash of the **variable index** they name:
 
 | order tried | fits |
 |---|---|
 | the rule, at its capacity | 13 of 13 |
 | ascending index | 0 of 13 |
 | the hash at half the capacity | 0 of 13 |
-| the hash at double the capacity | 11 of 13: the two Harmony 600 trees, 32 and 41 nodes, fit 64 buckets and fail at 128 |
+| the hash at double the capacity | 11 of 13 |
 
-The eleven others hold 51 to 90 nodes, fit 128 and fail at 64. So at 64 buckets the table doubles past
-a count between 41 and 51, a load factor in `[0.641, 0.797)`, which with section 315's `[0.6875,
-0.8125)` from 16 buckets leaves `[0.6875, 0.797)` for Java's 0.75. **A tie is refused**: no tree here
-has one, and its order would be the insertion order of a compiler nobody here has read. That the key is
-a boxed integer index rather than the name is the reading that fits; nothing names the map.
+**Only the two Harmony 600 trees pin the capacity from above**: 32 and 41 nodes, they fit 64 buckets
+and fail at 128. The eleven others hold 51 to 90 nodes, fail at 64, and fit 128 and every larger
+capacity alike, since all their indices are below 128 and the hash is then the same order however wide
+the table; so for them the capacity is pinned from below only. At 64 buckets the table therefore doubles
+past a count between 41 and 51, a load factor in `[0.641, 0.797)`, which with section 315's
+`[0.6875, 0.8125)` leaves `[0.6875, 0.797)` for Java's 0.75. If one compiler built the other
+architectures' trees too, a Harmony One tree of 12 nodes that fits 16 buckets and fails at 32 and one of
+25 that fits 64 and fails at 32 narrow it to `[0.75, 0.78125)`. That the key is a boxed integer index
+rather than the name is the reading that fits; nothing names the map.
 
-**The same order holds on arch 8, 9 and 12**, unasserted by the generator: ten trees, the Harmony One's
-four, the Harmony 525's two and the four arch 8 ones, show no step down at the rule's capacity and none
-is ascending. They are small, 4 to 13 level 1 nodes, and those of arch 8 and 9 carry a third level 0
-node, `HarmonyAssistant`, and level 2 nodes the generator does not build.
+**No tree of the thirteen has a tie**, and the generator refuses one. Ties do occur on arch 8 and 12:
+ten distinct pairs, fifteen occurrences over ten distinct Logitech trees of the Harmony One and the
+Harmony 880 and 885, at 16 and 32 buckets, and in every occurrence the larger index is stored first. That is not adopted: a Java 6 table
+inserted in ascending order puts the later key first only for a pair that never shared a bucket before
+the last resize, since a resize reverses a chain, and `49` and `19`, which share bucket 2 at 16 buckets
+as well as bucket 18 at 32, are stored larger first too. So the insertion order is not established, and
+an arch 14 tie stays a refusal until a compile holds one.
+
+**The same order holds on every name tree Logitech built in the lab**: 35 files on arch 8, 9, 12 and
+16, the Harmony 880 and 885, the Harmony 525, the Harmony One and the Harmony 300 and 350, hold 22
+distinct trees of 2 to 25 level 1 nodes, and all 22 show no step down at the rule's capacity while none
+is ascending. Three of the 22 are the Harmony 300 and 350's, of 2 to 5 nodes, which say little. Those of arch 8 and 9 carry a third level 0 node, `HarmonyAssistant`, and level 2 nodes the
+generator does not build. Arch 10 (Harmony 890 and 895) has no name tree. **The only trees that break
+it are ours**: all twenty configurations in the lab that `compose.ts` gave a node, thirteen on the spare
+Harmony One and seven on the Harmony 650, because it appends the node rather than placing it. Those ran on the remote,
+which agrees with nothing on it reading base slot 0.
 
 ### The index order is not a hash order of the names
 
-Which variable gets which index within a width is carried. The thirteen were scored against Java's
-`String` hash of five spellings of the name (whole, without the value count, the label alone, and
-prefixed `State.` and `Root.State.`) under both Java 6's and Java 8's supplemental hash at six
-capacities from 16 to 1024, and none fits: the named variables step down about as often as a random
-order would. The records are stored in index order except the first two byte variable and, on 11 of
-the 13, one more record stored apart, so the index is largely the emission order; what decides it is
-open.
-
-The transitions of a record are carried in stored order too. Input variables' transitions are in
-neither ascending nor hash order of their values, which is `inputs.ts`'s question, section 321.
+Which variable gets which index within a width is carried. Over the thirteen, the named variables in
+index order step down at the rule's capacity under Java's `String` hash of the whole name about as often
+as not, under both Java 6's and Java 8's supplemental hash: of 831 adjacent pairs, 408 and 413 step down. Four
+other spellings of the name, at six capacities from 16 to 1024, did no better, in a measurement the
+test does not repeat. The records are stored in index order except the first two
+byte variable and, on 11 of the 13, a trailing run of the highest one byte records, device input and
+state variables such as `TV_TVInput_3`, stored after the two byte ones: one record on five compiles, two
+on two, and 3, 5, 9 and 13 on one each. So the index is largely the emission order, and what decides
+it is open. The transitions of a record are carried in stored order as well; for a device's inputs that
+order is `inputs.ts`'s question, section 321.
 
 ### What it corrects
 
 Sections 86 and 120 measured a record's value at most its maximum, "at most `second` in all 735
-records", which holds for the population measured then and **not** for the thirteen: in
-`h650_power_hold_compile_2`, `DefaultPowerOnDelay_83915542` holds 65535 under a maximum of 254. So the
+records", which holds for the population measured then and **not** for the thirteen:
+in `h650_power_hold_compile_2`, `DefaultPowerOnDelay_83915542` holds 65535 under a maximum of 254. So the
 generator does not refuse a value above its maximum, since that would reject Logitech's own output;
 keeping the clock inside its range stays `edit.ts`'s rail.
 
@@ -42762,34 +42786,49 @@ and bounded by the activity count and `CurrentLocation` at 0 of 0; the count is 
 
 ### Scope, decision 16
 
-The generator is arch 14 only, the Harmony 600, 650 and 700, where every constant above was measured.
-The name tree's level 1 order is also seen on arch 8, 9 and 12, above. Records 7 to 12 hold the same
-values on arch 8 and 12 and different ones on arch 9, section 138; 13 to 17 are not compared here. Arch
-10 is not checked.
+The generator is arch 14 only, the Harmony 600, 650 and 700, where every constant above was measured,
+and several do not transfer. On arch 8 and 12 (Harmony 880 and 885, Harmony One) records 7 to 12 and 15
+to 17 hold arch 14's values while 13 and 14 do not, `1/1` and `0/1` on the 880 and 885 and `1/1` and
+`2/4` on the One against arch 14's `0/32` and `1/1`; arch 9 (Harmony 525) differs from record 8 on. The
+`0/65277` variable at index `narrow` exists on arch 8, 9 and 12 as well, as the only two byte variable,
+so the width rule cannot be scored there, and their one byte variables reach a maximum of 121, inside
+the gap refused here. The name tree's level 1 order is seen on every architecture with a name tree,
+above.
+
+### What the review changed
+
+The audit found the first draft's "no tree here has a tie" true of the thirteen and false of the lab,
+the other architectures scored on ten files of the 35 the lab holds, with one factory tree counted
+twice, "one more record stored apart" wrong on six of the eleven, the double capacity and
+ascending case controls presented without their split, and the arch 10 and the records 13 to 17 scope
+sentences short of what one command could say. Each is corrected above. The blind reviewer reproduced
+every count in the draft, and noticed the stored apart run independently.
 
 ### What this does not establish
 
 * What the first two byte variable is for, and what records 7 to 17 hold beyond section 138's arch 12
   readings.
-* Where between 100 and 254 a maximum makes a variable two bytes wide. That the line has to do with the
-  firmware's `0xFE` fill, section 276, is a guess and is not tested.
-* What decides the index order, and the order of a record's transitions.
+* Where between 100 and 254 a maximum makes a variable two bytes wide on arch 14. That the line has to
+  do with the firmware's `0xFE` fill, section 276, is a guess and is not tested.
+* The order of a tie in the name tree, what decides the index order, and the order of a record's
+  transitions.
 * Anything on the remote: base slot 0 is read by no firmware, and the other two are byte identical to
   compiles that ran.
 
 ### Falsification
 
-An arch 14 compile whose base slots 0, 13 or 14 the round trip does not reproduce; a name tree whose
-level 1 nodes step down in bucket order at the capacity the rule gives; a one byte variable with a
-maximum of 254 or more, or a two byte one with 100 or less; records 7 to 17 or the first two byte
-variable stating other values.
+An arch 14 compile whose base slots 0, 13 or 14 the round trip does not reproduce; a Logitech name tree
+whose level 1 nodes step down in bucket order at the capacity the rule gives; an arch 14 one byte
+variable with a maximum of 254 or more, or a two byte one with 100 or less; records 7 to 17 or the first
+two byte variable stating other values on an arch 14 compile.
 
 ### Where it lands
 
 * `packages/codec/src/statetables.ts`: `buildStateTables`, `describeStateTables`, `withStateTables`,
   `nameTreeOrder`, `isWideVariable`, `deviceDelayVariables`, `activityStateVariables`.
 * `packages/codec/test/statetables.test.ts`: the thirteen byte for byte, the blind control, the name
-  tree order and its four alternatives, the ten trees of the other architectures, the case order with
-  the ascending control, the constants and widths, the clock's transitions and the hour's list, the
-  device and activity variables, and the refusals.
+  tree order and its alternatives with their split, the Logitech trees of the other architectures and
+  the ties in them, the composed trees that break the order, the names' string hash, the case order with
+  the ascending control, the constants and width bounds, the clock's transitions and the hour's list,
+  the stored order, the device and activity variables, and the refusals.
 * `docs/config-format.md` under base slots 0, 13 and 14.

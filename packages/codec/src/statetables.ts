@@ -15,8 +15,9 @@
  *   14 and are written from `FIRMWARE_STATE_RECORDS` below. Records 0 to 6 are the clock, section
  *   130: their values and maxima are the caller's, since stamping them is `edit.ts`'s rule and two
  *   copies of that rule would be two copies until one moved, and their **transitions** are generated:
- *   the minute, day and month each increment the next field when they roll over to 0, and the hour
- *   calls a list, whose index is the caller's because the list is base slot 10's.
+ *   the minute, the day and the month increment the hour, the month and the year respectively when
+ *   they roll over to 0, and the hour calls a list, which increments the day and the weekday and
+ *   whose index is the caller's because the list is base slot 10's.
  * * **The variable the compiler emits after that block**, an unnamed two byte variable holding 0
  *   with a maximum of 65277 and no transitions, which takes index `narrow`, the first two byte index,
  *   and sits straight after record 17 in the file on all thirteen. What it is for is unread.
@@ -46,7 +47,7 @@
  *
  * `describeStateTables` reads a description back off a laid out container, so that what is generated
  * can be checked against Logitech's own: `test/statetables.test.ts` rebuilds all thirteen byte for
- * byte, every byte the generator owns zeroed or dropped first.
+ * byte, every byte the generator owns overwritten first.
  *
  * Read only towards hardware, like everything in this package. The result is pieces in memory.
  */
@@ -469,10 +470,11 @@ function targetOf(ref: PieceRef | undefined): PieceTarget {
  *
  * Reads only what the description carries: the clock's seven values and maxima, the hour's list,
  * and every variable from 18 upward but the first two byte one, with its stem, value, maximum and
- * transitions; and every value map's cases by value. Nothing the generator writes is read, the
- * firmware's records 7 to 17, the first two byte variable, the header's four words, the names'
- * value counts, the node order and the case order among them, so a rebuild that matches the
- * container computed every one of them.
+ * transitions; and every value map's cases by value. Of the header it reads `count` and the first
+ * `narrow`, to find the records and to know which index is the first two byte one. Nothing else the
+ * generator writes is read, the firmware's records 7 to 17, the first two byte variable, the
+ * header's `wide` and repeated `narrow`, the names' value counts, the node order and the case order
+ * among them, so a rebuild that matches the container computed every one of them.
  */
 export function describeStateTables(layout: ContainerLayout): StateTablesSpec {
   const table = tablePiece(layout, STATE_TABLE_SLOT);

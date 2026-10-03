@@ -2417,7 +2417,10 @@ Carried: which variables there are, their stems, values, maxima and transitions 
 the order of their indices within each width, which no hash of their names fits. **A value can exceed
 its maximum**: `DefaultPowerOnDelay` holds 65535 under 254 for one device of
 `h650_power_hold_compile_2`, so "at most `second`" holds for the population of sections 86 and 120 and
-not for every compile.
+not for every compile. The constants are arch 14's: on arch 8 and 12 records 7 to 12 and 15 to 17
+hold the same values while 13 and 14 hold `1/1, 0/1` (Harmony 880 and 885) and `1/1, 2/4` (Harmony
+One), arch 9 differs from record 8 on, and on all three the `0/65277` variable at index `narrow` is the only
+two byte one while one byte maxima reach 121, inside the gap refused here.
 
 Read with `gspm.state_table`, `gspm.state_records` and `gspm.state_index`; `stateTable` and
 `stateRecords` in `packages/codec`.
@@ -3205,18 +3208,25 @@ Level 2 appears on arch 8 and arch 9 only, holding a small menu under `HarmonyAs
 
 **The order Logitech's compiler stores the nodes in**, [findings.md](findings.md) section NNN. Level
 0 first, `Root` then `State` on the arch 12 and 14 configurations measured and those two then
-`HarmonyAssistant` on the arch 8 and 9 ones; the arch 9 safe mode container, which holds `Root`
-third, is the exception.
+`HarmonyAssistant` on the arch 8 and 9 ones. The exceptions are containers that are not a user
+configuration: the Harmony 525's safe mode container and the one in its firmware package hold one
+level 1 node, then `State`, then `Root`, and the Harmony 880 and 885 firmware containers hold `State`
+before `Root`.
 Then level 1 in ascending
 
     (i ^ (i >>> 4) ^ (i >>> 7)) & (capacity - 1),   i the variable index
 
 with the capacity 16 doubled while the level 1 node count exceeds three quarters of it: Java 6's
 `HashMap` keyed by the index, the rule section 315 found for the key list after the end marker. 13 of
-13 arch 14 compiles fit and none fits in index order; the two Harmony 600 trees, 32 and 41 nodes, fail
-at 128 buckets and the eleven of 51 to 90 nodes fail at 64, which pins the capacity there. Ten trees of
-arch 8, 9 and 12, 4 to 13 nodes, show no step down either. A tie in a bucket has not occurred and its
-order is unknown. Nothing on the remote reads the order; `buildNameTree` reproduces it.
+13 arch 14 compiles fit and none fits in index order. The two Harmony 600 trees, 32 and 41 nodes, fit
+64 buckets and fail at 128, which pins their capacity from both sides; the eleven of 51 to 90 nodes fail
+at 64 and fit at 128 and every wider table alike, since their indices are all below 128, so theirs is
+pinned from below only. All 22 distinct trees Logitech built on arch 8, 9, 12 and 16, 2 to 25 level 1
+nodes over 35 files, show no step down either, and the twenty that `compose.ts` gave a node all do.
+No arch 14 tree has a tie in a bucket, and `nameTreeOrder` refuses one; on arch 8 and 12 ten distinct
+pairs tie, fifteen times over ten trees, and every time the larger index is stored first, which is
+recorded and not adopted, section NNN. Arch 10 (Harmony 890 and 895) has no name tree. Nothing on the
+remote reads the order; `buildNameTree` reproduces it.
 
 A level 1 name is three parts, `<label>_<qualifier>_<values>`:
 

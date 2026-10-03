@@ -14,9 +14,11 @@
  * name's value count, the name tree's node order, every value map's lead byte and case order. The
  * rebuild from that copy still equals the compile, so none of those bytes reached the generator.
  *
- * **The failing controls are the alternative rules**, counted: the name tree in index order, its
- * hash at half and at double the capacity, and the value map cases in ascending order. Each fails on
- * compiles the generator reproduces.
+ * **The failing controls are the alternative rules**, counted with their split: the name tree in index
+ * order fails all thirteen and its hash at half the capacity fails all thirteen, while at double the
+ * capacity it fails only the two Harmony 600 trees, since every other tree's indices sit below 128
+ * where a wider table changes nothing; the value map cases in ascending order fail the 332 records
+ * whose key sets make the order visible. The trees `compose.ts` wrote fail the rule, all twenty.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -27,6 +29,7 @@ import {
   FIRMWARE_STATE_RECORDS,
   FIRST_WIDE_VARIABLE,
   NARROW_MAX_MEASURED,
+  VALUE_MAP_LEAD,
   StateTablesError,
   WIDE_MAX_MEASURED,
   activityNames,
@@ -226,11 +229,13 @@ test('a value map\'s cases are generated in the compiler\'s order, and ascending
   let records = 0;
   let ascendingFails = 0;
   for (const name of ARCH14_COMPILES) {
-    for (const map of valueMaps(containerOf(name))!) {
+    const c = containerOf(name);
+    for (const map of valueMaps(c)!) {
       const keys = map.entries.map(([value]) => value);
       assert.deepEqual(compilerCaseOrder(keys), keys, name);
       // No range table on any arch 14 compile, and the lead byte is 2.
       assert.equal(map.ranges.length, 0, name);
+      assert.equal(c.blob[c.blobOffsetOf(map.address)!], VALUE_MAP_LEAD, name);
       records += 1;
       if (!keys.every((v, k) => k === 0 || v > keys[k - 1]!)) ascendingFails += 1;
     }
@@ -239,7 +244,7 @@ test('a value map\'s cases are generated in the compiler\'s order, and ascending
   assert.equal(ascendingFails, 332);
 });
 
-test('the firmware\'s block, the first two byte variable and the widths are constant over the thirteen',
+test('the firmware\'s block and the first two byte variable are constant over the thirteen, and the widths part at 100 and 254',
      skipUnless(...ARCH14_COMPILES), () => {
   let narrowWidest = 0;
   let wideNarrowest = Infinity;
@@ -266,7 +271,8 @@ test('the firmware\'s block, the first two byte variable and the widths are cons
     const blobOf = (address: number): number => c.blobOffsetOf(address)!;
     assert.equal(blobOf(firstWide.address), blobOf(records[17]!.address) + records[17]!.length, name);
     assert.ok(!nameNodes(c)!.some((n) => n.level === 1 && n.index === t.narrow), name);
-    // Stored in index order, but for the first two byte variable and, on most, one record apart.
+    // Stored in index order, but for the first two byte variable and, on most, the highest one byte
+    // records stored after the two byte ones.
     const byAddress = records.map((_, index) => index).sort((a, b) => records[a]!.address - records[b]!.address)
       .filter((index) => index !== t.narrow);
     if (byAddress.some((index, k) => k > 0 && index < byAddress[k - 1]!)) apart += 1;
@@ -281,26 +287,131 @@ test('the firmware\'s block, the first two byte variable and the widths are cons
   assert.equal(wideNarrowest, WIDE_MAX_MEASURED);
 });
 
-/** Every programmed configuration of arch 8, 9 and 12 in the lab, plus the Harmony One's factory one. */
-const OTHER_ARCHITECTURES = [
-  'one_config', 'one_config_unprogrammed', 'one_spare_before_sync', 'one_spare_after_sync',
-  'h525_config', 'h525_config_2', 'arch8_config_a', 'arch8_config_b', 'arch8_config_c', 'arch8_config_d',
+/**
+ * Every configuration in the lab whose name tree Logitech's compiler wrote, on arch 8, 9, 12 and 16:
+ * read off a remote after a sync, compiled by their service, or written back by us unchanged. The
+ * arch 9 safe mode image and the firmware package's container are left out, being one node trees
+ * that are not a user configuration's.
+ */
+const LOGITECH_TREES = [
+  'h525_config', 'h525_config_2', 'h525_region_820000',
+  'arch8_config_a', 'arch8_config_b', 'arch8_config_c', 'arch8_config_d', 'arch8_config_880', 'arch8_config_885',
+  'one_config', 'one_config_unprogrammed', 'one_spare_before_sync', 'one_spare_after_sync', 'one_spare_myharmony',
+  'one_spare_20260830', 'one_spare_after_first_write', 'one_spare_20260901_delay', 'one_spare_20260901_denon',
+  'one_spare_20260901_region', 'one_spare_written_by_us', 'one_spare_written_region',
+  'calibration_one', 'calibration_favchannels', 'calibration_favzero',
+  'compiled_protocols', 'compiled_protocols_2', 'compiled_protocols_3',
+  'phase7_before', 'phase7_after', 'vendor_region_user_config',
+  'h350_config', 'h350_programmed_config', 'h350_three_devices_config', 'h300_config', 'h300_programmed_config',
 ] as const;
 
-test('the level 1 order holds on arch 8, 9 and 12 too, where the generator is not offered',
-     skipUnless(...OTHER_ARCHITECTURES), () => {
+/** Configurations composed here, whose name tree `compose.ts` appended a node to. */
+const COMPOSED_TREES = [
+  'one_spare_plus_lg_region', 'one_spare_mixed_region', 'one_spare_plus_lg2_region', 'one_spare_denon65_region',
+  'one_spare_reverted_region', 'one_spare_lg_activity_region', 'one_spare_narrow_base', 'one_spare_probe_base',
+  'one_spare_retarget_base', 'one_spare_paired_base', 'one_spare_screen_base', 'one_spare_poweroff_base',
+  'one_spare_page4_base',
+  'h650_lg_region', 'h650_notour_region', 'h650_pre144_region', 'h650_post144_region', 'h650_glow20_region',
+  'h650_glow10_region', 'h650_devicelist_region',
+] as const;
+
+/** The level 1 indices of a tree in stored order. */
+const levelOne = (name: string): number[] =>
+  nameNodes(containerOf(name))!.filter((n) => n.level === 1).map((n) => n.index);
+
+/** True when no stored node sits in a lower bucket than the one before it, at the rule's capacity. */
+function bucketsNeverStepDown(stored: readonly number[]): boolean {
+  const capacity = keyListCapacity(stored.length);
+  const bucket = (v: number): number => keyListHash(v) & (capacity - 1);
+  return stored.every((v, k) => k === 0 || bucket(v) >= bucket(stored[k - 1]!));
+}
+
+test('the level 1 order holds on every name tree Logitech built on arch 8, 9, 12 and 16, and ties are stored larger first',
+     skipUnless(...LOGITECH_TREES), () => {
+  // Several of these are one tree read more than once, so count distinct trees and not files.
+  const trees = new Map<string, number[]>();
+  for (const name of LOGITECH_TREES) {
+    const stored = levelOne(name);
+    trees.set(stored.join(','), stored);
+  }
   let fits = 0;
   let ascending = 0;
-  for (const name of OTHER_ARCHITECTURES) {
-    const stored = nameNodes(containerOf(name))!.filter((n) => n.level === 1).map((n) => n.index);
+  const sizes: number[] = [];
+  const ties = new Set<string>();
+  let treesWithTies = 0;
+  let largerFirst = 0;
+  let tiesSeen = 0;
+  for (const stored of trees.values()) {
+    sizes.push(stored.length);
+    if (bucketsNeverStepDown(stored)) fits += 1;
+    if (stored.every((v, k) => k === 0 || v > stored[k - 1]!)) ascending += 1;
     const capacity = keyListCapacity(stored.length);
     const bucket = (v: number): number => keyListHash(v) & (capacity - 1);
-    if (stored.every((v, k) => k === 0 || bucket(v) >= bucket(stored[k - 1]!))) fits += 1;
-    if (stored.every((v, k) => k === 0 || v > stored[k - 1]!)) ascending += 1;
+    let tied = false;
+    stored.forEach((v, k) => {
+      if (k === 0 || bucket(v) !== bucket(stored[k - 1]!)) return;
+      tied = true;
+      tiesSeen += 1;
+      const before = stored[k - 1]!;
+      ties.add(`${Math.max(before, v)}&${Math.min(before, v)}`);
+      if (before > v) largerFirst += 1;
+    });
+    if (tied) treesWithTies += 1;
   }
-  // Small trees, 4 to 13 level 1 nodes, so weaker evidence than the thirteen; and their trees carry a
-  // third level 0 node and a level 2 on arch 8 and 9, which the generator does not build.
-  assert.deepEqual({ fits, ascending }, { fits: 10, ascending: 0 });
+  assert.equal(trees.size, 22);
+  assert.deepEqual({ fits, ascending }, { fits: 22, ascending: 0 });
+  assert.deepEqual([Math.min(...sizes), Math.max(...sizes)], [2, 25]);
+  // Ten distinct pairs, and in every occurrence the larger index is stored first. Not adopted by the
+  // generator, which refuses a tie: see the section for why the insertion order is not established.
+  assert.equal(ties.size, 10);
+  assert.equal(treesWithTies, 10);
+  assert.equal(tiesSeen, 15);
+  assert.equal(largerFirst, tiesSeen);
+});
+
+test('the name trees composed here break the order, since compose.ts appends a node rather than placing it',
+     skipUnless(...COMPOSED_TREES), () => {
+  let fits = 0;
+  for (const name of COMPOSED_TREES) if (bucketsNeverStepDown(levelOne(name))) fits += 1;
+  assert.equal(fits, 0);
+});
+
+test('which variable gets which index is not a hash order of its name',
+     skipUnless(...ARCH14_COMPILES), () => {
+  // Java's String.hashCode of the whole name, then Java 6's and Java 8's supplemental hash, at the
+  // rule's capacity: a pair of named variables adjacent in index order steps down about as often as
+  // not, which is what an order unrelated to the hash gives.
+  const stringHash = (s: string): number => {
+    let h = 0;
+    for (let i = 0; i < s.length; i += 1) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+    return h >>> 0;
+  };
+  const java6 = (h: number): number => {
+    const x = h ^ (h >>> 20) ^ (h >>> 12);
+    return (x ^ (x >>> 7) ^ (x >>> 4)) >>> 0;
+  };
+  const java8 = (h: number): number => (h ^ (h >>> 16)) >>> 0;
+  let pairs = 0;
+  let down6 = 0;
+  let down8 = 0;
+  for (const name of ARCH14_COMPILES) {
+    const c = containerOf(name);
+    const t = stateTable(c)!;
+    const named = nameNodes(c)!.filter((n) => n.level === 1);
+    const byIndex = new Map(named.map((n) => [n.index, n.name]));
+    const capacity = keyListCapacity(named.length);
+    for (const [low, high] of [[18, t.narrow], [t.narrow + 1, t.count]] as const) {
+      const run: string[] = [];
+      for (let i = low; i < high; i += 1) if (byIndex.has(i)) run.push(byIndex.get(i)!);
+      for (let k = 1; k < run.length; k += 1) {
+        pairs += 1;
+        const [a, b] = [stringHash(run[k - 1]!), stringHash(run[k]!)];
+        if ((java6(b) & (capacity - 1)) < (java6(a) & (capacity - 1))) down6 += 1;
+        if ((java8(b) & (capacity - 1)) < (java8(a) & (capacity - 1))) down8 += 1;
+      }
+    }
+  }
+  assert.deepEqual({ pairs, down6, down8 }, { pairs: 831, down6: 408, down8: 413 });
 });
 
 test('a device\'s eight delay variables are built from its identifier and four delays, on all 83 devices',
