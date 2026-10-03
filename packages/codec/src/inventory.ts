@@ -175,7 +175,7 @@ import {
 export const SELECT_BINDING_SET = 0x1f;
 export const SELECT_BINDING_SET_MASK = 0xff00;
 /** A key code's scan code, the rest of it being the event type. Section 17. */
-const SCAN_CODE_MASK = 0x3f;
+export const SCAN_CODE_MASK = 0x3f;
 /**
  * How far to shift a key code to leave the event type: 0 none, 1 release, 2 press, 3 repeat.
  *

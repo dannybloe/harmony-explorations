@@ -1030,7 +1030,7 @@ function appendDelayVariable(
  * Append action lists at the foot of the action table, where `composeDevice` puts its own, and
  * return the index of the first. Each list is its instructions, `[operand, opcode]`.
  */
-function appendActionLists(
+export function appendActionLists(
   c: Container, bodies: readonly (readonly [number, number])[][],
 ): { bytes: Uint8Array; first: number } {
   if (c.architecture === undefined) throw new ComposeError('the container states no architecture');
