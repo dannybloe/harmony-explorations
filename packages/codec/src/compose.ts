@@ -432,9 +432,25 @@ export interface ComposeDevice {
    * may be the same step, a toggle, and then share one record. Absent means `power` is sent both ways,
    * which is what a composed device did before and what sends an ordinary press where Logitech's
    * catalogue asks for a held one: three frames where the Harmony 650's Panasonic needs four.
+   *
+   * **Several steps are an action performed in order**, section 320: the Knoll HDP-1100's catalogue
+   * switches it off with its power toggle held for half a second, three times, and Logitech's compiler
+   * wrote one list calling that step's send list three times, which is what the off transition runs. A
+   * step stated twice is one record and one send list, called twice. `catalogueDevicePower` in
+   * `devicepower.ts` reads these out of the catalogue.
    */
-  readonly powerOn?: ComposePowerStep;
-  readonly powerOff?: ComposePowerStep;
+  readonly powerOn?: ComposePowerStep | readonly ComposePowerStep[];
+  readonly powerOff?: ComposePowerStep | readonly ComposePowerStep[];
+  /**
+   * The amount of the `0x7C` paired with each power step's send, in tenths of a second: the catalogue's
+   * inter key delay, section 320. Every power step send list Logitech compiled for the test devices of
+   * the six power hold compiles carries its device's inter key delay there, 1, 4 or 5, while the same
+   * devices' ordinary presses carry 1, which is what `commands` still get. Their compiler also adds, on
+   * some devices, an uncalled second list per digit at the inter key delay and a second list for some
+   * input commands at the input delay; what decides either is not read and neither is composed.
+   * Default `DEVICE_QUANTITY_DEFAULT`, what a power step got before section 320.
+   */
+  readonly interKeyDelay?: number;
   /**
    * Arch 14 only: the inter device delay in tenths of a second, 0 to 20, which a start sequence
    * queues in front of each of this device's commands. Default `INTER_DEVICE_DELAY_DEFAULT`.
@@ -453,9 +469,12 @@ export interface ComposedDevice {
   /** The base slot 10 list index per command, which is what a binding's 0x7f names. */
   lists: readonly number[];
   /**
-   * The send lists of the power steps, where `powerOn` and `powerOff` were given: what the power
-   * variable runs, and what a device page's power keys should name so that they send what the
-   * catalogue asks for rather than an ordinary press. Equal for a toggle.
+   * The lists that perform the power actions, where `powerOn` and `powerOff` were given: what a
+   * device page's power keys should name so that they send what the catalogue asks for rather than an
+   * ordinary press. For an action of one step that is the step's own send list, equal for a toggle;
+   * for several it is a list calling each step's send list in order, section 320. `off` is also what
+   * the power variable runs to switch the device off. `on` never carries the power on delay, which
+   * only the transition adds: no device mode key Logitech compiled runs one.
    */
   powerSteps?: { on?: number; off?: number };
   /** The device's power variable, in base slot 13's numbering. */
@@ -594,6 +613,27 @@ function appendNameNode(c: Container, name: string, variable: number): Uint8Arra
   return nodeHole.bytes;
 }
 
+/**
+ * A power action as the ordered steps it performs: a single step is an action of one, and an empty
+ * list is refused, since an action that sends nothing would leave the power variable's transition
+ * pointing at a list that does nothing while every reader still finds a device there.
+ */
+function powerAction(
+  given: ComposePowerStep | readonly ComposePowerStep[] | undefined, which: 'on' | 'off',
+): readonly ComposePowerStep[] | undefined {
+  if (given === undefined) return undefined;
+  const steps = 'stated' in given ? [given] : given;
+  if (steps.length === 0) throw new ComposeError(`a power ${which} action of no steps sends nothing`);
+  return steps;
+}
+
+/** An action list of `0x7F` calls, one per list named, in order. */
+function callingList(lists: readonly number[]): Writer {
+  const body = new Writer(1 + 3 * lists.length).u8(lists.length);
+  for (const list of lists) body.u16(list).u8(ACTION_LIST_INDEX_OPCODE);
+  return body;
+}
+
 export function composeDevice(c: Container, device: ComposeDevice): ComposedDevice {
   if (device.label === '' || device.label.includes('_')
       || [...device.label].some((ch) => ch.charCodeAt(0) < 0x20 || ch.charCodeAt(0) > 0x7e)) {
@@ -605,15 +645,27 @@ export function composeDevice(c: Container, device: ComposeDevice): ComposedDevi
   }
   if (c.architecture === undefined) throw new ComposeError('the container states no architecture');
 
+  // The amount a power step's `0x7C` carries, the catalogue's inter key delay where the caller states
+  // it, section 320; an ordinary command's stays 1. One byte of the operand, the group the other.
+  const quantity = device.interKeyDelay ?? DEVICE_QUANTITY_DEFAULT;
+  if (!Number.isInteger(quantity) || quantity < 0 || quantity > 0xff) {
+    throw new ComposeError(`an inter key delay is 0 to 255 tenths of a second, not ${quantity}`);
+  }
+
+  // The power actions, each an ordered list of steps; a single step is an action of one.
+  const onSteps = powerAction(device.powerOn, 'on');
+  const offSteps = powerAction(device.powerOff, 'off');
+
   // The power steps, each a record after the commands, one per distinct step so that a toggle's two
-  // transitions send one record, as Logitech's compile of a toggle does.
+  // transitions send one record, as Logitech's compile of a toggle does, and so that a step an action
+  // states three times is one record called three times, as their compile of the Knoll's off does.
   const stepKey = (step: ComposePowerStep) => `${step.stated}|${step.holdMs ?? ''}`;
   const steps: ComposePowerStep[] = [];
-  for (const step of [device.powerOn, device.powerOff]) {
-    if (step !== undefined && !steps.some((one) => stepKey(one) === stepKey(step))) steps.push(step);
+  for (const step of [...(onSteps ?? []), ...(offSteps ?? [])]) {
+    if (!steps.some((one) => stepKey(one) === stepKey(step))) steps.push(step);
   }
-  const stepIndex = (step: ComposePowerStep | undefined) =>
-    step === undefined ? undefined : device.commands.length + steps.findIndex((one) => stepKey(one) === stepKey(step));
+  const stepIndex = (step: ComposePowerStep) =>
+    device.commands.length + steps.findIndex((one) => stepKey(one) === stepKey(step));
   const sends: ComposeCommand[] = [
     ...device.commands,
     ...steps.map((step): ComposeCommand => (step.holdMs === undefined
@@ -665,10 +717,24 @@ export function composeDevice(c: Container, device: ComposeDevice): ComposedDevi
     if (delay !== undefined) send.u16(loadList(k)).u8(ACTION_LIST_INDEX_OPCODE);
     return send
       .u16((group.group << 8) | k).u8(SEND_INFRARED)
-      .u16((group.group << 8) | DEVICE_QUANTITY_DEFAULT).u8(DEVICE_QUANTITY);
+      .u16((group.group << 8) | (k < device.commands.length ? DEVICE_QUANTITY_DEFAULT : quantity))
+      .u8(DEVICE_QUANTITY);
   });
   const powerDelayList = delayList + 1 + 2 * n;
   const onList = powerDelayList + 1;
+  // The send list of each step of an action, in order, or of the power command where no action is
+  // given, which is what the transitions below call.
+  const sendListsOf = (action: readonly ComposePowerStep[] | undefined): number[] =>
+    action === undefined ? [firstList + power] : action.map((step) => firstList + stepIndex(step));
+  const onCalls = sendListsOf(onSteps);
+  const offCalls = sendListsOf(offSteps);
+  // An action of several steps gets a list of its own calling each step's send list in order, section
+  // 320, laid out after everything above so that no index a caller already relies on moves. The off
+  // action's is what the off transition runs, as in Logitech's compile of the Knoll; the on action's
+  // is for a device page's power key only, since the on transition calls the steps itself.
+  let nextList = delay === undefined ? firstList + n : onList + 1;
+  const offAction = offCalls.length > 1 ? nextList++ : undefined;
+  const onAction = onCalls.length > 1 ? nextList++ : undefined;
   if (delay !== undefined) {
     const spacing = delay.interDevice;
     bodies.push(new Writer(4).u8(1).u16((spacing.table << 8) | spacing.variable).u8(MAP_VALUE_OPCODE));
@@ -682,10 +748,14 @@ export function composeDevice(c: Container, device: ComposeDevice): ComposedDevi
     });
     const waits = delay.powerOn;
     bodies.push(new Writer(4).u8(1).u16((waits.table << 8) | waits.variable).u8(MAP_VALUE_OPCODE));
-    bodies.push(new Writer(7).u8(2)
-      .u16(firstList + (stepIndex(device.powerOn) ?? power)).u8(ACTION_LIST_INDEX_OPCODE)
-      .u16(powerDelayList).u8(ACTION_LIST_INDEX_OPCODE));
+    // The on list: every step of the on action, then the power on delay. For one step that is the
+    // shape every arch 14 device Logitech compiled has, section 288. **For several it is inferred**:
+    // the steps are called in this list directly rather than through the action's own list, which is
+    // what the one step shape extends to, and no compile here switches a device on in several steps.
+    bodies.push(callingList([...onCalls, powerDelayList]));
   }
+  if (offAction !== undefined) bodies.push(callingList(offCalls));
+  if (onAction !== undefined) bodies.push(callingList(onCalls));
   const listsAt = actionTable.start;
   const listsLength = bodies.reduce((sum, body) => sum + body.bytes.length, 0);
   const listsHole = relocate(current, listsAt, listsLength);
@@ -712,8 +782,11 @@ export function composeDevice(c: Container, device: ComposeDevice): ComposedDevi
   const recordLength = STATE_RECORD_HEADER + STATE_VALUE_LENGTH * 2;
   const recordAt = stateRecordEnd(current);
   const recordHole = relocate(current, recordAt, recordLength);
-  const onSend = firstList + (stepIndex(device.powerOn) ?? power);
-  const offSend = firstList + (stepIndex(device.powerOff) ?? power);
+  // What performs each action: a step's own send list for an action of one, the action's own list for
+  // several. The off transition runs `offSend`; the on transition runs the on list where there is a
+  // power on delay to follow it, and `onSend` otherwise.
+  const onSend = onAction ?? (onCalls[0] as number);
+  const offSend = offAction ?? (offCalls[0] as number);
   const switchOn = delay === undefined ? onSend : onList;
   const record = new Writer(recordLength)
     .u16(0).u16(1).u16(2).u8(0)
@@ -827,7 +900,8 @@ export function composeDevice(c: Container, device: ComposeDevice): ComposedDevi
  * command and then one `0x72` mapping `PowerOnDelay_<identifier>` through a 451 case table, whose
  * case for each value up to 450 tenths queues that value as `0x7C` quantities for the device's group,
  * a hundred at a time, a case above 100 through a list of its own. The off transition sends a code of
- * the device with no delay; a composed device has one power command, so it sends that.
+ * the device with no delay; a composed device sends its power off action there, the catalogue's own since
+ * section 320, or its one power command where none is given.
  *
  * A composed device gets the same pieces the compiler gives one, and nothing is shared with another
  * device except the start sequence variable, which is the configuration's. **Since section 319 none

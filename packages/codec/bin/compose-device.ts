@@ -23,15 +23,20 @@
  *
  * **On a Harmony 600, 650 or 700 the device also gets its two delays**, sections 287 and 288:
  * `--power-on-delay` and `--inter-device-delay` in tenths of a second, 0 to 450 and 0 to 20, and
- * without them what most compiled devices carry, 15 and 5.
+ * without them the catalogue's own, which is what Logitech's compiler gives every test device of the
+ * power hold compiles, section 320. With `--no-power-steps` and no flags, what most compiled devices
+ * carry, 15 and 5.
  *
- * **A power step the catalogue holds for a time is composed as Logitech composes it**, section 309: a
- * record of its own holding the frames that hold sends, which the device's power variable sends when it
- * switches the device on or off. A television that needs its power button held, the Harmony 650's
- * Panasonic, stays off for an ordinary press. **The device page's power keys send those records too**,
- * which Logitech's compile does not do, since a device mode Power On of three frames leaves that
- * television off. Only a power action that is one send is composed this way; anything longer is
- * reported and the first command toggles the power as before, and `--no-power-steps` asks for that.
+ * **The power is composed as the catalogue states it and as Logitech's compiler wires it**, sections
+ * 309 and 320: each step a record of its own, the long press version where the catalogue holds the step
+ * for a time, an action of several steps a list calling them in order, and the power on delay, the inter
+ * device delay and the power steps' inter key delay all the catalogue's own. `catalogueDevicePower` is
+ * the reading and refuses what no compile shows composed, a wait inside a power action above all, and
+ * then this stops and says why; `--no-power-steps` instead sends the first command both ways, which is
+ * what this did before section 309. A television that needs its power button held, the Harmony 650's
+ * Panasonic, stays off for an ordinary press. **The device page's power keys send the power actions
+ * too**, which Logitech's compile does not do, since a device mode Power On of three frames leaves that
+ * television off.
  *
  * It deliberately does not stamp the build timestamp, for `set-delay.ts`'s reason: a timestamp is
  * right for a save and wrong for an exercise whose output should differ from its input only in the
@@ -44,9 +49,10 @@ import { IR_ARCHIVE } from '@harmony/lab';
 import {
   catalogueCommands,
   catalogueDevice,
+  catalogueDevicePower,
   catalogueDriving,
-  type ComposePowerStep,
-  type DriveStep,
+  type CataloguePower,
+  ComposeError,
   composeDevice,
   composeDeviceScreen,
   coverage,
@@ -120,29 +126,27 @@ const commands = wanted.map((name) => {
 process.stdout.write(`${device.manufacturer} ${device.model}: ${available.length} commands in the `
   + `catalogue, ${commands.length} asked for\n`);
 
-// The catalogue's power on and off, each composed as its own record where it is a single send, section
-// 309. A toggle device states one action for both.
+// The catalogue's power and delays, section 320: the steps that switch it on and off, each a record of
+// its own, and the three delays its entry states. A statement no compile shows composed stops here.
 const driving = catalogueDriving(IR_ARCHIVE, manufacturer, model);
-const single = (name: string, steps: readonly DriveStep[] | undefined):
-  { step: ComposePowerStep; command: string } | undefined => {
-  if (steps === undefined) return undefined;
-  const [only] = steps;
-  if (steps.length !== 1 || only === undefined || only.kind !== 'send') {
-    process.stdout.write(`power ${name} is ${steps.length} catalogue steps, not one send, so it is not composed `
-      + 'as a step of its own\n');
-    return undefined;
+let power: CataloguePower | undefined;
+if (!process.argv.includes('--no-power-steps')) {
+  try {
+    power = catalogueDevicePower(driving, (name) => byName.get(name));
+  } catch (error) {
+    if (!(error instanceof ComposeError)) throw error;
+    fail(`${error.message}. --no-power-steps sends ${wanted[0]} both ways instead`);
   }
-  const keycode = byName.get(only.command) ?? fail(`the catalogue's power ${name} sends ${only.command}, which the codeset lacks`);
-  return { command: only.command, step: { stated: keycode, ...(only.holdMs === undefined ? {} : { holdMs: only.holdMs }) } };
-};
-const steps = process.argv.includes('--no-power-steps') ? {} : {
-  on: single('on', driving.power?.on ?? driving.power?.toggle),
-  off: single('off', driving.power?.off ?? driving.power?.toggle),
-};
-for (const [name, one] of Object.entries(steps)) {
-  if (one === undefined) continue;
-  process.stdout.write(`power ${name}: ${one.command}`
-    + (one.step.holdMs === undefined ? ', an ordinary press' : `, held ${one.step.holdMs} ms`) + '\n');
+  const describe = (steps: CataloguePower['powerOn'], names: readonly string[]) => steps
+    .map((step, k) => names[k] + (step.holdMs === undefined ? '' : ` held ${step.holdMs} ms`)).join(', then ');
+  process.stdout.write(`power is ${power.type}: on ${describe(power.powerOn, power.onCommands)}; `
+    + `off ${describe(power.powerOff, power.offCommands)}\n`);
+  process.stdout.write(`catalogue delays in tenths: power on ${power.powerOnDelay ?? 'not stated'}, inter device `
+    + `${power.interDeviceDelay}, inter key ${power.interKeyDelay}\n`);
+  if (power.onResetStates > 0) {
+    process.stdout.write(`the catalogue resets ${power.onResetStates} input state(s) after a power on, `
+      + 'which is not composed: the device comes on in whatever input it was left in\n');
+  }
 }
 
 const before = parse(new Uint8Array(readFileSync(input)));
@@ -150,20 +154,22 @@ const wasDevices = inventory(before).devices;
 process.stdout.write(`${input}: ${before.blob.length} bytes, ${wasDevices.length} devices `
   + `(${wasDevices.map((one) => one.name ?? '?').join(', ')})\n`);
 
-// Arch 14 only: the two delays in tenths of a second, which the composer otherwise sets to what most
-// of Logitech's devices carry. A television usually wants a longer power on delay than that.
+// Arch 14 only: the two delays in tenths of a second, given on the command line to override the
+// catalogue's.
 const tenths = (name: string): number | undefined => {
   const given = argument(name);
   if (given === undefined) return undefined;
   const value = Number(given);
   return Number.isInteger(value) ? value : fail(`--${name} is a whole number of tenths of a second`);
 };
-const powerOnDelay = tenths('power-on-delay');
-const interDeviceDelay = tenths('inter-device-delay');
+// A delay given on the command line wins over the catalogue's.
+const powerOnDelay = tenths('power-on-delay') ?? power?.powerOnDelay;
+const interDeviceDelay = tenths('inter-device-delay') ?? power?.interDeviceDelay;
 const composed = composeDevice(before, {
   label, commands, power: 0,
-  ...(steps.on === undefined ? {} : { powerOn: steps.on.step }),
-  ...(steps.off === undefined ? {} : { powerOff: steps.off.step }),
+  ...(power === undefined ? {} : {
+    powerOn: power.powerOn, powerOff: power.powerOff, interKeyDelay: power.interKeyDelay,
+  }),
   ...(powerOnDelay === undefined ? {} : { powerOnDelay }),
   ...(interDeviceDelay === undefined ? {} : { interDeviceDelay }),
 });
@@ -179,11 +185,13 @@ if (!process.argv.includes('--no-power-off')) {
   process.stdout.write(`power variable ${composed.variable} joins all off list ${joined.allOff} and `
     + `${joined.enterLists.length} activity enter lists as 0\n`);
 }
-// A pad for a power command sends the power step's record, where there is one, rather than the
-// ordinary press: the reason the step exists is that the press is not enough for this device.
+// A pad for a power command performs the power action, where there is one, rather than sending the
+// ordinary press: the reason a long press version exists is that the press is not enough for this
+// device. A command both actions use, a toggle's, gets the on action.
 const padList = (k: number): number => {
-  if (wanted[k] === steps.on?.command && composed.powerSteps?.on !== undefined) return composed.powerSteps.on;
-  if (wanted[k] === steps.off?.command && composed.powerSteps?.off !== undefined) return composed.powerSteps.off;
+  const name = wanted[k] as string;
+  if (power?.onCommands.includes(name) && composed.powerSteps?.on !== undefined) return composed.powerSteps.on;
+  if (power?.offCommands.includes(name) && composed.powerSteps?.off !== undefined) return composed.powerSteps.off;
   return composed.lists[k] as number;
 };
 const screen = composeDeviceScreen(withDevice, label,

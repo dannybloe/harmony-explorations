@@ -40537,7 +40537,8 @@ sends them in place of the first command's ordinary press. Composed onto the Har
 configuration, the Panasonic television's two step records are Logitech's two records for it word for
 word. `compose-device.ts` reads the steps out of the catalogue when the power action is one send, and
 points the device page's power pads at them too, which Logitech's compile does not do and which is the
-reason for todo 4.3.4.
+reason for todo 4.3.4. **Since section 320 an action of several steps is composed too**, and the step
+from the catalogue is `catalogueDevicePower`, which also takes the catalogue's delays.
 
 ### On the Harmony 650, the television's own Power On key
 
@@ -41866,3 +41867,169 @@ order; a compile of an account holding a device numbered below one an earlier co
   two compiles, and the composer's two refusals, each by a one byte edit.
 * `docs/config-format.md`, base slot 14 and the arch 14 command lists; sections 287 and 288 corrected
   in place.
+
+## 320. A catalogue device's power is wired the way Logitech's compiler wires it, the long press version and the catalogue's delays included
+
+**3 October 2026, `todo-compile-650.md` 2.2.** Section 309 composed the long press version, the record
+a held power step sends, and checked the record word for word. What it did not check is the rest of
+what a device's power is: which list each transition of the `Power` variable runs, how an action of
+more than one step is laid out, and the delays around it. And the step from the catalogue to the
+composer lived in `compose-device.ts`, a script no test reached, which took a power action only when
+it was a single send and set every delay to what most compiled devices carry.
+
+**Sources checked**: sections 285, 287, 288 and 305 to 309; `driving.ts`, `compose.ts` and
+`compose-device.ts`; the six power hold compiles and the archive. Not Logitech's client: section 305
+found MyHarmony sets no power duration and the compiler is their service's, so no client or firmware
+holds the wiring.
+
+### What was missing, and what was measured
+
+Each test device of the six compiles, 18 instances of 16 catalogue devices, was composed from its
+catalogue entry alone onto the Harmony 650's own configuration, `h650_config_region`, and what its
+`Power` variable runs was compared with what the compile's runs, both transitions, call by call: the
+record each call sends, word for word, its held and tail pointers, the `0x7C` amount after it, the
+inter device delay its prelude maps, the power on delay the on transition calls, and the order of the
+calls. Four things were missing and are composed now:
+
+* **A power action of several steps.** The Knoll HDP-1100's catalogue switches it off with its power
+  toggle held 500 ms, three times. The compile's off transition runs a list of three `0x7F` calls, all
+  to one send list, whose record holds five frames. `composeDevice` took one step per action; it takes
+  a list now, a repeated step being one record and one send list, and an off action of several steps
+  is a list of calls exactly as the compile's.
+* **The power on delay and the inter device delay the catalogue states.** The compiled `PowerOnDelay`
+  and `InterDeviceDelay` variables start at the catalogue's `powerOnDelay` and `interDeviceDelay` in
+  tenths of a second on every instance compared. The defaults of 15 and 5 were wrong for the power on
+  delay of 11 of the 17 instances and for the inter device delay of 7 of them.
+* **The `0x7C` amount after a power step's send is the catalogue's `interKeyDelay` in tenths**, 1, 4 or
+  5 here; it was 1 on every composed send, wrong on 13 of the 28 distinct power send lists, on 9 of the
+  17 instances.
+* **The step from the catalogue to the composer is a library function**, `catalogueDevicePower` in
+  `packages/codec/src/devicepower.ts`, and `compose-device.ts` uses it.
+
+**Result: on 17 of the 18 instances every power send and every delay of both transitions agrees**,
+36 calls of a power send ours and 36 theirs, each at the same place in the other, over 28 distinct send
+lists whose records agree word for word. The 18th is the Panasonic TX-28A1U, whose Technics family
+states no press block, so its codes cannot be built at all, as section 309 found for its held record.
+**The whole on transition agrees on 9 of the 17**: on the other 8 the compile's on transition also calls
+one list per input state the catalogue's `onReset` names, 13 lists, after the power on delay and nothing
+after them. Those are not composed, todo 2.5, so a composed television comes on in whatever input it was
+left in, and the compare leaves them out.
+
+### The amounts take three values, and what a power step gets is the inter key delay
+
+**Tested**: over every send list of the 18 instances, power or not, the `0x7C` amount is 1, the
+catalogue's `interKeyDelay` or its `inputDelay`, in tenths, and no fourth value. The Sony KE-50MR1E's
+inputs carry 20, its input delay of 2000 ms, a value the corpus does not hold, since the compiles sit
+outside it.
+
+**Read once and not asserted**, by naming each compiled list from the catalogue by the number its record
+decodes to, here and again by both reviewers. Every command has a list at 1. The lists at the inter key
+delay are the power transitions' sends and lists reached from other state variables' transitions, and on
+seven instances a second set of ten lists, one per digit, that nothing calls: the TX-28A1U, DSI-4400,
+Quasar, CS-29FJ20S, TX-D37LT84F, KE-50MR1E and 25DT60H. The Barco 6300 and the Pioneer DEH-P47DH, both
+at an inter key delay of 5 and both holding the ten digits, get no such set. A list at the input delay
+is a second list for some input commands on three instances, the TX-29AK40F, the TX-28A1U and the
+KE-50MR1E, and on four others with input commands it is absent: the Knoll, the TX-D37LT84F, the
+CS-29FJ20S and the Quasar. **What decides the digit and input copies is not read.**
+
+So `DEVICE_QUANTITY_DEFAULT` of 1 is right for an ordinary command, which its docstring said nothing
+could choose; `composeDevice` keeps 1 there and gives the inter key delay to its power steps. Neither
+copy is composed.
+
+**This is about devices freshly added from the catalogue and is not scored on the corpus**, whose
+devices may carry delays their owner edited. Matched to the catalogue by the codes they send, 2 of the 9
+matched device groups in the arch 14 user configurations hold lists outside the three values, 14 of 605
+lists: the Harmony 650's own configuration has 10 at 4 on a device whose entry states an inter key delay
+of 1 and an input delay of 0, and the Harmony 700's has 4 at 10. Counted by the second reviewer and not
+asserted.
+
+### What is inferred rather than measured
+
+**An on action of several steps.** No compile here switches a device on in more than one step. The on
+transition calls the steps one by one and then the power on delay, which is what the one step shape
+extends to; calling a list of the steps instead would fit as well. The device page's key for such an
+action runs a list of its own calling the steps, which the off action's shape is.
+
+**What the catalogue states that nothing here composes**, refused by `catalogueDevicePower` rather than
+guessed at, counted over the archive's 276236 records: it takes the power of 235572, 2868 of them with
+an action of several steps, 2938 with a held step. A wait inside a power action refuses 2993, the
+largest shape being 1655 discrete devices whose power on holds no wait and whose power off does; no power
+action at all refuses 35716, since no compile shows what Logitech's compiler gives such a device; a
+toggle device with no toggle action 1321; and smaller groups are counted in the test. A compile of a
+device with a wait in its power off is the next calibration this needs.
+
+### Device mode
+
+**Logitech's compile gives a device page's power keys the ordinary press**, three frames for the
+Panasonic power codes, and section 306 heard that for `PowerOn` leave the bench television off.
+`compose-device.ts` points them at the power actions instead, as section 309 decided, so in device mode
+a composed device sends the long press version where Logitech's would not. That is a deliberate
+difference, alongside the input state lists above, which are a gap; the library hands back the lists,
+`powerSteps`, and the caller chooses.
+
+### What a Harmony 650 hardware check must observe
+
+`packages/bench/irtests/650-composed-power.json`: the Panasonic TX-P42GT30E composed from the catalogue
+as a device of its own, with a composed activity that switches it on. With the Flirc receiver, its
+device page's PowerOn pad gives seven `PowerOn` frames, 134.6 ms apart, the last ending 867.5 ms after
+the first began, and the television comes on; PowerOff gives seven `PowerOff` frames 136.4 ms apart,
+ending 879.7 ms after the first, and it goes off. The activity's start gives the same seven `PowerOn`
+frames and Off the same seven `PowerOff` frames. An ordinary press would be three. The power on delay,
+50 tenths for this television, is not visible in that run, because the composed activity sends the
+television nothing after switching it on, section 291's rail. `compose-device.ts` composes and saves
+the Panasonic onto the 650's region read from before the Panasonic was first added, once main's
+acceptance of a sync's day 0 stamp is in, and onto `h650_config_region`; the run is unperformed.
+
+### Independent closure and calibration
+
+The catalogue's statement comes from the archive and the compiled wiring from Logitech's service, two
+routes that meet only in Logitech's database. The calibration is the control counted beside the
+agreement: what the composer before this section would have written for the same devices. Counted per call, as
+the test does, it is wrong on 18 of the 36 amounts, 14 of the 36 inter device delays a call's prelude
+maps, 11 of the 17 power on delays and one action shape; per instance, the amount on 9 of the 17, the
+inter device delay on 7 and the power on delay on 11.
+
+### Scope, decision 16
+
+Compiled for a Harmony 650 and a Harmony 700, arch 14, and nothing else. The composer's arch 12
+(Harmony One) shape for an action of several steps is exercised by a test and calibrated against no
+compile; whether the arch 12 compiles carry the catalogue's delays the same way is not checked.
+
+### Falsification
+
+A compiled device whose power transitions, records or delays differ from what `catalogueDevicePower`
+and `composeDevice` make of its catalogue entry; a compile of an on action of several steps calling
+them through a list of their own; a send list of a device freshly added from the catalogue whose amount
+is none of 1, the inter key delay and the input delay.
+
+### The two reviews
+
+**The blind re-measurement**, by a reviewer handed the compiles and the catalogue and not this
+section's answer, reproduced the wiring: the delays equal the catalogue's on 18 of 18 instances, the
+power transitions' `0x7C` is the inter key delay on 29 of 29, the `onReset` lists come last, and the
+Knoll's off is three calls of one send list. It found the inter key delay on lists reached from other
+state variables too, and that the digit lists at that delay are second, uncalled copies, both of which
+the amounts subsection now says.
+
+**The sentence audit** found ten things and every one is corrected above. Two counts were per call
+where the claim was per instance or per list, the inter device delay's 14 of 36 and the amount's 18 of
+36. The headline held only with the input state calls left out, which it now says. "The only difference
+in the wiring" ignored those same calls. The digits rule failed on the Barco 6300 and the Pioneer
+DEH-P47DH, and the inputs rule held on three devices and failed on four. "Which value a send gets is
+the catalogue's" sat in a corpus wide paragraph it was never scored on, where 14 of 605 lists in matched
+groups fall outside it. The census's 1440 was asserted nowhere and counted a narrower shape than its
+sentence; the shape is now 1655 and asserted. The blocker named for the hardware check was stale
+against main. And the amounts test's docstring attributed commands it does not assert.
+
+### Where it lands
+
+* `packages/codec/src/devicepower.ts`, `catalogueDevicePower`, new.
+* `composeDevice` in `packages/codec/src/compose.ts`: `powerOn` and `powerOff` take several steps,
+  `interKeyDelay` sets the power steps' amount.
+* `packages/codec/bin/compose-device.ts`: power and delays from the catalogue.
+* `packages/codec/test/devicepower.test.ts`: the 18 instances against the compiles with the counts both
+  ways and the control; every send list's amount per instance; the mapping on made up records; an action
+  of several steps on the Harmony 650 and the Harmony One; and the archive census. Composing the Knoll's
+  off as one step, or leaving the delays at their defaults, fails the first.
+* `docs/config-format.md`, the power wiring and which `0x7C` value a send gets.
+* `DEVICE_QUANTITY_DEFAULT`'s docstring in `inventory.ts`, corrected in place.

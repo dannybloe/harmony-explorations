@@ -1,0 +1,10 @@
+{
+  "name": "Harmony 650, a device composed from the catalogue switches its power as Logitech's does",
+  "description": "Todo 2.2, section 320. The Panasonic TX-P42GT30E composed from Logitech's catalogue with compose-device.ts, nothing copied, as a device called Plasma with two pads, PowerOn and PowerOff, plus a composed activity that switches it on. Both power actions are the long press version: seven frames each, PowerOn spaced 134.6 ms and its last frame ending about 0.87 s after the first began, PowerOff spaced 136.4 ms and ending about 0.88 s after, where an ordinary press is three frames. The frame count and the spacing per step are the measurement, so the steps carry no expectation: the configuration that drives them is composed for the run and is not one the monitor names devices against. Keep the remote pointed at the Flirc and at the television.",
+  "steps": [
+    { "instruction": "Television off. On the Harmony 650, press Devices, choose Plasma, and press the PowerOn pad once, briefly. Expect seven PowerOn frames in one burst. Note whether the television switched on" },
+    { "instruction": "Press the PowerOff pad once, briefly. Expect seven PowerOff frames in one burst. Note whether the television switched off" },
+    { "instruction": "Television off. Start the composed activity that switches Plasma on and wait until the remote is done. Expect seven PowerOn frames for the television among what it sends. Note whether the television switched on" },
+    { "instruction": "Press Off and wait until the remote is done. Expect seven PowerOff frames for the television. Note whether the television switched off" }
+  ]
+}

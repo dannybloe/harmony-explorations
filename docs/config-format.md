@@ -2896,6 +2896,27 @@ separates, and that the Panasonic codes are not simply counted as whole copies w
 fits every record. **Unmeasured**: families with several repeat segments or more than two cells, and
 whether a hold shorter than an ordinary press can send fewer frames, which no record needs.
 
+**How the compiler wires a catalogue device's power**, section 320, arch 14 compiles only (Harmony 650
+and 700), 17 device instances of 15 catalogue devices, every power send and delay reproduced by
+`composeDevice` from the catalogue entry alone; the input state lists the on transition ends in are not
+composed:
+
+* **The actions are the catalogue's.** A `discrete` device's `Power` variable sends its `on` action going
+  from 0 to 1 and its `off` action going from 1 to 0; a `toggle` device sends its one `toggle` action both
+  ways, one record and one send list.
+* **An action of one step is that step's send list itself**: the off transition's operand is the send
+  list, `{0x7F, 0x7D, 0x7C}`. **An action of several steps is a list of `0x7F` calls**, one per step in
+  order, a step stated more than once being one record and one send list called again: the Knoll
+  HDP-1100's off, its power toggle held 500 ms three times, is one list calling one send list three
+  times. The only such action in the compiles, so one device.
+* **The on transition is a list of calls**: the on action's send list, then the device's power on delay
+  list, one `0x72`, then one list per input state the catalogue's `onReset` names. **Unconfirmed**: that
+  an on action of several steps is called step by step in that list rather than through a list of its
+  own, since no compile here holds one.
+* **The three delays are the catalogue entry's**, in tenths of a second: the `PowerOnDelay` variable's
+  first value is `powerOnDelay`, the `InterDeviceDelay` variable's is `interDeviceDelay`, and the `0x7C`
+  after a power step's send is `interKeyDelay`, on every device instance.
+
 **How Logitech's generator spells a block**, section 174. These are the generator's conventions
 rather than format constraints, since the firmware plays any legal spelling identically; a writer
 that wants byte identity with a compiled config follows them, and `compiledBlockWords` in
@@ -4001,7 +4022,16 @@ record can be sent from more than one list.
 `{0x7D, 0x7C}` on arch 8, 9 and 12, and in all 4267<!--fact:send_lists--> of those lists the `0x7C` operand's high byte
 equals the `0x7D` operand's. So the grouping is shared between the infrared database, `0x7C` and
 `0x7D`. The accompanying `0x7C` value takes seven values across the corpus, `0, 1, 2, 3, 4, 5, 10`, and is
-1 in most sends. What says it is a count rather than a second identifier is not the size of that set,
+1 in most sends. **On a device freshly added from the catalogue the value is one of three**, section 320,
+on the 18 test device instances of the six power hold compiles, arch 14, which sit outside the corpus
+and add a value it does not hold, 20: 1, the entry's `interKeyDelay` in tenths, or its `inputDelay` in
+tenths. Every command has a list at 1. The power transitions' sends are at `interKeyDelay`; on seven
+of the instances so is a second, uncalled list for each digit 0 to 9, which the Barco 6300 and the
+Pioneer DEH-P47DH do not get at the same `interKeyDelay` of 5; and on three a second list for some input
+commands is at `inputDelay`, which four others with input commands do not get. **Unconfirmed**: what
+decides the digit and input copies. Not scored on the corpus, whose devices may carry delays their owner
+edited: the Harmony 650's own configuration has 10 lists at 4 on a device the catalogue states with an
+`interKeyDelay` of 1. What says it is a count rather than a second identifier is not the size of that set,
 which grew when the population did: an identifier would have to separate the records of a group, the
 largest group here holds 111, and the firmware caps this field at 100. Section 140.
 

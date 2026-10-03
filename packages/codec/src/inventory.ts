@@ -936,10 +936,15 @@ export const DEVICE_QUANTITY = 0x7c;
 /**
  * What a composed send pairs with its `0x7C`: an amount of 1.
  *
- * Deliberately a constant rather than a computed delay. The quantity is a per device wait and this
- * project has no basis for choosing one for a device it has just added, so it takes the value the
- * configuration's own LG television entry carries, `0x7C` operand `0x0301`, which is the list run 3
- * of section 278 switched the television on with. Section 236 is why a small value is safe: a
+ * Deliberately a constant rather than a computed delay. The quantity is a per device wait, and this
+ * said the project had no basis for choosing one for a device it has just added, so it took the value
+ * the configuration's own LG television entry carries, `0x7C` operand `0x0301`, which is the list run 3
+ * of section 278 switched the television on with. **Section 320 found the basis, and 1 is right for an
+ * ordinary press**: on the test devices of the six power hold compiles, Logitech's compiler gives every
+ * command a list at 1 and the power steps the catalogue's inter key delay in tenths; the second lists
+ * some devices get per digit at the inter key delay, and for some input commands at the input delay,
+ * follow a rule not read. So `composeDevice` gives its power steps the inter key
+ * delay it is handed and keeps this for everything else. Section 236 is why a small value is safe: a
  * quantity with no later command for its own device behind it is never felt.
  */
 export const DEVICE_QUANTITY_DEFAULT = 1;

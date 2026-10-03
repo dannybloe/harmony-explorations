@@ -444,8 +444,8 @@ class ATypeScriptSampleLoopStatesItsPopulation(unittest.TestCase):
         # `packages/codec/test/driving.test.ts`, section 305. 67 since `packages/codec/test/tagfive.ts`,
         # section 313's tag 5 check shared by the corpus test and the composer's, which is a helper
         # rather than a test file and is counted because the glob reads every `.ts` under `test/`. 69 with
-        # section 315's two and 70 with `packages/codec/test/screencategories.test.ts`, section 317. 71 with frame.test.ts, section 318.
-        self.assertEqual(scanned, 71, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
+        # section 315's two and 70 with `packages/codec/test/screencategories.test.ts`, section 317. 71 with frame.test.ts, section 318, and 72 with devicepower.test.ts, section 320.
+        self.assertEqual(scanned, 72, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
         self.assertEqual(
             {name: len(lines) for name, lines in counted.items()},
             TYPESCRIPT_LOOPS_ALLOWED_TO_SKIP_A_SAMPLE,
@@ -576,8 +576,8 @@ class ABoundOnACorpusTotalIsExact(unittest.TestCase):
         # 65 since `packages/usb/test/settings.test.ts`, section 304, 66 since
         # `packages/codec/test/driving.test.ts`, section 305. 67 since `packages/codec/test/tagfive.ts`,
         # section 313, a shared helper rather than a test file. 69 with section 315's two and 70 with
-        # `packages/codec/test/screencategories.test.ts`, section 317. 71 with frame.test.ts, section 318.
-        self.assertEqual(len(scanned), 71, 'TypeScript test files, which moves when one is added')
+        # `packages/codec/test/screencategories.test.ts`, section 317. 71 with frame.test.ts, section 318, and 72 with devicepower.test.ts, section 320.
+        self.assertEqual(len(scanned), 72, 'TypeScript test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):
