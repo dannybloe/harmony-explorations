@@ -42033,3 +42033,161 @@ against main. And the amounts test's docstring attributed commands it does not a
   off as one step, or leaving the delays at their defaults, fails the first.
 * `docs/config-format.md`, the power wiring and which `0x7C` value a send gets.
 * `DEVICE_QUANTITY_DEFAULT`'s docstring in `inventory.ts`, corrected in place.
+
+## 321. A device's inputs are two layers of state variables, and the catalogue states enough to compose them
+
+**Todo `todo-compile-650.md` 2.5, and 3.6**: a device's inputs, its input states and the commands that
+select them, directly or by stepping; and an activity's start setting them.
+
+**Sources checked**: this document, sections 74, 86, 273, 277, 285, 288, 290, 291 and 305; the thirteen
+arch 14 compiles listed in section 314; the catalogue through `driving.ts`; the lab's raw capture of the
+same catalogue, `work/ir-archive-raw/`, for the fields the archive drops; MyHarmony's client for the
+names of `setType`'s values, client sourced under decision 2. The Harmony 600, 650 and 700's transition
+walker is **not** read; the sentinels below are read on the Harmony One's, section 277.
+
+### What the compiler writes
+
+A Harmony does not send "HDMI 1" from an activity. The activity writes a number into the device's
+`Input` variable and that variable's transition sends the code, the way `Power` sends the power code.
+Logitech's catalogue states inputs in two layers and the compiler keeps both:
+
+* `<label>_Input_<n>`: value `v` is the `v`th of `inputs.list`. Each value has one transition from
+  `-2`, the wildcard; where the inputs step with `inputs.next` instead, one transition per ordered pair.
+* `<label>_<state>_<n>`, one per catalogue state, Logitech's `InternalStateFeature`. A value with a
+  `select` has one transition, from `-2` when `setType` is 1 and from `-3`, "the value changed", when it
+  is 2, which MyHarmony names `SetStateValue` and `ChangeSetStateValue`. A state with `next` has one
+  transition per ordered pair. An input whose commands are `{set, to}` steps sends nothing itself: it
+  writes the state variables and their transitions send. The LG OLED65G26LA reaches DTV that way, its
+  input writing `Screen` and `TVInput`.
+
+Counted per configuration over the thirteen, so a device compiled into eight configurations counts
+eight times, `packages/codec/test/inputs.test.ts`:
+
+| | count |
+|---|---|
+| devices with an input variable | 40 |
+| reached by value, every value once from `-2` | 37, 437 transitions |
+| stepping | 3: the TX-28A1U's four inputs, 12 transitions, and two of one value with none |
+| devices with no input variable | 32, one of them holding a state |
+| state variables of devices with an input | 45: 22 by value, 73 transitions from `-2` and 54 from `-3`; 23 stepping |
+| stepping transitions whose body is the one step body `(j - i) mod n` times | 128 of 128 |
+| every variable's `first` | 0 |
+
+The instruction a transition holds: the null instruction for an input with no commands, 6 times; an
+inline write `0x80 | variable` when the input's only step writes one state, 103; a `0x7F` to a list
+otherwise, 340, and every one of the 243 state transitions. A body of one send runs that send list
+directly; a longer body is its own list of send list calls, bare `0x7C` waits and writes.
+
+**The wait after each send is per layer.** An input's own sends and its `next` wait the device's input
+delay, a state's sends its key delay, both in tenths. A device with an input delay of 0 waits its key
+delay on both, the Sony KDL-32W705B. The two rules part only where the input delay is above zero and
+below the key delay, twelve catalogue devices, none compiled here, so that case is refused.
+
+**Which variables exist**: one input that steps gets a variable of one value and no transitions, the
+Quasar SP2717T; one that does not step gets none, the KPN box and the Plex player. A state no input
+writes, directly or through another state, is not compiled: the Quasar's catalogue entry states six and
+its compile holds none. That is one device, so the reachability rule is fitted to it and to nothing
+against it: every state of the other nine composed devices below is reached and compiled.
+
+**An activity's start**, the enter list: power on, then the inputs in the order the devices were
+switched on, then power off, then the activity counter, 40 of 40 activities, 72 input writes. A device
+switched on with an input variable need not have it set, 11 such pairs; a device with no power variable
+can have it set, the Chromecast of `h600_config`, once.
+
+### The calibration
+
+Ten devices Logitech compiled were composed again from the catalogue alone, each into the Harmony
+650's own configuration, and their variables compared with Logitech's transition for transition. Sends
+are named by decoding each frame and looking its number up in the device's own codeset, so the two
+sides share no number. Inputs are compared as sets of bodies, because Logitech numbers them by
+`InputOrder`, which the archive drops: the Sony KDL-32W705B has Netflix at `InputOrder` 1 and last in
+the archive's array.
+
+Per device, transitions equal with the silent flag set aside, and how many of those are equal with it:
+
+| device | equal | exact | ours only | theirs only |
+|---|---|---|---|---|
+| LG OLED65G26LA | 24 | 24 | 0 | 0, plus `OnlinePower` |
+| Denon AVR-X4800H | 19 | 19 | 0 | 0 |
+| Panasonic TX-P42GT30E | 33 | 33 | 0 | 0 |
+| Sony KDL-32W705B | 10 | 10 | 1 | 1, plus `OnlinePower` |
+| Denon AVR-1912 | 16 | 16 | 0 | 0 |
+| Panasonic TX-29AK40F | 21 | 20 | 0 | 0 |
+| Panasonic TH-42PA30 | 30 | 21 | 4 | 0 |
+| Quasar SP2717T | 0 | 0 | 0 | 0 |
+| Thomson 25DT60H | 12 | 11 | 0 | 0 |
+| Sony KE-50MR1E | 9 | 9 | 0 | 0 |
+| **total** | **174** | **163** | **5** | **1** |
+
+Read the other way, 174 of Logitech's 175 transitions have an equal in ours and 174 of our 179 have one
+in Logitech's. The eleventh device, the TX-28A1U, cannot be composed, because its infrared family has no
+measured whole block; its plan states the same 12 pairs with the same presses and waits as its compile.
+
+**What differs, by name:**
+
+* **Silent writes, 11 transitions.** Logitech's raw data marks some state steps as recording a value
+  rather than setting it, `DevActionType` 1, and the compiler writes them behind the silent flag of
+  section 74, as a call to `[07 FFFF, 0x80 | v]`. The archive keeps the step and drops the mark, so a
+  composed step always sends. In the raw capture's inputs 191850 of 193647 state steps are the sending
+  kind.
+* **The connected app.** Netflix is the input Logitech marks online, and their transition waits for the
+  device's connected app first; the archive drops the mark. `<label>_OnlinePower_2`, a variable with no
+  transitions, belongs to the same machinery and is not composed.
+* **Four `Select` transitions, unexplained.** The TH-42PA30's catalogue reaches the `OFF` value of
+  `AV1Scart`, `AV2Scart`, `AV4Scart` and `MENU` by one `Select` press each, and Logitech's compile holds
+  no transition for any of the four. The code is in its compiled group, the raw capture states the
+  same steps, and the same device's other `-3` values compile. The raw capture gives these four the
+  step order 0 where the device's other steps have 1 or more, but the LG's state steps have order 0 too
+  and compile, so that does not explain it.
+
+**Two pins checked rather than trusted.** Each device's catalogue entry comes from the label the test
+account gave it, and the group Logitech compiled is checked against the entry's codeset: every number
+the group decodes to is in it on seven devices and on the Quasar, 115 of 144 on the AVR-X4800H and 91
+of 92 on the AVR-1912, whose misses are not examined, and **0 of 35 on the Thomson**,
+whose Philips RECS80 records decode to no number its codeset states. So the Thomson's sends compare as
+decoded numbers rather than names, and its pin rests on the label. Not explained. The codeset is not
+always the catalogue's best match either: the TX-29AK40F's group scores higher against another one.
+
+**A case mismatch, matched.** The catalogue's rules and codesets spell some names differently,
+`InputTvAudio` against `InputTVAudio`, `InputHdmi3` against `InputHDMI3`; four commands on the two
+calibration devices that have them. Logitech's compiler sends those commands, so a name is matched
+without case and refused when two codeset names differ only in case.
+
+### What is composed
+
+`inputPlan` turns a catalogue entry into the plan above and refuses every shape no compile here shows:
+a `start`, `finish` or `previous` list, `canSkip`, a held press inside an input, a value reached two
+ways, a state that both selects and steps, a `setType` other than 1 or 2, inputs nothing reaches,
+delays that are not whole tenths, and the twelve devices whose input delay sits below their key delay.
+`composeDeviceInputs` writes it on arch 14 only: the variables at `narrow` through the power variable's
+own insertion, now `appendNarrowStateVariable` in `compose.ts`, then one send list per command and wait
+with its private load and condition lists, and one list per longer body. `activityStartTargets` puts the
+inputs between the power writes, and a composed LG put on HDMI 1 by a composed activity writes power on,
+input 3, every other device off and the counter, and that input's transition puts `Screen` on HDMI1,
+whose transition sends a code that decodes to the catalogue's `InputHdmi1`.
+
+### Scope, decision 16
+
+Measured and composed on arch 14 only, the Harmony 600, 650 and 700, and the composer refuses any
+other. The Harmony One, 525 and 880 hold input variables too and are not compared here.
+
+### Falsification
+
+A Logitech compiled arch 14 configuration whose input or state variable is reached any other way, or
+whose stepping body is not the step repeated; on the remote, an activity built this way that switches a
+device on and does not send the input's code, or sends it before the power code.
+
+### For the hardware check
+
+Nothing here has been on a remote. Ticking 2.5 and 3.6 needs a Harmony 650 with a composed device whose
+inputs are composed this way, an activity that switches it on and chooses a non zero input, and the
+Flirc receiver: starting the activity must send the power code, wait, then the input's code; choosing
+an input that steps must send `next` the forward count of times; and the device's own keys must still
+answer. Value 0 should be avoided for the first check, because what the `-2` wildcard does when the
+variable already holds the value is read on the Harmony One only.
+
+### Where it lands
+
+* `packages/codec/test/inputs.test.ts`: the census above, the activity order, the plan's rules and
+  refusals, the calibration table, and the composed activity.
+* `packages/codec/src/inputs.ts`, `docs/config-format.md` under base slot 13.

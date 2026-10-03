@@ -31,7 +31,7 @@ copied. **Every chapter ends with a configuration that works on the 650.**
 - [ ] 2.2 Power on and off as the catalogue states them, the long press version included: composed against the 650's file, and on the remote only Logitech's own long press version, reached by a one byte edit (section 309); composed from the catalogue and calibrated on 17 of 18 power hold devices (section 320), on the 650 still to run `packages/bench/irtests/650-composed-power.json`
 - [ ] 2.3 A new device list page when the last one is full: composed and calibrated against Logitech's own lists (section 312). On the 650 the seventh device's row enters its device, both list pages read n/m and its screens send the LG codes the Flirc expects; still to see a page **opened** on a list a person reaches, which on a corner list happens only at the fifth device, since the one page the seventh opened is on the two row list nothing enters (was L14)
 - [ ] 2.4 A full device: every command the catalogue holds, on as many device mode pages as it takes (was 4.3.2)
-- [ ] 2.5 A device's inputs: its input states and the commands that select them, directly or by stepping through them in order; the catalogue's are read (`driving.ts`, section 305), composing them is not started
+- [ ] 2.5 A device's inputs: its input states and the commands that select them, directly or by stepping through them in order; the catalogue's are read (`driving.ts`, section 305) and composed, 174 of 175 of Logitech's transitions matched on ten devices (`inputs.ts`, section 321); on the 650 still to hear an activity put the LG on HDMI 1
 - [ ] 2.6 Every infrared code of the test setup can be written: four in five catalogue commands do today, and the test setup is chosen from devices that compose completely
 - [ ] 2.7 Several devices composed at once into one configuration (was 4.3.3)
 
@@ -42,7 +42,7 @@ copied. **Every chapter ends with a configuration that works on the 650.**
 - [x] 3.3 The activity's own device list, "Activity" at the bottom (section 294)
 - [x] 3.4 Off switches every device off (section 291)
 - [ ] 3.5 A device's power on delay and the delay between devices, seen to act: composed (sections 287 and 288), but the activity written gave the delay nothing to hold back (section 291)
-- [ ] 3.6 Set each device to the input the activity needs; works today only for a device whose input states came from Logitech's compile, waits on 2.5
+- [ ] 3.6 Set each device to the input the activity needs; composed for a catalogue device too since section 321; on the 650 still to hear power, then the input, in that order
 - [ ] 3.7 The activity's key map built from its roles, volume to one device and channels to another, rather than copied from an existing activity
 - [ ] 3.8 The activity's own screen pages: the commands it labels on the screen
 - [ ] 3.9 Picking the running activity again: Logitech gives it a list of its own, the inputs and the working screen without the start up screen or power; ours replays the whole start (tag 5, section 313)

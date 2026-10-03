@@ -259,10 +259,10 @@ export function blockWordsOf(pulses: readonly Pulse[]): IrPulse[] {
 }
 
 /** The action list table's base slot, whose lists are what everything that runs points at. */
-const ACTION_TABLE_SLOT = 10;
+export const ACTION_TABLE_SLOT = 10;
 /** One past the highest variable a state write can name: the index is the opcode's low seven bits,
  *  `actions.ts`, so 128 is where the write becomes an instruction of a different band. */
-const STATE_WRITE_LIMIT = 128;
+export const STATE_WRITE_LIMIT = 128;
 /** Tag 5's handler, what the activity switch runs when the activity asked for is the one already
  *  running, section 313. Spelled here because the readers name only tag 1, `ACTIVITY_START_TAG`. */
 const HANDLER_TAG_RESUME = 5;
@@ -278,7 +278,7 @@ const HANDLER_TAG_RESUME = 5;
  * Append entries to one of the counted pointer tables, which is the one growth every section
  * shares: three bytes per entry at the table's end, then the count, then nothing else.
  */
-function appendTableEntries(
+export function appendTableEntries(
   c: Container, slot: number, targets: readonly number[],
 ): Uint8Array {
   const table = c.pointerArrayAt(slot);
@@ -409,7 +409,7 @@ export function composeIrGroup(
 }
 
 /** The one integrity field, recomputed over the finished bytes, always last. */
-function restamped(bytes: Uint8Array): Uint8Array {
+export function restamped(bytes: Uint8Array): Uint8Array {
   bytes.set(new Writer(2).u16(trailerChecksum(bytes)).bytes,
             bytes.length - TRAILER_CHECKSUM_OFFSET);
   return bytes;
@@ -634,6 +634,68 @@ function callingList(lists: readonly number[]): Writer {
   return body;
 }
 
+/**
+ * Add one **one byte** state variable carrying transitions, named, and return where it landed.
+ *
+ * This is `composeDevice`'s power variable insertion lifted out unchanged so that a device's input
+ * variables, `inputs.ts`, go in by the same route rather than a second copy of it, which is the state
+ * `CLAUDE.md`'s oldest rule forbids. The reasons for each step are in `composeDevice`'s comments where
+ * they were first measured, sections 276 and 277, and are summarised here:
+ *
+ * 1. the record goes after the last existing record, never at the section's start, `stateRecordEnd`;
+ * 2. the pointer goes in at `narrow`, because no two byte variable in the corpus carries a transition,
+ *    0 of 64 against 91 of 194 one byte ones, so every variable at or above `narrow` is renumbered
+ *    first, `renumberStateVariables`;
+ * 3. the header gains one variable and one narrow one, `wide` unchanged, `narrowAgain` moving with
+ *    `narrow`;
+ * 4. the name tree gains a level 1 node naming the new index.
+ *
+ * `record` is the whole record, header and transitions, already encoded. Its transitions may name
+ * action lists that do not exist yet, since nothing here reads them; an **inline** state write inside
+ * a transition names a variable by its opcode, and `renumberStateVariables` does not rewrite records,
+ * so a caller writing one inline names a variable below `narrow`, which no later insertion moves.
+ *
+ * The bytes come back parseable and **not** restamped: the caller stamps once at the end.
+ */
+export function appendNarrowStateVariable(
+  c: Container, record: Uint8Array, name: string,
+): { bytes: Uint8Array; variable: number } {
+  const states = stateTable(c);
+  if (states === undefined) throw new ComposeError('base slot 13 does not read as a table');
+  if (states.count < firmwareStateVariableMax(c.architecture) + 1) {
+    throw new ComposeError("a table without the firmware's own variables is not one to extend");
+  }
+  const recordAt = stateRecordEnd(c);
+  const recordHole = relocate(c, recordAt, record.length);
+  recordHole.bytes.set(record, recordAt);
+  const recordAddress = c.flashBase + recordAt;
+  let current = parse(recordHole.bytes);
+
+  const grownStates = stateTable(current);
+  if (grownStates === undefined) throw new ComposeError('base slot 13 stopped reading');
+  const variable = grownStates.narrow;
+  // 1. Renumber first, while the table still has its old shape, so the walk sees the old indices.
+  current = parse(renumberStateVariables(current, variable));
+  // 2. Insert the pointer at the new variable's own position, which is where `narrow` was.
+  const inserted = stateTable(current);
+  if (inserted === undefined) throw new ComposeError('base slot 13 stopped reading after renumbering');
+  const entryAt = inserted.start + STATE_TABLE_HEADER + 3 * variable;
+  const entryHole = relocate(current, entryAt, 3);
+  entryHole.bytes.set(new Writer(3).u24(recordAddress).bytes, entryAt);
+  // 3. The header: one more variable, one more of them narrow, `wide` unchanged.
+  entryHole.bytes.set(
+    new Writer(8)
+      .u16(inserted.count + 1)
+      .u16(inserted.narrow + 1)
+      .u16(inserted.wide)
+      .u16(inserted.narrowAgain + 1).bytes,
+    inserted.start);
+  current = parse(entryHole.bytes);
+  assertStateTableConsistent(current);
+  // 4. The name.
+  return { bytes: appendNameNode(current, name, variable), variable };
+}
+
 export function composeDevice(c: Container, device: ComposeDevice): ComposedDevice {
   if (device.label === '' || device.label.includes('_')
       || [...device.label].some((ch) => ch.charCodeAt(0) < 0x20 || ch.charCodeAt(0) > 0x7e)) {
@@ -774,14 +836,7 @@ export function composeDevice(c: Container, device: ComposeDevice): ComposedDevi
   // as every compiled device there does, section 288. `first` is 0 because nothing is running when a config is generated, section 130, and the
   // maximum is 1 because a power switch has two states, which is also what the node's trailing
   // count states, section 86.
-  const states = stateTable(current);
-  if (states === undefined) throw new ComposeError('base slot 13 does not read as a table');
-  if (states.count < firmwareStateVariableMax(current.architecture) + 1) {
-    throw new ComposeError("a table without the firmware's own variables is not one to extend");
-  }
   const recordLength = STATE_RECORD_HEADER + STATE_VALUE_LENGTH * 2;
-  const recordAt = stateRecordEnd(current);
-  const recordHole = relocate(current, recordAt, recordLength);
   // What performs each action: a step's own send list for an action of one, the action's own list for
   // several. The off transition runs `offSend`; the on transition runs the on list where there is a
   // power on delay to follow it, and `onSend` otherwise.
@@ -792,9 +847,6 @@ export function composeDevice(c: Container, device: ComposeDevice): ComposedDevi
     .u16(0).u16(1).u16(2).u8(0)
     .u8(0).u16(0).u16(1).u16(switchOn).u8(ACTION_LIST_INDEX_OPCODE)
     .u8(0).u16(1).u16(0).u16(offSend).u8(ACTION_LIST_INDEX_OPCODE);
-  recordHole.bytes.set(record.bytes, recordAt);
-  const recordAddress = current.flashBase + recordAt;
-  current = parse(recordHole.bytes);
 
   // The state table is not a counted pointer array, so its append is spelled out: three bytes at
   // the end of its entry pointers, then the header at its start.
@@ -822,32 +874,14 @@ export function composeDevice(c: Container, device: ComposeDevice): ComposedDevi
   // references are real rather than spare: on the four programmed arch 12 (Harmony One) containers
   // the single top variable is named by 22 to 40 instructions. `renumberStateVariables` below is
   // that rewrite, and it is the reason this insertion is three steps rather than one.
-  const grownStates = stateTable(current);
-  if (grownStates === undefined) throw new ComposeError('base slot 13 stopped reading');
-  const variable = grownStates.narrow;
-  // 1. Renumber first, while the table still has its old shape, so the walk sees the old indices.
-  current = parse(renumberStateVariables(current, variable));
-  // 2. Insert the pointer at the new variable's own position, which is where `narrow` was.
-  const inserted = stateTable(current);
-  if (inserted === undefined) throw new ComposeError('base slot 13 stopped reading after renumbering');
-  const entryAt = inserted.start + STATE_TABLE_HEADER + 3 * variable;
-  const entryHole = relocate(current, entryAt, 3);
-  entryHole.bytes.set(new Writer(3).u24(recordAddress).bytes, entryAt);
-  // 3. The header: one more variable, one more of them narrow, `wide` unchanged. `narrowAgain` is
-  // the fourth word and moves with `narrow` so the two stay equal, which is what the corpus keeps
-  // on 19 of 19 even though these two architectures read it and store it nowhere.
-  entryHole.bytes.set(
-    new Writer(8)
-      .u16(inserted.count + 1)
-      .u16(inserted.narrow + 1)
-      .u16(inserted.wide)
-      .u16(inserted.narrowAgain + 1).bytes,
-    inserted.start);
-  current = parse(entryHole.bytes);
-  assertStateTableConsistent(current);
-
-  // The name tree node: `<label>_Power_2` at level 1, indexed by the new variable.
-  const named = parse(appendNameNode(current, `${device.label}_Power_2`, variable));
+  //
+  // **The steps live in `appendNarrowStateVariable` since section 321**, where a device's input
+  // variables needed the same insertion: one copy of the derivation rather than two, and the record
+  // built here is handed over whole. The name tree node is `<label>_Power_2`, indexed by the new
+  // variable.
+  const appended = appendNarrowStateVariable(current, record.bytes, `${device.label}_Power_2`);
+  const variable = appended.variable;
+  const named = parse(appended.bytes);
 
   // The delay variables were appended at the end, so the renumbering moved them up by one, and the
   // delay lists' `0x72`s with them. Read back rather than assumed.
@@ -4914,7 +4948,7 @@ const DEFERRED = { opcode: 0x3f, operand: 0xd000 } as const;
  *  enters a start up screen on the Harmony One, section 279. */
 const CANCEL_TIMERS = { opcode: 0x07, operand: 0xfffb } as const;
 /** `0x07` band `0xFF`, the silent flag, which the "an activity is running" list writes first. */
-const SILENT_WRITE = { opcode: 0x07, operand: 0xffff } as const;
+export const SILENT_WRITE = { opcode: 0x07, operand: 0xffff } as const;
 
 /** The value the next composed activity will take: one past the counter's highest, section 273. */
 export function nextActivityValue(c: Container): number {

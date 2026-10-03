@@ -2331,6 +2331,38 @@ starts on the Harmony 600:
 `deviceDelays`, `powerOnInstructions` and `deviceIdOfGroup` in `packages/codec/src/inventory.ts`.
 [findings.md](findings.md) sections 234 and 235.
 
+**A device's inputs**, arch 14, section 321, measured on the thirteen arch 14 compiles the lab holds.
+Two layers of one byte variables, each a record with `first` 0 and `second` the number of values less
+one:
+
+| variable | values | transitions |
+|---|---|---|
+| `<label>_Input_<n>` | the catalogue's `inputs.list`, numbered by Logitech's `InputOrder` | one per value from `-2` (0xFFFE), or, where the inputs step with `next`, one per ordered pair of distinct values |
+| `<label>_<state>_<n>` | one of the catalogue's `states`, its values in order | a value with a `select` gets one transition, from `-2` for `setType` 1 and `-3` (0xFFFD) for `setType` 2; a state with `next` gets one per ordered pair |
+
+* A transition `i` to `j` of a stepping variable runs the one step body `(j - i) mod n` times, so it
+  steps forward and wraps: 128 of 128 stepping transitions.
+* A transition's instruction: the null instruction (opcode 0, operand 0) for an input with no
+  commands, 6; an inline state write `0x80 | variable` for an input whose only step writes one state,
+  103; otherwise `0x7F` to a list, 340 inputs and every one of the 243 state transitions. A body that
+  is one send runs the send list itself; a longer one is a list of `0x7F` send list calls, bare `0x7C`
+  waits and state writes.
+* A send's `0x7C` quantity: an input's own sends and its `next` wait the input delay in tenths, or the
+  key delay where the input delay is 0; a state's sends wait the key delay.
+* A write the catalogue's raw data marks as recording rather than setting (`DevActionType` 1) is a call
+  to a two instruction list, `[0x07 0xFFFF, 0x80 | variable]`. The archive does not keep the mark.
+* One input that steps gives a variable of one value and no transitions; one input that does not step
+  gives none. A state no input writes, directly or through another state, is not compiled.
+* An activity's enter list writes power on, then the inputs in the order the devices were switched on,
+  then power off, then the counter: 40 of 40 activities, 72 input writes. A device with no power
+  variable can have its input written too, 1 case.
+* **Unexplained**: four `-3` transitions whose only step is a `Select` press are absent from the Panasonic
+  TH-42PA30's compile; the Panasonic TX-P42GT30E of `h700_power_hold_compile` holds `InputType` and no
+  `Input`; the Chromecast of `h600_config` holds a one value input variable and is not identified.
+
+`inputPlan`, `composeDeviceInputs`, `activityStartTargets` and `deviceStateMachines` in
+`packages/codec/src/inputs.ts`; `packages/codec/test/inputs.test.ts`.
+
 Read with `gspm.state_table`, `gspm.state_records` and `gspm.state_index`; `stateTable` and
 `stateRecords` in `packages/codec`.
 [findings.md](findings.md) sections 35, 60 and 86.
