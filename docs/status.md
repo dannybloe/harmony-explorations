@@ -564,7 +564,7 @@ finding.
 
 `todo.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 311<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 312<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and flash has been written on five units**, the first in section 222:
@@ -836,6 +836,17 @@ figures common to both carry `fact:` markers, so `make facts` moves every copy t
 cannot drift apart; what a reader should not expect is two independent statements of one measurement.
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
+
+**A device can now be added to a Harmony 600, 650 or 700 whose device list is full, section 312.** The
+list of devices on these remotes shows four, or two, to a screen, and a seventh device on the Harmony
+650 has nowhere to go on its two row list, so it was refused. The composer now opens a new screen at
+the end of every full list, with "4/4" in the corner and every earlier screen restated from "n/3" to
+"n/4". Checked against Logitech's own work: a fifth device added to the Harmony 600's configuration,
+whose lists are all full, gives screens drawn the same way as the ones Logitech's compiler drew for the
+650's five devices, down to where each piece of text sits. Built and read back on the 650's current six
+device configuration with every check passing; not written to the remote yet, and the script that would
+write it still stops on that configuration's build timestamp, which Logitech wrote with a day of month of
+0 on the 1st of October and our reader refuses. That is a separate open item.
 
 **A delay saved on the remote itself wins over the configuration, section 303.** The Harmony 600's
 KPN box was given a wait of 4.5 seconds instead of 1.5 and the remote kept waiting 1.0, the same to half

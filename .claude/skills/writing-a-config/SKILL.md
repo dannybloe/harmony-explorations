@@ -306,10 +306,14 @@ produce a config the remote accepts and mishandles.
   bound to **nothing**, never left out. A key a mode leaves out is
   resolved further down, against base slot 9, section 271's order, which is a map this device does not
   own; what a left out key then does on an arch 14 remote has not been measured. The arch 14 composer copies the key set of an existing device mode
-  and binds only the keys whose frame one of the new commands sends. Two further refusals are
-  deliberate: a device list whose last page is full, since a new page renumbers every page counter of
-  that list, and a label wider than sixty pixels, the composer's own limit, the widest compiled corner
-  label being 59. Three conventions are kept although nothing says the remote needs them, so that a
+  and binds only the keys whose frame one of the new commands sends. A device list whose last page is
+  full gets a new page, and **every page of that list then has to count to the new total**, `n/m` on
+  the title's line, a list of one page gaining a counter it did not have, section 312: a page added
+  without it reads `2/3` on a list of four. That was refused until then. Two refusals are deliberate: a
+  tenth page, whose counter would be two digits drawn further left, and a label wider than sixty pixels,
+  the composer's own limit, the widest compiled corner label being 59. **Restating a counter digit can
+  take a digit other screens borrow**: the compiler draws a string inline once and points every equal
+  string at it, so cutting it needs the borrowers pointed elsewhere first, `pageTexts`. Three conventions are kept although nothing says the remote needs them, so that a
   composed page is one the compiler could have written: a row list per button and per copy, entries
   stored 9, 8, 34, 2, and no font selected that is already in effect. **Where the arch 14 screens differ from
   the Harmony One's is geometry, and none of it transfers**: four labelled corners, scans 8, 2, 9 and 34

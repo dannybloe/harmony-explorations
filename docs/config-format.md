@@ -758,6 +758,14 @@ A mode of ten pages or more draws the counter further left, `0x63` and then `0x5
 mode's block is its own tagged list, then per page its program and a **six** byte page record, `u24
 list; u24 program`, since arch 14 pages carry no lead byte, then the entry.
 
+**A device list's paging is its counter and nothing else**, section 312, on the thirteen arch 14
+configurations Logitech compiled: no counter on 7 of 7 one page corner lists, all of them the Harmony
+600's, `n/m` on 135 of 135 pages of the 59 multi page lists, and a corner list's record list `0x72` under
+tag `0x99` and `0x73` under tag `0x2D` at one page and at several, 53 of 53, so no page turn binding
+changes with the page count. A corner page holding one item draws the device mode pages' one item
+background, 7 of 7, and every two row page after the first its list's first page's picture, 30 of 30. A page added to a full list copies its list's last page's
+chrome and holds the item in the first place; a list of one page gains the counter right after its title.
+
 **A device mode's own list binds every key**: 47 entries on all 21 device modes, the four corner scans
 bound to nothing, one `0x72` and one `0x73`, and every other key an action list or nothing, 547 of 547
 bound keys sending that device's command.

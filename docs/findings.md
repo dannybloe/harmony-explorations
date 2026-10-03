@@ -40775,3 +40775,107 @@ something while the "add an Activity" screen is up, scan 25 apart.
   The counts of 19, 10 and 34 are this section's and are not asserted.
 * `docs/config-format.md` under the key table, with the constants per model, and the arch 8 row's
   "identical" narrowed to the order of the events.
+## 312. An arch 14 device list opens a page when its last one is full, and the page is the one Logitech compiles
+
+**Date:** 3 October 2026. **Status:** confirmed by construction and by calibration against Logitech's own
+compiles; not yet written to a remote.
+
+**Asked for by `todo-compile-650.md` 2.3**: composing a device onto a Harmony 600, 650 or 700 was refused
+when a device list's last page was full, section 285, and the Harmony 650's six device configuration,
+`h650_plasma_base`, has a full two row list. `composeDeviceScreen` now opens a page there.
+
+**Sources.** The thirteen arch 14 configurations Logitech compiled that the lab holds once each:
+`h650_config_region`, `h650_panasonic_config` (which is `h650_plasma_base`'s configuration),
+`h600_config`, `calibration_h600`, `h700_config`, `h700_config_2`, `h700_28_config_region`, and the six
+power hold compiles of the Harmony 650 and 700, sections 306 and 307. This section first said five, and
+a sentence audit found the other eight, which obey the same rule; the counts below are over all thirteen.
+Neither client nor firmware was opened, section 293's reasoned exemption: the layout is
+what the compiler wrote, and the compiler ran on Logitech's server.
+
+**Scope, decision 16.** Arch 14 (Harmony 600, 650 and 700) only. The Harmony One's pages are section 241
+and 293, and arch 8, 9 and 10 have no device list composer.
+
+### What a device list's paging is, on the thirteen configurations
+
+| | count |
+|---|---|
+| corner lists of one page drawing no counter | 7 of 7, all on the two Harmony 600 configurations, since no 650 or 700 compile here has a one page list |
+| pages of multi page lists drawing `n/m` at the layout's three x positions | 135 of 135: 92 corner pages of 46 lists, 43 two row pages of 13; in one font per configuration, measured by the audit and not asserted |
+| corner lists whose record list is `0x72` under tag `0x99` and `0x73` under tag `0x2D` | 53 of 53: 7 of one page, 46 of several |
+| two row lists whose record list is the `0x72` alone | 13 of 13, every one of several pages |
+| corner pages holding one item that draw the device mode pages' one item background | 7 of 7, on two configurations |
+| two row list pages after the first drawing their list's first page's picture | 30 of 30 |
+
+So **arch 14's paging is the counter and nothing else**. Where the Harmony One also restates a header
+total and undeadens two page turn keys, section 293, an arch 14 page calls no header, and a corner list's
+record list is the same at one page and at several. No two row list in the corpus has a single page, so
+for that layout the record list is measured at several pages only. How the remote turns a page is the
+firmware's and unread.
+
+### What is composed
+
+`openFourSlotMenuPage` gives a menu whose last page is full a new last page holding the one item, and
+`paginateFourSlot` then makes every page of the menu count to the new total. The page copies its chrome
+from the menu's own last page, because the bottom word differs per list, "Activities" on the idle list and
+"Activity" on each activity's own, section 294. A corner page holding one item draws the one item
+background; a two row page draws its list's picture. The item takes the first place, top left at (3, 40)
+or both buttons of the top row with its label centred at y 35, each binding running a row list of its own
+and the page's pool copy others. The insertions are `composeMenuPage`'s, in its order: the copy after the
+last page's copy, the list at the end of the page list run, the entry's count and a placeholder pointer,
+the program and its six byte record at the entry's own offset, then the swap. A list of one page gains a
+counter after its title, in the counter font, which is how the first page of every two page
+corner list on the 650 and the 700 reads. A tenth page is refused, since its counter would be two
+digits drawn further left.
+
+**A digit lent out had to be handed over first.** The first corner list's first page draws its total
+inline, and the other corner lists' first pages and other screens point at it, 25 draws of the 650's "2"
+of which 13 are outside the device lists: restating the 650's "2" to "3" found borrowers and no other
+string reading "2" to give them, and the cut was refused. The step that restates a text, shared with the
+Harmony One's `paginate` and lifted out of it as `pageTexts` rather than copied, now also points a
+borrower at the **tail** of a longer inline string ending in the same codes, since a reference reads
+glyphs up to the terminator. Every text drawn anywhere but the device lists and the new modes reads as
+before, in the same font at the same place, which the test asserts after four devices.
+
+### The calibration
+
+`h600_config` drives four devices and every one of its five lists is full; `h650_config_region` is what
+the compiler writes for five, one past full. A fifth device composed onto the 600 opens a page on all five
+lists, and **each new page is one of the 650's last pages**, instruction for instruction, with font numbers
+read as roles by first appearance, a label as its place against the edges, the background as which picture
+it is, and a counter text as number, slash or total. So are the first pages' counters, and the two row
+list's second page. The control: none of the new pages reads as a full first page, and the three new page
+shapes, idle corner list, activity corner list and two row list, stay apart. A seventh device on
+`h700_config` opens a fourth two row page shaped like the last page of the 650's two row list and of
+`calibration_h600`'s, both one device past full.
+
+Two differences are kept, as section 294 kept them: composed texts are inline where the compiler points at
+an equal string, and the row lists are appended to base slot 10 rather than numbered in stored order.
+
+### On the Harmony 650's six device configuration
+
+`h650_plasma_base` with the LG of section 285 composed onto it: a seventh device, the five corner lists
+grown to three items on their second page and the two row list given a fourth page, counters `1/4` to
+`4/4`, the record list unchanged, every page drawn with nothing missing, every page's copy agreeing, all 14
+row lists bound once, the checksum agreeing and the emitter round tripping. Its accounting has the same 14
+unclaimed bytes the input has, and the audit found what they are: base slot 3's build timestamp, which
+Logitech's compiler wrote on 1 October 2026 with a day of month of **0** and the weekday of 30
+September. `clockRecord` requires a day of at least 1 and rejects it, so the bytes go unclaimed, and
+that same rejection is why **`compose-device.ts` does not yet run on it**: its save step refuses,
+`base slot 3 does not hold a clock record`. This section first called those bytes an infrared run, which
+was a guess. The day of 0 is todo-compile-650 1.3.1 and not this.
+
+### Falsification
+
+An arch 14 compile whose one page device list draws a counter, whose multi page list misses one on a page,
+or whose record list changes with its page count; or, on the 650, a composed fourth page that does not page
+in, or whose rows do not enter the new device's mode.
+
+### Where it lands
+
+* `packages/codec/src/compose.ts`: `openFourSlotMenuPage`, `paginateFourSlot`, `pageTexts` shared with
+  `paginate`, and `composeFourSlotDeviceScreen` opening a page where it refused.
+* `packages/codec/test/compose.test.ts`: the paging rule over the thirteen configurations, the calibration
+  against `h650_config_region`, `calibration_h600` and `h700_config`, the 650's six device configuration
+  taking a seventh, and four devices onto `h650_config_region` keeping every other screen's text; the
+  section 285 refusal test rewritten to what is true now.
+* `docs/config-format.md`, the `writing-a-config` skill, `todo-compile-650.md` and `todo.md`.

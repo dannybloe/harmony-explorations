@@ -95,8 +95,8 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // the variable bank and the store read after the start that followed it, and 184 with the 45 written
   // again, heard and put back, and 186 with the Harmony 650's configuration after the same television
   // was added to it and that account record's power settings, and 187 with the catalogue's own,
-  // and 188 with that catalogue entry's timing record, and 189 with the archive's raw features capture, and 191 with section 306's two compiles, and 192 with the original remote's power presses, and 194 with the power threshold run, and 197 with section 307's three compiles, and 198 with section 308's one.
-  assert.equal(Object.keys(pythonImages()).length, 198, 'every fixture tests/lab.py names');
+  // and 188 with that catalogue entry's timing record, and 189 with the archive's raw features capture, and 191 with section 306's two compiles, and 192 with the original remote's power presses, and 194 with the power threshold run, and 197 with section 307's three compiles, and 198 with section 308's one, and 199 with the Harmony 650's region before section 309's test device.
+  assert.equal(Object.keys(pythonImages()).length, 199, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {
@@ -166,7 +166,8 @@ test('the two sides exclude the same fixtures from the parseable population', ()
   // external flash reads from 0x000000, whose container is the safe mode one, and 45 and 46 with its
   // region after the KPN delay write and after it was put back, section 303, and 47 with the Harmony
   // 650's configuration after the Panasonic television was added to it, section 305, the 650's kind.
-  // 49 with section 306's two compiles, whose test devices no remote ever held, and 52 with 307's three, and 53 with 308's one.
-  assert.equal(names.length, 53, 'each one a container already counted, that container plus a known '
+  // 49 with section 306's two compiles, whose test devices no remote ever held, and 52 with 307's three, and 53 with 308's one, and 54 with the 650's region before section 309's test
+  // device, whose container is `h650_panasonic_config`.
+  assert.equal(names.length, 54, 'each one a container already counted, that container plus a known '
     + 'edit, or a compare base whose remote is not yet in the corpus');
 });

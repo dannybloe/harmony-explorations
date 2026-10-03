@@ -970,29 +970,380 @@ test('a device composed on the Harmony 650 opens every command in the compiler\'
     ?.record?.first, 20);
 });
 
-test('the arch 14 screen half refuses a full last page and a letter its fonts do not carry',
+test('the arch 14 screen half opens a page on a full last page and refuses a letter its fonts do not carry',
      skipUnless('h600_config', 'h700_config'), () => {
-  // A full last page would need a new menu page and a renumbered counter on every page of that
-  // menu, which is not composed: the Harmony 700's two row list holds two devices on each of three
-  // pages, and so do all five of the Harmony 600's, which is what refuses it: its label font carrying
-  // only the letters its own screens draw is refused first, and is not the reason it cannot compose.
-  const refusal = (host: string, label: string): string => {
+  // Until todo-compile-650 2.3 a full last page was refused here, the Harmony 700's two row list
+  // holding two devices on each of three pages and every list of the Harmony 600 being full. Now a
+  // full list gets a page, so the 700 composes, and what still refuses the 600 is its label font,
+  // which carries only the letters its own screens draw: no 'U' for an 'Up'.
+  const outcome = (host: string, label: string, row: string): string => {
     const c = parse(require_(host));
     const device = composeDevice(c, { label, commands: TELEVISION, power: 0 });
     try {
-      composeDeviceScreen(parse(device.bytes), label, [{ label: 'Up', list: device.lists[1]! }]);
+      const screen = composeDeviceScreen(parse(device.bytes), label, [{ label: row, list: device.lists[1]! }]);
+      return `pages added on ${screen.pagesAdded.join(',')}`;
     } catch (error) {
       assert.ok(error instanceof ComposeError, String(error));
       return error.message;
     }
-    return 'composed';
   };
-  assert.match(refusal('h700_config', 'TV'), /menu 283's last page is full/);
-  assert.match(refusal('h600_config', 'TV'), /font 6 has no glyph for 'U'/);
-  const c600 = parse(require_('h600_config'));
-  const tv = composeDevice(c600, { label: 'TV', commands: TELEVISION, power: 0 });
-  assert.throws(() => composeDeviceScreen(parse(tv.bytes), 'TV', [{ label: 'TV', list: tv.lists[1]! }]),
-                /menu 64's last page is full/);
+  assert.equal(outcome('h700_config', 'TV', 'Up'), 'pages added on 283');
+  assert.match(outcome('h600_config', 'TV', 'Up'), /font 6 has no glyph for 'U'/);
+  assert.equal(outcome('h600_config', 'TV', 'TV'), 'pages added on 64,77,101,145,166');
+});
+
+/** The arch 14 configurations Logitech compiled whose device lists the paging rule is read off. */
+/**
+ * Every Harmony 600, 650 and 700 configuration Logitech compiled that the lab holds once each: a
+ * region read equal to one of these is left out rather than counted twice. Five until a sentence
+ * audit of section 312 found the other eight, which obey the same rule.
+ */
+const ARCH14_LISTS = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',
+                      'h700_config', 'h700_config_2', 'h700_28_config_region',
+                      'h650_power_hold_compile', 'h650_power_hold_compile_2', 'h700_power_hold_compile',
+                      'h700_power_hold_compile_2', 'h700_power_hold_compile_3',
+                      'h700_power_hold_compile_4'] as const;
+
+/**
+ * The device list menus of an arch 14 configuration, each with its layout: a two row list binds both
+ * buttons of a row to twin lists, so its first page runs fewer distinct list bodies than it binds.
+ */
+function arch14DeviceLists(c: Container): { menu: number; rows: boolean }[] {
+  const lists = c.actionLists()!;
+  const marker = deviceModeMarker(c)!;
+  const out: { menu: number; rows: boolean }[] = [];
+  modeRecords(c)!.forEach((record, menu) => {
+    const reached = new Set<number>();
+    for (const page of record.pages) {
+      for (const one of taggedList(c, page.list)!.entries) {
+        const list = lists[one.operand];
+        if (one.opcode === 0x7f && list?.length === 2 && list[0]!.opcode === 0x7e
+            && list[1]!.opcode === marker.opcode) reached.add(list[0]!.operand);
+      }
+    }
+    if (reached.size < 2) return;
+    const first = taggedList(c, record.pages[0]!.list)!.entries;
+    const bodies = new Set(first.map((one) => JSON.stringify(lists[one.operand])));
+    out.push({ menu, rows: bodies.size < first.length });
+  });
+  return out;
+}
+
+/** The picture a page's program draws first, its background. */
+function backgroundOf(c: Container, program: number): number {
+  return bitmapReference(screenProgram(c, program)![0]!)!;
+}
+
+/** The background the configuration's device mode pages holding one item draw, by majority. */
+function oneItemBackground(c: Container): number {
+  const counts = new Map<number, number>();
+  for (const mode of new Set(deviceListRows(c).map((row) => row.mode))) {
+    for (const page of modeRecords(c)![mode]!.pages) {
+      if (taggedList(c, page.list)!.entries.length !== 1) continue;
+      const picture = backgroundOf(c, page.program);
+      counts.set(picture, (counts.get(picture) ?? 0) + 1);
+    }
+  }
+  return [...counts].sort((a, b) => b[1] - a[1])[0]![0];
+}
+
+test('an arch 14 device list counts its pages on every page of several and on none of one, and keeps one record list',
+     skipUnless(...ARCH14_LISTS), () => {
+  // The rule `openFourSlotMenuPage` and `paginateFourSlot` write, read off Logitech's own compiles.
+  // A page's counter is `n/m` at x 0x6A, 0x71, 0x76 on a corner list and 0x63, 0x6A, 0x6F on a two
+  // row one; a list of one page draws none; a corner list's record list is the same on one page and
+  // on several, so there is nothing like the Harmony One's deadened page turn keys to undo; a corner
+  // page holding one item draws the device mode pages' one item background; and every page of a two
+  // row list draws its first page's picture. No two row list here has one page, so that layout's
+  // record list is measured on several pages only, and every corner list of one page is a Harmony
+  // 600's, so the rule that one page draws no counter is measured on that model alone.
+  const tally = new Map<string, number>();
+  const note = (key: string): void => { tally.set(key, (tally.get(key) ?? 0) + 1); };
+  for (const host of ARCH14_LISTS) {
+    const c = parse(require_(host));
+    const strings = screenStrings(c, characterMap(c));
+    const single = oneItemBackground(c);
+    for (const { menu, rows } of arch14DeviceLists(c)) {
+      const record = modeRecords(c)![menu]!;
+      const kind = rows ? 'rows' : 'corners';
+      const several = record.pages.length > 1;
+      note(`${kind} ${several ? 'several' : 'one'} own ${record.entries.map((one) =>
+        `${one.tag.toString(16)}:${one.opcode.toString(16)}`).join(',')}`);
+      record.pages.forEach((page, k) => {
+        const counter = strings.filter((one) => one.program === page.program && one.y === 2 && one.x >= 0x60)
+          .map((one) => `${one.x.toString(16)}:${one.text}`).join(' ');
+        const right = rows ? `63:${k + 1} 6a:/ 6f:${record.pages.length}` : `6a:${k + 1} 71:/ 76:${record.pages.length}`;
+        note(`${kind} ${several ? 'several' : 'one'} counter ${counter === (several ? right : '') ? 'right' : counter}`);
+        const items = taggedList(c, page.list)!.entries.length;
+        if (!rows && items === 1) {
+          note(`corners one item ${backgroundOf(c, page.program) === single ? 'one item picture' : 'other'}`);
+        }
+        // From the second page on, since a first page compared with itself is no evidence.
+        if (rows && k > 0) {
+          note(`rows ${backgroundOf(c, page.program) === backgroundOf(c, record.pages[0]!.program)
+            ? 'first page picture' : 'other'}`);
+        }
+      });
+    }
+  }
+  assert.deepEqual(Object.fromEntries([...tally].sort()), {
+    'corners one counter right': 7,
+    'corners one item one item picture': 7,
+    'corners one own 99:72,2d:73': 7,
+    'corners several counter right': 92,
+    'corners several own 99:72,2d:73': 46,
+    'rows first page picture': 30,
+    'rows several counter right': 43,
+    'rows several own 99:72': 13,
+  });
+});
+
+/**
+ * A device list page as a shape two configurations can be compared on: every instruction in order,
+ * with what is per configuration taken out. Fonts become a letter by first appearance on the page, so
+ * a title, counter, label and bottom word font of 5, 6, 7, 1 on a 650 and 5, 8, 6, 1 on a 600 read
+ * alike; the background is named by what it is, the one item picture, its list's first page's or
+ * another; a counter text says whether it is the page's own number, the total or the slash; a label
+ * says where it sits against the edges, since the device names differ. Everything else is kept: the
+ * title, the bottom word, both bars' operands short of their address, and the queued instruction.
+ */
+function pageShape(c: Container, menu: number, page: number, rows: boolean): string[] {
+  const record = modeRecords(c)![menu]!;
+  const program = screenProgram(c, record.pages[page]!.program)!;
+  const map = characterMap(c)!;
+  const single = oneItemBackground(c);
+  const counterX = rows ? [0x63, 0x6a, 0x6f] : [0x6a, 0x71, 0x76];
+  const letters = new Map<number, string>();
+  let font = -1;
+  return program.map((one) => {
+    if (one.opcode === 0x02) {
+      const picture = bitmapReference(one);
+      return `picture ${picture === single ? 'one item'
+        : picture === backgroundOf(c, record.pages[0]!.program) ? 'first page' : 'other'}`;
+    }
+    if (one.opcode === 0x10) {
+      font = one.operands[0]!;
+      if (!letters.has(font)) letters.set(font, 'abcdefgh'[letters.size]!);
+      return `font ${letters.get(font)}`;
+    }
+    if (one.opcode === 0x04 || one.opcode === 0x05) {
+      const glyphs = one.glyphs ?? glyphsReferencedBy(c, one)!;
+      const text = decode(glyphs, map);
+      const [x, y] = [one.operands[0]!, one.operands[1]!];
+      if (y === 2 && counterX.includes(x)) {
+        const role = x === counterX[1] ? (text === '/' ? 'slash' : `slash reading ${text}`)
+          : x === counterX[0] ? (text === String(page + 1) ? 'own number' : `number reading ${text}`)
+            : (text === String(record.pages.length) ? 'total' : `total reading ${text}`);
+        return `counter ${role}`;
+      }
+      if (y === 2 || y > 100) return `text ${x} ${y} ${text}`;
+      const width = [...glyphs].reduce((sum, code) => sum + (glyphOf(c, fontSets(c)![font]!, code)?.width ?? 0), 0);
+      const where = x === 3 ? 'left' : x + width === 125 ? 'right'
+        : x === Math.floor((128 - width) / 2) ? 'centred' : `at ${x}`;
+      return `label ${where} ${y}`;
+    }
+    if (one.opcode === 0x03) return `bar ${[...one.operands.slice(0, 6)].join(' ')}`;
+    return `${one.opcode.toString(16)} ${[...one.operands].join(' ')}`;
+  });
+}
+
+/** One device composed onto `c` with a screen of one command, as the calibration composes it. */
+function composeOneMore(c: Container, label: string): { after: Container; screen: ReturnType<typeof composeDeviceScreen> } {
+  const device = composeDevice(c, { label, commands: TELEVISION, power: 0 });
+  const screen = composeDeviceScreen(parse(device.bytes), label, [{ label, list: device.lists[1]! }]);
+  return { after: parse(screen.bytes), screen };
+}
+
+test('a page opened on a full arch 14 device list is the page Logitech compiles for one device more',
+     skipUnless('h600_config', 'h650_config_region', 'calibration_h600', 'h700_config'), () => {
+  // The calibration. `h600_config` drives four devices and every one of its five lists is full, the
+  // four corner lists on their one page and the two row list on two; `h650_config_region` is what
+  // Logitech's compiler writes for five, and its lists are exactly one device past full. So a fifth
+  // device composed onto the 600 has to open pages shaped like the 650's: a second corner page with
+  // the item top left, a third two row page with the device on the top row, and a counter on every
+  // page, the corner lists' first pages gaining one.
+  const logitech = parse(require_('h650_config_region'));
+  const shapesOf = (c: Container, pick: (rows: boolean, pages: number) => number[]): string[] =>
+    arch14DeviceLists(c).flatMap(({ menu, rows }) =>
+      pick(rows, modeRecords(c)![menu]!.pages.length).map((page) => JSON.stringify(pageShape(c, menu, page, rows))));
+  // A page up to its first label: the 600's own pages carry its own devices, so a comparison of a page
+  // that was there before stops where they start.
+  const head = (shape: string): string => {
+    const all = JSON.parse(shape) as string[];
+    return JSON.stringify(all.slice(0, all.findIndex((one) => one.startsWith('label'))));
+  };
+  const theirNew = new Set(shapesOf(logitech, (_, pages) => [pages - 1]));
+  const theirFirstHeads = new Set(shapesOf(logitech, () => [0]).map(head));
+  const theirMiddleHeads = new Set(shapesOf(logitech, (rows, pages) => (rows ? [pages - 2] : [])).map(head));
+  assert.equal(arch14DeviceLists(logitech).length, 5);
+
+  const { after, screen } = composeOneMore(parse(require_('h600_config')), 'TV');
+  const ours = arch14DeviceLists(after);
+  assert.deepEqual(screen.pagesAdded, ours.map((one) => one.menu));
+  for (const { menu, rows } of ours) {
+    const pages = modeRecords(after)![menu]!.pages.length;
+    assert.equal(pages, rows ? 3 : 2);
+    const last = JSON.stringify(pageShape(after, menu, pages - 1, rows));
+    assert.ok(theirNew.has(last), `menu ${menu}'s new page is one Logitech wrote: ${last}`);
+    assert.ok(theirFirstHeads.has(head(JSON.stringify(pageShape(after, menu, 0, rows)))),
+              `menu ${menu}'s first page counts the way Logitech's does`);
+    if (rows) {
+      assert.ok(theirMiddleHeads.has(head(JSON.stringify(pageShape(after, menu, pages - 2, rows)))),
+                `menu ${menu}'s second page counts the way Logitech's does`);
+    }
+  }
+  // The control: the comparison tells a new page from a full first page, and the layouts and the two
+  // bottom words apart, so agreeing with it is not agreeing with anything.
+  const ourNew = new Set(shapesOf(after, (_, pages) => [pages - 1]));
+  const theirFirst = new Set(shapesOf(logitech, () => [0]));
+  assert.ok([...ourNew].every((one) => !theirFirst.has(one)), 'no new page reads as a full first page');
+  assert.equal(ourNew.size, 3, 'the idle corner list, the activities\' corner lists and the two row list differ');
+
+  // The second calibration, the two row layout alone: the Harmony 700's list is three full pages of
+  // two, and its fourth, holding the seventh device, is shaped like the last page of the two lists
+  // Logitech compiled one device past full, on the 650 and on the calibration Harmony 600.
+  const seven = composeOneMore(parse(require_('h700_config')), 'TV');
+  const twoRow = arch14DeviceLists(seven.after).filter((one) => one.rows);
+  assert.deepEqual(twoRow.map((one) => one.menu), [283]);
+  assert.equal(modeRecords(seven.after)![283]!.pages.length, 4);
+  const lastTwoRow = (c: Container): string => {
+    const { menu } = arch14DeviceLists(c).find((one) => one.rows)!;
+    return JSON.stringify(pageShape(c, menu, modeRecords(c)![menu]!.pages.length - 1, true));
+  };
+  assert.equal(lastTwoRow(seven.after), lastTwoRow(logitech));
+  assert.equal(lastTwoRow(seven.after), lastTwoRow(parse(require_('calibration_h600'))));
+});
+
+test('the Harmony 650\'s six device configuration takes a seventh device, on a fourth page of its full two row list',
+     skipUnless('h650_plasma_base'), () => {
+  // What todo-compile-650 2.3 is for: the 650 as it was before section 309's write, Logitech's own
+  // compile of six devices, whose two row list is three full pages of two and whose five corner lists
+  // hold two on their second page.
+  const base = parse(require_('h650_plasma_base'));
+  const baseGaps = coverage(base).gapBytes;
+  const device = composeDevice(base, { label: 'LG', commands: TELEVISION, power: 0 });
+  const before = parse(device.bytes);
+  const wasPages = modePages(before).length;
+  const items = ['Power', 'Up', 'Down'].map((label, k) => ({ label, list: device.lists[k]! }));
+  const screen = composeDeviceScreen(before, 'LG', items, { keysLike: 'TV' });
+  const after = parse(screen.bytes);
+
+  assert.deepEqual([...screen.menus], [57, 71, 87, 109, 159, 226]);
+  assert.deepEqual(screen.pagesAdded, [226]);
+  // The five corner lists take the LG as a third item and the two row list on a new page: one corner
+  // each and the top row's two buttons, a list per binding and as many again for the copies.
+  assert.equal(screen.rowLists, 2 * (5 + 2));
+  const report = coverage(after);
+  assert.equal(report.gapBytes, baseGaps, 'no byte unclaimed that the base did not leave unclaimed');
+  assert.deepEqual(report.overlaps, [], 'and no byte twice');
+  assert.ok(trailerAgrees(after));
+  assert.equal(roundTrip(after).equal, true, 'the emitter reproduces the composed file');
+  assert.equal(new Set(deviceListRows(after).map((row) => row.mode)).size, 7);
+
+  const record = modeRecords(after)![226]!;
+  assert.equal(record.pages.length, 4);
+  assert.deepEqual(record.entries.map((one) => [one.tag, one.opcode]), [[0x99, 0x72]], 'the record list is unchanged');
+  const strings = screenStrings(after, characterMap(after));
+  const counters = record.pages.map((page) => strings.filter((one) => one.program === page.program && one.y === 2
+    && one.x >= 0x60).map((one) => `${one.x.toString(16)}:${one.text}`).join(' '));
+  assert.deepEqual(counters, ['63:1 6a:/ 6f:4', '63:2 6a:/ 6f:4', '63:3 6a:/ 6f:4', '63:4 6a:/ 6f:4']);
+  // The new page: the LG on both buttons of the top row, each running a row list of its own that
+  // enters the new mode and writes the 650's marker, its label centred at y 35, and its list's picture.
+  const lists = after.actionLists()!;
+  const newPage = record.pages[3]!;
+  const bound = taggedList(after, newPage.list)!.entries;
+  assert.deepEqual(bound.map((one) => one.tag & 0x3f), [8, 2]);
+  assert.equal(new Set(bound.map((one) => one.operand)).size, 2);
+  for (const one of bound) {
+    assert.deepEqual(lists[one.operand]!.map((step) => [step.opcode, step.operand]),
+                     [[0x7e, screen.mode], [0x80 + 31, 1]]);
+  }
+  const label = strings.find((one) => one.program === newPage.program && one.y === 35)!;
+  assert.equal(label.text, 'LG');
+  const labelWidth = [...screenProgram(after, newPage.program)!
+    .find((one) => one.opcode === 0x05 && one.operands[1] === 35)!.glyphs!]
+    .reduce((sum, code) => sum + (glyphOf(after, fontSets(after)![7]!, code)?.width ?? 0), 0);
+  assert.equal(label.x, Math.floor((128 - labelWidth) / 2));
+  assert.equal(backgroundOf(after, newPage.program), backgroundOf(after, record.pages[0]!.program));
+  // The corner lists: a third item on their second page, the bottom left one.
+  for (const menu of [57, 71, 87, 109, 159]) {
+    const last = modeRecords(after)![menu]!.pages.at(-1)!;
+    assert.deepEqual(taggedList(after, last.list)!.entries.map((one) => one.tag & 0x3f), [9, 8, 2]);
+  }
+  // Drawn, every page of every list, with nothing unresolved.
+  for (const menu of screen.menus) {
+    for (const page of modeRecords(after)![menu]!.pages) {
+      for (const variant of renderVariants(after, page.program).variants) {
+        assert.equal(variant.page.glyphsMissing, 0, `menu ${menu} draws every glyph`);
+        assert.equal(variant.page.picturesMissing, 0, `menu ${menu} draws every picture`);
+      }
+    }
+  }
+  // Section 69's rail, over every page: one copy per page, agreeing entry by entry, so the new page's
+  // copy sits where the pairing by position expects it.
+  const pages = modePages(after);
+  const copies = pageListCopies(after);
+  assert.equal(pages.length, wasPages + 2, 'the new mode\'s page and the new list page');
+  assert.equal(copies.length, pages.length);
+  const body = (index: number): string => (lists[index] ?? []).map((one) => `${one.opcode}:${one.operand}`).join(' ');
+  pages.forEach((page, index) => {
+    const mine = taggedList(after, page.list)!;
+    const copy = taggedList(after, copies[index]! + after.flashBase)!;
+    assert.deepEqual(copy.entries.map((one) => [one.tag, one.opcode]), mine.entries.map((one) => [one.tag, one.opcode]),
+                     `page ${index}'s copy`);
+    mine.entries.forEach((entry, k) => assert.equal(body(copy.entries[k]!.operand), body(entry.operand)));
+  });
+  // Every row list the composition wrote is bound exactly once, across pages and copies.
+  const rowIndices = Array.from({ length: screen.rowLists! }, (_, k) => screen.rowList + k);
+  const boundRows = [...pages.map((page) => page.list), ...copies.map((copy) => copy + after.flashBase)]
+    .flatMap((list) => taggedList(after, list)!.entries)
+    .filter((one) => one.opcode === 0x7f && rowIndices.includes(one.operand)).map((one) => one.operand);
+  assert.deepEqual(boundRows.sort((a, b) => a - b), rowIndices);
+});
+
+test('a corner list opening its third page keeps every other screen\'s text, the digit it lent out included',
+     skipUnless('h650_config_region'), () => {
+  // Four devices onto the 650's five: the two row list opens its fourth page with the seventh device,
+  // and with the ninth the corner lists open their third and the two row list its fifth. A corner
+  // list's first page draws its total inline and other draws of "2" borrow that digit by reference,
+  // so restating it to "3" has to hand the borrowers another run ending in "2" first; any it missed
+  // would change on a screen nobody composed. So every text drawn anywhere but the device lists and
+  // the new modes reads as before, in the same font at the same place.
+  let c = parse(require_('h650_config_region'));
+  const listPrograms = (k: Container): Set<number> =>
+    new Set(arch14DeviceLists(k).flatMap(({ menu }) => modeRecords(k)![menu]!.pages.map((page) => page.program)));
+  const textsOutside = (k: Container, skip: Set<number>): string[] => screenStrings(k, characterMap(k))
+    .filter((one) => !skip.has(one.program)).map((one) => `${one.x},${one.y},${one.font}:${one.text}`).sort();
+  const before = textsOutside(c, listPrograms(c));
+  const added: number[][] = [];
+  const newModes: number[] = [];
+  // One label four times: the 650's title font spells only the letters its own titles use.
+  for (const label of ['LG', 'LG', 'LG', 'LG']) {
+    const grown = composeOneMore(c, label);
+    c = grown.after;
+    added.push([...grown.screen.pagesAdded]);
+    newModes.push(grown.screen.mode);
+  }
+  assert.deepEqual(added, [[], [179], [], [57, 61, 74, 135, 179]]);
+  const report = coverage(c);
+  assert.equal(report.accounted, report.total);
+  assert.deepEqual(report.overlaps, []);
+  assert.ok(trailerAgrees(c));
+  assert.equal(roundTrip(c).equal, true);
+  const skip = listPrograms(c);
+  for (const mode of newModes) for (const page of modeRecords(c)![mode]!.pages) skip.add(page.program);
+  assert.deepEqual(textsOutside(c, skip), before);
+  // And the lists themselves count right on every page.
+  const strings = screenStrings(c, characterMap(c));
+  for (const { menu, rows } of arch14DeviceLists(c)) {
+    const record = modeRecords(c)![menu]!;
+    assert.equal(record.pages.length, rows ? 5 : 3);
+    record.pages.forEach((page, k) => {
+      const counter = strings.filter((one) => one.program === page.program && one.y === 2 && one.x >= 0x60)
+        .map((one) => one.text).join('');
+      assert.equal(counter, `${k + 1}/${record.pages.length}`, `menu ${menu} page ${k + 1}`);
+    });
+  }
 });
 
 test('the screen half refuses what it cannot draw or place', skipUnless('one_config', 'h525_config'),
