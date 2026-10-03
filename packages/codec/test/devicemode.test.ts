@@ -1,5 +1,5 @@
 /**
- * Section 323: a whole catalogue device laid out in device mode the way Logitech's compiler lays it out,
+ * Section NNN: a whole catalogue device laid out in device mode the way Logitech's compiler lays it out,
  * on the Harmony 600, 650 and 700, and composed that way.
  *
  * The known answers are twenty devices Logitech compiled from its catalogue: the seventeen test devices of
@@ -70,7 +70,7 @@ import {
 // ---------------------------------------------------------------------------------------------------
 // 0. The rules on their own, with nothing from the lab: the cases each rule was read off
 
-test('section 323: a label splits at its first space, else at its first word boundary, never at a slash', () => {
+test('section NNN: labelBreak, the first place a label can split, is its first space, else its first word boundary, never a slash', () => {
   assert.deepEqual(labelBreak('Pip Channel Up'), ['Pip', 'Channel Up']);
   assert.deepEqual(labelBreak('WakeUp'), ['Wake', 'Up']);
   // A lower case letter before a digit is a boundary too: `Greater100` is drawn `Greater`, `100`.
@@ -81,10 +81,10 @@ test('section 323: a label splits at its first space, else at its first word bou
   assert.equal(labelBreak('Teletext'), undefined);
 });
 
-test('section 323: a label goes in the first size it fits, and a split label is held one pixel tighter', () => {
+test('section NNN: a label goes in the first size it fits, and a split label is held one pixel tighter', () => {
   // 58 pixels in the largest size: one line.
   assert.deepEqual(labelLayout('Teletext'), { size: 0, lines: ['Teletext'] });
-  // 59 and nowhere to split stays whole; 59 with a boundary is split, the tie that section 323 measured.
+  // 59 and nowhere to split stays whole; 59 with a boundary is split, the tie that section NNN measured.
   assert.deepEqual(labelLayout('Program'), { size: 0, lines: ['Program'] });
   assert.deepEqual(labelLayout('WakeUp'), { size: 0, lines: ['Wake', 'Up'] });
   // 66 with nowhere to split goes down a size, where it is 59.
@@ -95,7 +95,19 @@ test('section 323: a label goes in the first size it fits, and a split label is 
   assert.equal(labelLayout('#'), undefined);
 });
 
-test('section 323: the counter ends at 125 and the title stops 3 short of its widest page number', () => {
+test('section NNN: a label with spaces wraps as many words to a line as fit, section 323\'s rule', () => {
+  // The one three word label measured, on an activity's page in section 323: `Rcvr V-` over `Aux`.
+  // The first space would give `Rcvr` over `V- Aux`, which is the control: the wrap is what decides.
+  assert.deepEqual(labelLayout('Rcvr V- Aux')?.lines, ['Rcvr V-', 'Aux']);
+  assert.deepEqual(labelBreak('Rcvr V- Aux'), ['Rcvr', 'V- Aux']);
+  // Two words is the first space either way, and section 323's band edges hold: 55 whole, 59 broken.
+  assert.deepEqual(labelLayout('TV Vol+'), { size: 0, lines: ['TV Vol+'] });
+  assert.deepEqual(labelLayout('Sony TV'), { size: 0, lines: ['Sony', 'TV'] });
+  // Three words that wrap to three lines in a size go down until two lines hold them.
+  assert.deepEqual(labelLayout('Pip Channel Up'), { size: 4, lines: ['Pip', 'Channel Up'] });
+});
+
+test('section NNN: the counter ends at 125 and the title stops 3 short of its widest page number', () => {
   assert.deepEqual(pageCounter(1, 7).map((one) => [one.text, one.x]), [['1', 106], ['/', 113], ['7', 118]]);
   assert.deepEqual(pageCounter(1, 24).map((one) => [one.text, one.x]), [['1', 99], ['/', 106], ['24', 111]]);
   assert.deepEqual(pageCounter(17, 23).map((one) => [one.text, one.x]), [['17', 92], ['/', 106], ['23', 111]]);
@@ -106,7 +118,7 @@ test('section 323: the counter ends at 125 and the title stops 3 short of its wi
   assert.equal(deviceModeTitle('Panasonic TX-29AK40F', 6), 'Panasonic TX-29..');
 });
 
-test('section 323: the screen after the leading commands is case folded, hyphens passed over, then by character code', () => {
+test('section NNN: the screen after the leading commands is case folded, hyphens passed over, then by character code', () => {
   const sorted = ['InputHDMI3', 'InputHdmi4', 'InputVideo1', 'i-Manual', 'InputVideo 1/MD', 'Football',
     'InputHdmi2', 'InputVideo', 'In-Start', 'InputTv'].sort(screenCompare);
   assert.deepEqual(sorted, ['Football', 'i-Manual', 'InputHdmi2', 'InputHDMI3', 'InputHdmi4', 'InputTv',
@@ -494,7 +506,7 @@ const NAMED = {
 const ARCH14 = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600', 'h700_config',
   'h700_config_2', 'h700_28_config_region', ...FIXTURES.filter((one) => one !== 'calibration_h600')];
 
-test('section 323: the size table is every glyph width the thirteen arch 14 configurations draw in those sizes',
+test('section NNN: the size table is every glyph width the thirteen arch 14 configurations draw in those sizes',
   needing(skipUnless(...ARCH14)), () => {
     // Per size, every character any set of that size draws, and its width: the union must be the table,
     // character for character, and no set may disagree with another of its size.
@@ -527,7 +539,7 @@ test('section 323: the size table is every glyph width the thirteen arch 14 conf
 // ---------------------------------------------------------------------------------------------------
 // 1. The rules
 
-test('section 323: the compiler\'s device mode rules against twenty catalogue devices it compiled',
+test('section NNN: the compiler\'s device mode rules against twenty catalogue devices it compiled',
   needing(skipWithoutIrArchive(), skipUnless(...FIXTURES)), () => {
     const s = score();
     let lines = 0;
@@ -568,7 +580,7 @@ const HELD_OUT: readonly Cal[] = [
   cal('h650_config_region', 'TV', 'LG', 'OLED65G26LA'),
 ];
 
-test('section 323: the rules against a device they were not fitted to, in two compiles',
+test('section NNN: the rules against a device they were not fitted to, in two compiles',
   needing(skipWithoutIrArchive(), skipUnless('h650_power_hold_compile', 'h650_config_region')), () => {
     const s = score();
     for (const f of HELD_OUT.map(find)) {
@@ -613,7 +625,7 @@ function composeWhole(f: Found, order: 'compiler' | 'catalogue'):
 /** The devices the control composes in catalogue order: one on each of the Harmony 600, 650 and 700. */
 const CONTROL: readonly string[] = ['Sony_TV', 'Panasonic_TV', 'Sony_KE-50MR1E'];
 
-test('section 323: a catalogue device composed whole reads back as the compiler\'s device mode',
+test('section NNN: a catalogue device composed whole reads back as the compiler\'s device mode',
   needing(skipWithoutIrArchive(), skipUnless(...FIXTURES)), () => {
     const s = score();
     const control = score();

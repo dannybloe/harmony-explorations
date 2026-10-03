@@ -1,7 +1,7 @@
 /**
  * How Logitech's compiler lays a whole device out in device mode on arch 14 (Harmony 600, 650 and
  * 700): which commands go to the keypad, which to the screen and in what order, how a label is sized
- * and split over two lines, how a title is cut, and where the page counter sits. Section 323.
+ * and split over two lines, how a title is cut, and where the page counter sits. Section NNN.
  *
  * **Every rule here is read off the compiler's output and none off its code.** The population is the
  * twenty devices Logitech compiled from its catalogue for the test accounts, in seven of the thirteen
@@ -9,7 +9,7 @@
  * devices of `calibration_h600`, nineteen catalogue entries since one is on two records. Each
  * device's commands are named from the archive's own codeset, and its device mode is then read as a key
  * map and a run of screen pages. `test/devicemode.test.ts` scores every rule against all twenty and names
- * every difference; the counts live there and in section 323, not here.
+ * every difference; the counts live there and in section NNN, not here.
  *
  * Three things a reader should know before trusting it, each said again where it bites:
  *
@@ -252,11 +252,13 @@ export function textWidthIn(sizeOf: LabelSize, text: string): number | undefined
 }
 
 /**
- * Where the compiler may split a label over two lines: **at its first space**, the space dropped, and in
- * a label with no space at its first word boundary, which is after a hyphen not followed by another, or
+ * The first place a label can split, regardless of size: **its first space**, the space dropped, and in a
+ * label with no space at its first word boundary, which is after a hyphen not followed by another, or
  * between a lower case letter and an upper case letter or a digit, unless that letter is followed by a
  * hyphen. A slash is not a boundary: `Tv/Radio` goes down a size rather than split. Undefined when there
- * is nowhere to split.
+ * is nowhere to split. `labelLayout` breaks a label **with** spaces by `wrapAtSpaces` in each size,
+ * which is this on two words; this decides whether a label can split at all, the one pixel tie rule,
+ * a label without spaces, and the cut in the smallest size.
  */
 export function labelBreak(text: string): [string, string] | undefined {
   const space = text.indexOf(' ');
@@ -281,6 +283,33 @@ export interface LabelLayout {
   lines: string[];
 }
 
+/**
+ * A label with spaces broken the way a word wrap does, in one size: as many words to a line as fit
+ * within 58 pixels, `LABEL_WIDTH` less one, which is the same tie rule as a whole label's. Undefined
+ * where a word or the space has no width in the size, which is every label with a space in the
+ * smallest. On a label of two words too wide for one line this is the first space; it differs only on
+ * three or more, and the one label measured on which the two differ, `Rcvr V-` over `Aux` on an
+ * activity's page, is the reason it is a wrap: section 323's corner labels, most of them on device mode
+ * pages, and this module read the same compiler, and this is the rule both agree on, section NNN.
+ */
+function wrapAtSpaces(sizeOf: LabelSize, text: string): string[] | undefined {
+  const lines: string[] = [];
+  let current = '';
+  for (const word of text.split(' ')) {
+    const longer = current === '' ? word : `${current} ${word}`;
+    const wide = textWidthIn(sizeOf, longer);
+    if (wide === undefined) return undefined;
+    if (current !== '' && wide > LABEL_WIDTH - 1) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = longer;
+    }
+  }
+  lines.push(current);
+  return lines;
+}
+
 /** The longest prefix of `text` that fits `limit` with `..` after it, in a size. */
 function cut(sizeOf: LabelSize, text: string, limit: number): string | undefined {
   for (let n = text.length; n > 0; n -= 1) {
@@ -292,8 +321,9 @@ function cut(sizeOf: LabelSize, text: string, limit: number): string | undefined
 }
 
 /**
- * A label as the compiler draws it: in the first size of the ladder where it fits on one line, or split
- * at `labelBreak` with both halves fitting; and where no size holds it, in the smallest, split if it can
+ * A label as the compiler draws it: in the first size of the ladder where it fits on one line, or in two
+ * lines each fitting, a label with spaces wrapped by `wrapAtSpaces` and one without split at
+ * `labelBreak`; and where no size holds it, in the smallest, split at `labelBreak` if it can
  * be and each part cut with `..`. Undefined when a character has no width in the size that decides it,
  * which is a label nothing here can lay out without guessing.
  */
@@ -305,9 +335,10 @@ export function labelLayout(text: string): LabelLayout | undefined {
     if (whole !== undefined && whole <= LABEL_WIDTH - (split === undefined ? 0 : 1)) {
       return { size: k, lines: [text] };
     }
-    if (split !== undefined) {
-      const widths = split.map((part) => textWidthIn(sizeOf, part));
-      if (widths.every((one) => one !== undefined && one <= LABEL_WIDTH)) return { size: k, lines: [...split] };
+    const lines = text.includes(' ') ? wrapAtSpaces(sizeOf, text) : split;
+    if (lines !== undefined && lines.length === 2) {
+      const widths = lines.map((part) => textWidthIn(sizeOf, part));
+      if (widths.every((one) => one !== undefined && one <= LABEL_WIDTH)) return { size: k, lines: [...lines] };
     }
   }
   const last = LABEL_SIZES.length - 1;

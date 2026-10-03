@@ -42452,7 +42452,388 @@ the one its date has.
   `writing-a-config` skill and `docs/memory-map-525.md`; the dead phrasings in
   `reference/superseded.md`.
 
-## 323. A whole device's device mode is laid out by rules: hard keys by preference, the screen sorted, labels sized down a ladder of six
+## 323. An activity's key map is two roles over the devices' own maps, and its screen is their own screen items
+
+**Todo `todo-compile-650.md` 3.7 and 3.8**: the activity's key map built from its roles, volume to one
+device and channels to another, and the activity's own screen pages, the commands it labels there.
+`composeActivity` copied both from an existing activity until now.
+
+**Sources checked**: this document, sections 120, 151, 271, 273, 279, 285, 290, 312, 314, 315 and 319;
+`reference/button-maps.md`; the thirteen arch 14 compiles of section 314, holding 40 activities;
+`docs/myharmony/model.md` on roles, `ActivityFunctionMap` and the activity button map; four captures of
+Logitech's service in the lab, read only, all filed 13 August 2026: the calibration Harmony 600's account
+record's `MapList` (activity button maps and function maps), `GetButtonMaps_skin71` (device button maps,
+whose device ids are the Harmony One record's), and the calibration Harmony One record's `ActivityList`,
+its roles, and `MapList`. A live read of the Harmony 650 and 700 records' maps was attempted and failed
+at login, so their stated maps are not in hand.
+
+### What Logitech states
+
+An activity on the platform is roles: `DisplayActivityRole`, `VolumeActivityRole`,
+`ChannelChangingActivityRole`, `PlayMovieActivityRole` and others, each naming a device. Its button map
+names a device and a command per hard button and lists its soft buttons, the screen commands, in order.
+On the calibration Harmony 600's record both activities' maps put `VolumeUp`, `VolumeDown` and
+`VolumeMute` on the receiver and **all 36 other hard buttons on one device**: the television in "Watch
+TV", and the disc player in "Watch a Movie". The 600 capture states maps and not roles; on the Harmony
+One record set up with the same three devices and two activities the roles are display and channel
+changing on the television for the first, and display on the television with play movie on the disc
+player for the second, so the display device holds no key in "Watch a Movie". The soft buttons on the
+Harmony 600's record, 8 and 7, are all that one device's, and are in exactly the order its screen draws
+them. Its function maps say the split in Logitech's own terms: an activity's map takes the `Volume` group
+from one device and the rest from another.
+
+### What the compiler writes, key by key
+
+Roles are not in the configuration, so they are read off the sends, `activityRolesFromSends`: the device
+VolumeUp sends to, and the device most other keys send to. On the calibration Harmony 600 that gives the
+devices the stated button maps give, which checks the reading of the configuration against the record
+and is close to circular as a check of the rule. Then, over all 40 activities:
+
+* **the keys run the device's own lists**: of the 1328 activity key bindings, all of which send
+  infrared, 1254 run the very base slot 10 list some key of a device's own map runs, section 271, and
+  none runs a copy of one. Of the other 74, 5 run a list on a device's own screen page and 69 send codes
+  nothing in device mode sends; 64 of the 74 are in the three hand customised configurations below and
+  one is in each of the other ten;
+* **the volume keys are the volume device's own and every other key is the control device's own**. On
+  14, 15 and 16 that holds in all 40, and no other key goes to the volume device. Three refinements
+  follow, of which two are fitted to one activity:
+  * UpArrow and DownArrow, scans 26 and 27, bound to nothing in 56 of the 82 devices' own maps, take the
+    device's DirectionUp and DirectionDown, scans 50 and 42, when its own map leaves them unbound. Which
+    scan is which button is decided by the Harmony 600's stated device maps, below;
+  * where a device's own map runs its DirectionUp and DirectionDown lists on ChannelUp and ChannelDown,
+    as the disc player's does, the activity puts SkipForward and SkipBack there, scans 38 and 21;
+  * where the device's own screen has an item labelled `Exit`, the Exit key runs it, the device's own map
+    having given that key to `Cancel`.
+
+  The second and third fire on one activity of the 40, the calibration "Watch a Movie", and are right
+  there, 2 keys and 1. That is a fit, and what makes it more than one is Logitech's own statement: the
+  calibration Harmony One record's maps give the same disc player `Exit` to `Cancel` and `ChannelUp` to
+  `DirectionUp` in its own map and `ChannelUp` to `SkipForward` and `Exit` to `Exit` in the activity, and
+  its television's own map has no `UpArrow` where the activity has `UpArrow` to `DirectionUp`. It is the
+  same disc player, so the population does not widen.
+
+Built that way, `activityKeysFromRoles`, the 40 sets score **1241 keys the same, 53 running another list,
+34 that Logitech binds and the rule does not, and 70 that the rule binds and Logitech does not**. All of
+the difference sits in 20 activities, and **the other 20 are Logitech's key for key**, both calibration
+activities among them and two customised ones that bind only the volume keys. The 20:
+
+* **"TV kijken" on the test account's Harmony 650 and 700 records**, the same activity in nine compiles,
+  four keys each: Select runs another command of the same set top box, and Info and the two arrows are
+  unbound. PanaWatch drives the same box on three of those records and matches whole there, so the
+  device's own map is not the cause. Why is not established. These nine are also exactly the nine sets
+  whose bucket ties are in the other order, below, so the set was built differently from the rest, which
+  points at an edit on the account. LG WebOS was imported onto those records from the same Harmony One
+  and matches, so the import alone does not explain it.
+* **the 11 activities of the three hand customised configurations that bind more than volume**: all three
+  of Danny's own Harmony 600 and four of the five on each copy of the contributed Harmony 700. Only PS3's
+  single key, PrevChannel, is asserted key by key; the others are asserted as differing. One is a
+  different case: that Harmony 600's "Chromecast" drives a device with no infrared, and its only other
+  keys, Play and Pause, send two other television commands, so the television is read as the control
+  device and its whole map is predicted.
+
+**The refinements change 65 keys, only ever scans 12, 26, 27, 31 and 32, and 39 of the changes are
+right.** All 26 wrong ones are the arrow fallback, on the ten "TV kijken", the nine and Danny's Harmony
+600's, on "Chromecast", and on the contributed pair's "Watch TV". Counted by distinct activity the arrow
+fallback is right on five, the two calibration activities, "Kodi kijken", "LG WebOS" and "PanaWatch", and
+wrong on four. Without the refinements the calibration "Watch a Movie" is wrong on Exit and both channel
+keys and lacks both arrows.
+
+**Control**: the same 40 with the two roles swapped match 3 keys.
+
+**The 40 are fewer independent cases than they look.** The test account's "TV kijken", "LG WebOS",
+"Kodi kijken" and "PanaWatch" are each compiled three to nine times, so the 40 are about 14 distinct
+activities.
+
+**The order of a set's entries is not built here.** They are ascending in the bucket order of section
+315 on 40 of 40 activity sets, every one with ties. Inside a bucket `0x8C` precedes `0x05` in 26 and
+follows it in 9, and the 9 are the nine "TV kijken" copies, which is one activity; what decides it is not
+established. `composeActivity` writes the set.
+
+### Which scan is the arrow
+
+`reference/button-maps.md` left scans 26 and 50, and 27 and 42, as two symmetric pairs on the Harmony 600,
+since every activity in the two calibration configurations gives both members one command. The device
+maps break it. Logitech's stated device button maps for the three calibration devices, the capture
+`GetButtonMaps_skin71`, give each of them `DirectionUp` and `DirectionDown` and no `UpArrow` and no
+`DownArrow`; and in `calibration_h600` each of the three devices' own mode records binds 26 and 27 to the
+null instruction where 50 and 42 send its DirectionUp and DirectionDown. So 26 is `UpArrow`, 27
+`DownArrow`, 50 `DirectionUp` and 42 `DirectionDown`, on the Harmony 600. That capture names the device
+records of the calibration Harmony One's account, set up with the same three devices, which is a gap
+between the two sources this does not close. The Harmony 650 and 700 compiles are scored here on the same scan
+table, which the key score supports and nothing else here checks.
+
+### What the compiler writes, screen by screen
+
+On the ten compiles that are not hand customised, **every item on every activity's working screen is an
+item of a device's own screen pages: the same list under the same label**. That is 64 items counted per
+copy, 23 distinct items on six distinct activity screens, five of them not empty. So a screen command is
+named by its device and its label, `activityScreenRows`, and resolved to that item. On the customised
+three, 16 of 101 are; the rest are commands and labels a user built.
+
+**Which commands, and in what order, is not derived.** It is the platform's soft button list, a default
+suggestion or the user's choice, and on the calibration Harmony 600 the screen's order is exactly the
+stated soft button order. That order is not the bucket order of anything tried: the calibration
+selections are one device's commands in an order no hash of their names or function numbers gives. So
+the selection is an input and the layout is the composer's: four a page, top left, top right, bottom
+left, bottom right, `ceil(n / 4)` pages and at least one, a counter only past one page.
+
+Composed from each activity's own commands in order with `composeActivityScreen`, 38 of the 40 compose
+and **41 of their 47 working screen pages are Logitech's** in pictures, fonts, texts, places and
+bindings, counted per copy, texts compared by value since the compiler often draws a string by reference
+to an equal one, section 312. The record entries match on 38 of 38 and the start up title on 38 of 38.
+The six other pages are two each of three customised activities, and each of those has a page Logitech
+leaves short before its last, a gap the user left that a list of commands cannot state, so every later
+command sits one corner earlier in ours; no activity that matches has such a page. The two refused are
+the same contributed activity in both copies, below.
+
+### How a label is fitted
+
+Three things the composer refused or did not know, now measured:
+
+* **A corner label breaks onto two lines** the way a word wrap does. The population is the labels drawn in
+  their page's most common font where a corner label sits, one line at y 40 or 90, two at 25 and 40 or 75
+  and 90, a left one from x 3 and a right one ending at 125 line by line, counted once per configuration,
+  label and place: 2037, 1156 on one line and 880 on two, 2036 measurable, the other a glyph the
+  character map does not name. That is 422 distinct texts. A label without a space stays whole, one within
+  58 pixels stays whole, and a wider one breaks at spaces with as many words to a line as fit within 58.
+  Every width from 55 to 58 reproduces all 2036. The band's edges are three distinct labels, `TV Vol+` at
+  55 in the contributed Harmony 700 the widest whole label with a space, and `Sony TV` in the calibration
+  and `TV Input` in the contributed pair at 59 the narrowest broken; only 8 distinct labels stay whole
+  with a space in them, and on the nine test account compiles every label with a space is broken and the
+  narrowest is 63, so those constrain nothing below. The composer takes the band's top. "As many words as
+  fit" is tested by one distinct label, `Rcvr V-` over `Aux`; every other two line label has one space. A
+  single word of 59 stays whole, so the rule is not one width for every label; measuring a label with a
+  space as if it had a trailing one against 59 to 62 is the same rule spelled the other way.
+* **No corner label line in that font is wider than 59 pixels.** `Antenna`, 60 in it, is drawn by the
+  compiler in another font, in the contributed pair, which is the one case of the kind and corrects
+  `FOUR_SLOT_LABEL_MAX` from 60, a limit the composer had set itself, to 59. 890 corner cells are drawn in
+  a font other than their page's most common one, most of them help and dialog text, 60 of them cut with
+  `..`, and the choice is not "smaller when too wide": 128 are as wide or wider in their own font, and 16
+  on device pages would fit the page's font. Choosing a font is not built, and a label too wide for two
+  lines of the page's font is refused, which is what refuses the contributed Harmony 700's "Watch TV" in
+  both copies.
+* **The start up title breaks the same way at 123 pixels** onto y 5 and 19, each line centred: `Starting
+  Watch a` over `Movie` and `Starting Play Audio` over `Cassette`, at the x the compiler draws them. The
+  37 one line start up titles of the 13, 10 distinct, are all centred and none is wider than 123,
+  `Starting Watch Bluray` in the contributed pair; the broken ones, three titles and two distinct, are
+  130 and 163 whole, so where from 124 to 130 the break begins is not known.
+
+The device page composer is unchanged and still draws a label on one line; only its limit moved to 59.
+
+### Scope, decision 16
+
+Measured on arch 14, the Harmony 600, 650 and 700, and built for it: the screen half is those three's
+four corner layout. The Harmony One's activities have the same roles on the platform and are not scored
+here.
+
+### Falsification
+
+A Logitech compile whose activity, without a user's hand in it, puts a non volume key on a device other
+than the one most of its keys use; a label with a space of 55 pixels or less that the compiler breaks,
+or one of 59 or more that it keeps whole; on the remote, a key of a composed activity that sends
+something other than what the same key sends on that device's own Devices page.
+
+### For the hardware check
+
+Nothing here has been on a remote. On the Harmony 650, an activity composed with
+`compose-activity.ts --roles volume=<receiver>,control=<set top box> --commands ...` must send, key by
+key, the receiver's own VolumeUp, VolumeDown and Mute, and on every other key what the same key sends on
+the box's own Devices page, UpArrow and DownArrow sending the box's DirectionUp and DirectionDown. Its
+screen must draw the chosen commands in the four corners in the order given, each running the command of
+the same label on that device's Devices screen.
+
+### Where it lands
+
+* `packages/codec/src/activityroles.ts`: the roles, the key map, the screen rows, the inference.
+* `packages/codec/src/compose.ts`: the two line corner label and start up title, the 59 pixel limit.
+* `packages/codec/bin/compose-activity.ts`: `--roles` and `--commands`.
+* `packages/codec/test/activityroles.test.ts`: the stated map's devices, the key score with every
+  differing activity named, the swapped control, the refinements' account, the screen score, and the
+  corner label census with the widths either side of the band as its control.
+* `docs/config-format.md` under base slot 9, and `reference/button-maps.md` for the arrows.
+
+## 324. Base slots 0, 13 and 14 are built from a description, and the name tree's order is a hash order of the variable index
+
+**Date:** 3 October 2026. **Status:** confirmed by construction over the thirteen arch 14 compiles
+section 312 lists, with a blind control, two mutations of the generator that fail, and alternative
+rules scored with their split; nothing built this way has been written to a remote, and nothing needs
+to be for what is claimed here, since the result is byte identical to files already in the lab. Both
+reviewers ran on the whole diff; the blind one reproduced every number below, and the sentence audit's
+points are folded in, the main ones named under "What the review changed".
+
+**Todo `todo-compile-650.md` 10.3.** Section 318's frame lays a container out from pieces, and the
+pieces of base slot 0 (the name tree), base slot 13 (the state variables) and base slot 14 (the value
+maps) could only come out of a Logitech compile. `packages/codec/src/statetables.ts` builds them from a
+description: the configuration's own variables and value maps go in, and everything the format or the
+firmware decides is generated.
+
+**Sources checked**: this document, sections 39, 73, 86, 120, 130, 138, 234, 276, 277, 280, 284, 288,
+301, 315, 318, 319 and 322, and the thirteen compiles. Neither firmware nor client was opened: every rule
+below is an order or a constant Logitech's compiler wrote, and the compiler ran on their server,
+section 293's reasoned exemption. The firmware's own use of these slots was read in the sections
+named, and base slot 0 is not sought by it at all.
+
+### The measurement
+
+`takeApart` cuts each compile into pieces, `describeStateTables` reads back only what a composer would
+supply, `buildStateTables` builds the three slots' pieces, `withStateTables` puts them where
+Logitech's sat, and `layOutContainer` lays the container out again. **13 of 13 come back byte for
+byte.** The description carries 1051 variables and 501 value maps over the thirteen.
+
+**The blind control** overwrites, in a copy of the pieces, the bytes the generator claims to own:
+records 7 to 17 and the first two byte variable whole, the header's `wide` and repeated `narrow`, the
+operand and opcode of the clock's three increments, the value count at the end of every level 1 name,
+the order of the name tree's nodes (reversed), and every value map's lead byte and case order
+(reversed). The description read off that copy still rebuilds **13 of 13** byte for byte, so none of
+those bytes reached the generator. What it leaves is what the description needs: the header's `count`
+and `narrow`, read to find the records and to know which index is the generator's, the increments'
+`from` and `to`, and the level 0 nodes. Two mutations of the generator itself were run by hand and each
+fails the rebuild on the first compile: the name tree in index order, and record 9's maximum changed
+from 7 to 6.
+
+### What is generated
+
+| what | rule | over the thirteen |
+|---|---|---|
+| records 7 to 17 | `[first, max]` constants, no transitions: `0/2, 0/3, 5/7, 0/7, 0/32, 0/1, 0/32, 1/1, 0/3, 0/1, 0/3` | 13 of 13 |
+| the clock's transitions | the minute, the day and the month each `{-2 to 0, 0x1F 0xF2nn}`, incrementing the hour, the month and the year respectively, section 73's reading of `0xF2`; the hour `{-2 to 0, 0x7F list}`, a list `[0x1F 0xF203, 0x1F 0xF204]` incrementing the day and the weekday; second, weekday and year none | 13 of 13; the list's index is 12 on six compiles, 13 on one, 18 on two and 19 on four, and is the caller's |
+| the first two byte variable | index `narrow`, `first` 0, maximum 65277, no transitions, unnamed, stored straight after record 17 | 13 of 13; what it is for is **unread** |
+| a variable's width | one byte up to a maximum of 100, two bytes from 254 | per compile, the widest one byte maximum above the firmware's block is 100 and the narrowest two byte one 254, 13 of 13; **the line between them is not pinned**, and a maximum from 101 to 253 is refused |
+| the header | `count`, `narrow`, `wide`, `narrow`, from the widths | section 276 |
+| a variable's name | its stem, `_`, and its maximum plus one | section 86 |
+| the name tree's level 0 | `Root` index 0, `State` index 1, first in the file | 13 of 13 |
+| the name tree's level 1 order | ascending `(i ^ (i >>> 4) ^ (i >>> 7)) & (capacity - 1)` of the variable index, the capacity 16 doubled while the node count exceeds three quarters of it | 13 of 13 |
+| a value map's case order | `compilerCaseOrder`, section 319 | 501 of 501 records, but the order is visible only in the 332 holding the key sets 0 to 20 and 0 to 450; the other 169 hold one case or keys below 16, where it is ascending |
+| a value map's lead byte and range table | 2, and no range | 501 of 501 |
+
+The clock's day of the month counts from 0, section 322, so its rollover to 0 is the 1st and the
+increment it fires is the month's; the generator carries the clock's values and maxima and takes no
+position on how they count.
+
+The rest is the description: the clock's seven values and maxima and the hour's list, which are the
+stamping rule's and base slot 10's; each variable's stem, value, maximum and transitions in stored
+order; the order of the variables' indices within each width; and each value map's cases by value,
+each naming a piece.
+
+### The name tree is a hash map keyed by the variable index, and the capacity is pinned in places
+
+Section 315 found Java 6's `HashMap` bucket order in the key list after the end marker. The name
+tree's level 1 nodes follow the same hash of the **variable index** they name:
+
+| order tried | fits |
+|---|---|
+| the rule, at its capacity | 13 of 13 |
+| ascending index | 0 of 13 |
+| the hash at half the capacity | 0 of 13 |
+| the hash at double the capacity | 11 of 13 |
+
+**Only the two Harmony 600 trees pin the capacity from above**: 32 and 41 nodes, they fit 64 buckets
+and fail at 128. The eleven others hold 51 to 90 nodes, fail at 64, and fit 128 and every larger
+capacity alike, since all their indices are below 128 and the hash is then the same order however wide
+the table; so for them the capacity is pinned from below only. At 64 buckets the table therefore doubles
+past a count between 41 and 51, a load factor in `[0.641, 0.797)`, which with section 315's
+`[0.6875, 0.8125)` leaves `[0.6875, 0.797)` for Java's 0.75. If one compiler built the other
+architectures' trees too, a Harmony One tree of 12 nodes that fits 16 buckets and fails at 32 and one of
+25 that fits 64 and fails at 32 narrow it to `[0.75, 0.78125)`. That the key is a boxed integer index
+rather than the name is the reading that fits; nothing names the map.
+
+**No tree of the thirteen has a tie**, and the generator refuses one. Ties do occur on arch 8 and 12:
+ten distinct pairs, fifteen occurrences over ten distinct Logitech trees of the Harmony One and the
+Harmony 880 and 885, at 16 and 32 buckets, and in every occurrence the larger index is stored first. That is not adopted: a Java 6 table
+inserted in ascending order puts the later key first only for a pair that never shared a bucket before
+the last resize, since a resize reverses a chain, and `49` and `19`, which share bucket 2 at 16 buckets
+as well as bucket 18 at 32, are stored larger first too. So the insertion order is not established, and
+an arch 14 tie stays a refusal until a compile holds one.
+
+**The same order holds on every name tree Logitech built in the lab**: 35 files on arch 8, 9, 12 and
+16, the Harmony 880 and 885, the Harmony 525, the Harmony One and the Harmony 300 and 350, hold 22
+distinct trees of 2 to 25 level 1 nodes, and all 22 show no step down at the rule's capacity while none
+is ascending. Three of the 22 are the Harmony 300 and 350's, of 2 to 5 nodes, which say little. Those of arch 8 and 9 carry a third level 0 node, `HarmonyAssistant`, and level 2 nodes the
+generator does not build. Arch 10 (Harmony 890 and 895) has no name tree. **The only trees that break
+it are ours**: all twenty configurations in the lab that `compose.ts` gave a node, thirteen on the spare
+Harmony One and seven on the Harmony 650, because it appends the node rather than placing it. Those ran on the remote,
+which agrees with nothing on it reading base slot 0.
+
+### The index order is not a hash order of the names
+
+Which variable gets which index within a width is carried. Over the thirteen, the named variables in
+index order step down at the rule's capacity under Java's `String` hash of the whole name about as often
+as not, under both Java 6's and Java 8's supplemental hash: of 831 adjacent pairs, 408 and 413 step down. Four
+other spellings of the name, at six capacities from 16 to 1024, did no better, in a measurement the
+test does not repeat. The records are stored in index order except the first two
+byte variable and, on 11 of the 13, a trailing run of the highest one byte records, device input and
+state variables such as `TV_TVInput_3`, stored after the two byte ones: one record on five compiles, two
+on two, and 3, 5, 9 and 13 on one each. So the index is largely the emission order, and what decides
+it is open. The transitions of a record are carried in stored order as well; for a device's inputs that
+order is `inputs.ts`'s question, section 321.
+
+### What it corrects
+
+Sections 86 and 120 measured a record's value at most its maximum, "at most `second` in all 735
+records", which holds for the population measured then and **not** for the thirteen:
+in `h650_power_hold_compile_2`, `DefaultPowerOnDelay_83915542` holds 65535 under a maximum of 254. So the
+generator does not refuse a value above its maximum, since that would reject Logitech's own output;
+keeping the clock inside its range stays `edit.ts`'s rail.
+
+### Also built, from a smaller description
+
+`deviceDelayVariables(identifier, delays)` gives a device's eight delay variables, section 234: the two
+delays and their defaults as two byte variables with maxima 65277 and 254, and the four counters
+beside them as one byte variables, 0 under maxima of 5, 3, 100 and 100. All 83 devices on the thirteen
+hold exactly these, 664 variables. `activityStateVariables(n)` gives `CurrentActivityState_0` holding
+and bounded by the activity count and `CurrentLocation` at 0 of 0; the count is checked against
+`activityNames`, which reads the activities off the menu rather than off base slot 13, 13 of 13.
+
+### Scope, decision 16
+
+The generator is arch 14 only, the Harmony 600, 650 and 700, where every constant above was measured,
+and several do not transfer. On arch 8 and 12 (Harmony 880 and 885, Harmony One) records 7 to 12 and 15
+to 17 hold arch 14's values while 13 and 14 do not, `1/1` and `0/1` on the 880 and 885 and `1/1` and
+`2/4` on the One against arch 14's `0/32` and `1/1`; arch 9 (Harmony 525) differs from record 8 on. The
+`0/65277` variable at index `narrow` exists on arch 8, 9 and 12 as well, as the only two byte variable,
+so the width rule cannot be scored there, and their one byte variables reach a maximum of 121, inside
+the gap refused here. The name tree's level 1 order is seen on every architecture with a name tree,
+above.
+
+### What the review changed
+
+The audit found the first draft's "no tree here has a tie" true of the thirteen and false of the lab,
+the other architectures scored on ten files of the 35 the lab holds, with one factory tree counted
+twice, "one more record stored apart" wrong on six of the eleven, the double capacity and
+ascending case controls presented without their split, and the arch 10 and the records 13 to 17 scope
+sentences short of what one command could say. Each is corrected above. The blind reviewer reproduced
+every count in the draft, and noticed the stored apart run independently.
+
+### What this does not establish
+
+* What the first two byte variable is for, and what records 7 to 17 hold beyond section 138's arch 12
+  readings.
+* Where between 100 and 254 a maximum makes a variable two bytes wide on arch 14. That the line has to
+  do with the firmware's `0xFE` fill, section 276, is a guess and is not tested.
+* The order of a tie in the name tree, what decides the index order, and the order of a record's
+  transitions.
+* Anything on the remote: base slot 0 is read by no firmware, and the other two are byte identical to
+  compiles that ran.
+
+### Falsification
+
+An arch 14 compile whose base slots 0, 13 or 14 the round trip does not reproduce; a Logitech name tree
+whose level 1 nodes step down in bucket order at the capacity the rule gives; an arch 14 one byte
+variable with a maximum of 254 or more, or a two byte one with 100 or less; records 7 to 17 or the first
+two byte variable stating other values on an arch 14 compile.
+
+### Where it lands
+
+* `packages/codec/src/statetables.ts`: `buildStateTables`, `describeStateTables`, `withStateTables`,
+  `nameTreeOrder`, `isWideVariable`, `deviceDelayVariables`, `activityStateVariables`.
+* `packages/codec/test/statetables.test.ts`: the thirteen byte for byte, the blind control, the name
+  tree order and its alternatives with their split, the Logitech trees of the other architectures and
+  the ties in them, the composed trees that break the order, the names' string hash, the case order with
+  the ascending control, the constants and width bounds, the clock's transitions and the hour's list,
+  the stored order, the device and activity variables, and the refusals.
+* `docs/config-format.md` under base slots 0, 13 and 14.
+
+## NNN. A whole device's device mode is laid out by rules: hard keys by preference, the screen sorted, labels sized down a ladder of six
 
 **Logitech's compiler puts a catalogue device's whole command list into device mode by rules this
 section reads off its output, and the composer now builds a whole device by them.** Every hard key takes
@@ -42585,12 +42966,28 @@ the 734 label lines is drawn in one of the six.
   that could be split is held to 58: of the four labels exactly 59 wide in the largest size, the one with
   nowhere to break, `Program`, stays whole, and `WakeUp`, `ChLevel` and `InputAm` are split. That limit
   is fitted to one width and reads as a tie rule, not a second limit.
-* **It is split** at its first space, the space dropped, or with no space at its first word boundary:
-  after a hyphen not followed by another, or between a lower case letter and an upper case one or a
-  digit, unless that letter is followed by a hyphen. A slash is no boundary: `Tv/Radio` goes down a size.
-  Both halves must fit 59.
-* **Where no size holds it**, it goes in the smallest, split if it can be, each part cut to its longest
-  prefix that fits with `..` after it.
+* **It is split** at spaces the way a word wrap does, as many words to a line as fit within 58, the
+  spaces at the breaks dropped; or with no space at its first word boundary: after a hyphen not
+  followed by another, or between a lower case letter and an upper case one or a digit, unless that
+  letter is followed by a hyphen. A slash is no boundary: `Tv/Radio` goes down a size. It must come to
+  two lines, each within 59.
+  **The wrap is section 323's rule**, measured on the corner labels of every mode page of the same
+  thirteen configurations in each page's most common font, 1742 of its 2037 labels on device mode pages
+  by this section's blind reviewer's count, and this section first had the first space instead. The two
+  agree on every label of two words, and on every one of the 338 distinct catalogue names of this
+  population's devices: changing to the wrap moved none of the counts below. They differ only on three
+  words or more. The one label measured on which they differ, `Rcvr V-` over `Aux` on an activity's page
+  of `h700_config`, is the wrap's, and since most of section 323's population is device mode pages, the
+  device mode rule is **taken** to be the wrap; no device mode label here tells the two apart. Weakly for
+  it: `Pip Channel Down` is drawn `Pip`, `Channel`, the wrap's first two lines and not the first space's
+  `Pip`, `Channel Down`, in a size neither rule explains, and `Pip Channel Up` in the fifth size pins the
+  wrap's limit below 59, since `Pip Channel` is 59 there and stays apart.
+  **It is still two implementations**, `fourSlotLabelLines` in `compose.ts` measuring with one font
+  set's own glyphs and `wrapAtSpaces` in `devicemode.ts` with the size table, and they share the wrap
+  and not the rest: the first never splits a label without a space. That is the state the rule about
+  two copies of a derivation warns of. Open: one of them should call the other.
+* **Where no size holds it**, it goes in the smallest, split at its first space or word boundary rather
+  than wrapped, each part cut to its longest prefix that fits with `..` after it.
 
 A one line label sits at y 40 or 90; a two line one starts 15 higher with its second line one font
 height below, which is section 285's 25 and 75. Left labels start at x 3, and a right label's lines each

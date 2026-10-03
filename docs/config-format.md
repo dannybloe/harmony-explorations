@@ -718,7 +718,7 @@ pages all draw one picture, the corner lists' crossed one on the 650 and 700s an
 600, and carry no queued `0x73`. **Every row list is bound once**: 300 of 300, none shared between two
 buttons or between a page and its copy.
 
-**What a compiled catalogue device puts where**, section 323, on twenty devices Logitech compiled from
+**What a compiled catalogue device puts where**, section NNN, on twenty devices Logitech compiled from
 its catalogue, in seven of the thirteen configurations of section 312, plus one held out; the rules are
 read off the output and `devicemode.ts` is their executable form:
 
@@ -728,7 +728,7 @@ read off the output and `devicemode.ts` is their executable form:
 | screen, first | `PowerToggle PowerOn PowerOff Teletext List Home Eject Subtitle Aspect Timer Return NextDisc PreviousDisc Triangle Circle Square Cross`, those the device has, whether or not a key holds them | 474 of 476 items, both rows |
 | screen, rest | every command no key holds, sorted lower cased with `-` removed, then lower cased; stable | |
 | label size | the first of six sizes, heights 15, 14 wide, 14, 13, 11, 10, where it is at most 59 on one line, 58 if it could split, or split with both parts at most 59; else the smallest, each part cut to a prefix plus `..` | 470 of 474 labels |
-| label split | first space, dropped; else after `-` not followed by `-`, or lower case then upper case or digit unless that is followed by `-`; never at `/` | |
+| label split | at spaces as a word wrap within 58, the corner label rule of section 323; with no space, after `-` not followed by `-`, or lower case then upper case or digit unless that is followed by `-`; never at `/`; two lines at most; where no size holds it, the smallest, split at the first space or boundary | |
 | label place | one line at y 40 or 90, two from 25 or 75 one font height apart; left from x 3, right each line ending at 125 | |
 | counter | size 14, y 2: total ending at 125, `/` (5 px) before it, page before that, digits 7 px; none on one page | 128 of 128 |
 | title | size 14, x 0, y 2; whole if at most `125 - 14 * digits(total) - 8`, else the longest prefix plus `..` that is | 125 of 128 |
@@ -1073,6 +1073,38 @@ edit: `setActivityKey` and `clearActivityKey` in `packages/codec/src/activitykey
 only while some key is empty, 6 of the 13, which are two setups, and adding it is a length change, so the edit refuses on a
 configuration without it. Arch 12 (Harmony One) is not compared.
 
+**An activity's key map is built from two roles on arch 14** (Harmony 600, 650 and 700),
+[findings.md](findings.md) section 323, measured on the 40 activities of the 13 Logitech compiles:
+
+| keys | press entry runs |
+|---|---|
+| VolumeUp, VolumeDown, Mute (scans 14, 15, 16) | the **volume** device's own device mode list for that scan |
+| every other scan | the **control** device's own device mode list for that scan: the channel changing device, else the one that plays |
+| UpArrow, DownArrow (26, 27), unbound in the control device's own map | its DirectionUp, DirectionDown lists (50, 42); right on 5 distinct activities and wrong on 4 |
+| ChannelUp, ChannelDown (31, 32), where its own map runs the DirectionUp and DirectionDown lists there | its SkipForward, SkipBack lists (38, 21); fires on one activity, the calibration disc player's, and agrees with Logitech's stated map there |
+| Exit (12), where the control device's own screen has an item labelled `Exit` | that item's list; the same one activity |
+
+The **same base slot 10 list** as the device's own map, never a copy: 1254 of the 1328 activity key
+bindings, and none of the other 74 runs a list with the same codes. The result is Logitech's set key
+for key on 20 of the 40 activities, about 14 distinct; the other 20 are the nine copies of one activity
+on the test account's 650 and 700 records, four keys each, and 11 activities of the three hand
+customised configurations. A display device that neither changes channels nor plays contributes no
+key. Scans 26 and 27 are `UpArrow` and `DownArrow` and 50 and 42 the pad's, decided from the device
+maps, `reference/button-maps.md`. `activityKeysFromRoles` in
+`packages/codec/src/activityroles.ts`. Help (scan 3, release and repeat) is not built.
+
+**An activity's screen commands are its devices' own screen items**, same section: on the ten
+compiles that are not hand customised, every working screen item, 64 per copy and 23 distinct, is an item of one
+device's own screen pages, the same list under the same label, so a command is named by its device
+and label (`activityScreenRows`). Which commands, and in which order, is the platform's soft button
+list and an input. They fill four corners a page in the order given, and a label is broken onto two
+lines as the compiler breaks one: kept whole without a space or within 58 pixels, else greedily at
+spaces within 58, any threshold from 55 to 58 placing all 2036 measured corner labels (422 distinct, the
+band's edges three of them), at y 25 and 40 (75 and 90 in the bottom row), each line placed on its own.
+No corner label line in the page's label font is wider than 59 pixels, and the one 60 pixel word is
+drawn in another font, which is not composed. The start up title breaks the
+same way at 123 pixels onto y 5 and 19, each line centred.
+
 Read with `gspm.handler_sets` and `gspm.handler_index`. [findings.md](findings.md) section 39.
 
 ### Base slot 14: the state value map
@@ -1148,6 +1180,10 @@ devices or more, arch 8, 9, 12 and 14, naming every `Power` variable; none where
 The walk is from `CurrentLocation`'s record, whose one case, value 0, queues the call, so the switch off
 is conditional on it. Every activity's enter list writes every one of those variables, 1 or 0,
 directly or through the lists it calls, up to three calls down. `allOffList`.
+
+**On arch 14 every record leads with 2 and has no range table**, 501 of 501 over the thirteen compiles,
+and no address points into another record, so `buildValueMap` writes each record whole from its cases.
+[findings.md](findings.md) section 324.
 
 Read with `gspm.value_maps` and `gspm.value_map_reference`. [findings.md](findings.md) section 39.
 
@@ -2383,6 +2419,28 @@ one:
 `inputPlan`, `composeDeviceInputs`, `activityStartTargets` and `deviceStateMachines` in
 `packages/codec/src/inputs.ts`; `packages/codec/test/inputs.test.ts`.
 
+**Built from a description, arch 14**, [findings.md](findings.md) section 324. `buildStateTables` in
+`packages/codec/src/statetables.ts` rebuilds all thirteen arch 14 compiles' base slots 0, 13 and 14
+byte for byte. What it generates rather than carries:
+
+| what | value on arch 14 |
+|---|---|
+| records 7 to 17, `first / max` | `0/2, 0/3, 5/7, 0/7, 0/32, 0/1, 0/32, 1/1, 0/3, 0/1, 0/3`, no transitions |
+| the clock's transitions | minute, day, month: `{-2 to 0, 0x1F 0xF2nn}` incrementing hour, month, year; hour: `{-2 to 0, 0x7F list}`, the list `[0x1F 0xF203, 0x1F 0xF204]` incrementing day and weekday, its index the configuration's |
+| index `narrow` | `first` 0, max 65277, no transitions, unnamed, stored straight after record 17; purpose **unread** |
+| a variable's width | one byte for a maximum up to 100, two from 254; **between is unpinned** and refused |
+| a device's eight delay variables | `PowerOnDelay` and `InterDeviceDelay` max 65277, their `Default` copies max 254, all two bytes; `PowerOnDelayFlagCounter` 0/5, `InterDeviceDelayFlagCounter` 0/3, both `FixingTriggered` 0/100, one byte; 83 of 83 devices, `deviceDelayVariables` |
+| `CurrentActivityState_0` and `CurrentLocation` | the activity count for both value and max, and 0/0, `activityStateVariables` |
+
+Carried: which variables there are, their stems, values, maxima and transitions in stored order, and
+the order of their indices within each width, which no hash of their names fits. **A value can exceed
+its maximum**: `DefaultPowerOnDelay` holds 65535 under 254 for one device of
+`h650_power_hold_compile_2`, so "at most `second`" holds for the population of sections 86 and 120 and
+not for every compile. The constants are arch 14's: on arch 8 and 12 records 7 to 12 and 15 to 17
+hold the same values while 13 and 14 hold `1/1, 0/1` (Harmony 880 and 885) and `1/1, 2/4` (Harmony
+One), arch 9 differs from record 8 on, and on all three the `0/65277` variable at index `narrow` is the only
+two byte one while one byte maxima reach 121, inside the gap refused here.
+
 Read with `gspm.state_table`, `gspm.state_records` and `gspm.state_index`; `stateTable` and
 `stateRecords` in `packages/codec`.
 [findings.md](findings.md) sections 35, 60 and 86.
@@ -3166,6 +3224,28 @@ Two properties hold corpus wide and are what make this a tree rather than a list
   entry.**
 
 Level 2 appears on arch 8 and arch 9 only, holding a small menu under `HarmonyAssistant`.
+
+**The order Logitech's compiler stores the nodes in**, [findings.md](findings.md) section 324. Level
+0 first, `Root` then `State` on the arch 12 and 14 configurations measured and those two then
+`HarmonyAssistant` on the arch 8 and 9 ones. The exceptions are containers that are not a user
+configuration: the Harmony 525's safe mode container and the one in its firmware package hold one
+level 1 node, then `State`, then `Root`, and the Harmony 880 and 885 firmware containers hold `State`
+before `Root`.
+Then level 1 in ascending
+
+    (i ^ (i >>> 4) ^ (i >>> 7)) & (capacity - 1),   i the variable index
+
+with the capacity 16 doubled while the level 1 node count exceeds three quarters of it: Java 6's
+`HashMap` keyed by the index, the rule section 315 found for the key list after the end marker. 13 of
+13 arch 14 compiles fit and none fits in index order. The two Harmony 600 trees, 32 and 41 nodes, fit
+64 buckets and fail at 128, which pins their capacity from both sides; the eleven of 51 to 90 nodes fail
+at 64 and fit at 128 and every wider table alike, since their indices are all below 128, so theirs is
+pinned from below only. All 22 distinct trees Logitech built on arch 8, 9, 12 and 16, 2 to 25 level 1
+nodes over 35 files, show no step down either, and the twenty that `compose.ts` gave a node all do.
+No arch 14 tree has a tie in a bucket, and `nameTreeOrder` refuses one; on arch 8 and 12 ten distinct
+pairs tie, fifteen times over ten trees, and every time the larger index is stored first, which is
+recorded and not adopted, section 324. Arch 10 (Harmony 890 and 895) has no name tree. Nothing on the
+remote reads the order; `buildNameTree` reproduces it.
 
 A level 1 name is three parts, `<label>_<qualifier>_<values>`:
 
