@@ -1128,6 +1128,10 @@ The walk is from `CurrentLocation`'s record, whose one case, value 0, queues the
 is conditional on it. Every activity's enter list writes every one of those variables, 1 or 0,
 directly or through the lists it calls, up to three calls down. `allOffList`.
 
+**On arch 14 every record leads with 2 and has no range table**, 501 of 501 over the thirteen compiles,
+and no address points into another record, so `buildValueMap` writes each record whole from its cases.
+[findings.md](findings.md) section NNN.
+
 Read with `gspm.value_maps` and `gspm.value_map_reference`. [findings.md](findings.md) section 39.
 
 ### The screen language
@@ -2363,6 +2367,25 @@ one:
 `inputPlan`, `composeDeviceInputs`, `activityStartTargets` and `deviceStateMachines` in
 `packages/codec/src/inputs.ts`; `packages/codec/test/inputs.test.ts`.
 
+**Built from a description, arch 14**, [findings.md](findings.md) section NNN. `buildStateTables` in
+`packages/codec/src/statetables.ts` rebuilds all thirteen arch 14 compiles' base slots 0, 13 and 14
+byte for byte. What it generates rather than carries:
+
+| what | value on arch 14 |
+|---|---|
+| records 7 to 17, `first / max` | `0/2, 0/3, 5/7, 0/7, 0/32, 0/1, 0/32, 1/1, 0/3, 0/1, 0/3`, no transitions |
+| the clock's transitions | minute, day, month: `{-2 to 0, 0x1F 0xF2nn}` incrementing hour, month, year; hour: `{-2 to 0, 0x7F list}`, the list `[0x1F 0xF203, 0x1F 0xF204]` incrementing day and weekday, its index the configuration's |
+| index `narrow` | `first` 0, max 65277, no transitions, unnamed, stored straight after record 17; purpose **unread** |
+| a variable's width | one byte for a maximum up to 100, two from 254; **between is unpinned** and refused |
+| a device's eight delay variables | `PowerOnDelay` and `InterDeviceDelay` max 65277, their `Default` copies max 254, all two bytes; `PowerOnDelayFlagCounter` 0/5, `InterDeviceDelayFlagCounter` 0/3, both `FixingTriggered` 0/100, one byte; 83 of 83 devices, `deviceDelayVariables` |
+| `CurrentActivityState_0` and `CurrentLocation` | the activity count for both value and max, and 0/0, `activityStateVariables` |
+
+Carried: which variables there are, their stems, values, maxima and transitions in stored order, and
+the order of their indices within each width, which no hash of their names fits. **A value can exceed
+its maximum**: `DefaultPowerOnDelay` holds 65535 under 254 for one device of
+`h650_power_hold_compile_2`, so "at most `second`" holds for the population of sections 86 and 120 and
+not for every compile.
+
 Read with `gspm.state_table`, `gspm.state_records` and `gspm.state_index`; `stateTable` and
 `stateRecords` in `packages/codec`.
 [findings.md](findings.md) sections 35, 60 and 86.
@@ -3146,6 +3169,21 @@ Two properties hold corpus wide and are what make this a tree rather than a list
   entry.**
 
 Level 2 appears on arch 8 and arch 9 only, holding a small menu under `HarmonyAssistant`.
+
+**The order Logitech's compiler stores the nodes in**, [findings.md](findings.md) section NNN. Level
+0 first, `Root` then `State` on the arch 12 and 14 configurations measured and those two then
+`HarmonyAssistant` on the arch 8 and 9 ones; the arch 9 safe mode container, which holds `Root`
+third, is the exception.
+Then level 1 in ascending
+
+    (i ^ (i >>> 4) ^ (i >>> 7)) & (capacity - 1),   i the variable index
+
+with the capacity 16 doubled while the level 1 node count exceeds three quarters of it: Java 6's
+`HashMap` keyed by the index, the rule section 315 found for the key list after the end marker. 13 of
+13 arch 14 compiles fit and none fits in index order; the two Harmony 600 trees, 32 and 41 nodes, fail
+at 128 buckets and the eleven of 51 to 90 nodes fail at 64, which pins the capacity there. Ten trees of
+arch 8, 9 and 12, 4 to 13 nodes, show no step down either. A tie in a bucket has not occurred and its
+order is unknown. Nothing on the remote reads the order; `buildNameTree` reproduces it.
 
 A level 1 name is three parts, `<label>_<qualifier>_<values>`:
 
