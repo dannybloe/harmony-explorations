@@ -288,9 +288,13 @@ class TestSlot3Timestamp(unittest.TestCase):
     """
     Base slot 3 is an eleven byte framed record holding when the config was built.
 
-    The reason to believe the field assignment is that it is the only one that works, so the test
-    that matters here is the search itself rather than a table of expected dates. A table would
+    The reason to believe the field **assignment** is that it is the only one that works, so the
+    test that matters here is the search itself rather than a table of expected dates. A table would
     only restate the parser.
+
+    **How the day is counted is a different question and the search cannot answer it**, section 322:
+    widened to a day counted from 0 or from 1, it finds two solutions, and the firmware is what picks
+    the one counted from 0 with a Sunday based weekday. `tests/test_clock_counting.py` holds that.
     """
 
     def records(self):
@@ -323,19 +327,51 @@ class TestSlot3Timestamp(unittest.TestCase):
                     i = c.blob.find(gspm.CLOCK_COOKIE, i + 1)
                 self.assertEqual(hits, [o])
 
-    def test_the_day_of_week_byte_closes_on_the_epoch(self):
-        """Days since 1 January 2000 modulo 7, computed without going through the parser.
+    def test_the_day_of_week_byte_is_the_sunday_based_weekday_of_the_stored_day_plus_one(self):
+        """The weekday against the calendar, computed without going through the parser.
 
-        This is the independent closure: the weekday encoding and the year offset are two
-        different fields that agree on one anchor, and 1 January 2000 was a Saturday, which is
-        why 0 means Saturday.
+        Section 322's reading: the stored day counts from 0 and the weekday from Sunday. This test
+        asserted days since 1 January 2000 modulo 7 against the stored day itself<!--superseded-->,
+        a Saturday epoch, and it passed on every record for the reason the correction explains: both
+        readings give the same byte on every date these records hold. So the closure it described was
+        real and did not choose between them; the firmware's month end routine does.
         """
-        self.assertEqual(gspm.CLOCK_EPOCH.strftime('%A'), 'Saturday')
         for name, c, _, raw in self.records():
             with self.subTest(image=name):
-                second, minute, hour, day, dow, month, year = raw
-                d = datetime.date(2000 + year, month + 1, day)
-                self.assertEqual((d - gspm.CLOCK_EPOCH).days % 7, dow)
+                second, minute, hour, stored, dow, month, year = raw
+                d = datetime.date(2000 + year, month + 1, stored + 1)
+                self.assertEqual((d.weekday() + 1) % 7, dow)
+                # And the old reading's arithmetic on the day before gives the same byte, which is the
+                # whole reason a corpus could not separate the two.
+                before = d - datetime.timedelta(days=1)
+                self.assertEqual((before - datetime.date(2000, 1, 1)).days % 7, dow)
+
+    def test_counting_the_day_from_zero_or_one_is_not_something_the_corpus_decides(self):
+        """The search below, widened by one question it never asked: is the day counted from 0?
+
+        Two solutions survive, the old reading and the new one, on all seventeen records. That is the
+        measurement behind section 322's correction of section 21: a fit to the corpus cannot choose,
+        so the choice has to come from somewhere else, and it comes from the firmware.
+        """
+        raws = [raw for _, _, _, raw in self.records()]
+        self.assertEqual(len(raws), 17)
+        solutions = []
+        for day_from in (0, 1):
+            for dbase in range(7):
+                ok = True
+                for _, _, _, day, dow, month, year in raws:
+                    try:
+                        d = datetime.date(2000 + year, month + 1, day + 1 - day_from)
+                    except ValueError:
+                        ok = False
+                        break
+                    if (d.weekday() + dbase) % 7 != dow:
+                        ok = False
+                        break
+                if ok:
+                    solutions.append((day_from, dbase))
+        # (0, 1) is counted from 0 with Sunday as 0; (1, 2) is counted from 1 with Saturday as 0.
+        self.assertEqual(solutions, [(0, 1), (1, 2)])
 
     def test_the_field_assignment_is_the_only_one_that_fits(self):
         """The search, not the answer.
@@ -344,6 +380,10 @@ class TestSlot3Timestamp(unittest.TestCase):
         weekday offsets, exactly one assignment is consistent with every sample. Reorder the
         fields in `gspm.clock_record` and this fails, which a table of expected dates would not
         do in any informative way.
+
+        The search takes the day as counted from 1, which is the one thing it was never free to
+        vary, and its weekday offset of 2 is the Saturday epoch that follows from that. The test
+        above widens it and finds the second solution, section 322.
         """
         raws = [raw for _, _, _, raw in self.records()]
         self.assertEqual(len(raws), 17, 'the clock records the search runs against')
@@ -380,7 +420,8 @@ class TestSlot3Timestamp(unittest.TestCase):
         if a is None or b is None:
             self.skipTest('need both One factory configs')
         self.assertEqual(gspm.parse(a).built_at, gspm.parse(b).built_at)
-        self.assertEqual(gspm.parse(a).built_at, datetime.datetime(2007, 10, 24, 2, 22, 8))
+        # The 25th since section 322; this read the 24th, a day early like every date then.
+        self.assertEqual(gspm.parse(a).built_at, datetime.datetime(2007, 10, 25, 2, 22, 8))
 
     def test_the_arch8_cluster_shares_a_date(self):
         """Three of the four arch 8 configs were generated in one sitting, and it shows.
@@ -2488,9 +2529,9 @@ class TestTheTwoHarmony890Configs(unittest.TestCase):
         stamps = {name: gspm.parse(lab.load(name)).built_at.isoformat()
                   for name in ('arch8_config_880', 'h890_config_2', 'h890_config')}
         self.assertEqual(stamps, {
-            'arch8_config_880': '2025-05-14T21:25:34',
-            'h890_config_2': '2025-05-14T21:37:44',
-            'h890_config': '2025-05-14T21:40:26',
+            'arch8_config_880': '2025-05-15T21:25:34',
+            'h890_config_2': '2025-05-15T21:37:44',
+            'h890_config': '2025-05-15T21:40:26',
         })
 
     def test_neither_config_carries_a_name_tree(self):

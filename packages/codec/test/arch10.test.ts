@@ -1153,7 +1153,7 @@ test('the mapping is adopted, so the arch 10 readers answer, and each answer has
 
     const lists = c.actionLists();
     assert.equal(lists?.length, 1549, 'base slot 10 has its action lists');
-    assert.equal(c.builtAt, '2025-05-14T21:40:26', 'and base slot 3 its build timestamp');
+    assert.equal(c.builtAt, '2025-05-15T21:40:26', 'and base slot 3 its build timestamp');
   });
 
 /**

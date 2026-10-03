@@ -1189,7 +1189,7 @@ on arch 12 and arch 14, measured on both.
 the client's naming made 6 the obvious thing to try. All nine selectors return zero on a window that
 is demonstrably live on a 600. `docs/findings.md` section 90.
 
-### The clock is read and written over USB by name, and it disagrees with us twice
+### The clock is read and written over USB by name, and it agrees with the firmware
 
 *`hid/services/time/TimeHidService.java`, read 28 August 2026, section 209. Unlike everything above it
 this comes out of `hid/services/` rather than `hid/commands/`, which is the half of the layer the lab
@@ -1200,27 +1200,31 @@ hour, day of month, day of week, month and year, and reads them back the same wa
 13's first seven records exactly as section 130 reads them and as section 111 measured them live in a
 Harmony One's data memory, which is a third route to a field assignment that already had two.
 
-Three details do not agree, and none of them touches a rail here, since this project does not write to
-a remote and does not set a clock:
+This said three details disagree with us. **Two of them were ours, `docs/findings.md` section 322**:
+the client was right about the day and the weekday, and the firmware's month end routine says so on
+every image read. The third stands.
 
-* the client reads the day of month as the stored value **plus one** and writes it **minus one**.
-  Section 111 measured that byte as 6 on 6 August 2026, and section 130 has it equal to base slot 3's
-  own day field in all 21 containers, so both of our routes say the field holds the day itself.
+* the client reads the day of month as the stored value **plus one** and writes it **minus one**, and
+  that is how the field counts: the 1st is 0. This said section 111 measured the byte as 6 on 6 August
+  2026, so the field held the day itself; the day was the 7th, and the 6th came from the stamp read
+  that same wrong way.
 * the client takes the day of week only on architectures 8 and 12, and on every other one it reads the
   month from index 4 and the year from index 5. Architecture 9 (Harmony 525) and architecture 14
   (Harmony 600 and 700) put the month at index 5 like the others, measured: one Harmony 525 config
-  stores 3, 9 and 13 at indices 4, 5 and 6 for a build stamped 1 October 2013, where 3 is the weekday
-  under the record's own epoch, 9 is the zero based month and 13 is the year since 2000.
-* the client writes the weekday as Java's `DAY_OF_WEEK` minus one, which counts from **Sunday**, where
-  section 111 fixed the record's epoch on a **Saturday** by pairing each byte against a config field.
+  stores 3, 9 and 13 at indices 4, 5 and 6 for a build stamped 2 October 2013, where 3 is the weekday
+  counted from Sunday, 9 is the zero based month and 13 is the year since 2000.
+* the client writes the weekday as Java's `DAY_OF_WEEK` minus one, which counts from **Sunday**, and
+  so does the record. Section 111's Saturday epoch was the Sunday count of the day after, which is
+  what the misread day made it look like.
 
 The client does send a **clock recalculate**, misc selector 8, after writing, which is the one thing
-that could repair the second and third. It sends it only on the two architectures it believes carry a
+that could repair the second. It sends it only on the two architectures it believes carry a
 day of week, and `docs/usb-protocol.md` reads selector 8 as doing nothing at all on architecture 12,
 so on the one bench architecture where it is sent it is not the repair.
 
-**What this is evidence for is the field assignment, and what it is evidence against is trusting a
-client.** Two of the three would put the wrong date on a remote's screen.
+**What this is evidence for is the field assignment and its counting.** It was written up as evidence
+against trusting a client, on two disagreements that were this project's own misreading; the one left,
+the month's index on architectures 9 and 14, would put the wrong date on those remotes' screens.
 
 ### Smaller leads
 

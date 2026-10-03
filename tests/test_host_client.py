@@ -1449,16 +1449,20 @@ class TheTwoArchitectureMapsFromTheTwoClientsDoNotOverlap(unittest.TestCase):
 
 
 class TheClientReadsTheClockOutOfBaseSlotThirteen(unittest.TestCase):
-    """Section 209: `TimeHidService` writes state variables 0 to 6, and disagrees with us twice.
+    """Section 209: `TimeHidService` writes state variables 0 to 6, and disagrees with us once.
 
     The agreement is worth a test because it is a **third** route to base slot 13's first seven
     fields, after section 130's corpus reading and section 111's live measurement on a Harmony One.
     The disagreements are worth one because the honest record of a client source is the places it
     contradicts a measurement, not only the places it confirms one.
 
-    The second disagreement is checked against the corpus rather than asserted from the client: the
-    client would take the month from index 4 on architectures 9 and 14, and the configs put it at
-    index 5 there exactly as on architecture 12.
+    **It disagreed with us three times and two of them were ours**, section 322. Section 209 recorded
+    the client writing the day minus one and the weekday from Sunday as two places the client was off
+    against the corpus<!--superseded-->; the firmware counts both exactly that way, so the client was
+    right and this project's reader was a day early. The one disagreement left is the month's index on
+    architectures 9 and 14, which is checked against the corpus rather than asserted from the client:
+    the client would take the month from index 4 there, and the configs put it at index 5 exactly as
+    on architecture 12.
     """
 
     SERVICE = ('software', 'classic', 'src', 'hidcommands', 'com', 'logitech', 'harmony', 'hid',
@@ -1512,22 +1516,26 @@ class TheClientReadsTheClockOutOfBaseSlotThirteen(unittest.TestCase):
                     self.assertIsNotNone(off)
                     return int.from_bytes(container.blob[off:off + 2], 'little')
 
-                self.assertEqual(first(3), stamp.day, 'the day, not the day minus one')
+                self.assertEqual(first(3), stamp.day - 1, 'the day minus one, as the client writes it')
                 self.assertEqual(first(5), stamp.month - 1, 'the month sits at index 5')
                 self.assertEqual(first(6), stamp.year - 2000, 'and the year at index 6')
                 checked += 1
         self.assertEqual(checked, 15)
 
-    def test_the_stored_weekday_counts_from_a_saturday_and_not_from_a_sunday(self):
-        """The third disagreement, and it is the record's own epoch that settles it.
+    def test_the_stored_weekday_counts_from_a_sunday_as_the_client_writes_it(self):
+        """What was recorded as the third disagreement, and it is an agreement, section 322.
 
-        Base slot 3's weekday byte is days since 1 January 2000 modulo 7, section 21, and that date
-        was a Saturday. The client writes Java's `DAY_OF_WEEK` minus one, which counts from Sunday,
-        so the two conventions differ by one whichever container is used.
+        This test was called "the stored weekday counts from a Saturday and not from a Sunday" and
+        asserted days since 1 January 2000 against the date as this project then read it, a day early.
+        On that wrong date the Saturday based count gives the stored byte, and on the right date the
+        Sunday based count gives the same byte, so the old assertion held on every container and told
+        nothing apart. What separates the two is the date, and the firmware fixes that. So the claim
+        is now the client's own convention, Java's `DAY_OF_WEEK` minus one, on the correct date, with
+        the old reading's arithmetic kept beside it to show it was the same byte one day back.
         """
         lab.require(*lab.USER_CONFIGS)
+        self.assertIn('DayOfWeek - 1', self.source(), 'the client writes DAY_OF_WEEK minus one')
         epoch = datetime.date(2000, 1, 1)
-        self.assertEqual(epoch.weekday(), 5, 'a Saturday, under Python numbering')
         for name in lab.USER_CONFIGS:
             with self.subTest(config=name):
                 container = gspm.parse(lab.load(name))
@@ -1535,11 +1543,10 @@ class TheClientReadsTheClockOutOfBaseSlotThirteen(unittest.TestCase):
                 off = container.blob_offset_of(table.entries[4])
                 stored = int.from_bytes(container.blob[off:off + 2], 'little')
                 stamp = container.built_at.date()
-                self.assertEqual(stored, (stamp - epoch).days % 7)
-                sunday_based = (stamp.weekday() + 1) % 7
-                self.assertNotEqual(stored, sunday_based,
-                                    'the two conventions coincide here, so this container proves '
-                                    'nothing and the claim needs another')
+                self.assertEqual(stored, (stamp.weekday() + 1) % 7, 'Sunday based, on the date')
+                day_before = stamp - datetime.timedelta(days=1)
+                self.assertEqual(stored, (day_before - epoch).days % 7,
+                                 'and the Saturday epoch on the day before, which is the old reading')
 
 
 class EverySingleByteWriteIsReadBack(unittest.TestCase):

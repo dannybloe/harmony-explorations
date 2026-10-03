@@ -449,16 +449,18 @@ export interface StateRecord {
  * both to write those maxima and to refuse a base slot 13 whose others disagree, since whatever that
  * is, it is not the clock.
  *
- * **The day is the second such place, and finding out cost nothing but asking for the 31st.** `first`
- * is the one based day of the month and this maximum is 30 in all nineteen containers, so a config
- * built on a 31st declares a value outside its own variable's range. No container in the corpus was
- * built on a 31st, which is why no test could fire, and **what Logitech's generator does on such a day
- * is therefore unknown**: the corpus bounds the maximum below and says nothing about the ceiling. A
- * save stamps `max(30, day)` here, which is the same treatment the year already gets and keeps every
- * value inside its stated range; that choice is ours and is marked as unconfirmed rather than derived.
+ * **The day's maximum is fixed too**, section 322. `first` is the day of the month counted from 0, so
+ * the 30 every container declares is the 31st, which is also the last index the firmware's month end
+ * routine allows. This said the day was one based and that a config built on a 31st would declare a
+ * value outside its own range<!--superseded-->, and a save raised the maximum to 31 on such a day. Both
+ * rested on the misreading: `h700_config` was built on 31 July 2021 and stores 30 against a maximum of
+ * 30, which is what Logitech's generator does on a 31st.
  */
 export const CLOCK_STATE_MAXIMA = [59, 59, 23, 30, 6, 11] as const;
-/** The clock field whose maximum a save may have to raise, the day of the month. See above. */
+/**
+ * The day of the month, the one clock field whose stored maximum a save may have to put back: a save of
+ * ours on a 31st raised it to 31 until section 322, and `clockStateEdits` accepts that 31 and writes 30.
+ */
 export const CLOCK_DAY_INDEX = 3;
 
 /**

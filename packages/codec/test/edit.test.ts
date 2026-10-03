@@ -347,16 +347,14 @@ test('a stale year is repaired rather than left out of range', skipUnless(SAMPLE
   assert.equal(after?.second, 31);
 });
 
-test('saving on the 31st raises the day maximum, so no value sits outside its own range',
+test('saving on the 31st stores 30 and leaves the day maximum where it was',
   skipUnless(SAMPLE), () => {
-    // **The second field whose maximum moves, and the corpus could not have shown it.** `first` is the
-    // one based day of the month and every container declares a maximum of 30, so a save on a 31st
-    // wrote `first=31, second=30`: a variable holding a value its own record forbids, which is exactly
-    // what the year's repair exists to prevent one field along. No config in the corpus was built on a
-    // 31st, so no sample and no test could fire; it was found by asking for the date.
-    //
-    // What Logitech's generator does on such a day is unknown and stays unknown. Raising the maximum
-    // is our choice, taken because it keeps every value in range and matches the year's treatment.
+    // **This test used to be called "saving on the 31st raises the day maximum"<!--superseded-->**,
+    // and it asserted `first=31, second=31` for a save on 31 August. That was this project's own
+    // misreading, section 322: the day is counted from 0, so the 31st is stored as 30, which is the
+    // maximum every container declares and the firmware's own last index for a long month. Logitech's
+    // generator does exactly this, `h700_config` having been built on 31 July 2021 with 30 against 30,
+    // so what was written up as unknown was in the corpus all along.
     const c = parse(load(SAMPLE) as Uint8Array);
     const inRange = (when: string): { day: number; most: number; bad: number } => {
       const saved = stateRecords(parse(saveEdits(c, [], when).bytes) as never) ?? [];
@@ -368,13 +366,19 @@ test('saving on the 31st raises the day maximum, so no value sits outside its ow
         bad: seven.filter((r) => r.first > r.second).length,
       };
     };
-    assert.deepEqual(inRange('2026-08-31T12:00:00'), { day: 31, most: 31, bad: 0 });
-    // And the ordinary case does not move: a save on the 30th leaves the maximum where the corpus has
-    // it, so the raise is the exception and not a new default.
-    assert.deepEqual(inRange('2026-08-30T12:00:00'), { day: 30, most: 30, bad: 0 });
-    // A config saved on a 31st has to be savable again, which is why the refusal below accepts 31.
-    const once = parse(saveEdits(c, [], '2026-08-31T12:00:00').bytes);
-    assert.equal(clockStateEdits(once, '2026-09-01T00:00:00').length, CLOCK_FIELD_COUNT);
+    assert.deepEqual(inRange('2026-08-31T12:00:00'), { day: 30, most: 30, bad: 0 });
+    // The 1st is stored as 0, which is the stamp the old reader refused, todo-compile-650 1.3.1.
+    assert.deepEqual(inRange('2026-10-01T12:00:00'), { day: 0, most: 30, bad: 0 });
+    assert.deepEqual(inRange('2026-08-30T12:00:00'), { day: 29, most: 30, bad: 0 });
+    // A config an old save of ours left at a maximum of 31 can be saved again, and is put back to 30.
+    const record = stateRecords(c)?.[3];
+    assert.ok(record !== undefined);
+    const at = (c.blobOffsetOf(record.address) as number) + 2;
+    assert.equal(c.blob[at], 30, 'the day record declares 30');
+    // Made through `applyEdits`, so the trailer checksum is recomputed and the input is not damaged.
+    const old = applyEdits(c, [{ start: at, bytes: Uint8Array.of(31), owner: 'probe' }]).bytes;
+    const again = stateRecords(parse(saveEdits(parse(old), [], '2026-09-01T00:00:00').bytes) as never);
+    assert.deepEqual([again?.[3]?.first, again?.[3]?.second], [0, 30]);
   });
 
 test('a base slot 13 that is not the clock is refused rather than stamped', skipUnless(SAMPLE), () => {
@@ -444,8 +448,10 @@ test('the stamped weekday is derived, so the readers accept it', skipUnless(SAMP
     const when = `2026-08-${String(day).padStart(2, '0')}T00:00:00`;
     assert.equal(parse(saveEdits(c, [], when).bytes).builtAt, when, when);
   }
-  // And one that is not a Saturday epoch coincidence: the record's 0 is a Saturday, 1 January 2000.
+  // And the first day the record can hold, which is a Saturday and stores day 0 with weekday 6, and
+  // the 1st of a month in general, the stamp the reader used to refuse, section 322.
   assert.equal(parse(saveEdits(c, [], '2000-01-01T00:00:00').bytes).builtAt, '2000-01-01T00:00:00');
+  assert.equal(parse(saveEdits(c, [], '2026-10-01T14:32:27').bytes).builtAt, '2026-10-01T14:32:27');
 });
 
 test('a timestamp the record cannot hold is refused', skipUnless(SAMPLE), () => {
@@ -559,19 +565,27 @@ test('the clock encoder reproduces every stored record byte for byte',
   });
 
 test('the clock encoder derives the weekday rather than trusting anyone', () => {
-  // 1 January 2000 is the epoch and the record calls it 0, which is a Saturday. Checked against the
-  // calendar rather than against a stored byte, so this fails if the epoch is ever "simplified".
+  // The weekday counts from Sunday and the day from 0, section 322, both checked against the calendar
+  // rather than against a stored byte. This test used to pin 1 January 2000 as weekday 0, a Saturday
+  // epoch<!--superseded-->, which is the same byte as the Sunday count of the day after and so held
+  // while the whole reading was a day early.
   const fields = clockRecordFields('2000-01-01T00:00:00');
   assert.ok(fields !== undefined);
-  assert.equal(fields[4], 0, 'the epoch day is 0');
-  assert.equal(new Date(Date.UTC(2000, 0, 1)).getUTCDay(), 6, 'and it is a Saturday');
+  assert.equal(fields[3], 0, 'the 1st is stored as 0');
+  assert.equal(fields[4], 6, 'and a Saturday is 6 counted from Sunday');
+  assert.equal(new Date(Date.UTC(2000, 0, 1)).getUTCDay(), 6, 'which JavaScript agrees is a Saturday');
   // A whole week, so a wrong modulus shows up rather than a wrong offset only.
   for (let day = 1; day <= 7; day += 1) {
     const when = `2000-01-0${day}T00:00:00`;
     const got = clockRecordFields(when);
     assert.ok(got !== undefined, when);
-    assert.equal(got[4], (day - 1) % 7, when);
+    assert.equal(got[3], day - 1, when);
+    assert.equal(got[4], (day + 5) % 7, when);
   }
+  // The 650's own stamp from a MyHarmony sync on 1 October 2026, byte for byte: Logitech wrote
+  // `1b 20 0e 00 04 09 1a`, and this encoder writes the same seven bytes for that moment.
+  assert.deepEqual([...(clockRecordFields('2026-10-01T14:32:27') as Uint8Array)],
+    [0x1b, 0x20, 0x0e, 0x00, 0x04, 0x09, 0x1a]);
 });
 
 test('the encoder refuses what the decoder would refuse', () => {

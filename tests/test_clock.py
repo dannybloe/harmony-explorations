@@ -180,14 +180,19 @@ def month_group(month):
     return datetime.date(SPAN_YEAR if month >= 3 else SPAN_YEAR + 1, month, 1).weekday()
 
 
-def weekday_from_the_records_epoch(date):
-    """Days since 1 January 2000 modulo 7, which is base slot 3's convention: 0 is Saturday.
+def weekday_counted_from_sunday(date):
+    """The weekday with Sunday as 0, which is how the firmware's calendar counts, section 322.
 
-    Section 21 confirmed this on sixteen samples, so it is the calibrated half of the pairing: the
-    RAM byte is believed to use it because the firmware differences the RAM fields against the
-    record's, not because it happens to fit one observation.
+    This was days since 1 January 2000 modulo 7<!--superseded-->, a Saturday epoch, applied to the
+    stored day as if it were the date. Both give the same byte, because the stored day is the date minus
+    one, so the measurement below was never in doubt; what moved is which date it is.
     """
-    return (date - datetime.date(2000, 1, 1)).days % 7
+    return (date.weekday() + 1) % 7
+
+
+def stored_date(fields):
+    """The calendar date a clock's stored fields mean: the day and the month both count from 0."""
+    return datetime.date(2000 + fields[YEAR], fields[MONTH] + 1, fields[DAY] + 1)
 
 
 class TheSecondsFieldTest(unittest.TestCase):
@@ -402,9 +407,11 @@ class WhatTheBenchRemoteHeldTest(unittest.TestCase):
     """The measurement, checked for self consistency rather than pinned as seven bytes."""
 
     def test_the_measured_weekday_agrees_with_the_measured_date(self):
-        date = datetime.date(2000 + MEASURED[YEAR], MEASURED[MONTH] + 1, MEASURED[DAY])
-        self.assertEqual(weekday_from_the_records_epoch(date), MEASURED[WEEKDAY])
-        self.assertEqual(date.strftime('%A'), 'Thursday')
+        # 7 August 2026, a Friday, section 322. This read the 6th and a Thursday, each a day early
+        # and each consistent with the other, which is why nothing here could catch it.
+        date = stored_date(MEASURED)
+        self.assertEqual(weekday_counted_from_sunday(date), MEASURED[WEEKDAY])
+        self.assertEqual(date.strftime('%A'), 'Friday')
 
     def test_the_measured_date_is_the_units_own_config_build_date(self):
         lab.require(MEASURED_UNIT)
@@ -412,8 +419,7 @@ class WhatTheBenchRemoteHeldTest(unittest.TestCase):
         slot = gspm.arch_slot(container.architecture, CLOCK_RECORD_SLOT)
         offset = container.blob_offset_of(container.sections[slot].address)
         built = gspm.clock_record(container.blob, offset)
-        self.assertEqual((built.year, built.month, built.day),
-                         (2000 + MEASURED[YEAR], MEASURED[MONTH] + 1, MEASURED[DAY]),
+        self.assertEqual(built.date(), stored_date(MEASURED),
                          'the remote was holding its own config build date')
         # The minute agrees too, which is what makes the initialisation hypothesis worth a battery
         # pull. The hour does not, and that difference is the whole open question.
@@ -427,9 +433,9 @@ class WhatTheBenchRemoteHeldTest(unittest.TestCase):
         slot = gspm.arch_slot(container.architecture, CLOCK_RECORD_SLOT)
         offset = container.blob_offset_of(container.sections[slot].address)
         built = gspm.clock_record(container.blob, offset)
-        read = datetime.datetime(2000 + AFTER_REBOOT[YEAR], AFTER_REBOOT[MONTH] + 1,
-                                 AFTER_REBOOT[DAY], AFTER_REBOOT[HOUR], AFTER_REBOOT[MINUTE],
-                                 AFTER_REBOOT[SECOND])
+        read = datetime.datetime.combine(
+            stored_date(AFTER_REBOOT),
+            datetime.time(AFTER_REBOOT[HOUR], AFTER_REBOOT[MINUTE], AFTER_REBOOT[SECOND]))
         self.assertEqual((read - built).total_seconds(), UPTIME_SECONDS)
         # The date fields are the record's exactly, which is the half that predicts nothing about time.
         for field, name in ((DAY, 'day'), (MONTH, 'month'), (YEAR, 'year')):

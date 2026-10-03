@@ -2141,9 +2141,10 @@ export interface Inventory {
  * opcode `0x07` band `0xF8` steps a date held in variables 3, 5 and 6, and this says which is which
  * and adds the other four.
  *
- * The weekday's zero is a Saturday, which is not a convention picked to make the numbers fit: base slot
- * 3's own day of week byte is days since 1 January 2000 modulo 7, section 21, and that day was a
- * Saturday. Two records, two encodings, one epoch.
+ * The weekday's zero is a **Sunday** and the day of the month counts from 0, section 322, which is how
+ * the firmware's own calendar counts both. This said the weekday's zero was a Saturday, from base slot
+ * 3's epoch<!--superseded-->, and that reading is the same bytes as this one on every date the corpus
+ * holds, which is why a corpus fit could not tell the two apart and the firmware had to.
  *
  * **A writer must stamp these, not copy them**, the same rail as base slot 3's timestamp, section 111.
  * A config carried over with its old values sets the remote's clock to the moment the old config was
@@ -2165,8 +2166,8 @@ export const FIRMWARE_STATE_VARIABLES: Readonly<Record<number, string>> = {
   0: 'second',
   1: 'minute',
   2: 'hour',
-  3: 'day of the month',
-  4: 'day of the week, where 0 is a Saturday',
+  3: 'day of the month, where 0 is the 1st',
+  4: 'day of the week, where 0 is a Sunday',
   5: 'month, zero based',
   6: 'year since 2000',
   // Firmware owned by the same evidence as the clock, fixed per architecture and named by no config.
