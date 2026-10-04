@@ -151,6 +151,9 @@ test('a detail level leaves out what it says it leaves out', () => {
       h650: { text: 37, marks: 56, keys: 54 },
       h700: { text: 37, marks: 56, keys: 54 },
       one: { text: 34, marks: 32, keys: 44 },
+      // Off, Exit, Menu, OK, Vol, Ch, DVR, Guide, Info and the Logitech nameplate; eleven symbols drawn
+      // in 17 parts, rewind, fast forward, pause, mute and back being two each.
+      touch: { text: 10, marks: 17, keys: 29 },
     };
     const want = PRINTING[id]!;
     const count = (svg: string, re: RegExp): number => (svg.match(re) ?? []).length;

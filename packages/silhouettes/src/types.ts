@@ -38,8 +38,10 @@ export type Provenance = 'catalogue' | 'printed';
  * the four architectures and exactly one on arch 8. It matters to the interface because colouring by
  * device works on the keypad group, while what a screen key does depends on the page in force.
  *
- * `touch` is arch 12 (Harmony One) only: base slot 17 states the rectangle, so those keys have no
- * shape of their own on the case at all.
+ * `touch` is a key with no moulded part, answering a touch on the case. On arch 12 (Harmony One) base
+ * slot 17 states its rectangle; on a Harmony Touch it is the star and the house printed above the
+ * screen, which its manual lists as buttons and says to tap, and nothing about its configuration has
+ * been read, so there the kind says what the product is and nothing about a population.
  */
 export type KeyKind = 'keypad' | 'screen' | 'touch';
 
@@ -158,8 +160,8 @@ export interface Key {
   readonly accent?: string;
   /**
    * The scan code, present **only** where `reference/button-maps.md` names it: 32 of 44 keys on a
-   * Harmony One, 36 of 54 on a Harmony 600, none of the 50 on a Harmony 525 and none of the 55 on a
-   * Harmony 350. Never filled in by
+   * Harmony One, 36 of 54 on a Harmony 600, none of the 50 on a Harmony 525, none of the 55 on a
+   * Harmony 350 and none of the 29 on a Harmony Touch. Never filled in by
    * hand. A wrong scan code is invisible, because the interface would then show the wrong
    * assignment beside a key with complete confidence.
    */
@@ -228,7 +230,12 @@ export interface Screen {
   readonly w: number;
   readonly h: number;
   readonly pixels: { readonly width: number; readonly height: number };
-  /** True only on arch 12 (Harmony One), where base slot 17 is a touch hit map. */
+  /**
+   * Whether the glass is a touch panel. Arch 12 (Harmony One), where base slot 17 is a touch hit map,
+   * and the Harmony Touch, whose own manual calls it an LCD touch screen. On the Touch the raster is
+   * not from `SCREEN_SIZES` either, which has no entry for its architecture, but from the size of the
+   * screen captures in its user guide.
+   */
   readonly touch: boolean;
 }
 

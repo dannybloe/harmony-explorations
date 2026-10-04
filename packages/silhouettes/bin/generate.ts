@@ -22,6 +22,7 @@ const PHOTO: Readonly<Record<string, string>> = {
   h600: '600-full.jpg',
   h525: '525-full.jpg',
   one: 'one-full.jpg',
+  touch: 'touch-full.jpg',
 };
 
 function write(): void {

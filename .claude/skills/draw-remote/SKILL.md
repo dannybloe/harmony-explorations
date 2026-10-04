@@ -99,6 +99,16 @@ measures a **depth** with the mirrored case as its own control, 0.327 units agai
 traced drawing looks wrong in a way you would blame on the person who traced it, check what the reader
 did with it first.
 
+### A manual page can draw a whole side of the case as one cubic
+
+`pathBounds` measures a cubic by its endpoints, which is right for a case fitted through samples and
+wrong for a case out of a manual page: the Harmony Touch's setup guide draws each long side as **one**
+cubic from shoulder to foot, bulging 8.7 units past its ends. Sized that way, the case passed every test
+and was clipped by its own viewBox on both sides, which only a render showed. The extractor sizes the case
+with `pathBounds(d, true)` now, the true extent, and `the case fills the nominal height` checks the drawn
+curve against the viewBox. A model extracted before that change keeps its endpoint sized numbers, which is
+harmless where the bulge is under a unit, as on every earlier drawing.
+
 ### Shapes are named by position, not by index
 
 `extract.ts` sorts by area, so two parts of the same size are in whatever order the document put them.
@@ -267,9 +277,12 @@ prints a plus 11.3 wide with bars 2.8 across, a quarter. They are filled paths a
 now. Check who else uses a symbol before touching it, with a grep over `src/models/`, because the whole
 point of one set is that the other models move with it.
 
-**Leave out what is not the remote.** The Logitech logo and wordmark are in the drawings and stay out;
-`bin/extract.ts` reports marks belonging to no key, which is how they were found rather than assumed. So
-do the decorative relief lines across a face, any on screen rectangles, and a battery indicator drawn
+**Leave out what is not the remote.** The Logitech logo's **artwork** is in the drawings and stays out;
+`bin/extract.ts` reports marks belonging to no key, which is how it was found rather than assumed. Where
+a face prints `Logitech` in place of a model name, as the Harmony 300 and the Harmony Touch do, the
+nameplate says the word `Logitech` in our own type and draws no mark, Danny's decision of 4 October
+2026: it tells a person which face this is, and the artwork would be copying Logitech's. So do the
+decorative relief lines across a face, any on screen rectangles, and a battery indicator drawn
 inside a screen, because a screen's contents come from a config and not from here.
 
 **A feature in the drawing that the photograph does not show is drawn, and is not a key.** Logitech's

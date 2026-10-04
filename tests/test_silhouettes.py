@@ -533,6 +533,66 @@ class TestTheHarmony700Silhouette(TestTheHarmony650Silhouette):
     MODEL = '700'
 
 
+class TestTheHarmonyTouchSilhouette(_SilhouetteConventions, unittest.TestCase):
+    """Twenty nine, counted off Logitech's own drawing, with a touch screen and no measured code."""
+
+    NAME = 'touch.svg'
+    # As weak as the Harmony 350's count and for the same reason: nothing has read this model's keypad,
+    # so the number is the "Know your product" drawing in its setup guide, page 52 of the manual PDF in
+    # the lab, counted shape by shape. 27 keys plus the star and the house above the screen, which the
+    # legend lists as buttons, and the product photograph shows the same 29.
+    EXPECTED_BUTTONS = 29
+
+    def test_no_key_claims_a_code_or_a_candidate(self):
+        """
+        This library has never read a key off a Harmony Touch: its file based protocol is used only to
+        read identity files, its configuration is reachable neither as a file nor as a compile, and
+        `reference/button-maps.md` has no table for it. So no key carries a code or a candidate list.
+        """
+        buttons = _buttons(_tree(self.NAME).getroot())
+        for ident, element in buttons.items():
+            with self.subTest(button=ident):
+                self.assertIsNone(element.get('data-scan'))
+                self.assertIsNone(element.get('data-scan-candidates'))
+
+    def test_the_screen_is_a_touch_screen_with_the_guide_s_raster(self):
+        """
+        The manual calls it an LCD touch screen, and every screen capture in its user guide is 240 by
+        320, so the rectangle says both. It does **not** claim the Harmony One's hit map: nothing about
+        how this model resolves a press has been read, so the description stops at "a touch surface".
+        """
+        root = _tree(self.NAME).getroot()
+        screen = [e for e in root.iter() if e.get('id') == 'screen']
+        self.assertEqual(len(screen), 1)
+        self.assertEqual(screen[0].get('data-touch'), 'true')
+        self.assertEqual(screen[0].get('data-pixels'), '240x320')
+        self.assertNotIn('screen', _buttons(root))
+        text = _text(self.NAME)
+        self.assertIn('Its screen is a touch surface.', text)
+        self.assertNotIn('hit map', text)
+
+    def test_the_star_and_the_house_are_the_two_touch_keys(self):
+        """
+        The only keys with no moulded part: the product prints a star and a house on the bezel above
+        the glass and the guide says to tap them. Everything else is a physical key.
+        """
+        buttons = _buttons(_tree(self.NAME).getroot())
+        touch = sorted(k for k, v in buttons.items() if v.get('data-kind') == 'touch')
+        self.assertEqual(touch, ['k-favorites', 'k-home'])
+
+    def test_the_colour_keys_are_present_and_each_states_its_own_colour(self):
+        """
+        Four, in a row under the satellite keys, red, green, yellow and blue on the drawing and on the
+        photograph, each marked with a thin stripe in its colour.
+        """
+        text = _text(self.NAME)
+        buttons = _buttons(_tree(self.NAME).getroot())
+        for ident, (_, colour) in PALETTE.items():
+            with self.subTest(button=ident):
+                self.assertIn(ident, buttons, f'{ident} is missing')
+                self.assertIn(f'--accent: {colour}', text)
+
+
 class TestTheSilhouetteDirectory(unittest.TestCase):
     """What is drawn and what is not, so the gap is a statement rather than an oversight."""
 
@@ -546,12 +606,13 @@ class TestTheSilhouetteDirectory(unittest.TestCase):
         'h650.svg': TestTheHarmony650Silhouette,
         'h700.svg': TestTheHarmony700Silhouette,
         'one.svg': TestTheHarmonyOneSilhouette,
+        'touch.svg': TestTheHarmonyTouchSilhouette,
     }
-    # Drawings named here are wanted and not yet landed. The 650 and 700 were this pair until they landed
-    # as the 600's face with their own number, on Danny's statement that the three share one face; what
-    # is left undrawn is the Harmony Touch, and a drawing that lands goes in `DRAWN` and comes out of
-    # here, which the test below enforces.
-    NEXT = ('touch.svg',)
+    # Drawings named here are wanted and not yet landed. Every model on the bench is drawn now: the 650
+    # and 700 as the 600's face with their own number, the 300 as the 350's with its own printing, and
+    # the Harmony Touch last. A model added later starts here, goes in `DRAWN` when it lands and comes
+    # out of here, which the test below enforces.
+    NEXT: tuple[str, ...] = ()
 
     # A `d` attribute has to contain one of these to be a curve rather than a polygon. `A` counts as
     # well, since an elliptical arc is a curve, but a path made only of `M`, `L`, `H`, `V` and `Z` is

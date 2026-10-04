@@ -408,7 +408,11 @@ function describe(model: Model): string {
   // the One has a screen that can be pressed.
   const panel = model.screen === undefined ? ''
     : model.screen.touch
-      ? ' Its screen is a touch surface, so a press there goes through the hit map rather than the keypad.'
+      // The hit map is arch 12's (Harmony One) and is not claimed for any other touch panel: on a
+      // Harmony Touch nothing about how a press is resolved has been read.
+      ? model.architecture === 12
+        ? ' Its screen is a touch surface, so a press there goes through the hit map rather than the keypad.'
+        : ' Its screen is a touch surface.'
       : ' Its screen is not a touch surface: the keys flanking it are how its labels are reached.';
   // The provenance sentence said "drawn from measurements taken off a product photograph rather than
   // traced from it", which was true of the drawings this package replaced and is not true of these:

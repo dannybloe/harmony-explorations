@@ -43,6 +43,33 @@ function arcExtremes(
 }
 
 
+/** One coordinate of a cubic at `t`. */
+function cubicAt(p0: number, p1: number, p2: number, p3: number, t: number): number {
+  const u = 1 - t;
+  return u * u * u * p0 + 3 * u * u * t * p1 + 3 * u * t * t * p2 + t * t * t * p3;
+}
+
+/**
+ * Where one coordinate of a cubic turns, strictly inside the segment: the roots in (0, 1) of its
+ * derivative, `A t^2 + B t + C` with the coefficients below. Empty where it runs one way throughout.
+ */
+function cubicTurns(p0: number, p1: number, p2: number, p3: number): number[] {
+  const a = -p0 + 3 * p1 - 3 * p2 + p3;
+  const b = 2 * (p0 - 2 * p1 + p2);
+  const c = p1 - p0;
+  const roots: number[] = [];
+  if (Math.abs(a) < 1e-12) {
+    if (Math.abs(b) > 1e-12) roots.push(-c / b);
+  } else {
+    const disc = b * b - 4 * a * c;
+    if (disc >= 0) {
+      const r = Math.sqrt(disc);
+      roots.push((-b + r) / (2 * a), (-b - r) / (2 * a));
+    }
+  }
+  return roots.filter((t) => t > 0 && t < 1);
+}
+
 export interface Bounds {
   readonly minX: number;
   readonly maxX: number;
@@ -59,8 +86,17 @@ export interface Bounds {
  * the mark up until it overflowed its key. A cubic here is always a segment of a case side fitted
  * through measured samples, where the curve stays within a fraction of a unit of the samples it passes
  * through, and including its control points would report a shape wider than the one drawn.
+ *
+ * **`curves` asks for a cubic's true extent**, the points where its derivative is zero, which is
+ * neither its endpoints nor its control points. The premise above fails on a case taken from a manual
+ * page: the Harmony Touch's setup guide draws each long side of the case as **one** cubic from shoulder
+ * to foot, which bulges 8.7 units past its endpoints, and a case measured by endpoints came out that
+ * much too narrow and was clipped by its own viewBox on both sides. So the extractor sizes a case with
+ * `curves` on, and the test that a case fills its box measures it that way. The default stays endpoint
+ * only, because every traced key's box, and so every label and mark placed against one, is measured
+ * that way in the committed drawings.
  */
-export function pathBounds(d: string): Bounds {
+export function pathBounds(d: string, curves = false): Bounds {
   let x = 0;
   let y = 0;
   let minX = Infinity;
@@ -86,8 +122,16 @@ export function pathBounds(d: string): Bounds {
         x = ex; y = ey; see(x, y);
       }
     } else if (op === 'C') {
-      // Endpoint only, per the note above.
-      for (let i = 0; i + 5 < n.length; i += 6) { x = n[i + 4]!; y = n[i + 5]!; see(x, y); }
+      // Endpoint only unless asked, per the note above.
+      for (let i = 0; i + 5 < n.length; i += 6) {
+        const [x1, y1, x2, y2, x3, y3] = n.slice(i, i + 6) as [number, number, number, number, number, number];
+        if (curves) {
+          for (const t of [...cubicTurns(x, x1, x2, x3), ...cubicTurns(y, y1, y2, y3)]) {
+            see(cubicAt(x, x1, x2, x3, t), cubicAt(y, y1, y2, y3, t));
+          }
+        }
+        x = x3; y = y3; see(x, y);
+      }
     } else if (op === 'M' || op === 'L') {
       for (let i = 0; i + 1 < n.length; i += 2) { x = n[i]!; y = n[i + 1]!; see(x, y); }
     }
