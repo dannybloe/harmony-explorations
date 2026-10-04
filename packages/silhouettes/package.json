@@ -10,5 +10,10 @@
   },
   "scripts": {
     "typecheck": "tsc --build"
+  },
+  "devDependencies": {
+    "@harmony/codec": "workspace:*",
+    "@harmony/corpus": "workspace:*",
+    "@harmony/usb": "workspace:*"
   }
 }

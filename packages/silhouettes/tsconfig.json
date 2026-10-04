@@ -8,5 +8,8 @@
   // until 12 August 2026, so they were typechecked by nothing and a language server gave them
   // default options. Adding a directory of TypeScript means adding it to the project in the same
   // commit.
-  "include": ["src/**/*.ts", "test/**/*.ts", "bin/**/*.ts"]
+  "include": ["src/**/*.ts", "test/**/*.ts", "bin/**/*.ts"],
+  // `bin/remotes.ts` and its test read three other packages, as dev dependencies only: the library in
+  // `src` stays free of them, which is what FreeHarmony consumes.
+  "references": [{ "path": "../codec" }, { "path": "../corpus" }, { "path": "../usb" }]
 }
