@@ -189,8 +189,9 @@ test('every device record in the archive reads, and the power and input counts a
  * kept array position would turn a power toggle's press, wait, press into press, press, wait. Measured over
  * the raw capture the archive was projected from: 3884 of 477079 lists are stored out of order, and every
  * one of them reads in `Order` sequence through this reader. A hold of 0 ms is projected as a plain press,
- * which the comparison follows. Only the lists a device states once are compared, power, input switching
- * and channel entry, not the per input and per state ones. The capture is a release asset rather than part
+ * which the comparison follows. Only the lists a device states once are compared here, power, input
+ * switching and channel entry; the per input and per state ones are compared in `catalogueraw.test.ts`,
+ * through the projection the side file is built on. The capture is a release asset rather than part
  * of the checkout, 329 MB, so this skips without it.
  */
 test('the archive puts every power, input and channel action list in the service\'s own step order',

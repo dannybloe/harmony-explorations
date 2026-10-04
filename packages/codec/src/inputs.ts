@@ -47,7 +47,9 @@
  * one a state states waits its key delay. A Denon receiver's inputs wait 10 tenths and a Panasonic
  * television's state selects 1, though both devices' input delay is a second.
  *
- * **What the catalogue leaves unstated, and what this therefore gets wrong or refuses**:
+ * **What the catalogue leaves unstated, and what this therefore gets wrong or refuses**. The first three
+ * are stated in the raw capture behind the archive and `catalogueRules` in `catalogueraw.ts` now returns
+ * them beside the archive's rules; nothing here reads them yet:
  *
  * - **A silent write.** Logitech's raw data says per state step whether it *sets* a state, sending
  *   its code, or only *records* it, `DevActionType` 2 and 1, and the compiler writes the second behind

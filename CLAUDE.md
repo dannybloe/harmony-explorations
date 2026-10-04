@@ -1850,6 +1850,11 @@ make catalogue     what Logitech's device catalogue says about the devices our o
                    which device each group is, and the command name behind every button. Needs the
                    archive checkout and the lab, no network, and deliberately not in `make all`, since
                    it is a ten second full pass over 54118 files. CATALOGUE_ARGS=--detail
+make catalogue-raw pull the archive checkout, fetch its newest raw release when the lab's SHA256SUMS
+                   differ, and derive from the 5.5 GB capture a seekable copy, an index and a side file
+                   of the fields the archive drops, into the lab. About four minutes when it derives.
+                   **Never print a raw line or a whole device**: one line is up to 35000 tokens.
+                   Not in `make all`. CATALOGUE_RAW_ARGS=--force, --no-pull, --offline
 make protocols     what rhythm each protocol family uses, measured off the corpus against the family
                    names Logitech's analyser gave it, and the table that turns a code stated as a name
                    and a number into pulses. --write regenerates it. Needs a lab, no network
