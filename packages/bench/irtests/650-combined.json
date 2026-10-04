@@ -1,0 +1,17 @@
+{
+  "name": "Harmony 650, the combined bench file",
+  "description": "todo-compile-650 2.2, 2.5, 3.5 (half), 3.6, 3.7, 3.8, 3.11 and 3.12, one write of lab/work/h650-bench-combined.bin; the full script is lab/work/h650-bench-combined-NOTES.md. Steps 1 to 4 (no sync request, the activity menu's three pages, which wrap back to 1/3) were checked on 4 October 2026 before this run. Start here with nothing else pressed since the write's restart, and keep the remote pointed at the Flirc. A side button is one of the buttons beside the screen, next to the corner whose label it chooses.",
+  "steps": [
+    { "instruction": "Step 5. More Activities, page to 3/3, press the side button beside Plasma kijken. Expect 'Starting Plasma kijken', then at the Flirc: Plasma PowerOn as seven frames in one burst, at least five seconds of silence, then Plasma InputHdmi1 as three frames, nothing else. Then the working screen titled 'Plasma kijken', empty corners, 'Devices' at the bottom" },
+    { "instruction": "Step 6. Press the centre button (Devices). Expect 'Devices 1/2': Plasma top left, PS3 top right, KPN bottom left, Kodi bottom right, 'Activity' at the bottom" },
+    { "instruction": "Step 7. Press the side button beside Plasma. Expect the page titled 'Plasma': On top left, Off top right, Hdmi 1 bottom left, Hdmi 2 bottom right. Then press, one at a time and briefly: Hdmi 2 (three frames), Hdmi 1 (three frames), Off (seven frames in one burst), On (seven frames in one burst)" },
+    { "instruction": "Step 8. Press All Off. Expect Plasma PowerOff as seven frames, and nothing for any other device" },
+    { "instruction": "Step 9. Press Watch TV. Expect 'Starting Kijk TV', then at the Flirc the KPN power toggle and the Denon's PowerOn close together, nothing for Plasma. Then the working screen titled 'Kijk TV': Teletext top left, Radio top right, TV bottom left, Dimmer bottom right, 'Devices' at the bottom, no page counter" },
+    { "instruction": "Step 10. One press each: Vol up, Vol down, Mute (expect the Denon's VolumeUp, VolumeDown, Mute), then Ch +, 1, OK (expect the KPN box's ChannelUp, 1 and OK)" },
+    { "instruction": "Step 11. One press each on the four corners: Teletext, Radio and TV (expect the KPN box's commands of those names), Dimmer (expect the Denon's Dimmer)" },
+    { "instruction": "Step 12. Press the centre button (Devices). Expect 'Devices 1/2' with KPN top left, Denon top right, PS3 bottom left, Kodi bottom right; page on to 2/2 with TV, Panasonic TV, Test and Plasma bottom right. Press nothing there; return to Kijk TV with the centre button" },
+    { "instruction": "Step 13. Press All Off. Expect the KPN power toggle and the Denon's PowerOff, nothing else" },
+    { "instruction": "Step 14. More Activities, page to 2/3, press the side button beside TV kijken. It should start as it did before this write. Then press All Off" },
+    { "instruction": "Step 15. More Activities, page to 3/3, press the side button beside Plasma kijken again. Expect Plasma PowerOn as seven frames and then no InputHdmi1 (the remote should believe the television is still on HDMI 1; hearing it is a finding about the 650, not a fault). Then press All Off: Plasma PowerOff, seven frames" }
+  ]
+}
