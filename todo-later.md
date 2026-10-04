@@ -15,8 +15,8 @@ home in one of the two files.
 - [ ] 1.2 FreeHarmony: convert Logitech's database records into that format (was 4.2)
   - [x] 1.2.1 Read a device's driving rules out of the archive: timing, power, inputs, channel tuning and states, `driving.ts` (section 305)
   - [x] 1.2.2 Ask the archive's author whether his converter sorts every action list on `Order`: it does, every list, stated in his README; the raw file stays, since it holds fields the archive drops (section 305)
-- [ ] 1.3 The raw capture behind the infrared archive: a script that updates the archive clone, fetches a newer raw release by its checksums, extracts what the archive drops (per step send or record, input numbering, the connected app mark) into a small side file and indexes every device's position; the catalogue reader answers from both
-- [ ] 1.4 Confirm the archive's statement that every per input and per state list is in Order sequence, against the raw capture
+- [x] 1.3 The raw capture behind the infrared archive, `make catalogue-raw` and `catalogueRules`: a script that updates the archive clone, fetches a newer raw release by its checksums, extracts what the archive drops (per step send or record, input numbering, the connected app mark) into a small side file and indexes every device's position; the catalogue reader answers from both
+- [x] 1.4 Confirm the archive's statement that every per input and per state list is in Order sequence, against the raw capture: all of 680091, 82622 and 29326 lists (section 305)
 
 ## 2. Learning codes
 
