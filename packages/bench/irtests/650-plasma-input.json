@@ -1,0 +1,11 @@
+{
+  "name": "Harmony 650, Plasma kijken sends its input",
+  "description": "todo-compile-650 2.5, 3.6 and half of 3.5, one write of lab/work/h650-bench-combined-2.bin: the combined bench file rebuilt with Logitech's input reset after power on, section 332. Start with nothing pressed since the write's restart, remote pointed at the Flirc. A side button is one of the buttons beside the screen, next to the corner whose label it chooses.",
+  "steps": [
+    { "instruction": "More Activities, page to 3/3, press the side button beside Plasma kijken. Expect 'Starting Plasma kijken', then at the Flirc: Plasma PowerOn as seven frames in one burst, at least five seconds of silence, then Plasma InputHdmi1 as three frames, nothing else. Then the working screen titled 'Plasma kijken'" },
+    { "instruction": "Press All Off. Expect Plasma PowerOff as seven frames, and nothing for any other device" },
+    { "instruction": "More Activities, page to 3/3, press the side button beside Plasma kijken again. Expect the same as the first step: PowerOn as seven frames, at least five seconds of silence, then InputHdmi1 as three frames. This is the start that sent no input before the rebuild" },
+    { "instruction": "Press All Off. Expect Plasma PowerOff as seven frames" },
+    { "instruction": "Press Watch TV. Expect 'Starting Kijk TV' and the KPN power toggle and the Denon's PowerOn, nothing for Plasma. Then press All Off: the KPN toggle and the Denon's PowerOff" }
+  ]
+}
