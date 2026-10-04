@@ -36,7 +36,7 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets silhouettes all clean protocols segmentlengths prontocheck catalogue emitcheck myharmony-model model-pdf model-diagram model-activity model-cluster
+.PHONY: help test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets silhouettes remote-reference remote-reference-write all clean protocols segmentlengths prontocheck catalogue emitcheck myharmony-model model-pdf model-diagram model-activity model-cluster
 
 BENCH_PORT ?= 8731
 
@@ -64,6 +64,8 @@ help:
 	@echo "text         how much on screen text reads back as characters; TEXT_ARGS=--detail"
 	@echo "render       draw a config's screens as PNG; RENDER_ARGS=--config X --page N"
 	@echo "silhouettes  regenerate the remote face drawings; SILHOUETTE_ARGS=--preview"
+	@echo "remote-reference  check the generated blocks of reference/remotes and reference/architectures"
+	@echo "remote-reference-write  rewrite those blocks from the code"
 	@echo "page         drive the bench page in Chrome, which is what checks the page itself"
 	@echo "activities   which activity each key starts, and which label is its name"
 	@echo "catalogue    what Logitech's device catalogue says about our own configs' devices"
@@ -319,6 +321,17 @@ page:
 # whether a drawing is right. Every test in the package can pass on a key in the wrong place.
 silhouettes:
 	@node packages/silhouettes/bin/generate.ts $(SILHOUETTE_ARGS)
+
+# The per remote reference, reference/remotes/ and reference/architectures/. Hand written documents
+# with generated blocks inside markers, filled from models.ts, the drawings, the screen sizes and the
+# write rails; `remote-reference` checks them and fails naming each block that differs, the write
+# target rewrites them. Not `remotes`, which already lists the remotes attached to this machine. The
+# check also runs in `make ts`, packages/silhouettes/test/remotes.test.ts.
+remote-reference:
+	@node packages/silhouettes/bin/remotes.ts
+
+remote-reference-write:
+	@node packages/silhouettes/bin/remotes.ts --write
 
 render:
 	@node packages/codec/bin/render.ts $(RENDER_ARGS)

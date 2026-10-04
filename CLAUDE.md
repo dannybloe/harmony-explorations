@@ -1215,7 +1215,21 @@ reference/superseded.md         claims a finding killed, which no document may r
 reference/models.md             the 40 models Logitech retired in 2025, mapped to architectures
 reference/capabilities.md       what each model's hardware can do, per skin, with a verification
                                 column. Third party and unconfirmed except where that column says
-                                otherwise, and `packages/usb/src/models.ts` is the executable form
+                                otherwise, and `packages/usb/src/models.ts` is the executable form.
+                                To be absorbed into reference/remotes/ model by model
+reference/remotes/              the per remote technical reference, one folder per model and ten
+                                files each: hardware, keys, display, features, behaviour, memory,
+                                firmware, usb and misc beside a README. Every fact carries its source
+                                and a standing, and what nobody has checked says **not checked** in
+                                so many words. Started with the Harmony 650 after a session assumed
+                                the Harmony 600, 650 and 700 show a clock, which none of them does.
+                                Facts that live in code are **generated** blocks, between
+                                `<!-- generated:name -->` markers, by packages/silhouettes/bin/remotes.ts;
+                                `make remote-reference` fails on drift. Its README holds the convention
+reference/architectures/        what one architecture's models share, stated once and linked from
+                                each model folder: harmony-600-650-700/ for arch 14. It carries the
+                                architecture's memory layout now, and docs/memory-map-600.md and
+                                -700.md keep what is one unit's
 reference/silhouettes/          the front face of a model, one SVG per model, **generated** from
                                 packages/silhouettes/src/models/<id>.ts and never edited by hand.
                                 The geometry is traced from Logitech's own documentation, by hand,
@@ -1868,6 +1882,11 @@ make remotes       list attached remotes, enumeration only, opens nothing. Four 
                    shape found the same way, section 207: the Harmony 890 platform and the two beside
                    it carry a datagram protocol over USB rather than this command set, so they are
                    reported and refused, where they used to be claimed as openable
+make remote-reference
+                   check the generated blocks in reference/remotes/ and reference/architectures/
+                   against the code they come from, naming the file and block that drifted.
+                   remote-reference-write rewrites them. Not called `remotes`, which is taken by
+                   the line above. No lab, no network
 make page          drive the bench page in the Chrome already installed, which is what checks the
                    page rather than the routes. Gated on HARMONY_PAGE_TESTS=1 and skips with no
                    Chrome, because playwright's browser download is deliberately not approved

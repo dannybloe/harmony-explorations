@@ -75,7 +75,17 @@ importers:
         specifier: workspace:*
         version: link:../usb
 
-  packages/silhouettes: {}
+  packages/silhouettes:
+    devDependencies:
+      '@harmony/codec':
+        specifier: workspace:*
+        version: link:../codec
+      '@harmony/corpus':
+        specifier: workspace:*
+        version: link:../corpus
+      '@harmony/usb':
+        specifier: workspace:*
+        version: link:../usb
 
   packages/usb:
     dependencies:
