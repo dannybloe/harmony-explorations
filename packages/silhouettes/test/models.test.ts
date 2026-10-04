@@ -80,6 +80,17 @@ const EXPECTED: Readonly<Record<string, { buttons: number; scans: number;
     why: 'ten keys on the keypad plus the twelve the tables do not reach, counted off the '
       + 'photograph, with the four touch regions the hit map states',
   },
+  /**
+   * As weak as the Harmony 350's and for the same reason: nothing has read this architecture's keypad,
+   * so the count is the drawing's. 27 keys plus the two printed marks above the screen, which the
+   * legend lists among the buttons.
+   */
+  touch: {
+    buttons: 29,
+    scans: 0,
+    why: "Logitech's own drawing in the Harmony Touch setup guide counted shape by shape, its legend's "
+      + 'seventeen callouts, and the product photograph, which shows the same 29',
+  },
 };
 
 /** The scan to button tables, read out of the reference document rather than copied here. */
@@ -222,6 +233,7 @@ test('a key whose code is undecided carries candidates and no scan', () => {
     const SETS: Readonly<Record<string, { sets: number; each: number }>> = {
       h300: { sets: 0, each: 0 }, h350: { sets: 0, each: 0 },
       h525: { sets: 1, each: 4 }, h600: { sets: 2, each: 2 }, one: { sets: 2, each: 2 },
+      touch: { sets: 0, each: 0 },
     };
     const want = SETS[id]!;
     assert.equal(undecided.length, want.sets * want.each,
@@ -273,6 +285,21 @@ test('the case fills the nominal height and every model shares it', () => {
       `${id}: the case ends at ${b.maxY} of ${model.height}`);
     assert.ok(b.minX >= 0 && b.maxX <= model.width,
       `${id}: the case runs from ${b.minX} to ${b.maxX} in a width of ${model.width}`);
+    /**
+     * And the drawn curve, not just its endpoints, stays inside the box the SVG gives it, which is the
+     * width plus a margin of one case stroke, half of which the stroke itself uses.
+     *
+     * The endpoint check above cannot see a cubic's bulge, and the Harmony Touch's setup guide draws
+     * each side of its case as one cubic that bulges 8.733 units past its ends. Sized by endpoints, its
+     * case passed the check above and was clipped by its own viewBox on both sides, which is how it was
+     * found: by looking at a render. The cases fitted through samples bulge at most 0.794 units, the
+     * Harmony 350's, so one unit separates them from the defect by a factor of eight.
+     */
+    const curve = pathBounds(model.case, true);
+    assert.ok(curve.minX >= -1 && curve.maxX <= model.width + 1
+      && curve.minY >= -1 && curve.maxY <= model.height + 1,
+      `${id}: the drawn case reaches ${curve.minX.toFixed(3)} to ${curve.maxX.toFixed(3)} across a width of `
+      + `${model.width}, and ${curve.minY.toFixed(3)} to ${curve.maxY.toFixed(3)} down`);
     // And it uses most of the width, so a drawing cannot sit in a corner of its own viewBox.
     assert.ok(b.maxX - b.minX > model.width * 0.9, `${id}: the case is narrow inside its own box`);
     assert.ok(model.width > 0 && model.width < model.height, `${id}: a remote is taller than wide`);
@@ -284,6 +311,9 @@ test('the screen carries the raster its own firmware draws into', () => {
     9: { width: 96, height: 64 },
     12: { width: 176, height: 220 },
     14: { width: 128, height: 128 },
+    // Arch 17 (Harmony Touch) is not in `SCREEN_SIZES`, since nothing here reads its configuration. The
+    // figure is the size of every one of the fifty screen captures in its own user guide.
+    17: { width: 240, height: 320 },
   };
   /**
    * The aperture the drawing gives, as an aspect, exact rather than bounded against the raster's.
@@ -296,7 +326,24 @@ test('the screen carries the raster its own firmware draws into', () => {
    * rather than stretching it. So the aspect is stated and asserted, which can fail if the geometry
    * moves, where a band around the raster could only ever say "close enough".
    */
-  const APERTURE: Readonly<Record<string, number>> = { h525: 1.513, h600: 0.865, one: 0.794 };
+  const APERTURE: Readonly<Record<string, number>> = { h525: 1.513, h600: 0.865, one: 0.794, touch: 0.754 };
+  /**
+   * Where there is no bezel, the pair of shapes that has to sit symmetric about the glass, and which
+   * side of it they are on. A Harmony One has its paging arrows beside the glass; a Harmony Touch has
+   * its star and house above it, and their centres sit 0.04 units off the glass's centre line, two shapes
+   * and a rectangle measured separately agreeing.
+   */
+  const FLANKING: Readonly<Record<string, { names: readonly [string, string]; side: 'beside' | 'above' }>> = {
+    one: { names: ['ScreenPrev', 'ScreenNext'], side: 'beside' },
+    touch: { names: ['Favorites', 'Home'], side: 'above' },
+  };
+  /**
+   * Which drawings have a touch panel. The Harmony One, where base slot 17 is a hit map and names the
+   * picture bank on every other architecture this project reads, and the Harmony Touch, whose manual
+   * calls its display an LCD touch screen. Named per model, because the second is not a fact about
+   * any configuration.
+   */
+  const TOUCH_PANELS = new Set(['one', 'touch']);
   for (const [id, model] of drawn) {
     if (model.screen === undefined) continue;
     const raster = RASTERS[model.architecture]!;
@@ -322,18 +369,24 @@ test('the screen carries the raster its own firmware draws into', () => {
         && model.screen.y >= b.minY && model.screen.y + model.screen.h <= b.maxY,
         `${id}: the glass is not inside its bezel`);
     } else {
-      const flanking = model.keys.filter((k) => k.name === 'ScreenPrev' || k.name === 'ScreenNext');
-      assert.equal(flanking.length, 2, `${id}: no bezel and nothing beside the screen either`);
+      const pair = FLANKING[id];
+      assert.ok(pair, `${id}: no bezel and no flanking pair stated either`);
+      const flanking = model.keys.filter((k) => pair.names.includes(k.name));
+      assert.equal(flanking.length, 2, `${id}: no bezel and nothing flanking the screen either`);
       const mid = model.screen.x + model.screen.w / 2;
       const [a, c] = flanking.map((k) => k.shape.cx).sort((p, r) => p - r) as [number, number];
-      assert.ok(a < model.screen.x && c > model.screen.x + model.screen.w,
-        `${id}: a key that flanks the screen is on the glass`);
+      if (pair.side === 'beside') {
+        assert.ok(a < model.screen.x && c > model.screen.x + model.screen.w,
+          `${id}: a key that flanks the screen is on the glass`);
+      } else {
+        for (const key of flanking) {
+          assert.ok(key.shape.cy + key.shape.h / 2 < model.screen.y, `${id}: ${key.name} is not above the glass`);
+        }
+      }
       assert.ok(Math.abs((a + c) / 2 - mid) < 0.25,
         `${id}: the flanking keys sit ${((a + c) / 2 - mid).toFixed(2)} off the glass centre`);
     }
-    // Only arch 12 (Harmony One) has a touch panel: base slot 17 is a hit map there and names the
-    // picture bank everywhere else.
-    assert.equal(model.screen.touch, model.architecture === 12, `${id}: touch is arch 12 only`);
+    assert.equal(model.screen.touch, TOUCH_PANELS.has(id), `${id}: touch is the One's and the Touch's only`);
   }
 });
 
@@ -396,6 +449,15 @@ test('nothing the drawing states sits outside the case', () => {
     return best;
   };
   const ALLOWED = 1;
+  /**
+   * The cases that turned end over end still hold every key, so the mirrored control cannot bite on
+   * them. **The Harmony Touch** is one: its case is rounded at both ends with straight sides between, and
+   * mirrored it leaves nothing outside at all, 0.000 units. That also means the defect the mirror stands
+   * for would be invisible on it, which is why it gets a different control rather than a lower bar. The
+   * shifted control finds a shape 26.812 units out, against the drawing's own worst at 0.016, the end of
+   * its base seam meeting the case edge.
+   */
+  const END_FOR_END = new Set(['touch']);
   for (const [id, model] of drawn) {
     const segments = new Set((model.rockers ?? []).flatMap((r) => r.keys));
     const parts: [string, string][] = [
@@ -423,8 +485,19 @@ test('nothing the drawing states sits outside the case', () => {
     // The control: mirror the case top to bottom, which is exactly the defect, and the same check has
     // to fail by a wide margin. Without this the test could be passing because it cannot see anything.
     const mirrored = deepest(pathPolygon(transformPath(model.case, [1, 0, 0, -1, 0, model.height])));
-    assert.ok(mirrored.d > ALLOWED * 5,
-      `${id}: a mirrored case is only ${mirrored.d.toFixed(3)} out, so this check proves little`);
+    if (!END_FOR_END.has(id)) {
+      assert.ok(mirrored.d > ALLOWED * 5,
+        `${id}: a mirrored case is only ${mirrored.d.toFixed(3)} out, so this check proves little`);
+      continue;
+    }
+    // A case that is the same either way up cannot be checked by turning it over, and that is asserted
+    // rather than assumed: if this model's mirror starts biting, it leaves the set.
+    assert.ok(mirrored.d <= ALLOWED * 5, `${id}: the mirror bites at ${mirrored.d.toFixed(3)}, so it is not end for end`);
+    // So its control is the other way to put the case in the wrong place, a tenth of the height lower,
+    // which is the case and the keys normalised against different origins.
+    const shifted = deepest(pathPolygon(transformPath(model.case, [1, 0, 0, 1, 0, model.height / 10])));
+    assert.ok(shifted.d > ALLOWED * 5,
+      `${id}: a shifted case is only ${shifted.d.toFixed(3)} out, so this check proves little`);
   }
 });
 
@@ -440,7 +513,9 @@ test('a model that has no tilted key says so by measurement', () => {
    * to add: a slanted key comes across slanted. The Harmony 600 is rectilinear anyway, measured at under
    * a degree on the keys that looked tilted in its photograph.
    */
-  const LEVEL: Readonly<Record<string, boolean>> = { h300: true, h350: true, h525: true, h600: true, one: true };
+  const LEVEL: Readonly<Record<string, boolean>> = {
+    h300: true, h350: true, h525: true, h600: true, one: true, touch: true,
+  };
   for (const [id, model] of drawn) {
     for (const key of model.keys) {
       assert.ok(Math.abs(key.angle) <= 45, `${id}: ${key.name} is at ${key.angle} degrees`);

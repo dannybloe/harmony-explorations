@@ -99,6 +99,16 @@ measures a **depth** with the mirrored case as its own control, 0.327 units agai
 traced drawing looks wrong in a way you would blame on the person who traced it, check what the reader
 did with it first.
 
+### A manual page can draw a whole side of the case as one cubic
+
+`pathBounds` measures a cubic by its endpoints, which is right for a case fitted through samples and
+wrong for a case out of a manual page: the Harmony Touch's setup guide draws each long side as **one**
+cubic from shoulder to foot, bulging 8.7 units past its ends. Sized that way, the case passed every test
+and was clipped by its own viewBox on both sides, which only a render showed. The extractor sizes the case
+with `pathBounds(d, true)` now, the true extent, and `the case fills the nominal height` checks the drawn
+curve against the viewBox. A model extracted before that change keeps its endpoint sized numbers, which is
+harmless where the bulge is under a unit, as on every earlier drawing.
+
 ### Shapes are named by position, not by index
 
 `extract.ts` sorts by area, so two parts of the same size are in whatever order the document put them.

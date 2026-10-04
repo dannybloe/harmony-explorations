@@ -242,10 +242,14 @@ export function extract(file: string, height = 1000): Extracted {
   kept.sort((a, b) => area(b.box) - area(a.box));
   const shell = kept[0];
   if (shell === undefined) throw new Error(`${file}: nothing that looks like a case`);
-  const k = height / (shell.box.maxY - shell.box.minY);
-  const width = (shell.box.maxX - shell.box.minX) * k;
-  const cx = (shell.box.minX + shell.box.maxX) / 2;
-  const at: Matrix = [k, 0, 0, k, width / 2 - cx * k, -shell.box.minY * k];
+  // The case is sized by its true extent, cubic bulges included, and every other shape keeps the
+  // endpoint box. The Harmony Touch's guide draws each side of its case as one cubic that bulges 8.7
+  // units past its ends, so measured by endpoints the case came out too narrow for its own outline.
+  const outer = pathBounds(shell.d, true);
+  const k = height / (outer.maxY - outer.minY);
+  const width = (outer.maxX - outer.minX) * k;
+  const cx = (outer.minX + outer.maxX) / 2;
+  const at: Matrix = [k, 0, 0, k, width / 2 - cx * k, -outer.minY * k];
   const move = (s: { d: string; kind: 'ring' | 'stroke'; marks: readonly string[] }): Shape => {
     const d = transformPath(s.d, at);
     return { d, box: pathBounds(d), kind: s.kind, marks: s.marks.map((m) => transformPath(m, at)) };

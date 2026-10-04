@@ -87,6 +87,9 @@ test('every symbol fits in a box of about the unit square', () => {
   }
 });
 
+/** The models whose volume rocker prints a word on its pivot and no mark on either end. */
+const UNMARKED_ENDS = new Set(['touch']);
+
 test('the two ends of a volume rocker print different marks', () => {
   // On a Harmony 600 the louder end has waves and the quieter end does not, and that difference is the
   // only thing telling the two halves apart. Two versions of this test have now been wrong in the same
@@ -103,6 +106,13 @@ test('the two ends of a volume rocker print different marks', () => {
     // Whichever route the marks came from, the two ends have to differ. A traced key states paths and a
     // drawn one states a symbol name, and a key with neither is a key with nothing printed on it.
     const mark = (k: typeof up) => (k.marks ?? [k.icon ?? '']).join(' ');
+    // A Harmony Touch prints `Vol` on the pivot and nothing on either end, on Logitech's drawing and on
+    // the photograph alike. That is a stated exception and it is asserted, so a mark arriving on one end
+    // of its rocker fails here rather than being let through by the general rule.
+    if (UNMARKED_ENDS.has(id)) {
+      assert.deepEqual([mark(up), mark(down)], ['', ''], `${id}: the ends are stated to print nothing`);
+      continue;
+    }
     assert.notEqual(mark(up), mark(down), `${id}: the two ends must not print the same mark`);
     assert.notEqual(mark(up), '', `${id}: the louder end prints nothing at all`);
     // And the louder end is the one with more of them, since the waves are separate strokes.

@@ -127,6 +127,15 @@ export const ICONS: Readonly<Record<string, Icon>> = {
   bar: { parts: [{ d: 'M -0.9 -0.34 H 0.9 V 0.34 H -0.9 Z', mode: 'fill', accent: true }] },
 
   /**
+   * A thin stripe with round ends, which is what a Harmony Touch's four colour keys carry: a line of
+   * colour across the top of the key rather than a bar in its middle. The `bar` above cannot stand in
+   * for it, since a mark keeps its own proportion and the bar's is 0.38 where the Touch's drawing gives
+   * 4.8 across 32.2, which is the 0.15 drawn here. Accented for the same reason the bar is.
+   */
+  stripe: { parts: [{ d: 'M -0.765 -0.135 H 0.765 A 0.135 0.135 0 0 1 0.765 0.135 H -0.765 '
+    + 'A 0.135 0.135 0 0 1 -0.765 -0.135 Z', mode: 'fill', accent: true }] },
+
+  /**
    * A filled dot, which is what the four teletext keys of a Harmony 525 carry: a coloured circle
    * rather than the coloured bar a Harmony 600 prints. It takes the accent for the same reason the bar
    * does, since on those keys the colour is the whole identity.
