@@ -1,6 +1,6 @@
 /**
  * Help and the Remote Assistant on the Harmony 600, 650 and 700, and their absence from a composed
- * activity: todo-compile-650 3.13 and 4.3.2, section NNN.
+ * activity: todo-compile-650 3.13 and 4.3.2, section 333.
  *
  * Help is scan 3. What it does is decided by which key map holds the key, and the firmware walks a
  * stack: the page, the mode, then base slot 9 entries the configuration pushed, of which exactly one
@@ -77,7 +77,7 @@ function everyInstruction(c: Container): { opcode: number; operand: number }[] {
   return out;
 }
 
-test('section NNN: among the key maps only the activity and idle ones bind Help, no device mode binds it, and the screens that do are help, delay and status screens, on all thirteen compiles',
+test('section 333: among the key maps only the activity and idle ones bind Help, no device mode binds it, and the screens that do are help, delay and status screens, on all thirteen compiles',
      skipUnless(...COMPILES), () => {
   const count = { activityEntries: 0, attempting: 0, delayFixing: 0, idleEntries: 0, idleMapped: 0,
     otherEntriesBinding: 0, deviceModes: 0, deviceModesBinding: 0, prefixPressesShared: 0, rows: 0, rowsSelecting: 0,
@@ -173,7 +173,7 @@ test('section NNN: among the key maps only the activity and idle ones bind Help,
     modesBindingHelp: 467, ownScreensBindingHelp: 0 });
 });
 
-test('section NNN: the Remote Assistant is a branch on one variable at the end of every activity\'s start, on twelve compiles, and h600_config has none of it',
+test('section 333: the Remote Assistant is a branch on one variable at the end of every activity\'s start, on twelve compiles, and h600_config has none of it',
      skipUnless(...COMPILES), () => {
   const count = { activities: 0, direct: 0, branched: 0, assistantScreens: 0, offScreens: 0, variablesFresh: 0 };
   for (const name of COMPILES) {
@@ -224,7 +224,7 @@ test('section NNN: the Remote Assistant is a branch on one variable at the end o
   assert.deepEqual(count, { activities: 40, direct: 3, branched: 37, assistantScreens: 37, offScreens: 12, variablesFresh: 12 });
 });
 
-test('section NNN: an activity composed on a Harmony 650, 600 and 700 binds no Help and asks no Remote Assistant question, as h600_config\'s three',
+test('section 333: an activity composed on a Harmony 650, 600 and 700 binds no Help and asks no Remote Assistant question, as h600_config\'s three',
      skipUnless(...HOSTS), () => {
   const reference = load('h600_config');
   const referenceLists = reference.actionLists()!;

@@ -49,7 +49,7 @@ copied. **Every chapter ends with a configuration that works on the 650.**
 - [ ] 3.10 Leave devices on when switching activities, an option MyHarmony offers the 650: what it changes in the configuration
 - [ ] 3.11 Put an activity on Watch TV, Watch a Movie or Listen to Music: one entry in the key map that is always installed; an activity with no key stays on the menu, and an empty key shows the "add an Activity" screen (section 314); `setActivityKey` and `clearActivityKey` built, on the 650 Watch TV moved to Kijk TV started it, and TV kijken still started from the menu (`reads/20261004T063001Z-ir-test-harmony-650-the-combined-bench-file.json`); still to see an emptied key, which needs a base whose compile left one empty
 - [x] 3.12 A new activity menu page when the last one is full: composed and calibrated against Logitech's own menus (section 316); on the 650 the menu paged 1/3, 2/3, 3/3 and wrapped, and the new page's Plasma kijken started (`reads/20261004T063001Z-ir-test-harmony-650-the-combined-bench-file.json`)
-- [ ] 3.13 No help and no Remote Assistant: the Help key does nothing in our configuration and every activity goes straight to its working screen, as the Harmony 600's configuration without an assistant already does; help is postponed to todo-later 3.3
+- [ ] 3.13 No help and no Remote Assistant: the Help key does nothing in our configuration and every activity goes straight to its working screen, as the Harmony 600's configuration without an assistant already does; help is postponed to todo-later 3.3; a composed activity binds no Help and has no assistant branch, matching the no-assistant 600 configuration 4 of 4 (section 333); on the 650 still to press and hold Help in a composed activity and in device mode and see nothing happen
 - [ ] 3.14 A passthrough device in an activity, one a signal passes through unaltered
 
 ## 4. What else the test setup uses
@@ -58,7 +58,7 @@ copied. **Every chapter ends with a configuration that works on the 650.**
 - [ ] 4.2 Sequences, on their own and as steps in an activity's start, composed within the queue limit `assertQueueFits` already enforces (section 238); `composeSequence` built and calibrated on the Harmony One's four compiles, its arch 14 form inferred and listed in `ARCH14_INFERRED` (section 327); on the 650 still to hear KPN 1, 2 s, KPN 2, 20 s, KPN Red from one press of Red
 - [ ] 4.3 The three settings MyHarmony lists for the 650, at the values chosen
   - [x] 4.3.1 How long the screen stays lit: timer 1 (section 292)
-  - [ ] 4.3.2 RemoteAssistant, set off, since 3.13 leaves the assistant out
+  - [ ] 4.3.2 RemoteAssistant, set off, since 3.13 leaves the assistant out: the setting is applied by Logitech's compiler and what it changes in the bytes is not found, since every compile in the lab has it on; settling it needs one compile with it off, an account write (section 333)
   - [ ] 4.3.3 TiltSensor, waking when picked up
 - [ ] 4.4 Save and restore lists, so a delay changed on the remote survives the next start (was L10)
 

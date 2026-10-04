@@ -44414,7 +44414,7 @@ remote whose `InputType` reads anything but 3 before the start.
   silent skip.
 * Section 321 corrected in place; `reference/superseded.md`: "transition walker is unread".
 
-## NNN. Help is the running activity's own binding and the Remote Assistant is a branch on one variable, so a composed activity has neither
+## 333. Help is the running activity's own binding and the Remote Assistant is a branch on one variable, so a composed activity has neither
 
 **Todo `todo-compile-650.md` 3.13 and 4.3.2.** The 650 track builds without Help and without the
 Remote Assistant, todo-later 3.3. This section measures what both are in Logitech's compiles, where

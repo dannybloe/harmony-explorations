@@ -882,7 +882,7 @@ screen tests, and enters the working screen. Over the thirteen compiles that cha
 `[1F FB00, 7F [71 80vv, 7E assistant, 7E working]]` on 37 activities of 12 configurations, `vv` one
 unnamed variable per configuration seeded 0, maximum 1, no transition, written only ever 1 and never reset; each such
 configuration also has one shared "If any devices are still On" assistant screen. `h600_config` has no
-chain, no assistant screen and no such variable, section NNN. **What MyHarmony's `RemoteAssistant`
+chain, no assistant screen and no such variable, section 333. **What MyHarmony's `RemoteAssistant`
 setting changes is not established**: all twelve saved settings replies give `true`, so no compile with
 it `false` exists to compare.
 
@@ -1067,7 +1067,7 @@ rather than merely loose. The firmware reading is trelowney's, reported 26 Augus
 count cannot distinguish a push from an unordered insert.
 
 **Three pushed values are indirections, not entries**, read on the Harmony 700's 2.8 and the Harmony
-600's and 650's 0.2 images, arch 14, [findings.md](findings.md) section NNN:
+600's and 650's 0.2 images, arch 14, [findings.md](findings.md) section 333:
 
 | stack byte | resolves through |
 |---|---|
@@ -1212,7 +1212,7 @@ key. Scans 26 and 27 are `UpArrow` and `DownArrow` and 50 and 42 the pad's, deci
 maps, `reference/button-maps.md`. `activityKeysFromRoles` in
 `packages/codec/src/activityroles.ts`. Help (scan 3, release and repeat) is not built, deliberately:
 no device mode binds scan 3, so a map built from roles never holds it, and Help then does nothing in
-that activity, [findings.md](findings.md) section NNN.
+that activity, [findings.md](findings.md) section 333.
 
 **An activity's screen commands are its devices' own screen items**, same section: on the ten
 compiles that are not hand customised, every working screen item, 64 per copy and 23 distinct, is an item of one
