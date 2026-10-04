@@ -44413,3 +44413,172 @@ remote whose `InputType` reads anything but 3 before the start.
   call's append, the main loop's rotation that makes an append run next, and the setter's old value and
   silent skip.
 * Section 321 corrected in place; `reference/superseded.md`: "transition walker is unread".
+
+## NNN. Help is the running activity's own binding and the Remote Assistant is a branch on one variable, so a composed activity has neither
+
+**Todo `todo-compile-650.md` 3.13 and 4.3.2.** The 650 track builds without Help and without the
+Remote Assistant, todo-later 3.3. This section measures what both are in Logitech's compiles, where
+Help can be reached from, and what MyHarmony's `RemoteAssistant` setting is, and checks that a composed
+activity carries none of it.
+
+**Sources checked**: MyHarmony's decompiled client, `../lab/work/myharmony/src/`, and the compiled
+dashboard assembly beside it under `xap/`, which `src/` does not include; every saved settings reply in
+the lab; the Harmony 700's 2.8, the Harmony 600's 0.2 and the Harmony 650's 0.2 application images;
+this document, sections 17, 140, 271, 272, 279, 286, 290, 292, 312, 313 and 323.
+
+### Where Help is bound
+
+Help is scan 3. Over the thirteen arch 14 Logitech compiles section 312 names, 40 activities, which
+count the Harmony 700 pair twice (35 distinct):
+
+| | count |
+|---|---|
+| activity key maps binding scan 3's release to the activity's own "Attempting to fix the problem" mode | 40 of 40 |
+| and its repeat to `[07 FFFD, 7E <Delay Fixing>]`, one delay fixing menu per configuration | 40 of 40 |
+| idle key maps binding both, the release through a one case `0x72` map on `CurrentLocation` into the idle entry's own "Attempting to fix" mode | 13 of 13 |
+| any other base slot 9 entry binding scan 3's release or repeat | 0 |
+| device modes, the record a device list row enters and every page of it, binding scan 3 at all | 0 of 83 |
+| device list rows whose own binding, followed into the lists it calls, selects or pushes a key map entry | 0 of 83 |
+| entries 2 and 3 binding the press of all 54 scans, to two shared lists and to one | 26 of 26 |
+| modes binding scan 3's release or repeat to something other than the null instruction | 467 |
+| of them a device mode, a start up screen or a working screen | 0 |
+
+The 467 are the remote's own help, delay and status screens: per device delay screens, "Delay
+Fixing", "Select device", "Delay settings for ...", "USB Connected" and "Do you want to turn off your
+system", on 13 of 13. So among the key maps only the activity and idle entries bind Help, and the
+screens that bind it belong to the help machinery and the status screens, none of them a screen a
+composed activity shows. Which of release and repeat a short press and a hold produce is read off the
+bindings and not in the firmware. No key map binds Help's press: entries 2 and 3 bind every key's
+press to shared lists, and whether those consume it depends on a return value not read.
+
+### The key stack, read on three images
+
+Section 271 read the key resolution walk on the Harmony 700 and named three cases. What they are:
+
+| | 700 2.8 | 600 0.2 and 650 0.2 |
+|---|---|---|
+| the walk | `0x0EA78` to `0x0EB1E` | `0x0E692` to `0x0E738` |
+| stack depth, bytes | `0x117`, from `0x118` | `0x20E`, from `0x20F` |
+| `0xFD` | the current mode: page list, then the mode's own list | the same |
+| `0xFE` | the entry in `0x120` | the entry in `0x217` |
+| `0xFC` | the entry in `0x121` | the entry in `0x218` |
+| any other byte | that base slot 9 index | the same |
+| running entry written by the switch, section 313 | `0x0EB94` | `0x0E7AE` |
+| `0xFC`'s variable written by band `0xE8` | `0x0F456` | `0x0F054` |
+| push, band `0xFE` | `0x0F26A`, then `0x0E728` | `0x0E358` |
+
+The 650's 0.2 is not the 600's: the two images differ in 1395 bytes, and inside the walk only in the
+target of its three calls. Both indirections are set to `0xFF` at reset, `0x0E8BC` on the 700 and
+`0x0E4DA` on the 600 and 650. One variable holds the running entry, so an activity replaces the idle
+entry rather than stacking on it.
+
+In all thirteen compiles one boot list pushes exactly `01, FE, FD, FC, 02` in that order, and the walk
+runs top down, so a key is looked up in entry 2, then the entry band `0xE8` named, which is 0, 3 or 4,
+then the current mode, then the running activity's or idle entry, then entry 1. The `0xFF` band selects
+exactly the activity entries and the idle one. **So a release or repeat of Help reaches only the
+current mode and the running entry**, entries 0 to 4 binding neither. Device mode leaves the running
+entry alone: no device list row's binding selects or pushes one.
+
+### The Remote Assistant
+
+On 12 of the 13 every activity's deferred list, section 290, is
+
+```
+[3F D000, 7F a]    a = [1F FB00, 7F b]    b = [71 80vv, 7E <assistant>, 7E <working>]
+```
+
+load 0, compare variable `vv` for equality with two arms, section 140: while `vv` is 0 the activity
+enters its own "Remote Assistant / If any devices are not setup correctly, press Help now" screen,
+otherwise its working screen. The assistant screen's "Turn off Assistant" writes 1 into `vv` and enters
+the working screen, section 290, and its Exit enters the working screen without writing. The screen
+binds no scan 3, so Help there falls through to the activity's own release binding. 37 activities
+(32 distinct), one assistant screen each, and one more screen per configuration, 12 of 12, "If any
+devices are still On press Help now", which section 286 found the tour's exit and an ordinary restart
+lead to, behind a one way gate of its own. `vv` is unnamed, one per configuration, seeded 0 with a
+maximum of 1 and no transition; every write to it writes 1, `2 * (activities + 1)` writers per
+configuration, half of them bound to the assistant screens' "Turn off Assistant" and the other half not
+traced to a caller; it has one reader more than there are activities; and nothing sets it back to 0.
+
+**`h600_config` has none of it**: its three activities defer `[3F D000, 7E <working>]`, it draws no
+"Remote Assistant" screen and has no such variable. It does have Help, on all three activities and its
+idle entry.
+
+### What the RemoteAssistant setting changes: not found
+
+Logitech's service lists `RemoteAssistant`, setting id 10, a boolean whose default is `true`, beside
+`GlowTime` and `TiltSensor` with ids 8 and 9, section 292. All twelve saved settings replies give
+`true`, five for a Harmony 600, two for a 650 and five for a 700, and none is paired with any of the
+thirteen compiles, so no compile made with it `false` exists to compare. The decompiled sources do not
+include the dashboard assembly; the compiled one holds the "Enable Remote Assistant" and "Disable
+Remote Assistant" dialog and offers it for the Harmony 600, 650, 665 and 700 alone, and the sync passes
+the client's settings object to `StartCompileWithLocaleAndSettings`, so the compiler applies it server
+side. **That `h600_config` was compiled with it `false` is consistent with everything here and is not
+established**: its settings at compile time were not saved. Two readings fit, the compiler leaving the
+branch, the screens and the variable out, or nothing more than a seed of 1; `h600_config` having none of
+the three favours the first. A compile of one setup with the setting each way settles it, and that
+needs a write to an account.
+
+### A composed activity
+
+`composeActivity` on arch 14 already defers `[3F D000, 7E <working>]`, `h600_config`'s form, section
+290, and its tag 5 enters the working screen directly, section 313. Its key map is the keys it is given,
+and `activityKeysFromRoles` takes them from device modes, none of which binds scan 3. Composed on
+`h650_config_region`, `h600_config`, `calibration_h600` and `h700_config` from a Logitech activity's
+targets and that activity's roles, with a screen, a menu row and its own device list where the host has
+a row:
+
+| | count |
+|---|---|
+| bindings of scan 3, any event, in the composed key map | 0, against 2 in every Logitech activity |
+| deferred lists instruction for instruction `h600_config`'s, the mode each one's own | 4 of 4 |
+| modes added | 11 |
+| of them drawing "Remote Assistant", "Attempting to fix" or "Help" | 0 |
+| of them binding scan 3 to anything but the null instruction | 0 |
+| new lists reading or writing the host's assistant variable | 0 |
+
+A control was run by hand while writing the test: the same composition given a scan 3 binding fails it
+with 4 bindings.
+
+**So on a Harmony 650, Help on a composed activity's start up and working screens does nothing**: its
+release and repeat find no binding in the screen, none in the composed key map, and none in entries 0 to
+4. The same holds in device mode entered from a composed activity, since device mode binds no scan 3
+and leaves the running entry alone. While a help, delay or status screen is showing, Help acts as that
+screen says, whichever activity runs; in device mode entered from one of Logitech's activities, or with
+nothing running, Help is that activity's or the idle entry's, as compiled. Help's press runs what every
+key press runs. Starting a composed activity shows its start up screen and then its working screen with
+no question. **Predicted from the file and the three images, not yet seen on the remote.**
+
+### Scope, decision 16
+
+Arch 14, three models, thirteen compiles; the key stack read on the Harmony 700's 2.8, the Harmony
+600's 0.2 and the Harmony 650's 0.2 images, the push and band `0xE8` routines on the 600 and 650 by
+their addresses only. The Harmony One's Remote Assistant chain, section 279, is not compared here, and
+its Help is not measured.
+
+### Falsification
+
+A Logitech arch 14 compile with a device mode binding scan 3, a further push, or an entry outside the
+activities and idle binding Help's release; on the 650, Help on a composed activity's screens or in
+device mode from it showing any screen or sending anything beyond what every key press does, or a
+composed activity asking a question.
+
+### The reviewers
+
+The blind re-measure, given the questions and not this section, reproduced every count: the 40 and 13
+Help bindings, 0 of 83 device modes, the pushes and the two bands, the 37 branches, the variable's
+record and writers, and 49 assistant screens, 37 and 12. It corrected one reading: the idle entry's
+Help is its own "Attempting to fix", reached through `CurrentLocation`, not an "Is the X off?" question
+as the draft said. It also read the push order, which gives the search order above, and that the
+assistant screens bind no scan 3. The sentence audit found the draft's "Help itself lives only in the
+activity and idle entries" true of key maps alone, which added the 467 screens and narrowed the
+composed claim to its own screens; the stack addresses stated for the 700 alone; the 650 image called
+the 600's; thirteen replies where twelve carry a value; the client called silent where its dashboard
+assembly was never decompiled; a hold and a short press asserted from bindings; and the device row
+claim untested, which it was, since the first walk read a field a row does not have and so walked
+nothing. Each is corrected and the row walk is in the test.
+
+### Where it lands
+
+* `packages/codec/test/help.test.ts`: the tables above, on the thirteen compiles and the four hosts.
+* `docs/config-format.md`, base slot 9: the key stack's indirections and order, and where Help is
+  bound; the arch 14 enter list: the assistant chain and the setting.
