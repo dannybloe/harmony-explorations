@@ -141,6 +141,7 @@ test('a detail level leaves out what it says it leaves out', () => {
      * had twice: regenerating a model from an extraction and silently dropping every symbol.
      */
     const PRINTING: Readonly<Record<string, { text: number; marks: number; keys: number }>> = {
+      h350: { text: 44, marks: 41, keys: 55 },
       h525: { text: 44, marks: 36, keys: 50 },
       h600: { text: 37, marks: 56, keys: 54 },
       one: { text: 34, marks: 32, keys: 44 },

@@ -16,15 +16,16 @@ export { arcRing, circle, contour, cross, pill, poly, roundRect, segment, traced
 export { DEFAULTS, DETAIL, elementId, toSvg } from './svg.ts';
 export type { SvgOptions } from './svg.ts';
 
+import { H350 } from './models/h350.ts';
 import { H525 } from './models/h525.ts';
 import { H600 } from './models/h600.ts';
 import { ONE } from './models/one.ts';
 import type { Key, Model } from './types.ts';
 
 /** Every model that is drawn. A model absent from here has not been measured yet. */
-export const MODELS: Readonly<Record<string, Model>> = { h525: H525, h600: H600, one: ONE };
+export const MODELS: Readonly<Record<string, Model>> = { h350: H350, h525: H525, h600: H600, one: ONE };
 
-export { H525, H600, ONE };
+export { H350, H525, H600, ONE };
 
 /**
  * The key a name refers to on this model.

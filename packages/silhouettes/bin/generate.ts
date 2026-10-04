@@ -44,17 +44,20 @@ function preview(): void {
   const parts: string[] = [];
   for (const [id, model] of Object.entries(MODELS)) {
     const photo = PHOTO[id];
-    parts.push(`<section>
-  <h2>${model.label}</h2>
-  <div class="row">
-    <figure class="over">
+    // A model with no whole face photograph in the lab gets no overlay rather than a broken image. The
+    // Harmony 350 is the case: its only photograph is the cropped one on its setup guide's cover.
+    const overlay = photo === undefined ? '' : `<figure class="over">
       <div class="stack">
         <img src="../../reference/forum-images/${photo}" alt="">
         <div class="draw">${toSvg(model)}</div>
       </div>
       <figcaption>drawing over the photograph, opacity <input type="range" min="0" max="100"
         value="55" oninput="this.closest('.over').querySelector('.draw').style.opacity=this.value/100"></figcaption>
-    </figure>
+    </figure>`;
+    parts.push(`<section>
+  <h2>${model.label}</h2>
+  <div class="row">
+    ${overlay}
     <figure><div class="plain">${toSvg(model)}</div><figcaption>full</figcaption></figure>
     <figure><div class="half">${toSvg(model, { layers: DETAIL.full })}</div><figcaption>half size</figcaption></figure>
     <figure><div class="thumb">${toSvg(model, { layers: DETAIL.thumbnail })}</div><figcaption>thumbnail</figcaption></figure>

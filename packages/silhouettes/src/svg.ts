@@ -46,8 +46,12 @@ export const DETAIL = {
  * into each other under their keys. The photograph settles it. `Watch a Movie` is printed about 55
  * pixels wide for thirteen characters, which on this drawing's scale is a little over four units a
  * character, so nine is the size that fits where the real printing fits.
+ *
+ * `tiny` is the same argument one step down. A Harmony 350's device keys are 48 units wide and print
+ * `BD / Media` and `Game/MP3` with a cap height of 5.3 in Logitech's drawing, where nine gives about
+ * 6.4 and the words ran into the key's own ends. Seven and a half gives the drawing's 5.3.
  */
-const FONT_SIZE = { normal: 15, small: 9 } as const;
+const FONT_SIZE = { normal: 15, small: 9, tiny: 7.5 } as const;
 
 /**
  * One stroke width for every key, rocker and seam.
@@ -375,12 +379,21 @@ export function toSvg(model: Model, options: SvgOptions = {}): string {
     out.push('  </g>');
   }
 
-  if (on('text') && model.nameplate !== undefined) {
-    const np = model.nameplate;
+  if (on('text') && (model.nameplate !== undefined || model.captions !== undefined)) {
     out.push('  <g class="layer-text">');
-    out.push(`    <text class="lbl nameplate" x="${num(np.x)}" y="${num(np.y)}" `
-      + `font-size="${FONT_SIZE[np.size ?? 'small']}" text-anchor="middle" `
-      + `fill="${DEFAULTS.keyText}" font-family="${DEFAULTS.font}">${esc(np.text)}</text>`);
+    if (model.nameplate !== undefined) {
+      const np = model.nameplate;
+      out.push(`    <text class="lbl nameplate" x="${num(np.x)}" y="${num(np.y)}" `
+        + `font-size="${FONT_SIZE[np.size ?? 'small']}" text-anchor="middle" `
+        + `fill="${DEFAULTS.keyText}" font-family="${DEFAULTS.font}">${esc(np.text)}</text>`);
+    }
+    // Printing that names a group of keys and belongs to none of them, so it carries no key's id and
+    // does not light up with any key. See `Model.captions`.
+    for (const caption of model.captions ?? []) {
+      out.push(`    <text class="lbl caption" x="${num(caption.x)}" y="${num(caption.y)}" `
+        + `font-size="${FONT_SIZE[caption.size ?? 'small']}" text-anchor="middle" `
+        + `fill="${DEFAULTS.keyText}" font-family="${DEFAULTS.font}">${esc(caption.text)}</text>`);
+    }
     out.push('  </g>');
   }
 

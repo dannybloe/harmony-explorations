@@ -1,0 +1,302 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-2 -2 269.545 1004"
+     role="img" aria-labelledby="title desc" class="silhouette silhouette-h350">
+  <title id="title">Harmony 350, front face</title>
+  <desc id="desc">Outline drawing of the Harmony 350 front face, one shape per button. Its shapes are traced from the product documentation and its lettering and symbols are drawn from a photograph. 55 buttons, of which 0 carry a measured scan code. Every fill and stroke reads a custom property, so the interface decides the colours; nothing here is coloured in.</desc>
+
+  <!--
+    GENERATED FILE. Do not edit.
+
+    The measured geometry lives in packages/silhouettes/src/models/, which is where a
+    correction goes, and `make silhouettes` writes this. A test asserts this file is byte
+    for byte what the generator produces, so an edit here fails the suite rather than
+    surviving as a second source.
+  -->
+
+  <style>
+    .body   { fill: var(--case-fill, #fff); stroke: var(--case-stroke, #333); }
+    .region-recess { fill: var(--recess-fill, #eee);
+                     stroke: var(--case-stroke, #333); }
+    .region-seam   { fill: none; stroke: var(--case-stroke, #333); }
+    .lcd    { fill: var(--recess-fill, #eee); stroke: var(--case-stroke, #333); }
+    .rocker-fill { fill: var(--key-fill, #fff); stroke: none; }
+    .rocker { fill: none; stroke: var(--key-stroke, #666); }
+    .key    { fill: var(--key-fill, #fff); stroke: var(--key-stroke, #666); }
+    /* A rocker's segment takes the key fill and no outline of its own, so the moulding reads as the
+       one physical key it is while the halves still colour and click separately. */
+    .key-segment { stroke: none; }
+    .seam   { fill: none; stroke: var(--key-stroke, #666); }
+    .lbl    { fill: var(--key-text, #222); stroke: none; font-family: var(--font, system-ui, sans-serif); }
+    .mark-fill   { fill: var(--key-text, #222); }
+    .mark-stroke { stroke: var(--key-text, #222); }
+    .mark-accent.mark-fill   { fill: var(--accent, #d23c3c); }
+    .mark-accent.mark-stroke { stroke: var(--accent, #d23c3c); }
+    .body, .region-recess, .region-seam, .lcd, .key, .rocker, .seam
+      { vector-effect: non-scaling-stroke; }
+  </style>
+
+  <g class="layer-case">
+    <path class="body" d="M 132.773 1000 C 83.317 1000 54.638 968.704 33.796 912.652 C 21.468 879.493 15.172 836.549 12.119 798.251 C 2.5 677.755 22.255 624.299 10.714 498.049 C 6.767 454.933 0.384 362.191 0 352.223 C -3.148 268.939 3.415 130.232 13.499 47.764 C 16.767 21.084 23.159 12.914 48.042 7.906 C 76.403 2.192 103.775 0 132.773 0 C 161.784 0 189.143 2.192 217.503 7.906 C 242.386 12.914 248.781 21.084 252.046 47.764 C 262.13 130.232 268.694 268.939 265.545 352.223 C 265.172 362.191 258.781 454.933 254.832 498.049 C 243.29 624.299 263.045 677.755 253.429 798.251 C 250.376 836.549 244.077 879.493 231.749 912.652 C 210.918 968.704 182.239 1000 132.773 1000 Z" fill="#fff" stroke="#333" stroke-width="2" />
+    <clipPath id="case-clip"><path d="M 132.773 1000 C 83.317 1000 54.638 968.704 33.796 912.652 C 21.468 879.493 15.172 836.549 12.119 798.251 C 2.5 677.755 22.255 624.299 10.714 498.049 C 6.767 454.933 0.384 362.191 0 352.223 C -3.148 268.939 3.415 130.232 13.499 47.764 C 16.767 21.084 23.159 12.914 48.042 7.906 C 76.403 2.192 103.775 0 132.773 0 C 161.784 0 189.143 2.192 217.503 7.906 C 242.386 12.914 248.781 21.084 252.046 47.764 C 262.13 130.232 268.694 268.939 265.545 352.223 C 265.172 362.191 258.781 454.933 254.832 498.049 C 243.29 624.299 263.045 677.755 253.429 798.251 C 250.376 836.549 244.077 879.493 231.749 912.652 C 210.918 968.704 182.239 1000 132.773 1000 Z" /></clipPath>
+    <path class="region region-seam" id="devices-bay" d="M 132.773 184.728 L 69.668 184.728 C 44.02 184.728 33.51 177.898 36.307 148.985 C 37.149 140.305 37.574 130.316 38.214 121.623 C 40.223 94.338 48.445 88.252 73.317 86.041 C 93.233 84.273 111.849 83.647 132.773 83.647 C 153.71 83.647 172.326 84.273 192.228 86.041 C 217.1 88.252 225.333 94.338 227.334 121.623 C 227.972 130.316 228.397 140.305 229.238 148.985 C 232.035 177.898 221.526 184.728 195.888 184.728 Z" clip-path="url(#case-clip)" fill="none" stroke="#333" stroke-width="1" />
+    <path class="region region-seam" id="navigation-bay" d="M 56.798 387.212 C 31.266 387.212 23.244 380.543 22.097 354.097 C 21.915 349.925 21.266 322.204 21.193 317.321 C 20.735 287.12 32.713 282.449 56 282.449 L 209.559 282.449 C 232.833 282.449 244.813 287.12 244.355 317.321 C 244.282 322.204 243.631 349.925 243.451 354.097 C 242.302 380.543 234.282 387.212 208.751 387.212 Z" clip-path="url(#case-clip)" fill="none" stroke="#333" stroke-width="1" />
+    <path class="region region-seam" id="transport-bay" d="M 69.829 745.212 C 42.021 745.212 32.288 735.552 32.288 704.15 C 32.288 700.171 34.224 653.981 34.382 650.075 C 35.733 617.567 40.553 611.47 69.488 611.47 L 196.057 611.47 C 225.003 611.47 229.813 617.567 231.163 650.075 C 231.324 653.981 233.26 700.171 233.26 704.15 C 233.26 735.552 223.525 745.212 195.717 745.212 Z" clip-path="url(#case-clip)" fill="none" stroke="#333" stroke-width="1" />
+  </g>
+  <defs>
+    <clipPath id="seg-k-up-arrow"><path d="M 100 285 L 165 285 L 165 335.071 L 100 335.071 Z" /></clipPath>
+    <clipPath id="seg-k-down-arrow"><path d="M 100 335.071 L 165 335.071 L 165 385 L 100 385 Z" /></clipPath>
+    <clipPath id="seg-k-volume-up"><path d="M 30 430 L 90 430 L 90 493.991 L 30 493.991 Z" /></clipPath>
+    <clipPath id="seg-k-volume-down"><path d="M 30 493.991 L 90 493.991 L 90 558 L 30 558 Z" /></clipPath>
+    <clipPath id="seg-k-channel-up"><path d="M 176 430 L 236 430 L 236 493.991 L 176 493.991 Z" /></clipPath>
+    <clipPath id="seg-k-channel-down"><path d="M 176 493.991 L 236 493.991 L 236 558 L 176 558 Z" /></clipPath>
+    <clipPath id="seg-k-play"><path d="M 100 620 L 165 620 L 165 680.319 L 100 680.319 Z" /></clipPath>
+    <clipPath id="seg-k-pause"><path d="M 100 680.319 L 165 680.319 L 165 740 L 100 740 Z" /></clipPath>
+  </defs>
+  <g class="layer-keys">
+    <path class="rocker-fill" id="rocker-arrows" d="M 132.773 377.648 C 116.561 377.809 109.731 375.796 108.581 361.128 C 107.89 352.362 108.23 316.564 108.775 308.906 C 109.529 298.427 111.381 292.343 132.773 292.493 C 154.178 292.343 156.016 298.427 156.773 308.906 C 157.315 316.564 157.656 352.362 156.964 361.128 C 155.815 375.796 148.985 377.809 132.773 377.648 Z" fill="#fff" stroke="none" />
+    <path class="rocker-fill" id="rocker-volume" d="M 47.083 438.04 C 40 438.04 37.105 441.485 37.713 448.253 C 37.914 450.508 44.447 538.994 44.66 541.015 C 45.297 547.303 47.734 549.952 54.042 549.952 C 57.043 549.952 67.446 549.952 69.2 549.952 C 77.669 549.952 81.721 545.187 81.721 537.006 C 81.721 527.749 79.423 525.165 76.136 520.813 C 65.232 506.431 63.105 488.572 73.456 471.423 C 76.604 466.21 77.457 463.868 77.457 457.847 L 77.457 450.551 C 77.457 443.868 74.232 438.03 64.935 438.03 C 61.201 438.03 50.956 438.04 47.083 438.04 Z" fill="#fff" stroke="none" />
+    <path class="rocker-fill" id="rocker-channel" d="M 218.462 438.04 C 225.548 438.04 228.451 441.485 227.833 448.253 C 227.631 450.508 221.101 538.994 220.888 541.015 C 220.248 547.303 217.814 549.952 211.504 549.952 C 208.516 549.952 198.111 549.952 196.357 549.952 C 187.887 549.952 183.835 545.187 183.835 537.006 C 183.835 527.749 186.123 525.165 189.42 520.813 C 200.314 506.431 202.452 488.572 192.089 471.423 C 188.952 466.21 188.102 463.868 188.102 457.847 L 188.102 450.551 C 188.102 443.868 191.324 438.03 200.621 438.03 C 204.355 438.03 214.589 438.04 218.462 438.04 Z" fill="#fff" stroke="none" />
+    <path class="rocker-fill" id="rocker-play" d="M 132.773 732.488 C 116.561 732.69 109.731 730.223 108.581 712.243 C 107.89 701.511 108.23 657.649 108.775 648.267 C 109.529 635.427 111.381 627.97 132.773 628.15 C 154.178 627.97 156.016 635.427 156.773 648.267 C 157.315 657.649 157.656 701.511 156.964 712.243 C 155.815 730.223 148.985 732.69 132.773 732.488 Z" fill="#fff" stroke="none" />
+    <g class="key-group" id="k-watch-tv" data-name="WatchTV" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 77.86 53.968 C 77.86 60.063 72.871 65.052 66.787 65.052 L 56 65.052 C 49.902 65.052 44.913 60.063 44.913 53.968 L 44.913 45.553 C 44.913 39.455 49.902 34.477 56 34.477 L 66.787 34.477 C 72.871 34.477 77.86 39.455 77.86 45.553 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <g class="layer-icons"><g transform="translate(61.387 49.765) scale(12.563)"><path class="mark mark-stroke" d="M -0.8 -0.75 H 0.8 V 0.35 H -0.8 Z" fill="none" stroke="#222" stroke-width="0.16" stroke-linecap="round" stroke-linejoin="round" /><path class="mark mark-stroke" d="M -0.3 0.35 L -0.45 0.8 M 0.3 0.35 L 0.45 0.8 M -0.55 0.8 H 0.55" fill="none" stroke="#222" stroke-width="0.16" stroke-linecap="round" stroke-linejoin="round" /></g></g>
+      <text class="lbl layer-text" x="61.387" y="73.252" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Watch TV</text>
+    </g>
+    <g class="key-group" id="k-tv-avr" data-name="TvAvr" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 117.784 127.41 C 116.294 129.91 114.358 132.007 108.892 132.933 C 101.795 134.156 85.147 134.2 78.562 132.933 C 71.966 131.678 70.499 128.911 69.668 127.41 C 68.2 124.782 68.222 117.252 69.668 114.987 C 70.583 113.541 71.966 110.73 78.562 109.475 C 85.147 108.211 101.795 108.263 108.892 109.475 C 114.358 110.401 116.37 112.454 117.784 114.987 C 119.317 117.721 119.05 125.294 117.784 127.41 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="93.726" y="123.829" font-size="7.5" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">TV / AVR</text>
+    </g>
+    <g class="key-group" id="k-cable-dvd" data-name="CableDvd" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 147.762 127.41 C 149.262 129.91 151.188 132.007 156.656 132.933 C 163.75 134.156 180.409 134.2 186.983 132.933 C 193.579 131.678 195.047 128.911 195.888 127.41 C 197.345 124.782 197.324 117.252 195.888 114.987 C 194.962 113.541 193.579 110.73 186.983 109.475 C 180.409 108.211 163.75 108.263 156.656 109.475 C 151.188 110.401 149.189 112.454 147.762 114.987 C 146.242 117.721 146.495 125.294 147.762 127.41 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="171.825" y="123.829" font-size="7.5" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Cable/DVD</text>
+    </g>
+    <g class="key-group" id="k-bd-media" data-name="BdMedia" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 117.784 166.539 C 116.294 169.039 114.358 171.133 108.892 172.07 C 101.795 173.282 85.147 173.326 78.562 172.07 C 71.966 170.804 70.499 168.037 69.668 166.539 C 68.2 163.911 68.222 156.378 69.668 154.124 C 70.583 152.667 71.966 149.859 78.562 148.592 C 85.147 147.337 101.795 147.378 108.892 148.592 C 114.358 149.527 116.37 151.58 117.784 154.124 C 119.317 156.847 119.05 164.42 117.784 166.539 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="93.726" y="162.956" font-size="7.5" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">BD / Media</text>
+    </g>
+    <g class="key-group" id="k-game-mp3" data-name="GameMp3" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 147.762 166.539 C 149.262 169.039 151.188 171.133 156.656 172.07 C 163.75 173.282 180.409 173.326 186.983 172.07 C 193.579 170.804 195.047 168.037 195.888 166.539 C 197.345 163.911 197.324 156.378 195.888 154.124 C 194.962 152.667 193.579 149.859 186.983 148.592 C 180.409 147.337 163.75 147.378 156.656 148.592 C 151.188 149.527 149.189 151.58 147.762 154.124 C 146.242 156.847 146.495 164.42 147.762 166.539 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="171.825" y="162.956" font-size="7.5" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Game/MP3</text>
+    </g>
+    <g class="key-group" id="k-power" data-name="Power" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 231.46 178.219 C 231.46 172.122 226.482 167.133 220.387 167.133 L 216.174 167.133 C 210.09 167.133 205.101 172.122 205.101 178.219 L 205.101 181.994 C 205.101 188.091 210.09 193.07 216.174 193.07 L 220.387 193.07 C 226.482 193.07 231.46 188.091 231.46 181.994 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <g class="layer-icons"><g transform="translate(218.1 180) scale(7.595)"><path class="mark mark-stroke" d="M -0.5 -0.55 A 0.75 0.75 0 1 0 0.5 -0.55" fill="none" stroke="#222" stroke-width="0.16" stroke-linecap="round" stroke-linejoin="round" /><path class="mark mark-stroke" d="M 0 -0.9 V -0.1" fill="none" stroke="#222" stroke-width="0.16" stroke-linecap="round" stroke-linejoin="round" /></g></g>
+    </g>
+    <g class="key-group" id="k-input" data-name="Input" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 107.754 218.887 C 109.295 221.387 111.294 223.473 116.945 224.41 C 124.295 225.622 141.517 225.662 148.326 224.41 C 155.145 223.143 156.667 220.387 157.528 218.887 C 159.039 216.248 159.017 208.718 157.528 206.463 C 156.569 205.014 155.145 202.196 148.326 200.94 C 141.517 199.676 124.295 199.728 116.945 200.94 C 111.294 201.877 109.221 203.919 107.754 206.463 C 106.169 209.186 106.433 216.76 107.754 218.887 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="132.641" y="215.825" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Input</text>
+    </g>
+    <g class="key-group" id="k-favorite1" data-name="Favorite1" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 89.701 230.728 C 88.551 233.152 87.073 235.186 82.892 236.09 C 77.468 237.28 64.722 237.324 59.679 236.09 C 54.638 234.864 53.51 232.185 52.871 230.728 C 51.754 228.162 51.776 220.834 52.871 218.642 C 53.573 217.239 54.638 214.494 59.679 213.282 C 64.722 212.046 77.468 212.1 82.892 213.282 C 87.073 214.186 88.614 216.174 89.701 218.642 C 90.869 221.302 90.667 228.663 89.701 230.728 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="71.286" y="229.936" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">1</text>
+    </g>
+    <g class="key-group" id="k-favorite2" data-name="Favorite2" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 89.701 266.61 C 88.551 269.034 87.073 271.066 82.892 271.981 C 77.468 273.163 64.722 273.206 59.679 271.981 C 54.638 270.758 53.51 268.067 52.871 266.61 C 51.754 264.045 51.776 256.727 52.871 254.524 C 53.573 253.119 54.638 250.387 59.679 249.162 C 64.722 247.939 77.468 247.983 82.892 249.162 C 87.073 250.066 88.614 252.057 89.701 254.524 C 90.869 257.185 90.667 264.557 89.701 266.61 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="71.286" y="265.822" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">2</text>
+    </g>
+    <g class="key-group" id="k-favorite3" data-name="Favorite3" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 151.199 266.61 C 150.06 269.034 148.582 271.066 144.39 271.981 C 138.966 273.163 126.22 273.206 121.188 271.981 C 116.147 270.758 115.019 268.067 114.379 266.61 C 113.252 264.045 113.274 256.727 114.379 254.524 C 115.082 253.119 116.147 250.387 121.188 249.162 C 126.22 247.939 138.966 247.983 144.39 249.162 C 148.582 250.066 150.112 252.057 151.199 254.524 C 152.367 257.185 152.165 264.557 151.199 266.61 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="132.789" y="265.822" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">3</text>
+    </g>
+    <g class="key-group" id="k-favorite4" data-name="Favorite4" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 175.847 266.61 C 176.994 269.034 178.473 271.066 182.656 271.981 C 188.091 273.163 200.823 273.206 205.867 271.981 C 210.91 270.758 212.038 268.067 212.675 266.61 C 213.791 264.045 213.781 256.727 212.675 254.524 C 211.972 253.119 210.91 250.387 205.867 249.162 C 200.823 247.939 188.091 247.983 182.656 249.162 C 178.473 250.066 176.931 252.057 175.847 254.524 C 174.676 257.185 174.878 264.557 175.847 266.61 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="194.261" y="265.822" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">4</text>
+    </g>
+    <g class="key-group" id="k-favorite5" data-name="Favorite5" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 175.847 230.728 C 176.994 233.152 178.473 235.186 182.656 236.09 C 188.091 237.28 200.823 237.324 205.867 236.09 C 210.91 234.864 212.038 232.185 212.675 230.728 C 213.791 228.162 213.781 220.834 212.675 218.642 C 211.972 217.239 210.91 214.494 205.867 213.282 C 200.823 212.046 188.091 212.1 182.656 213.282 C 178.473 214.186 176.931 216.174 175.847 218.642 C 174.676 221.302 174.878 228.663 175.847 230.728 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="194.261" y="229.936" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">5</text>
+    </g>
+    <g class="key-group" id="k-menu" data-name="Menu" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 89.796 322.449 C 88.031 325.192 85.755 327.479 79.338 328.5 C 71 329.84 51.435 329.895 43.69 328.5 C 35.956 327.117 34.224 324.097 33.244 322.449 C 31.52 319.554 31.552 311.289 33.244 308.811 C 34.319 307.215 35.956 304.129 43.69 302.746 C 51.435 301.362 71 301.417 79.338 302.746 C 85.755 303.767 88.116 306.022 89.796 308.811 C 91.582 311.809 91.275 320.118 89.796 322.449 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="61.52" y="320.873" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Menu</text>
+    </g>
+    <g class="key-group" id="k-info" data-name="Info" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 175.76 322.449 C 177.517 325.192 179.794 327.479 186.207 328.5 C 194.559 329.84 214.121 329.895 221.855 328.5 C 229.6 327.117 231.324 324.097 232.313 322.449 C 234.037 319.554 234.004 311.289 232.313 308.811 C 231.229 307.215 229.6 304.129 221.855 302.746 C 214.121 301.362 194.559 301.417 186.207 302.746 C 179.794 303.767 177.432 306.022 175.76 308.811 C 173.963 311.809 174.271 320.118 175.76 322.449 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="204.037" y="320.873" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Info</text>
+    </g>
+    <g class="key-group" id="k-exit" data-name="Exit" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 93.083 360.576 C 91.327 363.307 89.053 365.606 82.636 366.627 C 74.298 367.967 54.733 368.01 46.988 366.627 C 39.243 365.243 37.522 362.212 36.531 360.576 C 34.818 357.681 34.839 349.405 36.531 346.937 C 37.617 345.341 39.243 342.256 46.988 340.872 C 54.733 339.489 74.298 339.543 82.636 340.872 C 89.053 341.894 91.414 344.149 93.083 346.937 C 94.88 349.936 94.573 358.244 93.083 360.576 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="64.807" y="359" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Exit</text>
+    </g>
+    <g class="key-group" id="k-guide" data-name="Guide" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 172.462 360.576 C 174.219 363.307 176.496 365.606 182.909 366.627 C 191.261 367.967 210.823 368.01 218.557 366.627 C 226.302 365.243 228.026 362.212 229.015 360.576 C 230.739 357.681 230.706 349.405 229.015 346.937 C 227.931 345.341 226.302 342.256 218.557 340.872 C 210.823 339.489 191.261 339.543 182.909 340.872 C 176.496 341.894 174.134 344.149 172.462 346.937 C 170.665 349.936 170.975 358.244 172.462 360.576 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="200.739" y="359" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Guide</text>
+    </g>
+    <g class="key-group" id="k-up-arrow" data-name="UpArrow" data-kind="keypad" data-src="printed">
+      <path class="key key-segment" d="M 132.773 377.648 C 116.561 377.809 109.731 375.796 108.581 361.128 C 107.89 352.362 108.23 316.564 108.775 308.906 C 109.529 298.427 111.381 292.343 132.773 292.493 C 154.178 292.343 156.016 298.427 156.773 308.906 C 157.315 316.564 157.656 352.362 156.964 361.128 C 155.815 375.796 148.985 377.809 132.773 377.648 Z" clip-path="url(#seg-k-up-arrow)" fill="#fff" stroke="none" />
+      <g class="layer-icons"><g transform="translate(132.8 312.9) scale(10.875)"><path class="mark mark-stroke" d="M -0.8 0.35 L 0 -0.4 L 0.8 0.35" fill="none" stroke="#222" stroke-width="0.16" stroke-linecap="round" stroke-linejoin="round" /></g></g>
+    </g>
+    <g class="key-group" id="k-down-arrow" data-name="DownArrow" data-kind="keypad" data-src="printed">
+      <path class="key key-segment" d="M 132.773 377.648 C 116.561 377.809 109.731 375.796 108.581 361.128 C 107.89 352.362 108.23 316.564 108.775 308.906 C 109.529 298.427 111.381 292.343 132.773 292.493 C 154.178 292.343 156.016 298.427 156.773 308.906 C 157.315 316.564 157.656 352.362 156.964 361.128 C 155.815 375.796 148.985 377.809 132.773 377.648 Z" clip-path="url(#seg-k-down-arrow)" fill="#fff" stroke="none" />
+      <g class="layer-icons"><g transform="translate(132.8 357.4) scale(10.875)"><path class="mark mark-stroke" d="M -0.8 -0.4 L 0 0.35 L 0.8 -0.4" fill="none" stroke="#222" stroke-width="0.16" stroke-linecap="round" stroke-linejoin="round" /></g></g>
+    </g>
+    <g class="key-group" id="k-red" data-name="Red" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 76.158 413.223 C 75.052 415.499 73.617 417.403 69.573 418.253 C 64.328 419.358 52.01 419.402 47.138 418.253 C 42.266 417.104 41.179 414.593 40.553 413.223 C 39.477 410.818 39.499 403.944 40.553 401.88 C 41.245 400.562 42.266 397.999 47.138 396.85 C 52.01 395.701 64.328 395.745 69.573 396.85 C 73.617 397.7 75.104 399.574 76.158 401.88 C 77.285 404.38 77.094 411.287 76.158 413.223 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <g class="layer-icons"><g transform="translate(58.356 407.552) scale(11.222)" style="--accent: #d23c3c"><path class="mark mark-fill mark-accent" d="M -0.9 -0.34 H 0.9 V 0.34 H -0.9 Z" fill="#d23c3c" stroke="none" /></g></g>
+    </g>
+    <g class="key-group" id="k-green" data-name="Green" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 126.06 413.223 C 124.954 415.499 123.519 417.403 119.486 418.253 C 114.232 419.358 101.912 419.402 97.04 418.253 C 92.168 417.104 91.084 414.593 90.466 413.223 C 89.382 410.818 89.401 403.944 90.466 401.88 C 91.147 400.562 92.168 397.999 97.04 396.85 C 101.912 395.701 114.232 395.745 119.486 396.85 C 123.519 397.7 125.009 399.574 126.06 401.88 C 127.187 404.38 126.997 411.287 126.06 413.223 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <g class="layer-icons"><g transform="translate(108.263 407.552) scale(11.222)" style="--accent: #2f9e44"><path class="mark mark-fill mark-accent" d="M -0.9 -0.34 H 0.9 V 0.34 H -0.9 Z" fill="#2f9e44" stroke="none" /></g></g>
+    </g>
+    <g class="key-group" id="k-yellow" data-name="Yellow" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 139.486 413.223 C 140.591 415.499 142.029 417.403 146.071 418.253 C 151.327 419.358 163.633 419.402 168.505 418.253 C 173.377 417.104 174.475 414.593 175.079 413.223 C 176.166 410.818 176.144 403.944 175.079 401.88 C 174.399 400.562 173.377 397.999 168.505 396.85 C 163.633 395.701 151.327 395.745 146.071 396.85 C 142.029 397.7 140.54 399.574 139.486 401.88 C 138.358 404.38 138.549 411.287 139.486 413.223 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <g class="layer-icons"><g transform="translate(157.283 407.552) scale(11.222)" style="--accent: #d9c22b"><path class="mark mark-fill mark-accent" d="M -0.9 -0.34 H 0.9 V 0.34 H -0.9 Z" fill="#d9c22b" stroke="none" /></g></g>
+    </g>
+    <g class="key-group" id="k-blue" data-name="Blue" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 189.388 413.223 C 190.493 415.499 191.931 417.403 195.973 418.253 C 201.229 419.358 213.535 419.402 218.418 418.253 C 223.282 417.104 224.377 414.593 224.992 413.223 C 226.068 410.818 226.057 403.944 224.992 401.88 C 224.312 400.562 223.282 397.999 218.418 396.85 C 213.535 395.701 201.229 395.745 195.973 396.85 C 191.931 397.7 190.453 399.574 189.388 401.88 C 188.26 404.38 188.454 411.287 189.388 413.223 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <g class="layer-icons"><g transform="translate(207.19 407.552) scale(11.222)" style="--accent: #3b6fd4"><path class="mark mark-fill mark-accent" d="M -0.9 -0.34 H 0.9 V 0.34 H -0.9 Z" fill="#3b6fd4" stroke="none" /></g></g>
+    </g>
+    <g class="key-group" id="k-volume-up" data-name="VolumeUp" data-kind="keypad" data-src="printed">
+      <path class="key key-segment" d="M 47.083 438.04 C 40 438.04 37.105 441.485 37.713 448.253 C 37.914 450.508 44.447 538.994 44.66 541.015 C 45.297 547.303 47.734 549.952 54.042 549.952 C 57.043 549.952 67.446 549.952 69.2 549.952 C 77.669 549.952 81.721 545.187 81.721 537.006 C 81.721 527.749 79.423 525.165 76.136 520.813 C 65.232 506.431 63.105 488.572 73.456 471.423 C 76.604 466.21 77.457 463.868 77.457 457.847 L 77.457 450.551 C 77.457 443.868 74.232 438.03 64.935 438.03 C 61.201 438.03 50.956 438.04 47.083 438.04 Z" clip-path="url(#seg-k-volume-up)" fill="#fff" stroke="none" />
+      <g class="layer-icons"><g transform="translate(57.3 456.9) scale(8.521)"><path class="mark mark-fill" d="M -0.95 -0.3 H -0.55 L 0 -0.8 V 0.8 L -0.55 0.3 H -0.95 Z" fill="#222" stroke="none" /><path class="mark mark-stroke" d="M 0.2 -0.34 A 0.42 0.42 0 0 1 0.2 0.34" fill="none" stroke="#222" stroke-width="0.16" stroke-linecap="round" stroke-linejoin="round" /><path class="mark mark-stroke" d="M 0.5 -0.6 A 0.72 0.72 0 0 1 0.5 0.6" fill="none" stroke="#222" stroke-width="0.16" stroke-linecap="round" stroke-linejoin="round" /></g></g>
+    </g>
+    <g class="key-group" id="k-volume-down" data-name="VolumeDown" data-kind="keypad" data-src="printed">
+      <path class="key key-segment" d="M 47.083 438.04 C 40 438.04 37.105 441.485 37.713 448.253 C 37.914 450.508 44.447 538.994 44.66 541.015 C 45.297 547.303 47.734 549.952 54.042 549.952 C 57.043 549.952 67.446 549.952 69.2 549.952 C 77.669 549.952 81.721 545.187 81.721 537.006 C 81.721 527.749 79.423 525.165 76.136 520.813 C 65.232 506.431 63.105 488.572 73.456 471.423 C 76.604 466.21 77.457 463.868 77.457 457.847 L 77.457 450.551 C 77.457 443.868 74.232 438.03 64.935 438.03 C 61.201 438.03 50.956 438.04 47.083 438.04 Z" clip-path="url(#seg-k-volume-down)" fill="#fff" stroke="none" />
+      <g class="layer-icons"><g transform="translate(61.4 531.1) scale(6.312)"><path class="mark mark-fill" d="M -0.8 -0.3 H -0.4 L 0.15 -0.8 V 0.8 L -0.4 0.3 H -0.8 Z" fill="#222" stroke="none" /></g></g>
+    </g>
+    <g class="key-group" id="k-direction-up" data-name="DirectionUp" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 124.486 439.211 C 130.009 438.326 135.177 438.04 141.038 439.211 C 153.582 441.731 154.102 445.805 151.931 455.87 C 151.73 456.826 150.591 461.273 150.218 462.273 C 148.699 466.273 146.016 468.847 141.092 468.836 C 139.793 468.836 126.242 468.828 124.358 468.942 C 120.199 469.187 116.487 466.317 115.21 462.273 C 114.72 460.72 113.816 457.39 113.497 455.881 C 111.498 446.613 112.135 441.199 124.486 439.211 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <g class="layer-icons"><g transform="translate(132.8 452.3) scale(8.412)"><path class="mark mark-fill" d="M -0.8 0.85 L 0.8 0.85 L 0 -0.85 Z" fill="#222" stroke="none" /></g></g>
+    </g>
+    <g class="key-group" id="k-direction-right" data-name="DirectionRight" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 187.879 486.039 C 188.761 491.548 189.058 496.72 187.879 502.591 C 185.357 515.124 181.283 515.644 171.218 513.485 C 170.262 513.272 165.815 512.134 164.826 511.761 C 160.815 510.241 158.252 507.559 158.252 502.635 C 158.263 501.347 158.263 487.782 158.154 485.9 C 157.901 481.742 160.782 478.027 164.815 476.752 C 166.368 476.273 169.698 475.369 171.207 475.039 C 180.474 473.038 185.888 473.689 187.879 486.039 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <g class="layer-icons"><g transform="translate(174.6 494.1) scale(8.412)"><path class="mark mark-fill" d="M -0.85 -0.85 L -0.85 0.85 L 0.85 0 Z" fill="#222" stroke="none" /></g></g>
+    </g>
+    <g class="key-group" id="k-direction-down" data-name="DirectionDown" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 124.486 549.419 C 130.009 550.304 135.177 550.601 141.038 549.419 C 153.582 546.9 154.102 542.834 151.931 532.76 C 151.73 531.804 150.591 527.368 150.218 526.366 C 148.699 522.357 146.016 519.792 141.092 519.803 C 139.793 519.803 126.242 519.803 124.358 519.696 C 120.199 519.451 116.487 522.324 115.21 526.366 C 114.72 527.91 113.816 531.241 113.497 532.749 C 111.498 542.025 112.135 547.442 124.486 549.419 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <g class="layer-icons"><g transform="translate(132.8 535.9) scale(8.412)"><path class="mark mark-fill" d="M -0.8 -0.85 L 0.8 -0.85 L 0 0.85 Z" fill="#222" stroke="none" /></g></g>
+    </g>
+    <g class="key-group" id="k-direction-left" data-name="DirectionLeft" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 77.669 486.039 C 76.787 491.548 76.498 496.72 77.669 502.591 C 80.191 515.124 84.265 515.644 94.328 513.485 C 95.286 513.272 99.731 512.134 100.722 511.761 C 104.731 510.241 107.296 507.559 107.296 502.635 C 107.296 501.347 107.296 487.782 107.402 485.9 C 107.636 481.742 104.763 478.027 100.733 476.752 C 99.178 476.273 95.85 475.369 94.338 475.039 C 85.074 473.038 79.657 473.689 77.669 486.039 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <g class="layer-icons"><g transform="translate(91 494.1) scale(8.412)"><path class="mark mark-fill" d="M 0.85 -0.85 L 0.85 0.85 L -0.85 0 Z" fill="#222" stroke="none" /></g></g>
+    </g>
+    <g class="key-group" id="k-select" data-name="Select" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 148.08 490.187 C 148.08 484.092 143.091 479.114 137.007 479.114 L 128.549 479.114 C 122.454 479.114 117.476 484.092 117.476 490.187 L 117.476 498.506 C 117.476 504.601 122.454 509.579 128.549 509.579 L 137.007 509.579 C 143.091 509.579 148.08 504.601 148.08 498.506 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="132.778" y="497.496" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">OK</text>
+    </g>
+    <g class="key-group" id="k-channel-up" data-name="ChannelUp" data-kind="keypad" data-src="printed">
+      <path class="key key-segment" d="M 218.462 438.04 C 225.548 438.04 228.451 441.485 227.833 448.253 C 227.631 450.508 221.101 538.994 220.888 541.015 C 220.248 547.303 217.814 549.952 211.504 549.952 C 208.516 549.952 198.111 549.952 196.357 549.952 C 187.887 549.952 183.835 545.187 183.835 537.006 C 183.835 527.749 186.123 525.165 189.42 520.813 C 200.314 506.431 202.452 488.572 192.089 471.423 C 188.952 466.21 188.102 463.868 188.102 457.847 L 188.102 450.551 C 188.102 443.868 191.324 438.03 200.621 438.03 C 204.355 438.03 214.589 438.04 218.462 438.04 Z" clip-path="url(#seg-k-channel-up)" fill="#fff" stroke="none" />
+      <g class="layer-icons"><g transform="translate(209.2 456.2) scale(6.35)"><path class="mark mark-fill" d="M -1 -0.248 H -0.248 V -0.903 H 0.248 V -0.248 H 1 V 0.248 H 0.248 V 0.903 H -0.248 V 0.248 H -1 Z" fill="#222" stroke="none" /></g></g>
+    </g>
+    <g class="key-group" id="k-channel-down" data-name="ChannelDown" data-kind="keypad" data-src="printed">
+      <path class="key key-segment" d="M 218.462 438.04 C 225.548 438.04 228.451 441.485 227.833 448.253 C 227.631 450.508 221.101 538.994 220.888 541.015 C 220.248 547.303 217.814 549.952 211.504 549.952 C 208.516 549.952 198.111 549.952 196.357 549.952 C 187.887 549.952 183.835 545.187 183.835 537.006 C 183.835 527.749 186.123 525.165 189.42 520.813 C 200.314 506.431 202.452 488.572 192.089 471.423 C 188.952 466.21 188.102 463.868 188.102 457.847 L 188.102 450.551 C 188.102 443.868 191.324 438.03 200.621 438.03 C 204.355 438.03 214.589 438.04 218.462 438.04 Z" clip-path="url(#seg-k-channel-down)" fill="#fff" stroke="none" />
+      <g class="layer-icons"><g transform="translate(203.9 531.6) scale(5.75)"><path class="mark mark-fill" d="M -1 -0.132 H 1 V 0.132 H -1 Z" fill="#222" stroke="none" /></g></g>
+    </g>
+    <g class="key-group" id="k-volume-mute" data-name="VolumeMute" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 43.668 572.673 C 43.668 566.589 48.658 561.6 54.744 561.6 L 66.659 561.6 C 72.753 561.6 77.732 566.589 77.732 572.673 L 77.732 584.481 C 77.732 590.579 72.753 595.557 66.659 595.557 L 54.744 595.557 C 48.658 595.557 43.668 590.579 43.668 584.481 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <g class="layer-icons"><g transform="translate(61.5 578.8) scale(7.063)"><path class="mark mark-fill" d="M -0.85 -0.3 H -0.45 L 0.1 -0.8 V 0.8 L -0.45 0.3 H -0.85 Z" fill="#222" stroke="none" /><path class="mark mark-stroke" d="M -0.7 0.8 L 0.75 -0.8" fill="none" stroke="#222" stroke-width="0.16" stroke-linecap="round" stroke-linejoin="round" /></g></g>
+    </g>
+    <g class="key-group" id="k-dvr" data-name="Dvr" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 126.465 593.866 C 125.273 596.407 123.731 598.534 119.401 599.481 C 113.764 600.726 100.529 600.77 95.294 599.481 C 90.063 598.193 88.892 595.397 88.222 593.866 C 87.062 591.184 87.084 583.515 88.222 581.216 C 88.954 579.737 90.063 576.875 95.294 575.59 C 100.529 574.302 113.764 574.356 119.401 575.59 C 123.731 576.546 125.338 578.621 126.465 581.216 C 127.677 583.994 127.476 591.706 126.465 593.866 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="107.344" y="590.685" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">DVR</text>
+    </g>
+    <g class="key-group" id="k-live" data-name="Live" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 139.083 593.866 C 140.284 596.407 141.817 598.534 146.155 599.481 C 151.784 600.726 165.017 600.77 170.251 599.481 C 175.485 598.193 176.654 595.397 177.326 593.866 C 178.484 591.184 178.465 583.515 177.326 581.216 C 176.591 579.737 175.485 576.875 170.251 575.59 C 165.017 574.302 151.784 574.356 146.155 575.59 C 141.817 576.546 140.221 578.621 139.083 581.216 C 137.868 583.994 138.07 591.706 139.083 593.866 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="158.205" y="590.685" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Live</text>
+    </g>
+    <g class="key-group" id="k-prev-channel" data-name="PrevChannel" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 221.877 572.673 C 221.877 566.589 216.899 561.6 210.804 561.6 L 198.889 561.6 C 192.792 561.6 187.814 566.589 187.814 572.673 L 187.814 584.481 C 187.814 590.579 192.792 595.557 198.889 595.557 L 210.804 595.557 C 216.899 595.557 221.877 590.579 221.877 584.481 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <g class="layer-icons"><g transform="translate(204.7 577.5) scale(7.882)"><path class="mark mark-stroke" d="M -0.85 0.6 H 0.3 A 0.55 0.55 0 0 0 0.3 -0.5 H -0.2" fill="none" stroke="#222" stroke-width="0.16" stroke-linecap="round" stroke-linejoin="round" /><path class="mark mark-fill" d="M -0.15 -0.95 L -0.15 -0.05 L -0.8 -0.5 Z" fill="#222" stroke="none" /></g></g>
+    </g>
+    <g class="key-group" id="k-rewind" data-name="Rewind" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 97.636 645.862 C 96.147 649.098 94.221 651.799 88.786 653.011 C 81.732 654.585 65.158 654.65 58.606 653.011 C 52.054 651.385 50.583 647.809 49.766 645.862 C 48.309 642.447 48.339 632.684 49.766 629.757 C 50.67 627.886 52.054 624.236 58.606 622.608 C 65.158 620.971 81.732 621.034 88.786 622.608 C 94.221 623.823 96.22 626.47 97.636 629.757 C 99.156 633.289 98.903 643.109 97.636 645.862 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <g class="layer-icons"><g transform="translate(72.3 637.8) scale(7.405)"><path class="mark mark-fill" d="M 0.05 -0.85 L 0.05 0.85 L -0.9 0 Z" fill="#222" stroke="none" /><path class="mark mark-fill" d="M 0.95 -0.85 L 0.95 0.85 L 0.05 0 Z" fill="#222" stroke="none" /></g></g>
+    </g>
+    <g class="key-group" id="k-fast-forward" data-name="FastForward" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 167.912 645.862 C 169.399 649.098 171.324 651.799 176.762 653.011 C 183.813 654.585 200.387 654.65 206.942 653.011 C 213.495 651.385 214.962 647.809 215.793 645.862 C 217.25 642.447 217.217 632.684 215.793 629.757 C 214.867 627.886 213.495 624.236 206.942 622.608 C 200.387 620.971 183.813 621.034 176.762 622.608 C 171.324 623.823 169.325 626.47 167.912 629.757 C 166.389 633.289 166.656 643.109 167.912 645.862 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <g class="layer-icons"><g transform="translate(193.3 637.8) scale(7.405)"><path class="mark mark-fill" d="M -0.95 -0.85 L -0.95 0.85 L -0.05 0 Z" fill="#222" stroke="none" /><path class="mark mark-fill" d="M -0.05 -0.85 L -0.05 0.85 L 0.9 0 Z" fill="#222" stroke="none" /></g></g>
+    </g>
+    <g class="key-group" id="k-skip-back" data-name="SkipBack" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 91.242 684.318 C 89.924 687.148 88.222 689.512 83.413 690.574 C 77.157 691.946 62.5 692.001 56.691 690.574 C 50.893 689.149 49.583 686.02 48.862 684.318 C 47.574 681.32 47.595 672.788 48.862 670.236 C 49.671 668.597 50.893 665.394 56.691 663.97 C 62.5 662.543 77.157 662.608 83.413 663.97 C 88.222 665.032 89.987 667.352 91.242 670.236 C 92.593 673.319 92.359 681.905 91.242 684.318 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <g class="layer-icons"><g transform="translate(69.4 677.2) scale(6.85)"><path class="mark mark-fill" d="M -1 -0.85 H -0.78 V 0.85 H -1 Z" fill="#222" stroke="none" /><path class="mark mark-fill" d="M 0.15 -0.85 L 0.15 0.85 L -0.72 0 Z" fill="#222" stroke="none" /><path class="mark mark-fill" d="M 1 -0.85 L 1 0.85 L 0.15 0 Z" fill="#222" stroke="none" /></g></g>
+    </g>
+    <g class="key-group" id="k-skip-forward" data-name="SkipForward" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 174.303 684.318 C 175.624 687.148 177.326 689.512 182.144 690.574 C 188.388 691.946 203.059 692.001 208.868 690.574 C 214.666 689.149 215.962 686.02 216.686 684.318 C 217.983 681.32 217.961 672.788 216.686 670.236 C 215.888 668.597 214.666 665.394 208.868 663.97 C 203.059 662.543 188.388 662.608 182.144 663.97 C 177.326 665.032 175.559 667.352 174.303 670.236 C 172.953 673.319 173.187 681.905 174.303 684.318 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <g class="layer-icons"><g transform="translate(195.6 677.2) scale(6.85)"><path class="mark mark-fill" d="M -1 -0.85 L -1 0.85 L -0.15 0 Z" fill="#222" stroke="none" /><path class="mark mark-fill" d="M -0.15 -0.85 L -0.15 0.85 L 0.72 0 Z" fill="#222" stroke="none" /><path class="mark mark-fill" d="M 0.78 -0.85 H 1 V 0.85 H 0.78 Z" fill="#222" stroke="none" /></g></g>
+    </g>
+    <g class="key-group" id="k-record" data-name="Record" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 93.361 723.594 C 92.051 726.434 90.338 728.806 85.531 729.86 C 79.276 731.244 64.616 731.287 58.807 729.86 C 52.999 728.436 51.713 725.307 50.978 723.594 C 49.679 720.617 49.711 712.085 50.978 709.52 C 51.787 707.883 52.999 704.691 58.807 703.256 C 64.616 701.829 79.276 701.895 85.531 703.256 C 90.338 704.318 92.105 706.639 93.361 709.52 C 94.712 712.616 94.477 721.2 93.361 723.594 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <g class="layer-icons"><g transform="translate(72.4 717) scale(7.419)"><path class="mark mark-fill mark-accent" d="M -0.62 0 A 0.62 0.62 0 1 0 0.62 0 A 0.62 0.62 0 1 0 -0.62 0 Z" fill="#d23c3c" stroke="none" /></g></g>
+    </g>
+    <g class="key-group" id="k-stop" data-name="Stop" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 172.187 723.594 C 173.505 726.434 175.207 728.806 180.028 729.86 C 186.272 731.244 200.94 731.287 206.749 729.86 C 212.547 728.436 213.846 725.307 214.568 723.594 C 215.867 720.617 215.845 712.085 214.568 709.52 C 213.759 707.883 212.547 704.691 206.749 703.256 C 200.94 701.829 186.272 701.895 180.028 703.256 C 175.207 704.318 173.443 706.639 172.187 709.52 C 170.837 712.616 171.071 721.2 172.187 723.594 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <g class="layer-icons"><g transform="translate(193.8 716.5) scale(5.333)"><path class="mark mark-fill" d="M -0.75 -0.75 H 0.75 V 0.75 H -0.75 Z" fill="#222" stroke="none" /></g></g>
+    </g>
+    <g class="key-group" id="k-play" data-name="Play" data-kind="keypad" data-src="printed">
+      <path class="key key-segment" d="M 132.773 732.488 C 116.561 732.69 109.731 730.223 108.581 712.243 C 107.89 701.511 108.23 657.649 108.775 648.267 C 109.529 635.427 111.381 627.97 132.773 628.15 C 154.178 627.97 156.016 635.427 156.773 648.267 C 157.315 657.649 157.656 701.511 156.964 712.243 C 155.815 730.223 148.985 732.69 132.773 732.488 Z" clip-path="url(#seg-k-play)" fill="#fff" stroke="none" />
+      <g class="layer-icons"><g transform="translate(132.9 657.3) scale(8.059)"><path class="mark mark-fill" d="M -0.7 -0.85 L -0.7 0.85 L 0.8 0 Z" fill="#222" stroke="none" /></g></g>
+    </g>
+    <g class="key-group" id="k-pause" data-name="Pause" data-kind="keypad" data-src="printed">
+      <path class="key key-segment" d="M 132.773 732.488 C 116.561 732.69 109.731 730.223 108.581 712.243 C 107.89 701.511 108.23 657.649 108.775 648.267 C 109.529 635.427 111.381 627.97 132.773 628.15 C 154.178 627.97 156.016 635.427 156.773 648.267 C 157.315 657.649 157.656 701.511 156.964 712.243 C 155.815 730.223 148.985 732.69 132.773 732.488 Z" clip-path="url(#seg-k-pause)" fill="#fff" stroke="none" />
+      <g class="layer-icons"><g transform="translate(132.8 701.9) scale(7.118)"><path class="mark mark-fill" d="M -0.65 -0.85 H -0.25 V 0.85 H -0.65 Z" fill="#222" stroke="none" /><path class="mark mark-fill" d="M 0.25 -0.85 H 0.65 V 0.85 H 0.25 Z" fill="#222" stroke="none" /></g></g>
+    </g>
+    <g class="key-group" id="k-number1" data-name="Number1" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 94.137 774.082 C 92.903 776.753 91.307 778.986 86.806 779.975 C 80.978 781.285 67.263 781.328 61.838 779.975 C 56.424 778.635 55.213 775.688 54.532 774.082 C 53.317 771.263 53.339 763.21 54.532 760.795 C 55.286 759.253 56.424 756.244 61.838 754.89 C 67.263 753.54 80.978 753.594 86.806 754.89 C 91.307 755.893 92.966 758.082 94.137 760.795 C 95.392 763.722 95.177 771.816 94.137 774.082 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="74.334" y="772.683" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">1</text>
+    </g>
+    <g class="key-group" id="k-number2" data-name="Number2" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 112.955 774.082 C 114.189 776.753 115.785 778.986 120.284 779.975 C 126.114 781.285 139.826 781.328 145.251 779.975 C 150.665 778.635 151.879 775.688 152.571 774.082 C 153.761 771.263 153.75 763.21 152.571 760.795 C 151.803 759.253 150.665 756.244 145.251 754.89 C 139.826 753.54 126.114 753.594 120.284 754.89 C 115.785 755.893 114.126 758.082 112.955 760.795 C 111.7 763.722 111.912 771.816 112.955 774.082 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="132.763" y="772.683" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">2</text>
+      <text class="lbl layer-text" x="132.763" y="788.175" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">abc</text>
+    </g>
+    <g class="key-group" id="k-number3" data-name="Number3" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 171.422 774.082 C 172.656 776.753 174.241 778.986 178.74 779.975 C 184.581 781.285 198.282 781.328 203.707 779.975 C 209.132 778.635 210.336 775.688 211.027 774.082 C 212.228 771.263 212.206 763.21 211.027 760.795 C 210.27 759.253 209.132 756.244 203.707 754.89 C 198.282 753.54 184.581 753.594 178.74 754.89 C 174.241 755.893 172.59 758.082 171.422 760.795 C 170.167 763.722 170.368 771.816 171.422 774.082 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="191.224" y="772.683" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">3</text>
+      <text class="lbl layer-text" x="191.224" y="788.175" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">def</text>
+    </g>
+    <g class="key-group" id="k-number4" data-name="Number4" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 94.137 814.528 C 92.903 817.208 91.307 819.433 86.806 820.433 C 80.978 821.729 67.263 821.783 61.838 820.433 C 56.424 819.082 55.213 816.135 54.532 814.528 C 53.317 811.71 53.339 803.657 54.532 801.241 C 55.286 799.7 56.424 796.688 61.838 795.348 C 67.263 793.997 80.978 794.049 86.806 795.348 C 91.307 796.347 92.966 798.529 94.137 801.241 C 95.392 804.166 95.177 812.263 94.137 814.528 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="74.334" y="813.141" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">4</text>
+      <text class="lbl layer-text" x="74.334" y="828.633" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">ghi</text>
+    </g>
+    <g class="key-group" id="k-number5" data-name="Number5" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 112.955 814.528 C 114.189 817.208 115.785 819.433 120.284 820.433 C 126.114 821.729 139.826 821.783 145.251 820.433 C 150.665 819.082 151.879 816.135 152.571 814.528 C 153.761 811.71 153.75 803.657 152.571 801.241 C 151.803 799.7 150.665 796.688 145.251 795.348 C 139.826 793.997 126.114 794.049 120.284 795.348 C 115.785 796.347 114.126 798.529 112.955 801.241 C 111.7 804.166 111.912 812.263 112.955 814.528 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="132.763" y="813.141" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">5</text>
+      <text class="lbl layer-text" x="132.763" y="828.633" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">jkl</text>
+    </g>
+    <g class="key-group" id="k-number6" data-name="Number6" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 171.422 814.528 C 172.656 817.208 174.241 819.433 178.74 820.433 C 184.581 821.729 198.282 821.783 203.707 820.433 C 209.132 819.082 210.336 816.135 211.027 814.528 C 212.228 811.71 212.206 803.657 211.027 801.241 C 210.27 799.7 209.132 796.688 203.707 795.348 C 198.282 793.997 184.581 794.049 178.74 795.348 C 174.241 796.347 172.59 798.529 171.422 801.241 C 170.167 804.166 170.368 812.263 171.422 814.528 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="191.224" y="813.141" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">6</text>
+      <text class="lbl layer-text" x="191.224" y="828.633" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">mno</text>
+    </g>
+    <g class="key-group" id="k-number7" data-name="Number7" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 98.53 854.877 C 97.296 857.549 95.7 859.782 91.201 860.781 C 85.371 862.08 71.659 862.132 66.234 860.781 C 60.817 859.43 59.605 856.495 58.914 854.877 C 57.713 852.069 57.734 844.006 58.914 841.601 C 59.668 840.049 60.817 837.039 66.234 835.686 C 71.659 834.346 85.371 834.39 91.201 835.686 C 95.7 836.699 97.359 838.878 98.53 841.601 C 99.785 844.518 99.573 852.611 98.53 854.877 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="78.722" y="853.484" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">7</text>
+      <text class="lbl layer-text" x="78.722" y="868.981" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">pqrs</text>
+    </g>
+    <g class="key-group" id="k-number8" data-name="Number8" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 112.955 854.877 C 114.189 857.549 115.785 859.782 120.284 860.781 C 126.114 862.08 139.826 862.132 145.251 860.781 C 150.665 859.43 151.879 856.495 152.571 854.877 C 153.761 852.069 153.75 844.006 152.571 841.601 C 151.803 840.049 150.665 837.039 145.251 835.686 C 139.826 834.346 126.114 834.39 120.284 835.686 C 115.785 836.699 114.126 838.878 112.955 841.601 C 111.7 844.518 111.912 852.611 112.955 854.877 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="132.763" y="853.484" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">8</text>
+      <text class="lbl layer-text" x="132.763" y="868.981" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">tuv</text>
+    </g>
+    <g class="key-group" id="k-number9" data-name="Number9" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 167.016 854.877 C 168.26 857.549 169.845 859.782 174.347 860.781 C 180.186 862.08 193.889 862.132 199.314 860.781 C 204.739 859.43 205.94 856.495 206.632 854.877 C 207.836 852.069 207.814 844.006 206.632 841.601 C 205.877 840.049 204.739 837.039 199.314 835.686 C 193.889 834.346 180.186 834.39 174.347 835.686 C 169.845 836.699 168.198 838.878 167.016 841.601 C 165.771 844.518 165.975 852.611 167.016 854.877 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="186.824" y="853.484" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">9</text>
+      <text class="lbl layer-text" x="186.824" y="868.981" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">wxyz</text>
+    </g>
+    <g class="key-group" id="k-clear" data-name="Clear" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 67.925 882.696 C 67.925 876.612 72.914 871.612 79.009 871.612 L 87.465 871.612 C 93.551 871.612 98.541 876.612 98.541 882.696 L 98.541 891.026 C 98.541 897.11 93.551 902.099 87.465 902.099 L 79.009 902.099 C 72.914 902.099 67.925 897.11 67.925 891.026 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <g class="layer-icons"><g transform="translate(83.1 886.8) scale(6.1)"><path class="mark mark-fill" d="M -1 0 A 0.255 0.255 0 1 0 -0.49 0 A 0.255 0.255 0 1 0 -1 0 Z" fill="#222" stroke="none" /><path class="mark mark-fill" d="M 0.08 -0.114 H 0.426 V -0.46 H 0.654 V -0.114 H 1 V 0.114 H 0.654 V 0.46 H 0.426 V 0.114 H 0.08 Z" fill="#222" stroke="none" /></g></g>
+      <text class="lbl layer-text" x="83.233" y="910.299" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Clear</text>
+    </g>
+    <g class="key-group" id="k-number0" data-name="Number0" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 112.955 895.207 C 114.189 897.876 115.785 900.111 120.284 901.111 C 126.114 902.407 139.826 902.451 145.251 901.111 C 150.665 899.76 151.879 896.803 152.571 895.207 C 153.761 892.388 153.75 884.324 152.571 881.92 C 151.803 880.367 150.665 877.355 145.251 876.015 C 139.826 874.665 126.114 874.716 120.284 876.015 C 115.785 877.015 114.126 879.207 112.955 881.92 C 111.7 884.844 111.912 892.941 112.955 895.207 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="132.763" y="893.813" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">0</text>
+    </g>
+    <g class="key-group" id="k-enter" data-name="Enter" data-kind="keypad" data-src="printed">
+      <path class="key" d="M 197.623 882.696 C 197.623 876.612 192.645 871.612 186.536 871.612 L 178.091 871.612 C 171.997 871.612 167.016 876.612 167.016 882.696 L 167.016 891.026 C 167.016 897.11 171.997 902.099 178.091 902.099 L 186.536 902.099 C 192.645 902.099 197.623 897.11 197.623 891.026 Z" fill="#fff" stroke="#666" stroke-width="1.4" />
+      <text class="lbl layer-text" x="182.32" y="890.006" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">E</text>
+      <text class="lbl layer-text" x="182.32" y="910.299" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Enter</text>
+    </g>
+    <path class="rocker" d="M 132.773 377.648 C 116.561 377.809 109.731 375.796 108.581 361.128 C 107.89 352.362 108.23 316.564 108.775 308.906 C 109.529 298.427 111.381 292.343 132.773 292.493 C 154.178 292.343 156.016 298.427 156.773 308.906 C 157.315 316.564 157.656 352.362 156.964 361.128 C 155.815 375.796 148.985 377.809 132.773 377.648 Z" fill="none" stroke="#666" stroke-width="1.4" />
+    <path class="rocker" d="M 47.083 438.04 C 40 438.04 37.105 441.485 37.713 448.253 C 37.914 450.508 44.447 538.994 44.66 541.015 C 45.297 547.303 47.734 549.952 54.042 549.952 C 57.043 549.952 67.446 549.952 69.2 549.952 C 77.669 549.952 81.721 545.187 81.721 537.006 C 81.721 527.749 79.423 525.165 76.136 520.813 C 65.232 506.431 63.105 488.572 73.456 471.423 C 76.604 466.21 77.457 463.868 77.457 457.847 L 77.457 450.551 C 77.457 443.868 74.232 438.03 64.935 438.03 C 61.201 438.03 50.956 438.04 47.083 438.04 Z" fill="none" stroke="#666" stroke-width="1.4" />
+    <text class="lbl layer-text" x="54.7" y="497.4" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Vol</text>
+    <path class="rocker" d="M 218.462 438.04 C 225.548 438.04 228.451 441.485 227.833 448.253 C 227.631 450.508 221.101 538.994 220.888 541.015 C 220.248 547.303 217.814 549.952 211.504 549.952 C 208.516 549.952 198.111 549.952 196.357 549.952 C 187.887 549.952 183.835 545.187 183.835 537.006 C 183.835 527.749 186.123 525.165 189.42 520.813 C 200.314 506.431 202.452 488.572 192.089 471.423 C 188.952 466.21 188.102 463.868 188.102 457.847 L 188.102 450.551 C 188.102 443.868 191.324 438.03 200.621 438.03 C 204.355 438.03 214.589 438.04 218.462 438.04 Z" fill="none" stroke="#666" stroke-width="1.4" />
+    <text class="lbl layer-text" x="211.9" y="497.4" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Ch</text>
+    <path class="rocker" d="M 132.773 732.488 C 116.561 732.69 109.731 730.223 108.581 712.243 C 107.89 701.511 108.23 657.649 108.775 648.267 C 109.529 635.427 111.381 627.97 132.773 628.15 C 154.178 627.97 156.016 635.427 156.773 648.267 C 157.315 657.649 157.656 701.511 156.964 712.243 C 155.815 730.223 148.985 732.69 132.773 732.488 Z" fill="none" stroke="#666" stroke-width="1.4" />
+  </g>
+  <g class="layer-text">
+    <text class="lbl nameplate" x="131.8" y="55.4" font-size="15" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Harmony</text>
+    <text class="lbl caption" x="133.1" y="96.5" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">My Devices</text>
+    <text class="lbl caption" x="133.1" y="239.3" font-size="9" text-anchor="middle" fill="#222" font-family="system-ui, sans-serif">Favorites</text>
+  </g>
+</svg>

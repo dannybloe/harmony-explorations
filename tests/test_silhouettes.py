@@ -440,12 +440,57 @@ class TestTheHarmonyOneSilhouette(_SilhouetteConventions, unittest.TestCase):
         self.assertEqual([k for k in buttons if k in PALETTE], [])
 
 
+class TestTheHarmony350Silhouette(_SilhouetteConventions, unittest.TestCase):
+    """Fifty five, counted off Logitech's own drawing, with nothing from the firmware to check it."""
+
+    NAME = 'h350.svg'
+    # **The weakest count in this directory, and stated as such.** Nobody has read arch 16's keypad
+    # scanner, so there is no equivalent of section 89's fifty or of the 600's column census. The number
+    # is the button page of the Harmony 350 setup guide, counted shape by shape out of its vector
+    # drawing; the guide's box contents drawing and the cover photograph agree where they reach.
+    EXPECTED_BUTTONS = 55
+
+    def test_no_key_claims_a_code_or_a_candidate(self):
+        """
+        Nothing ties a key on this remote to a scan code: the architecture has never been opened over
+        USB by this library and `reference/button-maps.md` has no table for it. Unlike the 525, there
+        is not even a block to narrow to, since that came from reading the firmware's matrix
+        arithmetic. So the claim is total: no code and no candidate list on any key.
+        """
+        buttons = _buttons(_tree(self.NAME).getroot())
+        for ident, element in buttons.items():
+            with self.subTest(button=ident):
+                self.assertIsNone(element.get('data-scan'))
+                self.assertIsNone(element.get('data-scan-candidates'))
+
+    def test_there_is_no_screen(self):
+        """
+        The Harmony 300 and 350 have no display, so a drawing with a screen rectangle would be offering
+        the interface somewhere to put a page that does not exist.
+        """
+        root = _tree(self.NAME).getroot()
+        self.assertEqual([e for e in root.iter() if e.get('id') == 'screen'], [])
+
+    def test_the_teletext_keys_are_present_and_each_states_its_own_colour(self):
+        """
+        Four, under the navigation bay, as the guide's drawing and photograph both show, with the
+        colour on a bar inside the key as on a Harmony 600.
+        """
+        text = _text(self.NAME)
+        buttons = _buttons(_tree(self.NAME).getroot())
+        for ident, (_, colour) in PALETTE.items():
+            with self.subTest(button=ident):
+                self.assertIn(ident, buttons, f'{ident} is missing')
+                self.assertIn(f'--accent: {colour}', text)
+
+
 class TestTheSilhouetteDirectory(unittest.TestCase):
     """What is drawn and what is not, so the gap is a statement rather than an oversight."""
 
     # Every drawing in the directory, each with the class that checks it. A file here with no class
     # naming it is the oversight this pairing exists to refuse.
     DRAWN = {
+        'h350.svg': TestTheHarmony350Silhouette,
         'h525.svg': TestTheHarmony525Silhouette,
         'h600.svg': TestTheHarmony600Silhouette,
         'one.svg': TestTheHarmonyOneSilhouette,
