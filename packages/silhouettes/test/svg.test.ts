@@ -141,6 +141,9 @@ test('a detail level leaves out what it says it leaves out', () => {
      * had twice: regenerating a model from an extraction and silently dropping every symbol.
      */
     const PRINTING: Readonly<Record<string, { text: number; marks: number; keys: number }>> = {
+      // The 350's 44 plus Power, the second line of TV Input, A to D, Replay, Skip, Record and Stop; the
+      // symbols are the same parts, so the marks are the 350's 41.
+      h300: { text: 54, marks: 41, keys: 55 },
       h350: { text: 44, marks: 41, keys: 55 },
       h525: { text: 44, marks: 36, keys: 50 },
       h600: { text: 37, marks: 56, keys: 54 },

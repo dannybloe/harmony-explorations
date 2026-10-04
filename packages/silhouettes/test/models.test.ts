@@ -35,6 +35,16 @@ const EXPECTED: Readonly<Record<string, { buttons: number; scans: number;
    * drawings in the setup guide agree on it, the button page and the box contents page, and the cover
    * photograph agrees for the 35 keys above the transport block that it shows.
    */
+  /**
+   * The Harmony 350's moulding with the 300's printing, so its count is the 350's drawing's, which Danny
+   * confirms holding both remotes; `h300.ts` takes every shape from `H350`.
+   */
+  h300: {
+    buttons: 55,
+    scans: 0,
+    why: "the Harmony 350's drawing, the same moulding per Danny's statement holding both, and the 300 "
+      + "setup guide's cover photograph shows the same 55 keys",
+  },
   h350: {
     buttons: 55,
     scans: 0,
@@ -210,7 +220,7 @@ test('a key whose code is undecided carries candidates and no scan', () => {
      * four while every drawn model happened to have four.
      */
     const SETS: Readonly<Record<string, { sets: number; each: number }>> = {
-      h350: { sets: 0, each: 0 },
+      h300: { sets: 0, each: 0 }, h350: { sets: 0, each: 0 },
       h525: { sets: 1, each: 4 }, h600: { sets: 2, each: 2 }, one: { sets: 2, each: 2 },
     };
     const want = SETS[id]!;
@@ -430,7 +440,7 @@ test('a model that has no tilted key says so by measurement', () => {
    * to add: a slanted key comes across slanted. The Harmony 600 is rectilinear anyway, measured at under
    * a degree on the keys that looked tilted in its photograph.
    */
-  const LEVEL: Readonly<Record<string, boolean>> = { h350: true, h525: true, h600: true, one: true };
+  const LEVEL: Readonly<Record<string, boolean>> = { h300: true, h350: true, h525: true, h600: true, one: true };
   for (const [id, model] of drawn) {
     for (const key of model.keys) {
       assert.ok(Math.abs(key.angle) <= 45, `${id}: ${key.name} is at ${key.angle} degrees`);

@@ -484,12 +484,38 @@ class TestTheHarmony350Silhouette(_SilhouetteConventions, unittest.TestCase):
                 self.assertIn(f'--accent: {colour}', text)
 
 
+class TestTheHarmony300Silhouette(TestTheHarmony350Silhouette):
+    """
+    The Harmony 350's moulding with the Harmony 300's printing: every shape is taken from the 350's model,
+    on Danny's statement that the two are the same part with different labels, so every convention the
+    350's drawing is held to holds here, and what this class adds is the printing that differs.
+    """
+
+    NAME = 'h300.svg'
+    EXPECTED_BUTTONS = 55
+
+    def test_the_printing_is_the_300s(self):
+        """
+        Read off the cover photograph of the Harmony 300 setup guide: its own device names, `List` where
+        the 350 prints `DVR`, and the colour keys lettered A to D, which a drawing reprinted from the 350
+        would not carry.
+        """
+        text = _text(self.NAME)
+        for word in ('Cable/Sat', 'VCR/Aux', 'List', 'Replay', 'Harmony 300'):
+            with self.subTest(word=word):
+                self.assertIn(f'>{word}<', text)
+        for word in ('Cable/DVD', 'Game/MP3', 'DVR', 'Favorites'):
+            with self.subTest(absent=word):
+                self.assertNotIn(f'>{word}<', text)
+
+
 class TestTheSilhouetteDirectory(unittest.TestCase):
     """What is drawn and what is not, so the gap is a statement rather than an oversight."""
 
     # Every drawing in the directory, each with the class that checks it. A file here with no class
     # naming it is the oversight this pairing exists to refuse.
     DRAWN = {
+        'h300.svg': TestTheHarmony300Silhouette,
         'h350.svg': TestTheHarmony350Silhouette,
         'h525.svg': TestTheHarmony525Silhouette,
         'h600.svg': TestTheHarmony600Silhouette,
