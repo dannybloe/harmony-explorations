@@ -56,6 +56,8 @@ export * from './growth.ts';
 export * from './relocate.ts';
 // The container's frame laid out from content, todo-compile-650 10.1.
 export * from './frame.ts';
+// What Logitech parks in front of a table, and the bank, placed from the content, todo-compile-650 10.5.
+export * from './placer.ts';
 // The state variables, value maps and name tree built from a description, todo-compile-650 10.3.
 export * from './statetables.ts';
 export * from './compose.ts';

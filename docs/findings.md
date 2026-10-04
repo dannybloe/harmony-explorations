@@ -41793,6 +41793,14 @@ a container whose two disagree is one where somebody stamped only one.
   our readers look; that the tables follow the body and ascend is Logitech's habit and `parse`'s
   `sections_ascend` check; and no differently ordered container has been written.
 
+  > **Read further by section NNN.** On the Harmony 600 0.2, 650 0.2 and 0.4 and 700 2.8 images,
+  > base slot 17 is fetched only as the hit map's page array and never offset to the bank; past the
+  > header, the validator's only fixed offset is the marker's, and no literal instruction on any of the
+  > four loads the key table's `0x5F`. So nothing found on those images reads either position, and
+  > still no container with them elsewhere has been written. The parking itself is decided from the
+  > content by `placePieces` now, and the order of the bank and of the page lists that call no parked
+  > action list is the placer's choice, since the pictures and the pages do not fix Logitech's.
+
 ### Falsification
 
 An arch 14 Logitech compile that `takeApart` and `layOutContainer` do not reproduce; a Logitech compile
@@ -43544,3 +43552,139 @@ compile whose sequence differs from the composer's output in any of the five nam
 * `packages/codec/test/sequence.test.ts`: the absence on arch 14, the calibration, the controls, the 200,
   the composer on the Harmony 650 and the refusal at the boundary.
 * `docs/config-format.md`, under `0x7C` and base slot 10, and section 70 corrected in place.
+
+## NNN. What Logitech parks in front of a table is placed by a rule, and the picture bank and the page lists are in an order the pictures and the pages do not fix
+
+**Date:** 4 October 2026. **Status:** confirmed by construction over the thirteen arch 14 compiles of
+section 312, with controls; the firmware half read on four arch 14 images. Nothing laid out this way has
+been written to a remote.
+
+**Asked for by `todo-compile-650.md` 10.5.** Section 318's `layOutContainer` lays a container out once it
+is told where every piece goes, and it took two things as Logitech left them: what is parked in front of
+a table, and the order of the picture bank. Together those are the glyphs and font sets, 59914 to 112256
+bytes, the bank, 401437 to 598368, and four smaller runs. `placePieces` in `packages/codec/src/placer.ts`
+now decides them from the content: the key table, the body and the tables are given, everything parked and
+every picture arrives as one shuffled bag, and nothing about where a piece was is in the input.
+
+**Sources.** The thirteen compiles; sections 34, 45, 62, 66, 84, 146, 285, 291, 311, 315 and 318 of this document; the
+firmware, the Harmony 600 0.2, Harmony 650 0.2 and 0.4 and Harmony 700 2.8 images. Logitech's client
+was not consulted, on section 293's reasoned exemption that section 318 used too: the order is the
+compiler's, and the compiler ran on Logitech's server, section 202.
+
+**Scope, decision 16.** Arch 14 (Harmony 600, 650 and 700). Arch 12 (Harmony One) has a different slot
+count and this codec finds its bank by search, section 62; arch 8, 9 and 10 are not checked.
+
+### The rule: a parked structure follows everything it names, in its table's field order
+
+| in front of base slot | what | in what order | exact on |
+|---|---|---|---|
+| 5 | the infrared group arrays | the order base slot 5's table names them | 13 of 13 |
+| 7 | the glyphs and the font sets | per set in the table's order: the set's glyphs in its own field order, then the set | 13 of 13 |
+| 10 | the action lists the body does not hold | the order base slot 10's table numbers them | 13 of 13 |
+| 15 | the parameter groups | the order base slot 15's table names them | 13 of 13 |
+
+No glyph is named by two sets on any compile, so the glyph rule never has to choose. **The two other
+plausible glyph orders fail on all thirteen**: the set before its glyphs, and every glyph before every
+set, each keeping the sets in table order and the glyphs in field order. The body holds the slot 10 lists
+numbered 0 to n - 1 and the parked ones are the table's tail, on all thirteen, which is the body's own
+emission numbering stopping where the body stops.
+
+### The page lists: half their order is stated, by the action lists they call
+
+**On the thirteen compiles, every action list parked in front of base slot 10 is called by exactly one
+mode page list**, through instruction `0x7F` and the list's number, and the page lists in Logitech's
+order call them in ascending number, each once, from the first parked number to the last, 259 of 259 on
+`h650_config_region` and every parked list on all thirteen. So the order of the page lists that call one
+is fixed by the action list numbers they carry, and the reading, not measured, is that the compiler
+assigned those numbers in the order it emitted the page lists. **It is a property of Logitech's compiles
+and not of a configuration that runs**: our two that ran on the Harmony 650, sections 285 and 291, call
+271 of their 277 and 274 of their 649 parked lists from the page lists, and not in ascending order. That is 108 to 248 page lists per compile, and `placePieces` puts them in the
+order of the number they call, which is Logitech's relative order on 13 of 13. The rest, 126 to 220 per
+compile, call none, and their place is the placer's choice: they keep their pages' order in the body,
+and the stated ones are re-sorted among the places stated ones occupy. **The control**: the stated page
+lists in their own pages' body order are out of Logitech's order on all thirteen.
+
+### The bank and the page lists are not fixed by the pictures or the pages
+
+`h700_config` and `h700_config_2` hold the same 24 pictures byte for byte and a body of 16251 pieces, 16237
+of them identical at the same place; the 14 that differ are seven clock records, four screen programs, a
+mode entry, a key map and one action list. The body names the 24 pictures first in the same order in
+both. Their banks are two permutations with **1 of the 24 pictures** at the same place, and their page lists,
+compared by the page each belongs to, **1 of 426**. So the order is not fixed by the pictures, the pages
+or the order the body names them. The pair differs in 14 body pieces and in its build time, so a
+dependence on those is not excluded. Over all thirteen, **17 pairs of compiles hold the same pictures
+byte for byte and none puts more than 3 of them at the same place**. It is what iterating a hash table keyed by object
+identity looks like, which section 315's reading of the compiler as Java makes natural, and that is a
+guess. The placer puts the pictures in the order a screen program first names them, which is
+deterministic, so the same content gives the same bytes, and agrees with Logitech at 0 to 2 places of 17
+to 24 per compile.
+
+### Calibration, and every difference named
+
+With Logitech's two permutations substituted for the placer's, **the thirteen come back byte for byte**.
+As placed, every byte that differs from the compile is in one of the five places below, and on 13 of 13
+nowhere else:
+
+| what | bytes, per compile |
+|---|---|
+| the picture bank | 324540 to 565658 |
+| the run of page lists | 1725 to 3840 |
+| the address fields naming a picture | 886 to 2911 |
+| the address fields naming a page list | 388 to 865 |
+| the trailer checksum | 2 |
+
+Read back, every one of the thirteen as placed has the inventory of the compile and round trips through
+the emitter. Placing from two different shuffles of the bag, and from the bag reversed, gives the same
+bytes. **The controls bite**: with the parameter groups reversed the substitution no longer gives the
+compile back, on 13 of 13, and dropping the address fields from the named places leaves 2674 bytes
+unexplained on `h650_config_region`.
+
+### What the firmware constrains: nothing found that reads a position
+
+Section 318 left open whether the remote needs the key table directly after the end marker and the bank
+directly after base slot 17. Read here on four images, the Harmony 600 0.2, Harmony 650 0.2 and 0.4 and
+Harmony 700 2.8:
+
+* **Base slot 17 is fetched at two call sites of the section seeker on every image**, `0x1A70C` and
+  `0x1A788` on the 700 2.8 and `0x18E48` and `0x18EC4` on the 600 and 650 0.2, and both index it as the
+  hit map's page array: the seeker, then an index into the offset `1 + 3 * index`, then the entry
+  followed. Neither adds the two bytes that lead to the bank; the indexer both sites call multiplies by
+  three and adds the one. On the 650 0.2, and identically on the 600 0.2, the first site is reached only
+  while a flag is set that event code `0xE0` sets and `0xE1` clears, and the second is reached from event
+  code `0xE3` and from two other paths whose conditions are not read here. Every arch 14 compile holds a
+  hit map of zero pages, sections 45 and 84.
+* **Past the header, the validator's only fixed offset is the marker.** It reads the cookie at 0 and
+  `end_addr` at 4, and then `MOVLW 0x5B`, once per image, followed by a comparison against `L`, `W`, `J`
+  and `L`; the end marker and the checksum are found through `end_addr`. **No literal instruction on any
+  of the four images loads `0x5F`**, the key table's offset, over all eight that take a literal. That is
+  a negative over literals, and an offset computed from the marker would not show in it; section 311
+  reads mode 0 being reached through base slot 6.
+* Pictures are drawn by the address a screen program states, section 146.
+
+And two configurations of ours parked more in front of base slots 5 and 9 and ran on the Harmony 650,
+sections 285 and 291. So placement is free as far as anything found on these four images reads it. **What is not
+established**: no container with the key table or the bank elsewhere has been written, and this codec's
+own readers find both by position, `relocationFloor` and `pictureBankStart`, so `layOutContainer` keeps
+both where Logitech puts them.
+
+### Falsification
+
+An arch 14 compile whose parked pieces in front of base slots 5, 7, 10 or 15 are not in the order the
+table states; a parked action list called by no page list, by two, or out of order; two compiles whose
+pictures and body agree and whose banks agree too, which would point at a rule after all; a pair whose
+banks differ while the body and the build time agree too, which would rule out a dependence on those; or an arch 14
+image that reaches the bank or the key table through a fixed position.
+
+### Where it lands
+
+* `packages/codec/src/placer.ts`: `placePieces`, `loosen`, `LOOSE_KINDS`.
+* `packages/codec/test/placer.test.ts`: the four exact regions from a shuffled bag, the glyph controls,
+  the slot 10 tail and the ascending calls with the page order control, the reversed table and dropped
+  field controls, the substitution and the named differences with inventory and round trip, the two
+  Harmony 700 compiles, the 17 pairs with at most 3 pictures in place, the shuffle invariance on all
+  thirteen and the refusals.
+* `tests/test_findings.py`, `TestBaseSlot17IsReadAsAHitMapAndNoLiteralNamesTheKeyTable`: base slot
+  17's two sites on four images indexed one byte in by threes, `0x5B` loaded once for the marker check,
+  and no literal of `0x5F`.
+* `docs/config-format.md`, "What decides each byte of the frame on arch 14", and section 318's open
+  question answered in place.

@@ -397,21 +397,42 @@ Where everything else goes, in order, with no padding anywhere:
 0x5F             the key table, mode 0's record, where the parsers read it, section 52
                  the body: every structure reached only through an address, in Logitech's order
 base slot 0..17  each table, preceded by what Logitech parks in front of it:
-                   5   base slot 5's group arrays
-                   7   base slot 7's glyphs and font sets
-                   9   the mode pages' own tagged lists
-                   10  some of base slot 10's action lists
-                   15  base slot 15's parameter groups
-                 the picture bank, immediately after base slot 17's two bytes, section 62
+                   5   base slot 5's group arrays, in the order the table names them
+                   7   per font set in the table's order: its glyphs in field order, then the set
+                   9   the mode pages' own tagged lists, in an order only partly stated (below)
+                   10  the action lists the body does not hold, which are the table's tail, in
+                       table order
+                   15  base slot 15's parameter groups, in the order the table names them
+                 the picture bank, immediately after base slot 17's two bytes, section 62, in an
+                 order the pictures and the pages do not fix
 end - 6          the trailer
 ```
 
-The order of the body and which structures are parked in front of which table are carried, not
-derived: nothing on the remote reads an order. The parking above is Logitech's habit, the same on all
-thirteen compiles; two configurations of ours park more in front of base slots 5 and 9 and ran on the
-Harmony 650, sections 285 and 291. Whether the firmware needs the key table or the picture bank where
-they are is open: section 311 reads it reaching mode 0 through base slot 6, and every picture is also
-reached by a screen program's address. Every compile's build timestamp is laid out from its time.
+**What is parked and in what order is decided from the content**, [findings.md](findings.md) section
+NNN: a parked structure follows everything it names, and the parked pieces of a table come in the
+table's own field order. `placePieces` in `packages/codec/src/placer.ts` places them from an
+unordered bag and gives Logitech's order exactly for base slots 5, 7, 10 and 15 on all thirteen
+compiles. **Two orders are not fixed by the pictures or the pages**: the picture bank and the mode
+pages' lists come out in a different permutation in `h700_config` and `h700_config_2`, which hold the
+same pictures named in the same order and differ in 14 body pieces and their build time, and no two
+compiles holding the same pictures put more than 3 at the same place. One constraint on the second is
+stated on the thirteen compiles: each action list parked in front of base slot 10 is called once, by
+instruction `0x7F`, from exactly one page list, and the page lists call them in ascending number. It
+does not hold on our two configurations that ran, so it is Logitech's habit and not the remote's
+demand. `placePieces` keeps that order and puts the rest of the page lists in their pages'
+body order and the pictures in the order a screen program first names them; with Logitech's two
+permutations substituted, all thirteen come back byte for byte.
+
+The order of the body is carried, not derived. **Nothing on the remote reads any of these orders or
+positions that has been found**: on the Harmony 600 and 650 0.2, 650 0.4 and 700 2.8 images, base slot
+17 is fetched at two call sites, both indexing it as the hit map's `count, u24[]` and neither adding
+the bank's two byte bias; past the header, the cookie at 0 and `end_addr` at 4, the validator's only
+fixed offset is the marker at `0x5B`, and no literal instruction on the four loads `0x5F`, the key
+table's offset; pictures are drawn by stated address, section 146,
+and mode 0 is reached through base slot 6, section 311. Two configurations of ours parked more in front
+of base slots 5 and 9 and ran on the Harmony 650, sections 285 and 291. A container with the key table
+or the bank elsewhere has not been written, and our own readers find both by position. Every compile's
+build timestamp is laid out from its time.
 **Corrected by section 322**: this said one compile states day 0 of October with 30 September's
 weekday<!--superseded--> and was carried as field bytes. The day counts from 0, so that stamp is
 Thursday 1 October and the encoder produces it; the six said to be stamped that day were made on the

@@ -2363,5 +2363,106 @@ class TestTheFlashAddressIsClassifiedBeforeItIsUsed(unittest.TestCase):
         self.assertEqual(0x1000000 >> 8 >> 8, 0x100, 'sixteen bits of offset under a forced top byte')
 
 
+class TestBaseSlot17IsReadAsAHitMapAndNoLiteralNamesTheKeyTable(unittest.TestCase):
+    """
+    Section NNN: on the four arch 14 application images read, the Harmony 600 0.2, Harmony 650 0.2
+    and 0.4 and Harmony 700 2.8, nothing found reaches the picture bank or the key table through where
+    they sit. A negative over what was read, not over the firmware.
+
+    Base slot 17 names the picture bank two bytes in front of it on every arch 14 compile, section 62,
+    and that is how this codec finds the bank. The firmware fetches base slot 17 at exactly two call
+    sites of its section seeker on every image here, and both index it the way the touch hit map is
+    indexed, sections 45 and 84: an offset of one, the count byte, loaded as a literal, then a call to
+    an indexer that multiplies the index by three and adds that offset. Neither adds the two bytes that
+    would reach the bank. Pictures are drawn by the address a screen program states, section 146.
+
+    Past the header, the cookie at 0 and `end_addr` at 4, the container validator's only fixed offset
+    is `0x5B`, where it compares the four bytes of `LWJL`. The key table sits at `0x5F` on every
+    compile and no literal instruction on any of the four loads that value, so it is reached through
+    base slot 6 like any other mode, section 311. An offset computed from the marker would not show in
+    a literal, which is why the test also pins that the one `0x5B` load is the marker check.
+    """
+
+    BASE = 0x9000
+    # image -> the section seeker, sections 35 and 81.
+    IMAGES = {
+        'h700_code': 0x10B92,
+        'h600_code_complete': 0x18020,
+        'h650_bench_code': 0x18020,
+        'h650_code': 0x10B72,
+    }
+    TOUCH_MAP_SLOT = 17
+    MARKER_OFFSET = 0x5B
+    KEY_TABLE_OFFSET = 0x5F
+    # Every PIC18 instruction that takes an eight bit literal, so the negative covers more than MOVLW.
+    LITERAL_MNEMONICS = ('MOVLW', 'ADDLW', 'SUBLW', 'XORLW', 'IORLW', 'ANDLW', 'RETLW', 'MULLW')
+
+    def slot_sites(self, code, seeker):
+        """Every seeker call site with the literal slot loaded in front of it."""
+        sites = {}
+        for site in trace.xrefs(code, self.BASE, [seeker])[seeker]:
+            offset = site.addr - self.BASE
+            for back in range(2, 30, 2):
+                instr = isa.decode(code, offset - back, self.BASE)
+                if instr.mnemonic == 'MOVLW':
+                    sites.setdefault(instr.fields['k'], []).append(site.addr)
+                    break
+        return sites
+
+    def following(self, code, addr, count):
+        out = []
+        offset = addr - self.BASE
+        for _ in range(count):
+            instr = isa.decode(code, offset, self.BASE)
+            out.append(instr)
+            offset += 2 * instr.words
+        return out
+
+    def test_base_slot_17_is_fetched_twice_and_indexed_one_byte_in_by_threes(self):
+        lab.require(*self.IMAGES)
+        for name, seeker in self.IMAGES.items():
+            code = lab.load(name)
+            with self.subTest(image=name):
+                sites = self.slot_sites(code, seeker)
+                self.assertEqual(len(sites.get(self.TOUCH_MAP_SLOT, [])), 2)
+                indexers = set()
+                for site in sites[self.TOUCH_MAP_SLOT]:
+                    after = self.following(code, site, 6)
+                    # The seeker call, a MOVFF of the index, then `MOVLW 0x01` into the offset
+                    # register and a call to the indexer. A bias of two, which is what reaching the
+                    # bank would take, would show as a different literal here.
+                    literals = [i.fields['k'] for i in after if i.mnemonic == 'MOVLW']
+                    self.assertEqual(literals, [1], hex(site))
+                    calls = [i.fields['target'] for i in after if i.mnemonic == 'CALL']
+                    self.assertEqual(calls[0], seeker, hex(site))
+                    self.assertEqual(len(calls), 2, hex(site))
+                    indexers.add(calls[1])
+                # Both sites call one indexer, and it multiplies the index by three: `MOVLW 0x03`
+                # straight before its first `MULWF`, entries of three bytes after the count.
+                self.assertEqual(len(indexers), 1)
+                body = self.following(code, indexers.pop(), 12)
+                first_multiply = next(k for k, i in enumerate(body) if i.mnemonic == 'MULWF')
+                self.assertEqual(body[first_multiply - 1].mnemonic, 'MOVLW')
+                self.assertEqual(body[first_multiply - 1].fields['k'], 3)
+
+    def test_0x5b_is_loaded_once_for_the_marker_check_and_no_literal_is_0x5f(self):
+        lab.require(*self.IMAGES)
+        for name in self.IMAGES:
+            code = lab.load(name)
+            markers = []
+            key_table = []
+            for addr, instr in isa.iter_instructions(code, self.BASE, 0, len(code)):
+                if instr.mnemonic == 'MOVLW' and instr.fields['k'] == self.MARKER_OFFSET:
+                    markers.append(addr)
+                if instr.mnemonic in self.LITERAL_MNEMONICS and instr.fields['k'] == self.KEY_TABLE_OFFSET:
+                    key_table.append(addr)
+            with self.subTest(image=name):
+                self.assertEqual(len(markers), 1)
+                self.assertEqual(key_table, [])
+                # And that one load is followed by the four letters of the marker, compared.
+                after = self.following(code, markers[0], 40)
+                letters = [i.fields['k'] for i in after if i.mnemonic == 'MOVLW' and 0x41 <= i.fields['k'] <= 0x5A]
+                self.assertEqual(bytes(letters[:4]), b'LWJL')
+
 if __name__ == '__main__':
     unittest.main()

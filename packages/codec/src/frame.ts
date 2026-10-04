@@ -23,8 +23,10 @@
  *
  * 1. The key table, immediately after the end marker. It is base slot 6's first mode record,
  *    section 52, and both parsers here read it at that offset, which is why `relocationFloor` will
- *    not insert in front of it, section 172. Whether the firmware needs it there is not read here:
- *    section 311 reads the firmware reaching mode 0 through base slot 6, like any other mode.
+ *    not insert in front of it, section 172. Section 311 reads the firmware reaching mode 0
+ *    through base slot 6, like any other mode, and none of the four arch 14 application images read
+ *    loads the key table's offset `0x5F` as a literal, section NNN; a container with it elsewhere
+ *    has not been written.
  * 2. The body: every piece the caller lists, in the caller's order. Every piece in it is reached
  *    through an address, so the order is carried rather than derived; reproducing Logitech's
  *    emission order is a composer's question.
@@ -37,12 +39,14 @@
  *    groups in front of base slot 15's. **That is Logitech's habit and not the remote's demand**: the
  *    configurations this project composed onto the Harmony 650 park infrared blocks in front of base
  *    slot 5 and base slot 9 lists in front of base slot 9, and the 650 ran them, sections 285 and 291.
- *    So the caller says what goes where, and the frame decides nothing about it.
+ *    So the caller says what goes where, and the frame decides nothing about it. `placer.ts` is the
+ *    caller that decides it from the content the way Logitech's compiler does, section NNN.
  * 4. The picture bank, immediately after base slot 17's two bytes. On arch 14 base slot 17 names the
  *    bank two bytes in front of it, section 62, which is where this codec's readers find the bank;
  *    every picture of the thirteen compiles is also reached by a screen program's address, section
- *    146, so whether the
- *    firmware needs the bank there is open. Every later picture is the byte after the one before.
+ *    146, and the four arch 14 application images read fetch base slot 17 only as the touch hit map,
+ *    never offset to the bank, section NNN. So nothing found on the remote needs the bank there; no
+ *    container with it elsewhere has been written. Every later picture is the byte after the one before.
  *
  * Then the trailer: the checksum over every whole sixteen bit word below it, then the end marker.
  *
