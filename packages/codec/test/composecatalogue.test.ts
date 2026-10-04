@@ -289,7 +289,7 @@ function treeInOrder(c: Container): boolean {
 
 /**
  * The reset calls the devices composed with inputs here carry after their power on delay, each one found
- * in the same place in Logitech's compile of the same devices. Measured, section NNN.
+ * in the same place in Logitech's compile of the same devices. Measured, section 332.
  */
 const RESETS_COMPARED = 10;
 
@@ -362,7 +362,7 @@ test('devices composed several at a time are where Logitech\'s compile of the sa
           'InterDeviceDelayFlagCounter', 'PowerOnDelayFixingTriggered', 'PowerOnDelayFlagCounter'], where);
         // What switching it on and off sends, and waits; Logitech's on transition then resets the input
         // states its catalogue names, a `T` each. The composer composes those resets only where it
-        // composes the inputs, section NNN, and only for a state it composed a variable for, so ours
+        // composes the inputs, section 332, and only for a state it composed a variable for, so ours
         // carries exactly that many `T`s after the delay and theirs is cut back to the same count. A
         // device composed with inputs whose resets all compose, which is every one here, therefore
         // compares whole; one composed without inputs compares on what it sends and waits.
@@ -410,7 +410,7 @@ test('devices composed several at a time are where Logitech\'s compile of the sa
     const theirModes = new Map(deviceModeMaps(theirs).map((one) => [one.mode, theirNames.get(one.group)!]));
     assert.notDeepEqual(deviceLists(wrongC, wrongModes), deviceLists(theirs, theirModes));
     // **One difference**: the TX-P42GT30E's power on resets its `InputType`, so Logitech compiles that
-    // state although no input variable writes it; the composer composes neither the reset, section NNN,
+    // state although no input variable writes it; the composer composes neither the reset, section 332,
     // nor the state, since it was not asked for inputs and the variable alone would be a state nothing sets.
     assert.deepEqual(named, ['h700_power_hold_compile Panasonic_TX-P42GT30E: ours Power 0..1 from 0, '
       + 'theirs InputType 0..8 from 0; Power 0..1 from 0']);

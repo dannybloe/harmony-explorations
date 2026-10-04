@@ -9,7 +9,7 @@
  * what the device's own entry states. Calibrated against Logitech's compiler on the 18 test device
  * instances of the six power hold compiles, sections 306 to 308, this reproduces every step record and
  * every transition their compiler wrote, except the input states a power on resets, which
- * `composeDeviceInputs` composes since section NNN because they are writes into the input variables,
+ * `composeDeviceInputs` composes since section 332 because they are writes into the input variables,
  * and one device whose family has no press block to build from.
  *
  * **What the catalogue states and how each part lands**:
@@ -41,7 +41,7 @@
  * - a power on followed by a send or a wait, `onReset` holding anything but states. The input states a
  *   power on resets are reported rather than refused, because Logitech's compile writes them after the
  *   power action and the power on delay and they change neither, and `composeDeviceInputs` composes
- *   them, section NNN; a send there would be a command the device misses;
+ *   them, section 332; a send there would be a command the device misses;
  * - a delay that is not a whole number of tenths, 119 power on delays, 3 inter device delays and 1 inter
  *   key delay over the 240520 discrete and toggle devices of the archive; a delay out of the
  *   composer's range is refused there.
@@ -71,7 +71,7 @@ export interface CataloguePower {
   /**
    * How many input states the catalogue resets after a power on, `onReset`. Logitech's compile writes
    * one list per state after the power on delay, on the six test devices that state any and compose,
-   * thirteen lists over eight device instances. `composeDeviceInputs` composes them, section NNN, since
+   * thirteen lists over eight device instances. `composeDeviceInputs` composes them, section 332, since
    * they write the input variables it creates; this only counts them.
    */
   readonly onResetStates: number;

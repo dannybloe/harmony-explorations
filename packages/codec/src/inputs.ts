@@ -28,11 +28,11 @@
  *   Logitech's `setType` is 1 and `from -3` when it is 2, which MyHarmony's client names
  *   `SetStateValue` and `ChangeSetStateValue` (client sourced, decision 2). Section 277 read the
  *   Harmony One's transition walker treating `0xFFFE` as a wildcard and `0xFFFD` as "the value
- *   changed", and section NNN read the same on the Harmony 600 and 650's 0.2 builds: `from -2` fires
+ *   changed", and section 332 read the same on the Harmony 600 and 650's 0.2 builds: `from -2` fires
  *   on every write, the value already held included, and `from -3` only when the write changes it.
  *   (This said the arch 14 walker was not read<!--superseded--> until then.)
  *
- * **What a `from -3` value costs a device that is switched off and on**, section NNN. The remote
+ * **What a `from -3` value costs a device that is switched off and on**, section 332. The remote
  * remembers the value across the power cycle, so a second activity start that asks for the same value
  * sends nothing, while the device itself may have come on somewhere else. The catalogue's
  * `power.onReset` states where it comes on, and Logitech's compiler writes it after the power on delay
@@ -353,7 +353,7 @@ export interface ComposedReset {
   /**
    * False where the catalogue names a value the variable does not declare, and 0 is written: the
    * TX-29AK40F's `Input` to `TunerMode` and the Quasar SP2717T's `Input` to `True`, whose inputs are
-   * called `Tuner`. Logitech's compiles write 0 for both, section NNN; whether that is a rule or the
+   * called `Tuner`. Logitech's compiles write 0 for both, section 332; whether that is a rule or the
    * first value by coincidence two cases cannot say, since `Tuner` is value 0 in both.
    */
   readonly declared: boolean;
@@ -612,7 +612,7 @@ export function composeDeviceInputs(c: Container, inputs: ComposeInputs): Compos
  * Append a call to each reset list to the end of the device's power on list, after its power on delay,
  * which is where Logitech's compiler puts them: on every one of the nine test device instances whose
  * catalogue states a reset, the on list is the power steps, the delay, then one call per reset, in the
- * catalogue's order, section NNN; eight of the nine compose here, and their 13 lists agree. The list grows in place, so nothing else that names it has to change,
+ * catalogue's order, section 332; eight of the nine compose here, and their 13 lists agree. The list grows in place, so nothing else that names it has to change,
  * and `relocate` moves everything after it.
  *
  * **After the delay and not before** is measured off Logitech's compiler, not derived from the

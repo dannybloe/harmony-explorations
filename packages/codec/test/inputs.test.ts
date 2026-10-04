@@ -44,7 +44,7 @@ function open(name: string): Container {
 const IS_STATE = (property: string): boolean =>
   property !== 'Power' && property !== 'Input' && property !== 'OnlinePower' && !/Delay/.test(property);
 
-test('section NNN: the leading byte is 0 on all 895 transitions of the thirteen arch 14 compiles, so none takes the walker\'s stop or repeat arm',
+test('section 332: the leading byte is 0 on all 895 transitions of the thirteen arch 14 compiles, so none takes the walker\'s stop or repeat arm',
      skipUnless(...ARCH14), () => {
   // The walker reads a transition's first byte as its lead: bit 7 set on a match stops the walk after
   // that transition, and any other nonzero value takes an arm that pushes the instruction a computed

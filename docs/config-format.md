@@ -2288,7 +2288,7 @@ consecutive records end exactly where the next begins and **none overruns**, and
 the byte accounting produces no overlap with any other structure.
 
 **Which transitions a write fires**, read in the firmware on the Harmony 600 and 650's 0.2 builds, whose
-walker and setters are byte identical ([findings.md](findings.md) section NNN). The sentinels and the
+walker and setters are byte identical ([findings.md](findings.md) section 332). The sentinels and the
 silent flag's skip were read on the Harmony One 3.4 too, section 277; the rest is not read there, and on
 the 650's 0.4 and the Harmony 700's 2.8 the walker is located and not compared:
 
@@ -2524,7 +2524,7 @@ one:
   gives none. A state no input writes, directly or through another state, is not compiled.
 * **The catalogue's `power.onReset`** becomes one list per state, `[0x07 0xFFFF, 0x80 | variable value]`,
   called from the power variable's `0 to 1` list after the power on delay, in the catalogue's order:
-  13 of 13 lists on the eight test device instances that compose, section NNN, and a fourteenth on a
+  13 of 13 lists on the eight test device instances that compose, section 332, and a fourteenth on a
   device that does not compose has the same place and flag. The value is the named value's index,
   told apart from "always the first value" by one catalogue entry only; where the catalogue names a
   value the variable does not declare, twice, the compile writes 0, **unexplained**: one of the two

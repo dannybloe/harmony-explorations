@@ -235,7 +235,7 @@ function report(one: ComposedCatalogueDevice): void {
       + `off ${describe(power.powerOff, power.offCommands)}\n`);
     process.stdout.write(`catalogue delays in tenths: power on ${power.powerOnDelay ?? 'not stated'}, inter device `
       + `${power.interDeviceDelay}, inter key ${power.interKeyDelay}\n`);
-    // The resets are composed with the inputs, section NNN, so without `--inputs` there is nothing to
+    // The resets are composed with the inputs, section 332, so without `--inputs` there is nothing to
     // reset and the remote keeps whatever input the device was last put on.
     if (power.onResetStates > 0 && one.inputs === undefined) {
       process.stdout.write(`the catalogue resets ${power.onResetStates} input state(s) after a power on, `

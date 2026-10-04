@@ -10,7 +10,7 @@
  * several; the `0x7C` amount after each send; the power on delay the on transition ends with and the
  * inter device delay every send's prelude maps. What the compile has and the composer deliberately does
  * not, the input states a power on resets, is counted rather than ignored, and composed with the inputs
- * by the test after it, section NNN.
+ * by the test after it, section 332.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -241,7 +241,7 @@ test('a device composed from the catalogue switches with the records and the wir
   });
 
 /**
- * Section NNN: the states a power on puts back, `power.onReset`, composed the way Logitech's compiler
+ * Section 332: the states a power on puts back, `power.onReset`, composed the way Logitech's compiler
  * writes them. A device is composed whole from its catalogue entry, power steps and inputs, by
  * `composeCatalogueDevice` as `compose-device.ts --inputs` does, and the calls its power on list makes
  * after the power on delay are compared with Logitech's, as the variable's property word, the value and

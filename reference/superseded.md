@@ -32,7 +32,7 @@ and leave this table alone.
 
 | phrase | superseded by | what is true instead |
 |---|---|---|
-| `transition walker is unread` | section NNN | read on the Harmony 600 and 650's 0.2 builds, byte identical, `0x1613E`: every transition is tested in record order and every match fires, `-2` matches any old value and `-3` only a changed one, and a fired write fires its own variable's transitions |
+| `transition walker is unread` | section 332 | read on the Harmony 600 and 650's 0.2 builds, byte identical, `0x1613E`: every transition is tested in record order and every match fires, `-2` matches any old value and `-3` only a changed one, and a fired write fires its own variable's transitions |
 | `Logitech's canonical key order` | section 315, corrected 3 October 2026 | a key list's order is the bucket order of a hash table keyed by the tag, `t ^ (t >>> 7) ^ (t >>> 4)` over a power of two capacity, so two lists agreeing on their shared codes says nothing about which button a code is |
 | `the only place in the format where an action says` | section 278, corrected 24 September 2026 | `0x7D` names its device and **so does the `0x7C` paired with it**, whose high byte is the same device on every send list of the corpus, and a send without it is not transmitted from an activity's transition on the spare Harmony One |
 | `why the transition does not fire` | section 278, corrected 24 September 2026 | the composed activity's transition **did** fire, shown by pointing it at an existing paired list and watching the television come on. What failed was the bare send in the list it ran |

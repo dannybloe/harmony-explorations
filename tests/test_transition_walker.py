@@ -1,4 +1,4 @@
-"""Section NNN: how the Harmony 600 and 650 choose which transitions a state write fires.
+"""Section 332: how the Harmony 600 and 650 choose which transitions a state write fires.
 
 Read on the 0.2 builds, the 650's own image and the 600's, which hold the walker and both setters byte
 for byte alike. Four claims, each pinned to the instructions that carry it:

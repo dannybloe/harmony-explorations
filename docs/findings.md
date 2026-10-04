@@ -42169,7 +42169,7 @@ arch 14 compiles listed in section 314; the catalogue through `driving.ts`; the 
 same catalogue, `work/ir-archive-raw/`, for the fields the archive drops; MyHarmony's client for the
 names of `setType`'s values, client sourced under decision 2. The Harmony 600, 650 and 700's transition
 walker is **not** read<!--superseded-->; the sentinels below are read on the Harmony One's, section 277.
-**Corrected by section NNN**: the walker is read on the Harmony 600 and 650's 0.2 builds and the
+**Corrected by section 332**: the walker is read on the Harmony 600 and 650's 0.2 builds and the
 sentinels mean the same there, `-2` any old value and `-3` only a changed one.
 
 ### What the compiler writes
@@ -44231,7 +44231,7 @@ alone; a configuration with more than 128 state variables that a remote runs.
   control.
 * `docs/config-format.md` under base slot 0.
 
-## NNN. The Harmony 600 and 650 fire every matching transition, a fired write fires its own, and Logitech resets a `-3` input after a power on
+## 332. The Harmony 600 and 650 fire every matching transition, a fired write fires its own, and Logitech resets a `-3` input after a power on
 
 Todo-compile-650 2.5. The combined bench file put a composed Panasonic TX-P42GT30E, "Plasma", on the
 Harmony 650 with an activity that switches it on and puts it on HDMI 1, which is input value 3. Its
