@@ -758,7 +758,7 @@ Unconfirmed: the key lists and several pairs of the leading list are fitted to t
 ordered by choice; the title limit is a fit of two measured limits. The character map names no code
 for `J` or `#`, so the table holds no width for either and a label holding one is not laid out.
 
-**A device mode page's chrome and a device mode's key map**, section NNN, on the 83 device modes and 639
+**A device mode page's chrome and a device mode's key map**, section 330, on the 83 device modes and 639
 pages of the thirteen compiles; `deviceModeChrome` and `deviceModeKeyMap` build them and check every
 device mode against what they build:
 

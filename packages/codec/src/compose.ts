@@ -3257,11 +3257,11 @@ export function composeDeviceScreen(
  * Break a corner label the way the compiler does, and refuse what it would draw in another font: a third
  * line, or a line wider than a corner holds. Returns the glyph codes per line, one or two.
  *
- * **The rule is `devicemode.ts`'s**, section NNN: a label with no space stays whole, one no wider than
+ * **The rule is `devicemode.ts`'s**, section 330: a label with no space stays whole, one no wider than
  * `LABEL_WRAP_WIDTH` stays whole, and a wider one is broken by `wrapAtSpaces`, measured here in the
  * configuration's own label font rather than in a size's table. Its two numbers were constants of this
  * file, 58 and 59, measured over the 13 Logitech compiles' corner labels by section 323, until section
- * NNN made them the ones section 325 measured over device mode pages; both measurements are on
+ * 330 made them the ones section 325 measured over device mode pages; both measurements are on
  * `LABEL_WRAP_WIDTH`'s docstring. A two line label's lines sit `TWO_LINE_RISE` apart, 25 and 40 in the
  * top row and 75 and 90 in the bottom, on all 880 such labels section 323 counted, which is the label
  * font's line height and also had a copy here.
@@ -3324,7 +3324,7 @@ function sentFrame(c: Container, list: readonly Instruction[] | undefined): stri
 }
 
 /*
- * ---- A device mode page's chrome and a device mode's key map, built, section NNN ----
+ * ---- A device mode page's chrome and a device mode's key map, built, section 330 ----
  *
  * `todo-compile-650.md` 6.2.6 and 6.2.7. Until then the composer took a device mode page's chrome, its
  * background, the queued program, the two bars and the bottom word, off the first device page of the

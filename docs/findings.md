@@ -42648,7 +42648,7 @@ Three things the composer refused or did not know, now measured:
 * **No corner label line in that font is wider than 59 pixels.** `Antenna`, 60 in it, is drawn by the
   compiler in another font, in the contributed pair, which is the one case of the kind and corrects
   `FOUR_SLOT_LABEL_MAX` from 60, a limit the composer had set itself, to 59, which is `LABEL_WIDTH` since
-  section NNN. 890 corner cells are drawn in
+  section 330. 890 corner cells are drawn in
   a font other than their page's most common one, most of them help and dialog text, 60 of them cut with
   `..`, and the choice is not "smaller when too wide": 128 are as wide or wider in their own font, and 16
   on device pages would fit the page's font. Choosing a font is not built, and a label too wide for two
@@ -43028,7 +43028,7 @@ the 734 label lines is drawn in one of the six.
   set's own glyphs and `wrapAtSpaces` in `devicemode.ts` with the size table, and they share the wrap
   and not the rest: the first never splits a label without a space. That is the state the rule about
   two copies of a derivation warns of. Open: one of them should call the other. **Closed by section
-  NNN**: `wrapAtSpaces` takes a width function and `fourSlotLabelLines` calls it with its own glyph
+  330**: `wrapAtSpaces` takes a width function and `fourSlotLabelLines` calls it with its own glyph
   widths, one threshold, `LABEL_WRAP_WIDTH`, 58.
 * **Where no size holds it**, it goes in the smallest, split at its first space or word boundary rather
   than wrapped, each part cut to its longest prefix that fits with `..` after it.
@@ -43830,7 +43830,7 @@ writing another variable or value, or a marker record other than 0 of 3.
 * `packages/codec/test/compose.test.ts`: the calibration on the thirteen and the 27, and the controls.
 * `docs/config-format.md`, under the arch 14 activity's enter list, the activity menu row and base slot 13.
 
-## NNN. A device mode page's chrome and a device mode's key map, built instead of copied, and one wrap rule
+## 330. A device mode page's chrome and a device mode's key map, built instead of copied, and one wrap rule
 
 **Date:** 4 October 2026. **Status:** confirmed by calibration against Logitech's own compiles, with a
 one byte control per check; nothing written to a remote, and the composed output is unchanged byte for

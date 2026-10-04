@@ -1,6 +1,6 @@
 /**
  * A device mode page's chrome and a device mode's key map on a Harmony 600, 650 or 700, built rather than
- * copied off another device in the configuration, section NNN, `todo-compile-650.md` 6.2.6 and 6.2.7, and
+ * copied off another device in the configuration, section 330, `todo-compile-650.md` 6.2.6 and 6.2.7, and
  * the one wrap rule a label breaks by.
  *
  * The population is the thirteen Logitech compiles section 312 lists, the Harmony 700 pair counted
@@ -96,7 +96,7 @@ function pictureKeys(c: Container): Map<number, string> {
   return out;
 }
 
-test('section NNN: every device mode page of the thirteen compiles draws the chrome built for it',
+test('section 330: every device mode page of the thirteen compiles draws the chrome built for it',
      skipWithoutLab(), () => {
   const looks = new Map<string, number>();
   const battery = new Map<number, number>();
@@ -141,7 +141,7 @@ test('section NNN: every device mode page of the thirteen compiles draws the chr
   assert.deepEqual([modes, pages], [83, 639]);
 });
 
-test('section NNN: the four page pictures of the chrome are among the fixed pictures of section 317 on the Harmony 650',
+test('section 330: the four page pictures of the chrome are among the fixed pictures of section 317 on the Harmony 650',
      skipUnless(...H650), () => {
   const four: (CensusMember & { c: Container })[] = H650.map((name) => {
     const c = parse(require_(name));
@@ -158,7 +158,7 @@ test('section NNN: the four page pictures of the chrome are among the fixed pict
   }
 });
 
-test('section NNN: the chrome check refuses a page, a look or a bottom word other than the built one',
+test('section 330: the chrome check refuses a page, a look or a bottom word other than the built one',
      skipUnless('h650_config_region'), () => {
   const pristine = load('h650_config_region');
   const chrome = deviceModeChrome(pristine);
@@ -184,7 +184,7 @@ test('section NNN: the chrome check refuses a page, a look or a bottom word othe
   assert.throws(() => deviceModeChrome(withByte(pristine, record + 2, 72, 74)), /skin 74 holds 0 device page looks/);
 });
 
-test('section NNN: a device mode\'s key map is 47 entries in the compiler\'s hash order, every device mode\'s',
+test('section 330: a device mode\'s key map is 47 entries in the compiler\'s hash order, every device mode\'s',
      skipWithoutLab(), () => {
   const press = (scan: number): number => (KEY_EVENT_PRESS << KEY_EVENT_SHIFT) | scan;
   const tags = [...HARD_KEYS.map((key) => press(key.scan)), ...FOUR_SLOT_ITEMS.map((item) => press(item.scan)),
@@ -249,7 +249,7 @@ test('section NNN: a device mode\'s key map is 47 entries in the compiler\'s has
   assert.equal(lower, 7, 'and the one named is the lower index on seven compiles, so no index rule picks it');
 });
 
-test('section NNN: every mode and page list of the thirteen compiles is in slot order, and its ties are answered or refused',
+test('section 330: every mode and page list of the thirteen compiles is in slot order, and its ties are answered or refused',
      skipWithoutLab(), () => {
   let lists = 0;
   let answered = 0;
@@ -290,7 +290,7 @@ test('section NNN: every mode and page list of the thirteen compiles is in slot 
   assert.deepEqual([...(bothWays.get(`${0x87},${0xc3}`) ?? [])].sort(), ['ascending', 'descending']);
 });
 
-test('section NNN: the key map check refuses a device mode or an activity menu other than the built one',
+test('section 330: the key map check refuses a device mode or an activity menu other than the built one',
      skipUnless('h650_config_region'), () => {
   const pristine = load('h650_config_region');
   const chrome = deviceModeChrome(pristine);
@@ -334,7 +334,7 @@ test('section NNN: the key map check refuses a device mode or an activity menu o
   assert.throws(() => deviceModeKeyMap(withByte(pristine, corner + 3, 0, 0x73), chrome), /tag 0x88, is not the built one/);
 });
 
-test('section NNN: a composed device mode carries the built chrome and the built key map',
+test('section 330: a composed device mode carries the built chrome and the built key map',
      skipUnless('h650_config_region', 'h600_config'), () => {
   const TELEVISION = [
     { stated: 'G:Toshiba 32 Bit:(0x20DF10EF)(Repeat)():3', held: false },
@@ -358,7 +358,7 @@ test('section NNN: a composed device mode carries the built chrome and the built
   }
 });
 
-test('section NNN: one wrap threshold, 58, one line limit, 59, and the greedy wrap both label layouts call', () => {
+test('section 330: one wrap threshold, 58, one line limit, 59, and the greedy wrap both label layouts call', () => {
   assert.equal(LABEL_WRAP_WIDTH, LABEL_WIDTH - 1);
   assert.equal(LABEL_WRAP_WIDTH, 58);
   const largest = LABEL_SIZES[0]!;

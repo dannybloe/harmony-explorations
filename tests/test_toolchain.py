@@ -446,7 +446,7 @@ class ATypeScriptSampleLoopStatesItsPopulation(unittest.TestCase):
         # `packages/codec/test/driving.test.ts`, section 305. 67 since `packages/codec/test/tagfive.ts`,
         # section 313's tag 5 check shared by the corpus test and the composer's, which is a helper
         # rather than a test file and is counted because the glob reads every `.ts` under `test/`. 69 with
-        # section 315's two and 70 with `packages/codec/test/screencategories.test.ts`, section 317. 71 with frame.test.ts, section 318, and 72 with devicepower.test.ts, section 320, and 73 with inputs.test.ts, section 321, and 74 with activityroles.test.ts, section 323, and 75 with statetables.test.ts, section 324, and 76 with devicemode.test.ts, section 325. 77 with tworowlist.test.ts, section 326, and 78 with sequence.test.ts, section 327. 80 with devicepage.test.ts, section NNN.
+        # section 315's two and 70 with `packages/codec/test/screencategories.test.ts`, section 317. 71 with frame.test.ts, section 318, and 72 with devicepower.test.ts, section 320, and 73 with inputs.test.ts, section 321, and 74 with activityroles.test.ts, section 323, and 75 with statetables.test.ts, section 324, and 76 with devicemode.test.ts, section 325. 77 with tworowlist.test.ts, section 326, and 78 with sequence.test.ts, section 327. 80 with devicepage.test.ts, section 330.
         self.assertEqual(scanned, 80, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
         self.assertEqual(
             {name: len(lines) for name, lines in counted.items()},
@@ -578,7 +578,7 @@ class ABoundOnACorpusTotalIsExact(unittest.TestCase):
         # 65 since `packages/usb/test/settings.test.ts`, section 304, 66 since
         # `packages/codec/test/driving.test.ts`, section 305. 67 since `packages/codec/test/tagfive.ts`,
         # section 313, a shared helper rather than a test file. 69 with section 315's two and 70 with
-        # `packages/codec/test/screencategories.test.ts`, section 317. 71 with frame.test.ts, section 318, and 72 with devicepower.test.ts, section 320, and 73 with inputs.test.ts, section 321, and 74 with activityroles.test.ts, section 323, and 75 with statetables.test.ts, section 324, and 76 with devicemode.test.ts, section 325. 77 with tworowlist.test.ts, section 326, and 78 with sequence.test.ts, section 327. 80 with devicepage.test.ts, section NNN.
+        # `packages/codec/test/screencategories.test.ts`, section 317. 71 with frame.test.ts, section 318, and 72 with devicepower.test.ts, section 320, and 73 with inputs.test.ts, section 321, and 74 with activityroles.test.ts, section 323, and 75 with statetables.test.ts, section 324, and 76 with devicemode.test.ts, section 325. 77 with tworowlist.test.ts, section 326, and 78 with sequence.test.ts, section 327. 80 with devicepage.test.ts, section 330.
         self.assertEqual(len(scanned), 80, 'TypeScript test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
@@ -1252,7 +1252,7 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
         # `work/plan-1.2.10/`, section 294. 80 since `work/plan-L7/`, section 301. 81 since `work/plan-L6/`, the
         # Harmony 600's delay write. 82 since `work/ir-archive-raw/`, section 305, and 83 since
         # `work/plan-4.3.4/`, the Harmony 650's long press version write, section 309.
-        self.assertEqual(len(named), 84, "lab paths the register names, as at 4 October 2026")
+        self.assertEqual(len(named), 85, "lab paths the register names, as at 4 October 2026")
         for path in sorted(named):
             with self.subTest(path=path):
                 if '*' in path:
@@ -1349,8 +1349,8 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
         # the Harmony 600's, and 59 since `work/ir-archive-raw/`, the infrared archive's raw capture,
         # section 305.
         # 60 since `work/plan-4.3.4/`, section 309.
-        self.assertEqual(len(rows), 61)
-        self.assertEqual(len(dict(rows)), 61, 'a duplicated path would make a query ambiguous')
+        self.assertEqual(len(rows), 62)
+        self.assertEqual(len(dict(rows)), 62, 'a duplicated path would make a query ambiguous')
         self.assertNotIn('unseen', dict(rows), 'the status legend is not an artefact')
 
     def test_a_query_is_answered_by_ancestors_and_by_descendants(self):

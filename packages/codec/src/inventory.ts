@@ -1021,7 +1021,7 @@ export function compilerCaseOrder(keys: readonly number[]): number[] {
 const MEASURED_TAG_TIES: ReadonlyMap<string, readonly [number, number]> = new Map([['45,164', [0x2d, 0xa4]]]);
 
 /**
- * The order Logitech's compiler stores the tags of a mode's own tagged list in, section NNN: the same
+ * The order Logitech's compiler stores the tags of a mode's own tagged list in, section 330: the same
  * hash map order as `compilerCaseOrder`, **masked to the table**, which matters here and not there
  * because a tag runs to `0xFF` where the case keys stay below their table's size.
  *

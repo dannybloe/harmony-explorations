@@ -235,7 +235,7 @@ export const TITLE_SIZE = LABEL_SIZES[2] as LabelSize;
  * and the widest corner label line on the 13 Logitech compiles for the Harmony 600, 650 and 700,
  * `Simplink`, section 323, where `Antenna`, 60 pixels in that font, is drawn by the compiler in another
  * font, the one case of the kind. The activity screen composer held its corner labels to this as
- * `FOUR_SLOT_LABEL_MAX` until section NNN made the two one constant.
+ * `FOUR_SLOT_LABEL_MAX` until section 330 made the two one constant.
  */
 export const LABEL_WIDTH = 59;
 
@@ -255,14 +255,14 @@ export const LABEL_WIDTH = 59;
  *   reproduces them, the widest label left whole with a space in it being 55 pixels, `TV Vol+`, and the
  *   narrowest broken one 59, `Sony TV` and `TV Input`, so the band rests on those three labels.
  *
- * **What pins 58 is labels with no space**, sections 325 and NNN: in the largest size `TvRadio` and
+ * **What pins 58 is labels with no space**, sections 325 and 330: in the largest size `TvRadio` and
  * `PipInput`, 58 wide, are drawn whole, and `InputAm`, `ChLevel` and `WakeUp`, 59, are split. For a
  * label with a space the device mode pages bound it only from 53 to 62, `PS3 Off` whole and the narrowest
  * split 63, and the corner labels from 55 to 58; 58 for those is the assumption that one threshold serves
  * both kinds, which nothing contradicts and nothing measured forces. Breaking a label of three or more
  * words is tested by one label, `Rcvr V-` over `Aux`. This was two
  * constants, `FOUR_SLOT_WRAP_WIDTH` in `compose.ts` and `LABEL_WIDTH - 1` here, each with its own copy of
- * the greedy wrap, until section NNN.
+ * the greedy wrap, until section 330.
  */
 export const LABEL_WRAP_WIDTH = LABEL_WIDTH - 1;
 
@@ -313,7 +313,7 @@ export interface LabelLayout {
  * A label with spaces broken the way a word wrap does: as many words to a line as fit within
  * `LABEL_WRAP_WIDTH`, greedily, each line measured whole by `widthOf`. **The one copy of the wrap**, which
  * `labelLayout` calls with a size's table widths and the activity screen composer with a configuration's
- * own glyph widths; until section NNN each carried its own loop, section 325's report.
+ * own glyph widths; until section 330 each carried its own loop, section 325's report.
  *
  * Undefined where `widthOf` cannot measure a line, which with table widths is every label with a space
  * in the smallest size. On a label of two words too wide for one line this is the first space; it

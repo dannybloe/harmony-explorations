@@ -217,7 +217,7 @@ const WHOLE_KEYPAD = 100;
 
 /**
  * A short stable hash of some bytes, FNV-1a and a second multiplier, as sixteen hex digits. What a look
- * keys a picture or a glyph by, and exported since section NNN, where the device mode composer names
+ * keys a picture or a glyph by, and exported since section 330, where the device mode composer names
  * the fixed pictures a page's chrome draws by this key rather than by majority over the device pages.
  * It identifies content and secures nothing.
  */
