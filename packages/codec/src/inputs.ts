@@ -28,7 +28,19 @@
  *   Logitech's `setType` is 1 and `from -3` when it is 2, which MyHarmony's client names
  *   `SetStateValue` and `ChangeSetStateValue` (client sourced, decision 2). Section 277 read the
  *   Harmony One's transition walker treating `0xFFFE` as a wildcard and `0xFFFD` as "the value
- *   changed"; the Harmony 600, 650 and 700's walker is not read.
+ *   changed", and section NNN read the same on the Harmony 600 and 650's 0.2 builds: `from -2` fires
+ *   on every write, the value already held included, and `from -3` only when the write changes it.
+ *   (This said the arch 14 walker was not read<!--superseded--> until then.)
+ *
+ * **What a `from -3` value costs a device that is switched off and on**, section NNN. The remote
+ * remembers the value across the power cycle, so a second activity start that asks for the same value
+ * sends nothing, while the device itself may have come on somewhere else. The catalogue's
+ * `power.onReset` states where it comes on, and Logitech's compiler writes it after the power on delay
+ * as a **silent** write, `0x07 0xFFFF` then the state write, one list per state, which puts the
+ * remembered value back to where the device is without sending anything. `composeDeviceInputs` writes
+ * the same, so a start that switches the device on and asks for anything but the reset value always
+ * sends it. A start that finds the device already on runs no power on and so no reset, and asking for
+ * the value already held then sends nothing, which is right: the device is still where it was put.
  * - **by stepping**: the state states one `next` list and its values nothing. Then there is a
  *   transition for every ordered pair of values `i` to `j`, holding `next` repeated
  *   `(j - i) mod n` times, so it always steps forward and wraps round.
@@ -329,12 +341,37 @@ export interface ComposedVariable {
   readonly values: ReadonlyMap<string, number>;
 }
 
+/**
+ * One state the device's power on puts back, `power.onReset` in the catalogue, written silently after
+ * the power on delay. `named` is the value as the catalogue spells it and `value` the number written.
+ */
+export interface ComposedReset {
+  readonly state: string;
+  readonly named: string;
+  readonly variable: number;
+  readonly value: number;
+  /**
+   * False where the catalogue names a value the variable does not declare, and 0 is written: the
+   * TX-29AK40F's `Input` to `TunerMode` and the Quasar SP2717T's `Input` to `True`, whose inputs are
+   * called `Tuner`. Logitech's compiles write 0 for both, section NNN; whether that is a rule or the
+   * first value by coincidence two cases cannot say, since `Tuner` is value 0 in both.
+   */
+  readonly declared: boolean;
+}
+
 export interface ComposedInputs {
   bytes: Uint8Array;
   /** The input variable, absent for a device with one input or none. */
   input?: ComposedVariable;
   /** One per catalogue state, by its name. */
   states: ReadonlyMap<string, ComposedVariable>;
+  /** The states the power on puts back, in the catalogue's order, which is the order of the lists. */
+  resets: readonly ComposedReset[];
+  /**
+   * Resets the catalogue states for a variable this did not compose, as `<state> := <value>`, left out
+   * rather than guessed at: no compile in the lab has one, so what Logitech does there is unknown.
+   */
+  resetsLeftOut: readonly string[];
   /**
    * The plan the bytes were built from, for a caller that wants to know what was composed. Note that
    * `ComposedDevice.delay` and `.powerOnDelay` name variables this insertion renumbered, being above
@@ -401,7 +438,34 @@ export function composeDeviceInputs(c: Container, inputs: ComposeInputs): Compos
   }
   const plan = inputPlan(inputs.driving);
   const variables = [...plan.states, ...(plan.input === undefined ? [] : [plan.input])];
-  if (variables.length === 0) return { bytes: Uint8Array.from(c.blob), states: new Map(), plan };
+
+  // The states a power on puts back, `power.onReset`, resolved against the plan before any byte moves.
+  // `catalogueDevicePower` refuses an `onReset` holding anything but states, and so does this, since a
+  // send there would be a command the device misses while it is still coming on.
+  const resetPlan: { variable: PlannedVariable; state: string; named: string; value: number; declared: boolean }[] = [];
+  const resetsLeftOut: string[] = [];
+  for (const one of inputs.driving.power?.onReset ?? []) {
+    if (one.kind !== 'state') {
+      throw new ComposeError(`the catalogue's power on is followed by a ${one.kind}, which is not composed`);
+    }
+    // The input variable is `Input` in the catalogue's own steps, the property word it is named by.
+    const variable = one.state === INPUT_PROPERTY ? plan.input : plan.states.find((v) => v.property === one.state);
+    if (variable === undefined) {
+      resetsLeftOut.push(`${one.state} := ${one.value}`);
+      continue;
+    }
+    const at = variable.values.indexOf(one.value);
+    resetPlan.push({ variable, state: one.state, named: one.value, value: Math.max(at, 0), declared: at >= 0 });
+  }
+
+  if (variables.length === 0) return { bytes: Uint8Array.from(c.blob), states: new Map(), resets: [], resetsLeftOut, plan };
+
+  // The list the power variable runs to switch the device on, which the resets are appended to. Every
+  // arch 14 device `composeDevice` builds has one, ending in the power on delay.
+  const switchOn = inputs.device.powerOnDelay;
+  if (resetPlan.length > 0 && switchOn === undefined) {
+    throw new ComposeError('the catalogue resets a state after a power on, and the device has no power on list');
+  }
 
   const { group } = inputs.device;
   const recordOf = (command: string): number => {
@@ -494,12 +558,26 @@ export function composeDeviceInputs(c: Container, inputs: ComposeInputs): Compos
     }
     encoded.push(out);
   }
-  // A device whose only variable steps over one value, the Quasar's, has no list to add.
+  // The resets, one list each, `[0x07 0xFFFF, 0x80 | variable value]`, laid out after the bodies.
+  // **Silent**, as all fourteen Logitech compiled are: without the flag the write would run the
+  // variable's transition and send the very command the reset exists to make unnecessary.
+  const firstReset = firstList + 3 * sendLists.size + bodies.length;
+  const resets: ComposedReset[] = resetPlan.map((one) => ({
+    state: one.state, named: one.named, variable: indexOf.get(one.variable.property)!, value: one.value,
+    declared: one.declared,
+  }));
+  for (const one of resets) {
+    encoded.push(new Writer(7).u8(2)
+      .u16(SILENT_WRITE.operand).u8(SILENT_WRITE.opcode)
+      .u16(one.value).u8(STATE_WRITE_BASE + one.variable));
+  }
+  // A device whose only variable steps over one value and states no reset has no list to add.
   if (encoded.length === 0) {
     return {
       bytes: restamped(Uint8Array.from(current.blob)),
       ...(plan.input === undefined ? {} : { input: composedOf(plan.input) }),
       states: new Map(plan.states.map((one) => [one.property, composedOf(one)])),
+      resets, resetsLeftOut,
       plan,
     };
   }
@@ -519,13 +597,51 @@ export function composeDeviceInputs(c: Container, inputs: ComposeInputs): Compos
     at += one.bytes.length;
   }
   current = parse(appendTableEntries(parse(hole.bytes), actionSlot, addresses));
+  if (resets.length > 0) current = parse(appendResetCalls(current, actionSlot, switchOn!, firstReset, resets.length));
 
   return {
     bytes: restamped(Uint8Array.from(current.blob)),
     ...(plan.input === undefined ? {} : { input: composedOf(plan.input) }),
     states: new Map(plan.states.map((one) => [one.property, composedOf(one)])),
+    resets, resetsLeftOut,
     plan,
   };
+}
+
+/**
+ * Append a call to each reset list to the end of the device's power on list, after its power on delay,
+ * which is where Logitech's compiler puts them: on every one of the nine test device instances whose
+ * catalogue states a reset, the on list is the power steps, the delay, then one call per reset, in the
+ * catalogue's order, section NNN; eight of the nine compose here, and their 13 lists agree. The list grows in place, so nothing else that names it has to change,
+ * and `relocate` moves everything after it.
+ *
+ * **After the delay and not before** is measured off Logitech's compiler, not derived from the
+ * firmware: what an instruction appends runs next, so a silent write before the delay or after it
+ * leaves the same value in place by the time the start writes the input, and either would do. The
+ * placement copies theirs so the composed list compares with theirs byte for byte.
+ */
+function appendResetCalls(
+  c: Container, actionSlot: number, switchOn: { list: number; on: number }, first: number, count: number,
+): Uint8Array {
+  const table = c.pointerArrayAt(actionSlot);
+  const address = table?.values[switchOn.on];
+  const at = address === undefined ? undefined : c.blobOffsetOf(address);
+  const list = c.actionLists()?.[switchOn.on];
+  // The on list `composeDevice` writes: calls, the last of them to the power on delay list. Anything else
+  // means the list is not the one this was written against, and appending to it would be a guess.
+  if (at === undefined || list === undefined || list.length === 0 || c.blob[at] !== list.length
+      || !list.every((one) => one.opcode === ACTION_LIST_INDEX_OPCODE)
+      || list.at(-1)!.operand !== switchOn.list) {
+    throw new ComposeError(`the power on list ${switchOn.on} is not a list of calls ending in the power on delay`);
+  }
+  if (list.length + count > QUANTITY_MAX) throw new ComposeError(`a power on list of ${list.length + count} steps`);
+  const end = at + 1 + 3 * list.length;
+  const grown = relocate(c, end, 3 * count);
+  const calls = new Writer(3 * count);
+  for (let k = 0; k < count; k += 1) calls.u16(first + k).u8(ACTION_LIST_INDEX_OPCODE);
+  grown.bytes.set(calls.bytes, end);
+  grown.bytes[at] = list.length + count;
+  return restamped(grown.bytes);
 }
 
 /** The target an activity's start writes to put the device on the input called `name`. */

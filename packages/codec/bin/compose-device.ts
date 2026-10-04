@@ -235,9 +235,11 @@ function report(one: ComposedCatalogueDevice): void {
       + `off ${describe(power.powerOff, power.offCommands)}\n`);
     process.stdout.write(`catalogue delays in tenths: power on ${power.powerOnDelay ?? 'not stated'}, inter device `
       + `${power.interDeviceDelay}, inter key ${power.interKeyDelay}\n`);
-    if (power.onResetStates > 0) {
+    // The resets are composed with the inputs, section NNN, so without `--inputs` there is nothing to
+    // reset and the remote keeps whatever input the device was last put on.
+    if (power.onResetStates > 0 && one.inputs === undefined) {
       process.stdout.write(`the catalogue resets ${power.onResetStates} input state(s) after a power on, `
-        + 'which is not composed: the device comes on in whatever input it was left in\n');
+        + 'which is composed only with --inputs\n');
     }
   }
   if (device.delay !== undefined) {
@@ -255,6 +257,13 @@ function report(one: ComposedCatalogueDevice): void {
     for (const [name, state] of one.inputs.states) {
       process.stdout.write(`state ${name} variable ${state.variable}: `
         + `${[...state.values].map(([one, value]) => `${value} ${one}`).join(', ')}\n`);
+    }
+    for (const reset of one.inputs.resets) {
+      process.stdout.write(`after a power on, ${reset.state} variable ${reset.variable} is set silently to `
+        + `${reset.value}${reset.declared ? ` ${reset.named}` : `, the catalogue's ${reset.named} not being one of its values`}\n`);
+    }
+    for (const left of one.inputs.resetsLeftOut) {
+      process.stdout.write(`after a power on the catalogue resets ${left}, a variable not composed, so it is left out\n`);
     }
   }
   if (one.joined !== undefined) {

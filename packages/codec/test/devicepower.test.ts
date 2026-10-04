@@ -9,7 +9,8 @@
  * records sent, word for word, in order; whether an action is a step's own list or a list calling
  * several; the `0x7C` amount after each send; the power on delay the on transition ends with and the
  * inter device delay every send's prelude maps. What the compile has and the composer deliberately does
- * not, the input states a power on resets, is counted rather than ignored.
+ * not, the input states a power on resets, is counted rather than ignored, and composed with the inputs
+ * by the test after it, section NNN.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -26,6 +27,7 @@ import {
   catalogueCommands,
   catalogueDevice,
   catalogueDevicePower,
+  composeCatalogueDevice,
   catalogueDriving,
   composeDevice,
   deviceDriving,
@@ -206,8 +208,9 @@ test('a device composed from the catalogue switches with the records and the wir
         assert.match(b.layout, /^[SD]*T*$/, `${one.name} ${which}: the input states come last`);
         assert.deepEqual(a.sends, b.sends, `${one.name} ${which}: what is sent`);
         assert.equal(a.powerOnDelay, b.powerOnDelay, `${one.name} ${which}: power on delay`);
-        // The input states a power on resets are Logitech's and not composed, todo 2.5: one list per
-        // state the catalogue's `onReset` names, after the power on delay.
+        // The input states a power on resets are one list per state the catalogue's `onReset` names,
+        // after the power on delay. This composes no inputs, so ours has none; the test below composes
+        // them with the inputs and compares them with Logitech's.
         assert.equal(a.states, 0);
         assert.equal(b.states, which === 'on' ? power.onResetStates : 0, `${one.name} ${which}: reset states`);
         statesNotComposed += b.states;
@@ -235,6 +238,90 @@ test('a device composed from the catalogue switches with the records and the wir
     // device delay on 14 and a wrong power on delay on 11 of the 17 devices, and one action, the
     // Knoll's off, would have been one send of three.
     assert.deepEqual(before, { amount: 18, interDevice: 14, powerOnDelay: 11, several: 1 });
+  });
+
+/**
+ * Section NNN: the states a power on puts back, `power.onReset`, composed the way Logitech's compiler
+ * writes them. A device is composed whole from its catalogue entry, power steps and inputs, by
+ * `composeCatalogueDevice` as `compose-device.ts --inputs` does, and the calls its power on list makes
+ * after the power on delay are compared with Logitech's, as the variable's property word, the value and
+ * whether the write is silent, so that no variable number has to agree. The TX-28A1U is the one device
+ * whose power cannot be built, the test above; its reset is counted as not compared.
+ */
+test('the states a power on resets are composed as Logitech compiles them, silent and in order, on all 13 reset lists of the 8 instances that compose',
+  needing(skipWithoutIrArchive(), skipUnless('h650_config_region', ...FIXTURES)), () => {
+    const pristine = parse(require_('h650_config_region'));
+    /** The calls after the power on delay, read as `<property>=<value>` with `silent ` in front where flagged. */
+    const resetsOf = (c: Container, label: string): string[] => {
+      const lists = c.actionLists()!;
+      const names = new Map(deviceVariables(c).map((one) => [one.index, one.property]));
+      const variable = deviceVariables(c).find((one) => one.device === label && one.property === 'Power')!;
+      const on = stateRecords(c)![variable.index]!.values.find((one) => one.from === 0 && one.to === 1)!;
+      const calls = lists[on.operand]!;
+      // Everything after the power on delay, which is the one call to a single `0x72` list.
+      const delay = calls.findIndex((one) => lists[one.operand]!.length === 1 && lists[one.operand]![0]!.opcode === MAP_VALUE);
+      assert.ok(delay >= 0, `${label}: the power on list holds the power on delay`);
+      return calls.slice(delay + 1).map((one) => {
+        const body = lists[one.operand]!;
+        assert.equal(body.length, 2, `${label}: a reset list is two instructions`);
+        const silent = body[0]!.opcode === 0x07 && body[0]!.operand === 0xffff;
+        const write = body[1]!;
+        assert.ok(write.opcode >= 0x80, `${label}: a reset list writes a state`);
+        return `${silent ? 'silent ' : ''}${names.get(write.opcode - 0x80)}=${write.operand}`;
+      });
+    };
+    const results: Record<string, string> = {};
+    const undeclared: string[] = [];
+    let lists = 0;
+    for (const one of ROWS) {
+      const driving = catalogueDriving(IR_ARCHIVE!, one.slug, one.file);
+      const theirs = resetsOf(parse(payloadOf(require_(one.fixture))), one.name);
+      const key = `${one.fixture} ${one.name}`;
+      let composed;
+      try {
+        // One screen command, the first power step under a short label, since the screen is not what this compares.
+        const codes = new Map(catalogueCommands(IR_ARCHIVE!, catalogueDevice(IR_ARCHIVE!, one.slug, one.file).codeset!)
+          .map((command) => [command.name, command.keycode]));
+        const first = catalogueDevicePower(driving, (name) => codes.get(name)).onCommands[0]!;
+        composed = composeCatalogueDevice(pristine, IR_ARCHIVE!, {
+          manufacturer: one.slug, model: one.file, label: 'Test', commands: [first], labels: ['On'], inputs: true,
+        });
+      } catch (error) {
+        assert.ok(error instanceof ComposeError, String(error));
+        results[key] = `refused, theirs ${theirs.length}: ${error.message}`;
+        continue;
+      }
+      const ours = resetsOf(parse(composed.bytes), 'Test');
+      assert.deepEqual(ours, theirs, key);
+      assert.deepEqual(composed.inputs?.resetsLeftOut ?? [], [], `${key}: nothing left out`);
+      undeclared.push(...(composed.inputs?.resets ?? []).filter((r) => !r.declared).map((r) => `${one.name} ${r.state} ${r.named}`));
+      lists += theirs.length;
+      results[key] = theirs.join(' ') || '-';
+    }
+    assert.deepEqual(results, {
+      'h650_power_hold_compile Panasonic_TX-29AK40F': 'silent Input=0 silent OnScreenMenu=0',
+      'h650_power_hold_compile Panasonic_TV': 'silent InputType=7',
+      'h650_power_hold_compile Knoll_HDP-1100': '-',
+      'h650_power_hold_compile_2 Dell_2300MP': '-',
+      'h650_power_hold_compile_2 Panasonic_TV': 'silent InputType=7',
+      // The Technics family has no press block, so its codes do not compose; Logitech's compile has one reset.
+      'h650_power_hold_compile_2 Panasonic_TX-28A1U': 'refused, theirs 1: the inputs send TvVideo, whose code does not compose',
+      'h700_power_hold_compile Barco_6300': '-',
+      'h700_power_hold_compile JVC_DLA-HD10KU': '-',
+      'h700_power_hold_compile Panasonic_TX-P42GT30E': 'silent InputType=7',
+      'h700_power_hold_compile_2 Pioneer_DEH-P47DH': '-',
+      'h700_power_hold_compile_2 Mivar_14_M3_TVD': '-',
+      'h700_power_hold_compile_2 Thomson_DSI-4400': '-',
+      'h700_power_hold_compile_3 Panasonic_TH-42PA30': 'silent Input=0 silent AV1Scart=0 silent AV2Scart=0 silent AV4Scart=0',
+      'h700_power_hold_compile_3 Quasar_SP2717T': 'silent Input=0',
+      'h700_power_hold_compile_3 Panasonic_CS-29FJ20S': '-',
+      'h700_power_hold_compile_4 Panasonic_TX-D37LT84F': '-',
+      'h700_power_hold_compile_4 Sony_KE-50MR1E': 'silent Input=0',
+      'h700_power_hold_compile_4 Thomson_25DT60H': 'silent InputType=0 silent Input=0',
+    });
+    assert.equal(lists, 13);
+    // Two resets name a value their variable does not declare, and Logitech's compile writes 0 for both.
+    assert.deepEqual(undeclared, ['Panasonic_TX-29AK40F Input TunerMode', 'Quasar_SP2717T Input True']);
   });
 
 /**

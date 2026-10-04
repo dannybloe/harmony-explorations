@@ -2287,6 +2287,29 @@ So a record is `7 + 8 * count` bytes. Across 14 containers and four architecture
 consecutive records end exactly where the next begins and **none overruns**, and claiming them in
 the byte accounting produces no overlap with any other structure.
 
+**Which transitions a write fires**, read in the firmware on the Harmony 600 and 650's 0.2 builds, whose
+walker and setters are byte identical ([findings.md](findings.md) section NNN). The sentinels and the
+silent flag's skip were read on the Harmony One 3.4 too, section 277; the rest is not read there, and on
+the 650's 0.4 and the Harmony 700's 2.8 the walker is located and not compared:
+
+* the setter reads the old value, stores the new one, and walks the variable's record unless the
+  silent flag is set (`0x07 0xFFFF` just before the write); a silent write stores and fires no
+  transition;
+* **every** transition is tested, in record order, and **every** match fires; there is no first match
+  rule. Firing is an append to the action queue, which drops an all zero instruction and drops anything
+  once the queue holds 40 instructions, silently. A match with a leading byte of bit 7 set ends the walk, which no arch 14 compile uses: the
+  leading byte is 0 on 895 of 895 transitions of the thirteen arch 14 compiles;
+* `from` matches when it equals the old value, always when it is `-2` (0xFFFE), and when it is `-3`
+  (0xFFFD) only if the old value differs from the new one. `to` takes the same three cases against the
+  new value; no arch 14 compile holds a negative `to`, where every Harmony One and Harmony 880 or 885
+  configuration holds two `-2` to `-2` transitions;
+* a firing transition's instruction is appended to the action queue as a list's own instruction is,
+  and what one instruction appended runs next, before anything queued earlier, so a state write inside a
+  transition fires that variable's transitions in turn, at once.
+
+A nonzero leading byte below bit 7 takes a different arm, which pushes the instruction a computed
+number of times; no configuration in the lab has one, and its meaning is not read.
+
 **The first field is the generated value**, section 130, which settles what section 60 marked
 unconfirmed and generalises section 120's reading of it as the idle activity value: for
 `CurrentActivityState` the two coincide, because no activity is running while a config is compiled.
@@ -2499,6 +2522,14 @@ one:
   to a two instruction list, `[0x07 0xFFFF, 0x80 | variable]`. The archive does not keep the mark.
 * One input that steps gives a variable of one value and no transitions; one input that does not step
   gives none. A state no input writes, directly or through another state, is not compiled.
+* **The catalogue's `power.onReset`** becomes one list per state, `[0x07 0xFFFF, 0x80 | variable value]`,
+  called from the power variable's `0 to 1` list after the power on delay, in the catalogue's order:
+  13 of 13 lists on the eight test device instances that compose, section NNN, and a fourteenth on a
+  device that does not compose has the same place and flag. The value is the named value's index,
+  told apart from "always the first value" by one catalogue entry only; where the catalogue names a
+  value the variable does not declare, twice, the compile writes 0, **unexplained**: one of the two
+  is a state of one value and the other names index 0 of another state. Without it a `-3` variable keeps its value across a power cycle and a second start asking
+  for the same value sends nothing.
 * An activity's enter list writes power on, then the inputs in the order the devices were switched on,
   then power off, then the counter: 40 of 40 activities, 72 input writes. A device with no power
   variable can have its input written too, 1 case.

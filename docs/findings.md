@@ -42168,7 +42168,9 @@ select them, directly or by stepping; and an activity's start setting them.
 arch 14 compiles listed in section 314; the catalogue through `driving.ts`; the lab's raw capture of the
 same catalogue, `work/ir-archive-raw/`, for the fields the archive drops; MyHarmony's client for the
 names of `setType`'s values, client sourced under decision 2. The Harmony 600, 650 and 700's transition
-walker is **not** read; the sentinels below are read on the Harmony One's, section 277.
+walker is **not** read<!--superseded-->; the sentinels below are read on the Harmony One's, section 277.
+**Corrected by section NNN**: the walker is read on the Harmony 600 and 650's 0.2 builds and the
+sentinels mean the same there, `-2` any old value and `-3` only a changed one.
 
 ### What the compiler writes
 
@@ -44228,3 +44230,186 @@ alone; a configuration with more than 128 state variables that a remote runs.
   smaller first control breaking exactly those, and a composed device's tree in order with the appended
   control.
 * `docs/config-format.md` under base slot 0.
+
+## NNN. The Harmony 600 and 650 fire every matching transition, a fired write fires its own, and Logitech resets a `-3` input after a power on
+
+Todo-compile-650 2.5. The combined bench file put a composed Panasonic TX-P42GT30E, "Plasma", on the
+Harmony 650 with an activity that switches it on and puts it on HDMI 1, which is input value 3. Its
+`Input` transition is a bare write, `0xC8 3`, of its `InputType` variable, whose transition to 3 is a
+`from -3` one and sends `InputHdmi1`. On the bench the first start sent `PowerOn`, seven frames, and
+nothing more: the monitor heard no frame for 93 seconds after it, until a device page press of a later
+step; a second start after All Off sent `PowerOn` and then `PowerOff` from
+All Off only (`reads/20261004T063001Z-ir-test-harmony-650-the-combined-bench-file.json`, steps 0 and
+10). Section 321 had composed those transitions from the Harmony One's reading of the sentinels,
+section 277, and said the arch 14 walker was unread. This reads it.
+
+**Sources checked**: sections 73, 74, 277, 278, 283, 287, 288, 320 and 321 of this document; the 650's
+own 0.2 image, `650-0.2-code-base0x9000-bench.bin`, the Harmony 600's 0.2 image, and the 650's 0.4 and
+the Harmony 700's 2.8 images for the scope; the thirteen arch 14 compiles of section 314; the catalogue
+through `driving.ts`; the two bench runs above and below. MyHarmony's client was not needed: the
+firmware answers the question.
+
+### The walker, on the 0.2 builds
+
+The 600's and the 650's 0.2 images hold `0x1613E` to `0x16538`, the walker and both setters, byte for
+byte alike; the two images differ in 1395 bytes, none inside that span, 1274 of them in `0x19C00` to
+`0x1A3FF`, where section 281 found code twelve bytes apart and left the reason unread. Addresses below
+are both builds' but one: `0x7F`'s handler is `0x1A15A`, its append call `0x1A18A`, on the 650 and
+`0x1A166` and `0x1A196` on the 600, the dispatcher's call at `0x0E8E4` naming each.
+
+* **The setter, `0x16360`**, reached from the dispatcher `0x0E89E` for every opcode from `0x80` with
+  the variable in `0xED9`, the value in `0xEDA` and the silent flag copied to `0xED8`: reads the old
+  value (`0x164C4` into `0xD40`), stores the new one (`0x16474`, which also restamps the state sum), and
+  **only if `0xED8` is clear** seeks the record (`0x16522`), puts the new value in `0xED6` and the old in
+  `0xED4`, and calls the walker. A silent write stores and fires no transition, `0x1637E`; its arm,
+  `0x163A0`, calls `0x10A6A` when the variable is 0, a clock record, and nothing else. The setter has a
+  second caller, `0x0EFE8`, which the sentence reviewer traced to the `0x1F` register writes `0xEE`
+  and `0xED`.
+* **The walker, `0x1613E`**, skips `first`, reads `second` and the 24 bit count, and for each transition
+  reads the leading byte into `0xD2F`, `from` into `0xD30` and `to` into `0xD32`, and sets the match
+  `0xD34` to 1. Then:
+  * `from` `0xFFFD` (`0x161A2`) clears the match if the old value equals the new one, both bytes,
+    `0x161C8` to `0x161D8`; `from` `0xFFFE` skips the comparison (`0x161B8`); any other `from` clears it
+    unless it equals the old value.
+  * `to` takes the same three cases against the new value, `0x161E8` to `0x1622E`.
+  * A match whose leading byte has bit 7 set sets `0xD36`, `0x16238`, which returns after this
+    transition, `0x1634E`. Nothing else stops the walk, and the walker holds no other return than the
+    count running out: **every transition is tested, in record order, and every match fires.** There
+    is no first match rule. Firing is appending, and the append itself drops two things silently: an
+    all zero instruction, `0x0E62A` to `0x0E630`, and anything at all once the ring holds 40, `0x0E40A`
+    testing the count `0x21D` against `0x78` bytes.
+  * With a leading byte of 0, a match calls `0x0E674`, `0x16250`, which reads the three instruction
+    bytes at the flash cursor and goes to the queue append `0x0E628`; no match skips them.
+  * A nonzero leading byte below bit 7 takes `0x1625A`, which pushes the instruction a number of times
+    computed from `from`, `to` and `second`, and on that arm the match is not consulted. **No
+    configuration uses it**: the leading byte is 0 on 895 of 895 transitions of the thirteen arch 14
+    compiles, so its meaning is left unread.
+* **A fired instruction runs as a list's own does.** `0x7F`'s handler, `0x1A15A`, appends each of a
+  list's instructions through the same `0x0E674`, `0x1A18A`. The append goes on the queue's tail and
+  counts itself in `0x203`; the main loop pops and runs one instruction, `0x14FDA`, and then `0x0E776`
+  moves the `0x203` instructions that one appended from the tail to the head, byte by byte through
+  `0x0E478`, order kept. So what an instruction appends runs **next**, before anything queued earlier,
+  through the same dispatcher and the same setter: a call, not a queue at the back. So a bare write
+  inside a transition, `0x80 | v`, fires `v`'s transitions as a write in a list does, and a write in a
+  list called by `0x7F` is no different from either. The blind reviewer read the append and stopped at
+  the tail, and so reported the opposite order, breadth first; the rotation is what that misses.
+
+So **`-2` fires on every write, the value already held included, and `-3` only when the write changes
+the value**, on the 0.2 builds. That is section 277's reading of the sentinels on the Harmony One, and
+the queue and the leading byte are read on the 0.2 builds only.
+
+**Two bench runs agree, and each is the other's control.** Logitech's own chain of the same shape, the
+Panasonic TX-P42GT30E their compile put on the 650, `Input` writing `InputType` with a bare write and
+`InputType`'s `from -3` transition sending `InputHdmi1`: started from the 650, it sent `PowerOn` and then
+`InputHdmi1`, `400401200d2c`, 6.5 seconds later
+(`reads/20261002T115945Z-ir-test-panasonic-television-how-long-must-power-be-held-and-what-the-harmony-650-sends.json`).
+The LG's chain in the combined file, `Input` writing `Screen` with a bare `0xB8`, both `from -2`, sent
+`InputHdmi1` 6.3 seconds after the LG's `PowerOn` (the combined run, step 9).
+
+### Scope, decision 16
+
+The walker and both setters are one routine on the Harmony 600 and 650's 0.2 builds. The `from 0xFFFD`
+test, `MOVLW 0xFD; XORWF from; BNZ; SETF WREG`, occurs exactly once in each of five images: `0x161A2`
+on both 0.2 builds, `0x178DE` on the 650's 0.4, `0x17B06` on the Harmony 700's 2.8, and `0x2A3DE` on the
+Harmony One 3.4, inside section 277's walker at `0x2A37A`. On the 0.4 and the 2.8 the walker is located
+and **not compared** by a test; the blind reviewer read it as the same logic with one addition, an early
+return when the count is `0xFFFFFF`, which no test asserts; on the One the sentinels and the silent skip are
+section 277's and the rest is not read. The Harmony 525 is not checked.
+
+### What Logitech's compiler does with a `-3` input after a power on
+
+Over the thirteen arch 14 compiles, every activity start's input write was followed to what it runs:
+52 run a list or a send, one has no transition for its value, and 19 are a bare write of a state
+variable, of which 13 reach a `from -2` transition and 6 a `from -3` one. The six are Logitech's
+Panasonic TX-P42GT30E in three compiles and the `TV` of `h600_config` in three activities. **On all
+three Panasonic ones the device's power on writes that same `InputType` silently**, to 7, `TV`, after the
+power on delay: `[0x07 0xFFFF, 0x80 | InputType 7]`, one list called last from the power variable's
+`0 to 1` list. The 600's `TV` has no such list, and its catalogue entry is not pinned, so it says nothing
+about the rule. Over all 71 power variables of the thirteen, 12 devices call such lists, 17 of them, every
+one after the delay and none before: the fourteen of the test devices below, the Panasonic of
+`h650_panasonic_config`, and a VCR's `AntennaOutput` set to 0 in both `h700_config` files, whose catalogue
+entry is not pinned either.
+
+That list is the catalogue's `power.onReset`, which section 320 counted and did not compose, todo 2.5.
+Over the eighteen test device instances of the six power hold compiles, Logitech's compile holds one
+list per state the catalogue's `onReset` names, after the power on delay, in the catalogue's order, each
+the silent flag and one write, 14 lists on 9 instances. **Composed again from the catalogue alone, 13 of
+13 agree** on the eight instances whose device composes, variable property, value and silent flag; the
+ninth, the TX-28A1U, does not compose, its inputs sending a Technics code with no press block, and its
+list in Logitech's compile is silent and after the delay too. The value is the index of the value the
+catalogue names, and **that rule is thinly tested**: 10 of the 13 write 0 where the named value is index
+0, so only the TX-P42GT30E's three, one catalogue entry, `InputType` to `TV` which is 7, tell it apart
+from always writing the first value. Twice the catalogue names a value the variable does not declare and
+Logitech writes 0: the Quasar SP2717T's `Input` to `True`, where `Input` has one value, so every rule
+gives 0 and the case is evidence for nothing; and the TX-29AK40F's `Input` to `TunerMode`, which is index
+0 of that device's own `InputMode` state, so "the index in whichever state declares the name" gives 0 as
+well. One case, three rules that fit it; the composer writes 0 and marks it `declared: false`.
+
+**What the reset is for**, from the walker: the remote remembers `InputType` across a power cycle, so
+without it a second start asking for HDMI 1 finds 3 already there, and `-3` does not fire. With it, the
+power on puts 7 back silently and the start's write of 3 is a change. So the second start's silence on
+the bench is what the walker predicts for the file as composed **if** `InputType` held 3 after the first
+start, which is open below; whatever silenced the first start would silence the second as well, so the
+second start cannot tell the two apart. The reset is what Logitech's file has and ours lacked, either
+way.
+
+### What is not explained: the first start
+
+The walker predicts the **first** start sends `InputHdmi1`. Section 283 saw a restart of this 650's 0.2
+build put back every variable an activity had changed and take a changed delay from the configuration,
+so after the write's restart `InputType` should hold its `first`, 0, and the start's write of 3 is a
+change. It did not send. Against Logitech's Panasonic chain, which sent on the same remote, the composed
+one has the same shape in its chain: the same `0x1F 0xFB01` load and `0x71` condition prelude, the same
+send list shape, a power on list of the power send and a `0x72` mapping a delay of 50 tenths, and the
+same delays, 5 and 50. The activity start lists differ: ours writes the power and the input inline,
+Logitech's calls a sub list per step; since an append runs next, both run in the same order, and nothing
+here found an effect, but that comparison was not made instruction for instruction. Ruled out by reading the file: a stray writer of `InputType` or `Input` (none in any
+list, handler set or mode), the record bytes and leading bytes, the addresses the renumbering moved, a
+dangling silent flag, and the action queue: the start, followed with the walker's rules, writes fired included, peaks at 16
+of its 40 places in the sentence reviewer's simulation, which no test repeats. **The one
+difference left is the missing reset, which cannot matter to a first start.**
+
+So either `InputType` was already 3 when the run started, which needs something between the write's
+restart and the run to have set it, or a mechanism not read here. **A read decides it without writing
+anything**: `read-ram.ts --address 0xE10 --count 192` on the 650 as it stands, where `Plasma_Power` is
+variable 71 at `0xE57`, `InputType` 72 at `0xE58` and `Input` 74 at `0xE5A`, all below `narrow`, 75,
+so one byte each; then start Plasma kijken off the cable and read again. `InputType` reading 3 with
+nothing heard means the write ran and the send was lost after it; reading 0 means the chain stopped
+before it.
+
+### What the composer does now
+
+`composeDeviceInputs` composes the reset: one list per `onReset` state, `[0x07 0xFFFF, 0x80 | variable
+value]`, and a call to each appended to the device's power on list after its delay, in place, through
+`relocate`. A reset naming a variable this does not compose is left out and reported in `resetsLeftOut`;
+none of the eight instances that compose and state a reset has one. For the Plasma that is `InputType`
+set to 7 silently after the 5 second delay, so the write of 3 by every start that switches it on is a
+change. Composed several at a time into the base configurations of Logitech's five multi device compiles,
+the devices asked for with inputs carry 10 reset calls between them, and each device's whole power on
+list, delay and resets, equals the one in Logitech's compile of the same devices.
+
+### Falsification
+
+An arch 14 compile whose `onReset` list sits anywhere but after the power on delay, or writes without the
+silent flag; a transition that fires on the 650 with a `from -3` whose old and new values are equal; a
+start of a rebuilt Plasma kijken, reset composed, that sends no `InputHdmi1` after a `PowerOn` from a
+remote whose `InputType` reads anything but 3 before the start.
+
+### Where it lands
+
+* `docs/config-format.md`, base slot 13: which transitions a write fires, and the reset under a device's
+  inputs.
+* `packages/codec/src/inputs.ts`: `composeDeviceInputs` composes the resets, `appendResetCalls`, and
+  `ComposedReset`; the module comment's walker paragraph corrected in place.
+* `packages/codec/src/devicepower.ts`: `onResetStates` no longer says the resets are not composed.
+* `packages/codec/bin/compose-device.ts`: prints each reset, and says a reset needs `--inputs`.
+* `packages/codec/test/devicepower.test.ts`: the thirteen reset lists against Logitech's, by property,
+  value and flag, with the refused device and the two undeclared names asserted.
+* `packages/codec/test/inputs.test.ts`: the leading byte 0 on 895 of 895 transitions, counted.
+* `packages/codec/test/composecatalogue.test.ts`: the devices composed several at a time compare their
+  power on list whole where inputs are composed, 10 reset calls counted.
+* `tests/test_transition_walker.py`: the two 0.2 builds identical over the walker and setters, the
+  `0xFFFD` test once per image in five images, the sentinel arms, the bit 7 stop, the append, the list
+  call's append, the main loop's rotation that makes an append run next, and the setter's old value and
+  silent skip.
+* Section 321 corrected in place; `reference/superseded.md`: "transition walker is unread".

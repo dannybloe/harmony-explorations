@@ -287,12 +287,19 @@ function treeInOrder(c: Container): boolean {
   return composedNameTreeOrder(stored).every((index, k) => index === stored[k]);
 }
 
+/**
+ * The reset calls the devices composed with inputs here carry after their power on delay, each one found
+ * in the same place in Logitech's compile of the same devices. Measured, section NNN.
+ */
+const RESETS_COMPARED = 10;
+
 test('devices composed several at a time are where Logitech\'s compile of the same devices put them, and send what it sends',
   needing(skipWithoutIrArchive(), skipUnless(...FIXTURES)), () => {
     const named: string[] = [];
     let lists = 0;
     let devicesCompared = 0;
     let linked = 0;
+    let resetsCompared = 0;
     for (const pair of PAIRS) {
       const base = open(pair.base);
       const theirs = open(pair.compile);
@@ -354,11 +361,20 @@ test('devices composed several at a time are where Logitech\'s compile of the sa
           'DefaultInterDeviceDelay', 'DefaultPowerOnDelay', 'InterDeviceDelayFixingTriggered',
           'InterDeviceDelayFlagCounter', 'PowerOnDelayFixingTriggered', 'PowerOnDelayFlagCounter'], where);
         // What switching it on and off sends, and waits; Logitech's on transition then resets the input
-        // states its catalogue names, `T`, which is not composed, section 320.
+        // states its catalogue names, a `T` each. The composer composes those resets only where it
+        // composes the inputs, section NNN, and only for a state it composed a variable for, so ours
+        // carries exactly that many `T`s after the delay and theirs is cut back to the same count. A
+        // device composed with inputs whose resets all compose, which is every one here, therefore
+        // compares whole; one composed without inputs compares on what it sends and waits.
         const mineP = powerOf(ours, one.label);
         const theirP = powerOf(theirs, one.theirs);
         assert.equal(mineP.off, theirP.off, `${where}: off`);
-        assert.equal(mineP.on, theirP.on.replace(/( T)+$/, ''), `${where}: on`);
+        const resets = result.devices[k]!.inputs?.resets.length ?? 0;
+        assert.equal(mineP.on, theirP.on.replace(/( T)+$/, '') + ' T'.repeat(resets), `${where}: on`);
+        if (resets > 0) {
+          assert.equal(mineP.on, theirP.on, `${where}: on, its resets included`);
+          resetsCompared += resets;
+        }
       });
 
       // The state table and the value maps grow by what the composer composes and Logitech's by six
@@ -375,6 +391,8 @@ test('devices composed several at a time are where Logitech\'s compile of the sa
     }
     assert.equal(devicesCompared, 14);
     assert.equal(linked, 12);
+    // Counted rather than bounded: the reset calls composed here and found in Logitech's on transition.
+    assert.equal(resetsCompared, RESETS_COMPARED);
     assert.equal(lists, 22, 'six device lists on the 650 and four on each 700 compile');
 
     // **The control on the order**: the Harmony 700's first three composed the other way round sit on
@@ -392,7 +410,7 @@ test('devices composed several at a time are where Logitech\'s compile of the sa
     const theirModes = new Map(deviceModeMaps(theirs).map((one) => [one.mode, theirNames.get(one.group)!]));
     assert.notDeepEqual(deviceLists(wrongC, wrongModes), deviceLists(theirs, theirModes));
     // **One difference**: the TX-P42GT30E's power on resets its `InputType`, so Logitech compiles that
-    // state although no input variable writes it; the composer composes neither the reset, section 320,
+    // state although no input variable writes it; the composer composes neither the reset, section NNN,
     // nor the state, since it was not asked for inputs and the variable alone would be a state nothing sets.
     assert.deepEqual(named, ['h700_power_hold_compile Panasonic_TX-P42GT30E: ours Power 0..1 from 0, '
       + 'theirs InputType 0..8 from 0; Power 0..1 from 0']);
