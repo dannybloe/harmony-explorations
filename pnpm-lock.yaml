@@ -45,6 +45,9 @@ importers:
       '@harmony/lab':
         specifier: workspace:*
         version: link:../lab
+      '@harmony/usb':
+        specifier: workspace:*
+        version: link:../usb
 
   packages/corpus:
     dependencies:

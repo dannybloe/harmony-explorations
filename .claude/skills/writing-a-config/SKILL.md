@@ -52,6 +52,17 @@ produce a config the remote accepts and mishandles.
   of the opcode and reaches the store unchecked, so that bound is nothing a config writer has to
   respect. Reading that guard as the config's was this section's recorded error. What it is worth
   knowing for is the reply: a refused read returns 0, which looks exactly like a variable holding 0.
+* **A configuration holds at most 128 state variables, and Logitech's own reach 112 to 124**, section
+  NNN. A write names its variable in the low seven bits of the opcode, section 277, so a variable at 128
+  cannot be set, and `compose.ts` refuses one. A device composed here costs three variables plus its
+  inputs, 3 to 14 on the devices measured; Logitech's costs six more, seven on one device. The other
+  bound is the model's own device count, `maxDevices` in `packages/usb`'s model table, eight on a Harmony
+  650 and 700 by Logitech's own figure, which `composeCatalogueDevices` checks before composing anything.
+  **The device count binds first on every configuration measured**: the compositions onto the Harmony
+  650 and 700 bases within eight devices end at 94 to 110 variables, and the ceiling was met only past
+  the device count, composing onto two of Logitech's own eight device compiles, at 122 and 124, with no
+  device count passed. The ceiling is met on the Harmony 650 and 700 only; the Harmony 600's two
+  configurations hold 66 and 74.
 * **Every send is paired with a `0x7C` naming the same device**, section 278. Section 33 found the
   shape, `{0x7D, 0x7C}` on arch 8, 9 and 12 and `{0x7F, 0x7D, 0x7C}` on arch 14, with no bare send
   anywhere in the corpus, and section 278 found out what it costs to ignore: the device composer

@@ -33,7 +33,7 @@ copied. **Every chapter ends with a configuration that works on the 650.**
 - [ ] 2.4 A full device: every command the catalogue holds, on as many device mode pages as it takes (was 4.3.2); composed the way Logitech lays it out, 527 of 527 keys and 466 of 468 screen items on 19 devices (section 325); on the 650 still to see `lab/work/h650-full-device.bin`, a whole Panasonic TV on 7 pages
 - [ ] 2.5 A device's inputs: its input states and the commands that select them, directly or by stepping through them in order; the catalogue's are read (`driving.ts`, section 305) and composed, 174 of 175 of Logitech's transitions matched on ten devices (`inputs.ts`, section 321); on the 650 the composed Plasma's activity sent power and then **no** input (`reads/20261004T063001Z-ir-test-harmony-650-the-combined-bench-file.json`): its input state's transitions are Logitech's "value changed" kind (`from -3`), as on Logitech's own Panasonic in the same file, and the LG's that do fire are the wildcard kind (`from -2`); the Harmony 650's transition walker is unread, so read it before composing again
 - [ ] 2.6 Every infrared code of the test setup can be written: four in five catalogue commands do today, and the test setup is chosen from devices that compose completely
-- [ ] 2.7 Several devices composed at once into one configuration (was 4.3.3)
+- [ ] 2.7 Several devices composed at once into one configuration (was 4.3.3): `composeCatalogueDevices`, one run equals one at a time, and on five Logitech compiles of 14 devices the device lists match 22 of 22 pages (section 331); on the 650 still to write the TX-29AK40F and the Knoll onto `h650_panasonic_config` and see both rows, their pages and their power codes
 
 ## 3. Activities
 

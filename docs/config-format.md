@@ -3333,11 +3333,22 @@ with the capacity 16 doubled while the level 1 node count exceeds three quarters
 64 buckets and fail at 128, which pins their capacity from both sides; the eleven of 51 to 90 nodes fail
 at 64 and fit at 128 and every wider table alike, since their indices are all below 128, so theirs is
 pinned from below only. All 22 distinct trees Logitech built on arch 8, 9, 12 and 16, 2 to 25 level 1
-nodes over 35 files, show no step down either, and the twenty that `compose.ts` gave a node all do.
+nodes over 35 files, show no step down either, and the twenty that `compose.ts` gave a node before
+section 331 all do, because it appended the node.
 No arch 14 tree has a tie in a bucket, and `nameTreeOrder` refuses one; on arch 8 and 12 ten distinct
 pairs tie, fifteen times over ten trees, and every time the larger index is stored first, which is
-recorded and not adopted, section 324. Arch 10 (Harmony 890 and 895) has no name tree. Nothing on the
-remote reads the order; `buildNameTree` reproduces it.
+recorded and not adopted by the generator, section 324. Arch 10 (Harmony 890 and 895) has no name tree.
+Nothing on the remote reads the order; `buildNameTree` reproduces it.
+
+**A composed node is placed, not appended**, section 331. `compose.ts` re-sorts a level 1 run after
+adding a node, `orderNameTree`, by `composedNameTreeOrder`: the rule above with a tie stored larger
+index first. The tie order is adopted here where the generator refuses it because a composer cannot
+refuse a tree for holding one, every tie Logitech wrote is stored that way, and nothing on the remote
+reads base slot 0. Sorting each of the 34 distinct trees in section 324's two populations that way
+gives back its stored order, and so does every tree not composed by us across all the samples the lab
+registers. The tie order is fitted to the fifteen ties those trees hold, the only ties in the lab, and
+no composition yet produces one. A tree whose level 0 nodes do not all come first, or which holds level 2
+nodes, the arch 8 and 9 shape, is left as it is.
 
 A level 1 name is three parts, `<label>_<qualifier>_<values>`:
 

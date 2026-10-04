@@ -224,6 +224,37 @@ export function nameTreeOrder(indices: readonly number[]): number[] {
   return [...indices].sort((a, b) => bucketOf(a) - bucketOf(b));
 }
 
+/**
+ * The order a **composer** puts a name tree's level 1 nodes in: `nameTreeOrder`'s, and within a shared
+ * bucket the larger index first rather than a refusal, section 331.
+ *
+ * **Why a composer needs what the generator refuses.** `nameTreeOrder` builds a tree from a description
+ * and refuses a tie, because no arch 14 compile holds one and so the arch 14 compiler's order there is
+ * unread. A composer extends a tree that already exists, one node at a time, and cannot decline the
+ * indices it is given: a device composed onto a Harmony 600's tree of 32 nodes, in 64 buckets, can land
+ * two variables in one. What it can do is follow every tie Logitech's compilers did write: 15
+ * occurrences over the Harmony One's and the Harmony 880's and 885's trees, every one larger first,
+ * section 324. Sorted that way, every one of the 48 trees Logitech built that the lab holds, on arch 8,
+ * 9, 12, 14 and 16, comes back in its stored order, 34 distinct ones, ties included. So the tie order is
+ * observed on arch 8 and 12 and inferred for arch 14, where it only arises on trees of 48 nodes or
+ * fewer, the Harmony 600's; at 128 buckets or more no two indices below 128 share one.
+ *
+ * Base slot 0 is read by the host and by no firmware, so nothing on the remote depends on this order;
+ * it is kept so that a composed tree is one the compiler could have written, which is what reading a
+ * composed configuration against a Logitech compile of the same devices compares.
+ */
+export function composedNameTreeOrder(indices: readonly number[]): number[] {
+  const capacity = keyListCapacity(indices.length);
+  const bucketOf = (index: number): number => keyListHash(index) & (capacity - 1);
+  for (const index of indices) {
+    if (!Number.isInteger(index) || index < 0 || index > 0xff) {
+      throw new StateTablesError(`a state variable index is 0 to 255, not ${index}`);
+    }
+  }
+  if (new Set(indices).size !== indices.length) throw new StateTablesError('two nodes name one variable');
+  return [...indices].sort((a, b) => bucketOf(a) - bucketOf(b) || b - a);
+}
+
 /** A name, as the frame stores it: one byte a character, printable ASCII. */
 function checkName(name: string): void {
   for (let i = 0; i < name.length; i += 1) {

@@ -370,8 +370,9 @@ test('a Harmony 300 device group is indexed by its device type button',
  * section 265: the Chromecast has no infrared codes at all, and asking the catalogue about it crashed.
  *
  * **The fix is that the declared type is now true**: `codeset` is omitted rather than null, which is
- * what makes `codeset ?? fail(...)` in `bin/compose-device.ts` and `codeset!` elsewhere behave the way
- * their callers already assume, and `model` says it can be null.
+ * what makes the `states no codeset` refusal in `src/composecatalogue.ts`, which was `codeset ?? fail(...)`
+ * in `bin/compose-device.ts` until section 331 lifted the composition into the library, and `codeset!`
+ * elsewhere behave the way their callers already assume, and `model` says it can be null.
  */
 test('the archive states two fields as null and the reader does not pass either through',
   needing(skipWithoutIrArchive()), () => {

@@ -35,6 +35,8 @@ import {
   activityNames,
   activityStateVariables,
   buildStateRecord,
+  composeDevice,
+  composedNameTreeOrder,
   buildStateTables,
   buildValueMap,
   clockTransitions,
@@ -369,11 +371,75 @@ test('the level 1 order holds on every name tree Logitech built on arch 8, 9, 12
   assert.equal(largerFirst, tiesSeen);
 });
 
-test('the name trees composed here break the order, since compose.ts appends a node rather than placing it',
+test('the name trees composed here before section 331 break the order, since compose.ts appended a node rather than placing it',
      skipUnless(...COMPOSED_TREES), () => {
   let fits = 0;
   for (const name of COMPOSED_TREES) if (bucketsNeverStepDown(levelOne(name))) fits += 1;
   assert.equal(fits, 0);
+});
+
+/**
+ * Section 331: the order a composer extends a tree in, `composedNameTreeOrder`, is the rule with a tie
+ * stored larger first, which is every tie Logitech's compilers wrote. Sorting each tree that way gives
+ * back its stored order on every tree in section 324's two populations, arch 14's thirteen compiles
+ * and the other architectures' 35 files, ties included; the refusing generator's order is the control,
+ * since it throws on exactly the trees holding a tie. A wider pass over every registered sample found
+ * every tree not composed by us in this order, which this test does not assert. The tie order is fitted
+ * to the fifteen ties these trees hold, the only ones in the lab, so the second control below is what
+ * makes it a claim: storing a tie smaller first breaks exactly the files holding one.
+ */
+test('section 331: every name tree in section 324\'s populations is in the composer\'s order, ties stored larger first',
+     skipUnless(...LOGITECH_TREES, ...ARCH14_COMPILES), () => {
+  const trees = new Map<string, number>();
+  const refused: string[] = [];
+  const holdingATie: string[] = [];
+  // The control on the tie order itself: the same rule with a tie stored smaller first.
+  const smallerFirstBreaks: string[] = [];
+  for (const name of [...LOGITECH_TREES, ...ARCH14_COMPILES]) {
+    const c = containerOf(name);
+    const stored = nameNodes(c)!.filter((n) => n.level === 1).map((n) => n.index);
+    assert.deepEqual(composedNameTreeOrder(stored), stored, name);
+    const capacity = keyListCapacity(stored.length);
+    const bucket = (v: number): number => keyListHash(v) & (capacity - 1);
+    // How many nodes share a bucket with an earlier one, counted once per distinct tree.
+    trees.set(stored.join(','), stored.length - new Set(stored.map(bucket)).size);
+    if (new Set(stored.map(bucket)).size < stored.length) holdingATie.push(name);
+    const smallerFirst = [...stored].sort((x, y) => bucket(x) - bucket(y) || x - y);
+    if (smallerFirst.some((v, k) => v !== stored[k])) smallerFirstBreaks.push(name);
+    try { nameTreeOrder(stored); } catch (error) {
+      assert.ok(error instanceof StateTablesError);
+      refused.push(name);
+    }
+  }
+  assert.equal(trees.size, 34, 'the 22 of the other architectures and the 12 distinct arch 14 trees');
+  // Fifteen ties in all, section 324's count, and none on arch 14 (Harmony 600, 650 and 700).
+  assert.equal([...trees.values()].reduce((sum, n) => sum + n, 0), 15);
+  assert.ok(holdingATie.length > 0);
+  assert.ok(ARCH14_COMPILES.every((name) => !holdingATie.includes(name)));
+  // The generator refuses exactly the files holding a tie, and storing a tie smaller first breaks
+  // exactly those files: so the larger first order is what every one of them holds, not a sort that
+  // would pass whichever way a tie went.
+  assert.deepEqual(refused, holdingATie);
+  assert.deepEqual(smallerFirstBreaks, holdingATie);
+});
+
+/** A catalogue power code, as `compose.test.ts` composes one onto the Harmony 650. */
+const PANASONIC_POWER = 'G:PanasonicV2 48 Bit:()(0x400401007C7D)():3';
+
+test('section 331: a device composed now leaves its name tree in the compiler\'s order, on the Harmony 650 and the Harmony One',
+     skipUnless('h650_config_region', 'one_config'), () => {
+  for (const name of ['h650_config_region', 'one_config']) {
+    const c = containerOf(name);
+    const composed = parse(composeDevice(c, { label: 'Test', commands: [{ stated: PANASONIC_POWER }] }).bytes);
+    const nodes = nameNodes(composed)!;
+    const stored = nodes.filter((n) => n.level === 1).map((n) => n.index);
+    assert.equal(stored.length, levelOne(name).length + (name === 'one_config' ? 1 : 3), `${name}: the nodes`);
+    assert.ok(bucketsNeverStepDown(stored), `${name}: in bucket order`);
+    assert.deepEqual(composedNameTreeOrder(stored), stored, name);
+    // The control: the same nodes with the power variable's node last, where appending put it, are not.
+    const power = nodes.find((n) => n.name === 'Test_Power_2')!.index;
+    assert.ok(!bucketsNeverStepDown([...stored.filter((v) => v !== power), power]), `${name}: appended`);
+  }
 });
 
 test('which variable gets which index is not a hash order of its name',

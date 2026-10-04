@@ -42793,8 +42793,9 @@ distinct trees of 2 to 25 level 1 nodes, and all 22 show no step down at the rul
 is ascending. Three of the 22 are the Harmony 300 and 350's, of 2 to 5 nodes, which say little. Those of arch 8 and 9 carry a third level 0 node, `HarmonyAssistant`, and level 2 nodes the
 generator does not build. Arch 10 (Harmony 890 and 895) has no name tree. **The only trees that break
 it are ours**: all twenty configurations in the lab that `compose.ts` gave a node, thirteen on the spare
-Harmony One and seven on the Harmony 650, because it appends the node rather than placing it. Those ran on the remote,
-which agrees with nothing on it reading base slot 0.
+Harmony One and seven on the Harmony 650, because it appended the node rather than placing it. Those ran on the remote,
+which agrees with nothing on it reading base slot 0. **Since section 331 the composer places the node**,
+with a tie stored larger first, and the twenty stay in the lab as they were written.
 
 ### The index order is not a hash order of the names
 
@@ -43999,3 +44000,206 @@ Each is corrected above.
 * `packages/codec/src/devicemode.ts`: `LABEL_WRAP_WIDTH`, and `wrapAtSpaces` exported over a width function.
 * `packages/codec/test/devicepage.test.ts`: the calibration on the thirteen and the controls.
 * `docs/config-format.md`, after section 325's table.
+## 331. Several catalogue devices composed in one run are composing them one at a time, and they land where Logitech's compile of the same devices puts them
+
+**Date:** 4 October 2026. **Status:** confirmed by construction against five Logitech compiles that
+added the same catalogue devices to configurations we hold, fourteen devices on the Harmony 650 and 700,
+and by device mode on thirteen devices in five compiles including the Harmony 600's, with controls.
+Nothing composed this way has been written to a remote.
+
+**Asked for by `todo-compile-650.md` 2.7.** `composeDevice` adds one device, and `bin/compose-device.ts`
+drove it once per run. Composing several meant running it several times and reading every variable
+number again in between, and nothing compared the result with what Logitech's compiler writes when an
+account gains several devices at once.
+
+**Sources checked**: this document, sections 136, 277, 287, 288, 303, 306 to 308, 312, 319 to 321, 324
+and 325, the six power hold compiles and the two configurations they were compiled from, and every name
+tree in the lab. Neither firmware nor client was opened: what is compared is what Logitech's compiler
+wrote, and the compiler ran on their server, section 293's exemption. The two bounds come from earlier
+readings: the write band's seven bit index from section 277, and the device count per model from the
+live service's `MaxDevicesPerAccount`, section 136.
+
+### What was wrong, and what changed
+
+* **The name tree was appended to.** Section 324 found the level 1 nodes stored in the bucket order of a
+  Java 6 `HashMap` keyed by the variable index, and every tree `compose.ts` had touched broken, because
+  `appendNameNode` put the new node last, all twenty in the lab. Several devices put several nodes last. `appendNameNode` now
+  ends with `orderNameTree`, which re-sorts the level 1 run in place by `composedNameTreeOrder`: the
+  rule, with a tie stored larger index first. Section 324 recorded that tie order on every tie
+  Logitech wrote, fifteen occurrences on arch 8 and 12, and left `nameTreeOrder` refusing a tie, since
+  the insertion order behind it is not established. The composer adopts it instead of refusing, because
+  it cannot refuse a configuration for holding one, and because base slot 0 is read by no firmware, so a
+  wrong tie order costs nothing on the remote. On a Harmony 650 or 700 tree of 128 buckets no tie can
+  arise at all: below 128, `i ^ (i >>> 4)` is a bijection, and the write ceiling below keeps every index
+  under 128. So the tie order matters on arch 12 and on the Harmony 600's 64 bucket trees. Sorting each
+  of the 34 distinct trees in section 324's two populations, arch 14's twelve and the other
+  architectures' 22, gives back its stored order, and the generator refuses exactly the files whose
+  trees hold a tie. Both reviewers went wider, over every sample the lab registers, and found every tree
+  not composed by us in that order and no tie stored smaller first; their totals differ only in how a
+  distinct tree is counted, the extra ones being the Harmony 300 and 350 trees and degenerate trees of
+  none or one node in firmware images. **The tie order is fitted rather than tested**: it was read off
+  the same fifteen ties the sort gives back, no tie exists anywhere else in the lab, no arch 14 tree holds
+  one, and no composition in any test produces one, so the tie half of `composedNameTreeOrder` is
+  exercised by Logitech's trees only. On a device composed onto the Harmony 650 and onto
+  the Harmony One the tree is now in bucket order, and the same nodes with the power variable's last, where
+  appending put it, are not. A tree whose level 0 nodes do not all come first, or which holds level 2
+  nodes, the arch 8 and 9 shape, is left as it is.
+* **A device's variable numbers went stale.** Its delay variables are appended above `narrow`, and
+  every one byte variable composed after `composeDevice` returns goes in below them and moves them up:
+  its own inputs' variables, and every later device's power variable. On the Harmony 650 the TX-29AK40F's
+  power on delay was variable 98 when composed and 106 at the end of the run: seven of its own input and
+  state variables and the Knoll's power variable went in below it, `narrow` 71 to 78 and 78 to 79. The
+  power variable sits below `narrow` and does not move. So the run reads every device's variables back
+  by name at the end, `<label>_<property>_<n>` and `<property>_<identifier>_<n>`, and reports those.
+* **Nothing composed several.** `composeCatalogueDevices` in `packages/codec/src/composecatalogue.ts`
+  composes a list in order, each device onto the reparsed result of the one before, which is what the bin
+  had done once per run; the bin's whole composition moved into the library as `composeCatalogueDevice`,
+  and the bin's single device form goes through it too. A single device composed through the library was
+  the old bin's output byte for byte apart from the stamp, compared once on files and not a test. `--catalogue <file>` gives the bin a JSON list.
+
+### The measurement
+
+**One run is the chain.** On the Harmony 650's own configuration, the TX-29AK40F with its inputs and the
+Knoll composed in one run are byte for byte the two composed one after the other. The identifiers are one
+and two past the highest the configuration holds. The control: the other order is a different
+configuration, with the identifiers swapped.
+
+**Against Logitech's compiles of the same devices.** Five pairs: `h650_panasonic_config` and
+`h650_power_hold_compile`, two devices added, and `h700_28_config_region` with each of
+`h700_power_hold_compile` to `_4`, three each. The 650's second compile is not a pair, since its
+TX-28A1U composes nothing, section 325. Each pair's devices are composed onto its base in the order of
+their device list rows in Logitech's compile, with their power commands on the page and inputs asked for
+exactly where Logitech's compile holds an input variable, and compared:
+
+| what | equal |
+|---|---|
+| every device list, page by page: which device in which corner or row in fill order, and the counter | 22 lists of 22 |
+| the order of the added devices' identifiers against the order of their rows | 5 compiles of 5; read device by device through the delays' defaults page on the 12 of 14 the reader links, the JVC and the CS-29FJ20S by elimination |
+| Logitech's identifiers within one compile consecutive, so one past the one before for every device after the first | 5 compiles of 5, and the 650's second compile too |
+| each device's two delays, `PowerOnDelay` and `InterDeviceDelay` | 28 of 28 |
+| what switching each device on and off sends and waits | 14 of 14 off, 14 of 14 on once Logitech's input resets are set aside |
+| each device's variables, their ranges and first values | 13 of 14 |
+| the name tree in the compiler's order | 5 of 5 ours, 5 of 5 theirs |
+
+The control: the Harmony 700's first three composed in reverse order sit on the device lists in the
+other order, and the lists no longer match Logitech's.
+
+**Device mode, several at a time against one at a time.** Section 325 composed each catalogue device
+whole into its own compile; here the devices of each compile are composed together, whole, into that
+compile, and each one is also composed alone onto the same compile. Five compiles, thirteen devices: the
+Harmony 650's first, the Harmony 700's first, second and fourth, and the Harmony 600's `calibration_h600`
+without its Blu-ray player, which has no catalogue model. The Harmony 700's third is a refusal only,
+below. Read with the same reader, every one of the
+thirteen modes composed together is the mode composed alone: 13 page counts of 13, 369 keys of 369, 338
+items of 338, 338 labels of 338, 91 titles of 91, 91 counters of 91, 91 backgrounds of 91 by the
+picture's own bytes, since a later device moves every address, and 91 page programs of 91. The control,
+each mode against the next device's, agrees on 0 page counts of 13 and 0 titles of 57.
+
+Against Logitech's own device modes, read out of the same container, the thirteen agree but for the
+differences section 325's single device score names on these devices, the JVC's title on three pages,
+one Sony KE-50MR1E label and that label's page, and one kind more, named below.
+
+### The two bounds
+
+**A model holds the devices Logitech lets its account hold.** `composeCatalogueDevices` takes
+`maxDevices` and refuses, before composing anything, a list that would pass it: eight on a Harmony 650,
+which the bin reads off the configuration's own skin through `modelForSkin`. It also refuses an empty
+list, and a label the configuration or the list already holds.
+
+**A configuration holds at most 128 state variables**, because a write names its variable in the low
+seven bits of the opcode, section 277, and `compose.ts` already refused a variable at 128. What is new is
+how close Logitech's own configurations come: the six eight device power hold compiles hold 112, 113,
+116, 116, 122 and 124, where the two configurations they were compiled from hold 85 and 97. A device
+composed here costs three variables, its power variable and two delays, plus its inputs: 3 to 14 on
+the devices measured here, 10 on the TX-29AK40F and 14 on the TH-42PA30. Logitech's costs those plus
+six, seven on the TX-P42GT30E, below. **The device count binds first on every configuration measured**:
+the compositions onto the two bases within eight devices end at 94 to 110 variables. The ceiling was met only past the device count, composing onto
+Logitech's own compiles that already hold eight, with `maxDevices` not passed: in the device mode test
+the Harmony 650's first compile, at 122, takes two more and refuses a third, and the Harmony 700's
+third, at 124, takes one and refuses a second, while the 112, 113 and 116 compiles take all of theirs.
+The Harmony 600's two configurations hold 66 and 74. The refusal now names the device and how many came
+before it in the run.
+
+### What Logitech writes and the composer does not, each counted
+
+* **Six more variables per device and two more value maps.** Logitech gives every added device
+  `DefaultPowerOnDelay`, `DefaultInterDeviceDelay`, `PowerOnDelayFixingTriggered`,
+  `InterDeviceDelayFixingTriggered`, `PowerOnDelayFlagCounter` and `InterDeviceDelayFlagCounter`, 14
+  devices of 14, and four value maps per device where the composer makes two, 5 compiles of 5; the
+  TX-P42GT30E gets a seventh, the `InputType` state below. What reads the six is not established here. Section 303's saved delays are what they look like, and composing those is todo
+  L10.
+* **An input state nothing sets.** Logitech's compile gives the TX-P42GT30E an `InputType` state of nine
+  values, which its power on resets, while giving it no input variable. The composer, not asked for
+  inputs there, composes neither. One device of 14.
+* **The input resets after a power on.** Logitech's on transitions end by resetting the input states
+  their catalogue names, where it names any, 6 devices of 14, which section 320 already recorded as not
+  composed; the comparison sets them aside.
+* **No input variable on six devices whose catalogue states inputs.** The Knoll, the TX-P42GT30E, the
+  Barco, the Pioneer, the CS-29FJ20S and the TX-D37LT84F have an input plan from `inputPlan` and no
+  input variable in Logitech's compile, where the other five that have one got theirs. What decided that
+  is not read, so the calibration asks for inputs where the compile has them. There is a lead, from the
+  sentence audit: of the eleven devices with an input plan, Logitech gave an input variable exactly where
+  the catalogue's power on resets input states, 10 of 11, the exception being the TX-P42GT30E, which
+  resets one state and got that `InputType` state and no input variable. A lead and not a rule.
+* **The delays' defaults page.** Logitech's compile gives every device a place on the page that puts
+  delays back to their defaults, `deviceDelays`, and that page is also what `deviceIdOfGroup` reads to
+  link a device's infrared group to its identifier. The composer adds none: on the Harmony 650 with two
+  devices composed, 6 of 8 devices are on it and have an identifier the reader can link, against 8 of 8
+  in Logitech's compile of the same two. This is so for a single composed device as well, and the run
+  restates every identifier by name for that reason.
+* **The device list label.** Logitech draws the device's name on two lines in a smaller size; the
+  composer draws a label on one line of at most 59 pixels in the list's font, and a configuration only
+  carries the glyphs its own texts use, so neither base can spell `Panasonic TX-29AK40F`. The devices are
+  therefore composed under short labels the base spells and compared by position. Drawing a glyph a
+  configuration lacks is chapter 8 of the plan. The composer also refuses an underscore in a label,
+  which the name grammar splits on, where Logitech writes `Panasonic_TX-29AK40F`.
+* **A device mode's power pad.** The whole device composition makes a power pad run the device's whole
+  power action, `padList` in `composecatalogue.ts`, on every device that has power steps, 13 of 13 here,
+  where Logitech's device mode sends none of its power transition records, 0 of 13, and sends the plain
+  press. The score sees this in four places on three devices, the Mivar's Power On and Power Off, the
+  DSI-4400's Power Toggle and the 25DT60H's key 1, because there the record the action sends first
+  carries a different frame value from the stated command; on the other ten the namer names that record
+  by its value as the plain command and cannot tell them apart. Composed alone they are the same, so this
+  is the composition's choice and not the run's. The first version of this paragraph explained the four
+  as the devices needing a long press version, section 320, which fitted the three devices the score
+  happens to see; the sentence audit found the pads run the power action on all thirteen.
+
+### What this does not establish
+
+* Anything on a remote. No configuration with several composed devices has been written, so that the
+  remote reads one the same way as one composed device is predicted, not measured.
+* Arch 14 only for the several device comparison, the Harmony 650 and 700 against compiles and the
+  Harmony 600 for device mode. The name tree placement is also checked on arch 12 (the Harmony One), on
+  one composed device. A tree of the arch 8 and 9 shape is left in the order it has.
+* The first identifier of a run: Logitech's counter leaves a gap before it that nothing here can know,
+  section 319.
+* What decides which devices get an input variable, and what the six extra variables do. Over all
+  sixteen devices the power hold compiles added, the catalogue's input plan gives an input variable to
+  13 and Logitech's compile holds one for 6, the seven disagreements all one way; the fourteen here are
+  six of them, the 650's second compile adding the Dell.
+
+### Falsification
+
+A Logitech compile adding several devices whose device list rows are not in the order of their
+identifiers, or whose identifiers within the compile are not consecutive; a Logitech name tree with a tie
+stored smaller index first; a device whose mode composed in one run differs from the same device composed
+alone; a configuration with more than 128 state variables that a remote runs.
+
+### Where it lands
+
+* `packages/codec/src/composecatalogue.ts`: `composeCatalogueDevice`, `composeCatalogueDevices`, the
+  final variables by name, the device count and label refusals, and the refusal naming the device.
+* `packages/codec/src/compose.ts`: `orderNameTree`, called by `appendNameNode`; the variable ceiling's
+  docstring.
+* `packages/codec/src/statetables.ts`: `composedNameTreeOrder`.
+* `packages/codec/bin/compose-device.ts`: `--catalogue`, the model's device count, the final variables.
+* `packages/codec/test/composecatalogue.test.ts`: one run against the chain with the staleness measured
+  and the order control, the refusals each by its message, and the five pairs against Logitech with the
+  identifiers read device by device and the reverse order control.
+* `packages/codec/test/devicemode.test.ts`: several devices against one at a time and against Logitech,
+  the next device control, and the two ceiling refusals.
+* `packages/codec/test/statetables.test.ts`: every tree in section 324's populations in the composer's
+  order, the fifteen ties and none on arch 14, the refusals of exactly the files with a tie and the
+  smaller first control breaking exactly those, and a composed device's tree in order with the appended
+  control.
+* `docs/config-format.md` under base slot 0.
