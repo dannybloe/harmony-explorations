@@ -53,6 +53,7 @@ import {
   type NameNode,
   handlerSets,
   HANDLER_TABLE_SLOT,
+  stateRecords,
 } from './sections.ts';
 import {
   SCREEN_DRAW_IMAGE_AT, SCREEN_JUMP, SCREEN_QUEUE_INSTRUCTION, type ScreenInstruction, bitmapAt,
@@ -98,7 +99,11 @@ import {
   QUEUE_INTER_DEVICE_DELAY,
   SEND_PRELUDE_LOAD,
   sendPreludeCondition,
+  compilerCaseOrder,
 } from './inventory.ts';
+import {
+  menuMarkerVariable, startSequenceVariables, stateVariableName, type StateVariableSpec,
+} from './statetables.ts';
 import { characterMap, decode, glyphsReferencedBy, screenStrings } from './text.ts';
 import { type FontSet, fontSets, glyphOf } from './font.ts';
 import {
@@ -116,6 +121,7 @@ import { blockOfStatedCode, longPressBlockOfStatedCode, statedCode, statedProtoc
 import { TOUCH_AREA_LENGTH, type TouchArea, type TouchPage, touchPages } from './tables.ts';
 import {
   deviceListRowMode, deviceListRows, deviceModeMarker, devices as deviceInventory, FOUR_SLOT_ITEMS,
+  isDeviceListRowShape,
   fourSlotCellAt, FOUR_SLOT_LABEL_Y, INPUT_PROPERTY, POWER_PROPERTY,
   FOUR_SLOT_LEFT_X, FOUR_SLOT_RIGHT_END, FOUR_SLOT_ROWS, FOUR_SLOT_SCREEN_WIDTH, FOUR_SLOT_STORED_ORDER,
   TWO_ROW_LABEL_Y,
@@ -954,10 +960,12 @@ export function composeDevice(c: Container, device: ComposeDevice): ComposedDevi
  * **What the change did to the refusals**, all in `composeDelays`. Two went: a configuration with no
  * power on delay table to copy an order off, and one whose first prelude's table did not read as an
  * inter device delay table, neither of which the composer needs any more. One came: the start variable
- * is read off the activities through `arch14Starts`, so composing a device on arch 14 now needs at
- * least one activity, every activity's enter list in the shape that reader accepts. Each of the
- * thirteen compiles has one; a configuration with no activity was composable before and is refused
- * now, with nothing in it to say which variable its commands should test.
+ * was read off the activities through `arch14Starts`, so composing a device on arch 14 needed at least
+ * one activity. **That one went again in section NNN**: the start variable is read off the Off key map,
+ * `startSequenceOf`, one per configuration on each of the thirteen compiles, and every activity is
+ * checked against it, so a configuration with an Off key map and no activity composes again and one
+ * whose activities raise another variable is refused. No configuration without an activity exists here
+ * to show that every one has an Off key map.
  *
  * **What is deliberately not composed**: the device's other six delay variables, the defaults and the
  * two counter and flag pairs; the second table each device carries on each of its two delay
@@ -1220,8 +1228,9 @@ function composeDelays(c: Container, group: number, interDevice: number, powerOn
   }
   // The prelude's operands, built: the load is a constant and the condition compares the start
   // sequence variable, which is the one the configuration's activities raise for the length of their
-  // start, section 289. The configuration's own preludes are checked against it, so a configuration
-  // whose commands test some other variable is refused rather than given a second one.
+  // start, section 289, read off its Off key map and checked against every activity by `arch14Starts`,
+  // section NNN. The configuration's own preludes are checked against it, so a configuration whose
+  // commands test some other variable is refused rather than given a second one.
   const loadOperand = SEND_PRELUDE_LOAD;
   const conditionOperand = sendPreludeCondition(arch14Starts(c).startVariable);
   for (const one of sendPreludes(c)) {
@@ -1917,12 +1926,69 @@ const BEEP_OPCODE = 0x75;
  * carries and this supplies only the operand. Section 275.
  */
 const ACTIVITY_MENU_MARKER_VALUE = 0;
+/** What a **device list** row writes into the same variable, section 239. */
+const DEVICE_MENU_MARKER_VALUE = 1;
 /**
- * A menu row ends by writing 1 into the variable that marks device mode, and **which variable that
- * is differs per configuration**, eight values across fourteen configs, section 239. So the composer
- * reads it off the rows the config already has rather than carrying a number.
+ * Where the menu rows are measured: arch 12 (Harmony One) and arch 14 (Harmony 600, 650 and 700).
+ * Arch 8, 9 and 10 (Harmony 880 and 885, 525, 890 and 895) are not read: they hold no list of the
+ * Harmony One's beeped row shape, and they do hold lists of the arch 14 activity row's unbeeped
+ * shape, each writing 0 into one variable per configuration, whether that variable is this marker
+ * being unread.
  */
-/** The marker itself is read by `deviceModeMarker` in `inventory.ts`; this file only writes it. */
+const MENU_MARKER_ARCHITECTURES: readonly number[] = [12, 14];
+
+/**
+ * The variable every menu row writes last, the menu marker, section NNN, `todo-compile-650.md` 6.2.8.
+ *
+ * **Which variable it is differs per configuration**, ten different ones over the eighteen of the
+ * marker census, sections 239 and 285, and fifteen over the 27 below, so the index is the configuration's own; in one built from nothing it is the
+ * description's, `menuMarkerVariable`. **What is generated is everything else**: a device list row
+ * writes `DEVICE_MENU_MARKER_VALUE`, an activity row `ACTIVITY_MENU_MARKER_VALUE`, and the variable is
+ * an unnamed 0 of maximum 3 with no transition. Until then the composer copied the whole instruction
+ * off the rows, the device rows' by majority in `deviceModeMarker` and the activity rows' off the
+ * first activity menu it found, so a configuration with no activity row had no marker for a composed
+ * activity's row to write.
+ *
+ * **The variable is read off every row of both kinds and they must agree**, not off a majority: every
+ * list of a device list row's shape, `isDeviceListRowShape`, writes it 1 as its last instruction, and
+ * every list of an activity row's shape writes it 0, 2256 and 282 lists on the 27 configurations of
+ * a Harmony One, 600, 650 or 700 the marker census and the thirteen arch 14 compiles read together.
+ * Rows are not its only writers: outside them it is written 0 once on each of the 27, and 1 a further 2
+ * to 9 times on each Harmony One configuration. Either kind alone names it, so a configuration with device rows and no activity
+ * row, or the reverse, still has one. Refused with neither, with two variables, with a value other
+ * than the generated one, or with a record other than the generated one.
+ */
+export function menuMarkerOf(c: Container): number {
+  if (!MENU_MARKER_ARCHITECTURES.includes(c.architecture as number)) {
+    throw new ComposeError('the menu marker is read on the Harmony One, 600, 650 and 700 alone, whose rows are measured');
+  }
+  const lists = c.actionLists() ?? [];
+  const variables = new Set<number>();
+  const wrong: string[] = [];
+  for (const [index, list] of lists.entries()) {
+    const deviceEnd = isDeviceListRowShape(list, c.architecture) ? list.at(-1) : undefined;
+    const activityEnd = activityRowEnd(list, c.architecture);
+    for (const [end, value] of [[deviceEnd, DEVICE_MENU_MARKER_VALUE], [activityEnd, ACTIVITY_MENU_MARKER_VALUE]] as const) {
+      if (end === undefined) continue;
+      variables.add(end.opcode - STATE_WRITE_BASE);
+      if (end.operand !== value) wrong.push(`list ${index} writes ${end.operand} where ${value} is built`);
+    }
+  }
+  if (variables.size !== 1) {
+    throw new ComposeError(variables.size === 0
+      ? 'no menu row here to read the menu marker variable from'
+      : `the menu rows write ${variables.size} different variables last: ${[...variables].join(', ')}`);
+  }
+  if (wrong.length > 0) throw new ComposeError(`a menu row writes the marker another value: ${wrong[0]}`);
+  const marker = [...variables][0] as number;
+  assertGeneratedRecord(c, marker, menuMarkerVariable(), 'the menu marker');
+  return marker;
+}
+
+/** The instruction a menu row ends with, built: the marker variable and the row kind's value. */
+function menuMarkerWrite(c: Container, value: number): Instruction {
+  return { opcode: STATE_WRITE_BASE + menuMarkerOf(c), operand: value };
+}
 /** Screen language opcodes, spelled here because the writer emits them as bytes. */
 const OP_END = 0x00;
 const OP_IMAGE = 0x02;
@@ -2003,7 +2069,16 @@ function deviceListMenus(
   c: Container,
 ): { menus: number[]; reach: number; marker: Instruction | undefined } {
   const lists = c.actionLists() ?? [];
-  const marker = deviceModeMarker(c);
+  // The row's last instruction, built rather than taken by majority off the rows, section NNN; a
+  // configuration with no menu row at all has no marker to build, which the callers refuse.
+  let marker: Instruction | undefined;
+  if (MENU_MARKER_ARCHITECTURES.includes(c.architecture as number)) {
+    try {
+      marker = menuMarkerWrite(c, DEVICE_MENU_MARKER_VALUE);
+    } catch (error) {
+      if (!(error instanceof ComposeError) || !/no menu row here/.test(error.message)) throw error;
+    }
+  }
   const records = modeRecords(c) ?? [];
   let deepest = 0;
   const reached = records.map((record) => {
@@ -4414,43 +4489,59 @@ function composeFourSlotDeviceScreen(
  * Read rather than tabulated for the same reason `deviceModeMarker` is: which variable marks the
  * top level screen differs per configuration, so a composer carrying a number would write a menu row
  * that parses, renders, and points the remote at the wrong screen.
+ *
+ * **The marker it returns is built**, section NNN: `menuMarkerOf`'s variable with
+ * `ACTIVITY_MENU_MARKER_VALUE`, checked against every row of both kinds, rather than the last
+ * instruction of the last row this walk met. The menu itself is still the one whose rows select the
+ * most entries, `todo-compile-650.md` 6.2.9.
  */
 function activityMenus(c: Container): { menu: number | undefined; marker: Instruction | undefined } {
   const lists = c.actionLists() ?? [];
-  // The row without its beep: an arch 14 (Harmony 600, 650 and 700) row carries none and an arch 12
-  // (Harmony One) row opens with one, section 289.
-  const bodyOf = (list: readonly Instruction[] | undefined): readonly Instruction[] | undefined => {
-    if (list === undefined) return undefined;
-    if (c.architecture === 14) return list;
-    return list[0]?.opcode === BEEP_OPCODE ? list.slice(1) : undefined;
-  };
-  const endOfRow = (index: number): Instruction | undefined => {
-    const body = bodyOf(lists[index]);
-    if (body === undefined || body.length !== 2) return undefined;
-    const select = body[0] as Instruction;
-    if (select.opcode !== SELECT_BINDING_SET) return undefined;
-    if ((select.operand & SELECT_BINDING_SET_MASK) !== SELECT_BINDING_SET_MASK) return undefined;
-    return body[1] as Instruction;
-  };
   const records = modeRecords(c) ?? [];
   let menu: number | undefined;
-  let marker: Instruction | undefined;
   let most = 0;
   records.forEach((record, index) => {
     const sets = new Set<number>();
-    let end: Instruction | undefined;
     for (const page of record.pages) {
       for (const entry of taggedList(c, page.list)?.entries ?? []) {
         if (entry.opcode !== ACTION_LIST_INDEX_OPCODE) continue;
-        const found = endOfRow(entry.operand);
-        if (found === undefined) continue;
-        sets.add((bodyOf(lists[entry.operand])?.[0] as Instruction).operand & 0xff);
-        end = found;
+        const list = lists[entry.operand];
+        if (activityRowEnd(list, c.architecture) === undefined) continue;
+        sets.add((activityRowBody(list, c.architecture)?.[0] as Instruction).operand & 0xff);
       }
     }
-    if (sets.size > most) { most = sets.size; menu = index; marker = end; }
+    if (sets.size > most) { most = sets.size; menu = index; }
   });
-  return { menu, marker };
+  const measured = MENU_MARKER_ARCHITECTURES.includes(c.architecture as number);
+  return { menu, marker: menu === undefined || !measured ? undefined : menuMarkerWrite(c, ACTIVITY_MENU_MARKER_VALUE) };
+}
+
+/**
+ * An activity row without its beep: an arch 14 (Harmony 600, 650 and 700) row carries none and an
+ * arch 12 (Harmony One) row opens with one, section 289.
+ */
+function activityRowBody(
+  list: readonly Instruction[] | undefined, architecture: number | undefined,
+): readonly Instruction[] | undefined {
+  if (list === undefined) return undefined;
+  if (architecture === 14) return list;
+  return list[0]?.opcode === BEEP_OPCODE ? list.slice(1) : undefined;
+}
+
+/**
+ * The instruction an activity row ends with, if `list` has an activity row's shape: select a base
+ * slot 9 entry, then a state write, the menu marker's, section 275.
+ */
+function activityRowEnd(
+  list: readonly Instruction[] | undefined, architecture: number | undefined,
+): Instruction | undefined {
+  const body = activityRowBody(list, architecture);
+  if (body === undefined || body.length !== 2) return undefined;
+  const select = body[0] as Instruction;
+  const end = body[1] as Instruction;
+  if (select.opcode !== SELECT_BINDING_SET) return undefined;
+  if ((select.operand & SELECT_BINDING_SET_MASK) !== SELECT_BINDING_SET_MASK) return undefined;
+  return end.opcode >= STATE_WRITE_BASE ? end : undefined;
 }
 
 /**
@@ -5482,10 +5573,125 @@ interface Arch14Starts {
   sets: Map<number, number>;
 }
 
+/** The variable a state write names, if it is a write of `value`. */
+function writtenWith(one: Instruction | undefined, value: number): number | undefined {
+  return one !== undefined && one.opcode >= STATE_WRITE_BASE && one.operand === value
+    ? one.opcode - STATE_WRITE_BASE : undefined;
+}
+
+/**
+ * Refuse unless variable `index` is the unnamed record `spec` describes: its value, its maximum and
+ * no transition, the shape `statetables.ts` generates for it. A variable a reader picked out by its
+ * use that held something else would be another variable used the same way, so it is refused rather
+ * than taken.
+ */
+function assertGeneratedRecord(c: Container, index: number, spec: StateVariableSpec, what: string): void {
+  const record = (stateRecords(c) ?? [])[index];
+  if (record === undefined || record.first !== spec.first || record.second !== spec.max
+      || record.count !== (spec.transitions?.length ?? 0)) {
+    throw new ComposeError(`${what}, variable ${index}, is not the record built for it: it holds `
+      + `${record?.first}/${record?.second} with ${record?.count} transitions, and ${spec.first}/${spec.max} `
+      + 'with none is built');
+  }
+  if (stateVariables(c).some((one) => one.index === index)) {
+    throw new ComposeError(`${what}, variable ${index}, has a name, and the one built has none`);
+  }
+}
+
+/** The variable the Off key map's enter list maps through base slot 14, section 280. */
+const LOCATION_STATE_NAME = 'CurrentLocation';
+
+/** The two variables an arch 14 start brackets itself with, `startSequenceOf`'s answer. */
+export interface StartSequenceVariables {
+  /** `S`: held at 1 while a start runs, tested by every command prelude, section 319. */
+  startVariable: number;
+  /** `F`: written 1 by an activity before it defers its working screen, and 0 by the Off key map. */
+  flagVariable: number;
+}
+
+/**
+ * The start variable and the flag of a Harmony 600, 650 or 700 configuration, read off its **Off**
+ * key map rather than off an activity, section NNN, `todo-compile-650.md` 6.2.4.
+ *
+ * Until then both were read off the activities' enter lists, `arch14Starts`, which made a
+ * configuration with no activity uncomposable: nothing in it said which variable a command prelude
+ * should test. The Off key map is base slot 9's `idle` entry, `handlerSetRoles`, the key map the
+ * remote installs when no activity runs, whose enter list maps `CurrentLocation` through base slot 14,
+ * section 280; the second condition is what tells it from an activity composed without its menu row
+ * yet, which no row binds either, and whose enter list raises `S` as the Off's lists do. **It is in each
+ * of the thirteen compiles, one per configuration**; no configuration without an activity exists here
+ * to show that it always is, the fewest being two. Both its lists bracket themselves the way an activity's start does, and with the same
+ * two variables: its enter list `[7F, 72 location, S:=1, F:=0, 7F, 72 location, S:=0]` and its tag 5
+ * list `[S:=1, F:=0, ..., S:=0]`, 26 lists of 26 on the thirteen compiles. So `S` is the variable the
+ * first write of 1 names, provided the list ends by writing it 0, and `F` the variable written 0 straight
+ * after it.
+ *
+ * **What is generated is each variable's record**, `startSequenceVariables`, and both are checked:
+ * an unnamed 0 of maximum 1 with no transition. **What is not generated is the index**, which is the
+ * configuration's own and can be nothing else, since Logitech's lists already name it; where it comes
+ * from in a configuration built from nothing is the description's order, section 324.
+ *
+ * Refused when there is no Off key map, which is what the safe mode containers give, or when its lists
+ * disagree, or when either variable is not the generated record.
+ */
+export function startSequenceOf(c: Container): StartSequenceVariables {
+  if (c.architecture !== 14) {
+    throw new ComposeError('the start sequence variables are the Harmony 600, 650 and 700\'s alone');
+  }
+  const lists = c.actionLists() ?? [];
+  const sets = handlerSets(c);
+  const roles = handlerSetRoles(c);
+  // The Off key map is the `idle` entry whose enter list maps `CurrentLocation` through base slot 14,
+  // section 280. The role alone is not enough: an activity composed without its menu row yet is selected
+  // and bound by no row, so `handlerSetRoles` calls it `idle` too, and its enter list starts the way
+  // the Off's does.
+  const location = stateVariables(c).find((one) => one.label === LOCATION_STATE_NAME)?.index;
+  const offs = (sets?.addresses ?? []).flatMap((address, index) => {
+    if (roles[index] !== 'idle' || location === undefined) return [];
+    const entries = taggedList(c, address)?.entries ?? [];
+    const enter = entries.find((one) => one.tag === HANDLER_TAG_ENTER && one.opcode === ACTION_LIST_INDEX_OPCODE);
+    const maps = (lists[enter?.operand ?? -1] ?? []).some((one) =>
+      one.opcode === MAP_VALUE_OPCODE && (one.operand & 0xff) === location);
+    return maps ? [entries] : [];
+  });
+  if (offs.length > 1) throw new ComposeError(`${offs.length} key maps here read as the Off key map`);
+  const found = new Set<string>();
+  for (const entries of offs) {
+    for (const entry of entries) {
+      if (entry.tag !== HANDLER_TAG_ENTER && entry.tag !== HANDLER_TAG_RESUME) continue;
+      if (entry.opcode !== ACTION_LIST_INDEX_OPCODE) continue;
+      const list = lists[entry.operand] ?? [];
+      const at = list.findIndex((one) => writtenWith(one, 1) !== undefined);
+      const start = writtenWith(list[at], 1);
+      const flag = writtenWith(list[at + 1], 0);
+      if (start === undefined || flag === undefined || flag === start || writtenWith(list.at(-1), 0) !== start) {
+        throw new ComposeError(`the Off key map's list ${entry.operand} does not bracket itself with a start `
+          + 'variable and a flag');
+      }
+      found.add(`${start}:${flag}`);
+    }
+  }
+  if (found.size !== 1) {
+    throw new ComposeError(found.size === 0
+      ? 'no Off key map with an enter list to read the start sequence variables from'
+      : `the Off key map's lists name ${found.size} different pairs of start variable and flag`);
+  }
+  const [startVariable, flagVariable] = ([...found][0] as string).split(':').map(Number) as [number, number];
+  const [startSpec, flagSpec] = startSequenceVariables() as [StateVariableSpec, StateVariableSpec];
+  assertGeneratedRecord(c, startVariable, startSpec, 'the start variable');
+  assertGeneratedRecord(c, flagVariable, flagSpec, 'the flag');
+  return { startVariable, flagVariable };
+}
+
 /**
  * The start sequence's shape, `[7E startup, S:=1, ..., counter:=activity, F:=1, 7F deferred, S:=0]`,
- * where the deferred list opens with the `0x3F` band `0xD0` instruction. Refused unless every activity
- * has it and all agree on `S` and `F`, which is 13 of 13, section 290.
+ * where the deferred list opens with the `0x3F` band `0xD0` instruction, section 290.
+ *
+ * `S` and `F` are `startSequenceOf`'s, from the Off key map, and **every activity is checked against
+ * them** rather than supplying them, 40 activities of 40 on the thirteen compiles; one that raises
+ * another variable is refused. A configuration with no activity is no longer refused here, since
+ * nothing about the start sequence needs one: what does is the caller that wants an activity to copy
+ * a screen or a record from, and `activityMaps` refuses that itself.
  */
 function arch14Starts(c: Container): Arch14Starts {
   const lists = c.actionLists() ?? [];
@@ -5495,11 +5701,7 @@ function arch14Starts(c: Container): Arch14Starts {
     throw new ComposeError(`no ${ACTIVITY_STATE_NAME} variable or no base slot 9 to read activities from`);
   }
   const counter = counterVariable.index;
-  const written = (one: Instruction | undefined, value: number): number | undefined =>
-    one !== undefined && one.opcode >= STATE_WRITE_BASE && one.operand === value
-      ? one.opcode - STATE_WRITE_BASE : undefined;
-  const starts = new Set<number>();
-  const flags = new Set<number>();
+  const { startVariable, flagVariable } = startSequenceOf(c);
   const startup = new Map<number, number>();
   const setOf = new Map<number, number>();
   for (const binding of activityBindings(c)) {
@@ -5510,27 +5712,22 @@ function arch14Starts(c: Container): Arch14Starts {
     const enter = entry === undefined ? undefined : lists[entry.operand];
     const call = enter?.at(-2);
     const deferred = call?.opcode === ACTION_LIST_INDEX_OPCODE ? lists[call.operand] : undefined;
-    const start = written(enter?.[1], 1);
-    const flag = written(enter?.at(-3), 1);
-    if (enter === undefined || enter[0]?.opcode !== ENTER_MODE || start === undefined
-        || written(enter.at(-1), 0) !== start || flag === undefined
-        || written(enter.at(-4), binding.activity) !== counter
+    if (enter === undefined || enter[0]?.opcode !== ENTER_MODE
+        || writtenWith(enter.at(-4), binding.activity) !== counter
         || deferred?.[0]?.opcode !== DEFERRED.opcode || deferred[0].operand !== DEFERRED.operand) {
       throw new ComposeError(`activity ${binding.activity}'s enter list is not the shape every arch 14 one has`);
     }
-    starts.add(start);
-    flags.add(flag);
+    const start = writtenWith(enter[1], 1);
+    const flag = writtenWith(enter.at(-3), 1);
+    if (start !== startVariable || writtenWith(enter.at(-1), 0) !== startVariable || flag !== flagVariable) {
+      throw new ComposeError(`activity ${binding.activity}'s enter list brackets itself with variables `
+        + `${start} and ${flag}, where the Off key map's start sequence uses ${startVariable} and ${flagVariable}`);
+    }
     startup.set(binding.activity, enter[0].operand);
     setOf.set(binding.activity, binding.set);
   }
-  if (startup.size === 0) throw new ComposeError('no activity to take the start sequence from');
-  if (starts.size !== 1 || flags.size !== 1) {
-    throw new ComposeError(`the activities disagree about the start sequence's variables: ${starts.size} `
-      + `start variables and ${flags.size} flags`);
-  }
   return {
-    counter, idle: counterVariable.record.first,
-    startVariable: [...starts][0] as number, flagVariable: [...flags][0] as number, startup, sets: setOf,
+    counter, idle: counterVariable.record.first, startVariable, flagVariable, startup, sets: setOf,
   };
 }
 
@@ -5546,13 +5743,49 @@ interface ActivityMaps {
  * activity and the idle value, activities entering a mode and the idle value not, is the working
  * screen's; the same keys all entering a mode are the key under Devices'; every activity and not the idle
  * value, each selecting that activity's own keypad map, is the binding set's. One, one or more, and
- * one, on 4 of 4, and anything else is refused rather than guessed at.
+ * one, on 13 of 13, and anything else is refused rather than guessed at.
+ *
+ * **The key sets are generated from the counter**, section NNN, `todo-compile-650.md` 6.2.5, rather than
+ * taken from the activities the start lists hold: the counter's values are 0 to its maximum, one of
+ * them, its starting value, is the idle value and every other is an activity, section 273. The
+ * activities the start lists hold are checked against that, and so is the counter's name, which is
+ * generated from its maximum, and the stored order of every record found, which is
+ * `compilerCaseOrder`'s. On the thirteen compiles all three hold, and the counter's record is
+ * `activityStateVariables`' exactly, the idle value at the maximum.
+ *
+ * **What is still read is which record is which**, by what its cases do, since the records' indices
+ * are the description's order and nothing generates that yet, section 324. So a configuration with no
+ * activity is refused here: its records would hold the idle case alone, nothing tells the working
+ * screen's from the key under Devices' by keys, and no user configuration of a Harmony 600, 650 or
+ * 700 without an activity exists here to show what such a configuration holds.
+ *
+ * **The order check pins nothing beyond ascending** on the thirteen, whose keys here are 0 to at most 5,
+ * where `compilerCaseOrder` is ascending; past key 15 the order is unpinned and refused.
  */
 function activityMaps(c: Container, starts: Arch14Starts): ActivityMaps {
   const maps = valueMaps(c);
   if (maps === undefined) throw new ComposeError('base slot 14 does not read');
-  const activities = [...starts.startup.keys()].sort((a, b) => a - b);
-  const everything = [...activities, starts.idle].sort((a, b) => a - b);
+  const counter = stateVariables(c).find((one) => one.index === starts.counter);
+  const highest = counter?.record?.second;
+  if (counter === undefined || highest === undefined || starts.idle > highest) {
+    throw new ComposeError(`the ${ACTIVITY_STATE_NAME} variable does not read as a counter with its idle value in range`);
+  }
+  // The counter's name, generated: its stem and its number of values, section 86.
+  const named = stateVariableName(COUNTER_STEM, highest);
+  if (counter.name !== named) {
+    throw new ComposeError(`the activity counter is named ${counter.name}, and one of maximum ${highest} is ${named}`);
+  }
+  // The key sets, generated from the counter alone, then the start lists checked against them.
+  const everything = Array.from({ length: highest + 1 }, (_, k) => k);
+  const activities = everything.filter((value) => value !== starts.idle);
+  const held = [...starts.startup.keys()].sort((a, b) => a - b);
+  if (held.join() !== activities.join()) {
+    throw new ComposeError(`the counter states activities ${activities.join(', ') || 'none'} and the start lists `
+      + `hold ${held.join(', ') || 'none'}`);
+  }
+  if (activities.length === 0) {
+    throw new ComposeError('no activity here, so the records keyed by the activity cannot be told apart');
+  }
   const same = (keys: number[], want: number[]): boolean =>
     keys.length === want.length && [...keys].sort((a, b) => a - b).every((key, k) => key === want[k]);
   const working: number[] = [];
@@ -5576,7 +5809,38 @@ function activityMaps(c: Container, starts: Arch14Starts): ActivityMaps {
     throw new ComposeError(`the activity keyed records read as ${working.length} working screen, `
       + `${devices.length} Devices key and ${select.length} keypad map records, not 1, some and 1`);
   }
+  // Each record's stored order, generated and compared: a record in another order is not one whose
+  // order an appended case keeps the compiler's.
+  for (const index of [...working, ...devices, ...select]) {
+    const keys = (maps[index]?.entries ?? []).map(([key]) => key);
+    if (caseOrderOf(keys)?.join() !== keys.join()) {
+      throw new ComposeError(`base slot 14 record ${index} holds its cases in an order compilerCaseOrder does not give, or past the keys it pins`);
+    }
+  }
   return { working: working[0] as number, devices, select: select[0] as number };
+}
+
+/**
+ * The four base slot 14 records keyed by the activity on a Harmony 600, 650 or 700, of three kinds, with every
+ * check `activityMaps` makes: the start sequence against the Off key map, the key sets against the
+ * counter, and the stored order against the compiler's. Exported for the calibration, section NNN.
+ */
+export function activityKeyedRecords(c: Container): { working: number; devices: number[]; select: number } {
+  if (c.architecture !== 14) throw new ComposeError('the activity keyed records are the Harmony 600, 650 and 700\'s alone');
+  return activityMaps(c, arch14Starts(c));
+}
+
+/** The activity counter's stem, `CurrentActivityState_0`, as `activityStateVariables` names it. */
+const COUNTER_STEM = `${ACTIVITY_STATE_NAME}_0`;
+
+/** `compilerCaseOrder`, or undefined for a key set whose order it does not pin. */
+function caseOrderOf(keys: readonly number[]): number[] | undefined {
+  try {
+    return compilerCaseOrder(keys);
+  } catch (error) {
+    if (error instanceof RangeError) return undefined;
+    throw error;
+  }
 }
 
 /**
@@ -5640,6 +5904,18 @@ function composeFourSlotActivityScreen(
     throw new ComposeError(`activity ${activity} already has a working screen`);
   }
   const maps = activityMaps(c, starts);
+  // The new activity's value is generated, one past the counter's highest, section 273, and the four
+  // records gain its case at their end, which keeps them in the compiler's order only while that order
+  // is ascending, as it is for every key below 16: so both are checked before anything moves.
+  if (activity !== nextActivityValue(c)) {
+    throw new ComposeError(`activity ${activity} is not the next one, ${nextActivityValue(c)}: one past the counter's highest`);
+  }
+  for (const map of [maps.working, ...maps.devices, maps.select]) {
+    const keys = [...(valueMaps(c)?.[map]?.entries ?? []).map(([key]) => key), activity];
+    if (caseOrderOf(keys)?.join() !== keys.join()) {
+      throw new ComposeError(`a case for ${activity} appended to record ${map} is out of compilerCaseOrder's order, or past the keys it pins`);
+    }
+  }
   const working = workingTemplate14(c, starts, maps);
   const device = fourSlotTemplate(c, undefined);
   const charMap = characterMap(c);

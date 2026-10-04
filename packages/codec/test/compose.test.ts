@@ -108,6 +108,12 @@ import {
   POWER_ON_DELAY_VALUES,
   SEND_PRELUDE_LOAD,
   sendPreludeCondition,
+  startSequenceOf,
+  startSequenceVariables,
+  menuMarkerOf,
+  menuMarkerVariable,
+  activityKeyedRecords,
+  activityStateVariables,
 } from '../src/index.ts';
 import { startAndFlag, startTargets, tagFiveMisfit, tagFiveShape } from './tagfive.ts';
 
@@ -4516,4 +4522,292 @@ test('on the 650\'s two configurations a composed device holds what copying gave
   }
   // A configuration naming no identifier is refused rather than given a first one of ours.
   assert.throws(() => nextDeviceIdentifier(parse(require_('one_config'))), ComposeError);
+});
+
+/*
+ * ---- The start sequence, the activity keyed records and the menu marker, built, section NNN ----
+ *
+ * todo-compile-650 6.2.4, 6.2.5 and 6.2.8. What the composers took off an existing activity or an
+ * existing row is now computed, from the Off key map, from the counter and from `statetables.ts`'s
+ * records, and what the configuration holds is checked against it. Calibrated on every Logitech
+ * compile of a Harmony 600, 650 or 700 the lab holds, `ARCH14_LISTS`, and for the marker on every
+ * Harmony One configuration with a device list as well.
+ */
+
+/** A copy of a container's bytes with one byte changed, after checking what was there. */
+function withByte(c: Container, at: number, was: number, now: number): Uint8Array {
+  const out = c.blob.slice();
+  assert.equal(out[at], was, `byte ${at} is what the edit expects`);
+  out[at] = now;
+  return out;
+}
+
+/** The blob offset of an action list instruction's opcode and of its operand's low byte. */
+function instructionAt(c: Container, list: number, k: number): { opcode: number; low: number } {
+  const start = c.blobOffsetOf(c.pointerArrayAt(archSlot(c.architecture!, 10))!.values[list]!)!;
+  return { opcode: start + 1 + 3 * k + 2, low: start + 1 + 3 * k };
+}
+
+test('the start variable and the flag are read off the Off key map, and every activity, prelude and record agrees',
+     skipWithoutLab(), () => {
+  let activities = 0;
+  let offLists = 0;
+  let preludes = 0;
+  let lookalikes = 0;
+  const offShapes = new Map<string, number>();
+  const startIndices = new Set<number>();
+  const flagIndices = new Set<number>();
+  const [startSpec, flagSpec] = startSequenceVariables();
+  for (const name of ARCH14_LISTS) {
+    const c = parse(payloadOf(require_(name)));
+    const { startVariable, flagVariable } = startSequenceOf(c);
+    startIndices.add(startVariable);
+    flagIndices.add(flagVariable);
+    // The activities, read here without the composer: each enter list raises S second, lowers it
+    // last, and raises F third from last.
+    const lists = c.actionLists()!;
+    const sets = handlerSets(c)!;
+    for (const set of new Set(activityBindings(c).map((one) => one.set))) {
+      const enter = lists[taggedList(c, sets.addresses[set]!)!.entries.find((one) => one.tag === 1)!.operand]!;
+      assert.deepEqual([enter[1], enter.at(-1), enter.at(-3)],
+                       [{ opcode: 0x80 + startVariable, operand: 1 }, { opcode: 0x80 + startVariable, operand: 0 },
+                        { opcode: 0x80 + flagVariable, operand: 1 }], `${name}: activity on set ${set}`);
+      activities += 1;
+    }
+    // The Off key map's two lists, read here by role: S raised, F lowered straight after, S lowered last.
+    // The whole list is spelled as tokens and counted per shape, so the shapes the findings print are
+    // asserted rather than only the three positions the composer relies on.
+    const roles = handlerSetRoles(c);
+    const location = stateVariables(c).find((one) => one.label === 'CurrentLocation')!.index;
+    const token = (one: { opcode: number; operand: number }): string =>
+      one.opcode === 0x7f ? '7F'
+        : one.opcode === 0x72 ? ((one.operand & 0xff) === location ? '72L' : '72')
+        : one.opcode === 0x80 + startVariable ? `S${one.operand}`
+        : one.opcode === 0x80 + flagVariable ? `F${one.operand}`
+        : one.opcode.toString(16);
+    sets.addresses.forEach((address, index) => {
+      if (roles[index] !== 'idle') return;
+      for (const entry of taggedList(c, address)!.entries) {
+        if (entry.opcode !== 0x7f || (entry.tag !== 1 && entry.tag !== 5)) continue;
+        const list = lists[entry.operand]!;
+        // Only the Off's, whose enter list maps CurrentLocation; an activity with no row yet is idle too.
+        if (!lists[taggedList(c, address)!.entries.find((one) => one.tag === 1)!.operand]!
+          .some((one) => one.opcode === 0x72 && (one.operand & 0xff) === location)) continue;
+        const at = list.findIndex((one) => one.opcode === 0x80 + startVariable && one.operand === 1);
+        assert.deepEqual(list[at + 1], { opcode: 0x80 + flagVariable, operand: 0 }, `${name}: Off tag ${entry.tag}`);
+        assert.deepEqual(list.at(-1), { opcode: 0x80 + startVariable, operand: 0 });
+        const shape = `${entry.tag}: ${list.map(token).join(' ')}`;
+        offShapes.set(shape, (offShapes.get(shape) ?? 0) + 1);
+        offLists += 1;
+      }
+    });
+    // Every prelude tests S, section 319's measurement, now against the Off's S.
+    for (const one of sendPreludes(c)) {
+      assert.equal(one.conditionOperand, sendPreludeCondition(startVariable), `${name}: list ${one.list}`);
+      preludes += 1;
+    }
+    // The records are the generated ones, and the record alone would not have found them: the control
+    // is how many other unnamed variables hold the same 0 of 1.
+    const records = stateRecords(c)!;
+    const named = new Set(stateVariables(c).map((one) => one.index));
+    for (const [index, spec] of [[startVariable, startSpec!], [flagVariable, flagSpec!]] as const) {
+      assert.deepEqual([records[index]!.first, records[index]!.second, records[index]!.count], [spec.first, spec.max, 0]);
+      assert.ok(!named.has(index), `${name}: variable ${index} is unnamed`);
+    }
+    lookalikes += records.filter((one, index) => index > 17 && !named.has(index) && one.first === 0
+      && one.second === 1 && one.count === 0 && index !== startVariable && index !== flagVariable).length;
+  }
+  assert.equal(activities, ACTIVITIES_ON_ARCH14_LISTS);
+  assert.equal(offLists, 26, 'the Off key map\'s enter and tag 5 lists, two per compile');
+  // The shapes the findings print, every list accounted for. The one tag 5 list mapping CurrentLocation
+  // twice instead of a call first is h600_config's.
+  assert.deepEqual(Object.fromEntries([...offShapes].sort()), {
+    '1: 7F 72L S1 F0 7F 72L S0': 13,
+    '5: S1 F0 72L 72L S0': 1,
+    '5: S1 F0 7F 72L S0': 12,
+  });
+  assert.equal(preludes, 6100);
+  assert.equal(lookalikes, 51, 'unnamed variables of 0 of 1 besides S and F, so the record alone does not single them out');
+  // The index is the configuration's own, and it moves.
+  assert.deepEqual([Math.min(...startIndices), Math.max(...startIndices)], [46, 59]);
+  assert.deepEqual([Math.min(...flagIndices), Math.max(...flagIndices)], [28, 44]);
+});
+
+test('the start sequence variables do not come from an activity: one disagreeing is refused, and none lets a device compose',
+     skipUnless('h650_config_region'), () => {
+  const pristine = parse(require_('h650_config_region'));
+  const { startVariable, flagVariable } = startSequenceOf(pristine);
+  const lists = pristine.actionLists()!;
+  const sets = handlerSets(pristine)!;
+  const compose = (blob: Uint8Array) => composeDevice(parse(blob), { label: 'LG', commands: TELEVISION, power: 0 });
+  const enterOf = (set: number) => taggedList(pristine, sets.addresses[set]!)!.entries.find((one) => one.tag === 1)!.operand;
+  const firstSet = activityBindings(pristine)[0]!.set;
+  const enter = lists[enterOf(firstSet)]!;
+
+  // One activity's F write names the variable before it: the reader still answers from the Off, and the
+  // composer refuses the configuration rather than following either.
+  const flagAt = instructionAt(pristine, enterOf(firstSet), enter.length - 3).opcode;
+  const flagWrong = parse(withByte(pristine, flagAt, 0x80 + flagVariable, 0x80 + flagVariable - 1));
+  assert.deepEqual(startSequenceOf(flagWrong), { startVariable, flagVariable });
+  assert.throws(() => compose(flagWrong.blob), /brackets itself with variables/);
+
+  // The Off's own F names the variable before it: now the Off and every activity disagree.
+  const offSet = handlerSetRoles(pristine).indexOf('idle');
+  const offEnter = taggedList(pristine, sets.addresses[offSet]!)!.entries.find((one) => one.tag === 1)!.operand;
+  const offFlag = lists[offEnter]!.findIndex((one) => one.opcode === 0x80 + flagVariable);
+  const offWrong = withByte(pristine, instructionAt(pristine, offEnter, offFlag).opcode,
+                            0x80 + flagVariable, 0x80 + flagVariable - 1);
+  assert.throws(() => compose(offWrong), /the Off key map's lists name 2 different pairs of start variable and flag/);
+
+  // S's record states a maximum of 2: the generated record is refused.
+  const record = stateRecords(pristine)![startVariable]!;
+  const maxAt = pristine.blobOffsetOf(record.address)! + 2;
+  assert.throws(() => compose(withByte(pristine, maxAt, 1, 2)), /the start variable, variable \d+, is not the record built/);
+
+  // No activity bound: every list instruction selecting an activity's key map loses its opcode, so no
+  // menu row starts anything and the composer finds no activity at all. Before section NNN this was
+  // refused, there being no activity to read S off; the Off still has it, so the device composes.
+  const activitySets = new Set(activityBindings(pristine).map((one) => one.set));
+  const unbound = pristine.blob.slice();
+  let cut = 0;
+  lists.forEach((list, index) => list.forEach((one, k) => {
+    if (one.opcode !== 0x1f || (one.operand & 0xff00) !== 0xff00 || !activitySets.has(one.operand & 0xff)) return;
+    unbound[instructionAt(pristine, index, k).opcode] = 0x00;
+    cut += 1;
+  }));
+  assert.equal(cut, 12, 'every list instruction selecting one of the three activities\' key maps');
+  const none = parse(unbound);
+  assert.equal(activityBindings(none).length, 0, 'no activity is found');
+  assert.deepEqual(startSequenceOf(none), { startVariable, flagVariable });
+  const device = compose(unbound);
+  const mine = sendPreludes(parse(device.bytes)).filter((one) => one.group === device.group);
+  assert.equal(mine.length, TELEVISION.length);
+  for (const one of mine) assert.equal(one.conditionOperand, sendPreludeCondition(startVariable));
+  // What still needs an activity is the screen half, which takes its records off one; here the counter
+  // still states the three the cut left unstarted, and that disagreement is what refuses it.
+  assert.throws(() => activityKeyedRecords(none), /the counter states activities 0, 1, 2 and the start lists hold none/);
+});
+
+test('the activity keyed records are found by key sets the counter generates, in the compiler\'s order',
+     skipWithoutLab(), () => {
+  let devicesKey = 0;
+  let idleAtTop = 0;
+  for (const name of ARCH14_LISTS) {
+    const c = parse(payloadOf(require_(name)));
+    const found = activityKeyedRecords(c);
+    const counter = stateVariables(c).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME))!;
+    const activities = [...new Set(activityBindings(c).map((one) => one.activity))].sort((a, b) => a - b);
+    // The counter's record is the generated one for that many activities, idle at the top.
+    const [built] = activityStateVariables(activities.length);
+    if (counter.record!.first === built!.first && counter.record!.second === built!.max) idleAtTop += 1;
+    const maps = valueMaps(c)!;
+    for (const index of [found.working, ...found.devices, found.select]) {
+      const keys = maps[index]!.entries.map(([key]) => key);
+      assert.deepEqual(compilerCaseOrder(keys), keys, `${name}: record ${index}`);
+    }
+    assert.deepEqual(maps[found.select]!.entries.map(([key]) => key).sort((a, b) => a - b), activities);
+    assert.equal(found.devices.length, 2, `${name}: records under the key under Devices`);
+    devicesKey += found.devices.length;
+  }
+  assert.equal(idleAtTop, ARCH14_LISTS.length);
+  assert.equal(devicesKey, 26, 'two records under the key under Devices on every compile');
+});
+
+test('the composer refuses a counter, a record order or an activity value other than the ones it generates',
+     skipUnless('h650_config_region'), () => {
+  const pristine = parse(require_('h650_config_region'));
+  const counter = stateVariables(pristine).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME))!;
+  assert.equal(counter.name, 'CurrentActivityState_0_4');
+  const maxAt = pristine.blobOffsetOf(counter.record!.address)! + 2;
+
+  // The counter's maximum raised alone: its name no longer is the one generated for it.
+  assert.throws(() => activityKeyedRecords(parse(withByte(pristine, maxAt, 3, 4))),
+                /named CurrentActivityState_0_4, and one of maximum 4 is CurrentActivityState_0_5/);
+  // Raised with its name: the counter now states an activity, 4, that no start list holds.
+  const name = new TextEncoder().encode(counter.name);
+  const nameAt = pristine.blob.findIndex((_, at) => name.every((byte, k) => pristine.blob[at + k] === byte));
+  const both = withByte(parse(withByte(pristine, maxAt, 3, 4)), nameAt + name.length - 1, 0x34, 0x35);
+  assert.throws(() => activityKeyedRecords(parse(both)), /the counter states activities 0, 1, 2, 4 and the start lists hold 0, 1, 2/);
+
+  // The working screen record's first two keys swapped: found by its keys, refused by its order.
+  const { working } = activityKeyedRecords(pristine);
+  const caseAt = pristine.blobOffsetOf(valueMaps(pristine)![working]!.address)! + 3;
+  const swapped = pristine.blob.slice();
+  assert.deepEqual([swapped[caseAt], swapped[caseAt + 5]], [0, 1]);
+  [swapped[caseAt], swapped[caseAt + 5]] = [1, 0];
+  assert.throws(() => activityKeyedRecords(parse(swapped)), new RegExp(`record ${working} holds its cases in an order`));
+
+  // An activity value other than one past the counter's highest.
+  const rows = [{ label: 'Power', list: 1 }];
+  assert.equal(nextActivityValue(pristine), 4);
+  assert.throws(() => composeActivityScreen(pristine, 5, 'Play Audio', rows), /activity 5 is not the next one, 4/);
+});
+
+test('the menu marker is the one variable every row writes, 1 from a device row and 0 from an activity row',
+     skipWithoutLab(), () => {
+  const population = [...new Set([...Object.keys(DEVICE_MODE_MARKERS), ...ARCH14_LISTS])];
+  let deviceRows = 0;
+  let activityRows = 0;
+  let reads = 0;
+  const spec = menuMarkerVariable();
+  for (const name of population) {
+    const c = parse(payloadOf(require_(name)));
+    const marker = menuMarkerOf(c);
+    assert.equal(marker, deviceModeMarker(c)!.opcode - 0x80, `${name}: the majority reader agrees`);
+    // Every row of either shape, read here without the composer.
+    for (const list of c.actionLists()!) {
+      const body = c.architecture === 14 ? list : list[0]?.opcode === 0x75 ? list.slice(1) : [];
+      if (body.length === 2 && body[0]!.opcode === 0x7e && body[1]!.opcode >= 0x80) {
+        assert.deepEqual(body[1], { opcode: 0x80 + marker, operand: 1 }, `${name}: a device row`);
+        deviceRows += 1;
+      }
+      if (body.length === 2 && body[0]!.opcode === 0x1f && (body[0]!.operand & 0xff00) === 0xff00
+          && body[1]!.opcode >= 0x80) {
+        assert.deepEqual(body[1], { opcode: 0x80 + marker, operand: 0 }, `${name}: an activity row`);
+        activityRows += 1;
+      }
+    }
+    // Written by rows and read by no action list: no condition, value map or band instruction names it.
+    for (const list of c.actionLists()!) {
+      for (const one of list) {
+        if (one.opcode < 0x80 && stateVariableSite(one)?.index === marker) reads += 1;
+      }
+    }
+    const record = stateRecords(c)![marker]!;
+    assert.deepEqual([record.first, record.second, record.count], [spec.first, spec.max, 0], name);
+    assert.ok(!stateVariables(c).some((one) => one.index === marker), `${name}: unnamed`);
+  }
+  assert.equal(population.length, 27);
+  assert.deepEqual([deviceRows, activityRows], [2256, 282]);
+  assert.equal(reads, 0);
+});
+
+test('the composer refuses a menu row writing another marker, another value, or a marker of another record',
+     skipUnless('h650_config_region'), () => {
+  const pristine = parse(require_('h650_config_region'));
+  const marker = menuMarkerOf(pristine);
+  const lists = pristine.actionLists()!;
+  const deviceRow = lists.findIndex((one) => one.length === 2 && one[0]!.opcode === 0x7e && one[1]!.opcode === 0x80 + marker);
+  const activityRow = lists.findIndex((one) => one.length === 2 && one[0]!.opcode === 0x1f && one[1]!.opcode === 0x80 + marker);
+  const compose = (blob: Uint8Array) => {
+    const c = parse(blob);
+    const device = composeDevice(c, { label: 'TV', commands: TELEVISION, power: 0 });
+    return composeDeviceScreen(parse(device.bytes), 'TV', [{ label: 'TV', list: device.lists[1]! }]);
+  };
+  assert.doesNotThrow(() => compose(pristine.blob));
+  // A device row writing 2.
+  assert.throws(() => compose(withByte(pristine, instructionAt(pristine, deviceRow, 1).low, 1, 2)),
+                new RegExp(`list ${deviceRow} writes 2 where 1 is built`));
+  // An activity row writing the variable before the marker.
+  assert.throws(() => compose(withByte(pristine, instructionAt(pristine, activityRow, 1).opcode, 0x80 + marker, 0x80 + marker - 1)),
+                /the menu rows write 2 different variables last/);
+  // The marker's record stating a maximum of 2.
+  const maxAt = pristine.blobOffsetOf(stateRecords(pristine)![marker]!.address)! + 2;
+  assert.throws(() => compose(withByte(pristine, maxAt, 3, 2)), /the menu marker, variable \d+, is not the record built/);
+  // And the activity row composer writes the built value into the same variable.
+  const built = composeActivityMenuRow(pristine, 'Play Audio', activityBindings(pristine)[0]!.set);
+  const after = parse(built.bytes);
+  const fresh = after.actionLists()!.slice(lists.length);
+  assert.equal(fresh.length, 4, 'the row lists: two bindings on the page and two on its copy');
+  assert.ok(fresh.every((one) => one.at(-1)!.opcode === 0x80 + marker && one.at(-1)!.operand === 0));
 });

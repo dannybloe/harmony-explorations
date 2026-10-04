@@ -762,6 +762,15 @@ u16 0xFF00 | entry;  u8 0x1F       select the activity's base slot 9 entry
 u16 0;               u8 0x80 + v   write 0 into the device mode marker, the device rows' v, 4 of 4
 ```
 
+**The menu marker `v` is one variable per configuration and every row of both kinds writes it**,
+section NNN, on the 27 configurations of a Harmony One, 600, 650 or 700 that the marker census and the
+thirteen compiles read together: 2256 lists of a device row's shape write it 1 and 282 of an activity
+row's shape write it 0, none anything else, and its record is `first` 0, max 3, no transition and no
+name, 27 of 27. No action list reads it, 0 of 27. Rows are not its only writers: outside them it is
+written 0 once on each of the 27, and 1 a further 2 to 9 times on each Harmony One configuration. Its
+index differs per configuration, sections 239 and 285, fifteen distinct over the 27. `menuMarkerOf`; `menuMarkerVariable` in
+`statetables.ts` is the record.
+
 **Its pictures differ from the device list's**: a page of one activity draws a picture the activities'
 own screens draw too, 3 of 3, and none of the 6 one item device pages beside it, and its full pages one picture of
 the menu's own that no page outside the menu draws, 4 menus of 4. So a page growing from one activity to
@@ -828,6 +837,30 @@ Every device list's scan 25 evaluates a record keyed by `CurrentLocation` whose 
 the working screen record: the 17 those records enter and one more per configuration, 21 of 21. The
 Remote Assistant screen's "Turn off Assistant" writes 1 into the variable the chain before the working
 screen tests, and enters the working screen.
+
+**`S` and `F` are stated by the Off key map**, section NNN, 13 of 13, the thirteen compiles counting
+the Harmony 700 pair twice: base slot 9's `idle` entry whose
+enter list maps `CurrentLocation` through base slot 14, the key map the remote installs when no
+activity runs, brackets both its lists with them:
+
+```
+tag 1:  [0x7F, 0x72 on CurrentLocation, S:=1, F:=0, 0x7F, 0x72 on CurrentLocation, S:=0]
+tag 5:  [S:=1, F:=0, 0x7F or 0x72 on CurrentLocation, 0x72 on CurrentLocation, S:=0]
+```
+
+26 lists of 26: tag 1 in that shape 13 of 13, tag 5 opening with `0x7F` on 12 and with `0x72` on
+`h600_config`. Every activity's enter list raises the same `S` and `F`, 40 of 40, and every command
+prelude tests that `S`, 6100 of 6100. Both are records `first` 0, max 1, no transition and no name,
+13 of 13; 51 other unnamed variables on the thirteen hold the same record, so the record alone does not
+single either out. Their indices are the configuration's own: `S` from 46 to 59 and `F` from 28 to 44.
+`startSequenceOf` reads them; `startSequenceVariables` in `statetables.ts` is the record.
+
+**The four records' key sets follow from the counter**, section NNN: values 0 to its maximum, the idle
+value its `first`, the activities the rest, section 273; on the thirteen the counter is
+`activityStateVariables`' record exactly, the idle value at the maximum, and each of the four is stored
+in `compilerCaseOrder`, the key under Devices having two records on every compile. Every key there is
+below 16, where that order is ascending, so this pins nothing beyond ascending. Which record is
+which is still read off what its cases do. `activityKeyedRecords`.
 
 **A corner page carries its own chrome**, with no call to a shared program:
 
@@ -2446,6 +2479,8 @@ byte for byte. What it generates rather than carries:
 | a variable's width | one byte for a maximum up to 100, two from 254; **between is unpinned** and refused |
 | a device's eight delay variables | `PowerOnDelay` and `InterDeviceDelay` max 65277, their `Default` copies max 254, all two bytes; `PowerOnDelayFlagCounter` 0/5, `InterDeviceDelayFlagCounter` 0/3, both `FixingTriggered` 0/100, one byte; 83 of 83 devices, `deviceDelayVariables` |
 | `CurrentActivityState_0` and `CurrentLocation` | the activity count for both value and max, and 0/0, `activityStateVariables` |
+| the start variable and the flag, section NNN | 0/1 each, unnamed, no transitions, `startSequenceVariables`; their indices are the description's |
+| the menu marker, section NNN | 0/3, unnamed, no transitions, `menuMarkerVariable`; its index is the description's |
 
 Carried: which variables there are, their stems, values, maxima and transitions in stored order, and
 the order of their indices within each width, which no hash of their names fits. **A value can exceed

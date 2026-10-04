@@ -341,6 +341,34 @@ export function activityStateVariables(activities: number): StateVariableSpec[] 
   ];
 }
 
+/**
+ * The two unnamed variables an arch 14 start sequence brackets itself with, section NNN: the start
+ * variable `S`, held at 1 while a start runs, which every command prelude tests, section 319, and
+ * the flag `F`, written 1 just before an activity defers its working screen and 0 by the Off key
+ * map. Both hold 0 with a maximum of 1, no name and no transition, on all thirteen compiles. In that
+ * order, start then flag.
+ *
+ * **Their indices are not generated.** Where a variable sits among the others is the description's
+ * order, and what decides Logitech's is open, section 324; on the thirteen `S` takes indices from 46
+ * to 59 and `F` from 28 to 44. A description that holds these two gets their indices from
+ * `buildStateTables`' `indexOf`, which is where a composer building from nothing reads them.
+ */
+export function startSequenceVariables(): StateVariableSpec[] {
+  return [{ first: 0, max: 1 }, { first: 0, max: 1 }];
+}
+
+/**
+ * The variable every menu row writes last, section NNN: 1 by a device list row and 0 by an activity
+ * row, section 275. It holds 0 with a maximum of 3, no name and no transition, on every configuration
+ * of those models in the lab that has a menu row, the 27 of section NNN, although no list writes it
+ * anything but 0 or 1 and none reads it. Which index it takes is per configuration, ten different
+ * ones over the eighteen of the marker census, sections 239 and 285, and fifteen over the 27, so it
+ * is the description's, like the two above.
+ */
+export function menuMarkerVariable(): StateVariableSpec {
+  return { first: 0, max: 3 };
+}
+
 const piece = (bytes: Uint8Array, owner: string, refs: PieceRef[] = []): ContainerPiece => ({ bytes, refs, owner });
 
 /**
