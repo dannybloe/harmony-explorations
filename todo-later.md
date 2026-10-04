@@ -99,7 +99,8 @@ The Harmony One is a different type, with a touch screen and its own screens, so
   - [ ] 8.1.2 The other bench models: One, 525, 600, 700, 300/350, Touch; thinner folders for the 880/885 and 890
   - [ ] 8.1.3 Absorb `reference/capabilities.md`
 - [ ] 8.2 Silhouettes for the models not yet drawn, from the manuals in the lab; the 600, 650 and 700 share one
-  - [ ] 8.2.1 Harmony 350, and the 300 if its face differs
+  - [ ] 8.2.1 Harmony 350: drawn from the manual's vector page, 55 keys, no scan code measured yet; Danny to look at it
+  - [ ] 8.2.3 Harmony 300: same case and key count, different printing and a separate pause key; its manual's drawing is a raster image, so another route
   - [ ] 8.2.2 Harmony Touch
 - [ ] 8.3 A static HTML site built from the folders and the silhouettes, committed, browsing models and their sections
 
