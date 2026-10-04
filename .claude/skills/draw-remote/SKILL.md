@@ -33,6 +33,16 @@ keys on these remotes are four cubic segments with no straight side, so the best
 through one sits a whole unit out on a key nine units tall, and no amount of measuring a photograph
 recovers a shape like that. It also carries the tilt, the symbols and the exact proportion.
 
+**A vector page in the manual is a traced drawing already, and it needs no hand trace.** The manuals
+for every model are in `../lab/Docs/`. Where a page's line drawing is vector, `pdftocairo -svg -f N -l N`
+turns it into an SVG of real strokes that `bin/extract.ts` reads as it stands; `pdfimages -list` says
+which pages are raster instead, since a page with no image on it is vector. The Harmony 350 was drawn
+this way, off its setup guide's button page. Two things come with it that a hand trace would have
+dropped: the manual's **callouts**, leader lines and brackets that can cross the case edge, which are
+left out by index and named in the model file; and the printed **words as filled paths**, which the
+extractor attaches to keys as marks and which are ignored, since the words are ours anyway. Expect a
+page from another manual to be raster: the Harmony 300's button drawing is an embedded JPEG.
+
 **A photograph otherwise.** `../lab/reference/forum-images/<model>-full.jpg`. Both stay in the lab: not
 published, not committed, not copied into FreeHarmony.
 
@@ -196,7 +206,8 @@ A test reads `reference/button-maps.md` and checks both directions, so a `catalo
 not in the tables fails and so does a `printed` name that is.
 
 **Never invent a scan code.** `scan` is present only where those tables name it, which is 32 of 44
-keys on a Harmony One, 36 of 54 on a Harmony 600 and none of the 50 on a Harmony 525. A wrong scan
+keys on a Harmony One, 36 of 54 on a Harmony 600, none of the 50 on a Harmony 525 and none of the 55
+on a Harmony 350. A wrong scan
 code is invisible: the interface then shows the wrong assignment beside a key with complete
 confidence. Where the name is settled and the code is not, use `scanCandidates`. That is the case
 for the four arrow keys of a Harmony One, where the shape says which is `DirectionUp` and which is

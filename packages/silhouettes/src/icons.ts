@@ -151,6 +151,20 @@ export const ICONS: Readonly<Record<string, Icon>> = {
       + 'H 0.248 V 0.903 H -0.248 V 0.248 H -1 Z', mode: 'fill' }] },
   minus: { parts: [{ d: 'M -1 -0.132 H 1 V 0.132 H -1 Z', mode: 'fill' }] },
 
+  /**
+   * A dot and a plus side by side, which is what a Harmony 350 prints on the key it labels `Clear`.
+   *
+   * Proportioned off Logitech's own drawing of that key, where the pair is 12.2 units across: the dot is
+   * 3.1 wide at the left edge and the plus 5.6 wide at the right, with bars a quarter of the plus across
+   * like `plus` above. Only that model uses it.
+   */
+  dotPlus: { parts: [
+      { d: 'M -1 0 A 0.255 0.255 0 1 0 -0.49 0 A 0.255 0.255 0 1 0 -1 0 Z', mode: 'fill' },
+      { d: 'M 0.08 -0.114 H 0.426 V -0.46 H 0.654 V -0.114 H 1 V 0.114 H 0.654 V 0.46 H 0.426 '
+          + 'V 0.114 H 0.08 Z', mode: 'fill' },
+    ],
+  },
+
   /** The power mark: a ring broken at the top with a stem through the gap. */
   power: { parts: [
       { d: 'M -0.5 -0.55 A 0.75 0.75 0 1 0 0.5 -0.55', mode: 'stroke' },

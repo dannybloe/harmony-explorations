@@ -96,9 +96,10 @@ export interface Label {
   readonly place: LabelPlace;
   /**
    * `small` is for the secondary printing: `abc` under a digit, `Replay` under a key whose face
-   * carries only a symbol, `Vol` between the halves of a rocker.
+   * carries only a symbol, `Vol` between the halves of a rocker. `tiny` is for a word that has to fit
+   * across a small key, a Harmony 350's `BD / Media`.
    */
-  readonly size?: 'normal' | 'small';
+  readonly size?: 'normal' | 'small' | 'tiny';
   /** Extra offset in model units, for the cases where the printing is not where the rule puts it. */
   readonly dx?: number;
   readonly dy?: number;
@@ -157,7 +158,8 @@ export interface Key {
   readonly accent?: string;
   /**
    * The scan code, present **only** where `reference/button-maps.md` names it: 32 of 44 keys on a
-   * Harmony One, 36 of 54 on a Harmony 600, none of the 50 on a Harmony 525. Never filled in by
+   * Harmony One, 36 of 54 on a Harmony 600, none of the 50 on a Harmony 525 and none of the 55 on a
+   * Harmony 350. Never filled in by
    * hand. A wrong scan code is invisible, because the interface would then show the wrong
    * assignment beside a key with complete confidence.
    */
@@ -247,4 +249,14 @@ export interface Model {
   readonly keys: readonly Key[];
   /** The model name as printed on the face, and where. */
   readonly nameplate?: Label & { readonly x: number; readonly y: number };
+  /**
+   * Words printed on the case that name a **group** of keys rather than one: `My Devices` over a Harmony
+   * 350's four device keys, `Favorites` between its five favourite keys.
+   *
+   * Not a key's label, deliberately. A label lives inside its key's group so it lights up when the
+   * interface highlights that key, and putting `Favorites` on any one of five keys would light it up
+   * with the wrong one. Not a moulding's label either, since there is no moulding. So it is printing on
+   * the case, drawn in the text layer beside the nameplate and belonging to nothing clickable.
+   */
+  readonly captions?: readonly (Label & { readonly x: number; readonly y: number })[];
 }
