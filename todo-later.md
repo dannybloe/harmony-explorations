@@ -14,7 +14,9 @@ home in one of the two files.
 - [ ] 1.1 FreeHarmony: how a device is stored in our own library (was 4.1)
 - [ ] 1.2 FreeHarmony: convert Logitech's database records into that format (was 4.2)
   - [x] 1.2.1 Read a device's driving rules out of the archive: timing, power, inputs, channel tuning and states, `driving.ts` (section 305)
-  - [ ] 1.2.2 Ask the archive's author whether his converter sorts every action list on `Order`; then delete the 329 MB raw features file from the lab (section 305)
+  - [x] 1.2.2 Ask the archive's author whether his converter sorts every action list on `Order`: it does, every list, stated in his README; the raw file stays, since it holds fields the archive drops (section 305)
+- [ ] 1.3 The raw capture behind the infrared archive: a script that updates the archive clone, fetches a newer raw release by its checksums, extracts what the archive drops (per step send or record, input numbering, the connected app mark) into a small side file and indexes every device's position; the catalogue reader answers from both
+- [ ] 1.4 Confirm the archive's statement that every per input and per state list is in Order sequence, against the raw capture
 
 ## 2. Learning codes
 
@@ -89,6 +91,17 @@ The Harmony One is a different type, with a touch screen and its own screens, so
 - [ ] 6.15 Release blocks and toggle bits as Logitech renders them: about 4,360 writable catalogue commands differ from Logitech's own rendering
 - [ ] 6.16 A repeat count for the families whose definition states none, GoVideo and Panasonic 48 Bit first, which would unlock about 165,000 commands
 - [x] 6.17 Toolchain checks walk `.claude/worktrees/`, so an agent's worktree fails the facts, prose and write review checks until it is removed
+
+## 8. A reference per remote
+
+- [ ] 8.1 One folder per model in `reference/remotes/`, ten files each (README, hardware, keys, display, features, behaviour, memory, firmware, usb, misc), every fact with its source and status, generated where the code already knows
+  - [ ] 8.1.1 The Harmony 650 as the sample, with the shared Harmony 600, 650 and 700 architecture folder; Danny reviews the shape
+  - [ ] 8.1.2 The other bench models: One, 525, 600, 700, 300/350, Touch; thinner folders for the 880/885 and 890
+  - [ ] 8.1.3 Absorb `reference/capabilities.md`
+- [ ] 8.2 Silhouettes for the models not yet drawn, from the manuals in the lab; the 600, 650 and 700 share one
+  - [ ] 8.2.1 Harmony 350, and the 300 if its face differs
+  - [ ] 8.2.2 Harmony Touch
+- [ ] 8.3 A static HTML site built from the folders and the silhouettes, committed, browsing models and their sections
 
 ## 7. Done, carried over from todo.md
 
