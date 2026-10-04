@@ -878,7 +878,13 @@ identical to the idle list's row list for that device, 63 of 63.
 Every device list's scan 25 evaluates a record keyed by `CurrentLocation` whose one case, for 0, queues
 the working screen record: the 17 those records enter and one more per configuration, 21 of 21. The
 Remote Assistant screen's "Turn off Assistant" writes 1 into the variable the chain before the working
-screen tests, and enters the working screen.
+screen tests, and enters the working screen. Over the thirteen compiles that chain is
+`[1F FB00, 7F [71 80vv, 7E assistant, 7E working]]` on 37 activities of 12 configurations, `vv` one
+unnamed variable per configuration seeded 0, maximum 1, no transition, written only ever 1 and never reset; each such
+configuration also has one shared "If any devices are still On" assistant screen. `h600_config` has no
+chain, no assistant screen and no such variable, section NNN. **What MyHarmony's `RemoteAssistant`
+setting changes is not established**: all twelve saved settings replies give `true`, so no compile with
+it `false` exists to compare.
 
 **`S` and `F` are stated by the Off key map**, section 329, 13 of 13, the thirteen compiles counting
 the Harmony 700 pair twice: base slot 9's `idle` entry whose
@@ -1060,6 +1066,29 @@ rather than merely loose. The firmware reading is trelowney's, reported 26 Augus
 [findings.md](findings.md) section 176 records what the corpus confirms and what it cannot, since a
 count cannot distinguish a push from an unordered insert.
 
+**Three pushed values are indirections, not entries**, read on the Harmony 700's 2.8 and the Harmony
+600's and 650's 0.2 images, arch 14, [findings.md](findings.md) section NNN:
+
+| stack byte | resolves through |
+|---|---|
+| `0xFD` | the current mode: its page's list, then the mode's own list |
+| `0xFE` | the running activity's entry, the one `0x1F` band `0xFF` selects (`0x120` on the 700, `0x217` on the 600 and 650) |
+| `0xFC` | the entry `0x1F` band `0xE8` names (`0x121`, `0x218`) |
+| anything else | that base slot 9 index itself |
+
+One variable holds the running entry, so an activity replaces the idle entry rather than stacking on
+it. On all thirteen arch 14 Logitech compiles one boot list pushes `01, FE, FD, FC, 02` in that order
+and band `0xE8` names 0, 3 or 4, so a key is looked up in entry 2, the `0xE8` entry, the current mode,
+the running entry, then entry 1.
+
+**Help is scan 3, and among the key maps only the running entry binds it**, same section: the release
+and the repeat on 40 of 40 activity entries and 13 of 13 idle entries and on no other entry, and
+scan 3 in no device mode, 0 of 83. Entries 2 and 3 bind the press of all 54 scans to shared lists, so
+Help's press there is any key's press. Modes bind it too, 467 of them, all the remote's own help,
+delay and status screens and none a device mode, start up screen or working screen. So an entry with
+no scan 3 binding makes Help do nothing on its own screens and in device mode entered from it, which
+is the form a composed activity takes.
+
 The sets sit in a pool of tagged lists packed end to end, which also holds one list per mode page.
 The pool is bounded at both ends without searching: it begins on the byte after a mode entry's page
 array and ends at the lowest address above that which another reader already names, and a run must
@@ -1181,7 +1210,9 @@ on the test account's 650 and 700 records, four keys each, and 11 activities of 
 customised configurations. A display device that neither changes channels nor plays contributes no
 key. Scans 26 and 27 are `UpArrow` and `DownArrow` and 50 and 42 the pad's, decided from the device
 maps, `reference/button-maps.md`. `activityKeysFromRoles` in
-`packages/codec/src/activityroles.ts`. Help (scan 3, release and repeat) is not built.
+`packages/codec/src/activityroles.ts`. Help (scan 3, release and repeat) is not built, deliberately:
+no device mode binds scan 3, so a map built from roles never holds it, and Help then does nothing in
+that activity, [findings.md](findings.md) section NNN.
 
 **An activity's screen commands are its devices' own screen items**, same section: on the ten
 compiles that are not hand customised, every working screen item, 64 per copy and 23 distinct, is an item of one
