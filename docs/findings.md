@@ -39494,7 +39494,7 @@ that moves with it, or a region read after the revert that differs from the one 
 * `packages/codec/bin/set-delay.ts` picks the editor by where the device holds its delay.
 * `packages/corpus/bin/write-config.ts`: the Harmony 700's compare bases are the region read before
   the raise and the one after it.
-* `packages/bench/irtests/700-denon-delay.json`: the test that was run.
+* `packages/bench/irtests/done/700-denon-delay.json`: the test that was run.
 * `tests/test_arch14_write_target.py`: the region reads, the checksum's consistency, the record's
   maximum, both writes' journals and the stopped one's, the three runs' gaps on both clocks, and the
   receiver's clock against a repeat.
@@ -42068,7 +42068,7 @@ difference, alongside the input state lists above, which are a gap; the library 
 
 ### What a Harmony 650 hardware check must observe
 
-`packages/bench/irtests/650-composed-power.json`: the Panasonic TX-P42GT30E composed from the catalogue
+`packages/bench/irtests/done/650-composed-power.json`: the Panasonic TX-P42GT30E composed from the catalogue
 as a device of its own, with a composed activity that switches it on. With the Flirc receiver, its
 device page's PowerOn pad gives seven `PowerOn` frames, 134.6 ms apart, the last ending 867.5 ms after
 the first began, and the television comes on; PowerOff gives seven `PowerOff` frames 136.4 ms apart,
