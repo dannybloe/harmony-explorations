@@ -95,7 +95,7 @@ The Harmony One is a different type, with a touch screen and its own screens, so
 ## 8. A reference per remote
 
 - [ ] 8.1 One folder per model in `reference/remotes/`, ten files each (README, hardware, keys, display, features, behaviour, memory, firmware, usb, misc), every fact with its source and status, generated where the code already knows
-  - [ ] 8.1.1 The Harmony 650 as the sample, with the shared Harmony 600, 650 and 700 architecture folder; Danny reviews the shape
+  - [ ] 8.1.1 The Harmony 650 as the sample, with the shared Harmony 600, 650 and 700 architecture folder: built, generated blocks tested by `make remote-reference`; Danny reviews the shape
   - [ ] 8.1.2 The other bench models: One, 525, 600, 700, 300/350, Touch; thinner folders for the 880/885 and 890
   - [ ] 8.1.3 Absorb `reference/capabilities.md`
 - [ ] 8.2 Silhouettes for the models not yet drawn, from the manuals in the lab; the 600, 650 and 700 share one
