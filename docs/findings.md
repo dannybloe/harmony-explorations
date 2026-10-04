@@ -42647,7 +42647,8 @@ Three things the composer refused or did not know, now measured:
   space as if it had a trailing one against 59 to 62 is the same rule spelled the other way.
 * **No corner label line in that font is wider than 59 pixels.** `Antenna`, 60 in it, is drawn by the
   compiler in another font, in the contributed pair, which is the one case of the kind and corrects
-  `FOUR_SLOT_LABEL_MAX` from 60, a limit the composer had set itself, to 59. 890 corner cells are drawn in
+  `FOUR_SLOT_LABEL_MAX` from 60, a limit the composer had set itself, to 59, which is `LABEL_WIDTH` since
+  section NNN. 890 corner cells are drawn in
   a font other than their page's most common one, most of them help and dialog text, 60 of them cut with
   `..`, and the choice is not "smaller when too wide": 128 are as wide or wider in their own font, and 16
   on device pages would fit the page's font. Choosing a font is not built, and a label too wide for two
@@ -43026,7 +43027,9 @@ the 734 label lines is drawn in one of the six.
   **It is still two implementations**, `fourSlotLabelLines` in `compose.ts` measuring with one font
   set's own glyphs and `wrapAtSpaces` in `devicemode.ts` with the size table, and they share the wrap
   and not the rest: the first never splits a label without a space. That is the state the rule about
-  two copies of a derivation warns of. Open: one of them should call the other.
+  two copies of a derivation warns of. Open: one of them should call the other. **Closed by section
+  NNN**: `wrapAtSpaces` takes a width function and `fourSlotLabelLines` calls it with its own glyph
+  widths, one threshold, `LABEL_WRAP_WIDTH`, 58.
 * **Where no size holds it**, it goes in the smallest, split at its first space or word boundary rather
   than wrapped, each part cut to its longest prefix that fits with `..` after it.
 
@@ -43826,3 +43829,173 @@ writing another variable or value, or a marker record other than 0 of 3.
 * `packages/codec/src/inventory.ts`: `isDeviceListRowShape` exported.
 * `packages/codec/test/compose.test.ts`: the calibration on the thirteen and the 27, and the controls.
 * `docs/config-format.md`, under the arch 14 activity's enter list, the activity menu row and base slot 13.
+
+## NNN. A device mode page's chrome and a device mode's key map, built instead of copied, and one wrap rule
+
+**Date:** 4 October 2026. **Status:** confirmed by calibration against Logitech's own compiles, with a
+one byte control per check; nothing written to a remote, and the composed output is unchanged byte for
+byte.
+
+**Todo `todo-compile-650.md` 6.2.6 and 6.2.7, and the wrap cleanup in `todo-later.md`.** Until here the
+arch 14 device screen composer took a new device mode page's chrome off the configuration it extended:
+the instructions around the page's middle off the first device mode page, the two backgrounds by
+majority over every device mode page, and the shape of a new device mode's own key map off an existing
+device's mode. Each is now built from a rule or from the fixed set of section 317, and the
+configuration's own pages and maps are checked against what is built, as sections 319 and 329 did.
+
+**Sources checked**: this document, sections 81, 131, 285, 289, 312, 317, 319, 323, 324, 325 and 329,
+and the thirteen compiles section 312 lists. Neither firmware nor client was opened: all of it is what
+Logitech's compiler wrote, section 293's reasoned exemption. **The population** is those thirteen, the
+Harmony 700 pair counted twice: 83 device modes, the modes the device lists enter, and 639 pages.
+
+**Scope, decision 16.** Arch 14 (Harmony 600, 650 and 700) only. The chrome and the key map are those
+remotes' device mode screens; the Harmony One's device mode is laid out differently, section 285, and
+is not read here.
+
+### A device mode page's chrome
+
+Every one of the 639 pages is the same program around its middle, which is the title, the counter and
+the labels that section 325 lays out:
+
+```
+OP_IMAGE        0, 0, background        one item or none: the single picture; two or more: the crossed one
+QUEUE 0x73      battery program         base slot 11's first battery program
+DRAW_IMAGE_AT   0, 0, 0, 0, 128, 16     the top bar
+  ... title, counter, labels ...
+DRAW_IMAGE_AT   0, 0, 0, 0, 128, 128    the bottom bar
+F 1             TEXT 49, 114 "Back"     pointing at the configuration's one inline copy
+END
+```
+
+| over the 639 pages | count |
+|---|---|
+| no item or one, the single background | 32 of 32: 1 with none, 31 with one |
+| two or more, the crossed background | 607 of 607 |
+| the queued program is the first battery program | 639 of 639 |
+| "Back" in font 1, x 49, y 114 | 639 of 639 |
+
+**The pictures are named by content, per look**, `contentKey`, and are not found by majority. A look is
+the model and the service generation together, section 317, and three are measured:
+
+| look | skins | compiles |
+|---|---|---|
+| the colour look of 2026 | 72 the Harmony 650, 66 the Harmony 700 | 9: the four 650 compiles, `h700_28_config_region` and the 700's four power hold compiles |
+| the colour look of 2021 and 2023 | 66 | 2: the `h700_config` pair |
+| the monochrome look | 71 and 73, the Harmony 600 and its European model | 2 |
+
+Each look is five pictures, the single and crossed backgrounds, the two bars and the battery icon; the
+top bar is one picture in all three, and the 2021 and 2023 colour look shares its bottom bar and
+battery icon with the monochrome one. **Neither the skin nor the pictures decide alone**: skin 66 is the
+Harmony 700 in two looks, and `h600_config` holds the five of the 2021 and 2023 colour look as well as
+its own. The look chosen is the one whose skin matches and whose five pictures the configuration holds,
+exactly one on every compile. The European
+Harmony 650 and 700, skins 74 and 69, and the Harmony 665, skin 75, are refused rather than given their twins' looks, since nothing
+here has read a compile for either. On the four Harmony 650 compiles the four page pictures are fixed in
+section 317's sense, 4 of 4 on each.
+
+**The battery program is an order, checked by its picture.** The base slot 11 programs that open with a
+one byte switch on state variable 17 are two on the Harmony 600 compiles and three on the others, and no
+base slot 14 case names any of them, so that half of the rule excludes nothing here. Every device mode
+page queues the first; a page of another mode queues one of them or none, and each is queued by some
+page. **Its index is the configuration's own**, 1 on seven compiles and 0 on the six power hold ones,
+so it is found and not numbered. The check is a closure between two sections: the program found has to
+draw the look's battery icon, a picture located by content, 13 of 13, and no later one draws it.
+
+**"Back" is drawn once and pointed at everywhere else.** The word's font is the first font set of the
+title's size, font 1 on all thirteen; it is centred, `floor((128 - width) / 2)`, which is 49; and the
+copy every page points at is the inline run of the same glyph codes, of which each compile holds
+exactly one, so the composer's "lowest addressed" never has to choose. On six compiles
+that copy sits on the first page of the lowest numbered device mode, which is then the one page drawing
+it inline; on the other seven it is on the delay settings screen. A composed page points at that copy, or draws the word inline where the
+configuration holds none, a case no compile exercises.
+
+**What is still read off the configuration**: the pictures' and the copy's addresses, since the bytes
+are the configuration's until chapter 9 builds them, and the title, counter and label fonts, which are
+the configuration's numbering of its font sets, `todo-compile-650.md` 6.2.12. An activity's working
+screen keeps its copied chrome, 6.2.10.
+
+### A device mode's key map
+
+**Every device mode holds one key map of 47 entries in one order**, 83 of 83: a press of each of the 41
+hard key scans of section 325's `HARD_KEYS`, of the four corners, of scan 25, the key under Devices, as
+tag `0x99`, and tag `0x2D`, which carries no event bits. The corners are bound to nothing, `0x99` maps
+the activity counter through a record with `0x72`, `0x2D` runs the page's battery program with `0x73`,
+and every other entry is a list, `0x7F`, or nothing.
+
+**The order is the slot order of Java 6 and 7's `HashMap` over the tags**, `compilerTagOrder`:
+`compilerCaseOrder`'s hash masked to a table of 16 slots doubled while the tags are more than three
+quarters of it, 64 here, walked slot by slot. It reproduces the 83 maps, which are one order 83 times;
+the slot order holds on every mode and page list of two tags or more in the thirteen, 6921 of 6921,
+including all 639 device mode pages' own lists; and at 16 slots it gives the corner pages' 9, 8, 34, 2
+and, with three items, 9, 8, 2, which section 285 had measured as a literal. On the key sets both orders
+accept, 0 to 15 and the run of 21, the two orders agree.
+
+**The order inside a shared slot is not the tag's.** In a device mode's map one slot holds two tags,
+`0x2D` and `0xA4` at 47, and `0x2D` comes first, 83 of 83. In other modes' lists `0xC3` is stored before
+`0x87` on 454 lists and after it on 117, which fits those maps putting a new entry at the head of its
+slot, so a tie shows the order the compiler inserted the tags in, which nothing here reads. So
+`compilerTagOrder` answers a shared slot only from a table of measured pairs, which holds the device
+mode's one, and refuses any other: of the 6921 lists it answers 4983, every one as stored, and refuses
+1938, each of them still in slot order.
+
+**The record under the key under Devices is read and not built.** The compiler writes two records for
+it, section 329's `activityKeyedRecords`, with the same keys and byte identical target programs at
+different addresses; the device modes name one, and no mode and no page names the other, 13 of 13. Its
+one reference is a base slot 11 program, reached through case 0 of a further base slot 14 record, that
+maps the counter through it, on all thirteen, which both reviewers of this section measured and no test
+here asserts. The one named is the lower index on the
+seven compiles that are not power hold compiles and the higher on the six that are, the same split as
+the battery program's index, so no index rule alone picks it. The activity menu names the same one on
+all thirteen, so it is
+read there, checked to be one of the two and keyed on the counter, and every device mode is checked
+against it.
+
+### One wrap rule
+
+Section 325 left the corner label wrap in two copies, `fourSlotLabelLines` in `compose.ts` with the
+configuration's own glyph widths and `wrapAtSpaces` in `devicemode.ts` with the size table. They are one
+now: `wrapAtSpaces` takes a width function and both call it, with one threshold, `LABEL_WRAP_WIDTH`, 58,
+and one line limit, `LABEL_WIDTH`, 59. **58 is pinned by labels with no space**: in the largest size
+`TvRadio` and `PipInput`, 58 wide, are drawn whole on device mode pages and `InputAm`, `ChLevel` and
+`WakeUp`, 59, are split. For a label with a space it is not pinned: the device mode pages allow 53 to
+62, `PS3 Off` whole and the narrowest split 63, and section 323's corner labels 55 to 58, so 58 for
+those is the assumption of one threshold for both kinds, which nothing contradicts. The two populations
+overlap, most corner labels being on device mode pages, so the two are not independent measurements. The constants `FOUR_SLOT_LABEL_MAX`, `FOUR_SLOT_WRAP_WIDTH` and `FOUR_SLOT_LINE_RISE` are gone,
+the last being `TWO_LINE_RISE`.
+
+### Controls and the byte check
+
+Each check refuses a one byte edit of `h650_config_region`: the top bar placed one row lower, 16 to 17;
+the queued program the next one; "Back" a pixel right, 49 to 50; the skin 72 to 74, which leaves no
+look; a device mode's `0x2D` running the next program; a device mode's `0x99` through the other, identical
+record; one mode outside the device list mapping `0x99` through the other record, which is refused for
+exactly one of those modes, the activity menu; and a device mode binding a corner.
+
+**The composed output is unchanged.** On twelve host compiles, the thirteen less `h700_config_2`, each
+composing a device mode with one short page, one with five items, one in a compiled device's layout,
+and an activity screen, the 48 compositions are the same with the codec before this section and after:
+40 compose byte for byte alike, and 8 refuse in both, each over a test label the host's fonts cannot
+spell. The activity screens keep the copied chrome, so the built chrome is compared on 29 of the 40: 27
+in the colour look of 2026, one in that of 2021 and 2023 and one in the monochrome look. A composed device mode passes
+both checks on a Harmony 650 and a Harmony 600 compile.
+
+### What the two reviewers changed
+
+The blind re-measure reproduced the 83 modes, the 639 pages, the page shape, the looks and the 47 tag
+order, and found the two Devices key records are the same keys with byte identical programs at different
+addresses rather than identical records, and that the lower and higher split follows the power hold
+compiles. The sentence audit found the claim this section first made about a shared slot, that it is
+ordered by the tag, wrong on 454 lists outside device modes, which is why `compilerTagOrder` refuses an
+unmeasured tie; that "nothing" named the other record when one program does; that 58 is pinned only by
+labels without a space; and that the byte check compares the built chrome on 29 compositions and not 48.
+Each is corrected above.
+
+### Code
+
+* `packages/codec/src/compose.ts`: `deviceModeChrome`, `deviceModeKeyMap`, `DEVICE_PAGE_BACK_WORD`,
+  the chrome and key map checks, and `fourSlotTemplate` building the chrome rather than copying a page.
+* `packages/codec/src/inventory.ts`: `compilerTagOrder`.
+* `packages/codec/src/screencategories.ts`: `contentKey`, the picture hash, exported.
+* `packages/codec/src/devicemode.ts`: `LABEL_WRAP_WIDTH`, and `wrapAtSpaces` exported over a width function.
+* `packages/codec/test/devicepage.test.ts`: the calibration on the thirteen and the controls.
+* `docs/config-format.md`, after section 325's table.

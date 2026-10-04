@@ -215,8 +215,13 @@ const FIRMWARE_VARIABLE_MAX = 17;
  */
 const WHOLE_KEYPAD = 100;
 
-/** A short stable hash of some bytes, FNV-1a and a second multiplier, as sixteen hex digits. */
-function hashBytes(bytes: Uint8Array): string {
+/**
+ * A short stable hash of some bytes, FNV-1a and a second multiplier, as sixteen hex digits. What a look
+ * keys a picture or a glyph by, and exported since section NNN, where the device mode composer names
+ * the fixed pictures a page's chrome draws by this key rather than by majority over the device pages.
+ * It identifies content and secures nothing.
+ */
+export function contentKey(bytes: Uint8Array): string {
   let a = 0x811c9dc5;
   let b = 0x01000193 ^ bytes.length;
   for (const byte of bytes) {
@@ -496,7 +501,7 @@ export function screenUnits(c: Container): ScreenUnit[] | undefined {
   const pictures = new Map<number, string>();
   for (const picture of pictureList) {
     const off = c.blobOffsetOf(picture.address) as number;
-    pictures.set(picture.address, hashBytes(c.blob.subarray(off, off + (picture.length ?? 0))));
+    pictures.set(picture.address, contentKey(c.blob.subarray(off, off + (picture.length ?? 0))));
   }
   const glyphKeys: Map<number, string>[] = [];
   const units: ScreenUnit[] = [];
@@ -506,7 +511,7 @@ export function screenUnits(c: Container): ScreenUnit[] | undefined {
       if (one.glyph === undefined) continue;
       const off = c.blobOffsetOf(one.address) as number;
       // A glyph's look is its own bytes and the height of the set it is drawn at.
-      const key = `${font.height}:${hashBytes(c.blob.subarray(off, off + one.glyph.length))}`;
+      const key = `${font.height}:${contentKey(c.blob.subarray(off, off + one.glyph.length))}`;
       keys.set(font.first + one.index, key);
       units.push(finish({ kind: 'glyph', label: `glyph ${font.first + one.index} of font set ${index}`,
                           ranges: [{ start: off, length: one.glyph.length }], look: `glyph:${key}`,

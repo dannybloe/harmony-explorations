@@ -231,14 +231,40 @@ export const LABEL_SIZES: readonly LabelSize[] = [
 export const TITLE_SIZE = LABEL_SIZES[2] as LabelSize;
 
 /**
- * The widest a label line may be, in pixels: 59, the widest one line label on the twenty devices' pages.
- * **A label the compiler could split is held to 58**, which is the one rule here fitted to a single
- * width: of the four labels exactly 59 pixels wide in the largest size, the one with no place to break,
- * `Program`, stays whole, and the three that have one, `WakeUp`, `ChLevel` and `InputAm`, are split.
- * Read it as "a measured tie goes to the split" rather than as a second limit: on those pages no label
- * wider than 59 is drawn on one line in a size and none narrower than 59 is split in it.
+ * The widest a label line may be, in pixels: 59, the widest one line label on the twenty devices' pages,
+ * and the widest corner label line on the 13 Logitech compiles for the Harmony 600, 650 and 700,
+ * `Simplink`, section 323, where `Antenna`, 60 pixels in that font, is drawn by the compiler in another
+ * font, the one case of the kind. The activity screen composer held its corner labels to this as
+ * `FOUR_SLOT_LABEL_MAX` until section NNN made the two one constant.
  */
 export const LABEL_WIDTH = 59;
+
+/**
+ * **Where a label that can break does break onto a second line: wider than 58 pixels**, one less than
+ * `LABEL_WIDTH`. One threshold for the two label layouts measured, device mode page labels and an
+ * activity's corner labels, measured twice over overlapping populations of the same thirteen compiles,
+ * since most of section 323's corner labels are on device mode pages:
+ *
+ * * **section 325, device mode pages**: of the four labels exactly 59 pixels wide in the largest size, the
+ *   one with no place to break, `Program`, stays whole, and the three that have one, `WakeUp`, `ChLevel`
+ *   and `InputAm`, are split. Read it as "a measured tie goes to the split": on those pages no label
+ *   wider than 59 is drawn on one line in a size and none narrower than 59 is split in it;
+ * * **section 323, corner labels**: over the 13 compiles, the labels drawn in their page's most common
+ *   font where a corner label sits number 2037, counted once per configuration, label and place, 422
+ *   distinct texts, and one rule places all 2036 whose width can be measured. Any width from 55 to 58
+ *   reproduces them, the widest label left whole with a space in it being 55 pixels, `TV Vol+`, and the
+ *   narrowest broken one 59, `Sony TV` and `TV Input`, so the band rests on those three labels.
+ *
+ * **What pins 58 is labels with no space**, sections 325 and NNN: in the largest size `TvRadio` and
+ * `PipInput`, 58 wide, are drawn whole, and `InputAm`, `ChLevel` and `WakeUp`, 59, are split. For a
+ * label with a space the device mode pages bound it only from 53 to 62, `PS3 Off` whole and the narrowest
+ * split 63, and the corner labels from 55 to 58; 58 for those is the assumption that one threshold serves
+ * both kinds, which nothing contradicts and nothing measured forces. Breaking a label of three or more
+ * words is tested by one label, `Rcvr V-` over `Aux`. This was two
+ * constants, `FOUR_SLOT_WRAP_WIDTH` in `compose.ts` and `LABEL_WIDTH - 1` here, each with its own copy of
+ * the greedy wrap, until section NNN.
+ */
+export const LABEL_WRAP_WIDTH = LABEL_WIDTH - 1;
 
 /** A text's width in a size, or undefined when the size has no width for one of its characters. */
 export function textWidthIn(sizeOf: LabelSize, text: string): number | undefined {
@@ -284,22 +310,26 @@ export interface LabelLayout {
 }
 
 /**
- * A label with spaces broken the way a word wrap does, in one size: as many words to a line as fit
- * within 58 pixels, `LABEL_WIDTH` less one, which is the same tie rule as a whole label's. Undefined
- * where a word or the space has no width in the size, which is every label with a space in the
- * smallest. On a label of two words too wide for one line this is the first space; it differs only on
- * three or more, and the one label measured on which the two differ, `Rcvr V-` over `Aux` on an
- * activity's page, is the reason it is a wrap: section 323's corner labels, most of them on device mode
- * pages, and this module read the same compiler, and this is the rule both agree on, section 325.
+ * A label with spaces broken the way a word wrap does: as many words to a line as fit within
+ * `LABEL_WRAP_WIDTH`, greedily, each line measured whole by `widthOf`. **The one copy of the wrap**, which
+ * `labelLayout` calls with a size's table widths and the activity screen composer with a configuration's
+ * own glyph widths; until section NNN each carried its own loop, section 325's report.
+ *
+ * Undefined where `widthOf` cannot measure a line, which with table widths is every label with a space
+ * in the smallest size. On a label of two words too wide for one line this is the first space; it
+ * differs only on three or more, and the one label measured on which the two differ, `Rcvr V-` over
+ * `Aux` on an activity's page, is the reason it is a wrap. It does not decide whether a label wraps at
+ * all, nor refuse a line too wide or a third line: those are each caller's, since a device mode page
+ * goes down a size where a corner label of an activity is refused.
  */
-function wrapAtSpaces(sizeOf: LabelSize, text: string): string[] | undefined {
+export function wrapAtSpaces(text: string, widthOf: (line: string) => number | undefined): string[] | undefined {
   const lines: string[] = [];
   let current = '';
   for (const word of text.split(' ')) {
     const longer = current === '' ? word : `${current} ${word}`;
-    const wide = textWidthIn(sizeOf, longer);
+    const wide = widthOf(longer);
     if (wide === undefined) return undefined;
-    if (current !== '' && wide > LABEL_WIDTH - 1) {
+    if (current !== '' && wide > LABEL_WRAP_WIDTH) {
       lines.push(current);
       current = word;
     } else {
@@ -332,10 +362,10 @@ export function labelLayout(text: string): LabelLayout | undefined {
   for (let k = 0; k < LABEL_SIZES.length; k += 1) {
     const sizeOf = LABEL_SIZES[k] as LabelSize;
     const whole = textWidthIn(sizeOf, text);
-    if (whole !== undefined && whole <= LABEL_WIDTH - (split === undefined ? 0 : 1)) {
+    if (whole !== undefined && whole <= (split === undefined ? LABEL_WIDTH : LABEL_WRAP_WIDTH)) {
       return { size: k, lines: [text] };
     }
-    const lines = text.includes(' ') ? wrapAtSpaces(sizeOf, text) : split;
+    const lines = text.includes(' ') ? wrapAtSpaces(text, (line) => textWidthIn(sizeOf, line)) : split;
     if (lines !== undefined && lines.length === 2) {
       const widths = lines.map((part) => textWidthIn(sizeOf, part));
       if (widths.every((one) => one !== undefined && one <= LABEL_WIDTH)) return { size: k, lines: [...lines] };

@@ -1015,6 +1015,56 @@ export function compilerCaseOrder(keys: readonly number[]): number[] {
 }
 
 /**
+ * Two tags that share a slot, in the order the compiler stores them: the only shared slot this module
+ * is asked about, a device mode's `0x2D` and `0xA4` at slot 47 of 64, `0x2D` first on 83 of 83.
+ */
+const MEASURED_TAG_TIES: ReadonlyMap<string, readonly [number, number]> = new Map([['45,164', [0x2d, 0xa4]]]);
+
+/**
+ * The order Logitech's compiler stores the tags of a mode's own tagged list in, section NNN: the same
+ * hash map order as `compilerCaseOrder`, **masked to the table**, which matters here and not there
+ * because a tag runs to `0xFF` where the case keys stay below their table's size.
+ *
+ * The table is 16 slots, doubled while the tags number more than three quarters of it, which is Java's
+ * default capacity and load factor: 64 slots for a device mode's 47 tags. A tag goes to slot
+ * `hash & (size - 1)` and the slots are walked in order. **Measured, not inferred**: the slot order
+ * holds on every mode record and page list of two tags or more on the thirteen Logitech compiles for the
+ * Harmony 600, 650 and 700, 6921 of 6921 at five table sizes, and with 16 slots it gives
+ * `FOUR_SLOT_STORED_ORDER`, the 9, 8, 34, 2 that every corner page stores, which was a literal measured
+ * separately, section 285. On the key sets both accept, 0 to 15 and the run of 21, it gives
+ * `compilerCaseOrder`'s order, since every key there is below its table's size; the run of 451 is not a
+ * tag set.
+ *
+ * **The order inside a shared slot is not the tag's, so it is not computed.** The same pair is stored
+ * both ways in those compiles, `0xC3` before `0x87` on 454 lists and after it on 117, which fits Java 6
+ * and 7 putting a new entry at the head of its slot, so the tie shows the order the compiler inserted the
+ * tags in, which nothing here reads. So a shared slot is answered only from `MEASURED_TAG_TIES`, which
+ * holds the device mode's one pair, and any other is refused rather than guessed. A tag outside 0 to 255,
+ * or one given twice, is refused too.
+ */
+export function compilerTagOrder(tags: readonly number[]): number[] {
+  const hash = (key: number): number => {
+    const h = key ^ (key >>> 20) ^ (key >>> 12);
+    return h ^ (h >>> 7) ^ (h >>> 4);
+  };
+  if (tags.some((tag) => !Number.isInteger(tag) || tag < 0 || tag > 0xff)) {
+    throw new RangeError('a tag is one byte');
+  }
+  if (new Set(tags).size !== tags.length) throw new RangeError('a tagged list cannot hold a tag twice');
+  let size = 16;
+  while (tags.length > size * 0.75) size *= 2;
+  const slot = (tag: number): number => hash(tag) & (size - 1);
+  return [...tags].sort((a, b) => {
+    if (slot(a) !== slot(b)) return slot(a) - slot(b);
+    const tie = MEASURED_TAG_TIES.get([a, b].sort((x, y) => x - y).join(','));
+    if (tie === undefined) {
+      throw new RangeError(`tags 0x${a.toString(16)} and 0x${b.toString(16)} share a slot whose stored order is not measured`);
+    }
+    return tie.indexOf(a) - tie.indexOf(b);
+  });
+}
+
+/**
  * The values an inter device delay table has a case for, 0 to 20 tenths of a second, **in the order
  * the compiler stores them**, which is `compilerCaseOrder`'s: 0 to 15, 17, 16, 19, 18, 20, on every
  * table of the kind, and each case's program sits in the same order. A variable holding more than 20

@@ -56,9 +56,11 @@ import {
   stateRecords,
 } from './sections.ts';
 import {
-  SCREEN_DRAW_IMAGE_AT, SCREEN_JUMP, SCREEN_QUEUE_INSTRUCTION, type ScreenInstruction, bitmapAt,
-  bitmapReference, screenProgram,
+  SCREEN_DRAW_IMAGE_AT, SCREEN_JUMP, SCREEN_QUEUE_INSTRUCTION, SCREEN_TABLE_SLOT, type ScreenInstruction, bitmapAt,
+  bitmapReference, bitmaps, pictureBank, pictureReference, reachablePrograms, screenProgram,
 } from './screen.ts';
+import { namedContentEnd } from './coverage.ts';
+import { contentKey } from './screencategories.ts';
 import {
   EDGE_CODES, LIST_ROW_PITCH, PANEL_LEFT, SCREEN_ROW_PITCH, touchOwner, touchPageOf,
 } from './touch.ts';
@@ -100,11 +102,12 @@ import {
   SEND_PRELUDE_LOAD,
   sendPreludeCondition,
   compilerCaseOrder,
+  compilerTagOrder,
 } from './inventory.ts';
 import {
   menuMarkerVariable, startSequenceVariables, stateVariableName, type StateVariableSpec,
 } from './statetables.ts';
-import { characterMap, decode, glyphsReferencedBy, screenStrings } from './text.ts';
+import { characterMap, decode, glyphsReferencedBy, referencedStringAddress, screenStrings } from './text.ts';
 import { type FontSet, fontSets, glyphOf } from './font.ts';
 import {
   IR_CLASS_STREAM,
@@ -128,7 +131,8 @@ import {
 } from './inventory.ts';
 import { excise, relocate } from './relocate.ts';
 import {
-  deviceModeTitle, fontsBySize, labelLayout, LABEL_SIZES, LABEL_WIDTH, pageCounter, placeLabel, TITLE_SIZE,
+  deviceModeTitle, fontsBySize, HARD_KEYS, labelLayout, LABEL_SIZES, LABEL_WIDTH, LABEL_WRAP_WIDTH, pageCounter,
+  placeLabel, TITLE_SIZE, TWO_LINE_RISE, wrapAtSpaces,
 } from './devicemode.ts';
 import { type ActivityKey, activityKeyEntry, setActivityKey } from './activitykeys.ts';
 import { applyEdits } from './edit.ts';
@@ -3250,71 +3254,36 @@ export function composeDeviceScreen(
  */
 
 /**
- * The widest line a corner label draws in its page's label font, 59 pixels. This was 60 and was
- * described as the composer's own limit rather than a measurement, until section 323 measured it:
- * the widest such line on the 13 Logitech compiles for the Harmony 600, 650 and 700 is 59,
- * `Simplink`, and `Antenna`, 60 pixels in that font, is drawn by the compiler in another font, the one
- * case of the kind. Choosing a font is not composed, so a line past this is refused.
- */
-const FOUR_SLOT_LABEL_MAX = 59;
-/**
- * Where the compiler breaks a corner label onto a second line, section 323. Over the 13 Logitech
- * compiles for the Harmony 600, 650 and 700, the labels drawn in their page's most common font where a
- * corner label sits, one line at y 40 or 90 or two at 25 and 40 or 75 and 90, number 2037 counted once
- * per configuration, label and place, 422 distinct texts, and one rule places all 2036 whose width
- * can be measured: a label with no space stays on one line, one no wider than this stays on one line,
- * and a wider one breaks at spaces, greedily, putting on each line as many words as fit within this
- * width. Any width from 55 to 58 reproduces all of them, the widest label left whole with a space in it
- * being 55 pixels, `TV Vol+`, and the narrowest broken one 59, `Sony TV` and `TV Input`. So the
- * threshold is known to lie in that band and not where in it, and the band rests on those three
- * labels; this takes its top, which breaks the fewest. Breaking a label of three or more words is
- * tested by one label, `Rcvr V-` over `Aux`.
+ * Break a corner label the way the compiler does, and refuse what it would draw in another font: a third
+ * line, or a line wider than a corner holds. Returns the glyph codes per line, one or two.
+ *
+ * **The rule is `devicemode.ts`'s**, section NNN: a label with no space stays whole, one no wider than
+ * `LABEL_WRAP_WIDTH` stays whole, and a wider one is broken by `wrapAtSpaces`, measured here in the
+ * configuration's own label font rather than in a size's table. Its two numbers were constants of this
+ * file, 58 and 59, measured over the 13 Logitech compiles' corner labels by section 323, until section
+ * NNN made them the ones section 325 measured over device mode pages; both measurements are on
+ * `LABEL_WRAP_WIDTH`'s docstring. A two line label's lines sit `TWO_LINE_RISE` apart, 25 and 40 in the
+ * top row and 75 and 90 in the bottom, on all 880 such labels section 323 counted, which is the label
+ * font's line height and also had a copy here.
  *
  * What it does not cover is a label the compiler draws in another font, which is not chosen by width
  * alone and is not composed, so a label too wide for two lines of this font is refused.
- */
-const FOUR_SLOT_WRAP_WIDTH = 58;
-/**
- * A two line corner label's first line sits this far above where a one line label would, and its
- * second line there: 25 and 40 in the top row, 75 and 90 in the bottom, on all 880 above. It is the
- * label font's line height, so it holds for the font the composer draws labels in and no other.
- */
-const FOUR_SLOT_LINE_RISE = 15;
-
-/**
- * Break a corner label the way the compiler does, `FOUR_SLOT_WRAP_WIDTH`, and refuse what it would
- * draw in another font: a third line, or a line wider than a corner holds. Returns the glyph codes
- * per line, one or two.
  */
 function fourSlotLabelLines(
   map: NonNullable<ReturnType<typeof characterMap>>, c: Container, set: FontSet, font: number, label: string,
 ): number[][] {
   const width = (text: string): number => textWidth(c, set, codesFor(map, c, set, text, font));
-  const words = label.split(' ');
-  const lines: string[] = [];
-  if (!label.includes(' ') || width(label) <= FOUR_SLOT_WRAP_WIDTH) {
-    lines.push(label);
-  } else {
-    let current = '';
-    for (const word of words) {
-      const longer = current === '' ? word : `${current} ${word}`;
-      if (current !== '' && width(longer) > FOUR_SLOT_WRAP_WIDTH) {
-        lines.push(current);
-        current = word;
-      } else {
-        current = longer;
-      }
-    }
-    lines.push(current);
-  }
+  const lines = !label.includes(' ') || width(label) <= LABEL_WRAP_WIDTH
+    ? [label]
+    : wrapAtSpaces(label, width) as string[];
   if (lines.length > 2) {
     throw new ComposeError(`'${label}' breaks onto ${lines.length} lines and a corner holds two in its font: `
       + 'give it a shorter label');
   }
   for (const line of lines) {
     const wide = width(line);
-    if (wide > FOUR_SLOT_LABEL_MAX) {
-      throw new ComposeError(`'${line}' is ${wide} pixels wide and a corner holds ${FOUR_SLOT_LABEL_MAX}: `
+    if (wide > LABEL_WIDTH) {
+      throw new ComposeError(`'${line}' is ${wide} pixels wide and a corner holds ${LABEL_WIDTH}: `
         + 'give it a shorter label');
     }
   }
@@ -3354,11 +3323,424 @@ function sentFrame(c: Container, list: readonly Instruction[] | undefined): stri
   return frame === undefined ? undefined : `${frame.bits}:${frame.value.toString(16)}`;
 }
 
-/** What a composer copies out of an arch 14 configuration before it moves anything. */
+/*
+ * ---- A device mode page's chrome and a device mode's key map, built, section NNN ----
+ *
+ * `todo-compile-650.md` 6.2.6 and 6.2.7. Until then the composer took a device mode page's chrome, its
+ * background, the queued program, the two bars and the bottom word, off the first device page of the
+ * configuration it extended, the two backgrounds by majority over every device page, and the shape of a
+ * new device mode's key map off another device's mode. Each is now built: the instructions from the
+ * geometry every device page on the thirteen Logitech compiles shares, the pictures by their content out
+ * of the fixed set of section 317, the queued program by a rule over base slot 11, and the key map's
+ * tags from section 325's key table in the compiler's hash order. What the configuration holds is then
+ * checked against what is built, as sections 319 and 329 did for what they built.
+ *
+ * What is still read off the configuration and why: the title, counter and label **fonts**, which are
+ * the configuration's own numbering of its font sets, `todo-compile-650.md` 6.2.12; the **record** the
+ * key under Devices maps through, which is read off the activity menu, since a record's index is the
+ * description's order, section 324; and the pictures' and the bottom word's **addresses**, since the
+ * bytes are the configuration's until chapter 9 builds them.
+ */
+
+/**
+ * The fixed pictures a device mode page's chrome draws, by `contentKey`, per look. **A look belongs to
+ * the model and the service generation together**, section 317: the Harmony 650 and the 2026 Harmony
+ * 700 compiles draw one, the Harmony 700 compiles of 2021 and 2023 another, and the Harmony 600, whose
+ * display is monochrome, a third. Every device mode page on the thirteen Logitech compiles for the
+ * Harmony 600, 650 and 700 draws one look's five, and which look is the configuration's own is decided
+ * by its skin, the low byte of its version word, section 81, and by which looks it holds whole: one of
+ * the two Harmony 600 compiles, `h600_config`, holds the 2021 and 2023 colour look's five as well, so
+ * the skin is needed and the pictures alone do not decide.
+ *
+ * Only the skins measured are named: 66 the Harmony 700, 71 and 73 the Harmony 600 and its European
+ * model, 72 the Harmony 650. The European 650 and 700, 74 and 69, would take their twins' looks if
+ * section 131's pairing carries over to pictures, which nothing here has read, so they are refused.
+ *
+ * The keys are content hashes and not the pictures; a key names a picture the configuration already
+ * carries and nothing here can draw one. That waits for `todo-compile-650.md` chapter 9.
+ */
+interface DevicePageLook {
+  name: string;
+  skins: readonly number[];
+  /** The background of a page holding one item or none, and of a page holding more: the corner cross. */
+  single: string;
+  crossed: string;
+  /** The bar along the top, 128 by 16, and the one along the bottom, drawn over the whole screen. */
+  topBar: string;
+  bottomBar: string;
+  /** The battery icon the queued program draws first, which is what ties that program to this look. */
+  battery: string;
+}
+
+const DEVICE_PAGE_LOOKS: readonly DevicePageLook[] = [
+  {
+    name: 'the colour look of 2026', skins: [66, 72],
+    single: '0061c06666b425f1', crossed: '45888f139bd13f9c',
+    topBar: 'e247f3ff422472de', bottomBar: '9e81b982b33e2ff5', battery: 'c7d320f981025b68',
+  },
+  {
+    name: 'the colour look of 2021 and 2023', skins: [66],
+    single: 'fb5f49a2ee63c0f9', crossed: '59a6f04d6ba0e90a',
+    topBar: 'e247f3ff422472de', bottomBar: '564e0ea2da45a0fd', battery: '6a7beeb149ddb000',
+  },
+  {
+    name: 'the monochrome look', skins: [71, 73],
+    single: 'b632fecee357d2c7', crossed: '7e1f839276f704c9',
+    topBar: 'e247f3ff422472de', bottomBar: '564e0ea2da45a0fd', battery: '6a7beeb149ddb000',
+  },
+];
+
+/**
+ * Where a device mode page draws its chrome: the background at 0, 0; the top bar placed by the six bytes
+ * `0, 0, 0, 0, 128, 16` and the bottom bar by `0, 0, 0, 0, 128, 128`; and the bottom word, "Back", on the
+ * line at y 114, centred, which is x 49 on every page. All 639 device mode pages of the thirteen.
+ */
+const DEVICE_PAGE_BACKGROUND_AT: readonly number[] = [0, 0];
+const DEVICE_PAGE_TOP_BAR_AT: readonly number[] = [0, 0, 0, 0, 128, 16];
+const DEVICE_PAGE_BOTTOM_BAR_AT: readonly number[] = [0, 0, 0, 0, 128, 128];
+const DEVICE_PAGE_BACK_Y = 114;
+/** The bottom word: what the key under the display's centre does on a device page, go back. */
+export const DEVICE_PAGE_BACK_WORD = 'Back';
+
+/** The action opcode a screen queues to run a base slot 11 program, `actions.ts`. */
+const RUN_SCREEN_PROGRAM = 0x73;
+/** The firmware's own state variable the battery programs switch on, section 317's battery reading. */
+const BATTERY_STATE_VARIABLE = 17;
+/** The screen opcode of a switch with one byte counts and values, `screen.ts`. */
+const SCREEN_SWITCH_ONE_BYTE = 0x12;
+
+/** What a device mode page's chrome is made of in one configuration, every piece built or located. */
+export interface DeviceModeChrome {
+  look: string;
+  /** The five pictures' addresses, located by content. */
+  single: number;
+  crossed: number;
+  topBar: number;
+  bottomBar: number;
+  /** The base slot 11 entry the page queues, `0x73`, and the key map runs under tag `0x2D`. */
+  battery: number;
+  /** The bottom word: its font, its glyph codes there, its x, and the address of an inline copy to point at. */
+  backFont: number;
+  backCodes: number[];
+  backX: number;
+  backHome: number | undefined;
+}
+
+/** Every picture of a configuration by its content, the bank's and the ones outside it, as `screenUnits` lists them. */
+function picturesByContent(c: Container): Map<string, number[]> {
+  const bank = pictureBank(c, namedContentEnd(c)) ?? [];
+  const inBank = new Set(bank.map((one) => one.address));
+  const out = new Map<string, number[]>();
+  for (const picture of [...bank, ...bitmaps(c).filter((one) => !inBank.has(one.address))]) {
+    const off = c.blobOffsetOf(picture.address);
+    if (off === undefined || picture.length === undefined) continue;
+    const key = contentKey(c.blob.subarray(off, off + picture.length));
+    out.set(key, [...(out.get(key) ?? []), picture.address]);
+  }
+  return out;
+}
+
+/**
+ * The battery program a device page queues: **the first base slot 11 entry that no base slot 14 case
+ * names and that opens with a switch on the firmware's state variable 17**. There are two such programs
+ * on the Harmony 600's compiles and three on the others', and every device mode page queues the first,
+ * 639 pages of 639 on the 13 compiles; a page of another mode queues one of them or none. No base slot
+ * 14 case names any such program on those compiles, so that half of the rule excludes nothing there and
+ * is kept because a program a case names is run by a value, not queued by a page. Its index is the
+ * configuration's own, 1 on seven compiles and 0 on the six power hold ones. The rule is an order and
+ * the check is the picture: the program found has to draw the look's battery icon, which is a closure
+ * between base slot 11's order and the picture bank's content.
+ */
+function batteryProgram(c: Container, look: DevicePageLook, pictures: Map<string, number[]>): number {
+  const table = c.pointerArray(archSlot(c.architecture as number, SCREEN_TABLE_SLOT)) ?? [];
+  const named = new Set<number>();
+  for (const map of valueMaps(c) ?? []) {
+    for (const [, target] of map.entries) named.add(target);
+    for (const [, , target] of map.ranges) named.add(target);
+  }
+  const index = table.findIndex((address) => {
+    if (named.has(address)) return false;
+    const first = screenProgram(c, address)?.[0];
+    return first?.opcode === SCREEN_SWITCH_ONE_BYTE && first.operands[0] === BATTERY_STATE_VARIABLE;
+  });
+  if (index < 0) throw new ComposeError('no base slot 11 program switches on the battery, so a device page has nothing to queue');
+  const icons = new Set(pictures.get(look.battery) ?? []);
+  const draws = [...reachablePrograms(c, [table[index] as number]).values()].some((program) =>
+    program.some((one) => icons.has(pictureReference(one) ?? -1)));
+  if (!draws) {
+    throw new ComposeError(`base slot 11 entry ${index}, the first battery program, does not draw ${look.name}'s battery icon`);
+  }
+  return index;
+}
+
+/**
+ * A device mode page's chrome in this configuration, built, `todo-compile-650.md` 6.2.6: the look its
+ * skin and its pictures decide, the five pictures located by content, the battery program by
+ * `batteryProgram`, and the bottom word spelled in the first font of the title's size, which is the
+ * font it is drawn in on every device page here, centred on its line, and pointed at the inline copy
+ * of the same codes, which is where the compiler's own pages point, 13 of 13. Each compile holds exactly
+ * one such copy, so taking the lowest addressed never has to choose; on six of them it sits on the first
+ * page of the lowest numbered device mode, the one page that draws the word inline, and on the other
+ * seven on the delay settings screen. Where a configuration holds no inline copy, a composed page draws
+ * the word inline, which no compile exercises. **Then every device mode page the configuration holds is
+ * checked against it**, `checkDeviceModeChrome`, so a configuration whose own pages disagree is refused
+ * rather than extended.
+ */
+export function deviceModeChrome(c: Container): DeviceModeChrome {
+  if (c.architecture !== 14) throw new ComposeError('a device page\'s chrome is built for the Harmony 600, 650 and 700 only');
+  const skin = (c.versionWord ?? -1) & 0xff;
+  const pictures = picturesByContent(c);
+  const roles = ['single', 'crossed', 'topBar', 'bottomBar', 'battery'] as const;
+  const whole = DEVICE_PAGE_LOOKS.filter((look) => look.skins.includes(skin)
+    && roles.every((role) => (pictures.get(look[role])?.length ?? 0) > 0));
+  if (whole.length !== 1) {
+    throw new ComposeError(`skin ${skin} holds ${whole.length} device page looks whole, `
+      + `${whole.map((one) => one.name).join(' and ') || 'none of the measured ones'}, not one`);
+  }
+  const look = whole[0] as DevicePageLook;
+  const one = (role: (typeof roles)[number]): number => {
+    const found = pictures.get(look[role]) ?? [];
+    if (found.length !== 1) throw new ComposeError(`${look.name}'s ${role} picture is stored ${found.length} times`);
+    return found[0] as number;
+  };
+
+  // The bottom word, in the first font of the title's size that spells it.
+  const map = characterMap(c);
+  if (map === undefined) throw new ComposeError('the config draws no text this can spell from');
+  const sets = fontSets(c) ?? [];
+  const titleRung = LABEL_SIZES.indexOf(TITLE_SIZE);
+  let backFont: number | undefined;
+  let backCodes: number[] = [];
+  for (const font of fontsBySize(c, map).get(titleRung) ?? []) {
+    try {
+      backCodes = codesFor(map, c, sets[font] as FontSet, DEVICE_PAGE_BACK_WORD, font);
+      backFont = font;
+      break;
+    } catch (error) {
+      if (!(error instanceof ComposeError)) throw error;
+    }
+  }
+  if (backFont === undefined) throw new ComposeError(`no font of the title's size spells '${DEVICE_PAGE_BACK_WORD}'`);
+  const backX = Math.floor((FOUR_SLOT_SCREEN_WIDTH - textWidth(c, sets[backFont] as FontSet, backCodes)) / 2);
+  // The inline copy to point at: the lowest addressed run of exactly these codes any program draws inline.
+  let backHome: number | undefined;
+  const want = backCodes.join(',');
+  for (const [, program] of reachablePrograms(c)) {
+    for (const instruction of program) {
+      if (instruction.opcode !== OP_TEXT_INLINE || [...(instruction.glyphs ?? [])].join(',') !== want) continue;
+      const at = c.flashBase + instruction.start + 3;
+      if (backHome === undefined || at < backHome) backHome = at;
+    }
+  }
+
+  const chrome: DeviceModeChrome = {
+    look: look.name,
+    single: one('single'), crossed: one('crossed'), topBar: one('topBar'), bottomBar: one('bottomBar'),
+    battery: batteryProgram(c, look, pictures),
+    backFont, backCodes, backX, backHome,
+  };
+  checkDeviceModeChrome(c, chrome);
+  return chrome;
+}
+
+/**
+ * The chrome above a page's title, after its background: the queued battery program and the top bar.
+ * `shifted` maps an address in the container as it is to where it lands once the page is inserted.
+ */
+function deviceChromeHead(chrome: DeviceModeChrome, shifted: (address: number) => number): number[] {
+  return [
+    SCREEN_QUEUE_INSTRUCTION, chrome.battery & 0xff, chrome.battery >> 8, RUN_SCREEN_PROGRAM,
+    SCREEN_DRAW_IMAGE_AT, ...DEVICE_PAGE_TOP_BAR_AT, ...new Writer(3).u24(shifted(chrome.topBar)).bytes,
+  ];
+}
+
+/** The bottom bar and the bottom word's font select, the part of a page's tail before the word. */
+function deviceChromeBottom(chrome: DeviceModeChrome, shifted: (address: number) => number): number[] {
+  return [
+    SCREEN_DRAW_IMAGE_AT, ...DEVICE_PAGE_BOTTOM_BAR_AT, ...new Writer(3).u24(shifted(chrome.bottomBar)).bytes,
+    OP_FONT, chrome.backFont,
+  ];
+}
+
+/** The chrome below a page's labels: the bottom bar, the bottom word's font and the word, and the end. */
+function deviceChromeTail(chrome: DeviceModeChrome, shifted: (address: number) => number): number[] {
+  const word = chrome.backHome === undefined
+    ? [OP_TEXT_INLINE, chrome.backX, DEVICE_PAGE_BACK_Y, ...chrome.backCodes, 0]
+    : [OP_TEXT_AT, chrome.backX, DEVICE_PAGE_BACK_Y, ...new Writer(3).u24(shifted(chrome.backHome)).bytes];
+  return [...deviceChromeBottom(chrome, shifted), ...word, OP_END];
+}
+
+/**
+ * Every device mode page of the configuration against the built chrome: its background the one item
+ * picture when it holds one item or none and the crossed one when it holds more, the head and the tail
+ * byte for byte, and the bottom word either pointing at the built home or being that home. A
+ * disagreement is refused with the page it is on.
+ */
+function checkDeviceModeChrome(c: Container, chrome: DeviceModeChrome): void {
+  const same = (address: number): number => address;
+  const head = deviceChromeHead(chrome, same).join(',');
+  const bottom = deviceChromeBottom(chrome, same).join(',');
+  const records = modeRecords(c) ?? [];
+  for (const mode of [...new Set(deviceListRows(c).map((row) => row.mode))]) {
+    (records[mode]?.pages ?? []).forEach((page, p) => {
+      const where = `device mode ${mode}'s page ${p + 1}`;
+      const program = screenProgram(c, page.program) ?? [];
+      const items = taggedList(c, page.list)?.entries.length ?? 0;
+      const first = program[0];
+      const bytes = (from: number, to: number): string => [...c.blob.subarray(from, to)].join(',');
+      const background = items > 1 ? chrome.crossed : chrome.single;
+      if (first?.opcode !== OP_IMAGE || bitmapReference(first) !== background
+          || [...first.operands.subarray(0, 2)].join(',') !== DEVICE_PAGE_BACKGROUND_AT.join(',')) {
+        throw new ComposeError(`${where} does not draw the ${items > 1 ? 'crossed' : 'one item'} background of ${chrome.look} at 0, 0`);
+      }
+      const third = program[3];
+      if (third === undefined || bytes(first.start + first.length, third.start) !== head) {
+        throw new ComposeError(`${where}'s queued program and top bar are not the ones built`);
+      }
+      const tail = program.slice(-4);
+      const word = tail[2];
+      if (tail.length !== 4 || word === undefined || bytes((tail[0] as ScreenInstruction).start, word.start) !== bottom
+          || tail[3]?.opcode !== OP_END) {
+        throw new ComposeError(`${where}'s bottom bar and the bottom word's font are not the ones built`);
+      }
+      const at = [word.operands[0], word.operands[1]].join(',');
+      const isHome = word.opcode === OP_TEXT_INLINE && c.flashBase + word.start + 3 === chrome.backHome
+        && [...(word.glyphs ?? [])].join(',') === chrome.backCodes.join(',');
+      const pointsHome = word.opcode === OP_TEXT_AT && referencedStringAddress(word) === chrome.backHome;
+      if (at !== [chrome.backX, DEVICE_PAGE_BACK_Y].join(',') || !(isHome || pointsHome)) {
+        throw new ComposeError(`${where}'s bottom word is not '${DEVICE_PAGE_BACK_WORD}' at ${chrome.backX}, `
+          + `${DEVICE_PAGE_BACK_Y} drawn from its inline copy at the lowest address`);
+      }
+    });
+  }
+}
+
+/**
+ * The chrome of a page around its middle, as `fourSlotPageProgram` and `compiledPageProgram` write it:
+ * built for a device mode page, `builtChrome`, and copied for an activity's working screen, whose chrome
+ * is still another activity's, `todo-compile-650.md` 6.2.10.
+ */
+interface PageChrome {
+  headLength: number;
+  tailLength: number;
+  head: (shifted: (address: number) => number) => number[];
+  tail: (shifted: (address: number) => number) => number[];
+}
+
+function builtChrome(chrome: DeviceModeChrome): PageChrome {
+  const same = (address: number): number => address;
+  return {
+    headLength: deviceChromeHead(chrome, same).length,
+    tailLength: deviceChromeTail(chrome, same).length,
+    head: (shifted) => deviceChromeHead(chrome, shifted),
+    tail: (shifted) => deviceChromeTail(chrome, shifted),
+  };
+}
+
+/** A page's chrome copied off another page's program: its instructions after the background and up to the title, and its last four. */
+function copiedChrome(c: Container, prefix: readonly ScreenInstruction[], suffix: readonly ScreenInstruction[]): PageChrome {
+  const head = prefix.slice(1);
+  return {
+    headLength: head.reduce((sum, one) => sum + one.length, 0),
+    tailLength: suffix.reduce((sum, one) => sum + one.length, 0),
+    head: (shifted) => head.flatMap((one) => [...copiedInstruction(c, one, shifted)]),
+    tail: (shifted) => suffix.flatMap((one) => [...copiedInstruction(c, one, shifted)]),
+  };
+}
+
+/**
+ * The tag a press of the key under Devices carries, scan 25, which a device mode maps through a base slot
+ * 14 record on the activity counter back to the device list, and the tag with no event bits, scan 45,
+ * under which a device mode runs the battery program its pages queue. What the second tag is a press
+ * of, if anything, is not read.
+ */
+const DEVICES_KEY_TAG = (KEY_EVENT_PRESS << KEY_EVENT_SHIFT) | 25;
+const DEVICE_MODE_PROGRAM_TAG = 0x2d;
+
+/** One entry of a mode's own key map as a composer writes it: always the narrow form, so no flags. */
+export type KeyMapEntry = Pick<TaggedEntry, 'tag' | 'operand' | 'opcode'>;
+
+/**
+ * A device mode's own key map before any key is bound, built, `todo-compile-650.md` 6.2.7: **47
+ * entries**, a press of every hard key section 325's `HARD_KEYS` lists, of the four corners and of the
+ * key under Devices, and the program tag, stored in `compilerTagOrder`'s order. The key under Devices
+ * maps the activity counter through the record the activity menu maps it through, the program tag runs
+ * the chrome's battery program, and every other entry is bound to nothing until a caller binds a key.
+ *
+ * Then every device mode the configuration holds is checked against it: the same tags in the same
+ * order, the same two entries, and every other entry a list or nothing, on all 83 device modes of the
+ * thirteen compiles. **The record is read and not built**: the compiler emits two records for the key
+ * under Devices, section 329, with the same keys and byte identical target programs at different
+ * addresses, and modes name one of them while no mode or page names the other, 13 of 13; its one
+ * reference is a base slot 11 program reached through a further base slot 14 record. Which of the two is named is the
+ * lower index on seven compiles and the higher on the six power hold ones. The activity menu
+ * names the one the device modes name on every compile here, so it is read there, checked to be one of
+ * the two `activityKeyedRecords` finds and keyed on the counter, and checked against every device mode.
+ */
+export function deviceModeKeyMap(c: Container, chrome: DeviceModeChrome): KeyMapEntry[] {
+  const press = (scan: number): number => (KEY_EVENT_PRESS << KEY_EVENT_SHIFT) | scan;
+  const tags = compilerTagOrder([
+    ...HARD_KEYS.map((key) => press(key.scan)), ...FOUR_SLOT_ITEMS.map((item) => press(item.scan)),
+    DEVICES_KEY_TAG, DEVICE_MODE_PROGRAM_TAG,
+  ]);
+
+  // The record the key under Devices maps through, off the activity menu.
+  const menu = activityMenus(c).menu;
+  const menuEntry = menu === undefined ? undefined
+    : modeRecords(c)?.[menu]?.entries.find((one) => one.tag === DEVICES_KEY_TAG);
+  if (menuEntry === undefined || menuEntry.opcode !== MAP_VALUE_OPCODE) {
+    throw new ComposeError('the activity menu does not map the key under Devices, so there is no record to map it through');
+  }
+  const counter = stateVariables(c).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME));
+  const record = menuEntry.operand >> 8;
+  if (counter === undefined || (menuEntry.operand & 0xff) !== counter.index
+      || !activityKeyedRecords(c).devices.includes(record)) {
+    throw new ComposeError(`the activity menu maps the key under Devices through record ${record}, which is not `
+      + 'one of the activity counter\'s records under that key');
+  }
+
+  const built: KeyMapEntry[] = tags.map((tag) => {
+    if (tag === DEVICES_KEY_TAG) return { tag, operand: menuEntry.operand, opcode: MAP_VALUE_OPCODE };
+    if (tag === DEVICE_MODE_PROGRAM_TAG) return { tag, operand: chrome.battery, opcode: RUN_SCREEN_PROGRAM };
+    return { tag, operand: 0, opcode: 0 };
+  });
+  checkDeviceModeKeyMaps(c, built);
+  return built;
+}
+
+/** Every device mode's own list against the built key map, refused with the mode and the entry it differs at. */
+function checkDeviceModeKeyMaps(c: Container, built: readonly KeyMapEntry[]): void {
+  const records = modeRecords(c) ?? [];
+  for (const mode of [...new Set(deviceListRows(c).map((row) => row.mode))]) {
+    const entries = records[mode]?.entries ?? [];
+    if (entries.length !== built.length) {
+      throw new ComposeError(`device mode ${mode}'s key map holds ${entries.length} entries, and ${built.length} are built`);
+    }
+    entries.forEach((entry, k) => {
+      const want = built[k] as KeyMapEntry;
+      const fixed = want.opcode !== 0;
+      const fits = entry.tag === want.tag && entry.flags === undefined && (fixed
+        ? entry.opcode === want.opcode && entry.operand === want.operand
+        : entry.opcode === ACTION_LIST_INDEX_OPCODE || (entry.opcode === 0 && entry.operand === 0));
+      if (!fits) {
+        throw new ComposeError(`device mode ${mode}'s key map entry ${k}, tag 0x${entry.tag.toString(16)}, `
+          + `is not the built one, tag 0x${want.tag.toString(16)}`
+          + (fixed ? ` running 0x${want.opcode.toString(16)} ${want.operand}` : ' bound to a list or to nothing'));
+      }
+    });
+  }
+}
+
+/**
+ * What a composer reads out of an arch 14 configuration before it moves anything. The chrome and the
+ * backgrounds are built, `deviceModeChrome`; the fonts are still the first device page's,
+ * `todo-compile-650.md` 6.2.12.
+ */
 interface FourSlotTemplate {
-  /** The template page's first three instructions and its last four, as instructions. */
-  prefix: ScreenInstruction[];
-  suffix: ScreenInstruction[];
+  /** The chrome around a page's middle, built for a device page and copied for a working screen. */
+  chrome: PageChrome;
+  /** The device page chrome as built, whatever `chrome` is, for the key map's battery program. */
+  device: DeviceModeChrome;
   titleFont: number;
   counterFont: number;
   labelFont: number;
@@ -3369,7 +3751,10 @@ interface FourSlotTemplate {
    */
   single: number | undefined;
   crossed: number | undefined;
-  /** The device mode whose own list the new one's key map is shaped on. */
+  /**
+   * The device mode whose keys a plain composition binds by frame, `keysLike`'s or the first row's. Only
+   * which command goes on which key is taken from it; the key map's shape is `deviceModeKeyMap`'s.
+   */
   keyMode: number;
 }
 
@@ -3378,33 +3763,9 @@ function fourSlotTemplate(c: Container, keysLike: string | undefined): FourSlotT
   if (rows.length === 0) throw new ComposeError('no device list to take a device mode from');
   const records = modeRecords(c) ?? [];
   const deviceModes = [...new Set(rows.map((row) => row.mode))];
-  const slotScans = new Set(FOUR_SLOT_ITEMS.map((item) => item.scan));
+  const chrome = deviceModeChrome(c);
 
-  // The two backgrounds, by majority over the device mode pages holding one item and four.
-  const tally = (want: (items: number[]) => boolean): number | undefined => {
-    const counts = new Map<number, number>();
-    for (const mode of deviceModes) {
-      for (const page of records[mode]?.pages ?? []) {
-        const items = (taggedList(c, page.list)?.entries ?? []).map((entry) => entry.tag & SCAN_MASK);
-        if (!items.every((scan) => slotScans.has(scan)) || !want(items)) continue;
-        const first = screenProgram(c, page.program)?.[0];
-        const picture = first?.opcode === OP_IMAGE ? bitmapReference(first) : undefined;
-        if (picture !== undefined) counts.set(picture, (counts.get(picture) ?? 0) + 1);
-      }
-    }
-    let best: number | undefined;
-    let most = 0;
-    for (const [picture, count] of counts) if (count > most) { most = count; best = picture; }
-    return best;
-  };
-  const first = FOUR_SLOT_ITEMS[0]?.scan;
-  const single = tally((items) => items.length === 1 && items[0] === first);
-  const crossed = tally((items) => items.length === FOUR_SLOT_ITEMS.length);
-  if (single === undefined || crossed === undefined) {
-    throw new ComposeError('no device mode page carries the two backgrounds the layout reuses');
-  }
-
-  // The chrome, from the first device mode page whose program has the measured shape.
+  // The fonts, from the first device mode page whose program has the measured shape, 6.2.12.
   for (const mode of deviceModes) {
     for (const page of records[mode]?.pages ?? []) {
       const program = screenProgram(c, page.program);
@@ -3423,18 +3784,18 @@ function fourSlotTemplate(c: Container, keysLike: string | undefined): FourSlotT
         throw new ComposeError(`no device list row is labelled ${keysLike}, so there is no key map to copy`);
       }
       return {
-        prefix: program.slice(0, 3),
-        suffix,
+        chrome: builtChrome(chrome),
+        device: chrome,
         titleFont: program[3]?.operands[0] as number,
         counterFont: program[5]?.operands[0] as number,
         labelFont: program[9]?.operands[0] as number,
-        single,
-        crossed,
+        single: chrome.single,
+        crossed: chrome.crossed,
         keyMode: keyRow.mode,
       };
     }
   }
-  throw new ComposeError('no device mode page has the chrome this composes');
+  throw new ComposeError('no device mode page has the shape its fonts are read from');
 }
 
 /**
@@ -3969,12 +4330,11 @@ function fourSlotPageProgram(
     if (second === undefined) {
       middle.push(...text(xOf(codes), FOUR_SLOT_LABEL_Y[item.row], codes));
     } else {
-      middle.push(...text(xOf(codes), FOUR_SLOT_LABEL_Y[item.row] - FOUR_SLOT_LINE_RISE, codes));
+      middle.push(...text(xOf(codes), FOUR_SLOT_LABEL_Y[item.row] - TWO_LINE_RISE, codes));
       middle.push(...text(xOf(second), FOUR_SLOT_LABEL_Y[item.row], second));
     }
   });
-  const copied = [...template.prefix.slice(1), ...template.suffix];
-  const length = 1 + 5 + copied.reduce((sum, one) => sum + one.length, 0) + middle.length;
+  const length = 1 + 5 + template.chrome.headLength + template.chrome.tailLength + middle.length;
   const background = page.labels.length > 1 ? template.crossed : template.single;
   if (background === undefined) {
     throw new ComposeError(`no page here holding ${page.labels.length > 1 ? 'several items' : 'one item or none'} `
@@ -3982,13 +4342,10 @@ function fourSlotPageProgram(
   }
   return {
     length,
-    build: (shifted) => {
-      const out: number[] = [OP_IMAGE, 0, 0, ...new Writer(3).u24(shifted(background)).bytes];
-      for (const one of template.prefix.slice(1)) out.push(...copiedInstruction(c, one, shifted));
-      out.push(...middle);
-      for (const one of template.suffix) out.push(...copiedInstruction(c, one, shifted));
-      return new Uint8Array(out);
-    },
+    build: (shifted) => new Uint8Array([
+      OP_IMAGE, ...DEVICE_PAGE_BACKGROUND_AT, ...new Writer(3).u24(shifted(background)).bytes,
+      ...template.chrome.head(shifted), ...middle, ...template.chrome.tail(shifted),
+    ]),
   };
 }
 
@@ -4276,19 +4633,15 @@ function compiledPageProgram(c: Container, template: FourSlotTemplate, page: Com
   draw(page.title);
   page.counter.forEach(draw);
   page.labels.flat().forEach(draw);
-  const copied = [...template.prefix.slice(1), ...template.suffix];
-  const length = 1 + 5 + copied.reduce((sum, one) => sum + one.length, 0) + middle.length;
+  const length = 1 + 5 + template.chrome.headLength + template.chrome.tailLength + middle.length;
   const background = page.labels.length > 1 ? template.crossed : template.single;
   if (background === undefined) throw new ComposeError('no page here draws the background a page needs');
   return {
     length,
-    build: (shifted) => {
-      const out: number[] = [OP_IMAGE, 0, 0, ...new Writer(3).u24(shifted(background)).bytes];
-      for (const one of template.prefix.slice(1)) out.push(...copiedInstruction(c, one, shifted));
-      out.push(...middle);
-      for (const one of template.suffix) out.push(...copiedInstruction(c, one, shifted));
-      return new Uint8Array(out);
-    },
+    build: (shifted) => new Uint8Array([
+      OP_IMAGE, ...DEVICE_PAGE_BACKGROUND_AT, ...new Writer(3).u24(shifted(background)).bytes,
+      ...template.chrome.head(shifted), ...middle, ...template.chrome.tail(shifted),
+    ]),
   };
 }
 
@@ -4328,8 +4681,8 @@ function composeFourSlotDeviceScreen(
     : compiledDeviceModePages(c, template, compiled.title, rows, pageCount);
   [label, ...(compiled === undefined ? rows.map((row) => row.label) : [])].forEach((text, k) => {
     const wide = textWidth(c, setOf(template.labelFont), k === 0 ? menuCodes : rowCodes[k - 1] as number[]);
-    if (wide > FOUR_SLOT_LABEL_MAX) {
-      throw new ComposeError(`'${text}' is ${wide} pixels wide and a corner holds ${FOUR_SLOT_LABEL_MAX}: `
+    if (wide > LABEL_WIDTH) {
+      throw new ComposeError(`'${text}' is ${wide} pixels wide and a corner holds ${LABEL_WIDTH}: `
         + 'give it a shorter label');
     }
   });
@@ -4369,7 +4722,11 @@ function composeFourSlotDeviceScreen(
   // 14 that every device mode carries, are copied as they are, and the four corners are nothing
   // because a page binds them.
   const lists = c.actionLists() ?? [];
+  // The shape is built, `deviceModeKeyMap`, 6.2.7; under the plain layout which command a key sends is
+  // still matched by frame against `keysLike`'s device, or the first row's, entry by entry with the tag.
+  const shape = deviceModeKeyMap(c, template.device);
   const keyTemplate = modeRecords(c)?.[template.keyMode]?.entries ?? [];
+  const likeByTag = new Map(keyTemplate.map((entry) => [entry.tag, entry]));
   // By frame, and a set rather than a list: two items running one command are one command.
   const ours = new Map<string, Set<number>>();
   rows.forEach((row) => {
@@ -4382,26 +4739,25 @@ function composeFourSlotDeviceScreen(
   // of a key the caller names runs its list, every other key and every corner is nothing, and the
   // template's navigation entries are kept as they are.
   const press = (tag: number): boolean => tag >> KEY_EVENT_SHIFT === KEY_EVENT_PRESS;
-  const own = keyTemplate.map((entry) => {
+  const own = shape.map((entry) => {
+    // The key under Devices and the program tag are built whole; a corner is the page's to bind.
+    if (entry.opcode !== 0) return entry;
+    const scan = entry.tag & SCAN_MASK;
+    if (!press(entry.tag) || slotScans.has(scan)) return entry;
     if (compiled !== undefined) {
-      if (entry.opcode !== ACTION_LIST_INDEX_OPCODE && entry.opcode !== 0) return entry;
-      const scan = entry.tag & SCAN_MASK;
-      const list = press(entry.tag) && !slotScans.has(scan) ? compiled.keys.get(scan) : undefined;
-      if (list === undefined) return { tag: entry.tag, operand: 0, opcode: 0 };
+      const list = compiled.keys.get(scan);
+      if (list === undefined) return entry;
       keys += 1;
       return { tag: entry.tag, operand: list, opcode: ACTION_LIST_INDEX_OPCODE };
     }
-    if (entry.opcode !== ACTION_LIST_INDEX_OPCODE) {
-      const corner = slotScans.has(entry.tag & SCAN_MASK) && entry.tag >> KEY_EVENT_SHIFT === KEY_EVENT_PRESS;
-      return corner ? { tag: entry.tag, operand: 0, opcode: 0 } : entry;
-    }
-    const frame = sentFrame(c, lists[entry.operand]);
+    const like = likeByTag.get(entry.tag);
+    const frame = like?.opcode === ACTION_LIST_INDEX_OPCODE ? sentFrame(c, lists[like.operand]) : undefined;
     const match = frame === undefined ? undefined : ours.get(frame);
     if (match?.size === 1) {
       keys += 1;
       return { tag: entry.tag, operand: [...match][0] as number, opcode: ACTION_LIST_INDEX_OPCODE };
     }
-    return { tag: entry.tag, operand: 0, opcode: 0 };
+    return entry;
   });
   if (keyTemplate.some((entry) => entry.flags !== undefined)) {
     throw new ComposeError('the template key map is not the narrow form every device mode uses');
@@ -6033,8 +6389,9 @@ function composeFourSlotActivityScreen(
   current = appendArch14Mode(current, mode, own(working.entries), pageListBytes, (now) => {
     const freshDevice = fourSlotTemplate(now, undefined);
     const freshWorking = workingTemplate14(now, arch14Starts(now), activityMaps(now, arch14Starts(now)));
+    // The working screen's chrome is still another activity's, copied, `todo-compile-650.md` 6.2.10.
     const template: FourSlotTemplate = {
-      ...freshDevice, prefix: freshWorking.prefix, suffix: freshWorking.suffix,
+      ...freshDevice, chrome: copiedChrome(now, freshWorking.prefix, freshWorking.suffix),
       single: freshWorking.single, crossed: freshWorking.crossed,
     };
     const measuring = setOf(device.labelFont, now);
