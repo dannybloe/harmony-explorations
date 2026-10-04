@@ -20,13 +20,15 @@ import { H300 } from './models/h300.ts';
 import { H350 } from './models/h350.ts';
 import { H525 } from './models/h525.ts';
 import { H600 } from './models/h600.ts';
+import { H650 } from './models/h650.ts';
+import { H700 } from './models/h700.ts';
 import { ONE } from './models/one.ts';
 import type { Key, Model } from './types.ts';
 
 /** Every model that is drawn. A model absent from here has not been measured yet. */
-export const MODELS: Readonly<Record<string, Model>> = { h300: H300, h350: H350, h525: H525, h600: H600, one: ONE };
+export const MODELS: Readonly<Record<string, Model>> = { h300: H300, h350: H350, h525: H525, h600: H600, h650: H650, h700: H700, one: ONE };
 
-export { H300, H350, H525, H600, ONE };
+export { H300, H350, H525, H600, H650, H700, ONE };
 
 /**
  * The key a name refers to on this model.

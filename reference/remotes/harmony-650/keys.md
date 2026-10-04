@@ -1,13 +1,15 @@
 # Harmony 650: keys
 
 **The Harmony 650 has the Harmony 600's face**, key for key: the 600, 650 and 700 share one layout
-and one form factor, Danny's statement. So this model has no drawing of its own and uses the Harmony
-600's, [`reference/silhouettes/h600.svg`](../../silhouettes/h600.svg), generated from
-`packages/silhouettes/src/models/h600.ts`. The 650's manual draws the same keys with the same printed
+and one form factor, and the only difference on the face is the model number at the bottom, Danny's
+statement holding all three. So its drawing,
+[`reference/silhouettes/h650.svg`](../../silhouettes/h650.svg), is generated from
+`packages/silhouettes/src/models/h650.ts`, which takes every shape and scan code from the 600's model by
+reference and changes only the nameplate. The 650's manual draws the same keys with the same printed
 words, page 2, which agrees with the statement and is not a measurement of the case. Whether the
 650's case differs in colour or finish is **not checked** and does not matter to the drawing.
 
-![The Harmony 600's face, which the Harmony 650 shares](../../silhouettes/h600.svg)
+![The Harmony 650's face](../../silhouettes/h650.svg)
 
 ## The two populations
 
@@ -38,7 +40,7 @@ measured. What does hold on the 650 is that its mode 0 lists every scan from 1 t
 has the same 54 codes.
 
 <!-- generated:keys -->
-54 keys on the drawing `h600`, 42 on the keypad and 12 that the screen speaks for. 36 carry a measured scan code and 4 are left between two candidates by the drawing.
+54 keys on the drawing `h650`, 42 on the keypad and 12 that the screen speaks for. 36 carry a measured scan code and 4 are left between two candidates by the drawing.
 
 | key | kind | name from | scan code | screen zone | printed on or beside it |
 |---|---|---|---|---|---|
@@ -97,7 +99,7 @@ has the same 54 codes.
 | `WatchAMovie` | screen | printed | not measured |  | Watch a Movie |
 | `WatchTV` | screen | printed | not measured |  | Watch TV |
 
-Generated from `packages/silhouettes/src/models/h600.ts` by `make remote-reference-write`. Change the source, not this block.
+Generated from `packages/silhouettes/src/models/h650.ts` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 ## What the drawing does not yet carry

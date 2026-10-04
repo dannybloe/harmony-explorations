@@ -63,6 +63,18 @@ const EXPECTED: Readonly<Record<string, { buttons: number; scans: number;
     why: 'six bits of a key event byte, a bench census of 14 14 13 13 per column, counting the '
       + "photograph, and Logitech's own manual listing 54 buttons in its own table",
   },
+  // The 600's face with another model number, per Danny holding all three; `h650.ts` and `h700.ts`
+  // take every shape and scan code from `H600`, so the counts and their grounds are the 600's.
+  h650: {
+    buttons: 54,
+    scans: 36,
+    why: "the Harmony 600's drawing and measurements, the same face per Danny's statement holding both",
+  },
+  h700: {
+    buttons: 54,
+    scans: 36,
+    why: "the Harmony 600's drawing and measurements, the same face per Danny's statement holding both",
+  },
   one: {
     buttons: 44,
     scans: 32,
@@ -107,6 +119,10 @@ function referenceTables(): Record<string, Map<number, string>> {
  */
 const HEADING: Readonly<Record<string, string>> = {
   h600: 'Harmony 600, skin 71, architecture 14',
+  // The 650 and 700 carry the 600's codes, by reference, on the strength of one face and one
+  // architecture 14 key table, section 17; neither has a table of its own in button-maps.md.
+  h650: 'Harmony 600, skin 71, architecture 14',
+  h700: 'Harmony 600, skin 71, architecture 14',
   one: 'Harmony One, skin 54, architecture 12',
 };
 
@@ -221,7 +237,7 @@ test('a key whose code is undecided carries candidates and no scan', () => {
      */
     const SETS: Readonly<Record<string, { sets: number; each: number }>> = {
       h300: { sets: 0, each: 0 }, h350: { sets: 0, each: 0 },
-      h525: { sets: 1, each: 4 }, h600: { sets: 2, each: 2 }, one: { sets: 2, each: 2 },
+      h525: { sets: 1, each: 4 }, h600: { sets: 2, each: 2 }, h650: { sets: 2, each: 2 }, h700: { sets: 2, each: 2 }, one: { sets: 2, each: 2 },
     };
     const want = SETS[id]!;
     assert.equal(undecided.length, want.sets * want.each,
@@ -296,7 +312,7 @@ test('the screen carries the raster its own firmware draws into', () => {
    * rather than stretching it. So the aspect is stated and asserted, which can fail if the geometry
    * moves, where a band around the raster could only ever say "close enough".
    */
-  const APERTURE: Readonly<Record<string, number>> = { h525: 1.513, h600: 0.865, one: 0.794 };
+  const APERTURE: Readonly<Record<string, number>> = { h525: 1.513, h600: 0.865, h650: 0.865, h700: 0.865, one: 0.794 };
   for (const [id, model] of drawn) {
     if (model.screen === undefined) continue;
     const raster = RASTERS[model.architecture]!;
@@ -440,7 +456,7 @@ test('a model that has no tilted key says so by measurement', () => {
    * to add: a slanted key comes across slanted. The Harmony 600 is rectilinear anyway, measured at under
    * a degree on the keys that looked tilted in its photograph.
    */
-  const LEVEL: Readonly<Record<string, boolean>> = { h300: true, h350: true, h525: true, h600: true, one: true };
+  const LEVEL: Readonly<Record<string, boolean>> = { h300: true, h350: true, h525: true, h600: true, h650: true, h700: true, one: true };
   for (const [id, model] of drawn) {
     for (const key of model.keys) {
       assert.ok(Math.abs(key.angle) <= 45, `${id}: ${key.name} is at ${key.angle} degrees`);

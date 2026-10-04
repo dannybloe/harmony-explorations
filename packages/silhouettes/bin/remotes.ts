@@ -79,7 +79,7 @@ interface ArchitectureFolder {
  * 700 share one face, Danny's statement; `reference/remotes/harmony-650/keys.md` says so beside the table.
  */
 export const REMOTES: readonly RemoteFolder[] = [
-  { folder: 'harmony-650', skins: [72, 74], drawing: 'h600', architecture: 14 },
+  { folder: 'harmony-650', skins: [72, 74], drawing: 'h650', architecture: 14 },
 ];
 
 export const ARCHITECTURES: readonly ArchitectureFolder[] = [

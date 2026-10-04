@@ -13,7 +13,7 @@ folder states what they share, once; each model's folder states only how it diff
 | Harmony 665 | none | none. `models.ts` and `reference/models.md` place skin 75 here; nothing of it has been read |
 
 The face, the layout of keys and the form factor are shared by the 600, 650 and 700, Danny's
-statement, and the 600's drawing serves all three, `packages/silhouettes/src/models/h600.ts`.
+statement, and the 600's drawing serves all three: `h650.ts` and `h700.ts` in `packages/silhouettes/src/models/` take it by reference and print their own model number.
 
 ## Skins
 

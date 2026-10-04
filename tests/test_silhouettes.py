@@ -509,6 +509,30 @@ class TestTheHarmony300Silhouette(TestTheHarmony350Silhouette):
                 self.assertNotIn(f'>{word}<', text)
 
 
+class TestTheHarmony650Silhouette(TestTheHarmony600Silhouette):
+    """
+    The Harmony 600's face with `Harmony 650` printed at the bottom: every shape and code is taken from
+    the 600's model, on Danny's statement that the three models share one face, so every claim the 600's
+    drawing carries holds here and the one thing to check is the number.
+    """
+
+    NAME = 'h650.svg'
+    MODEL = '650'
+
+    def test_the_nameplate_names_this_model(self):
+        """The only printing that differs from the 600's, and the reason this file exists at all."""
+        text = _text(self.NAME)
+        self.assertIn(f'>Harmony {self.MODEL}<', text)
+        self.assertNotIn('>Harmony 600<', text)
+
+
+class TestTheHarmony700Silhouette(TestTheHarmony650Silhouette):
+    """The same for the Harmony 700."""
+
+    NAME = 'h700.svg'
+    MODEL = '700'
+
+
 class TestTheSilhouetteDirectory(unittest.TestCase):
     """What is drawn and what is not, so the gap is a statement rather than an oversight."""
 
@@ -519,14 +543,15 @@ class TestTheSilhouetteDirectory(unittest.TestCase):
         'h350.svg': TestTheHarmony350Silhouette,
         'h525.svg': TestTheHarmony525Silhouette,
         'h600.svg': TestTheHarmony600Silhouette,
+        'h650.svg': TestTheHarmony650Silhouette,
+        'h700.svg': TestTheHarmony700Silhouette,
         'one.svg': TestTheHarmonyOneSilhouette,
     }
-    # The next pair worth drawing, and the reason is the same as the bench remotes': something can be
-    # checked against. The 700 is arch 14 like the 600, so section 17's reading of the key table
-    # applies to it and its own count would test whether 54 is the architecture's or the model's. The
-    # 650 shares the 600's skin family and differs only in its panel, per `reference/capabilities.md`,
-    # so a drawing of it would say whether the panel is the only difference.
-    NEXT = ('700.svg', 'h650.svg')
+    # Drawings named here are wanted and not yet landed. The 650 and 700 were this pair until they landed
+    # as the 600's face with their own number, on Danny's statement that the three share one face; what
+    # is left undrawn is the Harmony Touch, and a drawing that lands goes in `DRAWN` and comes out of
+    # here, which the test below enforces.
+    NEXT = ('touch.svg',)
 
     # A `d` attribute has to contain one of these to be a curve rather than a polygon. `A` counts as
     # well, since an elliptical arc is a curve, but a path made only of `M`, `L`, `H`, `V` and `Z` is
@@ -584,12 +609,12 @@ class TestTheSilhouetteDirectory(unittest.TestCase):
                 self.assertEqual(klass.NAME, name)
                 self.assertIsInstance(klass.EXPECTED_BUTTONS, int)
 
-    def test_the_three_bench_remotes_are_drawn_and_the_next_pair_is_not(self):
+    def test_the_bench_remotes_are_drawn_and_nothing_waiting_has_half_landed(self):
         """
-        The three remotes on the bench can be checked against by looking at them, and all three are
-        drawn now. The 700 and the 650 are the obvious next pair and neither is, which this records
-        rather than leaving to be discovered. When one of them lands, it goes in `DRAWN` with a class
-        and comes out of `NEXT`, and the test above is what refuses the first half without the second.
+        The first three remotes on the bench are drawn, and a drawing still listed in `NEXT` is not in
+        the directory. When one lands, it goes in `DRAWN` with a class and comes out of `NEXT`, and the
+        test above is what refuses the first half without the second. The 650 and the 700 came out of
+        `NEXT` that way.
         """
         drawn = set(os.listdir(SILHOUETTES))
         for bench in ('h525.svg', 'h600.svg', 'one.svg'):

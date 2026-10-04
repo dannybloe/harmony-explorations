@@ -10,7 +10,7 @@ below it. **It shows no clock.**
 | field | value | from |
 |---|---|---|
 | raster | 128 by 128 pixels | `SCREEN_SIZES` in `packages/codec/src/render.ts`, measured from the configurations' full screen pictures |
-| raster on the drawing | 128 by 128 | `h600.ts`, which must agree with the row above |
+| raster on the drawing | 128 by 128 | `h650.ts`, which must agree with the row above |
 | panel | colour | `packages/usb/src/models.ts` |
 | touch | no | `packages/usb/src/models.ts`, and `touch` on the drawing's screen is no |
 

@@ -147,6 +147,9 @@ test('a detail level leaves out what it says it leaves out', () => {
       h350: { text: 44, marks: 41, keys: 55 },
       h525: { text: 44, marks: 36, keys: 50 },
       h600: { text: 37, marks: 56, keys: 54 },
+      // The 600's printing with only the nameplate's number changed.
+      h650: { text: 37, marks: 56, keys: 54 },
+      h700: { text: 37, marks: 56, keys: 54 },
       one: { text: 34, marks: 32, keys: 44 },
     };
     const want = PRINTING[id]!;
