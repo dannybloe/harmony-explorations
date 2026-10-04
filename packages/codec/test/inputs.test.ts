@@ -22,7 +22,7 @@ import {
   ACTIVITY_STATE_NAME, ComposeError, catalogueCommands, catalogueDevice, catalogueDriving, codeKey,
   commandIndex, composeActivity, composeDevice, composeDeviceInputs, deviceDriving, deviceStateMachines,
   deviceVariables, devices, handlerSets, inputPlan, inputTarget, irGroups, joinPowerOff,
-  activityStartTargets, parse, payloadOf, stateVariables, taggedList,
+  activityStartTargets, parse, payloadOf, stateRecords, stateVariables, taggedList,
   type Container, type HeldStep, type HeldVariable, type InputPlan,
 } from '../src/index.ts';
 import { irFrame } from '../src/irframe.ts';
@@ -43,6 +43,28 @@ function open(name: string): Container {
 /** A device state variable that is neither its power nor the connected app machinery. */
 const IS_STATE = (property: string): boolean =>
   property !== 'Power' && property !== 'Input' && property !== 'OnlinePower' && !/Delay/.test(property);
+
+test('section NNN: the leading byte is 0 on all 895 transitions of the thirteen arch 14 compiles, so none takes the walker\'s stop or repeat arm',
+     skipUnless(...ARCH14), () => {
+  // The walker reads a transition's first byte as its lead: bit 7 set on a match stops the walk after
+  // that transition, and any other nonzero value takes an arm that pushes the instruction a computed
+  // number of times without consulting the match. Neither arm is read further, because no compile
+  // reaches either, and this is the count that says so. Counted rather than bounded.
+  let transitions = 0;
+  const leads: number[] = [];
+  for (const name of ARCH14) {
+    const c = open(name);
+    for (const record of stateRecords(c)!) {
+      for (const value of record.values) {
+        transitions += 1;
+        const lead = c.blob[value.start]!;
+        if (lead !== 0) leads.push(lead);
+      }
+    }
+  }
+  assert.equal(transitions, 895);
+  assert.deepEqual(leads, []);
+});
 
 test('every arch 14 input variable is reached by value or by stepping, and every state of a device with one the same way',
      skipUnless(...ARCH14), () => {
