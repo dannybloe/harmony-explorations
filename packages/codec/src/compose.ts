@@ -127,6 +127,7 @@ import {
 import { type ActivityKey, activityKeyEntry, setActivityKey } from './activitykeys.ts';
 import { applyEdits } from './edit.ts';
 import { Writer } from './emit.ts';
+import { composedNameTreeOrder } from './statetables.ts';
 import {
   VALUE_MAP_COUNT_WIDTH, VALUE_MAP_KEY_WIDTH, VALUE_MAP_SECTION_COUNT_WIDTH, VALUE_MAP_SLOT,
   countedPointers, valueMaps,
@@ -528,7 +529,10 @@ export interface ComposedDevice {
  *
  * **The bound is the write band's seven bits.** A variable shifted to 128 would need an opcode of
  * `0x100`, which does not exist, so the shift is refused rather than truncated. Nothing in the
- * corpus comes within 34 of it, which is exactly why the check has to be reasoned about.
+ * corpus comes within 34 of it, which is exactly why the check has to be reasoned about. **Logitech's
+ * own eight device compiles do**, lab fixtures outside that population: they hold 112 to 124
+ * variables, section NNN, so a composer adding several devices to one of them meets this bound, and
+ * `devicemode.test.ts` meets it on two.
  */
 export function renumberStateVariables(c: Container, from: number): Uint8Array {
   const table = stateTable(c);
@@ -594,9 +598,17 @@ function stateRecordEnd(c: Container): number {
 }
 
 /**
- * Name a state variable: a level 1 node appended to the name tree's frame, and the frame's own
- * length grown to say so. The tree is host side, base slots 0 and 1, so the order of its nodes is a
- * reader's question and every reader here goes by the index.
+ * Name a state variable: a level 1 node added to the name tree's frame, the frame's own length grown
+ * to say so, and then the level 1 nodes put back in the compiler's order, `orderNameTree`.
+ *
+ * **The order is the part that was wrong**, section NNN. This appended the node at the frame's end, and
+ * Logitech's compiler stores level 1 nodes in the bucket order of the variable's index, section 324, so
+ * every tree it composed broke that order, twenty of twenty in the lab. Several devices made it worse
+ * twice over: more nodes out of place, and the renumbering each one byte insertion performs moves every
+ * index at or above `narrow`, which reshuffles the order of nodes that were in place. So the whole level
+ * 1 run is reordered after each insertion rather than the new node slotted into a run that is no longer
+ * in order. The tree is host side, base slots 0 and 1, and every reader here goes by the index, so the
+ * order changes nothing a reader or the remote sees.
  */
 function appendNameNode(c: Container, name: string, variable: number): Uint8Array {
   if (c.architecture === undefined) throw new ComposeError('the container states no architecture');
@@ -613,7 +625,37 @@ function appendNameNode(c: Container, name: string, variable: number): Uint8Arra
   node.ascii(name);
   nodeHole.bytes.set(node.bytes, nodeAt);
   nodeHole.bytes.set(new Writer(3).u24(c.frameLength + nodeLength).bytes, treeStart + 2);
-  return nodeHole.bytes;
+  return orderNameTree(parse(nodeHole.bytes));
+}
+
+/**
+ * The name tree with its level 1 nodes in `composedNameTreeOrder`, the compiler's order, section NNN;
+ * the same bytes otherwise, so the frame keeps its length and nothing outside it moves.
+ *
+ * Only a tree of the shape the arch 12 and 14 compilers write is reordered, its level 0 nodes first and
+ * every node after them at level 1, which every such tree in the lab is; the Harmony 525's and the
+ * Harmony 880's carry a third level 0 node and level 2 nodes whose place is unread, and are left as they
+ * are rather than given an order nobody has measured for them.
+ */
+export function orderNameTree(c: Container): Uint8Array {
+  const bytes = Uint8Array.from(c.blob);
+  const nodes = nameNodes(c);
+  if (nodes === undefined) return bytes;
+  const firstLevelOne = nodes.findIndex((node) => node.level === NAME_LEVEL_STATE_VARIABLE);
+  if (firstLevelOne < 0) return bytes;
+  const head = nodes.slice(0, firstLevelOne);
+  const run = nodes.slice(firstLevelOne);
+  if (head.some((node) => node.level !== 0) || run.some((node) => node.level !== NAME_LEVEL_STATE_VARIABLE)) {
+    return bytes;
+  }
+  const byIndex = new Map(run.map((node) => [node.index, node]));
+  let at = (run[0] as (typeof run)[number]).start;
+  for (const index of composedNameTreeOrder(run.map((node) => node.index))) {
+    const node = byIndex.get(index) as (typeof run)[number];
+    bytes.set(c.blob.subarray(node.start, node.start + node.length), at);
+    at += node.length;
+  }
+  return bytes;
 }
 
 /**

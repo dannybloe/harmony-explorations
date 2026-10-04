@@ -33,6 +33,7 @@ import {
   IR_PULSE_MARK,
   LABEL_SIZES,
   SEND_INFRARED,
+  bitmapAt,
   bitmapReference,
   blockOfStatedCode,
   catalogueCommands,
@@ -40,6 +41,8 @@ import {
   characterMap,
   compiledBlockWords,
   composableKeycode,
+  composeCatalogueDevice,
+  composeCatalogueDevices,
   composeDevice,
   composeDeviceScreen,
   deviceListRows,
@@ -395,18 +398,26 @@ const nameList = (names: Set<string> | undefined): string =>
   names === undefined ? 'nothing' : [...names].join('|') || '?';
 const meets = (a: Set<string> | undefined, b: Set<string> | undefined): boolean =>
   a !== undefined && b !== undefined && [...a].some((name) => b.has(name));
+/** The same names exactly, none on both sides included; for comparing two of our own compositions. */
+const sameNames = (a: Set<string> | undefined, b: Set<string> | undefined): boolean =>
+  a !== undefined && b !== undefined && a.size === b.size && [...a].every((name) => b.has(name));
 
 /**
  * Compare a device mode with Logitech's, everything a reader can see: the page count, the key map, the
  * items in page order, every label's lines, places and size where both put the same command in the same
  * corner, the title and the counter on every page, and the background where both sides have one.
+ *
+ * Two lists are the same command when they send one name in common, `meets`, which is what a comparison
+ * with Logitech's can ask. Two of our own compositions can be held to more, `sameNames`: the same names
+ * exactly, so that two lists sending nothing a namer can name agree with each other and with nothing else.
  */
-function compare(s: Score, label: string, theirs: ReadMode, ours: ReadMode): void {
+function compare(s: Score, label: string, theirs: ReadMode, ours: ReadMode,
+                 alike: (a: Set<string> | undefined, b: Set<string> | undefined) => boolean = meets): void {
   const where = (more: string): string => `${label} ${more}`;
   tick(s, 'pages', theirs.pages.length === ours.pages.length, 'page count differs',
        where(`ours ${ours.pages.length}, theirs ${theirs.pages.length}`));
   for (const scan of new Set([...theirs.keys.keys(), ...ours.keys.keys()])) {
-    tick(s, 'keys', meets(ours.keys.get(scan), theirs.keys.get(scan)), 'key differs',
+    tick(s, 'keys', alike(ours.keys.get(scan), theirs.keys.get(scan)), 'key differs',
          where(`scan ${scan}: ours ${nameList(ours.keys.get(scan))}, theirs ${nameList(theirs.keys.get(scan))}`));
   }
   const theirItems = theirs.pages.flatMap((page) => page.items);
@@ -414,7 +425,7 @@ function compare(s: Score, label: string, theirs: ReadMode, ours: ReadMode): voi
   const theirLabels = theirs.pages.flatMap((page) => page.labels);
   const ourLabels = ours.pages.flatMap((page) => page.labels);
   for (let k = 0; k < Math.max(theirItems.length, ourItems.length); k += 1) {
-    const same = meets(ourItems[k], theirItems[k]);
+    const same = alike(ourItems[k], theirItems[k]);
     tick(s, 'items', same, 'item differs',
          where(`item ${k + 1}: ours ${nameList(ourItems[k])}, theirs ${nameList(theirItems[k])} drawn `
            + `'${(theirLabels[k] ?? []).map((line) => line.text).join(' ')}'`));
@@ -673,4 +684,139 @@ test('section 325: a catalogue device composed whole reads back as the compiler\
     // sees the order, and on every key, since the key map does not depend on it.
     assert.equal(tallies(control)['items'], '2/155');
     assert.equal(tallies(control)['keys'], '111/111');
+  });
+
+// ---------------------------------------------------------------------------------------------------
+// 3. Several devices in one run, section NNN
+
+/**
+ * The labels the devices of one compile are composed under. Each is short enough for the device list's
+ * one line and spelled only in characters the list's font holds, section NNN, and none is a label any of
+ * these compiles already carries, which `composeCatalogueDevices` would refuse.
+ */
+const SEVERAL_LABELS = ['Whole', 'Whale', 'While'] as const;
+
+/** Every picture's bytes, header and pixels, numbered in the order first met, across containers. */
+const PICTURES = new Map<string, number>();
+/**
+ * A device mode with each page's background stated as the picture it is rather than where it sits, so
+ * that two containers can be compared: the number `PICTURES` gives that picture's bytes.
+ */
+function byPicture(c: Container, mode: ReadMode): ReadMode {
+  return {
+    ...mode,
+    pages: mode.pages.map((page) => {
+      if (page.background === undefined) return page;
+      const at = c.blobOffsetOf(page.background);
+      const length = bitmapAt(c, page.background)?.length;
+      if (at === undefined || length === undefined) return { ...page, background: undefined };
+      const key = Buffer.from(c.blob.subarray(at, at + length)).toString('hex');
+      if (!PICTURES.has(key)) PICTURES.set(key, PICTURES.size);
+      return { ...page, background: PICTURES.get(key) as number };
+    }),
+  };
+}
+
+/**
+ * The compiles whose devices are composed several at a time, into the compile itself, as the single
+ * device score does: a compile's fonts hold every glyph its own devices' titles need, where the
+ * configuration it was compiled from does not, and drawing a glyph a configuration lacks is chapter 8's
+ * and not this one's. Each with the devices composed: those whose catalogue entry is pinned by model and
+ * whose codes compose, so not the Blu-ray player, which has no model, nor the TX-28A1U, which composes
+ * nothing, and so not the 650's second compile, which keeps one.
+ *
+ * **Two of them are refused part way**, past the model's device count, which is deliberately not passed
+ * here since each compile already holds eight, and that is the control on the state variable ceiling: a write
+ * names its variable in seven bits, so 128 variables is the most a configuration holds, and a device
+ * composed with no inputs costs three. The 650's first compile already holds 122, so two fit and the
+ * third is refused; the 700's third holds 124, so one fits and the second is refused, which leaves it
+ * nothing several to compare. The 650's composes its first two.
+ */
+const CEILING = 'a delay variable at 128 is past what a write opcode can name';
+const SEVERAL: readonly { compile: string; refused?: { message: string; keep: number } }[] = [
+  { compile: 'h650_power_hold_compile', refused: { message: `While, after 2 composed in this run: ${CEILING}`, keep: 2 } },
+  { compile: 'h700_power_hold_compile' },
+  { compile: 'h700_power_hold_compile_2' },
+  { compile: 'h700_power_hold_compile_3', refused: { message: `Whale, after 1 composed in this run: ${CEILING}`, keep: 1 } },
+  { compile: 'h700_power_hold_compile_4' },
+  { compile: 'calibration_h600' },
+];
+
+test('section NNN: several catalogue devices composed in one run each read back as the same device composed alone, and Logitech\'s differ only where named',
+  needing(skipWithoutIrArchive(), skipUnless(...SEVERAL.map((one) => one.compile))), () => {
+    // Against the same device composed alone into the same compile, against Logitech's, and the control.
+    const alike = score();
+    const logitech = score();
+    const control = score();
+    const composedDevices: string[] = [];
+    for (const { compile, refused } of SEVERAL) {
+      const found = CAL.filter((one) => one.fixture === compile && one.file !== '' && one.file !== 'TX-28A1U').map(find);
+      const base = found[0]!.c;
+      const requests = found.map((f, k) => ({
+        manufacturer: f.one.slug, model: f.one.file, label: SEVERAL_LABELS[k] as string, title: titleOf(f.one),
+        full: true,
+      }));
+      if (refused !== undefined) {
+        assert.throws(() => composeCatalogueDevices(base, IR_ARCHIVE!, requests), { message: refused.message }, compile);
+        requests.splice(refused.keep);
+        found.splice(refused.keep);
+        if (found.length < 2) continue;
+      }
+      const together = composeCatalogueDevices(base, IR_ARCHIVE!, requests);
+      const all = parse(together.bytes);
+      found.forEach((f, k) => {
+        const where = `${compile} ${f.one.label}`;
+        const alone = composeCatalogueDevice(base, IR_ARCHIVE!, requests[k]!);
+        const one = parse(alone.bytes);
+        const mine = readMode(one, alone.screen.mode, namer(one, f.commands));
+        // One namer for the composed container, since naming builds every catalogue command's block.
+        const names = namer(all, f.commands);
+        // A mode index is fixed once composed: a later device appends its own and moves none.
+        const ours = readMode(all, together.devices[k]!.screen.mode, names);
+        // Two containers, so a picture is compared by its bytes: a later device moves every address.
+        compare(alike, where, byPicture(one, mine), byPicture(all, ours), sameNames);
+        // Logitech's mode read out of the composed container too, so a picture is one address on both sides.
+        compare(logitech, f.one.label, readMode(all, f.mode, names), ours);
+        // The control: the next device's mode, read with this device's names, is not this one.
+        const other = together.devices[(k + 1) % found.length]!.screen.mode;
+        compare(control, where, byPicture(one, mine), byPicture(all, readMode(all, other, names)), sameNames);
+        composedDevices.push(f.one.label);
+      });
+    }
+    if (process.env.DEVICEMODE_DETAIL) {
+      console.log(`ALIKE ${report(alike)}`);
+      console.log(`LOGITECH ${report(logitech)}`);
+      console.log(`CONTROL ${report(control).split('\n')[0]}`);
+    }
+    assert.deepEqual(composedDevices, ['Panasonic_TX-29AK40F', 'Panasonic_TV', 'Barco_6300', 'JVC_DLA-HD10KU',
+      'Panasonic_TX-P42GT30E', 'Pioneer_DEH-P47DH', 'Mivar_14_M3_TVD', 'Thomson_DSI-4400', 'Panasonic_TX-D37LT84F',
+      'Sony_KE-50MR1E', 'Thomson_25DT60H', 'Sony_TV', 'Denon_AV_Receiver']);
+    // Composed together, every device's mode is the one it gets composed alone, to the page, the key, the
+    // label's place and size, the picture's bytes and the program's instructions.
+    assert.deepEqual(tallies(alike), {
+      pages: '13/13', keys: '369/369', items: '338/338', labels: '338/338', titles: '91/91', counters: '91/91',
+      backgrounds: '91/91', programs: '91/91',
+    });
+    assert.equal(alike.differences.total, 0);
+    // Against Logitech's: the single device score's named differences on these devices, and one more kind,
+    // which is the catalogue composition's and not the run's. **A power pad runs the device's whole power
+    // action**, `composeCatalogueDevice`'s `padList`, on every device that has power steps, and Logitech's
+    // device mode sends none of its power transition records, 0 of 13 measured by the sentence audit: it
+    // sends the plain press. The score sees that on four places only, the Mivar's Power On and Power Off,
+    // the DSI-4400's Power Toggle and the 25DT60H's key 1, because there the record the action sends first
+    // carries a different frame value from the stated command. On the other ten `namer` names that record
+    // by its value as the plain command, so the score cannot tell them apart, and this assertion is no
+    // evidence that their pads agree with Logitech's. Composed alone they are the same, which the score
+    // above already says.
+    assert.deepEqual(places(logitech), {
+      'title differs': NAMED['title differs'],
+      'item differs': ['Mivar_14_M3_TVD item 1', 'Mivar_14_M3_TVD item 2', 'Thomson_DSI-4400 item 1'],
+      'label differs': ['Sony_KE-50MR1E item 66'],
+      'program differs': ['Sony_KE-50MR1E page 17'],
+      'key differs': ['Thomson_25DT60H scan 24'],
+    });
+    // The control: the next device's mode agrees on no page count, title or counter, so the score sees
+    // which device a mode is.
+    assert.equal(tallies(control)['pages'], '0/13');
+    assert.equal(tallies(control)['titles'], '0/57');
   });

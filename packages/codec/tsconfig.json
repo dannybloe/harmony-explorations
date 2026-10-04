@@ -11,5 +11,5 @@
   // claims as its own inferred project with default options, so this is what makes an editor agree
   // with `make ts` about them.
   "include": ["src/**/*.ts", "test/**/*.ts", "bin/**/*.ts"],
-  "references": [{ "path": "../lab" }]
+  "references": [{ "path": "../lab" }, { "path": "../usb" }]
 }

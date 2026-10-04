@@ -12,6 +12,7 @@
     "typecheck": "tsc --build"
   },
   "devDependencies": {
-    "@harmony/lab": "workspace:*"
+    "@harmony/lab": "workspace:*",
+    "@harmony/usb": "workspace:*"
   }
 }

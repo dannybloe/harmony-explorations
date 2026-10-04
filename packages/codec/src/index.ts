@@ -84,6 +84,9 @@ export * from './inputs.ts';
 // And how the compiler lays a whole device out in device mode: which commands go to the keys and which
 // to the screen pages, in what order, and how a label is sized and split, section 325.
 export * from './devicemode.ts';
+// A catalogue device composed whole, and several of them in one run, todo-compile-650 2.7. After every
+// composer it calls: the device, its power, its inputs and its device mode.
+export * from './composecatalogue.ts';
 // A sequence, several commands and pauses on one key or screen item, composed within the action queue,
 // todo-compile-650 4.2. After `compose.ts`, whose list append it uses.
 export * from './sequence.ts';
