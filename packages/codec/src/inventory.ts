@@ -1409,8 +1409,11 @@ export function deviceVariables(c: Container): DeviceVariable[] {
  * on both 700s, half of them bound on a device list page and the other half the lists that page's
  * second copy names, section 69. Every other architecture is tested against the Harmony One's shape,
  * which finds no marker on arch 8, 9 or 10 and so no row, rather than being read on its own terms.
+ *
+ * Exported for `menuMarkerOf` in `compose.ts`, which checks that every list of this shape writes the
+ * one marker rather than taking the majority `deviceModeMarker` takes, section 329.
  */
-function isDeviceListRowShape(
+export function isDeviceListRowShape(
   list: readonly Instruction[] | undefined, architecture: number | undefined,
 ): boolean {
   if (list === undefined) return false;

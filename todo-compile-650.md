@@ -74,11 +74,11 @@ copied. **Every chapter ends with a configuration that works on the 650.**
   - [x] 6.2.1 The command prelude's operands: the constant load and a test of the start variable, built and checked against the configuration's own (section 319)
   - [x] 6.2.2 The power on delay table's case order: the compiler's hash order, generated (section 319)
   - [x] 6.2.3 A new device's identifier, one past the highest in the configuration, computed (section 319)
-  - [ ] 6.2.4 The start variable and the flag every activity sets, read off existing activities' start lists (`arch14Starts`)
-  - [ ] 6.2.5 The activity counter variable and the four records keyed by activity, cases appended to them (`activityMaps`)
+  - [x] 6.2.4 The start variable and the flag every activity sets: from the Off key map, records generated, every activity checked against them (section 329)
+  - [x] 6.2.5 The activity counter variable and the four records keyed by activity: their keys follow from the counter's record, checked (section 329)
   - [ ] 6.2.6 Device page chrome and page programs (`fourSlotTemplate`, `fourSlotPageProgram`), backgrounds chosen by majority
   - [ ] 6.2.7 A device mode's key map shape, 47 entries, copied off an existing device mode
-  - [ ] 6.2.8 The device mode and activity menu markers
+  - [x] 6.2.8 The device mode and activity menu markers: one variable, 1 on every device row and 0 on every activity row, generated and checked (section 329)
   - [ ] 6.2.9 Menu growth off existing pages (`growFourSlotMenu`, and `openFourSlotMenuPage` copying the last page's chrome)
   - [ ] 6.2.10 The start up and working screens off an existing activity's (`workingTemplate14`), and the Devices key's case
   - [ ] 6.2.11 An activity's own device list, copied from the idle list, its "Activity" word from another activity's list

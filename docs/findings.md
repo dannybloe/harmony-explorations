@@ -43688,3 +43688,141 @@ image that reaches the bank or the key table through a fixed position.
   and no literal of `0x5F`.
 * `docs/config-format.md`, "What decides each byte of the frame on arch 14", and section 318's open
   question answered in place.
+
+## 329. The start variable, the flag, the activity keyed records and the menu marker, built instead of copied
+
+**Date:** 4 October 2026. **Status:** confirmed by calibration against Logitech's own compiles, with a
+one byte control per check; nothing written to a remote, and the composed output is unchanged byte for
+byte.
+
+**Todo `todo-compile-650.md` 6.2.4, 6.2.5 and 6.2.8.** Two things the arch 14 composers took off the
+configuration they extend, and one the Harmony One and arch 14 composers both took: the start sequence's two variables, read off the existing activities' enter
+lists; the four base slot 14 records keyed by the activity, found by matching their keys against the
+activities those enter lists hold; and the instruction a menu row ends with, taken by majority off the
+device rows and off the last activity row met. Each is now computed from something that is not an
+existing activity, and the configuration's own is checked against it, as section 319 did for the
+prelude.
+
+**Sources checked**: this document, sections 69, 86, 120, 239, 273, 275, 280, 285, 289, 290, 294, 316,
+319 and 324, and the thirteen compiles section 312 lists. Neither firmware nor client was opened: all
+of it is what Logitech's compiler wrote, and the compiler ran on their server, section 293's reasoned
+exemption. **The population** is those thirteen, the Harmony 700 pair counted twice, and for the menu
+marker the eighteen configurations of the marker census, sections 239 and 285, as well, 27 distinct in all.
+
+**Scope, decision 16.** The start sequence and the four records are arch 14 (Harmony 600, 650 and 700)
+only, which is the only architecture with that start shape, section 290. The menu marker is measured
+on arch 12 (Harmony One) and arch 14. Arch 8, 9 and 10 (Harmony 880 and 885, 525, 890 and 895) are not
+read: they hold no list of the Harmony One's beeped row shape, and they do hold lists of the arch 14
+activity row's unbeeped shape, each writing 0 into one variable per configuration, and whether that
+variable is this marker is unread.
+
+### The start variable and the flag are the Off key map's
+
+**Base slot 9's `idle` entry**, section 272, whose enter list maps `CurrentLocation` through base slot
+14, section 280, is the key map the remote installs when no activity runs. Both its lists bracket
+themselves the way an activity's start does:
+
+```
+tag 1:  [0x7F, 0x72 on CurrentLocation, S:=1, F:=0, 0x7F, 0x72 on CurrentLocation, S:=0]
+tag 5:  [S:=1, F:=0, 0x7F or 0x72 on CurrentLocation, 0x72 on CurrentLocation, S:=0]
+```
+
+| over the thirteen | count |
+|---|---|
+| Off lists of that shape, tags 1 and 5 | 26 of 26: tag 1 13 of 13, tag 5 opening `0x7F` 12 and `0x72` 1, `h600_config` |
+| activities whose enter list raises that `S` second, lowers it last and raises that `F` third from last | 40 of 40 |
+| command preludes testing that `S`, section 319 | 6100 of 6100 |
+| `S` and `F` records `first` 0, max 1, no transition, no name | 26 of 26 |
+| other unnamed variables above the firmware's block holding that same record | 51 |
+
+So `startSequenceOf` reads `S` as the first variable an Off list writes 1 and `F` as the one written 0
+straight after it, requires both lists to agree, and checks both records against
+`startSequenceVariables` in `statetables.ts`. The last row is the control on that check: the record is
+necessary and not sufficient, so the use is what identifies them. **The index is not generated**: `S`
+takes indices 46 to 59 on the thirteen and `F` 28 to 44, and what decides an index is open, section 324.
+In a configuration built from a description the two are description entries and `buildStateTables`'
+`indexOf` gives their indices.
+
+`arch14Starts` now takes `S` and `F` from the Off and checks every activity against them, refusing one
+that brackets itself with other variables. **The `idle` role alone does not find the Off**: an activity
+composed without its menu row yet is selected and bound by no row, so `handlerSetRoles` calls it
+`idle` too, and its enter list raises `S`, as the Off's lists do. The full composer test caught that on the first run;
+the Off is the `idle` entry whose enter list maps `CurrentLocation`, and two such entries are refused.
+
+**What this does to the refusal section 319 introduced.** Composing a device on arch 14 needed an
+activity, since `S` came off one. It does not now: with every instruction that selects an activity's
+key map cut, so the composer finds no activity at all, a device composes onto the Harmony 650's
+configuration with preludes testing the Off's `S`. That is a simulation and not a configuration
+Logitech wrote; **no user configuration of a Harmony 600, 650 or 700 without an activity exists
+here**, the fewest being two, on six of the thirteen, and the only arch 14
+containers without one are the three safe mode images, which have no Off key map and no `S` or `F`
+and stay refused. The screen half still needs an activity, below.
+
+### The activity keyed records' keys are the counter's
+
+The counter's values are 0 to its maximum, its `first` is the idle value and every other value is an
+activity, section 273. `activityMaps` now generates the two key sets from the counter alone, every value
+and every value but the idle one, and checks against them the activities the start lists hold, the
+counter's name, which is its stem and its maximum plus one, section 86, and the stored order of each
+record found, which is `compilerCaseOrder`'s. On the thirteen all hold, the counter is
+`activityStateVariables`' record exactly, idle at the maximum, 13 of 13, and the records are one working
+screen record, two under the key under Devices and one keypad map record on each, 13, 26 and 13.
+
+**What is still read is which record is which**, by what its cases do, since a record's index is the
+description's order. So the screen composer still refuses a configuration with no activity: its records
+would hold the idle case alone and nothing tells the working screen's from the Devices key's by keys.
+Composing the screen also checks, before anything moves, that the activity is `nextActivityValue`, one
+past the counter's maximum, and that appending its case keeps each record in the compiler's order, which
+is pinned only while every key is below 16, where `compilerCaseOrder` is ascending, and refused past
+that. On the thirteen every key is below 16, so the order check pins nothing beyond ascending.
+
+### The menu marker is one variable every row writes
+
+On the 27 configurations, every list of a device row's shape, `isDeviceListRowShape`, ends by writing 1
+into one variable, 2256 lists, and every list of an activity row's shape, a selection then a state write,
+ends by writing 0 into the same one, 282 lists; no row writes any other value or variable. Its record is
+`first` 0, max 3, no transition, no name, 27 of 27, and **no action list reads it**, 0 of 27: no
+condition, value map or band instruction names it. What reads it, if anything, is not established here;
+that the maximum is 3 when only 0 and 1 are written is unexplained. No screen switch or queued screen
+instruction names it either, 0 of 27. **Rows are not its only writers**: outside them it is written 0
+once on each of the 27, a list `[v:=0, 0x72 on CurrentLocation]`, and 1 a further 2 to 9 times on each
+Harmony One configuration, 75 lists of an entered mode and a write with no beep. `menuMarkerOf` reads
+rows only, so those are neither checked nor relied on.
+
+`menuMarkerOf` reads the variable off every row of both kinds rather than a majority, refuses two
+variables, a value other than 1 or 0, or a record other than `menuMarkerVariable`'s, and the composers
+write the built instruction. Either kind of row alone names it, so a configuration with device rows and
+no activity row has one; the activity menu itself is still found off its rows, `todo-compile-650.md`
+6.2.9.
+
+### Byte identical
+
+Twenty two compositions hashed before and after, on six arch 14 hosts and three Harmony One ones: a
+device and a device with its screen on each arch 14 host and two whole activities in turn on five of
+them, a device with its screen on two Harmony One hosts and an activity row on all three, all 22 equal,
+and the two that refuse, two activities on `calibration_h600` and a screen on `calibration_one`, refuse
+with the same messages. Not pinned in a test, for section 319's reason.
+
+### Controls
+
+Each check is shown to refuse by a one byte edit of the Harmony 650's configuration: one activity's
+`F` write naming another variable, the Off's `F` naming another, `S`'s maximum 2; the counter's maximum
+raised alone, and with its name, the two first cases of the working screen record swapped, an activity
+value other than the next; a device row writing 2, an activity row writing another variable, the
+marker's maximum 2.
+
+### Falsification
+
+An arch 14 compile whose Off key map's lists bracket themselves with other variables than its
+activities, or whose activities' values are not the counter's minus its `first`; a record keyed by the
+activity out of `compilerCaseOrder`; a Harmony One, 600, 650 or 700 configuration with a menu row
+writing another variable or value, or a marker record other than 0 of 3.
+
+### Where it lands
+
+* `packages/codec/src/compose.ts`: `startSequenceOf`, `arch14Starts`, `activityMaps` and
+  `activityKeyedRecords`, `menuMarkerOf`, `activityMenus` and `deviceListMenus` writing the built marker.
+* `packages/codec/src/statetables.ts`: `startSequenceVariables`, `menuMarkerVariable`.
+* `packages/codec/src/inventory.ts`: `isDeviceListRowShape` exported.
+* `packages/codec/test/compose.test.ts`: the calibration on the thirteen and the 27, and the controls.
+* `docs/config-format.md`, under the arch 14 activity's enter list, the activity menu row and base slot 13.
