@@ -758,6 +758,27 @@ Unconfirmed: the key lists and several pairs of the leading list are fitted to t
 ordered by choice; the title limit is a fit of two measured limits. The character map names no code
 for `J` or `#`, so the table holds no width for either and a label holding one is not laid out.
 
+**A device mode page's chrome and a device mode's key map**, section NNN, on the 83 device modes and 639
+pages of the thirteen compiles; `deviceModeChrome` and `deviceModeKeyMap` build them and check every
+device mode against what they build:
+
+| what | rule | agree |
+|---|---|---|
+| background | `OP_IMAGE` at 0, 0: the look's single picture for a page of one item or none, its crossed one for more | 639 of 639 |
+| look | by skin and content key: 72 and 66 the colour look of 2026, 66 that of 2021 and 2023, 71 and 73 the monochrome; the one whose five pictures the configuration holds; 69, 74 and 75 refused | 13 of 13 |
+| queued program | `0x11 lo hi 0x73`, base slot 11's first program no base slot 14 case names that opens with a one byte switch on variable 17; it draws the look's battery icon | 639 of 639 |
+| bars | `DRAW_IMAGE_AT 0,0,0,0,128,16` the top bar after the queue; `DRAW_IMAGE_AT 0,0,0,0,128,128` the bottom bar before the word | 639 of 639 |
+| bottom word | font 1, the first set of the title's size; "Back" at `floor((128 - width) / 2)` = 49, y 114; drawn inline once per configuration, every other page `TEXT_AT` pointing at that copy | 639 of 639 |
+| key map tags | presses of the 41 `HARD_KEYS` scans, the four corners and scan 25 (`0x99`), and `0x2D`: 47 | 83 of 83 |
+| key map order | `compilerTagOrder`: the case hash masked to 16 slots doubled while over three quarters full, 64 here; `0x2D` before `0xA4`, the one shared slot | 83 of 83 |
+| fixed entries | `0x99` `0x72` on `(record << 8) \| counter`, the record the activity menu names, one of two with the same keys and byte identical targets; `0x2D` `0x73` the queued program; corners nothing; the rest `0x7F` or nothing | 83 of 83 |
+
+The slot order holds on all 6921 mode and page lists of two tags or more in the thirteen. The order
+inside a shared slot is insertion order and not the tag's, `0xC3` and `0x87` being stored both ways, so
+only the device mode's measured pair is answered and any other is refused. Which of the two records is
+named follows no index, lower on seven compiles and higher on the six power hold ones, so it is read off
+the activity menu.
+
 **Nothing enters the two row list**, section 326, on the thirteen arch 14 compiles: no `0x7E` anywhere
 in the container names its mode, counted as the bytes `lo hi 0x7E` over the whole file, 0 on every
 compile against at least one for every corner list and every row menu, 232 lists; no event map value
