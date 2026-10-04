@@ -261,6 +261,8 @@ let run;
 /** @type {{id: string, definition: any}[]} */
 let tests = [];
 let clockTimer;
+/** Which step the note field belongs to, so it is emptied when the step changes and not on every frame. */
+let problemStep;
 
 function setMode(next) {
   mode = next;
@@ -329,6 +331,14 @@ function showRun(next) {
     $('run-step').textContent = run.kind === 'test' ? `Step ${run.current + 1} of ${total}` : 'recording, Stop when it is done';
     $('run-instruction').textContent = run.kind === 'test' ? step?.instruction ?? '' : run.name;
     $('run-next').hidden = run.kind !== 'test';
+    $('run-problem').hidden = run.kind !== 'test';
+    $('run-mark').hidden = run.kind !== 'test';
+    // A new step starts with an empty note, and a step already marked shows its note to edit.
+    if (problemStep !== run.current) {
+      problemStep = run.current;
+      $('run-problem').value = step?.problem ?? '';
+    }
+    $('run-mark').textContent = step?.problem === undefined || step?.problem === null ? 'Mark wrong' : 'Update note';
     $('run-next').textContent = last ? 'Done, finish the test' : 'Done, next step';
     $('run-stop').textContent = run.kind === 'test' ? 'Abandon' : 'Stop';
     clearInterval(clockTimer);
@@ -401,6 +411,7 @@ function showSteps() {
       item.append(el('span', 'heard nothing', 'heard'));
     }
     if (step?.reached === false) item.append(el('span', 'not reached, the test was abandoned first', 'heard'));
+    if (step?.problem) item.append(el('span', `✗ marked wrong: ${step.problem}`, 'verdict bad marked'));
     for (const verdict of step?.verdicts ?? []) {
       // While a step is being done a missing command is not a failure yet, so it waits in grey.
       const waiting = current && !verdict.ok;
@@ -414,9 +425,11 @@ function showSteps() {
     const passed = verdicts.filter((one) => one.ok).length;
     const reached = run.steps.filter((step) => step.reached !== false).length;
     const abandoned = reached < run.steps.length;
+    const marked = run.steps.filter((step) => step.problem).length;
     $('run-summary').textContent = `${abandoned ? 'Abandoned' : 'Finished'}: ${reached} of ${run.steps.length} steps done`
-      + (verdicts.length > 0 ? `, ${passed} of ${verdicts.length} checks passed` : '');
-    $('run-summary').className = verdicts.length > passed || abandoned ? 'summary bad' : 'summary ok';
+      + (verdicts.length > 0 ? `, ${passed} of ${verdicts.length} checks passed` : '')
+      + (marked > 0 ? `, ${marked} marked wrong` : '');
+    $('run-summary').className = verdicts.length > passed || abandoned || marked > 0 ? 'summary bad' : 'summary ok';
   }
 }
 
@@ -502,7 +515,20 @@ $('test-pick').addEventListener('change', aboutTest);
 $('run-start').addEventListener('click', () => void runAction('/api/ir/run/start', mode === 'test'
   ? { kind: 'test', test: $('test-pick').value }
   : { kind: 'recording', name: $('record-name').value }));
-$('run-next').addEventListener('click', () => void runAction('/api/ir/run/next'));
+/** Save the note on the open step. A mark with nothing typed still records that the step was wrong. */
+async function markStep() {
+  const text = $('run-problem').value.trim();
+  await runAction('/api/ir/run/mark', { text: text === '' ? 'marked wrong, no note' : text });
+}
+$('run-mark').addEventListener('click', () => void markStep());
+$('run-problem').addEventListener('keydown', (event) => { if (event.key === 'Enter') void markStep(); });
+// Next with a note typed and not yet saved saves it first, so a note is never lost by moving on.
+$('run-next').addEventListener('click', async () => {
+  const typed = $('run-problem').value.trim();
+  const saved = run?.steps?.[run.current]?.problem ?? '';
+  if (open() && run.kind === 'test' && typed !== '' && typed !== saved) await markStep();
+  await runAction('/api/ir/run/next');
+});
 $('run-stop').addEventListener('click', () => void runAction('/api/ir/run/stop'));
 
 $('live').addEventListener('click', () => setLive(!live));

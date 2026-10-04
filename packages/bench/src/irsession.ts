@@ -74,6 +74,12 @@ export interface RunStep {
   verdicts: Verdict[];
   /** False for a step the run was stopped before, so a stopped test does not read as one that passed quietly. */
   readonly reached: boolean;
+  /**
+   * What the person at the bench saw go wrong, in their words, or undefined for a step nobody marked.
+   * The receiver only hears infrared, so a wrong screen or a missing page counter can reach the run file
+   * no other way.
+   */
+  problem: string | undefined;
 }
 
 export interface Run {
@@ -207,8 +213,20 @@ export class IrSessions {
   private step(from: TestStep, startedMs: number): RunStep {
     return {
       instruction: from.instruction, expect: from.expect ?? [], startedMs, endedMs: undefined, presses: [], verdicts: [],
-      reached: true,
+      reached: true, problem: undefined,
     };
+  }
+
+  /**
+   * Mark the open step as wrong, with what was seen; empty text takes the mark off again. Only the open
+   * step, so a note cannot land on a step other than the one the person is looking at.
+   */
+  mark(text: string): Run {
+    const run = this.open();
+    const trimmed = text.trim();
+    run.steps[run.current]!.problem = trimmed === '' ? undefined : trimmed;
+    this.changed(run);
+    return run;
   }
 
   /** Close the open step and open the next; on the last step this is the same as stopping. */

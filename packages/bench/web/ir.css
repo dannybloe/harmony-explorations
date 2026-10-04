@@ -91,3 +91,5 @@ section.card { border-top: 1px solid var(--line); }
 #lanes .boundary { stroke: var(--line); stroke-width: 1; }
 #lanes text { fill: var(--dim); font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
 #test-pick { padding: 0.2rem; background: transparent; color: inherit; border: 1px solid var(--line); border-radius: 4px; }
+#run-problem { width: 22rem; max-width: 100%; }
+.steps .verdict.marked { font-family: inherit; font-weight: 600; }

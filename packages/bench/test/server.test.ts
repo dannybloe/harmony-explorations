@@ -106,6 +106,7 @@ test('the route table is sixteen routes, and none of them reaches a remote', asy
     'GET /favicon.png',
     'POST /api/identify',
     'POST /api/inventory',
+    'POST /api/ir/run/mark',
     'POST /api/ir/run/next',
     'POST /api/ir/run/start',
     'POST /api/ir/run/stop',
@@ -289,8 +290,14 @@ test('the infrared routes run a test over HTTP, and a bench without a receiver s
       assert.equal(started.name, 'Two steps');
       // A second start while one is open is refused, not a second run.
       assert.equal((await post('/api/ir/run/start', { kind: 'recording', name: 'x' })).status, 500);
+      // A step marked wrong keeps the person's words, and empty text takes the mark off.
+      assert.equal((await postJson('/api/ir/run/mark', { text: ' no page counter ' })).steps[0].problem, 'no page counter');
+      assert.equal((await postJson('/api/ir/run/mark', { text: '' })).steps[0].problem, undefined);
+      await postJson('/api/ir/run/mark', { text: 'wrong title' });
       const next = await postJson('/api/ir/run/next', {});
       assert.equal(next.current, 1);
+      assert.equal(next.steps[0].problem, 'wrong title');
+      assert.equal(next.steps[1].problem, undefined);
       // Next on the last step is the end of the test.
       const done = await postJson('/api/ir/run/next', {});
       assert.ok(done.endedAt !== undefined);

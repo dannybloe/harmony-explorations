@@ -146,6 +146,10 @@ export function createServer(
           }
           if (req.method === 'POST' && url.pathname === '/api/ir/run/next') return json(res, 200, sessions.runs.next());
           if (req.method === 'POST' && url.pathname === '/api/ir/run/stop') return json(res, 200, sessions.runs.stop());
+          if (req.method === 'POST' && url.pathname === '/api/ir/run/mark') {
+            const body = await readBody(req);
+            return json(res, 200, sessions.runs.mark(String(body['text'] ?? '')));
+          }
         }
         if (req.method === 'GET' && url.pathname === '/api/ir/recent') {
           if (monitor === undefined) return json(res, 404, { message: 'no infrared monitor in this bench' });
@@ -233,6 +237,7 @@ export function createServer(
             'POST /api/ir/run/start',
             'POST /api/ir/run/next',
             'POST /api/ir/run/stop',
+            'POST /api/ir/run/mark',
             'POST /api/identify',
             'POST /api/inventory',
             'POST /api/read',

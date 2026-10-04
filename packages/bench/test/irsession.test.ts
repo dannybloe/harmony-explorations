@@ -138,9 +138,12 @@ test('a test run puts each press in the step that was open, attaches repeats, an
 
     runs.start('test', DEFINITION.name, DEFINITION);
     assert.throws(() => runs.start('recording', 'second'), /already open/);
+    runs.mark('the screen said Devices 2/2');
     clock.ms = 4000;
     runs.next();
     assert.equal(runs.current!.current, 1);
+    // The mark stays on the step it was made on and the next step starts unmarked.
+    assert.deepEqual(runs.current!.steps.map((one) => one.problem), ['the screen said Devices 2/2', undefined]);
 
     for (const at of [4500, 5000, 5600]) {
       const heard = frame(at, [match('TV', 'VolumeUp')]);
@@ -172,6 +175,8 @@ test('a test run puts each press in the step that was open, attaches repeats, an
     assert.ok(stopped.file !== undefined);
     assert.equal(stopped.file, join(dir, 'reads', '20261001T060000Z-ir-test-volume-briefly.json'));
     assert.throws(() => runs.next(), /no run is open/);
+    assert.throws(() => runs.mark('late'), /no run is open/);
+    assert.equal(stopped.steps[0]!.problem, 'the screen said Devices 2/2');
     assert.equal(changes.at(-1), stopped);
   } finally {
     rmSync(dir, { recursive: true, force: true });
