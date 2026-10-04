@@ -92,17 +92,22 @@ The Harmony One is a different type, with a touch screen and its own screens, so
 - [ ] 6.16 A repeat count for the families whose definition states none, GoVideo and Panasonic 48 Bit first, which would unlock about 165,000 commands
 - [x] 6.17 Toolchain checks walk `.claude/worktrees/`, so an agent's worktree fails the facts, prose and write review checks until it is removed
 
-## 8. A reference per remote
+## 8. The specification and the code are the product ([plan 005](docs/plans/005-specs-and-code.md))
 
-- [ ] 8.1 One folder per model in `reference/remotes/`, ten files each (README, hardware, keys, display, features, behaviour, memory, firmware, usb, misc), every fact with its source and status, generated where the code already knows
-  - [ ] 8.1.1 The Harmony 650 as the sample, with the shared Harmony 600, 650 and 700 architecture folder: built, generated blocks tested by `make remote-reference`; Danny reviews the shape
-  - [ ] 8.1.2 The other bench models: One, 525, 600, 700, 300/350, Touch; thinner folders for the 880/885 and 890
-  - [ ] 8.1.3 Absorb `reference/capabilities.md`
-- [ ] 8.2 Silhouettes for the models not yet drawn, from the manuals in the lab; the 600, 650 and 700 share one
-  - [x] 8.2.1 Harmony 350: drawn from the manual's vector page, 55 keys, no scan code measured yet
-  - [x] 8.2.3 Harmony 300: the 350's shapes with the 300's printing, read off its guide's cover photograph
-  - [ ] 8.2.2 Harmony Touch
-- [ ] 8.3 A static HTML site built from the folders and the silhouettes, committed, browsing models and their sections
+- [ ] 8.1 The decision: three deliverables, the `docs/spec/` layout, `findings.md` frozen as an archive, evidence per fact
+- [ ] 8.2 Move the files into the layout and rewrite every path that names them
+- [ ] 8.3 One folder per model in `docs/spec/remotes/`, ten files each, every fact with its standing, generated where the code already knows, nothing about our own units
+  - [ ] 8.3.1 The Harmony 650 as the sample, with the shared Harmony 600, 650 and 700 architecture folder: built, generated blocks tested by `make remote-reference`; still to move our own units into `docs/test-notes/650-test-notes.md` with a test guarding the line
+  - [ ] 8.3.2 The other bench models: One, 525, 600, 700, 300/350, Touch; thinner folders for the 880/885 and 890
+  - [ ] 8.3.3 Absorb `reference/capabilities.md`
+- [ ] 8.4 The specification is the first place to read and write: `CLAUDE.md` and the skills route to it
+- [x] 8.5 A drawing for every bench model
+  - [x] 8.5.1 Harmony 350: drawn from the manual's vector page, 55 keys, no scan code measured yet
+  - [x] 8.5.2 Harmony 300: the 350's shapes with the 300's printing, read off its guide's cover photograph
+  - [x] 8.5.3 Harmony 650 and 700: the 600's face with their own model number
+  - [x] 8.5.4 Harmony Touch: from the manual's vector page, 29 keys and the touch screen
+- [ ] 8.6 `docs/spec/infrared.md`, gathered from the code and the findings
+- [ ] 8.7 A static HTML site built from `docs/spec/` and the drawings, committed, browsing models and their sections
 
 ## 7. Done, carried over from todo.md
 
