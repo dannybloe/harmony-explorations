@@ -294,6 +294,11 @@ on a Harmony One the same thing happens on the touch panel.
 
 So "the buttons of a device" is two questions, not one, and an interface has to keep them apart.
 
+**The Harmony 600, 650 and 700 show no clock**, Danny's observation at the bench on 4 October 2026: the
+ordinary screen of these models has no time on it. They keep one all the same, the clock records of
+base slot 13 that every write stamps (section 322), so a wrong stamp is invisible on the remote and has
+to be checked by reading its memory, never by looking at the screen.
+
 ### Four keys around a Harmony One's screen are not on the screen
 
 **Danny's account, from the remote in his hand, 7 September 2026**, and it is here rather than in
