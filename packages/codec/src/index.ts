@@ -75,6 +75,9 @@ export * from './catalogue.ts';
 // And how to drive a catalogue device, from the archive's schema version 2: power, inputs, channel
 // entry, states and timing, section 305.
 export * from './driving.ts';
+// And what the archive drops from those rules, out of the raw capture behind it, attached through one door,
+// `catalogueRules`: whether a state step sends, how Logitech numbers an input, and its connected app mark.
+export * from './catalogueraw.ts';
 // And what of that a composed device takes: its power actions and its three delays as the catalogue
 // states them, section 320.
 export * from './devicepower.ts';

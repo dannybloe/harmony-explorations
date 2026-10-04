@@ -34,7 +34,9 @@ import { ArchiveError, archiveManifest } from './archive.ts';
 /**
  * One step of an action list. A list is performed in order, and every actionable field below is one. The
  * archive's order is the service's own step numbering rather than its array position, checked on every
- * power, input switching and channel entry list, section 305.
+ * list of every device, the per input and per state ones included, section 305. The fields the archive
+ * drops from a step or an input are in `catalogueraw.ts`, whose `catalogueRules` returns these rules with
+ * them attached.
  *
  * Five shapes in the archive, mapped to four kinds:
  *

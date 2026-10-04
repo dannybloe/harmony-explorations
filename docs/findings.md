@@ -40042,7 +40042,27 @@ capture it was projected from, a release asset of the archive: the service store
 input switching and channel entry lists out of order, its author's notes say the steps' `Order` field is
 authoritative, and the archive holds every one of them in `Order` sequence, where array position would
 have turned a power toggle's press, wait, press into press, press, wait. It projects a hold of 0 ms as a
-plain press. The per input and per state lists were not compared.
+plain press. This said the per input and per state lists were not compared; they are now, todo-later
+1.4, after the archive's author stated in his README that every list is sorted on `Order`. Of 680091
+per input lists 55744 are stored out of order, of 82622 routes to a state value 5282, and of 29326 of a
+state's own stepping and bracketing lists 68; the archive holds **every one** of the 792039 in `Order`
+sequence, and **none** of the 61094 stored out of order in its stored order. Comparing them needs the
+archive's own grouping undone first: a state's values arrive one entry per route and are grouped by name
+in first appearance order, a route repeating an earlier one of its value is dropped, an input with no name
+is dropped (10 of 1089522 inputs, each its device's only one), and a state stated twice word for word is
+one state. One path stays unaligned, Panasonic's TX-W32D3DPL stating `AV4Input` twice with different
+`next` lists, where the archive kept the first.
+
+**What that comparison is for beyond the order.** The three fields the archive drops and section 321
+needs, whether a state step sends or only records, the input numbering and the connected app mark, are now
+derived from the raw capture by `make catalogue-raw` into a side file in the archive's coordinates, and
+attached only to lists the comparison found equal, so a field cannot land on the wrong step.
+`catalogueRules` in `packages/codec/src/catalogueraw.ts` answers a device's rules from both, marked by
+source. On section 321's calibration devices the side file states what that section had to leave
+unexplained: the Panasonic TX-29AK40F and the Thomson 25DT60H, whose compiles each hold one silent input
+transition, each have exactly one input state step marked as only recording; the Sony KDL-32W705B's
+Netflix carries `InputOrder` 1 and the online mark; every state step of the LG OLED65G26LA sends. And
+`InputOrder` is not a unique numbering: the Denon AVR-1912 numbers CD and QuickSelect 1 both 11.
 
 **The 1000 is the catalogue's, and Logitech's service hands it out.** On the 650's record the
 television's power feature has `Id` 0 and `DateModified` null, as the PlayStation's does, where the four
@@ -40129,6 +40149,11 @@ whose stored copies overrun it, or leave room for another.
   the television's record with both service replies field for field, and walks the whole archive with
   exact counts: 3234 devices hold a power press for a stated time, 49 steps hold with no time, 14 of them
   naming digits rather than a command.
+* `packages/codec/src/catalogueraw.ts` and `packages/codec/bin/catalogue-raw.ts`, `make catalogue-raw`: the
+  raw capture kept current, a device fetched out of it through an index, and the fields the archive drops
+  attached to its reading. `packages/codec/test/catalogueraw.test.ts` holds the per input and per state
+  order counts above, the projection and its refusals on made up records, the derived files' freshness
+  against `SHA256SUMS`, and the calibration devices read through the one door.
 * `docs/usb-protocol.md`, `docs/config-format.md` and `CLAUDE.md`'s list of what has been written.
 
 ## 306. A power press held for a stated time is a frame count the compiler fits to the hold

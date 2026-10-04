@@ -36,7 +36,7 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets silhouettes remote-reference remote-reference-write all clean protocols segmentlengths prontocheck catalogue emitcheck myharmony-model model-pdf model-diagram model-activity model-cluster
+.PHONY: help test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets silhouettes remote-reference remote-reference-write all clean protocols segmentlengths prontocheck catalogue catalogue-raw emitcheck myharmony-model model-pdf model-diagram model-activity model-cluster
 
 BENCH_PORT ?= 8731
 
@@ -69,6 +69,7 @@ help:
 	@echo "page         drive the bench page in Chrome, which is what checks the page itself"
 	@echo "activities   which activity each key starts, and which label is its name"
 	@echo "catalogue    what Logitech's device catalogue says about our own configs' devices"
+	@echo "catalogue-raw  update the infrared archive and its raw capture, and derive what the archive drops"
 	@echo "prontocheck  our waveforms against Logitech's own renderings of two million commands"
 	@echo "devices      which devices a config drives, and what each one is called"
 	@echo "alphabets    regenerate the glyph shape table; ALPHABETS_ARGS=--write"
@@ -299,6 +300,15 @@ prontocheck:
 # 54118 files, and the claims it produced are pinned by `packages/codec/test/catalogue.test.ts`.
 catalogue:
 	@node packages/codec/bin/catalogue.ts $(CATALOGUE_ARGS)
+
+# Keep the infrared archive and its raw capture current and derive what the archive drops, todo-later 1.3
+# and 1.4: pull the archive checkout, fetch a newer raw release from GitHub when its SHA256SUMS differ from
+# the lab's, and in one pass over the 5.5 GB capture write a seekable copy, an index of every device and
+# the side file of fields the archive drops into the lab's `work/ir-archive-raw/derived/`. The derivation
+# runs only when those files are absent or stale. Needs the network, the archive and the lab; not in
+# `make all`. CATALOGUE_RAW_ARGS=--force rebuilds, --no-pull leaves the checkout alone, --offline both.
+catalogue-raw:
+	@node packages/codec/bin/catalogue-raw.ts $(CATALOGUE_RAW_ARGS)
 
 # Build a code from a protocol name and a number out of Logitech's catalogue and ask their own analyser to
 # read it back, which is the closed loop the infrared side of this project wanted: `analyze` sends a
