@@ -166,6 +166,9 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // The 650 after section 309's one byte write, seventeen blocks from 0x030000: the compare base for
   // the seventh device of todo-compile-650 2.3, section 312.
   h650_seventh_base: '20261003T1404Z-h650-pre-seventh-region-region.bin',
+  // The 650 after the seventh device, read back identical to that write: the compare base for the
+  // combined bench file of todo-compile-650 2.2 to 3.12.
+  h650_combined_base: '20261004T0554Z-h650-pre-combined-region.bin',
   // The bench Harmony 700 as it arrived, in safe mode, section 295: both internal program memory pages,
   // whose application at 0x9000 fails its checksum with the 1 KiB page at 0x10000 erased, and the
   // external flash below its configuration, whose staged application at 0x000000 verifies. The same two
@@ -680,6 +683,8 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
     'h650_plasma_base',
     // The 650's region after section 309's one byte write, a container already counted plus that edit.
     'h650_seventh_base',
+    // The 650's region after the seventh device, whose container is that write's file.
+    'h650_combined_base',
     // External flash of the bench Harmony 700 from 0x000000, kept for the staged application at its
     // start. The container at 0x020000 is byte for byte `h700_gspm`, the embedded config the 2.8
     // package carries as its region 3, so counting it would count that one twice. Section 295.

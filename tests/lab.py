@@ -185,6 +185,8 @@ IMAGES = {
     # The 650 after section 309's one byte write: the compare base for the seventh device of
     # todo-compile-650 2.3, section 312.
     'h650_seventh_base': '20261003T1404Z-h650-pre-seventh-region-region.bin',
+    # The 650 after the seventh device: the compare base for the combined bench file.
+    'h650_combined_base': '20261004T0554Z-h650-pre-combined-region.bin',
     # The bench Harmony 700 as it arrived, in safe mode, section 295.
     'h700_internal_fe': '20260929T1243Z-h700-internal-fe-region.bin',
     'h700_internal_ff': '20260929T1243Z-h700-internal-ff-region.bin',
@@ -680,6 +682,8 @@ PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_confi
                       'h650_plasma_base',
                       # The 650's region after section 309's one byte write.
                       'h650_seventh_base',
+                      # The 650's region after the seventh device.
+                      'h650_combined_base',
                       # External flash of the bench Harmony 700 from 0x000000, kept for the staged
                       # application; its container at 0x020000 is byte for byte `h700_gspm`.
                       # Section 295.

@@ -162,6 +162,9 @@ const H650_DUMPS = new Set([
   'h650_plasma_base',
   // After section 309's one byte write: the compare base for the seventh device, todo-compile-650 2.3.
   'h650_seventh_base',
+  // After the seventh device, read back identical to that write: the compare base for the combined
+  // bench file, todo-compile-650 2.2 to 3.12.
+  'h650_combined_base',
 ]);
 
 /**
