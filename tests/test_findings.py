@@ -2365,7 +2365,7 @@ class TestTheFlashAddressIsClassifiedBeforeItIsUsed(unittest.TestCase):
 
 class TestBaseSlot17IsReadAsAHitMapAndNoLiteralNamesTheKeyTable(unittest.TestCase):
     """
-    Section NNN: on the four arch 14 application images read, the Harmony 600 0.2, Harmony 650 0.2
+    Section 328: on the four arch 14 application images read, the Harmony 600 0.2, Harmony 650 0.2
     and 0.4 and Harmony 700 2.8, nothing found reaches the picture bank or the key table through where
     they sit. A negative over what was read, not over the firmware.
 

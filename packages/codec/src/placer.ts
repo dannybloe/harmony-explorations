@@ -10,7 +10,7 @@
  * over the parked pieces and the pictures as a bag, in any order, and gets a `ContainerLayout` back.
  *
  * **The rule is that the compiler emits a structure after everything it names**, and it is measured
- * on the thirteen arch 14 compiles of section 312, `docs/findings.md` section NNN. Each table that has
+ * on the thirteen arch 14 compiles of section 312, `docs/findings.md` section 328. Each table that has
  * something parked in front of it is a root, and what is parked is its descendants, in the table's
  * own field order:
  *

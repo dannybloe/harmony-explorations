@@ -409,7 +409,7 @@ end - 6          the trailer
 ```
 
 **What is parked and in what order is decided from the content**, [findings.md](findings.md) section
-NNN: a parked structure follows everything it names, and the parked pieces of a table come in the
+328: a parked structure follows everything it names, and the parked pieces of a table come in the
 table's own field order. `placePieces` in `packages/codec/src/placer.ts` places them from an
 unordered bag and gives Logitech's order exactly for base slots 5, 7, 10 and 15 on all thirteen
 compiles. **Two orders are not fixed by the pictures or the pages**: the picture bank and the mode

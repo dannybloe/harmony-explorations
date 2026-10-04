@@ -1,6 +1,6 @@
 /**
  * Where Logitech's compiler parks pieces and puts its pictures, decided from the content,
- * `todo-compile-650.md` 10.5 and `docs/findings.md` section NNN.
+ * `todo-compile-650.md` 10.5 and `docs/findings.md` section 328.
  *
  * **The measurement starts from a bag.** `takeApart` gives a compile's layout, `loosen` throws what
  * is parked in front of the tables and the whole picture bank into one bag and shuffles it, and

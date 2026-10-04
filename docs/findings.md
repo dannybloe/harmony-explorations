@@ -41793,7 +41793,7 @@ a container whose two disagree is one where somebody stamped only one.
   our readers look; that the tables follow the body and ascend is Logitech's habit and `parse`'s
   `sections_ascend` check; and no differently ordered container has been written.
 
-  > **Read further by section NNN.** On the Harmony 600 0.2, 650 0.2 and 0.4 and 700 2.8 images,
+  > **Read further by section 328.** On the Harmony 600 0.2, 650 0.2 and 0.4 and 700 2.8 images,
   > base slot 17 is fetched only as the hit map's page array and never offset to the bank; past the
   > header, the validator's only fixed offset is the marker's, and no literal instruction on any of the
   > four loads the key table's `0x5F`. So nothing found on those images reads either position, and
@@ -43553,7 +43553,7 @@ compile whose sequence differs from the composer's output in any of the five nam
   the composer on the Harmony 650 and the refusal at the boundary.
 * `docs/config-format.md`, under `0x7C` and base slot 10, and section 70 corrected in place.
 
-## NNN. What Logitech parks in front of a table is placed by a rule, and the picture bank and the page lists are in an order the pictures and the pages do not fix
+## 328. What Logitech parks in front of a table is placed by a rule, and the picture bank and the page lists are in an order the pictures and the pages do not fix
 
 **Date:** 4 October 2026. **Status:** confirmed by construction over the thirteen arch 14 compiles of
 section 312, with controls; the firmware half read on four arch 14 images. Nothing laid out this way has
