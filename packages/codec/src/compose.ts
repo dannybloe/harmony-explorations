@@ -4540,11 +4540,18 @@ function compiledDeviceModePages(
     if (set === undefined) return undefined;
     try { return codesFor(map, c, set, text, font); } catch { return undefined; }
   };
+  // The fonts the page's chrome draws in: the title, the counter and the bottom word. A font set carries
+  // its colour in its glyphs, so one of these has the size of a label and the colour of a title: on the
+  // Harmony 650 the title's font is green, and a label put in it showed on the remote as its shadow
+  // alone, `Direct TVRecord` on the TX-P42GT30E's third page, at the bench. Logitech's own pages on that
+  // configuration draw 13 titles in font 5, 25 counters in font 6 and 7 bottom words in font 1, and none
+  // of the 511 lines between the title and the bottom bar in any of the three, so a label never borrows one.
+  const chromeFonts = new Set([template.titleFont, template.counterFont, template.device.backFont]);
   // The font a group of lines is drawn in: a set of the wanted size spelling all of them, the preferred
-  // one first; else the nearest height that does, which is a substitution.
-  const pick = (rung: number | undefined, texts: readonly string[], preferred: number, what: string):
-      { font: number; codes: number[][] } => {
-    const wanted = rung === undefined ? [] : bySize.get(rung) ?? [];
+  // one first; else the nearest height that does, which is a substitution. `avoid` is left out of both.
+  const pick = (rung: number | undefined, texts: readonly string[], preferred: number, what: string,
+      avoid: ReadonlySet<number> = new Set()): { font: number; codes: number[][] } => {
+    const wanted = (rung === undefined ? [] : bySize.get(rung) ?? []).filter((font) => !avoid.has(font));
     const order = [...new Set([...(wanted.includes(preferred) ? [preferred] : []), ...wanted])];
     for (const font of order) {
       const codes = texts.map((text) => spell(font, text));
@@ -4552,7 +4559,7 @@ function compiledDeviceModePages(
     }
     const height = rung === undefined ? sets[preferred]?.height ?? 0 : (LABEL_SIZES[rung]?.height ?? 0);
     const able = sets.map((_, font) => font)
-      .filter((font) => texts.every((text) => spell(font, text) !== undefined))
+      .filter((font) => !avoid.has(font) && texts.every((text) => spell(font, text) !== undefined))
       .sort((a, b) => Math.abs((sets[a] as FontSet).height - height) - Math.abs((sets[b] as FontSet).height - height));
     const font = able[0];
     if (font === undefined) {
@@ -4574,7 +4581,7 @@ function compiledDeviceModePages(
     // Nothing left to draw, a label of `#` alone: the item is bound and drawn without a label.
     if (text === '') return { font: preferred, codes: [] };
     const height = sets[preferred]?.height ?? 0;
-    const order = [preferred, ...sets.map((_, font) => font).filter((font) => font !== preferred)
+    const order = [preferred, ...sets.map((_, font) => font).filter((font) => font !== preferred && !chromeFonts.has(font))
       .sort((a, b) => Math.abs((sets[a] as FontSet).height - height) - Math.abs((sets[b] as FontSet).height - height))];
     for (const font of order) {
       for (let n = text.length; n > 0; n -= 1) {
@@ -4629,7 +4636,7 @@ function compiledDeviceModePages(
     const placed = placeLabel(layout, item.column, item.row);
     const chosen = pick(layout.size, layout.lines,
                         shared.get(`${Math.floor(index / perPageOf)}:${layout.size}`) ?? template.labelFont,
-                        `label '${row.label}'`);
+                        `label '${row.label}'`, chromeFonts);
     const height = (sets[chosen.font] as FontSet).height;
     // Placed by the font actually drawn, which is the table's widths and height unless substituted.
     return chosen.codes.map((codes, k) => ({

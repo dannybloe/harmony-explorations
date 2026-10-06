@@ -1,0 +1,7 @@
+{
+  "name": "Harmony 650, Plasma page 3 label colour",
+  "description": "todo-compile-650 2.4, one write of lab/work/bench-2-4/h650-full-plasma-2.bin: the whole Plasma rebuilt after a corner label was found drawn in the title's green font, which showed on the remote as its shadow alone. The composer now keeps labels out of the title, counter and bottom bar fonts. The three buttons below the screen are the left arrow, the centre button and the right arrow.",
+  "steps": [
+    { "instruction": "Start on the remote's ordinary screen. Press the centre button ('Devices'), then the right arrow to reach 'Devices 2/2', then the button beside Plasma (bottom left). Press the right arrow twice to reach 'Plasma 3/7'. Expect 'Direct TvRecord' top left in white text like the other three labels, 'Input Component' top right, 'Input Hdmi1' bottom left and 'Input Hdmi2' bottom right. Mark the step if any label looks wrong" }
+  ]
+}
