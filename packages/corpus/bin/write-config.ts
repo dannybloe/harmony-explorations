@@ -165,6 +165,7 @@ const H650_DUMPS = new Set([
   // After the seventh device, read back identical to that write: the compare base for the combined
   // bench file, todo-compile-650 2.2 to 3.12.
   'h650_combined_base',
+  'h650_combined2_base',
 ]);
 
 /**
