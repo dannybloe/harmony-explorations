@@ -52,6 +52,10 @@ import {
   nameNodes,
   parse,
   payloadOf,
+  SCREEN_SELECT_FONT,
+  SCREEN_TEXT_AT,
+  SCREEN_TEXT_INLINE,
+  screenProgram,
   screenStrings,
   stateRecords,
   stateTable,
@@ -414,4 +418,41 @@ test('devices composed several at a time are where Logitech\'s compile of the sa
     // nor the state, since it was not asked for inputs and the variable alone would be a state nothing sets.
     assert.deepEqual(named, ['h700_power_hold_compile Panasonic_TX-P42GT30E: ours Power 0..1 from 0, '
       + 'theirs InputType 0..8 from 0; Power 0..1 from 0']);
+  });
+
+// ---------------------------------------------------------------------------------------------------
+// A corner label is never drawn in the page's title, counter or bottom bar font
+
+test('a whole composed device draws no corner label in a font its pages use for the title, the counter or the bottom bar',
+  needing(skipWithoutIrArchive(), skipUnless('h650_panasonic_config')), () => {
+    // On the Harmony 650 a font set carries its colour in its glyphs, and the title's font has a label's
+    // size: the TX-P42GT30E's 'Direct TVRecord' fitted no white font of that size and was drawn in the
+    // green title font, which the remote showed as the label's shadow alone, at the bench
+    // (reads/20261006T153704Z-ir-test-harmony-650-the-whole-plasma-on-seven-pages.json, step 3).
+    const base = open('h650_panasonic_config');
+    const before = (modeRecords(base) ?? []).length;
+    const composed = parse(composeCatalogueDevices(base, IR_ARCHIVE!, [
+      { manufacturer: 'Panasonic', model: 'TX-P42GT30E', label: 'Plasma', full: true }]).bytes);
+    const records = modeRecords(composed) ?? [];
+    const pages = records.slice(before).flatMap((record) => record.pages);
+    const chrome = new Set<number>();
+    const labels: { font: number; glyphs: number }[] = [];
+    for (const page of pages) {
+      let font = -1;
+      for (const one of screenProgram(composed, page.program) ?? []) {
+        if (one.opcode === SCREEN_SELECT_FONT) font = one.operands[0] as number;
+        // The bottom word is drawn from a stored copy rather than inline, so it is chrome by its opcode.
+        if (one.opcode === SCREEN_TEXT_AT) chrome.add(font);
+        if (one.opcode !== SCREEN_TEXT_INLINE) continue;
+        const y = one.operands[1] as number;
+        // The title and counter sit at the top and the bottom word in the bar, rows 2 and 114 on every
+        // page; everything between them is a corner label's line.
+        if (y <= 4 || y >= 110) chrome.add(font);
+        else labels.push({ font, glyphs: Object.keys(one.glyphs ?? {}).length });
+      }
+    }
+    assert.equal(pages.length, 7, 'the whole device, seven pages');
+    assert.equal(chrome.size, 3, 'a title font, a counter font and a bottom bar font');
+    assert.equal(labels.length, 42, 'every corner label line of the seven pages');
+    assert.deepEqual(labels.filter((one) => chrome.has(one.font)), [], 'no label line in a chrome font');
   });
