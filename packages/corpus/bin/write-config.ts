@@ -167,6 +167,7 @@ const H650_DUMPS = new Set([
   'h650_combined_base',
   'h650_combined2_base',
   'h650_two_devices_base',
+  'h650_full_plasma_base',
 ]);
 
 /**

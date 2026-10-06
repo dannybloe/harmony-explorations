@@ -171,6 +171,7 @@ export const IMAGES: Readonly<Record<string, string>> = {
   h650_combined_base: '20261004T0554Z-h650-pre-combined-region.bin',
   h650_combined2_base: '20261006T1447Z-h650-pre-combined-2-region-region.bin',
   h650_two_devices_base: '20261006T1504Z-h650-pre-two-devices-region.bin',
+  h650_full_plasma_base: '20261006T1529Z-h650-pre-full-plasma-region.bin',
   // The bench Harmony 700 as it arrived, in safe mode, section 295: both internal program memory pages,
   // whose application at 0x9000 fails its checksum with the 1 KiB page at 0x10000 erased, and the
   // external flash below its configuration, whose staged application at 0x000000 verifies. The same two
@@ -689,6 +690,7 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
     'h650_combined_base',
     'h650_combined2_base',
     'h650_two_devices_base',
+    'h650_full_plasma_base',
     // External flash of the bench Harmony 700 from 0x000000, kept for the staged application at its
     // start. The container at 0x020000 is byte for byte `h700_gspm`, the embedded config the 2.8
     // package carries as its region 3, so counting it would count that one twice. Section 295.
