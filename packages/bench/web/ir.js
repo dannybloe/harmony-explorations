@@ -90,7 +90,8 @@ function onFrame(frame) {
 }
 
 function heldText(press) {
-  return press.repeats.length === 0 ? '' : `held ×${press.repeats.length}`;
+  // The total frames heard, the first plus its repeats, which is how a test states what a press sends.
+  return press.repeats.length === 0 ? '' : `${press.repeats.length + 1} frames`;
 }
 
 function show(seq) {
@@ -405,7 +406,7 @@ function showSteps() {
       item.append(el('span', `listening for ${expect.map(expectLabel).join(', then ')}`, 'heard'));
     }
     if (step !== undefined && step.presses.length > 0) {
-      const heard = step.presses.map((press) => `${pressName(press)}${press.repeats > 0 ? ` held ×${press.repeats}` : ''}`);
+      const heard = step.presses.map((press) => `${pressName(press)}${press.repeats > 0 ? `, ${press.repeats + 1} frames` : ''}`);
       item.append(el('span', `heard: ${heard.join(', ')}`, 'heard'));
     } else if (done) {
       item.append(el('span', 'heard nothing', 'heard'));
@@ -493,7 +494,7 @@ function showTimeline() {
     tr.append(el('td', `${(press.atMs / 1000).toFixed(2)} s`, 'num mono'));
     tr.append(el('td', previous === undefined ? '' : `${Math.round(press.atMs - previous)} ms`, 'num mono dim'));
     tr.append(el('td', pressName(press), press.frame.matches.length === 0 ? 'bad' : undefined));
-    tr.append(el('td', press.repeats > 0 ? `×${press.repeats}` : '', 'mono dim'));
+    tr.append(el('td', press.repeats > 0 ? `${press.repeats + 1} frames` : '', 'mono dim'));
     tr.append(el('td', run.kind === 'test' ? String(step + 1) : '', 'num mono dim'));
     table.append(tr);
     previous = press.atMs;
