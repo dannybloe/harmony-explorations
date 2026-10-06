@@ -166,6 +166,7 @@ const H650_DUMPS = new Set([
   // bench file, todo-compile-650 2.2 to 3.12.
   'h650_combined_base',
   'h650_combined2_base',
+  'h650_two_devices_base',
 ]);
 
 /**

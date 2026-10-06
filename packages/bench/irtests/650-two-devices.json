@@ -1,0 +1,11 @@
+{
+  "name": "Harmony 650, two devices composed in one write",
+  "description": "todo-compile-650 2.7, one write of lab/work/bench-2-7/h650-two-devices.bin: the Panasonic TX-29AK40F as 'Pana' and the Knoll HDP-1100 as 'Knoll', composed in one run onto the 650's own configuration (h650_panasonic_config), section 331. Neither is in any activity, so only their own pages send them. Start with nothing pressed since the write's restart, remote pointed at the Flirc. A side button is one of the buttons beside the screen, next to the corner whose label it chooses.",
+  "steps": [
+    { "instruction": "The ordinary screen comes up, no request to sync. Press the centre button below the screen (Devices). Expect 'Devices 1/2': TV top left, KPN top right, Denon bottom left, PS3 bottom right. Nothing at the Flirc. Mark the step if the names or corners differ" },
+    { "instruction": "Page on with the arrow. Expect 'Devices 2/2': Kodi top left, Panasonic TV top right, Pana bottom left, Knoll bottom right. These two new rows are the point of the run. Nothing at the Flirc" },
+    { "instruction": "Press the side button beside Pana. Expect a page titled 'Pana' with one command, 'Power'. Press Power once, briefly. Expect at the Flirc the Panasonic power toggle as three frames, nothing else. (No television answers it here; the Flirc hearing it is the check)" },
+    { "instruction": "Go back to the Devices list with the centre button, page on to 2/2 and press the side button beside Knoll. Expect a page titled 'Knoll' with one command, 'Power'. Press Power once, briefly. Expect the Knoll's power toggle, a 32 bit code, as about eight frames in one burst (its 'on' action, held 800 ms), nothing else" },
+    { "instruction": "Press All Off. Expect nothing for Pana or Knoll: neither was switched on by an activity, so the remote thinks both are off. Anything the Flirc hears here, note it with the mark button" }
+  ]
+}
