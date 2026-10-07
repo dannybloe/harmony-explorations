@@ -1,0 +1,8 @@
+{
+  "name": "Harmony 650, the KPN box's delay between devices at 2 s",
+  "description": "todo-compile-650 3.5, one write of lab/work/bench-3-5/h650-kpn-gap-2s.bin: the combined bench file with only the KPN box's delay between devices raised from 0.5 s to 2 s, every other device at 0.5 s and nothing saved on the remote to override it. Before the change Kijk TV's start and All Off both showed 0.64 s from the KPN box's last frame to the Denon's first (reads/20261007T054551Z-...). Two readings, written down before the run: if the delay holds back whatever follows the KPN box, that gap grows to about 2.1 s; if it holds back the KPN box's own command, the gap stays about 0.64 s and the KPN toggle comes later after the press, which the Flirc cannot see. Section 287 infers the step acts inside an activity's start only, so All Off is the control: its gap should stay 0.64 s either way.",
+  "steps": [
+    { "instruction": "Start on the remote's ordinary screen. Press Watch TV and wait until the working screen 'Kijk TV' shows. Expect the KPN box's power toggle and then the Denon's PowerOn; nothing to time by hand, the Flirc records the gap" },
+    { "instruction": "Press All Off. Expect the KPN box's power toggle and then the Denon's PowerOff" }
+  ]
+}
