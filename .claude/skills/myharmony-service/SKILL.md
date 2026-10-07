@@ -296,6 +296,71 @@ and then restored as a developer option. Not established: no feature flag on eit
 XMPP, and `SpecialSUSStream=preview` appears in every mode. Both hub images are in the lab, so
 comparing them is what would settle it.
 
+## A remote's serial can be blocked for good, and a harvest did it
+
+**Read this before any write to either account.** On 7 October 2026 the family harvest of
+`todo-secure-logitech.md` 2.2 got the **spare Harmony One** blocked by Logitech's service. Harmony
+Desktop now answers for that remote, on any account: "Your Harmony remote is disabled. Please contact
+customer support." The remote itself still works and this repository's USB tools still read and write
+it, because the block is on the service's side. What is lost is everything that goes through their
+service for that serial.
+
+### What happened
+
+* The harvest ran on the first test account's Harmony One entry, 16315365, which had been described as
+  an entry never finished or used. **It carries the spare Harmony One's serial.** Nobody checked that
+  before repurposing it, and the first comparison made afterwards wrongly said it carried no bench
+  unit's serial: the service writes the first three groups of each GUID in a different byte order from
+  the identity block in `../lab/units/`, so a whole GUID comparison matches nothing. Compare the last
+  eight bytes of each GUID, which agree in both.
+* On that entry that day: its 3 devices and 2 activities removed, then 13 add calls putting on about
+  42 devices in all, each batch removed again after its compile, in quick succession.
+* Then the refusals: an add of 7 devices, "Cannot add device to the remote attached to the account",
+  `ErrorCode` 5 from `UserDeviceAdded`; then adds of 15, 8 and a single device, the same message from
+  `CanAddAnotherDeviceToAccount`, on an entry holding no device at all.
+* Then the entry was gone from `GetMyHousehold`, and the spare was refused by Harmony Desktop on other
+  accounts too.
+
+**Not known**: the threshold, whether it counts adds, removals or both, whether a time window applies,
+and whether a block is ever lifted by itself.
+
+**The same refusal was seen once more the same day**, on the second test account's Harmony 600 entry,
+16318263, straight after its 5 devices were removed. That entry carries the **Harmony 525's** serial
+and is still listed, so it may be on the same road.
+
+### Which entry carries which remote
+
+Measured on 7 October 2026 by comparing each entry's serial fields with `../lab/units/`. **A test
+account entry is a real remote's account entry**, so a write to it spends that remote's standing with
+the service.
+
+| entry | carries the serial of |
+|---|---|
+| account 1: 16315365 (Harmony One) | the spare Harmony One, **blocked** |
+| account 1: 16315370 (Harmony 600) | the bench Harmony 600 |
+| account 1: 16315388, account 2: twelve entries from 16318261 to 16318284, the 600 entry 16318263 among them | the Harmony 525 |
+| account 1: 16326458 (Harmony 650) | the bench Harmony 650 |
+| account 1: 16327048, account 2: 16327049 (Harmony 700) | the bench Harmony 700 |
+| account 2: 16318180 (Harmony One) | the spare Harmony One, **blocked** |
+| account 1: 16319183, 16321262 (350), 16321288 (300); account 2: 16319182 | no unit with a record in the lab; the 300 and 350 have none, so these may be theirs |
+
+Writes made the same day on the others, for scale: the 650 entry 3 add calls, the 700 entry 2, the
+350 entry 5, the 300 entry 1.
+
+### The rules this leaves
+
+* **Know whose serial an entry carries before writing to it**, by the comparison above, and treat a
+  write as spending that remote's access to the service. Never write to an entry carrying the everyday
+  Harmony One's serial.
+* **`ErrorCode` 5 means stop.** Never split a batch around it and never retry it; `harvest.ts` stops
+  at it. It is the only warning that came before the block.
+* **Volume per entry stays far below what triggered this**, about 42 device adds with their removals
+  on one entry in one sitting. The safe number is not known, so the plan that resumes the harvest
+  chooses one deliberately and spreads it over entries and over time.
+* **An entry with a made up serial** would spare the real remotes, and the lab has notes on making
+  them. It is untried for this purpose and may put the whole account at risk instead, so it is a
+  decision of its own.
+
 ## Rails that do not bend
 
 * Nothing here ever syncs a config to a remote. The compile is taken as a **file**; the sync step

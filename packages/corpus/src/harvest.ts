@@ -157,3 +157,17 @@ export function splitBatch<T>(batch: readonly T[]): [T[], T[]] {
   const half = Math.ceil(batch.length / 2);
   return [batch.slice(0, half), batch.slice(half)];
 }
+
+/**
+ * The service's message when it will not put a device on the record, or undefined for any other answer.
+ * Seen on 7 October 2026 in two shapes, both `ErrorCode` 5 with status 400: "Cannot add device to the remote
+ * attached to the account" from `UserDeviceAdded`, and the same message from `CanAddAnotherDeviceToAccount`.
+ * **It is a warning to stop**: it came just before the service blocked the spare Harmony One's serial on
+ * every account, after about forty devices had been added to and removed from one entry. So a harvest
+ * stops at it rather than splitting the batch around it. The `myharmony-service` skill holds the incident.
+ */
+export function addRefusal(status: number, json: unknown): string | undefined {
+  if (status !== 400 || typeof json !== 'object' || json === null) return undefined;
+  const { ErrorCode, Message, Source } = json as { ErrorCode?: number; Message?: string; Source?: string };
+  return ErrorCode === 5 ? `${Message ?? 'refused'} (${Source ?? 'no source'})` : undefined;
+}

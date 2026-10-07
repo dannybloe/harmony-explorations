@@ -46,7 +46,7 @@
  * Everything lands in the lab under `work/harvest/<label>/`: each compile's ZIP and its extracted
  * files, every reply the service gave, and `manifest.json`. Nothing of it enters this repository.
  */
-import { mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { setTimeout as sleep } from 'node:timers/promises';
@@ -57,7 +57,7 @@ import {
   credentials, type Reply,
 } from '../src/myharmony.ts';
 import {
-  HarvestRefusal, PROTECTED_RECORDS, addDeviceOperation, compileStatus, deviceName, operationBag,
+  HarvestRefusal, PROTECTED_RECORDS, addDeviceOperation, addRefusal, compileStatus, deviceName, operationBag,
   pickMatch, readZip, splitBatch, type HarvestDevice,
 } from '../src/harvest.ts';
 
@@ -105,7 +105,9 @@ const wanted: HarvestDevice[] = named.map(({ manufacturer, file }) => {
 const dir = join(LAB, 'work', 'harvest', label);
 const replies = join(dir, 'replies');
 mkdirSync(replies, { recursive: true });
-let sequence = 0;
+// A label is one harvest and a rerun resumes it, so numbering continues after the replies already filed
+// rather than writing over them: every reply the service gave is kept.
+let sequence = Math.max(0, ...readdirSync(replies).map((file) => Number(/^(\d+)-/.exec(file)?.[1] ?? 0)));
 const session = new MyHarmonySession((operation, reply) => {
   sequence += 1;
   writeFileSync(join(replies, `${String(sequence).padStart(4, '0')}-${operation}.bin`), reply.bytes);
@@ -114,10 +116,12 @@ const session = new MyHarmonySession((operation, reply) => {
 const manifestPath = join(dir, 'manifest.json');
 interface Compiled { file: string; status: string; devices: (HarvestDevice & { deviceId: number })[];
   inFile: number; namesFound: boolean; checked: boolean }
+/** A device the service would not put on this model's record, with the message it gave. */
+interface Refused extends HarvestDevice { message: string }
 /** A compile that never left "Compiling": kept with its address, so it can be fetched again later. */
 interface Stuck { downloadUrl: string; devices: HarvestDevice[] }
 const manifest: { record: number; model: string; account: string; compiles: Compiled[];
-  failed: HarvestDevice[]; stuck: Stuck[]; unresolved?: HarvestDevice[] } = existsSync(manifestPath)
+  failed: HarvestDevice[]; stuck: Stuck[]; unresolved?: HarvestDevice[]; refused?: Refused[] } = existsSync(manifestPath)
   ? { stuck: [], ...JSON.parse(readFileSync(manifestPath, 'utf8')) }
   : { record, model, account: selector, compiles: [], failed: [], stuck: [] };
 /**
@@ -192,10 +196,17 @@ for (const device of wanted) {
   console.log(`  resolved ${device.manufacturer} ${device.model}, device ${device.globalDeviceId}`);
 }
 if (unresolved.length > 0) {
-  manifest.unresolved = [...(manifest.unresolved ?? []), ...unresolved];
+  const known = new Set((manifest.unresolved ?? []).map((one) => one.globalDeviceId));
+  manifest.unresolved = [...(manifest.unresolved ?? []), ...unresolved.filter((one) => !known.has(one.globalDeviceId))];
   saveManifest();
 }
-const resolvedDevices = wanted.filter((device) => matches.has(device));
+// A rerun under the same label resumes: a device this harvest already compiled, saw fail or saw refused
+// is not sent again, so a run that stopped part way picks up where it stopped.
+const handled = new Set([
+  ...manifest.compiles.flatMap((one) => one.devices), ...manifest.failed, ...(manifest.refused ?? []),
+].map((one) => one.globalDeviceId));
+const resolvedDevices = wanted.filter((device) => matches.has(device) && !handled.has(device.globalDeviceId));
+if (handled.size > 0) console.log(`resuming: ${handled.size} devices already handled under this label are left out`);
 
 if (!commit) {
   console.log(`dry run: ${resolvedDevices.length} devices in batches of ${batchSize} would be compiled for record `
@@ -249,8 +260,19 @@ function indexOf(bytes: Uint8Array, needle: number[]): number {
 
 async function harvest(batch: HarvestDevice[], retried = false): Promise<void> {
   const before = new Set((await devicesOnRecord()).map((one) => one.Id.Value));
-  expectOk('UpdateMultiple', await session.call('UpdateMultiple', DEVICE_MANAGER, operationBag(record,
-    batch.map((device) => addDeviceOperation(matches.get(device)!, device, record, randomUUID())))));
+  const reply = await session.call('UpdateMultiple', DEVICE_MANAGER, operationBag(record,
+    batch.map((device) => addDeviceOperation(matches.get(device)!, device, record, randomUUID()))));
+  // The service's refusal to add is the warning that came before it blocked the spare Harmony One's serial
+  // for good on 7 October 2026, so it stops the run: never split around it, never retry it. The
+  // `myharmony-service` skill holds the incident.
+  const refusal = addRefusal(reply.status, reply.json);
+  if (refusal !== undefined) {
+    await clear((await devicesOnRecord()).map((one) => one.Id.Value).filter((id) => !before.has(id)));
+    manifest.refused = [...(manifest.refused ?? []), ...batch.map((device) => ({ ...device, message: refusal }))];
+    saveManifest();
+    throw new HarvestRefusal(`adding ${batch.length} devices refused: ${refusal}; stopping, see the myharmony-service skill`);
+  }
+  expectOk('UpdateMultiple', reply);
   const added = (await devicesOnRecord()).map((one) => one.Id.Value).filter((id) => !before.has(id));
   let result: { zip?: Uint8Array; status: string; downloadUrl?: string } = { status: 'not compiled' };
   try {

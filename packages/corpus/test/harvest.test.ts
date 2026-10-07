@@ -9,7 +9,7 @@ import { deflateRawSync } from 'node:zlib';
 
 import { ServiceRefusal, assertCallAllowed } from '../src/myharmony.ts';
 import {
-  HarvestRefusal, addDeviceOperation, compileStatus, operationBag, pickMatch, readZip, splitBatch,
+  HarvestRefusal, addDeviceOperation, addRefusal, compileStatus, operationBag, pickMatch, readZip, splitBatch,
 } from '../src/harvest.ts';
 
 const DENON = { manufacturer: 'Denon', file: 'AVR-X4800H.json', model: 'AVR-X4800H', globalDeviceId: 512420 };
@@ -102,4 +102,13 @@ test('a failed batch splits into two halves that between them hold every device 
   assert.equal(b.length, 7);
   assert.deepEqual([...a, ...b], batch);
   assert.deepEqual(splitBatch([1]), [[1], []]);
+});
+
+test('the refusal a harvest stops at is told apart from every other failed add', () => {
+  const refused = { ErrorCode: 5, Message: 'Cannot add device to the remote attached to the account', Source: 'UserDeviceAdded' };
+  assert.equal(addRefusal(400, refused), 'Cannot add device to the remote attached to the account (UserDeviceAdded)');
+  assert.equal(addRefusal(400, { ...refused, ErrorCode: 6 }), undefined);
+  assert.equal(addRefusal(500, refused), undefined);
+  assert.equal(addRefusal(200, { UpdateMultipleResult: null }), undefined);
+  assert.equal(addRefusal(400, null), undefined);
 });
