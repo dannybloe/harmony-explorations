@@ -9,6 +9,10 @@ otherwise. What has been done on the others, and what they will need afterwards,
 this route. [todo.md](todo.md) stays as it is until everything in it has a home in one of the two;
 then it is retired and `CLAUDE.md` is updated, which names it as the one place the sequence lives.
 
+**[todo-secure-logitech.md](todo-secure-logitech.md) and [todo-process-logitech.md](todo-process-logitech.md)
+go first**: they gather the Logitech compiles this track and every later one depend on while their
+service still runs, and work them out. This track resumes after both.
+
 **Before working any item, load the `harmony-650` skill**, in this session and in every agent brief:
 it says where the remote's facts are, which are read first, and holds the write and bench procedure.
 

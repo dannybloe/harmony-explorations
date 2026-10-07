@@ -1252,8 +1252,9 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
         # `work/plan-1.2.10/`, section 294. 80 since `work/plan-L7/`, section 301. 81 since `work/plan-L6/`, the
         # Harmony 600's delay write. 82 since `work/ir-archive-raw/`, section 305, and 83 since
         # `work/plan-4.3.4/`, the Harmony 650's long press version write, section 309. 86 since
-        # `work/ir-archive-raw/derived/`, what `make catalogue-raw` derives, todo-later 1.3.
-        self.assertEqual(len(named), 90, "lab paths the register names, as at 7 October 2026")
+        # `work/ir-archive-raw/derived/`, what `make catalogue-raw` derives, todo-later 1.3. 91 since
+        # `work/test-setup/`, the scan behind plan 006.
+        self.assertEqual(len(named), 91, "lab paths the register names, as at 7 October 2026")
         for path in sorted(named):
             with self.subTest(path=path):
                 if '*' in path:

@@ -734,7 +734,8 @@ All current documents report zero.
 **`docs/README.md` maps every document, package, tool and script and says why each exists**, and a
 source file's own header is where its reading lives. The ones a session reaches for most:
 
-* `docs/status.md`, where the work stands; `todo.md` and `todo-compile-650.md`, the sequence;
+* `docs/status.md`, where the work stands; `todo.md`, `todo-secure-logitech.md` and `todo-process-logitech.md` (first, in that order) and
+  `todo-compile-650.md`, the sequence;
   `docs/decisions.md` and `docs/plans/`, per "How planning works" above
 * `docs/findings.md`, the argument, grepped and read in ranges and never loaded whole;
   `docs/config-format.md`, the structured spec; `docs/glossary.md`, the vocabulary

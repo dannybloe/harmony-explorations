@@ -29,7 +29,7 @@ each candidate whole onto the 650's own Logitech configuration and reports what 
 Seven devices fill the device list's first page and open a second (2.3). Seven is under Logitech's
 eight for the 650 and over the manual's five; the bench unit has already held seven, 2.3.
 
-**Danny's own set top box is not among them.** His KPN box is the Motorola VIP 1853, whose infrared
+**The bench's own set top box is not among them.** That KPN box is the Motorola VIP 1853, whose infrared
 family is Kreatel IP 22 Bit, and none of its 38 commands composes: the repeats of that family differ
 from its first frame per record, and how many repetitions its compiler sends is not stated anywhere, `docs/findings.md` sections 171 and 258. The KPN
 TV6000COK stands in for it. Composing the real box is 2.6's work and is not needed for this setup.
@@ -93,7 +93,7 @@ so the menu is the only way to them (3.11).
   between them hold every letter the whole setup needs, so the font the remote needs is in Logitech's
   compile from the start.
 * **1.6** has Logitech compile that starting setup for the 650. That is a write to the test account and
-  needs Danny's say.
+  needs a go-ahead.
 * **5.2** compares our composed configuration with Logitech's compile of this whole setup, which needs
   the same say.
 * **3.14 is needed by 5.1, not before.** Logitech's compile in 1.6 can hold the passthrough device

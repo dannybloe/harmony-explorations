@@ -83,6 +83,7 @@ The largest square and the least read. 6758 files, 1.1 GB.
 | `work/*.bin` | internal flash reads of both bench architectures | 10 | `catalogued` | `restore` `write-path` | sections 87, 118, 189 to 192 |
 | `work/venv/` | a Python environment | 908 | `catalogued` 30 August 2026 | | not an artefact, and that is the finished answer rather than a pending one |
 | `work/src-review-2026-08-13.md`, `work/test-sweep-2026-08-13.md` | our review notes | 2 | `catalogued` 30 August 2026 | | sections 139 to 143 |
+| `work/test-setup/` | our scan of which catalogue devices compose completely onto a Harmony 650 configuration | 1 | `catalogued` 7 October 2026 | | plan 006, todo-compile-650 1.4 |
 
 ## Firmware
 
