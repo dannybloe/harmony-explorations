@@ -1253,7 +1253,7 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
         # Harmony 600's delay write. 82 since `work/ir-archive-raw/`, section 305, and 83 since
         # `work/plan-4.3.4/`, the Harmony 650's long press version write, section 309. 86 since
         # `work/ir-archive-raw/derived/`, what `make catalogue-raw` derives, todo-later 1.3.
-        self.assertEqual(len(named), 87, "lab paths the register names, as at 4 October 2026")
+        self.assertEqual(len(named), 90, "lab paths the register names, as at 7 October 2026")
         for path in sorted(named):
             with self.subTest(path=path):
                 if '*' in path:
@@ -1351,7 +1351,7 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
         # section 305.
         # 60 since `work/plan-4.3.4/`, section 309.
         # 63 since `work/ir-archive-raw/derived/`, todo-later 1.3.
-        self.assertEqual(len(rows), 64)
+        self.assertEqual(len(rows), 67)
         self.assertEqual(len(dict(rows)), 64, 'a duplicated path would make a query ambiguous')
         self.assertNotIn('unseen', dict(rows), 'the status legend is not an artefact')
 
