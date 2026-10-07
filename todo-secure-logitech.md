@@ -79,9 +79,11 @@ is the 650's test setup cut down to its device limit.
 
 ## 4. Everything else only the services hold
 
+Logitech's learning service, which names the family of a learned code, was dropped on 7 October 2026: a
+learned code is played back as it was captured and needs no name, whatever remote it was learned from.
+
 - [ ] 4.1 The latest firmware for every bench model, from the update service, filed in the lab where it is missing
-- [ ] 4.2 Check the product table, product capabilities and settings are captured for every bench model
-- [ ] 4.3 Logitech's learning service: its answers, family and code, for the raw infrared captures in the lab, as the reference a local replacement will be checked against
+- [ ] 4.2 Per bench model, the lists the service hands out beside the product table: its capabilities (captured for the 600 only) and its button list (the capture holds no list), all six models; settings are already captured for each
 
 ## 5. What lands in this repository
 
