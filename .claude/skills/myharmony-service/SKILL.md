@@ -361,6 +361,18 @@ the service.
 Writes made the same day on the others, for scale: the 650 entry 3 add calls, the 700 entry 2, the
 350 entry 5, the 300 entry 1.
 
+### A stated quota that may be what was hit
+
+`GetProductCapabilities2`, read on 7 October 2026 for all six bench models, states
+`NumOfAddDevice: 100` on every one of them, beside `MaxDevicesPerTimePeriod` and `MinutesPerTimePeriod`,
+both null. MyHarmony's source never reads the field, so whatever enforces it is on the server. **A
+lifetime budget of 100 device adds per remote would explain both blocks**: the spare Harmony One's serial
+had carried the August calibration and favourites campaigns before this harvest, and the Harmony 525's
+serial was registered for sixteen entries with devices migrated onto them. **Not established**: nobody
+has counted the adds either serial received, and the field may mean something else. If it holds, every
+remaining serial has a budget already partly spent, and the count of adds per serial is the number to
+keep.
+
 ### The rules this leaves
 
 * **Know whose serial an entry carries before writing to it**, by the comparison above, and treat a
