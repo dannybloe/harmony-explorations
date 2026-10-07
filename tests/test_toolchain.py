@@ -1352,7 +1352,7 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
         # 60 since `work/plan-4.3.4/`, section 309.
         # 63 since `work/ir-archive-raw/derived/`, todo-later 1.3.
         self.assertEqual(len(rows), 67)
-        self.assertEqual(len(dict(rows)), 64, 'a duplicated path would make a query ambiguous')
+        self.assertEqual(len(dict(rows)), 67, 'a duplicated path would make a query ambiguous')
         self.assertNotIn('unseen', dict(rows), 'the status legend is not an artefact')
 
     def test_a_query_is_answered_by_ancestors_and_by_descendants(self):
