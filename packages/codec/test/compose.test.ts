@@ -2637,8 +2637,10 @@ test('an activity row composed on a Harmony 650, 600 and 700 takes the bottom ro
       // Its one page holds two activities, so the row needs a new page, section 316, and a page of one
       // activity draws the working screens' one command background, which no working screen page there
       // draws: every one holds three commands or four. Until section 316 this refused any full page.
+      // Since section 334 the picture is looked up by its content in the monochrome look rather than
+      // through a working screen, and that route finds it missing too, so the refusal names the look.
       assert.throws(() => composeActivityMenuRow(before, built.label, built.set),
-                    /last page is full, and no working screen page holding one command or none/);
+                    /last page is full, and the configuration holds no picture a page of one activity draws in the monochrome look/);
       continue;
     }
     composed += 1;

@@ -779,6 +779,32 @@ only the device mode's measured pair is answered and any other is refused. Which
 named follows no index, lower on seven compiles and higher on the six power hold ones, so it is read off
 the activity menu.
 
+**An arch 14 menu page, built**, section 334, on the 79 menus and 164 pages of the thirteen compiles: 40
+activity device lists of 75 pages, 13 idle ones of 24, 13 two row lists of 43 and 13 activity menus of
+22. `fourSlotMenuChrome` builds a kind's chrome and `checkFourSlotMenuPages` checks every page of every
+menu against the page built from its number, its menu's page count, its fonts and its labels:
+
+| what | rule | agree |
+|---|---|---|
+| kind | the idle device list is the corner list the activity menu's `0x99` entry reaches: `0x72` on `(record << 8) \| counter`, and that record's case for the counter's starting value queues `0x7E` on it; every other corner list is an activity's own; a list whose first page is two row is the two row list | the route lands on a corner list on 13 of 13 compiles; the kind of the other 66 menus follows from it |
+| background | corner lists: section 330's single picture on a page holding one device, its crossed one for more; two row list: the look's `rows` picture on every page, which is the crossed one on both colour looks and one of its own on the monochrome look; activity menu: `activitiesSingle` for one activity, `activitiesFull` for two | 164 of 164 |
+| queued program | corner lists: the device mode pages' battery program; two row list: none; activity menu: the battery program drawing the look's `activitiesBattery` icon, base slot 11's second such program on the colour looks and the first on the monochrome, which is the device pages' own there | 164 of 164 |
+| bars | as section 330, the top bar after the queue, the bottom bar after the labels | 164 of 164 |
+| title | "Devices" on every device list, "Activities" on the activity menu, at 0, 2 in the font the page selects | 164 of 164 |
+| counter | only where the menu has two pages or more; `n`, `/`, `m` at x `0x6A`, `0x71`, `0x76`, or `0x63`, `0x6A`, `0x6F` on the two row list, y 2 | 164 of 164 |
+| labels | corner lists: section 285's places; rows: centred, y 35 and 79; one line on every row page; as many places as the page's own list binds | 164 of 164 |
+| bottom word | "Activities" on the idle list, "Activity" on an activity's own list and on the two row list, "Devices" on the activity menu; the first font of the title's size that spells it, as section 330, centred, y 114 | 164 of 164 |
+| font selects | one only where the font changes | 164 of 164 |
+| texts by reference | every text a menu page draws by reference points at the lowest addressed inline copy of the same glyph codes in the configuration, and every text drawn inline is that copy | 164 of 164 |
+| page record | six bytes, `u24 list; u24 program` | 164 of 164 |
+
+The fonts are read off the configuration and not built, `todo-compile-650.md` 6.2.12. A composed page
+draws a counter and a label inline where the compiler would point at an existing copy, the kept
+difference of sections 294 and 312, so a composed configuration passes every row but the last but one.
+Refused rather than guessed: a two line label on a row, a tenth page, a page whose picture the
+configuration does not hold, which is the activity menu's page of one activity on `calibration_h600`,
+and the European skins 69, 74 and 75, whose look section 330 refuses.
+
 **Nothing enters the two row list**, section 326, on the thirteen arch 14 compiles: no `0x7E` anywhere
 in the container names its mode, counted as the bytes `lo hi 0x7E` over the whole file, 0 on every
 compile against at least one for every corner list and every row menu, 232 lists; no event map value
@@ -826,8 +852,9 @@ list's**, in the font the device mode pages draw their counters in, 7 menus of 7
 page of one activity holds it on scans 8 and 2, label centred at y 35, and draws **the picture the
 activities' working screens draw on a page of one command or none**, 4 of 4, which is neither its menu's
 first page picture nor any device list page's; a full page after the first draws the first page's
-picture, 5 of 5. A page added to a full menu copies the last page's chrome; a menu of one page gains the
-counter right after its title.
+picture, 5 of 5. A page added to a full menu copies the last page's chrome<!--superseded-->; since section
+334 it is built, as every page of the menu is checked to be, and a menu of one page gains the counter
+right after its title.
 
 **Every arch 14 activity's enter list opens with its own start up screen**, "Starting" and its name,
 then writes 1 into the variable every command's delay step tests, and ends by writing 0 into it, 13 of
@@ -935,7 +962,8 @@ configurations Logitech compiled: no counter on 7 of 7 one page corner lists, al
 tag `0x99` and `0x73` under tag `0x2D` at one page and at several, 53 of 53, so no page turn binding
 changes with the page count. A corner page holding one item draws the device mode pages' one item
 background, 7 of 7, and every two row page after the first its list's first page's picture, 30 of 30. A page added to a full list copies its list's last page's
-chrome and holds the item in the first place; a list of one page gains the counter right after its title.
+chrome<!--superseded--> until section 334, which builds it instead, and holds the item in the first place;
+a list of one page gains the counter right after its title.
 
 **A device mode's own list binds every key**: 47 entries on all 21 device modes, the four corner scans
 bound to nothing, one `0x72` and one `0x73`, and every other key an action list or nothing, 547 of 547

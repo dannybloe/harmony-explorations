@@ -333,7 +333,12 @@ produce a config the remote accepts and mishandles.
   same way and is not a two row device list**, section 316: its counter sits at the corner lists' x,
   and its new page draws the working screens' one command picture rather than its last page's, so a
   composer that took both from the device list's two row rule would write a page that parses and draws
-  the counter and background no Logitech compile has. `FourSlotNewPage` is where the two differ. Two refusals are deliberate: a
+  the counter and background no Logitech compile has. **Since section 334 no menu page is copied off its
+  menu**: `fourSlotMenuChrome` builds each kind's chrome, title, bottom word, counter position, queued
+  program and the background by content per look, and a grown or opened page is checked against that
+  builder before and after, which is what turns "the last page looked right" into a refusal when it does
+  not. A page whose picture the configuration does not hold is refused, since a configuration holds a
+  picture only where one of its own programs draws it. Two refusals are deliberate: a
   tenth page, whose counter would be two digits drawn further left, and a label wider than sixty pixels,
   the composer's own limit, the widest compiled corner label being 59. **Restating a counter digit can
   take a digit other screens borrow**: the compiler draws a string inline once and points every equal

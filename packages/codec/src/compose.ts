@@ -3412,6 +3412,25 @@ interface DevicePageLook {
   bottomBar: string;
   /** The battery icon the queued program draws first, which is what ties that program to this look. */
   battery: string;
+  /**
+   * The menus' own pictures, section 334, `todo-compile-650.md` 6.2.9: the background every page of the
+   * two row device list draws, whatever it holds; the activity menu's background on a page holding two
+   * activities and on one holding one; and the battery icon the program the activity menu queues draws.
+   * Measured on the thirteen compiles: the two row list's on all 43 pages of its 13 lists, whether they
+   * hold one device or two, the activity menu's full page on all 18 of its pages holding two, and its
+   * page of one activity on the 4 there are,
+   * one per look: `h650_config_region`'s, the Harmony 700 pair's, and `h600_config`'s, which draws the
+   * 2021 and 2023 colour look's one item background on a monochrome remote, the picture its activities'
+   * own working screens draw too. A look's menu pictures need not all be held: a configuration holds a
+   * picture only where one of its programs draws it, so one whose programs draw no page of one activity,
+   * neither a menu page nor an activity's working screen, has no such picture and a page needing it is
+   * refused. Some pictures are drawn only by programs no mode page reaches, the battery icons among
+   * them, which is why it is programs and not pages.
+   */
+  rows: string;
+  activitiesFull: string;
+  activitiesSingle: string;
+  activitiesBattery: string;
 }
 
 const DEVICE_PAGE_LOOKS: readonly DevicePageLook[] = [
@@ -3419,16 +3438,22 @@ const DEVICE_PAGE_LOOKS: readonly DevicePageLook[] = [
     name: 'the colour look of 2026', skins: [66, 72],
     single: '0061c06666b425f1', crossed: '45888f139bd13f9c',
     topBar: 'e247f3ff422472de', bottomBar: '9e81b982b33e2ff5', battery: 'c7d320f981025b68',
+    rows: '45888f139bd13f9c', activitiesFull: '711cbbb1a44ca656', activitiesSingle: '21bc4747e696eba8',
+    activitiesBattery: '4c42bdc959b5ad48',
   },
   {
     name: 'the colour look of 2021 and 2023', skins: [66],
     single: 'fb5f49a2ee63c0f9', crossed: '59a6f04d6ba0e90a',
     topBar: 'e247f3ff422472de', bottomBar: '564e0ea2da45a0fd', battery: '6a7beeb149ddb000',
+    rows: '59a6f04d6ba0e90a', activitiesFull: '6ed840035d2f19ba', activitiesSingle: 'adc399032d1d41b0',
+    activitiesBattery: '4c42bdc959b5ad48',
   },
   {
     name: 'the monochrome look', skins: [71, 73],
     single: 'b632fecee357d2c7', crossed: '7e1f839276f704c9',
     topBar: 'e247f3ff422472de', bottomBar: '564e0ea2da45a0fd', battery: '6a7beeb149ddb000',
+    rows: 'c442f1b3a81999ec', activitiesFull: '18a044e60240cbd1', activitiesSingle: 'fb5f49a2ee63c0f9',
+    activitiesBattery: '6a7beeb149ddb000',
   },
 ];
 
@@ -3494,25 +3519,90 @@ function picturesByContent(c: Container): Map<string, number[]> {
  * between base slot 11's order and the picture bank's content.
  */
 function batteryProgram(c: Container, look: DevicePageLook, pictures: Map<string, number[]>): number {
+  const index = batteryPrograms(c)[0];
+  if (index === undefined) throw new ComposeError('no base slot 11 program switches on the battery, so a device page has nothing to queue');
+  if (!programDraws(c, index, pictures.get(look.battery) ?? [])) {
+    throw new ComposeError(`base slot 11 entry ${index}, the first battery program, does not draw ${look.name}'s battery icon`);
+  }
+  return index;
+}
+
+/**
+ * Every base slot 11 entry that no base slot 14 case names and that opens with a switch on the battery,
+ * state variable 17, in table order: two on the Harmony 600's compiles and three on the others', each
+ * drawing one common picture and one battery icon of its own, section 334. `batteryProgram` takes the
+ * first and the activity menu's queued program is the one drawing its look's `activitiesBattery`.
+ */
+function batteryPrograms(c: Container): number[] {
   const table = c.pointerArray(archSlot(c.architecture as number, SCREEN_TABLE_SLOT)) ?? [];
   const named = new Set<number>();
   for (const map of valueMaps(c) ?? []) {
     for (const [, target] of map.entries) named.add(target);
     for (const [, , target] of map.ranges) named.add(target);
   }
-  const index = table.findIndex((address) => {
-    if (named.has(address)) return false;
+  const out: number[] = [];
+  table.forEach((address, index) => {
+    if (named.has(address)) return;
     const first = screenProgram(c, address)?.[0];
-    return first?.opcode === SCREEN_SWITCH_ONE_BYTE && first.operands[0] === BATTERY_STATE_VARIABLE;
+    if (first?.opcode === SCREEN_SWITCH_ONE_BYTE && first.operands[0] === BATTERY_STATE_VARIABLE) out.push(index);
   });
-  if (index < 0) throw new ComposeError('no base slot 11 program switches on the battery, so a device page has nothing to queue');
-  const icons = new Set(pictures.get(look.battery) ?? []);
-  const draws = [...reachablePrograms(c, [table[index] as number]).values()].some((program) =>
+  return out;
+}
+
+/** Whether base slot 11 entry `index`, or a program it reaches, draws one of the pictures at `addresses`. */
+function programDraws(c: Container, index: number, addresses: readonly number[]): boolean {
+  const address = c.pointerArray(archSlot(c.architecture as number, SCREEN_TABLE_SLOT))?.[index];
+  if (address === undefined) return false;
+  const icons = new Set(addresses);
+  return [...reachablePrograms(c, [address]).values()].some((program) =>
     program.some((one) => icons.has(pictureReference(one) ?? -1)));
-  if (!draws) {
-    throw new ComposeError(`base slot 11 entry ${index}, the first battery program, does not draw ${look.name}'s battery icon`);
+}
+
+/**
+ * A word on a screen's bottom line, as the compiler draws it on every device mode page and every menu
+ * page of the thirteen compiles: in the first font of the title's size that spells it, which is font 1
+ * on all thirteen, centred, `floor((128 - width) / 2)`. "Back" at 49, "Activities" at 35, "Activity" at
+ * 39 and "Devices" at 40. One copy for the device mode chrome and the menus' since section 334.
+ */
+function bottomWord(c: Container, word: string): { font: number; codes: number[]; x: number } {
+  const map = characterMap(c);
+  if (map === undefined) throw new ComposeError('the config draws no text this can spell from');
+  const sets = fontSets(c) ?? [];
+  const titleRung = LABEL_SIZES.indexOf(TITLE_SIZE);
+  for (const font of fontsBySize(c, map).get(titleRung) ?? []) {
+    let codes: number[];
+    try {
+      codes = codesFor(map, c, sets[font] as FontSet, word, font);
+    } catch (error) {
+      if (!(error instanceof ComposeError)) throw error;
+      continue;
+    }
+    return { font, codes, x: Math.floor((FOUR_SLOT_SCREEN_WIDTH - textWidth(c, sets[font] as FontSet, codes)) / 2) };
   }
-  return index;
+  throw new ComposeError(`no font of the title's size spells '${word}'`);
+}
+
+/**
+ * Where the compiler keeps the one copy of each text that other texts point at: for every run of glyph
+ * codes some program draws inline, the lowest address it is drawn inline at, keyed by the codes joined.
+ * Every text a menu page or a device mode page of the thirteen compiles draws by reference points at
+ * exactly this copy, and every one drawn inline is this copy, section 334, so a page built here points
+ * at it and a configuration's own pages are checked against it. The menu pages' half is checked, 164
+ * of 164; the device mode pages' half was measured by that section's review, 4613 texts by reference
+ * and 2336 inline on 639 pages with no exception, and only their bottom word is checked.
+ */
+function inlineHomes(c: Container): Map<string, number> {
+  const homes = new Map<string, number>();
+  for (const [, program] of reachablePrograms(c)) {
+    for (const one of program) {
+      if (one.opcode !== OP_TEXT_INLINE || one.glyphs === undefined) continue;
+      const key = [...one.glyphs].join(',');
+      const at = c.flashBase + one.start + 3;
+      const was = homes.get(key);
+      if (was === undefined || at < was) homes.set(key, at);
+    }
+  }
+  return homes;
 }
 
 /**
@@ -3546,34 +3636,13 @@ export function deviceModeChrome(c: Container): DeviceModeChrome {
     return found[0] as number;
   };
 
-  // The bottom word, in the first font of the title's size that spells it.
-  const map = characterMap(c);
-  if (map === undefined) throw new ComposeError('the config draws no text this can spell from');
-  const sets = fontSets(c) ?? [];
-  const titleRung = LABEL_SIZES.indexOf(TITLE_SIZE);
-  let backFont: number | undefined;
-  let backCodes: number[] = [];
-  for (const font of fontsBySize(c, map).get(titleRung) ?? []) {
-    try {
-      backCodes = codesFor(map, c, sets[font] as FontSet, DEVICE_PAGE_BACK_WORD, font);
-      backFont = font;
-      break;
-    } catch (error) {
-      if (!(error instanceof ComposeError)) throw error;
-    }
-  }
-  if (backFont === undefined) throw new ComposeError(`no font of the title's size spells '${DEVICE_PAGE_BACK_WORD}'`);
-  const backX = Math.floor((FOUR_SLOT_SCREEN_WIDTH - textWidth(c, sets[backFont] as FontSet, backCodes)) / 2);
-  // The inline copy to point at: the lowest addressed run of exactly these codes any program draws inline.
-  let backHome: number | undefined;
-  const want = backCodes.join(',');
-  for (const [, program] of reachablePrograms(c)) {
-    for (const instruction of program) {
-      if (instruction.opcode !== OP_TEXT_INLINE || [...(instruction.glyphs ?? [])].join(',') !== want) continue;
-      const at = c.flashBase + instruction.start + 3;
-      if (backHome === undefined || at < backHome) backHome = at;
-    }
-  }
+  // The bottom word, in the first font of the title's size that spells it, and the inline copy to point
+  // at: the lowest addressed run of exactly these codes any program draws inline.
+  const back = bottomWord(c, DEVICE_PAGE_BACK_WORD);
+  const backFont = back.font;
+  const backCodes = back.codes;
+  const backX = back.x;
+  const backHome = inlineHomes(c).get(backCodes.join(','));
 
   const chrome: DeviceModeChrome = {
     look: look.name,
@@ -3871,36 +3940,49 @@ function menuLayout(
 
 /**
  * One more item on an arch 14 menu's last page: the page's list and its pool copy each gain the
- * buttons the item is bound to, the label goes in above the page's closing bar, and a page that held
- * one item may take the background its menu's full pages draw. The step both arch 14 menus share,
- * the device list and the activity menu, per decision 17: two builders, and the steps they have in
- * common written once.
+ * buttons the item is bound to, the label goes in above the page's closing bar, and the page's background
+ * becomes the one its kind draws for the places it now holds. The step both arch 14 menus share, the
+ * device list and the activity menu, per decision 17: two builders, and the steps they have in common
+ * written once.
  *
  * `firstRowList` is the first of the row lists the caller has already put in base slot 10, one per
  * button bound on the page and another per button on the copy, **in that order**, copy first: the
  * item takes the next corner, one list, or both buttons of the next row, two. What those lists run is
  * the caller's, which is the whole difference between the two menus.
  *
- * `background` says when the one item page's picture is replaced. `'corners'` is the device list's
- * rule, where a two row list's one device page already draws its full pages' picture, on both lists
- * that have such a page, the 650's and `calibration_h600`'s; `'both'` replaces it in either layout,
- * which is the activity menu's rule, only the two row layout occurring there: a page holding one
- * activity draws a picture the activities' own screens draw too, 3 of 3 on the four arch 14 user
- * configurations, and its full pages one picture of the menu's own, drawn by no page outside it, 4
- * menus of 4, section 289.
+ * **The page is the built one before and after**, section 334, `todo-compile-650.md` 6.2.9: the last page
+ * has to be the page `menuPageParts` builds from what it holds, or the growth is refused before anything
+ * moves, and the grown page has to be the one built from what it holds then. The label goes where the
+ * builder places it, and the background is the built one, `fourSlotMenuChrome`: a corner list's crossed
+ * picture once it holds two devices, a two row list's own picture whatever it holds, and the activity
+ * menu's full page picture once it holds two activities. Until then that picture was taken off one of
+ * the menu's full pages, so a menu with none was refused; now it is located by content, and a
+ * configuration that does not hold it, which is one whose activity menu has never had a full page, is
+ * still refused, because a configuration holds a picture only where one of its programs draws it.
  */
 function growFourSlotMenu(
-  start: Container, menu: number, firstRowList: number, codes: readonly number[], font: number,
-  background: 'corners' | 'both',
+  start: Container, menu: number, kind: FourSlotMenuKind, firstRowList: number, codes: readonly number[],
+  font: number,
 ): { container: Container; bound: number } {
   let current = start;
   let nextRow = firstRowList;
   const page = modeRecords(current)?.[menu]?.pages.at(-1);
+  const pages = modeRecords(current)?.[menu]?.pages.length ?? 0;
   const list = page === undefined ? undefined : taggedList(current, page.list);
   if (page === undefined || list === undefined) throw new ComposeError('a menu lost its page');
   const layout = menuLayout(current, list.entries);
   if (layout === undefined) throw new ComposeError('a menu page changed layout');
+  if (layout.rows !== menuOnRows(kind)) throw new ComposeError(`menu ${menu} is not a ${kind}`);
   if (layout.used >= layout.capacity) throw new ComposeError(`menu ${menu}'s last page is full`);
+  // The page as it is has to be the built one, so the growth below starts from a page the builder owns.
+  const before = menuPageDifference(current, fourSlotMenuChrome(current, kind), menu, pages - 1);
+  if (before !== undefined) throw new ComposeError(`menu ${menu}'s last page is not the page built for it: ${before}`);
+  // Refused before anything moves: a page whose new place count needs a picture the configuration lacks.
+  const wanted = fourSlotMenuChrome(current, kind);
+  if ((layout.used + 1 > 1 ? wanted.several : wanted.one) === undefined) {
+    throw new ComposeError(`menu ${menu} would hold ${layout.used + 1} places on a page, and the configuration `
+      + `holds no picture a ${kind} page of that many draws`);
+  }
   const entries = list.entries.length;
   // The scans the new item is bound to: the next corner, or both buttons of the next row.
   const scans = layout.rows
@@ -3942,39 +4024,35 @@ function growFourSlotMenu(
   if (target === undefined || program === undefined || bar === undefined || bar < 0) {
     throw new ComposeError('a menu page program has no closing bar to draw above');
   }
-  const labelSet = (fontSets(current) ?? [])[font];
-  if (labelSet === undefined) throw new ComposeError('the label font stopped reading');
-  const wide = textWidth(current, labelSet, codes);
-  const item = FOUR_SLOT_ITEMS[layout.used] as (typeof FOUR_SLOT_ITEMS)[number];
-  const [x, y] = layout.rows
-    ? [Math.floor((FOUR_SLOT_SCREEN_WIDTH - wide) / 2), TWO_ROW_LABEL_Y[layout.used] as number]
-    : [item.column === 0 ? FOUR_SLOT_LEFT_X : FOUR_SLOT_RIGHT_END - wide, FOUR_SLOT_LABEL_Y[item.row]];
+  // Where the builder places the label, one line in the caller's font.
+  const placed = menuLabelPlaces(current, layout.rows, layout.used, { font, lines: [[...codes]] })[0];
+  if (placed === undefined) throw new ComposeError('a label was placed nowhere');
   // A font select only where the page has another font in effect at the bar: the compiler never
   // selects the font already selected, 0 of the 820 selects on the four arch 14 configurations.
   const inEffect = program.slice(0, bar).findLast((one) => one.opcode === OP_FONT)?.operands[0];
   const drawn = new Uint8Array([
     ...(inEffect === font ? [] : [OP_FONT, font]),
-    OP_TEXT_INLINE, x, y, ...codes, 0,
+    OP_TEXT_INLINE, placed.x, placed.y, ...codes, 0,
   ]);
   const insertAt = (program[bar] as ScreenInstruction).start;
   const programHole = relocate(current, insertAt, drawn.length);
   programHole.bytes.set(drawn, insertAt);
   current = parse(programHole.bytes);
 
-  if (layout.used === 1 && (background === 'both' || !layout.rows)) {
-    // Read both after the insertion, so neither address is stale by it.
-    const full = modeRecords(current)?.[menu]?.pages.find((one) =>
-      (taggedList(current, one.list)?.entries.length ?? 0) === FOUR_SLOT_ITEMS.length);
-    const fullFirst = full === undefined ? undefined : screenProgram(current, full.program)?.[0];
-    const crossed = fullFirst?.opcode === OP_IMAGE ? bitmapReference(fullFirst) : undefined;
-    const last = modeRecords(current)?.[menu]?.pages.at(-1);
-    const lastFirst = last === undefined ? undefined : screenProgram(current, last.program)?.[0];
-    if (crossed === undefined || lastFirst?.opcode !== OP_IMAGE) {
-      throw new ComposeError(`menu ${menu} has no full page to take the background from`);
-    }
-    current.blob.set(new Writer(3).u24(crossed).bytes, lastFirst.start + lastFirst.length - 3);
+  // The background the page draws now, built, and read after the insertion so no address is stale.
+  const chrome = fourSlotMenuChrome(current, kind);
+  const want = layout.used + 1 > 1 ? chrome.several : chrome.one;
+  const last = modeRecords(current)?.[menu]?.pages.at(-1);
+  const first = last === undefined ? undefined : screenProgram(current, last.program)?.[0];
+  if (want === undefined || first?.opcode !== OP_IMAGE) {
+    throw new ComposeError(`menu ${menu}'s grown page has no background to draw`);
+  }
+  if (bitmapReference(first) !== want) {
+    current.blob.set(new Writer(3).u24(want).bytes, first.start + first.length - 3);
     current = parse(current.blob);
   }
+  const after = menuPageDifference(current, fourSlotMenuChrome(current, kind), menu, pages - 1);
+  if (after !== undefined) throw new ComposeError(`menu ${menu}'s grown page is not the page built for it: ${after}`);
   return { container: current, bound: nextRow - firstRowList };
 }
 
@@ -3993,87 +4071,49 @@ const TWO_ROW_COUNTER_X: readonly [number, number, number] = [0x63, 0x6a, 0x6f];
 const FOUR_SLOT_MAX_PAGES = 9;
 
 /**
- * The three x positions a **device list's** page counter sits at, by its layout. The activity menu is
- * the exception that makes this a device list rule rather than a layout rule: it is a two row layout
- * and draws its counter where the corner lists do, `FOUR_SLOT_COUNTER_X`, on all 16 pages of the 7
- * multi page activity menus Logitech compiled for the Harmony 600, 650 and 700 here, section 316.
+ * The texts a page opened here draws by reference where the compiler has drawn the same codes before,
+ * the title and the bottom word, and the ones it draws inline, the counter and the label. The two
+ * inline kinds are section 294's and 312's kept difference: `paginateFourSlot` restates every counter
+ * through `pageTexts`, which keeps the borrowers of an inline text it changes, and a new label has no
+ * copy anywhere to point at.
  */
-function fourSlotCounterX(rows: boolean): readonly [number, number, number] {
-  return rows ? TWO_ROW_COUNTER_X : FOUR_SLOT_COUNTER_X;
-}
-
-/**
- * What differs between the two arch 14 menus when one opens a page, and nothing else does: where the
- * counter sits, which font it falls back on where no page of the menu draws one yet, and which picture
- * a page holding one item draws. The step itself, `openFourSlotMenuPage`, is shared, decision 17.
- *
- * `background` is asked **after** every insertion the step makes below the page, since a picture
- * address read earlier is stale by them; it gets the menu's last full page's own picture, which is the
- * answer on a two row device list and not on the activity menu.
- */
-interface FourSlotNewPage {
-  counterX: readonly [number, number, number];
-  counterDefault: number;
-  background: (now: Container, lastPicture: number | undefined) => number | undefined;
-}
-
-/**
- * The opcodes a device list page's own chrome is made of, around its counter and its labels: the
- * background, the queued per mode instruction a corner page carries, the two bars, font selects and
- * texts, and the end. Anything else in the part a new page copies is refused rather than copied,
- * because nothing has said whether it holds an address `copiedInstruction` would leave stale.
- */
-const FOUR_SLOT_CHROME_OPCODES: ReadonlySet<number> = new Set([
-  OP_IMAGE, SCREEN_QUEUE_INSTRUCTION, SCREEN_DRAW_IMAGE_AT, OP_FONT, OP_TEXT_AT, OP_TEXT_INLINE, OP_END,
-]);
+const NEW_PAGE_POINTED: ReadonlySet<string> = new Set(['title', 'bottom']);
 
 /**
  * A new last page on an arch 14 menu whose last page is full, holding the one item being added, and
  * every page of the menu then counting to the new total: a device list's, section 312, and the
- * activity menu's, section 316, whose differences are the caller's `FourSlotNewPage`. The arch 14
- * counterpart of the Harmony One's `composeMenuPage`, and **the page is the one Logitech's compiler
- * writes**: composed on a configuration whose lists are full, the new pages are instruction for
- * instruction the pages the compiler wrote on a configuration with one device more, once font numbers
- * are read as roles and a label as its place, which `compose.test.ts` checks against
- * `h650_config_region` and `calibration_h600`. Two differences are kept, as section 294 kept them: the
- * composed texts are inline where the compiler points at an equal string elsewhere, and each binding
- * runs a row list of its own, appended to base slot 10 rather than numbered in stored order.
+ * activity menu's, section 316. The arch 14 counterpart of the Harmony One's `composeMenuPage`, and
+ * **the page is built**, section 334, `todo-compile-650.md` 6.2.9: `menuPageParts` for the menu's kind,
+ * which is every page of every menu of the thirteen compiles, `checkFourSlotMenuPages`. Until then the
+ * page copied its chrome, the instructions above its title and below its labels, off the menu's own last
+ * page.
  *
- * What a new page is, read off those configurations rather than assumed:
+ * What is built, by kind, `fourSlotMenuChrome`: the background of a page holding one place, the device
+ * mode pages' one item picture on a corner device list, the two row list's own picture, or the activity
+ * menu's page of one activity, section 316; the queued battery program or none; the bars; the title and
+ * the bottom word, "Activities" on the idle device list, "Activity" on an activity's own and on the two
+ * row list, section 294, and "Devices" on the activity menu; the counter at the kind's positions, in the
+ * menu's own counter font or the caller's `counterDefault` where no page of the menu draws one; the item
+ * in the first place, top left at x 3 and y 40 or the top row's two buttons with the label centred at
+ * y 35; and the six byte page record, the list then the program. The title font is read off the menu's
+ * last page, and the label's font is the caller's, both `todo-compile-650.md` 6.2.12.
  *
- * * **its chrome is its menu's own**, copied from the menu's last page: background, the queued per
- *   mode instruction on a corner page and none on a two row one, the top bar, the title, then after
- *   the labels the bottom bar and its word, which is "Activities" on the idle list and "Activity" on
- *   each activity's own, section 294. So the copy is per menu and not from one template;
- * * **a corner page holding one item draws the one item background**, the device mode pages' own,
- *   and a two row device list page draws the picture every page of its list draws, whatever it holds,
- *   section 285. The activity menu is two row and is the exception: its page of one activity draws the
- *   activities' working screens' one command background, section 316. Which is the caller's say;
- * * **the item takes the first place**: top left at x 3 and y 40 on a corner page, the top row's two
- *   buttons and a centred label at y 35 on a two row one, each binding running a row list of its own
- *   and the page's pool copy others, as `growFourSlotMenu` binds a grown item;
- * * **the counter is on every page of a menu of several pages and on no page of a menu of one**: all
- *   four one page device lists of `h600_config` and three of `calibration_h600` draw none, and all 43
- *   pages of the 20 multi page lists draw `n/m` in one font. So the new page draws its own, and
- *   `paginateFourSlot` restates every other page's.
- *
- * **What does not change is as much a measurement as what does.** A corner list's own record list is
- * `0x72` under tag `0x99` and `0x73` under tag `0x2D` on its 7 one page and 15 multi page instances
- * across the five configurations, and a two row list's is the `0x72` alone on all 5, none of which
- * has one page. So nothing like the Harmony One's deadened page turn keys has to be undone here,
- * section 275's rule being that model's; how an arch 14 remote turns a page is the firmware's and
- * unread.
+ * **What does not change is as much a measurement as what does.** A menu's own record list is the same
+ * on one page and on several, sections 312 and 316, so nothing like the Harmony One's deadened page turn
+ * keys is undone here, section 275's rule being that model's; how an arch 14 remote turns a page is the
+ * firmware's and unread.
  *
  * The insertions, each leaving the container parseable, in `composeMenuPage`'s order and for its
  * reasons: the pool copy right after the last page's copy, since copies pair with pages by position,
  * section 69; the list at the end of the page list run; the entry's count and a placeholder pointer;
  * the program and its six byte page record right after the last page's record, where the compiler
  * keeps them, which is the entry's own offset; and the swap. Every address the block embeds is read
- * after the last insertion below it, and `paging.background` is asked for the background then too.
+ * after the last insertion below it. The last page is checked against the builder before anything
+ * moves, and every page of the menu after the counters are restated.
  */
 function openFourSlotMenuPage(
-  start: Container, menu: number, firstRowList: number, codes: readonly number[], font: number,
-  paging: FourSlotNewPage,
+  start: Container, menu: number, kind: FourSlotMenuKind, firstRowList: number, codes: readonly number[],
+  font: number, counterDefault: number,
 ): { container: Container; bound: number } {
   let current = start;
   const recordOf = (): ModeRecord => {
@@ -4087,6 +4127,7 @@ function openFourSlotMenuPage(
   if (last === undefined || lastList === undefined) throw new ComposeError(`menu ${menu} has no page`);
   const layout = menuLayout(current, lastList.entries);
   if (layout === undefined) throw new ComposeError(`menu ${menu}'s last page is neither arch 14 layout`);
+  if (layout.rows !== menuOnRows(kind)) throw new ComposeError(`menu ${menu} is not a ${kind}`);
   if (layout.used < layout.capacity) {
     throw new ComposeError(`menu ${menu}'s last page has room, so the item goes on it and not on a new page`);
   }
@@ -4094,22 +4135,23 @@ function openFourSlotMenuPage(
   if (total > FOUR_SLOT_MAX_PAGES) {
     throw new ComposeError(`menu ${menu} would have ${total} pages, and a counter of two digits is not composed`);
   }
-  const counterX = paging.counterX;
+  // Before anything moves: the last page is the built one, and the configuration holds the picture a
+  // page of one place draws.
+  const startChrome = fourSlotMenuChrome(current, kind);
+  const was = menuPageDifference(current, startChrome, menu, before.pages.length - 1);
+  if (was !== undefined) throw new ComposeError(`menu ${menu}'s last page is not the page built for it: ${was}`);
+  if (startChrome.one === undefined) {
+    throw new ComposeError(`no picture here is the background a ${kind} page of one place draws in ${startChrome.look}`);
+  }
+  const titleFont = menuPageContent(current, kind, menu, before.pages.length - 1).titleFont;
   // The counter's font: the menu's own where a page already draws one, which on every configuration
   // here is also the device mode pages' counter font that the caller passes as the default, for the
   // device lists and for the 7 multi page activity menus alike, section 316.
-  let counterFont = paging.counterDefault;
+  let counterFont = counterDefault;
   for (const page of before.pages) {
-    const number = textAt(screenProgram(current, page.program) ?? [], counterX[0], FOUR_SLOT_TITLE_XY[1]);
+    const number = textAt(screenProgram(current, page.program) ?? [], startChrome.counterX[0], FOUR_SLOT_TITLE_XY[1]);
     if (number?.font !== undefined) { counterFont = number.font; break; }
   }
-  const map = characterMap(current);
-  if (map === undefined) throw new ComposeError('the config draws no text this can spell from');
-  const counterSet = (fontSets(current) ?? [])[counterFont];
-  if (counterSet === undefined) throw new ComposeError(`the config does not carry font ${counterFont}`);
-  // Spelled now, as codes: a code names a glyph by position and does not move with an insertion.
-  const counterCodes = [String(total), '/', String(total)].map((text) =>
-    codesFor(map, current, counterSet, text, counterFont));
 
   // The scans the item is bound to, the first place of the layout, and a list writer that hands each
   // binding the next row list, copy first and then the page's own, as `growFourSlotMenu` does.
@@ -4164,7 +4206,8 @@ function openFourSlotMenuPage(
   current = parse(entryHole.bytes);
 
   // 4. The block: the program, then the page record, at the entry's own offset, which is right after
-  // the last page's record on every arch 14 mode here. Everything it copies is read now.
+  // the last page's record on every arch 14 mode here. The page is built now, from the chrome located
+  // in the container as it is, so no address it embeds is stale.
   const record = recordOf();
   const lastReal = record.pages[record.pageCount - 2];
   const blockAt = current.blobOffsetOf(record.address);
@@ -4175,55 +4218,20 @@ function openFourSlotMenuPage(
   if (lastRealOff + lastReal.length !== blockAt) {
     throw new ComposeError(`menu ${menu}'s last page record does not end where its entry begins`);
   }
-  const program = screenProgram(current, lastReal.program) ?? [];
-  const title = textAt(program, ...FOUR_SLOT_TITLE_XY);
-  const bar = program.findLastIndex((one) => one.opcode === SCREEN_DRAW_IMAGE_AT);
-  if (title === undefined || bar <= title.index || program[0]?.opcode !== OP_IMAGE
-      || program.at(-1)?.opcode !== OP_END) {
-    throw new ComposeError(`menu ${menu}'s last page does not have the chrome a page is copied from`);
-  }
-  const unknown = program.find((one) => !FOUR_SLOT_CHROME_OPCODES.has(one.opcode));
-  if (unknown !== undefined) {
-    throw new ComposeError(`menu ${menu}'s last page draws opcode 0x${unknown.opcode.toString(16)}, `
-      + 'which a new page does not copy');
-  }
-  const head = program.slice(1, title.index + 1);
-  const tail = program.slice(bar);
-  const background = paging.background(current, bitmapReference(program[0] as ScreenInstruction));
-  if (background === undefined) {
-    throw new ComposeError(`no page here draws the background a new page of menu ${menu} needs`);
-  }
-  // The label, measured in the font table as it is now, since a set read before an insertion below
-  // it is stale by that insertion.
-  const labelSet = (fontSets(current) ?? [])[font];
-  if (labelSet === undefined) throw new ComposeError(`the config does not carry font ${font}`);
-  const wide = textWidth(current, labelSet, codes);
-  const [labelX, labelY] = layout.rows
-    ? [Math.floor((FOUR_SLOT_SCREEN_WIDTH - wide) / 2), TWO_ROW_LABEL_Y[0] as number]
-    : [FOUR_SLOT_LEFT_X, FOUR_SLOT_LABEL_Y[0]];
-  // The middle the copy leaves out is written fresh: the counter in its font, then the one label in
-  // the label font, a font being selected only where another is in effect, as the compiler does.
-  const titleFont = head.findLast((one) => one.opcode === OP_FONT)?.operands[0];
-  const middle: number[] = [];
-  if (counterFont !== titleFont) middle.push(OP_FONT, counterFont);
-  counterCodes.forEach((one, k) => middle.push(OP_TEXT_INLINE, counterX[k] as number, FOUR_SLOT_TITLE_XY[1], ...one, 0));
-  if (font !== counterFont) middle.push(OP_FONT, font);
-  middle.push(OP_TEXT_INLINE, labelX, labelY, ...codes, 0);
-  const first = program[0] as ScreenInstruction;
-  const programLength = first.length + middle.length
-    + [...head, ...tail].reduce((sum, one) => sum + one.length, 0);
-  const pageRecordLength = lastReal.length;
+  const parts = menuPageParts(current, fourSlotMenuChrome(current, kind), {
+    number: total, total, titleFont, counterFont, labels: [{ font, lines: [[...codes]] }],
+  });
+  const homes = inlineHomes(current);
+  const programLength = menuPageBytes(parts, homes, NEW_PAGE_POINTED, (address) => address).length;
+  const pageRecordLength = 6;
   const blockLength = programLength + pageRecordLength;
   const base = current.flashBase + blockAt;
   const shifted = (address: number): number => (address >= base ? address + blockLength : address);
   pageListOff += pageListOff >= blockAt ? blockLength : 0;
   const block = new Writer(blockLength);
-  block.u8(OP_IMAGE).u8(first.operands[0] as number).u8(first.operands[1] as number).u24(shifted(background));
-  for (const one of head) block.raw(copiedInstruction(current, one, shifted));
-  block.raw(new Uint8Array(middle));
-  for (const one of tail) block.raw(copiedInstruction(current, one, shifted));
-  // The page list has already been placed by step 2, so its address is final once this block moves
-  // it, which `pageListOff` has been carried through; the program is the block's own first byte.
+  block.raw(menuPageBytes(parts, homes, NEW_PAGE_POINTED, shifted));
+  // The page record: the list, which step 2 placed and this block's insertion moves by `blockLength`
+  // when it lies above, then the program, which is the block's own first byte.
   block.u24(current.flashBase + pageListOff).u24(base);
   if (block.bytes.length !== blockLength) {
     throw new ComposeError(`the new page came to ${block.bytes.length} bytes against ${blockLength}`);
@@ -4239,16 +4247,20 @@ function openFourSlotMenuPage(
   placed.blob.set(new Writer(3).u24(base + programLength).bytes, swapOff + 6 + 3 * (swapRecord.pageCount - 1));
 
   // 6. Every page counts to the new total, and the page that had none, a menu's only page, gains one.
-  return {
-    container: paginateFourSlot(parse(placed.blob), menu, counterX, counterFont),
-    bound: nextRow - firstRowList,
-  };
+  // Then every page of the menu is the page built for it, the new one and the restated ones alike.
+  const paged = paginateFourSlot(parse(placed.blob), menu, startChrome.counterX, counterFont);
+  const after = fourSlotMenuChrome(paged, kind);
+  for (let index = 0; index < total; index += 1) {
+    const difference = menuPageDifference(paged, after, menu, index);
+    if (difference !== undefined) throw new ComposeError(`menu ${menu}'s page ${index + 1} is not the page built for it: ${difference}`);
+  }
+  return { container: paged, bound: nextRow - firstRowList };
 }
 
 /**
  * Make an arch 14 menu's page counters agree with its page count: every page draws `n/m` on the
  * title's line, its own number and the total, at the three positions `x` the caller states, which are
- * per menu and not per layout, `FourSlotNewPage`. **Arch 14's whole paging is the counter**, where the
+ * per menu and not per layout, `fourSlotMenuChrome`'s `counterX`. **Arch 14's whole paging is the counter**, where the
  * Harmony One's `paginate` also restates a header total and undeadens two keys: an arch 14 page carries
  * its own chrome and calls no header, and a device list's record list is the same whatever its page
  * count, `openFourSlotMenuPage`, as the activity menu's is, section 316.
@@ -4308,6 +4320,458 @@ function paginateFourSlot(
     t.insert(after.start + after.length, bytes);
   }
   return t.current;
+}
+
+/*
+ * ---- An arch 14 menu page, built, section 334 ----
+ *
+ * `todo-compile-650.md` 6.2.9. Until here a menu that grew took its new page's chrome off its own last
+ * page, the instructions above the title and below the labels copied, and a page that grew from one item
+ * to two took its background off one of the menu's full pages. Both are built now, the way section 330
+ * built a device mode page's: the pictures by content per look, the queued program by the battery icon
+ * it draws, the title and the bottom word by the menu's kind, the counter and the labels by the rules
+ * sections 285, 312 and 316 measured, and the page record as six bytes. Every page of every menu of the
+ * thirteen compiles is then the built page, `checkFourSlotMenuPages`, and a grown or opened page is
+ * checked against the builder before it is returned.
+ *
+ * What is still read off the configuration: the **fonts** of the title, the counter and each label, which
+ * are the configuration's own numbering of its font sets, `todo-compile-650.md` 6.2.12; which device list
+ * is the idle one, read off base slot 14 the way the remote reaches it; and the pictures' and the texts'
+ * **addresses**, since the bytes are the configuration's until chapter 9 builds them.
+ */
+
+/**
+ * The four kinds of arch 14 menu, each drawing its own title and bottom word: the device list the key
+ * under Devices opens while no activity runs, whose bottom word goes to the activities; the one each
+ * activity has, section 294, whose bottom word goes back to it; the two row device list nothing enters,
+ * section 326; and the activity menu.
+ */
+export type FourSlotMenuKind = 'idle device list' | 'activity device list' | 'two row device list' | 'activity menu';
+
+export interface FourSlotMenu {
+  menu: number;
+  kind: FourSlotMenuKind;
+}
+
+/** A menu's title, on every page of every menu of its kind on the thirteen compiles. */
+const MENU_TITLE: Readonly<Record<FourSlotMenuKind, string>> = {
+  'idle device list': 'Devices',
+  'activity device list': 'Devices',
+  'two row device list': 'Devices',
+  'activity menu': 'Activities',
+};
+
+/**
+ * A menu's bottom word, the label of the key under the display's centre: on the idle list it goes to the
+ * activities, on an activity's own list and on the two row list back to the activity, and on the activity
+ * menu to the device list. Every page of every menu of its kind on the thirteen compiles.
+ */
+const MENU_BOTTOM_WORD: Readonly<Record<FourSlotMenuKind, string>> = {
+  'idle device list': 'Activities',
+  'activity device list': 'Activity',
+  'two row device list': 'Activity',
+  'activity menu': 'Devices',
+};
+
+/** Whether a menu kind lays a place out as a row of two buttons rather than as one corner. */
+function menuOnRows(kind: FourSlotMenuKind): boolean {
+  return kind === 'two row device list' || kind === 'activity menu';
+}
+
+/**
+ * The device list the key under Devices opens while no activity runs, read the way the remote reaches
+ * it: the activity menu maps that key's press through a base slot 14 record keyed by the activity
+ * counter, section 330, and the record's case for the counter's idle value, its starting value, queues
+ * entering the idle list. Read rather than built, since which list is the idle one is a mode number,
+ * which is the description's order, section 324.
+ */
+function idleDeviceList(c: Container): number {
+  const menu = activityMenus(c).menu;
+  const entry = menu === undefined ? undefined
+    : modeRecords(c)?.[menu]?.entries.find((one) => one.tag === DEVICES_KEY_TAG);
+  const counter = stateVariables(c).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME));
+  const idle = counter?.record?.first;
+  if (entry?.opcode !== MAP_VALUE_OPCODE || counter === undefined || idle === undefined
+      || (entry.operand & 0xff) !== counter.index) {
+    throw new ComposeError('the activity menu does not map the key under Devices through the activity counter');
+  }
+  const target = valueMaps(c)?.[entry.operand >> 8]?.entries.find(([key]) => key === idle)?.[1];
+  const queued = target === undefined ? undefined : caseQueued(c, target);
+  if (queued?.opcode !== ENTER_MODE) {
+    throw new ComposeError(`record ${entry.operand >> 8} has no case for the idle value entering a device list`);
+  }
+  return queued.operand;
+}
+
+/**
+ * Every arch 14 menu of a configuration with its kind: the device lists, `deviceListMenus`, each a corner
+ * or a two row list by its first page, the corner one the key under Devices opens with no activity
+ * running being the idle one; and the activity menu, `activityMenus`. Refused where the idle list is not
+ * one of the corner lists, or where the configuration has no activity menu.
+ */
+export function fourSlotMenus(c: Container): FourSlotMenu[] {
+  if (c.architecture !== 14) throw new ComposeError('the four slot menus are the Harmony 600, 650 and 700\'s alone');
+  const idle = idleDeviceList(c);
+  const out: FourSlotMenu[] = deviceListMenus(c).menus.map((menu) => {
+    const first = modeRecords(c)?.[menu]?.pages[0];
+    const layout = menuLayout(c, taggedList(c, first?.list ?? 0)?.entries ?? []);
+    if (layout === undefined) throw new ComposeError(`device list ${menu} is neither arch 14 layout`);
+    if (layout.rows) return { menu, kind: 'two row device list' as const };
+    return { menu, kind: menu === idle ? 'idle device list' as const : 'activity device list' as const };
+  });
+  if (!out.some((one) => one.kind === 'idle device list')) {
+    throw new ComposeError(`mode ${idle}, which the key under Devices opens with no activity running, is not a corner device list`);
+  }
+  const activities = activityMenus(c).menu;
+  if (activities === undefined) throw new ComposeError('no activity menu here');
+  out.push({ menu: activities, kind: 'activity menu' });
+  return out;
+}
+
+/** What a menu page of one kind is drawn with in one configuration, every piece built or located. */
+export interface FourSlotMenuChrome {
+  kind: FourSlotMenuKind;
+  look: string;
+  /**
+   * The background of a page holding one place and of one holding more, as picture addresses; a place
+   * is a corner, or a row of two buttons. Undefined where the configuration does not hold the picture,
+   * and then a page needing it is refused.
+   */
+  one: number | undefined;
+  several: number | undefined;
+  /** The base slot 11 entry the page queues with `0x73`, or undefined for a page queueing nothing. */
+  battery: number | undefined;
+  topBar: number;
+  bottomBar: number;
+  title: string;
+  counterX: readonly [number, number, number];
+  bottom: { word: string; font: number; codes: number[]; x: number };
+}
+
+/**
+ * A menu page's chrome for one kind of menu, built, `todo-compile-650.md` 6.2.9:
+ *
+ * * **the look is the device mode pages'**, `deviceModeChrome`, so the two bars are the same pictures;
+ * * **the background**: a corner device list's is the device mode pages' own, the one item picture on a
+ *   page holding one device and the crossed one on a page holding more; a two row device list draws its
+ *   look's `rows` picture on every page whatever it holds; the activity menu its look's
+ *   `activitiesSingle` on a page holding one activity and `activitiesFull` on one holding two;
+ * * **the queued program**: a corner device list queues the device mode pages' battery program; a two row
+ *   device list queues nothing; the activity menu queues the battery program that draws its look's
+ *   `activitiesBattery`, which is the second on the colour looks and the first on the monochrome one;
+ * * **the title and the bottom word** by the kind, `MENU_TITLE` and `MENU_BOTTOM_WORD`, the word in the
+ *   bottom word font and centred, `bottomWord`;
+ * * **the counter** at `TWO_ROW_COUNTER_X` on a two row device list and at `FOUR_SLOT_COUNTER_X` on every
+ *   other menu, the activity menu included although its layout is two row, section 316.
+ */
+export function fourSlotMenuChrome(c: Container, kind: FourSlotMenuKind): FourSlotMenuChrome {
+  const device = deviceModeChrome(c);
+  const look = DEVICE_PAGE_LOOKS.find((one) => one.name === device.look) as DevicePageLook;
+  const pictures = picturesByContent(c);
+  const held = (key: string, role: string): number | undefined => {
+    const found = pictures.get(key) ?? [];
+    if (found.length > 1) throw new ComposeError(`${look.name}'s ${role} picture is stored ${found.length} times`);
+    return found[0];
+  };
+  let one: number | undefined;
+  let several: number | undefined;
+  let battery: number | undefined;
+  if (kind === 'idle device list' || kind === 'activity device list') {
+    one = device.single;
+    several = device.crossed;
+    battery = device.battery;
+  } else if (kind === 'two row device list') {
+    one = held(look.rows, 'two row list');
+    several = one;
+  } else {
+    one = held(look.activitiesSingle, 'activity menu one activity');
+    several = held(look.activitiesFull, 'activity menu');
+    const icons = pictures.get(look.activitiesBattery) ?? [];
+    const drawing = batteryPrograms(c).filter((index) => programDraws(c, index, icons));
+    if (drawing.length !== 1) {
+      throw new ComposeError(`${drawing.length} battery programs draw ${look.name}'s activity menu battery icon, not one`);
+    }
+    battery = drawing[0];
+  }
+  const word = MENU_BOTTOM_WORD[kind];
+  return {
+    kind, look: look.name, one, several, battery,
+    topBar: device.topBar, bottomBar: device.bottomBar,
+    title: MENU_TITLE[kind],
+    counterX: kind === 'two row device list' ? TWO_ROW_COUNTER_X : FOUR_SLOT_COUNTER_X,
+    bottom: { word, ...bottomWord(c, word) },
+  };
+}
+
+/** One place's label on a menu page: the font it is drawn in and its lines, as glyph codes. */
+export interface FourSlotMenuLabel {
+  font: number;
+  lines: number[][];
+}
+
+/**
+ * What a menu page holds, which is what the builder does not decide: its number and its menu's page
+ * count, the title and counter fonts, and per place in fill order its label. The fonts are read off the
+ * configuration, `todo-compile-650.md` 6.2.12.
+ */
+export interface FourSlotMenuPageContent {
+  number: number;
+  total: number;
+  titleFont: number;
+  counterFont: number;
+  labels: FourSlotMenuLabel[];
+}
+
+/** One instruction of a built menu page, before it is spelled as bytes. */
+type MenuPart =
+  | { op: 'image'; address: number }
+  | { op: 'queue'; program: number }
+  | { op: 'bar'; at: readonly number[]; address: number }
+  | { op: 'font'; font: number }
+  | { op: 'text'; x: number; y: number; codes: number[]; role: 'title' | 'counter' | 'label' | 'bottom' }
+  | { op: 'end' };
+
+/** The line a menu page's title and counter sit on, and the bottom word's. */
+const MENU_TOP_LINE_Y = FOUR_SLOT_TITLE_XY[1];
+const MENU_BOTTOM_LINE_Y = DEVICE_PAGE_BACK_Y;
+
+/**
+ * Where a place's label lines go: on a corner page as section 285 measured, a left label from x 3 and a
+ * right one ending at 125, one line at y 40 or 90 and two from 15 higher with the second one font height
+ * below; on a two row page, a menu of rows, each line centred at y 35 or 79. A two line label on a two
+ * row page is refused, since no menu page of the thirteen draws one.
+ */
+function menuLabelPlaces(
+  c: Container, rows: boolean, place: number, label: FourSlotMenuLabel,
+): { x: number; y: number; codes: number[] }[] {
+  const set = (fontSets(c) ?? [])[label.font];
+  if (set === undefined) throw new ComposeError(`the config does not carry font ${label.font}`);
+  if (rows) {
+    if (label.lines.length !== 1) throw new ComposeError('a two line label on a two row menu page is not composed: no compile shows one');
+    const codes = label.lines[0] as number[];
+    return [{ x: Math.floor((FOUR_SLOT_SCREEN_WIDTH - textWidth(c, set, codes)) / 2), y: TWO_ROW_LABEL_Y[place] as number, codes }];
+  }
+  const item = FOUR_SLOT_ITEMS[place];
+  if (item === undefined || label.lines.length < 1 || label.lines.length > 2) {
+    throw new ComposeError(`a corner page has no place ${place} for a label of ${label.lines.length} lines`);
+  }
+  const top = FOUR_SLOT_LABEL_Y[item.row] - (label.lines.length > 1 ? TWO_LINE_RISE : 0);
+  return label.lines.map((codes, k) => ({
+    x: item.column === 0 ? FOUR_SLOT_LEFT_X : FOUR_SLOT_RIGHT_END - textWidth(c, set, codes),
+    y: top + k * set.height,
+    codes,
+  }));
+}
+
+/**
+ * A menu page built, as parts: the background for how many places it holds, the queued program where
+ * the kind queues one, the top bar, the title, the counter where the menu has several pages, the labels
+ * in fill order, the bottom bar, the bottom word and the end, **a font being selected only where another
+ * is in effect**, which is the compiler's rule, section 289.
+ */
+function menuPageParts(c: Container, chrome: FourSlotMenuChrome, page: FourSlotMenuPageContent): MenuPart[] {
+  const map = characterMap(c);
+  if (map === undefined) throw new ComposeError('the config draws no text this can spell from');
+  const setOf = (font: number): FontSet => {
+    const set = (fontSets(c) ?? [])[font];
+    if (set === undefined) throw new ComposeError(`the config does not carry font ${font}`);
+    return set;
+  };
+  const places = page.labels.length;
+  const background = places > 1 ? chrome.several : chrome.one;
+  if (background === undefined) {
+    throw new ComposeError(`the configuration holds no picture for a ${chrome.kind} page of ${places} `
+      + `place${places === 1 ? '' : 's'} in ${chrome.look}`);
+  }
+  if (places > (menuOnRows(chrome.kind) ? FOUR_SLOT_ROWS.length : FOUR_SLOT_ITEMS.length)) {
+    throw new ComposeError(`a ${chrome.kind} page holds no ${places} places`);
+  }
+  const parts: MenuPart[] = [{ op: 'image', address: background }];
+  if (chrome.battery !== undefined) parts.push({ op: 'queue', program: chrome.battery });
+  parts.push({ op: 'bar', at: DEVICE_PAGE_TOP_BAR_AT, address: chrome.topBar });
+  let font: number | undefined;
+  const select = (want: number): void => {
+    if (want !== font) parts.push({ op: 'font', font: want });
+    font = want;
+  };
+  select(page.titleFont);
+  parts.push({
+    op: 'text', ...{ x: FOUR_SLOT_TITLE_XY[0], y: MENU_TOP_LINE_Y },
+    codes: codesFor(map, c, setOf(page.titleFont), chrome.title, page.titleFont), role: 'title',
+  });
+  if (page.total > 1) {
+    if (page.total > FOUR_SLOT_MAX_PAGES) throw new ComposeError('a page counter of two digits is not composed on a menu');
+    select(page.counterFont);
+    [String(page.number), '/', String(page.total)].forEach((text, k) => parts.push({
+      op: 'text', x: chrome.counterX[k] as number, y: MENU_TOP_LINE_Y,
+      codes: codesFor(map, c, setOf(page.counterFont), text, page.counterFont), role: 'counter',
+    }));
+  }
+  page.labels.forEach((label, place) => {
+    for (const line of menuLabelPlaces(c, menuOnRows(chrome.kind), place, label)) {
+      select(label.font);
+      parts.push({ op: 'text', ...line, role: 'label' });
+    }
+  });
+  parts.push({ op: 'bar', at: DEVICE_PAGE_BOTTOM_BAR_AT, address: chrome.bottomBar });
+  select(chrome.bottom.font);
+  parts.push({ op: 'text', x: chrome.bottom.x, y: MENU_BOTTOM_LINE_Y, codes: chrome.bottom.codes, role: 'bottom' });
+  parts.push({ op: 'end' });
+  return parts;
+}
+
+/**
+ * A built page's bytes. A text whose role is in `pointed` is drawn by reference to its `inlineHomes`
+ * copy where the configuration has one, which is what the compiler does with every text it has drawn
+ * before; every other text is drawn inline. `shifted` maps an address as it is to where it lands once
+ * the page is inserted.
+ */
+function menuPageBytes(
+  parts: readonly MenuPart[], homes: ReadonlyMap<string, number>, pointed: ReadonlySet<string>,
+  shifted: (address: number) => number,
+): Uint8Array {
+  const out: number[] = [];
+  const address = (one: number): number[] => [...new Writer(3).u24(shifted(one)).bytes];
+  for (const part of parts) {
+    if (part.op === 'image') out.push(OP_IMAGE, ...DEVICE_PAGE_BACKGROUND_AT, ...address(part.address));
+    else if (part.op === 'queue') out.push(SCREEN_QUEUE_INSTRUCTION, part.program & 0xff, part.program >> 8, RUN_SCREEN_PROGRAM);
+    else if (part.op === 'bar') out.push(SCREEN_DRAW_IMAGE_AT, ...part.at, ...address(part.address));
+    else if (part.op === 'font') out.push(OP_FONT, part.font);
+    else if (part.op === 'end') out.push(OP_END);
+    else {
+      const home = pointed.has(part.role) ? homes.get(part.codes.join(',')) : undefined;
+      if (home === undefined) out.push(OP_TEXT_INLINE, part.x, part.y, ...part.codes, 0);
+      else out.push(OP_TEXT_AT, part.x, part.y, ...address(home));
+    }
+  }
+  return new Uint8Array(out);
+}
+
+/**
+ * What a menu page of the configuration holds, read for the builder: its fonts and its labels. Each text
+ * below the title line and above the bottom line is a label, given to a place by its cell on a corner
+ * page and by its row on a two row one, in the font in effect where it is drawn. The places have to be a
+ * prefix of the fill order and as many as the page's own list binds, which is a closure between the
+ * screen and base slot 6, so a page whose labels and bindings disagree is refused.
+ */
+function menuPageContent(c: Container, kind: FourSlotMenuKind, menu: number, index: number): FourSlotMenuPageContent {
+  const record = modeRecords(c)?.[menu];
+  const page = record?.pages[index];
+  const program = page === undefined ? undefined : screenProgram(c, page.program);
+  const list = page === undefined ? undefined : taggedList(c, page.list);
+  const layout = list === undefined ? undefined : menuLayout(c, list.entries);
+  if (record === undefined || program === undefined || layout === undefined) {
+    throw new ComposeError(`menu ${menu}'s page ${index + 1} does not read as an arch 14 menu page`);
+  }
+  if (layout.rows !== menuOnRows(kind)) throw new ComposeError(`menu ${menu}'s page ${index + 1} is not a ${kind} page`);
+  const rows = menuOnRows(kind);
+  let font: number | undefined;
+  let titleFont: number | undefined;
+  let counterFont: number | undefined;
+  const byPlace = new Map<number, FourSlotMenuLabel>();
+  for (const one of program) {
+    if (one.opcode === OP_FONT) { font = one.operands[0]; continue; }
+    if (one.opcode !== OP_TEXT_AT && one.opcode !== OP_TEXT_INLINE) continue;
+    const [x, y] = [one.operands[0] as number, one.operands[1] as number];
+    if (y === MENU_TOP_LINE_Y) {
+      if (x === FOUR_SLOT_TITLE_XY[0]) titleFont = font;
+      else counterFont ??= font;
+      continue;
+    }
+    if (y === MENU_BOTTOM_LINE_Y) continue;
+    const cell = fourSlotCellAt(x, y);
+    const place = cell === undefined ? undefined : rows ? FOUR_SLOT_ITEMS[cell]?.row : cell;
+    const codes = textGlyphs(c, one);
+    if (place === undefined || codes === undefined || font === undefined) {
+      throw new ComposeError(`menu ${menu}'s page ${index + 1} draws a text at ${x}, ${y} no place owns`);
+    }
+    const label = byPlace.get(place);
+    if (label === undefined) byPlace.set(place, { font, lines: [[...codes]] });
+    else if (label.font !== font) throw new ComposeError(`menu ${menu}'s page ${index + 1} draws one label in two fonts`);
+    else label.lines.push([...codes]);
+  }
+  const labels = Array.from({ length: byPlace.size }, (_, k) => byPlace.get(k));
+  if (labels.some((one) => one === undefined) || labels.length !== layout.used) {
+    throw new ComposeError(`menu ${menu}'s page ${index + 1} labels ${byPlace.size} places and binds ${layout.used}`);
+  }
+  if (titleFont === undefined) throw new ComposeError(`menu ${menu}'s page ${index + 1} draws no title`);
+  return {
+    number: index + 1, total: record.pages.length, titleFont,
+    // A menu of one page draws no counter, and its font is then nothing the page shows.
+    counterFont: counterFont ?? titleFont,
+    labels: labels as FourSlotMenuLabel[],
+  };
+}
+
+/**
+ * A menu page of the configuration against the page built from what it holds: instruction for
+ * instruction, every instruction that is not a text byte for byte, and every text by its place and its
+ * glyph codes, whether drawn inline or by reference. Returns the first difference, or undefined.
+ * Whether a reference points at the compiler's own copy is `checkFourSlotMenuPages`' question, since a
+ * page composed here draws inline what the compiler would point at.
+ */
+function menuPageDifference(c: Container, chrome: FourSlotMenuChrome, menu: number, index: number): string | undefined {
+  const page = modeRecords(c)?.[menu]?.pages[index];
+  const program = page === undefined ? undefined : screenProgram(c, page.program);
+  if (page === undefined || program === undefined) return 'the page does not read';
+  const parts = menuPageParts(c, chrome, menuPageContent(c, chrome.kind, menu, index));
+  if (parts.length !== program.length) return `${program.length} instructions where ${parts.length} are built`;
+  const same = (address: number): number => address;
+  for (let k = 0; k < parts.length; k += 1) {
+    const part = parts[k] as MenuPart;
+    const one = program[k] as ScreenInstruction;
+    if (part.op === 'text') {
+      const codes = textGlyphs(c, one);
+      if ((one.opcode !== OP_TEXT_AT && one.opcode !== OP_TEXT_INLINE) || one.operands[0] !== part.x
+          || one.operands[1] !== part.y || codes === undefined || [...codes].join(',') !== part.codes.join(',')) {
+        return `instruction ${k} is not the ${part.role} built at ${part.x}, ${part.y}`;
+      }
+      continue;
+    }
+    const want = [...menuPageBytes([part], new Map(), new Set(), same)].join(',');
+    if ([...c.blob.subarray(one.start, one.start + one.length)].join(',') !== want) {
+      return `instruction ${k} is not the ${part.op} built`;
+    }
+  }
+  // The page record: the list, then the program, six bytes, which is what a composer writes.
+  const recordOff = c.blobOffsetOf(page.address);
+  if (recordOff === undefined || page.length !== 6 || u24(c.blob, recordOff) !== page.list
+      || u24(c.blob, recordOff + 3) !== page.program) {
+    return 'its page record is not the list then the program in six bytes';
+  }
+  return undefined;
+}
+
+/**
+ * Every page of every arch 14 menu of the configuration against the page built for it, refused with the
+ * page and the first difference; and every text those pages draw by reference pointing at its
+ * `inlineHomes` copy and every text drawn inline being that copy, which holds on a compiler's pages and
+ * not on a composed one's. Returns the number of pages checked. The calibration of section 334.
+ */
+export function checkFourSlotMenuPages(c: Container, options: { homes?: boolean } = {}): number {
+  const homes = options.homes === false ? undefined : inlineHomes(c);
+  let checked = 0;
+  for (const { menu, kind } of fourSlotMenus(c)) {
+    const chrome = fourSlotMenuChrome(c, kind);
+    const record = modeRecords(c)?.[menu];
+    (record?.pages ?? []).forEach((page, index) => {
+      const where = `${kind} ${menu}'s page ${index + 1}`;
+      const difference = menuPageDifference(c, chrome, menu, index);
+      if (difference !== undefined) throw new ComposeError(`${where}: ${difference}`);
+      for (const one of homes === undefined ? [] : screenProgram(c, page.program) ?? []) {
+        const codes = textGlyphs(c, one);
+        if (codes === undefined || homes === undefined) continue;
+        const home = homes.get([...codes].join(','));
+        const at = one.opcode === OP_TEXT_INLINE ? c.flashBase + one.start + 3 : referencedStringAddress(one);
+        if (at !== home) {
+          throw new ComposeError(`${where} draws '${[...codes].join(',')}' ${one.opcode === OP_TEXT_INLINE ? 'inline' : 'by reference'} `
+            + 'away from the copy the compiler points at');
+        }
+      }
+      checked += 1;
+    });
+  }
+  return checked;
 }
 
 /**
@@ -4740,6 +5204,9 @@ function composeFourSlotDeviceScreen(
   if (found.menus.length === 0 || found.marker === undefined) {
     throw new ComposeError('no device list menu found to grow');
   }
+  // Which kind each device list is, which decides the bottom word and the background its pages draw,
+  // section 334. Read before anything moves; a mode's number does not move when another is added.
+  const kinds = new Map(fourSlotMenus(c).map((one) => [one.menu, one.kind]));
   // Counted before anything moves: how many buttons the new device takes on each menu, one corner or
   // a row's two, which is how many row lists step 1 writes for that menu's list and as many again for
   // its copy. A menu whose last page is full gets a new page, `openFourSlotMenuPage`, where the device
@@ -4848,26 +5315,20 @@ function composeFourSlotDeviceScreen(
     }));
   });
 
-  // 7. One more item on each menu's last page, which is a step `composeFourSlotActivityRow` shares.
-  // A corner page that held one device takes the crossed background its menu's full pages draw; a
-  // two row list's one device page already draws its full pages' picture, on the two lists that have
-  // one, so that layout changes nothing. A menu whose last page is full gets a new page instead,
-  // and every page of it then counts to the new total. The one item background is asked for inside
-  // that step, after its own insertions, since a picture address read now would be stale by them.
+  // 7. One more item on each menu's last page, which is a step `composeFourSlotActivityRow` shares,
+  // or a new page where the last one is full, every page of it then counting to the new total. Each
+  // page is the one built for its menu's kind, section 334: the idle list, an activity's own list or the
+  // two row list, read before anything moved.
   const pagesAdded: number[] = [];
   for (const menu of found.menus) {
+    const kind = kinds.get(menu);
+    if (kind === undefined) throw new ComposeError(`device list ${menu} has no kind`);
     const last = modeRecords(current)?.[menu]?.pages.at(-1);
     const layout = menuLayout(current, taggedList(current, last?.list ?? 0)?.entries ?? []);
     if (layout === undefined) throw new ComposeError(`menu ${menu} changed layout while being grown`);
     const grown = layout.used < layout.capacity
-      ? growFourSlotMenu(current, menu, nextRow, menuCodes, template.labelFont, 'corners')
-      : openFourSlotMenuPage(current, menu, nextRow, menuCodes, template.labelFont, {
-        counterX: fourSlotCounterX(layout.rows),
-        counterDefault: template.counterFont,
-        // A two row list's new page draws what its last page draws; a corner page holding one device
-        // the device mode pages' one item background, section 312.
-        background: (now, last) => (layout.rows ? last : fourSlotTemplate(now, options.keysLike).single),
-      });
+      ? growFourSlotMenu(current, menu, kind, nextRow, menuCodes, template.labelFont)
+      : openFourSlotMenuPage(current, menu, kind, nextRow, menuCodes, template.labelFont, template.counterFont);
     if (layout.used >= layout.capacity) pagesAdded.push(menu);
     current = grown.container;
     nextRow += grown.bound;
@@ -5371,7 +5832,7 @@ export function composeActivityMenuRow(
  * Undefined where no record or several fit, or where no working screen page holds one command or
  * none, which is `calibration_h600`, so that the caller refuses rather than drawing another picture.
  */
-function activityMenuSingle(c: Container): number | undefined {
+export function activityMenuSingle(c: Container): number | undefined {
   const idle = stateVariables(c).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME))?.record?.first;
   const onMenu = new Set(activityBindings(c).map((one) => one.activity));
   if (idle === undefined || onMenu.size === 0) return undefined;
@@ -5430,17 +5891,20 @@ function activityMenuSingle(c: Container): number | undefined {
  * theirs with, `openFourSlotMenuPage`: the activity on the top row's two buttons, its label centred at
  * y 35, the menu's own chrome, and a counter on every page. Until then a full page was refused, so a
  * menu could take a row only while it held an odd number of activities, and a second composed activity
- * on the Harmony 650 was refused. Two things are the activity menu's own and are what this passes:
+ * on the Harmony 650 was refused.
  *
- * * **the counter sits where a corner list's does**, `FOUR_SLOT_COUNTER_X`, though the layout is two
- *   row: 16 pages of 16 on the 7 multi page activity menus Logitech compiled here;
- * * **the new page draws the activities' working screens' one command background**,
- *   `activityMenuSingle`, which every page holding one activity draws, 4 of 4, and not its menu's first
- *   page picture, which a two row device list's new page would copy.
+ * **Since section 334 nothing of the page is copied**: `fourSlotMenuChrome` builds it for the kind
+ * 'activity menu', the counter where a corner list's sits though the layout is two row, and the
+ * background by the look's content, the full page picture for two activities and the one activity
+ * picture for one. The one activity picture is checked against the route section 316 found it by,
+ * `activityMenuSingle`, the activities' working screens' one command background, wherever that route
+ * answers: 12 of 12 compiles agree, and on the thirteenth, `calibration_h600`, neither route finds it.
  *
  * So the page count alternates what a row does: an odd number of activities leaves a last page with
  * one, which the next row fills, and an even number a full one, which the next row opens a page past.
- * What stays refused is a menu of one activity on one page, whose full page picture no page draws yet.
+ * What stays refused is a page whose picture the configuration does not hold, since a configuration
+ * holds a picture only where one of its programs draws it: a full page on `calibration_h600`, and a menu
+ * of one activity on one page wherever no page draws the full page picture.
  */
 function composeFourSlotActivityRow(
   c: Container, label: string, set: number, menu: number, marker: Instruction,
@@ -5466,9 +5930,18 @@ function composeFourSlotActivityRow(
     throw new ComposeError(`the activity menu would need page ${record.pages.length + 1}, and a counter of `
       + 'two digits is not composed');
   }
-  if (full && activityMenuSingle(c) === undefined) {
-    throw new ComposeError("the activity menu's last page is full, and no working screen page holding one "
-      + 'command or none draws the background a page of one activity needs');
+  // The picture a page of one activity draws is built by content per look, section 334, and checked
+  // against the second route section 316 found it by, the working screens' own one command background
+  // through base slot 14, wherever that route answers: two routes with nothing in common but the bytes.
+  const menuChrome = fourSlotMenuChrome(c, 'activity menu');
+  const working = activityMenuSingle(c);
+  if (working !== undefined && menuChrome.one !== undefined && working !== menuChrome.one) {
+    throw new ComposeError(`the activity menu's page of one activity would draw ${menuChrome.look}'s picture and `
+      + 'the working screens of one command draw another');
+  }
+  if (full && menuChrome.one === undefined) {
+    throw new ComposeError("the activity menu's last page is full, and the configuration holds no picture a page "
+      + `of one activity draws in ${menuChrome.look}`);
   }
 
   // The label's font: the one in effect at the closing bar of the page being grown, which is its
@@ -5519,12 +5992,9 @@ function composeFourSlotActivityRow(
   // page counts to the new total: in the menu's own counter font where a page draws one, and otherwise
   // in the device mode pages' counter font, which is the menu's on all 7 multi page menus, section 316.
   const grown = full
-    ? openFourSlotMenuPage(current, menu, rowList, codes, font, {
-      counterX: FOUR_SLOT_COUNTER_X,
-      counterDefault: fourSlotTemplate(current, undefined).counterFont,
-      background: (now) => activityMenuSingle(now),
-    })
-    : growFourSlotMenu(current, menu, rowList, codes, font, 'both');
+    ? openFourSlotMenuPage(current, menu, 'activity menu', rowList, codes, font,
+      fourSlotTemplate(current, undefined).counterFont)
+    : growFourSlotMenu(current, menu, 'activity menu', rowList, codes, font);
   if (grown.bound !== rowLists) {
     throw new ComposeError(`${grown.bound} row lists bound against the ${rowLists} written`);
   }
