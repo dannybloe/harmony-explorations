@@ -1,0 +1,10 @@
+{
+  "name": "Harmony 650, Help does nothing, and the gap between devices",
+  "description": "todo-compile-650 3.13 and the rest of 3.5, on lab/work/h650-bench-combined-2.bin written back. 3.13: a composed activity binds no Help and has no assistant, so Help should do nothing in Kijk TV and in the Plasma's device mode. 3.5: Kijk TV switches on the KPN box and then the Denon, and the gap between them is the delay between devices; the Flirc's timestamps measure it, so there is nothing to time by hand. Keep the remote pointed at the Flirc. The three buttons below the screen are the left arrow, the centre button and the right arrow; the four buttons beside the screen each choose the label in the corner next to them.",
+  "steps": [
+    { "instruction": "Start on the remote's ordinary screen, straight after the write's restart. Press Watch TV. Expect 'Starting Kijk TV', then the Flirc hears the KPN box's power toggle and after it the Denon's PowerOn, and nothing for the Plasma. Wait until the working screen 'Kijk TV' shows" },
+    { "instruction": "In Kijk TV, press Help once, briefly. Expect nothing: the screen stays on 'Kijk TV' and the Flirc hears nothing. Then press and hold Help for about three seconds. Expect nothing again. Mark the step with what the screen showed if anything changed" },
+    { "instruction": "Press All Off. Expect the KPN box's power toggle and the Denon's PowerOff" },
+    { "instruction": "On the ordinary screen press the centre button ('Devices'), then the right arrow to reach 'Devices 2/2', then the button beside Plasma (bottom right). Expect the page 'Plasma' with On, Off, Hdmi 1 and Hdmi 2 in the corners. Press Help once, briefly, then press and hold it for about three seconds. Expect nothing either time: the screen stays on the Plasma page and the Flirc hears nothing. Mark the step with what the screen showed if anything changed" }
+  ]
+}

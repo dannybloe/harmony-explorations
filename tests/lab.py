@@ -191,6 +191,7 @@ IMAGES = {
     'h650_two_devices_base': '20261006T1504Z-h650-pre-two-devices-region.bin',
     'h650_full_plasma_base': '20261006T1529Z-h650-pre-full-plasma-region.bin',
     'h650_full_plasma2_base': '20261006T1554Z-h650-pre-full-plasma-2-region.bin',
+    'h650_combined3_base': '20261007T0535Z-h650-pre-combined-3-region.bin',
     # The bench Harmony 700 as it arrived, in safe mode, section 295.
     'h700_internal_fe': '20260929T1243Z-h700-internal-fe-region.bin',
     'h700_internal_ff': '20260929T1243Z-h700-internal-ff-region.bin',
@@ -692,6 +693,7 @@ PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_confi
                       'h650_two_devices_base',
                       'h650_full_plasma_base',
                       'h650_full_plasma2_base',
+                      'h650_combined3_base',
                       # External flash of the bench Harmony 700 from 0x000000, kept for the staged
                       # application; its container at 0x020000 is byte for byte `h700_gspm`.
                       # Section 295.
