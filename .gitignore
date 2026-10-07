@@ -69,3 +69,7 @@ docs/myharmony/core-model.html
 docs/myharmony/activity-model.pdf
 docs/myharmony/button-model.pdf
 docs/myharmony/catalogue-model.pdf
+
+# Written by Claude Code into a plugin folder when it loads the plugin: the API typings, about
+# 14000 lines, regenerated on every load.
+.claude/skills/harmony-remote/.claude-plugin/types/
