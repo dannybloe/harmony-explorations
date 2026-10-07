@@ -859,7 +859,8 @@ right after its title.
 **Every arch 14 activity's enter list opens with its own start up screen**, "Starting" and its name,
 then writes 1 into the variable every command's delay step tests, and ends by writing 0 into it, 13 of
 13, section 289. So the inter device delay acts inside an activity's start, and since section NNN also
-in All Off and in Help, which raise the same variable; it does not act on a device mode key press.
+in All Off and in Help, which raise the same variable; a device's own command pressed in device mode
+reaches no list raising it.
 
 **The enter list in full**, section 290, 13 of 13:
 
@@ -977,10 +978,12 @@ of the device's own that is one `0x72` on that device's `InterDeviceDelay` varia
 itself, 31, 27 and 50. **Those writers are, and are only**, section NNN, each reached by one tagged list
 entry: an activity's handler lists, tag 1 (its start), tag 2 (left) and tag 5 (selected again); the Off
 key map's tags 1 and 5, which is All Off, whose `0x72` queueing the all off list sits between raising
-the variable and lowering it; and a mode's enter handler, tag 6, on every Help question screen and
-every "Attempting to fix" screen. No device mode key, page key, call, transition or queued instruction
-reaches one. So the inter device delay applies in an activity's start, in All Off and in Help, and not
-on a device mode key press:
+the variable and lowering it; and a mode's enter handler, tag 6, on 16 of the 69 screens drawing "Exit
+Help" on the 650 and on every "Attempting to fix" screen. A leave list, tag 2, is the bare pair and
+sends nothing. No device mode record, page key, call, transition or queued instruction names one. So
+the inter device delay applies in an activity's start, in All Off and in Help, which a Help key pressed
+in device mode reaches through the Off key map, section 333, and not to a device's own command pressed
+in device mode:
 
 | writers of the start variable | 650 | 600 | `calibration_h600` | 700 | bench 650 |
 |---|---|---|---|---|---|
@@ -996,9 +999,10 @@ for the device's own group, so tables differ per device in that byte only, store
 1598 of 1598. **What the queued kind 5 entry does is measured on the bench Harmony 650**, section NNN,
 and not read in the firmware: the value holds back the device's **own** command by a tenth of a
 second per unit, 15 units lengthening the silence before the Denon by 1.506 s in a start and 1.505 s in
-All Off, while the same change to the device sent before it moved nothing. It does not count down as a
-per device quantity alongside the other devices' waits: the wait begins once the device sent before it
-has gone. Whether it holds back a device queued after it is not measured. Harmony 600 and 700 not
+All Off, while the same change to the device sent before it left the start's silence at 0.620 s. The
+wait begins once the device sent before it has gone, so it does not count down alongside the other
+devices' waits as a per device quantity would, if the list's instructions all run before its first
+code goes out, which is not measured. Whether it holds back a device queued after it is not measured. Harmony 600 and 700 not
 measured. `sendPreludes` and `interDeviceDelayCases`; `composeDevice` emits all of it on arch 14.
 
 **Both operands are constants around the start variable**, section 319, over the thirteen arch 14
@@ -2477,7 +2481,7 @@ service states the same inter device field in milliseconds, at exactly 100 times
 The power on delay is how long the remote waits after switching a device on before it will send that
 device anything; the inter device delay is how long it waits between two codes going to different
 devices, measured on the Harmony 650 as a wait in front of the device's own command that begins once
-the code before it has gone, section NNN. The other four, `PowerOnDelayFlagCounter`, `PowerOnDelayFixingTriggered` and their inter
+the code before it has gone, section NNN, which assumes the instructions queueing them all ran first. The other four, `PowerOnDelayFlagCounter`, `PowerOnDelayFixingTriggered` and their inter
 device twins, have maxima of 5 and 100 and are unread.
 
 **Only arch 14 carries the variables, and every architecture states the delay.** That is section

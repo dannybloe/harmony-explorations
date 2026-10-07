@@ -982,11 +982,12 @@ export function composeDevice(c: Container, device: ComposeDevice): ComposedDevi
  * start sequence variable equals it, and the delay list, one `0x72` mapping the device's
  * `InterDeviceDelay_<identifier>` through a base slot 14 table whose case for each value queues that
  * many tenths for the device's group. So in an activity's start, in All Off and in Help, the lists
- * that raise that variable, each command waits its device's inter device delay, and a key press in
- * device mode, which reaches no such list, does not, section NNN. The bench Harmony 650 shows it in a
- * start and in All Off: the device's own command waits a tenth of a second per unit, once the code
- * before it has gone. Section 287 read this from three of the 650's start sequences alone, as an
- * inference, and missed All Off and Help.
+ * that raise that variable, each command waits its device's inter device delay, and a device's own
+ * command pressed in device mode, which reaches no such list, does not, section NNN. The bench Harmony
+ * 650 shows it in a start and in All Off: the device's own command waits a tenth of a second per
+ * unit, and the wait seems to begin once the code before it has gone, which assumes the list's
+ * instructions all ran first. Sections 285 and 287 read this from three of the 650's start sequences
+ * alone and missed All Off and Help.
  *
  * **And a device's power on list ends with its power on delay**, section 288, `PowerOnDelay` in
  * `inventory.ts`: the `Power` variable's off to on transition runs a list that calls the power

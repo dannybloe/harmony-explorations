@@ -842,15 +842,17 @@ accounting table** here, which was a real duplicate with nothing added and has b
 
 **The delay between devices has been watched on a Harmony 650, and it acts in All Off as well as when
 an activity starts, section NNN.** Each device has a setting for how long the remote pauses between
-devices. With every device at half a second, the Denon's command came 0.62 s after the KPN box's
-finished, both when Kijk TV started and in All Off.
-Setting the KPN box's to two seconds changed nothing there; setting the Denon's to two seconds made it
-2.13 s and 2.12 s. So a device's setting delays that device's own command, a tenth of a second per
-step, and its wait starts once the device before it has sent. What was wrong before was where it acts:
+devices. With both at half a second, the Denon's command came 0.62 s after the KPN box's finished when
+Kijk TV started and 0.61 s in All Off. Setting the KPN box's to two seconds left the start at 0.62 s
+(that run's All Off was heard too poorly to time); setting the Denon's to two seconds made it 2.13 s
+and 2.12 s. So a device's setting delays that device's own command, a tenth of a second per step, and
+its wait seems to start once the device before it has sent, though that rests on something not
+measured. What was wrong before was where it acts:
 the configuration switches the delay on while an activity starts, and also during All Off and while
 the Help screens re-send commands, and a search for what switches it on had missed the last two. A
-key pressed in device mode still waits for nothing, by the configuration's reading; that one has not
-been watched.
+device's own button pressed in device mode still waits for nothing, by the configuration's reading;
+that one has not been watched. Help pressed in device mode does wait, since it runs the Off screen's
+attempt to fix things.
 
 **An activity can now be added to a Harmony 600, 650 or 700 whose activity menu is full, section
 316.** The menu shows two activities to a screen, so it could only take a new one while its last screen
@@ -1005,8 +1007,10 @@ while an activity starts<!--superseded-->, which is what the composed activity w
 composed too now, section 288: switching the device on sends its power code and then makes the
 remote wait the device's power on delay, up to 45 seconds, before anything else goes to it, which is
 what all fifteen of Logitech's own devices with a power switch do on those configurations. Neither delay has been seen on
-a remote on these models, and that they act only while an activity starts rests on the Harmony One's
-measurement and on these configurations, which is what the composed activity will test.
+a remote on these models, and that they act only while an activity starts<!--superseded--> rests on the Harmony One's
+measurement and on these configurations, which is what the composed activity will test. *Both have been
+seen on the Harmony 650 since, the power on delay in todo-compile-650 3.5 and the delay between devices
+in section NNN, which also acts in All Off and Help.*
 
 **And the Harmony 650 no longer opens Logitech's introduction tour after a write, section 286.** Every
 write reloads the configuration, and every reload started a ten screen tour that had to be pressed

@@ -840,14 +840,18 @@ test('the start variable is written only by an activity\'s handlers, the Off key
 /**
  * Section NNN, on the bench Harmony 650. Its activity Kijk TV switches the KPN box on and then the Denon,
  * and All Off switches the KPN box and then the Denon off; three runs heard by the Flirc, every delay
- * between devices at 5 tenths, then the KPN box's alone at 20, then the Denon's alone at 20. What is
+ * between devices at 5 tenths but the television's 10, then the KPN box's at 20, then instead the
+ * Denon's at 20. What is
  * read is the silence the receiver itself reports before the Denon's first frame, which starts at the
  * end of the KPN box's last frame.
  *
  * One reading is not used and is kept in the table so that it cannot quietly join: All Off in the second
- * run, where the receiver heard the KPN box's two frames as fragments of 7 and 9 pulses against 27 to 35
- * for a whole one. It reads 0.94 s, which is still under the 2 s the KPN box's delay would give if it
- * held back the next device.
+ * run, where the receiver heard the KPN box's two frames as fragments of 7 and 9 pulses, where every
+ * reading used ends on a whole frame of 27 pulses or more. A fragment last reads long whatever the KPN
+ * box's delay is: the one other such pair in these captures, a 13 pulse fragment before the Denon's
+ * power off in the first run with every delay involved at 5, reads 0.884 s, and that pair is not
+ * attributed to a step, so it is not in the table. The excluded reading, 0.94 s, is still under the 2 s
+ * the KPN box's delay would give if it held back the next device.
  */
 test('on the Harmony 650 the silence before the Denon\'s command follows the Denon\'s own delay between devices and not the KPN box\'s, in Kijk TV\'s start and in All Off',
      skipUnless('h650_kpn_gap_base', 'h650_denon_gap_base', 'h650_denon_gap_config',
@@ -906,10 +910,15 @@ test('on the Harmony 650 the silence before the Denon\'s command follows the Den
   const remainder = (pick: 'kpn' | 'denon') => whole.map((one) => one.gapUs - one[pick] * 100000);
   const spread = (values: number[]) => Math.max(...values) - Math.min(...values);
   assert.deepEqual(remainder('denon'), [120000, 113000, 120000, 126000, 118000]);
-  assert.ok(spread(remainder('denon')) <= 15000, 'the Denon\'s delay accounts for the silence');
-  assert.ok(spread(remainder('kpn')) > 1000000, 'the KPN box\'s does not');
-  // Raising the Denon's by 15 lengthens both sequences by 1.5 s to within six milliseconds.
-  assert.deepEqual([2126000 - 620000, 2118000 - 613000], [1506000, 1505000]);
+  assert.equal(spread(remainder('denon')), 13000, 'the Denon\'s delay accounts for the silence');
+  assert.deepEqual(remainder('kpn'), [120000, 113000, -1380000, 1626000, 1618000], 'the KPN box\'s does not');
+  assert.equal(spread(remainder('kpn')), 3006000);
+  // Raising the Denon's by 15, from the first run to the third, lengthens both sequences by 1.5 s to
+  // within six milliseconds.
+  const at = (run: number, what: string) => readings.find((one) => one.run === run && one.what === what)!.gapUs;
+  const grown = ['start', 'all off'].map((what) => at(3, what) - at(1, what));
+  assert.deepEqual(grown, [1506000, 1505000]);
+  assert.ok(grown.every((one) => Math.abs(one - (delays[2]!.denon - delays[0]!.denon) * 100000) <= 6000));
   // And the reading left out is still under what the KPN box's delay would have given.
   const fragmentary = readings.find((one) => one.run === 2 && one.what === 'all off')!;
   assert.ok(fragmentary.gapUs < fragmentary.kpn * 100000, 'under the KPN box\'s 2 s');

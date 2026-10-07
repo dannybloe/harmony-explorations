@@ -531,3 +531,4 @@ it reachable in the same commit and the test comparing the two tables is what ca
 | `felt only inside a start sequence` | section NNN, 7 October 2026 | the same claim in section 287's scope |
 | `it only acts while an activity starts` | section NNN, 7 October 2026 | the same claim in `docs/status.md`'s words |
 | `runs only inside a start sequence` | section NNN, 7 October 2026 | the same claim in a docstring |
+| `they act only while an activity starts` | section NNN, 7 October 2026 | the same claim in `docs/status.md`'s plural, said of both delays; the inter device delay acts in All Off and Help too |
