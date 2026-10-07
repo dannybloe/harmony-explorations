@@ -10889,7 +10889,7 @@ by `LATE` bit 0. Eight lines driven directly and eight through the latch, sensed
 | scan code | `row * 4 + column`, 1 to 56 | not established | `group * 8 + column`, 1 to 64 |
 | sense | four column lines, interrupt on change | one shared line | one line, `PORTB` bit 7 |
 | drive | `PORTA`, `PORTD`, `PORTE` | not established | `LATD`, plus a latch on `LATE` bit 0 |
-| scan code variable | `0x73D` / `0x3A2` | `0x2FB` or `0x202`, unsettled | `0x2DE` |
+| scan code variable | `0x73D` / `0x3A2` | `0x2FB` the keypad and `0x202` the touch panel, section 337 | `0x2DE` |
 
 ### The closure, from the configs
 
@@ -17133,7 +17133,9 @@ The Harmony One's streamer is at `0x29A1A` with the state at `0x6AD`, the same s
 the same advance loop at `0x29C6E` and the same three skip counts. Its hold flag is `0x6AB` bit 2 and
 its caller tests **one** PORTB bit rather than four, at `0x2763C`, which is the wiring section 48
 measured from the other side: arch 14 has four sense lines and can tell you which column a key is in,
-and arch 12 has one, so a One knows only that some key is down. The 600 mirrors the 700 exactly,
+and arch 12 has one, so a One knows only that some key is down. **Incomplete, corrected in section
+337**: the same caller also sets the hold flag while the touch code `0x202` is nonzero, so a held touch
+repeats its code as a held key does. The 600 mirrors the 700 exactly,
 `BSF 0x3DC,3` at `0x1268E` after the same four tests.
 
 That is the answer to the question section 70 left open, and it is not the answer that section
@@ -45160,3 +45162,143 @@ menu row too and that refuses in both codecs, so 18, 21 and 3 stand and the thre
   composed activities.
 * `packages/codec/test/compose.test.ts`: the refusal on `calibration_h600` and the title lookup follow.
 * `docs/config-format.md`, after the four records keyed by the activity counter.
+
+
+## 337. On a Harmony One most screen commands wait the device's delay between devices before the code, and every one clicks first
+
+**The question came from the bench**: a command touched on a Harmony One's screen seems to go out a
+moment later than the same command on a key, which is useful, since it leaves time to point the
+remote. Is that in the configuration, in the firmware, or in the hand?
+
+**Sources checked**: this document, sections 17, 45, 48, 74, 104, 125, 127, 242, 287 and 335;
+`docs/config-format.md` on `0x75` and on the activity composer's send lists; MyHarmony's client under
+`../lab/work/myharmony/src/`, which says nothing about a touch delay, a touch sensitivity, sending on
+release or the button sound, and names the internal flash byte at `0x01F440` "key timing" only for
+the Harmony 600 and 700 family; the Harmony One 3.4 application image; the first harvest compile.
+**Two reviewers ran before this was committed**, one re-measuring blind and one auditing the text, and
+the second overturned the first draft's headline, which said the infrared records hold no difference.
+That draft compared the records of one two device compile and never asked which record a screen
+command sends.
+
+### A screen command usually sends a copy that waits first
+
+A device's commands are two block records, once and held, and on the Harmony One their once block opens
+with 50 ms of silence. Beside them a configuration holds **one block copies** of some of those codes, and
+on the One a copy opens with a long silence instead. Which record a binding's first `0x7D` sends, by the
+silence before its first pulse, over every press binding that runs an action list that sends, split by
+whether its scan is a hit map code (43, 44, 46, 47 and 48 to 53, section 45):
+
+| configuration | screen: 500 or 1000 ms first | screen: 50 ms | key: 500 or 1000 ms first | key: 50 ms |
+|---|---|---|---|---|
+| `one_config` | 148 (106 and 42) | 93 | 23 (17 and 6) | 354 |
+| `one_config_unprogrammed` | 59 | 12 | 6 | 48 |
+| `one_spare_after_sync` | 9 | 84 | 0 | 44 |
+| `calibration_one` | 36 | 133 | 0 | 163 |
+| `harvest_one_two_devices` | 6 | 123 | 0 | 62 |
+
+So on the Harmony One the wait the bench noticed is in the configuration, on most screen commands of a
+configuration grown by hand and the factory one, and on few keys. **It is the device's delay between
+devices** rather than anything about touch: the copy's lead is per device, 500 ms on four of
+`one_config`'s five devices and 1000 ms on the fifth, and in the harvest compile 500 ms on both devices, each of which states
+`interDeviceDelay` 500 in Logitech's database. Which commands get a copy is the compiler's choice and
+is not established in general; in the harvest compile they are PowerOn, PowerOff, the ten digits and
+OK for the LG television and PowerOn and PowerOff for the Denon receiver, the power copies reached from
+the devices' screen pages and from their power transitions, and the digit and OK copies from nothing in
+a compile with no activity. In `one_config` the copies are 28 to 34 per device, so far more than power.
+Whether Logitech meant the wait for aiming is not something a file can say.
+
+The harvest compile also gives the One against the Harmony 650 for the same two devices, Logitech's
+catalogue holding 63 and 118 commands:
+
+| device | two block records, 50 ms | one block copies |
+|---|---|---|
+| LG, One | 63 | 13, opening with **500 ms** |
+| LG, 650 | 63 | 13, opening with **nothing** |
+| Denon, One | 118 | 2, opening with **500 ms** |
+| Denon, 650 | 118 | 2, opening with nothing, plus one one block record that copies no code |
+
+Ignoring the lead, every record of the One's has an identical record on the 650. **Every one block copy
+on arch 14 opens with no silence**, in `h650_config_region`, `h600_config`, `h700_config` and this
+compile, and on `h600_config` and `h700_config`, the older generator, the two block records do too; on
+arch 14 the wait between devices is section 287's delay step at the front of each send list, which
+section 335 measured. The 650's further Denon record copies no catalogue command, has no counterpart on
+the One, and is sent from scan 9 on the first page of two mode records; what it is was not established.
+Item 1.2 of the gathering todo read the 15 differing records as "a leading silence the One adds", which
+was true and said nothing about which commands send them.
+
+### Logitech's compiles click before every screen send
+
+Over the same population, what runs before the first `0x7D`, following `0x7F` calls:
+
+| configuration | screen bindings, `0x75 0x0FCA`, then calls, then the send | key bindings, calls and the send |
+|---|---|---|
+| `one_config` | 241 of 241 | 377 of 377 |
+| `one_config_unprogrammed` | 71 of 71 | 54 of 54 |
+| `one_spare_after_sync` | 93 of 93 | 44 of 44 |
+| `calibration_one` | 169 of 169 | 163 of 163 |
+
+The factory configuration, two of Logitech's compiles and a configuration grown on Logitech's software.
+Over every press binding of `one_config` that runs an action list, infrared or not, a key list runs the
+click on none of 976 and a screen list on 853 of 993; the ten key bindings whose own entry is the click,
+scan 38 in mode records, are outside that count. **It is Logitech's convention and not a requirement**:
+configurations this project wrote to the spare Harmony One, `one_spare_plus_lg_region` among them, hold
+screen sends with no click, and the television answered them, section 242.
+
+### What the click costs
+
+The executor's arm for `0x75` at `0x25100` copies the operand's low byte to `0xF1A` and its high byte
+to `0xF19` and calls the generator at `0x2411E`, which returns only when the tone has played: per cycle
+it toggles `LATG` bit 0, busy waits in `0x2CCC4`, toggles again and waits again, `0xF19` cycles.
+Section 74's arithmetic gives `0x0FCA` 15 cycles of two 859 us halves, **26 ms**. Interrupts are not
+masked meanwhile. The executor runs one instruction per main loop turn, and on every screen send the
+order is the click, a `0x7F` call, then the send, so the send follows the click by two further turns of
+a loop that services about thirty routines each; those turns are not measured. With the sound gate
+`0xE12` at zero, section 74's `0x3F` with high byte `0xF3`, the generator returns at once and the tone's
+26 ms goes; the turns remain.
+
+### A touch is posted as a key is
+
+The touch routine runs when its timer fires (`0xED6`, read at `0x25EE0`), takes the answer of the call
+at `0x25EFA` into `0xD2F`, stores it in `0x202` at `0x25F3E`, and posts `0x80 | 0x202`, a press, at
+`0x25F50`; `0x40 | 0x202`, a release, at `0x25F24` and `0x25F8A`; and `0xC0 | 0x202`, a repeat, at
+`0x25FBC`. All four go to `0x24BF0`, the poster the keypad calls at `0x2BEA0` with `0x2FB`, which queues
+them as section 104's `0x1F 0xFC` events. The configurations bind only the press, section 17.
+
+**Unconfirmed**, read in one pass and not checked here: that the press is posted while the finger is
+down rather than on the lift, which rests on `0x200` being the pen down bit from the packet status;
+that the touch routine's timer is armed by the first packet with the byte at `0x01F440`, 25 when
+erased, in ticks of 1 ms, the keypad's settle time too; and that a touch becomes a repeat after `0xE11`
+times ten ticks, 75 by default (the literal `0x4B` at `0x24BDE` is read; its unit is not), against
+`0xE10`, which the configurations set to 100, for a key; that the queue refuses a touch event above 30
+queued and a key above 48 (`0x24E5A`, by `0xEB4`); and that sliding a finger onto another item posts a
+release and a new press, which a key cannot do.
+
+### Correcting section 127: a held touch repeats its code
+
+Section 127 says the One's streamer caller tests one `PORTB` bit to decide that a key is held. It also
+sets the hold flag `0x6AB` bit 2 when `0x202` is nonzero, at `0x27642` to `0x2764A`, the instructions
+after the keypad test, and the touch routine clears `0x202` on the lift, at `0x25FA2`. So **a held touch repeats its
+infrared as a held key does**, and the scan code variable section 48's table left unsettled between
+`0x2FB` and `0x202` is both: `0x2FB` for the keypad and `0x202` for the touch panel.
+
+### Scope, decision 16
+
+The Harmony One 3.4 application image and Logitech's compiles for the Harmony One. Arch 14, the Harmony
+600, 650 and 700, has no touch panel and issues no `0x75`, section 74, and its copies carry no lead on
+the four configurations read.
+
+### Falsification
+
+A Logitech compile for a Harmony One with a screen binding that sends and does not click first, or a key
+binding that sends and does; a copy whose lead is not its device's delay between devices; on the remote,
+a screen command sending its copy without the copy's silence.
+
+### Where it lands
+
+* `tests/test_touch_send.py`: the click arm, the generator's gate and its busy loop, the touch events
+  and their poster, the keypad's post through the same poster, the hold flag set by the touch code.
+* `packages/codec/test/touch.test.ts`: the click before every screen send and no key send on four of
+  Logitech's compiles, and the lead of the record each binding sends, with this project's own write as
+  the control.
+* `packages/codec/test/ir.test.ts`: the commands and their single shot copies on both remotes.
+* `docs/config-format.md` under `0x75` and the activity composer's send list; `docs/how-a-harmony-works.md`.

@@ -4033,7 +4033,7 @@ holds one.**
 
 | step | what a list holds |
 |---|---|
-| a command | one `0x7F` call of that command's send list `{0x7D, 0x7C}`, whose `0x7C` is the device's **inter key delay** in tenths, so a device at 200 ms calls lists at 2 where its device mode keys call lists at 1. The one separating device in the sequences is that one; the send is a single block record of its own where the key's is two blocks, and the composer makes no record |
+| a command | one `0x7F` call of that command's send list `{0x7D, 0x7C}`, whose `0x7C` is the device's **inter key delay** in tenths, so a device at 200 ms calls lists at 2 where its device mode keys call lists at 1. The one separating device in the sequences is that one; the send is a single block record of its own where the key's is two blocks, and the composer makes no record. A single block copy opens on arch 12 (Harmony One) with its device's delay between devices, 500 or 1000 ms, and on arch 14 (Harmony 600, 650 and 700) with no silence, where the wait is section 287's delay step, section 337 |
 | a pause | one `0x7C (group << 8) \| tenths` per device the **activity** switches on, in the order its start switches them on, whatever device the neighbouring steps send to. Four of four compiles, three of them with the devices renumbered |
 | a pause of 20 seconds | one `0x7C` of 200 per device, not runs of 100 |
 | two pauses in a row, and a pause at the end | kept as written, not merged |
@@ -4396,6 +4396,16 @@ cycles. At the 4 MIPS the infrared carrier gives (section 32) that is 4.25 us a 
 The whole corpus uses those four and nothing else. Counting the loop's own overhead moves the
 highest by about 8% and the lowest by under 1%. **`0x3F` with high byte `0xF3` gates it**: the
 generator returns without playing when that byte is zero. [findings.md](findings.md) section 74.
+
+**On arch 12 (Harmony One) Logitech's compiler clicks before every screen send.** Every screen binding
+that sends runs `0x75 0x0FCA`, then its calls, then its `0x7D`, and no key binding that sends runs it,
+on four of Logitech's compiles; this project's own writes omit it and the remote still sends, so it is a
+convention. The generator returns only when the 26 ms tone has played, and the send follows two main
+loop turns later. A screen binding's send is also more often a **one block copy**, whose once block opens
+with its device's delay between devices, 500 or 1000 ms on the One, where a two block record opens with
+50 ms: 148 of `one_config`'s 241 screen sends against 23 of its 377 key sends. A touch reaches the same
+event poster as a key, and the touch code `0x202` sets the streamer's hold flag as a held key does.
+[findings.md](findings.md) section 337.
 
 #### State variables 3, 5 and 6 are the date
 

@@ -13,7 +13,16 @@ import assert from 'node:assert/strict';
 
 import { load, skipUnless } from '@harmony/lab';
 import {
+  ACTION_LIST_INDEX_OPCODE,
+  type Container,
   EDGE_CODES,
+  handlerSets,
+  infraredCodesPerList,
+  irBlockWords,
+  irGroups,
+  irRecordBlocks,
+  modeRecords,
+  payloadOf,
   activityBindings,
   activityNames,
   modePages,
@@ -196,4 +205,118 @@ test('the activity names a One resolves do not depend on the x half of the trans
     assert.equal(named.length, 8, 'eight activities');
     assert.equal(withoutX.size, 8, 'and eight of them resolve with x ignored');
     for (const one of named) assert.equal(one.name, withoutX.get(one.activity), `activity ${one.activity}`);
+  });
+
+/**
+ * Every binding that sends infrared on a Harmony One, split into screen and key, and what runs before
+ * the send. Section 337. The firmware half, that the click is a busy loop the send waits for, is
+ * `tests/test_touch_send.py`.
+ *
+ * The population is every press binding in a device's own map, on a screen page and in a base slot 9
+ * set, whose list reaches a `0x7D` through `0x7F` calls. A screen binding is one whose scan is a hit
+ * map code, section 45.
+ */
+const TOUCH_SCANS = new Set([43, 44, 46, 47, 48, 49, 50, 51, 52, 53]);
+const CLICK = 0x75;
+const SEND = 0x7d;
+const CALL = 0x7f;
+
+function beforeTheSend(c: Container): { touch: Map<string, number>; key: Map<string, number> } {
+  const lists = c.actionLists() ?? [];
+  // The instructions run before the first send, or undefined when the list never sends.
+  const walk = (list: number, seen: Set<number>): string[] | undefined => {
+    if (seen.has(list)) return undefined;
+    seen.add(list);
+    const ran: string[] = [];
+    for (const one of lists[list] ?? []) {
+      if (one.opcode === SEND) return ran;
+      if (one.opcode === CALL) {
+        const inner = walk(one.operand, seen);
+        if (inner !== undefined) return [...ran, ...inner];
+        continue;
+      }
+      ran.push(`${one.opcode.toString(16)}:${one.operand.toString(16)}`);
+    }
+    return undefined;
+  };
+  const out = { touch: new Map<string, number>(), key: new Map<string, number>() };
+  const collect = (entries: readonly { tag: number; opcode: number; operand: number }[]): void => {
+    for (const entry of entries) {
+      if (entry.tag >> 6 !== 2 || entry.opcode !== ACTION_LIST_INDEX_OPCODE) continue;
+      const ran = walk(entry.operand, new Set());
+      if (ran === undefined) continue;
+      const side = TOUCH_SCANS.has(entry.tag & SCAN) ? out.touch : out.key;
+      const shape = ran.join(' ') || 'nothing';
+      side.set(shape, (side.get(shape) ?? 0) + 1);
+    }
+  };
+  for (const record of modeRecords(c) ?? []) collect(record.entries);
+  for (const page of modePages(c)) collect(taggedList(c, page.list)?.entries ?? []);
+  for (const address of handlerSets(c)?.addresses ?? []) collect(taggedList(c, address)?.entries ?? []);
+  return out;
+}
+
+test('in Logitech\'s compiles for a Harmony One every screen command clicks before it sends and no key command does, and this project\'s own write is the exception',
+  skipUnless('one_config', 'one_config_unprogrammed', 'one_spare_after_sync', 'calibration_one', 'one_spare_plus_lg_region'), () => {
+    // Measured. The unprogrammed One is the factory configuration, the spare after its sync and the
+    // calibration record are Logitech's compiles, and `one_config` is a configuration grown by hand,
+    // so the click is the compiler's rule across both eras and not one owner's choice.
+    const EXPECTED: Record<string, [number, number]> = {
+      one_config: [241, 377],
+      one_config_unprogrammed: [71, 54],
+      one_spare_after_sync: [93, 44],
+      calibration_one: [169, 163],
+    };
+    for (const [name, [touch, key]] of Object.entries(EXPECTED)) {
+      const found = beforeTheSend(parse(payloadOf(load(name) as Uint8Array)));
+      assert.deepEqual([...found.touch], [[`${CLICK.toString(16)}:fca`, touch]], `${name} screen`);
+      assert.deepEqual([...found.key], [['nothing', key]], `${name} keys`);
+    }
+    // The control: the spare Harmony One with the LG television this project composed and wrote,
+    // section 242, whose six screen sends were written without the click and still sent. So the walk
+    // can see a screen send without it, and the click is Logitech's convention, not a requirement.
+    const ours = beforeTheSend(parse(payloadOf(load('one_spare_plus_lg_region') as Uint8Array)));
+    assert.deepEqual([...ours.touch].sort(), [['75:fca', 340], ['nothing', 6]]);
+    assert.deepEqual([...ours.key], [['nothing', 432]]);
+  });
+
+test('on a Harmony One a screen command far more often sends a one block copy that waits its device\'s delay between devices first',
+  skipUnless('one_config', 'one_config_unprogrammed', 'one_spare_after_sync', 'calibration_one', 'harvest_one_two_devices'), () => {
+    // Section 337. Per press binding that sends, the silence before the first pulse of the record its
+    // first send names, in milliseconds: 50 for an ordinary two block record, 500 or 1000 for a copy.
+    const EXPECTED: Record<string, Record<string, number>> = {
+      one_config: { 'key 1000': 6, 'key 50': 354, 'key 500': 17, 'screen 1000': 42, 'screen 50': 93, 'screen 500': 106 },
+      one_config_unprogrammed: { 'key 50': 48, 'key 500': 6, 'screen 50': 12, 'screen 500': 59 },
+      one_spare_after_sync: { 'key 50': 44, 'screen 50': 84, 'screen 500': 9 },
+      calibration_one: { 'key 50': 163, 'screen 50': 133, 'screen 500': 36 },
+      harvest_one_two_devices: { 'key 50': 62, 'screen 50': 123, 'screen 500': 6 },
+    };
+    for (const [name, expected] of Object.entries(EXPECTED)) {
+      const c = parse(payloadOf(load(name) as Uint8Array));
+      const sent = infraredCodesPerList(c);
+      const groups = irGroups(c) ?? [];
+      const lead = (group: number, code: number): number => {
+        const record = groups[group]?.addresses[code] as number;
+        let total = 0;
+        for (const word of irBlockWords(c, irRecordBlocks(c, record)[0] as number) ?? []) {
+          if (word === 0 || word & 0x8000) break;
+          total += word;
+        }
+        return Math.round(total / 1000);
+      };
+      const found: Record<string, number> = {};
+      const collect = (entries: readonly { tag: number; opcode: number; operand: number }[]): void => {
+        for (const entry of entries) {
+          if (entry.tag >> 6 !== 2 || entry.opcode !== ACTION_LIST_INDEX_OPCODE) continue;
+          const first = sent.get(entry.operand)?.[0];
+          if (first === undefined) continue;
+          const key = `${TOUCH_SCANS.has(entry.tag & SCAN) ? 'screen' : 'key'} ${lead(first.group, first.code)}`;
+          found[key] = (found[key] ?? 0) + 1;
+        }
+      };
+      for (const record of modeRecords(c) ?? []) collect(record.entries);
+      for (const page of modePages(c)) collect(taggedList(c, page.list)?.entries ?? []);
+      for (const address of handlerSets(c)?.addresses ?? []) collect(taggedList(c, address)?.entries ?? []);
+      assert.deepEqual(Object.fromEntries(Object.entries(found).sort()), expected, name);
+    }
   });

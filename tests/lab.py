@@ -395,6 +395,10 @@ IMAGES = {
     # read for section 323's key calibration only.
     'h650_issue36_config': 'H650-Config.EZHex',
     'h650_issue8_config': 'Harmony_650.EZHex',
+    # The first harvest compile on a test account's Harmony One and Harmony 650 records, two devices
+    # and no activity, under names of their own. Section 337.
+    'harvest_one_two_devices': 'harvest-one-two-devices.EzHex',
+    'harvest_650_two_devices': 'harvest-650-two-devices.EzHex',
     # The spare Harmony One either side of a sync, 7 August 2026. The change was decided and
     # written down before it was made, which no other pair here can say, and the second half was
     # compiled by the live service rather than found. findings.md section 58.
@@ -720,7 +724,9 @@ PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_confi
                       'h700_after_failed_stage_region', 'h700_28_staging_region',
                       # Two contributed Harmony 650 configurations, out of the corpus for the reason
                       # `h650_config_region` is.
-                      'h650_issue36_config', 'h650_issue8_config')
+                      'h650_issue36_config', 'h650_issue8_config',
+                      # Two harvest compiles no remote ever held, section 306's reason.
+                      'harvest_one_two_devices', 'harvest_650_two_devices')
 
 CONTAINERS = (
     'h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'h525_config_2', 'one_config',

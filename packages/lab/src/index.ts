@@ -382,6 +382,12 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // outside this project, on the model the bench compiles for.
   h650_issue36_config: 'H650-Config.EZHex',
   h650_issue8_config: 'Harmony_650.EZHex',
+  // The first harvest compile, the Denon AVR-X4800H and the LG OLED65G26LA on a test account's Harmony
+  // One record, and the same two devices on its Harmony 650 record, with no activity, 7 October 2026.
+  // Copies of `work/harvest/first-run` and `check-650`'s `compile-001-Result.EzHex` under a name of
+  // their own, since every harvest compile carries that name. Section 337.
+  harvest_one_two_devices: 'harvest-one-two-devices.EzHex',
+  harvest_650_two_devices: 'harvest-650-two-devices.EzHex',
   // The spare Harmony One either side of a sync, 7 August 2026. findings.md section 58.
   one_spare_before_sync: 'one-spare-before-sync-config.bin',
   one_spare_after_sync: 'one-spare-after-sync-config.bin',
@@ -726,7 +732,10 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
     'h700_after_failed_stage_region', 'h700_28_staging_region',
     // Two contributed Harmony 650 configurations, out of the corpus for the reason `h650_config_region`
     // is: whether the 650 joins it is a decision of its own, not a side effect of a calibration.
-    'h650_issue36_config', 'h650_issue8_config'];
+    'h650_issue36_config', 'h650_issue8_config',
+    // Two harvest compiles of test devices removed straight afterwards, so no remote ever held either,
+    // the reason section 306's compiles are here.
+    'harvest_one_two_devices', 'harvest_650_two_devices'];
 
 const cache = new Map<string, string[]>();
 

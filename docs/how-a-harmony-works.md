@@ -343,6 +343,27 @@ undo the switching off or the second page cannot be reached. Section 275.
 fact about the file. Which of them is a button, what it says, and which one is dead, is a fact about
 the remote, and there was no way to reach it from the bytes.
 
+### A Harmony One clicks before it sends a command touched on its screen
+
+**The bench observation, 7 October 2026**: a command touched on a Harmony One's screen seems to go out a
+moment later than the same command on a key, which is welcome, since it leaves time to point the remote
+at the device after looking at the screen. What the configuration and the firmware say about it,
+section 337:
+
+* **Most screen commands wait before the code starts**, half a second, or a second for some devices.
+  The command on the screen usually sends a separate copy of the code that begins with that device's
+  "delay between devices", where the same command on a key sends the ordinary code, which begins
+  almost at once. On the bench Harmony One's own configuration 148 of 241 screen commands do this and
+  23 of 377 key commands. Whether Logitech meant it for aiming is not known; it is the wait they put
+  between one device and the next.
+* **Every screen command also plays a click first**, the button sound, about 26 ms, and no key command
+  does. Logitech's compiler always puts it there; this project's own writes have left it out and the
+  remote still sent, so it is a convention. With the button sound off the click is skipped.
+* **Holding a command on the screen repeats it**, as holding a key does.
+
+Nothing of this applies to the Harmony 600, 650 and 700: they have no touch panel and play no click, and
+their copies of a code begin with no silence, the wait between devices being a separate step.
+
 ## A favourite channel is a screen button, and the channel is text
 
 Read out of Logitech's own button records on 23 August 2026, for three of the models on the bench. A
@@ -409,6 +430,10 @@ by how long the key is held and belongs to the button rather than to any command
 between two actions must wait to learn which one was meant, and a key that is waiting cannot also be
 repeating. So the third behaviour is not a third kind of key: it is a key whose long press has taken
 its repeat away.
+
+**On a Harmony One the touch panel holds the same way**: a command held on the screen repeats like one
+held on a key, section 337. Whether a long press on the screen takes as long as on a key is not
+established.
 
 **Which models have a long press is a generation boundary**, from `ProductsManager/GetAllProducts` on
 the live service, where a product record lists its own capabilities. Declaring `LongPressAction`: the

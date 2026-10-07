@@ -36,6 +36,7 @@ import {
   payloadOf,
   irRecordsByClosure,
   IR_RECORD_POINTER_BIAS,
+  devices,
 } from '../src/index.ts';
 import type { Container } from '../src/index.ts';
 
@@ -454,4 +455,48 @@ test('the closure locator finds exactly the records base slot 5 names, all 3925 
     }
     // Exact, so a reader change or a new sample moves it in the diff rather than silently.
     assert.equal(total, 3925, 'records across the thirteen containers');
+  });
+
+test('a device holds its commands once each and single shot copies of some, which open with half a second of silence on the One and with none on the 650',
+  skipUnless('harvest_one_two_devices', 'harvest_650_two_devices'), () => {
+    // Section 337. The same two devices compiled by Logitech for a Harmony One record and a Harmony 650
+    // record. Logitech's catalogue holds 63 commands for the LG and 118 for the Denon, and both
+    // remotes carry exactly that many two block records opening with section 309's 50 ms. The rest are
+    // one block records repeating the code of one of those, the power, digit and OK sends. On the One
+    // they open with 500 ms, both devices' stated delay between devices; on the 650 with nothing, where
+    // the wait is section 287's delay step at the front of each send list. The 650's one further Denon
+    // record is not such a copy, and what it is was not established.
+    const shape = (name: string) => {
+      const c = parse(payloadOf(require_(name)));
+      const groups = irGroups(c) ?? [];
+      const out: Record<string, Record<string, number>> = {};
+      for (const device of devices(c)) {
+        const records = (groups[device.group as number]?.addresses ?? []).map((record: number) => {
+          const blocks = irRecordBlocks(c, record);
+          const words = irBlockWords(c, blocks[0] as number) ?? [];
+          let lead = 0;
+          let at = 0;
+          while (at < words.length && words[at] !== 0 && !((words[at] as number) & 0x8000)) lead += words[at++] as number;
+          const body = words.slice(at);
+          while (body.length > 0 && !((body[body.length - 1] as number) & 0x8000)) body.pop();
+          return { lead, blocks: blocks.length, body: JSON.stringify([irCarrier(c, record)?.periodNs, body]) };
+        });
+        const tally: Record<string, number> = {};
+        for (const one of records) {
+          const copy = one.blocks === 1 && records.some((other: { blocks: number; body: string }) => other.blocks === 2 && other.body === one.body);
+          const key = `${one.blocks} block, ${one.lead} us${one.blocks === 1 ? (copy ? ', a copy' : ', not a copy') : ''}`;
+          tally[key] = (tally[key] ?? 0) + 1;
+        }
+        out[(device.name ?? '').split('_')[0] as string] = tally;
+      }
+      return out;
+    };
+    assert.deepEqual(shape('harvest_one_two_devices'), {
+      LG: { '2 block, 50000 us': 63, '1 block, 500000 us, a copy': 13 },
+      Denon: { '2 block, 50000 us': 118, '1 block, 500000 us, a copy': 2 },
+    });
+    assert.deepEqual(shape('harvest_650_two_devices'), {
+      LG: { '2 block, 50000 us': 63, '1 block, 0 us, a copy': 13 },
+      Denon: { '2 block, 50000 us': 118, '1 block, 0 us, a copy': 2, '1 block, 0 us, not a copy': 1 },
+    });
   });

@@ -6,6 +6,9 @@ does it and what has been seen on the bench unit.
 
 ## Device mode, in and out
 
+The 650 plays no click on a key or a screen key: its architecture has no tone instruction, section 74,
+where a Harmony One clicks before every command on its touch screen, section 337.
+
 | | how | standing and source |
 |---|---|---|
 | in | **the centre key below the display**, under the word "Devices" on an activity's screens. There is no Devices key | Logitech's manual pages 3 and 4: "switch to device mode by pressing the center button below Devices"; seen at the bench on composed devices, section 285 |
@@ -29,6 +32,10 @@ television, with "Activity" at the bottom, section 294.
 * All Off turns off the devices of the current activity, Logitech's manual. On the bench, the composed
   plasma's power went out from its activity, its device page and All Off, `todo-compile-650.md` and the
   infrared run `reads/20261004T063001Z-...` in the lab.
+* Besides its ordinary commands a device holds single shot copies of some of them, power, digits and
+  OK in a compile of two devices, and they start with no silence at all. On a Harmony One the same
+  copies carry the device's delay between devices as silence in front, half a second or a second; on
+  the 650 that wait is a delay step at the front of each send, sections 287, 335 and 337.
 * Seen with the infrared receiver on the combined file: in Kijk TV volume and mute went to the Denon,
   channels, digits and OK to the KPN box, and the activity menu paged 1/3, 2/3, 3/3 and wrapped.
   Measured on air, `todo-compile-650.md`.
