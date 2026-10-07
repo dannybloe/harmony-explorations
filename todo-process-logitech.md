@@ -21,4 +21,13 @@ bench procedure. Moved here from todo-later 5.7; the 525 and the Touch, which ge
 - [ ] 1.3 Harmony 700, beside the 650 in the same architecture folder
 - [ ] 1.4 Harmony 300 and Harmony 350, the file based family
 
+## 2. The infrared families the composer refuses
+
+Measured on 7 October 2026 over the archive, without the service: 641 families hold a command the
+composer refuses, and the reason splits three ways.
+
+- [ ] 2.1 The 151 families whose catalogue notation our reader does not read, 53000 commands; Logitech's definition exists for every one, so this is reading work, checked against the compiles already in the lab
+- [ ] 2.2 The 482 families with a rhythm and no block, 339000 commands, which lack only the press repeat count: measure "the stated count, else three" against every compile in the lab, and name the kinds of family it gets wrong, the two Memorex families first
+- [ ] 2.3 The 8 families left over, 4 with no rhythm and 4 whose block is refused
+
 The other chapters are decided once the gathering is done, one per kind of knowledge.
