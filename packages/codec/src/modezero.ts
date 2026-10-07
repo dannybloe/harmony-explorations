@@ -47,9 +47,13 @@ export type ModeZeroModel = 'harmony-600' | 'harmony-650' | 'harmony-700';
 
 /** The key events a key list binds, as the tag's top two bits: release, press and repeat. Section 17. */
 const KEY_EVENTS = [1, KEY_EVENT_PRESS, 3] as const;
-/** Scans 1 to 54, the 600's keypad; scan 0 is no key. */
-const FIRST_SCAN = 1;
-const LAST_SCAN = 54;
+/**
+ * Scans 1 to 54, the 600's keypad; scan 0 is no key. Exported since section NNM, because an arch 14
+ * start up screen binds the press of exactly these, `activityScreenChrome`, and two copies of a range
+ * are two copies until one of them moves.
+ */
+export const KEYPAD_FIRST_SCAN = 1;
+export const KEYPAD_LAST_SCAN = 54;
 /** The key under "Exit" on the placeholder screen, sections 290, 294 and 311. */
 const EXIT_SCAN = 25;
 /** Instruction `0x07` with operand `0xFFFC` pops the mode stack, section 311. */
@@ -134,7 +138,7 @@ export function modeZeroEntries(model: ModeZeroModel, options: { variable?: numb
     throw new RangeError(`a ${model}'s mode 0 list has no leading entry, so it takes no variable`);
   }
   for (const event of KEY_EVENTS) {
-    for (let scan = FIRST_SCAN; scan <= LAST_SCAN; scan += 1) {
+    for (let scan = KEYPAD_FIRST_SCAN; scan <= KEYPAD_LAST_SCAN; scan += 1) {
       const tag = (event << KEY_EVENT_SHIFT) | scan;
       // Only the 600 and 650 placeholder pops back on Exit; on the 700 mode 0 is something else and
       // every key is swallowed.

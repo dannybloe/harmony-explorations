@@ -80,7 +80,7 @@ copied. **Every chapter ends with a configuration that works on the 650.**
   - [x] 6.2.7 A device mode's key map, 47 entries, built by `deviceModeKeyMap` in the compiler's hash order, 83 of 83 maps (section 330)
   - [x] 6.2.8 The device mode and activity menu markers: one variable, 1 on every device row and 0 on every activity row, generated and checked (section 329)
   - [x] 6.2.9 Menu growth off existing pages: every menu page built per kind by `fourSlotMenuChrome` and checked, 164 of 164 on 13 compiles (section 334)
-  - [ ] 6.2.10 The start up and working screens off an existing activity's (`workingTemplate14`), and the Devices key's case
+  - [x] 6.2.10 The start up and working screens off an existing activity's (`workingTemplate14`), and the Devices key's case: built by `activityScreenChrome` and checked, 40 start up screens, 63 working pages and 186 cases of 40 activities on 13 compiles; the start up font is read, 6.2.12's (section NNM)
   - [ ] 6.2.11 An activity's own device list, copied from the idle list, its "Activity" word from another activity's list
   - [ ] 6.2.12 Letters and fonts off the configuration's own (`codesFor`, `fontThatSpells`)
   - [ ] 6.2.13 Write the setup again and check it as in 5.2

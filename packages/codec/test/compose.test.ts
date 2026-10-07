@@ -3304,7 +3304,7 @@ test('an activity composed on a Harmony 650, 600 and 700 opens on a start up scr
     const activity = nextActivityValue(c);
     if (name === 'calibration_h600') {
       // No working screen there holds one command or none, so the second page has no background.
-      assert.throws(() => composeActivityScreen(c, activity, 'Play Audio', rows), /no background to copy/);
+      assert.throws(() => composeActivityScreen(c, activity, 'Play Audio', rows), /holds no working screen background of the monochrome look for a page of one command or none/);
     }
     const onPages = name === 'calibration_h600' ? rows.slice(0, 4) : rows;
     const screen = composeActivityScreen(c, activity, 'Play Audio', onPages);
@@ -3352,7 +3352,7 @@ test('an activity composed on a Harmony 650, 600 and 700 opens on a start up scr
       [0x7f, built.enterList + 2], [0x80 + screen.startVariable!, 0]]);
     assert.deepEqual(lists[built.enterList + 2], [{ opcode: 0x3f, operand: 0xd000 }, { opcode: 0x7e, operand: screen.mode }]);
 
-    // The start up screen: the template's record, one page binding nothing, and its own title.
+    // The start up screen: the built record binding nothing, one page binding nothing, and its own title.
     const strings = screenStrings(after, characterMap(after));
     const records = modeRecords(after)!;
     const startup = records[screen.startupMode]!;
@@ -3364,7 +3364,10 @@ test('an activity composed on a Harmony 650, 600 and 700 opens on a start up scr
     const drawn = strings.filter((one) => one.program === startup.pages[0]!.program);
     assert.deepEqual(drawn.map((one) => one.text),
                      ['Starting Play Audio', 'Please keep the', 'remote pointed at', 'your system']);
-    const title = screenProgram(after, startup.pages[0]!.program)!.find((one) => one.opcode === 0x05)!;
+    // The title is drawn inline, or by reference where the configuration already draws the same line,
+    // as `h700_config`'s "Play Audio Cassette" draws "Starting Play Audio", section NNM.
+    const title = screenProgram(after, startup.pages[0]!.program)!
+      .find((one) => (one.opcode === 0x04 || one.opcode === 0x05) && one.operands[1] === 5)!;
     const width = drawnCodes(after, title).reduce((sum, code) =>
       sum + (glyphOf(after, fontSets(after)![drawn[0]!.font]!, code)?.width ?? 0), 0);
     assert.deepEqual([drawn[0]!.x, drawn[0]!.y], [Math.floor((128 - width) / 2), 5]);

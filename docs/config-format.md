@@ -893,6 +893,29 @@ entries: scan 25 as `0x72` on the first of the two records for the key under Dev
 | the key under Devices, 2 with the same cases | activities and idle | enter its own device list, "Activity" at the bottom | enter the one saying "Activities" |
 | keypad map, 1 | activities only | `0x1F` with `0xFF00 | entry`, its own, 13 of 13 | none |
 
+**An activity's two screens and its cases, built**, section NNM, on the 40 activities, 63 working pages
+and 186 cases of the thirteen compiles; `activityScreenChrome` builds them and `checkActivityScreens`
+checks every activity against what is built:
+
+| what | rule | agree |
+|---|---|---|
+| start up record | presses of scans 1 to 54 bound to nothing, in `compilerTagOrder`; one page, list `00 00`; page record six bytes | 40 of 40 |
+| start up program | `02 0,0 picture` by content per look, `10 02`, the title lines, the three fixed lines, `00` | 40 of 40 |
+| start up title | "Starting" and the name, broken greedily at 123 pixels, y 5 and 19, each `floor((128 - width) / 2)`; the name is the working screen's title on every page | 40 of 40 |
+| fixed lines | "Please keep the", "remote pointed at", "your system", centred, y 82, 96, 110 | 40 of 40 |
+| start up texts | by reference to the lowest addressed inline copy of the same glyph codes, or that copy | 163 of 163 |
+| start up font | font 2, read off the configuration's start up screens, not built | 40 of 40 |
+| working background | `activitiesSingle` for one command or none, the look's `workingSeveral` for more | 21 and 42 pages |
+| working queued program | the activity menu's battery program | 63 of 63 |
+| working chrome | section 330's bars; "Devices" in the bottom word font, centred, 40, 114, by reference to its one inline copy or that copy | 63 of 63 |
+| working record | `0x99` `0x72` on the activity menu's `(record << 8) \| counter`, then `0x2D` `0x73` on the queued program, in `compilerTagOrder` | 40 of 40 |
+| case shape | `11 u16 operand u8 opcode 00`, five bytes, in all four records but the working record's idle case | 186 of 186 |
+| case operands | working: the mode the start sequence ends on, 40 of 40; Devices idle: the list the activity menu's route reaches, 26 of 26; Devices activity: one activity device list, the same in both records, no other activity's, 40 of 40, which one read; keypad map: read, `activityKeyedRecords` | as stated |
+
+A composed activity's case under the key under Devices enters the idle device list until its own list
+is composed, section 294. Unconfirmed beyond these compiles: the fixed lines' English wording, and their
+places for a start up font that is not 14 high, which is refused.
+
 **An activity's own device list is the idle one reordered**, section 294, 13 of 13: the idle list's
 record entries, page count, rows per page, backgrounds, title and counter, with the activity's devices
 first in the order its enter list writes their power variables 1, then the rest in the idle list's

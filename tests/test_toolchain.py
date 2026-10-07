@@ -447,7 +447,7 @@ class ATypeScriptSampleLoopStatesItsPopulation(unittest.TestCase):
         # section 313's tag 5 check shared by the corpus test and the composer's, which is a helper
         # rather than a test file and is counted because the glob reads every `.ts` under `test/`. 69 with
         # section 315's two and 70 with `packages/codec/test/screencategories.test.ts`, section 317. 71 with frame.test.ts, section 318, and 72 with devicepower.test.ts, section 320, and 73 with inputs.test.ts, section 321, and 74 with activityroles.test.ts, section 323, and 75 with statetables.test.ts, section 324, and 76 with devicemode.test.ts, section 325. 77 with tworowlist.test.ts, section 326, and 78 with sequence.test.ts, section 327. 80 with devicepage.test.ts, section 330, and 81 with composecatalogue.test.ts, section 331. 82 with `packages/silhouettes/test/remotes.test.ts`, the per remote reference's generated blocks. 83 with `packages/codec/test/catalogueraw.test.ts`, todo-later 1.3 and 1.4. 84 with help.test.ts, section 333, and 85 with menupage.test.ts, section 334.
-        self.assertEqual(scanned, 85, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
+        self.assertEqual(scanned, 86, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
         self.assertEqual(
             {name: len(lines) for name, lines in counted.items()},
             TYPESCRIPT_LOOPS_ALLOWED_TO_SKIP_A_SAMPLE,
@@ -579,7 +579,7 @@ class ABoundOnACorpusTotalIsExact(unittest.TestCase):
         # `packages/codec/test/driving.test.ts`, section 305. 67 since `packages/codec/test/tagfive.ts`,
         # section 313, a shared helper rather than a test file. 69 with section 315's two and 70 with
         # `packages/codec/test/screencategories.test.ts`, section 317. 71 with frame.test.ts, section 318, and 72 with devicepower.test.ts, section 320, and 73 with inputs.test.ts, section 321, and 74 with activityroles.test.ts, section 323, and 75 with statetables.test.ts, section 324, and 76 with devicemode.test.ts, section 325. 77 with tworowlist.test.ts, section 326, and 78 with sequence.test.ts, section 327. 80 with devicepage.test.ts, section 330, and 81 with composecatalogue.test.ts, section 331. 82 with `packages/silhouettes/test/remotes.test.ts`, the per remote reference's generated blocks. 83 with `packages/codec/test/catalogueraw.test.ts`, todo-later 1.3 and 1.4. 84 with help.test.ts, section 333, and 85 with menupage.test.ts, section 334.
-        self.assertEqual(len(scanned), 85, 'TypeScript test files, which moves when one is added')
+        self.assertEqual(len(scanned), 86, 'TypeScript test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):

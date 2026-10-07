@@ -138,6 +138,7 @@ import { type ActivityKey, activityKeyEntry, setActivityKey } from './activityke
 import { applyEdits } from './edit.ts';
 import { Writer } from './emit.ts';
 import { composedNameTreeOrder } from './statetables.ts';
+import { KEYPAD_FIRST_SCAN, KEYPAD_LAST_SCAN } from './modezero.ts';
 import {
   VALUE_MAP_COUNT_WIDTH, VALUE_MAP_KEY_WIDTH, VALUE_MAP_SECTION_COUNT_WIDTH, VALUE_MAP_SLOT,
   countedPointers, valueMaps,
@@ -3431,6 +3432,17 @@ interface DevicePageLook {
   activitiesFull: string;
   activitiesSingle: string;
   activitiesBattery: string;
+  /**
+   * An activity's own two screens, section NNM, `todo-compile-650.md` 6.2.10: the picture every start up
+   * screen draws, one per look and the same for every activity, 40 of 40 on the thirteen compiles, and
+   * the background of a working screen page holding two commands or more, 42 pages of 42. A working page
+   * of one command or none draws `activitiesSingle`, the activity menu's page of one activity, 21 of 21,
+   * which is the agreement section 316's route rests on. The 2021 and 2023 colour look and the
+   * monochrome one share their start up picture, and the monochrome look's working background is the
+   * 2021 and 2023 colour look's crossed device page picture, on both Harmony 600 compiles.
+   */
+  startup: string;
+  workingSeveral: string;
 }
 
 const DEVICE_PAGE_LOOKS: readonly DevicePageLook[] = [
@@ -3439,21 +3451,21 @@ const DEVICE_PAGE_LOOKS: readonly DevicePageLook[] = [
     single: '0061c06666b425f1', crossed: '45888f139bd13f9c',
     topBar: 'e247f3ff422472de', bottomBar: '9e81b982b33e2ff5', battery: 'c7d320f981025b68',
     rows: '45888f139bd13f9c', activitiesFull: '711cbbb1a44ca656', activitiesSingle: '21bc4747e696eba8',
-    activitiesBattery: '4c42bdc959b5ad48',
+    activitiesBattery: '4c42bdc959b5ad48', startup: 'a2368d93e91ee138', workingSeveral: 'a0d49b45e9df025c',
   },
   {
     name: 'the colour look of 2021 and 2023', skins: [66],
     single: 'fb5f49a2ee63c0f9', crossed: '59a6f04d6ba0e90a',
     topBar: 'e247f3ff422472de', bottomBar: '564e0ea2da45a0fd', battery: '6a7beeb149ddb000',
     rows: '59a6f04d6ba0e90a', activitiesFull: '6ed840035d2f19ba', activitiesSingle: 'adc399032d1d41b0',
-    activitiesBattery: '4c42bdc959b5ad48',
+    activitiesBattery: '4c42bdc959b5ad48', startup: 'a56cda25b2f115a2', workingSeveral: '5d94a9eb5d7de1de',
   },
   {
     name: 'the monochrome look', skins: [71, 73],
     single: 'b632fecee357d2c7', crossed: '7e1f839276f704c9',
     topBar: 'e247f3ff422472de', bottomBar: '564e0ea2da45a0fd', battery: '6a7beeb149ddb000',
     rows: 'c442f1b3a81999ec', activitiesFull: '18a044e60240cbd1', activitiesSingle: 'fb5f49a2ee63c0f9',
-    activitiesBattery: '6a7beeb149ddb000',
+    activitiesBattery: '6a7beeb149ddb000', startup: 'a56cda25b2f115a2', workingSeveral: '59a6f04d6ba0e90a',
   },
 ];
 
@@ -3476,21 +3488,38 @@ const BATTERY_STATE_VARIABLE = 17;
 /** The screen opcode of a switch with one byte counts and values, `screen.ts`. */
 const SCREEN_SWITCH_ONE_BYTE = 0x12;
 
-/** What a device mode page's chrome is made of in one configuration, every piece built or located. */
-export interface DeviceModeChrome {
+/**
+ * The chrome a four slot page draws around its middle, every piece built or located: the background by
+ * how many items the page holds, the queued program, the two bars and the bottom word. A device mode
+ * page's, `DeviceModeChrome`, and an activity's working screen's, `ActivityScreenChrome`, are each one of
+ * these, and differ in the word, the two backgrounds and the queued program, section NNM.
+ */
+export interface PageFrame {
   look: string;
-  /** The five pictures' addresses, located by content. */
-  single: number;
-  crossed: number;
+  /**
+   * The background of a page holding one item or none, and of one holding more, located by content.
+   * Undefined where the configuration does not hold the picture, which only a working screen's can be,
+   * and then a page needing it is refused.
+   */
+  single: number | undefined;
+  crossed: number | undefined;
   topBar: number;
   bottomBar: number;
-  /** The base slot 11 entry the page queues, `0x73`, and the key map runs under tag `0x2D`. */
+  /** The base slot 11 entry the page queues, `0x73`, and the mode's key map runs under tag `0x2D`. */
   battery: number;
-  /** The bottom word: its font, its glyph codes there, its x, and the address of an inline copy to point at. */
+  /** The bottom word: the word, its font, its glyph codes there, its x, and the address of an inline copy to point at. */
+  word: string;
   backFont: number;
   backCodes: number[];
   backX: number;
   backHome: number | undefined;
+}
+
+/** What a device mode page's chrome is made of in one configuration, every piece built or located. */
+export interface DeviceModeChrome extends PageFrame {
+  /** The five pictures' addresses, located by content: a device mode page always has both backgrounds. */
+  single: number;
+  crossed: number;
 }
 
 /** Every picture of a configuration by its content, the bank's and the ones outside it, as `screenUnits` lists them. */
@@ -3615,7 +3644,7 @@ function inlineHomes(c: Container): Map<string, number> {
  * page of the lowest numbered device mode, the one page that draws the word inline, and on the other
  * seven on the delay settings screen. Where a configuration holds no inline copy, a composed page draws
  * the word inline, which no compile exercises. **Then every device mode page the configuration holds is
- * checked against it**, `checkDeviceModeChrome`, so a configuration whose own pages disagree is refused
+ * checked against it**, `checkPageFrames`, so a configuration whose own pages disagree is refused
  * rather than extended.
  */
 export function deviceModeChrome(c: Container): DeviceModeChrome {
@@ -3648,9 +3677,9 @@ export function deviceModeChrome(c: Container): DeviceModeChrome {
     look: look.name,
     single: one('single'), crossed: one('crossed'), topBar: one('topBar'), bottomBar: one('bottomBar'),
     battery: batteryProgram(c, look, pictures),
-    backFont, backCodes, backX, backHome,
+    word: DEVICE_PAGE_BACK_WORD, backFont, backCodes, backX, backHome,
   };
-  checkDeviceModeChrome(c, chrome);
+  checkPageFrames(c, chrome, [...new Set(deviceListRows(c).map((row) => row.mode))], 'device mode');
   return chrome;
 }
 
@@ -3658,7 +3687,7 @@ export function deviceModeChrome(c: Container): DeviceModeChrome {
  * The chrome above a page's title, after its background: the queued battery program and the top bar.
  * `shifted` maps an address in the container as it is to where it lands once the page is inserted.
  */
-function deviceChromeHead(chrome: DeviceModeChrome, shifted: (address: number) => number): number[] {
+function deviceChromeHead(chrome: PageFrame, shifted: (address: number) => number): number[] {
   return [
     SCREEN_QUEUE_INSTRUCTION, chrome.battery & 0xff, chrome.battery >> 8, RUN_SCREEN_PROGRAM,
     SCREEN_DRAW_IMAGE_AT, ...DEVICE_PAGE_TOP_BAR_AT, ...new Writer(3).u24(shifted(chrome.topBar)).bytes,
@@ -3666,7 +3695,7 @@ function deviceChromeHead(chrome: DeviceModeChrome, shifted: (address: number) =
 }
 
 /** The bottom bar and the bottom word's font select, the part of a page's tail before the word. */
-function deviceChromeBottom(chrome: DeviceModeChrome, shifted: (address: number) => number): number[] {
+function deviceChromeBottom(chrome: PageFrame, shifted: (address: number) => number): number[] {
   return [
     SCREEN_DRAW_IMAGE_AT, ...DEVICE_PAGE_BOTTOM_BAR_AT, ...new Writer(3).u24(shifted(chrome.bottomBar)).bytes,
     OP_FONT, chrome.backFont,
@@ -3674,7 +3703,7 @@ function deviceChromeBottom(chrome: DeviceModeChrome, shifted: (address: number)
 }
 
 /** The chrome below a page's labels: the bottom bar, the bottom word's font and the word, and the end. */
-function deviceChromeTail(chrome: DeviceModeChrome, shifted: (address: number) => number): number[] {
+function deviceChromeTail(chrome: PageFrame, shifted: (address: number) => number): number[] {
   const word = chrome.backHome === undefined
     ? [OP_TEXT_INLINE, chrome.backX, DEVICE_PAGE_BACK_Y, ...chrome.backCodes, 0]
     : [OP_TEXT_AT, chrome.backX, DEVICE_PAGE_BACK_Y, ...new Writer(3).u24(shifted(chrome.backHome)).bytes];
@@ -3682,24 +3711,29 @@ function deviceChromeTail(chrome: DeviceModeChrome, shifted: (address: number) =
 }
 
 /**
- * Every device mode page of the configuration against the built chrome: its background the one item
- * picture when it holds one item or none and the crossed one when it holds more, the head and the tail
- * byte for byte, and the bottom word either pointing at the built home or being that home. A
- * disagreement is refused with the page it is on.
+ * Every page of the given modes against the built chrome: its background the one item picture when it
+ * holds one item or none and the crossed one when it holds more, the head and the tail byte for byte,
+ * and the bottom word either pointing at the built home or being that home. A disagreement is refused
+ * with the page it is on. The device mode pages' check of section 330, and since section NNM the working
+ * screens' too, with the working screen's own frame.
  */
-function checkDeviceModeChrome(c: Container, chrome: DeviceModeChrome): void {
+function checkPageFrames(c: Container, chrome: PageFrame, modes: readonly number[], what: string): number {
   const same = (address: number): number => address;
   const head = deviceChromeHead(chrome, same).join(',');
   const bottom = deviceChromeBottom(chrome, same).join(',');
   const records = modeRecords(c) ?? [];
-  for (const mode of [...new Set(deviceListRows(c).map((row) => row.mode))]) {
+  let checked = 0;
+  for (const mode of modes) {
     (records[mode]?.pages ?? []).forEach((page, p) => {
-      const where = `device mode ${mode}'s page ${p + 1}`;
+      const where = `${what} ${mode}'s page ${p + 1}`;
       const program = screenProgram(c, page.program) ?? [];
       const items = taggedList(c, page.list)?.entries.length ?? 0;
       const first = program[0];
       const bytes = (from: number, to: number): string => [...c.blob.subarray(from, to)].join(',');
       const background = items > 1 ? chrome.crossed : chrome.single;
+      if (background === undefined) {
+        throw new ComposeError(`${where} holds ${items} items and the configuration holds no such background of ${chrome.look}`);
+      }
       if (first?.opcode !== OP_IMAGE || bitmapReference(first) !== background
           || [...first.operands.subarray(0, 2)].join(',') !== DEVICE_PAGE_BACKGROUND_AT.join(',')) {
         throw new ComposeError(`${where} does not draw the ${items > 1 ? 'crossed' : 'one item'} background of ${chrome.look} at 0, 0`);
@@ -3719,17 +3753,18 @@ function checkDeviceModeChrome(c: Container, chrome: DeviceModeChrome): void {
         && [...(word.glyphs ?? [])].join(',') === chrome.backCodes.join(',');
       const pointsHome = word.opcode === OP_TEXT_AT && referencedStringAddress(word) === chrome.backHome;
       if (at !== [chrome.backX, DEVICE_PAGE_BACK_Y].join(',') || !(isHome || pointsHome)) {
-        throw new ComposeError(`${where}'s bottom word is not '${DEVICE_PAGE_BACK_WORD}' at ${chrome.backX}, `
+        throw new ComposeError(`${where}'s bottom word is not '${chrome.word}' at ${chrome.backX}, `
           + `${DEVICE_PAGE_BACK_Y} drawn from its inline copy at the lowest address`);
       }
+      checked += 1;
     });
   }
+  return checked;
 }
 
 /**
- * The chrome of a page around its middle, as `fourSlotPageProgram` and `compiledPageProgram` write it:
- * built for a device mode page, `builtChrome`, and copied for an activity's working screen, whose chrome
- * is still another activity's, `todo-compile-650.md` 6.2.10.
+ * The chrome of a page around its middle, as `fourSlotPageProgram` and `compiledPageProgram` write it,
+ * built from a frame: a device mode page's, and since section NNM an activity's working screen's.
  */
 interface PageChrome {
   headLength: number;
@@ -3738,24 +3773,13 @@ interface PageChrome {
   tail: (shifted: (address: number) => number) => number[];
 }
 
-function builtChrome(chrome: DeviceModeChrome): PageChrome {
+function builtChrome(chrome: PageFrame): PageChrome {
   const same = (address: number): number => address;
   return {
     headLength: deviceChromeHead(chrome, same).length,
     tailLength: deviceChromeTail(chrome, same).length,
     head: (shifted) => deviceChromeHead(chrome, shifted),
     tail: (shifted) => deviceChromeTail(chrome, shifted),
-  };
-}
-
-/** A page's chrome copied off another page's program: its instructions after the background and up to the title, and its last four. */
-function copiedChrome(c: Container, prefix: readonly ScreenInstruction[], suffix: readonly ScreenInstruction[]): PageChrome {
-  const head = prefix.slice(1);
-  return {
-    headLength: head.reduce((sum, one) => sum + one.length, 0),
-    tailLength: suffix.reduce((sum, one) => sum + one.length, 0),
-    head: (shifted) => head.flatMap((one) => [...copiedInstruction(c, one, shifted)]),
-    tail: (shifted) => suffix.flatMap((one) => [...copiedInstruction(c, one, shifted)]),
   };
 }
 
@@ -3795,7 +3819,23 @@ export function deviceModeKeyMap(c: Container, chrome: DeviceModeChrome): KeyMap
     DEVICES_KEY_TAG, DEVICE_MODE_PROGRAM_TAG,
   ]);
 
-  // The record the key under Devices maps through, off the activity menu.
+  const devicesKey = devicesKeyOperand(c);
+  const built: KeyMapEntry[] = tags.map((tag) => {
+    if (tag === DEVICES_KEY_TAG) return { tag, operand: devicesKey, opcode: MAP_VALUE_OPCODE };
+    if (tag === DEVICE_MODE_PROGRAM_TAG) return { tag, operand: chrome.battery, opcode: RUN_SCREEN_PROGRAM };
+    return { tag, operand: 0, opcode: 0 };
+  });
+  checkDeviceModeKeyMaps(c, built);
+  return built;
+}
+
+/**
+ * The operand the key under Devices is mapped with, `0x72` on `(record << 8) | counter`, read off the
+ * activity menu, checked to be keyed on the activity counter and to name one of the two records
+ * `activityKeyedRecords` finds under that key. Section 330 for a device mode, and since section NNM an
+ * activity's working screen maps the key with the same operand, 40 of 40 on the thirteen compiles.
+ */
+function devicesKeyOperand(c: Container): number {
   const menu = activityMenus(c).menu;
   const menuEntry = menu === undefined ? undefined
     : modeRecords(c)?.[menu]?.entries.find((one) => one.tag === DEVICES_KEY_TAG);
@@ -3809,14 +3849,7 @@ export function deviceModeKeyMap(c: Container, chrome: DeviceModeChrome): KeyMap
     throw new ComposeError(`the activity menu maps the key under Devices through record ${record}, which is not `
       + 'one of the activity counter\'s records under that key');
   }
-
-  const built: KeyMapEntry[] = tags.map((tag) => {
-    if (tag === DEVICES_KEY_TAG) return { tag, operand: menuEntry.operand, opcode: MAP_VALUE_OPCODE };
-    if (tag === DEVICE_MODE_PROGRAM_TAG) return { tag, operand: chrome.battery, opcode: RUN_SCREEN_PROGRAM };
-    return { tag, operand: 0, opcode: 0 };
-  });
-  checkDeviceModeKeyMaps(c, built);
-  return built;
+  return menuEntry.operand;
 }
 
 /** Every device mode's own list against the built key map, refused with the mode and the entry it differs at. */
@@ -3848,7 +3881,7 @@ function checkDeviceModeKeyMaps(c: Container, built: readonly KeyMapEntry[]): vo
  * `todo-compile-650.md` 6.2.12.
  */
 interface FourSlotTemplate {
-  /** The chrome around a page's middle, built for a device page and copied for a working screen. */
+  /** The chrome around a page's middle, built: a device page's, or a working screen's since section NNM. */
   chrome: PageChrome;
   /** The device page chrome as built, whatever `chrome` is, for the key map's battery program. */
   device: DeviceModeChrome;
@@ -4528,7 +4561,7 @@ type MenuPart =
   | { op: 'queue'; program: number }
   | { op: 'bar'; at: readonly number[]; address: number }
   | { op: 'font'; font: number }
-  | { op: 'text'; x: number; y: number; codes: number[]; role: 'title' | 'counter' | 'label' | 'bottom' }
+  | { op: 'text'; x: number; y: number; codes: number[]; role: 'title' | 'counter' | 'label' | 'bottom' | 'fixed' }
   | { op: 'end' };
 
 /** The line a menu page's title and counter sit on, and the bottom word's. */
@@ -4714,7 +4747,17 @@ function menuPageDifference(c: Container, chrome: FourSlotMenuChrome, menu: numb
   const page = modeRecords(c)?.[menu]?.pages[index];
   const program = page === undefined ? undefined : screenProgram(c, page.program);
   if (page === undefined || program === undefined) return 'the page does not read';
-  const parts = menuPageParts(c, chrome, menuPageContent(c, chrome.kind, menu, index));
+  return partsDifference(c, menuPageParts(c, chrome, menuPageContent(c, chrome.kind, menu, index)), program)
+    ?? pageRecordDifference(c, page);
+}
+
+/**
+ * A program against built parts: instruction for instruction, every instruction that is not a text byte
+ * for byte, and every text by its place and its glyph codes, whether drawn inline or by reference.
+ * Returns the first difference, or undefined. The menu pages' comparison of section 334, and the start
+ * up screens' since section NNM.
+ */
+function partsDifference(c: Container, parts: readonly MenuPart[], program: readonly ScreenInstruction[]): string | undefined {
   if (parts.length !== program.length) return `${program.length} instructions where ${parts.length} are built`;
   const same = (address: number): number => address;
   for (let k = 0; k < parts.length; k += 1) {
@@ -4733,7 +4776,11 @@ function menuPageDifference(c: Container, chrome: FourSlotMenuChrome, menu: numb
       return `instruction ${k} is not the ${part.op} built`;
     }
   }
-  // The page record: the list, then the program, six bytes, which is what a composer writes.
+  return undefined;
+}
+
+/** A page record against the one a composer writes: the list, then the program, six bytes. */
+function pageRecordDifference(c: Container, page: ModePage): string | undefined {
   const recordOff = c.blobOffsetOf(page.address);
   if (recordOff === undefined || page.length !== 6 || u24(c.blob, recordOff) !== page.list
       || u24(c.blob, recordOff + 3) !== page.program) {
@@ -4758,20 +4805,32 @@ export function checkFourSlotMenuPages(c: Container, options: { homes?: boolean 
       const where = `${kind} ${menu}'s page ${index + 1}`;
       const difference = menuPageDifference(c, chrome, menu, index);
       if (difference !== undefined) throw new ComposeError(`${where}: ${difference}`);
-      for (const one of homes === undefined ? [] : screenProgram(c, page.program) ?? []) {
-        const codes = textGlyphs(c, one);
-        if (codes === undefined || homes === undefined) continue;
-        const home = homes.get([...codes].join(','));
-        const at = one.opcode === OP_TEXT_INLINE ? c.flashBase + one.start + 3 : referencedStringAddress(one);
-        if (at !== home) {
-          throw new ComposeError(`${where} draws '${[...codes].join(',')}' ${one.opcode === OP_TEXT_INLINE ? 'inline' : 'by reference'} `
-            + 'away from the copy the compiler points at');
-        }
-      }
+      if (homes !== undefined) assertTextsAtHome(c, homes, screenProgram(c, page.program) ?? [], where);
       checked += 1;
     });
   }
   return checked;
+}
+
+/**
+ * Every text a program draws by reference pointing at its `inlineHomes` copy, and every text it draws
+ * inline being that copy, which holds on a compiler's pages and not on a composed one's; refused with
+ * the text and `where`. Section 334's half of the menu page check, and the start up screens' since
+ * section NNM.
+ */
+function assertTextsAtHome(
+  c: Container, homes: ReadonlyMap<string, number>, program: readonly ScreenInstruction[], where: string,
+): void {
+  for (const one of program) {
+    const codes = textGlyphs(c, one);
+    if (codes === undefined) continue;
+    const home = homes.get([...codes].join(','));
+    const at = one.opcode === OP_TEXT_INLINE ? c.flashBase + one.start + 3 : referencedStringAddress(one);
+    if (at !== home) {
+      throw new ComposeError(`${where} draws '${[...codes].join(',')}' ${one.opcode === OP_TEXT_INLINE ? 'inline' : 'by reference'} `
+        + 'away from the copy the compiler points at');
+    }
+  }
 }
 
 /**
@@ -5864,7 +5923,8 @@ export function activityMenuSingle(c: Container): number | undefined {
       if (picture !== undefined) counts.set(picture, (counts.get(picture) ?? 0) + 1);
     }
   }
-  // The most drawn, the lowest address on a tie, as `workingTemplate14` picks its own.
+  // The most drawn, the lowest address on a tie. Since section NNM the working screens' own background is
+  // located by content, `activityScreenChrome`, and it is this picture on the twelve compiles that hold it.
   return [...counts].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0]?.[0];
 }
 
@@ -6248,7 +6308,9 @@ export interface ComposeActivityScreenOptions {
   /**
    * An existing activity, by its drawn menu label, whose start up screen the new activity shows.
    * That screen draws the activity's icon, so a television activity wants a television one. Without
-   * it the start up screen of the activity whose working screen served as the template is used.
+   * it, on the Harmony One, the start up screen of the activity whose working screen served as the
+   * template is used. **Harmony One only**: on a Harmony 600, 650 or 700 every start up screen draws one picture and is
+   * built, section NNM, so it is refused there rather than ignored.
    */
   startupLike?: string;
 }
@@ -6259,7 +6321,7 @@ export interface ComposedActivityScreen {
   activity: number;
   /** The new working screen, base slot 6. */
   mode: number;
-  /** The existing start up screen the enter list should open with. */
+  /** The start up screen the enter list should open with: an existing one on the Harmony One, the one composed with it on arch 14. */
   startupMode: number;
   /** The existing list every activity's enter list calls to say an activity is running. Harmony One only. */
   activeList?: number;
@@ -6407,9 +6469,15 @@ function appendValueMapCase(start: Container, map: number, key: number, program:
  * the Remote Assistant's branch, and `h600_config`'s reach it directly, `[3F D000, 7E working]`. That
  * second form is the one a composed activity takes. **Nor is the activity's own device list, here**:
  * the key under Devices of a composed activity opens the idle value's, the one saying "Activities", its
- * case copied, and `composeActivityDeviceList` then gives it a list of its own, section 294. Its centre
+ * case built as `caseProgram` on `idleDeviceList` since section NNM, and `composeActivityDeviceList` then
+ * gives it a list of its own, section 294. Its centre
  * key leads back to the composed activity's working screen either way, through `CurrentLocation` and
  * the working screen record.
+ *
+ * **Since section NNM both screens and the four cases are built, `activityScreenChrome`**, where until
+ * then the start up screen's picture, font and fixed lines and the working screen's chrome, backgrounds
+ * and record were copied off the configuration's own activities. The start up font is still read,
+ * `todo-compile-650.md` 6.2.12's.
  *
  * **A name is spelled in the fonts the configuration has**, and each holds only the letters its own
  * texts use. The start up title's font is the one every start up title is drawn in, and the status and
@@ -6432,8 +6500,17 @@ const STARTUP_TITLE_Y = 5;
  */
 const STARTUP_TITLE_MAX = 123;
 const STARTUP_TITLE_SECOND_Y = 19;
-/** Below the title every start up screen draws the same three lines, from y 82 down, 13 of 13. */
-const STARTUP_FIXED_Y = 82;
+/**
+ * Below the title every start up screen draws the same three lines, each centred in the start up font,
+ * at y 82, 96 and 110, which is that font's height apart: 40 start up screens of 40 on the thirteen
+ * compiles, section NNM. Built rather than copied off another activity's screen since then. **Fitted**:
+ * every compile here draws them in English, so what a remote set to another language draws is not known,
+ * and the places are measured for a start up font 14 high only, which `startupParts` refuses otherwise.
+ */
+const STARTUP_FIXED_LINES: readonly string[] = ['Please keep the', 'remote pointed at', 'your system'];
+const STARTUP_FIXED_LINE_Y: readonly number[] = [82, 96, 110];
+/** The word under the working screen's centre key, which goes to the device list, section 290. */
+const WORKING_SCREEN_WORD = 'Devices';
 
 /** What every arch 14 activity's enter list states, read off all of them rather than one. */
 interface Arch14Starts {
@@ -6446,6 +6523,12 @@ interface Arch14Starts {
   /** Per activity value: its start up mode and its base slot 9 entry. */
   startup: Map<number, number>;
   sets: Map<number, number>;
+  /**
+   * Per activity value: the working screen its start sequence ends on, the last `0x7E` of the deferred
+   * list or of the Remote Assistant's branch below it, section 333; absent where neither reads, which
+   * `checkActivityScreens` refuses. Section NNM.
+   */
+  endsOn: Map<number, number>;
 }
 
 /** The variable a state write names, if it is a write of `value`. */
@@ -6579,6 +6662,7 @@ function arch14Starts(c: Container): Arch14Starts {
   const { startVariable, flagVariable } = startSequenceOf(c);
   const startup = new Map<number, number>();
   const setOf = new Map<number, number>();
+  const endsOn = new Map<number, number>();
   for (const binding of activityBindings(c)) {
     if (startup.has(binding.activity)) continue;
     const address = sets.addresses[binding.set];
@@ -6599,10 +6683,17 @@ function arch14Starts(c: Container): Arch14Starts {
         + `${start} and ${flag}, where the Off key map's start sequence uses ${startVariable} and ${flagVariable}`);
     }
     startup.set(binding.activity, enter[0].operand);
+    // The deferred list enters the working screen itself, `[3F D000, 7E working]`, or calls the Remote
+    // Assistant's branch, `[1F FB00, 7F b]` with `b` ending `7E assistant, 7E working`, section 333.
+    const branch = deferred[1]?.opcode === ACTION_LIST_INDEX_OPCODE ? lists[deferred[1].operand] ?? [] : [];
+    const inner = lists[branch.find((one) => one.opcode === ACTION_LIST_INDEX_OPCODE)?.operand ?? -1] ?? [];
+    const working = deferred[1]?.opcode === ENTER_MODE ? deferred[1].operand
+      : inner.filter((one) => one.opcode === ENTER_MODE).at(-1)?.operand;
+    if (working !== undefined) endsOn.set(binding.activity, working);
     setOf.set(binding.activity, binding.set);
   }
   return {
-    counter, idle: counterVariable.record.first, startVariable, flagVariable, startup, sets: setOf,
+    counter, idle: counterVariable.record.first, startVariable, flagVariable, startup, sets: setOf, endsOn,
   };
 }
 
@@ -6719,55 +6810,290 @@ function caseOrderOf(keys: readonly number[]): number[] | undefined {
 }
 
 /**
- * The first page of the lowest working screen whose program is a device mode page's chrome around its
- * middle, which is where the composed one's prefix, bottom word and record entries come from, plus the
- * two backgrounds by majority over every working page: one command or none, and more.
+ * A base slot 14 case's program as the compiler writes every one an activity keyed record holds: queue
+ * one action, `0x11` and its operand and opcode, then the end, five bytes. Every case of the working
+ * screen, key under Devices and keypad map records has this shape on the thirteen compiles but the
+ * working screen record's idle case, which queues a further record, section NNM; one derivation for the
+ * composer and the check.
  */
-function workingTemplate14(c: Container, starts: Arch14Starts, maps: ActivityMaps): {
-  mode: number; activity: number; entries: TaggedEntry[];
-  prefix: ScreenInstruction[]; suffix: ScreenInstruction[];
-  single: number | undefined; crossed: number | undefined;
-} {
+function caseProgram(opcode: number, operand: number): Uint8Array {
+  return new Writer(5).u8(SCREEN_QUEUE_INSTRUCTION).u16(operand).u8(opcode).u8(OP_END).bytes;
+}
+
+/** What an activity's own two screens are drawn with in one Harmony 600, 650 or 700 configuration. */
+export interface ActivityScreenChrome {
+  look: string;
+  /** The start up screen's picture, one per look, located by content. */
+  startupPicture: number;
+  /**
+   * The font a start up screen draws in, font 2 on all thirteen compiles. **Read, not built**: it is the
+   * configuration's numbering of its font sets, `todo-compile-650.md` 6.2.12, and it is read off the
+   * configuration's own start up screens, all of which have to agree.
+   */
+  startupFont: number;
+  /** A start up screen's key map: the press of every keypad scan, 1 to 54, bound to nothing. */
+  startupKeyMap: KeyMapEntry[];
+  /** A working screen page's chrome: a device page's with its own two backgrounds, program and word. */
+  working: PageFrame;
+  /** A working screen's own key map: the key under Devices, and the program tag running `working.battery`. */
+  workingKeyMap: KeyMapEntry[];
+  /**
+   * The device list the key under Devices opens while no activity runs, which is the list a composed
+   * activity's case opens until it has a list of its own, `composeActivityDeviceList`, 6.2.11.
+   */
+  idleList: number;
+}
+
+/**
+ * The font every start up screen of the configuration selects, its program's second instruction.
+ * Refused where they disagree or where there is none to read, `todo-compile-650.md` 6.2.12's.
+ */
+function startupFontOf(c: Container, starts: Arch14Starts): number {
   const records = modeRecords(c) ?? [];
-  const record = valueMaps(c)?.[maps.working];
-  const byActivity = new Map<number, number>();
-  for (const [key, target] of record?.entries ?? []) {
-    const one = caseQueued(c, target);
-    if (key !== starts.idle && one?.opcode === ENTER_MODE) byActivity.set(key, one.operand);
+  const fonts = new Set<number>();
+  for (const mode of starts.startup.values()) {
+    const page = records[mode]?.pages[0];
+    const select = page === undefined ? undefined : screenProgram(c, page.program)?.[1];
+    if (select?.opcode !== OP_FONT) throw new ComposeError(`start up screen ${mode} selects no font where every one does`);
+    fonts.add(select.operands[0] as number);
   }
-  const counts = [new Map<number, number>(), new Map<number, number>()];
-  let chosen: { mode: number; activity: number; program: ScreenInstruction[] } | undefined;
-  for (const [activity, mode] of [...byActivity].sort((a, b) => a[1] - b[1])) {
-    for (const page of records[mode]?.pages ?? []) {
-      const program = screenProgram(c, page.program) ?? [];
-      const picture = program[0]?.opcode === OP_IMAGE ? bitmapReference(program[0]) : undefined;
-      const items = taggedList(c, page.list)?.entries.length ?? 0;
-      const tally = counts[items > 1 ? 1 : 0] as Map<number, number>;
-      if (picture !== undefined) tally.set(picture, (tally.get(picture) ?? 0) + 1);
-      const opcodes = program.map((one) => one.opcode);
-      const suffix = program.slice(-4);
-      if (chosen === undefined
-          && FOUR_SLOT_PREFIX.every((opcode, k) => opcodes[k] === opcode) && opcodes[3] === OP_FONT
-          && FOUR_SLOT_SUFFIX_OPCODES.every((opcode, k) => suffix[k]?.opcode === opcode)
-          && [OP_TEXT_AT, OP_TEXT_INLINE].includes(suffix[2]?.opcode as number) && suffix[3]?.opcode === OP_END) {
-        chosen = { mode, activity, program };
-      }
-    }
+  if (fonts.size !== 1) {
+    throw new ComposeError(`the start up screens select ${fonts.size} fonts, so none is the start up font`);
   }
-  const majority = (tally: Map<number, number>): number | undefined =>
-    [...tally].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0]?.[0];
-  const found = chosen === undefined ? undefined : records[chosen.mode];
-  if (chosen === undefined || found === undefined) {
-    throw new ComposeError('no working screen has the chrome a device mode page has');
+  return [...fonts][0] as number;
+}
+
+/**
+ * An activity's start up screen and working screen chrome on a Harmony 600, 650 or 700, built,
+ * `todo-compile-650.md` 6.2.10, section NNM:
+ *
+ * * **the start up screen** draws its look's `startup` picture at 0, 0, selects the start up font, draws
+ *   "Starting" and the name, broken at `STARTUP_TITLE_MAX` and each line centred, and below it the three
+ *   `STARTUP_FIXED_LINES`, each centred; its record binds the press of every keypad scan to nothing, in
+ *   `compilerTagOrder`'s order, and its one page binds nothing;
+ * * **the working screen** is a device mode page's chrome, `deviceModeChrome`, with three differences:
+ *   the backgrounds, the activity menu's page of one activity for a page of one command or none and the
+ *   look's `workingSeveral` for more; the queued program, the activity menu's battery program,
+ *   `fourSlotMenuChrome`; and the word, "Devices", in the bottom word font and centred, `bottomWord`. Its
+ *   record maps the key under Devices as a device mode does, `devicesKeyOperand`, and runs the queued
+ *   program under the program tag;
+ * * **the key under Devices** of a composed activity opens the idle device list, `idleDeviceList`, as a
+ *   `caseProgram`.
+ *
+ * Then every start up screen, every working screen page and every case of the activity keyed records
+ * the configuration holds is checked against what is built, `checkActivityScreens`, so a configuration
+ * whose own screens disagree is refused rather than extended. What is still read: the start up font,
+ * 6.2.12's; the queued program, the Devices key operand and the idle list, each off the activity menu
+ * by the routes of sections 330 and 334 rather than off another activity's screen; and the pictures' and
+ * texts' addresses, since the bytes are the configuration's until chapter 9 builds them.
+ */
+export function activityScreenChrome(c: Container): ActivityScreenChrome {
+  if (c.architecture !== 14) {
+    throw new ComposeError('an activity\'s screens are built here for the Harmony 600, 650 and 700 only');
   }
-  if (found.entries.some((entry) => entry.flags !== undefined)) {
-    throw new ComposeError('the template working screen is not in the narrow form');
-  }
-  return {
-    mode: chosen.mode, activity: chosen.activity, entries: found.entries,
-    prefix: chosen.program.slice(0, 3), suffix: chosen.program.slice(-4),
-    single: majority(counts[0] as Map<number, number>), crossed: majority(counts[1] as Map<number, number>),
+  const device = deviceModeChrome(c);
+  const menu = fourSlotMenuChrome(c, 'activity menu');
+  const look = DEVICE_PAGE_LOOKS.find((one) => one.name === device.look) as DevicePageLook;
+  const pictures = picturesByContent(c);
+  const held = (key: string, role: string): number | undefined => {
+    const found = pictures.get(key) ?? [];
+    if (found.length > 1) throw new ComposeError(`${look.name}'s ${role} picture is stored ${found.length} times`);
+    return found[0];
   };
+  const startupPicture = held(look.startup, 'start up');
+  if (startupPicture === undefined) throw new ComposeError(`the configuration holds no start up picture of ${look.name}`);
+  if (menu.battery === undefined) throw new ComposeError('the activity menu queues no battery program');
+  const battery = menu.battery;
+  const word = bottomWord(c, WORKING_SCREEN_WORD);
+  const starts = arch14Starts(c);
+  const press = (scan: number): number => (KEY_EVENT_PRESS << KEY_EVENT_SHIFT) | scan;
+  const keypad = Array.from({ length: KEYPAD_LAST_SCAN - KEYPAD_FIRST_SCAN + 1 }, (_, k) => press(KEYPAD_FIRST_SCAN + k));
+  const devicesKey = devicesKeyOperand(c);
+  const chrome: ActivityScreenChrome = {
+    look: look.name,
+    startupPicture,
+    startupFont: startupFontOf(c, starts),
+    startupKeyMap: compilerTagOrder(keypad).map((tag) => ({ tag, operand: 0, opcode: 0 })),
+    working: {
+      look: look.name,
+      single: held(look.activitiesSingle, 'working screen one command'),
+      crossed: held(look.workingSeveral, 'working screen'),
+      topBar: device.topBar, bottomBar: device.bottomBar, battery,
+      word: WORKING_SCREEN_WORD, backFont: word.font, backCodes: word.codes, backX: word.x,
+      backHome: inlineHomes(c).get(word.codes.join(',')),
+    },
+    workingKeyMap: compilerTagOrder([DEVICES_KEY_TAG, DEVICE_MODE_PROGRAM_TAG]).map((tag) => (tag === DEVICES_KEY_TAG
+      ? { tag, operand: devicesKey, opcode: MAP_VALUE_OPCODE }
+      : { tag, operand: battery, opcode: RUN_SCREEN_PROGRAM })),
+    idleList: idleDeviceList(c),
+  };
+  checkActivityScreensWith(c, chrome, starts);
+  return chrome;
+}
+
+/**
+ * A start up screen built, as parts: the picture, the font, the title "Starting" and `label` broken
+ * greedily at `STARTUP_TITLE_MAX` onto at most two lines at y 5 and 19, each centred, then the three
+ * fixed lines, each centred, and the end. A title that does not fit two lines is refused.
+ */
+function startupParts(c: Container, chrome: ActivityScreenChrome, label: string): MenuPart[] {
+  const map = characterMap(c);
+  const set = (fontSets(c) ?? [])[chrome.startupFont];
+  if (map === undefined) throw new ComposeError('the config draws no text this can spell from');
+  if (set === undefined) throw new ComposeError(`the config does not carry font ${chrome.startupFont}`);
+  // The fixed lines' places are measured, not derived: 14 apart, which is font 2's height on all thirteen
+  // compiles. A start up font of another height has no measured places, so it is refused.
+  if (set.height !== (STARTUP_FIXED_LINE_Y[1] as number) - (STARTUP_FIXED_LINE_Y[0] as number)) {
+    throw new ComposeError(`the start up font is ${set.height} high, and the fixed lines are measured only for one 14 high`);
+  }
+  const codesOf = (text: string): number[] => codesFor(map, c, set, text, chrome.startupFont);
+  const widthOf = (text: string): number => textWidth(c, set, codesOf(text));
+  const lines: string[] = [];
+  for (const word of (STARTUP_TITLE_PREFIX + label).split(' ')) {
+    const last = lines.at(-1);
+    if (last !== undefined && widthOf(`${last} ${word}`) <= STARTUP_TITLE_MAX) lines[lines.length - 1] = `${last} ${word}`;
+    else lines.push(word);
+  }
+  if (lines.length > 2 || lines.some((line) => widthOf(line) > STARTUP_TITLE_MAX)) {
+    throw new ComposeError(`'${STARTUP_TITLE_PREFIX}${label}' does not fit a start up screen's two lines of `
+      + `${STARTUP_TITLE_MAX} pixels: give the activity a shorter label`);
+  }
+  const centred = (text: string, y: number, role: 'title' | 'fixed'): MenuPart => ({
+    op: 'text', x: Math.floor((FOUR_SLOT_SCREEN_WIDTH - widthOf(text)) / 2), y, codes: codesOf(text), role,
+  });
+  return [
+    { op: 'image', address: chrome.startupPicture },
+    { op: 'font', font: chrome.startupFont },
+    ...lines.map((line, k) => centred(line, k === 0 ? STARTUP_TITLE_Y : STARTUP_TITLE_SECOND_Y, 'title')),
+    ...STARTUP_FIXED_LINES.map((line, k) => centred(line, STARTUP_FIXED_LINE_Y[k] as number, 'fixed')),
+    { op: 'end' },
+  ];
+}
+
+/** A key map against the built one, entry for entry in the narrow form; the first difference, or undefined. */
+function keyMapDifference(entries: readonly TaggedEntry[], built: readonly KeyMapEntry[]): string | undefined {
+  if (entries.length !== built.length) return `${entries.length} entries where ${built.length} are built`;
+  const k = entries.findIndex((entry, at) => {
+    const want = built[at] as KeyMapEntry;
+    return entry.tag !== want.tag || entry.opcode !== want.opcode || entry.operand !== want.operand || entry.flags !== undefined;
+  });
+  return k < 0 ? undefined : `entry ${k}, tag 0x${(entries[k] as TaggedEntry).tag.toString(16)}, is not the built one`;
+}
+
+/** What `checkActivityScreens` checked: start up screens, working screens and their pages, and cases. */
+export interface ActivityScreensChecked {
+  startups: number;
+  working: number;
+  workingPages: number;
+  cases: number;
+}
+
+/**
+ * Every activity's two screens and every case of its keyed records against what `activityScreenChrome`
+ * builds, refused with the first difference:
+ *
+ * * each start up screen whole: its record's key map, one page binding nothing in the two byte empty
+ *   list, its page record, and its program part for part against `startupParts` built from the
+ *   activity's name, every text drawn by reference pointing at the compiler's one inline copy of it and
+ *   every text drawn inline being that copy;
+ * * each working screen's key map, and every page's chrome, `checkPageFrames`: the middle, the title,
+ *   counter and labels, is section 323's and is not checked here;
+ * * every case of the working screen record, the two records under the key under Devices and the keypad
+ *   map record, byte for byte a `caseProgram`. Of the operands, an activity's working screen case is
+ *   checked to enter the mode its start sequence ends on, `Arch14Starts.endsOn`, and both Devices
+ *   records' idle case to enter `idleDeviceList`'s list; an activity's two Devices cases are held to one
+ *   list, the same in both, an activity device list no other activity's case enters or the idle list for
+ *   a composed activity without its own yet, which list being section 294's and read; and the keypad map
+ *   case's entry is `activityKeyedRecords`' requirement. The working screen record's idle case queues a
+ *   further record and is not built.
+ */
+export function checkActivityScreens(c: Container, chrome: ActivityScreenChrome): ActivityScreensChecked {
+  return checkActivityScreensWith(c, chrome, arch14Starts(c));
+}
+
+function checkActivityScreensWith(c: Container, chrome: ActivityScreenChrome, starts: Arch14Starts): ActivityScreensChecked {
+  const maps = activityMaps(c, starts);
+  const records = modeRecords(c) ?? [];
+  const values = valueMaps(c) ?? [];
+  const homes = inlineHomes(c);
+  // The name a start up screen is titled with is the one its working screen is titled with on every
+  // page, 40 activities of 40 on the thirteen compiles, and the menu's name for it where the menu
+  // resolves one, which it does not for every composed activity.
+  const named = new Map(activityNames(c).flatMap((one) => (one.name === undefined ? [] : [[one.activity, one.name] as const])));
+  const strings = screenStrings(c, characterMap(c));
+  const titleOf = (mode: number): string | undefined => {
+    const titles = new Set((records[mode]?.pages ?? []).map((page) => strings.find((one) => one.program === page.program
+      && one.x === FOUR_SLOT_TITLE_XY[0] && one.y === FOUR_SLOT_TITLE_XY[1])?.text));
+    return titles.size === 1 ? [...titles][0] : undefined;
+  };
+  const caseBytes = (map: number, key: number): string => {
+    const target = values[map]?.entries.find(([one]) => one === key)?.[1];
+    const at = target === undefined ? undefined : c.blobOffsetOf(target);
+    return at === undefined ? 'none' : [...c.blob.subarray(at, at + 5)].join(',');
+  };
+  const expect = (map: number, key: number, opcode: number, operand: number, what: string): void => {
+    if (caseBytes(map, key) !== [...caseProgram(opcode, operand)].join(',')) {
+      throw new ComposeError(`record ${map}'s case for ${key} is not the built ${what}`);
+    }
+  };
+  const checked: ActivityScreensChecked = { startups: 0, working: 0, workingPages: 0, cases: 0 };
+  const activityLists = new Set(fourSlotMenus(c).filter((one) => one.kind === 'activity device list').map((one) => one.menu));
+  const listsTaken = new Set<number>();
+  for (const [activity, mode] of [...starts.startup].sort((a, b) => a[0] - b[0])) {
+    // The working screen this activity's start ends on, whose title names it.
+    const target = values[maps.working]?.entries.find(([key]) => key === activity)?.[1];
+    const working = target === undefined ? undefined : caseQueued(c, target);
+    if (working?.opcode !== ENTER_MODE || working.operand !== starts.endsOn.get(activity)) {
+      throw new ComposeError(`activity ${activity}'s working screen case does not enter the screen its start sequence ends on`);
+    }
+    const name = titleOf(working.operand);
+    if (name === undefined || (named.has(activity) && named.get(activity) !== name)) {
+      throw new ComposeError(`activity ${activity}'s working screen pages are not titled with one name, the menu's`);
+    }
+
+    const where = `activity ${activity}'s start up screen ${mode}`;
+    const record = records[mode];
+    const page = record?.pages[0];
+    if (record === undefined || page === undefined || record.pages.length !== 1) {
+      throw new ComposeError(`${where} is not one page`);
+    }
+    const listAt = c.blobOffsetOf(page.list);
+    const keys = keyMapDifference(record.entries, chrome.startupKeyMap);
+    if (keys !== undefined) throw new ComposeError(`${where}'s key map: ${keys}`);
+    if (listAt === undefined || c.blob[listAt] !== 0 || c.blob[listAt + 1] !== 0) {
+      throw new ComposeError(`${where}'s page binds something, or not in the two byte empty list`);
+    }
+    const program = screenProgram(c, page.program) ?? [];
+    const difference = partsDifference(c, startupParts(c, chrome, name), program) ?? pageRecordDifference(c, page);
+    if (difference !== undefined) throw new ComposeError(`${where}: ${difference}`);
+    assertTextsAtHome(c, homes, program, where);
+    checked.startups += 1;
+
+    // The working screen, and the four records' cases for the activity.
+    expect(maps.working, activity, ENTER_MODE, working.operand, 'working screen case');
+    const workingKeys = keyMapDifference(records[working.operand]?.entries ?? [], chrome.workingKeyMap);
+    if (workingKeys !== undefined) throw new ComposeError(`activity ${activity}'s working screen's key map: ${workingKeys}`);
+    checked.workingPages += checkPageFrames(c, chrome.working, [working.operand], 'working screen');
+    checked.working += 1;
+    // Which list it is, is read: an activity's own corner list, section 294, held by no other activity,
+    // or the idle list where `composeActivityDeviceList` has not yet given a composed activity its own.
+    const own = values[maps.devices[0] as number]?.entries.find(([key]) => key === activity)?.[1];
+    const ownList = own === undefined ? undefined : caseQueued(c, own);
+    if (ownList?.opcode !== ENTER_MODE
+        || (ownList.operand !== chrome.idleList && (!activityLists.has(ownList.operand) || listsTaken.has(ownList.operand)))) {
+      throw new ComposeError(`activity ${activity}'s case under the key under Devices enters neither a device list of its own nor the idle one`);
+    }
+    if (ownList.operand !== chrome.idleList) listsTaken.add(ownList.operand);
+    for (const map of maps.devices) expect(map, activity, ENTER_MODE, ownList.operand, 'device list case');
+    expect(maps.select, activity, SELECT_BINDING_SET, SELECT_BINDING_SET_MASK | (starts.sets.get(activity) as number),
+           'keypad map case');
+    checked.cases += 2 + maps.devices.length;
+  }
+  for (const map of maps.devices) {
+    expect(map, starts.idle, ENTER_MODE, chrome.idleList, 'idle device list case');
+    checked.cases += 1;
+  }
+  return checked;
 }
 
 function composeFourSlotActivityScreen(
@@ -6791,7 +7117,13 @@ function composeFourSlotActivityScreen(
       throw new ComposeError(`a case for ${activity} appended to record ${map} is out of compilerCaseOrder's order, or past the keys it pins`);
     }
   }
-  const working = workingTemplate14(c, starts, maps);
+  if (options.startupLike !== undefined) {
+    throw new ComposeError('every start up screen on a Harmony 600, 650 or 700 draws one picture, so there is '
+      + 'no other activity\'s to show: startupLike is the Harmony One\'s');
+  }
+  // Both screens and the cases are built, section NNM, and the configuration's own are checked against
+  // what is built before anything moves.
+  const chrome = activityScreenChrome(c);
   const device = fourSlotTemplate(c, undefined);
   const charMap = characterMap(c);
   if (charMap === undefined) throw new ComposeError('the config draws no text this can spell from');
@@ -6800,51 +7132,8 @@ function composeFourSlotActivityScreen(
     if (set === undefined) throw new ComposeError(`the config does not carry font ${font}`);
     return set;
   };
-
-  // The start up screen to copy: the image, the font, the title, then the three fixed lines.
-  const startupOf = options.startupLike === undefined
-    ? working.activity
-    : activityNames(c).find((one) => one.name === options.startupLike)?.activity;
-  const startupTemplate = startupOf === undefined ? undefined : starts.startup.get(startupOf);
-  if (startupTemplate === undefined) throw new ComposeError(`no activity is labelled ${options.startupLike}`);
-  const startupRecord = (modeRecords(c) ?? [])[startupTemplate];
-  const startupPage = startupRecord?.pages[0];
-  const startupProgram = startupPage === undefined ? [] : screenProgram(c, startupPage.program) ?? [];
-  const fixedFrom = startupProgram.findIndex((one, k) => k >= 2
-    && (one.opcode === OP_TEXT_AT || one.opcode === OP_TEXT_INLINE) && (one.operands[1] as number) >= STARTUP_FIXED_Y);
-  const fixed = fixedFrom < 0 ? [] : startupProgram.slice(fixedFrom, -1);
-  if (startupRecord === undefined || startupRecord.pages.length !== 1 || startupPage === undefined
-      || (taggedList(c, startupPage.list)?.entries.length ?? -1) !== 0
-      || startupRecord.entries.some((entry) => entry.flags !== undefined)
-      || startupProgram[0]?.opcode !== OP_IMAGE || startupProgram[1]?.opcode !== OP_FONT
-      || fixed.length === 0 || startupProgram.at(-1)?.opcode !== OP_END
-      || !startupProgram.slice(2, fixedFrom).every((one) => one.opcode === OP_TEXT_INLINE || one.opcode === OP_TEXT_AT)
-      || !fixed.every((one) => one.opcode === OP_TEXT_AT || one.opcode === OP_TEXT_INLINE)) {
-    throw new ComposeError(`activity ${startupOf}'s start up screen is not the one page shape every arch 14 one has`);
-  }
-  const startupFont = startupProgram[1]?.operands[0] as number;
-  // The start up title, broken greedily at STARTUP_TITLE_MAX onto at most two lines, each centred.
-  const startupWidthOf = (text: string): number =>
-    textWidth(c, setOf(startupFont), codesFor(charMap, c, setOf(startupFont), text, startupFont));
-  const startupLines: string[] = [];
-  for (const word of (STARTUP_TITLE_PREFIX + label).split(' ')) {
-    const last = startupLines.at(-1);
-    if (last !== undefined && startupWidthOf(`${last} ${word}`) <= STARTUP_TITLE_MAX) {
-      startupLines[startupLines.length - 1] = `${last} ${word}`;
-    } else {
-      startupLines.push(word);
-    }
-  }
-  const startupTooWide = startupLines.find((line) => startupWidthOf(line) > STARTUP_TITLE_MAX);
-  if (startupLines.length > 2 || startupTooWide !== undefined) {
-    throw new ComposeError(`'${STARTUP_TITLE_PREFIX}${label}' does not fit a start up screen's two lines of `
-      + `${STARTUP_TITLE_MAX} pixels: give the activity a shorter label`);
-  }
-  const startupTitle = startupLines.map((line, k) => {
-    const codes = codesFor(charMap, c, setOf(startupFont), line, startupFont);
-    const x = Math.floor((FOUR_SLOT_SCREEN_WIDTH - textWidth(c, setOf(startupFont), codes)) / 2);
-    return [OP_TEXT_INLINE, x, k === 0 ? STARTUP_TITLE_Y : STARTUP_TITLE_SECOND_Y, ...codes, 0];
-  }).flat();
+  // The start up screen, built here once so that a title too wide is refused before anything moves.
+  startupParts(c, chrome, label);
 
   // The working screen's text, refused before anything moves.
   const perPage = FOUR_SLOT_ITEMS.length;
@@ -6869,9 +7158,9 @@ function composeFourSlotActivityScreen(
   const slashCodes = codesFor(charMap, c, setOf(device.counterFont), '/', device.counterFont);
   const pageRows = Array.from({ length: pageCount }, (_, p) => rows.slice(p * perPage, (p + 1) * perPage));
   const needs = new Set(pageRows.map((onPage) => onPage.length > 1));
-  if ((needs.has(false) && working.single === undefined) || (needs.has(true) && working.crossed === undefined)) {
-    throw new ComposeError('no working screen here holds as many commands as a page of this one, so there '
-      + 'is no background to copy for it');
+  if ((needs.has(false) && chrome.working.single === undefined) || (needs.has(true) && chrome.working.crossed === undefined)) {
+    throw new ComposeError(`the configuration holds no working screen background of ${chrome.look} for a page of `
+      + `${needs.has(false) && chrome.working.single === undefined ? 'one command or none' : 'several commands'}`);
   }
 
   const table = modeTable(c);
@@ -6882,36 +7171,26 @@ function composeFourSlotActivityScreen(
   if (sets === undefined) throw new ComposeError('base slot 9 does not read');
   const set = sets.addresses.length;
 
-  // 1. The start up screen: its record's entries as the template's, bound to nothing, one page with an
-  // empty list, and a program of the template's picture and font, the new title, and its fixed lines.
-  const own = (entries: readonly TaggedEntry[]) =>
-    entries.map((entry) => ({ tag: entry.tag, operand: entry.operand, opcode: entry.opcode }));
-  let current = appendArch14Mode(c, startupMode, own(startupRecord.entries), [fourSlotPageList([])], (now) => {
-    const nowProgram = screenProgram(now, (modeRecords(now)?.[startupTemplate]?.pages[0] as ModePage).program) ?? [];
-    const copied = [nowProgram[0], nowProgram[1], ...nowProgram.slice(fixedFrom, -1)] as ScreenInstruction[];
-    const title = startupTitle;
+  // 1. The start up screen: the built key map, one page with an empty list, and the built program, every
+  // text pointing at the compiler's one inline copy of it where the configuration holds one.
+  const startupPointed: ReadonlySet<string> = new Set(['title', 'fixed']);
+  let current = appendArch14Mode(c, startupMode, chrome.startupKeyMap, [fourSlotPageList([])], (now) => {
+    const parts = startupParts(now, activityScreenChrome(now), label);
+    const homes = inlineHomes(now);
     return [{
-      length: copied.reduce((sum, one) => sum + one.length, 0) + title.length + 1,
-      build: (shifted) => new Uint8Array([
-        ...copiedInstruction(now, copied[0] as ScreenInstruction, shifted),
-        ...copiedInstruction(now, copied[1] as ScreenInstruction, shifted),
-        ...title,
-        ...copied.slice(2).flatMap((one) => [...copiedInstruction(now, one, shifted)]),
-        OP_END,
-      ]),
+      length: menuPageBytes(parts, homes, startupPointed, (address) => address).length,
+      build: (shifted) => menuPageBytes(parts, homes, startupPointed, shifted),
     }];
   });
 
-  // 2. The working screen: a device mode page's program with the working screen's prefix, bottom word
-  // and backgrounds, and the working screen's own two record entries.
+  // 2. The working screen: a device mode page's program with the working screen's built chrome and
+  // backgrounds, and the working screen's built key map.
   const pageListBytes = pageRows.map((onPage) => fourSlotPageList(onPage.map((row) => row.list)));
-  current = appendArch14Mode(current, mode, own(working.entries), pageListBytes, (now) => {
+  current = appendArch14Mode(current, mode, chrome.workingKeyMap, pageListBytes, (now) => {
     const freshDevice = fourSlotTemplate(now, undefined);
-    const freshWorking = workingTemplate14(now, arch14Starts(now), activityMaps(now, arch14Starts(now)));
-    // The working screen's chrome is still another activity's, copied, `todo-compile-650.md` 6.2.10.
+    const working = activityScreenChrome(now).working;
     const template: FourSlotTemplate = {
-      ...freshDevice, chrome: copiedChrome(now, freshWorking.prefix, freshWorking.suffix),
-      single: freshWorking.single, crossed: freshWorking.crossed,
+      ...freshDevice, chrome: builtChrome(working), single: working.single, crossed: working.crossed,
     };
     const measuring = setOf(device.labelFont, now);
     return pageRows.map((onPage, p) => fourSlotPageProgram(now, template, measuring, {
@@ -6922,19 +7201,13 @@ function composeFourSlotActivityScreen(
     }));
   });
 
-  // 3. The four cases. The Devices key's copy the idle value's program, byte for byte, so the composed
-  // activity's Devices key opens the list shown when no activity is running.
-  const idleProgram = (map: number): Uint8Array => {
-    const target = valueMaps(current)?.[map]?.entries.find(([key]) => key === starts.idle)?.[1];
-    const one = target === undefined ? undefined : caseQueued(current, target);
-    if (one === undefined) throw new ComposeError(`record ${map} has no idle case to copy`);
-    return new Writer(5).u8(SCREEN_QUEUE_INSTRUCTION).u16(one.operand).u8(one.opcode).u8(OP_END).bytes;
-  };
-  current = appendValueMapCase(current, maps.working, activity,
-    new Writer(5).u8(SCREEN_QUEUE_INSTRUCTION).u16(mode).u8(ENTER_MODE).u8(OP_END).bytes);
-  for (const map of maps.devices) current = appendValueMapCase(current, map, activity, idleProgram(map));
-  current = appendValueMapCase(current, maps.select, activity, new Writer(5)
-    .u8(SCREEN_QUEUE_INSTRUCTION).u16(SELECT_BINDING_SET_MASK | set).u8(SELECT_BINDING_SET).u8(OP_END).bytes);
+  // 3. The four cases, each a built `caseProgram`. The key under Devices opens the idle device list, the
+  // one shown when no activity is running, until `composeActivityDeviceList` gives the activity its own.
+  const idleList = idleDeviceList(current);
+  current = appendValueMapCase(current, maps.working, activity, caseProgram(ENTER_MODE, mode));
+  for (const map of maps.devices) current = appendValueMapCase(current, map, activity, caseProgram(ENTER_MODE, idleList));
+  current = appendValueMapCase(current, maps.select, activity,
+                               caseProgram(SELECT_BINDING_SET, SELECT_BINDING_SET_MASK | set));
 
   return {
     bytes: restamped(current.blob), activity, mode, startupMode, map: maps.working, scans: [],
