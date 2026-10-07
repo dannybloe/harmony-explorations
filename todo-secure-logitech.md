@@ -33,15 +33,15 @@ have no command that writes.
 
 ## 1. The harvesting route
 
-- [ ] 1.1 A harvest script in this repository, TypeScript beside the codec, credentials from the environment as `make analyze` takes them: put a list of catalogue devices on a test account record, compile, fetch the file into the lab with a manifest naming every device, remove the devices; the lab's Python client is retired for these steps
+- [ ] 1.1 A harvest script in this repository, TypeScript beside the codec, credentials from the environment as `make analyze` takes them: put a list of catalogue devices on a test account record, compile, fetch the file into the lab with a manifest naming every device, remove the devices; the lab's Python client is retired for these steps; when a compile fails, it splits the batch and retries the halves until the device that breaks it is found and set aside on a list of its own
 - [ ] 1.2 Compile the families for the Harmony One, which takes 15 devices per configuration against 8 on the 650, 700 and 350; first compile the same few devices for the 650 and the 350 too and compare the stored infrared, so a model that lays a family out differently is found before the bulk
 - [ ] 1.3 The pace: one compile at a time with a pause between, watching for refusals from the service
 - [ ] 1.4 The go-ahead for the account writes this track makes
 
 ## 2. The infrared families we cannot write
 
-- [ ] 2.1 The list: every family where a command does not compose, with one device per family whose code set covers it, preferring a device whose commands are all in that family
-- [ ] 2.2 Compile them, the largest families first, every compile filed in the lab
+- [ ] 2.1 The list: every family where a command does not compose, with one device per family whose code set covers it, preferring a device whose commands are all in that family, plus a second device for the 20 largest families, to check the rule is the family's and not the device's
+- [ ] 2.2 Compile them, 15 devices per compile and nearly every one from a different family, the largest families first, every compile filed in the lab; each device keeps its own records, so 2.3's check stays per family
 - [ ] 2.3 Check each compile holds the records of the families it was made for, so nothing is missing when the service is gone
 - [ ] 2.4 The 10 families that write except for a few odd codes: compile a device holding those codes, and check the codes are in it
 - [ ] 2.5 The bench's KPN box, the Motorola VIP 1853 (Kreatel IP 22 Bit): already compiled on the 650, so check the lab copy is complete and needs no new compile
@@ -52,6 +52,11 @@ Not limited to one remote: every piece of compiler behaviour we know we will nee
 configuration for every supported model, each feature compiled on every model that offers it.
 **The supported models are the ones on the bench**, decided on 7 October 2026 for practical reasons.
 Each item ends with its check: the compile differs from its control where the feature should show.
+**Per model one base setup and one variant per feature**, each identical to the base but for that one
+feature, about ten compiles per model. **Setups go onto the account through the service's own calls**,
+made by the harvest script, with MyHarmony's client code showing which call carries what; by hand in
+MyHarmony only where a call will not work, which a learned code probably is. A smaller model's base setup
+is the 650's test setup cut down to its device limit.
 
 - [x] 3.1 Which bench models get a compile: the One, 600, 650, 700, 300 and 350 (the 300 and 350 compiled through MyHarmony, their configurations dumped in the lab); the 525 is discontinued per the lab's `device-support.txt`, and the Touch takes a route with no compile
 - [ ] 3.2 Per model, which features and settings it offers and how many devices it holds, from the captured product table, capabilities and settings, written as the first file of that model's reference folder, `reference/remotes/<model>/features.md` in the 650's layout, for the One, 600, 700, 300 and 350
@@ -70,7 +75,7 @@ Each item ends with its check: the compile differs from its control where the fe
 
 - [ ] 4.1 The latest firmware for every bench model, from the update service, filed in the lab where it is missing
 - [ ] 4.2 Check the product table, product capabilities and settings are captured for every bench model
-- [ ] 4.3 Decide whether channel logos, the pictures favourites can show, are worth archiving
+- [ ] 4.3 Logitech's learning service: its answers, family and code, for the raw infrared captures in the lab, as the reference a local replacement will be checked against
 
 ## 5. What lands in this repository
 
