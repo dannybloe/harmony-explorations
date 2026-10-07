@@ -107,7 +107,9 @@ produce a config the remote accepts and mishandles.
   The rail holds on the other architectures too without needing their measurement, because stamping the
   moment of writing is the right provenance value whatever the remote does with it, and it holds whether
   the firmware reads this record or base slot 13's `first`, which section 137 says nothing separates:
-  both get stamped by a save. This is the one
+  both get stamped by a save. **`write-config.ts` stamps every write itself**, todo-compile-650 1.3, and
+  saves the stamped file over `--config` before it erases anything; `--as-is` is the one way to write
+  a file's own stamp, for a compile put back unchanged. This is the one
   field where reproducing the input byte for byte, which is what a round trip test wants, is the wrong
   thing for a save.
 * **`end_addr` is restamped when anything changes length**, and it is the only header field that

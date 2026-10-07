@@ -7,6 +7,15 @@
  *   ... --commit --no-invalidate   section 250's control: every step but the first
  *   ... --commit --drop-only      section 250's isolating control: the drop and nothing else
  *   ... --commit --restart-only   section 282: the restart and nothing else
+ *   ... --as-is                   write the file's own stamp, for putting a compile back unchanged
+ *
+ * **Every write stamps the configuration at the moment of writing**, todo-compile-650 1.3: the build
+ * timestamp and the clock records, since a restart puts the remote's clock back to that stamp
+ * (sections 111 and 310). The stamped file is saved over `--config` before the first erase, so the
+ * lab holds what went onto the remote, and a rerun after a run that stopped past its erase writes
+ * that saved file unchanged rather than stamping again, `stoppedAfterErase`. `--as-is` writes the
+ * file as it is, which is what 1.6 needs for a compile written back unchanged, and `--drop-only` and
+ * `--restart-only` imply it, since both compare the remote against the file and write nothing.
  *
  * **Two units since 27 September 2026, section 282**, chosen by the architecture read off the remote
  * the way `rehearse-block.ts` chooses: the spare Harmony One on arch 12 and the Harmony 650 on arch
@@ -48,7 +57,8 @@
  * identified off its own identity block, the architecture comes off the device, and the erase is
  * measured against both neighbours.
  */
-import { appendFileSync, readFileSync } from 'node:fs';
+import { appendFileSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { basename, dirname, join } from 'node:path';
 
 import { imagePath, unitIdentity, unitIdentityPath } from '@harmony/lab';
 import {
@@ -85,6 +95,7 @@ import {
   assertStateTableConsistent, parse, trailerChecksum, worstQueueRun,
 } from '@harmony/codec';
 import { profileFor, readConfig } from '../src/index.ts';
+import { StampError, stampForWrite, stoppedAfterErase } from '../src/stamp.ts';
 
 /**
  * The lab images this may be written against, which are the spare Harmony One's own reads.
@@ -341,7 +352,36 @@ async function main(): Promise<void> {
   const dumpPath = imagePath(dumpName);
   if (dumpPath === undefined) fail(`no lab image called ${dumpName}`);
   const dump = new Uint8Array(readFileSync(dumpPath));
-  const wanted = new Uint8Array(readFileSync(configPath));
+  let wanted: Uint8Array = new Uint8Array(readFileSync(configPath));
+
+  // The stamp, before every other check so that they all run on the bytes that will be written.
+  // `stampForWrite` checks the file's own checksum first, since stamping recomputes it.
+  const asIs = process.argv.includes('--as-is') || dropOnly || restartOnly;
+  const previous = readdirSync(dirname(configPath))
+    .filter((name) => name.startsWith(`${basename(configPath)}.write-`) && name.endsWith('.log'))
+    .map((name) => join(dirname(configPath), name))
+    .filter((path) => path !== journalPath)
+    .sort()
+    .at(-1);
+  const resuming = previous !== undefined && stoppedAfterErase(readFileSync(previous, 'utf8'));
+  let stamped = false;
+  if (asIs) {
+    say('--as-is: the file is written with its own stamp\n');
+  } else if (resuming) {
+    say(`${basename(previous!)} erased flash and never read the configuration back, so this is its `
+      + 'rerun: the file is written with the stamp that run saved, which is what its blocks hold\n');
+  } else {
+    try {
+      const result = stampForWrite(wanted, new Date());
+      wanted = result.bytes;
+      stamped = true;
+      say(`stamped ${result.at}: the build timestamp and the clock records, which the remote's `
+        + 'clock is set back to at every restart\n');
+    } catch (error) {
+      if (!(error instanceof StampError)) throw error;
+      fail(`${configPath}: ${error.message}. It would also be refused by the remote at boot`);
+    }
+  }
 
   // **The one check the remote itself makes, performed before anything is erased.** A container
   // whose trailer disagrees with its bytes is one the boot validator refuses, and the failure would
@@ -631,6 +671,12 @@ async function main(): Promise<void> {
     }
 
     assertFirstWriteAllowed();
+    // Saved before the first command that changes the remote, so that whatever happens next the lab
+    // holds the bytes the remote is being given, and a rerun can find them. The journal says so.
+    if (stamped) {
+      writeFileSync(configPath, wanted);
+      say(`saved the stamped configuration over ${configPath}\n`);
+    }
     const permission = {
       architecture,
       configLength: dump.length,
