@@ -1,6 +1,6 @@
 ---
 name: myharmony-service
-description: How to talk to Logitech's two live services, read only by default: the configuration service and the software update service that serves firmware. Carries the account map, the API mechanics, the hidden recovery screens in both clients, the rails and the traps. Use before any session that logs in, fetches the device catalogue or a firmware image, compiles a config, registers or removes anything on an account, or reasons about what an account holds.
+description: "How to talk to Logitech's two live services, read only by default: the configuration service and the software update service that serves firmware. Carries the account map, the API mechanics, the hidden recovery screens in both clients, the rails and the traps. Use before any session that logs in, fetches the device catalogue or a firmware image, compiles a config, registers or removes anything on an account, or reasons about what an account holds."
 ---
 
 # Logitech's live services: the instrument, the accounts, the rails

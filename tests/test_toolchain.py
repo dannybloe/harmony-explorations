@@ -1572,7 +1572,8 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # 24 later the same day, and it is one withheld document becoming three rather than two new
         # leaks: `docs/roadmap.md` was retired, its decisions became `docs/decisions.md`, its
         # reasoning `docs/plans/002-the-roadmap.md`, and the sequence it carried is `todo.md`.
-        self.assertEqual(len(must), 24, 'the withhold list should resolve to 24 paths, got %s'
+        # 25 with `docs/README.md`, the document map moved out of `CLAUDE.md` on 7 October 2026.
+        self.assertEqual(len(must), 25, 'the withhold list should resolve to 25 paths, got %s'
                          % sorted(must))
 
     def test_every_may_read_path_is_clean_of_the_write_path(self):
@@ -1675,7 +1676,8 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # **38 with section 297's review**: `packages/usb/test/firmware.test.ts`, whose simulated
         # remote answers an erase, an announced write, its data packets and its close. It is inside
         # `packages/usb/`, withheld whole, so nothing widens; the list was re-read before this moved.
-        self.assertEqual(len(stating), 38,
+        # 39 since docs/README.md, the document map moved out of CLAUDE.md, which names the write path.
+        self.assertEqual(len(stating), 39,
                          'the number of files stating the write path moved, so re-read the withhold '
                          'list before restamping this: %s' % stating)
 

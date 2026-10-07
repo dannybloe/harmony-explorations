@@ -111,3 +111,10 @@ Then the batch checks still have to run, because the index is a navigator and no
 make ts        # typecheck and test the TypeScript packages
 make pyright   # the Python half, at the level pyrightconfig.json argues for
 ```
+
+## How the language servers are set up
+
+`.claude/skills/ts-lsp/` and `py-lsp/` start servers pinned in `node_modules`, and pyright's
+strictness is argued in `pyrightconfig.json`. The reasoning behind the pins, and why an official
+TypeScript or pyright plugin must not run alongside them, is in `docs/README.md` under "Where things
+go".

@@ -57,6 +57,14 @@ this section applies, and it is exactly when nobody thinks to read a skill. So t
 you one bit. A source tells you the rule. And an experiment can cost the session, or worse: section 200's
 near miss is the same day's other lesson, where a filename turned out to be a verb.
 
+## Which remotes this library can open at all
+
+`openHarmony` refuses three families on purpose: the **file based** remotes (Harmony Touch, 300 and
+350), the **tunnelled** ones (the Harmony 890 platform), and a remote sitting in its **bootloader**.
+The argument for each, what the file protocol looks like and why a path on it can be an action, is
+in `docs/README.md` under "Where things go", moved there out of `CLAUDE.md`. Read it before
+widening any of those refusals.
+
 ## The rails
 
 **Never write, never erase, never reset.** See "Never write to a remote" in `CLAUDE.md`. That one is

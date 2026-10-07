@@ -500,3 +500,115 @@ catalogue row does not.
 already governs: a fact from it is marked as client sourced, the firmware stays the authority where
 it can settle something, and nothing from the site is committed but our own description of it.
 
+
+## Why the register is checked at every path, and the hook
+
+Moved out of `CLAUDE.md` on 7 October 2026, word for word, so that it is read when it is needed
+rather than carried into every session. Where the text says "this file" it means `CLAUDE.md`,
+and the rules it argues are stated briefly there.
+
+**Treat the lab as an archaeology site, not as a drawer**, decision 12 in `docs/decisions.md`, taken on
+28 August 2026 after the fourth time a session worked out something the lab already had written down.
+**Before deriving anything, ask whether the site already answers it.** The site is 12506 files and
+2.3 GB, of which `software/classic/` is 4809 files and `work/myharmony/` another 3465. **Neither is
+untouched and this said `software/classic/` had exactly one file read**, until 29 August 2026: sections
+204 to 209 worked it, two of its notes are mined, a third is catalogued, and `src/` and `res/` are
+surveyed with the HID command layer mined and three resource files with it. `make lab-progress` is the
+answer to how far anything has been dug, and a count in this file is exactly the kind of thing it
+exists to replace.
+
+**The survey is done since 28 August 2026** and `reference/lab-register.md` is the register: one row
+per artefact, each with a status and its tags, with a test that fails when the lab gains one the
+register does not name. **The row count deliberately no longer appears here**, and that is the third
+correction of the same defect rather than a style change. It said 58 for a day, which was a count
+nothing recomputed; then 44 while the test asserted 45, until 30 August 2026; then 46 while the test
+asserted 48, until 4 September 2026. Each time the cause was identical, that the count is asserted in
+`tests/test_toolchain.py` and restated here and only one of the two moves when a row is added, and
+each time the fix was to update the copy. So the copy is gone: the number lives in the test, which
+recomputes it, and the register itself is one command away. So "did we already know this" is a **command** rather than a memory exercise:
+`make lab-check PATH_ARG=<path>`, which prints every register row bearing on a path, ancestors and
+descendants both. That is the point: an expensive check gets skipped under momentum, so making it
+cheap is the only structural fix, and section 209 is what finally made it cheap instead of writing a
+sixth paragraph about remembering. What is left of step 9 is the digging, in tag order.
+
+**Grepping it is not the same as reading it, and section 206 is the fifth occurrence.** That afternoon
+re-extracted all seven of the classic client's per architecture constant tables and got numbers
+`docs/host-client.md` had carried since 9 August, from a lab file the register names on its own row
+with the words "`docs/host-client.md` is built on it". **So the instrument works and using it is the
+part that fails**, every time under momentum.
+
+**Section 209 is the sixth occurrence and it corrects the trigger this paragraph used to give**, which
+was the act of opening an artefact and which reads as one check at the start of a dig. That check was
+performed, correctly, on the square the dig started in, and the dig then **wandered**: a resource key
+led to a class, the class to a service, the service to a directory whose own register row says it is
+mined, and crossing that boundary does not feel like opening a new artefact. So **the trigger is the
+path and not the dig**, re-run every time the path changes even when the subject has not, and it is
+one command now, `make lab-check PATH_ARG=<path>`.
+
+**It is nine occurrences now, and the seventh, eighth and ninth all happened in the session that
+wrote the sixth's fix**, sections 213 and 214. One published a finding whose stated lead had been sitting in a lab note
+for twenty days, and the other followed a method into `core/flash/`, a directory whose own register
+row says mined, and got `PROTOCOL-CONSTANTS.md` back. Both times the check was run on the paths the
+dig set out to open and not on the path a name led to, which is precisely the distinction the
+paragraph above states. So the rule is now written down three times and has failed twice since. **Do
+not add a fourth paragraph about it**: what is missing is not a statement, it is a check that runs
+without being remembered.
+
+**So it is a hook now**, `bin/lab-register-hook.py`, wired into both agents' `PreToolUse` on the tools
+that open a file rather than on `Bash` alone, because both of section 213's re-derivations read their
+files through an ordinary read. **It interrupts the first touch of a lab directory and then stays
+quiet**: exit 2 carrying the register's own rows, and the retry straight afterwards succeeds, so the
+cost is one round trip per new directory and the guarantee is that nobody digs a mined square without
+having been shown its row. Advisory output was not tried, deliberately, because text that scrolls past
+is exactly what the eight occurrences prove gets ignored. It **fails open** on anything it cannot
+parse, since losing the reminder costs an afternoon and blocking a session on a broken hook costs more.
+`make lab-check` is unchanged and is still the way to ask on purpose.
+
+**The ninth arrived the same day and the hook could not have caught it either**, section 214, which is
+why it is worth a paragraph where an eighth would not have been. It was not a dig that skipped a
+register row: it was a **claim of ours**, in a docstring, in a file sitting inside Logitech's own
+package name in a directory the register correctly describes as the vendor's decompiled source. The
+instrument built there on 7 August states that a remote names its own regions; section 212 spent an
+afternoon on 29 August establishing that it does not and that no packet is sent. No status a register
+can carry would have warned about that, because a register describes artefacts and not whose claims
+are inside them.
+
+**So the standing rule gains a second half**: this project's own claims are scattered across the lab in
+places catalogued as somebody else's, where `reference/superseded.md`, `make facts` and the four places
+cannot reach them. A claim of ours in a lab docstring is worse than the same claim in a lab note, since
+a note announces itself as ours and a package name announces the opposite. When a lab file states
+something about a remote, check who wrote it before believing it **and** before re-deriving it.
+
+What the fifth occurrence bought is real and is the shape to aim for when this happens
+again: the ledger of client sourced numbers had no executable check at all and has one now, and three
+of its rows moved on bytes that were already here.
+
+**Its first square paid for it.** `software/classic/SERVER-DEPENDENCY.md`, 278 lines from 7 August
+2026, never crossed: the client is an **executor and not a builder**, so reading, writing, learning and
+firmware update are local and still work, while the device database, the interface and the
+**configuration compiler** were server side and are gone. That is the biggest want list item and, if it
+holds, it closes it as a recovery target.
+
+The mechanism is the thing to understand, because it is not carelessness. Every rule here for keeping
+facts straight, `make facts`, `reference/superseded.md`, the four places, a regression test per claim,
+operates on **this repository**. The lab is deliberately outside all of it, since it holds unlicensed
+firmware, contributors' configs and Logitech's own client code. So **a fact recorded only in a lab
+`META.md` is invisible to every check this project has**, and no amount of care in here can see it.
+Section 197 is the case: Logitech's own per model protocol specification was mirrored **and read** on
+9 August 2026, its notes carry the architecture map, the vendor's codenames and the Harmony One's whole
+infrared learn session, and none of it reached a finding, a test or a line of code for nineteen days.
+That same notes file said thirty lines earlier that the files had never been fetched.
+
+Two consequences for a session working here. A find in the lab is **not** landed until it has taken the
+ordinary route into this repository, and saying so in a lab note is the state the decision forbids. And
+an artefact whose value is not yet apparent is the one most worth cataloguing, because whoever needs it
+later will not know to go looking. the excavation in `docs/lab-excavation.md` is the excavation and the register it
+produces, and `docs/lab-excavation.md` is the method.
+
+**A catalogue is not a claim, and only a claim needs a test.** Taken by Danny on 28 August 2026,
+against the reading recorded here that everything out of the lab takes the four places. A claim says
+how a remote behaves and can be wrong, so it keeps the full route. A catalogue says what exists and
+where, it can only be incomplete, and **requiring a test for a row is what keeps the site
+unexcavated**, since writing down "their client calls these 308 operations, this one probably feeds
+the device wizard" would then cost more than leaving the knowledge in the lab. A marked guess is a
+useful row and an unmarked one is not.

@@ -1,6 +1,6 @@
 ---
 name: how-a-harmony-works
-description: What a Harmony does from the point of view of somebody holding one: activities, device mode, how each model gets into device mode and back. Read this BEFORE designing or building anything about what a remote does, what an interface offers, or what a config field means for a person. Use when a task touches button mapping, activities, devices, screens, or any question of the form "what should the interface show here".
+description: "What a Harmony does from the point of view of somebody holding one: activities, device mode, how each model gets into device mode and back. Read this BEFORE designing or building anything about what a remote does, what an interface offers, or what a config field means for a person. Use when a task touches button mapping, activities, devices, screens, or any question of the form \"what should the interface show here\"."
 ---
 
 # How a Harmony works, from the outside

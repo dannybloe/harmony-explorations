@@ -1,6 +1,6 @@
 ---
 name: writing-a-config
-description: The rails a config writer must respect, and why each one exists. Use before changing any byte of a Harmony configuration container: editing a device, an activity, a key binding, a favourite channel, an infrared record or a screen, running the write rehearsal, or working on edit.ts, relocate.ts or the write path in packages/usb. Also use when judging whether a proposed edit is safe.
+description: "The rails a config writer must respect, and why each one exists. Use before changing any byte of a Harmony configuration container: editing a device, an activity, a key binding, a favourite channel, an infrared record or a screen, running the write rehearsal, or working on edit.ts, relocate.ts or the write path in packages/usb. Also use when judging whether a proposed edit is safe."
 ---
 
 # Writing a config: the rails, and the evidence behind each

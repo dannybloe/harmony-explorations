@@ -1,6 +1,6 @@
 ---
 name: status-report
-description: Write a short, plain status update: what changed, one concrete example with real numbers, where that puts us in the plan of record, and one next step. Use when asked for a status update, for "waar staan we", for "vertel het even kort", or when a long working stretch ends and the last real report is stale.
+description: "Write a short, plain status update: what changed, one concrete example with real numbers, where that puts us in the plan of record, and one next step. Use when asked for a status update, for \"waar staan we\", for \"vertel het even kort\", or when a long working stretch ends and the last real report is stale."
 ---
 
 # A status update that can be read in a minute

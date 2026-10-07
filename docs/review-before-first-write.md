@@ -104,6 +104,7 @@ that could have leaked.
 | `reference/superseded.md` | twelve contiguous rows, each pairing an answer we got wrong with the corrected one and its addresses. On question 4 it states both wrong readings and the right one |
 | `docs/host-client.md` | question 2's hypothesis, and an independent statement of the transfer shape taken from Logitech's client |
 | `CLAUDE.md`, `docs/status.md`, `todo.md`, `docs/adding-a-device.md` | all restate the sequence |
+| `docs/README.md` | the map of documents and commands moved out of `CLAUDE.md` on 7 October 2026, which names `rehearse-block.ts` and the write protect interlock |
 | `AGENTS.md` | deliberately absent since 28 August 2026. Codex reads `CLAUDE.md` through `.codex/config.toml`, so both agents use one brief. The row stays reserved so recreating a separate brief cannot silently widen what a reviewer may see |
 | `docs/glossary.md`, `docs/growing-a-config.md` | one line each |
 | `docs/review-before-first-write.md` | this document, which states which questions are open |
@@ -166,7 +167,8 @@ protect question 4.
 of an always loaded brief into a skill changes who can reach it: a skill is discovered by an agent on
 its own, so text that was previously read only by whoever opened `CLAUDE.md` becomes text a reviewer
 may meet without choosing to. Any future move of write path material has to ask that question before
-it asks about size.
+it asks about size. The 7 October 2026 move of the document map and the command catalogue into
+`docs/README.md` asked it, through the sweep failing, and that file is on the list above.
 
 ## Orientation, and the control that it is insufficient
 

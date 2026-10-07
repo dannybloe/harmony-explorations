@@ -1,3 +1,8 @@
+---
+name: draw-a-diagram
+description: "Draw a diagram this project generates from data, such as an entity model, a call graph, a state machine or a section map: emit DOT source and let graphviz lay it out, never a layout engine of our own. Use before writing or changing anything that renders a diagram, including make model-diagram and the drawings under docs/myharmony. Not for the remote silhouettes, which have draw-remote."
+---
+
 # Drawing a generated diagram
 
 For any picture this project generates from data: an entity model, a call graph, a state machine, a

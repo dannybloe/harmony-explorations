@@ -1,6 +1,6 @@
 ---
 name: recovering-a-remote
-description: How a Harmony is recovered when a write goes wrong, per architecture: safe mode, the bootloader, the flash programmer, the EEPROM latch and the write protect interlock. Use before planning or rehearsing a first write, when a remote will not boot or is stuck in safe mode, when judging whether an operation is survivable, and before entering safe mode on any model.
+description: "How a Harmony is recovered when a write goes wrong, per architecture: safe mode, the bootloader, the flash programmer, the EEPROM latch and the write protect interlock. Use before planning or rehearsing a first write, when a remote will not boot or is stuck in safe mode, when judging whether an operation is survivable, and before entering safe mode on any model."
 ---
 
 # Recovering a remote, per architecture
