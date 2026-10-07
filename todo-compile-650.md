@@ -9,6 +9,9 @@ otherwise. What has been done on the others, and what they will need afterwards,
 this route. [todo.md](todo.md) stays as it is until everything in it has a home in one of the two;
 then it is retired and `CLAUDE.md` is updated, which names it as the one place the sequence lives.
 
+**Before working any item, load the `harmony-650` skill**, in this session and in every agent brief:
+it says where the remote's facts are, which are read first, and holds the write and bench procedure.
+
 **The route**: start from a Logitech compile of part of a test setup, add the rest with our own
 composers until the whole test setup works (chapter 5), then replace every copied part until nothing is
 copied. **Every chapter ends with a configuration that works on the 650.**

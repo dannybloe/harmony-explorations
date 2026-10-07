@@ -71,6 +71,13 @@ The Harmony One is a different type, with a touch screen and its own screens, so
   - [ ] 5.4.2 Whether the 0xFE fill above the state variable storage happens on the Harmony 525 too: unmeasured (was 1.3.2)
 - [ ] 5.5 The Harmony 300 and 350, and the Harmony Touch: the file based family, read only so far
 - [ ] 5.6 The legacy remotes, Harmony 880, 885, 890 and 895: contributed configurations only, no compiler
+- [ ] 5.7 A reference folder and a skill for every remote on the bench, the way the Harmony 650 has `reference/remotes/harmony-650/` and the `harmony-650` skill: the folder holds the model's facts with a source each, the skill says to read it first and carries that remote's write and bench procedure, so an agent sent to any remote starts from what is known
+  - [ ] 5.7.1 Harmony One, one folder for the model and one skill naming both units: the spare is a write target and the everyday one never is
+  - [ ] 5.7.2 Harmony 600, beside the 650 in `reference/architectures/harmony-600-650-700/`
+  - [ ] 5.7.3 Harmony 700, beside the 650 in the same architecture folder
+  - [ ] 5.7.4 Harmony 525, with an architecture folder of its own, and the hazard that its application firmware sits one erase block below its configuration
+  - [ ] 5.7.5 Harmony 300 and Harmony 350, the file based family, read only
+  - [ ] 5.7.6 Harmony Touch, file based as well, read only
 
 ## 6. Fine tuning and loose ends
 
