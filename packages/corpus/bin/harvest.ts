@@ -256,7 +256,9 @@ async function harvest(batch: HarvestDevice[]): Promise<void> {
     // reader counts devices for the model.
     const payload = ezhex === undefined ? new Uint8Array() : payloadOf(ezhex);
     const text = new TextDecoder('latin1').decode(payload);
-    const namesFound = ezhex !== undefined && batch.every((device) => text.includes(device.model));
+    // A name tree writes a space as an underscore, so "Plex Player" is stored as "Plex_Player".
+    const namesFound = ezhex !== undefined
+      && batch.every((device) => text.includes(device.model) || text.includes(device.model.replaceAll(' ', '_')));
     const counted = !FILE_BASED_MODELS.has(model);
     const inFile = ezhex === undefined || !counted ? 0 : configDevices(parse(payload)).length;
     const checked = namesFound && (!counted || inFile === batch.length);
