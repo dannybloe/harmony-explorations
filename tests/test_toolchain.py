@@ -579,7 +579,8 @@ class ABoundOnACorpusTotalIsExact(unittest.TestCase):
         # `packages/codec/test/driving.test.ts`, section 305. 67 since `packages/codec/test/tagfive.ts`,
         # section 313, a shared helper rather than a test file. 69 with section 315's two and 70 with
         # `packages/codec/test/screencategories.test.ts`, section 317. 71 with frame.test.ts, section 318, and 72 with devicepower.test.ts, section 320, and 73 with inputs.test.ts, section 321, and 74 with activityroles.test.ts, section 323, and 75 with statetables.test.ts, section 324, and 76 with devicemode.test.ts, section 325. 77 with tworowlist.test.ts, section 326, and 78 with sequence.test.ts, section 327. 80 with devicepage.test.ts, section 330, and 81 with composecatalogue.test.ts, section 331. 82 with `packages/silhouettes/test/remotes.test.ts`, the per remote reference's generated blocks. 83 with `packages/codec/test/catalogueraw.test.ts`, todo-later 1.3 and 1.4. 84 with help.test.ts, section 333, and 85 with menupage.test.ts, section 334. 86 with `packages/corpus/test/stamp.test.ts`, todo-compile-650 1.3. 87 with activityscreen.test.ts, section 336.
-        self.assertEqual(len(scanned), 87, 'TypeScript test files, which moves when one is added')
+        # 88 with `packages/corpus/test/harvest.test.ts`, todo-secure-logitech 1.1.
+        self.assertEqual(len(scanned), 88, 'TypeScript test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):
@@ -1253,8 +1254,8 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
         # Harmony 600's delay write. 82 since `work/ir-archive-raw/`, section 305, and 83 since
         # `work/plan-4.3.4/`, the Harmony 650's long press version write, section 309. 86 since
         # `work/ir-archive-raw/derived/`, what `make catalogue-raw` derives, todo-later 1.3. 91 since
-        # `work/test-setup/`, the scan behind plan 006.
-        self.assertEqual(len(named), 91, "lab paths the register names, as at 7 October 2026")
+        # `work/test-setup/`, the scan behind plan 006, and 92 since `work/harvest/`, todo-secure-logitech.
+        self.assertEqual(len(named), 92, "lab paths the register names, as at 7 October 2026")
         for path in sorted(named):
             with self.subTest(path=path):
                 if '*' in path:

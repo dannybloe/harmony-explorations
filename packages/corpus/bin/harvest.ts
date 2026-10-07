@@ -1,0 +1,278 @@
+/**
+ * Harvest Logitech compiles: put catalogue devices on a disposable remote record, have Logitech compile
+ * it, file the result in the lab with a manifest, remove the devices again. `todo-secure-logitech.md`
+ * 1.1; load the `gathering-logitech` skill before using it.
+ *
+ * ```
+ * node packages/corpus/bin/harvest.ts --record 16318261 --model 72 --label families-001 \
+ *     --device Denon/AVR-X4800H.json --device LG/OLED65G26LA.json [--devices list.json]
+ *     [--account 2] [--batch 15] [--pause 30] [--empty-record] [--commit]
+ * ```
+ *
+ * `--devices` is a JSON array of `{ "manufacturer": ..., "file": ... }`, the archive's folder and file.
+ *
+ * **Without `--commit` it writes nothing**: it logs in, reads the household, checks the record, and
+ * resolves every device through the service's search, all reads, then prints what a run would do. That
+ * half is worth running on its own, since a device that does not resolve refuses the whole run.
+ *
+ * **With `--commit` it writes three kinds of thing**, each behind the door the lab client already uses:
+ * adding devices (`MYHARMONY_ALLOW_DEVICE_WRITE=1`), compiling (`MYHARMONY_ALLOW_COMPILE=1`) and
+ * removing them (`MYHARMONY_ALLOW_DELETE=1`). Nothing is ever sent to a remote.
+ *
+ * **The rails**, each here because of a way a harvest could go wrong:
+ *
+ * * A record on `PROTECTED_RECORDS` is refused, and so is **any record holding a device when the run
+ *   starts**, which is what keeps a real record off the list from being touched: a harvest only ever
+ *   uses an empty record and leaves it empty. `--empty-record` is the one exception, for a record
+ *   there is a go-ahead to repurpose: with `--commit` it removes every device the record holds before
+ *   the first batch, the device list having been filed among the replies by the read before it.
+ * * The record's model has to be the one `--model` names, so a family is never compiled for the wrong
+ *   remote by a mistyped record id.
+ * * Every device must resolve to exactly one search match carrying the archive's device id before
+ *   anything is written, so a typo cannot half apply a batch.
+ * * The devices are removed after every compile, failed or not, and the record is read back empty; if
+ *   it is not, the run stops rather than compile the next batch on top of leftovers.
+ * * One compile at a time, `--pause` seconds apart, and the run stops at the first refusal it does not
+ *   understand rather than retrying blind.
+ *
+ * **A compile that fails is split**, `splitBatch`: the devices are removed, the batch halved, and each
+ * half compiled on its own, until the device that breaks Logitech's compiler stands alone and is
+ * recorded in the manifest's `failed` list. Every other device still gets compiled.
+ *
+ * **The check that makes a compile count**, from the `gathering-logitech` skill: the fetched file is
+ * parsed and must hold as many devices as went in. A per family check of the infrared records is
+ * `todo-secure-logitech.md` 2.3's and runs over the filed compiles afterwards.
+ *
+ * Everything lands in the lab under `work/harvest/<label>/`: each compile's ZIP and its extracted
+ * files, every reply the service gave, and `manifest.json`. Nothing of it enters this repository.
+ */
+import { mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { randomUUID } from 'node:crypto';
+import { setTimeout as sleep } from 'node:timers/promises';
+import { LAB, IR_ARCHIVE } from '@harmony/lab';
+import { devices as configDevices, parse, payloadOf, catalogueDevice } from '@harmony/codec';
+import {
+  ACCOUNT_DIRECTOR, ACCOUNT_MANAGER, COMPILE_MANAGER, DELETION_MANAGER, DEVICE_MANAGER, MyHarmonySession,
+  credentials, type Reply,
+} from '../src/myharmony.ts';
+import {
+  HarvestRefusal, PROTECTED_RECORDS, addDeviceOperation, compileStatus, deviceName, operationBag,
+  pickMatch, readZip, splitBatch, type HarvestDevice,
+} from '../src/harvest.ts';
+
+function flag(name: string): string | undefined {
+  const at = process.argv.indexOf(`--${name}`);
+  return at < 0 ? undefined : process.argv[at + 1];
+}
+function flags(name: string): string[] {
+  return process.argv.flatMap((arg, i) => (arg === `--${name}` ? [process.argv[i + 1] ?? ''] : []));
+}
+function required(name: string): string {
+  const value = flag(name);
+  if (value === undefined) throw new HarvestRefusal(`--${name} is required`);
+  return value;
+}
+
+const commit = process.argv.includes('--commit');
+const selector = flag('account') ?? '2';
+const record = Number(required('record'));
+const model = required('model');
+const label = required('label');
+const batchSize = Number(flag('batch') ?? 15);
+const pauseSeconds = Number(flag('pause') ?? 30);
+if (LAB === undefined) throw new HarvestRefusal('no lab: a harvest files everything there');
+if (IR_ARCHIVE === undefined) throw new HarvestRefusal('no archive checkout: devices are named out of it');
+if (!/^[\w.-]+$/.test(label)) throw new HarvestRefusal(`--label ${label} is not a plain folder name`);
+if (PROTECTED_RECORDS.has(record)) throw new HarvestRefusal(`record ${record} is protected`);
+
+// The devices, named as the archive names them, and resolved out of it so the id is the archive's.
+const named: { manufacturer: string; file: string }[] = [
+  ...flags('device').map((one) => {
+    const [manufacturer, file] = one.split('/');
+    if (!manufacturer || !file) throw new HarvestRefusal(`--device ${one} is not <manufacturer>/<file>`);
+    return { manufacturer, file };
+  }),
+  ...(flag('devices') ? JSON.parse(readFileSync(flag('devices')!, 'utf8')) as { manufacturer: string; file: string }[] : []),
+];
+if (named.length === 0) throw new HarvestRefusal('no devices named');
+const wanted: HarvestDevice[] = named.map(({ manufacturer, file }) => {
+  const entry = catalogueDevice(IR_ARCHIVE!, manufacturer, file);
+  if (entry.model === null) throw new HarvestRefusal(`${manufacturer}/${file} has no model in the archive`);
+  return { manufacturer: entry.manufacturer, file, model: entry.model, globalDeviceId: entry.globalDeviceId };
+});
+
+const dir = join(LAB, 'work', 'harvest', label);
+const replies = join(dir, 'replies');
+mkdirSync(replies, { recursive: true });
+let sequence = 0;
+const session = new MyHarmonySession((operation, reply) => {
+  sequence += 1;
+  writeFileSync(join(replies, `${String(sequence).padStart(4, '0')}-${operation}.bin`), reply.bytes);
+});
+
+const manifestPath = join(dir, 'manifest.json');
+interface Compiled { file: string; status: string; devices: (HarvestDevice & { deviceId: number })[];
+  inFile: number; checked: boolean }
+const manifest: { record: number; model: string; account: string; compiles: Compiled[];
+  failed: HarvestDevice[] } = existsSync(manifestPath)
+  ? JSON.parse(readFileSync(manifestPath, 'utf8'))
+  : { record, model, account: selector, compiles: [], failed: [] };
+function saveManifest(): void { writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 1)}\n`); }
+
+function expectOk(operation: string, reply: Reply): Record<string, unknown> {
+  if (reply.status !== 200 || typeof reply.json !== 'object' || reply.json === null) {
+    throw new HarvestRefusal(`${operation} answered status ${reply.status}; stopping`);
+  }
+  return reply.json as Record<string, unknown>;
+}
+
+async function devicesOnRecord(): Promise<{ Id: { Value: number } }[]> {
+  const out = expectOk('GetDevicesInAccount', await session.call('GetDevicesInAccount', DEVICE_MANAGER,
+    { accountId: { Value: record, IsPersisted: true } }));
+  return (out['GetDevicesInAccountResult'] as { Id: { Value: number } }[] | null) ?? [];
+}
+
+const { email, password } = credentials(selector);
+await session.login(email, password);
+console.log(`signed in to test account ${selector}`);
+
+// The record: on this account, empty, and for the model asked for.
+const household = expectOk('GetMyHousehold', await session.call('GetMyHousehold', ACCOUNT_MANAGER, {}));
+const accounts = ((household['GetMyHouseholdResult'] as { Accounts?: unknown[] } | undefined)?.Accounts ?? []) as
+  { Id: { Value: number }; ProductIdentifier?: string; Remotes?: { Id: { Value: number } }[] }[];
+const chosen = accounts.find((one) => one.Id.Value === record);
+if (chosen === undefined) throw new HarvestRefusal(`record ${record} is not on test account ${selector}`);
+if (chosen.ProductIdentifier !== model) {
+  throw new HarvestRefusal(`record ${record} is for model ${chosen.ProductIdentifier}, not ${model}`);
+}
+const remote = chosen.Remotes?.[0]?.Id.Value;
+if (remote === undefined || (chosen.Remotes?.length ?? 0) !== 1) {
+  throw new HarvestRefusal(`record ${record} holds ${chosen.Remotes?.length ?? 0} remotes, not 1`);
+}
+const emptyRecord = process.argv.includes('--empty-record');
+const already = await devicesOnRecord();
+if (already.length > 0 && !emptyRecord) {
+  throw new HarvestRefusal(`record ${record} holds ${already.length} devices; a harvest only uses an empty record`);
+}
+console.log(`record ${record}: model ${model}, remote ${remote}, `
+  + (already.length === 0 ? 'empty' : `${already.length} devices to remove first`));
+
+// Every device resolved before anything is written.
+const matches = new Map<HarvestDevice, Record<string, unknown>>();
+for (const device of wanted) {
+  let found: Record<string, unknown>[] = [];
+  // Search type 3 is the client's search box; type 1 finds what 3 misses, measured in the lab client.
+  for (const searchType of [3, 1]) {
+    const out = expectOk('SearchGlobalDevices', await session.call('SearchGlobalDevices', DEVICE_MANAGER, {
+      manufacturer: device.manufacturer, modelNumber: device.model, deviceType: 0, searchType, maxResults: 50,
+    }));
+    found = ((out['SearchGlobalDevicesResult'] as { Matches?: Record<string, unknown>[] } | undefined)?.Matches) ?? [];
+    if (found.some((one) => (one['Id'] as { Value?: number } | undefined)?.Value === device.globalDeviceId)) break;
+  }
+  matches.set(device, pickMatch(found, device));
+  console.log(`  resolved ${device.manufacturer} ${device.model}, device ${device.globalDeviceId}`);
+}
+
+if (!commit) {
+  console.log(`dry run: ${wanted.length} devices in batches of ${batchSize} would be compiled for record `
+    + `${record}; nothing was written.`);
+  process.exit(0);
+}
+
+/** Remove the devices a batch added, and stop the run if the record does not read back empty. */
+async function clear(ids: number[]): Promise<void> {
+  if (ids.length > 0) {
+    expectOk('DeleteDevices', await session.call('DeleteDevices', DELETION_MANAGER,
+      { accountId: { Value: record }, deviceIds: ids.map((Value) => ({ Value })) }));
+  }
+  const left = await devicesOnRecord();
+  if (left.length > 0) throw new HarvestRefusal(`record ${record} still holds ${left.length} devices; stopping`);
+}
+
+/** One compile of the record as it stands: the ZIP's bytes, or the status word it failed with. */
+async function compile(): Promise<{ zip?: Uint8Array; status: string }> {
+  const settings = await session.callAt('GetRemoteSettings', `${ACCOUNT_DIRECTOR}Account/${record}/Remote/${remote}/Settings`, 'GET');
+  if (settings.status !== 200) throw new HarvestRefusal(`remote settings answered ${settings.status}; stopping`);
+  const started = expectOk('StartCompileWithLocaleAndSettings', await session.call(
+    'StartCompileWithLocaleAndSettings', COMPILE_MANAGER,
+    { remoteId: { Value: remote, IsPersisted: true }, localeId: 'en-US', remoteSettings: settings.json }));
+  const url = (started['StartCompileWithLocaleAndSettingsResult'] as { DownloadUrl?: string } | undefined)?.DownloadUrl;
+  if (!url) return { status: 'no download url' };
+  const [base, query = ''] = url.split('?');
+  const token = query.split('CompilationId=').pop() ?? '';
+  // The client polls the JSON variant every three seconds until the compiler is done.
+  const poll = `${base!.replace('/RemoteConfiguration', '')}/json2/RemoteConfigurationInJson?`;
+  for (let attempt = 0; attempt < 80; attempt++) {
+    const answer = await session.callAt('RemoteConfigurationInJson', poll, 'POST', { token });
+    const status = compileStatus(answer.bytes) ?? `http ${answer.status}`;
+    if (status === 'Successful') {
+      const at = indexOf(answer.bytes, [0x50, 0x4b, 0x03, 0x04]);
+      return at < 0 ? { status: 'successful without a ZIP' } : { zip: answer.bytes.subarray(at), status };
+    }
+    if (status !== 'Compiling' && status !== 'Pending' && status !== 'Queued') return { status };
+    await sleep(3000);
+  }
+  return { status: 'still compiling after 80 polls' };
+}
+
+function indexOf(bytes: Uint8Array, needle: number[]): number {
+  outer: for (let i = 0; i + needle.length <= Math.min(bytes.length, 8192); i++) {
+    for (let j = 0; j < needle.length; j++) if (bytes[i + j] !== needle[j]) continue outer;
+    return i;
+  }
+  return -1;
+}
+
+async function harvest(batch: HarvestDevice[]): Promise<void> {
+  const before = new Set((await devicesOnRecord()).map((one) => one.Id.Value));
+  expectOk('UpdateMultiple', await session.call('UpdateMultiple', DEVICE_MANAGER, operationBag(record,
+    batch.map((device) => addDeviceOperation(matches.get(device)!, device, record, randomUUID())))));
+  const added = (await devicesOnRecord()).map((one) => one.Id.Value).filter((id) => !before.has(id));
+  let result: { zip?: Uint8Array; status: string } = { status: 'not compiled' };
+  try {
+    if (added.length !== batch.length) {
+      throw new HarvestRefusal(`${batch.length} devices sent, ${added.length} on the record; stopping`);
+    }
+    result = await compile();
+  } finally {
+    await clear(added);
+  }
+  if (result.zip !== undefined) {
+    const name = `compile-${String(manifest.compiles.length + 1).padStart(3, '0')}`;
+    writeFileSync(join(dir, `${name}.zip`), result.zip);
+    const files = readZip(result.zip);
+    for (const [file, bytes] of files) writeFileSync(join(dir, `${name}-${file}`), bytes);
+    const ezhex = [...files].find(([file]) => file.toLowerCase().endsWith('.ezhex'))?.[1];
+    // The check: the compiled file holds every device that went in.
+    const inFile = ezhex === undefined ? 0 : configDevices(parse(payloadOf(ezhex))).length;
+    manifest.compiles.push({ file: `${name}.zip`, status: result.status, inFile, checked: inFile === batch.length,
+      devices: batch.map((device, i) => ({ ...device, deviceId: added[i] ?? 0 })) });
+    saveManifest();
+    console.log(`  ${name}: ${batch.length} devices, ${inFile} in the file${inFile === batch.length ? '' : ', CHECK FAILED'}`);
+    return;
+  }
+  console.log(`  compile of ${batch.length} devices failed: ${result.status}`);
+  if (batch.length === 1) {
+    manifest.failed.push(batch[0]!);
+    saveManifest();
+    return;
+  }
+  for (const half of splitBatch(batch)) {
+    await sleep(pauseSeconds * 1000);
+    await harvest(half);
+  }
+}
+
+if (already.length > 0) {
+  await clear(already.map((one) => one.Id.Value));
+  console.log(`removed the record's ${already.length} devices; it reads back empty`);
+}
+
+for (let at = 0; at < wanted.length; at += batchSize) {
+  if (at > 0) await sleep(pauseSeconds * 1000);
+  const batch = wanted.slice(at, at + batchSize);
+  console.log(`batch ${at / batchSize + 1}: ${batch.map(deviceName).join(', ')}`);
+  await harvest(batch);
+}
+console.log(`done: ${manifest.compiles.length} compiles filed, ${manifest.failed.length} devices failed, in ${dir}`);

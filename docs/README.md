@@ -820,6 +820,12 @@ node packages/corpus/bin/read-region.ts --label <name> --address 0x820000 [--cou
                        previous one, so it never leaves the lab. Refuses a range outside the config
                        region unless `--anywhere`, which is about what the artefact gets filed as
                        rather than about what is safe to read. Opens the device.
+node packages/corpus/bin/harvest.ts --record <id> --model <skin> --label <name> --device <make>/<file>.json
+                       todo-secure-logitech's harvest: catalogue devices onto an empty remote record of a
+                       test account, a Logitech compile, the file and every reply into the lab's
+                       `work/harvest/<label>/`, the devices removed again. Never touches a remote. Without
+                       `--commit` it only reads; with it, three account writes, each behind the lab
+                       client's own door. Load the `gathering-logitech` skill first.
 node packages/probe/bin/probe.ts [--product 0xc122] [--file <config>]
                        the contribution probe: a few kilobytes of JSON describing a config's
                        shape and nothing of its contents, meant to be published. Opens the
