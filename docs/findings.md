@@ -44955,3 +44955,182 @@ sentence about what Help screens send. All are corrected above, in the summaries
   `docs/status.md`, `todo.md`, `todo-compile-650.md` 3.5, the `writing-a-config` skill, the Harmony
   650's features page, the docstrings of `sendPreludeCondition`, `SendPrelude` and the arch 14 delay
   notes in `compose.ts` and `sequence.ts`, and `reference/superseded.md`.
+
+## 336. An arch 14 activity's start up screen, working screen and keyed cases, built instead of copied off another activity
+
+**Date:** 7 October 2026. **Status:** confirmed by calibration against Logitech's own compiles, with an
+edit of a compile that each check refuses; nothing written to a remote or to an account.
+
+**Todo `todo-compile-650.md` 6.2.10.** Until here `composeFourSlotActivityScreen` took a composed
+activity's two screens off the configuration it extended: `workingTemplate14` picked the working screen
+of the lowest mode whose program had a device page's shape and copied its top chrome, its bottom word
+and its two record entries, took the two backgrounds by majority over every working page, and the
+start up screen copied that activity's, or `startupLike`'s, picture, font select, three fixed lines and
+54 record entries; the composed activity's case under the key under Devices copied the idle value's.
+Each is now built from a rule, as section 330 built a device mode page and section 334 a menu page, and
+the configuration's own screens and cases are checked against what is built before anything moves.
+
+**Sources checked**: this document, sections 273, 285, 289, 290, 294, 313, 316, 317, 323, 329, 330, 333
+and 334, and the thirteen compiles section 312 lists. Neither firmware nor client was opened: all of it
+is what Logitech's compiler wrote, section 293's reasoned exemption. **The population** is those
+thirteen, the Harmony 700 pair counted twice: 40 activities, 35 distinct, each with one start up screen
+and one working screen, 63 working pages, and 186 cases of the four records keyed by the activity, four
+per activity and the two idle cases under the key under Devices per configuration.
+
+**Scope, decision 16.** Arch 14 (Harmony 600, 650 and 700) only. The Harmony One's activity screens,
+section 279, are composed by another path, are not built here, and keep `startupLike`.
+
+### The start up screen
+
+| what | rule | agree |
+|---|---|---|
+| record | the press of every keypad scan, 1 to 54, bound to nothing, in `compilerTagOrder`; one page; its list the two byte empty list | 40 of 40 |
+| picture | `OP_IMAGE` at 0, 0, by content per look: one for the colour look of 2026, one shared by the 2021 and 2023 colour look and the monochrome look | 40 of 40 |
+| font | font 2, read, not built | 40 of 40 |
+| title | "Starting" and the name, broken greedily at 123 pixels onto y 5 and 19, each line `floor((128 - width) / 2)`; where from 124 to 130 the break begins is not pinned, section 323 | 40 of 40, 3 on two lines |
+| fixed lines | "Please keep the", "remote pointed at", "your system", each centred, at y 82, 96 and 110 | 40 of 40 |
+
+**The fixed lines are fitted.** Every compile here draws them in English, so what a remote set to
+another language draws is not known, and their places are measured for a start up font 14 high only,
+so `startupParts` refuses a font of another height rather than placing the lines by a pitch nobody has
+seen. Neither refusal has a configuration here to show it.
+| texts | every text drawn by reference points at the lowest addressed inline copy of the same glyph codes, and every text drawn inline is that copy | 163 texts of 163 |
+| page record | six bytes, list then program | 40 of 40 |
+
+Of the 120 fixed lines, 21 are drawn inline, on one start up screen on each of seven compiles, 60 point
+at that copy, and 39 on the other six compiles point at a copy drawn by another program; all 43 title
+lines are drawn inline, no compile having two activities that share a title line. The name a start up
+screen is titled with is the one its working screen is titled with on every page, which is the menu's
+name for it, 40 of 40, so the check reads the name off the working screen, which also names an
+activity whose menu row `activityNames` does not resolve, as a composed one on `h700_config`'s menu.
+
+**The font is the one drawn part not built from a rule.** It is font 2 on all thirteen, a set of height
+14 that is none of `LABEL_SIZES`' rungs, so the rule that picks the bottom word's font does not reach
+it. It is read off the configuration's own start up screens, all of which have to select the same one,
+and choosing it is `todo-compile-650.md` 6.2.12's, with the letters. **What else is read**, each by a
+route other than another activity's screen: the queued program, the activity menu's battery program
+found by the picture it draws, section 334; the operand the key under Devices maps with, off the
+activity menu, section 330; the idle device list, off the activity menu's route, section 334; and every
+picture's and text's address, since those bytes are the configuration's until chapter 9 builds them.
+
+### The working screen
+
+A working screen page is a device mode page's chrome, section 330, with three differences, each built:
+
+| what | rule | agree |
+|---|---|---|
+| backgrounds | one command or none: the look's `activitiesSingle`, the activity menu's page of one activity; more: the look's `workingSeveral`, a picture of the working screens' own on the colour looks and the 2021 and 2023 colour look's crossed device page picture on the monochrome one | 21 pages and 42 pages, 63 of 63 |
+| queued program | `0x11 lo hi 0x73` on the activity menu's battery program, section 334: operand 2 on the eleven colour compiles, 1 on the two monochrome ones | 63 of 63 |
+| bottom word | "Devices", in the first font of the title's size that spells it, centred, 40, 114, pointing at its one inline copy or being it | 63 of 63 |
+| bars | the device page's top and bottom bars | 63 of 63 |
+| record | two entries in `compilerTagOrder`: `0x99` `0x72` on `(record << 8) \| counter`, the operand the activity menu and every device mode map the key under Devices with, then `0x2D` `0x73` on the queued program | 40 of 40 |
+
+**Two routes agree on the queued program**: read off each working page's own second instruction it is
+the program the activity menu's pages queue, 63 of 63, and that program was found by section 334 by the
+picture it draws. And the key under Devices maps through the device modes' record on every working
+screen, 40 of 40, read off a device mode's own key map. So the working screen differs from a device
+page on the 650 and 700 in its queued program because the activity menu's is another program there,
+and not on the 600s because it is the same one, which is section 290's operand 2 and 1 explained, per
+compile: the device pages queue 1 on five colour compiles and 0 on the six power hold ones, section 330,
+the working pages 2 on all eleven, and both 1 on the two Harmony 600 compiles.
+`calibration_h600` has no working page of one command or none, so it holds no `activitiesSingle`, and
+a working page of one command or none composed there is refused, as it was.
+
+The middle of a working page, its title, counter and labels, is section 323's and is not checked here.
+
+### The cases, and the key under Devices
+
+Every case of the working screen record, the two records under the key under Devices and the keypad map
+record has one five byte shape, `0x11 u16 operand u8 opcode 0x00`, `caseProgram`, 186 of 186, the
+working screen record's idle case apart, which queues a further record and is not built. **Of the
+operands two are checked against another route and two are read**: an activity's working screen case
+enters the mode its start sequence ends on, the deferred list's own `0x7E` or the last of the Remote
+Assistant's branch, 40 of 40; both records' idle case enter the list the activity menu's route reaches,
+`idleDeviceList`, 26 of 26; an activity's two cases under Devices enter one list, the same in both, an
+activity device list no other activity's case enters, 40 of 40, which list being section 294's and
+6.2.11's; and the keypad map case selects the activity's own base slot 9 entry, which
+`activityKeyedRecords` already requires. **A composed activity's case under the key under Devices is
+built on the idle list** until `composeActivityDeviceList` gives the activity its own, section 294,
+which is `todo-compile-650.md` 6.2.11.
+
+### Controls
+
+Edits of `h650_config_region`, each refused, with the screen the edit lands on named: a fixed line a
+pixel right; the title a pixel down; a start up key bound to list 1; a working page queueing program 1;
+"Devices" a pixel right; the working screen's program tag running program 1; a working page of no
+command drawing the crossed picture, a three byte pointer; one record under Devices sending an activity
+to another list than the other does; both sending it to another activity's own list; one record's idle
+case entering another list; and the working screen case entering another activity's working screen.
+The keypad map case has no control of its own: a same length edit that still reads as a case selects
+another entry, which `activityKeyedRecords` refuses before this check runs. The font height refusal has
+none either, no compile holding a start up font of another height.
+
+### The composed output
+
+Composing onto the thirteen and `h650_plasma_base`, a screen alone with five commands, one activity with
+its menu row and its own device list, and two such activities, 42 compositions, with the codec before
+this section and after: 18 compose byte for byte alike, 21 differ, and 3 refuse in both, all three on
+`calibration_h600`: the screen alone and the two activities at a working page of one command or none,
+whose picture it does not hold, with another message now, and the one activity at its menu row, the
+activity menu having no page of one activity to open, as section 334 found. **Every
+difference is a text now drawn by reference to the compiler's copy where a copied instruction drew it
+inline**, which is the rule the compiles follow:
+
+* on the five Harmony 650 hosts the old template was the start up screen holding the fixed lines' inline
+  copy, so each composed start up screen drew a second inline copy, 37 bytes more per composed activity;
+* on the `h700_config` pair the title "Starting Play Audio" is already drawn inline by "Play Audio
+  Cassette"'s start up screen, so the composed title points at it, 17 bytes.
+
+On the 26 compositions with a menu row the two codecs give the same modes, record entries, page lists,
+instruction kinds, pictures by content, texts by place and font, cases and action lists, compared
+normalised with every address left out.
+
+### Refused rather than guessed
+
+`startupLike` on a Harmony 600, 650 or 700, since every start up screen there draws one picture; a
+configuration whose start up screens select more than one font; a working page needing a background the
+configuration does not hold; and, through `deviceModeChrome`, the European skins 69, 74 and 75.
+
+### Review
+
+Both of the `finding` skill's reviewers ran on the whole diff, as subagents.
+
+**The blind one**, given the questions and the thirteen compiles and none of this section, used only the
+older readers and found the same population, 40 activities, 63 working pages split 21 and 42, the start
+up record, its order, the pictures per look, font 2, the fixed lines and their places, 99 texts by
+reference and 64 inline all at the lowest inline copy, the queued program equal to the activity menu's
+with the device pages' split 1 and 0, the working record, and every case five bytes with the two
+Devices records agreeing. It disagreed nowhere.
+
+**The audit** confirmed the counts per compile and the byte differences, and found the sentences
+overclaiming in ten places, each corrected above: the cases were "the same five byte program" where
+only the shape was built and two operands were read off the cases themselves, so an edit of both
+Devices records to another list passed, and the check now compares the working screen case with the
+start sequence and holds each activity's list to one no other activity's case enters; "the font is the
+one thing read" left out the queued program, the Devices key operand and the idle list; the
+working screen case's control was said to be the reader's, when that edit passed the reader and was
+caught by the title lookup, so it has a control of its own now; "the second" and "the first" for
+operands 2 and 1; the device pages' 0 on the power hold compiles; a background tally that compared the
+builder with itself, which now reads pictures by content; a test comment asserting the case under
+Devices before and after the device list with nothing asserting it, which now does; a test title
+claiming whole working pages; the fixed lines' places and wording fitted with no refusal, now stated
+and refused off a 14 high font; and the title break left unqualified. **One objection is overruled
+after measuring**: it counted `calibration_h600`'s one activity composition as composing, 19, 21 and 2,
+which holds for the screen and the activity without the menu row, while the comparison composes the
+menu row too and that refuses in both codecs, so 18, 21 and 3 stand and the three are named above.
+
+### Code
+
+* `packages/codec/src/compose.ts`: `arch14Starts` reading where each start sequence ends,
+  `activityScreenChrome`, `checkActivityScreens`, `startupParts`,
+  `caseProgram`, `devicesKeyOperand`, `PageFrame` with `checkPageFrames` in place of
+  `checkDeviceModeChrome`, `partsDifference`, `pageRecordDifference` and `assertTextsAtHome` out of the
+  menu page check, the start up and working pictures in `DEVICE_PAGE_LOOKS`, and
+  `composeFourSlotActivityScreen` building both screens and the four cases; `workingTemplate14` and
+  `copiedChrome` removed.
+* `packages/codec/src/modezero.ts`: the keypad's scan range exported, `KEYPAD_FIRST_SCAN` and
+  `KEYPAD_LAST_SCAN`, so the start up key map and mode 0's list share it.
+* `packages/codec/test/activityscreen.test.ts`: the calibration, the two routes, the controls and the
+  composed activities.
+* `packages/codec/test/compose.test.ts`: the refusal on `calibration_h600` and the title lookup follow.
+* `docs/config-format.md`, after the four records keyed by the activity counter.

@@ -218,8 +218,10 @@ test('a run file is named for when it started, what it is and what it is called'
 
 test('every test definition in the repository is well formed', () => {
   // These are written by hand, by either of us, and a malformed one would only show as a confusing page.
-  const dir = fileURLToPath(new URL('../irtests/', import.meta.url));
-  const definitions = testDefinitions(dir);
+  // Both folders: a test that has been run moves to `done/` and stays in the repository, so it is
+  // still checked, and the open folder is often empty between bench sessions.
+  const definitions = ['../irtests/', '../irtests/done/']
+    .flatMap((folder) => testDefinitions(fileURLToPath(new URL(folder, import.meta.url))));
   assert.ok(definitions.length > 0);
   for (const { id, definition } of definitions) {
     assert.equal(typeof definition.name, 'string', id);
