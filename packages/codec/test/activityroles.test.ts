@@ -9,7 +9,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { require_, skipWithoutLab } from '@harmony/lab';
+import { require_, skipUnless, skipWithoutLab } from '@harmony/lab';
 import {
   ACTION_LIST_INDEX_OPCODE,
   activities,
@@ -154,6 +154,43 @@ test('an activity\'s keypad built from its roles is Logitech\'s on 20 of the 40 
     'h700_config_2 Watch Bluray', 'h700_config_2 Watch Roku', 'h700_config_2 Watch TV', 'h700_config_2 Watch VCR',
   ]);
   assert.equal(differing['h600_config PS3'], '~43');
+});
+
+test('on two Harmony 650 configurations set up by other owners, the keypad from roles is Logitech\'s on 4 of 6 activities and 223 of 226 keys', skipUnless('h650_issue36_config', 'h650_issue8_config'), () => {
+  // Posted as harmony-decompiler issues 36 and 8. These are six activities nobody here set up, which
+  // the 40 above are not: they are about 14 distinct activities, most of them this project's own test
+  // records. Whether either owner customised a key by hand cannot be known, so a miss here is either
+  // the rule's or theirs.
+  const total = { match: 0, differ: 0, missing: 0, extra: 0 };
+  const differing: Record<string, string> = {};
+  let activityCount = 0;
+  let control = 0;
+  for (const name of ['h650_issue36_config', 'h650_issue8_config']) {
+    const c = load(name);
+    for (const one of activities(c)) {
+      activityCount++;
+      const roles = activityRolesFromSends(c, one.activity);
+      const theirs = stated(c, one.set);
+      const result = score(keysOf(c, roles), theirs);
+      total.match += result.match; total.differ += result.differ;
+      total.missing += result.missing; total.extra += result.extra;
+      if (result.keys.length > 0) differing[`${name} ${one.name}`] = result.keys.join(' ');
+      control += score(keysOf(c, { volume: roles.control, control: roles.volume }), theirs).match;
+    }
+  }
+  assert.equal(activityCount, 6);
+  assert.deepEqual(total, { match: 223, differ: 3, missing: 0, extra: 0 });
+  // 43 PrevChannel runs a list no key or screen item of any device's own runs, which reads as the
+  // owner's edit. 33 Guide runs the console's own screen item labelled `Guide` where its own map's
+  // Guide key runs another list, the shape of the Exit refinement above, one case. 19 NumberPlus runs
+  // the list the console's own Exit key runs, for which no rule is offered.
+  assert.deepEqual(differing, {
+    'h650_issue8_config TV par internet': '~43',
+    'h650_issue8_config Console': '~19 ~33',
+  });
+  // The control: the two roles swapped. All 37 that match are "Regarder la TNT", whose volume and
+  // control device are one device, so swapping them changes nothing there.
+  assert.equal(control, 37);
 });
 
 test('the control: swapping the two roles leaves almost nothing matching', skipWithoutLab(), () => {

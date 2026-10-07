@@ -42709,6 +42709,32 @@ Three things the composer refused or did not know, now measured:
 
 The device page composer is unchanged and still draws a label on one line; only its limit moved to 59.
 
+### Six activities nobody here set up, added 7 October 2026
+
+The 40 above are about 14 distinct activities, and most of them are this project's own test records.
+Two Harmony 650 configurations posted by their owners as harmony-decompiler issues 36 and 8,
+`h650_issue36_config` and `h650_issue8_config`, hold six more, two and four, set up by two people outside
+this project. Whether either touched a key by hand cannot be known from the file. Scored the same way:
+
+* **223 of 226 keys are Logitech's, and 4 of the 6 activities key for key**: "TiVo" 40 of 40, "Dodgy
+  Box" 39 of 39, "Regarder la TNT" 37 of 37 and "Ecouter de la musique" 37 of 37 (the configuration's own
+  spelling has an accent the character map does not name). No key is bound on one side only.
+* **The arrow fallback fires on three of them, six keys, and is right on all six.** Counted by distinct
+  activity it is now right on eight and wrong on four. No other refinement fires.
+* **The three that differ**, all on the second configuration: on "TV par internet" PrevChannel, scan 43,
+  runs a list no key and no screen item of any device's own runs, which reads as a user's edit; on
+  "Console" Guide, scan 33, runs the console's own screen item labelled `Guide` where the console's own
+  Guide key runs another list, the shape of the `Exit` refinement above and one case of it; and
+  NumberPlus, scan 19, runs the list the console's own Exit key runs, for which nothing here offers a
+  rule.
+* **Control**: the two roles swapped match 37 of 230 keys, all of them "Regarder la TNT", whose volume
+  and control device are one device, so the swap changes nothing there.
+
+Both files are registered and kept out of the corpus, `PARSEABLE_EXCLUDED`, for the reason
+`h650_config_region` is. Sources checked: this section and `reference/button-maps.md` for the scan
+names; nothing of Logitech's client, since the question is what their compiler wrote and the files
+state it.
+
 ### Scope, decision 16
 
 Measured on arch 14, the Harmony 600, 650 and 700, and built for it: the screen half is those three's

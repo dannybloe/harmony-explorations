@@ -377,6 +377,11 @@ export const IMAGES: Readonly<Record<string, string>> = {
   h600_config: 'harmony-600-programmed-config.EZHex',
   h700_config: 'harmony700.EZHex',
   h700_config_2: 'harmony700-2.EZHex',
+  // Two Harmony 650 configurations posted by two other owners as harmony-decompiler issues 36 and 8,
+  // downloaded 7 October 2026. Read for section 323's key calibration only: activities set up by people
+  // outside this project, on the model the bench compiles for.
+  h650_issue36_config: 'H650-Config.EZHex',
+  h650_issue8_config: 'Harmony_650.EZHex',
   // The spare Harmony One either side of a sync, 7 August 2026. findings.md section 58.
   one_spare_before_sync: 'one-spare-before-sync-config.bin',
   one_spare_after_sync: 'one-spare-after-sync-config.bin',
@@ -718,7 +723,10 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
     'h700_prehd_staging_region', 'h700_posthd_staging_region',
     // The blank staging region and the 2.8 staged one, section 297, whose container at 0x020000 is
     // `h700_gspm`'s like the others.
-    'h700_after_failed_stage_region', 'h700_28_staging_region'];
+    'h700_after_failed_stage_region', 'h700_28_staging_region',
+    // Two contributed Harmony 650 configurations, out of the corpus for the reason `h650_config_region`
+    // is: whether the 650 joins it is a decision of its own, not a side effect of a calibration.
+    'h650_issue36_config', 'h650_issue8_config'];
 
 const cache = new Map<string, string[]>();
 

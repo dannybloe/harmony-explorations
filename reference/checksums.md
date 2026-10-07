@@ -149,6 +149,17 @@ architecture would be.
 differs alongside them, which is what makes the pair a controlled sample rather than two files:
 <https://github.com/trelowney/harmony-decompiler/issues/9>.
 
+Two architecture 14 configs of **two other Harmony 650s**, posted publicly by their owners as
+harmony-decompiler [issue 36](https://github.com/trelowney/harmony-decompiler/issues/36) and
+[issue 8](https://github.com/trelowney/harmony-decompiler/issues/8), downloaded on 7 October 2026. Skin
+72, two and four activities. Used for the activity key calibration of `docs/findings.md` section 323 and
+kept out of the corpus, as the bench 650's own configuration is:
+
+| File | SHA-256 |
+|---|---|
+| `H650-Config.EZHex` | `63de7d306161636e20ef57fa533502a000c3812445c517a630ab62dd02f1978f` |
+| `Harmony_650.EZHex` | `57ebff5368197ec4192f34a193af8d9727b2a1383cca73c1cfc1cd0e03d986e8` |
+
 Note the **older** 600 firmware file listed under derived binaries is truncated: the real image is
 70336 bytes and concordance returns only the first 65536.
 

@@ -1273,7 +1273,7 @@ configuration without it. Arch 12 (Harmony One) is not compared.
 |---|---|
 | VolumeUp, VolumeDown, Mute (scans 14, 15, 16) | the **volume** device's own device mode list for that scan |
 | every other scan | the **control** device's own device mode list for that scan: the channel changing device, else the one that plays |
-| UpArrow, DownArrow (26, 27), unbound in the control device's own map | its DirectionUp, DirectionDown lists (50, 42); right on 5 distinct activities and wrong on 4 |
+| UpArrow, DownArrow (26, 27), unbound in the control device's own map | its DirectionUp, DirectionDown lists (50, 42); right on 5 distinct activities and wrong on 4 in the 13 compiles, and right on all 3 it fires on in two contributed Harmony 650 configurations |
 | ChannelUp, ChannelDown (31, 32), where its own map runs the DirectionUp and DirectionDown lists there | its SkipForward, SkipBack lists (38, 21); fires on one activity, the calibration disc player's, and agrees with Logitech's stated map there |
 | Exit (12), where the control device's own screen has an item labelled `Exit` | that item's list; the same one activity |
 
@@ -1281,7 +1281,9 @@ The **same base slot 10 list** as the device's own map, never a copy: 1254 of th
 bindings, and none of the other 74 runs a list with the same codes. The result is Logitech's set key
 for key on 20 of the 40 activities, about 14 distinct; the other 20 are the nine copies of one activity
 on the test account's 650 and 700 records, four keys each, and 11 activities of the three hand
-customised configurations. A display device that neither changes channels nor plays contributes no
+customised configurations. On two Harmony 650 configurations set up by other owners it is Logitech's
+on 4 of 6 activities and 223 of 226 keys, the three others on the one activity each that a user may
+have edited, [findings.md](findings.md) section 323. A display device that neither changes channels nor plays contributes no
 key. Scans 26 and 27 are `UpArrow` and `DownArrow` and 50 and 42 the pad's, decided from the device
 maps, `reference/button-maps.md`. `activityKeysFromRoles` in
 `packages/codec/src/activityroles.ts`. Help (scan 3, release and repeat) is not built, deliberately:

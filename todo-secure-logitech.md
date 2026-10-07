@@ -75,7 +75,7 @@ is the 650's test setup cut down to its device limit.
 - [ ] 3.9 What a person changes by hand in the service: a key reassigned in an activity, a command renamed on the screen, a delay or an input changed; check each compile differs from its control
 - [ ] 3.10 Long press actions, on the models that declare them; check the compile differs from its control
 - [ ] 3.11 A model at its maximum number of devices and with many activities, so every page break and limit is seen on each model; check every device and activity is in the file
-- [ ] 3.12 More activities, to calibrate which device gets which key in an activity (exact on 20 of 40 today); check every activity is in the file
+- [ ] 3.12 More activities, to calibrate which device gets which key in an activity (exact on 20 of 40 compiled activities, about 14 distinct, and on 4 of 6, 223 of 226 keys, in two Harmony 650 configurations other owners posted, section 323); check every activity is in the file
 
 ## 4. Everything else only the services hold
 

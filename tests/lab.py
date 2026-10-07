@@ -391,6 +391,10 @@ IMAGES = {
     # pair in the corpus: same remote, one documented change between them.
     'h700_config': 'harmony700.EZHex',
     'h700_config_2': 'harmony700-2.EZHex',
+    # Two Harmony 650 configurations posted by two other owners as harmony-decompiler issues 36 and 8,
+    # read for section 323's key calibration only.
+    'h650_issue36_config': 'H650-Config.EZHex',
+    'h650_issue8_config': 'Harmony_650.EZHex',
     # The spare Harmony One either side of a sync, 7 August 2026. The change was decided and
     # written down before it was made, which no other pair here can say, and the second half was
     # compiled by the live service rather than found. findings.md section 58.
@@ -713,7 +717,10 @@ PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_confi
                       # The same range either side of a Harmony Desktop sync, byte for byte. Section 296.
                       'h700_prehd_staging_region', 'h700_posthd_staging_region',
                       # The blank and the 2.8 staged region, section 297, same container.
-                      'h700_after_failed_stage_region', 'h700_28_staging_region')
+                      'h700_after_failed_stage_region', 'h700_28_staging_region',
+                      # Two contributed Harmony 650 configurations, out of the corpus for the reason
+                      # `h650_config_region` is.
+                      'h650_issue36_config', 'h650_issue8_config')
 
 CONTAINERS = (
     'h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'h525_config_2', 'one_config',
