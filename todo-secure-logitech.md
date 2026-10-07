@@ -34,13 +34,13 @@ have no command that writes.
 ## 1. The harvesting route
 
 - [x] 1.1 A harvest script in this repository, TypeScript beside the codec, credentials from the environment as `make analyze` takes them: put a list of catalogue devices on a test account record, compile, fetch the file into the lab with a manifest naming every device, remove the devices; the lab's Python client is retired for these steps; when a compile fails, it splits the batch and retries the halves until the device that breaks it is found and set aside on a list of its own; built as `packages/corpus/bin/harvest.ts`, first run filed in the lab's `work/harvest/first-run/`: two devices in, a compile holding both out, the record empty again
-- [ ] 1.2 Compile the families for the Harmony One, which takes 15 devices per configuration against 8 on the 650, 700 and 350; first compile the same few devices for the 650 and the 350 too and compare the stored infrared, so a model that lays a family out differently is found before the bulk
+- [x] 1.2 The same two devices compiled for the One, 650 and 350 (lab `work/harvest/first-run`, `check-650`, `check-350*`): the 650 stores 181 of the One's 196 infrared records identically and the other 15 differ only by a leading silence the One adds; the 350 shares only 90 of 296 pattern pieces with the One and takes eight devices of any type per compile, four televisions included. So the families are compiled on the Harmony One, 15 per compile, and on the Harmony 350, 8 per compile, with a sample of about 20 families on the 650; the 600 and 700 share the 650's architecture and the 300 the 350's, each confirmed by one compile of the same two devices
 - [ ] 1.3 The pace: one compile at a time with a pause between, watching for refusals from the service
-- [ ] 1.4 The go-ahead for the account writes this track makes
+- [x] 1.4 The go-ahead for the account writes: given for the first test account's Harmony One, 650, 700 and 350 records, to be repurposed after their devices and activities are saved to the lab
 
 ## 2. The infrared families we cannot write
 
-- [ ] 2.1 The list: every family where a command does not compose, with one device per family whose code set covers it, preferring a device whose commands are all in that family, plus a second device for the 20 largest families, to check the rule is the family's and not the device's
+- [x] 2.1 The list: every family where a command does not compose, with one device per family whose code set covers it, preferring a device whose commands are all in that family, plus a second device for the 20 largest families, to check the rule is the family's and not the device's; built by `packages/corpus/bin/harvest-list.ts` into the lab's `work/harvest/lists/families.json`: 641 families, 548 devices, 15 of them second devices
 - [ ] 2.2 Compile them, 15 devices per compile and nearly every one from a different family, the largest families first, every compile filed in the lab; each device keeps its own records, so 2.3's check stays per family
 - [ ] 2.3 Check each compile holds the records of the families it was made for, so nothing is missing when the service is gone
 - [ ] 2.4 The 10 families that write except for a few odd codes: compile a device holding those codes, and check the codes are in it

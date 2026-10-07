@@ -6,7 +6,7 @@
  * ```
  * node packages/corpus/bin/harvest.ts --record 16318261 --model 72 --label families-001 \
  *     --device Denon/AVR-X4800H.json --device LG/OLED65G26LA.json [--devices list.json]
- *     [--account 2] [--batch 15] [--pause 30] [--empty-record] [--commit]
+ *     [--account 2] [--batch 15] [--pause 30] [--empty-record] [--skip-unresolved] [--commit]
  * ```
  *
  * `--devices` is a JSON array of `{ "manufacturer": ..., "file": ... }`, the archive's folder and file.
@@ -117,7 +117,7 @@ interface Compiled { file: string; status: string; devices: (HarvestDevice & { d
 /** A compile that never left "Compiling": kept with its address, so it can be fetched again later. */
 interface Stuck { downloadUrl: string; devices: HarvestDevice[] }
 const manifest: { record: number; model: string; account: string; compiles: Compiled[];
-  failed: HarvestDevice[]; stuck: Stuck[] } = existsSync(manifestPath)
+  failed: HarvestDevice[]; stuck: Stuck[]; unresolved?: HarvestDevice[] } = existsSync(manifestPath)
   ? { stuck: [], ...JSON.parse(readFileSync(manifestPath, 'utf8')) }
   : { record, model, account: selector, compiles: [], failed: [], stuck: [] };
 /**
@@ -167,6 +167,8 @@ console.log(`record ${record}: model ${model}, remote ${remote}, `
 
 // Every device resolved before anything is written.
 const matches = new Map<HarvestDevice, Record<string, unknown>>();
+const skipUnresolved = process.argv.includes('--skip-unresolved');
+const unresolved: HarvestDevice[] = [];
 for (const device of wanted) {
   let found: Record<string, unknown>[] = [];
   // Search type 3 is the client's search box; type 1 finds what 3 misses, measured in the lab client.
@@ -177,12 +179,26 @@ for (const device of wanted) {
     found = ((out['SearchGlobalDevicesResult'] as { Matches?: Record<string, unknown>[] } | undefined)?.Matches) ?? [];
     if (found.some((one) => (one['Id'] as { Value?: number } | undefined)?.Value === device.globalDeviceId)) break;
   }
-  matches.set(device, pickMatch(found, device));
+  try {
+    matches.set(device, pickMatch(found, device));
+  } catch (error) {
+    // `--skip-unresolved` is for a long list built by `harvest-list.ts`, where one device the service
+    // no longer finds should not stop every other family: it is recorded and left out instead.
+    if (!skipUnresolved || !(error instanceof HarvestRefusal)) throw error;
+    unresolved.push(device);
+    console.log(`  NOT resolved, left out: ${(error as Error).message}`);
+    continue;
+  }
   console.log(`  resolved ${device.manufacturer} ${device.model}, device ${device.globalDeviceId}`);
 }
+if (unresolved.length > 0) {
+  manifest.unresolved = [...(manifest.unresolved ?? []), ...unresolved];
+  saveManifest();
+}
+const resolvedDevices = wanted.filter((device) => matches.has(device));
 
 if (!commit) {
-  console.log(`dry run: ${wanted.length} devices in batches of ${batchSize} would be compiled for record `
+  console.log(`dry run: ${resolvedDevices.length} devices in batches of ${batchSize} would be compiled for record `
     + `${record}; nothing was written.`);
   process.exit(0);
 }
@@ -231,7 +247,7 @@ function indexOf(bytes: Uint8Array, needle: number[]): number {
   return -1;
 }
 
-async function harvest(batch: HarvestDevice[]): Promise<void> {
+async function harvest(batch: HarvestDevice[], retried = false): Promise<void> {
   const before = new Set((await devicesOnRecord()).map((one) => one.Id.Value));
   expectOk('UpdateMultiple', await session.call('UpdateMultiple', DEVICE_MANAGER, operationBag(record,
     batch.map((device) => addDeviceOperation(matches.get(device)!, device, record, randomUUID())))));
@@ -273,6 +289,14 @@ async function harvest(batch: HarvestDevice[]): Promise<void> {
   if (result.downloadUrl !== undefined) {
     manifest.stuck.push({ downloadUrl: result.downloadUrl, devices: batch });
     saveManifest();
+    // A compile that hangs is retried once whole before the batch is split: on the Harmony 350 a hang
+    // turned out to be a one off on Logitech's side, which MyHarmony's own sync ran into as well, and
+    // the same two devices compiled at the next attempt.
+    if (!retried) {
+      await sleep(pauseSeconds * 1000);
+      await harvest(batch, true);
+      return;
+    }
   }
   if (batch.length === 1) {
     manifest.failed.push(batch[0]!);
@@ -290,9 +314,9 @@ if (already.length > 0) {
   console.log(`removed the record's ${already.length} devices; it reads back empty`);
 }
 
-for (let at = 0; at < wanted.length; at += batchSize) {
+for (let at = 0; at < resolvedDevices.length; at += batchSize) {
   if (at > 0) await sleep(pauseSeconds * 1000);
-  const batch = wanted.slice(at, at + batchSize);
+  const batch = resolvedDevices.slice(at, at + batchSize);
   console.log(`batch ${at / batchSize + 1}: ${batch.map(deviceName).join(', ')}`);
   await harvest(batch);
 }
