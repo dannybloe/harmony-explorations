@@ -71,6 +71,15 @@ press and a double press, and it names the button kinds per surface. That schema
 generation of hardware, so it is evidence about the product's design and not about what these remotes
 hold. `docs/myharmony/model.md` and `docs/how-a-harmony-works.md` carry it.
 
+**The Harmony 600, 650 and 700 show no clock. There is no time anywhere on their screen**, Danny's
+observation at the bench, said many times and got wrong by sessions anyway, because until 7 October
+2026 it lived only in documents read on demand. They keep a clock in memory all the same, the first
+seven state variables, which every restart sets back to the configuration's stamp. So anything about
+that clock on these models is checked by **reading the remote's memory over USB** (`READ_MISC` selector
+7, section 283), never by asking him to look at the screen, and a reply or a todo item must never
+suggest otherwise. Only the Harmony One shows the time here. `reference/remotes/harmony-650/display.md`
+is the long form.
+
 **The screen is the bigger half of device mode.** An old remote has far more buttons than a Harmony, so
 what people build in device mode is pages on the screen, a screenful of commands at a time, for the
 functions the keypad has no room for. Those never belonged on an activity's keypad map, which carries what

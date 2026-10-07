@@ -40,6 +40,10 @@ keypad has no room for. Those never belonged on an activity's keypad map, which 
 often. That is why Logitech can say you hardly ever need device mode and be right, and why it matters
 anyway: the alternative is walking to the cupboard.
 
+**The Harmony 600, 650 and 700 show no clock on their screen.** They keep one in memory, which every
+restart sets back to the configuration's stamp, so it is checked by reading memory over USB and never by
+looking. Only the Harmony One shows the time.
+
 **How you get in and out is per model, and the words differ.** A Harmony 525 has a Devices key and its
 own Activities key. A **Harmony 600 has no such key at all**: its screen writes "Devices" above the
 centre key of the three below the display, and "Activity" to come back. A Harmony One has both as items
