@@ -123,6 +123,62 @@ cut, because a field is either checkable here or it is not.
 | firmware seen | **contradicted as a ceiling, correct as a floor** | the table says 2.5.0 for the 700 where the lab holds 2.8, and 0.2 for the 650 where it holds 0.4. It is right about the three bench remotes: 3.4.0 on the One, 0.2 on the 600, 3.0 on the 525 |
 | favourites, battery, RF channels, sound and picture buttons | **unchecked** | nothing measured here bears on any of them |
 
+## The six bench models, as Logitech's service states them
+
+`UserAccountDirector/GetProductCapabilities2`, asked through one account entry of each model on 7
+October 2026; the answers are filed in the lab's `work/myharmony/responses-per-model/`. **Standing:
+Logitech's service**, current, and for every bench model the vendor's own statement rather than the
+forum table's. The plain `GetProductCapabilities` answers the same product with fewer fields.
+
+| | Harmony One | Harmony 600 | Harmony 650 | Harmony 700 | Harmony 300 | Harmony 350 |
+|---|---|---|---|---|---|---|
+| skin of the entry asked | 54 | 71 | 72 | 66 | 79 | 104 |
+| product family | HarmonyOne | Molson | Molson | Molson | Harmony300 | Harmony350 |
+| compiler architecture | 12 | 14 | 14 | 14 | 16 | 16 |
+| max devices | 15 | 5 | 8 | 8 | 4 | 8 |
+| max favourite channels | 24 | 23 | 23 | 23 | 4 | 5 |
+| max activities | not stated | not stated | not stated | not stated | not stated | 1 |
+| display | colour, 2 by 3 | monochrome, 2 by 2 | colour, 2 by 2 | colour, 2 by 2 | none | none |
+| settings and defaults | none listed | screen lit 20, tilt on, Remote Assistant on | the same | the same | none listed | none listed |
+| `NumOfAddDevice` | 100 | 100 | 100 | 100 | 100 | 100 |
+
+The capabilities each states, by Logitech's names, "yes" where stated and none denied:
+
+| capability | One | 600 | 650 | 700 | 300 | 350 |
+|---|---|---|---|---|---|---|
+| Activities | yes | yes | yes | yes | | yes |
+| FavoriteChannels | yes | yes | yes | yes | yes | yes |
+| RemoteSettings | | yes | yes | yes | | |
+| ColourDisplay | yes | | yes | yes | | |
+| CompiledRemoteButtonMapping | | | | | yes | yes |
+| ActivityCompiledRemoteButtonMapping | yes | yes | yes | yes | | |
+| PartiallySetupActivities | yes | yes | yes | yes | yes | |
+| ActivityReorder | yes | | | | | |
+| LocaleEnabled | yes | yes | yes | yes | | |
+| DeviceDelay | yes | yes | yes | yes | yes | yes |
+| ActivityMapping | | yes | yes | yes | | |
+| SupportActivitySequence, ButtonSequences | yes | yes | yes | yes | | |
+| LeaveDevicesPoweredOn | yes | yes | yes | yes | | |
+| LongPressAction | | | | | | yes |
+| SupportsMHAssist | | yes | yes | yes | | yes |
+| SmartTV, Apple TV and Roku activities, watch app, video calling | yes | yes | yes | yes | | |
+| FavoriteChannelImageScaling | yes | | yes | yes | | |
+| email campaign, change username | yes | yes | yes | yes | yes | yes |
+
+Each also carries a capability naming the model itself, `HarmonyOne`, `Harmony600` and so on, and the
+300's names `Harmony300EMEA`.
+
+**What this settles against the rows above.** The panel field now has the vendor's word for all four
+models with a screen, and it agrees with the 600 seen at the bench. The 350's long press and its eight
+devices agree with the section below. Favourite channel maxima were unchecked and are the vendor's now
+for these six. **The 300 states no `Activities` capability** where the 350 states it with a maximum of
+one; what a 300 does without one is **not checked**.
+
+**`NumOfAddDevice` is 100 on every model** and nothing in MyHarmony's source reads it, so whatever
+enforces it is on the server. It may be a lifetime budget of device adds per remote, which would explain
+the two serials the service blocked on 7 October 2026; that is **not established**, and the
+`myharmony-service` skill holds the incident.
+
 ## A long press is a capability too, and no model here has one
 
 A **long press** is a second, different action on one button, chosen by how long it is held. It is not a

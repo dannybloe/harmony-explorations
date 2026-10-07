@@ -49,7 +49,8 @@ plus its inputs, so the device count binds first on every configuration measured
 
 * Under **Favorites** in the Watch TV activity, four to a page, each "the button beside the channel
   number or icon", Logitech's manual pages 3 and 5.
-* **23** is the forum table's figure, third party. The manual gives no number.
+* **23**, **Logitech's service**, `MaxFavoriteChannels` in `GetProductCapabilities2`, read 7 October
+  2026, `reference/capabilities.md`. It agrees with the forum table's figure. The manual gives no number.
 * How the 650 stores them is **not read**: favourites are read on the Harmony One only, sections 154
   and 156, `todo-compile-650.md` 4.1.
 
@@ -94,12 +95,15 @@ remote, section 327 and the `writing-a-config` skill.
 | setting | standing and source |
 |---|---|
 | `GlowTime`, how long the screen stays lit | the configuration's timer 1, **measured on the 650**, section 292 |
-| `TiltSensor`, waking when picked up | listed for the 600 and 700, section 292; for the 650 **not checked**, `todo-compile-650.md` 4.3.3 |
-| `RemoteAssistant` | listed for the 600 and 700; for the 650 **not checked**, 4.3.2 |
+| `TiltSensor`, waking when picked up | **Logitech's service** lists it for the 650, default on, read 7 October 2026; what it changes in the configuration is **not checked**, `todo-compile-650.md` 4.3.3 |
+| `RemoteAssistant` | **Logitech's service** lists it for the 650, default on, read 7 October 2026; its effect on the configuration is **not checked**, 4.3.2 |
 | leave devices on when switching activities | claimed for the 650 in `todo-compile-650.md` 3.10, Logitech's service; what it changes is **not checked** |
 
-No MyHarmony `GetRemoteSettings` answer for a 650 has been saved, section 292, so the list above is the
-600's and 700's and the todo's statement, not the 650's own.
+**The 650's own list is these three and no others**: `GlowTime` default 20, `TiltSensor` and
+`RemoteAssistant` default on, from `GetRemoteSettings` for a 650 entry and from
+`GetProductCapabilities2`, both Logitech's service, read 7 October 2026 and filed in the lab. This
+paragraph said until then that no 650 answer had been saved, section 292, so the list was the 600's and
+700's. Leaving devices on is a capability, `LeaveDevicesPoweredOn`, and not one of the settings.
 
 ## Learning
 
@@ -109,7 +113,6 @@ manual page 15. Learning on this unit is **not checked**.
 ## Not checked
 
 * The device limit the remote or today's MyHarmony actually enforces.
-* The number of favourite channels and how they are stored.
-* The 650's own MyHarmony settings list.
+* How favourite channels are stored.
 * Advanced help's delay and repeat screens on this model.
 * Long press, beyond Logitech's statement that the model has none.

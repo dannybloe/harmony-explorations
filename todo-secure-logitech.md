@@ -65,7 +65,7 @@ MyHarmony only where a call will not work, which a learned code probably is. A s
 is the 650's test setup cut down to its device limit.
 
 - [x] 3.1 Which bench models get a compile: the One, 600, 650, 700, 300 and 350 (the 300 and 350 compiled through MyHarmony, their configurations dumped in the lab); the 525 is discontinued per the lab's `device-support.txt`, and the Touch takes a route with no compile
-- [ ] 3.2 Per model, which features and settings it offers and how many devices it holds, from the captured product table, capabilities and settings, written as the first file of that model's reference folder, `reference/remotes/<model>/features.md` in the 650's layout, for the One, 600, 700, 300 and 350
+- [x] 3.2 Per model, which features and settings it offers and how many devices it holds: Logitech's own statement for the six bench models, from 4.2's capture, written into `reference/capabilities.md` beside the forum table, and into the 650's `features.md`; the other five get their `features.md` from it when the processing todo's chapter 1 makes their folders, which need all ten files at once
 - [ ] 3.3 One test setup per model that between them use every feature that model offers, plan 006 being the Harmony 650's, compiled for each model; check every device and activity of the setup is in the file
 - [ ] 3.4 Every setting a model offers, compiled both ways: screen light, Remote Assistant, tilt sensor, leave devices on when switching activities, and whatever 3.2 adds; check the two compiles differ
 - [ ] 3.5 A passthrough device in an activity, compiled with and without it; check the two differ
