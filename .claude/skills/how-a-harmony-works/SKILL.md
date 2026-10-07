@@ -48,6 +48,11 @@ again to leave. So do not print "Current Activity" as though it were the product
 not put a Devices key on a drawing of a 600. `docs/how-a-harmony-works.md` has the table with the
 manuals' own wording.
 
+**Help belongs to what is running, never to a device.** In an activity it resends that activity's power
+and inputs, with nothing running it resends power off and asks "Did that fix the problem?", and a device
+page binds no Help, so a press there goes to whatever runs underneath. Measured on the Harmony 600, 650
+and 700 only; `docs/how-a-harmony-works.md` has the evidence.
+
 ## What follows for the format work
 
 **A button map belongs to a device first**, which is how Logitech's software authors it, and the corpus

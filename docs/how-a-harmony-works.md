@@ -487,6 +487,27 @@ an activity's map are all deliberate overrides: there are 136 keys where every a
 other activities and disagrees with the device's own map, which is ten times the number this project
 previously thought were overrides, and nothing has tested that reading.
 
+## Help belongs to what is running, never to a device
+
+**Help is not a device's feature.** It belongs to the running activity, or to the state in which nothing
+is running, and a device page has none of its own.
+
+* **In an activity**, Help tries to put that activity right: it resends the activity's power and input
+  commands and then asks, device by device, whether each one is right. Held for five seconds it opens
+  advanced help, where a device's delays are adjusted.
+* **With nothing running**, Help makes sure everything is off: it resends power off to the devices and
+  asks "Did that fix the problem?".
+* **On a device page**, the press is not the device's. A device page binds no Help key, so the press goes
+  to whatever is running underneath: the activity's Help in an activity, the off one when nothing runs.
+
+The evidence, all of it on the Harmony 600, 650 and 700 and **not checked on any other model**: on
+thirteen of Logitech's compiles every activity and the nothing running entry bind Help, and none of 83
+device modes does, `docs/findings.md` section 333, which also reads the firmware's key walk that sends
+a press from a device page down to the running entry. On a Harmony 650 at the bench, Help on a device
+page with nothing running resent power off to three devices and then asked "Did that fix the
+problem?", exactly as that predicts. Help pressed on a device page **while an activity runs** is
+predicted and not yet seen.
+
 ## The rule this document is really for
 
 A measurement over the corpus answers "what do these files contain". It never answers "what does the

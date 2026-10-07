@@ -59,6 +59,12 @@ plus its inputs, so the device count binds first on every configuration measured
   advanced help, Logitech's manual page 6. On the Harmony 600 and 700 that is where a device's
   inter device delay and repeats are adjusted, their manuals; on the 650 **not checked**.
 * Help also leads to a "Select device" screen, a third list of devices, `docs/how-a-harmony-works.md`.
+* **Help belongs to what is running, not to a device**: in an activity it resends that activity's power
+  and inputs, with nothing running it resends power off and asks "Did that fix the problem?", and a
+  device page binds no Help, so a press there goes to whatever is running underneath. Read in Logitech's
+  compiles, every activity and the nothing running state binding Help and no device mode, section 333;
+  the nothing running case **measured on a unit** from a device page. In an activity from a device page
+  **not checked**. `docs/how-a-harmony-works.md` has the long form.
 * **Remote Assistant**: shown after a sync and when an activity starts, turned off temporarily from its
   own screen, back after the next sync, Logitech's manual page 4. MyHarmony lists `RemoteAssistant` as a
   setting for the 600 and 700, section 292; for the 650 the setting is claimed in
