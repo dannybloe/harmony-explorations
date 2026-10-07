@@ -1,6 +1,7 @@
+import { atom, read, update } from 'claude-code'
 import type { Register } from 'claude-code'
 
-// One status line for the bench: whether a Harmony remote is on USB and ready, and how far a
+// One line for the bench, drawn in the band above the prompt: whether a Harmony remote is on USB and ready, and how far a
 // configuration write to it has got. Everything here is read only: it asks the operating system what
 // is attached (ioreg, enumeration, never an open) and reads the journal the config writer appends to
 // beside the configuration it writes, so it can never touch a remote itself.
@@ -9,6 +10,18 @@ import type { Register } from 'claude-code'
 // writer's own command line and working directory say where the journal is. Once the writer has
 // exited the journal is remembered from the last poll that saw it, which is what keeps "done" and
 // "stopped" on the line after the process is gone.
+
+// Drawn in the band above the prompt rather than on the status line, because the status line takes
+// text only and its colour is the engine's, which reads poorly on a light theme.
+const line = atom({ plugin: 'harmony-remote', key: 'line' } as const, null)
+const theme = atom({ plugin: 'harmony-remote', key: 'theme' } as const, '')
+
+// Blue on a light theme and the theme's own orange on a dark one. A theme of "auto" follows the
+// terminal, which a plugin cannot see, so it gets the orange: the theme key resolves per theme and
+// stays legible on both, where a fixed blue would not on a dark background.
+export function bandColour(themeSetting: string): string {
+  return themeSetting.startsWith('light') ? '#1f5fbf' : 'claude'
+}
 
 const POLL_MS = 3000
 // A finished or stopped write stays on the line this many polls, two minutes, so it is seen after
@@ -107,7 +120,35 @@ export function configOf(args: string, cwd: string): string | undefined {
 const quote = (s: string): string => `'${s.replace(/'/g, `'\\''`)}'`
 
 export const register: Register = (on) => {
+  on('config.set', { key: 'theme' }, async ($, e, next) => {
+    const result = await next(e)
+    await update($, theme, () => String(e.value))
+    return result
+  // Not a guard: the setting has changed before this hook does anything, so a failure here only
+  // leaves the band in the old colour, and the change itself must go through either way.
+  }).catch(($, e, next) => next(e))
+
+  on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
+    const text = await read($, line)
+    if (e.props.hasSurvey || text === null) return next(e)
+    const { Box, Text } = $.ui.resolve(e)
+    // A rule above the line, so it reads as a panel of its own rather than as the tail of whatever
+    // notice the engine printed last. The rule is longer than any terminal and cut at the edge.
+    return (
+      <Box flexDirection="column" marginTop={1}>
+        <Text dimColor wrap="truncate">{'── Harmony remote ' + '─'.repeat(400)}</Text>
+        <Box paddingLeft={2}>
+          <Text color={bandColour(await read($, theme))} wrap="truncate-end">{text}</Text>
+        </Box>
+      </Box>
+    )
+  })
+
   on('session.start', async ($, e, next) => {
+    try {
+      const row = (await $.config.list()).find((r) => r.key === 'theme')
+      await update($, theme, () => String(row?.value ?? ''))
+    } catch { /* no theme row: the band uses the orange */ }
     let last: string | undefined
     let busy = false
     // The journal of the most recent write seen running, and how many polls ago it stopped.
@@ -160,7 +201,7 @@ export const register: Register = (on) => {
           if (/write done/.test(text) && !/write done/.test(last ?? '')) $.ui.toast('Harmony write done and verified')
           if (/STOPPED/.test(text) && !/STOPPED/.test(last ?? '')) $.ui.toast('Harmony write stopped before it finished')
           last = text
-          $.ui.status(text)
+          await update($, line, () => text)
         }
       } finally {
         busy = false

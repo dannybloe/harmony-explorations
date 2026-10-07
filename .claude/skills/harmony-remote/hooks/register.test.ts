@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { configOf, usbState, writeLine, writeProgress } from './register'
+import { bandColour, configOf, usbState, writeLine, writeProgress } from './register'
 
 const usb650 = '+-o Harmony Remote  <class IOUSBHostDevice>\n  "idProduct" = 49442\n  "idVendor" = 1133\n'
 const hid650 = '+-o IOHIDInterface\n  "Product" = "Harmony Remote 0-0.2.0"\n  "VendorID" = 1133\n  "ProductID" = 49442\n'
@@ -40,4 +40,11 @@ test('the configuration is found from the writer command line, relative to its w
   expect(configOf(run, '/bench/harmony-explorations')).toBe('/bench/harmony-explorations/../lab/work/x/650.bin')
   expect(configOf(run.replace('../lab', '/bench/lab'), '/elsewhere')).toBe('/bench/lab/work/x/650.bin')
   expect(configOf('node packages/corpus/bin/write-config.ts --help', '/bench')).toBe(undefined)
+})
+
+test('the band is blue on a light theme and the theme orange on a dark or automatic one', () => {
+  expect(bandColour('light')).toBe('#1f5fbf')
+  expect(bandColour('light-daltonized')).toBe('#1f5fbf')
+  expect(bandColour('dark')).toBe('claude')
+  expect(bandColour('auto')).toBe('claude')
 })

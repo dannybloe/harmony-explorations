@@ -1,1 +1,6 @@
-{ "name": "harmony-remote", "version": "0.1.0", "description": "Status line: is a Harmony remote on USB and ready, and how far a configuration write to it has got" }
+{
+  "name": "harmony-remote",
+  "version": "0.1.0",
+  "description": "A band above the prompt: is a Harmony remote on USB and ready, and how far a configuration write to it has got",
+  "types": "./types/index.d.ts"
+}
