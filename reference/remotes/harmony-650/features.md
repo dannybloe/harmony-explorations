@@ -80,7 +80,10 @@ remote, section 327 and the `writing-a-config` skill.
 ## Delays
 
 * **Power on delay** per device, 0 to 45 seconds in tenths, read from configurations, section 288.
-* **Inter device delay** per device, 0 to 2 seconds in tenths, section 287.
+* **Inter device delay** per device, 0 to 2 seconds in tenths, section 287. It holds back that device's
+  own command, a tenth of a second per unit, in an activity's start and in All Off, measured with an
+  infrared receiver, section 335; on a device's own command pressed in device mode it does not act, by
+  the configuration's reading, **not checked** on the remote.
 * **A delay saved on the remote wins** over the configuration's at start, measured on the Harmony 600,
   section 303. **The 650 has none saved**: its settings store holds three records, all setting `0x80`,
   measured, section 282.

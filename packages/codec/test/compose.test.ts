@@ -10,8 +10,9 @@
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
-import { IMAGES, PARSEABLE_EXCLUDED, load, require_, skipUnless, skipWithoutLab } from '@harmony/lab';
+import { IMAGES, PARSEABLE_EXCLUDED, imagePath, load, require_, skipUnless, skipWithoutLab } from '@harmony/lab';
 import {
   ComposeError,
   DEVICE_QUANTITY_DEFAULT,
@@ -114,6 +115,12 @@ import {
   menuMarkerVariable,
   activityKeyedRecords,
   activityStateVariables,
+  ACTION_LIST_INDEX_OPCODE,
+  MAP_VALUE_OPCODE,
+  MODE_TAG_ENTER,
+  SCREEN_QUEUE_INSTRUCTION,
+  STATE_WRITE_BASE,
+  reachablePrograms,
 } from '../src/index.ts';
 import { startAndFlag, startTargets, tagFiveMisfit, tagFiveShape } from './tagfive.ts';
 
@@ -704,6 +711,217 @@ test('no command opens with the prelude on the Harmony One, the 525 or the arch 
     assert.equal(c.actionLists()!.filter((list) => list.some((one) => one.opcode === 0x7d)).length, sends);
     assert.deepEqual(sendPreludes(c), [], `${name} has sends and no prelude`);
   }
+});
+
+/**
+ * Section 335. The start variable, `S`, is what every arch 14 command's delay step tests, section 287,
+ * and here it is taken off the preludes' own condition so that nothing below is read off the lists it
+ * classifies. Every list writing it, by every route that names a list: a base slot 9 handler set entry,
+ * a mode record's entry or one of its pages' entries, a `0x7F` call, a screen instruction queueing a call
+ * anywhere a screen program is reachable, and a state transition. Section 287 counted the writers and
+ * read three of the 650's 31, having searched for them by calls, queued screen instructions and
+ * transitions only; the other 28 are named by tagged lists, which that search did not walk.
+ *
+ * Per configuration: activity handler lists by tag (enter, leave, the same activity again), the Off
+ * key map's two, and mode enter handlers whose mode draws a Help screen, a question with "Exit Help" or
+ * "Attempting to fix". `h650_kpn_gap_base` is the configuration the bench Harmony 650 held for the first
+ * bench run, its composed activities giving no leave list the start variable.
+ */
+const START_WRITERS = [
+  ['h650_config_region', { enter: 3, leave: 3, again: 3, off: 2, help: 16, fixing: 4 }],
+  ['h600_config', { enter: 3, leave: 3, again: 3, off: 2, help: 12, fixing: 4 }],
+  ['calibration_h600', { enter: 2, leave: 2, again: 2, off: 2, help: 12, fixing: 3 }],
+  ['h700_config', { enter: 5, leave: 5, again: 5, off: 2, help: 27, fixing: 6 }],
+  ['h700_config_2', { enter: 5, leave: 5, again: 5, off: 2, help: 27, fixing: 6 }],
+  ['h650_kpn_gap_base', { enter: 6, leave: 4, again: 6, off: 2, help: 22, fixing: 5 }],
+] as const;
+
+test('the start variable is written only by an activity\'s handlers, the Off key map and the Help screens, each raising it and lowering it again',
+     skipUnless(...START_WRITERS.map(([name]) => name)), () => {
+  let total = 0;
+  for (const [name, expected] of START_WRITERS) {
+    const c = parse(require_(name));
+    const lists = c.actionLists()!;
+    const starts = new Set(sendPreludes(c).map((one) => one.conditionOperand & 0xff));
+    assert.equal(starts.size, 1, `${name}: one start variable`);
+    const [start] = [...starts] as [number];
+    const writes = (list: readonly { opcode: number; operand: number }[]) =>
+      list.filter((one) => one.opcode === STATE_WRITE_BASE + start).map((one) => one.operand);
+
+    // Every route that names a list, each written as the kind of thing it is.
+    const routes = new Map<number, string[]>();
+    const add = (list: number, route: string) => routes.set(list, [...(routes.get(list) ?? []), route]);
+    const roles = handlerSetRoles(c);
+    handlerSets(c)!.addresses.forEach((address, index) => {
+      for (const entry of taggedList(c, address)?.entries ?? []) {
+        if (entry.opcode === ACTION_LIST_INDEX_OPCODE) add(entry.operand, `${roles[index]} tag ${entry.tag}`);
+      }
+    });
+    const drawn = screenStrings(c, characterMap(c));
+    for (const mode of modeRecords(c) ?? []) {
+      const programs = new Set(mode.pages.map((page) => page.program));
+      const texts = drawn.filter((one) => programs.has(one.program)).map((one) => one.text.trim());
+      const screen = texts.includes('Exit Help') ? 'help'
+        : texts.some((one) => one.startsWith('Attempting to fix')) ? 'fixing' : 'other';
+      for (const entry of mode.entries) {
+        if (entry.opcode === ACTION_LIST_INDEX_OPCODE) add(entry.operand, `mode tag ${entry.tag} ${screen}`);
+      }
+      for (const page of mode.pages) {
+        for (const entry of taggedList(c, page.list)?.entries ?? []) {
+          if (entry.opcode === ACTION_LIST_INDEX_OPCODE) add(entry.operand, 'page');
+        }
+      }
+    }
+    lists.forEach((list) => list.forEach((one) => {
+      if (one.opcode === ACTION_LIST_INDEX_OPCODE) add(one.operand, 'call');
+    }));
+    const queuedIn = new Map<number, number[]>();
+    for (const [address, program] of reachablePrograms(c)) {
+      for (const step of program) {
+        if (step.opcode !== SCREEN_QUEUE_INSTRUCTION || step.operands[2] !== ACTION_LIST_INDEX_OPCODE) continue;
+        const list = (step.operands[0] as number) | ((step.operands[1] as number) << 8);
+        add(list, 'queued');
+        queuedIn.set(list, [...(queuedIn.get(list) ?? []), address]);
+      }
+    }
+    stateRecords(c)!.forEach((record) => record.values.forEach((value) => {
+      if (value.opcode === ACTION_LIST_INDEX_OPCODE) add(value.operand, 'transition');
+    }));
+
+    const seen = { enter: 0, leave: 0, again: 0, off: 0, help: 0, fixing: 0 };
+    const KIND: Record<string, keyof typeof seen> = {
+      'activity tag 1': 'enter', 'activity tag 2': 'leave', 'activity tag 5': 'again',
+      'idle tag 1': 'off', 'idle tag 5': 'off',
+      [`mode tag ${MODE_TAG_ENTER} help`]: 'help', [`mode tag ${MODE_TAG_ENTER} fixing`]: 'fixing',
+    };
+    const offLists: number[] = [];
+    lists.forEach((list, index) => {
+      const values = writes(list);
+      if (values.length === 0) return;
+      // One route each, and it is one of the seven: so no device mode key, no page key, no call, no
+      // transition and no queued instruction reaches a list that raises the start variable.
+      const by = routes.get(index) ?? [];
+      assert.equal(by.length, 1, `${name}: list ${index} is reached by ${by.join(', ') || 'nothing'}`);
+      const kind = KIND[by[0]!];
+      assert.ok(kind !== undefined, `${name}: list ${index} is reached by ${by[0]}`);
+      seen[kind] += 1;
+      if (kind === 'off') offLists.push(index);
+      assert.equal(values[0], 1, `${name}: list ${index} raises it first`);
+      assert.equal(values.at(-1), 0, `${name}: and lowers it last`);
+    });
+    assert.deepEqual(seen, { ...expected }, name);
+    total += Object.values(seen).reduce((sum, one) => sum + one, 0);
+
+    // The all off list is queued by a map's case, and the lists mapping that variable through that
+    // record are exactly the Off key map's two, each between raising the start variable and lowering it.
+    const allOff = allOffList(c);
+    assert.ok(allOff !== undefined, `${name}: one all off list`);
+    assert.deepEqual(routes.get(allOff.list), ['queued'], `${name}: reached only as a queued call`);
+    const maps = valueMaps(c)!;
+    const queuers = new Set<number>();
+    maps.forEach((map, index) => {
+      for (const [, target] of [...map.entries, ...map.ranges.map(([, , at]) => [0, at] as const)]) {
+        if (queuedIn.get(allOff.list)?.includes(target)) queuers.add(index);
+      }
+    });
+    assert.equal(queuers.size, 1, `${name}: one record queues it`);
+    const mapping: number[] = [];
+    lists.forEach((list, index) => list.forEach((one, at) => {
+      if (one.opcode !== MAP_VALUE_OPCODE || !queuers.has(one.operand >> 8)) return;
+      mapping.push(index);
+      assert.deepEqual(writes(list.slice(0, at)), [1], `${name}: list ${index} raises it before the map`);
+      assert.deepEqual(writes(list.slice(at + 1)), [0], `${name}: and lowers it after`);
+    }));
+    assert.deepEqual(mapping.sort((a, b) => a - b), offLists.sort((a, b) => a - b), `${name}: and they are the Off's`);
+  }
+  assert.equal(total, 31 + 27 + 23 + 50 + 50 + 45);
+});
+
+/**
+ * Section 335, on the bench Harmony 650. Its activity Kijk TV switches the KPN box on and then the Denon,
+ * and All Off switches the KPN box and then the Denon off; three runs heard by the Flirc, every delay
+ * between devices at 5 tenths but the television's 10, then the KPN box's at 20, then instead the
+ * Denon's at 20. What is
+ * read is the silence the receiver itself reports before the Denon's first frame, which starts at the
+ * end of the KPN box's last frame.
+ *
+ * One reading is not used and is kept in the table so that it cannot quietly join: All Off in the second
+ * run, where the receiver heard the KPN box's two frames as fragments of 7 and 9 pulses, where every
+ * reading used ends on a whole frame of 27 pulses or more. A fragment last reads long whatever the KPN
+ * box's delay is: the one other such pair in these captures, a 13 pulse fragment before the Denon's
+ * power off in the first run with every delay involved at 5, reads 0.884 s, and that pair is not
+ * attributed to a step, so it is not in the table. The excluded reading, 0.94 s, is still under the 2 s
+ * the KPN box's delay would give if it held back the next device.
+ */
+test('on the Harmony 650 the silence before the Denon\'s command follows the Denon\'s own delay between devices and not the KPN box\'s, in Kijk TV\'s start and in All Off',
+     skipUnless('h650_kpn_gap_base', 'h650_denon_gap_base', 'h650_denon_gap_config',
+                'h650_gap_ir_all5', 'h650_gap_ir_kpn20', 'h650_gap_ir_denon20'), () => {
+  type Press = { repeats: number; frame: { gapUs?: number; number?: string | null; pulses: unknown[]; matches: { device: string }[] } };
+  type Run = { steps: { instruction: string; presses?: Press[] }[] };
+  const RUNS = [
+    ['h650_gap_ir_all5', 'h650_kpn_gap_base'],
+    ['h650_gap_ir_kpn20', 'h650_denon_gap_base'],
+    ['h650_gap_ir_denon20', 'h650_denon_gap_config'],
+  ] as const;
+  // The delays each run's configuration holds, tenths, read off the variable each device's prelude maps.
+  const delays = RUNS.map(([, config]) => {
+    const c = parse(require_(config));
+    const records = stateRecords(c)!;
+    const groupOf = (device: string) => devices(c).find((one) => one.name === device)?.group;
+    const delayOf = (group: number | undefined) => {
+      const variables = new Set(sendPreludes(c).filter((one) => one.group === group).map((one) => one.variable));
+      assert.equal(variables.size, 1, `${config}: one delay variable for group ${group}`);
+      return records[[...variables][0]!]!.first;
+    };
+    return { kpn: delayOf(groupOf('KPN')), denon: delayOf(groupOf('Denon')) };
+  });
+  assert.deepEqual(delays, [{ kpn: 5, denon: 5 }, { kpn: 20, denon: 5 }, { kpn: 5, denon: 20 }]);
+
+  // Per run and sequence: the Denon's first frame, by the number the receiver decodes, its silence, and
+  // the pulse counts of the frames heard since the previous Denon frame or the step's start, a held
+  // frame counted once.
+  const readings = RUNS.flatMap(([capture], run) => {
+    const steps = (JSON.parse(readFileSync(imagePath(capture)!, 'utf8')) as Run).steps;
+    return ([['start', /Press Watch TV/, '2278'], ['all off', /Press All Off/, '2178']] as const).map(([what, pattern, number]) => {
+      const presses = steps.find((one) => pattern.test(one.instruction))?.presses ?? [];
+      const at = presses.findIndex((one) => one.frame.number === number);
+      assert.ok(at > 0, `run ${run + 1} ${what}: the Denon's frame and something before it`);
+      assert.ok(presses[at]!.frame.matches.some((one) => one.device === 'Denon'), 'the bench names it the Denon\'s');
+      const before = presses.slice(0, at);
+      const since = before.slice(before.findLastIndex((one) => typeof one.frame.number === 'string') + 1);
+      return { run: run + 1, what, gapUs: presses[at]!.frame.gapUs!, heard: since.map((one) => one.frame.pulses.length), ...delays[run]! };
+    });
+  });
+  assert.deepEqual(readings.map(({ run, what, gapUs, heard }) => ({ run, what, gapUs, heard })), [
+    { run: 1, what: 'start', gapUs: 620000, heard: [5, 33] },
+    { run: 1, what: 'all off', gapUs: 613000, heard: [35, 27] },
+    { run: 2, what: 'start', gapUs: 620000, heard: [5, 33] },
+    { run: 2, what: 'all off', gapUs: 940000, heard: [7, 9] },
+    { run: 3, what: 'start', gapUs: 2126000, heard: [35] },
+    { run: 3, what: 'all off', gapUs: 2118000, heard: [33, 33] },
+  ]);
+  // The silence is measured from the end of the KPN box's last frame, so that frame has to be heard
+  // whole: 27 pulses or more, against 7 and 9 in the one reading left out.
+  const whole = readings.filter((one) => (one.heard.at(-1) ?? 0) >= 27);
+  assert.equal(whole.length, 5, 'all but the second run\'s All Off');
+
+  // Subtract a delay of a tenth of a second per unit from each silence. The Denon's own leaves the same
+  // remainder on all five; the KPN box's, the device before it, leaves remainders over a second apart.
+  const remainder = (pick: 'kpn' | 'denon') => whole.map((one) => one.gapUs - one[pick] * 100000);
+  const spread = (values: number[]) => Math.max(...values) - Math.min(...values);
+  assert.deepEqual(remainder('denon'), [120000, 113000, 120000, 126000, 118000]);
+  assert.equal(spread(remainder('denon')), 13000, 'the Denon\'s delay accounts for the silence');
+  assert.deepEqual(remainder('kpn'), [120000, 113000, -1380000, 1626000, 1618000], 'the KPN box\'s does not');
+  assert.equal(spread(remainder('kpn')), 3006000);
+  // Raising the Denon's by 15, from the first run to the third, lengthens both sequences by 1.5 s to
+  // within six milliseconds.
+  const at = (run: number, what: string) => readings.find((one) => one.run === run && one.what === what)!.gapUs;
+  const grown = ['start', 'all off'].map((what) => at(3, what) - at(1, what));
+  assert.deepEqual(grown, [1506000, 1505000]);
+  assert.ok(grown.every((one) => Math.abs(one - (delays[2]!.denon - delays[0]!.denon) * 100000) <= 6000));
+  // And the reading left out is still under what the KPN box's delay would have given.
+  const fragmentary = readings.find((one) => one.run === 2 && one.what === 'all off')!;
+  assert.ok(fragmentary.gapUs < fragmentary.kpn * 100000, 'under the KPN box\'s 2 s');
 });
 
 test('every arch 14 device with a Power variable switches on through its power command and then its power on delay',

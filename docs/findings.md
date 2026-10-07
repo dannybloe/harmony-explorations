@@ -52,11 +52,15 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Sixty four have been found and corrected so far. **The newest is in section 322**: the clock record's
+Sixty five have been found and corrected so far. **The newest is in section 335**: sections 285 and
+287 read the delay between devices as acting only inside an activity's start, and four other files
+restated that as a fact, while the variable it waits on is raised by All Off and by the Help screens as
+well, which the search for that variable's writers missed because it did not walk tagged lists. **The one before it is
+in section 322**: the clock record's
 day of the month counts from 0 and its weekday from Sunday, and section 21's reading of the same bytes,
 a day counted from 1 and a weekday from a Saturday epoch, fitted every stamp as well because it named
 each date a day early. So every build date here was a day early and every configuration our writer
-stamped set its remote's clock a day ahead. **The one before it is in section 226**, and it is a claim
+stamped set its remote's clock a day ahead. **The one before that is in section 226**, and it is a claim
 of ours restated in code for three days after `docs/findings.md` had corrected it: the rehearsal's dump
 allow list plus its byte compare were said to identify the unit on the cable, where they prove content,
 so another Harmony One whose selected block happened to match would have passed as the spare. **The
@@ -37308,7 +37312,9 @@ wide totals, so the counts in this section are over a wider population than `lab
   it and an activity starting it would get no inter device delay. Section 235 reads those variables.
   *Section 287 reads the cases and composes the call, the `InterDeviceDelay` variable and its table,
   and section 288 the power on delay; the other six delay variables are still not composed, so
-  `deviceDelays` still does not report it.*
+  `deviceDelays` still does not report it. Section 335: the variable is raised in All Off and in Help
+  as well as in a start, so the delay acts there too, and the bench Harmony 650 shows it in a start and
+  in All Off.*
 
 ### A closure, and the disagreement it found in section 271's reader
 
@@ -37585,9 +37591,15 @@ which repeats the first. Every send list has exactly this shape, and three thing
   operand's bits 8 to 11 being 0. Every list that writes it sets it to 1 and back to 0 inside itself,
   31, 27, 23 and 50 of them, three of the 650's being the activities' `Starting ...` sequences.
   **That the delay step acts inside a start sequence and not on a device mode key press is an
-  inference**, from those three and from the variable being 0 at rest. What reaches the other 28 of
-  the 650's writers is unread: the prose auditor found none of the 131 named by a `0x7F`, by a screen
+  inference**<!--superseded-->, from those three and from the variable being 0 at rest. What reaches the other 28 of
+  the 650's writers is unread<!--superseded-->: the prose auditor found none of the 131 named by a `0x7F`, by a screen
   program queueing one, or by a state transition.
+  *Corrected by section 335: the 28 are named by tagged lists, which that search did not walk, and they
+  are six activity handler lists that are not a start, the Off key map's two lists and twenty Help
+  screens' enter handlers. So the delay step acts in an activity's start, in All Off and in Help, which
+  the bench Harmony 650 confirms for the first two, and not on a device mode key press, which no writer
+  is reached from. The 131 are the writers on the four distinct configurations, the second Harmony 700
+  one being a repeat.*
 
 `variable` is the device's `InterDeviceDelay_<identifier>` on all 23, the identifier being the one the
 remote's own delay page joins to that device's group on 17 of 17 devices with commands, a two byte
@@ -37616,7 +37628,10 @@ screen is the likely reader and that is a guess. Not composed.
 `5 << 4 | group` and whose value is the operand's low byte, beside the send's kind 0 and the `0x7C`
 quantity's kind 4. **What the sender does with a kind 5 entry is unread.** That it is the inter device
 delay rests on the variable's name and on the operand carrying it, not on a firmware reading, so it is
-stated here as unconfirmed.
+stated here as unconfirmed. *Section 335 measured it on the bench Harmony 650: the device's own value
+holds back that device's command by a tenth of a second per unit, and not as section 236's per device
+quantity would, since the wait began only once the device before it had sent. The firmware's handling
+is still unread.*
 
 **The cases are stored in the order 0 to 15, 17, 16, 19, 18, 20**, and the programs in the same order,
 on 23 tables of 23. It is not the delay tables' own order: every base slot 14 record whose keys are
@@ -37682,7 +37697,8 @@ The shape: arch 14, three models and five configurations; absent on arch 8, 9 an
 and 16 not checked here. The table's meaning: the configuration only, no image read. The composition:
 built and read back on the Harmony 650's configuration, where the reader, the accounting, the round trip,
 the checksum and the index order all agree, and on `h600_config` by the four host test. **Nothing about it is measured on hardware**: an inter device delay is felt only
-inside a start sequence, so the first test is the composed activity of todo 1.4.4.
+inside a start sequence<!--superseded-->, so the first test is the composed activity of todo 1.4.4. *Measured since
+section 335, on the bench Harmony 650, in an activity's start and in All Off.*
 
 ### The reviewers
 
@@ -37931,7 +37947,8 @@ the enter list opens by entering a start up screen of the activity's own, drawin
 name, then writes 1 into the variable section 287's condition tests, and its last instruction writes 0
 into it, 13 of 13, the variable being 52, 46, 47 and 59. **That is the evidence section 287's start
 sequence reading already rested on**, the 650's three being among the lists it counted, so this adds the
-count and not a new route. What it means for a composer is the consequence: an activity whose enter list
+count and not a new route. *Section 335 reads the other writers, the Off key map and the Help screens
+among them, so the delay acts in All Off and Help as well.* What it means for a composer is the consequence: an activity whose enter list
 does not write that variable runs every command's inter device delay step with the condition false, so
 that delay does not act. **The power on delay is called with no such condition in front of it**, from
 the power variable's on list, section 288, so whether it depends on the variable is unread.
@@ -44738,3 +44755,203 @@ taken; none was overruled.
 * `packages/codec/test/menupage.test.ts`: the calibration, the two routes, the controls and the composed
   pages.
 * `docs/config-format.md`, after section 330's table.
+
+## 335. On the Harmony 650 the delay between devices holds back that device's own command, and on arch 14 it acts in All Off and Help as well as in an activity's start
+
+**Date:** 7 October 2026. **Status:** measured on the bench Harmony 650 with an infrared receiver, three
+runs, the second and third each differing from the first in one variable; the configuration half
+confirmed on the five arch 14 configurations section 287 counts and on the bench one. **Corrects
+sections 285 and 287**, whose reading that the delay acts only inside an activity's start<!--superseded--> was too
+narrow, and resolves section 287's 28 unread writers.
+
+**Todo `todo-compile-650.md` 3.5.** Section 287 composed every arch 14 command's delay step and said
+nothing about it was measured on hardware. Section 291's activity gave the delay nothing to hold back.
+The bench configuration's Kijk TV does: it switches on the KPN box and then the Denon, and All Off
+switches both off in the same order.
+
+**Sources checked**: this document, sections 70, 71, 235, 236, 238, 280, 285, 287, 288, 289, 290,
+303, 329 and 333; the five configurations and the bench one. Neither the firmware nor Logitech's client
+was opened: which lists raise the start variable is something the configuration states, and the client
+compiles nothing, section 278's reason. **What the sender does with the queued kind 5 entry stays
+unread in the firmware**, below.
+
+### The three runs
+
+The bench file `h650-bench-combined-2.bin` sets every device's `InterDeviceDelay` to 5 tenths but the
+television's, which holds 10, as it does on Logitech's own compile of the 650. Two copies change one
+variable each against it: the KPN box's, `InterDeviceDelay_83908300`, to 20, and the Denon's,
+`InterDeviceDelay_83908303`, to 20. Besides that variable each differs from the first only in what a
+write stamps, the build timestamp and the first clock records, and in the trailer checksum. The
+remote's settings store held no saved delay before the second and third runs, read with
+`read-settings.ts` at the bench, so section 303's override was not in play there; it was not read
+before the first, and no file of either read is in the lab.
+
+What is read is the silence the Flirc receiver itself reports before the Denon's first frame, which
+runs from the end of the KPN box's last frame:
+
+| run | KPN box | Denon | Kijk TV's start | All Off |
+|---|---|---|---|---|
+| 1 | 5 | 5 | 0.620 s | 0.613 s |
+| 2 | 20 | 5 | 0.620 s | 0.940 s, not used |
+| 3 | 5 | 20 | 2.126 s | 2.118 s |
+
+**One reading is not used, and the reason is measured rather than chosen.** The KPN box sends two
+frames 85 ms apart, and in every reading used the receiver heard the last of them whole, 27 to 35
+pulses. In the second run's All Off it heard both as fragments of 7 and 9 pulses, and the silence starts
+at the end of the last of them. The one other KPN box then Denon pair in these captures with a fragment last, a
+single 13 pulse fragment in the first run before Kijk TV was started, followed by the Denon's power off,
+reads 0.884 s with every delay involved at 5. So a fragment last reads about 0.3 s long whatever the
+KPN box's delay is, and that pair's cause, like what was pressed for it, is not established. Any
+threshold from 14 to 27 pulses splits these captures the same way.
+
+### Whose command it holds back
+
+**The Denon's own.** Raising the Denon's delay by 15 tenths lengthened the silence before the Denon by
+1.506 s in the start and 1.505 s in All Off. Raising the KPN box's by the same 15 left the silence
+before the Denon in the start at 0.620 s, to the millisecond; All Off's reading in that run is the one
+not used. Subtract a tenth of a second per unit of the Denon's delay from the five readings used and the
+remainder is 0.120, 0.120 and 0.126 s in the start and 0.113 and 0.118 s in All Off, so most of the
+13 ms spread is a steady difference between the two sequences; subtract the KPN box's delay instead and
+the remainders are more than a second apart. What the remainder is, is not established.
+
+**The unit closes.** The variable is a number in the configuration and the silence is the receiver's own
+clock, and 15 units came out as 1.506 and 1.505 s, a tenth of a second per unit to within 0.4%. That is
+the third route to tenths for this variable, after the strings the remote's own delay screens draw and
+Logitech's account, which states the same field in milliseconds at 100 times the stored number, section
+235.
+
+**A check with another device in front.** In the first run Help was pressed on a device page and the
+remote sent the television's power off, the Denon's and a Panasonic code that two devices hold, twice;
+the operator saw "Did that fix the problem" afterwards, below. The Denon followed the television, whose
+delay is 10, after 0.623 s, which is the Denon's own half second and not the television's second. The
+Panasonic code, from a device whose delay is 5, followed the Denon after 0.572 and 0.573 s, a remainder
+of about 0.07 s against 0.11 to 0.13 s after the KPN box or the television. So the remainder depends on
+what was sent before, which is a second thing about it that is not established.
+
+**That is what the delay step's position says**, section 287: it opens the device's own send list, so
+the kind 5 entry it queues for the device's own group sits in front of that device's send and of no
+other device's.
+
+**It does not look like section 236's per device hold.** Section 236 read the picker and the countdown:
+a send is held while an earlier queue entry names its device, and two devices never wait for each
+other. Were the kind 5 entry counted down that way, and were both devices' entries queued before the
+first code went out, the KPN box's and the Denon's waits would run at the same time: in the first run
+the Denon would follow the KPN box with only the remainder between them, and in the second the Denon's
+0.5 s would end 1.5 s before the KPN box's 2 s and the Denon would go first. It went 0.62 s after the
+KPN box both times, so its wait began only once the KPN box's command had gone out. **That rests on the
+second condition**, all of a start list's instructions running before its first code goes out, which
+section 238's one instruction per main loop turn makes likely and which nothing here measured. Two
+readings fit what was heard: a wait in front of the device's command that holds back everything queued
+behind it too, or a wait measured from the last code sent to another device, which is what the
+variable's name says. **Which one is not separable here**, since the Denon is the last device in both
+lists, so a third device after it is what would part them. The sender's handling of a kind 5 entry is
+not read.
+
+### Why All Off applies it, and the correction
+
+The delay step runs the device's delay list only while the start variable `S` equals 1, section 287.
+**Every list that writes `S` is read now**, by every route that names a list: a base slot 9 handler set
+entry, a mode record's entry or a page's, a call, a screen instruction queueing a call, and a state
+transition. Each writer has exactly one route, and it is one of these:
+
+| | 650 | 600 | `calibration_h600` | 700 | 700, second | bench 650 |
+|---|---|---|---|---|---|---|
+| activity, tag 1, its start | 3 | 3 | 2 | 5 | 5 | 6 |
+| activity, tag 2, left | 3 | 3 | 2 | 5 | 5 | 4 |
+| activity, tag 5, selected again | 3 | 3 | 2 | 5 | 5 | 6 |
+| the Off key map, tags 1 and 5 | 2 | 2 | 2 | 2 | 2 | 2 |
+| a Help question's enter handler, tag 6 | 16 | 12 | 12 | 27 | 27 | 22 |
+| an "Attempting to fix" screen's enter handler, tag 6 | 4 | 4 | 3 | 6 | 6 | 5 |
+| all | 31 | 27 | 23 | 50 | 50 | 45 |
+
+`S` is taken off the preludes' condition here rather than off the Off key map as `startSequenceOf`
+reads it, so the census does not assume what it classifies. Every writer raises `S` first and lowers it
+last, 226 of 226 with the second Harmony 700 configuration counted again, 176 distinct. The Help
+screens that write it are a minority of the Help screens: 16 of the 69 modes on the 650 that draw "Exit
+Help" have an enter handler, and those are the writers. What each Help writer sends between its two
+writes is not counted here. An activity's leave list, tag 2, is the bare pair `[S:=1, S:=0]` on all five
+configurations, so it sends nothing with the delay acting; the bench configuration's two composed
+activities have no tag 2 list at all, a difference from Logitech's compiler that changes nothing that
+is sent.
+
+**All Off is the Off key map**, the `idle` entry section 329 read the start variable off. Both its lists
+raise `S`, then map `CurrentLocation` through the record whose case for 0 queues a call to the all off
+list, section 280, then lower `S`; on all six the all off list is reached by that queued call and by
+nothing else, and the lists mapping through that record are exactly those two. Section 238 is why the
+codes the all off list sends go out while `S` is still 1: whatever an instruction pushes runs before the
+rest of its list. That the `0x72`'s queued call and a state write's transition list are pushed that way
+is consistent with the bench and was not read in the firmware here.
+
+**No device mode record, page key, call, transition or queued instruction names a writer**, so a
+device's command pressed in device mode runs its delay step with `S` at 0 and waits for no delay. That
+is a reading of the configuration and was not measured. **Help is the exception that the bench did
+hear**: device mode binds no Help, section 333, so Help pressed on a device page falls through to the
+Off key map's binding, whose "Attempting to fix" screen is a writer, and the codes it sent waited the
+delay, as above.
+
+**The correction.** The reading began as a fact in section 285, "applies the device's inter device
+delay while a start sequence runs and not on a key press in device mode", and in `docs/config-format.md`
+in the same commit as "applies inside a start sequence and not on a device mode key press"<!--superseded-->. Section 287 then
+called it an inference, "That the delay step acts inside a start sequence and not on a device mode key
+press is an inference", and left what reaches 28 of the 650's 31 writers unread, the search having found
+none of them named by a call, by a screen program queueing one or by a state transition; it did not
+sweep the copy in `docs/config-format.md`. Section 289 restated it there as "the inter device delay
+acts only inside an activity's start"<!--superseded-->, and it reached `docs/status.md` twice, `todo.md` and the
+`sendPreludeCondition` docstring. All 28 are named by **tagged lists**, base slot 9's handler sets and
+the mode records, which that search did not walk: six activity handler lists that are not a start, the
+Off key map's two, and twenty Help screens. The reading was right about a device's own commands in
+device mode and wrong in what it left out. Section 329 had already read both Off lists as writers of
+`S`, on 4 October 2026, and did not connect that to section 287's open question.
+
+### Scope, decision 16
+
+The bench result: the Harmony 650, one pair of devices, the KPN box and then the Denon, in one activity
+and in All Off, with the Help readings as a check. The Harmony 600 and 700 are not measured on hardware.
+The census of `S`'s writers: arch 14 (Harmony 600, 650 and 700), the five compiles and the bench
+configuration. Arch 8, 9 and 12 (Harmony 880 and 885, 525, One) carry no delay step, section 287, so the
+question does not arise there, and where they keep an inter device delay is open, section 235. Arch 10
+and 16 (Harmony 890 and 895, 300 and 350) not checked.
+
+### Falsification
+
+A run where raising the KPN box's delay moves the silence before the Denon, or where raising the
+Denon's by 15 moves it by other than 1.5 s; a writer of `S` named by a device mode record or a page; an
+arch 14 compile whose Off key map maps the all off list outside its `S` bracket.
+
+### The reviewers
+
+**The blind re-measure** reproduced every number: the three files' differences, the groups and delay
+variables, the six silences and the fragments, the writer census on all six configurations with one
+route each, and the all off list's place inside the `S` bracket. It refuted the per device parallel
+reading and the next device reading independently, and it found the Help pair that is now the check
+with the television in front.
+
+**The prose audit** found fourteen things and each was measured here before it changed anything. The
+television's delay is 10, not 5 like every other device, which the first version said while relying on
+10 a paragraph later. The Help check's remainder of 0.07 s after the Denon was left out where the 0.12 s
+after the television was quoted. "Never a device mode key" was contradicted by the same capture, Help
+falling through to the Off key map; it is narrowed to a device's own commands. "Every Help question
+screen" was 16 of 69. The correction said the reading began as an inference in section 287, where
+`git log -S` shows it a fact in section 285 and in `docs/config-format.md`, in a commit three hours
+before section 287's. One
+copy in `docs/status.md`, worded in the plural, escaped the superseded check; the excluded reading was
+summarised as "nothing moved"; the per device hold's caveat was dropped from the summaries; the 27 pulse
+rule was stated without the fragment it is scored against; one test assertion was arithmetic on
+literals; leave lists, scope in the title, the runs' wording, the settings store read and an untested
+sentence about what Help screens send. All are corrected above, in the summaries or in the test.
+
+### Where it lands
+
+* `packages/codec/test/compose.test.ts`: the census of `S`'s writers on the six configurations with the
+  all off list's place, and the three bench runs against the three configurations' delays, beside
+  section 287's tests. Controls, each run once and reverted: dropping the mode records from the routes,
+  which is section 287's search, fails on the 650's list 3131 being reached by nothing; swapping the
+  second and third runs' captures fails the Denon's remainder; and fitting the KPN box's delay instead
+  of the Denon's fails the spread.
+* `packages/lab/src/index.ts` and `tests/lab.py`: the third run's configuration and the three runs;
+  `tools/golden.py` and `packages/codec/test/golden.test.ts`: that configuration and the eight Harmony
+  650 compare bases registered before it without a golden vector, which had left `test_golden` failing.
+* Sections 285, 287 and 290 corrected in place or pointed here; `docs/config-format.md`,
+  `docs/status.md`, `todo.md`, `todo-compile-650.md` 3.5, the `writing-a-config` skill, the Harmony
+  650's features page, the docstrings of `sendPreludeCondition`, `SendPrelude` and the arch 14 delay
+  notes in `compose.ts` and `sequence.ts`, and `reference/superseded.md`.

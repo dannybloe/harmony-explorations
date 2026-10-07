@@ -128,6 +128,17 @@ CONTAINERS = (
     'h650_devicelist_region',
     'h650_plasma_base',
     'h650_seventh_base',
+    # The 650's compare bases after the seventh device, todo-compile-650's bench files, and the file
+    # written for section 335's third bench run.
+    'h650_combined_base',
+    'h650_combined2_base',
+    'h650_two_devices_base',
+    'h650_full_plasma_base',
+    'h650_full_plasma2_base',
+    'h650_combined3_base',
+    'h650_kpn_gap_base',
+    'h650_denon_gap_base',
+    'h650_denon_gap_config',
     'h700_28_config_region',
     'h700_after_rehearsal_region',
     'h700_delay90_region',
