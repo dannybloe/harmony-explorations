@@ -113,11 +113,18 @@ const session = new MyHarmonySession((operation, reply) => {
 
 const manifestPath = join(dir, 'manifest.json');
 interface Compiled { file: string; status: string; devices: (HarvestDevice & { deviceId: number })[];
-  inFile: number; checked: boolean }
+  inFile: number; namesFound: boolean; checked: boolean }
+/** A compile that never left "Compiling": kept with its address, so it can be fetched again later. */
+interface Stuck { downloadUrl: string; devices: HarvestDevice[] }
 const manifest: { record: number; model: string; account: string; compiles: Compiled[];
-  failed: HarvestDevice[] } = existsSync(manifestPath)
-  ? JSON.parse(readFileSync(manifestPath, 'utf8'))
-  : { record, model, account: selector, compiles: [], failed: [] };
+  failed: HarvestDevice[]; stuck: Stuck[] } = existsSync(manifestPath)
+  ? { stuck: [], ...JSON.parse(readFileSync(manifestPath, 'utf8')) }
+  : { record, model, account: selector, compiles: [], failed: [], stuck: [] };
+/**
+ * The Harmony 300 and 350, whose configuration our container reader does not yet count devices in: a
+ * count off their file came back 8 for one device. For them the check is the device names alone.
+ */
+const FILE_BASED_MODELS = new Set(['78', '79', '104']);
 function saveManifest(): void { writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 1)}\n`); }
 
 function expectOk(operation: string, reply: Reply): Record<string, unknown> {
@@ -191,7 +198,7 @@ async function clear(ids: number[]): Promise<void> {
 }
 
 /** One compile of the record as it stands: the ZIP's bytes, or the status word it failed with. */
-async function compile(): Promise<{ zip?: Uint8Array; status: string }> {
+async function compile(): Promise<{ zip?: Uint8Array; status: string; downloadUrl?: string }> {
   const settings = await session.callAt('GetRemoteSettings', `${ACCOUNT_DIRECTOR}Account/${record}/Remote/${remote}/Settings`, 'GET');
   if (settings.status !== 200) throw new HarvestRefusal(`remote settings answered ${settings.status}; stopping`);
   const started = expectOk('StartCompileWithLocaleAndSettings', await session.call(
@@ -213,7 +220,7 @@ async function compile(): Promise<{ zip?: Uint8Array; status: string }> {
     if (status !== 'Compiling' && status !== 'Pending' && status !== 'Queued') return { status };
     await sleep(3000);
   }
-  return { status: 'still compiling after 80 polls' };
+  return { status: 'still compiling after 80 polls', downloadUrl: url };
 }
 
 function indexOf(bytes: Uint8Array, needle: number[]): number {
@@ -229,7 +236,7 @@ async function harvest(batch: HarvestDevice[]): Promise<void> {
   expectOk('UpdateMultiple', await session.call('UpdateMultiple', DEVICE_MANAGER, operationBag(record,
     batch.map((device) => addDeviceOperation(matches.get(device)!, device, record, randomUUID())))));
   const added = (await devicesOnRecord()).map((one) => one.Id.Value).filter((id) => !before.has(id));
-  let result: { zip?: Uint8Array; status: string } = { status: 'not compiled' };
+  let result: { zip?: Uint8Array; status: string; downloadUrl?: string } = { status: 'not compiled' };
   try {
     if (added.length !== batch.length) {
       throw new HarvestRefusal(`${batch.length} devices sent, ${added.length} on the record; stopping`);
@@ -244,15 +251,27 @@ async function harvest(batch: HarvestDevice[]): Promise<void> {
     const files = readZip(result.zip);
     for (const [file, bytes] of files) writeFileSync(join(dir, `${name}-${file}`), bytes);
     const ezhex = [...files].find(([file]) => file.toLowerCase().endsWith('.ezhex'))?.[1];
-    // The check: the compiled file holds every device that went in.
-    const inFile = ezhex === undefined ? 0 : configDevices(parse(payloadOf(ezhex))).length;
-    manifest.compiles.push({ file: `${name}.zip`, status: result.status, inFile, checked: inFile === batch.length,
+    // The check: the compiled file holds every device that went in. Every model's file carries each
+    // device's model name as text, so that half holds everywhere; the device count is added where our
+    // reader counts devices for the model.
+    const payload = ezhex === undefined ? new Uint8Array() : payloadOf(ezhex);
+    const text = new TextDecoder('latin1').decode(payload);
+    const namesFound = ezhex !== undefined && batch.every((device) => text.includes(device.model));
+    const counted = !FILE_BASED_MODELS.has(model);
+    const inFile = ezhex === undefined || !counted ? 0 : configDevices(parse(payload)).length;
+    const checked = namesFound && (!counted || inFile === batch.length);
+    manifest.compiles.push({ file: `${name}.zip`, status: result.status, inFile, namesFound, checked,
       devices: batch.map((device, i) => ({ ...device, deviceId: added[i] ?? 0 })) });
     saveManifest();
-    console.log(`  ${name}: ${batch.length} devices, ${inFile} in the file${inFile === batch.length ? '' : ', CHECK FAILED'}`);
+    console.log(`  ${name}: ${batch.length} devices, names ${namesFound ? 'found' : 'MISSING'}`
+      + (counted ? `, ${inFile} counted` : '') + (checked ? '' : ', CHECK FAILED'));
     return;
   }
   console.log(`  compile of ${batch.length} devices failed: ${result.status}`);
+  if (result.downloadUrl !== undefined) {
+    manifest.stuck.push({ downloadUrl: result.downloadUrl, devices: batch });
+    saveManifest();
+  }
   if (batch.length === 1) {
     manifest.failed.push(batch[0]!);
     saveManifest();
