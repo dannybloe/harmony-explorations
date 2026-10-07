@@ -1,7 +1,7 @@
 /**
  * An arch 14 activity's start up screen, its working screen and the cases its keyed records hold, on a
  * Harmony 600, 650 or 700, built rather than copied off another activity of the configuration, section
- * NNM, `todo-compile-650.md` 6.2.10.
+ * 336, `todo-compile-650.md` 6.2.10.
  *
  * The population is the thirteen Logitech compiles section 312 lists, the Harmony 700 pair counted
  * twice. The shape is sections 330 and 334's: the builder builds, every screen and case the
@@ -56,7 +56,7 @@ function workingModes(c: Container): number[] {
   return record.entries.filter(([key]) => key !== idle).map(([, target]) => caseQueued(c, target)!.operand);
 }
 
-test('section NNM: every start up screen, working screen page\'s chrome and activity keyed case of the thirteen compiles is the one built',
+test('section 336: every start up screen, working screen page\'s chrome and activity keyed case of the thirteen compiles is the one built',
      skipUnless(...ARCH14), () => {
   // The calibration. Each start up screen is built whole from its activity's name and compared part for
   // part, its texts at the compiler's one inline copy; each working screen page's chrome byte for byte,
@@ -84,7 +84,7 @@ test('section NNM: every start up screen, working screen page\'s chrome and acti
   });
 });
 
-test('section NNM: what the working screens queue, draw and map, read off the pages rather than through the builder',
+test('section 336: what the working screens queue, draw and map, read off the pages rather than through the builder',
      skipUnless(...ARCH14), () => {
   // The working screen's queued program is the activity menu's, and its key under Devices maps through
   // the record the device modes map it through: each read here off a page or a record of the other kind
@@ -134,7 +134,7 @@ test('section NNM: what the working screens queue, draw and map, read off the pa
   });
 });
 
-test('section NNM: the activity screen check refuses a line, a key, a program, a word, a picture or a case other than the built one',
+test('section 336: the activity screen check refuses a line, a key, a program, a word, a picture or a case other than the built one',
      skipUnless('h650_config_region'), () => {
   // Edits of `h650_config_region`, each where the compiler's screen is the built one, and each refused.
   // Activity 2 is TV kijken: its start up screen is mode 155 and its working screen mode 81, one page
@@ -196,7 +196,7 @@ test('section NNM: the activity screen check refuses a line, a key, a program, a
   // before this check runs.
 });
 
-test('section NNM: an activity composed on a Harmony 650, 600 and 700 passes the check its compiles pass',
+test('section 336: an activity composed on a Harmony 650, 600 and 700 passes the check its compiles pass',
      skipUnless('h650_config_region', 'h600_config', 'h700_config', 'h700_28_config_region'), () => {
   // Composed with its screens, its menu row and its own device list. The composed start up screen draws
   // the fixed lines by reference to the compiler's copy, and its working screen's chrome, key map and
@@ -242,7 +242,7 @@ test('section NNM: an activity composed on a Harmony 650, 600 and 700 passes the
   }
 });
 
-test('section NNM: the start up screen is the Harmony One\'s to choose, not the 600\'s, 650\'s or 700\'s',
+test('section 336: the start up screen is the Harmony One\'s to choose, not the 600\'s, 650\'s or 700\'s',
      skipUnless('h650_config_region'), () => {
   // Every start up screen on those remotes draws one picture, so asking for another activity's is refused
   // rather than ignored.

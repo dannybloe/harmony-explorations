@@ -48,7 +48,7 @@ export type ModeZeroModel = 'harmony-600' | 'harmony-650' | 'harmony-700';
 /** The key events a key list binds, as the tag's top two bits: release, press and repeat. Section 17. */
 const KEY_EVENTS = [1, KEY_EVENT_PRESS, 3] as const;
 /**
- * Scans 1 to 54, the 600's keypad; scan 0 is no key. Exported since section NNM, because an arch 14
+ * Scans 1 to 54, the 600's keypad; scan 0 is no key. Exported since section 336, because an arch 14
  * start up screen binds the press of exactly these, `activityScreenChrome`, and two copies of a range
  * are two copies until one of them moves.
  */

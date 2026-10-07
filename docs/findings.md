@@ -44739,7 +44739,7 @@ taken; none was overruled.
   pages.
 * `docs/config-format.md`, after section 330's table.
 
-## NNM. An arch 14 activity's start up screen, working screen and keyed cases, built instead of copied off another activity
+## 336. An arch 14 activity's start up screen, working screen and keyed cases, built instead of copied off another activity
 
 **Date:** 7 October 2026. **Status:** confirmed by calibration against Logitech's own compiles, with an
 edit of a compile that each check refuses; nothing written to a remote or to an account.

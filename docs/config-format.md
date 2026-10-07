@@ -893,7 +893,7 @@ entries: scan 25 as `0x72` on the first of the two records for the key under Dev
 | the key under Devices, 2 with the same cases | activities and idle | enter its own device list, "Activity" at the bottom | enter the one saying "Activities" |
 | keypad map, 1 | activities only | `0x1F` with `0xFF00 | entry`, its own, 13 of 13 | none |
 
-**An activity's two screens and its cases, built**, section NNM, on the 40 activities, 63 working pages
+**An activity's two screens and its cases, built**, section 336, on the 40 activities, 63 working pages
 and 186 cases of the thirteen compiles; `activityScreenChrome` builds them and `checkActivityScreens`
 checks every activity against what is built:
 

@@ -3433,7 +3433,7 @@ interface DevicePageLook {
   activitiesSingle: string;
   activitiesBattery: string;
   /**
-   * An activity's own two screens, section NNM, `todo-compile-650.md` 6.2.10: the picture every start up
+   * An activity's own two screens, section 336, `todo-compile-650.md` 6.2.10: the picture every start up
    * screen draws, one per look and the same for every activity, 40 of 40 on the thirteen compiles, and
    * the background of a working screen page holding two commands or more, 42 pages of 42. A working page
    * of one command or none draws `activitiesSingle`, the activity menu's page of one activity, 21 of 21,
@@ -3492,7 +3492,7 @@ const SCREEN_SWITCH_ONE_BYTE = 0x12;
  * The chrome a four slot page draws around its middle, every piece built or located: the background by
  * how many items the page holds, the queued program, the two bars and the bottom word. A device mode
  * page's, `DeviceModeChrome`, and an activity's working screen's, `ActivityScreenChrome`, are each one of
- * these, and differ in the word, the two backgrounds and the queued program, section NNM.
+ * these, and differ in the word, the two backgrounds and the queued program, section 336.
  */
 export interface PageFrame {
   look: string;
@@ -3714,7 +3714,7 @@ function deviceChromeTail(chrome: PageFrame, shifted: (address: number) => numbe
  * Every page of the given modes against the built chrome: its background the one item picture when it
  * holds one item or none and the crossed one when it holds more, the head and the tail byte for byte,
  * and the bottom word either pointing at the built home or being that home. A disagreement is refused
- * with the page it is on. The device mode pages' check of section 330, and since section NNM the working
+ * with the page it is on. The device mode pages' check of section 330, and since section 336 the working
  * screens' too, with the working screen's own frame.
  */
 function checkPageFrames(c: Container, chrome: PageFrame, modes: readonly number[], what: string): number {
@@ -3764,7 +3764,7 @@ function checkPageFrames(c: Container, chrome: PageFrame, modes: readonly number
 
 /**
  * The chrome of a page around its middle, as `fourSlotPageProgram` and `compiledPageProgram` write it,
- * built from a frame: a device mode page's, and since section NNM an activity's working screen's.
+ * built from a frame: a device mode page's, and since section 336 an activity's working screen's.
  */
 interface PageChrome {
   headLength: number;
@@ -3832,7 +3832,7 @@ export function deviceModeKeyMap(c: Container, chrome: DeviceModeChrome): KeyMap
 /**
  * The operand the key under Devices is mapped with, `0x72` on `(record << 8) | counter`, read off the
  * activity menu, checked to be keyed on the activity counter and to name one of the two records
- * `activityKeyedRecords` finds under that key. Section 330 for a device mode, and since section NNM an
+ * `activityKeyedRecords` finds under that key. Section 330 for a device mode, and since section 336 an
  * activity's working screen maps the key with the same operand, 40 of 40 on the thirteen compiles.
  */
 function devicesKeyOperand(c: Container): number {
@@ -3881,7 +3881,7 @@ function checkDeviceModeKeyMaps(c: Container, built: readonly KeyMapEntry[]): vo
  * `todo-compile-650.md` 6.2.12.
  */
 interface FourSlotTemplate {
-  /** The chrome around a page's middle, built: a device page's, or a working screen's since section NNM. */
+  /** The chrome around a page's middle, built: a device page's, or a working screen's since section 336. */
   chrome: PageChrome;
   /** The device page chrome as built, whatever `chrome` is, for the key map's battery program. */
   device: DeviceModeChrome;
@@ -4755,7 +4755,7 @@ function menuPageDifference(c: Container, chrome: FourSlotMenuChrome, menu: numb
  * A program against built parts: instruction for instruction, every instruction that is not a text byte
  * for byte, and every text by its place and its glyph codes, whether drawn inline or by reference.
  * Returns the first difference, or undefined. The menu pages' comparison of section 334, and the start
- * up screens' since section NNM.
+ * up screens' since section 336.
  */
 function partsDifference(c: Container, parts: readonly MenuPart[], program: readonly ScreenInstruction[]): string | undefined {
   if (parts.length !== program.length) return `${program.length} instructions where ${parts.length} are built`;
@@ -4816,7 +4816,7 @@ export function checkFourSlotMenuPages(c: Container, options: { homes?: boolean 
  * Every text a program draws by reference pointing at its `inlineHomes` copy, and every text it draws
  * inline being that copy, which holds on a compiler's pages and not on a composed one's; refused with
  * the text and `where`. Section 334's half of the menu page check, and the start up screens' since
- * section NNM.
+ * section 336.
  */
 function assertTextsAtHome(
   c: Container, homes: ReadonlyMap<string, number>, program: readonly ScreenInstruction[], where: string,
@@ -5923,7 +5923,7 @@ export function activityMenuSingle(c: Container): number | undefined {
       if (picture !== undefined) counts.set(picture, (counts.get(picture) ?? 0) + 1);
     }
   }
-  // The most drawn, the lowest address on a tie. Since section NNM the working screens' own background is
+  // The most drawn, the lowest address on a tie. Since section 336 the working screens' own background is
   // located by content, `activityScreenChrome`, and it is this picture on the twelve compiles that hold it.
   return [...counts].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0]?.[0];
 }
@@ -6310,7 +6310,7 @@ export interface ComposeActivityScreenOptions {
    * That screen draws the activity's icon, so a television activity wants a television one. Without
    * it, on the Harmony One, the start up screen of the activity whose working screen served as the
    * template is used. **Harmony One only**: on a Harmony 600, 650 or 700 every start up screen draws one picture and is
-   * built, section NNM, so it is refused there rather than ignored.
+   * built, section 336, so it is refused there rather than ignored.
    */
   startupLike?: string;
 }
@@ -6469,12 +6469,12 @@ function appendValueMapCase(start: Container, map: number, key: number, program:
  * the Remote Assistant's branch, and `h600_config`'s reach it directly, `[3F D000, 7E working]`. That
  * second form is the one a composed activity takes. **Nor is the activity's own device list, here**:
  * the key under Devices of a composed activity opens the idle value's, the one saying "Activities", its
- * case built as `caseProgram` on `idleDeviceList` since section NNM, and `composeActivityDeviceList` then
+ * case built as `caseProgram` on `idleDeviceList` since section 336, and `composeActivityDeviceList` then
  * gives it a list of its own, section 294. Its centre
  * key leads back to the composed activity's working screen either way, through `CurrentLocation` and
  * the working screen record.
  *
- * **Since section NNM both screens and the four cases are built, `activityScreenChrome`**, where until
+ * **Since section 336 both screens and the four cases are built, `activityScreenChrome`**, where until
  * then the start up screen's picture, font and fixed lines and the working screen's chrome, backgrounds
  * and record were copied off the configuration's own activities. The start up font is still read,
  * `todo-compile-650.md` 6.2.12's.
@@ -6503,7 +6503,7 @@ const STARTUP_TITLE_SECOND_Y = 19;
 /**
  * Below the title every start up screen draws the same three lines, each centred in the start up font,
  * at y 82, 96 and 110, which is that font's height apart: 40 start up screens of 40 on the thirteen
- * compiles, section NNM. Built rather than copied off another activity's screen since then. **Fitted**:
+ * compiles, section 336. Built rather than copied off another activity's screen since then. **Fitted**:
  * every compile here draws them in English, so what a remote set to another language draws is not known,
  * and the places are measured for a start up font 14 high only, which `startupParts` refuses otherwise.
  */
@@ -6526,7 +6526,7 @@ interface Arch14Starts {
   /**
    * Per activity value: the working screen its start sequence ends on, the last `0x7E` of the deferred
    * list or of the Remote Assistant's branch below it, section 333; absent where neither reads, which
-   * `checkActivityScreens` refuses. Section NNM.
+   * `checkActivityScreens` refuses. Section 336.
    */
   endsOn: Map<number, number>;
 }
@@ -6813,7 +6813,7 @@ function caseOrderOf(keys: readonly number[]): number[] | undefined {
  * A base slot 14 case's program as the compiler writes every one an activity keyed record holds: queue
  * one action, `0x11` and its operand and opcode, then the end, five bytes. Every case of the working
  * screen, key under Devices and keypad map records has this shape on the thirteen compiles but the
- * working screen record's idle case, which queues a further record, section NNM; one derivation for the
+ * working screen record's idle case, which queues a further record, section 336; one derivation for the
  * composer and the check.
  */
 function caseProgram(opcode: number, operand: number): Uint8Array {
@@ -6865,7 +6865,7 @@ function startupFontOf(c: Container, starts: Arch14Starts): number {
 
 /**
  * An activity's start up screen and working screen chrome on a Harmony 600, 650 or 700, built,
- * `todo-compile-650.md` 6.2.10, section NNM:
+ * `todo-compile-650.md` 6.2.10, section 336:
  *
  * * **the start up screen** draws its look's `startup` picture at 0, 0, selects the start up font, draws
  *   "Starting" and the name, broken at `STARTUP_TITLE_MAX` and each line centred, and below it the three
@@ -7121,7 +7121,7 @@ function composeFourSlotActivityScreen(
     throw new ComposeError('every start up screen on a Harmony 600, 650 or 700 draws one picture, so there is '
       + 'no other activity\'s to show: startupLike is the Harmony One\'s');
   }
-  // Both screens and the cases are built, section NNM, and the configuration's own are checked against
+  // Both screens and the cases are built, section 336, and the configuration's own are checked against
   // what is built before anything moves.
   const chrome = activityScreenChrome(c);
   const device = fourSlotTemplate(c, undefined);

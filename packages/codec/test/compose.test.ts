@@ -3365,7 +3365,7 @@ test('an activity composed on a Harmony 650, 600 and 700 opens on a start up scr
     assert.deepEqual(drawn.map((one) => one.text),
                      ['Starting Play Audio', 'Please keep the', 'remote pointed at', 'your system']);
     // The title is drawn inline, or by reference where the configuration already draws the same line,
-    // as `h700_config`'s "Play Audio Cassette" draws "Starting Play Audio", section NNM.
+    // as `h700_config`'s "Play Audio Cassette" draws "Starting Play Audio", section 336.
     const title = screenProgram(after, startup.pages[0]!.program)!
       .find((one) => (one.opcode === 0x04 || one.opcode === 0x05) && one.operands[1] === 5)!;
     const width = drawnCodes(after, title).reduce((sum, code) =>
