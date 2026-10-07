@@ -12,9 +12,8 @@ because two copies of a fact are two copies until one of them moves.
 
 1. `todo-secure-logitech.md`: the plan, which item the task is, and what is already recorded on it.
 2. The `myharmony-service` skill: the accounts, the rails for writes, and the traps already met. **Load
-   it before anything that talks to the service.** Until item 1.1 is done it still describes the lab's
-   Python client as the only one; item 1.1 replaces that client with a script in this repository, and
-   corrects that skill in the same step.
+   it before anything that talks to the service.** The harvest itself is `packages/corpus/bin/harvest.ts`,
+   item 1.1; its header holds the rails and the usage.
 3. Per model, its reference folder in `reference/remotes/`. Only `harmony-650/` exists yet; item 3.2
    starts the others with a `features.md`, and from then on the model's own file is read, not guessed.
 

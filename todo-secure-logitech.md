@@ -33,7 +33,7 @@ have no command that writes.
 
 ## 1. The harvesting route
 
-- [ ] 1.1 A harvest script in this repository, TypeScript beside the codec, credentials from the environment as `make analyze` takes them: put a list of catalogue devices on a test account record, compile, fetch the file into the lab with a manifest naming every device, remove the devices; the lab's Python client is retired for these steps; when a compile fails, it splits the batch and retries the halves until the device that breaks it is found and set aside on a list of its own
+- [x] 1.1 A harvest script in this repository, TypeScript beside the codec, credentials from the environment as `make analyze` takes them: put a list of catalogue devices on a test account record, compile, fetch the file into the lab with a manifest naming every device, remove the devices; the lab's Python client is retired for these steps; when a compile fails, it splits the batch and retries the halves until the device that breaks it is found and set aside on a list of its own; built as `packages/corpus/bin/harvest.ts`, first run filed in the lab's `work/harvest/first-run/`: two devices in, a compile holding both out, the record empty again
 - [ ] 1.2 Compile the families for the Harmony One, which takes 15 devices per configuration against 8 on the 650, 700 and 350; first compile the same few devices for the 650 and the 350 too and compare the stored infrared, so a model that lays a family out differently is found before the bulk
 - [ ] 1.3 The pace: one compile at a time with a pause between, watching for refusals from the service
 - [ ] 1.4 The go-ahead for the account writes this track makes

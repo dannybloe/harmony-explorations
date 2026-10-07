@@ -47,11 +47,26 @@ Where Harmony Desktop's mirror is still the only source is the **per skin protoc
 file based family and the **parameter encoder** in `en.desktop-app-main.js`, both confirmed against
 hardware. Reach for it for those and for the `susKey`, and for nothing else.
 
-## The instrument lives in the lab, not in this repository
+## Two clients now, and which one to use
 
-`../lab/work/myharmony/probe.py` is the client. It handles a credential and talks to a live third
-party, which is why it is not in a public checkout. **Do not write a second client**; import probe
-and use its `call`, its login and its masking. Everything that matters about it:
+**For adding devices, compiling and removing devices, use the repository's client**:
+`packages/corpus/src/myharmony.ts` and `packages/corpus/bin/harvest.ts`, written on 7 October 2026 for
+`todo-secure-logitech.md` 1.1. The calls are the knowledge being secured, so they belong where this
+repository's checks can see them; the credentials still come from the lab's `credentials.env` (or
+`MYHARMONY_EMAIL<n>` and `MYHARMONY_PASSWORD<n>` in the environment), and every reply and compiled file
+is filed in the lab, never here. Its writes sit behind **the same named doors** as the lab client's, so a
+go-ahead for one door means the same thing for both. **For those three steps the lab client is retired**;
+do not extend it for them.
+
+**For everything else, the lab client below is still the instrument**: the other doors (adding a
+remote, migrating, `UpdateMyData`), the evidence directories, and the reads the earlier sections cite.
+A further kind of write goes into the repository's client, not into a third one.
+
+## The lab's client
+
+`../lab/work/myharmony/probe.py`. It handles a credential and talks to a live third party, which is why
+it was kept out of a public checkout until the repository's client existed. Import probe and use its
+`call`, its login and its masking rather than writing another Python client. Everything that matters about it:
 
 * `MYHARMONY_ACCOUNT=2 python3 probe.py` selects the account. Credentials come from
   `credentials.env` beside it (`MYHARMONY_EMAIL`/`MYHARMONY_PASSWORD`, suffix `2` for the second
