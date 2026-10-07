@@ -79,7 +79,7 @@ copied. **Every chapter ends with a configuration that works on the 650.**
   - [x] 6.2.6 Device page chrome and page programs: built by `deviceModeChrome` and checked against every device mode page, 639 of 639 on 13 compiles (section 330)
   - [x] 6.2.7 A device mode's key map, 47 entries, built by `deviceModeKeyMap` in the compiler's hash order, 83 of 83 maps (section 330)
   - [x] 6.2.8 The device mode and activity menu markers: one variable, 1 on every device row and 0 on every activity row, generated and checked (section 329)
-  - [ ] 6.2.9 Menu growth off existing pages (`growFourSlotMenu`, and `openFourSlotMenuPage` copying the last page's chrome)
+  - [x] 6.2.9 Menu growth off existing pages: every menu page built per kind by `fourSlotMenuChrome` and checked, 164 of 164 on 13 compiles (section 334)
   - [ ] 6.2.10 The start up and working screens off an existing activity's (`workingTemplate14`), and the Devices key's case
   - [ ] 6.2.11 An activity's own device list, copied from the idle list, its "Activity" word from another activity's list
   - [ ] 6.2.12 Letters and fonts off the configuration's own (`codesFor`, `fontThatSpells`)

@@ -41362,7 +41362,10 @@ menu passes `FOUR_SLOT_COUNTER_X`, the device mode pages' counter font, and `act
 **The new page** copies its menu's last page's chrome, the queued `0x73` included, puts the activity on
 the top row's two buttons with its label centred at y 35 in the last page's label font, or the nearest
 that spells it, and draws a counter; every other page is restated to the new total, and a menu of one
-page gains a counter after its title.
+page gains a counter after its title. **Corrected by section 334**: nothing of the new page but its fonts
+is copied or passed by the caller any more, the title's font read off the last page and the label's and
+the counter's fallback passed by the caller, `todo-compile-650.md` 6.2.12; `FourSlotNewPage` is gone, and the menu's kind decides the page through
+`fourSlotMenuChrome`, every page of the menu being checked against it.
 
 **`activityMenuSingle`** finds the working screens' base slot 14 record by what its cases do, as
 `activityMaps` does, without that function's two demands, that the keys be exactly the menu's activities
@@ -44582,3 +44585,156 @@ nothing. Each is corrected and the row walk is in the test.
 * `packages/codec/test/help.test.ts`: the tables above, on the thirteen compiles and the four hosts.
 * `docs/config-format.md`, base slot 9: the key stack's indirections and order, and where Help is
   bound; the arch 14 enter list: the assistant chain and the setting.
+
+## 334. An arch 14 menu page, built instead of copied off its menu's last page
+
+**Date:** 4 October 2026. **Status:** confirmed by calibration against Logitech's own compiles, with an
+edit of a compile's page that each of five checks refuses; nothing written to a remote or to an account.
+
+**Todo `todo-compile-650.md` 6.2.9.** Until here a four slot menu that grew took its new page off its own
+last page: `openFourSlotMenuPage` copied the instructions above the title and below the labels, and
+`growFourSlotMenu` took the background of a page growing from one item to two off one of the menu's full
+pages. Both now build the page from a rule per kind of menu, as section 330 built a device mode page, and
+the configuration's own menu pages are checked against what is built, before anything moves and again
+afterwards.
+
+**Sources checked**: this document, sections 285, 289, 293, 294, 312, 316, 317, 326 and 330, and the
+thirteen compiles section 312 lists. Neither firmware nor client was opened: all of it is what Logitech's
+compiler wrote, section 293's reasoned exemption. **The population** is those thirteen, the Harmony 700
+pair counted twice: 79 menus and 164 pages, 40 activity device lists of 75 pages, 13 idle device lists
+of 24, 13 two row device lists of 43 and 13 activity menus of 22.
+
+**Scope, decision 16.** Arch 14 (Harmony 600, 650 and 700) only. The Harmony One's menus are paged by a
+header and two page turn keys, section 293, and are not read here.
+
+### Four kinds of menu
+
+A menu's kind decides its title, its bottom word, its counter position, its queued program and its
+backgrounds. The idle device list, the one the key under Devices opens while no activity runs, is read
+the way the remote reaches it: the activity menu's `0x99` entry is `0x72` on `(record << 8) | counter`,
+and that record's case for the activity counter's starting value queues `0x7E` on the idle list. Every
+other corner list is an activity's own, section 294, and the list whose first page is two row is the
+one nothing enters, section 326.
+
+| kind | title | bottom word | counter x | queued program |
+|---|---|---|---|---|
+| idle device list | Devices | Activities | `0x6A`, `0x71`, `0x76` | the device mode pages' battery program |
+| activity device list | Devices | Activity | `0x6A`, `0x71`, `0x76` | the device mode pages' battery program |
+| two row device list | Devices | Activity | `0x63`, `0x6A`, `0x6F` | none |
+| activity menu | Activities | Devices | `0x6A`, `0x71`, `0x76` | the battery program drawing the look's activity menu battery icon |
+
+**The backgrounds are named by content per look**, extending section 330's look table with four pictures:
+the two row list's, which is one picture on all 43 of its pages whatever they hold, and on both colour looks
+is that look's crossed device page picture, the monochrome look's being one of its own; the activity menu's full page, on all 18 pages
+holding two activities; its page of one activity, on the 4 there are; and the activity menu's battery
+icon. Corner lists draw section 330's device page pictures: the single one on the 7 pages holding one
+device, the crossed one on the 92 holding more.
+
+**How wide each picture is measured differs per look**, which is worth knowing before a fourth compile
+disagrees. All 7 corner pages holding one device are on the colour look of 2026, on `h650_config_region`
+and `h700_28_config_region`, so on the other two looks a corner page of one device drawing section 330's
+single picture is that section's device page reading carried over, not a menu page seen to draw it. And
+the colour look of 2021 and 2023 has one pair of compiles, the Harmony 700's two, whose menus are
+identical, so its three menu pictures rest on one sample counted twice.
+
+**The activity menu's battery program is found by its icon, and it is another program than the device
+pages' on the colour looks only.** Base slot 11 holds two battery programs on the monochrome look and
+three on the colour looks, each a switch on variable 17 drawing one picture they share and an icon of
+its own. The activity menu queues the one drawing its look's activity menu icon: the second on all 11
+colour compiles, where the device pages queue the first, and the first on both monochrome ones, where
+the monochrome look's activity menu icon is the device pages' battery icon and the two kinds queue the
+same program. Which index the device pages' program has varies, 0 on six of the nine 2026 compiles and 1
+elsewhere, so the program is found by the picture it draws, never by index.
+
+**The page of one activity is found by two routes.** Section 316 found its picture as the activities'
+working screens' one command background through base slot 14, `activityMenuSingle`; here it is found by
+content. On 12 of the 13 compiles both find the same picture, and on 4 of those a menu page draws it,
+`h650_config_region`'s, `h600_config`'s and the Harmony 700 pair's; the other 8 hold it for their
+activities' working screens alone. On `calibration_h600` neither route finds it, since no program of that
+configuration draws it, so a row there that would open a page is refused, as it was.
+
+### Every page against the page built for it
+
+Every page of every menu is then the built page, 164 of 164: the background for how many places it
+holds; the queued program; the top bar; the title at 0, 2; the counter where the menu has two pages or
+more; the labels, corner ones by section 285's places and row ones centred at y 35 and 79; the bottom
+bar; the bottom word in the first font of the title's size that spells it, centred, at y 114; and the
+end, with a font selected only where another is in effect. The page record is six bytes, list then
+program, 164 of 164.
+
+**A text drawn by reference points at the lowest addressed inline copy of the same glyph codes, and every
+text drawn inline is that copy**, 164 of 164 pages: 152 titles drawn by reference and 12 inline, 138
+bottom words by reference and 26 inline, 420 counter texts by reference and 33 inline, 430 labels by
+reference and 123 inline. A composed page draws its counter and its label inline where the compiler would
+point at an existing copy, the kept difference of sections 294 and 312, so the check takes that half off
+for a composed configuration; the new page's title and bottom word do point at the compiler's copies.
+
+**What is still read off the configuration**: the fonts of the title, the counter and each label,
+`todo-compile-650.md` 6.2.12; which list is the idle one; and the addresses of the pictures and texts.
+
+### Controls
+
+Five checks each refuse an edit of `h650_config_region`, three of them of one byte: the activity menu's
+bottom word a pixel right; its queued program changed; a two row list's label a pixel right; an
+activity's own device list page drawing the crossed picture where it holds one device, a three byte
+picture pointer; and an activity's own device list drawing the idle list's word, pointed at "Activities"
+and moved to its centre, four bytes. The title, the counter, the bars, the font selects, the page record
+and the texts by reference have no control of their own here.
+
+**Refused rather than guessed**: a two line label on a row, which no page shows; a tenth page, whose
+counter would be two digits; a page whose picture the configuration does not hold, the activity menu's
+page of one activity on `calibration_h600`; a last page that is not the built page; and the European
+skins 69, 74 and 75, whose look section 330 refuses.
+
+### The composed output
+
+Composing onto the thirteen and `h650_plasma_base` with the codec before this section and after, one
+device, two devices, one activity and two activities on each, 56 compositions: 50 compose byte for byte
+alike, 3 differ in their bytes, and 3 refuse in both:
+
+* `h600_config` with one device and with two, and `calibration_h600` with two, differ, each difference
+  being the page now built: the new page's title and bottom word are drawn by reference to the
+  compiler's copy where the copied page drew them inline, which is what the compiler's own pages do, so
+  the composed file is 19 bytes shorter on both `h600_config` compositions and 14 on `calibration_h600`'s;
+  every address after it moves by that much, and so do the digit references of the counters restated on
+  other pages.
+* `h700_power_hold_compile_3` with two devices refuses in both with the same message, over a delay
+  variable past what a write opcode names.
+* `calibration_h600` with one activity and with two refuses in both, now with a message naming the
+  missing picture rather than the working screens.
+
+### Review
+
+Both of the `finding` skill's reviewers ran on the whole diff after the rebase onto section 333.
+
+**The blind one**, given the questions and the thirteen compiles and none of this section, used only the
+older readers and found the same population, 79 menus and 164 pages split by kind as above, the same titles,
+bottom words and counter positions, the same backgrounds, the six byte page record, the same text
+totals with no reference pointing anywhere but the lowest inline copy, and the two routes agreeing.
+It disagreed in one place, and was right: on both monochrome compiles the activity menu queues the same
+program as the device pages, where this section said "another battery program than the device pages"
+unscoped. Measured again with `fourSlotMenuChrome` and corrected above; the test had asserted the right
+split all along, so the sentence was a passenger beside it.
+
+**The audit** re-ran all 56 compositions with the codec of section 333 and this one and found the split
+written here wrong in its own terms, "one refuses in both" beside two more that did; and "a one byte
+control per check" true of three checks of eleven; the correction of section 316 claiming the caller
+passes nothing, where it still passes two fonts; the two row picture's equality with the crossed one
+stated for one colour look where it holds on both; two assertions of the second test true by
+construction, which now read the queued program and the picture off every page of those menus and fail
+under a control; the kind row's "79 of 79" counting a classifier against itself; and the per look reach
+of the corner and 2021 and 2023 pictures, now stated. It also measured the passenger in `inlineHomes`'s
+docstring, that device mode pages point at the lowest inline copy too: 4613 texts by reference and 2336
+inline on 639 pages, no exception, recorded there as measured and not asserted. Every objection was
+taken; none was overruled.
+
+### Code
+
+* `packages/codec/src/compose.ts`: `FourSlotMenuKind`, `fourSlotMenus`, `fourSlotMenuChrome`,
+  `checkFourSlotMenuPages`, the menu pictures in `DEVICE_PAGE_LOOKS`, `batteryPrograms`, `bottomWord`
+  and `inlineHomes`; `growFourSlotMenu` and `openFourSlotMenuPage` building and checking their pages, and
+  `FourSlotNewPage` and `fourSlotCounterX` removed, the caller stating only the label's font and the
+  counter's fallback font, which are 6.2.12's.
+* `packages/codec/test/menupage.test.ts`: the calibration, the two routes, the controls and the composed
+  pages.
+* `docs/config-format.md`, after section 330's table.
