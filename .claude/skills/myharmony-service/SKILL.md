@@ -357,9 +357,17 @@ Writes made the same day on the others, for scale: the 650 entry 3 add calls, th
 * **Volume per entry stays far below what triggered this**, about 42 device adds with their removals
   on one entry in one sitting. The safe number is not known, so the plan that resumes the harvest
   chooses one deliberately and spreads it over entries and over time.
-* **An entry with a made up serial** would spare the real remotes, and the lab has notes on making
-  them. It is untried for this purpose and may put the whole account at risk instead, so it is a
-  decision of its own.
+* **There is no made up serial to fall back on.** The service validates a serial when an entry is
+  registered and refuses an invented one, `ErrorCode` 5 from `ValidateRemote`, measured for a Harmony
+  880 and a Harmony 300 in `docs/findings.md` section 136. This bullet first said the route was untried,
+  which was wrong: it was tried and closed in August. So every entry that can compile carries a real
+  remote's serial.
+* **Whether a serial is blocked is a read**: `UserAccountDirector/GetGlobalRemote` with the entry's
+  `SerialNumber` answers `IsBanished`, the flag MyHarmony itself checks before a sync. On 7 October 2026
+  it was true for the spare Harmony One and for the **Harmony 525**, and false for the bench Harmony
+  600, 650 and 700 and for the 300 and 350 entries. When the 525 was blocked is not known; it may
+  explain why the second account's 600 entry, on the 525's serial, refused its very first add. The flag
+  only shows a block after the fact, so it protects nothing by itself.
 
 ## Rails that do not bend
 
