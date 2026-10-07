@@ -82,7 +82,7 @@ is the 650's test setup cut down to its device limit.
 Logitech's learning service, which names the family of a learned code, was dropped on 7 October 2026: a
 learned code is played back as it was captured and needs no name, whatever remote it was learned from.
 
-- [ ] 4.1 The latest firmware for every bench model, from the update service, filed in the lab where it is missing
+- [ ] 4.1 The latest firmware for every bench model, filed in the lab where it is missing: MyHarmony's own version list, `files.myharmony.com/Assets/Firmware/VersionDbDefaults2.xml`, still served and filed in the lab's `firmware/packages/versiondb/`, names the One 3.4, the 700 2.8, the 650 0.4, the 300 and 350 1.4.0, all held, and **the 600 0.3**, newer than any 600 image in the lab; every image it names answers 404 on that server while the list and the other assets still answer, so 0.3 is not obtainable this way
 - [ ] 4.2 Per bench model, the lists the service hands out beside the product table: its capabilities (captured for the 600 only) and its button list (the capture holds no list), all six models; settings are already captured for each
 
 ## 5. What lands in this repository

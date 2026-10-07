@@ -276,6 +276,20 @@ There is a second, keyless route for factory images only:
 `https://rcbu-prod-ssl-amr.myharmony.com/Firmware/<skin>/firmware_factory.hfw2`, which serves skin 99
 and skin 106 and answers 403 for every other skin.
 
+### MyHarmony's own version list, and the images it names are gone
+
+For the MyHarmony generation (skins 54, 66, 71, 72 and the like) MyHarmony does not ask the update
+service: it reads `firmwareVersionConfig`, which its runtime settings set to
+`https://files.myharmony.com/Assets/Firmware/VersionDbDefaults2.xml`, and builds a download from the
+`DownloadUrl` there with the asset base `https://files.myharmony.com/Assets/`. Read on 7 October 2026:
+the list is still served (filed in the lab's `firmware/packages/versiondb/`) and names fifteen models,
+among them the Harmony 600 at **0.3**, newer than the bench unit's 0.2, and the Harmony 650 at 0.4, the
+700 at 2.8, the One at 3.4 and the 300 and 350 at 1.4.0. **Every image it names answers 404**, while the
+list itself and the other assets on that server answer, so the images were removed rather than moved
+behind a path we got wrong. Not established: whether that 404 is where MyHarmony's sync of the 600 and
+the 700 stopped. It would fit a sync that requires the listed version first, and it does not fit the
+Harmony 650 at 0.2 having been programmed with MyHarmony while the list names 0.4.
+
 ### What is already downloaded, so nobody fetches it twice
 
 Eleven images sit in `../lab/firmware/packages/sus/` with a `META.md` and a `MANIFEST.json` of sizes,

@@ -1353,8 +1353,10 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
         # section 305.
         # 60 since `work/plan-4.3.4/`, section 309.
         # 63 since `work/ir-archive-raw/derived/`, todo-later 1.3.
-        self.assertEqual(len(rows), 67)
-        self.assertEqual(len(dict(rows)), 67, 'a duplicated path would make a query ambiguous')
+        # 69 since `work/test-setup/` and `work/harvest/`, todo-secure-logitech; both rows landed on 7
+        # October 2026 without this count, which stayed at 67 until the next run of this test.
+        self.assertEqual(len(rows), 69)
+        self.assertEqual(len(dict(rows)), 69, 'a duplicated path would make a query ambiguous')
         self.assertNotIn('unseen', dict(rows), 'the status legend is not an artefact')
 
     def test_a_query_is_answered_by_ancestors_and_by_descendants(self):
