@@ -348,7 +348,7 @@ export function composeSequence(c: Container, sequence: ComposeSequence): Compos
     }
     // On arch 14 a send opens with a delay step of three lists, section 287: a load and a condition
     // **private to the command**, then a delay list **shared by the device**, which queues its inter
-    // device delay while a start sequence runs. So a new send gets a new pair, laid out after it in
+    // device delay while a start, All Off or Help runs, section NNN. So a new send gets a new pair, laid out after it in
     // `composeDevice`'s order, calling the device's one delay list with the operands its other
     // commands' pairs carry. More than one delay list or operand for one device is a configuration this
     // was not measured on.

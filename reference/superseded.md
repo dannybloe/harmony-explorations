@@ -525,3 +525,9 @@ it reachable in the same commit and the test comparing the two tables is what ca
 | `does not implement action queueing` | section 326, 3 October 2026 | the same claim in its first form; the queue is reached through command state `0x34` |
 | `0 to 100 and never more` | section 327, 4 October 2026 | true of the twelve containers section 70 counted; Logitech's compiler writes a sequence's 20 second wait on the spare Harmony One as one `0x7C` of 200 per device, twelve in one configuration, and whether the remote waits all of it is unmeasured |
 | `copies the last page's chrome` | section 334, 4 October 2026 | said of a page added to a full arch 14 menu, the Harmony 600, 650 and 700's. The page is built per kind of menu, `fourSlotMenuChrome`, and every page of the menu is checked against what is built |
+| `acts only inside an activity's start` | section NNN, 7 October 2026 | said of the arch 14 inter device delay. The variable its step tests is raised by an activity's handlers, by the Off key map, which is All Off, and by the Help screens, and the bench Harmony 650 waits the delay in All Off |
+| `applies inside a start sequence and not on a device mode key press` | section NNN, 7 October 2026 | the same claim in `config-format.md`'s words; the device mode half stands, the start sequence half left out All Off and Help |
+| `acts only inside a start sequence` | section NNN, 7 October 2026 | the same claim in `todo.md`'s words |
+| `felt only inside a start sequence` | section NNN, 7 October 2026 | the same claim in section 287's scope |
+| `it only acts while an activity starts` | section NNN, 7 October 2026 | the same claim in `docs/status.md`'s words |
+| `runs only inside a start sequence` | section NNN, 7 October 2026 | the same claim in a docstring |

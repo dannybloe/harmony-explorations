@@ -1086,9 +1086,11 @@ export const INTER_DEVICE_DELAY_VALUES: readonly number[] =
  * **`load` and `condition` are private to the command and `delay` is shared by the device**: 1598
  * send lists of 1598 on the five arch 14 containers, the Harmony 600, 650 and 700, no `load` or
  * `condition` named by a second list and one `delay` per device. `start` is one variable per
- * configuration, which every list that writes it sets to 1 and back to 0 inside itself, three of
- * them on the 650 an activity's start sequence, section 285; so the delay is queued inside a start
- * sequence and not on a device mode key press, which is an inference and not a measurement. `variable` is the device's `InterDeviceDelay_<identifier>`, and `table` a base slot 14
+ * configuration, which every list that writes it sets to 1 and back to 0 inside itself. Those lists
+ * are an activity's handler lists, the Off key map's two, which are All Off, and the Help screens'
+ * enter handlers, and nothing a device mode key reaches, section NNN; so the delay is queued in an
+ * activity's start, in All Off and in Help and not on a device mode key press, and the bench Harmony
+ * 650 waits it in a start and in All Off. `variable` is the device's `InterDeviceDelay_<identifier>`, and `table` a base slot 14
  * record whose case for each value queues that many tenths for the device's group through
  * `QUEUE_INTER_DEVICE_DELAY`, which `interDeviceDelayCases` reads.
  */
@@ -1156,7 +1158,7 @@ export function sendPreludes(c: Container): SendPrelude[] {
 
 /**
  * The value a prelude's `load` puts in the byte register, which its `condition` then compares the
- * start variable against: 1, the value the start sequence holds the variable at while it runs.
+ * start variable against: 1, the value a start, All Off or a Help screen holds it at while it runs.
  */
 const SEND_PRELUDE_LOADED = 1;
 /**
@@ -1170,9 +1172,10 @@ const CONDITION_EQUAL = 0;
 /**
  * A prelude's `condition` operand for a configuration whose start sequence variable is `start`,
  * section 319: compare `start` for equality with what `load` put in the byte register, one arm, so
- * the delay list runs only inside a start sequence. Every bit but the variable's is a constant: the
- * high byte is 0 on 6100 of 6100, and the low byte is the variable each configuration's activities
- * set to 1 at the head of their start and back to 0 at its foot, section 289.
+ * the delay list runs only while a list raising that variable runs, which is an activity's start, All
+ * Off or a Help screen, section NNN. Every bit but the variable's is a constant: the high byte is 0 on
+ * 6100 of 6100, and the low byte is the variable each configuration's activities set to 1 at the head
+ * of their start and back to 0 at its foot, section 289.
  */
 export function sendPreludeCondition(start: number): number {
   if (!Number.isInteger(start) || start < 0 || start > 0xff) {

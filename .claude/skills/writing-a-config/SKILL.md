@@ -73,7 +73,9 @@ produce a config the remote accepts and mishandles.
   activity, not from a key. Why the firmware treats the two routes differently is unread. **On arch 14
   the `0x7F` in front is a delay step of three lists**, section 287: a load and a condition private to
   the command and a delay list shared by the device, whose base slot 14 table queues the device's inter
-  device delay, by inference while a start sequence runs. The composer emits all three, with the device's
+  device delay while a list raising the start variable runs: an activity's start, All Off or a Help
+  screen, and never a device mode key, section NNN, which watched it hold back the device's own
+  command on the Harmony 650. The composer emits all three, with the device's
   `InterDeviceDelay` variable and its table, and a writer adding a command by hand must too. **And
   switching an arch 14 device on runs the power command and then its power on delay**, section 288: a
   `0x72` on `PowerOnDelay_<identifier>` through a 451 case table that queues the wait a hundred tenths
