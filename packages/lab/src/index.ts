@@ -176,7 +176,7 @@ export const IMAGES: Readonly<Record<string, string>> = {
   h650_combined3_base: '20261007T0535Z-h650-pre-combined-3-region.bin',
   h650_kpn_gap_base: '20261007T0601Z-h650-pre-kpn-gap-region.bin',
   h650_denon_gap_base: '20261007T0610Z-h650-pre-denon-gap-region.bin',
-  // The delay between devices on the bench, section NNN. The two region reads above hold the
+  // The delay between devices on the bench, section 335. The two region reads above hold the
   // configuration the 650 ran the first and second bench runs on, every InterDeviceDelay at 5 and then
   // the KPN box's at 20; this is the file written for the third, the Denon's at 20 and the KPN box's
   // back at 5, which nothing read back off the remote afterwards. Then the three runs, in that order.
@@ -707,7 +707,7 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
     'h650_combined3_base',
     'h650_kpn_gap_base',
     'h650_denon_gap_base',
-    // The file written for section NNN's third bench run, a container already counted plus one
+    // The file written for section 335's third bench run, a container already counted plus one
     // variable's value and the stamps a write restamps.
     'h650_denon_gap_config',
     // External flash of the bench Harmony 700 from 0x000000, kept for the staged application at its

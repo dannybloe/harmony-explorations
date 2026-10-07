@@ -858,7 +858,7 @@ right after its title.
 
 **Every arch 14 activity's enter list opens with its own start up screen**, "Starting" and its name,
 then writes 1 into the variable every command's delay step tests, and ends by writing 0 into it, 13 of
-13, section 289. So the inter device delay acts inside an activity's start, and since section NNN also
+13, section 289. So the inter device delay acts inside an activity's start, and since section 335 also
 in All Off and in Help, which raise the same variable; a device's own command pressed in device mode
 reaches no list raising it.
 
@@ -975,7 +975,7 @@ bound keys sending that device's command.
 loading 1, then a list testing a variable against it with `0x71` and, while it matches, calling a list
 of the device's own that is one `0x72` on that device's `InterDeviceDelay` variable through a base slot
 14 table. The variable is 52, 46 and 59, and every list writing it sets it to 1 and back to 0 inside
-itself, 31, 27 and 50. **Those writers are, and are only**, section NNN, each reached by one tagged list
+itself, 31, 27 and 50. **Those writers are, and are only**, section 335, each reached by one tagged list
 entry: an activity's handler lists, tag 1 (its start), tag 2 (left) and tag 5 (selected again); the Off
 key map's tags 1 and 5, which is All Off, whose `0x72` queueing the all off list sits between raising
 the variable and lowering it; and a mode's enter handler, tag 6, on 16 of the 69 screens drawing "Exit
@@ -996,7 +996,7 @@ in device mode:
 section 287: 21 cases, 0 to 20 tenths, each a screen program queueing `0x67` with `(group << 8) | value`
 for the device's own group, so tables differ per device in that byte only, stored in the order 0 to 15,
 17, 16, 19, 18, 20. `load` and `condition` are private to each command, `delay` shared by the device,
-1598 of 1598. **What the queued kind 5 entry does is measured on the bench Harmony 650**, section NNN,
+1598 of 1598. **What the queued kind 5 entry does is measured on the bench Harmony 650**, section 335,
 and not read in the firmware: the value holds back the device's **own** command by a tenth of a
 second per unit, 15 units lengthening the silence before the Denon by 1.506 s in a start and 1.505 s in
 All Off, while the same change to the device sent before it left the start's silence at 0.620 s. The
@@ -2481,7 +2481,7 @@ service states the same inter device field in milliseconds, at exactly 100 times
 The power on delay is how long the remote waits after switching a device on before it will send that
 device anything; the inter device delay is how long it waits between two codes going to different
 devices, measured on the Harmony 650 as a wait in front of the device's own command that begins once
-the code before it has gone, section NNN, which assumes the instructions queueing them all ran first. The other four, `PowerOnDelayFlagCounter`, `PowerOnDelayFixingTriggered` and their inter
+the code before it has gone, section 335, which assumes the instructions queueing them all ran first. The other four, `PowerOnDelayFlagCounter`, `PowerOnDelayFixingTriggered` and their inter
 device twins, have maxima of 5 and 100 and are unread.
 
 **Only arch 14 carries the variables, and every architecture states the delay.** That is section

@@ -714,7 +714,7 @@ test('no command opens with the prelude on the Harmony One, the 525 or the arch 
 });
 
 /**
- * Section NNN. The start variable, `S`, is what every arch 14 command's delay step tests, section 287,
+ * Section 335. The start variable, `S`, is what every arch 14 command's delay step tests, section 287,
  * and here it is taken off the preludes' own condition so that nothing below is read off the lists it
  * classifies. Every list writing it, by every route that names a list: a base slot 9 handler set entry,
  * a mode record's entry or one of its pages' entries, a `0x7F` call, a screen instruction queueing a call
@@ -838,7 +838,7 @@ test('the start variable is written only by an activity\'s handlers, the Off key
 });
 
 /**
- * Section NNN, on the bench Harmony 650. Its activity Kijk TV switches the KPN box on and then the Denon,
+ * Section 335, on the bench Harmony 650. Its activity Kijk TV switches the KPN box on and then the Denon,
  * and All Off switches the KPN box and then the Denon off; three runs heard by the Flirc, every delay
  * between devices at 5 tenths but the television's 10, then the KPN box's at 20, then instead the
  * Denon's at 20. What is

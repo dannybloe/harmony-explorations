@@ -142,7 +142,7 @@ const CONTAINERS = [
   // The 650's region after section 309's one byte write, the compare base for the seventh device.
   'h650_seventh_base',
   // The 650's compare bases after the seventh device, todo-compile-650's bench files, and the file
-  // written for section NNN's third bench run.
+  // written for section 335's third bench run.
   'h650_combined_base',
   'h650_combined2_base',
   'h650_two_devices_base',
@@ -346,7 +346,7 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // the Panasonic television was added to it, section 305.
   // 97 since section 306's two compiles with the power hold test devices, 100 since 307's three, 101 since
   // 308's one, 102 since the 650's region before section 309's test device, 103 since the one after it.
-  // 112 with the 650's eight bench compare bases after the seventh device and section NNN's third
+  // 112 with the 650's eight bench compare bases after the seventh device and section 335's third
   // bench configuration, which had been registered without a vector.
   assert.equal(present.length, 112, 'every vector, which is what `make golden` compares');
   // 38 since the Harmony 895 landed: its key table reads with the existing reader even though
@@ -393,7 +393,7 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // Harmony 650's configuration with the Panasonic television, section 305.
   // 92 since section 306's two compiles, 95 since 307's three, 96 since 308's one, 97 since
   // the 650's region before section 309's test device, 98 since the one after it.
-  // 107 with the 650's eight bench compare bases and section NNN's third bench configuration.
+  // 107 with the 650's eight bench compare bases and section 335's third bench configuration.
   assert.equal(complete, 107, 'the vectors whose container has a key table at all');
 
   // **The number sender field, and why it needs its own guard.** It is an empty array on 30 vectors
@@ -444,7 +444,7 @@ test('the vectors carry the fields worth comparing, rather than being nearly emp
   // 58 since the Harmony 650's configuration with the Panasonic television, which declares none either.
   // 60 since section 306's two compiles, neither of which declares one, and 63 since 307's three, and
   // 64 since 308's one, and 65 since the 650's region before section 309's test device, 66 since the one after it.
-  // 75 with the 650's eight bench compare bases and section NNN's third bench configuration, none of
+  // 75 with the 650's eight bench compare bases and section 335's third bench configuration, none of
   // which declares one.
   assert.equal(senders.filter((one) => Array.isArray(one) && one.length === 0).length, 75);
   // **Four since the second compiled sample**, and the reason is the account rather than the request:
@@ -522,7 +522,7 @@ test('the list above covers exactly what the Python side writes a vector for', (
   // since it was put back, and 95 since the 650's configuration with the Panasonic television.
   // 97 since section 306's two compiles, 100 since 307's three, 101 since 308's one, and 102 since
   // the 650's region before section 309's test device, 103 since its region after it.
-  // 112 with the 650's eight bench compare bases and section NNN's third bench configuration.
+  // 112 with the 650's eight bench compare bases and section 335's third bench configuration.
   assert.equal(python.length, 112, 'the golden vectors, which is what `make golden` prints');
   assert.deepEqual([...CONTAINERS].sort(), python.sort());
 });

@@ -194,7 +194,7 @@ IMAGES = {
     'h650_combined3_base': '20261007T0535Z-h650-pre-combined-3-region.bin',
     'h650_kpn_gap_base': '20261007T0601Z-h650-pre-kpn-gap-region.bin',
     'h650_denon_gap_base': '20261007T0610Z-h650-pre-denon-gap-region.bin',
-    # The delay between devices on the bench, section NNN: the file written for the third run, and
+    # The delay between devices on the bench, section 335: the file written for the third run, and
     # the three runs in order.
     'h650_denon_gap_config': 'h650-denon-gap-2s.bin',
     'h650_gap_ir_all5': '20261007T054551Z-ir-test-harmony-650-help-does-nothing-and-the-gap-between-devices.json',
@@ -704,7 +704,7 @@ PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_confi
                       'h650_combined3_base',
                       'h650_kpn_gap_base',
                       'h650_denon_gap_base',
-                      # The file written for section NNN's third bench run.
+                      # The file written for section 335's third bench run.
                       'h650_denon_gap_config',
                       # External flash of the bench Harmony 700 from 0x000000, kept for the staged
                       # application; its container at 0x020000 is byte for byte `h700_gspm`.

@@ -467,7 +467,7 @@ export interface ComposeDevice {
   readonly interKeyDelay?: number;
   /**
    * Arch 14 only: the inter device delay in tenths of a second, 0 to 20, which an activity's start,
-   * All Off and Help queue in front of each of this device's commands, section NNN. Default
+   * All Off and Help queue in front of each of this device's commands, section 335. Default
    * `INTER_DEVICE_DELAY_DEFAULT`.
    */
   readonly interDeviceDelay?: number;
@@ -983,7 +983,7 @@ export function composeDevice(c: Container, device: ComposeDevice): ComposedDevi
  * `InterDeviceDelay_<identifier>` through a base slot 14 table whose case for each value queues that
  * many tenths for the device's group. So in an activity's start, in All Off and in Help, the lists
  * that raise that variable, each command waits its device's inter device delay, and a device's own
- * command pressed in device mode, which reaches no such list, does not, section NNN. The bench Harmony
+ * command pressed in device mode, which reaches no such list, does not, section 335. The bench Harmony
  * 650 shows it in a start and in All Off: the device's own command waits a tenth of a second per
  * unit, and the wait seems to begin once the code before it has gone, which assumes the list's
  * instructions all ran first. Sections 285 and 287 read this from three of the 650's start sequences

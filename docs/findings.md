@@ -52,7 +52,7 @@ wrong addresses. Section 18 has the correction. The remaining one is that the ar
 number is inferred, not read off a board. Errors are documented where they occurred rather
 than quietly fixed, so the rest can be calibrated against them.
 
-Sixty five have been found and corrected so far. **The newest is in section NNN**: sections 285 and
+Sixty five have been found and corrected so far. **The newest is in section 335**: sections 285 and
 287 read the delay between devices as acting only inside an activity's start, and four other files
 restated that as a fact, while the variable it waits on is raised by All Off and by the Help screens as
 well, which the search for that variable's writers missed because it did not walk tagged lists. **The one before it is
@@ -37312,7 +37312,7 @@ wide totals, so the counts in this section are over a wider population than `lab
   it and an activity starting it would get no inter device delay. Section 235 reads those variables.
   *Section 287 reads the cases and composes the call, the `InterDeviceDelay` variable and its table,
   and section 288 the power on delay; the other six delay variables are still not composed, so
-  `deviceDelays` still does not report it. Section NNN: the variable is raised in All Off and in Help
+  `deviceDelays` still does not report it. Section 335: the variable is raised in All Off and in Help
   as well as in a start, so the delay acts there too, and the bench Harmony 650 shows it in a start and
   in All Off.*
 
@@ -37594,7 +37594,7 @@ which repeats the first. Every send list has exactly this shape, and three thing
   inference**<!--superseded-->, from those three and from the variable being 0 at rest. What reaches the other 28 of
   the 650's writers is unread<!--superseded-->: the prose auditor found none of the 131 named by a `0x7F`, by a screen
   program queueing one, or by a state transition.
-  *Corrected by section NNN: the 28 are named by tagged lists, which that search did not walk, and they
+  *Corrected by section 335: the 28 are named by tagged lists, which that search did not walk, and they
   are six activity handler lists that are not a start, the Off key map's two lists and twenty Help
   screens' enter handlers. So the delay step acts in an activity's start, in All Off and in Help, which
   the bench Harmony 650 confirms for the first two, and not on a device mode key press, which no writer
@@ -37628,7 +37628,7 @@ screen is the likely reader and that is a guess. Not composed.
 `5 << 4 | group` and whose value is the operand's low byte, beside the send's kind 0 and the `0x7C`
 quantity's kind 4. **What the sender does with a kind 5 entry is unread.** That it is the inter device
 delay rests on the variable's name and on the operand carrying it, not on a firmware reading, so it is
-stated here as unconfirmed. *Section NNN measured it on the bench Harmony 650: the device's own value
+stated here as unconfirmed. *Section 335 measured it on the bench Harmony 650: the device's own value
 holds back that device's command by a tenth of a second per unit, and not as section 236's per device
 quantity would, since the wait began only once the device before it had sent. The firmware's handling
 is still unread.*
@@ -37698,7 +37698,7 @@ and 16 not checked here. The table's meaning: the configuration only, no image r
 built and read back on the Harmony 650's configuration, where the reader, the accounting, the round trip,
 the checksum and the index order all agree, and on `h600_config` by the four host test. **Nothing about it is measured on hardware**: an inter device delay is felt only
 inside a start sequence<!--superseded-->, so the first test is the composed activity of todo 1.4.4. *Measured since
-section NNN, on the bench Harmony 650, in an activity's start and in All Off.*
+section 335, on the bench Harmony 650, in an activity's start and in All Off.*
 
 ### The reviewers
 
@@ -37947,7 +37947,7 @@ the enter list opens by entering a start up screen of the activity's own, drawin
 name, then writes 1 into the variable section 287's condition tests, and its last instruction writes 0
 into it, 13 of 13, the variable being 52, 46, 47 and 59. **That is the evidence section 287's start
 sequence reading already rested on**, the 650's three being among the lists it counted, so this adds the
-count and not a new route. *Section NNN reads the other writers, the Off key map and the Help screens
+count and not a new route. *Section 335 reads the other writers, the Off key map and the Help screens
 among them, so the delay acts in All Off and Help as well.* What it means for a composer is the consequence: an activity whose enter list
 does not write that variable runs every command's inter device delay step with the condition false, so
 that delay does not act. **The power on delay is called with no such condition in front of it**, from
@@ -44756,7 +44756,7 @@ taken; none was overruled.
   pages.
 * `docs/config-format.md`, after section 330's table.
 
-## NNN. On the Harmony 650 the delay between devices holds back that device's own command, and on arch 14 it acts in All Off and Help as well as in an activity's start
+## 335. On the Harmony 650 the delay between devices holds back that device's own command, and on arch 14 it acts in All Off and Help as well as in an activity's start
 
 **Date:** 7 October 2026. **Status:** measured on the bench Harmony 650 with an infrared receiver, three
 runs, the second and third each differing from the first in one variable; the configuration half

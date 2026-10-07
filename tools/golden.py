@@ -129,7 +129,7 @@ CONTAINERS = (
     'h650_plasma_base',
     'h650_seventh_base',
     # The 650's compare bases after the seventh device, todo-compile-650's bench files, and the file
-    # written for section NNN's third bench run.
+    # written for section 335's third bench run.
     'h650_combined_base',
     'h650_combined2_base',
     'h650_two_devices_base',

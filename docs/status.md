@@ -841,7 +841,7 @@ Recorded on 29 August 2026 after an audit found the move had also planted a **se
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
 
 **The delay between devices has been watched on a Harmony 650, and it acts in All Off as well as when
-an activity starts, section NNN.** Each device has a setting for how long the remote pauses between
+an activity starts, section 335.** Each device has a setting for how long the remote pauses between
 devices. With both at half a second, the Denon's command came 0.62 s after the KPN box's finished when
 Kijk TV started and 0.61 s in All Off. Setting the KPN box's to two seconds left the start at 0.62 s
 (that run's All Off was heard too poorly to time); setting the Denon's to two seconds made it 2.13 s
@@ -997,7 +997,7 @@ commands built earlier will not act; whether the power on delay needs it too is 
 own do, section 287.** Every command their compiler writes for those models first runs a small delay
 step, which by every sign is the device's own inter device delay, applied while an activity is starting
 up and not when a key is pressed in device mode; the remote has not been watched doing it. *Watched since
-section NNN, on the Harmony 650, and it acts in All Off and Help too, not only while an activity
+section 335, on the Harmony 650, and it acts in All Off and Help too, not only while an activity
 starts.* That step is three short lists per
 command, two of them belonging to that one command and the third to the device, and a table per
 device that turns its delay setting, 0 to 2 seconds, into what the remote queues. Measured on all 1598 commands of the
@@ -1010,7 +1010,7 @@ what all fifteen of Logitech's own devices with a power switch do on those confi
 a remote on these models, and that they act only while an activity starts<!--superseded--> rests on the Harmony One's
 measurement and on these configurations, which is what the composed activity will test. *Both have been
 seen on the Harmony 650 since, the power on delay in todo-compile-650 3.5 and the delay between devices
-in section NNN, which also acts in All Off and Help.*
+in section 335, which also acts in All Off and Help.*
 
 **And the Harmony 650 no longer opens Logitech's introduction tour after a write, section 286.** Every
 write reloads the configuration, and every reload started a ten screen tour that had to be pressed
