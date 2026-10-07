@@ -38,7 +38,7 @@ have no command that writes.
   - [x] 1.2.1 The 700 (lab `check-700`): all 197 infrared records identical to the 650's, so it needs no harvest of its own; the compile hung once and the whole retry succeeded
   - [x] 1.2.2 The 600: the service refused to add the two devices to the second test account's emptied record, "Cannot add device to the remote attached to the account", and syncing the remote failed in both MyHarmony and Harmony Desktop, the remote reading back unchanged; the two devices were set up by hand on the first test account's 600 entry, with one activity, and that entry compiled with a go-ahead, no device added or removed (lab `check-600-logitest`): 185 of the 650's 186 distinct infrared records identical, the remaining one and 9 extra records all of one 38 kHz timing, so not like for like with the 650's compile, which has no activity
   - [ ] 1.2.3 The 300 (lab `check-300`): not the same file as the 350's; four in five of its 32 byte pieces are in the 350's file in a different order, and of the 650's duration blocks found in either, 100 are in both, 6 only in the 350's and 1 only in the 300's. Whether the 300 needs a family harvest of its own, at 4 devices per compile, needs a decision
-- [ ] 1.3 The pace: one compile at a time with a pause between, watching for refusals from the service
+- [x] 1.3 The pace, rewritten on 7 October 2026 after the spare Harmony One was blocked: devices added to an entry once and left on, one compile per entry, separate sessions rather than a run, and a stop for good at the first refusal; the `myharmony-service` skill holds the incident and the rules
 - [x] 1.4 The go-ahead for the account writes: given for the first test account's Harmony One, 650, 700, 350 and 300 records and the second test account's 600 record (16318263), to be repurposed after their devices and activities are saved to the lab
 
 ## 2. The infrared families we cannot write
@@ -48,9 +48,9 @@ have no command that writes.
   - [ ] 2.2.1 Paused on 7 October 2026: the run on the first test account's Harmony One entry got the spare Harmony One's serial blocked by the service, after 3 compiles holding 7 devices (lab `work/harvest/families-one`); the incident and the rules are in the `myharmony-service` skill
   - [ ] 2.2.2 Why pausing costs little: of the 641 families, 482 lack only the number of times a press repeats the code, which Logitech's definitions state for 39 families and our compiles measured as three on 22 of 24 where unstated; the working idea is to default to the stated number or three, with a per device setting the user tries out, so the harvest is not needed for the infrared to work
   - [ ] 2.2.3 Resume only much slower, on a serial whose loss costs nothing (a Harmony One or 525 that may come from a friend), adding devices once and leaving them on, and stopping for good at the first refusal
-- [ ] 2.3 Check each compile holds the records of the families it was made for, so nothing is missing when the service is gone
+- [x] 2.3 Check each compile holds the records of the families it was made for: the 3 compiles filed before the pause hold 9 families over 7 devices, every frame the rhythm table builds found in the compile (610 of 610), and the 75 commands it cannot build, 73 of them in Microsoft 30 Bit and Philips Hurd 16 Bit LongToggle, present by record count; to repeat for any compile if 2.2 resumes
 - [ ] 2.4 The 10 families that write except for a few odd codes: compile a device holding those codes, and check the codes are in it
-- [ ] 2.5 The bench's KPN box, the Motorola VIP 1853 (Kreatel IP 22 Bit): already compiled on the 650, so check the lab copy is complete and needs no new compile
+- [x] 2.5 The bench's KPN box, the Motorola VIP 1853 (Kreatel IP 22 Bit): the 650's configuration in the lab (`h650_config_region`) holds all 38 of the catalogue entry's commands, every frame found, in a group of 51 records, so it needs no new compile
 
 ## 3. How the compiler handles every feature, on every supported model
 
