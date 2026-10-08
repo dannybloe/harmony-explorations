@@ -45558,8 +45558,12 @@ Logitech's compile still puts Muziek on the Listen to Music key, and Kodi kijken
 still holds no key, in both compiles. So an activity's type and its group on the account do not decide
 its key alone. What does is not established: the four activities keep their order and their handler sets,
 and the one difference in the inputs is Muziek's type. Section 314's six compiles with an empty Listen to
-Music key are two setups, and whether either holds fewer activities than keys is not checked here. So 3.11
-still has no compile of the 650's own setup with an empty key.
+Music key are two setups, and over those thirteen compiles and this pair, fifteen in all, a key is empty
+exactly where the activities number two: all six with two activities leave Listen to Music empty, and the
+two with three, five with four and two with five fill all three keys. That is the pattern and not its
+cause, since no compile here holds three activities with one of them `Custom`. So 3.11 still has no
+compile of the 650's own setup with an empty key, and the route the pattern points to is a setup of two
+activities.
 
 ### Scope, decision 16
 
@@ -45576,6 +45580,7 @@ All Off leaves it out; for the key, a compile where saving an activity as `Custo
 * `packages/codec/test/devicepower.test.ts`: the two starts' dropped writes, exactly, nothing added, and
   the All Off list in both compiles.
 * `packages/codec/test/activitykeys.test.ts`: the three keys and their activities in both compiles.
+  And the tally over the fifteen compiles: activities against empty keys, by count.
 * `packages/corpus/src/setup.ts`, `keepOnPayload` and `customPayload`, and the builder's `options` stage,
   with the door `MYHARMONY_ALLOW_FEATURE_WRITE` in `packages/corpus/src/myharmony.ts`.
 * `docs/config-format.md` under entry 1's activity keys.

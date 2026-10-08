@@ -238,3 +238,18 @@ test('an activity saved again as Custom keeps its Listen to Music key in Logitec
       ], name);
     }
   });
+
+test('in every compile measured a key is empty only where the activities number two, fewer than the keys',
+     skipUnless(...COMPILES, 'h650_start_config', 'h650_options_config'), () => {
+  // Section 340: the measurement behind todo-compile-650 3.11's next step. It states the pattern over
+  // these fifteen compiles and not its cause.
+  const seen = [...COMPILES, 'h650_start_config', 'h650_options_config'].map((name) => {
+    const c = parseConfig(require_(name));
+    return [activityList(c).length, keysOf(c).filter((one) => one.kind !== 'activity').map((one) => one.key).join(',')];
+  });
+  const tally = new Map<string, number>();
+  for (const [count, empty] of seen) tally.set(`${count}:${empty}`, (tally.get(`${count}:${empty}`) ?? 0) + 1);
+  assert.deepEqual(Object.fromEntries([...tally].sort()), {
+    '2:Listen to Music': 6, '3:': 2, '4:': 5, '5:': 2,
+  });
+});
