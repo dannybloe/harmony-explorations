@@ -185,6 +185,7 @@ const H650_DUMPS = new Set([
   'h650_denon_gap_base',
   'h650_clock_base',
   'h650_start_base',
+  'h650_bench_2_3_base',
 ]);
 
 /**

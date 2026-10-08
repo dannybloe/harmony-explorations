@@ -101,7 +101,8 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // 216 with the first harvest compile on the Harmony One and the Harmony 650, section 337.
   // 217 with the 650's region before todo-compile-650 1.3's clock check.
   // 219 with the starting setup's region and configuration, todo-compile-650 1.6.
-  assert.equal(Object.keys(pythonImages()).length, 219, 'every fixture tests/lab.py names');
+  // 220 with the bench 650's region after 2.3's write, the base for 3.9's.
+  assert.equal(Object.keys(pythonImages()).length, 220, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {
@@ -178,6 +179,7 @@ test('the two sides exclude the same fixtures from the parseable population', ()
   // 68 with those two harvest compiles, whose devices no remote ever held.
   // 69 with that region, whose container is `h650_denon_gap_config`.
   // 71 with the starting setup's configuration and its region, todo-compile-650 1.6.
-  assert.equal(names.length, 71, 'each one a container already counted, that container plus a known '
+  // 72 with the bench 650's region after 2.3's write.
+  assert.equal(names.length, 72, 'each one a container already counted, that container plus a known '
     + 'edit, or a compare base whose remote is not yet in the corpus');
 });

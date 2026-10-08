@@ -203,6 +203,8 @@ IMAGES = {
     # 650: the region and its configuration, the compare base for todo-compile-650's writes.
     'h650_start_base': '20261008T0721Z-h650-start-region.bin',
     'h650_start_config': '20261008T0722Z-h650-start-config.bin',
+    # The bench 650's region after todo-compile-650 2.3's write, the compare base for 3.9's.
+    'h650_bench_2_3_base': '20261008T0930Z-h650-bench-2-3-region.bin',
     'h650_gap_ir_all5': '20261007T054551Z-ir-test-harmony-650-help-does-nothing-and-the-gap-between-devices.json',
     'h650_gap_ir_kpn20': '20261007T060756Z-ir-test-harmony-650-the-kpn-box-s-delay-between-devices-at-2-s.json',
     'h650_gap_ir_denon20': '20261007T061443Z-ir-test-harmony-650-the-denon-s-delay-between-devices-at-2-s.json',
@@ -723,7 +725,7 @@ PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_confi
                       # The region before 1.3's clock check.
                       'h650_clock_base',
                       # The starting setup's compile as the 650 holds it, and its region.
-                      'h650_start_base', 'h650_start_config',
+                      'h650_start_base', 'h650_start_config', 'h650_bench_2_3_base',
                       # External flash of the bench Harmony 700 from 0x000000, kept for the staged
                       # application; its container at 0x020000 is byte for byte `h700_gspm`.
                       # Section 295.
