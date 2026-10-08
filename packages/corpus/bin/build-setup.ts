@@ -190,11 +190,15 @@ if (stage === 'compile') {
   // A name tree writes a space as an underscore.
   const holds = (name: string): boolean => text.includes(name) || text.includes(name.replaceAll(' ', '_'));
   const config = parse(payload);
+  // An activity's name is not stored as text the way a device's is, so it is checked through the
+  // reader: on the 650's starting setup none of the four names occurs in the bytes, and the reader
+  // names all four.
+  const activityNames = new Set(configActivities(config).map((one) => one.name));
   const report = {
     devicesCounted: configDevices(config).length,
-    activitiesCounted: configActivities(config).length,
+    activitiesCounted: activityNames.size,
     devicesMissing: setup.devices.map((one) => one.name).filter((name) => !holds(name)),
-    activitiesMissing: setup.activities.map((one) => one.name).filter((name) => !holds(name)),
+    activitiesMissing: setup.activities.map((one) => one.name).filter((name) => !activityNames.has(name)),
   };
   writeFileSync(join(dir, 'compile-check.json'), `${JSON.stringify(report, null, 1)}\n`);
   console.log(JSON.stringify(report));

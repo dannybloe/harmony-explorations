@@ -199,6 +199,10 @@ IMAGES = {
     'h650_denon_gap_config': 'h650-denon-gap-2s.bin',
     # The 650's region before todo-compile-650 1.3's clock check, container `h650_denon_gap_config`.
     'h650_clock_base': '20261008T0633Z-h650-clock-base-region.bin',
+    # todo-compile-650 1.5's starting setup, Logitech's compile synced by MyHarmony and read off the
+    # 650: the region and its configuration, the compare base for todo-compile-650's writes.
+    'h650_start_base': '20261008T0721Z-h650-start-region.bin',
+    'h650_start_config': '20261008T0722Z-h650-start-config.bin',
     'h650_gap_ir_all5': '20261007T054551Z-ir-test-harmony-650-help-does-nothing-and-the-gap-between-devices.json',
     'h650_gap_ir_kpn20': '20261007T060756Z-ir-test-harmony-650-the-kpn-box-s-delay-between-devices-at-2-s.json',
     'h650_gap_ir_denon20': '20261007T061443Z-ir-test-harmony-650-the-denon-s-delay-between-devices-at-2-s.json',
@@ -718,6 +722,8 @@ PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_confi
                       'h650_denon_gap_config',
                       # The region before 1.3's clock check.
                       'h650_clock_base',
+                      # The starting setup's compile as the 650 holds it, and its region.
+                      'h650_start_base', 'h650_start_config',
                       # External flash of the bench Harmony 700 from 0x000000, kept for the staged
                       # application; its container at 0x020000 is byte for byte `h700_gspm`.
                       # Section 295.

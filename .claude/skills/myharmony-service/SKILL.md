@@ -195,7 +195,18 @@ reasoning instead of querying.
   differ in about two thirds of their bytes (section 154).
 * **`DeviceManager/UpdateMultiple`** puts a catalogue appliance on an account, which is how the
   eighteen protocol families got their measured rhythms (sections 160 to 163). It is behind the
-  device door.
+  device door. A device added this way arrives with its input and power records already complete
+  (`UserFeatureManager/GetUserFeatures`), so nothing else is needed before an activity names its
+  inputs, measured on seven devices on 8 October 2026.
+* **`UserAccountDirector/SaveActivities`** puts an activity on a record, one call per activity,
+  behind its own door, `MYHARMONY_ALLOW_ACTIVITY_WRITE`. Read off MyHarmony's activity wizard and
+  first sent on 8 October 2026 by `packages/corpus/bin/build-setup.ts`, four activities, each
+  accepted and listed back. `packages/corpus/src/setup.ts` holds the payload and what each field
+  means; the service fills in the ids, the power order, the start screen and the group itself.
+* **A compile can hang at `Compiling`**, and on 8 October 2026 one polled for about fifty answers
+  ended in `ErrorCode` 3, "Internal Error", source `DeEncrypt`: the compile was dropped, not
+  refused. MyHarmony's own sync then compiled the same record and wrote it to the remote. So the
+  route past a hung compile is a sync from MyHarmony, or one fresh compile, never a series of them.
 * **`RemoteManager/AddRemoteToAccount`** works only with a serial `ValidateRemote` accepts: a real
   serial off real hardware passes (three brace wrapped GUIDs, the first sixteen `0xEE` bytes on
   every unit read here), a synthetic one is refused with `ErrorCode 5` (section 136). So a model
