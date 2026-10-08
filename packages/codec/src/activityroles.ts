@@ -32,10 +32,12 @@ import {
   ACTION_LIST_INDEX_OPCODE, handlerSets, modeRecords, taggedList,
 } from './sections.ts';
 import {
-  activities, deviceModeMaps, FOUR_SLOT_ITEMS, fourSlotCellAt, infraredCodesPerList,
+  activities, deviceModeMaps, devices, deviceVariables, FOUR_SLOT_ITEMS, fourSlotCellAt, INPUT_PROPERTY,
+  infraredCodesPerList, POWER_PROPERTY,
 } from './inventory.ts';
 import { characterMap, screenStrings } from './text.ts';
-import { ComposeError, type ComposeRow } from './compose.ts';
+import { ComposeError, type ComposeActivityTarget, type ComposeRow } from './compose.ts';
+import { activityStartTargets } from './inputs.ts';
 
 /** VolumeUp, VolumeDown and Mute on the Harmony 600, 650 and 700's keypad, `reference/button-maps.md`. */
 export const VOLUME_SCANS: readonly number[] = [14, 15, 16];
@@ -215,4 +217,109 @@ export function activityRolesFromSends(c: Container, activity: number): Activity
   }
   const control = [...tally].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0]?.[0];
   return { volume, control };
+}
+
+/**
+ * The jobs a device can do in an activity, by the names Logitech's contract gives their role types,
+ * `docs/myharmony/model.md`. A device listed with **none** of them is a pass through device, the
+ * contract's `PassThroughActivityRole`: one the signal passes through unaltered, an HDMI switch or an
+ * amplifier that only routes the picture. MyHarmony states it as a role of its own; here it is the
+ * empty list, because it does none of the jobs and the compile gives it nothing a job would.
+ */
+export type ActivityRoleName = 'Display' | 'Volume' | 'ChannelChanging' | 'PlayMovie' | 'PlayMedia' | 'PlayGame';
+
+/** The roles that make a device the control device when no device changes channels, section 323. */
+const PLAY_ROLES: readonly ActivityRoleName[] = ['PlayMovie', 'PlayMedia', 'PlayGame'];
+
+/** One device of an activity in the platform's terms: which device, its jobs, and its input. */
+export interface ActivityDevice {
+  /** The device, as an index into base slot 5's group array, as `ActivityRoles` names it. */
+  readonly group: number;
+  /** Its jobs in this activity. Empty is a pass through device, switched on and to its input only. */
+  readonly roles: readonly ActivityRoleName[];
+  /**
+   * The input the activity puts it on: what `inputTarget` gives for a composed device, or the device's
+   * own `Input` variable and a value for one already in the configuration. It must be this device's.
+   */
+  readonly input?: ComposeActivityTarget;
+}
+
+/** What `activityFromRoles` hands `composeActivity` and `activityKeysFromRoles`. */
+export interface ActivityFromRoles {
+  /** The start's writes in Logitech's order: power on, inputs, every other device off. */
+  readonly targets: ComposeActivityTarget[];
+  /** The volume and control devices, for `activityKeysFromRoles`. */
+  readonly roles: ActivityRoles;
+  /** The devices listed with no role, in the order given, for a caller to report. */
+  readonly passThrough: number[];
+}
+
+/**
+ * An activity stated the way MyHarmony states it, devices with roles, turned into what the composer
+ * takes: the start's writes and the two devices the keypad is built from. `todo-compile-650.md` 3.14,
+ * the pass through device.
+ *
+ * **Every device listed is switched on and put on its input, whatever its roles**, and that is the
+ * whole of what Logitech's compiler does for a pass through device. Measured on the one compile in the
+ * lab whose saved activity states one, `h650_start_config`'s "Kodi kijken" with the Ligawo HDMI switch
+ * saved under `PassThroughActivityRole` on Input 2: the switch's power is the third write of the
+ * start's power on list, after the television's and Kodi's, in the order the saved roles number their
+ * `PowerOnOrder`, 1 to 3; its input is the second write of the input list, after the television's; the
+ * same input write is in the list that picking the activity again runs; the switch is third on the
+ * activity's own device list; and **no key of the activity's keypad map and no item of its working
+ * screen sends one of its codes**. The other three activities of that compile hold the switch in their
+ * power off lists, as every device an activity does not use.
+ *
+ * **So the pass through role leaves no trace of its own in the compile.** A display device with no
+ * screen items has the same shape, "TV kijken"'s television in the same compile, so the role cannot be
+ * read back off a configuration, and the empty list here is the platform's statement carried as an
+ * input.
+ *
+ * The order of the start is `activityStartTargets`', which this calls rather than repeats: power on in
+ * the order the devices are listed, then their inputs in the same order, then 0 into every other
+ * device's power. A device with **no power variable**, an always on device such as a media player, is
+ * left out of the power writes and keeps its roles: Logitech's compiler writes an instruction of
+ * opcode and operand zero in its place, section 294, which `composeActivity` does not write.
+ *
+ * The roles go the way section 323 measured: the volume keys to the device with `Volume`, everything
+ * else to the one with `ChannelChanging`, or where none changes channels the one that plays. A display
+ * or a pass through device contributes no key. Two devices claiming one of those two jobs are refused,
+ * since the keypad follows only one.
+ */
+export function activityFromRoles(c: Container, listed: readonly ActivityDevice[]): ActivityFromRoles {
+  const variables = deviceVariables(c);
+  const byGroup = new Map(devices(c).map((one) => [one.group, one]));
+  const seen = new Set<number>();
+  const on: number[] = [];
+  const inputs: ComposeActivityTarget[] = [];
+  const passThrough: number[] = [];
+  for (const one of listed) {
+    const device = byGroup.get(one.group);
+    if (device === undefined) throw new ComposeError(`device ${one.group} is not a device of this configuration`);
+    if (seen.has(one.group)) throw new ComposeError(`device ${one.group} is listed twice`);
+    seen.add(one.group);
+    const own = variables.filter((variable) => device.variables.includes(variable.index));
+    const power = own.find((variable) => variable.property === POWER_PROPERTY);
+    if (power !== undefined) on.push(power.index);
+    const input = one.input;
+    if (input !== undefined) {
+      // An input target of another device would switch that device's input while this one stays where
+      // it was, and the start would read correctly to everything but the person watching.
+      if (own.find((variable) => variable.index === input.variable)?.property !== INPUT_PROPERTY) {
+        throw new ComposeError(`variable ${input.variable} is not device ${one.group}'s input`);
+      }
+      inputs.push(input);
+    }
+    if (one.roles.length === 0) passThrough.push(one.group);
+  }
+  const holding = (roles: readonly ActivityRoleName[]): number | undefined => {
+    const found = listed.filter((one) => one.roles.some((role) => roles.includes(role)));
+    if (found.length > 1) {
+      throw new ComposeError(`devices ${found.map((one) => one.group).join(' and ')} both hold ${roles.join(' or ')}`);
+    }
+    return found[0]?.group;
+  };
+  const volume = holding(['Volume']);
+  const control = holding(['ChannelChanging']) ?? holding(PLAY_ROLES);
+  return { targets: activityStartTargets(c, on, inputs), roles: { volume, control }, passThrough };
 }
