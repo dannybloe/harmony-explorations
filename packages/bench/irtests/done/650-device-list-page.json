@@ -1,0 +1,24 @@
+{
+  "name": "Harmony 650, a fifth device opens a second device list page",
+  "description": "todo-compile-650 2.3, one write of lab/work/bench-2-3/h650-issue36-plus-sony.bin: the contributed four device Harmony 650 configuration of harmony-decompiler issue 36 (h650_issue36_config) with the Sony DAV-C540 composed onto it as 'Sony HT', four commands, Power, Vol+, Vol- and Mute. The four devices filled every corner list, so the composer opened a page on each: the idle list and both activities' own lists go from one page to two, and the two row list nobody reaches from two to three (section 326). Predicted: every reachable list reads 1/2 and then 2/2 with Sony HT top left alone, its row enters a page titled 'Sony HT', and its four keys each send a Sony code. Sony HT is in no activity, so All Off sends nothing for it. Keep the remote pointed at the Flirc. The three buttons below the screen are the left arrow, the centre button and the right arrow; the four buttons beside the screen each choose the label in the corner next to them.",
+  "steps": [
+    {
+      "instruction": "Start on the remote's ordinary screen. Press the centre button below the screen ('Devices'). Expect 'Devices 1/2' with Virgin Media DVR top left, Zgemma DVR top right, Denon AV Receiver bottom left and Samsung TV bottom right, and 'Activities' at the bottom. The Flirc hears nothing"
+    },
+    {
+      "instruction": "Press the right arrow below the screen. Expect 'Devices 2/2' with Sony HT top left and the other three corners empty. The Flirc hears nothing"
+    },
+    {
+      "instruction": "Press the button beside Sony HT (top left). Expect a screen titled 'Sony HT' with Power top left, Vol+ top right, Vol- bottom left, Mute bottom right and 'Back' at the bottom. Press the button beside each of the four once, briefly, in that order, and mark each with the mark button. Expect the Flirc to hear a Sony code after each press"
+    },
+    {
+      "instruction": "Press the centre button ('Back'), then 'Activities' to return to the activity list. Start the first activity on it. Expect the Flirc to hear the contributed configuration's own devices, not Sony HT. When it has settled, press the centre button ('Devices'). Expect 'Devices 1/2' with four devices and 'Activity' at the bottom; press the right arrow and expect 'Devices 2/2' with Sony HT top left alone. Press the button beside Sony HT and then beside Power once. Expect a Sony code"
+    },
+    {
+      "instruction": "Do the same from the second activity: start it, press 'Devices', the right arrow, Sony HT, and Power once. Expect 'Devices 2/2' with Sony HT top left alone and a Sony code"
+    },
+    {
+      "instruction": "Press All Off. Expect the Flirc to hear the contributed devices switching off and nothing for Sony HT. If the Flirc hears a Sony code, mark it"
+    }
+  ]
+}
