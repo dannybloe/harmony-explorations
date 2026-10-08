@@ -107,15 +107,27 @@ export function credentials(selector: string, env: NodeJS.ProcessEnv = process.e
 }
 
 /**
+ * The least time between two requests of one session, decided on 8 October 2026: at least five to ten
+ * seconds between any two requests to Logitech's service, after the harvest of 7 October got a serial
+ * blocked. It is enforced here, in the one place every request passes, rather than left to each
+ * script's own pauses, because the harvest script's compile poll asked every three seconds.
+ */
+export const MINIMUM_GAP_MS = 10_000;
+
+/**
  * One logged in session. `onReply` sees every reply with the operation's name, which is how a caller
  * files the replies in the lab as evidence; this module never writes a file itself.
  */
 export class MyHarmonySession {
   private readonly jar = new Map<string, string>();
   private readonly onReply: (operation: string, reply: Reply) => void;
+  private readonly gapMs: number;
+  /** When the previous request was sent, so the next one waits out the gap from there. */
+  private lastSent = 0;
 
-  constructor(onReply: (operation: string, reply: Reply) => void = () => {}) {
+  constructor(onReply: (operation: string, reply: Reply) => void = () => {}, gapMs = MINIMUM_GAP_MS) {
     this.onReply = onReply;
+    this.gapMs = gapMs;
   }
 
   /** Log in. A refusal names only the status: their reply quotes the address and an account id. */
@@ -147,6 +159,9 @@ export class MyHarmonySession {
     const headers: Record<string, string> = { Accept: 'application/json' };
     if (method === 'POST') headers['Content-Type'] = 'application/json';
     if (this.jar.size > 0) headers['Cookie'] = [...this.jar].map(([k, v]) => `${k}=${v}`).join('; ');
+    const wait = this.lastSent + this.gapMs - Date.now();
+    if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
+    this.lastSent = Date.now();
     const answer = await fetch(url, {
       method, headers, signal: AbortSignal.timeout(90_000),
       ...(method === 'POST' ? { body: JSON.stringify(body ?? {}) } : {}),

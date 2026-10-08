@@ -7,7 +7,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { deflateRawSync } from 'node:zlib';
 
-import { ServiceRefusal, assertCallAllowed } from '../src/myharmony.ts';
+import { DEVICE_MANAGER, MINIMUM_GAP_MS, MyHarmonySession, ServiceRefusal, assertCallAllowed } from '../src/myharmony.ts';
 import {
   HarvestRefusal, addDeviceOperation, addRefusal, compileStatus, operationBag, pickMatch, readZip, splitBatch,
 } from '../src/harvest.ts';
@@ -111,4 +111,26 @@ test('the refusal a harvest stops at is told apart from every other failed add',
   assert.equal(addRefusal(500, refused), undefined);
   assert.equal(addRefusal(200, { UpdateMultipleResult: null }), undefined);
   assert.equal(addRefusal(400, null), undefined);
+});
+
+test('a session waits out the least gap between two requests, and the gap is at least ten seconds', async () => {
+  // Decided on 8 October 2026: five to ten seconds at least between requests to Logitech's service.
+  assert.ok(MINIMUM_GAP_MS >= 10_000);
+  // The fetch is replaced, so nothing leaves this machine; a short gap keeps the test quick.
+  const sent: number[] = [];
+  const real = globalThis.fetch;
+  globalThis.fetch = (async () => {
+    sent.push(Date.now());
+    return new Response('{}', { status: 200 });
+  }) as typeof fetch;
+  try {
+    const session = new MyHarmonySession(() => {}, 200);
+    await session.call('GetDevicesInAccount', DEVICE_MANAGER, {});
+    await session.call('GetDevicesInAccount', DEVICE_MANAGER, {});
+    await session.call('GetDevicesInAccount', DEVICE_MANAGER, {});
+  } finally {
+    globalThis.fetch = real;
+  }
+  assert.equal(sent.length, 3);
+  for (let at = 1; at < sent.length; at++) assert.ok((sent[at] as number) - (sent[at - 1] as number) >= 195, `gap ${at}`);
 });
