@@ -1,0 +1,24 @@
+{
+  "name": "Harmony 650, the Listen to Music key left empty",
+  "description": "Rerun of the first run, which rebooted at the button beside Muziek; a second test then started Muziek from the menu, and Kodi kijken after the 'add an Activity' screen, without a reboot. Keep the remote off the cable, pointed at the Flirc, and handle it gently. todo-compile-650 3.11. The remote holds Logitech's compile of the options setup (h650_options_config) with one change of ours: the Listen to Music key calls the two instruction list Logitech compiles for an empty key, remember the current screen and open mode 0, appended because this compile had none. Mode 0 reads 'Use the Harmony setup software to add an Activity on this button.' with 'Exit' above the centre key below the screen, which returns to the screen it came from (section 311). Predicted: the key opens that screen and sends nothing, Exit goes back, and Muziek still starts from the Activities menu, since it stays on the menu with no key. Keep the remote off the cable and pointed at the Flirc.",
+  "steps": [
+    {
+      "instruction": "Take the remote off the cable, point it at the Flirc and press All Off once. The Flirc may hear power off codes for whatever the remote still counted as on, or nothing. Mark when it is quiet"
+    },
+    {
+      "instruction": "On the ordinary screen, 'Activities 1/2' with Kodi kijken and Muziek, press the Listen to Music key. Expect the screen 'Use the Harmony setup software to add an Activity on this button.' with 'Exit' at the bottom, and the Flirc to hear nothing. Mark what the screen shows"
+    },
+    {
+      "instruction": "Press the centre key of the three below the screen, the one under 'Exit'. Expect to be back on 'Activities 1/2', and the Flirc to hear nothing"
+    },
+    {
+      "instruction": "Press the button beside Muziek. Expect 'Starting Muziek', Kodi's and the Sony's power codes and the Sony's Audio 2 input, then Muziek's own screen. Mark when it settles"
+    },
+    {
+      "instruction": "With Muziek running, press the Listen to Music key again. Expect the same 'add an Activity' screen and nothing heard. Then press the centre key under 'Exit': expect Muziek's own screen back, still with nothing heard"
+    },
+    {
+      "instruction": "Press All Off. Expect Kodi and the Sony switching off"
+    }
+  ]
+}

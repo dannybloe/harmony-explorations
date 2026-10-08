@@ -45651,3 +45651,70 @@ All Off leaves it out; for the key, a compile where saving an activity as `Custo
 * `packages/corpus/src/setup.ts`, `keepOnPayload` and `customPayload`, and the builder's `options` stage,
   with the door `MYHARMONY_ALLOW_FEATURE_WRITE` in `packages/corpus/src/myharmony.ts`.
 * `docs/config-format.md` under entry 1's activity keys.
+
+## 341. An activity key emptied on a compile that had all three taken opens the "add an Activity" screen, on the Harmony 650
+
+todo-compile-650 3.11's last part was to see an emptied key on the remote. Section 340 left two routes,
+both through Logitech's service: a setup of two activities, or a button map saved with one key left out.
+This took a third, which needs neither: build the empty key ourselves, from Logitech's own form of one.
+
+**Why it needed an append.** `clearActivityKey` is a same length edit and refuses on a configuration
+without the list an empty key calls, `[07 FFFD, 7E m]`, push the current mode and enter the placeholder
+mode, because Logitech compiles that list only while some key is empty (section 314). The options compile
+on the bench 650 (`h650_options_config`) has all three keys taken and no such list. So the list was
+appended with `appendActionLists`, the append `composeDevice` and `composeActivity` use, at the foot of
+the action table as list 9295, and `clearActivityKey` then pointed Listen to Music's press entry at it.
+
+**What it is against Logitech's.** The appended list is instruction for instruction the one Logitech wrote
+for the empty Listen to Music of `calibration_h600`, a Harmony 600 compile, and enters the same mode
+number, 0, which on the 650 draws "Use the Harmony setup software to add an Activity on this button."
+with "Exit". The Harmony 700's compiles enter mode 4, the same list with its own placeholder. The one
+difference is the list's index: Logitech's sits near the front of the table, 9 on the 600, and ours at the
+end, since the press entry names it by index and nothing else does. Every other structure the codec reads
+is unchanged: the 9295 lists below it, every handler set but entry 1, all 377 mode records, the activity
+menu. The file is 10 bytes longer, and every byte is claimed once.
+
+**On the bench.** Written with `write-config.ts` over `h650_options_base`, which a fresh read had matched
+byte for byte, twelve blocks since the inserted bytes move everything after the action table, and the whole
+configuration read back identical. Then, heard with the Flirc and watched on the screen:
+
+* Listen to Music opened the "add an Activity" screen and sent nothing; the centre key under "Exit"
+  returned to "Activities 1/2". So a key calling the list behaves as Logitech's design says, section 311.
+* Muziek, now on no key, started from the Activities menu: Kodi's and the Sony's power codes, and on the
+  first start three of the Sony's next input codes.
+* With Muziek running, Listen to Music opened the same screen and Exit returned to Muziek's.
+* Kodi kijken started from the menu straight after a visit to the "add an Activity" screen.
+
+**A reboot, seen once and not repeated.** In the first run the remote restarted at the button beside
+Muziek, straight after the "add an Activity" screen and Exit. A test separating the two causes, Muziek from
+the menu without the screen and another activity after it, was run twice without a restart; the first run
+was then repeated in full, followed by several more presses of the same sequence, again without one. During
+the extra presses after the separating test the remote was once put down hard on the bench, and a restart
+may have been seen then; it lay flat for the final run. That is recorded as what was seen and not as a
+cause: the restart is unexplained, like the dimmed screen in
+section 340, and its batteries had read 2.86 V the same day.
+
+**Sources.** Logitech's compiles for the list and its mode, section 311's reading of the 600's firmware for
+what push and enter do, and the bench. Logitech's client was not consulted for the bytes: MyHarmony cannot
+produce an empty key while there are three activities, section 340.
+
+### Scope, decision 16
+
+The Harmony 650's 0.2 build, one compile and one key, Listen to Music. Emptying Watch TV or Watch a Movie
+uses the same press entry form and is not tried on the remote; the Harmony 600 and 700 are not written; the
+Harmony One's activity keys are not compared (section 314).
+
+### Falsification
+
+A remote that restarts on the same sequence again, with the remote at rest; or a compile of Logitech's
+where an empty key calls something other than the two instruction list.
+
+### Where it lands
+
+* `packages/codec/test/activitykeys.test.ts`: the refusal on the options compile, the append, the list
+  equal to `calibration_h600`'s, the three keys after, the lists and menu unchanged, and the byte count.
+* `docs/config-format.md` under entry 1's activity keys, and the header of
+  `packages/codec/src/activitykeys.ts`.
+* The run files in the lab's `reads/`, `20261008T141329Z`, `20261008T142549Z`, `20261008T142833Z` and
+  `20261008T143827Z`, and the configuration in `work/bench-3-11/`.
+

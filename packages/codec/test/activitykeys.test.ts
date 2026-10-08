@@ -18,6 +18,7 @@ import {
   activityKeyEntry,
   activityKeys,
   activityOfSet,
+  appendActionLists,
   applyEdits,
   clearActivityKey,
   ComposeError,
@@ -30,6 +31,7 @@ import {
   parse,
   placeholderList,
   placeholderMode,
+  restamped,
   roundTrip,
   setActivityKey,
   stateVariables,
@@ -253,3 +255,42 @@ test('in every compile measured a key is empty only where the activities number 
     '2:Listen to Music': 6, '3:': 2, '4:': 5, '5:': 2,
   });
 });
+
+test('a key is emptied on a compile with all three taken by appending Logitech\'s list first, and the rest reads as before',
+  skipUnless('h650_options_config', 'calibration_h600'), () => {
+    // Section 341, todo-compile-650 3.11: the configuration written to the bench Harmony 650, where the
+    // key opened the "add an Activity" screen and Exit returned. Logitech compiles the list only while a
+    // key is empty, so on this compile the same length edit refuses and an append has to come first.
+    const base = parse(require_('h650_options_config'));
+    assert.equal(placeholderList(base), undefined, 'the compile holds no list entering the placeholder');
+    assert.throws(() => clearActivityKey(base, 'Listen to Music'), EditError);
+    const mode = placeholderMode(base);
+    assert.equal(mode, 0, 'mode 0 is the "add an Activity" screen on the 650');
+    const appended = appendActionLists(base, [[[0xfffd, 0x07], [mode!, 0x7e]]]);
+    const withList = parse(restamped(appended.bytes));
+    const result = parse(applyEdits(withList, clearActivityKey(withList, 'Listen to Music')).bytes);
+
+    // The list is Logitech's own, instruction for instruction: the Harmony 600's calibration compile,
+    // whose empty Listen to Music calls the same two steps into the same mode number.
+    const logitech = parse(require_('calibration_h600'));
+    assert.deepEqual(result.actionLists()![appended.first], logitech.actionLists()![placeholderList(logitech)!]);
+
+    const before = activityKeys(base);
+    const after = activityKeys(result);
+    assert.deepEqual(after.map((one) => [one.key, one.kind, one.set, one.list]), [
+      ['Watch TV', 'activity', before[0]!.set, undefined],
+      ['Watch a Movie', 'activity', before[1]!.set, undefined],
+      ['Listen to Music', 'placeholder', undefined, appended.first],
+    ]);
+    // Nothing else moved: the same action lists below the appended one, the same activities on the menu,
+    // and every byte claimed once, ten more than before.
+    assert.equal(appended.first, base.actionLists()!.length);
+    assert.deepEqual(result.actionLists()!.slice(0, appended.first), base.actionLists());
+    assert.deepEqual(activityList(result).map((one) => one.name), activityList(base).map((one) => one.name));
+    const was = coverage(base);
+    const now = coverage(result);
+    assert.equal(now.total - was.total, 10);
+    assert.equal(now.accounted, now.total);
+    assert.equal(now.overlaps.length, 0);
+    assert.ok(trailerAgrees(result));
+  });

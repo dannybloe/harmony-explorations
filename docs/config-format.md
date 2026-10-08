@@ -1264,7 +1264,9 @@ Both forms are the same length, so putting an activity on a key or emptying one 
 edit: `setActivityKey` and `clearActivityKey` in `packages/codec/src/activitykeys.ts`, and
 `composeActivity`'s `activityKey`. **Emptying needs list `p` to exist already**: Logitech compiles it
 only while some key is empty, 6 of the 13, which are two setups, and adding it is a length change, so the edit refuses on a
-configuration without it. Arch 12 (Harmony One) is not compared.
+configuration without it. **Appending the list first works**: `appendActionLists` with `[07 FFFD, 7E m]`
+and then `clearActivityKey`, written to a Harmony 650 whose compile had all three keys taken, opened the
+"add an Activity" screen, [findings.md](findings.md) section 341. Arch 12 (Harmony One) is not compared.
 
 **Which activity a key gets is not its type alone**, [findings.md](findings.md) section 340: an
 activity saved again as `Custom`, its group read back as 0 on the account, kept the Listen to Music key

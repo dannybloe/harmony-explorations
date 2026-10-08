@@ -29,7 +29,10 @@
  * share about four setups between them. Creating one is a base slot 10 append,
  * which is a length change and belongs to the composers rather than to a same length editor. So a key
  * can be emptied on a configuration that holds the list, ours included once a key has been filled over
- * it, since filling a key leaves the list in place, and is refused on the others.
+ * it, since filling a key leaves the list in place, and is refused on the others. On those, append the
+ * list first with `appendActionLists`, `[[0xFFFD, 0x07], [placeholderMode(c), 0x7E]]`, then empty the
+ * key: done on a Harmony 650 whose compile had all three keys taken, where the key opened the screen and
+ * Exit returned, section 341.
  *
  * **Scope, decision 16**: arch 14 (Harmony 600, 650 and 700) only, which is where section 314 measured
  * it. The Harmony One's activity keys have not been compared and every function here refuses another
@@ -273,7 +276,7 @@ export function clearActivityKey(c: Container, key: ActivityKey): Edit[] {
     throw new EditError(
       `${key} cannot be emptied: this configuration holds no [07 FFFD, 7E placeholder] list, which `
         + 'Logitech compiles only while some activity key is already empty, and adding one is a length '
-        + 'change this same length edit does not make');
+        + 'change this same length edit does not make; append it first with appendActionLists, section 341');
   }
   if (list > 0xffff) throw new EditError(`list ${list} does not fit an operand`);
   return [{
