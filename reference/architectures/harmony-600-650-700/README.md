@@ -50,6 +50,7 @@ table's, third party, except the 600's monochrome panel, which is seen on the be
 | clock on screen | **none** | seen at the bench, 4 October 2026, `docs/how-a-harmony-works.md` |
 | long press | none | Logitech's service, `reference/capabilities.md` |
 | USB product id | `0xC122` for all three | measured, section 281 |
+| battery voltage over USB | in millivolts, `READ_MISC` `0x0C` detail 1, see [usb.md](usb.md) | firmware on all three, sent to the 650 only, sections 212 and 340 |
 | infrared | 2 transmitters, up to 50 ft, learning up to 200 kHz | all three manuals |
 | size | 8.75 x 2.3 x 1.3 inch, 6 oz | all three manuals |
 

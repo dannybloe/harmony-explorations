@@ -40,6 +40,14 @@ addresses given for the 600's 0.2 and the 700's 2.8. Two arch 14 only additions:
 section 283. Section 110 measured the configuration not loaded while a 600 was on the cable; the two
 are not reconciled anywhere, see the 650's [usb.md](../../remotes/harmony-650/usb.md).
 
+**The battery voltage can be read over USB**, `READ_MISC` selector `0x0C` detail 1: two bytes, high
+byte first, in millivolts, measured under load and so a little below what a meter shows on the cells.
+The firmware implements it on the 600 and 700 images and on the 650's build, section 212 and section
+340; it has been sent to the 650 only, and the 600 and 700 have not been asked. Logitech's client
+offers the reading for the Harmony One alone, so on these three models it is not a product feature.
+Detail 0 is one byte from a fixed data memory address; any other detail answers whatever the previous
+command left behind, which is why `packages/usb` refuses it.
+
 ## Write standing
 
 <!-- generated:write-rails -->
