@@ -85,6 +85,7 @@ The largest square and the least read. 6758 files, 1.1 GB.
 | `work/src-review-2026-08-13.md`, `work/test-sweep-2026-08-13.md` | our review notes | 2 | `catalogued` 30 August 2026 | | sections 139 to 143 |
 | `work/test-setup/` | our scan of which catalogue devices compose completely onto a Harmony 650 configuration | 1 | `catalogued` 7 October 2026 | | plan 006, todo-compile-650 1.4 |
 | `work/harvest/` | Logitech compiles gathered by `packages/corpus/bin/harvest.ts`, one folder per run with its manifest and every reply, and the repurposed records' state before | 2 | `catalogued` 7 October 2026 | | todo-secure-logitech |
+| `work/setups/` | Setups put on a test record and compiled by `packages/corpus/bin/build-setup.ts`, one folder per label with every reply, the compile and its check; the setups are left on the record | 2 | `catalogued` 8 October 2026 | | todo-compile-650 |
 
 ## Firmware
 
