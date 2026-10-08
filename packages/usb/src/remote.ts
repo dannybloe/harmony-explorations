@@ -47,6 +47,8 @@ import {
   getVersionRequest,
   readFlashRequest,
   readRamRequest,
+  hardwareFeatureRequest,
+  MISC_HARDWARE_FEATURE,
   ARCH_WITHOUT_A_RAM_READ,
   architectureFromVersion,
   regionOf,
@@ -324,6 +326,31 @@ export class HarmonyRemote {
       throw new RemoteError(`the remote echoed selector 0x${reply.selector.toString(16)}`);
     }
     return reply.value;
+  }
+
+  /**
+   * The hardware feature read, `READ_MISC` selector `0x0C`, section 212: detail 0 is one byte of data
+   * memory, which Logitech's client masks to a hardware flag, and detail 1 a sixteen bit value a
+   * routine computes, which the client calls the battery level. Returns the two bytes after the
+   * selector as the firmware sends them, **high byte first**: on the Harmony 650's 0.2 build the arm
+   * at `0x0CB44` fills `0xD64` and `0xD63`, high and low, detail 0 clearing the high byte and copying
+   * data memory `0x3FF` into the low one, detail 1 taking `PRODH` and `PRODL` from `0x11184`, and the
+   * sender at `0x0CB68` emits `0xD64` and then `0xD63`. So the reply's `word` is the value. Refused on
+   * arch 9 (Harmony 525) for the reason `readRam` gives: only selector `0x01` has a body there.
+   */
+  async readHardwareFeature(detail: number): Promise<Uint8Array> {
+    if (this.architecture === undefined) {
+      throw new RemoteError('the architecture is unknown; call getVersion() first');
+    }
+    if (this.architecture === ARCH_WITHOUT_A_RAM_READ) {
+      throw new RemoteError('a Harmony 525 has no READ_MISC body for selector 0x0c; docs/findings.md section 90');
+    }
+    const reply = await this.exchange(hardwareFeatureRequest(detail));
+    if (reply.kind !== 'misc') throw new RemoteError(`a hardware feature read answered with a ${reply.kind} reply`);
+    if (reply.selector !== MISC_HARDWARE_FEATURE) {
+      throw new RemoteError(`the remote echoed selector 0x${reply.selector.toString(16)}`);
+    }
+    return reply.bytes;
   }
 
   /**

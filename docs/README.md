@@ -785,6 +785,12 @@ node packages/usb/bin/read-ram.ts --address 0x... [--count 64] [--summary]
                        never moves from an address the remote does not serve, and on arch 9 it
                        is the second. --summary counts nonzero bytes, which is the question a
                        positive control asks. Opens the device.
+node packages/usb/bin/read-battery.ts
+                       ask a connected remote for its battery voltage, `READ_MISC` selector
+                       `0x0C` detail 1, and print it in millivolts, high byte first. It also
+                       reads detail 0 and the data memory byte it is built from, as an agreement
+                       check. Refused on arch 9, whose executor answers only selector 1. First
+                       sent to a Harmony 650, section 340. Opens the device.
 node packages/usb/bin/read-file-identity.ts [--product 0xc12b] [--raw]
                        read the identity of a remote in the **file based** family: open
                        `/sys/sysinfo` for reading, read it, close it. A different door from

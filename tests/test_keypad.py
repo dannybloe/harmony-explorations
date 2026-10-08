@@ -384,10 +384,6 @@ class TestTheArch8Keypad(unittest.TestCase):
         self.assertEqual(len(arch8_press_codes('arch8_config_880')), 53)
 
 
-if __name__ == '__main__':
-    unittest.main()
-
-
 class TestTheHarmony650RaisesThreeKeyEventsAndNoLongPress(unittest.TestCase):
     """findings.md section 340: on the bench Harmony 650's 0.2 build a key raises press, repeat and
     release and nothing else, so there is no long press event for an activity key to bind. The
@@ -429,3 +425,7 @@ class TestTheHarmony650RaisesThreeKeyEventsAndNoLongPress(unittest.TestCase):
         self.assertEqual(self.at(0x179D0, 4), bytes([0x00, 0x51, 0x64, 0x0D]))  # MOVF 0x200,W ; MULLW 100
         # Their starting values, 10 and 50.
         self.assertEqual(self.at(0x0E4E8, 8), bytes([0x0A, 0x0E, 0x00, 0x6F, 0x32, 0x0E, 0x01, 0x6F]))
+
+
+if __name__ == '__main__':
+    unittest.main()

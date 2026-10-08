@@ -2545,5 +2545,36 @@ class TestTheFlashWriteDataPath(unittest.TestCase):
         self.assertEqual(self.literal(self.ARCH12, 0x263C8), 0xF8)
 
 
+class TestTheHarmony650SendsTheBatteryLevelHighByteFirst(unittest.TestCase):
+    """findings.md section 340: `READ_MISC` selector `0x0C` on the Harmony 650's 0.2 build fills two
+    bytes, high and low, and sends the high one first. First sent to a remote there, it answered 2860
+    with 2.92 V across the cells on a multimeter, so the value is millivolts measured under load.
+
+    Read as bytes, so the test fails if the build moves.
+    """
+
+    BASE = 0x9000
+
+    def setUp(self):
+        self.code = lab.load('h650_bench_code')
+
+    def at(self, address, count):
+        return self.code[address - self.BASE:address - self.BASE + count]
+
+    def test_detail_0_clears_the_high_byte_and_copies_one_memory_byte_into_the_low(self):
+        # MOVLB 0xD ; CLRF 0xD64 ; MOVFF 0x3FF,0xD63
+        self.assertEqual(self.at(0x0CB4A, 8), bytes([0x0D, 0x01, 0x64, 0x6B, 0xFF, 0xC3, 0x63, 0xFD]))
+
+    def test_detail_1_takes_prodl_low_and_prodh_high(self):
+        # CALL 0x11184 ; MOVFF PRODL,0xD63 ; MOVFF PRODH,0xD64
+        self.assertEqual(self.at(0x0CB5A, 12), bytes([0xC2, 0xEC, 0x88, 0xF0, 0xF3, 0xCF, 0x63, 0xFD, 0xF4, 0xCF, 0x64, 0xFD]))
+
+    def test_the_sender_emits_the_high_byte_first(self):
+        # MOVFF 0xD64,0x707 ; ... CALL 0x1598A ; MOVFF 0xD63,0x707 ; ... CALL 0x1598A
+        self.assertEqual(self.at(0x0CB68, 4), bytes([0x64, 0xCD, 0x07, 0xF7]))
+        self.assertEqual(self.at(0x0CB74, 4), bytes([0x63, 0xCD, 0x07, 0xF7]))
+        self.assertEqual(self.at(0x0CB70, 4), self.at(0x0CB7C, 4))
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -580,3 +580,30 @@ test('the misc branch matches on the reply code, not on the whole first byte', (
   const usual = decodeReply(two);
   assert.equal(usual.kind === 'misc' && usual.word, 0x5a00);
 });
+
+test('the battery read is READ_MISC selector 0x0C with its detail, a read the transport passes, and a detail without an arm is refused', async () => {
+  const { hardwareFeatureRequest, isReadOnlyReport, HARDWARE_FEATURE_BATTERY, HARDWARE_FEATURE_FLAG, ProtocolError } =
+    await import('../src/index.ts');
+  // Section 212: the parameter's low byte picks the arm, 0 the flag byte and 1 the battery level.
+  const battery = hardwareFeatureRequest(HARDWARE_FEATURE_BATTERY);
+  assert.deepEqual([...battery.subarray(0, 4)], [...readMiscRequest(0x0c, 1).subarray(0, 4)]);
+  assert.deepEqual([...battery.subarray(1, 4)], [0x0c, 0x00, 0x01]);
+  assert.ok(isReadOnlyReport(battery));
+  assert.ok(isReadOnlyReport(hardwareFeatureRequest(HARDWARE_FEATURE_FLAG)));
+  // A detail above 1 answers whatever the previous command left, so it is never built.
+  assert.throws(() => hardwareFeatureRequest(2), ProtocolError);
+});
+
+test('a hardware feature reply carries its value high byte first, as the Harmony 650 sends it', () => {
+  // The 650's 0.2 build emits 0xD64 and then 0xD63, PRODH and then PRODL; the bytes are the first
+  // battery reading taken, on the bench 650, section 340.
+  const report = new Uint8Array(REPORT_SIZE);
+  report.set([MISC_REPLY, 0x0c, 0x0b, 0x2c]);
+  const reply = decodeReply(report);
+  assert.equal(reply.kind, 'misc');
+  if (reply.kind === 'misc') {
+    assert.equal(reply.selector, 0x0c);
+    assert.deepEqual([...reply.bytes], [0x0b, 0x2c]);
+    assert.equal(reply.word, 2860);
+  }
+});

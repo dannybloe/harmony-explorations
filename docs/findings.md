@@ -45572,8 +45572,18 @@ in the 0.2 build do not look like a battery reading: `0x11D18` clears it in an i
 `0x11D34` copies `0x3E9` into it, reached from three routines at `0x11D7E`, `0x11DA0` and `0x11DC6`,
 each of which pushes a byte pair into a 30 slot ring buffer at `0x3B7` (`0x11C28`, the count at `0x3B6`
 against `0x1E`) and, when the push succeeds, raises the variable to 1 or 2 if it is lower. What the
-buffer holds is not read, so section 317's reading is doubted here and not refuted. The firmware's own
-battery read, `READ_MISC` selector `0x0C` detail 1, section 212, has still never been sent.
+buffer holds is not read, so section 317's reading is doubted here and not refuted.
+
+**The battery read, first sent.** `READ_MISC` selector `0x0C` detail 1, section 212, which Logitech's
+client offers on the Harmony One alone, sent to the Harmony 650 by `packages/usb/bin/read-battery.ts`
+with those cells in and the cable in: it answered `0B 2C`, 2860. On the 650's 0.2 build the arm at
+`0x0CB44` fills `0xD64` and `0xD63` with the high and low bytes, detail 1 from `PRODH` and `PRODL`
+after `0x11184` and detail 0 as a cleared high byte and data memory `0x3FF`, and the sender at
+`0x0CB68` emits `0xD64` first, so the value is 2860. A multimeter across the cells, out of the remote,
+read **2.92 V**: so the value is millivolts, measured under load, and 2.86 V is not a flat battery. That
+makes low cells an unlikely explanation for the dimmed screen, though a dip while sending is not ruled
+out. Detail 0 answered `00 00` with `0x3FF` reading 0, which agrees and is a weak check, since both are
+zero. Section 212's "nothing here has asked a remote for either value yet" stops being true here.
 
 ### Making Muziek Custom
 
@@ -45631,6 +45641,9 @@ All Off leaves it out; for the key, a compile where saving an activity as `Custo
 
 * `packages/codec/test/devicepower.test.ts`: the two starts' dropped writes, exactly, nothing added, and
   the All Off list in both compiles.
+* `tests/test_usb_firmware.py`, `TestTheHarmony650SendsTheBatteryLevelHighByteFirst`, and
+  `packages/usb/test/protocol.test.ts`, the battery request and its reply's byte order;
+  `HarmonyRemote.readHardwareFeature` and `packages/usb/bin/read-battery.ts`.
 * `tests/test_keypad.py`, `TestTheHarmony650RaisesThreeKeyEventsAndNoLongPress`: the four ORs, that
   there are no others, and the per key delay with its starting values, as bytes.
 * `packages/codec/test/activitykeys.test.ts`: the three keys and their activities in both compiles.

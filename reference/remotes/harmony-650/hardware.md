@@ -21,7 +21,7 @@ again only where the 650 adds something.
 
 | | value | standing and source |
 |---|---|---|
-| cells | AA alkaline batteries | Logitech's manual, "Battery type AA Alkaline" |
+| cells | two AA alkaline batteries, so about 3 V when fresh | Logitech's manual names the type, "Battery type AA Alkaline", and not the count; two is the bench unit |
 | how many cells | not stated | **not checked** |
 | charging | none: the manual names batteries and no charger, where the Harmony 700's manual has a charging chapter and NiMH cells | Logitech's manual, both |
 | battery level in the firmware | four of the configuration's 19 pictures are drawn only by programs that switch on state variable 17, which this project **reads** as a battery gauge | inference, section 317; what variable 17 holds is **not checked**, and its writers in the firmware's 0.2 build raise it to 1 or 2 when a byte pair is queued, which is not the shape of a battery reading, section 340 |
@@ -47,7 +47,8 @@ checked**; `todo-compile-650.md` 4.3.3 is the open item.
 ## Not checked
 
 * The processor part on this unit, by any route other than the firmware.
-* How many cells, and the battery voltage the firmware treats as low.
+* The battery voltage the firmware treats as low, if it has one. The battery voltage itself can be read
+  over USB, in millivolts, `READ_MISC` selector `0x0C` detail 1, section 340.
 * Whether the 650 has a motion or tilt sensor.
 * The display controller and panel part: nothing names either for this architecture.
 * What else differs between hardware 1.1 and 1.2, beyond the panel.

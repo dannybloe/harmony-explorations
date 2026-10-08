@@ -389,8 +389,9 @@ export const MISC_INVALIDATE = 0x02;
  * free parameter.
  *
  * The client offers the battery reading on arch 12 (Harmony One) alone. Both arch 14 images
- * implement it identically, so that is a product decision of theirs rather than a capability, and
- * nothing here has asked a remote for either value yet.
+ * implement it identically, so that is a product decision of theirs rather than a capability. First
+ * sent to a Harmony 650, section 340: detail 1 answered 2860 against 2.92 V on a multimeter across the
+ * cells, so the battery level is millivolts, sent high byte first.
  */
 export const MISC_HARDWARE_FEATURE = 0x0c;
 /** One byte, of which the client reads bit 0. */
@@ -401,6 +402,14 @@ export const HARDWARE_FEATURE_DETAILS: readonly number[] = [
   HARDWARE_FEATURE_FLAG,
   HARDWARE_FEATURE_BATTERY,
 ];
+
+/** The `READ_MISC` request for one hardware feature detail, refusing any detail without an arm. */
+export function hardwareFeatureRequest(detail: number): Uint8Array {
+  if (!HARDWARE_FEATURE_DETAILS.includes(detail)) {
+    throw new ProtocolError(`hardware feature detail ${detail} has no arm and would answer stale bytes`);
+  }
+  return readMiscRequest(MISC_HARDWARE_FEATURE, detail);
+}
 
 export const READ_MISC_SELECTORS: readonly number[] = [0x01, 0x06, 0x07, MISC_HARDWARE_FEATURE];
 export const WRITE_MISC_SELECTORS: readonly number[] = [
