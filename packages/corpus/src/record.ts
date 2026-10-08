@@ -73,6 +73,15 @@ export async function compileRecord(session: MyHarmonySession, record: number, r
     { remoteId: { Value: remote, IsPersisted: true }, localeId: 'en-US', remoteSettings: settings.json }));
   const url = (started['StartCompileWithLocaleAndSettingsResult'] as { DownloadUrl?: string } | undefined)?.DownloadUrl;
   if (!url) return { status: 'no download url' };
+  return pollCompile(session, url, polls);
+}
+
+/**
+ * Poll a compile already started, by the download address its start answered with, until the compiler
+ * is done or `polls` answers have come back. Exported so a compile that outlasted one run can be fetched
+ * by a later run instead of being started again.
+ */
+export async function pollCompile(session: MyHarmonySession, url: string, polls = 40): Promise<CompileResult> {
   const [base, query = ''] = url.split('?');
   const token = query.split('CompilationId=').pop() ?? '';
   // The client polls the JSON variant until the compiler is done.

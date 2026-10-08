@@ -17,7 +17,9 @@
  *   and power records an activity's inputs are named against, into the lab.
  * * `activities` saves every setup activity the record does not already hold by that name, one
  *   `SaveActivities` each, in the setup's order (`MYHARMONY_ALLOW_ACTIVITY_WRITE=1`).
- * * `compile` compiles the record once (`MYHARMONY_ALLOW_COMPILE=1`) and files the result.
+ * * `compile` compiles the record once (`MYHARMONY_ALLOW_COMPILE=1`) and files the result. With
+ *   `--poll <download address>` it starts nothing and polls a compile an earlier run started and gave up
+ *   waiting for, which is a read.
  *
  * **Without `--commit` a stage writes nothing**: it signs in, reads the record and says what it would
  * send. Every reply is filed in the lab under `work/setups/<label>/replies/`, numbered on from the last.
@@ -40,7 +42,7 @@ import { ACCOUNT_DIRECTOR, ACCOUNT_MANAGER, DEVICE_MANAGER, MyHarmonySession, SV
 import {
   HarvestRefusal, PROTECTED_RECORDS, addDeviceOperation, addRefusal, operationBag, readZip, type HarvestDevice,
 } from '../src/harvest.ts';
-import { compileRecord, devicesOnRecord, expectOk, searchDevice } from '../src/record.ts';
+import { compileRecord, devicesOnRecord, expectOk, pollCompile, searchDevice } from '../src/record.ts';
 import { saveActivityPayload, type Setup } from '../src/setup.ts';
 
 function flag(name: string): string | undefined {
@@ -171,11 +173,12 @@ if (stage === 'activities') {
 }
 
 if (stage === 'compile') {
-  if (!commit) {
+  const earlier = flag('poll');
+  if (!commit && earlier === undefined) {
     console.log('dry run: the record would be compiled once; nothing was written');
     process.exit(0);
   }
-  const result = await compileRecord(session, record, remote);
+  const result = earlier === undefined ? await compileRecord(session, record, remote) : await pollCompile(session, earlier);
   if (result.zip === undefined) throw new HarvestRefusal(`compile ${result.status}${result.downloadUrl ? `, ${result.downloadUrl}` : ''}`);
   writeFileSync(join(dir, 'compile.zip'), result.zip);
   const files = readZip(result.zip);
