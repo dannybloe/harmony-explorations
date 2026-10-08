@@ -19,6 +19,12 @@ import type { ActivityRoleName } from '@harmony/codec';
 export interface SetupDevice {
   readonly name: string;
   readonly device: string;
+  /**
+   * MyHarmony's "I want to keep this device on when switching Activities and only turn it off when I
+   * press the Off button": `IsPoweredOnBetweenActivities` in the device's power feature, read in the
+   * client's power settings view. Absent means the default, off.
+   */
+  readonly poweredOnBetweenActivities?: boolean;
 }
 
 /**
@@ -107,5 +113,32 @@ export function saveActivityPayload(activity: SetupActivity, record: number, dev
       SuggestedDisplay: activity.type,
       Type: ACTIVITY_TYPES[activity.type],
     }],
+  };
+}
+
+/**
+ * A device's power feature as `GetUserFeatures` returned it, with the keep on flag set to `on`, as
+ * MyHarmony's power settings view saves it: the one feature, marked completed, in a list of its own.
+ * Every other member is carried through unchanged, so nothing but the flag can move.
+ */
+export function keepOnPayload(power: Record<string, unknown>, on: boolean): Record<string, unknown> {
+  if (!String(power['__type'] ?? '').startsWith('PowerFeature:')) throw new Error('not a power feature');
+  return { deviceFeatures: [{ ...power, IsPoweredOnBetweenActivities: on, State: FEATURE_COMPLETED }] };
+}
+
+/** `FeatureState.Completed`, the client's enum, whose two members are not completed and completed. */
+const FEATURE_COMPLETED = 1;
+
+/**
+ * An activity already on the record, as `ActivityList` returned it, saved again as a `Custom` activity,
+ * which holds no activity key. Only that change: the service picks an activity's key from its type, the
+ * client never sets the group itself, so the group is cleared with it and everything else is carried
+ * through, the id included, so the save replaces the activity rather than adding a second.
+ */
+export function customPayload(existing: Record<string, unknown>, record: number): Record<string, unknown> {
+  if (existing['Id'] === null || existing['Id'] === undefined) throw new Error('the activity has no id to replace');
+  return {
+    accountId: id(record),
+    activities: [{ ...existing, ActivityGroup: 0, SuggestedDisplay: 'Custom', Type: ACTIVITY_TYPES.Custom }],
   };
 }

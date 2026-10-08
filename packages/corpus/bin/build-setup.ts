@@ -6,7 +6,7 @@
  *
  * ```
  * node packages/corpus/bin/build-setup.ts --setup packages/corpus/setups/h650-start.json \
- *     --record 16326458 --model 72 --label h650-start --stage devices|activities|compile \
+ *     --record 16326458 --model 72 --label h650-start --stage devices|activities|options|compile \
  *     [--account 1] [--commit]
  * ```
  *
@@ -17,6 +17,11 @@
  *   and power records an activity's inputs are named against, into the lab.
  * * `activities` saves every setup activity the record does not already hold by that name, one
  *   `SaveActivities` each, in the setup's order (`MYHARMONY_ALLOW_ACTIVITY_WRITE=1`).
+ * * `options` changes what is already on the record to match the setup, for `todo-compile-650.md` 3.10
+ *   and 3.11: a device's keep on flag, `poweredOnBetweenActivities`, saved with `SaveUserFeatures`
+ *   (`MYHARMONY_ALLOW_FEATURE_WRITE=1`), and an activity the setup calls `Custom` that the record holds
+ *   as another type, saved again as `Custom` so it holds no activity key (`MYHARMONY_ALLOW_ACTIVITY_WRITE=1`).
+ *   Only those two changes; any other difference is refused rather than guessed at.
  * * `compile` compiles the record once (`MYHARMONY_ALLOW_COMPILE=1`) and files the result. With
  *   `--poll <download address>` it starts nothing and polls a compile an earlier run started and gave up
  *   waiting for, which is a read.
@@ -43,7 +48,7 @@ import {
   HarvestRefusal, PROTECTED_RECORDS, addDeviceOperation, addRefusal, operationBag, readZip, type HarvestDevice,
 } from '../src/harvest.ts';
 import { compileRecord, devicesOnRecord, expectOk, pollCompile, searchDevice } from '../src/record.ts';
-import { saveActivityPayload, type Setup } from '../src/setup.ts';
+import { customPayload, keepOnPayload, saveActivityPayload, type Setup } from '../src/setup.ts';
 
 function flag(name: string): string | undefined {
   const at = process.argv.indexOf(`--${name}`);
@@ -62,7 +67,7 @@ const model = required('model');
 const label = required('label');
 const stage = required('stage');
 const setup = JSON.parse(readFileSync(required('setup'), 'utf8')) as Setup;
-if (!['devices', 'activities', 'compile'].includes(stage)) throw new HarvestRefusal(`--stage ${stage} is not a stage`);
+if (!['devices', 'activities', 'options', 'compile'].includes(stage)) throw new HarvestRefusal(`--stage ${stage} is not a stage`);
 if (LAB === undefined) throw new HarvestRefusal('no lab: a setup files everything there');
 if (IR_ARCHIVE === undefined) throw new HarvestRefusal('no archive checkout: devices are named out of it');
 if (!/^[\w.-]+$/.test(label)) throw new HarvestRefusal(`--label ${label} is not a plain folder name`);
@@ -170,6 +175,69 @@ if (stage === 'activities') {
   } else {
     console.log('dry run: nothing was written');
   }
+}
+
+if (stage === 'options') {
+  const FEATURES = `${SVCS}/UserFeaturePlatform/UserFeatureManager.svc/json/`;
+  const missingDevices = setup.devices.filter((one) => !held.has(one.name));
+  if (missingDevices.length > 0) throw new HarvestRefusal(`run the devices stage first: ${missingDevices.length} missing`);
+  // The keep on flag, per device, against what the record holds now.
+  const reply = expectOk('GetUserFeatures', await session.call('GetUserFeatures', FEATURES, {
+    deviceIds: setup.devices.map((one) => ({ IsPersisted: true, Value: held.get(one.name)! })) }));
+  const byDevice = new Map(((reply['GetUserFeaturesResult'] ?? []) as { Key: { Value: number }; Value: Record<string, unknown>[] }[])
+    .map((one) => [one.Key.Value, one.Value]));
+  const flagChanges: { name: string; power: Record<string, unknown>; on: boolean }[] = [];
+  for (const one of setup.devices) {
+    const power = byDevice.get(held.get(one.name)!)?.find((f) => String(f['__type']).startsWith('PowerFeature:'));
+    if (power === undefined) throw new HarvestRefusal(`${one.name} has no power feature to change`);
+    const wanted = one.poweredOnBetweenActivities ?? false;
+    if (power['IsPoweredOnBetweenActivities'] !== wanted) flagChanges.push({ name: one.name, power, on: wanted });
+  }
+  // The activities whose type differs, of which only a change to Custom is made.
+  const list = await session.callAt('ActivityList', `${ACCOUNT_DIRECTOR}Account/${record}/ActivityList`, 'GET');
+  const existing = ((list.json as { Activities?: Record<string, unknown>[] } | undefined)?.Activities ?? []);
+  const retype: Record<string, unknown>[] = [];
+  for (const activity of setup.activities) {
+    const on = existing.filter((one) => one['Name'] === activity.name);
+    if (on.length !== 1) throw new HarvestRefusal(`record ${record} holds ${on.length} activities called ${activity.name}`);
+    if (on[0]!['SuggestedDisplay'] === activity.type) continue;
+    if (activity.type !== 'Custom') throw new HarvestRefusal(`${activity.name}: only a change to Custom is made here`);
+    retype.push(on[0]!);
+  }
+  for (const one of flagChanges) console.log(`  ${commit ? 'setting' : 'would set'} ${one.name}'s keep on flag to ${one.on}`);
+  for (const one of retype) console.log(`  ${commit ? 'saving' : 'would save'} ${String(one['Name'])} as Custom, which holds no activity key`);
+  if (!commit) {
+    console.log('dry run: nothing was written');
+    process.exit(0);
+  }
+  for (const one of flagChanges) {
+    // The operation returns nothing, so an empty body is a success; the read back below is the check.
+    const saved = await session.call('SaveUserFeatures', FEATURES, keepOnPayload(one.power, one.on));
+    if (saved.status !== 200) throw new HarvestRefusal(`SaveUserFeatures answered status ${saved.status}; stopping`);
+  }
+  for (const one of retype) {
+    expectOk('SaveActivities', await session.call('SaveActivities', ACCOUNT_DIRECTOR, customPayload(one, record)));
+  }
+  // Read both back, and refuse if either did not take or the activity count moved.
+  const features = expectOk('GetUserFeatures', await session.call('GetUserFeatures', FEATURES, {
+    deviceIds: setup.devices.map((one) => ({ IsPersisted: true, Value: held.get(one.name)! })) }));
+  const after = new Map(((features['GetUserFeaturesResult'] ?? []) as { Key: { Value: number }; Value: Record<string, unknown>[] }[])
+    .map((one) => [one.Key.Value, one.Value.find((f) => String(f['__type']).startsWith('PowerFeature:'))]));
+  for (const one of setup.devices) {
+    const now = after.get(held.get(one.name)!)?.['IsPoweredOnBetweenActivities'];
+    if (now !== (one.poweredOnBetweenActivities ?? false)) throw new HarvestRefusal(`${one.name}'s keep on flag reads ${String(now)} after saving`);
+  }
+  const listed = await session.callAt('ActivityList', `${ACCOUNT_DIRECTOR}Account/${record}/ActivityList`, 'GET');
+  const nowActivities = ((listed.json as { Activities?: Record<string, unknown>[] } | undefined)?.Activities ?? []);
+  if (nowActivities.length !== existing.length) {
+    throw new HarvestRefusal(`the record held ${existing.length} activities and holds ${nowActivities.length} after saving`);
+  }
+  for (const activity of setup.activities) {
+    const one = nowActivities.find((each) => each['Name'] === activity.name);
+    if (one?.['SuggestedDisplay'] !== activity.type) throw new HarvestRefusal(`${activity.name} reads ${String(one?.['SuggestedDisplay'])} after saving`);
+    console.log(`  ${activity.name}: ${String(one['SuggestedDisplay'])}, activity group ${String(one['ActivityGroup'])}`);
+  }
+  console.log('every keep on flag and activity type on the record matches the setup');
 }
 
 if (stage === 'compile') {

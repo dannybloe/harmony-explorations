@@ -53,6 +53,9 @@ export const DOORS: ReadonlyMap<string, string> = new Map([
   // Saving an activity, opened on 8 October 2026 for the Harmony 650's starting setup,
   // `todo-compile-650.md` 1.6; a kind of write the lab client never made.
   ['saveactivities', 'MYHARMONY_ALLOW_ACTIVITY_WRITE'],
+  // Saving a device's power feature, opened for `todo-compile-650.md` 3.10: MyHarmony's "keep this
+  // device on when switching Activities" is a flag in it, saved through this call alone.
+  ['saveuserfeatures', 'MYHARMONY_ALLOW_FEATURE_WRITE'],
 ]);
 
 /** A call this client will not send, with the reason, raised before any request exists. */
