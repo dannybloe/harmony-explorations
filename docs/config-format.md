@@ -1290,6 +1290,13 @@ maps, `reference/button-maps.md`. `activityKeysFromRoles` in
 no device mode binds scan 3, so a map built from roles never holds it, and Help then does nothing in
 that activity, [findings.md](findings.md) section 333.
 
+**A pass through device**, one in an activity that MyHarmony gives no role, an HDMI switch the picture
+only passes through, is switched on in the activity's start and set to its input, and bound no key and
+no screen item, [findings.md](findings.md) section 339. Measured on one Logitech compile with the role
+stated, the Harmony 650's starting setup; a contributed Harmony 700 configuration has the same shape
+with the role inferred. Nothing in a configuration states the role: a display device with no key and no
+screen item looks the same. `activityFromRoles` in `packages/codec/src/activityroles.ts`.
+
 **An activity's screen commands are its devices' own screen items**, same section: on the ten
 compiles that are not hand customised, every working screen item, 64 per copy and 23 distinct, is an item of one
 device's own screen pages, the same list under the same label, so a command is named by its device

@@ -45443,3 +45443,83 @@ same device.
   the old rule the test fails at 398.
 * `packages/codec/src/composecatalogue.ts`: the power exception removed under `full`.
 * `docs/config-format.md` under the record's three blocks.
+
+## 339. A pass through device is switched on and set to its input, and given nothing else
+
+**Todo `todo-compile-650.md` 3.14.** MyHarmony lets an activity hold a device with no job, which its
+service saves as a `PassThroughActivityRole`: an HDMI switch the picture only passes through. The
+question was what Logitech's compiler makes of one, and whether the composer can build it.
+
+**Sources checked**: Logitech's compile of the Harmony 650's starting setup, `h650_start_config`,
+whose saved activities state the roles (`work/setups/h650-start/replies/`); MyHarmony's decompiled
+client for the role's name and payload, through the setup builder of todo-compile-650 1.6; this
+document, sections 273, 291, 313, 323 and 332. The firmware was not needed: nothing here is a new
+instruction, only which instructions the compiler emits.
+
+### What Logitech's compile does
+
+Kodi kijken holds the LG television on HDMI 3, Kodi to play, and the switch on Input 2 with no role.
+Its start switches on the LG, Kodi and the switch, in the saved power on order, and its input list
+writes `LG_TV_Input` 5 and `Switch_Input` 1, which is Input 2 by the code it sends. Its tag 5 list,
+section 313, calls the same input list. Its own device list opens with the LG, Kodi and the switch, in
+that order. The keypad map and the working screen send nothing to the switch: the keys go to Kodi and the
+LG, and the screen's one item is Kodi's. The other three activities switch the switch off.
+
+**Nothing in the file states the role.** A display device with no key and no screen item has exactly
+this shape: TV kijken's LG is switched on and set to HDMI 1 and given nothing else. So a pass through
+device is recognised only where the activity is stated as MyHarmony states it.
+
+**Second sample, inferred**: the contributed Harmony 700 configuration (`h700_config`), whose Watch VCR
+switches its A/V switch on last of four, sets its input to 1, lists it fourth and binds it nothing. No
+other compile in the lab has its roles captured, so this one is the same shape with the role guessed,
+read by hand and not asserted in a test.
+
+### What the composer does
+
+`activityFromRoles` takes an activity as devices with roles and an input each and gives the composer's
+targets: every listed device on, each set to its input, every other device off, and the keys from the
+volume and control roles, section 323. A device with no role is switched on and set to its input and
+nothing else, and is reported in `passThrough`. On the command line it is a `--targets` device left out
+of `--roles`. Composed from the catalogue onto `h650_panasonic_config`, Kodi kijken's three devices come
+out equal to Logitech's in power on, inputs, off, tag 5, keys, screen and the head of the device list,
+and the switch's input value 1 sends Logitech's Input 2 code word for word; left out, exactly those
+places change and nothing else (`packages/codec/test/passthrough.test.ts`).
+
+### On the bench
+
+One write of the 3.9 bench file with "Switch kijken" composed onto it: the Plasma on HDMI 3 for volume,
+Kodi for the rest, the switch with no role on Input 3, so its code differs from Logitech's Kodi kijken's
+Input 2 (`reads/20261008T095859Z-ir-test-harmony-650-a-pass-through-switch-in-our-activity-and-in-logitech-s.json`).
+
+* Starting it: the Plasma's `PowerOn` (seven frames), Kodi's power toggle, the switch's power on code,
+  then the switch's `OutputAInput3` and the Plasma's `InputHDMI3`.
+* Its own device list sent nothing. Picked again: the switch's `OutputAInput3` alone, since its input
+  takes its values from `-2` and the Plasma's from `-3`, section 332.
+* Volume Up went to the Plasma and Play to Kodi; nothing reached the switch.
+* Logitech's Kodi kijken from there: the LG's `PowerOn`, the switch's `OutputAInput2`, the Plasma's
+  `PowerOff` and the LG's `InputHdmi3`, no power code for Kodi or the switch, which stayed on. Ours
+  again: the Plasma's `PowerOn`, the switch's `OutputAInput3`, the LG's `PowerOff` and the Plasma's
+  `InputHDMI3`.
+* All Off: the Plasma, Kodi and the switch, and nothing else.
+
+The switch's power on record is the one Logitech's compile sends; the bench monitor names that frame
+`ARC`, the first command the catalogue gives its number, and its power off `PowerToggle`.
+
+### Scope, decision 16
+
+Measured on arch 14 alone, the Harmony 650, on one compile with the role stated and one with it
+inferred. The Harmony One and the other architectures are not checked.
+
+### Falsification
+
+A Logitech compile that binds a key or a screen item to a device saved with a pass through role, or
+leaves it off in the activity's start; on the Harmony 650, our Switch kijken sending the switch a code
+on a key press.
+
+### Where it lands
+
+* `packages/codec/src/activityroles.ts`: `activityFromRoles`, and `ActivityRoleName` shared with the
+  setup builder.
+* `packages/codec/test/passthrough.test.ts`: Logitech's compile read, ours composed against it with the
+  switch left out as the control, and the refusals.
+* `docs/config-format.md` under an activity's key map.
