@@ -32,8 +32,8 @@ television, with "Activity" at the bottom, section 294.
   Plasma (nothing) and on the LG, the Denon and an HDMI switch (their input codes again), sections 313
   and 339.
 * A device kept on between activities, a per device setting, stays on when the next activity does not
-  use it, and only All Off switches it off; read from configurations, section 340, not yet seen on the
-  remote.
+  use it, and only All Off switches it off; read from configurations and heard with the infrared receiver,
+  section 340.
 * All Off sends nothing to a device the remote counts as off, so straight after a restart, with every
   device counted as off, it sends nothing at all; seen with the infrared receiver, section 332.
 * A start up screen, "Starting" and the name, then the working screen with "Devices" below it; seen for

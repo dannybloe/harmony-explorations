@@ -45552,6 +45552,13 @@ only All Off switches it off, which is what the setting's wording says. The comp
 that shape by leaving a device out of the targets it completes with 0, section 280; it has no per device
 option for it yet.
 
+**Heard on the Harmony 650**, with no write, on this compile as synced
+(`reads/20261008T131427Z-ir-test-harmony-650-the-denon-kept-on-between-activities.json`). TV kijken sent
+the LG's, the KPN box's and the Denon's power on and their inputs. Muziek then sent Kodi's and the Sony's
+power, the LG's `PowerOff` and the KPN box's toggle, and the Sony's `Function` three times for its Audio
+2, and **nothing to the Denon**. All Off then sent the Denon's power off, Kodi's and the Sony's, so the
+remote had counted the Denon as on throughout.
+
 ### Making Muziek Custom
 
 Logitech's compile still puts Muziek on the Listen to Music key, and Kodi kijken, `Custom` from the start,
