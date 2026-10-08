@@ -44,6 +44,11 @@
  * beeper, a long pause written as one instruction rather than in runs of a hundred tenths, and the send
  * carrying the inter key delay.
  *
+ * **The remote runs that form**, section 342: on a Harmony 650, one sequence on Red sent its three codes
+ * with the 2 and 20 second pauses between them, and a key pressed during the pause was held until the
+ * pause ended, since a pause holds every device of the activity. That is the firmware executing the form,
+ * not Logitech's compiler writing it, so `ARCH14_INFERRED` stays as it is.
+ *
  * **What does not depend on any of that is the refusal.** Every list composed here, and every list in
  * the configuration that results, goes through `assertQueueFits`, section 238: a sequence is spooled
  * into the remote's forty instruction action queue whole, so a long one with many pauses on a three

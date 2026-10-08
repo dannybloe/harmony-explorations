@@ -45718,3 +45718,60 @@ where an empty key calls something other than the two instruction list.
 * The run files in the lab's `reads/`, `20261008T141329Z`, `20261008T142549Z`, `20261008T142833Z` and
   `20261008T143827Z`, and the configuration in `work/bench-3-11/`.
 
+## 342. A composed sequence runs on the Harmony 650, and its pause holds back every device of the activity
+
+todo-compile-650 4.2. Section 327 composed sequences in the Harmony One's form and listed five things
+carried over to the Harmony 600, 650 and 700 unseen, `ARCH14_INFERRED`, because no Logitech compile for
+those models holds a sequence. This is the first time one ran on a remote of that family.
+
+**What was written.** Onto section 341's configuration, then on the bench 650 (`h650_bench_4_2_base` holds
+it), `composeSequence` built one list for KPN 1, a pause of 20 tenths, KPN 2, a pause of 200 tenths, KPN
+Red, and `bindKeyToList` put it on Red (scan 13) in TV kijken, entry 9. The three commands already had
+send lists, the ones TV kijken's 1, 2 and Red keys call, so none was created and the list is nine
+instructions: three `0x7F` calls and two runs of three `0x7C`, naming the LG, the KPN box and the Denon,
+the devices `activityPauseGroups` reads off TV kijken's start, in that order. The deepest the action
+queue gets is 12 of 40. The file grew 31 bytes, every byte claimed once, and read back identical.
+
+**What was heard**, with the Flirc (`reads/20261008T152233Z-ir-test-harmony-650-a-sequence-on-red-in-tv-kijken.json`):
+
+| press | KPN 1 to KPN 2 | KPN 2 to the next code | anything else |
+|---|---|---|---|
+| Red, nothing else touched | 2.80 s | 20.28 s, KPN Red | nothing to the LG or the Denon |
+| Red, Volume Up pressed during the long pause | 2.49 s | 19.97 s, the Denon's Volume Up, then KPN Red 0.47 s later and a second Volume Up 0.77 s after that | the Volume Up waited for the pause |
+
+So the inferred list shape works on this model, and a 20 second pause written as one `0x7C` of 200 per
+device acted as 20 seconds, which are two of `ARCH14_INFERRED`'s five as far as the remote's behaviour
+goes. The gaps run a few tenths over the stated pause, which is the codes' own length and the KPN box's
+delay of 1 tenth in each send list; not separated further here.
+
+**A pause holds back the whole activity, not the next step's device.** Each pause is a `0x7C` per device of
+the activity, so while it runs every one of those devices is held, and a key pressed meanwhile is sent when
+it ends. The person at the bench saw the volume key buffered. Two orderings are measured and not explained:
+the first Volume Up came out **before** the sequence's KPN Red although it was pressed after the sequence
+was queued, and a second Volume Up followed the Red; whether that second one was a second press or the same
+key held is not recorded. Neither is read from the firmware's queue here.
+
+**Sources.** The composer and section 327 for the form, `queue.ts` for the peak, and the bench. Logitech's
+client was not read for this step; MyHarmony authors sequences, and a compile of one on the 650's test
+account is `todo-secure-logitech.md` 3.7, which is what would show whether Logitech writes this form here.
+
+### Scope, decision 16
+
+The Harmony 650's 0.2 build, one sequence on one key of one activity of three devices. The Harmony 600
+and 700 are not written; a screen item's copy and a sequence with a send list it had to create are not
+tried on the remote. What three of `ARCH14_INFERRED`'s entries say about Logitech's own form is untouched:
+the pause's devices and their order, the screen copy's beeper, and the send's quantity.
+
+### Falsification
+
+A Logitech compile for this model whose sequence names only the next step's device in a pause, or splits a
+long pause into runs; or a rerun where a key pressed during a pause is sent at once.
+
+### Where it lands
+
+* `packages/codec/test/sequence.test.ts`: the bench sequence composed again onto `h650_bench_4_2_base`,
+  its nine instructions, no send list created, the peak of 12, and the binding on Red.
+* `docs/config-format.md` under "A sequence is one action list of calls and per device pauses", and the
+  header of `packages/codec/src/sequence.ts`.
+* The configuration and its write journals in the lab's `work/bench-4-2/`.
+

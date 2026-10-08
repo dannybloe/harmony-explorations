@@ -4057,7 +4057,11 @@ pushes. `docs/findings.md` section 238.
 five of each compile's six lists reproduced instruction for instruction from the account's statement of
 their steps; inferred on arch 14, unconfirmed, since no compile in the lab for a Harmony 600, 650 or 700
 holds one.**
-[findings.md](findings.md) section 327.
+[findings.md](findings.md) section 327. **On a Harmony 650 the composed form runs as written**, section 342:
+one press sent the three commands with the two pauses, 2 and 20 seconds, between them. That is the remote
+executing the form; whether Logitech's compiler writes the same form for this model is still unseen.
+**A pause holds every device it names, and so the whole activity**: a key pressed during the 20 second
+pause, Volume Up to the receiver, was sent only when the pause ended.
 
 | step | what a list holds |
 |---|---|

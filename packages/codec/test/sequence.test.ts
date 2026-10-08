@@ -461,3 +461,42 @@ test('the composer refuses a sequence the action queue cannot hold, at the exact
   // The queue model agrees with the composer's figure on the list it composed.
   assert.equal(queueRun(parse(fits.bytes), fits.lists[0] as number)?.peak, fits.peak);
 });
+
+test('the sequence heard on the Harmony 650: three of the KPN box\'s own sends and two pauses naming TV kijken\'s three devices',
+  skipUnless('h650_bench_4_2_base'), () => {
+    // Section 342, todo-compile-650 4.2. Composed again onto what the remote held before the write: KPN 1,
+    // 2 s, KPN 2, 20 s, KPN Red, on Red in TV kijken. Each command reuses the send list the activity's own
+    // key for it calls, so nothing is created, and each pause is one 0x7C per device of the activity.
+    const c = parse(require_('h650_bench_4_2_base'));
+    const tv = activities(c).find((one) => one.name === 'TV kijken')!;
+    assert.equal(tv.set, 9);
+    const map = taggedList(c, handlerSets(c)!.addresses[tv.set]!)!;
+    const keyList = (scan: number): number => map.entries.find((one) => one.tag === (0x80 | scan))!.operand;
+    // Number1, Number2 and Red, `reference/remotes/harmony-650/keys.md`.
+    const [one, two, red] = [24, 47, 13].map(keyList) as [number, number, number];
+    const sendOf = new Map(sendPreludes(c).map((p) => [p.list, p]));
+    // The key calls the send list itself: its delay step, the send, and the device's quantity.
+    const code = (list: number): { group: number; code: number } =>
+      ({ group: sendOf.get(list)!.group, code: c.actionLists()![list]![1]!.operand & 0xff });
+    const kpn = code(one).group;
+    assert.equal(devices(c).find((d) => d.group === kpn)?.name, 'KPN');
+    const groups = activityPauseGroups(c, tv.set);
+    assert.deepEqual(groups.map((g) => devices(c).find((d) => d.group === g)?.name), ['LG_TV', 'KPN', 'Denon']);
+    const composed = composeSequence(c, {
+      steps: [{ send: code(one) }, { pause: 20 }, { send: code(two) }, { pause: 200 }, { send: code(red) }],
+      pauseGroups: groups, interKeyDelays: { [kpn]: 1 },
+    });
+    assert.deepEqual(composed.created, []);
+    assert.equal(composed.peak, 12);
+    const out = parse(composed.bytes);
+    const body = out.actionLists()![composed.lists[0]!]!.map((i) => [i.opcode, i.operand]);
+    const sends = [one, two, red];
+    assert.deepEqual(body, [
+      [0x7f, sends[0]], ...groups.map((g) => [0x7c, (g << 8) | 20]),
+      [0x7f, sends[1]], ...groups.map((g) => [0x7c, (g << 8) | 200]),
+      [0x7f, sends[2]],
+    ]);
+    const bound = parse(applyEdits(out, bindKeyToList(out, tv.set, 13, composed.lists[0]!)).bytes);
+    const redEntry = taggedList(bound, handlerSets(bound)!.addresses[tv.set]!)!.entries.find((e) => e.tag === 0x8d)!;
+    assert.deepEqual([redEntry.opcode, redEntry.operand], [0x7f, composed.lists[0]]);
+  });

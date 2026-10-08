@@ -1,0 +1,21 @@
+{
+  "name": "Harmony 650, a sequence on Red in TV kijken",
+  "description": "todo-compile-650 4.2. The remote holds section 341's configuration with one sequence of ours added: in TV kijken, Red runs KPN 1, a 2 s pause, KPN 2, a 20 s pause, KPN Red. Composed with composeSequence in the Harmony One's form, which no Logitech compile for this model has been seen to use (ARCH14_INFERRED): one action list calling the KPN box's own send lists, and each pause a 0x7C per device of the activity, LG, KPN and Denon, in tenths. Predicted: one press of Red sends KPN 1, then KPN 2 about 2 s later, then KPN Red about 20 s after that, and nothing to the LG or the Denon. Keep the remote off the cable and pointed at the Flirc.",
+  "steps": [
+    {
+      "instruction": "Straight after the write the remote restarts and may show 'If any devices are still On press Help now'. Do NOT press Help. Take the remote off the cable, point it at the Flirc and press All Off once. Mark when it is quiet"
+    },
+    {
+      "instruction": "Press the Watch TV key. Expect 'Starting TV kijken', the LG's, the KPN box's and the Denon's power codes and their inputs, then TV kijken's screen. Mark when it settles"
+    },
+    {
+      "instruction": "Press Red once and then touch nothing. Expect the KPN box's 1, about 2 s later its 2, and about 20 s after that its Red. Mark when Red has been heard, or when 30 s have passed without it"
+    },
+    {
+      "instruction": "Press Red once more and, during the long wait after the 2, press Volume Up once. Note whether the Denon's volume comes at once or only after the KPN Red, and whether the KPN Red still comes"
+    },
+    {
+      "instruction": "Press All Off"
+    }
+  ]
+}
