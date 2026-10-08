@@ -118,6 +118,32 @@ The drawing calls the activity keys and Help `screen` keys, which is a statement
 layers. In the configuration they are hard keys bound by the always installed key map, section 314, not
 keys the screen speaks for.
 
+**Which activity each activity key starts** is chosen in MyHarmony's "Customize Activity Buttons" screen,
+a list of the activities per key with no empty choice, and saved as a button map of its own rather than
+as part of an activity: an activity's type does not move it. So with three activities or more all three
+keys hold one, and Listen to Music is empty only where there are two, over fifteen compiles of this
+architecture. MyHarmony's client, read, and Logitech's compiles, section 340.
+
+## What pressing a key raises
+
+Read in the 650's firmware, build 0.2, section 340. A key raises three events and no others:
+
+| event | when |
+|---|---|
+| press | the key goes down |
+| repeat | the key is still down when a timer started at the press runs out |
+| release | the key is let go |
+
+**There is no long press.** Nothing in the firmware tells a short press from a long one, so a long press
+action could only be imitated by a configuration binding a key's repeat, and Logitech's compiler binds the
+activity keys' press alone. Logitech's service agrees: it declares no long press for this model,
+`reference/capabilities.md`. MyHarmony's client offers a long press activity per activity key, which
+belongs to later models.
+
+**Help waits longer.** The repeat timer is one value for every key and another for Help, starting at 10
+and 50, each multiplied by 100 before the timer starts, so Help waits five times longer before its repeat.
+The timer's unit and whether the repeat keeps firing while the key is held are not read.
+
 ## Keys with no code at all
 
 * **Help** and **All Off** carry no measured scan code here. `AllOff` sends the activity's off sequence
@@ -132,4 +158,5 @@ keys the screen speaks for.
 
 * The 650's own button map: every scan code above is the 600's, carried over.
 * The scan codes of the two arrows below the display, Help, All Off, Enter and More Activities.
-* Long press on any key: Logitech's service declares none for this model, `reference/capabilities.md`.
+* The repeat timer's unit, and whether repeat fires once or keeps firing; the firmware's three events are
+  read, above.

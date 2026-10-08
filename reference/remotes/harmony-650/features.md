@@ -43,6 +43,9 @@ plus its inputs, so the device count binds first on every configuration measured
 | three activity keys, Watch TV, Watch a Movie, Listen to Music, plus More Activities for the rest | Logitech's manual, page 2 |
 | how many activities a 650 may hold | **not stated**. The manual: "The number of activities you can add depends on the devices you have added". Seventeen model records were filled with seven activities each and every model with a screen took all seven, `docs/how-a-harmony-works.md`, Logitech's service; whether a 650 record was among the seventeen is not recorded there, so for the 650 **not checked**. The bench unit holds four, section 317 |
 | an activity key with no activity opens mode 0, "Use the Harmony setup software to add an Activity on this button" | read from configurations, section 311 |
+| which activity each activity key starts: MyHarmony's "Customize Activity Buttons", one activity per key and no empty choice, so a key is empty only with fewer than three activities | MyHarmony's client and Logitech's compiles, section 340 |
+| no long press on an activity key, or on any key: the firmware raises press, repeat and release only | the firmware, build 0.2, section 340; [keys.md](keys.md) |
+| a pass through device, a switch the picture only passes through: switched on and set to its input by the activity, and bound no key and no screen item | read from configurations, composed and seen on the 650, section 339 |
 | the activity menu pages when full, with the page Logitech compiles | read from configurations and composed, section 316; paged 1/3 to 3/3 and wrapping at the bench on the combined file, `todo-compile-650.md` |
 
 ## Favourite channels
@@ -97,13 +100,14 @@ remote, section 327 and the `writing-a-config` skill.
 | `GlowTime`, how long the screen stays lit | the configuration's timer 1, **measured on the 650**, section 292 |
 | `TiltSensor`, waking when picked up | **Logitech's service** lists it for the 650, default on, read 7 October 2026; what it changes in the configuration is **not checked**, `todo-compile-650.md` 4.3.3 |
 | `RemoteAssistant` | **Logitech's service** lists it for the 650, default on, read 7 October 2026; its effect on the configuration is **not checked**, 4.3.2 |
-| leave devices on when switching activities | claimed for the 650 in `todo-compile-650.md` 3.10, Logitech's service; what it changes is **not checked** |
+| leave devices on when switching activities | **per device**, in the device's power settings: "I want to keep this device on when switching Activities and only turn it off when I press the Off button". In the configuration it removes that device's switch off from the start of every activity that does not use it; the activities that use it still switch it on and All Off still switches it off. MyHarmony's client and two Logitech compiles, section 340; not yet seen on the remote |
 
 **The 650's own list is these three and no others**: `GlowTime` default 20, `TiltSensor` and
 `RemoteAssistant` default on, from `GetRemoteSettings` for a 650 entry and from
 `GetProductCapabilities2`, both Logitech's service, read 7 October 2026 and filed in the lab. This
 paragraph said until then that no 650 answer had been saved, section 292, so the list was the 600's and
-700's. Leaving devices on is a capability, `LeaveDevicesPoweredOn`, and not one of the settings.
+700's. Leaving devices on is a capability, `LeaveDevicesPoweredOn`, and not one of the settings: it is set per
+device, above.
 
 ## Learning
 

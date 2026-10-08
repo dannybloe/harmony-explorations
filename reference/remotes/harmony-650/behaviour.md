@@ -26,7 +26,16 @@ television, with "Activity" at the bottom, section 294.
 ## Starting and switching activities
 
 * An activity key starts its activity; More Activities lists them all on the screen, Logitech's manual.
-  Pressing the running activity's key again is a distinct case, section 313.
+  Pressing the running activity's key again is a distinct case, section 313: no start up screen and no
+  power, only the activity's inputs set again. A device whose input sends its code on every setting
+  sends it again; one that sends only on a change sends nothing. Seen with the infrared receiver on the
+  Plasma (nothing) and on the LG, the Denon and an HDMI switch (their input codes again), sections 313
+  and 339.
+* A device kept on between activities, a per device setting, stays on when the next activity does not
+  use it, and only All Off switches it off; read from configurations, section 340, not yet seen on the
+  remote.
+* All Off sends nothing to a device the remote counts as off, so straight after a restart, with every
+  device counted as off, it sends nothing at all; seen with the infrared receiver, section 332.
 * A start up screen, "Starting" and the name, then the working screen with "Devices" below it; seen for
   a composed activity, all eight predictions held, section 291.
 * All Off turns off the devices of the current activity, Logitech's manual. On the bench, the composed
