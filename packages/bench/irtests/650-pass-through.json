@@ -1,0 +1,27 @@
+{
+  "name": "Harmony 650, a pass through switch in our activity and in Logitech's",
+  "description": "todo-compile-650 3.14, one write of lab/work/bench-3-14/h650-plus-switch-kijken.bin: the bench file of 3.9 with 'Switch kijken' composed onto it, the Plasma on HDMI 3 for volume, Kodi for everything else, and the switch a pass through device on Input 3, switched on and set to its input and given nothing else. Logitech's own Kodi kijken in the same file does the same with the switch on Input 2, so the two activities' switch codes tell them apart. Predicted: starting Switch kijken sends the Plasma's, Kodi's and the switch's power codes and then the Plasma's InputHDMI3 and the switch's OutputAInput3; picking it again resends only the switch's input, since the Plasma's input fires only on a change and the switch's on every write; no key sends anything to the switch; Kodi kijken switches the Plasma off and the LG on and moves the switch to Input 2 without a switch power code; All Off switches the switch off. Keep the remote pointed at the Flirc. The three buttons below the screen are the left arrow, the centre button and the right arrow; the four buttons beside the screen each choose the label next to them.",
+  "steps": [
+    {
+      "instruction": "Start on the remote's ordinary screen, 'Activities 1/3'. Press the right arrow twice: expect 'Activities 3/3' with Plasma kijken at the top and Switch kijken below it. Press the button beside Switch kijken. Expect 'Starting Switch kijken', the Flirc hearing the Plasma's PowerOn (seven frames), Kodi's power code (one code for on and off), and the switch's PowerOn; then the switch's OutputAInput3 and, after the Plasma's pause, its InputHDMI3, in either order; then a red screen titled 'Switch kijken' with 'Devices' at the bottom. Mark when it settles"
+    },
+    {
+      "instruction": "Press the button beside 'Devices' (bottom). Expect 'Devices 1/2' with Plasma and Kodi at the top and Switch and LG TV at the bottom, and 'Activity' at the bottom. Expect the Flirc to hear nothing. Press the button beside 'Activity' to go back to the red Switch kijken screen"
+    },
+    {
+      "instruction": "Press the More Activities key, page to 3/3 with the right arrow and press the button beside Switch kijken again. Expect NO 'Starting Switch kijken': straight to the red screen. Expect the Flirc to hear the switch's OutputAInput3 once more and nothing else: no power code and no Plasma input. Mark anything else"
+    },
+    {
+      "instruction": "Press Volume Up once and then Play once. Expect Volume Up to go to the Plasma and Play to Kodi, and nothing to the switch"
+    },
+    {
+      "instruction": "Press the More Activities key, stay on 'Activities 1/3' and press the button beside Kodi kijken. Expect 'Starting Kodi kijken', the LG's PowerOn and the Plasma's PowerOff, no power code for Kodi or the switch, which stay on, then the LG's HDMI 3 and the switch's OutputAInput2, and then Kodi kijken's screen. Mark when it settles"
+    },
+    {
+      "instruction": "Press the More Activities key, page to 3/3 and press the button beside Switch kijken. Expect 'Starting Switch kijken', the LG's PowerOff and the Plasma's PowerOn, no power code for Kodi or the switch, then the Plasma's InputHDMI3 and the switch's OutputAInput3. Mark when it settles"
+    },
+    {
+      "instruction": "Press All Off. Expect the Plasma, Kodi and the switch switching off, and nothing for the LG, the Denon, the KPN box or the Sony"
+    }
+  ]
+}
