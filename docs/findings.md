@@ -45561,9 +45561,20 @@ and the one difference in the inputs is Muziek's type. Section 314's six compile
 Music key are two setups, and over those thirteen compiles and this pair, fifteen in all, a key is empty
 exactly where the activities number two: all six with two activities leave Listen to Music empty, and the
 two with three, five with four and two with five fill all three keys. That is the pattern and not its
-cause, since no compile here holds three activities with one of them `Custom`. So 3.11 still has no
-compile of the 650's own setup with an empty key, and the route the pattern points to is a setup of two
-activities.
+cause, since no compile here holds three activities with one of them `Custom`.
+
+**MyHarmony's "Customize Activity Buttons" screen explains it, client sourced.** The screen offers each of
+the three keys a list of the activities and no empty choice. Its view model, `ActivityModeMapViewModel` in
+`work/myharmony/src/Web.MartiniWeb.Tasks.ActivityRemote.ButtonMapping/`, builds the three keys as
+`HardRemoteButton`s keyed `DeviceModeType` 5 (Watch TV), 6 (Watch a Movie) and 4 (Listen to Music), each
+with a short press `ButtonActivityAction` naming an activity's id and a **long press** one as well, and saves
+them with `SaveButtonMaps`, as the root button map in some upgrade flows: the map keyed by neither a device
+nor an activity. So the key assignment is a button map of its own and not the activity's type or group,
+which is why saving Muziek as `Custom` moved nothing. A key with no activity is representable there, since
+the builder skips a key with neither press chosen, but the screen never produces one while there are
+activities to choose. Whether a long press activity reaches an arch 14 configuration is not checked. So 3.11
+still has no compile of the 650's own setup with an empty key; the two routes are a setup of two activities,
+or a root button map saved with one key left out.
 
 ### Scope, decision 16
 

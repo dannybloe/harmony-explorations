@@ -1269,7 +1269,9 @@ configuration without it. Arch 12 (Harmony One) is not compared.
 **Which activity a key gets is not its type alone**, [findings.md](findings.md) section 340: an
 activity saved again as `Custom`, its group read back as 0 on the account, kept the Listen to Music key
 in Logitech's compile, and an activity `Custom` from the start held none. Over fifteen arch 14 compiles a
-key is empty exactly where the activities number two, Listen to Music each time; the cause is unconfirmed.
+key is empty exactly where the activities number two, Listen to Music each time. MyHarmony assigns the
+three keys in a button map of their own, its "Customize Activity Buttons" screen, which offers no empty
+choice, client sourced.
 
 **A device kept on between activities**, MyHarmony's per device power setting
 (`IsPoweredOnBetweenActivities`), has its write of 0 left out of the start of every activity that does

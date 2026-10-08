@@ -198,6 +198,12 @@ reasoning instead of querying.
   device door. A device added this way arrives with its input and power records already complete
   (`UserFeatureManager/GetUserFeatures`), so nothing else is needed before an activity names its
   inputs, measured on seven devices on 8 October 2026.
+* **Which activity each activity key starts is a button map, not the activity's type or group**, section
+  340: MyHarmony's "Customize Activity Buttons" screen saves the three keys, each with a short and a long
+  press activity, through `SaveButtonMaps`, and offers no empty choice. Saving an activity again as `Custom`
+  leaves it on its key. **A device's "keep on when switching Activities"** is `IsPoweredOnBetweenActivities`
+  in its power feature, saved with `UserFeatureManager/SaveUserFeatures` behind
+  `MYHARMONY_ALLOW_FEATURE_WRITE`, `build-setup.ts --stage options`.
 * **`UserAccountDirector/SaveActivities`** puts an activity on a record, one call per activity,
   behind its own door, `MYHARMONY_ALLOW_ACTIVITY_WRITE`. Read off MyHarmony's activity wizard and
   first sent on 8 October 2026 by `packages/corpus/bin/build-setup.ts`, four activities, each
