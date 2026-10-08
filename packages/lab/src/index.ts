@@ -181,6 +181,9 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // the KPN box's at 20; this is the file written for the third, the Denon's at 20 and the KPN box's
   // back at 5, which nothing read back off the remote afterwards. Then the three runs, in that order.
   h650_denon_gap_config: 'h650-denon-gap-2s.bin',
+  // The 650's region before todo-compile-650 1.3's clock check, its container byte for byte
+  // `h650_denon_gap_config`: the write puts the same configuration back with only the stamps changed.
+  h650_clock_base: '20261008T0633Z-h650-clock-base-region.bin',
   h650_gap_ir_all5: '20261007T054551Z-ir-test-harmony-650-help-does-nothing-and-the-gap-between-devices.json',
   h650_gap_ir_kpn20: '20261007T060756Z-ir-test-harmony-650-the-kpn-box-s-delay-between-devices-at-2-s.json',
   h650_gap_ir_denon20: '20261007T061443Z-ir-test-harmony-650-the-denon-s-delay-between-devices-at-2-s.json',
@@ -721,6 +724,8 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
     // The file written for section 335's third bench run, a container already counted plus one
     // variable's value and the stamps a write restamps.
     'h650_denon_gap_config',
+    // The region before 1.3's clock check, whose container is `h650_denon_gap_config`.
+    'h650_clock_base',
     // External flash of the bench Harmony 700 from 0x000000, kept for the staged application at its
     // start. The container at 0x020000 is byte for byte `h700_gspm`, the embedded config the 2.8
     // package carries as its region 3, so counting it would count that one twice. Section 295.

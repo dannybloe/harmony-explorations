@@ -44,6 +44,12 @@ the reload checksum at `0xED2`, the infrared ring at `0x500` kept across a bare 
 at `0x68B` and the cache drop flag at `0x725`. The current mode is at `0x0A8` and its argument at
 `0x0AD`, section 326.
 
+**The clock is the write's stamp after a restart**, measured on 8 October 2026: a write stamped the
+seven clock records with seconds 37, minutes 34, hour 8, day 7, weekday 4, month 9, year 26, and
+straight after the writer's restart the first seven state variables read 48, 34, 8, 7, 4, 9 and 26,
+the stamp plus the 11 seconds since the restart. Day and month count from 0 and the weekday from
+Sunday, section 322, so that is Thursday 8 October 2026, 08:34:48.
+
 ## The configuration on this unit
 
 | | value | source |
