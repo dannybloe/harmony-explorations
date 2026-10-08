@@ -441,7 +441,8 @@ the live service, where a product record lists its own capabilities. Declaring `
 families. Not declaring it: the Harmony One, 600, 650, 665, 700, 300 and 200, in both regional
 variants where there are two, and the two hubs, which have no buttons at all. So **no architecture
 this project can read has a long press**, and a keypad map read out of any configuration here cannot
-contain one.
+contain one. **The Harmony 650's firmware agrees**, section 340: a key raises press, repeat and
+release and nothing else, and only the Help key waits longer before its repeat.
 
 **On the Harmony 350 the long press is what the device count is made of**, which is the closure worth
 keeping because it explains three numbers with one mechanism. Its interface says four device buttons

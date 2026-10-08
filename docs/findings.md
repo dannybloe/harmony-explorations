@@ -45572,9 +45572,27 @@ them with `SaveButtonMaps`, as the root button map in some upgrade flows: the ma
 nor an activity. So the key assignment is a button map of its own and not the activity's type or group,
 which is why saving Muziek as `Custom` moved nothing. A key with no activity is representable there, since
 the builder skips a key with neither press chosen, but the screen never produces one while there are
-activities to choose. Whether a long press activity reaches an arch 14 configuration is not checked. So 3.11
+activities to choose. So 3.11
 still has no compile of the 650's own setup with an empty key; the two routes are a setup of two activities,
 or a root button map saved with one key left out.
+
+### The 650 has no long press, in its firmware
+
+The client's long press activity has nothing to land on here. On the bench 650's 0.2 build
+(`650-0.2-code-base0x9000-bench.bin`) the key handler holds the bare scan code at `0x73D` and raises an
+event by ORing a type onto it and handing the result on through `0x29B`, and there are exactly four
+such ORs in the image: `0x80` at `0x179B2` when a new key goes down, `0xC0` at `0x17952` when a timer
+started at that press runs out with the key still held, and `0x40` at `0x179FA` and `0x17A44` when it
+is let go. So a key raises press, repeat and release, section 17's three types, and nothing else. The
+timer's length is `0x200` times 100 for every key and `0x201` times 100 for scan 3, the Help key
+(`MOVLW 3 ; SUBWF 0x73D` at `0x179C0`), and the two start at 10 and 50 (`0x0E4E8`): the Help key waits
+five times longer before its repeat, which is how holding Help differs from pressing it, section 333.
+The timer's unit and whether repeat fires once or keeps firing are not read here.
+
+So a long press on an activity key could only be imitated by a configuration binding that key's repeat
+event, as Help's is, and Logitech's compiler binds the activity keys' press alone. That agrees with the
+product table, which does not declare `LongPressAction` for the Harmony 650 (`docs/how-a-harmony-works.md`).
+Scope: the 650's 0.2 build; the other arch 14 builds and the other architectures are not read here.
 
 ### Scope, decision 16
 
@@ -45590,6 +45608,8 @@ All Off leaves it out; for the key, a compile where saving an activity as `Custo
 
 * `packages/codec/test/devicepower.test.ts`: the two starts' dropped writes, exactly, nothing added, and
   the All Off list in both compiles.
+* `tests/test_keypad.py`, `TestTheHarmony650RaisesThreeKeyEventsAndNoLongPress`: the four ORs, that
+  there are no others, and the per key delay with its starting values, as bytes.
 * `packages/codec/test/activitykeys.test.ts`: the three keys and their activities in both compiles.
   And the tally over the fifteen compiles: activities against empty keys, by count.
 * `packages/corpus/src/setup.ts`, `keepOnPayload` and `customPayload`, and the builder's `options` stage,

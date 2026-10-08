@@ -386,3 +386,46 @@ class TestTheArch8Keypad(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class TestTheHarmony650RaisesThreeKeyEventsAndNoLongPress(unittest.TestCase):
+    """findings.md section 340: on the bench Harmony 650's 0.2 build a key raises press, repeat and
+    release and nothing else, so there is no long press event for an activity key to bind. The
+    repeat waits a delay that is one value for every key and another for scan 3, the Help key.
+
+    Read as bytes rather than through the disassembler, so the test fails if the build moves.
+    """
+
+    BASE = 0x9000
+
+    def setUp(self):
+        self.code = lab.load('h650_bench_code')
+
+    def at(self, address, count):
+        return self.code[address - self.BASE:address - self.BASE + count]
+
+    def test_each_event_ors_its_type_onto_the_held_scan_code(self):
+        # MOVLW type ; MOVLB 7 ; IORWF 0x73D,W ; MOVLB 2 ; MOVWF 0x29B, the event handed on.
+        raised = {0x17952: 0xC0, 0x179B2: 0x80, 0x179FA: 0x40, 0x17A44: 0x40}
+        for address, event in raised.items():
+            with self.subTest(address=hex(address)):
+                self.assertEqual(self.at(address, 10), bytes([event, 0x0E, 0x07, 0x01, 0x3D, 0x11, 0x02, 0x01, 0x9B, 0x6F]))
+
+    def test_no_other_event_type_is_ored_onto_it(self):
+        # Every `IORWF 0x73D,W` in the image, found by its encoding behind `MOVLB 7`, is one of the four.
+        pattern = bytes([0x07, 0x01, 0x3D, 0x11])
+        found = []
+        start = 0
+        while (at := self.code.find(pattern, start)) >= 0:
+            found.append(at + self.BASE - 2)
+            start = at + 1
+        self.assertEqual(found, [0x17952, 0x179B2, 0x179FA, 0x17A44])
+        self.assertEqual(sorted({self.at(one, 1)[0] for one in found}), [0x40, 0x80, 0xC0])
+
+    def test_the_repeat_delay_is_per_key_only_for_help(self):
+        # After a press: MOVLW 3 ; SUBWF 0x73D,W ; BNZ, then 0x201 for scan 3 and 0x200 for every other.
+        self.assertEqual(self.at(0x179C0, 8), bytes([0x03, 0x0E, 0x07, 0x01, 0x3D, 0x5D, 0x03, 0xE1]))
+        self.assertEqual(self.at(0x179CA, 2), bytes([0x01, 0x51]))
+        self.assertEqual(self.at(0x179D0, 4), bytes([0x00, 0x51, 0x64, 0x0D]))  # MOVF 0x200,W ; MULLW 100
+        # Their starting values, 10 and 50.
+        self.assertEqual(self.at(0x0E4E8, 8), bytes([0x0A, 0x0E, 0x00, 0x6F, 0x32, 0x0E, 0x01, 0x6F]))
