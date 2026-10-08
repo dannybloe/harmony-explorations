@@ -1266,8 +1266,8 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
         # `work/ir-archive-raw/derived/`, what `make catalogue-raw` derives, todo-later 1.3. 91 since
         # `work/test-setup/`, the scan behind plan 006, and 92 since `work/harvest/`, todo-secure-logitech.
         # 93 since `work/setups/`, the setup builder of todo-compile-650 1.6, and 94 since
-        # `work/bench-2-3/`, todo-compile-650 2.3.
-        self.assertEqual(len(named), 94, "lab paths the register names, as at 8 October 2026")
+        # `work/bench-2-3/`, todo-compile-650 2.3. 96 since `work/bench-3-9/` and `work/agent-3-14/`, 3.9 and 3.14.
+        self.assertEqual(len(named), 96, "lab paths the register names, as at 8 October 2026")
         for path in sorted(named):
             with self.subTest(path=path):
                 if '*' in path:
@@ -1368,8 +1368,9 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
         # 69 since `work/test-setup/` and `work/harvest/`, todo-secure-logitech; both rows landed on 7
         # October 2026 without this count, which stayed at 67 until the next run of this test.
         # 70 since `work/setups/`, todo-compile-650 1.6, and 71 since `work/bench-2-3/`, 2.3.
-        self.assertEqual(len(rows), 71)
-        self.assertEqual(len(dict(rows)), 71, 'a duplicated path would make a query ambiguous')
+        # 73 since `work/bench-3-9/` and `work/agent-3-14/`, 3.9 and 3.14.
+        self.assertEqual(len(rows), 73)
+        self.assertEqual(len(dict(rows)), 73, 'a duplicated path would make a query ambiguous')
         self.assertNotIn('unseen', dict(rows), 'the status legend is not an artefact')
 
     def test_a_query_is_answered_by_ancestors_and_by_descendants(self):
