@@ -24,7 +24,7 @@ again only where the 650 adds something.
 | cells | AA alkaline batteries | Logitech's manual, "Battery type AA Alkaline" |
 | how many cells | not stated | **not checked** |
 | charging | none: the manual names batteries and no charger, where the Harmony 700's manual has a charging chapter and NiMH cells | Logitech's manual, both |
-| battery level in the firmware | four of the configuration's 19 pictures are drawn only by programs that switch on state variable 17, which this project **reads** as a battery gauge | inference, section 317; what variable 17 holds is **not checked** |
+| battery level in the firmware | four of the configuration's 19 pictures are drawn only by programs that switch on state variable 17, which this project **reads** as a battery gauge | inference, section 317; what variable 17 holds is **not checked**, and its writers in the firmware's 0.2 build raise it to 1 or 2 when a byte pair is queued, which is not the shape of a battery reading, section 340 |
 
 ## Infrared, light and case
 

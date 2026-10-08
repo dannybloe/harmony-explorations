@@ -45566,6 +45566,15 @@ compile, so the file gives no step that sets a light level. How the 650 sets its
 read; the Harmony One's light state machine is section 103 and is arch 12's. The battery level was not
 read at the time.
 
+Afterwards, with the same cells in and the cable in, state variable 17 read 0 (`0xE21`). Section 317
+reads it as a battery gauge, since four pictures are drawn only by programs switching on it. Its writers
+in the 0.2 build do not look like a battery reading: `0x11D18` clears it in an initialisation, and
+`0x11D34` copies `0x3E9` into it, reached from three routines at `0x11D7E`, `0x11DA0` and `0x11DC6`,
+each of which pushes a byte pair into a 30 slot ring buffer at `0x3B7` (`0x11C28`, the count at `0x3B6`
+against `0x1E`) and, when the push succeeds, raises the variable to 1 or 2 if it is lower. What the
+buffer holds is not read, so section 317's reading is doubted here and not refuted. The firmware's own
+battery read, `READ_MISC` selector `0x0C` detail 1, section 212, has still never been sent.
+
 ### Making Muziek Custom
 
 Logitech's compile still puts Muziek on the Listen to Music key, and Kodi kijken, `Custom` from the start,
