@@ -72,16 +72,17 @@ export function deviceName(device: HarvestDevice): string {
 /**
  * One `AddDeviceBySearchResultOperation`, as the client builds it. **`__type` is the first member** in
  * both objects, which their deserialiser requires; an object literal keeps insertion order, so it is
- * written first by hand. `ReturnIdAsKey` is a fresh guid per device, as the client makes it.
+ * written first by hand. `ReturnIdAsKey` is a fresh guid per device, as the client makes it. `name` is
+ * what the record calls the device, the harvest's own `deviceName` unless a setup names it.
  */
 export function addDeviceOperation(match: Record<string, unknown>, device: HarvestDevice, record: number,
-    guid: string): Record<string, unknown> {
+    guid: string, name = deviceName(device)): Record<string, unknown> {
   return {
     __type: `AddDeviceBySearchResultOperation:#${DEVICE_OPERATION}`,
     ParentAccount: accountId(record),
     ReturnIdAsKey: guid,
     ControlPort: 7,
-    DeviceName: deviceName(device),
+    DeviceName: name,
     DeviceClassification: 0,
     IsScartCableSupported: false,
     SetupState: 1,

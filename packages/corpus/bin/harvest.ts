@@ -53,12 +53,15 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { LAB, IR_ARCHIVE } from '@harmony/lab';
 import { devices as configDevices, parse, payloadOf, catalogueDevice } from '@harmony/codec';
 import {
-  ACCOUNT_DIRECTOR, ACCOUNT_MANAGER, COMPILE_MANAGER, DELETION_MANAGER, DEVICE_MANAGER, MyHarmonySession,
+  ACCOUNT_MANAGER, DELETION_MANAGER, DEVICE_MANAGER, MyHarmonySession,
   credentials, type Reply,
 } from '../src/myharmony.ts';
 import {
-  HarvestRefusal, PROTECTED_RECORDS, addDeviceOperation, addRefusal, compileStatus, deviceName, operationBag,
-  pickMatch, readZip, splitBatch, type HarvestDevice,
+  compileRecord, devicesOnRecord as recordDevices, searchDevice, type CompileResult,
+} from '../src/record.ts';
+import {
+  HarvestRefusal, PROTECTED_RECORDS, addDeviceOperation, addRefusal, deviceName, operationBag,
+  readZip, splitBatch, type HarvestDevice,
 } from '../src/harvest.ts';
 
 function flag(name: string): string | undefined {
@@ -138,11 +141,7 @@ function expectOk(operation: string, reply: Reply): Record<string, unknown> {
   return reply.json as Record<string, unknown>;
 }
 
-async function devicesOnRecord(): Promise<{ Id: { Value: number } }[]> {
-  const out = expectOk('GetDevicesInAccount', await session.call('GetDevicesInAccount', DEVICE_MANAGER,
-    { accountId: { Value: record, IsPersisted: true } }));
-  return (out['GetDevicesInAccountResult'] as { Id: { Value: number } }[] | null) ?? [];
-}
+const devicesOnRecord = (): Promise<{ Id: { Value: number } }[]> => recordDevices(session, record);
 
 const { email, password } = credentials(selector);
 await session.login(email, password);
@@ -174,17 +173,8 @@ const matches = new Map<HarvestDevice, Record<string, unknown>>();
 const skipUnresolved = process.argv.includes('--skip-unresolved');
 const unresolved: HarvestDevice[] = [];
 for (const device of wanted) {
-  let found: Record<string, unknown>[] = [];
-  // Search type 3 is the client's search box; type 1 finds what 3 misses, measured in the lab client.
-  for (const searchType of [3, 1]) {
-    const out = expectOk('SearchGlobalDevices', await session.call('SearchGlobalDevices', DEVICE_MANAGER, {
-      manufacturer: device.manufacturer, modelNumber: device.model, deviceType: 0, searchType, maxResults: 50,
-    }));
-    found = ((out['SearchGlobalDevicesResult'] as { Matches?: Record<string, unknown>[] } | undefined)?.Matches) ?? [];
-    if (found.some((one) => (one['Id'] as { Value?: number } | undefined)?.Value === device.globalDeviceId)) break;
-  }
   try {
-    matches.set(device, pickMatch(found, device));
+    matches.set(device, await searchDevice(session, device));
   } catch (error) {
     // `--skip-unresolved` is for a long list built by `harvest-list.ts`, where one device the service
     // no longer finds should not stop every other family: it is recorded and left out instead.
@@ -224,39 +214,8 @@ async function clear(ids: number[]): Promise<void> {
   if (left.length > 0) throw new HarvestRefusal(`record ${record} still holds ${left.length} devices; stopping`);
 }
 
-/** One compile of the record as it stands: the ZIP's bytes, or the status word it failed with. */
-async function compile(): Promise<{ zip?: Uint8Array; status: string; downloadUrl?: string }> {
-  const settings = await session.callAt('GetRemoteSettings', `${ACCOUNT_DIRECTOR}Account/${record}/Remote/${remote}/Settings`, 'GET');
-  if (settings.status !== 200) throw new HarvestRefusal(`remote settings answered ${settings.status}; stopping`);
-  const started = expectOk('StartCompileWithLocaleAndSettings', await session.call(
-    'StartCompileWithLocaleAndSettings', COMPILE_MANAGER,
-    { remoteId: { Value: remote, IsPersisted: true }, localeId: 'en-US', remoteSettings: settings.json }));
-  const url = (started['StartCompileWithLocaleAndSettingsResult'] as { DownloadUrl?: string } | undefined)?.DownloadUrl;
-  if (!url) return { status: 'no download url' };
-  const [base, query = ''] = url.split('?');
-  const token = query.split('CompilationId=').pop() ?? '';
-  // The client polls the JSON variant every three seconds until the compiler is done.
-  const poll = `${base!.replace('/RemoteConfiguration', '')}/json2/RemoteConfigurationInJson?`;
-  for (let attempt = 0; attempt < 80; attempt++) {
-    const answer = await session.callAt('RemoteConfigurationInJson', poll, 'POST', { token });
-    const status = compileStatus(answer.bytes) ?? `http ${answer.status}`;
-    if (status === 'Successful') {
-      const at = indexOf(answer.bytes, [0x50, 0x4b, 0x03, 0x04]);
-      return at < 0 ? { status: 'successful without a ZIP' } : { zip: answer.bytes.subarray(at), status };
-    }
-    if (status !== 'Compiling' && status !== 'Pending' && status !== 'Queued') return { status };
-    await sleep(3000);
-  }
-  return { status: 'still compiling after 80 polls', downloadUrl: url };
-}
-
-function indexOf(bytes: Uint8Array, needle: number[]): number {
-  outer: for (let i = 0; i + needle.length <= Math.min(bytes.length, 8192); i++) {
-    for (let j = 0; j < needle.length; j++) if (bytes[i + j] !== needle[j]) continue outer;
-    return i;
-  }
-  return -1;
-}
+/** One compile of the record as it stands, through the module the setup builder shares. */
+const compile = (): Promise<CompileResult> => compileRecord(session, record, remote);
 
 async function harvest(batch: HarvestDevice[], retried = false): Promise<void> {
   const before = new Set((await devicesOnRecord()).map((one) => one.Id.Value));
@@ -274,7 +233,7 @@ async function harvest(batch: HarvestDevice[], retried = false): Promise<void> {
   }
   expectOk('UpdateMultiple', reply);
   const added = (await devicesOnRecord()).map((one) => one.Id.Value).filter((id) => !before.has(id));
-  let result: { zip?: Uint8Array; status: string; downloadUrl?: string } = { status: 'not compiled' };
+  let result: CompileResult = { status: 'not compiled' };
   try {
     if (added.length !== batch.length) {
       throw new HarvestRefusal(`${batch.length} devices sent, ${added.length} on the record; stopping`);

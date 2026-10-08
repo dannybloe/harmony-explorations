@@ -1,0 +1,29 @@
+{
+ "about": "The Harmony 650's starting setup, todo-compile-650.md 1.5: all seven devices of docs/plans/006-the-650-test-setup.md and four of its five activities. Plan 006 is the source of every name and input here; the settings stay at their defaults.",
+ "devices": [
+  { "name": "LG TV", "device": "LG/OLED65G26LA" },
+  { "name": "Plasma", "device": "Panasonic/TX-P42GT30E" },
+  { "name": "Denon", "device": "Denon/AVR-X4800H" },
+  { "name": "KPN", "device": "KPN/TV6000COK" },
+  { "name": "Kodi", "device": "Plex/Plex_Player" },
+  { "name": "Switch", "device": "Ligawo/3090063" },
+  { "name": "Sony HT", "device": "Sony/DAV-C540" }
+ ],
+ "activities": [
+  { "name": "TV kijken", "type": "WatchTV", "devices": [
+   { "device": "LG TV", "input": "HDMI 1", "roles": ["Display"] },
+   { "device": "KPN", "roles": ["ChannelChanging"] },
+   { "device": "Denon", "input": "CBL/SAT", "roles": ["Volume"] } ] },
+  { "name": "Film kijken", "type": "WatchDvd", "devices": [
+   { "device": "Plasma", "input": "HDMI 2", "roles": ["Display"] },
+   { "device": "Kodi", "roles": ["PlayMovie"] },
+   { "device": "Denon", "input": "Media Player", "roles": ["Volume"] } ] },
+  { "name": "Muziek", "type": "ListenToMusic", "devices": [
+   { "device": "Kodi", "roles": ["PlayMedia"] },
+   { "device": "Sony HT", "input": "Audio 2", "roles": ["Volume"] } ] },
+  { "name": "Kodi kijken", "type": "Custom", "devices": [
+   { "device": "LG TV", "input": "HDMI 3", "roles": ["Display", "Volume"] },
+   { "device": "Kodi", "roles": ["PlayMovie"] },
+   { "device": "Switch", "input": "Input 2", "roles": [] } ] }
+ ]
+}
