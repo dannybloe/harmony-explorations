@@ -13,6 +13,7 @@
  * input's name as the catalogue states it. Ids, the power on and off order and the activity group are
  * left for the service to assign, which is what the replies captured in the lab show it doing.
  */
+import type { ActivityRoleName } from '@harmony/codec';
 
 /** One device of a setup: what the remote calls it, and its catalogue entry as `<manufacturer>/<file>`. */
 export interface SetupDevice {
@@ -20,8 +21,12 @@ export interface SetupDevice {
   readonly device: string;
 }
 
-/** The jobs a device can do in an activity, as the contract names their role types. */
-export type RoleName = 'Display' | 'Volume' | 'ChannelChanging' | 'PlayMovie' | 'PlayMedia' | 'PlayGame';
+/**
+ * The jobs a device can do in an activity, as the contract names their role types. The codec's list,
+ * since the activity composer takes the same roles, `activityFromRoles`, and one vocabulary in two
+ * places is two until one of them moves. A device listed with none is a pass through device here too.
+ */
+export type RoleName = ActivityRoleName;
 
 /** The activity types this setup uses, by the contract's name; `Custom` holds no activity key. */
 export const ACTIVITY_TYPES = { WatchTV: 1, WatchDvd: 2, ListenToMusic: 4, Custom: 5 } as const;
