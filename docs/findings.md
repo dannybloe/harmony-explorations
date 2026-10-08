@@ -45559,6 +45559,13 @@ power, the LG's `PowerOff` and the KPN box's toggle, and the Sony's `Function` t
 2, and **nothing to the Denon**. All Off then sent the Denon's power off, Kodi's and the Sony's, so the
 remote had counted the Denon as on throughout.
 
+**Seen once and unexplained**: at the Listen to Music press the screen went dimmer and stayed so until
+the batteries came out after the run. Muziek's start in this file holds its power and input steps and
+the start up and working screens, the same kinds of step as TV kijken's, and the same as in the starting
+compile, so the file gives no step that sets a light level. How the 650 sets its screen's light is not
+read; the Harmony One's light state machine is section 103 and is arch 12's. The battery level was not
+read at the time.
+
 ### Making Muziek Custom
 
 Logitech's compile still puts Muziek on the Listen to Music key, and Kodi kijken, `Custom` from the start,
