@@ -80,6 +80,7 @@ import {
   archSlot,
   characterMap,
   composeDeviceScreen,
+  deviceModeChrome,
   deviceListRows,
   fontSets,
   glyphOf,
@@ -2932,6 +2933,46 @@ test('an activity row composed on a Harmony 650, 600 and 700 takes the bottom ro
     }
   }
   assert.equal(composed, 3);
+});
+
+test('a compile with no device page of one command takes a composed activity, and still refuses a device page of one',
+     skipUnless('h650_start_config'), () => {
+  // todo-compile-650 3.9. Logitech's compile of the Harmony 650's starting setup has no device page
+  // holding one command, so it carries no picture for one: a compile holds only what its pages draw.
+  // The activity's own screens never need it, since a working page of one command draws the activity
+  // menu's page of one activity, section 336, so the device page chrome reports it missing rather than
+  // refusing the whole configuration.
+  const c = parse(require_('h650_start_config'));
+  assert.equal(deviceModeChrome(c).single, undefined, 'no one item device page background');
+
+  // Plasma kijken, the starting setup's fifth activity in plan 006, built from TV kijken's own start
+  // writes so the re-pick list can be held against Logitech's: the same check as the test above.
+  const reference = handlerSetRoles(c).indexOf('activity');
+  const targets = startTargets(c, reference);
+  const deviceMode = modeRecords(c)![deviceListRows(c)[0]!.mode]!;
+  const commands = deviceMode.pages.flatMap((page) => taggedList(c, page.list)!.entries.map((one) => one.operand));
+  const rows = ['Menu', 'Info'].map((label, k) => ({ label, list: commands[k]! }));
+  const screen = composeActivityScreen(c, nextActivityValue(c), 'Plasma kijken', rows);
+  const built = composeActivity(parse(screen.bytes), {
+    label: 'Plasma kijken', targets,
+    screen: {
+      startupMode: screen.startupMode, workingMode: screen.mode, activity: screen.activity,
+      startVariable: screen.startVariable, flagVariable: screen.flagVariable, set: screen.set,
+    },
+  });
+  const after = parse(composeActivityDeviceList(parse(composeActivityMenuRow(parse(built.bytes), built.label, built.set).bytes), built.activity).bytes);
+  assert.equal(tagFiveMisfit(after, built.set), undefined, 'the composed tag 5 has Logitech\'s shape');
+  assert.deepEqual(tagFiveShape(after, built.set), tagFiveShape(c, reference));
+  const report = coverage(after);
+  assert.equal(report.accounted, report.total);
+  assert.deepEqual(report.overlaps, []);
+  assert.equal(roundTrip(after).equal, true);
+
+  // **The control**: a device page of one command needs the missing picture and is refused where it is
+  // drawn, so the background is optional for what does not draw it and nothing else.
+  const device = composeDevice(c, { label: 'TV', commands: TELEVISION, power: 0 });
+  assert.throws(() => composeDeviceScreen(parse(device.bytes), 'TV', [{ label: 'TV', list: device.lists[1]! }]),
+    (error: unknown) => error instanceof ComposeError && /one item or none/.test(error.message));
 });
 
 /** The activity menu of an arch 14 configuration: the mode whose pages bind the activities, as `activityBindings` reads them. */

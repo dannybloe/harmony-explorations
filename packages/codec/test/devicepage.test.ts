@@ -149,8 +149,10 @@ test('section 330: the four page pictures of the chrome are among the fixed pict
   });
   for (const one of four) {
     const chrome = deviceModeChrome(one.c);
+    // These four each have a device page of one command, so each holds the one item background.
+    assert.notEqual(chrome.single, undefined, `${one.name}: the one item background`);
     const keys = pictureKeys(one.c);
-    const wanted = new Set([chrome.single, chrome.crossed, chrome.topBar, chrome.bottomBar]
+    const wanted = new Set([chrome.single!, chrome.crossed, chrome.topBar, chrome.bottomBar]
       .map((address) => `picture:${keys.get(address)}`));
     const found = attributeScreens(one.units, four).filter((answer) => wanted.has(answer.unit.look));
     assert.equal(found.length, 4, `${one.name}: the four page pictures each once`);

@@ -3522,8 +3522,14 @@ export interface PageFrame {
 
 /** What a device mode page's chrome is made of in one configuration, every piece built or located. */
 export interface DeviceModeChrome extends PageFrame {
-  /** The five pictures' addresses, located by content: a device mode page always has both backgrounds. */
-  single: number;
+  /**
+   * The pictures' addresses, located by content. The crossed background is always held, since every
+   * compile has a device page of several commands. **The one item background need not be**: a compile
+   * carries only the pictures its pages draw, and Logitech's compile of the Harmony 650's starting
+   * setup, `h650_start_config`, has no device page of one command and so no such picture,
+   * `todo-compile-650.md` 3.9. Undefined then, and a page that needs it is refused where it is drawn.
+   */
+  single: number | undefined;
   crossed: number;
 }
 
@@ -3656,7 +3662,9 @@ export function deviceModeChrome(c: Container): DeviceModeChrome {
   if (c.architecture !== 14) throw new ComposeError('a device page\'s chrome is built for the Harmony 600, 650 and 700 only');
   const skin = (c.versionWord ?? -1) & 0xff;
   const pictures = picturesByContent(c);
-  const roles = ['single', 'crossed', 'topBar', 'bottomBar', 'battery'] as const;
+  // The look is the one whose pictures the configuration holds, the one item background aside, which
+  // a compile without a device page of one command leaves out; it is located below if it is held.
+  const roles = ['crossed', 'topBar', 'bottomBar', 'battery'] as const;
   const whole = DEVICE_PAGE_LOOKS.filter((look) => look.skins.includes(skin)
     && roles.every((role) => (pictures.get(look[role])?.length ?? 0) > 0));
   if (whole.length !== 1) {
@@ -3664,7 +3672,7 @@ export function deviceModeChrome(c: Container): DeviceModeChrome {
       + `${whole.map((one) => one.name).join(' and ') || 'none of the measured ones'}, not one`);
   }
   const look = whole[0] as DevicePageLook;
-  const one = (role: (typeof roles)[number]): number => {
+  const one = (role: (typeof roles)[number] | 'single'): number => {
     const found = pictures.get(look[role]) ?? [];
     if (found.length !== 1) throw new ComposeError(`${look.name}'s ${role} picture is stored ${found.length} times`);
     return found[0] as number;
@@ -3680,7 +3688,8 @@ export function deviceModeChrome(c: Container): DeviceModeChrome {
 
   const chrome: DeviceModeChrome = {
     look: look.name,
-    single: one('single'), crossed: one('crossed'), topBar: one('topBar'), bottomBar: one('bottomBar'),
+    single: (pictures.get(look.single)?.length ?? 0) === 0 ? undefined : one('single'),
+    crossed: one('crossed'), topBar: one('topBar'), bottomBar: one('bottomBar'),
     battery: batteryProgram(c, look, pictures),
     word: DEVICE_PAGE_BACK_WORD, backFont, backCodes, backX, backHome,
   };
