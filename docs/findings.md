@@ -45302,3 +45302,109 @@ a screen command sending its copy without the copy's silence.
   the control.
 * `packages/codec/test/ir.test.ts`: the commands and their single shot copies on both remotes.
 * `docs/config-format.md` under `0x75` and the activity composer's send list; `docs/how-a-harmony-works.md`.
+
+## 338. Every infrared record the Harmony 650's test setup composes is one Logitech compiled, and a power command repeats while held
+
+**Date:** 8 October 2026. **Status:** confirmed in the configuration, on one compile of seven devices;
+nothing here needs a remote.
+
+**Asked for by `todo-compile-650.md` 2.6**: every infrared code of the test setup can be written. Plan
+006 chose the seven devices because each composes whole, every catalogue command with its inputs. What
+that did not say is whether what we write is what Logitech writes, and since 1.6 there is a compile to
+hold it against: `h650_start_config`, Logitech's compile of all seven on the bench Harmony 650.
+
+**Sources, checked before the work.** Sections 161, 162, 174, 258, 308, 309, 320, 325 and 337;
+`docs/config-format.md` on the record's three blocks; `composecatalogue.ts` and its test; plan 006's scan
+in the lab. Logitech's client was not read: the question is about the bytes their compiler wrote, and the
+compile answers it.
+
+### Every record we compose is one of theirs
+
+Each device composed whole, with its inputs, onto `h650_panasonic_config`, whose fonts spell every label
+a whole device needs, and every record compared as its three blocks' raw words with the records in
+Logitech's group for the same device. The comparison is the blocks and one way, each of ours against
+theirs; a record's header differs only in its address bytes, as placement predicts, which the reviewer
+below checked and the test does not:
+
+| device | our records | identical to one of theirs | their records |
+|---|---|---|---|
+| LG TV, LG OLED65G26LA | 65 | 65 | 85 |
+| Plasma, Panasonic TX-P42GT30E | 65 | 65 | 85 |
+| Denon, Denon AVR-X4800H | 120 | 120 | 139 |
+| KPN, KPN TV6000COK | 39 | 39 | 49 |
+| Kodi, Plex Player | 60 | 60 | 70 |
+| Switch, Ligawo 3090063 | 12 | 12 | 15 |
+| Sony HT, Sony DAV-C540 | 57 | 57 | 58 |
+
+**418 of 418**, 407 commands and 11 power steps. The control: our LG records against Logitech's Plasma
+group match none, and the blind reviewer found none in any of the 42 ordered pairs of devices, so the
+count is the devices' own and not codes every device shares.
+
+### Correcting the composer: a power command repeats while held
+
+Before this, 398 of the 418 matched, and the twenty that did not were every command named Power on the
+seven devices, `PowerOn`, `PowerOff`, `PowerToggle` and the Denon's zone variants: our first block was
+theirs exactly, and theirs carried the family's held block where ours carried none. The catalogue
+composer withheld it from any command named Power under `full`, on the reasoning that a held power
+toggle must not repeat. **No compile shows that reasoning**: Logitech gives all twenty the held block of
+their family, as it does every other command, and phase 7 in `compose.test.ts` had already seen
+Logitech give a Harmony One's LG power toggle a held block, one of the three commands it compared. The
+composer now does the same under `full`. Without
+`full` the first command is still the one sent both ways and still does not repeat; that path was not
+measured here.
+
+A power **step**, the record of its own a power action list sends, is a different record and is
+unaffected: it has no lead in and no held block in Logitech's compile and in ours, section 309.
+
+### Their 83 records more
+
+Logitech's groups for the seven hold 83 records that are not ours, every one a single block with no lead
+in. **82 are one of our commands' first blocks with its opening silence dropped**, section 337's copies,
+so a copy is writable from what we compose: the digits, the inputs, the Denon's QuickSelect keys, OK and
+a few screen commands; which commands get one and what sends it is section 337's open question and
+5.2's. The last is the LG group's `Logitech 24 Bit` code 0, a 4000 and 4500 lead in followed by 25 marks
+of 400 alone, which section 162 showed our emitter reproduces byte for byte. It is no catalogue command
+of the LG, and it is sent through one action list called from 35 places in this compile. The same record
+sits in the TV group of `h700_config` and `h700_config_2` and in the PS3 group of the 650's earlier
+compiles, and `h600_config` holds the same frame inside a longer record; what it is for is not read
+here.
+
+### Scope, decision 16
+
+The composer's correction is measured on one Logitech compile for the Harmony 650, arch 14, of seven
+devices. The fact under it, that Logitech gives a power command its family's held block, is seen on arch
+12 too: phase 7's LG power toggle on a Harmony One compile. The audit below adds the 650 and 700 power
+hold compiles. **One shape is unexplained**: the PS3 group of every power hold compile and of
+`h650_panasonic_config` holds three records with the 50 ms lead in and no held block, which no command
+we compose for a Playstation 3 is; whether a command of a family with a held block can go without one is
+therefore not settled, only that none of the 20 here does.
+
+### The two reviewers
+
+Run per the `finding` skill before the commit. The blind one, given the question and not the answer,
+measured the same table, 418 of 418, and the 83 extra records as 82 copies and one other, with two
+controls of its own: 0 matches in all 42 ordered pairs of devices, and 0 of 418 still matching after one
+microsecond is added to one word of each record. The auditor confirmed the counts one level down and
+found six faults in the first draft, all corrected above: the draft counted 94 one block records and
+called 93 copies, which counted our own 11 power steps among them; it put the 24 bit record in a group
+of `h600_config`, where only its frame sits, inside a longer record; it quoted phase 7 as if that test
+had covered every command rather than three; it said byte for byte where the comparison is the three
+blocks; its test asserted twenty power commands held without asserting there were twenty; and the spec
+sentence spoke for Logitech's compiles from one. Composing the devices of the five power hold compiles
+whole, it found 27 more power commands over 13 devices, each carrying its family's held block as
+ours now does; that count is the auditor's and is not in a test.
+
+### Falsification
+
+A Logitech compile whose record for a command named Power has no held block where its family has one; any
+record of a test setup device composed whole that is not byte identical to one of Logitech's for the
+same device.
+
+### Where it lands
+
+* `packages/codec/test/composecatalogue.test.ts`: the seven devices composed whole against
+  `h650_start_config`, 418 of 418, the twenty power commands all with a held block, Logitech's 83 extra
+  records as 82 copies and the one code that is not, with the other device's group as the control. With
+  the old rule the test fails at 398.
+* `packages/codec/src/composecatalogue.ts`: the power exception removed under `full`.
+* `docs/config-format.md` under the record's three blocks.

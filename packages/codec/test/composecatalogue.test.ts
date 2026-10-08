@@ -456,3 +456,102 @@ test('a whole composed device draws no corner label in a font its pages use for 
     assert.equal(labels.length, 42, 'every corner label line of the seven pages');
     assert.deepEqual(labels.filter((one) => chrome.has(one.font)), [], 'no label line in a chrome font');
   });
+
+// ---------------------------------------------------------------------------------------------------
+// The Harmony 650's test setup: every infrared record we compose is the one Logitech compiled
+// ---------------------------------------------------------------------------------------------------
+
+/**
+ * The seven devices of plan 006, as the archive names them and as the starting setup's compile names
+ * them, todo-compile-650 2.6. `h650_start_config` is Logitech's compile of all seven on the bench 650,
+ * synced by MyHarmony and read off the remote; `h650_panasonic_config` is a base whose fonts spell
+ * every label a whole device needs.
+ */
+const TEST_SETUP: readonly { manufacturer: string; model: string; theirs: string }[] = [
+  { manufacturer: 'LG', model: 'OLED65G26LA', theirs: 'LG_TV' },
+  { manufacturer: 'Panasonic', model: 'TX-P42GT30E', theirs: 'Plasma' },
+  { manufacturer: 'Denon', model: 'AVR-X4800H', theirs: 'Denon' },
+  { manufacturer: 'KPN', model: 'TV6000COK', theirs: 'KPN' },
+  { manufacturer: 'Plex', model: 'Plex_Player', theirs: 'Kodi' },
+  { manufacturer: 'Ligawo', model: '3090063', theirs: 'Switch' },
+  { manufacturer: 'Sony', model: 'DAV-C540', theirs: 'Sony_HT' },
+];
+
+/** A record's three blocks as their raw words up to the terminating zero, `-` for a null pointer. */
+function recordBlocks(c: Container, group: number): string[][] {
+  return irGroups(c)![group]!.addresses.map((address) => irHeaderPointers(c, address).slice(0, 3).map((pointer) => {
+    if (pointer === 0) return '-';
+    const words: number[] = [];
+    for (let at = c.blobOffsetOf(pointer)!; ; at += 2) {
+      const word = c.blob[at]! | (c.blob[at + 1]! << 8);
+      if (word === 0) break;
+      words.push(word);
+    }
+    return words.join(',');
+  }));
+}
+
+test('the test setup\'s seven devices composed whole are infrared records Logitech compiled for them, three blocks word for word',
+  needing(skipWithoutIrArchive(), skipUnless('h650_panasonic_config', 'h650_start_config')), () => {
+    const base = open('h650_panasonic_config');
+    const theirs = open('h650_start_config');
+    const theirGroup = new Map(devices(theirs).map((one) => [one.name, one.group!]));
+    let ours = 0;
+    let identical = 0;
+    let powerHeld = 0;
+    let powerCommands = 0;
+    let copies = 0;
+    let copiesOfOurs = 0;
+    const notCopies: string[] = [];
+    let control = -1;
+    for (const one of TEST_SETUP) {
+      const result = composeCatalogueDevices(base, IR_ARCHIVE!, [{ manufacturer: one.manufacturer, model: one.model,
+        label: 'Test', full: true, inputs: true }], { maxDevices: 99 });
+      const device = result.devices[0]!;
+      assert.deepEqual(device.leftOut, [], `${one.theirs}: every catalogue command composes`);
+      const composed = parse(result.bytes);
+      const mine = recordBlocks(composed, devices(composed).find((d) => d.name === 'Test')!.group!);
+      const theirRecords = recordBlocks(theirs, theirGroup.get(one.theirs)!);
+      const theirSet = new Set(theirRecords.map((blocks) => blocks.join('|')));
+      ours += mine.length;
+      identical += mine.filter((blocks) => theirSet.has(blocks.join('|'))).length;
+      // A command named Power repeats while held, as every other command does: Logitech gives it its
+      // family's held block. Our power steps are records of their own after the commands, and the two
+      // are told apart by name.
+      device.commandNames.forEach((name, k) => {
+        if (!name.startsWith('Power')) return;
+        powerCommands += 1;
+        if (mine[k]![1] !== '-') powerHeld += 1;
+      });
+      // Logitech's records that are not ours are one block records, section 337: a copy of one of our
+      // once blocks without the silence it opens with, or a code no catalogue command is.
+      const onceWithoutLead = new Set(mine.map((blocks) => {
+        const words = blocks[0]!.split(',').map(Number);
+        return words.slice(words.findIndex((word) => (word & 0x8000) !== 0)).join(',');
+      }));
+      const mineSet = new Set(mine.map((blocks) => blocks.join('|')));
+      for (const blocks of theirRecords) {
+        if (mineSet.has(blocks.join('|'))) continue;
+        assert.deepEqual([blocks[1], blocks[2]], ['-', '-'], `${one.theirs}: a record not ours has one block`);
+        copies += 1;
+        if (onceWithoutLead.has(blocks[0]!)) copiesOfOurs += 1;
+        else notCopies.push(`${one.theirs}: ${blocks[0]!.split(',').slice(0, 4).join(',')}`);
+      }
+      // **The control**: the same comparison against another device's records finds nothing, so the
+      // count above is the devices' own and not codes every device shares.
+      if (one.theirs === 'LG_TV') {
+        const plasma = new Set(recordBlocks(theirs, theirGroup.get('Plasma')!).map((blocks) => blocks.join('|')));
+        control = mine.filter((blocks) => plasma.has(blocks.join('|'))).length;
+      }
+    }
+    assert.equal(ours, 418, 'records composed for the seven devices');
+    assert.equal(identical, 418, 'records byte identical to one of Logitech\'s for the same device');
+    assert.equal(powerCommands, 20, 'commands named Power on the seven');
+    assert.equal(powerHeld, 20, 'power commands that repeat while held');
+    assert.equal(control, 0);
+    assert.equal(copies, 83, 'records in Logitech\'s groups for the seven that are not ours');
+    assert.equal(copiesOfOurs, 82, 'copies of one of our once blocks, its silence dropped');
+    // The one left is section 162's `Logitech 24 Bit` code 0: a 4000 and 4500 lead in, then marks of
+    // 400 alone, which our emitter reproduces byte for byte there. What sends it is not read here.
+    assert.deepEqual(notCopies, ['LG_TV: 36768,4500,33168,1000']);
+  });

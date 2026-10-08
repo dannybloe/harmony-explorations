@@ -3151,6 +3151,12 @@ group without a held block falls through. Four shapes occur over 3703 groups and
 | `B0B`, once plus tail | 368 |
 | `BBB` | 95, and only in four arch 8 configs |
 
+**A command named Power gets its family's held block** like any other command, section 338: all twenty
+on the seven devices of the Harmony 650's test setup, and the Harmony One LG's power toggle in phase 7's
+compile. A power **step**, the record a power action list sends, is a different record and has none,
+section 309. Whether every command of a family with a held block carries it is not settled: three PS3
+records with a lead in and no held block are unexplained, section 338.
+
 **The interval between two sends of a held key is slot 1's own duration**, since the firmware replays
 the whole block before looking at the keypad again. 30.8 ms to 752 ms across the corpus, most between
 60 and 120 ms. `irRepeatPeriod` returns it, and it is the number a user experiences as the repeat rate.

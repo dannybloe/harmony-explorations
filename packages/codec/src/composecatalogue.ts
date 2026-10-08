@@ -160,10 +160,13 @@ export function composeCatalogueDevice(
       throw new ComposeError(`${manufacturer} ${model} has no command called ${name}. It has: `
         + [...byName.keys()].sort().join(', '));
     }
-    // The power toggle must not repeat when held; everything else is a key you hold down. Under
-    // `full` the power commands are the ones named so, and every other command repeats where its
-    // family has a held block and sends once where it has none.
-    if (full) return { stated: keycode, ...(name.startsWith('Power') ? { held: false } : {}) };
+    // Under `full` every command repeats where its family has a held block and sends once where it
+    // has none, the power commands included: Logitech's compile of the Harmony 650's starting setup
+    // gives all 20 power commands of its seven devices the held block of their family, as it does every
+    // other command, todo-compile-650 2.6. This withheld it from every command named Power until then,
+    // on the reasoning that a held toggle must not repeat, which no compile shows.
+    if (full) return { stated: keycode };
+    // Without `full` the first command is the one sent both ways, and it does not repeat.
     return { stated: keycode, held: name !== wanted[0] };
   });
   // The command sent both ways where the catalogue's power steps are not used.
