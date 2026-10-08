@@ -41098,6 +41098,30 @@ compared. That step is `7E` in both on `h600_config` and the Remote Assistant's 
 on the other three. Without a screen, and on every other architecture, the composer still points tag
 5 at the enter list.
 
+### On the bench, todo-compile-650 3.9
+
+Measured on the Harmony 650 with the Flirc receiver, one write of Logitech's compile of the starting
+setup with Plasma kijken composed onto it (`reads/20261008T093857Z-ir-test-harmony-650-picking-the-running-activity-again-and-all-off-with-everything-off.json`).
+The written file's two tag 5 lists, read back out of it: TV kijken's, Logitech's, writes `LG_TV_Input`
+3 and `Denon_Input` 0 through a list; Plasma kijken's, ours, writes `Plasma_Input` 3 inline. Both open
+with `S := 1`, close with `S := 0` and hold the working screen and nothing else.
+
+* Plasma kijken started from the menu: KPN `PowerToggle`, the Plasma's `PowerOn` (seven frames), and
+  6.5 s later its `InputHdmi1`. Picked again from the menu: **no frame at all**, and no problem marked
+  at the step, whose instruction predicted no "Starting" screen.
+* Watch TV from Plasma kijken: the LG's `PowerOn`, the Denon's power code, the Plasma's `PowerOff`, the
+  Denon's `InputCbl/Sat` and the LG's `InputHdmi1`, and nothing for the KPN box, which both activities
+  keep on. Watch TV again: **the LG's `InputHdmi1` and the Denon's `InputCbl/Sat` again**, no power.
+
+So whether a second pick resends an input is decided by the device's input variable and not by the tag
+5 list, and section 332's walker predicts both halves. The Plasma's `InputType` takes its values through
+transitions from `-3`, so the second pick's write of 3 over 3 fires nothing; the LG's `Screen` and the
+Denon's `Input` take theirs from `-2`, which fires on every write. The step section 332 composes after
+the Plasma's power on, `InputType` reset to 7 silently, is what makes its first start a change, and a
+second pick has no power on to run it. Our composed tag 5 and Logitech's behaved alike, each according
+to its devices; the one observation that would have told them apart, a start up screen on the second
+pick, was not reported for either.
+
 ### Scope, decision 16
 
 The switch routine is read on arch 12 and arch 14. The Harmony 525's image is not checked, and the
@@ -44435,6 +44459,17 @@ set to 7 silently after the 5 second delay, so the write of 3 by every start tha
 change. Composed several at a time into the base configurations of Logitech's five multi device compiles,
 the devices asked for with inputs carry 10 reset calls between them, and each device's whole power on
 list, delay and resets, equals the one in Logitech's compile of the same devices.
+
+### All Off with every device counted as off, todo-compile-650 3.15
+
+All Off writes 0 to each device's power variable, and in the written file each of the seven power
+variables carries only the two transitions 0 to 1 and 1 to 0, so a write of 0 over 0 fires nothing and All Off sends nothing to a
+device the remote counts as off. On the Harmony 650 straight after the write of section 313's bench
+file, all seven power variables read 0 over USB (data memory `0xE2B` to `0xE52`), and All Off pressed
+off the cable sent no frame (the same run, step 1). The single Denon `PowerOff` the earlier run heard
+before Kijk TV started (`reads/20261007T054551Z-ir-test-harmony-650-help-does-nothing-and-the-gap-between-devices.json`,
+step 1) is not explained by this: an All Off with the KPN box and the Denon counted as on fits its
+frames, and what was pressed then is unrecorded.
 
 ### Falsification
 
