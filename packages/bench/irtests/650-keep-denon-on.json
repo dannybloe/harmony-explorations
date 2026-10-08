@@ -1,0 +1,18 @@
+{
+  "name": "Harmony 650, the Denon kept on between activities",
+  "description": "Opportunistic, beside todo-compile-650 3.10: no write. The remote holds Logitech's compile of the starting setup with MyHarmony's 'keep this device on when switching Activities' set on the Denon (h650_options_config, section 340). In that compile Muziek's start no longer writes the Denon's power 0, while All Off still does. Predicted: TV kijken switches the Denon on; switching to Muziek switches the LG and the KPN box off and Kodi and the Sony on, and sends the Denon nothing; All Off then switches the Denon off together with Kodi and the Sony. Keep the remote off the cable and pointed at the Flirc.",
+  "steps": [
+    {
+      "instruction": "Press All Off, so every device starts off. The Flirc may hear power off codes for whatever the remote still counted as on, or nothing. Mark when it is quiet"
+    },
+    {
+      "instruction": "Press the Watch TV key. Expect 'Starting TV kijken', the power on codes of the LG, the KPN box and the Denon, then the LG's HDMI 1 and the Denon's CBL/SAT input, and then TV kijken's screen. Mark when it settles"
+    },
+    {
+      "instruction": "Press the Listen to Music key. Expect 'Starting Muziek', Kodi's and the Sony's power codes, the LG's and the KPN box's power codes switching them off, and the Sony's Audio 2 input. Expect NO power code for the Denon: it stays on. Mark when it settles, and mark anything sent to the Denon"
+    },
+    {
+      "instruction": "Press All Off. Expect Kodi, the Sony and the Denon switching off: the Denon's PowerOff is the proof the remote still counted it as on"
+    }
+  ]
+}
