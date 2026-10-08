@@ -45523,3 +45523,59 @@ on a key press.
 * `packages/codec/test/passthrough.test.ts`: Logitech's compile read, ours composed against it with the
   switch left out as the control, and the refusals.
 * `docs/config-format.md` under an activity's key map.
+
+## 340. Keeping a device on between activities removes its switch off from the other activities' starts, and an activity's type does not choose its key alone
+
+**Todo `todo-compile-650.md` 3.10 and 3.11.** Two questions about what Logitech's compiler does with a
+setting: what MyHarmony's "leave devices on when switching activities" changes in a configuration, and
+how to get a compile with an empty activity key, which `clearActivityKey` needs as its model.
+
+**Sources checked**: MyHarmony's decompiled client, `work/myharmony/src/`: the setting is one device's,
+"I want to keep this device on when switching Activities and only turn it off when I press the Off
+button", in the device's power settings view, which sets `IsPoweredOnBetweenActivities` in the device's
+power feature and saves that one feature with `UserFeatureManager/SaveUserFeatures`. No client code sets
+an activity's group; the service assigns it. This document, sections 280, 291 and 314.
+
+**The compile pair.** The Harmony 650's starting setup (`h650_start_config`, section 338's) and the same
+record after two changes made by `packages/corpus/bin/build-setup.ts --stage options`: the Denon's keep on
+flag set, and Muziek saved again as `Custom`. The account read both back, the flag true and Muziek
+`Custom` with activity group 0. The record was then synced by MyHarmony to the bench 650 and read off it
+(`h650_options_config`), so this compile is the one a person's sync produces.
+
+### Keeping the Denon on
+
+The starts of the four activities differ in two writes and no others: Kodi kijken's and Muziek's no
+longer write `Denon_Power` 0. Those are the two activities that do not use the Denon. TV kijken and Film
+kijken still write it 1, nothing is added anywhere, and the All Off list still names the Denon's power
+variable in both compiles. So on the remote, switching from TV kijken to Muziek leaves the Denon on, and
+only All Off switches it off, which is what the setting's wording says. The composer can already build
+that shape by leaving a device out of the targets it completes with 0, section 280; it has no per device
+option for it yet.
+
+### Making Muziek Custom
+
+Logitech's compile still puts Muziek on the Listen to Music key, and Kodi kijken, `Custom` from the start,
+still holds no key, in both compiles. So an activity's type and its group on the account do not decide
+its key alone. What does is not established: the four activities keep their order and their handler sets,
+and the one difference in the inputs is Muziek's type. Section 314's six compiles with an empty Listen to
+Music key are two setups, and whether either holds fewer activities than keys is not checked here. So 3.11
+still has no compile of the 650's own setup with an empty key.
+
+### Scope, decision 16
+
+One device, one compile pair, arch 14 (the Harmony 650). The other architectures are not checked, and
+neither is a device kept on that an activity uses for volume or input switching only.
+
+### Falsification
+
+A compile with the keep on flag set whose other activities still write that device's power 0, or whose
+All Off leaves it out; for the key, a compile where saving an activity as `Custom` alone empties its key.
+
+### Where it lands
+
+* `packages/codec/test/devicepower.test.ts`: the two starts' dropped writes, exactly, nothing added, and
+  the All Off list in both compiles.
+* `packages/codec/test/activitykeys.test.ts`: the three keys and their activities in both compiles.
+* `packages/corpus/src/setup.ts`, `keepOnPayload` and `customPayload`, and the builder's `options` stage,
+  with the door `MYHARMONY_ALLOW_FEATURE_WRITE` in `packages/corpus/src/myharmony.ts`.
+* `docs/config-format.md` under entry 1's activity keys.

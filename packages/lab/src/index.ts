@@ -194,6 +194,10 @@ export const IMAGES: Readonly<Record<string, string>> = {
   h650_bench_2_3_base: '20261008T0930Z-h650-bench-2-3-region.bin',
   // The bench 650's region after 3.9's write, the compare base for 3.14's.
   h650_bench_3_9_base: '20261008T0951Z-h650-bench-3-9-region.bin',
+  // The starting setup with the Denon kept on between activities and Muziek saved as Custom, synced
+  // by MyHarmony and read off the bench 650, todo-compile-650 3.10 and 3.11: the region and the container.
+  h650_options_base: '20261008T1237Z-h650-options-region.bin',
+  h650_options_config: '20261008T1238Z-h650-options-config.bin',
   h650_gap_ir_all5: '20261007T054551Z-ir-test-harmony-650-help-does-nothing-and-the-gap-between-devices.json',
   h650_gap_ir_kpn20: '20261007T060756Z-ir-test-harmony-650-the-kpn-box-s-delay-between-devices-at-2-s.json',
   h650_gap_ir_denon20: '20261007T061443Z-ir-test-harmony-650-the-denon-s-delay-between-devices-at-2-s.json',
@@ -739,6 +743,7 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
     // Logitech's compile of the starting setup as the 650 holds it, and the region around it; the 650
     // is not yet in the corpus.
     'h650_start_base', 'h650_start_config', 'h650_bench_2_3_base', 'h650_bench_3_9_base',
+    'h650_options_base', 'h650_options_config',
     // External flash of the bench Harmony 700 from 0x000000, kept for the staged application at its
     // start. The container at 0x020000 is byte for byte `h700_gspm`, the embedded config the 2.8
     // package carries as its region 3, so counting it would count that one twice. Section 295.

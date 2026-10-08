@@ -10,6 +10,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { require_, skipUnless } from '@harmony/lab';
+import { activities as activityList, activityKeys as keysOf, parse as parseConfig } from '../src/index.ts';
 import {
   ACTIVITY_KEYS,
   type ActivityKey,
@@ -221,3 +222,19 @@ test('a composed activity goes on the key it is given, and on no key without one
   assert.throws(() => composeActivity(one, { label: 'Radio', targets: [], activityKey: 'Watch TV' }),
                 (error: unknown) => error instanceof ComposeError && /cannot go on Watch TV/.test((error as Error).message));
 });
+
+test('an activity saved again as Custom keeps its Listen to Music key in Logitech\'s compile',
+  skipUnless('h650_start_config', 'h650_options_config'), () => {
+    // todo-compile-650 3.11's attempt at an empty key: Muziek saved again as Custom, its group read back
+    // as 0 on the account. Logitech's compile still puts it on the Listen to Music key, and Kodi
+    // kijken, Custom from the start, still holds no key. So the type does not decide the key alone.
+    for (const name of ['h650_start_config', 'h650_options_config']) {
+      const c = parseConfig(require_(name));
+      const byset = new Map(activityList(c).map((one) => [one.set, one.name]));
+      assert.deepEqual(keysOf(c).map((one) => [one.key, one.kind, byset.get((one as { set?: number }).set ?? -1)]), [
+        ['Watch TV', 'activity', 'TV kijken'],
+        ['Watch a Movie', 'activity', 'Film kijken'],
+        ['Listen to Music', 'activity', 'Muziek'],
+      ], name);
+    }
+  });

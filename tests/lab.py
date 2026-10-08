@@ -207,6 +207,9 @@ IMAGES = {
     'h650_bench_2_3_base': '20261008T0930Z-h650-bench-2-3-region.bin',
     # The bench 650's region after 3.9's write, the compare base for 3.14's.
     'h650_bench_3_9_base': '20261008T0951Z-h650-bench-3-9-region.bin',
+    # The starting setup with the Denon kept on and Muziek Custom, synced by MyHarmony, 3.10 and 3.11.
+    'h650_options_base': '20261008T1237Z-h650-options-region.bin',
+    'h650_options_config': '20261008T1238Z-h650-options-config.bin',
     'h650_gap_ir_all5': '20261007T054551Z-ir-test-harmony-650-help-does-nothing-and-the-gap-between-devices.json',
     'h650_gap_ir_kpn20': '20261007T060756Z-ir-test-harmony-650-the-kpn-box-s-delay-between-devices-at-2-s.json',
     'h650_gap_ir_denon20': '20261007T061443Z-ir-test-harmony-650-the-denon-s-delay-between-devices-at-2-s.json',
@@ -728,6 +731,7 @@ PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_confi
                       'h650_clock_base',
                       # The starting setup's compile as the 650 holds it, and its region.
                       'h650_start_base', 'h650_start_config', 'h650_bench_2_3_base', 'h650_bench_3_9_base',
+                      'h650_options_base', 'h650_options_config',
                       # External flash of the bench Harmony 700 from 0x000000, kept for the staged
                       # application; its container at 0x020000 is byte for byte `h700_gspm`.
                       # Section 295.

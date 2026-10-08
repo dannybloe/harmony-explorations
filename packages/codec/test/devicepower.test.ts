@@ -19,6 +19,10 @@ import { join } from 'node:path';
 
 import { IR_ARCHIVE, needing, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
 import {
+  ACTION_LIST_INDEX_OPCODE as CALL_LIST, EVENT_MASK, STATE_WRITE_BASE, activities, allOffList, handlerSets, nameNodes,
+  taggedList,
+} from '../src/index.ts';
+import {
   ComposeError,
   type Container,
   DEVICE_QUANTITY_DEFAULT,
@@ -526,4 +530,40 @@ test('the mapping takes the power of 235572 of the archive\'s 276236 devices, an
     });
     assert.equal([...outcomes.values()].reduce((sum, n) => sum + n, 0), 276236);
     assert.deepEqual({ several, held, waitInOffOnly }, { several: 2868, held: 2938, waitInOffOnly: 1655 });
+  });
+
+/** Every power write an activity's start makes, one call deep and the next, by variable name. */
+function startPowerWrites(c: Container): Map<string, string[]> {
+  const lists = c.actionLists() ?? [];
+  const names = new Map((nameNodes(c) ?? []).map((one) => [one.index, one.name]));
+  const walk = (list: number, depth: number): string[] => (lists[list] ?? []).flatMap((step) =>
+    step.opcode >= STATE_WRITE_BASE ? [`${names.get(step.opcode - STATE_WRITE_BASE)}=${step.operand}`]
+      : step.opcode === CALL_LIST && depth < 2 ? walk(step.operand, depth + 1) : []);
+  const sets = handlerSets(c)!;
+  return new Map(activities(c).map((one): [string, string[]] => {
+    const start = (taggedList(c, sets.addresses[one.set]!)?.entries ?? [])
+      .find((entry) => (entry.tag & EVENT_MASK) === 0 && entry.tag === 1)!.operand;
+    return [one.name ?? '', walk(start, 0).filter((write) => write.includes('_Power_'))];
+  }));
+}
+
+test('keeping a device on between activities drops its switch off from the starts of the activities without it, and All Off keeps it',
+  needing(skipUnless('h650_start_config', 'h650_options_config')), () => {
+    // todo-compile-650 3.10: the same setup compiled by Logitech twice, the second with MyHarmony's
+    // "keep this device on when switching Activities" set on the Denon and Muziek saved as Custom.
+    const before = parse(require_('h650_start_config'));
+    const after = parse(require_('h650_options_config'));
+    const was = startPowerWrites(before);
+    const now = startPowerWrites(after);
+    assert.deepEqual([...now.keys()], [...was.keys()]);
+    const dropped = [...was].map(([name, writes]): [string, string[]] => [name, writes.filter((write) => !now.get(name)!.includes(write))])
+      .filter(([, gone]) => gone.length > 0);
+    // Only the Denon's write of 0, and only in the two activities that do not use the Denon.
+    assert.deepEqual(dropped, [['Kodi kijken', ['Denon_Power_2=0']], ['Muziek', ['Denon_Power_2=0']]]);
+    const added = [...now].filter(([name, writes]) => writes.some((write) => !was.get(name)!.includes(write)));
+    assert.deepEqual(added, []);
+    // The two that use it still switch it on, and All Off still switches it off, in both compiles.
+    for (const name of ['TV kijken', 'Film kijken']) assert.ok(now.get(name)!.includes('Denon_Power_2=1'), name);
+    const denon = deviceVariables(after).find((one) => one.device === 'Denon' && one.property === 'Power')!.index;
+    assert.ok(allOffList(before)!.variables.includes(denon) && allOffList(after)!.variables.includes(denon));
   });

@@ -1266,6 +1266,17 @@ edit: `setActivityKey` and `clearActivityKey` in `packages/codec/src/activitykey
 only while some key is empty, 6 of the 13, which are two setups, and adding it is a length change, so the edit refuses on a
 configuration without it. Arch 12 (Harmony One) is not compared.
 
+**Which activity a key gets is not its type alone**, [findings.md](findings.md) section 340: an
+activity saved again as `Custom`, its group read back as 0 on the account, kept the Listen to Music key
+in Logitech's compile, and an activity `Custom` from the start held none. What empties a key is
+unconfirmed.
+
+**A device kept on between activities**, MyHarmony's per device power setting
+(`IsPoweredOnBetweenActivities`), has its write of 0 left out of the start of every activity that does
+not use it, and nothing else changes: it is still switched on by the activities that use it and still in
+the All Off list, [findings.md](findings.md) section 340. Measured on one device in one compile pair on
+the Harmony 650.
+
 **An activity's key map is built from two roles on arch 14** (Harmony 600, 650 and 700),
 [findings.md](findings.md) section 323, measured on the 40 activities of the 13 Logitech compiles:
 
