@@ -551,7 +551,9 @@ document:
   section 249: the firmware raises a status **code**, the same number on every architecture, and the
   two configuration messages are the two arms of one test in the container validator. A cookie that
   does not match gives code 0, "Go to Website to update settings"; cookies that match with a trailer
-  checksum that does not gives code 26, "Configuration Corrupted". **That condition is arch 12
+  checksum that does not gives code 26, "Configuration Corrupted". **On the Harmony 600 and 650 the
+  checksum is checked only while one setting is on**, and it is off on both units, so they accept a
+  configuration on its three markers alone, section 354. **That condition is arch 12
   (Harmony One) and arch 14 (Harmony 600 and 700) only**, section 253, and this stated it unscoped:
   arch 9 (Harmony 525) has no discriminator variable and picks between the same two codes by **which
   container** failed, raising 26 for a bad user configuration and 0 when the other container is bad

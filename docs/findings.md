@@ -32066,7 +32066,9 @@ place. Read as a sentence:
   **mismatch sets the byte to one**, which is screen 26, **Configuration Corrupted**;
 * a match sets the verified flag and shows nothing.
 
-So the two messages mean two different things and the difference is precise. Screen 26 says "I read
+So the two messages mean two different things and the difference is precise. **On arch 14 the
+checksum arm runs only while setting `0x80`'s bit 0 is set**, section 354, which section 282 read as
+clear on the Harmony 600 and 650, so there a configuration is accepted on its markers alone. Screen 26 says "I read
 a container here and its checksum is wrong". Screen 0 says "I never got as far as a checksum".
 
 ### The three cookies, and a firmware confirmation of section 20 that came free
@@ -32077,7 +32079,13 @@ The checks are the container's own markers, in this order:
 |---|---|---|
 | 1 | `GSPM`, or `AHCM` on arch 9 | offset 0 |
 | 2 | `LWJL` | offset `0x63` on arch 12, `0x5B` on arch 14 |
-| 3 | `PTYY` | the section base slot 4 points at |
+| 3 | `PTYY` | where the three bytes at offset 4, `end_addr`, point |
+
+**The third row said "the section base slot 4 points at"**<!--superseded--> **until section 354**, which read the seek: the
+validator seeks offset 4 of the header, the same seek that found `LWJL` at its offset, and follows the
+three byte address stored there, which is `end_addr`. No container has `PTYY` where base slot 4
+points, so that reading would have every configuration fail; nothing tested it, and it was taken up
+once, in section 353, where it made a working file look broken.
 
 **`0x63` is `0x0B + 4 * 22` and `0x5B` is `0x0B + 4 * 20`.** Section 20 corrected both parsers here
 from a `u32` table at `0x0C` to a table of four byte items at `0x0B`, one slot longer than either had
@@ -47037,11 +47045,93 @@ committed predictions, as reported from the remote:
 
 **"Go to Website to update settings" is screen 0**, which section 249 read on the Harmony One as the
 validator failing one of three markers before it reaches the checksum, and section 253 found the 650's
-images choosing between the same two codes. So the remote did not run the library as a configuration at
-all: it refused it at the markers and showed status screens. **Which marker failed is not measured.** The
-first two, `GSPM` at offset 0 and `LWJL` at `0x5B`, are in the probe file; a quick read of the third,
-`PTYY` where base slot 4 points, read wrong bytes for the working 6.2.13 file as well, so that read and
-not the probe is what is in doubt. What the probe establishes is the floor: a configuration with nothing
-in it, built as the firmware's own status library, is not accepted as one.
+images choosing between the same two codes. This section concluded that the remote refused the library
+at the markers and never ran it as a configuration<!--superseded-->, and **section 354 refutes that**: the probe passes all three
+markers as the 650's validator reads them, and the remote's memory, read with the probe on it, shows the
+configuration's verdict good. The "quick read of the third" marker that failed for the working file as
+well was looking where section 249's table said, base slot 4, which was the table's mistake.
 
 * `packages/codec/test/relocate.test.ts`: the four rebase tests.
+
+## 354. The Harmony 650 accepts the 7.1 probe as its configuration, on its three markers alone
+
+`todo-compile-650.md` 7.1.3, from the firmware, and 7.1.4, on the remote. Section 353 left open which of
+the validator's three markers the probe failed. **None did, and the remote's own memory says it accepted
+the file.**
+
+### What the 650's validator checks
+
+Read out of the 650's own build, `650-0.2-code-base0x9000-bench.bin`, where the validator is at
+`0x151C6`, the address section 257 gives for the Harmony 600's 0.2 build, which disassembles the same:
+
+| | what | where it reads |
+|---|---|---|
+| 1 | `GSPM` | offset 0 |
+| 2 | `LWJL` | offset `0x5B` |
+| 3 | `PTYY` | the address the three bytes at offset 4 state, `end_addr` |
+| 4 | the trailer checksum | the word XOR seeded `0x4321` from offset 0 up to two bytes before `end_addr`, against those two bytes; **only while setting `0x80`'s bit 0 is set** |
+
+The seek at `0x18008` puts the offset in the address's low byte and the top byte at `0x03` when the
+container select bit (`0x68B` bit 4) is set and `0x02` when it is clear, so the configuration is read at
+`0x030000` and the status screens at `0x020000`; `0x17434` starts a plain serial flash read, command
+`0x03` and the address, and `0x17458` reads the bytes. For the third marker `0x17EBE` loads three bytes
+into the address and the read continues from there, an absolute address.
+
+**Section 249's table had the third marker at "the section base slot 4 points at"**<!--superseded-->,
+corrected in place there: on four images, the Harmony 600's and 650's 0.2 builds, the 700's 2.8 and the
+Harmony One's 3.4, the validator seeks offset 4 and follows the address it finds, and on the One the
+helper at `0x2B8AC` reads three bytes into `0xD47` to `0xD49`. Over 232 lab files that open with a
+container cookie, 224 `GSPM` containers have `PTYY` at `end_addr` and none where base slot 4 points; the
+Harmony 525's five `AHCM` containers have `MCHA` at `end_addr`.
+
+**The checksum is gated on arch 14 and not on arch 12.** After `PTYY`, at `0x15278`, the 650 tests bit 0
+of `0x744`; clear, with the configuration selected, it sets the verdict bit (`0x68B` bit 2) at `0x1528C`
+and leaves without computing anything. `0x744` has one writer, at start, which loads setting `0x80` from
+the settings store section 282 read; the 600's build is the same, and the 700's 2.8 does the same with
+`0x3A9`. The Harmony One goes from `PTYY` straight to the checksum. **So on the Harmony 600 and 650
+"Configuration Corrupted" (code 26) can only come from the configuration while that bit is set**, which
+section 282 read as clear on both units.
+
+### The probe on the remote
+
+**By the firmware's arithmetic the probe passes.** As read back off the remote (`h650_7_1_probe`): `GSPM`,
+`LWJL`, `PTYY` at `0x031BC7`, and a checksum of `0xB5DB` against a stated `0xB5DB` that the remote does not
+consult. The 6.2.13 file the remote ran before the first attempt (`h650_7_1_base`) passes the same.
+
+**On the remote, measured**, 7.1.4, with predictions committed in the lab first
+(`work/probe-7-1/predictions-7-1-4.md`). The data memory read over USB, `READ_MISC` selector 7:
+
+| | `0x68B`, the flags | `0x744`, setting `0x80` | the screen |
+|---|---|---|---|
+| the 6.2.13 file, before | `0x16` | | its own |
+| the probe, after the restart | `0x16` | | a plain blue screen on the cable; off it "Go to Website to update settings", keys doing nothing, as in 7.1.2 |
+| the probe, cable out and back | `0x16` | | |
+| the 6.2.13 file, back | `0x16` | `0xFE` | its own |
+
+`0x16` is bits 4, 2 and 1: the configuration selected, its verdict good, and the status screens good.
+**So the remote accepted the library as its configuration**, and on its three markers alone, since
+setting `0x80`'s bit 0 is clear. The validator's own "Go to Website" call, `0x1540E`, is reached only
+with the verdict clear, so it is not what put that text up. The discriminator at `0xD04`, which picks
+between codes 0 and 26, has some 38 writers elsewhere in the image and read `0x15` with the 6.2.13 file
+on, so it says nothing after start.
+
+**The remote drew the library's screens, which is read and not measured.** With the verdict set, the
+screen routine `0x14B3C` reads its screen through the accepted configuration's own base slot 4 table
+(`0x14BA4`, then `0x18020` with slot 4), and only falls back to the status screens at `0x020000` with the
+verdict clear. The library's table puts "Go to Website to update settings" at record 5, its first status
+screen, and the library holds a text only "USB CONNECTED" screen, which 7.1.2 saw on the cable and this
+run did not; why the cable screen differed between the two runs is not known. **What the remote demands
+at minimum, so far: the three markers.** It ran a file with no devices, no activities and no key
+bindings, and drew screens out of it.
+
+**Scope.** The validator, its third marker and the screen routine's fallback are read on arch 14 (the
+Harmony 600's and 650's 0.2 builds and the 700's 2.8); the third marker also on arch 12 (the Harmony
+One's 3.4), which has no checksum gate; arch 9 (Harmony 525) checks its own cookies, section 249, and was
+not read here. The remote measurement is the bench 650's alone. Sources: the firmware images, and
+sections 249, 253, 257, 282 and 347; Logitech's client does not validate a container.
+
+* `tests/test_status_screens.py`: `test_the_third_cookie_is_sought_where_the_headers_end_address_points_on_arch14`
+  and `test_the_harmony_one_follows_the_same_end_address_for_its_third_cookie`.
+* `packages/codec/test/relocate.test.ts`: the validator's checks computed from the firmware rather than
+  the codec's parser, checksum included, on the probe and the 6.2.13 file, with the probe's figures
+  pinned, and one byte of the end marker or the body changed giving the third marker and the checksum.

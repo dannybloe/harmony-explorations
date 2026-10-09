@@ -342,3 +342,40 @@ test('a rebase that leaves out any one kind of field is caught by the census on 
       assert.deepEqual(effective.filter((one) => !readers.includes(one)), blind, name);
     }
   });
+/**
+ * The container validator's checks on the Harmony 600, 650 and 700 as their firmware computes them,
+ * section 354, written here from the firmware rather than from the codec's parser so the two can
+ * disagree. The checksum is always computed, where the firmware computes it only while setting `0x80`'s
+ * bit 0 is set, which it is not on the bench 650: `GSPM`
+ * at offset 0, `LWJL` at `0x5B`, `PTYY` where the three bytes at offset 4 point, and the word XOR seeded
+ * with `0x4321` from the start up to the two bytes before that address, against those two bytes. A
+ * region read starts at the configuration's flash address, `0x030000`.
+ */
+const validatorVerdict = (region: Uint8Array, base = 0x30000): string => {
+  const ascii = (at: number): string => String.fromCharCode(...region.subarray(at, at + 4));
+  if (ascii(0) !== 'GSPM') return 'GSPM';
+  if (ascii(0x5b) !== 'LWJL') return 'LWJL';
+  const end = (region[4]! | region[5]! << 8 | region[6]! << 16) - base;
+  if (end < 0 || end + 4 > region.length || ascii(end) !== 'PTYY') return 'PTYY';
+  let sum = 0x4321;
+  for (let k = 0; k + 1 < end - 2; k += 2) sum ^= region[k]! | region[k + 1]! << 8;
+  return sum === (region[end - 2]! | region[end - 1]! << 8) ? 'accepted' : 'checksum';
+};
+
+test('the 7.1 probe on the Harmony 650 passes the validator\'s three cookies and its checksum, computed as the firmware computes them, section 354',
+  skipUnless('h650_7_1_probe', 'h650_7_1_base'), () => {
+    const probe = new Uint8Array(load('h650_7_1_probe')!);
+    assert.equal(validatorVerdict(probe), 'accepted');
+    // The figures section 354 quotes: PTYY at 0x031BC7, and a checksum of 0xB5DB stated and computed.
+    assert.equal(probe[4]! | probe[5]! << 8 | probe[6]! << 16, 0x031bc7);
+    assert.equal(probe[0x1bc5]! | probe[0x1bc6]! << 8, 0xb5db);
+    // The control: the 6.2.13 file the remote ran before the probe, read off it, passes too, and one byte of the probe's end marker
+    // changed fails at the third cookie, which is the check section 353 had guessed failed.
+    assert.equal(validatorVerdict(load('h650_7_1_base')!), 'accepted');
+    const end = (probe[4]! | probe[5]! << 8 | probe[6]! << 16) - 0x30000;
+    probe[end + 3] ^= 0xff;
+    assert.equal(validatorVerdict(probe), 'PTYY');
+    probe[end + 3] ^= 0xff;
+    probe[0x100] ^= 0x01;
+    assert.equal(validatorVerdict(probe), 'checksum');
+  });

@@ -97,6 +97,21 @@ def _literals_after(instrs, at, count):
     return tuple(out)
 
 
+def _next_cookie(instrs, at):
+    """Where the next cookie comparison starts after `at`: the first MOVLW followed by an XORWF.
+
+    A read's destination address is loaded with MOVLW too, so the literals straight after a seek are
+    not the cookie; the comparison is the literal that is XORed against what was read.
+    """
+    for k, (address, instr) in enumerate(instrs[:-1]):
+        if address > at and instr.mnemonic == 'MOVLW' and instrs[k + 1][1].mnemonic == 'MOVLB' \
+                and instrs[k + 2][1].mnemonic == 'XORWF':
+            return address
+        if address > at and instr.mnemonic == 'MOVLW' and instrs[k + 1][1].mnemonic == 'XORWF':
+            return address
+    raise AssertionError('no cookie comparison after 0x%x' % at)
+
+
 class OneRoutineDisplaysAStatusScreenAndEachCallerIsACondition(unittest.TestCase):
     """The claim section 244 could not make, and the shape of the search that found it."""
 
@@ -230,6 +245,50 @@ class TheThreeChecksAreTheContainersOwnCookies(unittest.TestCase):
             with self.subTest(image=name):
                 self.assertEqual(_literals_after(instrs, start, 4), GSPM)
                 self.assertEqual(_literals_after(instrs, cookie2, 4), LWJL)
+
+    def test_the_third_cookie_is_sought_where_the_headers_end_address_points_on_arch14(self):
+        """Section 354: `PTYY` is read at the address the three bytes at offset 4 state, `end_addr`.
+
+        Section 249's table had it at base slot 4, which no container satisfies: the validator seeks
+        offset 4 of the header, the same seek that found `LWJL` at its offset, and
+        the helper it calls next loads three bytes from there into the table pointer and reads on
+        from that address. Three images, the Harmony 650's bench build among them.
+        """
+        for name, start, seek_offset in (('h600_code_complete', 0x151C6, 0x6D9),
+                                         ('h650_bench_code', 0x151C6, 0x6D9),
+                                         ('h700_code', 0x16468, 0x6DC)):
+            lab.require(name)
+            instrs = _instructions(name, 0x9000)
+            body = [(a, i) for a, i in instrs if start <= a < start + 0x200]
+            with self.subTest(image=name):
+                # The offsets the validator seeks, in order: LWJL's, then the end address's.
+                seeks = [(a, body[k - 1][1].fields['k']) for k, (a, i) in enumerate(body)
+                         if i.mnemonic == 'MOVWF' and i.fields['f'] == seek_offset & 0xFF
+                         and body[k - 1][1].mnemonic == 'MOVLW']
+                self.assertEqual([offset for _, offset in seeks[:2]], [0x5B, 0x04])
+                at = seeks[1][0]
+                calls = [i.fields['target'] for a, i in body if a > at and i.mnemonic == 'CALL'][:2]
+                # The first call is the seek, the same routine LWJL's seek called.
+                lwjl_seek = next(i.fields['target'] for a, i in body if a > seeks[0][0] and i.mnemonic == 'CALL')
+                self.assertEqual(calls[0], lwjl_seek)
+                # The second follows a pointer: three bytes into TBLPTRL, TBLPTRH, TBLPTRU, in order.
+                follow = [i for a, i in instrs if calls[1] <= a < calls[1] + 0x20]
+                stores = [i.fields['f'] for i in follow if i.mnemonic == 'MOVWF'][:3]
+                self.assertEqual(stores, [0xF6, 0xF7, 0xF8])
+                # And what is compared there is PTYY, the next cookie spelled after the follow.
+                self.assertEqual(_literals_after(instrs, _next_cookie(body, at), 4), PTYY)
+
+    def test_the_harmony_one_follows_the_same_end_address_for_its_third_cookie(self):
+        """Arch 12's validator seeks offset 4 too, and its helper reads a three byte address."""
+        instrs = _instructions('one34_code', 0x20000)
+        by_address = dict(instrs)
+        self.assertEqual(by_address[0x28DFE].fields['k'], 0x04)
+        calls = [i.fields['target'] for a, i in instrs if 0x28DFE < a < 0x28E18 and i.mnemonic == 'CALL']
+        self.assertEqual(calls, [ONE_SELECTOR, 0x2B8AC, 0x2B98C])
+        follow = [i for a, i in instrs if 0x2B8AC <= a < 0x2B8CA]
+        self.assertEqual([i.fields['target'] for i in follow if i.mnemonic == 'CALL'], [0x2DE6C] * 3)
+        self.assertEqual([i.fields['f'] for i in follow if i.mnemonic == 'MOVWF'], [0x47, 0x48, 0x49])
+        self.assertEqual(_literals_after(instrs, _next_cookie(instrs, 0x28DFE), 4), PTYY)
 
     def test_arch9_checks_its_own_cookie_instead(self):
         """The negative that says the check is per format rather than a constant of the code."""

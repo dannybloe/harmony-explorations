@@ -28,7 +28,9 @@ block at zero, so a region read of the 650 never leaves the lab for one more rea
 Internal page `0xFF` `+0xEC00`, the architecture's layout. On the 650: **three records, all setting
 `0x80`**, values `0xF8`, `0xFF` and `0xFE`, and the second block erased, measured, section 282. So **no
 delay is saved on this remote** and the configuration's own delays govern, which is the opposite of the
-Harmony 600, section 303. What setting `0x80` means is **not checked**.
+Harmony 600, section 303. **Setting `0x80`'s bit 0 decides whether the configuration's checksum is
+checked at start**, read in the firmware and seen in memory (`0x744` = `0xFE`), section 354: it is clear,
+so this remote accepts a configuration on its three markers alone. Its other bits are **not checked**.
 
 ## The identity block
 

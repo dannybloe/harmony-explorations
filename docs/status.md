@@ -565,7 +565,7 @@ finding.
 
 `todo.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 353<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 354<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and flash has been written on five units**, the first in section 222:
@@ -1456,7 +1456,8 @@ the same number means the same screen on all three architectures read; the recor
 code plus a base per container, which is why the message is entry 0 on a Harmony One and entry 5 on a
 Harmony 600. One routine displays a screen and it has exactly five callers, so there are five
 conditions and no more. The two configuration messages are the two arms of one test at the end of the
-routine that validates a container: it checks three markers in the file and then its checksum, and a
+routine that validates a container: it checks three markers in the file and then its checksum (on the
+Harmony 600 and 650 only while one setting is on, section 354), and a
 marker that does not match shows "go to the website" while a checksum that does not match shows
 "configuration corrupted". So the two messages mean two different things, precisely, and both of the
 screens seen on the bench are accounted for. The search that had failed was for a variable written
