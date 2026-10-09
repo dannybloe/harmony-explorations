@@ -115,7 +115,7 @@ an item, ask whether the finish line moves without it; if it does, the item goes
   - [x] 7.1.5 Which screens a person sees that no key leads to, from the firmware: none of the thirty status screens is drawn from the configuration as far as the code reads, and the firmware's own fourteen are entered only by the configuration's wiring, which `buildWiring` already builds; the bench half dropped, since nothing the remote checks can fail and these screens cannot be raised at the bench (section 355)
 - [x] 7.2 Categorise every screen left: the same on every 650, dynamic, or depending on the configuration; every screen byte of the four 650 compiles is attributed to exactly one, about three quarters fixed (section 317)
 - [ ] 7.3 The screen records for the device list, the activity menu and Off, each page with its second copy (section 69); the activity menu's rows in the setup description's order, since MyHarmony lets no 650 owner choose one (section 351)
-- [ ] 7.4 Build the standard screens the probe shows are needed: the setup and status screens, and the welcome tour if it cannot simply be skipped
+- [ ] 7.4 Build the standard screens the probe shows are needed: the firmware's own fourteen screens and the setup screens, and the welcome tour if it cannot simply be skipped; not the thirty status screens, which the 650 never draws from a configuration (section 355)
 
 ## 8. Text and fonts
 
