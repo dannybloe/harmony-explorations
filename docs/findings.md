@@ -45948,9 +45948,9 @@ value are the same.
 
 Timer 0 is the one section 292 found running ten seconds after the screen light's own timer, queueing
 `[1F E900, 3F F101]`. So with the sensor on, the remote sets this flag when it goes quiet and in the two
-other places, and with it off it never does. **What the flag does in the firmware is not read**; that it is
-the sensor's wake is the reading the setting's name suggests, and it is not checked on the remote. Neither
-is what `1F E900` selects, and the two lists ending in the flag are not traced to their callers here.
+other places, and with it off it never does. **What the flag does in the firmware is not read**, and neither is what `1F E900` selects; the two lists ending in the flag are not traced to their callers here.
+
+**What the sensor does is seen at the bench**, on the 650 with the sensor on: tilting the remote while its screen is dark lights the screen, and so does pressing a key. A key pressed while the screen is dark is registered as well, which was observed with less certainty and not measured with the infrared receiver. That the flag is how the configuration arms the sensor is the reading the two compiles suggest: it is **not** checked by writing the compile without it and tilting the remote.
 
 **For the 650 track** this is the last of the three settings: a configuration built by us sets the sensor on
 by carrying the flag where Logitech does and off by leaving it out. The starting configuration was compiled
