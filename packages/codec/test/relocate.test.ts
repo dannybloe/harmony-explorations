@@ -373,9 +373,9 @@ test('the 7.1 probe on the Harmony 650 passes the validator\'s three cookies and
     // changed fails at the third cookie, which is the check section 353 had guessed failed.
     assert.equal(validatorVerdict(load('h650_7_1_base')!), 'accepted');
     const end = (probe[4]! | probe[5]! << 8 | probe[6]! << 16) - 0x30000;
-    probe[end + 3] ^= 0xff;
+    probe[end + 3] = probe[end + 3]! ^ 0xff;
     assert.equal(validatorVerdict(probe), 'PTYY');
-    probe[end + 3] ^= 0xff;
-    probe[0x100] ^= 0x01;
+    probe[end + 3] = probe[end + 3]! ^ 0xff;
+    probe[0x100] = probe[0x100]! ^ 0x01;
     assert.equal(validatorVerdict(probe), 'checksum');
   });
