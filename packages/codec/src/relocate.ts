@@ -28,6 +28,7 @@ import { u32 } from './bytes.ts';
 import {
   Container,
   END_MARKER_LENGTH,
+  parse,
   TRAILER_CHECKSUM_OFFSET,
   trailerChecksum,
 } from './gspm.ts';
@@ -217,9 +218,11 @@ export interface Rebased extends Relocated {
   /** The flash address the bytes are now linked for. */
   base: number;
   /**
-   * Fields naming flash outside the container, base slot 2's log area on the containers measured,
-   * left exactly as they were, since moving a container does not move what it names elsewhere. A
-   * caller writing the result somewhere else decides whether that flash is still right there.
+   * Fields naming flash outside the container, left exactly as they were, since moving a container
+   * does not move what it names elsewhere: base slot 2's log area on the Harmony 600, 650 and 700
+   * containers, and on the Harmony 300 and 350 that plus thirteen base slot 5 entries such as
+   * `0x7F0082`, which are not addresses at all. A caller writing the result somewhere else decides
+   * whether that flash is still right there.
    */
   outward: { at: number; target: number; holder: string }[];
 }
@@ -237,13 +240,21 @@ export interface Rebased extends Relocated {
  *
  * **The same census as `relocate`**, which is what makes the two agree on what an address is: an
  * insertion moves the pointers landing above it, a rebase moves all of them, so a reader that joins
- * the census joins both. Nothing else in a container states its base, `recoverFlashBase` derives it
- * from the content, so the parse of the result is the check that the move took.
+ * the census joins both.
+ *
+ * **It checks its own result and refuses rather than return one it cannot vouch for**: the input has
+ * to pass its own checks, and the output has to parse at the new base, pass them too, and have every
+ * census field on the same byte naming the same byte. That is only as complete as the census, so a
+ * kind of pointer the census does not know would pass it; what reads the result, the section claims,
+ * the screen text and the keys, is the check that does not share the census's blind spots, and the
+ * tests hold both, section 353. The input check is what refuses every Harmony 890 file in the lab,
+ * none of which passes its own checks, and whose census reads differently at another base.
  */
 export function rebase(c: Container, base: number, options: { omitForTest?: string } = {}): Rebased {
   if (!Number.isInteger(base) || base <= 0 || base > POINTER_CEILING) {
     throw new RelocateError(`a container is linked for a positive three byte address, not ${base}`);
   }
+  if (!c.allChecksPass) throw new RelocateError('a container that fails its own checks cannot be vouched for at another base');
   const delta = base - c.flashBase;
   const refusals: string[] = [];
   const census = pointers(c, refusals);
@@ -269,5 +280,15 @@ export function rebase(c: Container, base: number, options: { omitForTest?: stri
   bytes.set(new Writer(4).u32(u32(c.blob, 4) + delta).bytes, 4);
   bytes.set(new Writer(2).u16(trailerChecksum(bytes)).bytes,
             bytes.length - TRAILER_CHECKSUM_OFFSET);
+  // The control test leaves a kind of field out on purpose to see what notices, so it skips this.
+  if (options.omitForTest === undefined) {
+    const after = parse(bytes);
+    if (after.flashBase !== base) {
+      throw new RelocateError(`the result parses at 0x${after.flashBase.toString(16)}, not 0x${base.toString(16)}`);
+    }
+    if (!after.allChecksPass) throw new RelocateError('the result fails its own checks');
+    const landings = (x: Container): string => pointers(x).map((p) => `${p.holder}@${p.at}>${p.lands}`).join();
+    if (landings(after) !== landings(c)) throw new RelocateError('a census field lands somewhere else after the move');
+  }
   return { bytes, rewritten, base, outward };
 }

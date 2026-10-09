@@ -236,9 +236,19 @@ test('a cut refuses to remove a pointer field or anything a pointer names', skip
 /** Where every census field sits and where it lands, which is what a rebase must leave alone. */
 const landings = (c: Container): string[] => pointers(c).map((p) => `${p.holder}@${p.at}>${p.lands}`);
 
+/**
+ * The Harmony 300 and 350 configurations, read with concordance, outside the corpus since their
+ * family is the file based one; in this check because a rebase is a claim about every container
+ * these readers parse, and they carry fields naming flash outside themselves that no corpus
+ * container does.
+ */
+const FILE_FAMILY = [
+  'h300_config', 'h300_programmed_config', 'h350_config', 'h350_programmed_config', 'h350_three_devices_config',
+] as const;
+
 test('a rebase links every container for another address and back again byte for byte, todo-compile-650 7.1.1',
-  skipUnless(...SAMPLES, ...MADE), () => {
-    for (const name of [...SAMPLES, ...MADE]) {
+  skipUnless(...SAMPLES, ...MADE, ...FILE_FAMILY), () => {
+    for (const name of [...SAMPLES, ...MADE, ...FILE_FAMILY]) {
       const before = parse(load(name)!);
       const there = rebase(before, before.flashBase + 0x10000);
       const moved = parse(there.bytes);
@@ -263,7 +273,9 @@ test('the 650\'s status screen library linked for the configuration\'s address, 
     const library = parse(load('h650_safemode_gspm')!);
     assert.equal(library.flashBase, 0x20000);
     const linked = rebase(library, 0x30000);
+    // 290 census entries naming 289 fields: one field is named by two kinds of entry.
     assert.equal(linked.rewritten.length, 290);
+    assert.equal(new Set(linked.rewritten.map((one) => one.at)).size, 289);
     // The log area names flash outside the container and is left as it was, for the caller.
     assert.deepEqual(linked.outward.map((one) => one.target), [0xe0000, 0x100000]);
     assert.deepEqual(screenStrings(parse(linked.bytes)).map((one) => one.text), screenStrings(library).map((one) => one.text));
@@ -272,18 +284,61 @@ test('the 650\'s status screen library linked for the configuration\'s address, 
     assert.deepEqual([...setupView(parse(rebase(compile, 0x40000).bytes))], [...setupView(compile)]);
   });
 
-test('a rebase that leaves out any one kind of field is caught', skipUnless('h650_safemode_gspm'), () => {
-  const library = parse(load('h650_safemode_gspm')!);
-  const classes = [...new Set(rebase(library, 0x30000).rewritten.map((one) => one.holder))].sort();
-  assert.ok(classes.length > 1);
-  for (const omitted of classes) {
-    let caught = false;
-    try {
-      const moved = parse(rebase(library, 0x30000, { omitForTest: omitted }).bytes);
-      caught = moved.flashBase !== 0x30000 || landings(moved).join() !== landings(library).join();
-    } catch {
-      caught = true;
+test('a rebase refuses every Harmony 890 file, none of which passes its own checks',
+  skipUnless('h890_config', 'h890_config_2', 'h890_config_2_rescan'), () => {
+    for (const name of ['h890_config', 'h890_config_2', 'h890_config_2_rescan']) {
+      const c = parse(load(name)!);
+      assert.equal(c.allChecksPass, false, name);
+      assert.throws(() => rebase(c, c.flashBase + 0x10000), RelocateError, name);
     }
-    assert.ok(caught, `omitting ${omitted} was not caught`);
+  });
+
+/**
+ * What the readers make of a container, with nothing in it that is an address: the section claims by
+ * offset, the screen text, and every key's label and the frames it sends. A view's raw record words
+ * are left out, since an undecoded infrared record carries a flash address among them.
+ */
+const reading = (c: Container): string => {
+  const refusals: string[] = [];
+  const sections = claims(c, true, refusals).map((one) => `${one.owner}:${one.start}+${one.length}`).sort();
+  // The status screen library has no activities, and the view says so by throwing; the same message
+  // either side is the same reading.
+  let view: unknown;
+  try {
+    view = [...setupView(c)].map(([key, item]) => [key, item.label, item.frames]);
+  } catch (error) {
+    view = (error as Error).message;
   }
-});
+  return JSON.stringify({ sections, refusals, view, text: screenStrings(c).map((one) => one.text) });
+};
+
+test('a rebase that leaves out any one kind of field is caught by the census on six containers, and by the readers wherever a reader reads that kind',
+  skipUnless('h650_safemode_gspm', 'h525_config', 'calibration_favchannels', 'one_config', 'arch8_config_a', 'h350_programmed_config'), () => {
+    // Per container: the kinds no reader here reads, so only the census notices them.
+    const unread: Record<string, string[]> = {
+      h650_safemode_gspm: [], h525_config: ['slot-11-table', 'slot-14-record'], calibration_favchannels: [],
+      one_config: [], arch8_config_a: [], h350_programmed_config: ['raw-10-table', 'raw-6-table', 'raw-8-table'],
+    };
+    // On the Harmony 350 these two kinds name one and the same field, so leaving one out still moves it.
+    const shared: Record<string, string[]> = { h350_programmed_config: ['raw-11-table', 'slot-16-table'] };
+    for (const [name, blind] of Object.entries(unread)) {
+      const c = parse(load(name)!);
+      const to = c.flashBase + 0x10000;
+      const whole = rebase(c, to);
+      assert.equal(reading(parse(whole.bytes)), reading(c), name);
+      const kinds = [...new Set(whole.rewritten.map((one) => one.holder))].sort();
+      const census: string[] = [];
+      const readers: string[] = [];
+      for (const omitted of kinds) {
+        const bytes = rebase(c, to, { omitForTest: omitted }).bytes;
+        if (bytes.every((b, k) => b === whole.bytes[k])) continue;
+        const moved = parse(bytes);
+        if (moved.flashBase !== to || !moved.allChecksPass || landings(moved).join() !== landings(c).join()) census.push(omitted);
+        if (reading(moved) !== reading(c)) readers.push(omitted);
+      }
+      const same = shared[name] ?? [];
+      const effective = kinds.filter((one) => !same.includes(one));
+      assert.deepEqual(census, effective, name);
+      assert.deepEqual(effective.filter((one) => !readers.includes(one)), blind, name);
+    }
+  });

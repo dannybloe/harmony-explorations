@@ -46960,47 +46960,66 @@ test, and test titles that do not claim the labels are built. All taken; none ov
 ## 353. A container is linked for one flash address, so the 650's status screen library needs moving before it can stand in as a configuration
 
 `todo-compile-650.md` 7.1, the first probe of what the remote demands at minimum. The candidate was the
-smallest well formed arch 14 container in the lab, the status screen library the Harmony 650's firmware
-package carries (`h650_safemode_gspm`, 7115 bytes, region 3 of the package): no devices, no activities,
+status screen library the Harmony 650's firmware package carries, at 7115 bytes the smallest well formed
+arch 14 container in the lab, a size it shares with the Harmony 600's and 700's libraries (`h650_safemode_gspm`, 7115 bytes, region 3 of the package): no devices, no activities,
 no codes, 35 screens and every one a status message, section 244. It differs from the Harmony 700's copy
 (`h700_gspm`) in 50 bytes. The predictions were committed before the write, in
 `packages/bench/irtests/650-7-1-status-library.json`.
 
 **The write stopped at its read back, and the reason was the probe's design, not the remote.** The
 library is linked for flash `0x020000`, where the firmware package puts it: its `end_addr` is `0x021BC7`
-and every one of its 290 internal addresses assumes that base. Written unchanged at the configuration's
+and every one of its 289 internal addresses assumes that base (290 census entries, one field
+named by two kinds of entry). Written unchanged at the configuration's
 `0x030000`, each address names a byte sixty four kilobytes short of the structure it means, and
 `write-config.ts`'s read back refused to parse it, "end_addr 0x21bc7 gives an implausible length", before
 the restart. The region read afterwards (`h650_7_1_stopped`) holds the library's 7115 bytes at the start
 of the block, the rest of that block as it was and everything above it unchanged against
 `h650_7_1_base`; the 6.2.13 file was written back over it and read back identical. **The remote never
-restarted on the library**, so nothing here says what it would have done. Nothing in the dry run noticed
-the base: it compares the blocks to be erased with the dump and the configuration's six compatibility
-fields with the remote, and this container states none of them.
+restarted on the library**, so nothing here says what it would have done. The dry run did not catch it
+either: it parsed the file, so the base `0x020000` was in hand, and nothing compared that with the
+`0x030000` the writer puts it at. It compares the blocks to be erased with the dump, and the six
+compatibility fields with the remote, which this container does not state.
 
 **What was built instead is `rebase`**, in `packages/codec/src/relocate.ts`, with
 `packages/codec/bin/rebase.ts`: link a container for another address without moving a byte of it. It
 uses `relocate`'s pointer census, all of it rather than the part above an insertion, moves `end_addr` by
-the same difference and recomputes the trailer checksum; nothing else in a container states its base,
-since `recoverFlashBase` derives it from the content, so the parse of the result is the check. Fields
-naming flash outside the container are left as they were and reported, which on the library is base
-slot 2's log area.
+the same difference and recomputes the trailer checksum. **It checks its own result** and refuses rather
+than return one it cannot vouch for: the input must pass its own checks, and the output must parse at the
+new base, pass them, and have every census field on the same byte naming the same byte. That check is
+only as complete as the census, since a kind of pointer the census does not know would pass it; the parse
+checks the container's frame and section table and not what the sections hold, so the independent check is what the readers make of the
+result, below. Fields naming flash outside the container are left as they were and reported: base slot
+2's log area on the library, and on the Harmony 300 and 350 that plus thirteen base slot 5 entries such
+as `0x7F0082`, which are not addresses at all.
 
 **The log area is the one thing a caller has to decide.** The library declares `0x0E0000` to `0x100000`,
-as every arch 14 status library does, and the 650's user configurations declare `0x1E0000` to
-`0x200000`, section 206's observation. Moved to `0x030000`, the library's range falls inside the
-configuration region. The probe sets the two fields to the user configurations' range, as the cautious
-choice, since which of the two a remote wants is not established.
+as all three arch 14 status libraries in the lab do, and every Harmony 650 configuration and region read
+in the lab declares `0x1E0000` to `0x200000`, section 347; the Harmony 600's and 700's are sections 47 and
+206. Written as the configuration, the library would claim a log area inside the configuration region.
+The probe sets the two fields to the 650 configurations' range, as the cautious choice, since which of
+the two a remote wants is not established.
 
-**Checked, on every container in the corpus.** All nineteen of `CONTAINERS` and the two made
-configurations are linked sixty four kilobytes higher and back: the result parses at the new base, every
+**Checked, on every container in the corpus and on the Harmony 300 and 350.** All nineteen of
+`CONTAINERS`, the two made configurations and the five Harmony 300 and 350 configurations are linked
+sixty four kilobytes higher and back: the result parses at the new base, every
 census field sits on the same byte and lands on the same byte, the bytes differ in nothing but the
 rewritten fields, `end_addr` and the checksum, and the return trip is the original byte for byte. The
-library linked for `0x030000` moves 290 fields and draws the same screen text, and Logitech's clean
+library linked for `0x030000` moves 289 fields and draws the same screen text, and Logitech's clean
 compile of the 650 test setup linked for `0x040000` reads the same in all 639 items of the 5.2
-comparison. The control: leaving out any one class of field is caught, by the parse or by a field landing
-elsewhere. Measured on arch 8, 9, 12 and 14, the corpus's span; arch 10 and 16 have no container here
-this census reads.
+comparison. **Arch 10 is refused**: none of the three Harmony 890 files passes its own checks, and moved
+and moved back the first comes out 316 bytes different, since its census reads differently at another
+base. The input check is what refuses them.
+
+**The control has two halves, because one would be circular.** Each kind of field is left out in turn,
+on six containers, one per architecture plus a made configuration: the 650's library, the Harmony 525,
+the Harmony One, an arch 8 configuration, the favourite channel calibration and the Harmony 350, 104
+kinds in all. The census half, the same comparison the function makes, catches every one, except that on
+the 350 two kinds name one and the same field, so leaving one out still moves it. The readers' half
+compares what the codec reads with no address in it, the section claims by offset, the screen text and
+every key's label and frames, and catches every kind a reader reads: all of them on four of the six, and
+on the Harmony 525 all but two (base slot 11's table and base slot 14's records) and on the 350 all but
+three (raw slots 6, 8 and 10's tables), which no reader here reads. So for those five a mistake would be
+seen by the census alone. Measured on arch 8, 9, 12, 14 and 16; arch 10 is refused.
 
 ### The probe, run: the remote refuses the library as a configuration
 
@@ -47025,4 +47044,4 @@ first two, `GSPM` at offset 0 and `LWJL` at `0x5B`, are in the probe file; a qui
 not the probe is what is in doubt. What the probe establishes is the floor: a configuration with nothing
 in it, built as the firmware's own status library, is not accepted as one.
 
-* `packages/codec/test/relocate.test.ts`: the three rebase tests.
+* `packages/codec/test/relocate.test.ts`: the four rebase tests.
