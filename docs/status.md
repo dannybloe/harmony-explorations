@@ -571,7 +571,7 @@ finding.
 
 `todo.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 358<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 359<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and flash has been written on five units**, the first in section 222:
@@ -846,6 +846,18 @@ figures common to both carry `fact:` markers, so `make facts` moves every copy t
 cannot drift apart; what a reader should not expect is two independent statements of one measurement.
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
+
+**The device composer reads Logitech's infrared codes the way their own definitions say to, and 39074
+more of the catalogue's commands compose, section 359.** A code in Logitech's database is a protocol name
+and a number, and how many bits each part of the number takes is stated by the protocol's definition. The
+composer took it from the protocol's name instead, and a name like "Motorola 16 Bit Hex" gives the number
+of hexadecimal digits, not bits, so 52658 commands of 156 protocols were refused as unreadable. Read the
+definition's way, 39074 of them compose; the rest are refused for reasons other items hold, and 172 are not
+infrared at all or are misspelt in the database. Three devices from a Harmony One compile, one of them all
+70 commands of a protocol never composable before, came out word for word as Logitech wrote them. Two smaller
+fixes came with it: 1217 commands of three protocols the name had read wrongly now send what the definition
+describes, and a long silence is spelt in the words Logitech uses. Over the whole database, 2038021 of
+2067863 commands compose now, and 766 of 54118 code sets have none that does.
 
 **The delay between devices has been watched on a Harmony 650, and it acts in All Off as well as when
 an activity starts, section 335.** Each device has a setting for how long the remote pauses between

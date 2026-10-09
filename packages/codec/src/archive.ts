@@ -1136,6 +1136,34 @@ export function withToggleCleared(
   });
 }
 
+/**
+ * One catalogue code read at the widths and in the bases its family's definition states, rather than the
+ * ones its name spells: the reading `waveformOfArchiveCommand` makes, and the one the catalogue composer
+ * makes since section 359. `undefined` where even the definition's widths do not read it.
+ *
+ * **Why this is a function of its own.** Until section 359 it was three lines inside
+ * `waveformOfArchiveCommand`, and the composer read the same codes with `statedCode` alone, which takes
+ * each width from the number before `Bit` in the family's name. That number is the digit count and not the
+ * bit count on most of the families whose cell carries more than one bit, section 231, and several names
+ * state no width at all, so the composer refused 52658 commands of 156 families as unreadable while the
+ * renderer that `make prontocheck` holds against every rendering in the archive read 52486 of them. Two
+ * readings of one string is the state `CLAUDE.md` warns precedes two diverging answers, and it had
+ * diverged: on 224 codes of three Quad Toggle families both read the code and the composer's widths sent
+ * a different block. So both callers read through here.
+ */
+export function statedCodeOfDefinition(protocol: ArchiveProtocol, keycode: string): StatedCode | undefined {
+  // **The code's own spelling decides each value's width**, section 233: the segment its index names
+  // states the width, and for a cell family its digit count can widen it.
+  const slots = frameSlots(keycode);
+  const widths = frameWidths(protocol, slots);
+  const perDigit = frameDigitBases(protocol, slots) ?? [bitsPerDigit(protocol)];
+  // The definition's widths go **into** the reader and not over its answer: a base four or base sixteen
+  // code is refused outright against the width its family's name states, so correcting it afterwards
+  // would never see the code. Section 231.
+  return statedCode(keycode, widths === undefined
+    ? { bitsPerDigit: perDigit } : { widths, bitsPerDigit: perDigit });
+}
+
 /** Why a catalogue command could not be turned into a waveform. Each names a reading still to do. */
 export type WaveformRefusal =
   | 'no rhythm derivable for the family'
@@ -1173,16 +1201,8 @@ export function waveformOfArchiveCommand(
 ): { once: Pulse[]; held: Pulse[]; release?: Pulse[] } | { refusal: WaveformRefusal } {
   const rhythm = rhythmOfDefinition(protocol);
   if ('refusal' in rhythm) return { refusal: 'no rhythm derivable for the family' };
-  // **The code's own spelling decides each value's width**, section 233: the segment its index names
-  // states the width, and for a cell family its digit count can widen it.
   const slots = frameSlots(keycode);
-  const widths = frameWidths(protocol, slots);
-  const perDigit = frameDigitBases(protocol, slots) ?? [bitsPerDigit(protocol)];
-  // The definition's widths go **into** the reader and not over its answer: a base four or base sixteen
-  // code is refused outright against the width its family's name states, so correcting it afterwards
-  // would never see the code. Section 231.
-  const code = statedCode(keycode, widths === undefined
-    ? { bitsPerDigit: perDigit } : { widths, bitsPerDigit: perDigit });
+  const code = statedCodeOfDefinition(protocol, keycode);
   if (code === undefined) return { refusal: 'our keycode reader declines the code' };
   const keyCode = keyCodeOfStatedCode(protocol, code);
   if (keyCode === undefined) return { refusal: 'our keycode reader declines the code' };
@@ -1257,6 +1277,35 @@ export interface ArchiveBlock {
    * segment in another's rhythm and the waveform would look well formed.
    */
   readonly also: readonly FrameShape[];
+}
+
+/** The width `blockOfDefinition` chunks a literal gap at, the widest duration a stored word holds. */
+export const GAP_CHUNK_US = 32767;
+
+/**
+ * A block's gaps joined back into one silence each, where `blockOfDefinition` chunked them: a space of
+ * exactly `GAP_CHUNK_US` absorbs the space after it. Section 359.
+ *
+ * **Why a writer needs this and a comparison does not.** The chunking is ours, greedy, and a train
+ * comparison joins it anyway; but a configuration spells a long silence by the half word rule,
+ * `compiledBlockWords` in `compose.ts`, and that rule can only be applied to a silence it sees whole.
+ * Fed the chunks, it spells each on its own, so `Microsoft 30 Bit`'s 68643 went out as 32767, 32767 and
+ * 3109 where every Logitech compile holding the family writes 32767, 17938 and 17938, the same signal in
+ * other words. Measured on the 72 records of a Harmony One compile of the harvest, section 359.
+ *
+ * **Only a chunk is joined, never two spaces in general**: a biphase family sends two adjacent half cells
+ * of one kind as two cells and Logitech stores them as two words, so merging every run of spaces would
+ * write words no compile holds. A half cell is never as wide as a stored word.
+ */
+export function joinedGaps(pulses: readonly Pulse[]): Pulse[] {
+  const out: Pulse[] = [];
+  for (const one of pulses) {
+    const last = out[out.length - 1];
+    if (last !== undefined && !last.mark && !one.mark && last.us >= GAP_CHUNK_US && (last.us % GAP_CHUNK_US) === 0) {
+      out[out.length - 1] = { mark: false, us: last.us + one.us };
+    } else out.push({ ...one });
+  }
+  return out;
 }
 
 /**
@@ -1422,10 +1471,10 @@ export function blockOfDefinition(
     out.push(...trailer);
     return out;
   };
-  /** A gap in stored words, each at most the widest a duration word holds. */
+  /** A gap in stored words, each at most the widest a duration word holds. `joinedGaps` undoes it. */
   const chunked = (us: number): number[] => {
     const out: number[] = [];
-    for (let left = us; left > 0; left -= 32767) out.push(-Math.min(left, 32767));
+    for (let left = us; left > 0; left -= GAP_CHUNK_US) out.push(-Math.min(left, GAP_CHUNK_US));
     return out;
   };
   /**

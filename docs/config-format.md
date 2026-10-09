@@ -3497,6 +3497,28 @@ only, `MemorexO1 32 Bit`'s gap above all, follow the definition with no compile 
 Yamaha DSP-A592's 4, whose count is refused, and 46 long toggle records the table writes one microsecond
 short at the end, which is the table's long toggle shape and not the count.
 
+**A catalogue code is read at the widths and in the bases its family's definition states, never the
+name's**, section 359: `statedCodeOfDefinition` in `packages/codec/src/archive.ts`, which the renderer and
+the catalogue composer both read through. The name's number is a digit count on most families whose cell
+carries more than one bit and is absent on others, so reading it refused 52658 archive commands of 156
+families; the definition reads all but 172, which are not infrared codes (`HID 16 Bit`, `Roku IP`, `Sonos
+IP`) or are misspelt in the catalogue, none of them rendered there. On the codes both read, the rhythm
+table's block is the same on 101369 of 101593 and differs on 224 codes of three Quad Toggle families, where
+the name's block is no count of the definition and the definition's reading is its block at the family's
+stated 1. **The table's whole block is sent only for a code the name reads too**: every row was measured
+or derived over such codes, and a code only the definition reads is built from the definition at the
+device's count, since on 78 of the 2975 such codes a row takes, it sends fewer frames than the code states.
+Confirmed word for word on three devices of one Harmony One compile, 183 records of which 74 are such codes,
+of `Microsoft 30 Bit`, `Sony 20 Bit` and `LG 32 Bit`; `Philips RC5Ex` and `Russound 9 Bit Quad` agree as trains with a Harmony 350 and a
+Harmony 880 configuration whose devices or settings are not known. **Unconfirmed** for the other 122
+families admitted, composed from the definition alone.
+
+**A silence longer than one word is spelt whole**, section 359: `compiledBlockWords` joins the 32767
+microsecond chunks a definition's literal gap comes in, `joinedGaps`, before the half word rule spells it,
+so `Microsoft 30 Bit`'s 68643 is 32767, 17938 and 17938 as Logitech writes it, not 32767, 32767 and 3109.
+Only a space of whole chunks is joined; two adjacent biphase half cells stay two words, as Logitech stores
+them.
+
 **How many times a press sends the code is also stated twice outside the file**, and both agree with
 the ratio: `pressMinimumRepeats` on 39 of Logitech's 1368 protocol definition records, values 0, 1 and
 3; and `PressMinRepeats` with `DefaultPressMinRepeats` per device on the live service, same values.

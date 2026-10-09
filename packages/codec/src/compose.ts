@@ -119,9 +119,10 @@ import {
   irBuildRecord,
 } from './ir.ts';
 import type { Pulse } from './irframe.ts';
+import { joinedGaps } from './archive.ts';
 import { IR_TABLE_SLOT, irGroups } from './ir.ts';
 import { irFrame } from './irframe.ts';
-import { blockOfStatedCode, longPressBlockOfStatedCode, statedCode, statedProtocol } from './stated.ts';
+import { blockOfStatedCode, longPressBlockOfStatedCode, statedCode, statedProtocol, type StatedCode } from './stated.ts';
 import { TOUCH_AREA_LENGTH, type TouchArea, type TouchPage, touchPages } from './tables.ts';
 import {
   deviceListRowMode, deviceListRows, deviceModeMarker, devices as deviceInventory, FOUR_SLOT_ITEMS,
@@ -151,6 +152,17 @@ export class ComposeError extends Error {}
 export interface ComposeCommand {
   /** The code, whole: `G:Toshiba 32 Bit:(0x20DF10EF)(Repeat)():3`. */
   readonly stated: string;
+  /**
+   * `stated` as its family's definition reads it, `statedCodeOfDefinition` in `archive.ts`, where the
+   * caller has the archive; absent, `stated` is read at the widths its family's name spells. Section 359.
+   *
+   * **The name is not enough to read a code**, section 231: the number before `Bit` is the digit count on
+   * most families whose cell carries more than one bit, and several names state no width at all, so a code
+   * the name cannot read is one the table's block and the held power step cannot be built for either. The
+   * catalogue composer passes this for every command, so the record is built from one reading of the
+   * string, the one `make prontocheck` holds against Logitech's renderings.
+   */
+  readonly read?: StatedCode;
   /**
    * Whether the command repeats while its key is held, which nothing states, phase 4's audit gap 2:
    * a record's held block is per command in the format and the catalogue does not say. Absent means
@@ -205,6 +217,8 @@ export interface StatedBlocks {
  */
 export interface ComposePowerStep {
   readonly stated: string;
+  /** `stated` as its family's definition reads it, `ComposeCommand.read`. */
+  readonly read?: StatedCode;
   readonly holdMs?: number;
   /** The press's blocks where the rhythm table has none for its family, `ComposeCommand.blocks`. */
   readonly blocks?: StatedBlocks;
@@ -235,7 +249,12 @@ export const COMPILED_LEAD_IN_US = 50000;
  * carving last is the only one on none.
  */
 export function compiledBlockWords(pulses: readonly Pulse[], leadInUs = 0): IrPulse[] {
-  const led = leadInUs > 0 ? [{ mark: false, us: leadInUs }, ...pulses] : [...pulses];
+  // **A silence handed over in chunks is spelt whole**, section 359: Logitech's definition route states a
+  // gap longer than a word as chunks of one word each, `joinedGaps` in `archive.ts`, and the rule below
+  // can only be applied to a silence it sees whole. Spelt chunk by chunk, `Microsoft 30 Bit`'s 68643 was
+  // 32767, 32767 and 3109 where Logitech writes 32767, 17938 and 17938.
+  const joined = joinedGaps(pulses);
+  const led = leadInUs > 0 ? [{ mark: false, us: leadInUs }, ...joined] : joined;
   const words: IrPulse[] = [];
   // The trailing gap gives up its last microsecond first, then the rest is spelled like any silence.
   const lastAt = led.length - 1;
@@ -357,7 +376,8 @@ export function composeIrGroup(
   // Every command's blocks, derived and refused early: composing half a device helps nobody.
   const built: { periodNs: number; once: Uint8Array; held?: Uint8Array }[] = [];
   for (const command of commands) {
-    const read = statedCode(command.stated);
+    // The caller's reading where it gives one, which is the definition's, section 359.
+    const read = command.read ?? statedCode(command.stated);
     if (read === undefined) throw new ComposeError(`not a catalogue code: ${command.stated}`);
     const entry = statedProtocol(read.family);
     if (entry === undefined) {
@@ -822,6 +842,7 @@ export function composeDevice(c: Container, device: ComposeDevice): ComposedDevi
         ? { stated: step.stated, held: false, leadInUs: 0 }
         : { stated: step.stated, holdMs: step.holdMs }),
       ...(step.blocks === undefined ? {} : { blocks: step.blocks }),
+      ...(step.read === undefined ? {} : { read: step.read }),
     })),
   ];
 

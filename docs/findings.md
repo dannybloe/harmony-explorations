@@ -47906,3 +47906,170 @@ wrong.
   the 6.2.13 file's refusal, the premise on the 7.5 file with its left out split, and the 7.5 file with every
   text generated and its six changed lengths.
 * `docs/config-format.md`, after the firmware's own screens, and the start up title limit in its two places.
+
+## 359. The catalogue composer reads a code at the widths its family's definition states, and writes 39074 commands more
+
+**Date:** 9 October 2026. **Status:** confirmed by construction against one Harmony One compile, three
+devices word for word, and by train against two more Logitech configurations; the rest of what it admits
+is composed from Logitech's definition and is unconfirmed. Nothing composed this way has been written to a
+remote.
+
+`todo-process-logitech.md` 2.1. An infrared command in Logitech's catalogue is a family name and a value
+written in a notation, `G:Motorola 16 Bit Hex:()(0x...)():3`. How wide each value is and what base its
+digits are written in is stated by the family's definition, `keycodeFields` and the cell count of the
+segment a value names, sections 231 to 233. The renderer, `waveformOfArchiveCommand`, has read codes that
+way since section 233. The catalogue composer did not: it read every code with `statedCode` alone, which
+takes the width from the number before `Bit` in the family's name. That number is a digit count on most
+families whose cell carries more than one bit, and several names state no width at all.
+
+**Sources checked before the work started.** This document, sections 228, 231 to 233, 309, 348 and 350.
+MyHarmony's client, `../lab/work/myharmony/src/`: it holds `ParsedKeyCode`, whose `Start`, `Repeat` and
+`Finish` are lists of `KeyCodeElement`, a segment name and a segment type, as data contracts of the
+service proxy, and parses no keycode string and states no width; the compile runs on Logitech's server,
+section 293's exemption. The archive's own protocol definitions, which state every width this section
+uses. No firmware was read: what a remote does with a record is not in question here, only which record.
+
+### The premise, measured
+
+The item asked whether its 151 families and about 53000 commands were the 52517 commands `todo-later.md`
+6.14 had counted as refused because the composer takes digit widths from the family name. They are, as one
+rule and not 151 readers, though neither number is reproduced:
+
+| `make composecensus` before this section | commands |
+|---|---|
+| refused with "our keycode reader declines the code" | 52673 |
+| of which the name's widths cannot read the code, in 156 families | 52658 |
+| of which the definition's widths cannot build a `MemorexO1 32 Bit` code, section 350 | 15 |
+
+Of the 52658, the definition's widths read 52486, in 150 families that read whole. The 172 left are not
+infrared codes a remote can send: `HID 16 Bit`'s 109, `Roku IP`'s 19 and `Sonos IP`'s 13, whose values
+carry no `0x` and whose definitions state no rhythm, and 31 codes misspelt in the catalogue itself, `0x0x`
+on 27 `Galaxis 16 Bit Quad Toggle` codes, a stray letter or a command name on three `Toshiba 32 Bit` ones
+and `(c)` on one `Pioneer 32 Bit`. None of the 172 has a rendering in the archive either. The 52517 was
+counted before sections 348 and 350 by another route and the 151 families are not named anywhere, so
+neither is reconciled here.
+
+### The rule
+
+**The composer reads every catalogue code at the definition's widths**, `statedCodeOfDefinition` in
+`archive.ts`, the three lines `waveformOfArchiveCommand` held, lifted out so that both read through one
+function. `catalogueCode` in `composecatalogue.ts` picks the family's definition; `ComposeCommand.read`
+carries the reading into `composeIrGroup`, which until now read `stated` again by the name.
+
+**Calibration, on every code both readings read.** Of the archive's 152110 distinct codes, both read
+141517, and the rhythm table has a block under both for 101593. The block is the same under either reading
+on 101369 and differs on 224, every one of them a code of `Motorola 16 Bit Quad Toggle` (99), `Kathrein 16
+Bit Quad Toggle` (80) or `Pace 18 Bit Quad Toggle` (45), whose toggle field the name made sixteen bits wide
+and the definition makes one. **The name's block on all 224 is the definition built at no count from 0 to
+6, and the definition's reading gives the definition's block at 1, the count the three families state.** So
+the composer was sending a frame no definition describes on 1217 commands, and sends the definition's now.
+No compile in the lab holds any of the three families, so that is a reading of the definition, and
+`make prontocheck` agrees with it on every command of the three. No code loses or gains a table block by
+the reading.
+
+**A code only the definition reads goes to the definition, never to a table block.** Thirteen families have
+a whole block in the table that takes such a code, 2975 distinct codes, and on 78 the block sends fewer
+intervals than the definition does at the family's own count: a `Samsung 16 and 20 Bit` code stating four
+pairs gets the row's one pair (41 codes), a `Pace 16 Bit Quad` code stating two values gets one (35), and
+an `iMonFixed2` code stating only its start and release groups gets nothing (2). Every row was measured or
+derived over codes the name reads, `bin/protocols.ts` reading them with `statedCode`, so for the others the
+table holds no evidence. The composer therefore builds them from the definition at the device's count, the
+route of a family with no whole block, section 348: 1138 of the 2975 as the definition's block, 1833
+refused for a release group, which is that route's refusal, and 4 `iMonFixed2` codes sending nothing at the
+0 their family states. The table route would have composed the 1833 with the release dropped, which is
+todo 2.5's open question rather than an answer to it.
+
+**A gap longer than a word is spelt whole.** `blockOfDefinition` chunks a literal gap into words of 32767,
+and `compiledBlockWords` spelt each chunk on its own, where Logitech's compiler spells a silence by the half
+word rule, phase 7 and section 174: `Microsoft 30 Bit`'s 68643 went out as 32767, 32767 and 3109, and
+every Logitech compile holding the family writes 32767, 17938 and 17938. The same signal in other words,
+and no train comparison could see it. `joinedGaps` in `archive.ts`, beside the chunking it undoes, joins a
+space of a whole number of chunks to the space after it and nothing else, since a biphase family's two
+adjacent half cells are two words in Logitech's records too, and `compiledBlockWords` calls it. It changes
+the words of 24 families whose definition states a gap with a remainder under half a word, measured over
+every distinct code built at 1 and at 3: `Microsoft 30 Bit`, `Philips RC5Ex`, `Vaux 33 Bit`, `NRC 17 Bit`
+and twenty more, three of them `Entone` families whose table rows carry the chunks as well. The 292 tests
+of every file that composes pass unchanged, every word for word comparison an earlier section made among
+them.
+
+### Against Logitech's compiles
+
+Every infrared record of every container in the lab, 128 distinct, was looked up against the definition's
+build at 0 to 6 repetitions of every distinct code this section admits or re-reads, 10672 codes. Three
+containers hold any:
+
+| container | remote | family | records | at |
+|---|---|---|---|---|
+| the harvest's third compile on the first test account | Harmony One (arch 12) | `Microsoft 30 Bit` | 72 | 3 |
+| the same | Harmony One (arch 12) | `Sony 20 Bit`, `LG 32 Bit` | 1 each | 3, 1 |
+| the factory configuration, `h350_config` | Harmony 350 (arch 16) | `Philips RC5Ex` | 30 | 3 |
+| a contributed configuration | Harmony 880 (arch 8) | `Russound 9 Bit Quad` | 66 | 3, 20 of them 1 or 3 |
+
+Every record found carries the definition's carrier. **The closure is the composer's output against the
+first compile's bytes.** The Gemini TestQuhd, all 70 of whose codes only the definition reads, the Sony
+RDR-GXD500 and the Rosen 0602-2XX-8, one such code each, composed whole onto the Harmony 650's configuration
+at their own counts, 3, 3 and 1, and compared on what follows each record's opening silence, since a Harmony
+One compile opens its blocks with none: 72 of 72, 63 of 63 and 48 of 48 records are Logitech's in all three
+blocks, and nothing of any of the three is left out. The Sony's group holds ten records more, which are
+not read here. **The controls**: read at the name's widths not one of the TestQuhd's 70 codes composes, so
+the device had nothing to compose before this; spelt chunk by chunk, as the writer did before, none of its
+70 presses is one of Logitech's words, though every one is the same signal; and built at 1 rather than its
+3, none is even that signal.
+
+The Harmony 350's factory configuration and the Harmony 880's contributed one check the frames and not the
+count: the device behind the first is not known, and the second's owner may have changed the count, section
+348. Neither is evidence about which count a device of the family repeats.
+
+### What it moves
+
+`make composecensus`, a command counted as written when it composes for every device serving its codeset:
+
+| | section 350 | now |
+|---|---|---|
+| commands written, of 2067863 | 1998947 | 2038021 |
+| families refusing a command, of 687 | 516 | 441 |
+| families writing nothing | 209 | 95 |
+| codesets writing nothing, of 54118 | 2119 | 766 |
+| devices writing every command, of 257720 | 244478 | 251849 |
+
+**Of the 52658 commands the name could not read, 39074 now write, in 127 of the 156 families**, 78 of them
+writing every one. Counted per family by what checked them:
+
+| | families | commands written |
+|---|---|---|
+| word for word against a Logitech compile of a known device, Harmony One (arch 12) | 3 | 72 |
+| frames against a Logitech configuration whose device or settings are not known, Harmony 350 (arch 16) and Harmony 880 (arch 8) | 2 | 14987 |
+| on the definition alone, stated and unverified per decision 15 | 122 | 24015 |
+
+The 13584 not written are refused by rules other sections hold: 11288 name a release group (2.2.3), 1464 sit
+on a device whose codeset holds a family stating another count (2.2.2), 660 on a device stating 0 (2.2.4),
+and the 172 above. 1050 commands compose for some of their codeset's devices and not all, against 442,
+counted as refused. **The 2.1 refusal itself is down to 187**: the 172 and section 350's 15.
+
+### Scope, decision 16
+
+The word for word check is one Harmony One compile (arch 12), three devices, composed onto a Harmony 650
+configuration (arch 14) and compared on the block words, which are the same format on both. No Harmony 600,
+650 or 700 compile (arch 14) in the lab holds any family this section admits, so on those models it is the
+definition's reading only. The Harmony 350 (arch 16) and Harmony 880 (arch 8) agree on frames. Not checked
+on the Harmony 525 (arch 9), for which nothing compiles. Nothing was sent to a remote.
+
+### Falsification
+
+A Logitech compile holding a code only the definition reads whose record is not the definition's block at
+the device's count, or a code of the three Quad Toggle families written as the name read it; a Logitech
+record of a gap longer than a word spelt as maximal words and a remainder under half a word.
+
+### Where it lands
+
+* `packages/codec/src/archive.ts`: `statedCodeOfDefinition`, which `waveformOfArchiveCommand` now calls,
+  `GAP_CHUNK_US` and `joinedGaps`.
+* `packages/codec/src/composecatalogue.ts`: `catalogueCode`, `catalogueCommandBlocks` reading through it and
+  sending the table's block only for a code the name reads too, the reading attached to every command.
+* `packages/codec/src/compose.ts`: `ComposeCommand.read` and `ComposePowerStep.read`, read by
+  `composeIrGroup`; `compiledBlockWords` joining chunked gaps.
+* `packages/codec/src/devicemode.ts`: `composableKeycode` takes the reading.
+* `packages/codec/bin/composecensus.ts`: the section's tally and `--families`.
+* `packages/codec/test/cataloguereading.test.ts`: the premise counts, the calibration with its control, the
+  78, the three devices against the compile with their three controls, `joinedGaps`, and the Harmony 350.
+* `docs/config-format.md`, after the press count paragraphs.
