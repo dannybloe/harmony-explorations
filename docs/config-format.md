@@ -1027,6 +1027,28 @@ Unconfirmed: the order of the devices an activity does not switch on; and a labe
 candidate rule, the list's main label font unless a line would be wider than 59 pixels in it or it lacks a
 glyph, fits 143 of 143 labels and was fitted on them.
 
+**The idle device list's, the activity menu's and Off's whole records, built**, section 356,
+`screenrecords.ts`, on the 22 arch 14 compiles of `test/screenrecords.test.ts`: 2 Harmony 600, 7 Harmony
+700 and 13 Harmony 650, byte for byte, 41, 43 and 22 pages. `h650_issue8_config` is French and refused.
+
+| part | built as |
+|---|---|
+| which mode is Off | the first `0x7E` reached depth first from the list the Off key map's enter list calls first, `idleEnter.first`, 22 of 22; mode 104 on `h650_test_config_clean`. Mode 85 there, "Do you want to turn off your system now?", is not Off: entered by Help lists, a wide own list, both its calls `[07 FFF5, 1F FF00 \| idle entry]`, 22 of 22 |
+| own list | idle list: `0x99` `0x72`, `0x2D` `0x73`; activity menu: `0x99` `0x72`, scan 4's press `0x72`, `0x2D` `0x73`; both narrow; Off: the 54 keypad presses bound to nothing in `compilerTagOrder` |
+| entry, page record | section 52's entry, kind 0; six byte page records, `u24 list; u24 program` |
+| page list | each button's press calling that button's list, in `FOUR_SLOT_STORED_ORDER`; a device row one corner, an activity row two buttons, scans 8 and 2 or 9 and 34; `00 00` on Off |
+| copy, section 69 | the same bindings calling each button's other list, in place, paired by rank in mode page order |
+| row lists | device `[7E mode, marker := 1]`, activity `[1F FF00 \| entry, marker := 0]`, one per button on the page and one on the copy; 286 and 312 lists |
+| programs | `menuPageParts` for the menus; Off `fixedLineScreenParts` with "Turning system off", font and picture as a start up screen's |
+| text form | by reference to an inline copy outside the three records where one exists, else inline once and by reference after |
+| menu order | the description's; a setup file's through `inActivityOrder`, since no owner of these models chooses one, section 351 |
+
+**Read, not built**: the mode numbers, the rows' labels (font and glyph codes), each button's base slot 10
+lists, the marker variable, the fonts, the own lists' operands, the pictures by content, and the addresses
+of the texts drawn by reference outside the three records. A blind control overwrites every other byte of
+the three records with `0xEE`, 17326 over the 22, and the rebuild is unchanged. Unconfirmed: any wording
+but English, and any architecture but arch 14.
+
 Every device list's scan 25 evaluates a record keyed by `CurrentLocation` whose one case, for 0, queues
 the working screen record: the 17 those records enter and one more per configuration, 21 of 21. The
 Remote Assistant screen's "Turn off Assistant" writes 1 into the variable the chain before the working
