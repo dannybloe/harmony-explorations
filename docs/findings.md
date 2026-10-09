@@ -45562,6 +45562,10 @@ closure does not lean on our reading of either. What it does not show: a device 
 sits in a list several activities share, which this pair does not hold; the function cuts a shared list
 once and reports every activity reaching it.
 
+**Heard on a file of ours**, `todo-compile-650.md` 5.1: the KPN box kept on with `keepDeviceOn` in Logitech's
+starting compile and with `keepOn` in our Plasma kijken, written to the Harmony 650. Switching from Plasma
+kijken to Muziek sent the KPN box nothing, and All Off then sent its power (`reads/20261009T101603Z-ir-test-harmony-650-the-test-setup-composed-onto-logitech-s-starting-configuration.json`).
+
 **Heard on the Harmony 650**, with no write, on this compile as synced
 (`reads/20261008T131427Z-ir-test-harmony-650-the-denon-kept-on-between-activities.json`). TV kijken sent
 the LG's, the KPN box's and the Denon's power on and their inputs. Muziek then sent Kodi's and the Sony's
