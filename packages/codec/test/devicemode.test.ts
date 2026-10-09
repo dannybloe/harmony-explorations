@@ -663,7 +663,9 @@ test('section 325: a catalogue device composed whole reads back as the compiler\
       console.log(report(s));
       console.log(`CONTROL ${report(control).split('\n')[0]}`);
     }
-    // The Panasonic TX-28A1U's codes are a family with no whole block, so it has no page to compare.
+    // The Panasonic TX-28A1U's codes are a family with no whole block in the rhythm table, and this composes
+    // with the table alone, so it has no page to compare. The catalogue composer builds them at the
+    // device's repeat count since section 347, which `composecatalogue.test.ts` compares.
     assert.deepEqual(notWhole, ['Panasonic_TX-28A1U: every command']);
     // The texts reported as substituted are exactly the ones the rules could not measure.
     assert.deepEqual(substituted, ['JVC_DLA-HD10KU: title \'JVC DLA-HD10KU\'',
@@ -722,8 +724,9 @@ function byPicture(c: Container, mode: ReadMode): ReadMode {
  * device score does: a compile's fonts hold every glyph its own devices' titles need, where the
  * configuration it was compiled from does not, and drawing a glyph a configuration lacks is chapter 8's
  * and not this one's. Each with the devices composed: those whose catalogue entry is pinned by model and
- * whose codes compose, so not the Blu-ray player, which has no model, nor the TX-28A1U, which composes
- * nothing, and so not the 650's second compile, which keeps one.
+ * whose codes compose by the rhythm table alone, so not the Blu-ray player, which has no model, nor the
+ * TX-28A1U, whose family the table holds no block for (the catalogue composer builds it since section
+ * 347), and so not the 650's second compile, which keeps one.
  *
  * **Two of them are refused part way**, past the model's device count, which is deliberately not passed
  * here since each compile already holds eight, and that is the control on the state variable ceiling: a write

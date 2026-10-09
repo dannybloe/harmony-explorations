@@ -3237,9 +3237,22 @@ service states 3 for each of those devices. The four values in the corpus are 1,
 
 Dividing is what makes it a device's count rather than a family's spelling: a family sending a frame
 and its complement stores six copies and two, and one sending a single frame stores three and one, and
-both are three sends. **Unconfirmed for a family whose definition states an intro section of a
-different code word**, where the ratio is one more than the count Logitech's service states: one
-family in this corpus, `Kreatel IP 22 Bit`, four copies against a stated 1.
+both are three sends. **A family whose definition states an intro section of a different code word**
+holds one copy more than the count, the intro: `Kreatel IP 22 Bit`, section 347.
+
+**Which count a press repeats, where the family's definition states none, is the device's own**,
+`timing.pressMinRepeats` in the archive, section 347. A record's first block is the definition's start
+group, the repeat group that many times and the finish group, built by `waveformOfArchiveCommand` with
+`asStored`. Confirmed on 45 of 47 catalogue devices of MyHarmony compiles for the Harmony One, 600, 650 and 700,
+3391 records, of which only three devices state 1 and so separate it from a default of 3; a family that
+states a count is written at it, 1021 records. **Unconfirmed** where the
+device's codeset holds a family stating a different count: two devices were written at their main
+family's stated 1 against their own 3, one record at the device's 3 against its family's stated 1, and the
+composer refuses such a device. Also refused as unknown: a device count of 0, and a code naming a release
+group. A count of 2 is built as the rule says and is unconfirmed: no compile shows one. The rhythm table's
+whole blocks for 26 families stating no count were each measured on one device and fix its count for
+every device, wrong for the Dell 2300MP's `Memorex 32 Bit`; the composer still prefers the table there,
+and that is open.
 
 **How many times a press sends the code is also stated twice outside the file**, and both agree with
 the ratio: `pressMinimumRepeats` on 39 of Logitech's 1368 protocol definition records, values 0, 1 and

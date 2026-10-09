@@ -33141,8 +33141,15 @@ disagreement lives rather than in the reading: `Kreatel IP 22 Bit`'s definition 
 word followed by a repeating section of a **different** one, so its four copies are one intro and three
 repetitions. Its `pressMinimumRepeats` is null and it is one of the families our own table carries no
 block for, so nothing states how many repetitions its compiler emits and the 4 cannot be checked against
-anything. **It stays open**, and the honest statement is that a family with its own intro section is a
+anything. **It stays open**<!--superseded-->, and the honest statement is that a family with its own intro section is a
 family whose ratio is not the setting.
+
+**Corrected by section 347.** Four copies is the intro and three repetitions. The "stated 1" in the table
+above is the Motorola vip_1853 of our account, which is written at 1 on all four of our own MyHarmony
+compiles that hold it; neither of these two configurations is shown to hold that device, since eleven or
+more of the archive's catalogue entries rebuild their records, some stating 1 and some 3. So the row
+compares a count of 3 with a setting that may not be theirs, and whether 3 is their devices' own count
+stays open.
 
 ### Two routes that were tried before this one, recorded so nobody tries them again
 
@@ -45973,3 +45980,206 @@ A Logitech compile with the sensor off that holds `3F F1xx`, or one with it on t
   and none with it off, and what does not change.
 * `reference/remotes/harmony-650/features.md`, the `TiltSensor` row.
 
+
+## 347. A family whose definition states no repeat count repeats the device's own count
+
+`todo-process-logitech.md` 2.2. A press sends a code's start once, its repeating part some number of
+times, and its finish. Logitech's protocol definitions state that number, `pressMinimumRepeats`, for 39
+of 684 families, and the rhythm table holds a measured whole block for 26 more. Of the families with
+neither, 478 were refused for that alone, until this section: 338578 commands, only for want of one
+number.
+
+**Sources read before deriving.** The archive's README, commits `ca0349b` and `fdbaffa`, which trace the
+hub firmware: it plays the start group once, the repeat group as many times as the **device's**
+`timing.pressMinRepeats` (3 when absent), then the finish group; it reads the protocol's
+`pressMinimumRepeats` and never sends with it, and does not read the device's `minRepeats` at all. That is
+a later generation of hardware, so it says what the number is and not what the compiler for these remotes
+does with it. MyHarmony's client, `DeviceCommandRepeatsViewModel`: the count is a per device setting the
+owner may edit, and restoring the default takes the catalogue device's own value, else 3. So a
+configuration from an account whose settings are unknown cannot be scored against the catalogue's number,
+which decides the population below. And sections 233 (the tail pointer holds a release), 258 (the ratio
+reading, and its open set top box), 309 (a held power step), 337 (single block copies) and 338.
+
+**The method reads the count by rebuilding the record**, not by counting segments: each command of the
+device's codeset is built from Logitech's definition at 0 to 6 repetitions, `waveformOfArchiveCommand`
+with `asStored`, which keeps toggle bits as stated and returns a release group apart, and a record's first
+block is taken to repeat `n` times when the build at `n` is that block interval for interval, its leading
+silence dropped. A held power step is cut the way section 309 cuts it. The count is therefore read off
+Logitech's bytes by a route that does not use the device's number at all.
+
+**The population is device groups of compiles our own accounts produced whose device is known from
+outside its bytes**: the account captures, the harvest manifests, the power hold compiles' own labels and
+the test setup. 65 groups, on the Harmony One (arch 12) and the Harmony 600, 650 and 700 (arch 14),
+listed one by one in `packages/codec/test/pressrepeats.test.ts`, holding 47 distinct catalogue devices
+with a family that states no count. They are chosen rather than every such group: a group compiled
+several times byte for byte is pinned once, the set top box's in thirteen compiles as four distinct
+groups, and devices holding only families that state a count add nothing to the claim. The Harmony 600's
+own configuration is left out, since its devices are known from their bytes only: its television was
+matched to a codeset by its codes, section 305, and its set top box cannot be, below. 16 records of the
+pins rebuild at no count: learned codes, and one code no catalogue command of its device is.
+
+### What the compiles say
+
+| | records | devices |
+|---|---|---|
+| a family stating no count, repeated at the device's count | 3391 | 45 of 47 agree on every such record |
+| a family stating a count, repeated at it | 1021 | all but one record |
+| the control, the stated count or else three, over the families stating none | 299 records wrong | |
+
+**The two devices that disagree** state 3 and were written at 1 for a family stating nothing: the Toshiba
+20VL44G2's `Memorex 32 Bit`, 8 records, and the Yamaha DSP-A592's `PanasonicV2 48 Bit`, 4 records. Both
+codesets are mostly `Toshiba 32 Bit`, which states 1 (36 and 127 records). **The one stated record that
+disagrees** is the mirror image: the Sony KE-50MR1E states 3, its codeset is mostly Sony families written at
+3, and its one `Toshiba 32 Bit` command, stating 1, was written at 3.
+
+**A reading that fits all three, unconfirmed**: the compiler takes the count of the device's main family
+where that family states one, and the device's own where it does not. It fits every pin, but it was built
+from exactly the three devices on which it predicts anything different from the device's count, so its
+fit is not evidence; and nothing read says how the compiler would pick a main family. So the composer
+**refuses** a device whose codeset holds a family stating a count other than the device's, rather than
+guessing. **Most of what it refuses there is not even this reading's case**: counted per device and
+command over the archive, the main family being the codeset's most common, between 78 and 88 in 100 of
+those refusals are a minority family stating a count on a device whose main family states none, a shape no
+pinned device has, and the rest a device whose main family states another count. (The two figures are two
+counts, which differ in whether commands refused for other reasons are included.)
+
+**The control is the working idea of `todo-secure-logitech.md` 2.2.2**, the stated count or else three. Over
+the records of families stating no count it gets 299 wrong (300 counting the Sony's one stated record,
+which the device's count gets wrong as well): every record of the set top box's four compiles, the Philips 70FA930, the Samsung
+BDC8000 and the two devices above. Three was never the family's number; it was the number most devices
+state.
+
+**How much of this is independent is smaller than the record counts suggest.** Of the 45 devices that agree,
+42 state 3, where three for every family fits as well; what separates the device's count from three is
+**three devices**, the only ones stating 1: the Motorola vip_1853 (one device, four distinct groups in
+thirteen compiles, 206 of the 299 records), the Samsung BDC8000 and the Philips 70FA930. Every one of them
+agrees, and the two that disagree go the other way, a device stating 3 written at 1. **Per model**: the
+BDC8000 and the Philips are Harmony One compiles only, the vip_1853 is on the One, 650 and 700, both
+disagreeing devices are Harmony One compiles, and every Harmony 600 device pinned states 3, so nothing on
+the 600 separates the device's count from three. That is enough to compose by and not enough to call it
+the compiler's rule.
+
+### The set top box and section 258's open item
+
+`Kreatel IP 22 Bit` opens with an intro section of a different code word and then repeats a second one,
+so a record holds one copy more than its count. The Motorola vip_1853, which states 1, is written at 1 in
+all thirteen of our MyHarmony compiles that hold it, on the Harmony One, 650 and 700; it is known as that
+device from the account capture, which names Motorola vip 1853 at 1, the compiles' label being only
+"KPN".
+
+**Section 258's two configurations are the Harmony 600's and the everyday Harmony One's, `one_config`, and
+four copies is the intro and three repetitions.** What neither can say is which catalogue device it holds.
+36 codesets of the archive are this family; 11 rebuild all 51 records of the 600's group and 14 rebuild 58
+of the 59 of `one_config`'s, and among them are entries stating 1 (the vip_1853 and three other Motorola
+boxes) and entries stating 3 (the KPN VIP1853 and others). The codes the vip_1853 and the KPN VIP1853 do not
+share lean one way each, one code to the KPN on the 600 and three to the Motorola on `one_config`, but that
+chooses between two of the eleven and not among them. So both are a count of 3 on a device not known, and
+the "stated 1" section 258 set against them was the vip_1853 of our account, which neither configuration is
+shown to hold. `one_config` was also not compiled by us and its account's setting at the time is not known.
+**Section 258's open item is half closed**: the intro explains the extra copy, and whether 3 is those
+devices' own count stays open. Corrected in place there. The blind re-measurement found this; the first
+draft of this section had named the 600's box the KPN VIP1853 on that one code.
+
+### The two Memorex families
+
+`Memorex 32 Bit` is written at 3 on the Dell 2300MP, which states 3 and holds nothing else, and at 1 on the
+Toshiba 20VL44G2 above. The rhythm table's row for it holds one copy, because it was measured on that
+Toshiba. **So the table, which the composer prefers wherever it holds a block, is wrong for the Dell**: 34
+records. `MemorexO1 32 Bit` appears only on a contributed Harmony 885 (arch 8) configuration, at 1, whose
+owner's settings are unknown.
+
+**This is not one family's accident.** The table's 26 families that state no count were each measured on
+one device and fix a count for every device. Rebuilding each table block from the definition, `Memorex 32
+Bit` is at 1 on all its codes, `MemorexO1 32 Bit` on 22 and `Samsung 38 Bit` on 53, and the rest are at 3
+on most codes, with a few codes of four families at another count, 0, 1 or 5. Several thousand codes, most
+of `MemorexO1 32 Bit` and all of `Philips Hurd 16 Bit LongToggle`, are not rebuilt by this route at any
+count, so their table count is not read. Over the archive, about 8900 of the 257720 devices with a codeset
+hold a table family whose majority table count is not the device's, about 316000 commands counted per
+device (8864 and 8911 devices by two counts that differ in how the families not read are treated). On the
+65 groups, over the 24 table families whose count is read, the table agrees with Logitech on 2594 records
+and disagrees on the Dell's 34 and the Yamaha's 4; the Philips 70FA930's three `Philips Hurd 16 Bit
+LongToggle` records at 1, against a table block measured at 3 on another device, are likely a third case
+and are not checked here. **Left as it is**: the table still wins where it has a block, and whether the
+device's count should override it is open.
+
+### Configurations whose settings are unknown
+
+The contributed configurations, the Harmony 885 one above and `one_config` disagree with the catalogue's
+number in both directions, and one stranger's configuration mixes 1 and 3 inside one device and one family
+(`Sharp 48 Bit 2`, 70 records at 1 and 17 at 3). Since the owner may change the count per device, none of
+this is evidence for or against the catalogue's number, and none of it is counted above.
+
+### The composer
+
+The catalogue composer builds a command whose family has no block in the table from Logitech's definition
+at the device's count, `catalogueCommandBlocks` and `cataloguePressRepeats` in
+`packages/codec/src/composecatalogue.ts`, and passes the blocks to `composeIrGroup` beside the code; the
+table's block wins wherever it has one. It refuses three things still unknown:
+
+* a device stating 0, 215 commands. The README says the hub then sends no repeat; no compile here shows it.
+  Section 258's games console is at 0 in its account and was written at 1, but its family states 1, so it
+  says nothing about 0;
+* a device whose codeset holds a family stating another count, 1744 commands, the reading above;
+* a code naming a release group, 13912 commands. Section 233 puts a release in the tail pointer and no
+  compile here shows one stored.
+
+These three are over all families, each command counted by its first refusing device; the figures below
+for the 478 families are a subset. **A count of 2 is composed, unconfirmed**: 1518 devices with a codeset
+state it and no compile here shows it either. It is built as the rule says, between the 1 and the 3 that
+are seen; 0 is refused where 2 is not because at 0 the hub's reading changes kind, a press with no repeat
+group at all.
+
+**The closure is the composer's own output against Logitech's bytes.** Composed whole onto the Harmony
+650's configuration: the vip_1853 at 1, 39 records of 39 identical to the Harmony 650 compile's in all three
+blocks; the Panasonic TX-28A1U at 3, 28 of 28, its held power step included. These two are what the
+closure covers: the Dell's ordinary commands, which the table composes, are 34 of 35 wrong, above. And the
+KPN VIP1853 at 3
+against the Harmony 600's set top box, whose device is not known but whose count is 3, the block a press
+sends on 38 of 39 (`DVR` matches no record there, not read further), where that compile gives five
+commands no held block, which is not the count. The last shows the intro and three repetitions compose,
+and nothing about whose count 3 is. **The control**: the
+vip_1853's codes built at 3 match none of its 38 commands' records, and at 1 all 38. The 650's second
+power hold compile now composes too, and `composecatalogue.test.ts` compares it as a sixth pair.
+
+### What it moves
+
+`make composecensus`, the composer over every command of the archive, a command counted as written when it
+composes for every device serving its codeset:
+
+| | the table alone | now |
+|---|---|---|
+| commands written, of 2067863 | 1676125 | 1999026 |
+| families refusing a command, of 687 | 641 | 513 |
+| families writing nothing | 631 | 209 |
+| codesets writing nothing, of 54118 | 10046 | 2115 |
+| devices writing every command, of 257720 | 182603 | 244487 |
+
+Of the 478 families the table refused only for want of a whole block, 350 still refuse 15864 commands:
+13909 for a release group, in 40 families (12 held back by that alone), 1740 for a conflicting stated count
+in 337 families, and 215 for a count of 0 in 6. 440 commands compose for some of their codeset's devices
+and not all, and are counted as refused.
+
+### Scope, decision 16
+
+Compiles for the Harmony One (arch 12) and the Harmony 600, 650 and 700 (arch 14), by MyHarmony, with the
+per model split above: the devices stating 1 that carry the claim are on the One, 650 and 700. Not
+checked on the Harmony 525 (arch 9), for which nothing compiles; the Harmony 880 to 895 (arch 8 and 10)
+are contributed configurations whose settings are unknown; the Harmony 300 and 350 (arch 16) not looked at.
+Nothing was sent to a remote.
+
+### Falsification
+
+A MyHarmony compile of a device on one of our accounts, its account count equal to the catalogue's,
+where a family stating no count repeats another number and no family on the device states one. For the
+main family reading: a device whose main family states a count and whose other families are written at
+the device's own, or one whose main family states none and whose minority stated family is written at the
+device's count.
+
+### Where it lands
+
+* `packages/codec/test/pressrepeats.test.ts`: the 65 groups and their counts, the three disagreements, the
+  control, the composer against Logitech's bytes, and the refusals.
+* `packages/codec/test/composecatalogue.test.ts` and `devicepower.test.ts`: the TX-28A1U composes and is
+  compared.
+* `packages/codec/bin/composecensus.ts`, `make composecensus`.
+* `docs/config-format.md`, the press count paragraph.

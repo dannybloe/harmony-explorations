@@ -616,15 +616,22 @@ const HELD_FRAME_GAP_US = 10000;
  * than the first slot's plus one cycle of the second's; and where the hold would send fewer frames than
  * an ordinary press, since whether a hold that short sends less than a press is unmeasured. Measured on
  * arch 14 (Harmony 650 and 700) only.
+ *
+ * `given` is the press for a family the table holds no block for, `ComposeCommand.blocks`, and is
+ * ignored where the table has one. No held power record of such a family has been compared with a
+ * compile, so that path rests on the press being right and the cutting being the family independent
+ * rule section 309 measured.
  */
 export function longPressBlockOfStatedCode(
-  code: string | StatedCode, holdMs: number, periodNs?: number,
+  code: string | StatedCode, holdMs: number, periodNs?: number, given?: readonly Pulse[],
 ): Pulse[] | undefined {
   const read = typeof code === 'string' ? statedCode(code) : code;
   if (read === undefined) return undefined;
   const count = longPressFramesOfStatedCode(read, holdMs);
   const walk = segmentWalkOf(read);
-  const press = blockOfStatedCode(read, periodNs, 'once');
+  // The table's press where it has one, else the caller's: a family whose definition states no repeat
+  // count has its press derived at the device's count, section 347, and the hold is cut from that.
+  const press = blockOfStatedCode(read, periodNs, 'once') ?? (given === undefined ? undefined : [...given]);
   if (count === undefined || walk === undefined || press === undefined) return undefined;
   // How many frames carry part of the first slot, a segment that closes none joining the frame after it,
   // and how many the second slot's cycle is.

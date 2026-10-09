@@ -1158,11 +1158,19 @@ export type WaveformRefusal =
  *
  * `storedForm` is the one microsecond a configuration's last duration carries and a rendering does not,
  * so a comparison against Logitech's renderer passes `false` and a writer wants the default.
+ *
+ * **`asStored` is the writer's other two differences from a rendering**, section 347, and it exists so
+ * that the composer reads a command through these same seven readings rather than an eighth copy. A
+ * rendering clears every toggle bit, which is the archive's convention for comparing, and a writer sends
+ * the value the code states, which is what Logitech's compiles hold on every toggle family section 347
+ * compared. And a rendering appends the release block to the first transmission, where a configuration
+ * keeps it behind a pointer of its own: so under `asStored` the release block comes back separately as
+ * `release`, and `once` is the record's first block alone.
  */
 export function waveformOfArchiveCommand(
   protocol: ArchiveProtocol, keycode: string,
-  options: { readonly storedForm?: boolean; readonly repeats?: number } = {},
-): { once: Pulse[]; held: Pulse[] } | { refusal: WaveformRefusal } {
+  options: { readonly storedForm?: boolean; readonly repeats?: number; readonly asStored?: boolean } = {},
+): { once: Pulse[]; held: Pulse[]; release?: Pulse[] } | { refusal: WaveformRefusal } {
   const rhythm = rhythmOfDefinition(protocol);
   if ('refusal' in rhythm) return { refusal: 'no rhythm derivable for the family' };
   // **The code's own spelling decides each value's width**, section 233: the segment its index names
@@ -1183,9 +1191,17 @@ export function waveformOfArchiveCommand(
     keyCode,
   });
   if ('refusal' in built) return { refusal: built.refusal };
-  const frames = withToggleCleared(protocol, withStatedWidths(protocol, code.frames, slots));
+  const widened = withStatedWidths(protocol, code.frames, slots);
+  const frames = options.asStored === true ? widened : withToggleCleared(protocol, widened);
   const shape: FrameShape = { ...shapeOfRhythm(rhythm), also: built.also };
   try {
+    if (options.asStored === true) {
+      return {
+        once: pulsesOfBlock(shape, frames, built.tail),
+        held: pulsesOfBlock(shape, frames, built.held),
+        ...(built.release === undefined ? {} : { release: pulsesOfBlock(shape, frames, built.release) }),
+      };
+    }
     return {
       // **The release block goes on the end of the first transmission**, section 233, which is where
       // Logitech's own renderer puts it: their string has two sections and a press cycle has three
