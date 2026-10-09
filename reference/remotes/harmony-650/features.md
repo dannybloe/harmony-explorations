@@ -76,8 +76,8 @@ plus its inputs, so the device count binds first on every configuration measured
   **not checked**. `docs/how-a-harmony-works.md` has the long form.
 * **Remote Assistant**: shown after a sync and when an activity starts, turned off temporarily from its
   own screen, back after the next sync, Logitech's manual page 4. MyHarmony lists `RemoteAssistant` as a
-  setting for the 600 and 700, section 292; for the 650 the setting is claimed in
-  `todo-compile-650.md` 4.3 and its effect on the configuration is **not checked**.
+  setting for the 600 and 700, section 292, and for the 650; switched off, Logitech's compile holds no
+  Assistant screens at all, section 345.
 
 ## Sequences
 
@@ -102,9 +102,9 @@ remote, section 327 and the `writing-a-config` skill.
 
 | setting | standing and source |
 |---|---|
-| `GlowTime`, how long the screen stays lit | the configuration's timer 1, **measured on the 650**, section 292 |
-| `TiltSensor`, waking when picked up | **Logitech's service** lists it for the 650, default on, read 7 October 2026; what it changes in the configuration is **not checked**, `todo-compile-650.md` 4.3.3 |
-| `RemoteAssistant` | **Logitech's service** lists it for the 650, default on, read 7 October 2026; its effect on the configuration is **not checked**, 4.3.2 |
+| `GlowTime`, how long the screen stays lit | the configuration's timer 1, **measured on the 650**, section 292; MyHarmony sets it with a slider from 5 to 30 seconds in its "Remote Backlight Settings" dialog, MyHarmony's screen |
+| `TiltSensor`, waking when picked up | **Logitech's service** lists it for the 650, default on, read 7 October 2026; set in the same "Remote Backlight Settings" dialog as the glow time, "Enable tilt sensor" or "Disable tilt sensor"; what it changes in the configuration is **not checked**, `todo-compile-650.md` 4.3.3 |
+| `RemoteAssistant` | **Logitech's service** lists it for the 650, default on, read 7 October 2026; set under Settings in MyHarmony. **Off, Logitech's compiler builds no Assistant at all**: its six screens and the steps leading to them after a start and after All Off are absent, and nothing else changes in count, section 345 |
 | leave devices on when switching activities | **per device**, in the device's power settings: "I want to keep this device on when switching Activities and only turn it off when I press the Off button". In the configuration it removes that device's switch off from the start of every activity that does not use it; the activities that use it still switch it on and All Off still switches it off. MyHarmony's client and two Logitech compiles, and heard with the infrared receiver on Logitech's compile: switching from an activity using the device to one without it sent the device nothing, and All Off switched it off, section 340 |
 
 **The 650's own list is these three and no others**: `GlowTime` default 20, `TiltSensor` and
@@ -113,6 +113,10 @@ remote, section 327 and the `writing-a-config` skill.
 paragraph said until then that no 650 answer had been saved, section 292, so the list was the 600's and
 700's. Leaving devices on is a capability, `LeaveDevicesPoweredOn`, and not one of the settings: it is set per
 device, above.
+
+**The remote's language is chosen apart from those three**, in MyHarmony's "Select Language For Your Remote"
+dialog (English, Français, Español, Deutsch, Nederlands, Italiano and more), and reaches the compile as its
+locale rather than as a setting; what it changes in the configuration is **not checked**. MyHarmony's screen.
 
 ## Learning
 

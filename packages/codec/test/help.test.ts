@@ -312,3 +312,35 @@ test('section 333: an activity composed on a Harmony 650, 600 and 700 binds no H
   assert.deepEqual(count, { composed: 4, helpBindings: 0, deferredAsReference: 4, newModes: 11, newHelpOrAssistant: 0,
     newModesBindingHelp: 0, assistantVariableTouched: 0, logitechHelpBindings: 8 });
 });
+
+test('with MyHarmony\'s Remote Assistant off, Logitech\'s compile drops its six screens and the seven deferred steps leading there, and nothing else changes in count',
+  skipUnless('h650_favourites_base', 'h650_assistant_off_config'), async () => {
+    // Section 345, todo-compile-650 4.3.2. The same setup on the Harmony 650's test record, read off the
+    // remote after MyHarmony's sync with the Assistant on, and compiled by Logitech with it off.
+    const { activities, characterMap, modeRecords, screenStrings, stateVariables } = await import('../src/index.ts');
+    const shape = (name: string) => {
+      const c = parse(require_(name));
+      const strings = screenStrings(c, characterMap(c));
+      const programs = new Set(strings.filter((s) => /Remote Assistant/.test(s.text)).map((s) => s.program));
+      const modes: number[] = [];
+      modeRecords(c)!.forEach((m, i) => { if (m.pages.some((p) => programs.has(p.program))) modes.push(i); });
+      const lists = c.actionLists()!;
+      return {
+        assistantScreens: modes.length,
+        listsEnteringThem: lists.filter((l) => l.some((x) => x.opcode === 0x7e && modes.includes(x.operand))).length,
+        // The deferred step that leads there: 0x71 with 0x8022 after a start, 0x8038 after All Off.
+        deferredSteps: lists.filter((l) => l.some((x) => x.opcode === 0x71 && (x.operand === 0x8022 || x.operand === 0x8038))).length,
+        modes: modeRecords(c)!.length,
+        lists: lists.length,
+        variables: stateVariables(c).length,
+        activities: activities(c).map((a) => a.name),
+      };
+    };
+    const on = shape('h650_favourites_base');
+    const off = shape('h650_assistant_off_config');
+    assert.deepEqual([on.assistantScreens, on.listsEnteringThem, on.deferredSteps], [6, 6, 7]);
+    assert.deepEqual([off.assistantScreens, off.listsEnteringThem, off.deferredSteps], [0, 0, 0]);
+    assert.deepEqual([on.modes - off.modes, on.lists - off.lists], [6, 26]);
+    assert.equal(off.variables, on.variables);
+    assert.deepEqual(off.activities, on.activities);
+  });

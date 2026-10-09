@@ -45880,3 +45880,54 @@ shows the favourites of two devices.
   files, and one number sender record per device whose favourites are shown.
 * `docs/how-a-harmony-works.md`, the favourite channel section; `reference/remotes/harmony-650/features.md`.
 
+## 345. MyHarmony's Remote Assistant setting decides whether Logitech compiles the Assistant's screens at all
+
+`todo-compile-650.md` 4.3.2. Every Logitech compile in the lab had the Remote Assistant on, so what the
+setting does to the bytes was unknown. It is set in MyHarmony under Settings, in a dialog "Remote Assistant
+enables instant help on your remote" with On and Off; the service then reads `RemoteAssistant` as `false`
+in `GetRemoteSettings`. The test record's Harmony 650 was compiled once with it off
+(`h650_assistant_off_config`), with nothing else changed since the setup that MyHarmony had synced to the
+remote with it on (`h650_favourites_base`).
+
+| | Assistant on | Assistant off |
+|---|---|---|
+| screens with "Remote Assistant" on them | 6 | 0 |
+| lists entering one of those screens | 6 | 0 |
+| lists holding the deferred step `0x71 0x8022` or `0x71 0x8038` | 7 | 0 |
+| mode records | 401 | 395 |
+| action lists | 9503 | 9477 |
+| state variables | 79 | 79 |
+| activities | the same five | the same five |
+
+So the setting is the compiler's choice of whether to build the Assistant at all. With it on, each of the
+five activities has a list `[71 8022, 7E assistant screen, 7E working screen]`, reached through
+`[1F FB00, 7F list]` at the end of its start, plus one more `0x71 0x8022` list that calls on, and All Off
+has `[71 8038, 7F ..., 7E screen]` for "If any devices are still On press Help now". With it off, none of
+those lists and none of the six screens exist, and the screen texts "Remote Assistant", "If any devices are
+not setup correctly, press Help now" and "If any devices are still On press Help" are gone. The 26 lists
+fewer are those and the screens' own lists; the variable count does not move.
+
+**What it means for the 650 track.** Section 333's composer already leaves the Assistant out of a composed
+activity, which is the off form, so a configuration built by us is a configuration with the setting off.
+What remains is Logitech's own activities copied from the starting configuration, which was compiled with
+it on; replacing those is chapter 6's work. What a start runs instead of the deferred step, with the
+Assistant off, is not traced here.
+
+**Sources.** MyHarmony's client for where the setting lives (its Dashboard's settings popup), Logitech's
+service for the value, and the two Logitech files.
+
+### Scope, decision 16
+
+The Harmony 650, one setup. The Harmony 600 and 700 list the same setting and are not compiled with it off.
+
+### Falsification
+
+A Logitech compile with the setting off that still holds an Assistant screen, or one with it on that holds
+none.
+
+### Where it lands
+
+* `packages/codec/test/help.test.ts`: the six screens, the lists entering them and the seven deferred steps
+  in the on file, none in the off file, and the counts that do and do not move.
+* `reference/remotes/harmony-650/features.md`, the `RemoteAssistant` row.
+
