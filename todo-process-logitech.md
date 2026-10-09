@@ -16,10 +16,10 @@ as `reference/remotes/harmony-650/` is, is where this todo lands what it works o
 skill the way the Harmony 650 has `harmony-650`: read the folder first, plus that remote's write and
 bench procedure. Moved here from todo-later 5.7; the 525 and the Touch, which get no compile, stay there.
 
-- [ ] 1.1 Harmony One, one folder for the model and one skill naming both units: the spare is a write target and the everyday one never is; its behaviour file carries section 337, the click before every screen command and the held touch, now in `docs/how-a-harmony-works.md`
-- [ ] 1.2 Harmony 600, beside the 650 in `reference/architectures/harmony-600-650-700/`
-- [ ] 1.3 Harmony 700, beside the 650 in the same architecture folder
-- [ ] 1.4 Harmony 300 and Harmony 350, the file based family
+- [x] 1.1 Harmony One, one folder for the model and one skill naming both units: the spare is a write target and the everyday one never is; its behaviour file carries section 337, the click before every screen command and the held touch, now in `docs/how-a-harmony-works.md`; done: `reference/remotes/harmony-one/` and the `harmony-one` skill
+- [x] 1.2 Harmony 600, beside the 650 in `reference/architectures/harmony-600-650-700/`; done: `reference/remotes/harmony-600/` and the `harmony-600` skill
+- [x] 1.3 Harmony 700, beside the 650 in the same architecture folder; done: `reference/remotes/harmony-700/` and the `harmony-700` skill
+- [x] 1.4 Harmony 300 and Harmony 350, the file based family; done: `reference/remotes/harmony-300/` and `harmony-350/`, an architecture folder `reference/architectures/harmony-300-350/`, and one skill `harmony-300-350`, since their procedure is identical
 
 ## 2. The infrared families the composer refuses
 
