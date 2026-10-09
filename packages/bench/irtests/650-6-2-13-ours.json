@@ -1,0 +1,24 @@
+{
+  "name": "Harmony 650, the test setup rebuilt by our composers",
+  "description": "todo-compile-650 6.2.13. The test setup composed again onto Logitech's starting compile with chapter 6's composers, which no longer borrow the parts 6.2 lists, and with 5.2.4's sequence records: the 5.2 comparison finds no difference from Logitech's clean compile in 639 items. The screen light is the starting compile's 20 s. Predicted, as Logitech's file was heard in 5.2.5: Plasma kijken, alone on the activity menu's third page, sends the Plasma's power on (seven frames, its long press version) and the KPN box's power, then the Plasma's HDMI 1 about 6.5 s after the power on, and nothing else. Radio sends KPN 1 once, then KPN 2 about 2.2 s later, where 5.1's file took 2.5 s and repeated KPN 1. Muziek sends Kodi's and the Sony's power, the Plasma's power off and the Sony's Function three times, and nothing to the KPN box. All Off sends Kodi's, the Sony's and the KPN box's power. The screen goes dark about 20 s after the last key. Also note whether the remote restarts on the first presses after the write, which 5.2.5 saw and nothing explains: if it does, what the screen showed. Keep the remote off the cable and pointed at the Flirc.",
+  "steps": [
+    {
+      "instruction": "Straight after the write the remote restarts and may show 'If any devices are still On press Help now'. Do NOT press Help. Take the remote off the cable, point it at the Flirc and press All Off once. Mark when it is quiet"
+    },
+    {
+      "instruction": "Press the centre key below the screen until the screen says Activities 1/3 at the top, then the right arrow below the screen twice. Expect Activities 3/3 with Plasma kijken alone at the top. Press the button beside Plasma kijken (upper left). Expect 'Starting Plasma kijken', the Plasma's power on and the KPN box's power, about 6.5 s later the Plasma's HDMI 1, then a screen titled Plasma kijken with Teletext, DVR, Aspect and Radio in its corners. If the remote restarts instead, note what the screen showed. Mark when it settles"
+    },
+    {
+      "instruction": "Touch nothing and watch the screen: note roughly how many seconds after the last press it goes dark (about 20 expected). Then press any key once to wake it, and mark"
+    },
+    {
+      "instruction": "Press the button beside Radio (lower right) once and touch nothing. Expect the KPN box's 1 and about 2 s later its 2. Mark when the 2 has been heard, or when 10 s have passed without it"
+    },
+    {
+      "instruction": "Press the Listen to Music key (Muziek). Expect Kodi's and the Sony's power, the Sony's Function three times and the Plasma's power off, and nothing for the KPN box. Mark when it settles"
+    },
+    {
+      "instruction": "Press All Off. Expect Kodi's, the Sony's and the KPN box's power. Mark when it is quiet"
+    }
+  ]
+}
