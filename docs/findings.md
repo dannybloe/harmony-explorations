@@ -45749,7 +45749,9 @@ the activity, so while it runs every one of those devices is held, and a key pre
 it ends. The person at the bench saw the volume key buffered. Two orderings are measured and not explained:
 the first Volume Up came out **before** the sequence's KPN Red although it was pressed after the sequence
 was queued, and a second Volume Up followed the Red; whether that second one was a second press or the same
-key held is not recorded. Neither is read from the firmware's queue here.
+key held is not recorded. Both orderings come from one run, as the Flirc recorded them, and the person at
+the bench doubts the first happened that way; a rerun is what settles it, if it ever matters. Neither is
+read from the firmware's queue here.
 
 **Sources.** The composer and section 327 for the form, `queue.ts` for the peak, and the bench. Logitech's
 client was not read for this step; MyHarmony authors sequences, and a compile of one on the 650's test
