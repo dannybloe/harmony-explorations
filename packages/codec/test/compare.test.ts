@@ -44,3 +44,19 @@ test('our 5.1 file and Logitech\'s compile of the same setup differ in the menu 
     const start = setupView(parse(require_('h650_start_config')));
     assert.equal(compareViews(ours, start).filter((one) => one.kind === 'only in a').length, 45);
   });
+
+test('once the account matches the test setup, Logitech\'s compile and our 5.1 file differ only in the menu order and how Radio is stored',
+  skipUnless('h650_milestone_5_1_config', 'h650_test_config_clean'), () => {
+    const ours = setupView(parse(require_('h650_milestone_5_1_config')));
+    const theirs = setupView(parse(require_('h650_test_config_clean')));
+    assert.equal(theirs.size, 639);
+    // todo-compile-650 5.2.3: 4.2's sequence taken off TV kijken's Red in MyHarmony and compiled again,
+    // so the one difference a person would hear is gone; what stays is 5.2.2's and 5.2.4's.
+    assert.deepEqual(compareViews(ours, theirs).map((one) => `${one.kind}: ${one.key}`), [
+      'records: activity Plasma kijken | page 1 | scan 34',
+      'label: activity menu | page 1 | cell 2',
+      'label: activity menu | page 2 | cell 0',
+      'label: activity menu | page 2 | cell 2',
+      'label: activity menu | page 3 | cell 0',
+    ]);
+  });
