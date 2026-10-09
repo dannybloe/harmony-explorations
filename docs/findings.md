@@ -45777,3 +45777,55 @@ long pause into runs; or a rerun where a key pressed during a pause is sent at o
   header of `packages/codec/src/sequence.ts`.
 * The configuration and its write journals in the lab's `work/bench-4-2/`.
 
+## 343. Logitech's compile of a sequence on the Harmony 650 has the composer's form, and sends single block copies of the codes
+
+`todo-secure-logitech.md` 3.7 and `todo-compile-650.md` 4.2. Section 342 heard our sequence run; this is
+whether Logitech writes the same thing. The same sequence was authored in MyHarmony on the test account's
+650 record, KPN 1, 2 s, KPN 2, 20 s, KPN Red on Red in TV kijken, and compiled once with
+`build-setup.ts --stage compile` (`h650_sequence_config`; replies in the lab's `work/setups/h650-sequence/`).
+It was not synced to the remote.
+
+**What the compile holds.** Red in TV kijken calls one list, the only list in the compile with a pause
+across devices:
+
+| | Logitech's | ours, section 342 |
+|---|---|---|
+| shape | send, 3 pauses, send, 3 pauses, send | the same |
+| a pause | `0x7C` per device: LG, KPN, Denon, at 20, then at 200 | the same devices, order and amounts |
+| a send's quantity | 1 | 1 |
+| the record a send names | a single block record, frames `20ff8877`, `20ff48b7`, `20ffd02f` | the record the activity's key sends, the same frames, two blocks |
+
+Fed Logitech's three send lists, `sequenceBody` with `activityPauseGroups` rebuilds their list instruction
+for instruction. So three of the five things section 327 carried over from the Harmony One are now seen on
+this model: the list shape, the pause's devices and their order, and a 20 second wait as one `0x7C` of 200.
+`ARCH14_INFERRED` holds the other two. The send's quantity is not separated, since every device of this
+activity states an inter key delay of 100 ms on the account and Logitech gives most lists 1 anyway, and a
+screen item's copy is not authored.
+
+**The one difference is the Harmony One's.** Logitech sends each command as a single block record of its
+own, beside the two block record the key keeps, as section 327 read on the One. The composer makes no
+record and sends the key's. Behaviour on the bench was the same, since a held block only plays while a key
+is held; the bytes are not.
+
+**Sources.** Logitech's compile and section 327's reading; the client was not read for this step, since the
+compile answers the question directly.
+
+### Scope, decision 16
+
+One sequence on one key of one activity, on the Harmony 650 compiled by Logitech. The Harmony 600 and 700
+are not compiled with one; a screen item's copy and a device with an inter key delay other than 100 ms are
+not authored.
+
+### Falsification
+
+A Logitech compile for this family whose sequence pause names other devices than the activity's, or another
+order, or splits a long pause; or a send whose quantity is not the device's inter key delay for a device
+whose delay is not 100 ms.
+
+### Where it lands
+
+* `packages/codec/test/sequence.test.ts`: Logitech's list rebuilt from the composer's rule, its sends'
+  quantity, and its records against the keys' in the compile before (`h650_options_config`); and
+  `ARCH14_INFERRED` down to two.
+* `packages/codec/src/sequence.ts`, `ARCH14_INFERRED` and the header; `docs/config-format.md`.
+

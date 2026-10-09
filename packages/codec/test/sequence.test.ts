@@ -22,7 +22,7 @@ import { LAB, require_, skipUnless } from '@harmony/lab';
 import {
   ACTION_QUEUE_INSTRUCTIONS, ARCH14_INFERRED, ComposeError, EditError, QueueError, SCREEN_ITEM_BEEP,
   activities, activityPauseGroups, applyEdits, devices, assertQueueFits, bindKeyToList, composeSequence,
-  handlerSets, infraredCodesPerList, irGroups, modeRecords, parse, payloadOf, queueRun, sendPreludes, sequenceBody,
+  handlerSets, infraredCodesPerList, irFrames, irGroups, irRecordBlocks, modeRecords, parse, payloadOf, queueRun, sendPreludes, sequenceBody,
   taggedList,
   type Container, type Instruction, type SequenceStep,
 } from '../src/index.ts';
@@ -139,13 +139,13 @@ test('each compile holding the two sequences has six sequence lists in four bind
   }
 });
 
-test('none of the thirteen Harmony 600, 650 and 700 compiles holds a pause across devices, so their form is carried over',
+test('none of the thirteen earlier Harmony 600, 650 and 700 compiles holds a pause across devices',
      skipUnless(...ARCH14), () => {
-  // **This is the assertion that makes the arch 14 composer an inference**, and it is written to fail
-  // the day a compile with a sequence arrives: then the five entries of `ARCH14_INFERRED` can be
-  // scored rather than carried.
+  // This made the arch 14 composer an inference until a compile with a sequence arrived, section 343,
+  // which scored three of the five entries `ARCH14_INFERRED` carried; two remain, and the next test
+  // is the one that scored the three.
   for (const name of ARCH14) assert.deepEqual(pauseShaped(open(name)), [], name);
-  assert.equal(ARCH14_INFERRED.length, 5);
+  assert.equal(ARCH14_INFERRED.length, 2);
 });
 
 test('no screen item on a Harmony 600, 650 or 700 opens with the beeper every spare Harmony One screen item opens with',
@@ -500,3 +500,51 @@ test('the sequence heard on the Harmony 650: three of the KPN box\'s own sends a
     const redEntry = taggedList(bound, handlerSets(bound)!.addresses[tv.set]!)!.entries.find((e) => e.tag === 0x8d)!;
     assert.deepEqual([redEntry.opcode, redEntry.operand], [0x7f, composed.lists[0]]);
   });
+
+test('Logitech\'s sequence on the Harmony 650 is the composer\'s list, given its send lists, and sends single block copies of the keys\' codes',
+  skipUnless('h650_sequence_config'), () => {
+    // Section 343: the sequence of section 342 authored in MyHarmony on the test account, KPN 1, 2 s,
+    // KPN 2, 20 s, KPN Red on Red in TV kijken, and compiled by Logitech.
+    const c = parse(require_('h650_sequence_config'));
+    assert.deepEqual(pauseShaped(c).length, 1, 'one list in the compile pauses across devices');
+    const tv = activities(c).find((one) => one.name === 'TV kijken')!;
+    const map = taggedList(c, handlerSets(c)!.addresses[tv.set]!)!;
+    const pressList = (scan: number): number => map.entries.find((one) => one.tag === (0x80 | scan))!.operand;
+    const lists = c.actionLists()!;
+    const body = lists[pressList(13)]!;
+    assert.equal(pauseShaped(c)[0], pressList(13), 'the pausing list is the one Red calls');
+    // The composer's rule, fed Logitech's own send lists in the order the list calls them.
+    const calls = body.filter((one) => one.opcode === 0x7f).map((one) => one.operand);
+    assert.equal(calls.length, 3);
+    const sendOf = new Map(sendPreludes(c).map((p) => [p.list, p]));
+    const step = (list: number): SequenceStep =>
+      ({ send: { group: sendOf.get(list)!.group, code: lists[list]![1]!.operand & 0xff } });
+    const steps: SequenceStep[] = [step(calls[0]!), { pause: 20 }, step(calls[1]!), { pause: 200 }, step(calls[2]!)];
+    const groups = activityPauseGroups(c, tv.set);
+    assert.deepEqual(groups.map((g) => devices(c).find((d) => d.group === g)?.name), ['LG_TV', 'KPN', 'Denon']);
+    const rebuilt = sequenceBody(steps, (group, code) =>
+      calls.find((list) => sendOf.get(list)!.group === group && (lists[list]![1]!.operand & 0xff) === code)!, groups);
+    assert.deepEqual(rebuilt, body);
+    // Each send carries 1, the KPN box's inter key delay of 100 ms, which is also what most of its lists carry.
+    for (const list of calls) assert.equal(lists[list]![2]!.operand & 0xff, 1);
+    // The records: one block each, the same frames as the records TV kijken's 1, 2 and Red keys send in
+    // Logitech's compile of the same setup before the sequence, `h650_options_config`, which carry two
+    // blocks. In this compile Red runs the sequence, so its own key no longer names the KPN Red record.
+    // That is the difference from the composer, which sends the key's record.
+    const before = parse(require_('h650_options_config'));
+    const frameIn = (container: Container, code: number, group: number): string =>
+      irFrames(container, irGroups(container)![group]!.addresses[code]!).map((f) => f.value.toString(16)).join();
+    const blocksIn = (container: Container, code: number, group: number): number =>
+      irRecordBlocks(container, irGroups(container)![group]!.addresses[code]!).length;
+    const kpn = sendOf.get(calls[0]!)!.group;
+    const beforeTv = activities(before).find((one) => one.name === 'TV kijken')!;
+    const beforeMap = taggedList(before, handlerSets(before)!.addresses[beforeTv.set]!)!;
+    const beforeCode = (scan: number): number =>
+      before.actionLists()![beforeMap.entries.find((one) => one.tag === (0x80 | scan))!.operand]![1]!.operand & 0xff;
+    const theirs = calls.map((list) => lists[list]![1]!.operand & 0xff);
+    assert.deepEqual(theirs.map((code) => frameIn(c, code, kpn)), [24, 47, 13].map((scan) => frameIn(before, beforeCode(scan), kpn)));
+    assert.deepEqual(theirs.map((code) => frameIn(c, code, kpn)), ['20ff8877', '20ff48b7', '20ffd02f']);
+    assert.deepEqual(theirs.map((code) => blocksIn(c, code, kpn)), [1, 1, 1]);
+    assert.deepEqual([24, 47, 13].map((scan) => blocksIn(before, beforeCode(scan), kpn)), [2, 2, 2]);
+  });
+

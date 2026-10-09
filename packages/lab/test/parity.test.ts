@@ -105,7 +105,8 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // 221 with the region after 3.9's write, the base for 3.14's.
   // 223 with the options setup's region and configuration, todo-compile-650 3.10.
   // 224 with the region read before todo-compile-650 4.2's write.
-  assert.equal(Object.keys(pythonImages()).length, 224, 'every fixture tests/lab.py names');
+  // 225 with Logitech's sequence compile, section 343.
+  assert.equal(Object.keys(pythonImages()).length, 225, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {
@@ -186,6 +187,7 @@ test('the two sides exclude the same fixtures from the parseable population', ()
   // 73 with the region after 3.9's write.
   // 75 with the options setup's region and configuration.
   // 76 with the region read before 4.2's write.
-  assert.equal(names.length, 76, 'each one a container already counted, that container plus a known '
+  // 77 with Logitech's sequence compile.
+  assert.equal(names.length, 77, 'each one a container already counted, that container plus a known '
     + 'edit, or a compare base whose remote is not yet in the corpus');
 });

@@ -35,8 +35,8 @@
  * * one list **per binding**: a screen item's list opens with the beeper every Harmony One screen item
  *   opens with, plus that page's second copy, section 69; a key's list does not.
  *
- * **On a Harmony 600, 650 or 700 none of that has been seen**, which is the honest scope and the reason
- * this module names its inferences rather than hiding them. No Logitech compile in the lab for those
+ * **On a Harmony 600, 650 or 700 none of that had been seen until section 343**, which is the honest scope
+ * and the reason this module names its inferences rather than hiding them. No Logitech compile in the lab for those
  * models holds a sequence: none of the thirteen has a run of `0x7C` instructions sharing one wait across
  * several devices, which is what every pause on the Harmony One is. So on arch 14 five things here are
  * **carried over from the Harmony One and unconfirmed**, and `ARCH14_INFERRED` lists them for a caller
@@ -46,8 +46,10 @@
  *
  * **The remote runs that form**, section 342: on a Harmony 650, one sequence on Red sent its three codes
  * with the 2 and 20 second pauses between them, and a key pressed during the pause was held until the
- * pause ended, since a pause holds every device of the activity. That is the firmware executing the form,
- * not Logitech's compiler writing it, so `ARCH14_INFERRED` stays as it is.
+ * pause ended, since a pause holds every device of the activity. That is the firmware executing the form;
+ * **Logitech's compiler writes the same form**, section 343, with one difference the Harmony One already
+ * showed: each command goes out as a single block record of its own, where this composer sends the record
+ * the key sends, which carries a held block too.
  *
  * **What does not depend on any of that is the refusal.** Every list composed here, and every list in
  * the configuration that results, goes through `assertQueueFits`, section 238: a sequence is spooled
@@ -102,12 +104,17 @@ const PRELUDE_ARCHITECTURE = 14;
  */
 export const PAUSE_TENTHS_MAX = 0xff;
 
-/** What a caller and a report should know is carried over from the Harmony One rather than seen. */
+/**
+ * What a caller and a report should know is carried over from the Harmony One rather than seen.
+ *
+ * **Five until section 343, two since.** Logitech's compile of one sequence on a Harmony 650,
+ * `h650_sequence_config`, has the list shape, the pause's devices in the activity's order, and a 20 second
+ * wait as one `0x7C` of 200 per device, exactly as this composes them, so those three left the list. Still
+ * unseen: a screen item's copy, since that compile binds a key, and the send's quantity, since every device
+ * of that activity states an inter key delay of 100 ms and so carries 1 either way.
+ */
 export const ARCH14_INFERRED: readonly string[] = [
-  'the list shape: one list, a 0x7F per command and a 0x7C per device per pause, as on the Harmony One',
-  "the pause's devices and their order: the devices the activity switches on, in the order it does",
   'a screen copy carries no beeper, since no screen item on a Harmony 600, 650 or 700 opens with one',
-  'a wait over ten seconds is one 0x7C, as the Harmony One compile wrote its 20 seconds, and not runs of 100',
   "a command's send carries the device's inter key delay, as on the Harmony One; on arch 14 Logitech gives that "
     + 'amount to power steps and to some digit copies, section 320, and most commands a list at 1',
 ];

@@ -4055,11 +4055,12 @@ pushes. `docs/findings.md` section 238.
 
 **Confirmed on arch 12 (Harmony One) from four compiles of one account holding the same two sequences,
 five of each compile's six lists reproduced instruction for instruction from the account's statement of
-their steps; inferred on arch 14, unconfirmed, since no compile in the lab for a Harmony 600, 650 or 700
-holds one.**
+their steps; on arch 14 confirmed from one Logitech compile of a Harmony 650 holding one sequence,
+section 343, for the shape, the pause's devices and order, and a 20 second pause as one `0x7C`; the screen
+copy and the send's quantity are still inferred there.**
 [findings.md](findings.md) section 327. **On a Harmony 650 the composed form runs as written**, section 342:
-one press sent the three commands with the two pauses, 2 and 20 seconds, between them. That is the remote
-executing the form; whether Logitech's compiler writes the same form for this model is still unseen.
+one press sent the three commands with the two pauses, 2 and 20 seconds, between them, and Logitech's
+compile of the same sequence is the same list, section 343, sending single block records of its own.
 **A pause holds every device it names, and so the whole activity**: a key pressed during the 20 second
 pause, Volume Up to the receiver, was sent only when the pause ended.
 
