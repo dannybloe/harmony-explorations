@@ -36,6 +36,7 @@ four in five commands composed and 10046 of 54118 code sets had none that does; 
   - [ ] 2.2.2 1740 commands in 337 families: a device whose code set holds a family stating a count other than its own; two devices were written at their main family's count, an unconfirmed reading, so these are refused
   - [ ] 2.2.3 13909 commands in 40 families: a code naming a release group, which no compile in the lab shows stored; overlaps 2.5
   - [ ] 2.2.4 215 commands in 6 families: a device stating a count of 0, which no compile in the lab shows
+  - [ ] 2.2.5 The rhythm table's blocks for families stating no count were each measured on one device, so they hold that device's count for every device: wrong where a device states another count, the Dell 2300MP on 34 of 35 records, about 8900 archive devices exposed; build these at the device's count too, which changes commands that compose today (findings section 348)
 - [ ] 2.3 The 8 families left over, 4 with no rhythm and 4 whose block is refused
 - [ ] 2.4 The 10 families that compose except for 231 commands; Logitech's own version of those codes is `todo-secure-logitech.md` 2.4
 - [ ] 2.5 Release blocks and toggle bits as Logitech renders them: about 4360 commands compose and differ from Logitech's rendering (was `todo-later.md` 6.15)
