@@ -1003,6 +1003,25 @@ label is the idle list's instructions for that device moved to its new corner, x
 a column change and 50 pixels on a row change, 63 of 63. Each row runs a list of its own, byte
 identical to the idle list's row list for that device, 63 of 63.
 
+**Built, section 352**, `activityDeviceList`, and checked against every activity list of the 23 arch 14
+compiles with an activity in the lab, 78 of 82 lists, 149 pages and 515 rows, the other four being
+`h650_issue8_config`'s, whose screens are in French and are refused; on the Harmony 650, 53 of 57. The
+counts are per configuration; the 22 checked hold 13 distinct sets of devices:
+
+| part | built as | standing |
+|---|---|---|
+| rows | every idle list device, the activity's first in its enter list's power order, then the rest in the idle list's order, four to a page in `FOUR_SLOT_ITEMS` order | the rest's order read: it is the two row list's on 23 of 23 and ascending device identifier on 17 of 20, and neither builds it |
+| row lists | `[7E mode, marker := 1]`, one per row on the page and another on its pool copy | 515 of 515 rows bind different lists on the page and the copy |
+| record | `0x99` `0x72` on `(record << 8) \| CurrentLocation`, the one record whose single case, for 0, maps the counter through the working screen record; `0x2D` `0x73` on the device pages' battery program; `compilerTagOrder` | every device list and the activity menu's `0x84`, 151 of 151 on 23 compiles |
+| pages | `menuPageParts` for an activity device list, "Activity" at 39, 114 in the first font of the title's size spelling it | 149 of 149, texts compared by place and glyph codes |
+| text form | every text by reference to its lowest inline copy where one exists, inline otherwise | section 334's check on 22 of 22 composed configurations |
+| labels | each device's font and glyph lines as the idle list draws it | read: letters and fonts unbuilt |
+
+Composed again from the idle list, the 78 lists draw the compiler's raster on 149 pages of 149.
+Unconfirmed: the order of the devices an activity does not switch on; and a label's font, where a
+candidate rule, the list's main label font unless a line would be wider than 59 pixels in it or it lacks a
+glyph, fits 143 of 143 labels and was fitted on them.
+
 Every device list's scan 25 evaluates a record keyed by `CurrentLocation` whose one case, for 0, queues
 the working screen record: the 17 those records enter and one more per configuration, 21 of 21. The
 Remote Assistant screen's "Turn off Assistant" writes 1 into the variable the chain before the working
