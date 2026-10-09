@@ -1,6 +1,6 @@
 /**
- * A setup description in, a whole container out: `todo-compile-650.md` 10.6, `docs/findings.md` section
- * 362.
+ * A setup description in, a whole container out: `todo-compile-650.md` 10.6, `docs/findings.md` sections
+ * 362 and 363.
  *
  * Until this module a configuration of ours was a chain of lab scripts, each starting from a Logitech
  * compile and replacing a part: the 6.2.13 file's composers, then the 7.5 file's three screen passes,
@@ -14,31 +14,39 @@
  *   is left;
  * * **the settings**, MyHarmony's and this track's, `TRACK_SETTINGS` unless given.
  *
- * **What it does, in order**, each a generator this project already has and a check that it calibrated
- * against Logitech's compiles:
+ * **What it does, in order**, each a generator or a composer this project already has and a check that
+ * it calibrated against Logitech's compiles:
  *
- * 1. checks that the donor holds the setup's devices and activities by name, and no others;
- * 2. applies the setup's "keep this device on when switching Activities" with `keepDeviceOn` where the
- *    donor does not, section 340, and refuses where the donor keeps a device on that the setup does not;
- * 3. the idle device list, the activity menu in the setup's order and Off, section 356;
- * 4. the firmware's own screens, section 357;
- * 5. every text, section 358;
- * 6. the firmware's wiring with the settings, sections 347 and 360;
- * 7. the state variables, value maps and name tree, section 324;
- * 8. mode 0's key list, section 315;
- * 9. **drops every action list the donor named and the result names by nothing**, renumbering every
- *    list after it, which no step before could do since each put its pieces back at the donor's
- *    numbering: with the wiring's three settings off that is the 70 lists section 360 counted;
- * 10. places what is parked in front of a table and the picture bank, section 328, and lays the frame
- *     out, section 318.
+ * 1. checks that the donor holds nothing the setup does not, a device by the setup's name or by the
+ *    `<manufacturer>_<model>` name Logitech's compiler gives one nobody renamed, since no composer
+ *    removes a device or an activity;
+ * 2. composes every device the setup names and the donor lacks from the catalogue, in the setup's order,
+ *    `composeCatalogueDevices`, section 331, which needs the archive, `options.archive`;
+ * 3. applies the setup's "keep this device on when switching Activities" with `keepDeviceOn` to the
+ *    donor's activities, section 340, and refuses where the donor keeps a device on that the setup does not;
+ * 4. composes every activity the setup names and the donor lacks, in the setup's order,
+ *    `composeSetupActivity`: the start and the keypad from the roles, the inputs by name, the working
+ *    screen from `options.screens`, the menu row, the activity's device list and its activity key;
+ * 5. the idle device list, the activity menu in the setup's order and Off, section 356;
+ * 6. the firmware's own screens, section 357;
+ * 7. every text, section 358;
+ * 8. the firmware's wiring with the settings, sections 347 and 360;
+ * 9. the state variables, value maps and name tree, section 324;
+ * 10. mode 0's key list, section 315;
+ * 11. **drops every action list the donor named and the result names by nothing**, renumbering every
+ *     list after it, which no step before could do since each put its pieces back at the donor's
+ *     numbering: with the wiring's three settings off that is the 70 lists section 360 counted;
+ * 12. moves what the composers parked where Logitech's compiler parks nothing into the body, places
+ *     what is parked in front of a table and the picture bank, section 328, and lays the frame out,
+ *     section 318.
  *
- * **What it does not do, and why it is a refusal rather than a gap papered over.** No composer
- * removes a device or an activity, so one the donor holds and the setup does not cannot be taken out, and none composes an activity from the setup file alone, because the file does not say which
- * commands go on an activity's screen or what its sequences are: those are the platform's soft button
- * list and a person's choice, section 323, and the setup file never carried them. So the devices and
- * activities themselves are the donor's, and the donor has to hold exactly the setup's. That is the
- * finding's main measurement: what 11.1 still needs is a container with no device and no activity for
- * the composers to start from, and a setup format that states an activity's screen.
+ * **What it cannot do yet, measured in section 363.** An activity's working screen is not in the setup
+ * file, which is the platform's soft button list and a person's choice, section 323, so it is an input of
+ * its own, `options.screens`, named rather than read off a Logitech file. And the composers need a donor
+ * that already holds an activity: on `harvest_650_two_devices`, the smallest Harmony 650 compile in the
+ * lab with no activity, the device composer finds the device list through the activity menu, which a
+ * configuration with no activity has not got, the fonts lack letters the setup's labels need, and the
+ * activity composer tells the records keyed by an activity apart by the activities already there.
  *
  * Arch 14 only and measured on the Harmony 650 alone; the Harmony 600 and 700 are refused, see
  * `ASSEMBLY_SKINS`. Read only towards hardware, like everything in this package: the result is bytes.
@@ -61,7 +69,7 @@ import { characterMap, decode, glyphsReferencedBy } from './text.ts';
 import { activities, devices, deviceVariables } from './inventory.ts';
 import type { ContainerLayout, ContainerPiece } from './frame.ts';
 import { layOutContainer, takeApart } from './frame.ts';
-import { loosen, placePieces } from './placer.ts';
+import { LOOSE_KINDS, loosen, placePieces } from './placer.ts';
 import { buildStateTables, describeStateTables, withStateTables } from './statetables.ts';
 import {
   buildWiring, builtPieces, checkWiring, describeWiring, withWiring, wiringModelOfSkin, type WiringSettings,
@@ -73,8 +81,20 @@ import {
 } from './screenrecords.ts';
 import { buildFirmwareScreens, checkFirmwareScreens, describeFirmwareScreens, withFirmwareScreens } from './firmwarescreens.ts';
 import { buildScreenTexts, checkScreenTexts, describeScreenTexts, withScreenTexts } from './screentexts.ts';
-import { keepDeviceOn, startsSwitchingOff } from './compose.ts';
-import type { ActivityRoleName } from './activityroles.ts';
+import {
+  ComposeError, composeActivity, composeActivityDeviceList, composeActivityMenuRow, composeActivityScreen, keepDeviceOn,
+  nextActivityValue, startsSwitchingOff,
+} from './compose.ts';
+import {
+  activityFromRoles, activityKeysFromRoles, activityScreenRows, deviceKeypadLists, type ActivityDevice,
+  type ActivityRoleName,
+} from './activityroles.ts';
+import { composeCatalogueDevices, type ComposedCatalogueDevice } from './composecatalogue.ts';
+import { inputPlan, inputTarget } from './inputs.ts';
+import { catalogueDriving } from './driving.ts';
+import { activityPauseGroups, composeSequence } from './sequence.ts';
+import type { ActivityKey } from './activitykeys.ts';
+import type { ComposeRow } from './compose.ts';
 
 /** A refusal, named so a caller can tell a setup the donor cannot serve from a bug. */
 export class AssemblyError extends Error {}
@@ -108,6 +128,22 @@ export interface SetupDescription {
   readonly devices: readonly SetupDevice[];
   readonly activities: readonly SetupActivity[];
 }
+
+/**
+ * One item of an activity's working screen, which the setup file does not state, section 323: a device's
+ * command by the label that device's own screen draws it under, or a sequence, Logitech's "sequence" of
+ * MyHarmony, by its name and its steps. A step sends the command a device's key sends, by the key's scan
+ * code, `keys.md`, or pauses, in tenths of a second.
+ */
+export type AssemblyScreenItem =
+  | { readonly device: string; readonly command: string }
+  | { readonly sequence: string; readonly steps: readonly AssemblySequenceStep[] };
+export type AssemblySequenceStep = { readonly device: string; readonly scan: number } | { readonly pause: number };
+
+/** MyHarmony's activity type to the Harmony 600, 650 and 700's activity key, section 314; `Custom` holds none. */
+const KEY_OF_TYPE: Readonly<Record<string, ActivityKey | undefined>> = {
+  WatchTV: 'Watch TV', WatchDvd: 'Watch a Movie', ListenToMusic: 'Listen to Music', Custom: undefined,
+};
 
 // ---------------------------------------------------------------------------------------------------
 // Which lists are named, and dropping the ones that are not
@@ -435,6 +471,16 @@ export interface AssembleOptions {
   readonly builtAt?: string;
   /** False keeps the donor's placement of parked pieces and pictures instead of `placePieces`'. */
   readonly place?: boolean;
+  /**
+   * The checkout of the device catalogue's archive, decision 15, which composing a device needs, and
+   * naming a donor device's input does, since an input's value is its place in the catalogue's list.
+   */
+  readonly archive?: string;
+  /**
+   * Each composed activity's working screen by the activity's name, which the setup file does not state.
+   * Absent for an activity composes it with an empty working screen.
+   */
+  readonly screens?: Readonly<Record<string, readonly AssemblyScreenItem[]>>;
 }
 
 /** One step of the assembly, for a caller that reports. */
@@ -453,6 +499,8 @@ export interface Assembled {
   dropped: number[];
   /** The devices `keepDeviceOn` was applied to, by the setup's name. */
   keptOn: string[];
+  /** The setup's devices and activities the composers added, by the setup's name, in the order added. */
+  composed: { devices: string[]; activities: string[] };
 }
 
 /** A device's name as base slot 0 spells it, with `_` for a space, read back as the setup writes it. */
@@ -474,47 +522,73 @@ export function assembleSetup(setup: SetupDescription, options: AssembleOptions)
   };
   note('donor');
 
-  // 1. The donor holds exactly the setup's devices and activities. Nothing here removes a device or an
-  //    activity, and nothing composes an activity's screen from the setup file, which does not state it.
-  const held = devices(c);
+  // 1. The donor holds nothing the setup does not, since no composer removes a device or an activity.
+  //    A donor device is the setup's by the setup's name, or by the name Logitech's compiler gives a
+  //    catalogue device nobody renamed, `<manufacturer>_<model>`; it keeps the donor's label either way.
   const wantedDevices = new Set(setup.devices.map((one) => one.name));
   if (wantedDevices.size !== setup.devices.length) throw new AssemblyError('the setup names one device twice');
-  for (const one of held) {
-    if (!wantedDevices.has(spoken(one.name))) {
+  const setupDeviceOf = (label: string | undefined): SetupDevice | undefined =>
+    setup.devices.find((one) => one.name === spoken(label) || one.device.replace('/', '_') === label);
+  for (const one of devices(c)) {
+    if (setupDeviceOf(one.name) === undefined) {
       throw new AssemblyError(`the donor holds a device called ${spoken(one.name)} that the setup does not, and no composer removes one`);
-    }
-  }
-  for (const name of wantedDevices) {
-    if (!held.some((one) => spoken(one.name) === name)) {
-      throw new AssemblyError(`the setup's device ${name} is not in the donor; composing it is not part of the assembly yet`);
     }
   }
   const names = setup.activities.map((one) => one.name);
   if (new Set(names).size !== names.length) throw new AssemblyError('the setup names one activity twice');
-  const heldActivities = activities(c).map((one) => spoken(one.name));
-  for (const name of heldActivities) {
+  for (const name of activities(c).map((one) => spoken(one.name))) {
     if (!names.includes(name)) {
       throw new AssemblyError(`the donor holds an activity called ${name} that the setup does not, and no composer removes one`);
     }
   }
-  try {
-    activityEntriesByName(c, names);
-  } catch (error) {
-    throw new AssemblyError(`the donor does not hold the setup's activities: ${(error as Error).message}; `
-      + 'composing one needs the commands on its screen, which the setup file does not state');
+  /** The donor's or a composed device's label for a setup device, once it is in the container. */
+  const labelOf = (name: string): string | undefined =>
+    devices(c).find((one) => setupDeviceOf(one.name)?.name === name)?.name;
+
+  // 2. The setup's devices the donor lacks, from the catalogue, in the setup's order, section 331.
+  const composed = { devices: [] as string[], activities: [] as string[] };
+  const missingDevices = setup.devices.filter((one) => labelOf(one.name) === undefined);
+  const composedDevices = new Map<string, ComposedCatalogueDevice>();
+  if (missingDevices.length > 0) {
+    if (options.archive === undefined) {
+      throw new AssemblyError(`the donor lacks ${missingDevices.map((one) => one.name).join(', ')}, and composing a device needs the catalogue's archive`);
+    }
+    const requests = missingDevices.map((one) => {
+      const [manufacturer, model] = one.device.split('/');
+      if (manufacturer === undefined || model === undefined) throw new AssemblyError(`${one.name}'s device is not <manufacturer>/<model>`);
+      return { manufacturer, model, label: one.name, full: true, inputs: true };
+    });
+    let result;
+    try {
+      result = composeCatalogueDevices(c, options.archive, requests, { maxDevices: MAX_DEVICES_650 });
+    } catch (error) {
+      if (error instanceof ComposeError) throw new AssemblyError(`composing ${missingDevices.map((one) => one.name).join(', ')}: ${error.message}`);
+      throw error;
+    }
+    c = parse(result.bytes);
+    result.devices.forEach((one, k) => composedDevices.set(missingDevices[k]!.name, one));
+    composed.devices.push(...missingDevices.map((one) => one.name));
+    note('devices composed', composed.devices.join(', '));
   }
 
-  // 2. Keep on between activities, section 340. A device with no power variable is always on.
+  // 3. Keep on between activities, section 340, on the activities already there. A device with no
+  //    power variable is always on. The activities composed below leave a kept on device on themselves.
   const keptOn: string[] = [];
+  const present = activities(c).map((one) => spoken(one.name));
+  /** The power variable of a setup device, by its label in the container. */
+  const powerOf = (name: string): number | undefined => {
+    const label = labelOf(name);
+    return deviceVariables(c).find((one) => one.device === label && one.property === 'Power')?.index;
+  };
   for (const wanted of setup.devices) {
-    const device = devices(c).find((one) => spoken(one.name) === wanted.name);
-    const power = deviceVariables(c).find((one) => spoken(one.device) === wanted.name && one.property === 'Power');
-    if (device === undefined || power === undefined) continue;
-    const off = new Set([...startsSwitchingOff(c, power.index).values()].flatMap((one) => [...one].map(spoken)));
-    const unused = setup.activities.filter((one) => !one.devices.some((d) => d.device === wanted.name)).map((one) => one.name);
+    const power = powerOf(wanted.name);
+    if (power === undefined || present.length === 0) continue;
+    const off = new Set([...startsSwitchingOff(c, power).values()].flatMap((one) => [...one].map(spoken)));
+    const unused = setup.activities.filter((one) => present.includes(one.name)
+      && !one.devices.some((d) => d.device === wanted.name)).map((one) => one.name);
     if (wanted.poweredOnBetweenActivities === true) {
       if (off.size > 0) {
-        c = parse(keepDeviceOn(c, power.index).bytes);
+        c = parse(keepDeviceOn(c, power).bytes);
         keptOn.push(wanted.name);
       }
     } else if (unused.some((name) => !off.has(name))) {
@@ -523,28 +597,43 @@ export function assembleSetup(setup: SetupDescription, options: AssembleOptions)
     }
   }
   if (keptOn.length > 0) note('kept on', keptOn.join(', '));
+
+  // 4. The setup's activities the donor lacks, in the setup's order: the start and the keypad from the
+  //    roles, section 323, the inputs by their names, the working screen from `options.screens`, its
+  //    sequences first, the menu row and the activity's own device list, `compose-activity.ts`'s route.
+  for (const activity of setup.activities) {
+    if (activities(c).some((one) => spoken(one.name) === activity.name)) continue;
+    try {
+      c = composeSetupActivity(c, setup, activity, options, labelOf, powerOf, composedDevices);
+    } catch (error) {
+      if (error instanceof ComposeError) throw new AssemblyError(`composing ${activity.name}: ${error.message}`);
+      throw error;
+    }
+    composed.activities.push(activity.name);
+    note('activity composed', activity.name);
+  }
   const namedBefore = namedLists(c);
 
-  // 3. The idle device list, the activity menu in the setup's order, and Off.
+  // 5. The idle device list, the activity menu in the setup's order, and Off.
   let layout = takeApart(c);
   const records = describeScreenRecords(c, layout);
   const spec = inActivityOrder(records.spec, activityEntriesByName(c, names));
   c = parse(layOutContainer(withScreenRecords(layout, buildScreenRecords(spec, c), records.place)).bytes);
   note('screen records');
 
-  // 4. The firmware's own screens.
+  // 6. The firmware's own screens.
   layout = takeApart(c);
   const firmware = describeFirmwareScreens(c, layout);
   c = parse(layOutContainer(withFirmwareScreens(layout, buildFirmwareScreens(firmware.spec, c), firmware.place)).bytes);
   note('firmware screens');
 
-  // 5. Every text.
+  // 7. Every text.
   layout = takeApart(c);
   const texts = describeScreenTexts(c, layout);
   c = parse(layOutContainer(withScreenTexts(layout, buildScreenTexts(texts.spec, c), texts.place)).bytes);
   note('texts');
 
-  // 6. The wiring, with the settings.
+  // 8. The wiring, with the settings.
   layout = takeApart(c);
   const wiring = describeWiring(layout);
   if (wiringModelOfSkin(skin) !== wiring.model) throw new AssemblyError('the wiring reads another model than the skin names');
@@ -552,12 +641,12 @@ export function assembleSetup(setup: SetupDescription, options: AssembleOptions)
   c = parse(layOutContainer(withWiring(layout, built)).bytes);
   note('wiring', JSON.stringify(settings));
 
-  // 7. The state tables.
+  // 9. The state tables.
   layout = takeApart(c);
   c = parse(layOutContainer(withStateTables(layout, buildStateTables(describeStateTables(layout)))).bytes);
   note('state tables');
 
-  // 8. Mode 0's key list, after the end marker.
+  // 10. Mode 0's key list, after the end marker.
   // The piece is written in place, since base slot 6's table names it as mode 0's record: a new object
   // would leave that address naming a piece the layout no longer holds.
   layout = takeApart(c);
@@ -569,17 +658,18 @@ export function assembleSetup(setup: SetupDescription, options: AssembleOptions)
   c = parse(layOutContainer(layout).bytes);
   note('mode 0');
 
-  // 9. The lists the donor named and nothing names now. Below the wiring's front nothing is dropped.
+  // 11. The lists the donor named and nothing names now. Below the wiring's front nothing is dropped.
   const namedAfter = namedLists(c);
   const orphans = [...namedBefore].filter((index) => !namedAfter.has(index));
   const dropped = dropLists(c, orphans, built.frontLength);
   c = parse(dropped.bytes);
   note('lists dropped', `${dropped.dropped.length} lists, ${dropped.length} bytes, ${dropped.renumbered} sites renumbered`);
 
-  // 10. Placement and the frame.
+  // 12. Placement and the frame.
   if (options.place !== false) {
-    c = parse(layOutContainer(placePieces(loosen(takeApart(c))).layout).bytes);
-    note('placed');
+    const into = composedIntoBody(takeApart(c));
+    c = parse(layOutContainer(placePieces(loosen(into.layout)).layout).bytes);
+    note('placed', into.moved === 0 ? undefined : `${into.moved} composed pieces moved into the body first`);
   }
   if (options.builtAt !== undefined) {
     c = parse(saveEdits(c, [], options.builtAt).bytes);
@@ -587,7 +677,166 @@ export function assembleSetup(setup: SetupDescription, options: AssembleOptions)
   }
 
   checkAssembled(c);
-  return { bytes: c.blob, container: c, steps, dropped: dropped.dropped, keptOn };
+  return { bytes: c.blob, container: c, steps, dropped: dropped.dropped, keptOn, composed };
+}
+
+/** The most devices a Harmony 650 holds, Logitech's figure, `maxDevices` in `packages/usb`'s model table. */
+const MAX_DEVICES_650 = 8;
+
+/** The group of the device a setup names, through its label in the container. */
+function groupOfDevice(c: Container, label: string | undefined, name: string): number {
+  const group = label === undefined ? undefined : devices(c).find((one) => one.name === label)?.group;
+  if (group === undefined) throw new AssemblyError(`the setup's device ${name} is not in the container`);
+  return group;
+}
+
+/**
+ * One activity of the setup composed onto `c`, the route `compose-activity.ts` takes: the start's writes
+ * and the keypad from the roles, `activityFromRoles`, with each input written by its place in the
+ * catalogue's list of the device's inputs, which is how the composer numbers a composed device's and how
+ * Logitech's compiler numbers its own, section 321; the devices the setup keeps on between activities get
+ * no write of 0, section 340; the working screen from `options.screens`, a sequence composed first as
+ * `composeSequence` composes one; then the menu row, the activity's own device list, and its activity key
+ * by its type, section 314.
+ */
+function composeSetupActivity(
+  c: Container, setup: SetupDescription, activity: SetupActivity, options: AssembleOptions,
+  labelOf: (name: string) => string | undefined, powerOf: (name: string) => number | undefined,
+  composedDevices: ReadonlyMap<string, ComposedCatalogueDevice>,
+): Container {
+  if (!(activity.type in KEY_OF_TYPE)) throw new AssemblyError(`${activity.name}'s type ${activity.type} is not one this assembly knows`);
+  const listed: ActivityDevice[] = activity.devices.map((one) => {
+    const label = labelOf(one.device);
+    const group = groupOfDevice(c, label, one.device);
+    if (one.input === undefined) return { group, roles: one.roles };
+    const setupDevice = setup.devices.find((each) => each.name === one.device);
+    const own = composedDevices.get(one.device)?.inputs;
+    let names: readonly string[] | undefined;
+    if (own !== undefined) {
+      names = own.input === undefined ? undefined : [...own.input.values.keys()];
+    } else {
+      if (options.archive === undefined) {
+        throw new AssemblyError(`${activity.name} puts ${one.device} on ${one.input}, and naming a donor device's input needs the catalogue's archive`);
+      }
+      const [slug, file] = (setupDevice?.device ?? '').split('/');
+      names = inputPlan(catalogueDriving(options.archive, slug ?? '', file ?? '')).input?.values;
+    }
+    const variable = deviceVariables(c).find((each) => each.device === label && each.property === 'Input')?.index;
+    // A device with one input that does not step has no input variable, and Logitech's compiler writes
+    // none for it, section 321: the input named is the only one there is.
+    if (names === undefined && variable === undefined) return { group, roles: one.roles };
+    const value = names?.indexOf(one.input) ?? -1;
+    if (variable === undefined || value < 0) {
+      throw new AssemblyError(`${one.device} has no input called ${JSON.stringify(one.input)}`);
+    }
+    if (own !== undefined) {
+      const target = inputTarget(own, one.input);
+      if (target.value !== value) throw new AssemblyError(`${one.device}'s ${one.input} is ${target.value} to its composer and ${value} by its place`);
+    }
+    return { group, roles: one.roles, input: { variable, value } };
+  });
+  const from = activityFromRoles(c, listed);
+  const keep = new Set<number>();
+  for (const one of setup.devices) {
+    const power = one.poweredOnBetweenActivities === true ? powerOf(one.name) : undefined;
+    if (power !== undefined) keep.add(power);
+  }
+  const targets = from.targets.filter((one) => !(one.value === 0 && keep.has(one.variable)));
+  const keys = activityKeysFromRoles(c, from.roles);
+
+  // The working screen, in the order given; a sequence's lists are appended, so the rows read before
+  // it keep their numbers.
+  const powered = (group: number): boolean => {
+    const label = devices(c).find((each) => each.group === group)?.name;
+    return deviceVariables(c).some((each) => each.device === label && each.property === 'Power');
+  };
+  const pauseGroups = listed.filter((one) => powered(one.group)).map((one) => one.group);
+  const rows: ComposeRow[] = [];
+  let sequenced = false;
+  for (const item of options.screens?.[activity.name] ?? []) {
+    if ('device' in item) {
+      const group = groupOfDevice(c, labelOf(item.device), item.device);
+      rows.push(...activityScreenRows(c, [{ group, label: item.command }]));
+      continue;
+    }
+    const lists = c.actionLists() ?? [];
+    const interKeyDelays: Record<number, number> = {};
+    const steps = item.steps.map((step) => {
+      if ('pause' in step) return { pause: step.pause };
+      const group = groupOfDevice(c, labelOf(step.device), step.device);
+      const list = deviceKeypadLists(c, group).get(step.scan);
+      const body = list === undefined ? undefined : lists[list];
+      const send = body?.find((one) => one.opcode === SEND_OPCODE);
+      const quantity = body?.find((one) => one.opcode === QUANTITY_OPCODE);
+      if (send === undefined || quantity === undefined) {
+        throw new AssemblyError(`${item.sequence}: ${step.device}'s key ${step.scan} sends no code to put in a sequence`);
+      }
+      interKeyDelays[group] = quantity.operand & 0xff;
+      return { send: { group, code: send.operand & 0xff } };
+    });
+    const sequence = composeSequence(c, { steps, pauseGroups, interKeyDelays, copies: ['screen'] });
+    c = parse(sequence.bytes);
+    rows.push({ label: item.sequence, list: sequence.lists[0] as number });
+    sequenced = true;
+  }
+
+  const screen = composeActivityScreen(c, nextActivityValue(c), activity.name, rows);
+  const key = KEY_OF_TYPE[activity.type];
+  const built = composeActivity(parse(screen.bytes), {
+    label: activity.name, targets, keys,
+    screen: {
+      startupMode: screen.startupMode, workingMode: screen.mode, activity: screen.activity,
+      startVariable: screen.startVariable, flagVariable: screen.flagVariable, set: screen.set,
+    },
+    ...(key === undefined ? {} : { activityKey: key }),
+  });
+  const rowed = parse(composeActivityMenuRow(parse(built.bytes), built.label, built.set).bytes);
+  const after = parse(composeActivityDeviceList(rowed, built.activity).bytes);
+  // A sequence's pauses name the activity's devices as its start switches them on, which is read back.
+  if (sequenced) {
+    const started = activityPauseGroups(after, built.set);
+    if (started.join() !== pauseGroups.join()) {
+      throw new AssemblyError(`${activity.name}'s sequence pauses name ${pauseGroups.join(', ')} where its start switches on ${started.join(', ')}`);
+    }
+  }
+  return after;
+}
+
+/** A send's opcode and its quantity's, the pair section 278 requires, read off a key's send list. */
+const SEND_OPCODE = 0x7d;
+const QUANTITY_OPCODE = 0x7c;
+
+/**
+ * Every parked piece of a kind the placer has no rule for, into the body. A composer parks what it adds
+ * in front of a table: a composed activity's key map in front of base slot 9's, a composed device's
+ * infrared records in front of base slot 5's. Logitech's compiler parks only the kinds `LOOSE_KINDS`
+ * names, exact on the thirteen compiles of section 328, so everything else is a body piece in its
+ * compiles: on `h650_test_config_clean`, `h650_start_config`, `h700_config` and `h600_config` every key
+ * map is in the body, the activities' in one run that ends with the last. So each piece goes after the
+ * body's last piece of its own kind, which is our choice, as the page lists' order is, section 328.
+ */
+function composedIntoBody(layout: ContainerLayout): { layout: ContainerLayout; moved: number } {
+  const ruled = new Set<string | undefined>(LOOSE_KINDS);
+  const moving = layout.sections.flatMap((s) => s?.before.filter((piece) => !ruled.has(piece.owner)) ?? []);
+  if (moving.length === 0) return { layout, moved: 0 };
+  const body = [...layout.body];
+  for (const piece of moving) {
+    let last = -1;
+    body.forEach((one, k) => {
+      if (one.owner === piece.owner) last = k;
+    });
+    if (last < 0) throw new AssemblyError(`the body holds no ${piece.owner ?? 'unnamed'} piece to put a composed one after`);
+    body.splice(last + 1, 0, piece);
+  }
+  const gone = new Set(moving);
+  return {
+    layout: {
+      ...layout,
+      body,
+      sections: layout.sections.map((s) => (s === undefined ? s : { ...s, before: s.before.filter((piece) => !gone.has(piece)) })),
+    },
+    moved: moving.length,
+  };
 }
 
 /**
