@@ -36,8 +36,11 @@ import {
   parse,
   PICTURE_BANK_BIAS,
   pictureBankStart,
+  pointers,
+  rebase,
   relocate,
   relocationFloor,
+  setupView,
   trailerAgrees,
 } from '../src/index.ts';
 
@@ -228,4 +231,59 @@ test('a cut refuses to remove a pointer field or anything a pointer names', skip
   const borrower = screenStrings(c).find((one) => one.referencedFrom !== undefined && one.at > relocationFloor(c));
   assert.ok(borrower !== undefined, 'one_config draws no text by reference above the floor');
   assert.throws(() => excise(c, borrower.at + 3, 3), /removes the .* field at/);
+});
+
+/** Where every census field sits and where it lands, which is what a rebase must leave alone. */
+const landings = (c: Container): string[] => pointers(c).map((p) => `${p.holder}@${p.at}>${p.lands}`);
+
+test('a rebase links every container for another address and back again byte for byte, todo-compile-650 7.1.1',
+  skipUnless(...SAMPLES, ...MADE), () => {
+    for (const name of [...SAMPLES, ...MADE]) {
+      const before = parse(load(name)!);
+      const there = rebase(before, before.flashBase + 0x10000);
+      const moved = parse(there.bytes);
+      // The parse finds the new base by itself, which is the check that the move took.
+      assert.equal(moved.flashBase, before.flashBase + 0x10000, name);
+      assert.ok(moved.allChecksPass, name);
+      // Every field still sits on the same byte and names the same byte.
+      assert.deepEqual(landings(moved), landings(before), name);
+      // Nothing changed but the rewritten fields, `end_addr` and the checksum.
+      const touched = new Set(there.rewritten.flatMap((one) => [one.at, one.at + 1, one.at + 2]));
+      for (const k of [4, 5, 6, 7, there.bytes.length - TRAILER_CHECKSUM_OFFSET,
+                       there.bytes.length - TRAILER_CHECKSUM_OFFSET + 1]) touched.add(k);
+      const stray = [...there.bytes.keys()].filter((k) => there.bytes[k] !== before.blob[k] && !touched.has(k));
+      assert.deepEqual(stray, [], name);
+      // And back.
+      assert.deepEqual(rebase(moved, before.flashBase).bytes, before.blob, name);
+    }
+  });
+
+test('the 650\'s status screen library linked for the configuration\'s address, and a full 650 compile moved, read the same',
+  skipUnless('h650_safemode_gspm', 'h650_test_config_clean'), () => {
+    const library = parse(load('h650_safemode_gspm')!);
+    assert.equal(library.flashBase, 0x20000);
+    const linked = rebase(library, 0x30000);
+    assert.equal(linked.rewritten.length, 290);
+    // The log area names flash outside the container and is left as it was, for the caller.
+    assert.deepEqual(linked.outward.map((one) => one.target), [0xe0000, 0x100000]);
+    assert.deepEqual(screenStrings(parse(linked.bytes)).map((one) => one.text), screenStrings(library).map((one) => one.text));
+    // A configuration with devices and activities reads the same item for item at another address.
+    const compile = parse(load('h650_test_config_clean')!);
+    assert.deepEqual([...setupView(parse(rebase(compile, 0x40000).bytes))], [...setupView(compile)]);
+  });
+
+test('a rebase that leaves out any one kind of field is caught', skipUnless('h650_safemode_gspm'), () => {
+  const library = parse(load('h650_safemode_gspm')!);
+  const classes = [...new Set(rebase(library, 0x30000).rewritten.map((one) => one.holder))].sort();
+  assert.ok(classes.length > 1);
+  for (const omitted of classes) {
+    let caught = false;
+    try {
+      const moved = parse(rebase(library, 0x30000, { omitForTest: omitted }).bytes);
+      caught = moved.flashBase !== 0x30000 || landings(moved).join() !== landings(library).join();
+    } catch {
+      caught = true;
+    }
+    assert.ok(caught, `omitting ${omitted} was not caught`);
+  }
 });

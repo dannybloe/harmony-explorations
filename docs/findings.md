@@ -46956,3 +46956,50 @@ test, and test titles that do not claim the labels are built. All taken; none ov
 * `packages/codec/test/activitydevicelist.test.ts`: the check over the 23 compiles, the calibration and
   the controls.
 * `docs/config-format.md`, after section 294's paragraph.
+
+## 353. A container is linked for one flash address, so the 650's status screen library needs moving before it can stand in as a configuration
+
+`todo-compile-650.md` 7.1, the first probe of what the remote demands at minimum. The candidate was the
+smallest well formed arch 14 container in the lab, the status screen library the Harmony 650's firmware
+package carries (`h650_safemode_gspm`, 7115 bytes, region 3 of the package): no devices, no activities,
+no codes, 35 screens and every one a status message, section 244. It differs from the Harmony 700's copy
+(`h700_gspm`) in 50 bytes. The predictions were committed before the write, in
+`packages/bench/irtests/650-7-1-status-library.json`.
+
+**The write stopped at its read back, and the reason was the probe's design, not the remote.** The
+library is linked for flash `0x020000`, where the firmware package puts it: its `end_addr` is `0x021BC7`
+and every one of its 290 internal addresses assumes that base. Written unchanged at the configuration's
+`0x030000`, each address names a byte sixty four kilobytes short of the structure it means, and
+`write-config.ts`'s read back refused to parse it, "end_addr 0x21bc7 gives an implausible length", before
+the restart. The region read afterwards (`h650_7_1_stopped`) holds the library's 7115 bytes at the start
+of the block, the rest of that block as it was and everything above it unchanged against
+`h650_7_1_base`; the 6.2.13 file was written back over it and read back identical. **The remote never
+restarted on the library**, so nothing here says what it would have done. Nothing in the dry run noticed
+the base: it compares the blocks to be erased with the dump and the configuration's six compatibility
+fields with the remote, and this container states none of them.
+
+**What was built instead is `rebase`**, in `packages/codec/src/relocate.ts`, with
+`packages/codec/bin/rebase.ts`: link a container for another address without moving a byte of it. It
+uses `relocate`'s pointer census, all of it rather than the part above an insertion, moves `end_addr` by
+the same difference and recomputes the trailer checksum; nothing else in a container states its base,
+since `recoverFlashBase` derives it from the content, so the parse of the result is the check. Fields
+naming flash outside the container are left as they were and reported, which on the library is base
+slot 2's log area.
+
+**The log area is the one thing a caller has to decide.** The library declares `0x0E0000` to `0x100000`,
+as every arch 14 status library does, and the 650's user configurations declare `0x1E0000` to
+`0x200000`, section 206's observation. Moved to `0x030000`, the library's range falls inside the
+configuration region. The probe sets the two fields to the user configurations' range, as the cautious
+choice, since which of the two a remote wants is not established.
+
+**Checked, on every container in the corpus.** All nineteen of `CONTAINERS` and the two made
+configurations are linked sixty four kilobytes higher and back: the result parses at the new base, every
+census field sits on the same byte and lands on the same byte, the bytes differ in nothing but the
+rewritten fields, `end_addr` and the checksum, and the return trip is the original byte for byte. The
+library linked for `0x030000` moves 290 fields and draws the same screen text, and Logitech's clean
+compile of the 650 test setup linked for `0x040000` reads the same in all 639 items of the 5.2
+comparison. The control: leaving out any one class of field is caught, by the parse or by a field landing
+elsewhere. Measured on arch 8, 9, 12 and 14, the corpus's span; arch 10 and 16 have no container here
+this census reads.
+
+* `packages/codec/test/relocate.test.ts`: the three rebase tests.

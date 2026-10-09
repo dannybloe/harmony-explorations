@@ -211,3 +211,63 @@ export function excise(c: Container, at: number, count: number): Relocated {
 
   return { bytes, rewritten };
 }
+
+/** What `rebase` produced: the moved bytes, the fields it rewrote, and the ones it left alone. */
+export interface Rebased extends Relocated {
+  /** The flash address the bytes are now linked for. */
+  base: number;
+  /**
+   * Fields naming flash outside the container, base slot 2's log area on the containers measured,
+   * left exactly as they were, since moving a container does not move what it names elsewhere. A
+   * caller writing the result somewhere else decides whether that flash is still right there.
+   */
+  outward: { at: number; target: number; holder: string }[];
+}
+
+/**
+ * Link a container for another flash address without moving a byte of it: every census pointer
+ * landing inside the container moves by the difference, `end_addr` moves with them, and the trailer
+ * checksum is recomputed last. `todo-compile-650.md` 7.1.1.
+ *
+ * **Why it is needed.** A container states absolute flash addresses, so one built for one place is
+ * wrong anywhere else. The Harmony 650's status screen library, the container its firmware package
+ * carries, is linked for `0x020000`, and written unchanged at the configuration's `0x030000` every
+ * one of its addresses pointed sixty four kilobytes short, which the writer's read back refused,
+ * section 353. Placing a container where it was not built is the whole of what this does.
+ *
+ * **The same census as `relocate`**, which is what makes the two agree on what an address is: an
+ * insertion moves the pointers landing above it, a rebase moves all of them, so a reader that joins
+ * the census joins both. Nothing else in a container states its base, `recoverFlashBase` derives it
+ * from the content, so the parse of the result is the check that the move took.
+ */
+export function rebase(c: Container, base: number, options: { omitForTest?: string } = {}): Rebased {
+  if (!Number.isInteger(base) || base <= 0 || base > POINTER_CEILING) {
+    throw new RelocateError(`a container is linked for a positive three byte address, not ${base}`);
+  }
+  const delta = base - c.flashBase;
+  const refusals: string[] = [];
+  const census = pointers(c, refusals);
+  if (refusals.length > 0) {
+    throw new RelocateError(`the census disagrees with its readers: ${refusals[0]}`);
+  }
+  const bytes = new Uint8Array(c.blob);
+  const rewritten: RewrittenField[] = [];
+  const outward: Rebased['outward'] = [];
+  for (const p of census) {
+    if (p.lands === undefined) {
+      outward.push({ at: p.at, target: p.target, holder: p.holder });
+      continue;
+    }
+    if (options.omitForTest !== undefined && p.holder === options.omitForTest) continue;
+    const to = p.target + delta;
+    if (to <= 0 || to > POINTER_CEILING) {
+      throw new RelocateError(`${p.holder} would state 0x${to.toString(16)}, outside a u24`);
+    }
+    bytes.set(new Writer(POINTER_WIDTH).u24(to).bytes, p.at);
+    rewritten.push({ at: p.at, to, holder: p.holder });
+  }
+  bytes.set(new Writer(4).u32(u32(c.blob, 4) + delta).bytes, 4);
+  bytes.set(new Writer(2).u16(trailerChecksum(bytes)).bytes,
+            bytes.length - TRAILER_CHECKSUM_OFFSET);
+  return { bytes, rewritten, base, outward };
+}
