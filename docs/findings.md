@@ -45829,3 +45829,46 @@ whose delay is not 100 ms.
   `ARCH14_INFERRED` down to two.
 * `packages/codec/src/sequence.ts`, `ARCH14_INFERRED` and the header; `docs/config-format.md`.
 
+## 344. A Harmony 650 activity shows the favourites of the one device that changes its channels
+
+Found at the bench while gathering favourite channels for `todo-secure-logitech.md` 3.6. Four favourites
+were saved on the KPN box and four on the LG in MyHarmony, on the Harmony 650's test record: `FvKPN1`,
+`FvKPN2`, `FvKPN33`, `FvKPN666`, and the same numbers as `FvTV...`. MyHarmony keeps them **per device**,
+on a page "Favorite Channels for device" with the device chosen at the top, showing the LG's four in two
+pages beside a "Commands" button.
+
+**Logitech's compile held only the KPN box's** (`h650_favourites_config`): on TV kijken's own screen pages,
+"Commands" then `FvKPN1`, `FvKPN2`, `FvKPN33` on the first page and `FvKPN666` on the second, and one
+number sender record. No text of the LG's favourites is anywhere in the file. The person at the bench then
+worked out the rule in MyHarmony: an activity has one device that changes its channels, or none, and its
+favourites are that device's. TV kijken's channel device is the KPN box, and no activity had the LG change
+channels. An activity `Watch TV2` was added with the LG changing channels and synced with MyHarmony; read
+off the remote (`h650_favourites_base`), it holds the LG's four on its own pages the same way, TV kijken
+still holds the KPN box's, and the number sender has two records, one per device whose favourites are shown.
+
+So a device's favourites reach the remote only through an activity that uses it for channels, and
+`docs/how-a-harmony-works.md` said a favourites page "can hold channels for more than one tuner", which is
+what the records allow and not what Logitech's software does. That sentence stays, narrowed by a paragraph
+after it rather than replaced, since the records' shape is still what it says.
+
+**Sources.** MyHarmony's own pages, Logitech's compile, and the remote after Logitech's sync. The client's
+code was not read for the rule; it is the person's reading of MyHarmony's behaviour, confirmed by both files.
+
+### Scope, decision 16
+
+The Harmony 650, two devices and two activities. How each favourite's sending is built on this model, a
+favourite with a leading zero and one with a logo are not read here; on the Harmony One the first two are
+sections 154 and 156. Whether a page can hold more than one device's favourites in any Logitech compile is
+not seen.
+
+### Falsification
+
+A Logitech compile whose activity shows favourites of a device that does not change its channels, or
+shows the favourites of two devices.
+
+### Where it lands
+
+* `packages/codec/test/numbersender.test.ts`: which activity holds which device's favourites in both
+  files, and one number sender record per device whose favourites are shown.
+* `docs/how-a-harmony-works.md`, the favourite channel section; `reference/remotes/harmony-650/features.md`.
+

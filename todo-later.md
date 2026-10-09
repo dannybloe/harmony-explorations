@@ -100,6 +100,7 @@ The Harmony One is a different type, with a touch screen and its own screens, so
 - [ ] 6.18 Read the battery before writing to a remote, and refuse or warn when it is too low; a threshold per model is a guess until measured, but a remote that is about 3 V fresh and reads under 2 V is likely too low. For FreeHarmony as much as for the bench
   - [ ] 6.18.1 What each model takes, from Logitech's manuals: Harmony One one lithium ion cell; Harmony 600 and 650 AA alkaline, two on the bench 650 (the manuals do not say how many); Harmony 700 NiMH AA, charged on USB; Harmony 525 four AAA; Harmony 300 and 350 two AA; Harmony Touch an internal rechargeable
   - [ ] 6.18.2 The read has been sent to the Harmony 650 only, 2860 mV against 2.92 V on a meter (section 340); whether the One, 600 and 700 answer it the same way is unchecked, and the Harmony 525 refuses it
+- [ ] 6.19 MyHarmony's sync changes the Harmony 650's screen to a USB logo with arrows around it while it writes, and our writes leave the plain USB logo: find in MyHarmony's sync code which command does that, and whether a write should send it too
 
 ## 8. The specification and the code are the product ([plan 005](docs/plans/005-specs-and-code.md))
 

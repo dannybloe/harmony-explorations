@@ -69,7 +69,7 @@ is the 650's test setup cut down to its device limit.
 - [ ] 3.3 One test setup per model that between them use every feature that model offers, plan 006 being the Harmony 650's, compiled for each model; check every device and activity of the setup is in the file
 - [ ] 3.4 Every setting a model offers, compiled both ways: screen light, Remote Assistant, tilt sensor, leave devices on when switching activities, and whatever 3.2 adds; check the two compiles differ
 - [ ] 3.5 A passthrough device in an activity, compiled with and without it; check the two differ
-- [ ] 3.6 Favourite channels: plain numbers, a leading zero, a logo, more than one page; check each channel is in the file
+- [ ] 3.6 Favourite channels: plain numbers, a leading zero, a logo, more than one page; check each channel is in the file; plain numbers over two pages compiled on the Harmony 650, four on the KPN box and four on the LG, and an activity shows only the favourites of the device that changes its channels (`h650_favourites_config`, `h650_favourites_base`, section 344); a leading zero and a logo still to compile
 - [ ] 3.7 Sequences, on their own and as a step in an activity's start; check each sequence's commands are in the file; one on its own compiled on the Harmony 650, KPN 1, 2 s, KPN 2, 20 s, KPN Red on Red in TV kijken, all three commands in the file (`h650_sequence_config`, section 343)
 - [ ] 3.8 A learned code: a raw infrared command added to a device; check the file holds a record for it
 - [ ] 3.9 What a person changes by hand in the service: a key reassigned in an activity, a command renamed on the screen, a delay or an input changed; check each compile differs from its control

@@ -54,8 +54,12 @@ plus its inputs, so the device count binds first on every configuration measured
   number or icon", Logitech's manual pages 3 and 5.
 * **23**, **Logitech's service**, `MaxFavoriteChannels` in `GetProductCapabilities2`, read 7 October
   2026, `reference/capabilities.md`. It agrees with the forum table's figure. The manual gives no number.
-* How the 650 stores them is **not read**: favourites are read on the Harmony One only, sections 154
-  and 156, `todo-compile-650.md` 4.1.
+* **Kept per device, shown per activity**: MyHarmony saves favourites for a device, and an activity shows
+  the favourites of the one device that changes its channels, on the activity's own screen pages after a
+  "Commands" button, three beside it on the first page. A device that changes channels in no activity has
+  its favourites in no screen and not in the file. Logitech's compile and the bench, section 344.
+* How each favourite's sending is built on this model is **not read**; on the Harmony One it is sections
+  154 and 156. The compiled file holds one number sender record per device whose favourites are shown.
 
 ## Help and the Remote Assistant
 
@@ -117,6 +121,6 @@ manual page 15. Learning on this unit is **not checked**.
 ## Not checked
 
 * The device limit the remote or today's MyHarmony actually enforces.
-* How favourite channels are stored.
+* How a favourite's sending is built: read on the Harmony One only.
 * Advanced help's delay and repeat screens on this model.
 * Long press, beyond Logitech's statement that the model has none.

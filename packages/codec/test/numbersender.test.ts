@@ -404,3 +404,37 @@ test('the control has no digit spelling at all, because none of its channels car
     const senders = handoverLists(lists);
     assert.deepEqual([...senders.values()].sort((a, b) => a - b), [1, 100, 666]);
   });
+
+test('the KPN box\'s favourites appear in TV kijken alone, and the LG\'s only once an activity has the LG change channels',
+  skipUnless('h650_favourites_config', 'h650_favourites_base'), async () => {
+    // Section 344. Four favourites on the KPN box and four on the LG, saved per device in MyHarmony on the
+    // Harmony 650's test record. Logitech's compile put only the KPN box's in, on TV kijken's own screen
+    // pages after "Commands", since the KPN box changes channels there and no activity has the LG do so.
+    // A second activity with the LG changing channels, synced and read off the remote, holds the LG's.
+    const { activities, characterMap, modeRecords, screenStrings } = await import('../src/index.ts');
+    const favouritesByActivity = (name: string): Record<string, string[]> => {
+      const c = parse(require_(name));
+      const strings = screenStrings(c, characterMap(c));
+      const text = new Map<number, string>();
+      for (const s of strings) text.set(s.program, `${text.get(s.program) ?? ''}/${s.text}`);
+      const out: Record<string, string[]> = {};
+      for (const record of modeRecords(c) ?? []) {
+        const pages = record.pages.map((page) => text.get(page.program) ?? '');
+        const found = pages.join('/').split('/').filter((one) => /^Fv/.test(one));
+        if (found.length === 0) continue;
+        // The title is the first text on the first page, the activity's own name.
+        out[pages[0]!.split('/')[1]!] = found;
+      }
+      assert.equal(numberSenders(c)?.records.length, Object.keys(out).length, `${name}: one number sender per device with favourites in`);
+      assert.ok(Object.keys(out).every((title) => activities(c).some((a) => a.name === title)));
+      return out;
+    };
+    // Labels as drawn: a long one wraps, so "FvKPN33" is drawn as "Fv" over "KPN33".
+    assert.deepEqual(favouritesByActivity('h650_favourites_config'), {
+      'TV kijken': ['FvKPN1', 'FvKPN2', 'Fv', 'Fv'],
+    });
+    assert.deepEqual(favouritesByActivity('h650_favourites_base'), {
+      'TV kijken': ['FvKPN1', 'FvKPN2', 'Fv', 'Fv'],
+      'Watch TV2': ['FvTV1', 'FvTV2', 'FvTV33', 'Fv'],
+    });
+  });
