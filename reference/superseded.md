@@ -533,3 +533,5 @@ it reachable in the same commit and the test comparing the two tables is what ca
 | `runs only inside a start sequence` | section 335, 7 October 2026 | the same claim in a docstring |
 | `they act only while an activity starts` | section 335, 7 October 2026 | the same claim in `docs/status.md`'s plural, said of both delays; the inter device delay acts in All Off and Help too |
 | `the other two lists are each one instruction shorter` | section 347, 9 October 2026 | with MyHarmony's tilt sensor off, one of the two lists ending in `3F F101` is one instruction shorter and the other is gone, with base slot 9 entry 2's binding of event `0x17` |
+| `the stated number or three` | section 348, 9 October 2026 | a family whose definition states no repeat count repeats the device's own count, `timing.pressMinRepeats`, on 45 of 47 catalogue devices of our own compiles; three for every such family gets 299 of their records wrong |
+| `four copies against a stated 1` | section 348, 9 October 2026 | the four copies are `Kreatel IP 22 Bit`'s intro and three repetitions, and the stated 1 is our account's vip_1853, which neither configuration section 258 read is shown to hold |

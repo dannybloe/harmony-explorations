@@ -456,7 +456,9 @@ test('the repeat count is stated for five of the blocks we measured, and right o
   // own measurement gives 3 on 22 of the 24 and 1 on the other two, so **defaulting it to 3 would fit
   // 22 of 24 and would be a fit to this corpus rather than a derivation**. That is exactly the mistake
   // that put three wrong family names in this table, so no default is taken and a family whose count is
-  // unstated gets no block.
+  // unstated gets no block. Section 348 found where the count comes from: the device, which the catalogue
+  // composer now uses for such a family. The table stays without a block for it, since a block here
+  // would fix one device's count for every device.
   const archive = archiveProtocols(IR_ARCHIVE!);
   assert.equal(archive.length, 684);
   assert.equal(archive.filter((one) => one.pressMinimumRepeats !== null).length, 39);

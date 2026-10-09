@@ -37,7 +37,9 @@ import {
   catalogueCommands,
   catalogueDevice,
 } from './catalogue.ts';
-import { catalogueDriving } from './driving.ts';
+import { catalogueDriving, type DeviceDriving } from './driving.ts';
+import { archiveProtocols, waveformOfArchiveCommand, type ArchiveProtocol } from './archive.ts';
+import { statedCode, statedProtocol } from './stated.ts';
 import { catalogueDevicePower, type CataloguePower } from './devicepower.ts';
 import { commandIndex, composeDeviceInputs, inputPlan, type ComposedInputs } from './inputs.ts';
 import { composableKeycode, deviceModeLayout } from './devicemode.ts';
@@ -47,7 +49,9 @@ import {
   composeDeviceScreen,
   joinPowerOff,
   type ComposeCommand,
+  type ComposePowerStep,
   type ComposedDevice,
+  type StatedBlocks,
   type ComposedScreen,
   type JoinedPowerOff,
 } from './compose.ts';
@@ -141,12 +145,33 @@ export function composeCatalogueDevice(
   const byName = new Map<string, string>();
   for (const command of available) if (!byName.has(command.name)) byName.set(command.name, command.keycode);
 
+  // A code whose family states no repeat count is composed at the device's count, section 348, from the
+  // family's definition in the archive; the device's count is judged once, over its whole codeset.
+  const driving = catalogueDriving(archive, manufacturer, model);
+  const protocols = archiveProtocolsByName(archive);
+  const press = cataloguePressRepeats(driving, available.map((one) => one.keycode), protocols);
+  const derived = new Map<string, ReturnType<typeof catalogueCommandBlocks>>();
+  const blocksOf = (keycode: string) => {
+    if (!derived.has(keycode)) derived.set(keycode, catalogueCommandBlocks(keycode, press, protocols));
+    return derived.get(keycode);
+  };
+  /** True where the table composes the code or its blocks were derived at the device's count. */
+  const composable = (keycode: string): boolean => {
+    const blocks = blocksOf(keycode);
+    return blocks === undefined || !('refusal' in blocks);
+  };
+  /** The command as the composer takes it, its derived blocks attached where it has them. */
+  const withBlocks = <T extends { stated: string }>(one: T): T => {
+    const blocks = blocksOf(one.stated);
+    return blocks === undefined || 'refusal' in blocks ? one : { ...one, blocks };
+  };
+
   // Under `full`, every name whose code composes, in catalogue order; the layout is computed over all
   // of them, as the compiler's is, and a command left out leaves its place to the next.
   const layout = full ? deviceModeLayout([...byName.keys()]) : undefined;
-  const leftOut = full ? [...byName].filter(([, keycode]) => !composableKeycode(keycode)).map(([name]) => name) : [];
+  const leftOut = full ? [...byName].filter(([, keycode]) => !composable(keycode)).map(([name]) => name) : [];
   const wanted = full
-    ? [...byName].filter(([, keycode]) => composableKeycode(keycode)).map(([name]) => name)
+    ? [...byName].filter(([, keycode]) => composable(keycode)).map(([name]) => name)
     : [...(request.commands ?? [])];
   if (wanted.length === 0) {
     throw new ComposeError(full ? `${manufacturer} ${model} has no command whose code composes`
@@ -165,17 +190,22 @@ export function composeCatalogueDevice(
     // gives all 20 power commands of its seven devices the held block of their family, as it does every
     // other command, todo-compile-650 2.6. This withheld it from every command named Power until then,
     // on the reasoning that a held toggle must not repeat, which no compile shows.
-    if (full) return { stated: keycode };
+    if (full) return withBlocks({ stated: keycode });
     // Without `full` the first command is the one sent both ways, and it does not repeat.
-    return { stated: keycode, held: name !== wanted[0] };
+    return withBlocks({ stated: keycode, held: name !== wanted[0] });
   });
   // The command sent both ways where the catalogue's power steps are not used.
   const powerIndex = full ? Math.max(0, wanted.indexOf('PowerToggle')) : 0;
 
   // The catalogue's power and delays, section 320. A statement no compile shows composed is refused.
-  const driving = catalogueDriving(archive, manufacturer, model);
-  const power = request.powerSteps === false ? undefined
+  const statedPower = request.powerSteps === false ? undefined
     : catalogueDevicePower(driving, (name) => byName.get(name));
+  const stepsWithBlocks = (steps: readonly ComposePowerStep[]) => steps.map((one) => withBlocks(one));
+  const power = statedPower === undefined ? undefined : {
+    ...statedPower,
+    powerOn: stepsWithBlocks(statedPower.powerOn),
+    powerOff: stepsWithBlocks(statedPower.powerOff),
+  };
 
   // The inputs' own commands, appended after the screen's and named the way the rules name them, so
   // `composeDeviceInputs` finds each by name; one already asked for is not composed twice.
@@ -194,9 +224,9 @@ export function composeCatalogueDevice(
         if (!(error instanceof ComposeError)) throw error;
       }
       const keycode = byName.get(catalogueNames[commandIndex(catalogueNames, name)] as string) as string;
-      if (!composableKeycode(keycode)) throw new ComposeError(`the inputs send ${name}, whose code does not compose`);
+      if (!composable(keycode)) throw new ComposeError(`the inputs send ${name}, whose code does not compose`);
       commandNames.push(name);
-      inputCommands.push({ stated: keycode });
+      inputCommands.push(withBlocks({ stated: keycode }));
     }
   }
 
@@ -317,6 +347,114 @@ export function composeCatalogueDevices(
     current = parse(one.bytes);
   }
   return { bytes: current.blob, devices: composed, variables: finalVariables(current, composed) };
+}
+
+// ---------------------------------------------------------------------------------------------------
+// How many times a press repeats the code, where the family does not say: the device does, section 348
+
+/** Every protocol definition of an archive checkout by family name, read once per checkout. */
+const PROTOCOLS_OF = new Map<string, ReadonlyMap<string, ArchiveProtocol>>();
+
+/** The archive's protocol definitions by family name, cached per checkout since a device composes many. */
+export function archiveProtocolsByName(archive: string): ReadonlyMap<string, ArchiveProtocol> {
+  let found = PROTOCOLS_OF.get(archive);
+  if (found === undefined) {
+    found = new Map(archiveProtocols(archive).map((one) => [one.name, one]));
+    PROTOCOLS_OF.set(archive, found);
+  }
+  return found;
+}
+
+/** A device's press count for the families that state none, or why it is not known. */
+export type PressRepeats = { readonly repeats: number } | { readonly refusal: string };
+
+/**
+ * How many times one press of this device sends the repeating part of a code whose family's definition
+ * states no count: the device's own `timing.pressMinRepeats`, or a refusal where the compiles do not say.
+ *
+ * **What the count is.** A press is the start group once, the repeat group this many times, and the
+ * release group, which is the archive README's reading of the hub's infrared engine and the one
+ * `blockOfDefinition` builds. Section 348 scored it against every Logitech compile in the lab whose
+ * devices are known: on 45 of the 47 catalogue devices of the compiles our own accounts produced, the
+ * records of every family whose definition states no count repeat exactly the device's number, 1 or 3,
+ * the `Kreatel IP 22 Bit` set top box at 1 on four compiles; the two others are the second refusal below.
+ * Only three of the 45 state 1, so that is what separates it from a default of 3. That is
+ * what retired the rule this replaced, that such a family gets no block at all because the count is not
+ * the family's: it is not, it is the device's.
+ *
+ * **Two refusals, each a place the compiles leave open rather than a guess.**
+ *
+ * * **A count of 0**, 124 devices of the archive, 120 of them with a codeset. The hub plays it as the
+ *   start group alone, per the archive README, and no compile here holds a catalogue device stating it,
+ *   so what Logitech's compiler for these remotes writes is not seen. (Section 258's games console is
+ *   at 0 in its account and was written at 1, but its family states 1, so it says nothing about 0.)
+ *
+ * **A count of 2 is composed, and that is unconfirmed**: 1518 devices of the archive with a codeset state
+ * it, no compile here shows it either, and it is built as the rule says, between the 1 and the 3 that are
+ * seen. 0 is refused where 2 is not because at 0 the hub's reading changes kind, a press with no repeat
+ * group at all, where 2 only changes how many.
+ * * **A device whose codeset holds a family stating a count other than the device's.** Two devices of
+ *   the compiles are this case, a Toshiba television and a Yamaha receiver, both stating 3, both mostly
+ *   `Toshiba 32 Bit`, which states 1: Logitech wrote 1 for **every** command of both, the `Memorex 32
+ *   Bit` and `PanasonicV2 48 Bit` ones included, which state no count. So on such a device the
+ *   device's number is not the one used, and which one is cannot be read off two samples, so it is not
+ *   composed. A third, a Sony television stating 3 and mostly `Sony 12 Bit`, which states 3 as well,
+ *   gives its one `Toshiba 32 Bit` command 3 rather than its family's 1: the family's own statement does
+ *   not always win either.
+ */
+export function cataloguePressRepeats(
+  driving: { readonly timing: Pick<DeviceDriving['timing'], 'pressMinRepeats'> }, keycodes: Iterable<string>,
+  protocols: ReadonlyMap<string, ArchiveProtocol>,
+): PressRepeats {
+  const repeats = driving.timing.pressMinRepeats;
+  if (repeats === 0) {
+    return { refusal: 'the device states a repeat count of 0, which no Logitech compile here shows' };
+  }
+  for (const keycode of keycodes) {
+    const family = /^G:([^:]+):/.exec(keycode)?.[1];
+    const stated = family === undefined ? null : protocols.get(family)?.pressMinimumRepeats ?? null;
+    if (stated !== null && stated !== repeats) {
+      return {
+        refusal: `the device states a repeat count of ${repeats} and its ${family} commands' family states `
+          + `${stated}, and on such a device Logitech's compiler does not always use the device's number`,
+      };
+    }
+  }
+  return { repeats };
+}
+
+/**
+ * The press's blocks for one command whose family the rhythm table holds no whole block for, at the
+ * device's count; `undefined` where the table composes the command itself; a refusal otherwise.
+ *
+ * Read through `waveformOfArchiveCommand`, the one composition of a definition's readings, so the frames
+ * are the ones `make prontocheck` holds against two million of Logitech's renderings, sent as the code
+ * states them rather than with the toggle cleared. **A command naming a release group is refused**: a
+ * configuration's record has a pointer for it, section 233, and no compile here holds one, so where
+ * Logitech's compiler puts it is not seen.
+ */
+export function catalogueCommandBlocks(
+  keycode: string, press: PressRepeats, protocols: ReadonlyMap<string, ArchiveProtocol>,
+): StatedBlocks | { readonly refusal: string } | undefined {
+  if (composableKeycode(keycode)) return undefined;
+  const read = statedCode(keycode);
+  if (read === undefined) return { refusal: 'our keycode reader declines the code' };
+  const entry = statedProtocol(read.family);
+  if (entry === undefined) return { refusal: `no rhythm for ${read.family}` };
+  if (entry.tail !== undefined || entry.quad !== undefined || entry.longToggle !== undefined
+    || entry.sections !== undefined) {
+    return { refusal: `${read.family}'s block does not take this code` };
+  }
+  if ('refusal' in press) return press;
+  const protocol = protocols.get(read.family);
+  if (protocol === undefined) return { refusal: `the archive holds no definition of ${read.family}` };
+  const built = waveformOfArchiveCommand(protocol, keycode, { repeats: press.repeats, asStored: true });
+  if ('refusal' in built) return { refusal: built.refusal };
+  if (built.release !== undefined) {
+    return { refusal: 'the code names a release group, which no Logitech compile here shows stored' };
+  }
+  if (built.once.length === 0) return { refusal: 'the code sends nothing on a press' };
+  return { once: built.once, ...(built.held.length === 0 ? {} : { held: built.held }) };
 }
 
 /** A delay variable's name: its property, the device's identifier, and its number of values. */

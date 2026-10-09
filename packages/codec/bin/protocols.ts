@@ -2088,7 +2088,9 @@ if (write) {
    * shape plus that count. Defaulting it to the 3 that 22 of our 24 unstated families happen to use
    * would be fitting to the corpus, which is the mistake that produced three wrong family names in the
    * first place, so a family whose count is unstated keeps no block and stays buildable rather than
-   * writable.
+   * writable. Section 348 found the count is the **device's**, `timing.pressMinRepeats`, so the catalogue
+   * composer builds such a family's blocks per device, and the table still holds none: a row here would
+   * fix one device's count for every device, which is what the measured rows of 26 such families do.
    *
    * Ordered by family name so the generated file's diff is stable, since the filesystem's order is not.
    */

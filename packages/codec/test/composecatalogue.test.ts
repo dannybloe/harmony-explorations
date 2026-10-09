@@ -10,10 +10,13 @@
  *
  * **The known answers** are the power hold compiles of sections 306 and 307: devices put on a test
  * account's Harmony 650 and 700 records by us and compiled by Logitech's service, beside a compile of
- * the same account before they were added. Five pairs: the Harmony 650's `h650_panasonic_config` and
- * `h650_power_hold_compile`, two devices added, and the Harmony 700's `h700_28_config_region` and each of
- * `h700_power_hold_compile` to `_4`, three each. The sixth, the 650's second compile, is not one: one of
- * its two devices, the Panasonic TX-28A1U, composes nothing, section 325.
+ * the same account before they were added. Six pairs: the Harmony 650's `h650_panasonic_config` and each
+ * of `h650_power_hold_compile` and `_2`, two devices added each, and the Harmony 700's
+ * `h700_28_config_region` and each of `h700_power_hold_compile` to `_4`, three each. The 650's second
+ * compile joined at section 348: one of its two devices, the Panasonic TX-28A1U, composed nothing until
+ * its family's codes were built at the device's own repeat count. What these compare is placement,
+ * variables and the power actions; the Dell 2300MP's ordinary command records, which the rhythm table
+ * builds at one repetition where Logitech wrote three, are not among them, section 348.
  *
  * **The base cannot draw the devices' own names**: a configuration carries only the glyphs its texts
  * use, so neither base spells `Panasonic TX-29AK40F`, and the composer draws a device list label on one
@@ -82,9 +85,9 @@ const added = (slug: string, file: string, label: string, theirs: string, inputs
   ({ slug, file, label, theirs, inputs });
 
 /**
- * The five pairs, each added device in the order of its device list row in Logitech's compile, which is
+ * The six pairs, each added device in the order of its device list row in Logitech's compile, which is
  * the order of their identifiers there. `inputs` is set where Logitech's compile holds an input
- * variable for the device: it gave six of these fourteen none, where the catalogue states inputs, and
+ * variable for the device: it gave seven of these sixteen none, where the catalogue states inputs, and
  * what decided that is not read, so the composition is asked for what the compile holds rather than
  * the comparison counting a difference the composer was told to make.
  */
@@ -92,6 +95,9 @@ const PAIRS: readonly { base: string; compile: string; devices: readonly Added[]
   { base: 'h650_panasonic_config', compile: 'h650_power_hold_compile', devices: [
     added('Panasonic', 'TX-29AK40F', 'Pana', 'Panasonic_TX-29AK40F', true),
     added('Knoll', 'HDP-1100', 'Knoll', 'Knoll_HDP-1100')] },
+  { base: 'h650_panasonic_config', compile: 'h650_power_hold_compile_2', devices: [
+    added('Dell', '2300MP', 'Dell', 'Dell_2300MP'),
+    added('Panasonic', 'TX-28A1U', 'Pana', 'Panasonic_TX-28A1U', true)] },
   { base: 'h700_28_config_region', compile: 'h700_power_hold_compile', devices: [
     added('Panasonic', 'TX-P42GT30E', 'Pana', 'Panasonic_TX-P42GT30E'),
     added('JVC', 'DLA-HD10KU', 'DLA', 'JVC_DLA-HD10KU'),
@@ -295,7 +301,7 @@ function treeInOrder(c: Container): boolean {
  * The reset calls the devices composed with inputs here carry after their power on delay, each one found
  * in the same place in Logitech's compile of the same devices. Measured, section 332.
  */
-const RESETS_COMPARED = 10;
+const RESETS_COMPARED = 11;
 
 test('devices composed several at a time are where Logitech\'s compile of the same devices put them, and send what it sends',
   needing(skipWithoutIrArchive(), skipUnless(...FIXTURES)), () => {
@@ -335,7 +341,7 @@ test('devices composed several at a time are where Logitech\'s compile of the sa
       assert.deepEqual(theirAdded, theirAdded.map((_, k) => theirAdded[0]! + k), `${pair.compile}: consecutive`);
       // And directly: each added device's own identifier, read through the delays' defaults page, in
       // the order the devices are composed, which is their rows' order. Pairing `theirAdded` by index
-      // below rests on this. The reader links a page to a device on 12 of the 14 and not on the JVC and
+      // below rests on this. The reader links a page to a device on 14 of the 16 and not on the JVC and
       // the CS-29FJ20S, so those two are checked only by elimination, the one identifier left.
       const theirIdOfGroup = deviceIdOfGroup(theirs);
       const theirIdOf = new Map(devices(theirs).map((one) =>
@@ -393,16 +399,16 @@ test('devices composed several at a time are where Logitech\'s compile of the sa
       assert.ok(treeInOrder(theirs), `${pair.compile}: Logitech's tree`);
       assert.ok(treeInOrder(ours), `${pair.compile}: ours`);
     }
-    assert.equal(devicesCompared, 14);
-    assert.equal(linked, 12);
+    assert.equal(devicesCompared, 16);
+    assert.equal(linked, 14);
     // Counted rather than bounded: the reset calls composed here and found in Logitech's on transition.
     assert.equal(resetsCompared, RESETS_COMPARED);
-    assert.equal(lists, 22, 'six device lists on the 650 and four on each 700 compile');
+    assert.equal(lists, 28, 'six device lists on each 650 compile and four on each 700 compile');
 
     // **The control on the order**: the Harmony 700's first three composed the other way round sit on
     // the device lists in the other order and carry the other identifiers, so the lists no longer match
     // Logitech's, which is what shows the comparison above sees the order and not only the membership.
-    const pair = PAIRS[1]!;
+    const pair = PAIRS[2]!;
     const reversed = [...pair.devices].reverse();
     const wrong = composeCatalogueDevices(open(pair.base), IR_ARCHIVE!, reversed.map(requestOf));
     const wrongC = parse(wrong.bytes);

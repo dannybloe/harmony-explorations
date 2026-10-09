@@ -36,7 +36,7 @@ JAVA_21 ?= /opt/homebrew/opt/openjdk@21
 
 export PYTHONPATH := $(SRC):$(TESTS)
 
-.PHONY: help test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets silhouettes remote-reference remote-reference-write all clean protocols segmentlengths prontocheck catalogue catalogue-raw emitcheck myharmony-model model-pdf model-diagram model-activity model-cluster
+.PHONY: help test test-nolab test-partial test-verbose lint pyright prose facts facts-write corpus lab-check lab-progress ghidra ts ts-test ts-typecheck audit hooks golden golden-write bench probe remotes watch-keys watch-columns coverage emit reading growth text render page activities devices alphabets silhouettes remote-reference remote-reference-write all clean protocols segmentlengths prontocheck composecensus catalogue catalogue-raw emitcheck myharmony-model model-pdf model-diagram model-activity model-cluster
 
 BENCH_PORT ?= 8731
 
@@ -71,6 +71,7 @@ help:
 	@echo "catalogue    what Logitech's device catalogue says about our own configs' devices"
 	@echo "catalogue-raw  update the infrared archive and its raw capture, and derive what the archive drops"
 	@echo "prontocheck  our waveforms against Logitech's own renderings of two million commands"
+	@echo "composecensus  which archive commands the catalogue composer writes, and why it refuses the rest"
 	@echo "devices      which devices a config drives, and what each one is called"
 	@echo "alphabets    regenerate the glyph shape table; ALPHABETS_ARGS=--write"
 	@echo "facts        check the numbers and the dead claims in the documents; facts-write fixes numbers"
@@ -291,6 +292,13 @@ segmentlengths:
 # for one family's disagreements in full.
 prontocheck:
 	@node packages/codec/bin/prontocheck.ts $(PRONTOCHECK_ARGS)
+
+# Which of the archive's two million commands the catalogue composer writes and why it refuses the rest,
+# todo-process-logitech chapter 2, whose done criterion is that this refuses nothing. A command is judged
+# per device since section 348, because a family stating no repeat count composes at the device's own.
+# Needs the archive checkout, no lab and no network; about forty seconds, so not in `make all`.
+composecensus:
+	@node packages/codec/bin/composecensus.ts
 
 # What Logitech's device catalogue says about the devices our own configurations drive, section 229:
 # identify every corpus device group from the numbers it sends, then name every button send out of that

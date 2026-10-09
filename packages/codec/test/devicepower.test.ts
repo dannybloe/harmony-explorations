@@ -233,7 +233,9 @@ test('a device composed from the catalogue switches with the records and the wir
       'Panasonic_TH-42PA30 discrete on 1 off 1', 'Quasar_SP2717T toggle on 1 off 1', 'Panasonic_CS-29FJ20S toggle on 1 off 1',
       'Panasonic_TX-D37LT84F discrete on 1 off 1', 'Sony_KE-50MR1E discrete on 1 off 1', 'Thomson_25DT60H discrete on 1 off 1',
     ]);
-    // The Technics family states no press block, section 309, so its toggle cannot be built at all.
+    // The Technics family states no press block, section 309, so the rhythm table alone cannot build its
+    // toggle. The catalogue composer can since section 348, at the device's repeat count, which this test
+    // does not use: it composes through `composeDevice` with the table's blocks only.
     assert.deepEqual(refused, ['Panasonic_TX-28A1U: Technics 22 Bit has no measured whole block, so nothing can be sent']);
     assert.deepEqual({ ours, theirs, oursInTheirs, theirsInOurs }, { ours: 36, theirs: 36, oursInTheirs: 36, theirsInOurs: 36 });
     // TX-29AK40F 2, TV 1 twice, TX-P42GT30E 1, TH-42PA30 4, Quasar 1, Sony 1, 25DT60H 2.
@@ -249,10 +251,12 @@ test('a device composed from the catalogue switches with the records and the wir
  * writes them. A device is composed whole from its catalogue entry, power steps and inputs, by
  * `composeCatalogueDevice` as `compose-device.ts --inputs` does, and the calls its power on list makes
  * after the power on delay are compared with Logitech's, as the variable's property word, the value and
- * whether the write is silent, so that no variable number has to agree. The TX-28A1U is the one device
- * whose power cannot be built, the test above; its reset is counted as not compared.
+ * whether the write is silent, so that no variable number has to agree. The TX-28A1U, whose power the
+ * test above cannot build from the rhythm table alone, composes here since section 348: its family states
+ * no repeat count, so the catalogue composer builds its codes at the device's own, and its one reset is
+ * compared with the rest.
  */
-test('the states a power on resets are composed as Logitech compiles them, silent and in order, on all 13 reset lists of the 8 instances that compose',
+test('the states a power on resets are composed as Logitech compiles them, silent and in order, on all 14 reset lists of the 9 instances that have one',
   needing(skipWithoutIrArchive(), skipUnless('h650_config_region', ...FIXTURES)), () => {
     const pristine = parse(require_('h650_config_region'));
     /** The calls after the power on delay, read as `<property>=<value>` with `silent ` in front where flagged. */
@@ -308,8 +312,9 @@ test('the states a power on resets are composed as Logitech compiles them, silen
       'h650_power_hold_compile Knoll_HDP-1100': '-',
       'h650_power_hold_compile_2 Dell_2300MP': '-',
       'h650_power_hold_compile_2 Panasonic_TV': 'silent InputType=7',
-      // The Technics family has no press block, so its codes do not compose; Logitech's compile has one reset.
-      'h650_power_hold_compile_2 Panasonic_TX-28A1U': 'refused, theirs 1: the inputs send TvVideo, whose code does not compose',
+      // The Technics family has no press block in the table and states no repeat count, so its codes are
+      // built at the device's count, section 348; until then this read `refused, theirs 1`.
+      'h650_power_hold_compile_2 Panasonic_TX-28A1U': 'silent Input=0',
       'h700_power_hold_compile Barco_6300': '-',
       'h700_power_hold_compile JVC_DLA-HD10KU': '-',
       'h700_power_hold_compile Panasonic_TX-P42GT30E': 'silent InputType=7',
@@ -323,7 +328,7 @@ test('the states a power on resets are composed as Logitech compiles them, silen
       'h700_power_hold_compile_4 Sony_KE-50MR1E': 'silent Input=0',
       'h700_power_hold_compile_4 Thomson_25DT60H': 'silent InputType=0 silent Input=0',
     });
-    assert.equal(lists, 13);
+    assert.equal(lists, 14);
     // Two resets name a value their variable does not declare, and Logitech's compile writes 0 for both.
     assert.deepEqual(undeclared, ['Panasonic_TX-29AK40F Input TunerMode', 'Quasar_SP2717T Input True']);
   });

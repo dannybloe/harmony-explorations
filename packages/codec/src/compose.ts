@@ -172,6 +172,25 @@ export interface ComposeCommand {
    * the way Logitech's compiler writes one. `held` and `leadInUs` do not apply and are refused.
    */
   readonly holdMs?: number;
+  /**
+   * The press's blocks where the caller derived them, for a family the rhythm table holds no whole block
+   * for, section 348: `once` is the record's first block without its lead in and `held` the second.
+   *
+   * **The table cannot hold these because the count is the device's and not the family's.** A whole block
+   * is the family's shape plus how many repetitions a press sends, and for the families whose definition
+   * states no count the compiler takes it from the device, so one family has as many blocks as its
+   * devices have counts. `catalogueCommandBlocks` in `composecatalogue.ts` derives them from the
+   * family's definition at the device's count; a caller without the archive leaves this out and such a
+   * family is refused, as before. Ignored where the table has a block, which wins.
+   */
+  readonly blocks?: StatedBlocks;
+}
+
+/** A press's two blocks as pulses, derived outside the rhythm table, `ComposeCommand.blocks`. */
+export interface StatedBlocks {
+  readonly once: readonly Pulse[];
+  /** Absent for a command that repeats nothing while held. */
+  readonly held?: readonly Pulse[];
 }
 
 /**
@@ -184,6 +203,8 @@ export interface ComposeCommand {
 export interface ComposePowerStep {
   readonly stated: string;
   readonly holdMs?: number;
+  /** The press's blocks where the rhythm table has none for its family, `ComposeCommand.blocks`. */
+  readonly blocks?: StatedBlocks;
 }
 
 /** The lead-in the generator gives a command nothing says more about, measured in phase 7. */
@@ -343,7 +364,7 @@ export function composeIrGroup(
       if (command.held === true || (command.leadInUs ?? 0) !== 0) {
         throw new ComposeError('a held power step has no held block and no lead in');
       }
-      const block = longPressBlockOfStatedCode(read, command.holdMs);
+      const block = longPressBlockOfStatedCode(read, command.holdMs, undefined, command.blocks?.once);
       if (block === undefined) {
         throw new ComposeError(`${command.stated} cannot be composed held for ${command.holdMs} ms: `
           + 'its family has no measured press block or stated segment lengths, or the hold is shorter than a press');
@@ -351,11 +372,17 @@ export function composeIrGroup(
       built.push({ periodNs: entry.periodNs, once: irBuildBlock(compiledBlockWords(block)) });
       continue;
     }
-    const once = blockOfStatedCode(read, undefined, 'once');
-    if (once === undefined) {
+    // The table's block where it has one; the caller's, derived at the device's count, where the
+    // family's definition states no count and so the table cannot hold one, section 348.
+    const tabled = blockOfStatedCode(read, undefined, 'once');
+    const given = tabled === undefined ? command.blocks : undefined;
+    const once = tabled ?? (given === undefined ? undefined : [...given.once]);
+    if (once === undefined || once.length === 0) {
       throw new ComposeError(`${read.family} has no measured whole block, so nothing can be sent`);
     }
-    const held = command.held === false ? undefined : blockOfStatedCode(read, undefined, 'held');
+    const givenHeld = given?.held === undefined || given.held.length === 0 ? undefined : [...given.held];
+    const held = command.held === false ? undefined
+      : given !== undefined ? givenHeld : blockOfStatedCode(read, undefined, 'held');
     if (command.held === true && held === undefined) {
       throw new ComposeError(`${read.family} has no measured held block and one was demanded`);
     }
@@ -788,9 +815,12 @@ export function composeDevice(c: Container, device: ComposeDevice): ComposedDevi
     device.commands.length + steps.findIndex((one) => stepKey(one) === stepKey(step));
   const sends: ComposeCommand[] = [
     ...device.commands,
-    ...steps.map((step): ComposeCommand => (step.holdMs === undefined
-      ? { stated: step.stated, held: false, leadInUs: 0 }
-      : { stated: step.stated, holdMs: step.holdMs })),
+    ...steps.map((step): ComposeCommand => ({
+      ...(step.holdMs === undefined
+        ? { stated: step.stated, held: false, leadInUs: 0 }
+        : { stated: step.stated, holdMs: step.holdMs }),
+      ...(step.blocks === undefined ? {} : { blocks: step.blocks }),
+    })),
   ];
 
   // The infrared half, then everything else on the reparsed result.

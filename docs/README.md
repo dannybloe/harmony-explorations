@@ -701,6 +701,11 @@ make prontocheck   our own waveforms against the ones Logitech's renderer produc
                    it is 3017 corpus codes or 35 measured families. PRONTOCHECK_ARGS=--codesets 400 for
                    a sample, --only '<family>' --detail to see one family's disagreements in full. Not
                    in `make all`, since a fresh clone has no archive
+make composecensus which of the archive's commands the catalogue composer writes and why it refuses the
+                   rest, by family and by reason, beside the verdict of the rhythm table alone. The
+                   composer's own test over the archive, todo-process-logitech chapter 2, judged per
+                   device since section 348. Needs the archive checkout, no lab and no network, about
+                   forty seconds. Not in `make all`
 make analyze       ask Logitech's own analyser what a code in the corpus is and compare it with ours,
                    which is the only second opinion available on `irframe.ts` for a code no calibration
                    account generated. Needs HARMONY_LOGITECH_EMAIL and HARMONY_LOGITECH_PASSWORD and
