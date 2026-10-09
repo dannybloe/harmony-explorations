@@ -1269,7 +1269,7 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
         # 93 since `work/setups/`, the setup builder of todo-compile-650 1.6, and 94 since
         # `work/bench-2-3/`, todo-compile-650 2.3. 96 since `work/bench-3-9/` and `work/agent-3-14/`, 3.9 and 3.14. 97 since `work/bench-3-14/`. 98 since `work/bench-3-11/`, section 341. 99 since `work/bench-4-2/`, section 342. 100 since `work/bench-5-1/`, todo-compile-650 5.1.
         # 101 with `work/agent-5-2-4/`, todo-compile-650 5.2.4, 102 with `work/agent-2-2-5/`, 103 with `work/bench-5-2-5/`, 104 with `work/agent-6-2-11/`, 6.2.11, 105 with `work/bench-6-2-13/`, 106 with `work/probe-7-1/`, 107 with `work/agent-7-3/`, 7.3, 108 with `work/agent-7-4/`, 7.4.
-        self.assertEqual(len(named), 108, "lab paths the register names, as at 9 October 2026")
+        self.assertEqual(len(named), 109, "lab paths the register names, as at 9 October 2026")
         for path in sorted(named):
             with self.subTest(path=path):
                 if '*' in path:
@@ -1373,8 +1373,8 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
         # 73 since `work/bench-3-9/` and `work/agent-3-14/`, 3.9 and 3.14, and 74 since `work/bench-3-14/`.
         # 75 since `work/bench-3-11/`, section 341, and 76 since `work/bench-4-2/`, section 342.
         # 77 since `work/bench-5-1/`, todo-compile-650 5.1, and 78 with `work/agent-5-2-4/`, 5.2.4, 79 with `work/agent-2-2-5/`, 80 with `work/bench-5-2-5/`, 81 with `work/agent-6-2-11/`, 6.2.11, 82 with `work/bench-6-2-13/`, 83 with `work/probe-7-1/`, 84 with `work/agent-7-3/`, 85 with `work/agent-7-4/`.
-        self.assertEqual(len(rows), 85)
-        self.assertEqual(len(dict(rows)), 85, 'a duplicated path would make a query ambiguous')
+        self.assertEqual(len(rows), 86)
+        self.assertEqual(len(dict(rows)), 86, 'a duplicated path would make a query ambiguous')
         self.assertNotIn('unseen', dict(rows), 'the status legend is not an artefact')
 
     def test_a_query_is_answered_by_ancestors_and_by_descendants(self):
