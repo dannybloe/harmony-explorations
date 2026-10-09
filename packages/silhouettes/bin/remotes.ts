@@ -81,6 +81,7 @@ interface ArchitectureFolder {
 export const REMOTES: readonly RemoteFolder[] = [
   { folder: 'harmony-600', skins: [71, 73], drawing: 'h600', architecture: 14 },
   { folder: 'harmony-650', skins: [72, 74], drawing: 'h650', architecture: 14 },
+  { folder: 'harmony-700', skins: [66, 69], drawing: 'h700', architecture: 14 },
 ];
 
 export const ARCHITECTURES: readonly ArchitectureFolder[] = [

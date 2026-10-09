@@ -9,7 +9,7 @@ folder states what they share, once; each model's folder states only how it diff
 |---|---|---|
 | Harmony 600 | [harmony-600](../../remotes/harmony-600/README.md) | one, a write target since 29 September 2026 |
 | Harmony 650 | [harmony-650](../../remotes/harmony-650/README.md) | one, a write target since 27 September 2026 |
-| Harmony 700 | not yet written | one, a write target since 29 September 2026 |
+| Harmony 700 | [harmony-700](../../remotes/harmony-700/README.md) | one, a write target since 29 September 2026 |
 | Harmony 665 | none | none. `models.ts` and `reference/models.md` place skin 75 here; nothing of it has been read |
 
 The face, the layout of keys and the form factor are shared by the 600, 650 and 700, Danny's
