@@ -571,7 +571,7 @@ finding.
 
 `todo.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 362<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 363<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and flash has been written on five units**, the first in section 222:
@@ -1013,6 +1013,18 @@ broken over two lines where Logitech draws it on one, because the limit was set 
 evidence allowed. The new limit is measured on the Harmony 650 and assumed for the 600 and 700. Not
 generated: the letters and fonts themselves, `todo-compile-650.md` 8.2, and the texts on help, the Remote
 Assistant, the tour and the status screens, which are not built.
+
+**Six of a Harmony 650's pictures are built now, section 363, and the four backgrounds `todo-compile-650.md` 9.1
+names are not among them.** A 650 configuration holds 18 or 19 pictures, each the same on every compile that
+holds it. The plain dark background, the bars along the top and the bottom, and three small patches drawn in the
+bottom right corner are a fill or a band of one coloured rows, and built from that rule they are Logitech's bytes,
+about 41 KB, the same six pictures on all 13 of Logitech's 650 compiles; all 22 compiles of the 600, 650 and 700 come back identical
+with them built, again with those bytes blanked first. The curved grey and red backgrounds with their cross or
+line, the start up picture, the corner mark and four firmware screen pictures are designed images: their pixels
+are not written into this repository, and a configuration still takes them from a Logitech compile until it is
+decided where they come from. The cross is not simply a line drawn over the plain curved background either:
+the two differ in 98 pixels beside it, each one colour step off. Two black dotted pictures belong to Help's delay screens and are left out with
+Help. The assembly of section 362 does not use the built six yet; that is one more step after its texts.
 
 **The remote's own wiring calls nothing copied any more in the configuration this track builds, section
 360.** The lists behind the remote's own events, the screen light, the battery screens and starting up
@@ -2148,9 +2160,12 @@ all**, so the tests that carry weight are the negatives.
 
 **The number has a depth, the same way `actions.ts` does.** `framed` bytes come from typed fields,
 5.5% to 38.3% depending on the sample; `carried` bytes came out of a reader as an opaque run, and
-that is nearly all of a config, because **a glyph and an encoded picture cannot be re-encoded from
-their pixels**: the encoder chose where to skip and where to emit literals and several encodings
-draw the same image. **Do not treat moving those bytes as the obvious next job**: what a picture
+that is nearly all of a config. This said that was because a glyph and an encoded picture could not be
+re-encoded from their pixels, since several streams draw the same image; section 363 found Logitech's compiler
+always writes the same greedy stream, and every picture and glyph of the 37 containers measured on arch 8, 10,
+12 and 14 comes back byte for byte from its pixels, so the bytes stay carried because framing them buys nothing
+for reading, not
+because it cannot be done. **Do not treat moving those bytes as the obvious next job**: what a picture
 means is already read, so framing the body would move the number 60 to 80 points without anything
 becoming clearer. What it would buy is the ability to **change** an image rather than reproduce
 one, which is a product question. `docs/plans/002-the-roadmap.md`, milestone M2.

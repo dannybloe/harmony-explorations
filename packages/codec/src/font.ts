@@ -381,6 +381,45 @@ export function glyphAt(
 }
 
 /**
+ * A glyph's bytes from its width and its rows, the inverse of `glyphAt` on arch 8, 10, 12 and 14.
+ *
+ * **The same greedy rule `encodeBitmap` in `screen.ts` follows for a picture**, section 363: each row cut
+ * into maximal runs of skipped and literal pixels, 127 at a time, a trailing skip included, a `0x80`
+ * between rows, which `glyphAt` reads as a skip of nothing and which every stored glyph carries, and the
+ * end byte after the last row. A pixel is stored as `glyphAt` reads it, low byte first. Every glyph of the
+ * 37 containers on arch 8, 10, 12 and 14 `test/pictures.test.ts` reads comes back byte for byte from its own
+ * rows by this rule, so the rail
+ * that a glyph cannot be re-encoded from its pixels does not hold for Logitech's glyphs; which letters a
+ * font should hold, and where their shapes come from, is `todo-compile-650.md` 8.2 and not this. Arch 9
+ * (Harmony 525) packs its glyphs two bits a pixel, `packedGlyph`, and has no encoder here.
+ */
+export function encodeGlyph(width: number, rows: readonly (readonly (number | undefined)[])[]): Uint8Array {
+  if (!Number.isInteger(width) || width < 1 || width > 0xff) throw new GspmError(`a glyph ${width} wide does not fit its width byte`);
+  if (rows.length === 0 || rows.some((line) => line.length !== width)) throw new GspmError('every row of a glyph is its width wide');
+  const out: number[] = [width];
+  rows.forEach((line, row) => {
+    if (row > 0) out.push(IMAGE_SKIP);
+    let x = 0;
+    while (x < width) {
+      const skipped = line[x] === undefined;
+      let run = 0;
+      while (x + run < width && (line[x + run] === undefined) === skipped && run < 0x7f) run += 1;
+      if (skipped) out.push(IMAGE_SKIP | run);
+      else {
+        out.push(run);
+        for (let k = 0; k < run; k += 1) {
+          const value = line[x + k] as number;
+          out.push(value & 0xff, value >> 8);
+        }
+      }
+      x += run;
+    }
+  });
+  out.push(IMAGE_END);
+  return Uint8Array.from(out);
+}
+
+/**
  * The arch 9 glyph encoding: rows framed by their own byte length, pixels two bits wide.
  *
  * Unlike the other three architectures this never yields `undefined` for a pixel. A background run

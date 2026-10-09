@@ -550,6 +550,72 @@ function encodedExtent(
   return undefined;
 }
 
+/** The longest run one control byte of the encoded kind states, skip or literal: its low seven bits. */
+export const BITMAP_RUN_LIMIT = 0x7f;
+/** The firmware loads only the low byte of the stride and of the row count, section 50. */
+export const BITMAP_DIMENSION_LIMIT = 0xff;
+
+/**
+ * A picture's whole object, header included, from its pixels: `undefined` is a pixel nothing draws.
+ *
+ * **The inverse of `bitmapPixels` in `render.ts`**, for the two kinds arch 8, 10, 12 and 14 store, and
+ * it is the encoder `todo-compile-650.md` 9.1 needed, section 363. Two choices are the encoder's and
+ * neither is stated in the stream, so both were measured rather than chosen:
+ *
+ * * **The kind follows from the pixels.** A picture with a pixel nothing draws can only be the encoded
+ *   kind; one with none is raw. No encoded picture in the corpus draws every one of its pixels.
+ * * **The control stream is the greedy one**: each row, left to right, is cut into maximal runs of drawn
+ *   and undrawn pixels, each run taken `BITMAP_RUN_LIMIT` at a time, a skip byte for an undrawn run and
+ *   a literal byte and its pixels for a drawn one, a trailing undrawn run included; rows are separated by
+ *   `BITMAP_ROW_BREAK`, so there are `rows - 1` of them, and `BITMAP_END` follows the last. The format
+ *   admits other streams for the same pixels, a trailing skip left out or a run cut elsewhere, which is
+ *   what `CLAUDE.md`'s rail "a glyph and an encoded picture cannot be re-encoded" rested on; Logitech's
+ *   compiler emits this one for every encoded picture of the 32 containers on arch 8, 10, 12 and 14 measured,
+ *   and `encodeGlyph` in `font.ts` is the same rule for a glyph. A skip over 127 is cut 127 and the rest, on
+ *   four pictures; no drawn run in the corpus is longer than 122, so cutting a longer one at 127 is this
+ *   encoder's assumption and not a measurement.
+ *
+ * A pixel is stored high byte first, like every pixel `bitmapPixels` reads; the header's two `u16` are
+ * little endian, like every other count in the container. Refused: a row that is not `stride` pixels, a
+ * stride or a row count the firmware would read modulo 256, and an empty picture.
+ */
+export function encodeBitmap(rows: readonly (readonly (number | undefined)[])[]): Uint8Array {
+  const height = rows.length;
+  const stride = rows[0]?.length ?? 0;
+  if (height === 0 || stride === 0) throw new GspmError('a picture needs at least one pixel');
+  if (stride > BITMAP_DIMENSION_LIMIT || height > BITMAP_DIMENSION_LIMIT) {
+    throw new GspmError(`a ${stride} by ${height} picture: the firmware reads only the low byte of each, section 50`);
+  }
+  if (rows.some((line) => line.length !== stride)) throw new GspmError('every row of a picture is its stride wide');
+  const encoded = rows.some((line) => line.some((pixel) => pixel === undefined));
+  const out: number[] = [encoded ? BITMAP_ENCODED : BITMAP_RAW, stride & 0xff, stride >> 8, height & 0xff, height >> 8];
+  const pixel = (value: number): void => {
+    if (!Number.isInteger(value) || value < 0 || value > 0xffff) throw new GspmError(`${value} is not an RGB565 pixel`);
+    out.push(value >> 8, value & 0xff);
+  };
+  if (!encoded) {
+    for (const line of rows) for (const value of line) pixel(value as number);
+    return Uint8Array.from(out);
+  }
+  rows.forEach((line, row) => {
+    if (row > 0) out.push(BITMAP_ROW_BREAK);
+    let x = 0;
+    while (x < stride) {
+      const undrawn = line[x] === undefined;
+      let run = 0;
+      while (x + run < stride && (line[x + run] === undefined) === undrawn && run < BITMAP_RUN_LIMIT) run += 1;
+      if (undrawn) out.push(0x80 | run);
+      else {
+        out.push(run);
+        for (let k = 0; k < run; k += 1) pixel(line[x + k] as number);
+      }
+      x += run;
+    }
+  });
+  out.push(BITMAP_END);
+  return Uint8Array.from(out);
+}
+
 /** The trailer: a sixteen bit checksum and the four byte end marker. */
 export const TRAILER_LENGTH = 6;
 
