@@ -991,13 +991,16 @@ Assistant, the tour and the status screens, which are not built.
 359.** The lists behind the remote's own events, the screen light, the battery screens and starting up
 are a tree of small tests on the firmware's own settings, 40 lists on a Harmony 650, and they are generated
 now; 23 of Logitech's compiles, the one with no activities among them, come back identical, again with
-everything but the few bytes the description reads blanked first. Three lists the wiring calls are not
-built, because each belongs to something this track leaves out: putting back delays saved on the remote,
-the Remote Assistant's check, and what All Off runs first so Help can offer to fix a device that did not
-switch inputs. Left out, the remote starts without touching its saved delays and All Off switches straight
-off; that is a reading of the files, in none of Logitech's, and not yet tried on the 650. The test setup
-recomposed that way shows a person nothing different and is 11 bytes shorter. Section 347's count of what
-it did not build missed the All Off key's eight lists, and is corrected.
+every byte but the few the description reads blanked first, apart from the file's frame, which says where
+each piece sits and how long it is, and the model. Three lists the wiring calls are not built, because each
+belongs to something this track leaves out: putting back delays saved on the remote, the Remote
+Assistant's check, and what the key read as All Off's runs first so Help can offer to fix a device that did
+not switch inputs. Left out, the configuration does not touch the remote's saved delays at start and that
+key switches straight off; that is a reading of the files, in none of Logitech's, and not yet tried on the
+650. The test setup recomposed that way is 11 bytes shorter and shows nothing different on the menus, start
+screens and keys the comparison reads; it says nothing about the All Off wizard, Help, the Assistant or
+the restore, which are what changed. Section 347's count of what it did not build missed that key's eight
+lists, and is corrected.
 
 **A Harmony One's activity menu can now grow a page, section 293.** Its menu shows three activities to
 a page, and a fourth used to be refused. Now it opens a new page, and the menu says so in the three

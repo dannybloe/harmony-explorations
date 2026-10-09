@@ -38,8 +38,9 @@
  * **What is carried**, the description: which list, mode, variable, value map or base slot 9 entry a
  * generated structure names when that thing is not itself generated here, every list's index among
  * them. Three lists the generated ones call are not built, each belonging to something the Harmony
- * 650's track leaves out: the restore of saved delays, the Assistant's gate and the All Off key's Help
- * list; three settings leave them out, `delayRestore`, `remoteAssistant` and `help`. Also carried:
+ * 650's track leaves out: the restore of saved delays, the Assistant's gate and the Help list of scan
+ * 6, read as All Off's; three settings leave them out, `delayRestore`, `remoteAssistant` and `help`.
+ * Also carried:
  * the settings, the screen light's time, the tilt sensor, the Remote Assistant and the tour's form,
  * sections 292, 345, 346 and 357, which are the configuration's own; which base slot 9 entry each activity key selects, or that it is
  * empty, section 314; and a device's own timer, a power timer writing one variable, with its place in
@@ -173,24 +174,27 @@ export interface WiringSettings {
   bootStep: boolean;
   /**
    * Whether the tour's start list enters the welcome tour's first screen, the shown form, or marks it
-   * seen and goes quiet, the skipped form, section 286. Shown on two of the 22 compiles of section 357's
-   * population; a configuration that leaves the tour's screens out has the skipped form, section 357.
+   * seen and goes quiet, the skipped form, section 286. Shown on two of section 357's 21 compiles and on
+   * three of the 22 of sections 356 to 358; a configuration that leaves the tour's screens out has the
+   * skipped form, section 357.
    */
   tourShown: boolean;
   /**
    * Whether the start list restores the delays saved on the remote, section 303: `start`'s second call,
    * a list that clears the settings store's marks, reads every saved delay back into its variable, and
    * erases what no read marked. On every Logitech compile. A configuration without it leaves `start`
-   * one call shorter and never touches the store, so the configuration's delay wins at start, which is
-   * `todo-later.md` 3.3.5's reading; the restore itself belongs to that item and is not built here.
+   * one call shorter and the configuration does not touch the store at start, so the configuration's
+   * delay wins then, which is `todo-later.md` 3.3.5's reading; the restore itself belongs to that item and
+   * is not built here. An empty restore is not the same: by section 303's reading, not exercised here, it
+   * would erase every saved delay at every start.
    */
   delayRestore: boolean;
   /**
    * Whether the configuration carries Help, section 333, which every Logitech compile does. With it,
-   * the All Off key runs a list of Help's that can offer a "Fix it now" wizard instead of switching
-   * off, `todo-later.md` 3.3.3, and the idle entry binds Help's release and hold. Without it, which is
-   * this track's configuration, the All Off key selects the idle entry itself, which is where every
-   * path of Help's list that runs none of Help's own lists ends, and the idle entry binds neither.
+   * scan 6, read as All Off's, runs a list of Help's that can offer a "Fix it now" wizard instead of
+   * switching off, `todo-later.md` 3.3.3, and the idle entry binds Help's release and hold. Without it,
+   * which is this track's configuration, scan 6 selects the idle entry itself, which is where every path
+   * of Help's list that runs none of Help's own lists ends, and the idle entry binds neither.
    */
   help: boolean;
 }
@@ -210,6 +214,12 @@ export interface WiringSpec {
    * or `null` for an empty key, which calls a front list entering the "add an Activity" screen.
    */
   activityKeys: Readonly<Record<number, number | null>>;
+  /**
+   * How many activities the configuration has. Read off base slot 9's table, whose entries are the five
+   * fixed ones, the leftover entry and one per activity, `FIXED_ENTRIES` plus the count, which equals the
+   * name tree's activity count, `activityCount`, on the 23 compiles of section 359.
+   */
+  activityCount: number;
   deviceTimers: readonly DeviceTimer[];
   /** What the generated structures name and do not generate, by the names `wiringSymbols` lists. */
   lists: Readonly<Record<string, number>>;
@@ -280,10 +290,13 @@ const E9 = (low: number): WiringInstruction => ({ op: 0x1f, operand: 0xe900 | lo
 /** The screen key presses a shared list of their own serves in entry 2: scans 1 to 5, 7 to 9, 11, 34, 35. */
 const ELEVEN_KEY_SCANS: ReadonlySet<number> = new Set([1, 2, 3, 4, 5, 7, 8, 9, 11, 34, 35]);
 /**
- * The All Off key's scan. Read from its binding in entry 1, whose every path that runs none of Help's own
- * lists ends by selecting the idle entry, which is All Off, section 335; not pressed on a remote to check.
+ * The scan read as All Off's. Read from its binding in entry 1, whose every path that runs none of Help's
+ * own lists ends by selecting the idle entry, which is All Off, section 335; not pressed on a remote to
+ * check, and `reference/remotes/harmony-650/keys.md` lists All Off's scan as unmeasured.
  */
 export const ALL_OFF_SCAN = 6;
+/** Base slot 9's entries every configuration has: entries 0 to 4 and the leftover entry. */
+export const FIXED_ENTRIES = 6;
 /** The activity keys of entry 1: Watch a Movie, Watch TV and Listen to Music, section 314. */
 export const ACTIVITY_KEY_SCANS = [1, 5, 7] as const;
 
@@ -325,19 +338,26 @@ const tie = (a: number, b: number): [string, readonly [number, number]] => [[a, 
  * firmware's own variables, whose numbers are the firmware's, and on three of the configuration's, the
  * low battery flag, the tour's mark and, on the Harmony 700, the variable the Assistant's gate tests.
  *
- * Almost every one has one shape, `[load k, call test]` and `test = [compare, then, else]`, section
- * 140: the compiler emits a comparison as a list of its own behind the list that loads what it compares
- * against. `branch` writes that pair. The arms are lists of their own where they hold more than one
- * instruction. Logitech does not share identical lists: the same body at two call sites is two lists,
- * so every site has a name of its own here, and a list two sites share, `stopLights`, is one list on
- * every compile.
+ * Most have one shape, 28 of the 40 on a Harmony 600 or 650, `[load k, call test]` and `test = [compare,
+ * then, else]`, section 140: the compiler emits a comparison as a list of its own behind the list that
+ * loads what it compares against. `branch` writes that pair. The arms are lists of their own where they
+ * hold more than one instruction.
+ *
+ * Whether two call sites share one list or each get a list of the same body is the compiler's, per
+ * model, and each list has one name here, so a shared list is one name several templates call and a
+ * repeated body is several names. Shared on all 23 compiles of section 359: `stopLights`, five callers;
+ * `tour`, two where the Assistant is on. Also shared on the Harmony 700: `everyKey.on`, two, and
+ * `entry1.0x27.shared` and `entry1.0x24.shared`, four each. Repeated: `lightOn` and `lightOnAgain` on
+ * all 23, and on the Harmony 700 `cycle0` and `entry1.0x23.second` and six battery comparisons of one
+ * body. The rebuild is exact about which, since `describeWiring` refuses one name at two indices and
+ * `buildWiring` two names at one, and all 23 rebuild byte for byte.
  *
  * Measured per model over the 22 compiles of sections 356 to 358; the shapes are the same on every
  * compile of a model, the Harmony 600's and 650's identical. Three lists the generated ones call are
  * not built, and the description names them by index: the restore of saved delays, `start.reset`,
- * `todo-later.md` 3.3.5; the Assistant's gate, `assistantGate`, `todo-later.md` 3.3; and the All Off
- * key's Help list, `allOff`, `todo-later.md` 3.3.3. The configuration this track builds has none of
- * the three, `WiringSettings`.
+ * `todo-later.md` 3.3.5; the Assistant's gate, `assistantGate`, `todo-later.md` 3.3; and the Help
+ * list of scan 6, read as All Off's, `allOff`, `todo-later.md` 3.3.3. The configuration this track
+ * builds has none of the three, `WiringSettings`.
  */
 function conditionals(model: WiringModel, settings: WiringSettings, lists: Map<string, WiringInstruction[]>): void {
   const seven = model === 'harmony-700';
@@ -453,7 +473,9 @@ function conditionals(model: WiringModel, settings: WiringSettings, lists: Map<s
  * after where it is bound: `entry1.0x26` is entry 1's binding of tag `0x26`. Names with a dot after a
  * list's own name are the description's lists that list calls.
  */
-function catalogue(model: WiringModel, settings: WiringSettings, activityKeys: Readonly<Record<number, number | null>>): Catalogue {
+function catalogue(
+  model: WiringModel, settings: WiringSettings, activityKeys: Readonly<Record<number, number | null>>, activityCount: number,
+): Catalogue {
   const seven = model === 'harmony-700';
   const lists = new Map<string, WiringInstruction[]>();
   const tilt = (body: WiringInstruction[]): WiringInstruction[] => (settings.tiltSensor ? [...body, TILT_FLAG] : body);
@@ -541,16 +563,16 @@ function catalogue(model: WiringModel, settings: WiringSettings, activityKeys: R
   }
   entry1.set(press(35), { op: 0x0f, operand: 0xffa1 });
   // Scan 4's press maps the location, which reaches the activity menu, or with no activity at all pushes
-  // the "add Activities" placeholder: all three activity keys are empty exactly when there is none,
-  // section 340, and `harvest_650_two_devices` is the one compile of that kind, so the rule is one sample's.
-  const noActivities = ACTIVITY_KEY_SCANS.every((scan) => activityKeys[scan] === null);
+  // the "add Activities" placeholder. `harvest_650_two_devices`, a Harmony 650, is the one compile with no
+  // activity, so the rule is one sample's and `buildWiring` refuses it on another model.
+  const noActivities = activityCount === 0;
   entry1.set(press(4), {
     front: noActivities
       ? [{ write: 'menuMarker', value: 0 }, PUSH_MODE, { enter: 'addActivities' }]
       : [{ write: 'menuMarker', value: 0 }, { map: 'locationMap', on: 'location' }],
   });
-  // The All Off key. With Help, a list of Help's that may offer a "Fix it now" wizard before switching
-  // off, carried and not built, `todo-later.md` 3.3.3; without, the Off key map itself, section 335.
+  // Scan 6, read as All Off's. With Help, a list of Help's that may offer a "Fix it now" wizard before
+  // switching off, carried and not built, `todo-later.md` 3.3.3; without, the Off key map itself, section 335.
   entry1.set(press(ALL_OFF_SCAN), settings.help ? { call: 'allOff' } : { select: 'idle' });
   entry1.set(0x2d, { op: 0x07, operand: 0xfffa });
   entry1.set(0x10, {
@@ -640,6 +662,10 @@ function catalogue(model: WiringModel, settings: WiringSettings, activityKeys: R
 // ---------------------------------------------------------------------------------------------------
 
 type SymbolKind = 'lists' | 'modes' | 'variables' | 'maps' | 'entries' | 'timers';
+/** A kind's name for one symbol, for a refusal's message. */
+const ONE: Readonly<Record<SymbolKind, string>> = {
+  lists: 'list', modes: 'mode', variables: 'variable', maps: 'map', entries: 'entry', timers: 'timer',
+};
 type Symbols = Record<SymbolKind, Map<string, number>>;
 const emptySymbols = (): Symbols => ({
   lists: new Map(), modes: new Map(), variables: new Map(), maps: new Map(), entries: new Map(), timers: new Map(),
@@ -660,7 +686,7 @@ function namedBy(ins: WiringInstruction): [SymbolKind, string][] {
 
 function lookup(symbols: Symbols, kind: SymbolKind, name: string): number {
   const value = symbols[kind].get(name);
-  if (value === undefined) throw new WiringError(`the description names no ${kind.slice(0, -1)} ${JSON.stringify(name)}`);
+  if (value === undefined) throw new WiringError(`the description names no ${ONE[kind]} ${JSON.stringify(name)}`);
   return value;
 }
 
@@ -709,7 +735,7 @@ function decode(ins: WiringInstruction, operand: number, opcode: number, symbols
     if (generated[kind].has(name)) return;
     const had = symbols[kind].get(name);
     if (had !== undefined && had !== value) {
-      throw new WiringError(`${kind.slice(0, -1)} ${JSON.stringify(name)} is ${had} in one place and ${value} in another`);
+      throw new WiringError(`${ONE[kind]} ${JSON.stringify(name)} is ${had} in one place and ${value} in another`);
     }
     symbols[kind].set(name, value);
   };
@@ -797,8 +823,8 @@ function timerOrder(cat: Catalogue, deviceTimers: readonly DeviceTimer[]): strin
  * Connected" leave handler, `usbLeave`, both bound in the firmware's own screens, section 357. Refused
  * for a name the front does not hold for that model.
  */
-export function wiringFrontIndex(spec: Pick<WiringSpec, 'model' | 'settings' | 'activityKeys'>, name: string): number {
-  const index = catalogue(spec.model, spec.settings, spec.activityKeys).front.indexOf(name);
+export function wiringFrontIndex(spec: Pick<WiringSpec, 'model' | 'settings' | 'activityKeys' | 'activityCount'>, name: string): number {
+  const index = catalogue(spec.model, spec.settings, spec.activityKeys, spec.activityCount).front.indexOf(name);
   if (index < 0) throw new WiringError(`a ${spec.model}'s front holds no list ${JSON.stringify(name)}`);
   return index;
 }
@@ -827,14 +853,25 @@ export function buildWiring(spec: WiringSpec): BuiltWiring {
   if (!spec.settings.remoteAssistant && spec.model === 'harmony-700') {
     throw new WiringError('no Harmony 700 compile with the Remote Assistant off has been read, and its USB leave handler compares the Assistant\'s variable');
   }
-  const cat = catalogue(spec.model, spec.settings, spec.activityKeys);
+  // With no activity, scan 4 pushes the "add Activities" placeholder; that is one Harmony 650 compile's,
+  // and what a configuration with activities and every activity key empty binds there is not read.
+  const emptyKeys = ACTIVITY_KEY_SCANS.filter((scan) => spec.activityKeys[scan] === null).length;
+  if (!Number.isInteger(spec.activityCount) || spec.activityCount < 0) throw new WiringError(`${spec.activityCount} activities is not a count`);
+  if (spec.activityCount === 0 && spec.model !== 'harmony-650') {
+    throw new WiringError(`no ${spec.model} compile with no activity has been read, only a Harmony 650's`);
+  }
+  if (spec.activityCount === 0 && emptyKeys !== ACTIVITY_KEY_SCANS.length) throw new WiringError('an activity key selects an entry and there is no activity');
+  if (spec.activityCount > 0 && emptyKeys === ACTIVITY_KEY_SCANS.length) {
+    throw new WiringError('every activity key is empty while there are activities, and what the compiler binds scan 4 to then is not read');
+  }
+  const cat = catalogue(spec.model, spec.settings, spec.activityKeys, spec.activityCount);
   const order = timerOrder(cat, spec.deviceTimers);
   const generated = generatedSymbols(cat, order);
   const symbols = emptySymbols();
   for (const kind of Object.keys(symbols) as SymbolKind[]) for (const [k, v] of generated[kind]) symbols[kind].set(k, v);
   const fill = (kind: SymbolKind, given: Readonly<Record<string, number>>): void => {
     for (const [name, value] of Object.entries(given)) {
-      if (generated[kind].has(name)) throw new WiringError(`${kind.slice(0, -1)} ${JSON.stringify(name)} is generated, not described`);
+      if (generated[kind].has(name)) throw new WiringError(`${ONE[kind]} ${JSON.stringify(name)} is generated, not described`);
       symbols[kind].set(name, value);
     }
   };
@@ -920,7 +957,7 @@ export function buildWiring(spec: WiringSpec): BuiltWiring {
     if (template.index === 1) {
       const order1 = orderOf(template);
       for (const scan of ACTIVITY_KEY_SCANS) marks.push(1 + 4 * order1.indexOf(press(scan)) + 3);
-      // So is whether the All Off key calls Help's list or selects the idle entry: `help`.
+      // So is whether scan 6, read as All Off's, calls Help's list or selects the idle entry: `help`.
       marks.push(1 + 4 * order1.indexOf(press(ALL_OFF_SCAN)) + 3);
     }
     if (entries.has(index)) throw new WiringError(`base slot 9 entry ${index} is built twice`);
@@ -997,9 +1034,12 @@ export function describeWiring(layout: ContainerLayout): WiringSpec {
   const tiltSensor = u8(firmware[0]!.bytes, 6) === 0x7f;
 
   // Entry 1's activity keys, at the places the generated order puts them.
+  // The activity count is the frame's: base slot 9's entries less the fixed five and the leftover entry.
+  const activityCount = entryPieces.length - FIXED_ENTRIES;
+  if (activityCount < 0) throw new WiringError(`base slot 9 holds ${entryPieces.length} entries, fewer than the ${FIXED_ENTRIES} every configuration has`);
   const probe = catalogue(model, {
     glowTime: 0, tiltSensor, remoteAssistant: true, bootStep: false, tourShown: false, delayRestore: true, help: true,
-  }, { 1: null, 5: null, 7: null });
+  }, { 1: null, 5: null, 7: null }, activityCount);
   const entry1 = probe.entries.find((e) => e.index === 1)!;
   const order1 = orderOf(entry1);
   const activityKeys: Record<number, number | null> = {};
@@ -1028,12 +1068,12 @@ export function describeWiring(layout: ContainerLayout): WiringSpec {
   const tourPiece = listPieces[tourIndex];
   if (tourPiece === undefined) throw new WiringError(`the tour's start list would be action list ${tourIndex}, which the table does not hold`);
   const tourShown = u8(tourPiece.bytes, 1 + 3 * 1 + 2) === 0x7e;
-  // The All Off key calls Help's list or selects the idle entry.
+  // Scan 6, read as All Off's, calls Help's list or selects the idle entry.
   const help = instructionAt(entryPieces[1]!.bytes, 1 + 4 * order1.indexOf(press(ALL_OFF_SCAN)) + 1).opcode === 0x7f;
   const settings: WiringSettings = {
     glowTime: u24(firmware[glowAt]!.bytes, 1), tiltSensor, remoteAssistant, bootStep, tourShown, delayRestore, help,
   };
-  const cat = catalogue(model, settings, activityKeys);
+  const cat = catalogue(model, settings, activityKeys, activityCount);
   if (firmware.length !== cat.timers.length) {
     throw new WiringError(`base slot 12 holds ${firmware.length} firmware timers where a ${model} has ${cat.timers.length}`);
   }
@@ -1092,7 +1132,7 @@ export function describeWiring(layout: ContainerLayout): WiringSpec {
 
   const record = (kind: SymbolKind): Record<string, number> => Object.fromEntries(symbols[kind]);
   return {
-    model, settings, activityKeys, deviceTimers,
+    model, settings, activityKeys, activityCount, deviceTimers,
     lists: record('lists'), modes: record('modes'), variables: record('variables'), maps: record('maps'), entries: record('entries'),
   };
 }

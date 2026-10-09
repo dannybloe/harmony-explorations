@@ -36,6 +36,7 @@ import {
   LOG_AREA,
   PARAMETER_VALUES,
   WiringError,
+  activityCount,
   archSlot,
   buildWiring,
   checkWiring,
@@ -316,10 +317,10 @@ const SECTION_347_SHARED = [
   'lightOff', 'lightOn', 'lightOnAgain', 'lightTick', 'cycle0', 'cycle1', 'cycle2', 'cycle3',
 ] as const;
 
-test('section 347\'s count, corrected by section 359: the wiring called 1622 lists over the thirteen that it did not build, 77 to 156 per compile, of which 1518 were reached from its lists and 104 from entry 1\'s All Off binding alone',
+test('section 347\'s count, corrected by section 359: the wiring called 1622 lists over the thirteen that it did not build, 77 to 156 per compile, of which 1518 were reached from its lists and 104 from entry 1\'s binding of scan 6, read as All Off\'s, alone',
      skipUnless(...ARCH14_COMPILES), () => {
-  // Section 347 followed calls out of the built lists only, so the eight lists the All Off key's binding
-  // in entry 1 calls were never counted. The same walk, over section 347's built lists, from the lists
+  // Section 347 followed calls out of the built lists only, so the eight lists the binding of scan 6,
+  // read as All Off's, in entry 1 calls were never counted. The same walk, over section 347's built lists, from the lists
   // and then from entry 1 as well. The lists section 359 builds are counted here as not built, which is
   // what they were then.
   const beyond: number[] = [];
@@ -445,13 +446,14 @@ test('section 359: the wiring of the 22 compiles of sections 356 to 358 and of t
   assert.deepEqual(Object.fromEntries(Object.entries(perModel).map(([m, xs]) => [m, [xs.length, sum(xs)]])), PER_MODEL_359);
 });
 
-test('section 359: the settings the 23 carry: the tour shown on three, the Assistant off on three, the restore of saved delays and Help on all 23, and every activity key empty on the compile with no activities alone',
+test('section 359: the settings the 23 carry: the tour shown on three, the Assistant off on three, the restore of saved delays and Help on all 23, and no activity, with every activity key empty, on one Harmony 650 compile alone; the activity count is base slot 9\'s entry count less six on all 23',
      skipUnless(...SECTION_359), () => {
   const shown: string[] = [];
   const assistantOff: string[] = [];
   const noRestore: string[] = [];
   const noHelp: string[] = [];
   const allEmpty: string[] = [];
+  const none: string[] = [];
   for (const name of SECTION_359) {
     const spec = describeWiring(takeApart(containerOf(name)));
     if (spec.settings.tourShown) shown.push(name);
@@ -459,7 +461,11 @@ test('section 359: the settings the 23 carry: the tour shown on three, the Assis
     if (!spec.settings.delayRestore) noRestore.push(name);
     if (!spec.settings.help) noHelp.push(name);
     if (ACTIVITY_KEY_SCANS.every((scan) => spec.activityKeys[scan] === null)) allEmpty.push(name);
+    // The activity count the description reads off base slot 9's entry count is the name tree's.
+    assert.equal(spec.activityCount, activityCount(containerOf(name)), name);
+    if (spec.activityCount === 0) none.push(name);
   }
+  assert.deepEqual(none, [NO_ACTIVITIES]);
   assert.deepEqual(shown, ['h650_config_region', 'calibration_h600', 'h650_issue36_config']);
   assert.deepEqual(assistantOff, ['h600_config', 'h650_assistant_off_config', 'h650_tilt_off_config']);
   assert.deepEqual(noRestore, []);
@@ -467,53 +473,89 @@ test('section 359: the settings the 23 carry: the tour shown on three, the Assis
   assert.deepEqual(allEmpty, [NO_ACTIVITIES]);
 });
 
-test('section 359: with every byte of the configuration blinded in what the description reads, the carried lists included, but the bytes the built pieces mark, and every unmarked byte of the built pieces blinded in the layout the rebuild is written into, the 23 still rebuild',
+/** A base slot's head piece, and the pieces its table points at in address order. */
+function pairsIn(layout: ContainerLayout, built: ReturnType<typeof buildWiring>): [ContainerPiece, ContainerPiece][] {
+  const head = (slot: number): ContainerPiece => layout.sections[slot]!.head[0]!;
+  const pairs: [ContainerPiece, ContainerPiece][] = [
+    [head(2), built.logArea], [head(4), built.eventMap], [head(8), built.leadingList],
+    [head(12), built.timerTable], [head(15), built.parameterTable],
+  ];
+  targets(head(12)).forEach((p, k) => pairs.push([p, built.timerRecords[k]!]));
+  targets(head(15)).forEach((p, k) => pairs.push([p, built.parameterGroups[k]!]));
+  const entryPieces = targets(head(9));
+  for (const [k, p] of built.entries) pairs.push([entryPieces[k]!, p]);
+  const listPieces = targets(head(10));
+  for (const [k, p] of built.lists) pairs.push([listPieces[k]!, p]);
+  return pairs;
+}
+
+/**
+ * The layout the blind control's description reads: every byte of every piece blinded to `0xEE` but the
+ * bytes the built pieces mark as the description's, less any `unmark` takes away. Returns the layout and
+ * how many bytes were kept and how many changed. What this cannot blind is the frame: which piece a
+ * table entry points at, each piece's length and each table's entry count, which `takeApart` reads
+ * before any byte is looked at, and the skin.
+ */
+function blindForReading(c: Container, built: ReturnType<typeof buildWiring>, unmark?: (made: ContainerPiece, keep: Set<number>) => void): {
+  layout: ContainerLayout; marked: number; blinded: number;
+} {
+  const layout = takeApart(c);
+  const keep = new Map(pairsIn(layout, built).map(([original, made]): [ContainerPiece, Set<number>] => {
+    const k = new Set(built.described.get(made)!);
+    unmark?.(made, k);
+    return [original, k];
+  }));
+  let marked = 0;
+  let blinded = 0;
+  const every = [layout.keyTable, ...layout.body, ...layout.sections.flatMap((one) => (one === undefined ? [] : [...one.before, ...one.head])), ...layout.pictures];
+  for (const p of new Set(every)) {
+    const k = keep.get(p) ?? new Set<number>();
+    for (let i = 0; i < p.bytes.length; i += 1) {
+      if (k.has(i)) { marked += 1; continue; }
+      if (p.bytes[i] !== 0xee) blinded += 1;
+      p.bytes[i] = 0xee;
+    }
+  }
+  return { layout, marked, blinded };
+}
+
+test('section 359: blinded to the frame and the skin, the 23 still rebuild: every byte of the configuration the description reads is blinded, the carried lists included, but the bytes the built pieces mark, and so is every unmarked byte of the built pieces in the layout the rebuild is written into; and with the opcode of scan 6\'s binding, read as All Off\'s, unmarked the description refuses, so the marks are what it reads',
      skipUnless(...SECTION_359), () => {
   let marked = 0;
   let blinded = 0;
   for (const name of SECTION_359) {
     const c = containerOf(name);
-    // Two layouts of one file: the one the description reads, and the one the rebuild is written into.
-    const read = takeApart(c);
-    const into = takeApart(c);
     const built = buildWiring(describeWiring(takeApart(c)));
-    const pairsIn = (layout: ContainerLayout): [ContainerPiece, ContainerPiece][] => {
-      const head = (slot: number): ContainerPiece => layout.sections[slot]!.head[0]!;
-      const pairs: [ContainerPiece, ContainerPiece][] = [
-        [head(2), built.logArea], [head(4), built.eventMap], [head(8), built.leadingList],
-        [head(12), built.timerTable], [head(15), built.parameterTable],
-      ];
-      targets(head(12)).forEach((p, k) => pairs.push([p, built.timerRecords[k]!]));
-      targets(head(15)).forEach((p, k) => pairs.push([p, built.parameterGroups[k]!]));
-      const entryPieces = targets(head(9));
-      for (const [k, p] of built.entries) pairs.push([entryPieces[k]!, p]);
-      const listPieces = targets(head(10));
-      for (const [k, p] of built.lists) pairs.push([listPieces[k]!, p]);
-      return pairs;
-    };
-    // What the description reads: every byte of every piece, built or not, is blinded but the marked ones.
-    const keep = new Map(pairsIn(read).map(([original, made]): [ContainerPiece, Set<number>] => [original, new Set(built.described.get(made)!)]));
-    const every = [read.keyTable, ...read.body, ...read.sections.flatMap((one) => (one === undefined ? [] : [...one.before, ...one.head])), ...read.pictures];
-    for (const p of new Set(every)) {
-      const k = keep.get(p) ?? new Set<number>();
-      for (let i = 0; i < p.bytes.length; i += 1) {
-        if (k.has(i)) { marked += 1; continue; }
-        if (p.bytes[i] !== 0xee) blinded += 1;
-        p.bytes[i] = 0xee;
-      }
-    }
+    // Not blinded, since `takeApart` reads it before any byte: which piece each table entry points at,
+    // every piece's length and every table's entry count, among them base slot 9's, which is the
+    // activity count, and base slot 12's, which is how many timers there are and so how many of them are
+    // the firmware's, the description's `firmware.length`.
+    const read = blindForReading(c, built);
+    marked += read.marked;
+    blinded += read.blinded;
     // Where the rebuild is written: the built pieces' unmarked bytes, as the thirteen's control does.
-    for (const [original, made] of pairsIn(into)) {
+    const into = takeApart(c);
+    for (const [original, made] of pairsIn(into, built)) {
       const k = new Set(built.described.get(made)!);
       for (let i = 0; i < original.bytes.length; i += 1) if (!k.has(i)) original.bytes[i] = 0xee;
     }
-    const spec = describeWiring(read);
+    const spec = describeWiring(read.layout);
     assert.equal(firstDifference(layOutContainer(withWiring(into, buildWiring(spec))).bytes, c.blob), undefined, `${name} differs`);
+    // The control's own control: entry 1's binding of scan 6, read as All Off's, with its opcode
+    // unmarked. The description then reads the Help setting off a blinded byte, builds the idle entry's other form, and finds the idle
+    // entry at one index from the mode table and another from the binding, so it refuses while reading.
+    const entry1 = built.entries.get(1)!;
+    const dropped = blindForReading(c, built, (made, keep) => {
+      if (made !== entry1) return;
+      for (let i = 1; i + 4 <= made.bytes.length; i += 4) if (made.bytes[i] === (0x80 | ALL_OFF_SCAN)) keep.delete(i + 3);
+    });
+    assert.ok(dropped.marked < read.marked, name);
+    assert.throws(() => describeWiring(dropped.layout), (e: unknown) => e instanceof WiringError && /^entry "idle" is \d+ in one place and \d+ in another$/.test(e.message), name);
   }
   assert.deepEqual([marked, blinded], BLIND_359);
 });
 
-test('section 359: the wiring calls three lists it does not build, each belonging to something this track leaves out: the restore of saved delays, one list and four per saved delay, on 23 of 23; the Assistant\'s gate, four lists, on the 20 with the Assistant on; the All Off key\'s Help list, eight, on 23 of 23; and on the Harmony 700 one list the firmware screens build',
+test('section 359: the wiring calls three lists it does not build, each belonging to something this track leaves out: the restore of saved delays, one list and four per saved delay, on 23 of 23; the Assistant\'s gate, four lists, on the 20 with the Assistant on; the Help list of scan 6, read as All Off\'s, eight, on 23 of 23; and on the Harmony 700 one list the firmware screens build',
      skipUnless(...SECTION_359), () => {
   const totals: Record<string, number> = {};
   for (const name of SECTION_359) {
@@ -534,7 +576,7 @@ test('section 359: the wiring calls three lists it does not build, each belongin
   assert.deepEqual(totals, CARRIED_359);
 });
 
-test('section 359: this track\'s configuration, built on Logitech\'s clean compile with no restore, no Assistant and no Help: the start list goes straight to the idle entry, the All Off key selects it, the idle entry binds two events, 11 bytes fewer, and its own description reads it back',
+test('section 359: this track\'s configuration, built on Logitech\'s clean compile with no restore, no Assistant and no Help: the start list goes straight to the idle entry, scan 6, read as All Off\'s, selects it, the idle entry binds two events, 11 bytes fewer, and its own description reads it back',
      skipUnless('h650_test_config_clean'), () => {
   const c = containerOf('h650_test_config_clean');
   const read = describeWiring(takeApart(c));
@@ -548,7 +590,7 @@ test('section 359: this track\'s configuration, built on Logitech\'s clean compi
   // `start`, front list 1: boot, select the idle entry, start.last.
   assert.deepEqual(lists[1]!.map((one) => one.opcode), [0x7f, 0x1f, 0x7f]);
   assert.equal(lists[1]![1]!.operand, 0xff00 | read.entries.idle!);
-  // The All Off key selects the idle entry; the idle entry binds its enter and resume alone.
+  // Scan 6, read as All Off's, selects the idle entry; the idle entry binds its enter and resume alone.
   const entry1 = taggedList(out, handlerSets(out)!.addresses[1]!)!.entries;
   const allOff = entry1.find((one) => one.tag === (0x80 | ALL_OFF_SCAN))!;
   assert.deepEqual([allOff.opcode, allOff.operand], [0x1f, 0xff00 | read.entries.idle!]);
@@ -559,6 +601,8 @@ test('section 359: this track\'s configuration, built on Logitech\'s clean compi
     for (let at = 1; at + 3 <= p.bytes.length; at += 3) if (p.bytes[at + 2] === 0x7f) named.add(p.bytes[at]! | (p.bytes[at + 1]! << 8));
   }
   for (const one of [...CARRIED, 'helpHold']) assert.equal(named.has(read.lists[one]!), false, one);
+  // So the built pieces of this track's configuration call no list the wiring does not build.
+  assert.deepEqual(carried(c, ours, built), {});
   // Read back, the settings are this track's and the rebuild is the file.
   const again = describeWiring(takeApart(out));
   assert.deepEqual(again.settings, ours.settings);
@@ -584,7 +628,7 @@ test('section 359: checkWiring passes Logitech\'s clean compile and refuses a co
   const refused = (c: Container, pattern: RegExp): void => {
     assert.throws(() => checkWiring(c), (e: unknown) => e instanceof WiringError && pattern.test(e.message));
   };
-  // Variable 16 compared where the compiler compares 17.
+  // Variable 17 compared where the compiler compares 16.
   refused(edited('events.1.test', 0, 0, 0x11), /in list \d+, events\.1\.test$/);
   // The screen light started again on timer 3, where the table puts it at 4 on this compile.
   refused(edited('elevenKeys.again', 2, 0, 0x03), /in list \d+, elevenKeys\.again$/);
@@ -598,8 +642,23 @@ test('section 359: checkWiring passes Logitech\'s clean compile and refuses a co
   swapped.set(swapped.slice(at + 7, at + 10), at + 4);
   swapped.set(first, at + 7);
   refused(parse(swapped), /in list \d+, everyKey\.(again|on)$/);
-  // `stopLights`, which four lists call, called at another index by one of them: refused while reading.
+  // `stopLights`, which five lists call, called at another index by one of them: refused while reading.
   refused(edited('elevenKeys.again', 0, 0, (spec.lists.stopLights! + 1) & 0xff), /list "stopLights" is \d+ in one place and \d+ in another/);
+});
+
+test('section 359: the "add Activities" rule is keyed on the activity count and refused where it is not read: no activity with an activity key set, activities with every activity key empty, and no activity outside the Harmony 650',
+     skipUnless(NO_ACTIVITIES, 'h650_config_region'), () => {
+  const none = describeWiring(takeApart(containerOf(NO_ACTIVITIES)));
+  const some = describeWiring(takeApart(containerOf('h650_config_region')));
+  const refuses = (spec: WiringSpec, pattern: RegExp): void => assert.throws(() => buildWiring(spec), (e: unknown) => e instanceof WiringError && pattern.test(e.message));
+  assert.equal(none.activityCount, 0);
+  refuses({ ...none, activityKeys: some.activityKeys }, /activity key selects an entry and there is no activity/);
+  refuses({ ...some, activityKeys: none.activityKeys }, /every activity key is empty while there are activities/);
+  refuses({ ...none, model: 'harmony-600' }, /no harmony-600 compile with no activity/);
+  refuses({ ...none, model: 'harmony-700' }, /no harmony-700 compile with no activity/);
+  // The control: both as read build.
+  buildWiring(none);
+  buildWiring(some);
 });
 
 test('section 359: a Harmony 700 with the Remote Assistant off is refused, since no such compile has been read', skipUnless('h700_config'), () => {
