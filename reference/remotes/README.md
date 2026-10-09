@@ -32,6 +32,7 @@ reference/
   architectures/
     harmony-600-650-700/      architecture 14: what the three models share, stated once
       README.md, memory.md, firmware.md, usb.md, misc.md
+    harmony-300-350/          architecture 16, the file based family: the same five files
 ```
 
 **Every model folder holds the same ten files**, including a model where a file says little, because a
