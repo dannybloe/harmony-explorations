@@ -157,7 +157,8 @@ export interface ComposeCommand {
    * caller has the archive; absent, `stated` is read at the widths its family's name spells. Section 359.
    *
    * **The name is not enough to read a code**, section 231: the number before `Bit` is the digit count on
-   * most families whose cell carries more than one bit, and several names state no width at all, so a code
+   * some families whose cell carries more than one bit and neither count on as many, and several names state
+   * no width at all, so a code
    * the name cannot read is one the table's block and the held power step cannot be built for either. The
    * catalogue composer passes this for every command, so the record is built from one reading of the
    * string, the one `make prontocheck` holds against Logitech's renderings.

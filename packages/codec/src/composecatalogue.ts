@@ -607,13 +607,15 @@ export function catalogueCommandBlocks(
 
 /**
  * A catalogue code as the composer reads it: at the widths and in the bases its family's definition
- * states, `statedCodeOfDefinition`, and at the name's only for a family the archive defines none of,
- * which no family of the archive is. Section 359.
+ * states, `statedCodeOfDefinition`, and at the name's only for a family the archive defines none of. Five
+ * family spellings in the codesets are such, about 222 commands, all but one a letter case away from a
+ * defined family (`AudioAnalogue 14 bit`) and one with a trailing space; they are refused later as having no
+ * rhythm, which is todo-process-logitech 2.3's class. Section 359.
  *
  * **Why the definition and not the name.** The composer read every code at the widths the family's name
- * spells until section 359, and so refused 52658 commands of 156 families as unreadable: names such as
- * `Motorola 16 Bit Hex` and `Russound 9 Bit Quad` give the digit count, and `Philips RC5Ex` no number at
- * all, section 231. On the codes both read, the table's block is the same under either reading on 101369
+ * spells until section 359, and so refused 52658 commands of 156 families as unreadable: a name such as
+ * `Russound 9 Bit Quad` gives the digit count, `Motorola 16 Bit Hex`, whose values are 32 bits, neither
+ * count, and `Philips RC5Ex` no number at all, sections 231 and 233. On the codes both read, the table's block is the same under either reading on 101369
  * of 101593 and differs on 224, all of `Motorola 16 Bit Quad Toggle`, `Kathrein 16 Bit Quad Toggle` and
  * `Pace 18 Bit Quad Toggle`, whose toggle field the name made sixteen bits wide where the definition makes
  * it one: the name's block is the definition's at no count, the definition's at the count the family

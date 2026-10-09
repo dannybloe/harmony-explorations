@@ -850,11 +850,13 @@ accounting table** here, which was a real duplicate with nothing added and has b
 **The device composer reads Logitech's infrared codes the way their own definitions say to, and 39074
 more of the catalogue's commands compose, section 359.** A code in Logitech's database is a protocol name
 and a number, and how many bits each part of the number takes is stated by the protocol's definition. The
-composer took it from the protocol's name instead, and a name like "Motorola 16 Bit Hex" gives the number
-of hexadecimal digits, not bits, so 52658 commands of 156 protocols were refused as unreadable. Read the
+composer took it from the protocol's name instead, and a name like "Russound 9 Bit Quad" gives the number
+of base four digits, not bits, so 52658 commands of 156 protocols were refused as unreadable. Read the
 definition's way, 39074 of them compose; the rest are refused for reasons other items hold, and 172 are not
-infrared at all or are misspelt in the database. Three devices from a Harmony One compile, one of them all
-70 commands of a protocol never composable before, came out word for word as Logitech wrote them. Two smaller
+infrared at all or are misspelt in the database. Three devices from a Harmony One compile, one of which
+composed nothing before, came out word for word as Logitech wrote them; those are protocols whose name was
+right and whose numbers ran over it, so the main case, a name giving the wrong width, is checked against
+Logitech only as signals, on two protocols in configurations whose devices are not known. Two smaller
 fixes came with it: 1217 commands of three protocols the name had read wrongly now send what the definition
 describes, and a long silence is spelt in the words Logitech uses. Over the whole database, 2038021 of
 2067863 commands compose now, and 766 of 54118 code sets have none that does.

@@ -47910,17 +47910,20 @@ wrong.
 ## 359. The catalogue composer reads a code at the widths its family's definition states, and writes 39074 commands more
 
 **Date:** 9 October 2026. **Status:** confirmed by construction against one Harmony One compile, three
-devices word for word, and by train against two more Logitech configurations; the rest of what it admits
-is composed from Logitech's definition and is unconfirmed. Nothing composed this way has been written to a
-remote.
+devices word for word, but those are codes whose name states the right width and whose value overflows
+it, 185 of the commands this section reads; the width reading proper, the other 52300 or so, is checked
+against Logitech only as trains, on two families in two configurations whose devices are not catalogue
+matched. The rest of what it admits is composed from Logitech's definition and is unconfirmed. Nothing
+composed this way has been written to a remote.
 
 `todo-process-logitech.md` 2.1. An infrared command in Logitech's catalogue is a family name and a value
 written in a notation, `G:Motorola 16 Bit Hex:()(0x...)():3`. How wide each value is and what base its
 digits are written in is stated by the family's definition, `keycodeFields` and the cell count of the
 segment a value names, sections 231 to 233. The renderer, `waveformOfArchiveCommand`, has read codes that
 way since section 233. The catalogue composer did not: it read every code with `statedCode` alone, which
-takes the width from the number before `Bit` in the family's name. That number is a digit count on most
-families whose cell carries more than one bit, and several names state no width at all.
+takes the width from the number before `Bit` in the family's name. On the 142 families whose cell
+carries more than one bit that number is the digit count on 66, the bit count on 4 and neither on 72,
+section 231, and 43 names state no width at all, section 233.
 
 **Sources checked before the work started.** This document, sections 228, 231 to 233, 309, 348 and 350.
 MyHarmony's client, `../lab/work/myharmony/src/`: it holds `ParsedKeyCode`, whose `Start`, `Repeat` and
@@ -47941,7 +47944,13 @@ rule and not 151 readers, though neither number is reproduced:
 | of which the name's widths cannot read the code, in 156 families | 52658 |
 | of which the definition's widths cannot build a `MemorexO1 32 Bit` code, section 350 | 15 |
 
-Of the 52658, the definition's widths read 52486, in 150 families that read whole. The 172 left are not
+Of the 52658, the definition's widths read 52486, in 150 families that read whole. Why the name failed
+them, per field, from the sentence audit: on 59 families, 9019 commands, the name states no width; on 64,
+20924 commands, it is the digit count; on about 21800 commands it is neither, the six `... 16 Bit Hex`
+families above all, whose values are eight hexadecimal digits under a name saying 16; and on 7 families,
+185 commands, the name's width is right and a value overflows it, which the definition's route masks to
+the width as Logitech's renderer does, section 233. 49 of the 156 families, 197 commands, are Logitech's
+`QE ...` test patterns, frequency and timing tests rather than equipment. The 172 left are not
 infrared codes a remote can send: `HID 16 Bit`'s 109, `Roku IP`'s 19 and `Sonos IP`'s 13, whose values
 carry no `0x` and whose definitions state no rhythm, and 31 codes misspelt in the catalogue itself, `0x0x`
 on 27 `Galaxis 16 Bit Quad Toggle` codes, a stray letter or a command name on three `Toshiba 32 Bit` ones
@@ -47967,14 +47976,19 @@ No compile in the lab holds any of the three families, so that is a reading of t
 `make prontocheck` agrees with it on every command of the three. No code loses or gains a table block by
 the reading.
 
-**A code only the definition reads goes to the definition, never to a table block.** Thirteen families have
-a whole block in the table that takes such a code, 2975 distinct codes, and on 78 the block sends fewer
-intervals than the definition does at the family's own count: a `Samsung 16 and 20 Bit` code stating four
-pairs gets the row's one pair (41 codes), a `Pace 16 Bit Quad` code stating two values gets one (35), and
-an `iMonFixed2` code stating only its start and release groups gets nothing (2). Every row was measured or
-derived over codes the name reads, `bin/protocols.ts` reading them with `statedCode`, so for the others the
-table holds no evidence. The composer therefore builds them from the definition at the device's count, the
-route of a family with no whole block, section 348: 1138 of the 2975 as the definition's block, 1833
+**A code only the definition reads goes to the definition, never to a table block.** The ground is
+provenance: every row was measured or derived over codes the name reads, `bin/protocols.ts` reading them
+with `statedCode`, so for the others the table holds no evidence. Thirteen families have a whole block in
+the table that takes such a code, 2975 distinct codes, and on 78 the block sends fewer intervals than the
+definition does at the family's own count: a `Samsung 16 and 20 Bit` code stating three to five pairs gets
+the row's one pair (39 codes, and 2 more stating start and release groups), a `Pace 16 Bit Quad` code
+stating two values gets one (35), and an `iMonFixed2` code stating only its start and release groups gets
+nothing (2). **The 78 do not by themselves draw the line at the name**: on codes the name does read, in
+families stating a count, the table's block is shorter than the definition's on 122 (86 `Samsung 42 Bit
+2`, 25 `Toshiba 32 Bit`, 7 `JerroldO1 16 Bit`, 3 `Logitech 24 Bit`, 1 `Galaxis 16 Bit Quad Toggle`) and
+longer on 88, against 63853 the same, the sentence audit's count, and those are left as the table sends
+them, since they are what todo 2.4 and 2.5 are about. The composer builds the ones only the definition
+reads from the definition at the device's count, the route of a family with no whole block, section 348: 1138 of the 2975 as the definition's block, 1833
 refused for a release group, which is that route's refusal, and 4 `iMonFixed2` codes sending nothing at the
 0 their family states. The table route would have composed the 1833 with the release dropped, which is
 todo 2.5's open question rather than an answer to it.
@@ -47982,7 +47996,9 @@ todo 2.5's open question rather than an answer to it.
 **A gap longer than a word is spelt whole.** `blockOfDefinition` chunks a literal gap into words of 32767,
 and `compiledBlockWords` spelt each chunk on its own, where Logitech's compiler spells a silence by the half
 word rule, phase 7 and section 174: `Microsoft 30 Bit`'s 68643 went out as 32767, 32767 and 3109, and
-every Logitech compile holding the family writes 32767, 17938 and 17938. The same signal in other words,
+Logitech writes 32767, 17938 and 17938 in every container in the lab holding that silence, eight of
+them, on the Harmony 880 and 885 (arch 8), the Harmony One (arch 12), a contributed Harmony 650 (arch 14)
+and both Harmony 350s (arch 16), and spells it chunk by chunk in none. The same signal in other words,
 and no train comparison could see it. `joinedGaps` in `archive.ts`, beside the chunking it undoes, joins a
 space of a whole number of chunks to the space after it and nothing else, since a biphase family's two
 adjacent half cells are two words in Logitech's records too, and `compiledBlockWords` calls it. It changes
@@ -47994,9 +48010,9 @@ them.
 
 ### Against Logitech's compiles
 
-Every infrared record of every container in the lab, 128 distinct, was looked up against the definition's
-build at 0 to 6 repetitions of every distinct code this section admits or re-reads, 10672 codes. Three
-containers hold any:
+Every infrared record of every container in the lab, 128 distinct containers outside the agents' scratch
+and 132 with it, was looked up against the definition's build at 0 to 6 repetitions of every distinct code
+this section admits or re-reads, 10672 codes. Three containers hold any:
 
 | container | remote | family | records | at |
 |---|---|---|---|---|
@@ -48010,15 +48026,21 @@ first compile's bytes.** The Gemini TestQuhd, all 70 of whose codes only the def
 RDR-GXD500 and the Rosen 0602-2XX-8, one such code each, composed whole onto the Harmony 650's configuration
 at their own counts, 3, 3 and 1, and compared on what follows each record's opening silence, since a Harmony
 One compile opens its blocks with none: 72 of 72, 63 of 63 and 48 of 48 records are Logitech's in all three
-blocks, and nothing of any of the three is left out. The Sony's group holds ten records more, which are
-not read here. **The controls**: read at the name's widths not one of the TestQuhd's 70 codes composes, so
+blocks, and nothing of any of the three is left out. The Sony's group holds ten records more, the digits
+again with a first block only, which the composer does not emit and which is not read here. **What this closure covers is narrower than the section**: all three families are of the
+overflow class above, a name stating the right width, 30, 20 and 32 bits, and a value wider than it, so it
+confirms the definition's route and its masking word for word, and says nothing about a width the name got
+wrong. **The controls**: read at the name's widths not one of the TestQuhd's 70 codes composes, so
 the device had nothing to compose before this; spelt chunk by chunk, as the writer did before, none of its
 70 presses is one of Logitech's words, though every one is the same signal; and built at 1 rather than its
 3, none is even that signal.
 
-The Harmony 350's factory configuration and the Harmony 880's contributed one check the frames and not the
-count: the device behind the first is not known, and the second's owner may have changed the count, section
-348. Neither is evidence about which count a device of the family repeats.
+The Harmony 350's factory configuration and the Harmony 880's contributed one are the only checks of the
+width reading proper against Logitech, `Philips RC5Ex` stating no width and `Russound 9 Bit Quad` a digit
+count, and they check the frames and not the count: the first is Logitech's factory set, whose records are
+not tied to catalogue entries here, section 263, and the second's owner may have changed the count, section
+348. Neither is evidence about which count a device of the family repeats, and 96 records cover at most 96
+of the two families' 1277 distinct codes, so the row below attributes whole families on that.
 
 ### What it moves
 
@@ -48039,20 +48061,43 @@ writing every one. Counted per family by what checked them:
 |---|---|---|
 | word for word against a Logitech compile of a known device, Harmony One (arch 12) | 3 | 72 |
 | frames against a Logitech configuration whose device or settings are not known, Harmony 350 (arch 16) and Harmony 880 (arch 8) | 2 | 14987 |
-| on the definition alone, stated and unverified per decision 15 | 122 | 24015 |
+| on the definition alone, stated and unverified per decision 15 | 122, 49 of them `QE` test patterns | 24015 |
 
 The 13584 not written are refused by rules other sections hold: 11288 name a release group (2.2.3), 1464 sit
 on a device whose codeset holds a family stating another count (2.2.2), 660 on a device stating 0 (2.2.4),
-and the 172 above. 1050 commands compose for some of their codeset's devices and not all, against 442,
-counted as refused. **The 2.1 refusal itself is down to 187**: the 172 and section 350's 15.
+and the 172 above; which reason a command is counted under depends on which of its devices refuses
+first, and the blind re-measure, taking each count's reason in another order, got 11359, 1336, 717 and 172
+over the same total. 1050 commands compose for some of their codeset's devices and not all, against 442,
+counted as refused. 438 written commands sit on a codeset with a device stating a count of 2, which
+section 348 composes unconfirmed. **The 2.1 refusal itself is down to 187**: the 172 and section 350's 15.
+Not in any of these: about 222 commands whose family is spelt with another letter case or a trailing space,
+`AudioAnalogue 14 bit` against the definition's `14 Bit` and four more, which find no definition and are
+refused as having no rhythm, todo 2.3's class rather than this one's.
 
 ### Scope, decision 16
 
 The word for word check is one Harmony One compile (arch 12), three devices, composed onto a Harmony 650
 configuration (arch 14) and compared on the block words, which are the same format on both. No Harmony 600,
-650 or 700 compile (arch 14) in the lab holds any family this section admits, so on those models it is the
-definition's reading only. The Harmony 350 (arch 16) and Harmony 880 (arch 8) agree on frames. Not checked
+650 or 700 container (arch 14) in the lab holds a code only the definition reads, so on those models it is
+the definition's reading only; the families are there, `Sony 20 Bit` on every bench Harmony 650 compile and
+`Microsoft 30 Bit` on a contributed Harmony 650, through codes the name reads. The Harmony 350 (arch 16)
+and Harmony 880 (arch 8) agree on frames. The gap spelling holds on arch 8, 12, 14 and 16 (Harmony 880 and
+885, Harmony One, Harmony 650, Harmony 350). Not checked
 on the Harmony 525 (arch 9), for which nothing compiles. Nothing was sent to a remote.
+
+### The two reviews
+
+**The blind re-measure**, given the questions and not this section, agreed on every total: 52658 commands of
+156 families, 39074 written, 127 families writing some and 78 all, the 224 and their counts, the three
+containers and the three closures, 72, 63 and 48. It split the refusals in another order, above, and found
+the docstring of `catalogueCode` wrong in saying every family has a definition, the 222 above. **The
+sentence audit** found that the word for word closure is of the overflow class and not the width class,
+now said in the status and above; "a digit count on most" where section 231 measured 66 of 142, corrected
+here, in `docs/config-format.md` and in two docstrings; `Motorola 16 Bit Hex` given as a digit count name
+where its values are 32 bits; the scope sentence true per code and not per family; the Samsung codes
+stating three to five pairs and not four; the line at the name resting on the 78 when 122 named codes show
+the same shortfall, now rested on provenance; the `QE` test families inside the family counts; and four
+test titles naming more than their bodies, two renamed and two given the check their titles claimed.
 
 ### Falsification
 

@@ -1143,9 +1143,10 @@ export function withToggleCleared(
  *
  * **Why this is a function of its own.** Until section 359 it was three lines inside
  * `waveformOfArchiveCommand`, and the composer read the same codes with `statedCode` alone, which takes
- * each width from the number before `Bit` in the family's name. That number is the digit count and not the
- * bit count on most of the families whose cell carries more than one bit, section 231, and several names
- * state no width at all, so the composer refused 52658 commands of 156 families as unreadable while the
+ * each width from the number before `Bit` in the family's name. Of the 142 families whose cell carries more
+ * than one bit that number is the digit count on 66 and neither the digit nor the bit count on 72, section
+ * 231; 43 names state no width at all, section 233; and a few state the right width and write values wider
+ * than it, which the definition's route masks. So the composer refused 52658 commands of 156 families as unreadable while the
  * renderer that `make prontocheck` holds against every rendering in the archive read 52486 of them. Two
  * readings of one string is the state `CLAUDE.md` warns precedes two diverging answers, and it had
  * diverged: on 224 codes of three Quad Toggle families both read the code and the composer's widths sent

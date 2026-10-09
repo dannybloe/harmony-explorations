@@ -17,10 +17,13 @@
  * **Against Logitech.** Three devices of the harvest's third Harmony One compile hold such codes, and
  * composed whole onto the Harmony 650's configuration every record is Logitech's, word for word after
  * the opening silence: the Gemini TestQuhd, all 70 of whose codes only the definition reads, 72 of 72,
- * and the one such code each of the Sony RDR-GXD500 and the Rosen 0602-2XX-8. The factory configuration
- * of the Harmony 350 holds a fourth family, `Philips RC5Ex`, and the definition's build at 3 is each of
- * its 30 records. Every other admitted family is composed from the definition alone, no compile in the
- * lab holding it.
+ * and the one such code each of the Sony RDR-GXD500 and the Rosen 0602-2XX-8. **Those three families
+ * state the right width in their names** and write values wider than it, so they confirm the definition's
+ * route and its masking, not a width the name got wrong. That reading is checked against Logitech only as
+ * trains: the factory configuration of the Harmony 350 holds `Philips RC5Ex`, whose name states no width,
+ * and the definition's build at 3 is each of its 30 records; a contributed Harmony 880 configuration, not
+ * a fixture here, holds `Russound 9 Bit Quad`. Every other admitted family is composed from the definition
+ * alone, no container in the lab holding a code of it that only the definition reads.
  *
  * **What is not claimed.** Anything on a remote; and anything about the release groups, the counts of 0
  * and the conflicting stated counts that still refuse most of what this section reads, which are
@@ -107,8 +110,23 @@ function archiveKeycodes(): string[] {
 }
 const familyOf = (keycode: string): string => /^G:([^:]+):/.exec(keycode)![1]!;
 
+/** Every keycode the archive holds a rendering for, a Pronto string, anywhere. */
+function renderedKeycodes(): Set<string> {
+  const out = new Set<string>();
+  for (const bucket of readdirSync(join(IR_ARCHIVE!, 'codesets'))) {
+    for (const file of readdirSync(join(IR_ARCHIVE!, 'codesets', bucket))) {
+      const raw = JSON.parse(readFileSync(join(IR_ARCHIVE!, 'codesets', bucket, file), 'utf8')) as unknown;
+      const list = (Array.isArray(raw) ? raw : (raw as { commands?: unknown[] }).commands ?? []) as
+        { keycode?: string; pronto?: string }[];
+      for (const { keycode, pronto } of list) if (keycode !== undefined && pronto !== undefined) out.add(keycode);
+    }
+  }
+  return out;
+}
+
 test('the codes a family\'s name cannot read are 52658 commands of 156 families, and the definition reads all but 172, none of them an infrared code the catalogue renders',
   needing(skipWithoutIrArchive()), () => {
+    const rendered = renderedKeycodes();
     const protocols = archiveProtocolsByName(IR_ARCHIVE!);
     const families = new Set<string>();
     let unnamed = 0;
@@ -120,7 +138,10 @@ test('the codes a family\'s name cannot read are 52658 commands of 156 families,
       const family = familyOf(keycode);
       families.add(family);
       if (statedCodeOfDefinition(protocols.get(family)!, keycode) !== undefined) read += 1;
-      else declined.set(family, (declined.get(family) ?? 0) + 1);
+      else {
+        declined.set(family, (declined.get(family) ?? 0) + 1);
+        assert.ok(!rendered.has(keycode), `${keycode.slice(0, 60)} has a rendering in the archive`);
+      }
     }
     assert.equal(unnamed, 52658);
     assert.equal(families.size, 156);
@@ -176,7 +197,7 @@ test('on a code both readings read, the table\'s block is the same under both on
     assert.deepEqual([...rebuild], [['name none, definition 1, stated 1', 224]]);
   });
 
-test('a code only the definition reads is built from the definition at the device\'s count, never the table\'s block, which sends fewer frames than such a code states on 78',
+test('a code only the definition reads is built from the definition, never the table\'s block, which sends fewer frames than such a code states on 78',
   needing(skipWithoutIrArchive()), () => {
     const protocols = archiveProtocolsByName(IR_ARCHIVE!);
     const taken = new Map<string, number>();
@@ -207,7 +228,7 @@ test('a code only the definition reads is built from the definition at the devic
       ['Zenith 11 Bit Quad', 74], ['iMonFixed2', 6],
     ]);
     // **The table's block is wrong on 78 of them**: it sends fewer intervals than the definition does at the
-    // family's own count. A `Samsung 16 and 20 Bit` code stating four pairs gets the row's one pair, a
+    // family's own count. A `Samsung 16 and 20 Bit` code stating three to five pairs gets the row's one pair, a
     // `Pace 16 Bit Quad` code stating two values gets one, and an `iMonFixed2` code stating only its start
     // and release groups gets nothing at all. The row was measured or derived over codes the name reads.
     assert.deepEqual([...short].sort(), [['Pace 16 Bit Quad', 35], ['Samsung 16 and 20 Bit', 41], ['iMonFixed2', 2]]);
@@ -245,7 +266,7 @@ test('three devices holding codes only the definition reads, composed whole, pre
       results.push(`${one.model}: ${unnamed} unnamed, ${ours.filter((r) => logitech.has(r)).length} of ${ours.length}`);
     }
     // Every record, once, held and tail block, is one of Logitech's for the device. The Sony's group holds
-    // ten more of Logitech's, the one block copies of section 337.
+    // ten more of Logitech's, the digits again with a first block only, which are not read here.
     assert.deepEqual(results, [
       'TestQuhd: 70 unnamed, 72 of 72',
       'RDR-GXD500: 1 unnamed, 63 of 63',
@@ -299,7 +320,7 @@ test('the controls: read at the name\'s widths the TestQuhd composes nothing, sp
     assert.equal(atOne, 0);
   });
 
-test('joinedGaps joins a chunked gap and nothing else, and the writer spells the joined silence by the half word rule',
+test('joinedGaps joins a chunked gap and leaves two half cells and a short space apart, and the writer spells the joined silence by the half word rule',
   () => {
     const chunked: Pulse[] = [{ mark: true, us: 441 }, { mark: false, us: 32767 }, { mark: false, us: 32767 },
       { mark: false, us: 3109 }, { mark: true, us: 2632 }];
@@ -333,7 +354,8 @@ test('the Harmony 350\'s factory configuration holds 30 records of `Philips RC5E
     }
     const c = open('h350_config');
     const counts = new Map<string, number>();
-    for (const group of irGroups(c)!) {
+    const groups = new Map<number, number>();
+    for (const [at, group] of irGroups(c)!.entries()) {
       for (const address of group.addresses) {
         const [once] = irHeaderPointers(c, address);
         const words = irBlockWords(c, once!)!.filter((word) => word !== 0);
@@ -341,7 +363,11 @@ test('the Harmony 350\'s factory configuration holds 30 records of `Philips RC5E
         if (found === undefined) continue;
         const key = [...found].join('/');
         counts.set(key, (counts.get(key) ?? 0) + 1);
+        groups.set(at, (groups.get(at) ?? 0) + 1);
       }
     }
     assert.deepEqual([...counts], [['3', 30]]);
+    // And the 30 are one whole group, so a record of it the build missed would fail here.
+    assert.deepEqual([...groups], [[3, 30]]);
+    assert.equal(irGroups(c)![3]!.addresses.length, 30);
   });
