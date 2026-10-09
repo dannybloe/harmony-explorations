@@ -23,6 +23,10 @@
  * It prints the composer's verdict before section 348, the table alone, beside the verdict now, so the
  * one number this step moves is visible next to the ones it does not.
  *
+ * **Since section 361** it also prints the two classes todo-process-logitech 2.3 named, as the table alone
+ * refused them: a family spelt otherwise than its definition, which found no rhythm, and a code the family's
+ * whole table block does not take; and how many of each now write.
+ *
  * Usage: `make composecensus`; `--families` lists, family by family, the commands whose code the family's
  * name cannot read, section 359, and how many of them now write. Needs the public infrared archive
  * checkout, no lab and no network. Not in `make all`: it reads every one of the archive's device and
@@ -151,6 +155,12 @@ const unnamedFamilies = new Map<string, { commands: number; written: number }>()
 const unnamedWhy = new Map<string, number>();
 /** Commands the table composes whose block the definition's reading changes, section 359. */
 let tableReread = 0;
+/**
+ * todo-process-logitech 2.3, section 361: the commands the table alone refused as having no rhythm, every one
+ * a family spelt otherwise than its definition, and those it refused because the family's whole block does
+ * not take the code; per class, the commands, the spellings, and how many now write.
+ */
+const leftover = new Map<string, { commands: number; written: number; families: Set<string> }>();
 
 /** Why a command still does not compose, its first refusing device's reason, by command. */
 const reasons = new Map<string, number>();
@@ -216,6 +226,13 @@ for (const bucket of readdirSync(join(root, 'codesets'))) {
       kinds.add(kind);
       refusedBefore.set(family, kinds);
       const ok = verdicts.map((one) => !refused(one));
+      if (kind === 'rhythm' || kind === 'block') {
+        const row = leftover.get(kind) ?? { commands: 0, written: 0, families: new Set<string>() };
+        row.commands += 1;
+        row.families.add(family);
+        if (ok.every(Boolean)) row.written += 1;
+        leftover.set(kind, row);
+      }
       if (read === undefined) {
         unnamed += 1;
         const row = unnamedFamilies.get(family) ?? { commands: 0, written: 0 };
@@ -287,6 +304,12 @@ if (process.argv.includes('--families')) {
   }
 }
 console.log(`and of the commands the table composes, ${tableReread} get another block read at the definition's widths`);
+// Section 361: the two classes todo-process-logitech 2.3 names, as the table alone refused them.
+for (const [kind, what] of [['rhythm', 'a family spelt otherwise than its definition, which the table alone found no rhythm for'],
+  ['block', "a code the family's whole table block does not take"]] as const) {
+  const row = leftover.get(kind) ?? { commands: 0, written: 0, families: new Set<string>() };
+  console.log(`${what}, section 361: ${row.commands} commands in ${row.families.size} family spellings, ${row.written} now write`);
+}
 console.log('\nwhy a command is still refused, by its first refusing device:');
 for (const [why, n] of [...reasons].sort((a, b) => b[1] - a[1])) console.log(`  ${String(n).padStart(7)}  ${why}`);
 // The families the table refused only for want of a whole block, todo-process-logitech 2.2's share.

@@ -707,7 +707,9 @@ make composecensus which of the archive's commands the catalogue composer writes
                    device since section 348. Needs the archive checkout, no lab and no network, about
                    forty seconds. Not in `make all`. Run as `node packages/codec/bin/composecensus.ts
                    --families` it also lists, family by family, the commands whose code the family's
-                   name cannot read and how many of them write, section 359
+                   name cannot read and how many of them write, section 359. It prints the two classes
+                   of section 361 too, a family spelt otherwise than its definition and a code the
+                   family's whole table block does not take, and how many of each write now
 make analyze       ask Logitech's own analyser what a code in the corpus is and compare it with ours,
                    which is the only second opinion available on `irframe.ts` for a code no calibration
                    account generated. Needs HARMONY_LOGITECH_EMAIL and HARMONY_LOGITECH_PASSWORD and

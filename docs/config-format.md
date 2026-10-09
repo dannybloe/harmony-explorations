@@ -3522,6 +3522,23 @@ holding it, on arch 8, 12, 14 and 16, not 32767, 32767 and 3109.
 Only a space of whole chunks is joined; two adjacent biphase half cells stay two words, as Logitech stores
 them.
 
+**A code's family is the definition its keycode spells, or, where none is spelt so, the one spelt the same
+but for letter case and spacing**, section 361, `catalogueProtocol`: trimmed, runs of white space made one,
+case set aside. Five spellings in the catalogue name no definition, 222 commands (`Ada 40 Bit`,
+`AudioAnalogue 14 bit`, `DAM 12 Bit`, `toshiba 32 Bit`, `Intellibus 17 Bit ` with a trailing space), and
+Logitech's own `ProtocolId`, which every command of their service carries beside its keycode, names the
+folded match on every one of them and the exact spelling on every other command of the raw capture,
+13292991 of 13293293 counted per device. The 684 definitions fold to 684 spellings; a folded spelling
+fitting two would find neither. A code so found is read by, and carries the name of, that definition.
+
+**A code whose family's whole table block does not take it is built from the definition at the device's
+count**, section 361, as a code only the definition reads is: `Entone 56 Bit` codes stating their value in
+the start group alone, `Galaxis 16 Bit Quad Toggle` and `Philips Hurd 16 Bit LongToggle` codes stating three
+frames, and a `Pioneer 32 Bit Dual` code stating one value. Confirmed word for word on three such codes of
+two devices in two Harmony One compiles; on the codes the four rows do take, the definition at the row's
+count sends the row's train on 4797 of 4834. **Unconfirmed** for `Entone 56 Bit`, `Galaxis 16 Bit Quad
+Toggle` and the misspelt spellings, which no compile in the lab holds.
+
 **How many times a press sends the code is also stated twice outside the file**, and both agree with
 the ratio: `pressMinimumRepeats` on 39 of Logitech's 1368 protocol definition records, values 0, 1 and
 3; and `PressMinRepeats` with `DefaultPressMinRepeats` per device on the live service, same values.

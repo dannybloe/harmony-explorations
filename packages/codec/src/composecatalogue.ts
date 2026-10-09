@@ -373,6 +373,53 @@ export function archiveProtocolsByName(archive: string): ReadonlyMap<string, Arc
   return found;
 }
 
+/** A family spelling with its letter case and its spacing set aside: trimmed, runs of white space as one. */
+function foldedFamily(spelling: string): string {
+  return spelling.trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+/** Per definition map, its names by folded spelling, `null` where two definitions fold alike. */
+const FOLDED_OF = new WeakMap<ReadonlyMap<string, ArchiveProtocol>, Map<string, string | null>>();
+
+/**
+ * The archive's definition of a catalogue code's family: by the code's own spelling of the family, and
+ * where no definition is spelt that way, by the one spelt the same but for letter case and spacing.
+ * `undefined` where neither finds one, or where the folded spelling would fit two definitions.
+ *
+ * **Why the code's spelling is not always a definition's name.** Five spellings in the catalogue's codes
+ * name no definition, 222 commands: `Ada 40 Bit` (82), `AudioAnalogue 14 bit` (108), `DAM 12 Bit` (29),
+ * `toshiba 32 Bit` (2) and `Intellibus 17 Bit ` with a trailing space (1). Until todo-process-logitech 2.3
+ * they found no definition and no rhythm and were refused, section 361.
+ *
+ * **Why folding is Logitech's answer and not a guess.** Every command of Logitech's service carries a
+ * `ProtocolId` beside its keycode, the field MyHarmony's client knows as `Command.ProtocolId`, and the
+ * definitions carry the same id. Over all 13293293 commands of the raw capture behind the archive, the id
+ * names the keycode's own spelling on 13292991 and on the other 302, every command of the five spellings,
+ * it names the definition spelt the same but for case and spacing, and on none does it name another
+ * family. The archive's `protocol` field is that id's name. **And folding merges nothing**: the 684
+ * definitions fold to 684 different spellings, and a pair that folded alike would be refused here rather
+ * than one of them picked.
+ */
+export function catalogueProtocol(
+  keycode: string, protocols: ReadonlyMap<string, ArchiveProtocol>,
+): ArchiveProtocol | undefined {
+  const family = /^G:([^:]+):/.exec(keycode)?.[1];
+  if (family === undefined) return undefined;
+  const exact = protocols.get(family);
+  if (exact !== undefined) return exact;
+  let folded = FOLDED_OF.get(protocols);
+  if (folded === undefined) {
+    folded = new Map();
+    for (const name of protocols.keys()) {
+      const key = foldedFamily(name);
+      folded.set(key, folded.has(key) ? null : name);
+    }
+    FOLDED_OF.set(protocols, folded);
+  }
+  const name = folded.get(foldedFamily(family));
+  return name === undefined || name === null ? undefined : protocols.get(name);
+}
+
 /** A device's press count for the families that state none, or why it is not known. */
 export type PressRepeats = { readonly repeats: number } | { readonly refusal: string };
 
@@ -419,11 +466,11 @@ export function cataloguePressRepeats(
     return { refusal: 'the device states a repeat count of 0, which no Logitech compile here shows' };
   }
   for (const keycode of keycodes) {
-    const family = /^G:([^:]+):/.exec(keycode)?.[1];
-    const stated = family === undefined ? null : protocols.get(family)?.pressMinimumRepeats ?? null;
-    if (stated !== null && stated !== repeats) {
+    const protocol = catalogueProtocol(keycode, protocols);
+    const stated = protocol?.pressMinimumRepeats ?? null;
+    if (protocol !== undefined && stated !== null && stated !== repeats) {
       return {
-        refusal: `the device states a repeat count of ${repeats} and its ${family} commands' family states `
+        refusal: `the device states a repeat count of ${repeats} and its ${protocol.name} commands' family states `
           + `${stated}, and on such a device Logitech's compiler does not always use the device's number`,
       };
     }
@@ -593,24 +640,29 @@ export function catalogueCommandBlocks(
   if (named && composableKeycode(keycode, read)) {
     return tableBlocksAtDeviceCount(keycode, read, press, protocols);
   }
-  const entry = statedProtocol(read.family);
-  if (entry === undefined) return { refusal: `no rhythm for ${read.family}` };
-  if (named && (entry.tail !== undefined || entry.quad !== undefined || entry.longToggle !== undefined
-    || entry.sections !== undefined)) {
-    return { refusal: `${read.family}'s block does not take this code` };
-  }
+  if (statedProtocol(read.family) === undefined) return { refusal: `no rhythm for ${read.family}` };
+  // **A code the name reads and the family's whole block does not take goes to the definition too**,
+  // section 361, which until then refused it: 87 commands of four families, a `Pioneer 32 Bit Dual` code
+  // stating one value where the row's block names two, `Philips Hurd 16 Bit LongToggle` and `Galaxis 16
+  // Bit Quad Toggle` codes stating three frames where the row's shape takes one, and `Entone 56 Bit` codes
+  // stating their value in the start group where the row's block sends the repeat group's. The ground is
+  // the one above: the row holds no evidence for a shape it does not take, and the definition states it.
+  // On the codes the four rows do take, the definition at the row's count sends the row's own train on
+  // 4797 of 4834; and Logitech's compiles of the two catalogue devices here holding such a code, a Pioneer
+  // receiver and a Philips television on a Harmony One, hold the definition's block word for word.
   if ('refusal' in press) return press;
-  const protocol = protocols.get(read.family);
+  const protocol = catalogueProtocol(keycode, protocols);
   if (protocol === undefined) return { refusal: `the archive holds no definition of ${read.family}` };
   return blocksAtDeviceCount(protocol, keycode, press.repeats);
 }
 
 /**
  * A catalogue code as the composer reads it: at the widths and in the bases its family's definition
- * states, `statedCodeOfDefinition`, and at the name's only for a family the archive defines none of. Five
- * family spellings in the codesets are such, about 222 commands, all but one a letter case away from a
- * defined family (`AudioAnalogue 14 bit`) and one with a trailing space; they are refused later as having no
- * rhythm, which is todo-process-logitech 2.3's class. Section 359.
+ * states, `statedCodeOfDefinition`, and at the name's only for a family the archive defines none of.
+ * **The definition is found by `catalogueProtocol`**, so a code spelling its family in another letter case
+ * or with a trailing space is read by its definition and carries the definition's name as its `family`,
+ * which is what the rhythm table is looked up by; the 222 commands of the five such spellings were refused
+ * as having no rhythm until section 361. Section 359.
  *
  * **Why the definition and not the name.** The composer read every code at the widths the family's name
  * spells until section 359, and so refused 52658 commands of 156 families as unreadable: a name such as
@@ -624,9 +676,10 @@ export function catalogueCommandBlocks(
 export function catalogueCode(
   keycode: string, protocols: ReadonlyMap<string, ArchiveProtocol>,
 ): StatedCode | undefined {
-  const family = /^G:([^:]+):/.exec(keycode)?.[1];
-  const protocol = family === undefined ? undefined : protocols.get(family);
-  return protocol === undefined ? statedCode(keycode) : statedCodeOfDefinition(protocol, keycode);
+  const protocol = catalogueProtocol(keycode, protocols);
+  if (protocol === undefined) return statedCode(keycode);
+  const read = statedCodeOfDefinition(protocol, keycode);
+  return read === undefined || read.family === protocol.name ? read : { ...read, family: protocol.name };
 }
 
 /** A delay variable's name: its property, the device's identifier, and its number of values. */

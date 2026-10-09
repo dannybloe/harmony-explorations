@@ -689,16 +689,17 @@ test('the Dell 2300MP, whose family\'s table block holds a count it does not sta
     // **The Philips 70FA930**, a Harmony One compile of the harvest, states 1 and its one long toggle
     // record the table composes was written at 1, against the table's 3. Composed whole onto the same
     // configuration and compared on what follows each record's opening silence, since a Harmony One
-    // compile opens its blocks with none: 44 of its 45 records are Logitech's in all three blocks, the long
+    // compile opens its blocks with none: 46 of its 47 records are Logitech's in all three blocks, the long
     // toggle one now among them with the held block the definition states. The other is a power step,
-    // not read here; two more long toggle codes state their frame three times, which the table's block does
-    // not take, and are left out as before.
+    // not read here. Two more long toggle codes state their frame three times, which the table's block does
+    // not take: they were left out, 44 of 45, until section 361 built them from the definition at the
+    // device's 1, and both are Logitech's records, which `catalogueleftovers.test.ts` holds by name.
     const philips = composeCatalogueDevices(open('h650_panasonic_config'), IR_ARCHIVE!, [{ manufacturer: 'Philips',
       model: '70FA930_00S', label: 'Test', full: true }], { maxDevices: 99 });
-    assert.deepEqual(philips.devices[0]!.leftOut, ['InputDvd', 'InputSat']);
+    assert.deepEqual(philips.devices[0]!.leftOut, []);
     const p = parse(philips.bytes);
     const ours = recordBlocks(p, devices(p).find((d) => d.name === 'Test')!.group!).map(withoutLead);
     const logitech = new Set(recordBlocks(open(HARVEST('families-one', 2)), 0).map(withoutLead));
-    assert.equal(ours.length, 45);
-    assert.equal(ours.filter((one) => logitech.has(one)).length, 44);
+    assert.equal(ours.length, 47);
+    assert.equal(ours.filter((one) => logitech.has(one)).length, 46);
   });
