@@ -27,7 +27,7 @@ Measured on 7 October 2026 over the archive, without the service: 641 families h
 composer refuses, and the reason splits three ways.
 
 - [ ] 2.1 The 151 families whose catalogue notation our reader does not read, 53000 commands; Logitech's definition exists for every one, so this is reading work, checked against the compiles already in the lab
-- [ ] 2.2 The 482 families with a rhythm and no block, 339000 commands, which lack only the press repeat count: measure "the stated count, else three" against every compile in the lab, and name the kinds of family it gets wrong, the two Memorex families first
+- [ ] 2.2 The 482 families with a rhythm and no block, 339000 commands, which lack only the press repeat count: measure "the stated count, else three" against every compile in the lab, and name the kinds of family it gets wrong, the two Memorex families first; the count to measure is the device's own, `timing.pressMinRepeats` in the archive, which `driving.ts` reads and the composer does not use, and which the archive's README now names as the count (commits ca0349b and fdbaffa), not the family's
 - [ ] 2.3 The 8 families left over, 4 with no rhythm and 4 whose block is refused
 
 The other chapters are decided once the gathering is done, one per kind of knowledge.
