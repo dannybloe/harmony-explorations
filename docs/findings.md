@@ -46171,9 +46171,21 @@ stored order, each that runs a list of its own emitting that list, an empty acti
 The lists the generated ones call, followed through every call: **1518 lists over the thirteen, 69 to 148
 per compile**, which nothing here generates. On `h650_config_region` they are 85: 30 that send or name a
 device, 14 more loads and calls, 28 comparisons, 13 else. They are a tree of conditionals on the
-firmware's own variables and on every device, the all off reset among them, plus the tour and the
+firmware's own variables and on every device, the all off reset<!--superseded--> among them, plus the tour and the
 Assistant's gate. Some of it is other items' work, the devices' and the activities'; the rest is the
 part of the wiring still copied.
+
+**Corrected by section 360.** That walk followed calls out of the built lists only, and for that walk
+1518 and 69 to 148 stand; it missed the eight lists entry 1's binding of scan 6, read as All Off's, calls,
+and counting those it is 1622 over the thirteen, 77 to 156 per compile, 93 on `h650_config_region`. Its
+parts are other than this paragraph names. "The all off reset"<!--superseded--> is the restore of the delays saved on
+the remote, section 303, which `start` calls between the boot list and the idle entry; it is the part "on
+every device", one list and four per saved delay. Scan 6's own list, the eight missed, is Help's, and the
+gate is the Remote Assistant's. The rest is a tree of comparisons on the firmware's variables, which
+section 360 builds; none of it is the devices' or the activities' work, as this paragraph supposed. So on
+`h650_config_region` the 93 are 41 lists of the restore, one and four for each of its ten saved delays, 8
+of Help's list, 4 of the gate and 40 of the tree, which is the breakdown by part; the one above, 30, 14, 28
+and 13, was of the 85 and by kind of list, and is not recounted by kind.
 
 ### What it corrects
 
@@ -47675,7 +47687,7 @@ start.** All 63992 text draws of the 24 Harmony 600, 650 and 700 compiles in the
 screen program of each: the 22, 60370 draws, the French `h650_issue8_config`, 2239, and
 `harvest_650_two_devices`, 1383, a Logitech compile of a Harmony 650 with two devices and no activities,
 which is not among the 22 because section 356 refuses a configuration with no activities and this pass
-refuses its wiring, below. Section 334 measured it on menu pages, 336 on start up screens and 357 inside the
+refuses its wiring, below; since section 360 reads that wiring, the pass refuses it at its menus instead. Section 334 measured it on menu pages, 336 on start up screens and 357 inside the
 firmware's screens; each is this rule seen from inside one builder. Because it is the configuration's, the
 pass generates the form of the texts it leaves out too: a text on a built screen can be the first copy a left
 out text points at, or the other way round.
@@ -47787,7 +47799,10 @@ by reference before any copy of it is drawn inline. **A configuration whose firm
 reader cannot read is refused as one**, where it used to fall through with that reader's own error:
 `harvest_650_two_devices`, whose location variable differs between two places, and `h650_bench_4_2_base`,
 the region read of `todo-compile-650.md` 4.2, where a wiring list runs past the end of its section, which was
-"read at offset 7 is outside a 7 byte buffer" and is now that message inside a refusal.
+"read at offset 7 is outside a 7 byte buffer" and is now that message inside a refusal. **Changed by section
+360**, which reads the wiring of a configuration with no activities: the location variable differed because
+scan 4's list there enters the "add Activities" placeholder instead of mapping the location. The pass now
+refuses `harvest_650_two_devices` at its menus, "the menus are not read", the refusal section 356 makes.
 
 ### The 7.5 file with every text generated
 
@@ -48121,6 +48136,273 @@ record of a gap longer than a word spelt as maximal words and a remainder under 
 * `packages/codec/test/cataloguereading.test.ts`: the premise counts, the calibration with its control, the
   78, the three devices against the compile with their three controls, `joinedGaps`, and the Harmony 350.
 * `docs/config-format.md`, after the press count paragraphs.
+
+## 360. The lists the firmware's wiring calls are built from a description, and the three left are the delay restore, the Assistant's gate and the Help list of the key read as All Off
+
+**Date:** 9 October 2026. **Status:** confirmed by construction over the 22 arch 14 compiles of sections
+356 to 358 and `harvest_650_two_devices`, 23 in all, with a blind control that blinds everything but the
+frame and the skin, and failing controls; the settings that leave the three carried lists out are a
+reading, in no Logitech compile, and nothing built this way has been written to a remote. Corrects section
+347's count and its naming of the parts in place, and section 358's refusal of the compile with no
+activities. Corrected in place after a sentence audit the same day: the sharing of lists, the rule with no
+activities, the blind control's own control and the scope of three counts. Numbered 359 until the
+infrared section of `todo-process-logitech.md` 2.1 took that number. Checked by an independent blind
+re-measure, below, which agrees and adds the restore's device constant.
+
+**Todo `todo-compile-650.md` 10.2.2.** Section 347 built the firmware's wiring, the front of base slot 10
+and the shared lists every key press runs, and named by index every list those call. This section builds
+that tree in `packages/codec/src/wiring.ts`, on section 347's own describe, build and put back pattern,
+which sections 356 to 358 copied: the new lists are more templates in the same catalogue, `conditionals`,
+so `describeWiring` reads their indices and the few variables they name, `buildWiring` builds them, and
+`withWiring` puts them where Logitech's sat. `checkWiring` is the calibration.
+
+**Sources checked**: this document, sections 140, 286, 303, 314, 329, 333, 335, 340, 345, 347 and 356 to
+358; the 23 compiles. Logitech's client, `RemoteSettingConstants`, knows three settings, `GlowTime`,
+`TiltSensor` and `RemoteAssistant`, and builds no action list: every list here is what Logitech's compiler
+wrote on their server, section 293's reasoned exemption. The firmware was not opened for this. The one
+place a choice here depends on it is leaving the restore out, and what the restore's `07 FFF3` and
+`07 FFF2` do was read on the Harmony 600's 0.2 image in section 303, whose store routines the 650's 0.2
+build holds byte identical, section 282.
+
+### The premise, measured
+
+On `h650_test_config_clean` and on the 7.5 file of `todo-compile-650.md` alike, the wiring built 24 lists
+and called 109 it did not build, following calls out of every built list, every built base slot 9 entry
+and the leading list:
+
+| part | lists | what it is |
+|---|---|---|
+| the restore of saved delays, `start.reset` | 57 | `[07 FFF3, 14 calls, 07 FFF2]`, each call four lists reading one of the seven devices' two delays back out of the settings store, section 303 |
+| the Help list of scan 6, read as All Off's, `allOff` | 8 | entry 1's binding of scan 6, below |
+| the Assistant's gate, `assistantGate` | 4 | the Remote Assistant's branch, section 345 |
+| comparisons on the firmware's variables, the idle entry's two lists, `start`'s last call, the tour's start list | 40 | built now |
+
+Only the restore grows with the devices, a chain of four lists per saved delay, each naming its device's
+store key, so "on every device" in the todo item is the restore, and "the all off reset"<!--superseded--> in section 347 is
+that restore, which `start` calls between the boot
+list and the idle entry. Section 347 counted 85 on `h650_config_region` because it followed calls out of
+lists only and missed the eight entry 1 calls; it is corrected in place.
+
+**What this track's configuration needs** is decided by what each part belongs to:
+
+* **The restore** belongs to saving a delay on the remote, whose only writer is Help's delay fixing
+  screen, `todo-later.md` 3.3.5, which this track leaves out. That item already states the consequence:
+  without restore lists the configuration's delay wins at start. Left out.
+* **The Assistant's gate** belongs to the Remote Assistant, set off for this track, `todo-compile-650.md`
+  4.3.2. Left out, as section 347 already could.
+* **Scan 6's list** is Help's. On `h650_test_config_clean` it compares the flag every activity
+  sets, section 329; then a variable written only by the two lists entering "You will no longer be
+  prompted for fixing activity problems"; then two variables valued 1 to 7, one value per device, each
+  evaluating a value map whose seven cases reach screens such as "LG TV does not seem to switch inputs
+  correctly in activities. Fix it now". Every path that runs neither map ends in `1F FF00|idle`, selecting
+  the idle entry, which is All Off, section 335. So scan 6 is read as the All Off key; it was not pressed
+  on a remote to check. The list is the "Fix it now" wizard All Off offers, `todo-later.md` 3.3.3. Left
+  out.
+* **The rest** every configuration needs, and it is built.
+
+### What is built
+
+Most lists are a pair the compiler emits for one comparison, 28 of the 40 on a Harmony 600 or 650:
+`[1F FB0k, call T]`, loading `k` into the byte register, and `T = [71 form|v, then, else]`, section 140. `v` is one of the firmware's own
+variables 9, 14, 15, 16 and 17, whose numbers are the firmware's and the same on all 23, or one of the
+configuration's: the low battery flag, the tour's mark, and on the Harmony 700 the variable the
+Assistant's gate compares. Timers are named by their place in the table, `1F EB00|k` to start one and
+`1F EA00|k`, read here as stopping one, so a device timer's place moves them as section 347's table does.
+**Within the tree's conditional lists, 40 on a Harmony 600 or 650 and 78 on a Harmony 700, whether call
+sites share a list or each get a list of the same body is per model**, and the generator follows each
+compile. Elsewhere in the wiring sharing is the rule: section 347's own lists are called from many sites,
+`everyKey` from 104 sites on a Harmony 600 or 650 and 109 on a 700 by the blind re-measure's count below, and the send lists and the delay maps'
+callers are shared across activities. Within the tree, shared on all 23: `stopLights`, five callers, and `tour`, two on the 20 with the
+Assistant on. Shared on the seven Harmony 700 compiles as well: `everyKey.on`, two callers, and
+`entry1.0x27.shared` and `entry1.0x24.shared`, four each. Repeated per call site: `lightOn` and
+`lightOnAgain`, one body, on all 23, the three empty activity keys' lists on the compile with no
+activities, and on the Harmony 700 `cycle0` and `entry1.0x23.second`, and six battery comparisons of one
+body. Each list has one name here, so a shared list is one name several templates call and a repeated body
+is several names; `describeWiring` refuses one name at two indices and `buildWiring` two names at one
+index, so a rebuild that equals the compile has its sharing exactly, and all 23 do. `callers.ts` in the
+lab's `work/agent-10-2-2/` counts it. `docs/config-format.md` holds the templates.
+
+The shapes are the same on every compile of a model, and the Harmony 600's are the Harmony 650's. The
+Harmony 700 has its own `everyKey` tree and battery event trees, and its USB leave handler's second call.
+**One rule is one compile's**: with no activity at all, scan 4's front list pushes the "add Activities"
+placeholder instead of mapping the location; `harvest_650_two_devices`, a Harmony 650, is the only such
+compile, and its wiring, refused by section 347's reader because the location variable then read two
+values, now rebuilds. The rule is keyed on the activity count, base slot 9's entry count less six, which
+equals the name tree's activity count on 23 of 23. Three empty activity keys are not the same thing: a root
+button map saved with the keys left out, and `clearActivityKey`, give three empty keys with activities
+present, section 340 does not exclude that, and no compile of it has been read. So a composition with
+activities and every activity key empty is refused, and so is the rule on the Harmony 600 and 700, whose
+compiles with no activity have not been read.
+
+### The measurement
+
+Describe, build, put back, lay out: **23 of 23 come back byte for byte**, 14 Harmony 650, 2 Harmony 600 and
+7 Harmony 700 compiles. The wiring builds 64 lists on a Harmony 600 or 650 and 112 on a Harmony 700, one
+more per empty activity key and two fewer with the tilt sensor off, which rests on one Harmony 650 compile,
+`h650_tilt_off_config`, and is the generator's assumption on the 600 and 700: 898 on the fourteen 650 compiles, 129
+on the two 600 and 789 on the seven 700, 1816 in all. On the thirteen of section 347 that is 1174 lists
+where it was 388, and of the bytes of every piece the wiring builds, 17351 are generated and 6461 are the
+description's, where they were 12533 and 4910.
+
+What the built lists still call, over the 23: the restore, 1183 lists, one and four per saved delay on
+every compile; scan 6's Help list, 8 on every compile, 184; the Assistant's gate, 4 on each of the 20
+with the Assistant on, 80; and on each Harmony 700 one list, 7, its USB leave handler's first call, which
+is "USB Connected"'s `cleared` and section 357 builds. Nothing else. **The settings the 23 carry**: the
+tour shown on `h650_config_region`, `calibration_h600` and `h650_issue36_config`; the Assistant off on
+`h600_config`, `h650_assistant_off_config` and `h650_tilt_off_config`; the restore and Help on all 23; no
+activity on `harvest_650_two_devices` alone.
+
+**The blind control**, and what it blinds. Two layouts of each file are taken apart. In the one the
+description reads, **every byte of every piece is set to `0xEE`**, the carried lists, the screens and the
+rest of the configuration included, except the bytes the built pieces' `described` marks: 10755 bytes
+are left over the 23, and 23268672 others changed. In the one the rebuild is written into, every unmarked
+byte of the pieces the wiring builds is blinded too, as section 347's control does, so nothing generated
+passes through. **The rebuild still equals the compile on 23 of 23.** **Not blinded, and so still read,
+are the frame and the skin**: which piece each table entry points at, which is how the description finds a
+list by its index; each piece's length; and each table's entry count, among them base slot 9's, which is
+the activity count, and base slot 12's, which says how many timers there are and so how many are the
+firmware's. `takeApart` reads all of that before any byte is looked at, so a blind control at this level
+cannot reach it. **The control's own control is a refusal, not a differing rebuild**: with the mark on
+scan 6's opcode in entry 1 removed, the description reads Help off a blinded byte, takes the idle entry's
+other form, and finds the idle entry at one index from the mode table and another from that binding, so it
+refuses while reading, `entry "idle" is 8 in one place and 47 in another` on `h650_test_config_clean`, and
+likewise on all 23, which the test asserts. The rebuild never differs; nothing gets that far.
+
+**The independent check.** The blind re-measure, given the question and the 23 and not this text, in
+the lab's `work/review-360-blind/`, agrees on the counts the section rests on: base slot 9 holds the
+activities and six more on 23 of 23; `start` is the boot list, the restore, the selection of the entry this
+section calls idle and the USB check; the restore is `2 + 2d` instructions for `d` devices, each call a
+chain of four lists, so `1 + 8d` lists, which is 57 on `h650_test_config_clean` and 41 on
+`h650_config_region`; scan 6's list is a chain of eight whose paths end selecting that entry or at a per
+device "does not seem to switch inputs" or "turn on correctly ... Fix it now" screen, `8 + 2d` with the
+screens' value maps; and what the leading list reaches is `30 + 8d` on a Harmony 600 or 650, `26 + 8d`
+with the Assistant's gate replaced by a map, and `40 + 8d` on a Harmony 700. Across every reachable list it
+finds sharing the norm: `boot` called from 4 sites, `events` from 9, 10 on the 700, `everyKey` from 104,
+109 on the 700 and 103 with the tilt sensor off, `elevenKeys` from 11 and `quiet` from 2 or 3, with send
+lists shared across activities and the delay maps' callers per device; the byte identical bodies it finds
+are mostly `[71 v, 7F map caller]`, one per send list. Those counts are the re-measure's and not reproduced
+here; they are why the sharing statement above is scoped to the tree.
+
+It measured two things this section had not. **The restore's device constant**: every restore leaf is
+`[7A K, 0F FF40 or FF41, 1F ED00|v]`, and `K` is the device identifier's last five decimal digits, or its
+last four where five would exceed 65535, on **290 of 290 leaves over the 23**: 44063548 gives 63548,
+92595307 gives 5307. Section 303 found the last four digits fitting some configurations and the last five
+others and left the key unconfirmed; this one rule fits both. Reproduced here, `restorekey.ts` in
+`work/agent-10-2-2/`. Nothing builds on it, since the restore is left out; `todo-later.md` 3.3.5 is where
+it would be used. **The restore's device order** is ascending by identifier on 20 of the 23 and not on
+`h600_config`, `h700_config` and `h700_config_2`; what orders those three is unread.
+
+**Failing controls**, by `checkWiring` on `h650_test_config_clean`, which passes the unedited compile
+over 64 lists and 6 entries:
+
+| edit | refusal |
+|---|---|
+| `events.1.test` comparing variable 17 where the compiler compares 16 | differs in that list |
+| `elevenKeys.again` starting timer 3 where the table puts the screen light again at 4 | differs in that list |
+| `idleEnter.first.test`'s one armed comparison of the tour's mark made two armed | differs in that list |
+| the two arms of `everyKey.1.test` swapped | the description follows them, so the two lists they name come out with each other's bodies, and differs there |
+| `elevenKeys.again` calling `stopLights`, which five lists call, one index on | refused while reading: `stopLights` is two indices |
+
+### This track's configuration
+
+Three settings drop the three carried lists, each the reading above and in no Logitech compile; MyHarmony
+offers only the Assistant among them:
+
+* `delayRestore` off: `start` is `[call boot, 1F FF00|idle, call start.last]`, one call shorter, and the
+  configuration does not touch the store at start. An empty restore, `[07 FFF3, 07 FFF2]`, was the
+  alternative and is not taken, since by section 303's reading of the two operations it would erase every
+  slot no read marked at every start; that reading was not exercised here.
+* `remoteAssistant` off: the quiet list, the idle resume and `idleEnter.second` evaluate the location map
+  instead of calling the gate, as the three compiles with it off do. Refused on a Harmony 700, whose USB
+  leave handler compares the Assistant's variable and of which no compile with it off has been read.
+* `help` off: entry 1 binds scan 6, read as All Off's, to `1F FF00|idle` itself, and the idle entry binds no Help
+  release, `0x43`, or hold, `0xC3`, so the help hold list and the Delay Fixing mode are not named.
+
+On `h650_test_config_clean` that configuration is 11 bytes shorter, one instruction of `start` and two
+narrow bindings of the idle entry; its own description reads the three settings back off it and rebuilds
+it byte for byte, and its wiring calls nothing it does not build, which the test asserts as an empty count
+of carried lists.
+
+### The 7.5 file recomposed
+
+`make-10-2-2.ts` in the lab's `work/agent-10-2-2/` composes the 7.5 file as `work/bench-7-5/make.ts` does,
+which gives that file back byte for byte, 998210 bytes, then rebuilds its wiring twice. **With the
+description read off it**, the wiring comes back byte for byte: the 40 lists Logitech's starting compile
+carried there are now generated and equal. **With this track's three settings**, the result is 998199
+bytes, **11 shorter**: `start` loses its call of the restore, 3 bytes, and the idle entry its two Help
+bindings, 8; the quiet list, the idle resume and `idleEnter.second`'s last list change a call for a map of
+the same length, and entry 1 a call for a select. `checkWiring` and the checks of sections 356, 357 and
+358 all pass on it. Against `h650_test_config_clean` `compareViews` finds no difference with the menu
+order not counted and, counted, the four labels of the activity menu sections 356 to 358 found; against
+the 7.5 file it finds none. That comparison reads the setup's keys, starts and screen pages and not the
+wiring, so it shows that nothing a person sees on those screens changed, and says nothing about All Off's
+wizard, Help while no activity runs, the Assistant or the restore, which are what changed.
+
+**What stays in the file**: 70 lists, 676 bytes, that the starting compile named are named by nothing
+now: the restore's 57, scan 6's Help list's 8, the gate's 4 and the help hold list. That is relative to a
+walk over every instruction in action lists, mode
+key maps, page lists and their copies, base slot 9, the timers, the state transitions, the value maps'
+payloads and the leading list, dropping lists until nothing changes; by that same walk 712 of the file's
+9318 lists were already named by nothing before, and are not counted. They stay because base slot 10's
+numbering is still the description's, so leaving a list out of an existing container would renumber
+every list after it; a container built from a description, `todo-compile-650.md` 10.6, numbers its lists
+itself and need emit none of them. The Assistant's first screen, mode 246 in that file, is entered only
+from the gate's list, so nothing named reaches it. Help's screens are still reached from Logitech's
+activities in that file, which bind Help.
+
+### What the description carries, and so what is still read
+
+* every list's index, base slot 10's numbering, as section 347 left it;
+* the low battery flag, the tour's mark, Off's mode, the location variable and map, and on the Harmony 700
+  the Assistant's variable and the USB leave handler's map; the tour's first screen where it is shown;
+* the three new settings, read off `start`'s second instruction, the tour's second and entry 1's binding
+  of scan 6;
+* the activity count, base slot 9's entry count less six, which is the frame's.
+
+### Scope, decision 16
+
+Arch 14 only, the Harmony 600, 650 and 700, every template measured on its own model's compiles: 14
+Harmony 650, 2 Harmony 600 and 7 Harmony 700. The rule with no activities rests on one Harmony 650
+compile and is refused on the 600 and 700, and so is a composition with activities and every activity key
+empty. Two fewer lists with the tilt sensor off rests on one Harmony 650 compile. The three settings off
+are in no compile of any model, and the Harmony 700 with the Assistant off is refused. Arch 12 (Harmony
+One) and arch 9 (Harmony 525) were not compared. Refused as before: the European skins.
+
+### What this does not establish
+
+* That the remote runs a configuration with the restore, the gate or scan 6's Help list left out as the
+  reading says: nothing was written. The bench check is that All Off switches off without offering a
+  wizard, that the remote starts with no restore, and that Help pressed with no activity running does
+  nothing.
+* That the restore's device constant rule holds beyond these 23, and what orders the restore's devices
+  on the three where it is not ascending.
+* What variables 9, 14, 15, 16 and 17 hold, what `1F E8xx`, `1F E9xx` and `07 FFF6` do, and that
+  `1F EA00|k` stops a timer: the tree is built from its shapes, not its meaning.
+* That scan 6 is the key printed All Off: read from what its list selects, and
+  `reference/remotes/harmony-650/keys.md` lists All Off's scan as unmeasured.
+
+### Falsification
+
+An arch 14 Logitech compile whose wiring does not rebuild byte for byte, or whose rebuild from the blinded
+description differs; one whose wiring calls a list outside the three carried and section 357's; a
+Logitech compile with no activities whose scan 4 list maps the location.
+
+### Where it lands
+
+* `packages/codec/src/wiring.ts`: `conditionals`, the settings `tourShown`, `delayRestore` and `help`, the
+  `stop` and `test` instructions, `ALL_OFF_SCAN`, `FIXED_ENTRIES`, the activity count, `listNames`,
+  `checkWiring`, and the refusals of a Harmony 700 with the Assistant off and of the rule with no
+  activities where it is not read.
+* `packages/codec/src/screentexts.ts`: `menusOf`, the refusal of a configuration whose menus are not read,
+  where the compile with no activities is refused now.
+* `packages/codec/test/wiring.test.ts`: the thirteen's and section 347's corrected counts, the 23 byte for
+  byte per model, the settings and the activity count, the blind control and its refusal, the carried
+  lists, this track's configuration, the five failing controls, the refusals of the rule with no activities
+  and the Harmony 700 refusal; `screentexts.test.ts`'s refusal of the compile with no
+  activities at its menus.
+* `docs/config-format.md`, "The firmware's own wiring on arch 14", and the restore's key in section 303's
+  delay table.
+* `todo-later.md` 3.3.5.1: the restore's device constant rule and order, for when the restore is built.
 
 ## 361. A family spelt otherwise than its definition is found by Logitech's own protocol id, and a code the family's whole block does not take is built from the definition
 

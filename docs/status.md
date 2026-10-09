@@ -571,7 +571,7 @@ finding.
 
 `todo.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 360<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 361<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and flash has been written on five units**, the first in section 222:
@@ -1012,6 +1012,21 @@ broken over two lines where Logitech draws it on one, because the limit was set 
 evidence allowed. The new limit is measured on the Harmony 650 and assumed for the 600 and 700. Not
 generated: the letters and fonts themselves, `todo-compile-650.md` 8.2, and the texts on help, the Remote
 Assistant, the tour and the status screens, which are not built.
+
+**The remote's own wiring calls nothing copied any more in the configuration this track builds, section
+360.** The lists behind the remote's own events, the screen light, the battery screens and starting up
+are a tree of small tests on the firmware's own settings, 40 lists on a Harmony 650, and they are generated
+now; 23 of Logitech's compiles, the one with no activities among them, come back identical, again with
+every byte but the few the description reads blanked first, apart from the file's frame, which says where
+each piece sits and how long it is, and the model. Three lists the wiring calls are not built, because each
+belongs to something this track leaves out: putting back delays saved on the remote, the Remote
+Assistant's check, and what the key read as All Off's runs first so Help can offer to fix a device that did
+not switch inputs. Left out, the configuration does not touch the remote's saved delays at start and that
+key switches straight off; that is a reading of the files, in none of Logitech's, and not yet tried on the
+650. The test setup recomposed that way is 11 bytes shorter and shows nothing different on the menus, start
+screens and keys the comparison reads; it says nothing about the All Off wizard, Help, the Assistant or
+the restore, which are what changed. Section 347's count of what it did not build missed that key's eight
+lists, and is corrected.
 
 **A Harmony One's activity menu can now grow a page, section 293.** Its menu shows three activities to
 a page, and a fourth used to be refused. Now it opens a new page, and the menu says so in the three
