@@ -1144,5 +1144,112 @@ class TheHarmony700HasTheSamePollAtItsOwnAddresses(unittest.TestCase):
         self.assertEqual(H600_VERDICT_BIT, 2)
         self.assertEqual(H600_SELECT_BIT, 4)
 
+
+class OnTheHarmony600And650NoStatusScreenIsDrawnFromTheConfiguration(unittest.TestCase):
+    """Section 355: the configuration's thirty status screens, as far as the code reads, are never drawn.
+
+    Every lookup of a configuration section goes through `0x18020` with the section's number stored
+    into `0x6DA` first, and every such store is a literal: base slot 4, the event map, is named once,
+    inside the walker `0x14BA4` that only the status screen routine `0x14B3C` calls. That routine is
+    asked for five codes, and each is asked for with the built in status screens selected, or, for
+    Application Terminated, behind a state the main loop never leaves at its head.
+    """
+
+    IMAGES = ('h600_code_complete', 'h650_bench_code')
+
+    def _images(self):
+        for name in self.IMAGES:
+            lab.require(name)
+            yield name, _instructions(name, 0x9000)
+
+    @staticmethod
+    def _callers(instrs, target):
+        return [a for a, i in instrs if i.mnemonic in ('CALL', 'RCALL', 'GOTO', 'BRA')
+                and i.fields.get('target') == target]
+
+    def _stores(self, instrs):
+        """Every store into the section number `0x6DA` in bank 6, with the literal before it or None."""
+        out, bsr = [], None
+        for k, (address, instr) in enumerate(instrs):
+            if instr.mnemonic == 'MOVLB':
+                bsr = instr.fields['k']
+            if instr.mnemonic == 'MOVWF' and instr.fields['f'] == 0xDA and instr.fields['a'] == 1 and bsr == 6:
+                prior = instrs[k - 1][1]
+                out.append((address, prior.fields['k'] if prior.mnemonic == 'MOVLW' else None))
+        return out
+
+    def test_every_section_lookup_names_its_section_as_a_literal_and_the_event_map_once(self):
+        for name, instrs in self._images():
+            with self.subTest(image=name):
+                stores = self._stores(instrs)
+                self.assertEqual(len(stores), 19)
+                self.assertNotIn(None, [literal for _, literal in stores])
+                self.assertEqual([address for address, literal in stores if literal == 4], [0x14BB2])
+
+    def test_only_the_status_screen_routine_walks_it_and_nothing_else_seeks_the_pointer_table(self):
+        for name, instrs in self._images():
+            with self.subTest(image=name):
+                self.assertEqual(self._callers(instrs, 0x14BA4), [0x14B4A, 0x14B6C])
+                # The seek's six callers: the validator's five, at offsets 0, 0x5B, 4, 4 and 0, and
+                # the section lookup. None of those offsets is a pointer table entry, 0x0B + 4 * slot.
+                self.assertEqual(len(self._callers(instrs, 0x18008)), 6)
+                self.assertIn(0x18032, self._callers(instrs, 0x18008))
+
+    def test_the_seek_reads_the_configuration_with_the_select_bit_set_and_the_status_screens_without(self):
+        for name, instrs in self._images():
+            with self.subTest(image=name):
+                by_address = dict(instrs)
+                test = by_address[0x1800A]
+                self.assertEqual((test.mnemonic, test.fields['f'], test.fields['b']), ('BTFSS', 0x8B, 4))
+                self.assertEqual(by_address[0x1800E].fields['k'], 0x03)
+                self.assertEqual(by_address[0x18012].fields['k'], 0x02)
+
+    def test_the_status_screen_routine_is_asked_for_five_codes_at_five_sites(self):
+        for name, instrs in self._images():
+            with self.subTest(image=name):
+                sites = [k for k, (a, i) in enumerate(instrs)
+                         if i.mnemonic == 'CALL' and i.fields['target'] == 0x14B3C]
+                self.assertEqual([instrs[k][0] for k in sites], [0x14F50, 0x14F76, 0x151BE, 0x15408, 0x15414])
+                codes = []
+                for k in sites:
+                    # The code is the last value stored into 0x0B5 before the call: a literal, or a clear.
+                    for _, prior in reversed(instrs[k - 6:k]):
+                        if prior.mnemonic == 'CLRF' and prior.fields['f'] == 0xB5:
+                            codes.append(0)
+                            break
+                        if prior.mnemonic == 'MOVLW':
+                            codes.append(prior.fields['k'])
+                            break
+                self.assertEqual(codes, [22, 27, 25, 26, 0])
+
+    def test_battery_adc_is_asked_for_after_the_select_bit_is_cleared_and_missing_license_after_the_verdict(self):
+        for name, instrs in self._images():
+            with self.subTest(image=name):
+                by_address = dict(instrs)
+                select = by_address[0x14F32]
+                self.assertEqual((select.mnemonic, select.fields['f'], select.fields['b']), ('BCF', 0x8B, 4))
+                # Nothing between that clear and code 22's call sets the select bit again.
+                between = [i for a, i in instrs if 0x14F32 < a < 0x14F50]
+                self.assertFalse([i for i in between if i.mnemonic == 'BSF' and i.fields['f'] == 0x8B])
+                verdict = by_address[0x14F6C]
+                self.assertEqual((verdict.mnemonic, verdict.fields['f'], verdict.fields['b']), ('BCF', 0x8B, 2))
+                self.assertEqual(by_address[0x14F6E].fields['k'], 27)
+
+    def test_application_terminated_sits_behind_the_sleep_state_which_is_cleared_before_the_loop_head(self):
+        for name, instrs in self._images():
+            with self.subTest(image=name):
+                by_address = dict(instrs)
+                # The loop head tests the state for 2 and branches to the code 25 call.
+                self.assertEqual(by_address[0x14FBA].fields['k'], 2)
+                self.assertEqual(by_address[0x14FC2].fields['target'], 0x151B6)
+                # Its only predecessors: the fall through from a clear, and the branch after a clear.
+                self.assertEqual(by_address[0x14FB8].mnemonic, 'CLRF')
+                self.assertEqual(self._callers(instrs, 0x14FBA), [0x151B4])
+                self.assertEqual(by_address[0x151B2].mnemonic, 'CLRF')
+                # And 2 is the sleep state: the dispatch sends it to the handler that sleeps.
+                self.assertEqual(by_address[0x150E0].fields['target'], 0x15190)
+                self.assertEqual(by_address[0x1938A].mnemonic, 'SLEEP')
+
+
 if __name__ == '__main__':
     unittest.main()

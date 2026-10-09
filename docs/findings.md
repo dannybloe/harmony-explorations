@@ -47135,3 +47135,86 @@ sections 249, 253, 257, 282 and 347; Logitech's client does not validate a conta
 * `packages/codec/test/relocate.test.ts`: the validator's checks computed from the firmware rather than
   the codec's parser, checksum included, on the probe and the 6.2.13 file, with the probe's figures
   pinned, and one byte of the end marker or the body changed giving the third marker and the checksum.
+
+## 355. The Harmony 650 draws none of a configuration's thirty status screens, as far as its code reads
+
+`todo-compile-650.md` 7.1.5, code only: which screens a person sees that no key leads to. Section 354
+found the remote refuses nothing that carries the three markers, so what decides which screens a
+configuration needs is what the firmware itself draws out of it. Two groups are candidates: the thirty
+status screens reached through base slot 4, the event map, and the firmware's own screens at the front
+of base slot 6, fourteen on the 650, section 347.
+
+**Sources:** the Harmony 650's 0.2 build and the Harmony 600's 0.2 build, which are byte identical at
+every address cited here, and sections 249, 257, 285, 286, 326, 347 and 354. Logitech's client draws nothing
+on a remote.
+
+### The event map has one interpreter
+
+Every lookup of a configuration section goes through `0x18020`, which takes the section's number in
+`0x6DA`, seeks `0x0B + 4 * number` through `0x18008` and follows that slot's pointer. **On both builds
+there are 19 stores into `0x6DA` and every one is a literal**, so which sections the firmware reads is
+fixed in the code. `0x18008` has six callers, `0x18020` and the validator's five seeks, at offsets 0,
+`0x5B`, 4, 4 and 0, none of them a pointer table entry. Base slot 4 is named once, at `0x14BB2`, inside
+the walker `0x14BA4`, which only the status screen routine `0x14B3C` calls. Apart from the validator's
+checksum walk, which reads every byte without interpreting any, nothing else reads the event map.
+
+**Which container a screen comes from is the select bit's**, `0x68B` bit 4: `0x18008` reads the
+configuration at `0x030000` with it set and the built in status screens at `0x020000` with it clear.
+The status screen routine walks with the bit as it finds it while the configuration's verdict, bit 2,
+is set; with the verdict clear it clears the select bit itself, or, when the status screens failed
+their own check (bit 1 clear), calls `0x14B18`, which draws no container's screen.
+
+The routine is asked for **five codes at five call sites**, and none of them reaches the configuration:
+
+| code | screen | why it is not drawn from the configuration |
+|---|---|---|
+| 22 | Battery ADC Not Calibrated | asked for at start, right after `0x14F32` clears the select bit to validate the status screens, and nothing sets it again before the call, so the walk reads `0x020000` whatever the verdict |
+| 27 | Missing License | `0x14F6C` clears the verdict right before asking |
+| 26 | Configuration Corrupted | asked for only with the verdict clear, at the end of the validator, section 354 |
+| 0 | Go to Website to update settings | the same |
+| 25 | Application Terminated | behind the main loop's state `0x740` being 2 at the loop head, `0x14FBA`; but 2 is the sleep state, which the dispatch at `0x150DC` sends to `0x15190`, whose sleep at `0x1938A` is followed by `0x151B2` clearing the state before it branches back to the loop head. No instruction leaves 2 there, so the call looks unreachable on these builds; an indirect write through a computed pointer was not excluded |
+
+**So no status screen in a 650 configuration is drawn, as far as the code reads**, and the one route
+left open is "Application Terminated" through a write the reading has not excluded. Section 285's
+reading of `0x740`, the mode variable with 3 meaning restart, agrees. When no entry matches, the walker
+would draw the event map header's default instead, so that is the other thing the open route touches.
+
+### The firmware's own screens are the configuration's to enter
+
+The fourteen screens at the front of base slot 6 (USB Connected, Low Battery, Insert batteries, Unable
+to charge, Update and Upgrade Successful, Ready to learn, Command Received, Terminate Entry, the two "add
+an Activity" screens and three blanks, section 347's table) are never entered by number. The routine
+that makes a mode current takes its number from an action list operand, the mode stack, or the event
+map walker, section 326's table of its callers. They are entered by the configuration's own lists,
+through base slot 8's leading list and base slot 9's event bindings, both of which `buildWiring` already
+generates byte for byte, section 347. The firmware starts the leading list's entry 1, `start`, by a
+literal at `0x1543E`; every other entry is started at `0x0F3A4` or `0x0F3CE` with an index from the
+operand of the instruction being run, and `0x0F32C` is the only lookup of base slot 8. **What a person
+sees of these fourteen is decided by the configuration's wiring**, which our composer copies from
+Logitech's form.
+
+### What this means for 7.4
+
+The standard screens a 650 configuration has to carry are the fourteen the wiring enters and the screens
+the configuration's own lists reach, the Remote Assistant and the tour among them, section 286. The
+thirty status screens behind the event map are not drawn by the firmware as read, so building them is
+not needed for anything a person sees; whether the event map can be cut down or left out is a
+separate question, untested, and nothing here was tried on a remote.
+
+### Scope
+
+Arch 14 on the Harmony 600's and 650's 0.2 builds. The Harmony 700's 2.8 build has the same validator
+structure at other addresses, section 257, and was not read for this; arch 12 (Harmony One) and arch 9
+(Harmony 525) were not read. Nothing was measured on a remote: no status screen was raised on purpose.
+
+### What this does not establish
+
+* That no indirect write leaves `0x740` at 2 for the loop head.
+* Which instructions start leading list entries 0 and 2 to 10, and so the full route to each of the
+  fourteen.
+* Whether the remote tolerates a configuration whose event map or status screens are cut down.
+
+* `tests/test_status_screens.py`: `OnTheHarmony600And650NoStatusScreenIsDrawnFromTheConfiguration`, the
+  19 literal section lookups with base slot 4 named once, the walker's two callers, the seek's six
+  callers, the five call sites and their codes, the select bit cleared before code 22, Missing License
+  clearing the verdict, and the sleep state cleared before the loop head, on both builds.
