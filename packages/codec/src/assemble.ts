@@ -1,6 +1,6 @@
 /**
  * A setup description in, a whole container out: `todo-compile-650.md` 10.6, `docs/findings.md` sections
- * 362 and 363.
+ * 362 and 364.
  *
  * Until this module a configuration of ours was a chain of lab scripts, each starting from a Logitech
  * compile and replacing a part: the 6.2.13 file's composers, then the 7.5 file's three screen passes,
@@ -30,17 +30,18 @@
  * 5. the idle device list, the activity menu in the setup's order and Off, section 356;
  * 6. the firmware's own screens, section 357;
  * 7. every text, section 358;
- * 8. the firmware's wiring with the settings, sections 347 and 360;
- * 9. the state variables, value maps and name tree, section 324;
- * 10. mode 0's key list, section 315;
- * 11. **drops every action list the donor named and the result names by nothing**, renumbering every
+ * 8. the six pictures a rule draws, section 363;
+ * 9. the firmware's wiring with the settings, sections 347 and 360;
+ * 10. the state variables, value maps and name tree, section 324;
+ * 11. mode 0's key list, section 315;
+ * 12. **drops every action list the donor named and the result names by nothing**, renumbering every
  *     list after it, which no step before could do since each put its pieces back at the donor's
  *     numbering: with the wiring's three settings off that is the 70 lists section 360 counted;
- * 12. moves what the composers parked where Logitech's compiler parks nothing into the body, places
+ * 13. moves what the composers parked where Logitech's compiler parks nothing into the body, places
  *     what is parked in front of a table and the picture bank, section 328, and lays the frame out,
  *     section 318.
  *
- * **What it cannot do yet, measured in section 363.** An activity's working screen is not in the setup
+ * **What it cannot do yet, measured in section 364.** An activity's working screen is not in the setup
  * file, which is the platform's soft button list and a person's choice, section 323, so it is an input of
  * its own, `options.screens`, named rather than read off a Logitech file. And the composers need a donor
  * that already holds an activity: on `harvest_650_two_devices`, the smallest Harmony 650 compile in the
@@ -75,6 +76,7 @@ import {
   buildWiring, builtPieces, checkWiring, describeWiring, withWiring, wiringModelOfSkin, type WiringSettings,
 } from './wiring.ts';
 import { modeZeroKeyList } from './modezero.ts';
+import { checkPictures, describePictures, withPictures } from './pictures.ts';
 import {
   activityEntriesByName, buildScreenRecords, checkScreenRecords, describeScreenRecords, inActivityOrder,
   withScreenRecords,
@@ -606,7 +608,9 @@ export function assembleSetup(setup: SetupDescription, options: AssembleOptions)
     try {
       c = composeSetupActivity(c, setup, activity, options, labelOf, powerOf, composedDevices);
     } catch (error) {
-      if (error instanceof ComposeError) throw new AssemblyError(`composing ${activity.name}: ${error.message}`);
+      if (error instanceof ComposeError || error instanceof AssemblyError) {
+        throw new AssemblyError(`composing ${activity.name}: ${error.message}`);
+      }
       throw error;
     }
     composed.activities.push(activity.name);
@@ -633,7 +637,12 @@ export function assembleSetup(setup: SetupDescription, options: AssembleOptions)
   c = parse(layOutContainer(withScreenTexts(layout, buildScreenTexts(texts.spec, c), texts.place)).bytes);
   note('texts');
 
-  // 8. The wiring, with the settings.
+  // 8. The pictures a rule draws, section 363; the artwork and any picture its table does not know stay.
+  layout = takeApart(c);
+  c = parse(layOutContainer(withPictures(layout, describePictures(layout))).bytes);
+  note('pictures');
+
+  // 9. The wiring, with the settings.
   layout = takeApart(c);
   const wiring = describeWiring(layout);
   if (wiringModelOfSkin(skin) !== wiring.model) throw new AssemblyError('the wiring reads another model than the skin names');
@@ -641,12 +650,12 @@ export function assembleSetup(setup: SetupDescription, options: AssembleOptions)
   c = parse(layOutContainer(withWiring(layout, built)).bytes);
   note('wiring', JSON.stringify(settings));
 
-  // 9. The state tables.
+  // 10. The state tables.
   layout = takeApart(c);
   c = parse(layOutContainer(withStateTables(layout, buildStateTables(describeStateTables(layout)))).bytes);
   note('state tables');
 
-  // 10. Mode 0's key list, after the end marker.
+  // 11. Mode 0's key list, after the end marker.
   // The piece is written in place, since base slot 6's table names it as mode 0's record: a new object
   // would leave that address naming a piece the layout no longer holds.
   layout = takeApart(c);
@@ -658,14 +667,14 @@ export function assembleSetup(setup: SetupDescription, options: AssembleOptions)
   c = parse(layOutContainer(layout).bytes);
   note('mode 0');
 
-  // 11. The lists the donor named and nothing names now. Below the wiring's front nothing is dropped.
+  // 12. The lists the donor named and nothing names now. Below the wiring's front nothing is dropped.
   const namedAfter = namedLists(c);
   const orphans = [...namedBefore].filter((index) => !namedAfter.has(index));
   const dropped = dropLists(c, orphans, built.frontLength);
   c = parse(dropped.bytes);
   note('lists dropped', `${dropped.dropped.length} lists, ${dropped.length} bytes, ${dropped.renumbered} sites renumbered`);
 
-  // 12. Placement and the frame.
+  // 13. Placement and the frame.
   if (options.place !== false) {
     const into = composedIntoBody(takeApart(c));
     c = parse(layOutContainer(placePieces(loosen(into.layout)).layout).bytes);
@@ -725,10 +734,11 @@ function composeSetupActivity(
     // A device with one input that does not step has no input variable, and Logitech's compiler writes
     // none for it, section 321: the input named is the only one there is.
     if (names === undefined && variable === undefined) return { group, roles: one.roles };
+    // Logitech's compile of the smallest donor gives its television no input variable at all, where the
+    // catalogue lists ten inputs, so that is said apart from an input name the catalogue does not know.
+    if (variable === undefined) throw new AssemblyError(`${one.device} has no input variable here to put on ${one.input}`);
     const value = names?.indexOf(one.input) ?? -1;
-    if (variable === undefined || value < 0) {
-      throw new AssemblyError(`${one.device} has no input called ${JSON.stringify(one.input)}`);
-    }
+    if (value < 0) throw new AssemblyError(`${one.device} has no input called ${JSON.stringify(one.input)}`);
     if (own !== undefined) {
       const target = inputTarget(own, one.input);
       if (target.value !== value) throw new AssemblyError(`${one.device}'s ${one.input} is ${target.value} to its composer and ${value} by its place`);
@@ -860,6 +870,7 @@ export function checkAssembled(c: Container): void {
   checkScreenRecords(c);
   checkFirmwareScreens(c);
   checkScreenTexts(c);
+  checkPictures(c);
   const layout = takeApart(c);
   const rebuilt = layOutContainer(withStateTables(layout, buildStateTables(describeStateTables(layout)))).bytes;
   if (!sameBytes(rebuilt, c.blob)) throw new AssemblyError('the state tables do not rebuild from their description');
@@ -918,7 +929,7 @@ export function compareDrawnTexts(a: Container, b: Container): { text: string; a
  */
 export const ATTRIBUTIONS = [
   'frame', 'addresses', 'description', 'mode 0', 'wiring', 'state tables', 'screen records', 'firmware screens',
-  'texts',
+  'texts', 'pictures',
 ] as const;
 export type Attribution = (typeof ATTRIBUTIONS)[number];
 
@@ -994,6 +1005,15 @@ export function attributeBytes(c: Container): AttributedBytes {
   const texts = describeScreenTexts(c, layout);
   markSet(texts.described, 'description');
   markSet(texts.structure, 'texts');
+
+  // The pictures a rule draws, where they are byte for byte the built ones, section 363.
+  checkPictures(c);
+  const laidPictures = layOutContainer(layout);
+  for (const one of describePictures(layout)) {
+    if (one.entry?.source !== 'rule') continue;
+    const at = laidPictures.offsetOf(one.piece);
+    if (at !== undefined) mark(at, one.piece.bytes.length, 'pictures');
+  }
 
   // Every address field no generator laid: the frame's, inside a piece otherwise carried.
   for (const p of pointers(c)) mark(p.at, 3, 'addresses');

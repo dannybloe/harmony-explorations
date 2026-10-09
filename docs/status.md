@@ -1024,7 +1024,7 @@ line, the start up picture, the corner mark and four firmware screen pictures ar
 are not written into this repository, and a configuration still takes them from a Logitech compile until it is
 decided where they come from. The cross is not simply a line drawn over the plain curved background either:
 the two differ in 98 pixels beside it, each one colour step off. Two black dotted pictures belong to Help's delay screens and are left out with
-Help. The assembly of section 362 does not use the built six yet; that is one more step after its texts.
+Help. The assembly of section 362 builds the six since section 364, one more step after its texts.
 
 **The remote's own wiring calls nothing copied any more in the configuration this track builds, section
 360.** The lists behind the remote's own events, the screen light, the battery screens and starting up
@@ -1056,6 +1056,20 @@ the rest is Logitech's, and most of that is pictures, infrared codes and fonts. 
 still needs that no step names**: a starting file with no devices and no activities, since nothing here can
 take one out, and a setup file that says what goes on an activity's screen, which today's does not.
 Measured on the Harmony 650 only, and not written to a remote.
+
+**The assembly now composes what the starting file lacks, section 364.** It adds every device and activity
+the setup names that the Logitech file it starts from does not hold, with the composers that built the bench
+files, and builds the six pictures of section 363. Started from Logitech's compile of the four activities,
+it composes Plasma kijken from the setup file and comes out as the file the lab's scripts composed, byte for
+byte but the date it was built, and shows a person what Logitech's own compile of the setup shows, the
+menu's order aside. The one thing the setup file does not say is what goes on an activity's screen, so that
+is handed in beside it; without it, the activity's four screen items are missing and nothing else.
+**The smallest Logitech file in the lab, two devices and no activity, takes none of it**: the device
+composer finds the device list through the activity menu, which that file has not got; its fonts lack a K
+and the word Eject; and the activity composer needs another activity to tell its records apart. So the
+finish line needs either a way to take devices and activities out of a file, or a starting file built from
+nothing that already has a menu, plus the fonts and the eleven designed pictures. About one byte in nine is
+ours as content now, and one in five and a half with the addresses we rewrite.
 
 **A Harmony One's activity menu can now grow a page, section 293.** Its menu shows three activities to
 a page, and a fourth used to be refused. Now it opens a new page, and the menu says so in the three

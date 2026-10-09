@@ -1,5 +1,5 @@
 /**
- * A setup description and a donor in, a whole container out: `todo-compile-650.md` 10.6, section 362.
+ * A setup description and a donor in, a whole container out: `todo-compile-650.md` 10.6, sections 362 and 364.
  *
  * **Three things are measured here.** The list census a renumbering of base slot 10 rests on, over 22
  * Logitech compiles of the Harmony 600, 650 and 700: dropping every list they reach by nothing changes
@@ -7,14 +7,15 @@
  * holder, every holder naming lists a drop moves. The assembly of the Harmony 650's test setup with Logitech's clean compile as the donor:
  * what it drops, what a person sees against the donor and against the 10.2.2 composition, and why the
  * two differ in length. And which bytes of each a generator reproduces, which is the premise table of
- * section 362: what is still the donor's.
+ * section 362: what is still the donor's. Since section 364 the assembly composes the setup's devices and
+ * activities the donor lacks: on the starting compile, and refused on the smallest one.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-import { require_, skipUnless } from '@harmony/lab';
-import type { Container, SetupDescription } from '../src/index.ts';
+import { IR_ARCHIVE, needing, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
+import type { AssemblyScreenItem, Container, SetupDescription } from '../src/index.ts';
 import {
   AssemblyError,
   TRACK_SETTINGS,
@@ -35,6 +36,7 @@ import {
   describeScreenRecords,
   describeScreenTexts,
   describeWiring,
+  devices,
   dropLists,
   inActivityOrder,
   activityEntriesByName,
@@ -232,6 +234,7 @@ test('the test setup assembled on Logitech\'s clean compile drops section 360\'s
   const out = assembleSetup(setupOf('h650-test.json'), { donor: donor.blob });
   assert.deepEqual(out.steps.map((one) => [one.step, one.bytes]), [
     ['donor', 1000819], ['screen records', 1000819], ['firmware screens', 1000819], ['texts', 1000819],
+    ['pictures', 1000819],
     ['wiring', 1000808], ['state tables', 1000808], ['mode 0', 1000808], ['lists dropped', 999922], ['placed', 999922],
   ]);
   assert.deepEqual(out.keptOn, []);
@@ -296,10 +299,10 @@ test('a second setup assembles and passes every check: the starting setup on its
   assert.deepEqual(assembleSetup(setupOf('h650-options.json'), { donor: require_('h650_options_config') }).keptOn, []);
 });
 
-test('a setup the donor cannot serve is refused: an activity it lacks, one it holds and the setup does not, another model, a device kept on against the setup',
+test('a setup the donor cannot serve is refused: an input named with no catalogue to number it, an activity the donor holds and the setup does not, another model, a device kept on against the setup',
      skipUnless('h650_start_config', 'h650_test_config_clean', 'h700_config', 'h650_options_config'), () => {
   assert.throws(() => assembleSetup(setupOf('h650-test.json'), { donor: require_('h650_start_config') }),
-    /does not hold the setup's activities.*Plasma kijken/);
+    /composing Plasma kijken: Plasma kijken puts Plasma on HDMI 1, and naming a donor device's input needs the catalogue's archive/);
   assert.throws(() => assembleSetup(setupOf('h650-start.json'), { donor: require_('h650_test_config_clean') }),
     /holds an activity called Plasma kijken that the setup does not/);
   assert.throws(() => assembleSetup(setupOf('h650-start.json'), { donor: require_('h700_config') }), AssemblyError);
@@ -311,18 +314,19 @@ test('a setup the donor cannot serve is refused: an activity it lacks, one it ho
 // Which bytes a generator reproduces
 // ---------------------------------------------------------------------------------------------------
 
-test('a generator lays 73830 bytes of the assembled test setup and rewrites 67890 of address fields in the donor\'s pieces, and the rest is the donor\'s by what it is',
+test('a generator lays 114896 bytes of the test setup assembled on the clean compile and rewrites 67890 of address fields in the donor\'s pieces, and the rest is the donor\'s by what it is',
      skipUnless('h650_test_config_clean'), () => {
   const out = assembleSetup(setupOf('h650-test.json'), { donor: require_('h650_test_config_clean') });
   const a = attributeBytes(out.container);
   assert.equal(a.total, 999922);
   assert.deepEqual(a.generated, {
     frame: 122, addresses: 67890, description: 17752, 'mode 0': 649, wiring: 1143, 'state tables': 38334,
-    'screen records': 906, 'firmware screens': 4712, texts: 10212,
+    'screen records': 906, 'firmware screens': 4712, texts: 10212, pictures: 41066,
   });
   const carried = (...keys: string[]): number => keys.reduce((n, key) => n + (a.carried.get(key) ?? 0), 0);
   assert.equal(carried('slot-7-glyph', 'slot-7-set'), 92170);
-  assert.equal(carried('picture-bank'), 401730);
+  // The eleven designed pictures, todo 9.1.2; the six a rule draws are the generators' since section 363.
+  assert.equal(carried('picture-bank'), 360664);
   assert.equal(carried('slot-5-block', 'slot-5-header', 'slot-5-group'), 220607);
   assert.equal(carried('slot-10-list reached'), 74513);
   assert.equal(carried('slot-10-list reached by nothing'), 2393);
@@ -342,4 +346,114 @@ test('the track settings are the ones the 10.2.2 file was built with, with the s
     glowTime: 20, tiltSensor: true, remoteAssistant: false, bootStep: false, tourShown: false,
     delayRestore: false, help: false,
   });
+});
+
+// ---------------------------------------------------------------------------------------------------
+// The composing route: the setup's devices and activities the donor lacks, from the composers, section 364
+// ---------------------------------------------------------------------------------------------------
+
+/**
+ * Plasma kijken's working screen, which the setup file does not state: the three device commands and the
+ * Radio sequence Logitech's compile of the setup draws there, the sequence as the setup's `about` states
+ * it, KPN 1, a two second pause, KPN 2, by the keys' scan codes, `keys.md`.
+ */
+const PLASMA_KIJKEN_SCREEN: readonly AssemblyScreenItem[] = [
+  { device: 'KPN', command: 'Teletext' }, { device: 'KPN', command: 'DVR' }, { device: 'Plasma', command: 'Aspect' },
+  { sequence: 'Radio', steps: [{ device: 'KPN', scan: 24 }, { pause: 20 }, { device: 'KPN', scan: 47 }] },
+];
+
+test('on Logitech\'s starting compile the test setup\'s fifth activity is composed from the setup file and its screen, and the result is the lab\'s composed file, 70 lists lighter, but for its build stamp',
+     needing(skipWithoutIrArchive(), skipUnless('h650_start_config', 'h650_7_1_base', 'h650_test_config_clean')), () => {
+  const out = assembleSetup(setupOf('h650-test.json'), {
+    donor: require_('h650_start_config'), archive: IR_ARCHIVE!, screens: { 'Plasma kijken': PLASMA_KIJKEN_SCREEN },
+  });
+  assert.deepEqual(out.composed, { devices: [], activities: ['Plasma kijken'] });
+  assert.deepEqual(out.keptOn, ['KPN']);
+  assert.equal(out.bytes.length, 997313);
+  // The 6.2.13 file, the lab's chain of composers on the same compile, through the same passes: the same
+  // bytes but the build stamp, five in base slot 3 and the same five in the clock's records.
+  const chain = assembleSetup(setupOf('h650-test.json'), { donor: require_('h650_7_1_base') });
+  assert.deepEqual(chain.composed, { devices: [], activities: [] });
+  const owners = claims(out.container);
+  const differing = [...out.bytes.keys()].filter((k) => out.bytes[k] !== chain.bytes[k])
+    .map((k) => owners.find((one) => k >= one.start && k < one.start + one.length)?.owner);
+  assert.equal(chain.bytes.length, out.bytes.length);
+  assert.deepEqual(differing, [...Array(5).fill('slot-13-record'), ...Array(5).fill('slot-3-clock')]);
+  // Against Logitech's compile of the setup, the menu's order alone; against the 10.2.2 file, nothing.
+  const clean = containerOf('h650_test_config_clean');
+  assert.deepEqual(compareViews(setupView(out.container), setupView(clean), { menuOrder: false }), []);
+  assert.equal(compareDrawnTexts(out.container, clean).length, 8);
+  const ten = tenTwoTwo();
+  assert.deepEqual(compareViews(setupView(out.container), setupView(ten)), []);
+  assert.deepEqual(compareDrawnTexts(out.container, ten), []);
+  assert.equal(ten.blob.length - out.bytes.length, 886);
+});
+
+test('with no screen stated, the composed activity\'s screen is empty: its four items are what a person misses, and nothing else',
+     needing(skipWithoutIrArchive(), skipUnless('h650_start_config', 'h650_test_config_clean')), () => {
+  const out = assembleSetup(setupOf('h650-test.json'), { donor: require_('h650_start_config'), archive: IR_ARCHIVE! });
+  const missing = compareViews(setupView(out.container), setupView(containerOf('h650_test_config_clean')), { menuOrder: false });
+  assert.deepEqual(missing.map((one) => [one.key, one.kind, one.b?.label]).sort(), [
+    ['activity Plasma kijken | page 1 | scan 2', 'only in b', 'DVR'],
+    ['activity Plasma kijken | page 1 | scan 34', 'only in b', 'Radio'],
+    ['activity Plasma kijken | page 1 | scan 8', 'only in b', 'Teletext'],
+    ['activity Plasma kijken | page 1 | scan 9', 'only in b', 'Aspect'],
+  ]);
+});
+
+test('the smallest Harmony 650 compile, two devices and no activity, takes no composer: the device list is found through an activity menu it has not got, its fonts lack letters, and an activity needs another to be told apart from',
+     needing(skipWithoutIrArchive(), skipUnless('harvest_650_two_devices')), () => {
+  const smallest = require_('harvest_650_two_devices');
+  // Its two devices are the setup's LG television and Denon receiver under the names Logitech gives them.
+  assert.deepEqual(devices(parse(smallest)).map((one) => one.name), ['LG_OLED65G26LA', 'Denon_AVR-X4800H']);
+  assert.throws(() => assembleSetup(setupOf('h650-test.json'), { donor: smallest, archive: IR_ARCHIVE! }),
+    /composing Plasma, KPN, Kodi, Switch, Sony HT: the activity menu does not map the key under Devices through the activity counter/);
+  // Each device alone, by its first refusal.
+  const alone = (name: string): string => {
+    const setup = setupOf('h650-test.json');
+    const one = { devices: setup.devices.filter((d) => ['LG TV', 'Denon', name].includes(d.name)), activities: [] };
+    try {
+      assembleSetup(one, { donor: smallest, archive: IR_ARCHIVE! });
+      return 'composed';
+    } catch (error) {
+      return (error as Error).message.replace(/^composing [^:]+: /, '');
+    }
+  };
+  assert.deepEqual(Object.fromEntries(['Plasma', 'KPN', 'Kodi', 'Switch', 'Sony HT'].map((name) => [name, alone(name)])), {
+    Plasma: 'the activity menu does not map the key under Devices through the activity counter',
+    KPN: 'font 6 has no glyph for \'K\', so it cannot be drawn',
+    Kodi: 'font 6 has no glyph for \'K\', so it cannot be drawn',
+    Switch: 'the activity menu does not map the key under Devices through the activity counter',
+    'Sony HT': 'no font in this config spells \'Eject\'',
+  });
+  // And an activity on its own two devices: with an input, the television has no input variable to put on
+  // it, since the compile with no activity gave it none; without, the activity composer refuses.
+  const tv = (input?: string): SetupDescription => ({
+    devices: setupOf('h650-test.json').devices.filter((d) => ['LG TV', 'Denon'].includes(d.name)),
+    activities: [{ name: 'TV', type: 'Custom', devices: [
+      { device: 'LG TV', ...(input === undefined ? {} : { input }), roles: ['Display'] }, { device: 'Denon', roles: ['Volume'] }] }],
+  });
+  assert.throws(() => assembleSetup(tv('HDMI 1'), { donor: smallest, archive: IR_ARCHIVE! }),
+    /composing TV: LG TV has no input variable here to put on HDMI 1/);
+  assert.throws(() => assembleSetup(tv(), { donor: smallest, archive: IR_ARCHIVE! }),
+    /composing TV: no activity here, so the records keyed by the activity cannot be told apart/);
+});
+
+test('a device the donor lacks is composed from the catalogue with an activity on it, and every check passes',
+     needing(skipWithoutIrArchive(), skipUnless('h650_start_config')), () => {
+  const start = setupOf('h650-start.json');
+  const setup: SetupDescription = {
+    devices: [...start.devices, { name: 'Pana', device: 'Panasonic/TX-P42GT30E' }],
+    activities: [...start.activities, { name: 'Kijk twee', type: 'Custom', devices: [
+      { device: 'Pana', input: 'HDMI 2', roles: ['Display', 'Volume'] }, { device: 'KPN', roles: ['ChannelChanging'] }] }],
+  };
+  const out = assembleSetup(setup, { donor: require_('h650_start_config'), archive: IR_ARCHIVE! });
+  assert.deepEqual(out.composed, { devices: ['Pana'], activities: ['Kijk twee'] });
+  assert.equal(out.bytes.length, 1068094);
+  assert.ok(devices(out.container).some((one) => one.name === 'Pana'));
+  // A label the corner cannot hold is the composer's refusal, named with the device.
+  const wide = { ...setup, devices: [...start.devices, { name: 'Plasma 2', device: 'Panasonic/TX-P42GT30E' }],
+    activities: start.activities };
+  assert.throws(() => assembleSetup(wide, { donor: require_('h650_start_config'), archive: IR_ARCHIVE! }),
+    /composing Plasma 2: 'Plasma 2' is 61 pixels wide and a corner holds 59/);
 });
