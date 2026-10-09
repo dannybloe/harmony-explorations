@@ -1,0 +1,18 @@
+{
+  "name": "Harmony 650, the status screen library written as its configuration",
+  "description": "todo-compile-650 7.1, the first probe of what the remote demands at minimum. The configuration written is the 650's own status screen library, the 7115 byte container its firmware package carries (`h650_safemode_gspm`), unchanged: no devices, no activities, no codes, and 35 screens, every one a status message (USB CONNECTED, Battery Low, Configuration Corrupted, Go to Website to update settings, Needs to be setup. Battery Charging, and so on). It is Logitech's own well formed file, so the question is only what the application does with a configuration that has nothing in it. Predicted, written before the write: (P1) the write succeeds and reads back identical, one 64 KiB block changed; (P2) after the restart the remote shows a status screen rather than an activity menu, most likely 'Needs to be setup. Battery Charging', with 'Go to Website to update settings' or 'Configuration Corrupted' as the alternatives if it rejects the file; (P3) no key makes the receiver hear anything, since the file holds no infrared; (P4) on the cable the remote still answers over USB, so the 6.2.13 file can be written back. If the remote shows anything else, an activity menu, the welcome tour, a blank screen, that is the finding.",
+  "steps": [
+    {
+      "instruction": "After the write the remote restarts. Do NOT press Help. Leave it on the cable for now. Write down exactly what the screen shows, every line, and whether it changes by itself within half a minute. Mark"
+    },
+    {
+      "instruction": "Take the remote off the cable and point it at the Flirc. Write down what the screen shows now. Mark"
+    },
+    {
+      "instruction": "Press, one at a time with a second between them: All Off, the centre key below the screen, the button beside the screen at the upper left, Volume up, Channel up, the digit 1, Help. After each, note what the screen does. Mark when done"
+    },
+    {
+      "instruction": "Put the remote back on the cable and note what the screen shows. Mark. Then tell me, and I will write the 6.2.13 configuration back"
+    }
+  ]
+}
