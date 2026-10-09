@@ -46,6 +46,7 @@ home in one of the two files.
 
 - [ ] 4.1 The interface
 - [ ] 4.2 Publish `packages/*` so somebody without this checkout can build it (decision 4)
+- [ ] 4.3 A sequence as a step in an activity's start, which Logitech's schema has no form for: an addition of ours, if FreeHarmony wants it (was `todo-compile-650.md` 4.2)
 
 ## 5. Other remotes, after the Harmony 650
 
@@ -94,7 +95,7 @@ The Harmony One is a different type, with a touch screen and its own screens, so
 - [ ] 6.13 Six Python tests fail on the Harmony 650 and 700 compiles the long press work added to the lab, and the golden vector list lacks `h650_plasma_base`: the EzHex population counts 23 against 17, and the per config checks on those six files
 - [ ] 6.14 Moved to `todo-process-logitech.md` 2.1
 - [ ] 6.15 Moved to `todo-process-logitech.md` 2.5
-- [ ] 6.16 Moved to `todo-compile-650.md` 2.8
+- [ ] 6.16 Moved to `todo-process-logitech.md` 2.2
 - [x] 6.17 Toolchain checks walk `.claude/worktrees/`, so an agent's worktree fails the facts, prose and write review checks until it is removed
 - [ ] 6.18 Read the battery before writing to a remote, and refuse or warn when it is too low; a threshold per model is a guess until measured, but a remote that is about 3 V fresh and reads under 2 V is likely too low. For FreeHarmony as much as for the bench
   - [ ] 6.18.1 What each model takes, from Logitech's manuals: Harmony One one lithium ion cell; Harmony 600 and 650 AA alkaline, two on the bench 650 (the manuals do not say how many); Harmony 700 NiMH AA, charged on USB; Harmony 525 four AAA; Harmony 300 and 350 two AA; Harmony Touch an internal rechargeable

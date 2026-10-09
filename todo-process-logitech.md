@@ -30,7 +30,7 @@ Done when the composer's own test over the archive refuses no command. Today fou
 compose and 10046 of 54118 code sets have none that does.
 
 - [ ] 2.1 The 151 families whose catalogue notation our reader does not read, about 53000 commands; Logitech's definition exists for every one, so this is reading work, checked against the compiles in the lab; check first whether these are the 52517 commands refused because the composer takes digit widths from the family name (was `todo-later.md` 6.14)
-- [ ] 2.2 The 482 families that lack only the press repeat count: moved to `todo-compile-650.md` 2.8, the device's own count
+- [ ] 2.2 The 482 families that lack only the press repeat count, about 339000 commands: take it from the device, `timing.pressMinRepeats` in the archive, where the family states none; `driving.ts` reads it and the composer does not use it; first score it against every Logitech compile in the lab and name the families it gets wrong, `Kreatel IP 22 Bit`'s intro section and the two Memorex families first (was `todo-later.md` 6.16); the archive's README names it as the count (commits ca0349b and fdbaffa)
 - [ ] 2.3 The 8 families left over, 4 with no rhythm and 4 whose block is refused
 - [ ] 2.4 The 10 families that compose except for 231 commands; Logitech's own version of those codes is `todo-secure-logitech.md` 2.4
 - [ ] 2.5 Release blocks and toggle bits as Logitech renders them: about 4360 commands compose and differ from Logitech's rendering (was `todo-later.md` 6.15)
