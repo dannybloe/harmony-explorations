@@ -4551,6 +4551,23 @@ variable length records rather than a table, and whether it also names lists in 
 cannot be told by scanning, because that index range is wide enough for coincidences to swamp it.
 `docs/findings.md` section 26.
 
+#### Every place that names a list, and the lists nothing reaches
+
+**Confirmed on arch 14 (Harmony 600, 650 and 700), 22 compiles.** A list's index is written at ten kinds
+of place, each the `u16` operand of a `0x7F`: an action list's own call; a tagged list's entry, in a mode's
+key map, a page list, a page list's second copy and a base slot 9 entry; a timer's instruction at record
+offset 4; a state transition's at value offset 5; an instruction a screen program queues with opcode 17,
+operand at its offset 1; a number sender's three instructions at offsets 5, 8 and 11 and its digit tables;
+and base slot 8's leading list. `listCallSites` enumerates them and `checkRenumbering` holds a renumbering
+of base slot 10 to all of them. Every list a screen program queues is named by that one instruction and by
+no other holder, and a page list and its copy hold the same lists, many of them at different table entries:
+426 of 700 places on `h650_test_config_clean`. Number senders' places occur on 3 of the 22.
+
+Lists nothing reaches through any of these, following calls: 126 to 392 per Logitech compile, 6528 lists
+and 48801 bytes over the 22, none below the wiring's front. Dropping them all and renumbering changes
+nothing `compareViews` reads and passes `checkWiring`, `checkScreenRecords` and `checkScreenTexts` on all 22
+and `checkFirmwareScreens` on the 21 it reads. `docs/findings.md` section 362.
+
 #### `{0x7A a; 0x6C b}` is most of an arch 14 config
 
 **Confirmed on architecture 14.** 2832 of the 700's 8037 lists and 1888 of the 600's 4955 are two

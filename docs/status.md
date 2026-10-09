@@ -571,7 +571,7 @@ finding.
 
 `todo.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 361<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 363<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and flash has been written on five units**, the first in section 222:
@@ -1024,7 +1024,7 @@ line, the start up picture, the corner mark and four firmware screen pictures ar
 are not written into this repository, and a configuration still takes them from a Logitech compile until it is
 decided where they come from. The cross is not simply a line drawn over the plain curved background either:
 the two differ in 98 pixels beside it, each one colour step off. Two black dotted pictures belong to Help's delay screens and are left out with
-Help.
+Help. The assembly of section 362 does not use the built six yet; that is one more step after its texts.
 
 **The remote's own wiring calls nothing copied any more in the configuration this track builds, section
 360.** The lists behind the remote's own events, the screen light, the battery screens and starting up
@@ -1040,6 +1040,22 @@ key switches straight off; that is a reading of the files, in none of Logitech's
 screens and keys the comparison reads; it says nothing about the All Off wizard, Help, the Assistant or
 the restore, which are what changed. Section 347's count of what it did not build missed that key's eight
 lists, and is corrected.
+
+**A setup file and one Logitech file now make a whole Harmony 650 configuration in one step, section 362.**
+The chain of lab scripts that built each composed file is one function, which takes the setup file and names
+the Logitech file it still borrows from as an input of its own, so the finish line can swap it and count what
+is left. Given Logitech's own compile of the test setup, the result shows a person the same as that compile
+apart from the menu's order, and the same as the file the lab's scripts composed for the wiring step, which
+was never written to the remote. It is 1723 bytes longer than that file: Logitech's version of Plasma kijken
+with its Help screens against ours, less the 70 lists that file carries and nothing uses, plus a little
+because the two started from different Logitech files. Those 70 are dropped now, which needed every place
+in a configuration that names a list: ten kinds, and one of them could be left out without any comparison
+of what a person sees noticing, so the dropping checks itself. Our generators lay about one byte in
+fourteen as content, and about one in seven counting the addresses they rewrite inside Logitech's pieces;
+the rest is Logitech's, and most of that is pictures, infrared codes and fonts. **What the finish line
+still needs that no step names**: a starting file with no devices and no activities, since nothing here can
+take one out, and a setup file that says what goes on an activity's screen, which today's does not.
+Measured on the Harmony 650 only, and not written to a remote.
 
 **A Harmony One's activity menu can now grow a page, section 293.** Its menu shows three activities to
 a page, and a fourth used to be refused. Now it opens a new page, and the menu says so in the three
