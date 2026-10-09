@@ -214,6 +214,8 @@ export const IMAGES: Readonly<Record<string, string>> = {
   h650_milestone_5_1_base: '20261009T1006Z-h650-milestone-5-1-before-region.bin',
   // Logitech's compile of the whole test setup, todo-compile-650 5.2's other half.
   h650_test_config: '20261009T1123Z-h650-test-config.bin',
+  // Our 5.1 file as written to the 650: the starting compile with the rest of the test setup composed on.
+  h650_milestone_5_1_config: '20261009T1007Z-h650-milestone-5-1-config.bin',
   h650_gap_ir_all5: '20261007T054551Z-ir-test-harmony-650-help-does-nothing-and-the-gap-between-devices.json',
   h650_gap_ir_kpn20: '20261007T060756Z-ir-test-harmony-650-the-kpn-box-s-delay-between-devices-at-2-s.json',
   h650_gap_ir_denon20: '20261007T061443Z-ir-test-harmony-650-the-denon-s-delay-between-devices-at-2-s.json',
@@ -762,6 +764,7 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
     'h650_options_base', 'h650_options_config', 'h650_bench_4_2_base', 'h650_sequence_config',
     'h650_favourites_config', 'h650_favourites_base', 'h650_assistant_off_config',
     'h650_tilt_off_config', 'h650_milestone_5_1_base', 'h650_test_config',
+    'h650_milestone_5_1_config',
     // External flash of the bench Harmony 700 from 0x000000, kept for the staged application at its
     // start. The container at 0x020000 is byte for byte `h700_gspm`, the embedded config the 2.8
     // package carries as its region 3, so counting it would count that one twice. Section 295.

@@ -101,3 +101,5 @@ export * from './pronto.ts';
 // An activity's keypad map and screen commands from its roles, section 323. After `compose.ts`, whose
 // rows and errors it uses.
 export * from './activityroles.ts';
+// Two configurations of one setup compared by what a person sees and hears, todo-compile-650 5.2.
+export * from './compare.ts';

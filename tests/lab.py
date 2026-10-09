@@ -216,6 +216,7 @@ IMAGES = {
     'h650_favourites_base': '20261009T0847Z-h650-favourites-synced-region.bin',
     'h650_milestone_5_1_base': '20261009T1006Z-h650-milestone-5-1-before-region.bin',
     'h650_test_config': '20261009T1123Z-h650-test-config.bin',
+    'h650_milestone_5_1_config': '20261009T1007Z-h650-milestone-5-1-config.bin',
     'h650_assistant_off_config': '20261009T0930Z-h650-assistant-off-config.bin',
     'h650_tilt_off_config': '20261009T0950Z-h650-tilt-off-config.bin',
     'h650_gap_ir_all5': '20261007T054551Z-ir-test-harmony-650-help-does-nothing-and-the-gap-between-devices.json',
@@ -742,6 +743,7 @@ PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_confi
                       'h650_options_base', 'h650_options_config', 'h650_bench_4_2_base', 'h650_sequence_config',
                       'h650_favourites_config', 'h650_favourites_base', 'h650_assistant_off_config',
                       'h650_tilt_off_config', 'h650_milestone_5_1_base', 'h650_test_config',
+                      'h650_milestone_5_1_config',
                       # External flash of the bench Harmony 700 from 0x000000, kept for the staged
                       # application; its container at 0x020000 is byte for byte `h700_gspm`.
                       # Section 295.
