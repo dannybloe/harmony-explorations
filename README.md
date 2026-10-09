@@ -35,10 +35,11 @@ can turn one into a brick, so the first thing this project ever writes to a remo
 
 ## Where we stand
 
-Seven remotes are on the bench: a Harmony One, a second One kept as a spare, a Harmony 600, a Harmony
-525, and a Harmony Touch, a Harmony 350 and a Harmony 300 added later, plus configuration files that
-other owners have sent in. The work so far is about the first four; the other three speak a different
-protocol and are only partly reachable.
+Nine remotes are on the bench: a Harmony One, a second One kept as a spare, a Harmony 600, a Harmony
+525, a Harmony Touch, a Harmony 350 and a Harmony 300, and later a Harmony 650 and a Harmony 700, plus
+configuration files that other owners have sent in. The work is about the Harmony Ones, the 525, the 600,
+the 650 and the 700; the Touch, the 350 and the 300 speak a different protocol and are only partly
+reachable.
 
 | | |
 |---|---|

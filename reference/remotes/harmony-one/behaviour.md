@@ -73,9 +73,8 @@ devices is a separate step, section 337.
 
 The clock is state variables 0 to 6, at data memory `0x108` to `0x10E`, seeded from the configuration's
 clock records, read in the firmware, section 138; a power cycled unit read its configuration's stamp plus
-its uptime, measured, section 111, and once seeded it ticks at real rate on the cable, section 251. **Two
-statements disagree about when it is reseeded**: `CLAUDE.md` says at every boot, and section 138 reads a
-cold boot reseeding it and a warm start keeping the running clock, behind a checksum. Whether the restart
+its uptime, measured, section 111, and once seeded it ticks at real rate on the cable, section 251. It is
+reseeded on a cold boot and a warm start keeps the running clock, behind a checksum, sections 138 and 274. Whether the restart
 after a write is warm or cold is **not checked**. The day of the month counts from 0 and the weekday from
 Sunday, section 322.
 

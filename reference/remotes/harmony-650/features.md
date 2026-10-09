@@ -81,8 +81,10 @@ plus its inputs, so the device count binds first on every configuration measured
 
 ## Sequences
 
-Logitech's software allows up to 25 steps. **No arch 14 compile holds one**, so the arch 14 form is
-inferred from the Harmony One's, section 327. The composer refuses a sequence by the depth of the
+Logitech's software allows up to 25 steps. Our composed sequence runs on the 650 and its pause holds
+back every device of the activity, section 342, and **Logitech's own compile of a sequence for the 650
+has the composer's form**, section 343. This said no arch 14 compile held one, and that the form was
+inferred from the Harmony One's, until 9 October 2026; both were written before sections 342 and 343. The composer refuses a sequence by the depth of the
 forty instruction action queue, never by step count, which refuses Logitech's own limit on this
 remote, section 327 and the `writing-a-config` skill.
 

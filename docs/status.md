@@ -18,9 +18,11 @@ section. For the format as a specification, [config-format.md](config-format.md)
 
 ## Status
 
-The work targets three architectures. **Seven remotes are on the bench**, and this list is the
-hardware, not the model families: two Harmony Ones, a Harmony 600, a Harmony 525, and since 27 August
-2026 a Harmony Touch, a Harmony 350 and a Harmony 300. The last three are the file based family and
+The work targets three architectures. **Nine remotes are on the bench**, and this list is the
+hardware, not the model families: two Harmony Ones, a Harmony 600, a Harmony 525, since 27 August
+2026 a Harmony Touch, a Harmony 350 and a Harmony 300, since 27 September 2026 a Harmony 650, and since
+29 September 2026 a Harmony 700. This said seven until 9 October 2026, two units short, the same count
+`CLAUDE.md` had corrected for itself. The last three are the file based family and
 are **not targets** for the config work: `openHarmony` refuses them by product id
 rather than by accident, section 193. What they have bought so far is the reading of the descriptor
 field that names a model, section 195, the route to their firmware, section 196, and their whole
@@ -33,17 +35,19 @@ writes, so `openHarmony`'s refusal is about what has been built for the **config
 about what is reachable at all. Other models
 appear throughout this page as firmware images or contributed configurations, and the Harmony 700 is
 the one that gets mistaken for hardware, because it is the best mapped arch 14 image and is quoted
-constantly. There has never been a Harmony 700 here.
+constantly. **A Harmony 700 unit has been on the bench since 29 September 2026**, and this said there
+had never been one until 9 October 2026.
 
 * **arch 12** ("Gin"), the Harmony One, and the spare Harmony One, one of the **three** units anything
   may be written to. This said it was "the only unit anything may ever be written
   to"<!--superseded--> until 5 September 2026
-* **arch 14**, the Harmony 600 and, since 27 September 2026, a Harmony 650. The Harmony 700 belongs
-  to this architecture and is a **reference image**: two configurations and a firmware image, no
-  remote. **The 650 is the third unit that may be written to** and arch 14 the third architecture
+* **arch 14**, the Harmony 600, since 27 September 2026 a Harmony 650, and since 29 September 2026
+  a Harmony 700, which was a **reference image** before that: two configurations and a firmware image,
+  no remote. **The 650 is the third unit that may be written to** and arch 14 the third architecture
   written to: one block of its own bytes put back unchanged the day it was permitted, section 281.
-  **The 600 and the 700 may be written to since 29 September 2026**, Danny's decision, and neither
-  has been yet. The three share a product id and an architecture, so the dump names which unit is
+  **The 600 and the 700 may be written to since 29 September 2026**, Danny's decision, and both have
+  had a configuration changed since, sections 301 and 303; this said "neither has been yet" until 9
+  October 2026. The three share a product id and an architecture, so the dump names which unit is
   expected and the unit check against the identity block is what refuses any other
 * **arch 9**, the Harmony 525, connected on 8 August 2026 and a target since: its config and its
   firmware are in the lab, and its class 5 infrared, which was the last big gap in the byte
