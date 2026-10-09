@@ -79,7 +79,7 @@ an item, ask whether the finish line moves without it; if it does, the item goes
 ## 5. Milestone: the test setup, composed on the starting configuration
 
 - [ ] 5.1 Compose the rest of the test setup onto 1.6's starting configuration and write it: Plasma kijken, the fifth activity, which opens the activity menu's second page; the Radio sequence on TV kijken's screen; the screen lit 10 seconds; leave devices on for the KPN box, felt switching between TV kijken and Plasma kijken. Plan 006's favourites, sequence in an activity's start and save and restore lists have left the setup (4.1, todo-freeharmony 1.3, 4.4); the Remote Assistant stays as the starting configuration has it, on, since a composer adds and cannot take Logitech's out, and 5.2 leaves it out
-  - [ ] 5.1.1 Compose leave devices on per device: what it changes is read (3.10, section 340), the composer is not built
+  - [x] 5.1.1 Compose leave devices on per device: `keepDeviceOn` for the activities a configuration holds and `keepOn` for one composed after; on Logitech's starting compile it gives exactly the starts Logitech compiled with the setting on the Denon (section 340)
 - [ ] 5.2 Check it against the same test setup compiled by Logitech: every key and every screen item, in every activity and in device mode, shows the same and sends the same infrared, as the bench's receiver hears it, Help and the Remote Assistant apart
 
 ## 6. Our composers stop borrowing parts from Logitech's file

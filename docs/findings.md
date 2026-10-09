@@ -45549,8 +45549,18 @@ longer write `Denon_Power` 0. Those are the two activities that do not use the D
 kijken still write it 1, nothing is added anywhere, and the All Off list still names the Denon's power
 variable in both compiles. So on the remote, switching from TV kijken to Muziek leaves the Denon on, and
 only All Off switches it off, which is what the setting's wording says. The composer can already build
-that shape by leaving a device out of the targets it completes with 0, section 280; it has no per device
-option for it yet.
+that shape by leaving a device out of the targets it completes with 0, section 280; it had no per device
+option for it until `todo-compile-650.md` 5.1.1.
+
+**Composed since, and closed against the pair.** `keepDeviceOn` cuts the device's write of 0 out of every
+activity's start in a configuration that already holds them, two calls deep, and leaves the All Off list
+alone; `activityPowerTargets` takes the kept devices as `keepOn` for an activity composed afterwards.
+Applied to the compile without the setting, it cuts two writes, one in Kodi kijken's start and one in
+Muziek's, six bytes, and the power writes of all four starts then equal the compile with the setting,
+activity by activity and in order. The two ends of that check are two compiles Logitech made, so the
+closure does not lean on our reading of either. What it does not show: a device kept on whose switch off
+sits in a list several activities share, which this pair does not hold; the function cuts a shared list
+once and reports every activity reaching it.
 
 **Heard on the Harmony 650**, with no write, on this compile as synced
 (`reads/20261008T131427Z-ir-test-harmony-650-the-denon-kept-on-between-activities.json`). TV kijken sent
@@ -45640,7 +45650,7 @@ All Off leaves it out; for the key, a compile where saving an activity as `Custo
 ### Where it lands
 
 * `packages/codec/test/devicepower.test.ts`: the two starts' dropped writes, exactly, nothing added, and
-  the All Off list in both compiles.
+  the All Off list in both compiles; and `keepDeviceOn` on the first compile giving the second's starts.
 * `tests/test_usb_firmware.py`, `TestTheHarmony650SendsTheBatteryLevelHighByteFirst`, and
   `packages/usb/test/protocol.test.ts`, the battery request and its reply's byte order;
   `HarmonyRemote.readHardwareFeature` and `packages/usb/bin/read-battery.ts`.

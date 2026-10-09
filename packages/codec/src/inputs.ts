@@ -658,12 +658,14 @@ export function inputTarget(inputs: ComposedInputs, name: string): ComposeActivi
  * variable, then each input, then 0 into every other device's power variable. Measured on all 40
  * activities of the thirteen arch 14 compiles, section 321, every one of which writes an input.
  * **The caller orders `inputs`**: Logitech's follow the order the devices are switched on in, and
- * this keeps whatever order it is given. `activityPowerTargets` is the power half.
+ * this keeps whatever order it is given. `activityPowerTargets` is the power half, and `keepOn` passes
+ * through to it: the devices kept on between activities, which get no write of 0, section 340.
  */
 export function activityStartTargets(
   c: Container, on: readonly number[], inputs: readonly ComposeActivityTarget[],
+  keepOn: readonly number[] = [],
 ): ComposeActivityTarget[] {
-  const power = activityPowerTargets(c, on);
+  const power = activityPowerTargets(c, on, keepOn);
   return [...power.slice(0, on.length), ...inputs, ...power.slice(on.length)];
 }
 

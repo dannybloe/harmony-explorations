@@ -19,8 +19,8 @@ import { join } from 'node:path';
 
 import { IR_ARCHIVE, needing, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
 import {
-  ACTION_LIST_INDEX_OPCODE as CALL_LIST, EVENT_MASK, STATE_WRITE_BASE, activities, allOffList, handlerSets, nameNodes,
-  taggedList,
+  ACTION_LIST_INDEX_OPCODE as CALL_LIST, EVENT_MASK, STATE_WRITE_BASE, activities, activityPowerTargets, allOffList,
+  handlerSets, keepDeviceOn, nameNodes, taggedList,
 } from '../src/index.ts';
 import {
   ComposeError,
@@ -566,4 +566,28 @@ test('keeping a device on between activities drops its switch off from the start
     for (const name of ['TV kijken', 'Film kijken']) assert.ok(now.get(name)!.includes('Denon_Power_2=1'), name);
     const denon = deviceVariables(after).find((one) => one.device === 'Denon' && one.property === 'Power')!.index;
     assert.ok(allOffList(before)!.variables.includes(denon) && allOffList(after)!.variables.includes(denon));
+  });
+
+test('keepDeviceOn cuts the Denon\'s switch off out of Logitech\'s starting compile and gives exactly the starts Logitech compiled with the setting on',
+  needing(skipUnless('h650_start_config', 'h650_options_config')), () => {
+    // todo-compile-650 5.1.1. The same pair as the test above: applying the setting to the compile made
+    // without it has to land on the power writes of the compile made with it, activity by activity.
+    const before = parse(require_('h650_start_config'));
+    const after = parse(require_('h650_options_config'));
+    const denon = deviceVariables(before).find((one) => one.device === 'Denon' && one.property === 'Power')!.index;
+    const kept = keepDeviceOn(before, denon);
+    const ours = parse(kept.bytes);
+    assert.deepEqual(startPowerWrites(ours), startPowerWrites(after));
+    // Two cuts, one per activity without the Denon, and the file shrank by exactly two instructions.
+    assert.deepEqual(kept.cut.flatMap((one) => one.activities).sort(), ['Kodi kijken', 'Muziek']);
+    assert.equal(before.blob.length - ours.blob.length, 6);
+    // All Off still switches it off, and every reader of the activities still agrees.
+    assert.ok(allOffList(ours)!.variables.includes(denon));
+    assert.deepEqual(activities(ours).map((one) => one.name), activities(before).map((one) => one.name));
+    // A second application finds nothing to cut and says so rather than writing the same file.
+    assert.throws(() => keepDeviceOn(ours, denon), ComposeError);
+    // And an activity composed afterwards leaves the Denon alone when told it is kept on.
+    const targets = activityPowerTargets(ours, [], [denon]);
+    assert.ok(!targets.some((one) => one.variable === denon));
+    assert.ok(activityPowerTargets(ours, []).some((one) => one.variable === denon && one.value === 0));
   });

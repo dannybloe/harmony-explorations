@@ -72,6 +72,7 @@ import {
   type ActivityScreens,
   activityBindings,
   activityNames,
+  activities,
   activityScreens,
   allOffList,
   caseQueued,
@@ -7895,15 +7896,122 @@ export function joinPowerOff(c: Container, variable: number): JoinedPowerOff {
 /**
  * The power writes a new activity makes: 1 into each variable in `on`, 0 into every other device
  * the all off list names, in that order, which is the order a real enter list calls them in.
+ *
+ * **`keepOn` names the devices MyHarmony's "keep this device on when switching Activities" is set
+ * on**, by their power variables, and they get no write of 0: section 340 measured that the setting
+ * removes exactly that write from the starts of the activities that do not use the device and changes
+ * nothing else. A device in both `on` and `keepOn` is simply switched on, as Logitech's compile does.
  */
 export function activityPowerTargets(
-  c: Container, on: readonly number[],
+  c: Container, on: readonly number[], keepOn: readonly number[] = [],
 ): { variable: number; value: number }[] {
   const allOff = allOffList(c);
   if (allOff === undefined) throw new ComposeError('no single list switches every device off');
   return [
     ...on.map((variable) => ({ variable, value: 1 })),
-    ...allOff.variables.filter((one) => !on.includes(one)).map((variable) => ({ variable, value: 0 })),
+    ...allOff.variables.filter((one) => !on.includes(one) && !keepOn.includes(one))
+      .map((variable) => ({ variable, value: 0 })),
   ];
+}
+
+/** Where `keepDeviceOn` found and removed a device's switch off. */
+export interface KeptOn {
+  bytes: Uint8Array;
+  /** Each list a write of 0 was cut from, and the activities whose start reaches it, by name. */
+  cut: { list: number; activities: string[] }[];
+}
+
+/**
+ * Apply MyHarmony's "keep this device on when switching Activities" to the activities a configuration
+ * already holds: cut the write of 0 into `variable` out of every activity's start, and leave the all
+ * off list alone, so only All Off switches the device off. Section 340: on the Harmony 650 that setting
+ * changed exactly those writes and nothing else, and it was heard so on the remote.
+ *
+ * **A start is its enter list and the lists that calls**, two calls deep, which is where every power
+ * write of a Logitech start sits (section 280: "directly or through the lists it calls"). A write found
+ * there is cut whole, three bytes, by `excise`, and the list's count byte lowered; the cuts go from the
+ * highest offset down, re-reading after each, since every cut moves what follows it.
+ *
+ * **What it refuses**, each a case where a cut would change something besides an activity's start: a
+ * list named twice in base slot 10, the all off list itself, and a list that holds nothing but the write,
+ * which would be left empty. A device that no start switches off is refused too, since the caller asked
+ * for a change that is not there: either the setting is already in force or the variable is not a device's.
+ * For an activity composed after this, pass the same variable as `keepOn` to `activityPowerTargets`.
+ */
+export function keepDeviceOn(c: Container, variable: number): KeptOn {
+  const power = deviceVariables(c).find((one) => one.index === variable);
+  if (power === undefined || power.property !== 'Power') {
+    throw new ComposeError(`state variable ${variable} is not a device's Power variable`);
+  }
+  const allOff = allOffList(c);
+  if (allOff === undefined) throw new ComposeError('no single list switches every device off');
+  if (c.architecture === undefined) throw new ComposeError('the container states no architecture');
+  const sets = handlerSets(c);
+  const lists = c.actionLists();
+  if (sets === undefined || lists === undefined) throw new ComposeError('base slot 9 or 10 does not read');
+
+  const write = STATE_WRITE_BASE + variable;
+  const holders = new Map<number, Set<string>>();
+  const walk = (list: number, depth: number, activity: string): void => {
+    for (const step of lists[list] ?? []) {
+      if (step.opcode === write && step.operand === 0) {
+        const named = holders.get(list) ?? new Set<string>();
+        named.add(activity);
+        holders.set(list, named);
+      } else if (step.opcode === ACTION_LIST_INDEX_OPCODE && depth < 2) {
+        walk(step.operand, depth + 1, activity);
+      }
+    }
+  };
+  for (const one of activities(c)) {
+    const enter = (taggedList(c, sets.addresses[one.set] as number)?.entries ?? [])
+      .find((entry) => entry.tag === HANDLER_TAG_ENTER);
+    if (enter?.opcode !== ACTION_LIST_INDEX_OPCODE) {
+      throw new ComposeError(`activity ${one.name ?? one.set} has no enter list`);
+    }
+    walk(enter.operand, 0, one.name ?? `set ${one.set}`);
+  }
+  if (holders.size === 0) {
+    throw new ComposeError(`no activity's start switches variable ${variable} off`);
+  }
+
+  const actionSlot = archSlot(c.architecture, ACTION_TABLE_SLOT);
+  const table = c.pointerArrayAt(actionSlot);
+  if (table === undefined) throw new ComposeError('base slot 10 does not read');
+  // Every cut, as a blob offset and the list it shortens, highest offset first.
+  const cuts: { at: number; list: number }[] = [];
+  for (const [list] of holders) {
+    if (list === allOff.list) throw new ComposeError(`list ${list} is the all off list, which keeps the device`);
+    const address = table.values[list];
+    if (address === undefined || table.values.filter((one) => one === address).length !== 1) {
+      throw new ComposeError(`list ${list} is named twice in base slot 10, so cutting it cuts both`);
+    }
+    const body = lists[list] as Instruction[];
+    if (body.every((one) => one.opcode === write)) {
+      throw new ComposeError(`list ${list} holds nothing but the write, and would be left empty`);
+    }
+    const start = c.blobOffsetOf(address);
+    if (start === undefined) throw new ComposeError(`list ${list} is outside the container`);
+    body.forEach((one, k) => {
+      if (one.opcode === write && one.operand === 0) cuts.push({ at: start + 1 + 3 * k, list });
+    });
+  }
+  cuts.sort((a, b) => b.at - a.at);
+
+  let current = c;
+  for (const { at, list } of cuts) {
+    // The count byte sits below every cut in its own list, so cutting from the top down leaves it in
+    // place; it is read back from the current table rather than trusted from the first pass.
+    const address = current.pointerArrayAt(actionSlot)?.values[list];
+    const start = address === undefined ? undefined : current.blobOffsetOf(address);
+    if (start === undefined) throw new ComposeError(`list ${list} does not read after a cut`);
+    const cut = excise(current, at, 3);
+    cut.bytes[start] = (current.blob[start] as number) - 1;
+    current = parse(cut.bytes);
+  }
+  return {
+    bytes: restamped(Uint8Array.from(current.blob)),
+    cut: [...holders].map(([list, named]) => ({ list, activities: [...named] })),
+  };
 }
 

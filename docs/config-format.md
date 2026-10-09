@@ -1279,7 +1279,9 @@ choice, client sourced.
 (`IsPoweredOnBetweenActivities`), has its write of 0 left out of the start of every activity that does
 not use it, and nothing else changes: it is still switched on by the activities that use it and still in
 the All Off list, [findings.md](findings.md) section 340. Measured on one device in one compile pair on
-the Harmony 650.
+the Harmony 650. `keepDeviceOn` applies it to the activities a configuration holds, and
+`activityPowerTargets`'s `keepOn` to an activity composed after; applied to the compile without the setting,
+the starts equal the compile with it.
 
 **An activity's key map is built from two roles on arch 14** (Harmony 600, 650 and 700),
 [findings.md](findings.md) section 323, measured on the 40 activities of the 13 Logitech compiles:
