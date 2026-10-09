@@ -23,12 +23,16 @@
  *   they are one table, `buildScreenTexts`.
  * * **its form**, inline or by reference: **the first text in the configuration to draw a run of glyph
  *   codes draws it inline, and every later one points at that copy**, over the whole configuration and
- *   every screen program in it. That holds for all 62609 text draws of the 23 arch 14 compiles in the
- *   lab, so it is not a rule of one screen kind; section 334 measured it on the menu pages and section
- *   357 inside the firmware's screens, and both are this rule seen from inside one builder.
+ *   every screen program in it. That holds for all 63992 text draws of the 24 Harmony 600, 650 and 700
+ *   compiles in the lab, the 22 this pass rebuilds, the French one and a compile with no activities, so it
+ *   is not a rule of one screen kind; section 334 measured it on the menu pages and section 357 inside the
+ *   firmware's screens, and both are this rule seen from inside one builder. The match is on the codes
+ *   alone, whatever font the copy is drawn in, and on whole runs: a run equal to the tail of an earlier
+ *   one is drawn inline, so a reference never lands inside another text.
  *
  * **What is left out, and why it is not built**, `LeftOutScreen`: the screens this track does not build,
- * help and the Remote Assistant with the delay settings screens and their two countdown programs, the
+ * help and the Remote Assistant with the delay settings screens and the one text programs their two
+ * countdowns reach, the
  * welcome tour and the thirty status screens the remote never draws from a configuration. Their texts
  * keep their glyph codes and their places as read. **Their form is still generated**, because the form
  * rule is the configuration's and not a screen's: a text on a built screen can be the first copy a left
@@ -118,8 +122,8 @@ export type TextScreenKind = 'firmware' | 'fixed line' | 'corner page' | 'two ro
  * * `tour`: the welcome tour, which a configuration may leave out, section 357;
  * * `help`: every other mode, help, the Remote Assistant and the delay settings screens they reach,
  *   which our configuration leaves out, `todo-compile-650.md` 3.13, sections 333 and 345;
- * * `no page`: a program no mode's page draws: the two delay countdowns those delay settings screens
- *   queue, on every compile here.
+ * * `no page`: a program no mode's page draws: one text programs the two delay countdowns those delay
+ *   settings screens queue reach, 472 on the 7.5 file.
  */
 export type LeftOutScreen = 'status screen' | 'tour' | 'help' | 'no page';
 
@@ -231,6 +235,20 @@ function textsOf(program: readonly ScreenInstruction[]): DrawnText[] {
 }
 
 /**
+ * The model, off the firmware's wiring, section 347, which is what says how many firmware screens head the
+ * mode table. A configuration whose wiring that reader cannot read is refused here as one this pass does not
+ * describe, whatever the reader's own error: a Logitech compile with no activities, `harvest_650_two_devices`,
+ * and a bench file whose wiring lists run past their end, `h650_bench_4_2_base`, section 358.
+ */
+function modelOf(layout: ContainerLayout): ReturnType<typeof describeWiring>['model'] {
+  try {
+    return describeWiring(layout).model;
+  } catch (error) {
+    throw new ScreenTextError(`the firmware's wiring is not read: ${(error as Error).message}`);
+  }
+}
+
+/**
  * Which kind of screen each mode is, by the readers that already know them: the firmware's screens by
  * their place at the head of the mode table, section 357, and the status screens after them, which
  * `modeRoles` names with them; a device's own mode, Off, the start up screens and the tour by
@@ -241,7 +259,7 @@ function textsOf(program: readonly ScreenInstruction[]): DrawnText[] {
  */
 function modeKinds(c: Container, layout: ContainerLayout): { kind: TextScreenKind; leftOut?: LeftOutScreen }[] {
   const roles = modeRoles(c);
-  const firmware = FIRMWARE_SCREENS[describeWiring(layout).model].length;
+  const firmware = FIRMWARE_SCREENS[modelOf(layout)].length;
   const kinds = roles.map((role, mode): { kind: TextScreenKind; leftOut?: LeftOutScreen } => {
     if (mode < firmware) {
       if (role !== 'system' && role !== 'status') throw new ScreenTextError(`mode ${mode} is not a firmware screen`);
@@ -305,7 +323,7 @@ export function describeScreenTexts(
 
   // Which screen draws each program: a mode's pages, by the mode's kind, and every other program left out.
   const kinds = modeKinds(c, layout);
-  const firmwareNames = FIRMWARE_SCREENS[describeWiring(layout).model];
+  const firmwareNames = FIRMWARE_SCREENS[modelOf(layout)];
   const owner = new Map<number, { kind: TextScreenKind; leftOut?: LeftOutScreen; mode?: number; page?: number }>();
   (modeRecords(c) ?? []).forEach((record, mode) => {
     record.pages.forEach((page, index) => {
@@ -357,7 +375,10 @@ export function describeScreenTexts(
     const who = owner.get(address) ?? { kind: 'left out' as const, leftOut: 'no page' as const };
     const where = who.mode === undefined ? `the program at 0x${address.toString(16)}`
       : `mode ${who.mode} page ${(who.page ?? 0) + 1}`;
-    const roles = rolesOf(who.kind, drawn, who.mode === undefined ? undefined : firmwareNames[who.mode], where);
+    // A text's place is read through the reader to find its role, and only there: the build places it again
+    // from the role alone. Read lazily, so a firmware screen, whose roles are its template's order, reads none.
+    const placeOf = (one: DrawnText, axis: 0 | 1): number => value(one.instruction.start + 1 + axis);
+    const roles = rolesOf(who.kind, drawn, who.mode === undefined ? undefined : firmwareNames[who.mode], where, placeOf);
     group += 1;
     let heading: { draws: ScreenInstruction[]; spec: ScreenTextSpec } | undefined;
     // Whether every line of the title, if the screen has one, states its word; navigation, the codes
@@ -434,10 +455,16 @@ export function describeScreenTexts(
  * above y 16, the bottom line from y 112, and in between a corner by `fourSlotCellAt` or a row by which
  * half it is in. A firmware screen's texts are its template's lines in order, then "Exit" where it has
  * one; a fixed line screen's are its title above the middle and its fixed lines below. These read the
- * coordinates to find the role; the place is then computed from the role alone.
+ * places through `placeOf`, which is the description's reader, so the blind control counts them as read;
+ * the place is then computed from the role alone. A page counter's place follows the kind, the two row
+ * list's ending at 118 and every other's at 125, which on the built pages coincides with the page program
+ * holding no opcode 17 or one, section 358.
  */
-function rolesOf(kind: TextScreenKind, drawn: readonly DrawnText[], firmware: string | undefined, where: string): TextRole[] {
-  const xy = (one: DrawnText): [number, number] => [one.instruction.operands[0] as number, one.instruction.operands[1] as number];
+function rolesOf(
+  kind: TextScreenKind, drawn: readonly DrawnText[], firmware: string | undefined, where: string,
+  placeOf: (one: DrawnText, axis: 0 | 1) => number,
+): TextRole[] {
+  const yOf = (one: DrawnText): number => placeOf(one, 1);
   if (kind === 'left out') return drawn.map(() => ({ role: 'left out', x: 0, y: 0 }));
   if (kind === 'firmware') {
     const template = firmware === undefined ? undefined : FIRMWARE_SCREEN_TEMPLATES[firmware];
@@ -448,19 +475,19 @@ function rolesOf(kind: TextScreenKind, drawn: readonly DrawnText[], firmware: st
   }
   if (kind === 'fixed line') {
     let fixed = 0;
-    return drawn.map((one) => (xy(one)[1] < SCREEN_MIDDLE ? { role: 'heading' } : { role: 'fixed', line: fixed++ }));
+    return drawn.map((one) => (yOf(one) < SCREEN_MIDDLE ? { role: 'heading' } : { role: 'fixed', line: fixed++ }));
   }
-  const top = drawn.filter((one) => xy(one)[1] < TITLE_LINE_BELOW);
+  const top = drawn.filter((one) => yOf(one) < TITLE_LINE_BELOW);
   if (top.length !== 1 && top.length !== 4) throw new ScreenTextError(`${where} draws ${top.length} texts on the title's line`);
   // A corner's lines are numbered in the order the page draws them, and counted per corner.
   const cells = drawn.map((one) => {
-    const [x, y] = xy(one);
-    return y >= TITLE_LINE_BELOW && y < BOTTOM_LINE_FROM && kind === 'corner page' ? fourSlotCellAt(x, y) : undefined;
+    const y = yOf(one);
+    return y >= TITLE_LINE_BELOW && y < BOTTOM_LINE_FROM && kind === 'corner page' ? fourSlotCellAt(placeOf(one, 0), y) : undefined;
   });
   const lineOf = new Map<number, number>();
   let onTop = 0;
   return drawn.map((one, k): TextRole => {
-    const [, y] = xy(one);
+    const y = yOf(one);
     if (y < TITLE_LINE_BELOW) {
       onTop += 1;
       return onTop === 1 ? { role: 'title' } : { role: 'counter', part: (onTop - 2) as 0 | 1 | 2 };

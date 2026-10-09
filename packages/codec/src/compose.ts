@@ -6687,9 +6687,12 @@ export const STARTUP_TITLE_Y = 5;
  * section 358. A longer one wraps onto a second line at y 19, `STARTUP_TITLE_SECOND_Y`, and since
  * section 323 that is composed: the words break greedily at this width and each line is centred on
  * its own, which reproduces both titles the Logitech compiles wrap, `Starting Watch a` over `Movie` and
- * `Starting Play Audio` over `Cassette`, at the x they are drawn at. Those two are 130 and 163 pixels
- * whole, so the break starts somewhere from 127 to 130, which is not known, and this keeps the widest
- * one line title measured. **It was 123 until section 358**, the widest of the 13
+ * `Starting Play Audio` over `Cassette`, at the x they are drawn at. **126 is the Harmony 650's and is
+ * applied to the 600 and 700 by assumption**: per model, the widest title on one line against the
+ * narrowest broken is 116 against 130 on the Harmony 600, 123 against 163 on the 700, and 126 against
+ * 130 on the 650, whose 130, "Démarrage de Console", and a kept first line of 126 come from the French
+ * compile `h650_issue8_config`. So on the 650 the break starts somewhere from 127 to 130, which is not
+ * known, and this keeps the widest one line title measured. **It was 123 until section 358**, the widest of the 13
  * compiles section 336 read, `Starting Watch Bluray`; the composer then broke `Starting Plasma kijken`
  * over two lines where Logitech draws one, on every file this project composed with Plasma kijken in
  * it, a difference the setup comparison does not look at.

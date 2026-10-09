@@ -961,7 +961,7 @@ u16 0;               u8 0x80 + S
 **A start up screen** is a mode of one page with an empty list, `00 00`, and 54 bindings to nothing,
 13 of 13; its program is `[02 picture, 10 02, the title, three fixed lines from y 82, 00]`, the fixed
 lines the same across a configuration's activities, 4 of 4, and the title "Starting" and the name at
-y 5 and `x = floor((128 - width) / 2)` on the 11 of 13 that fit one line, at most 123 pixels there and 126 on the test setup's two compiles, section 358. Font 2
+y 5 and `x = floor((128 - width) / 2)` on the 11 of 13 that fit one line, at most 123 pixels there and 126 on the Harmony 650 test setup's two compiles, section 358. Font 2
 holds only the letters the texts drawn in it use, the start up titles and the status and battery messages.
 
 **A working screen** is a four slot device mode page, section 285, whose queued `0x73` has operand 2 on
@@ -985,7 +985,7 @@ checks every activity against what is built:
 |---|---|---|
 | start up record | presses of scans 1 to 54 bound to nothing, in `compilerTagOrder`; one page, list `00 00`; page record six bytes | 40 of 40 |
 | start up program | `02 0,0 picture` by content per look, `10 02`, the title lines, the three fixed lines, `00` | 40 of 40 |
-| start up title | "Starting" and the name, broken greedily at 126 pixels since section 358, y 5 and 19, each `floor((128 - width) / 2)`; the name is the working screen's title on every page | 40 of 40 |
+| start up title | "Starting" and the name, broken greedily at 126 pixels since section 358, the Harmony 650's and assumed for the 600 and 700, y 5 and 19, each `floor((128 - width) / 2)`; the name is the working screen's title on every page | 40 of 40 |
 | fixed lines | "Please keep the", "remote pointed at", "your system", centred, y 82, 96, 110 | 40 of 40 |
 | start up texts | by reference to the lowest addressed inline copy of the same glyph codes, or that copy | 163 of 163 |
 | start up font | font 2, read off the configuration's start up screens, not built | 40 of 40 |
@@ -1102,30 +1102,34 @@ place by its screen kind's rule, and its form, for every text in the configurati
 
 | what | rule | agree |
 |---|---|---|
-| form | the first text in address order to draw a run of glyph codes draws it inline, opcode 5; every later one is opcode 4 pointing at that copy's codes, its start plus 3 | 62609 of 62609 draws on 23 compiles, `h650_issue8_config` included |
+| form | the first text in address order to draw a run of glyph codes draws it inline, opcode 5; every later one is opcode 4 pointing at that copy's codes, its start plus 3. Matched on the codes alone, whatever font the copy is drawn in, and on whole runs: a run equal to the tail of an earlier one is drawn inline | 63992 of 63992 draws on 24 compiles, `h650_issue8_config` and `harvest_650_two_devices` included |
 | corner page title | 0, 2 | |
-| corner page counter | `n`, `/`, `m` chained so that `m` ends at 125, y 2; the two row list's at `TWO_ROW_COUNTER_X` | |
-| corner label | from x 3, or ending at 125; y 40 or 90; a two line label from 15 higher, each line a font height below the last | |
-| row label, activity menu | centred, y 35 and 79 | |
+| page counter | `n`, `/`, `m` chained so that `m` ends at 125, y 2; on the two row list at `TWO_ROW_COUNTER_X`, ending at 118. Decided by the screen kind; on the built pages the same split as the page program holding an opcode 17 or none | |
+| corner label | from x 3, or ending at 125; one line at y 40 or 90; two lines at 25 and `25 + h`, or 75 and `75 + h`, `h` the font's height | |
+| row label, two row list and activity menu | centred, y 35 and 79 | 143 and 78 draws |
 | bottom word | centred, y 114 | |
-| start up and Off heading | broken greedily at 126 pixels onto y 5 and 19, each line centred | |
+| start up and Off heading | broken greedily at 126 pixels onto y 5 and 19, each line centred. 126 is the Harmony 650's, from 127 to 130 the break is not known, and it is applied to the Harmony 600 and 700 by assumption, whose brackets are 116 to 130 and 123 to 163 | |
 | fixed lines | centred, y 82, 96, 110 | |
 | firmware screens | section 357's templates | |
 
 Every place row holds on the 22 byte for byte, 16070 draws on screens built here: firmware 542, fixed line
 403, corner page 14325, two row list 528, activity menu 272. Centred is `floor((128 - width) / 2)`.
 
-**Not built, and why**: help, the Remote Assistant and the delay screens, the two countdown programs no page
-draws, the welcome tour and the thirty status screens, 44300 draws over the 22. Their texts keep their glyph
+**Not built, and why**: help, the Remote Assistant and the delay screens, the one text programs no page
+draws, which the two delay countdowns reach, the welcome tour and the thirty status screens, 44300 draws over the 22. Their texts keep their glyph
 codes and places as read; their form is generated, since a reference may cross between a built and a left out
 screen either way.
 
 **Read, not built**: each text's word through the character map, and its font, `todo-compile-650.md` 8.2; a
 label's lines, section 325's rule. A text whose codes the character map does not resolve keeps its codes and
 is still placed and given its form, 74 on built screens of the 22. A glyph code of 128 or more is refused. A
-blind control overwrites every byte of the texts the description does not read with `0xEE`, 229010 over the
-22, and the rebuild is unchanged; the character map is the one input taken from the unblinded file. Refused:
-the French `h650_issue8_config`. Unconfirmed: any wording but English, any architecture but arch 14.
+built text's place is read to find its role and placed again from the role. A blind control overwrites every
+byte of the texts the description does not read with `0xEE`, 205792 over the 22, every byte of the texts in
+the layout, and every text's place in the container the description navigates, and the rebuild is unchanged:
+given the roles, the rules regenerate every place, form and address. That navigated container still holds
+the opcodes, codes and reference addresses, and is the second input. Refused: the French `h650_issue8_config`,
+and a configuration whose firmware wiring is not read, `harvest_650_two_devices` and
+`h650_bench_4_2_base`. Unconfirmed: any wording but English, any architecture but arch 14.
 
 **The welcome tour is not built, and a configuration can leave its ten screens out**, section 357: in
 Logitech's skipped form, 19 of the 21, no instruction anywhere enters any of them. Its start list, the
@@ -1535,7 +1539,8 @@ spaces within 58, any threshold from 55 to 58 placing all 2036 measured corner l
 band's edges three of them), at y 25 and 40 (75 and 90 in the bottom row), each line placed on its own.
 No corner label line in the page's label font is wider than 59 pixels, and the one 60 pixel word is
 drawn in another font, which is not composed. The start up title breaks the
-same way at 126 pixels onto y 5 and 19, each line centred, section 358.
+same way at 126 pixels onto y 5 and 19, each line centred, section 358, a Harmony 650 measurement applied to
+the 600 and 700 by assumption.
 
 Read with `gspm.handler_sets` and `gspm.handler_index`. [findings.md](findings.md) section 39.
 

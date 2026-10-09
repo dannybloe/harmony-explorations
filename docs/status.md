@@ -972,17 +972,20 @@ section 311 had left open. One more owner's 650 is refused because its letters c
 **The welcome tour can be left out**: in the form Logitech skips it, nothing enters its ten screens, about
 1700 bytes; its seven byte start list has to stay unless three other lists change with it.
 
-**Every text on those screens is generated now, section 358**: what it says, where it sits and whether it is
-written out in full or points at an earlier copy of the same word, which is how a configuration saves room.
-The last of those turned out to be one rule for the whole file rather than one per screen: the first time a
-word appears it is written out, and every later use points back at that first one, on every one of 62609
-texts in 23 of Logitech's compiles. Rebuilt this way, 22 of them come back identical, again with every byte
-the builder claims blanked first. The test setup composed for the bench, run through it, shows a person
-nothing Logitech's own compile of that setup does not, apart from the menu's order, and is 24 bytes shorter.
-It also found one thing every earlier composed file had wrong: "Starting Plasma kijken" broken over two
-lines where Logitech draws it on one, because the limit was set at the narrowest width the evidence
-allowed. Not generated: the letters and fonts themselves, `todo-compile-650.md` 8.2, and the texts on help,
-the Remote Assistant, the tour and the status screens, which are not built.
+**Every text on those screens is generated now, section 358**, on the Harmony 600, 650 and 700: what it says,
+where it sits and whether it is written out in full or points at an earlier copy of the same word, which is how
+a configuration saves room. The last of those turned out to be one rule for the whole file rather than one per
+screen: the first time a word appears it is written out, and every later use points back at that first one, on
+every one of 63992 texts in 24 of Logitech's compiles. Rebuilt this way, 22 of them come back identical. The
+check that every byte was really rebuilt is narrower than it first read: where each text sits is read to tell
+what it is, a title, a corner label, a row, and then placed again by the rule. A French Harmony 650 is
+refused, since its words do not fit the English screens. The test setup composed for the bench, run through
+it, shows a person nothing Logitech's own compile of that setup does not, apart from the menu's order, and is
+24 bytes shorter. It also found one thing every earlier composed file had wrong: "Starting Plasma kijken"
+broken over two lines where Logitech draws it on one, because the limit was set at the narrowest width the
+evidence allowed. The new limit is measured on the Harmony 650 and assumed for the 600 and 700. Not
+generated: the letters and fonts themselves, `todo-compile-650.md` 8.2, and the texts on help, the Remote
+Assistant, the tour and the status screens, which are not built.
 
 **A Harmony One's activity menu can now grow a page, section 293.** Its menu shows three activities to
 a page, and a fourth used to be refused. Now it opens a new page, and the menu says so in the three

@@ -9,11 +9,14 @@
  * `layOutContainer` lays the container out again. Byte equality says the rules produced every place, every
  * form and every reference address the compile holds.
  *
- * **The blind control makes that a test**: every byte of every text instruction the description does not
- * read, which is every place on a built screen, every opcode, every terminator and every reference address,
- * is overwritten with `0xEE` in the bytes the reader is handed, in the layout's pieces and in the file the
- * fonts are read from, and the rebuild still equals the compile. What the description does read is each
- * text's glyph codes, which is where its word comes from, and a left out text's place.
+ * **The blind control makes that a test, of a narrower claim**: given the roles read off the real places,
+ * the rules regenerate every place, form and address. Every byte of the texts the description does not read,
+ * every opcode, terminator and reference address and the places that do not decide a role, is overwritten
+ * with `0xEE` in the bytes the reader is handed; every byte of the texts in the layout's pieces; and every
+ * text's place in the container the description finds its way through, which still holds the opcodes, codes
+ * and addresses that find the texts, and is named as the second input. What the description reads is each
+ * text's glyph codes, which is where its word comes from, the places that find a built text's role, and a
+ * left out text's place.
  *
  * **The failing controls** are edits of a compile that `checkScreenTexts` refuses.
  */
@@ -114,7 +117,7 @@ function seenDifferences(a: Map<string, number>, b: Map<string, number>): string
     .map((key) => `${a.get(key) ?? 0} against ${b.get(key) ?? 0}: ${key}`).sort();
 }
 
-test('every text of the 22 arch 14 compiles is spelled from its word, placed by its screen\'s rule and drawn inline or by reference by the first copy, byte for byte',
+test('on the 22 Harmony 600, 650 and 700 compiles every text on a screen built here is spelled from its word and placed by its screen\'s rule, every text\'s form follows the first copy, and the texts left out keep their codes and places, byte for byte',
      skipUnless(...ALL), () => {
   const perModel = new Map<string, number>();
   const perKind = new Map<string, number>();
@@ -164,10 +167,16 @@ test('every text of the 22 arch 14 compiles is spelled from its word, placed by 
   assert.equal(unresolved, 74);
 });
 
-test('the first text to draw a run of glyph codes draws it inline and every later one points at that copy, on all 62609 text draws of the 23 compiles',
-     skipUnless(...ALL, 'h650_issue8_config'), () => {
+/**
+ * Every Logitech compile of a Harmony 600, 650 or 700 in the lab: the 22, the French one, and a compile with
+ * two devices and no activities, which the pass refuses for its wiring as section 356 refuses it.
+ */
+const FORM_RULE = [...ALL, 'h650_issue8_config', 'harvest_650_two_devices'] as const;
+
+test('the first text to draw a run of glyph codes draws it inline and every later one points at that copy, on all 63992 text draws of the 24 Harmony 600, 650 and 700 compiles in the lab',
+     skipUnless(...FORM_RULE), () => {
   let draws = 0;
-  for (const name of [...ALL, 'h650_issue8_config']) {
+  for (const name of FORM_RULE) {
     const c = containerOf(name);
     const found: { at: number; inline: boolean; key: string; target?: number }[] = [];
     const seen = new Set<number>();
@@ -199,7 +208,7 @@ test('the first text to draw a run of glyph codes draws it inline and every late
     }
     draws += found.length;
   }
-  assert.equal(draws, 62609);
+  assert.equal(draws, 63992);
 });
 
 test('a French Harmony 650 is refused at its first firmware screen, whose words break into other lines than the template\'s',
@@ -208,10 +217,11 @@ test('a French Harmony 650 is refused at its first firmware screen, whose words 
     (error: Error) => error instanceof ScreenTextError && /addActivityHere, draws 6 texts where its template has 5/.test(error.message));
 });
 
-test('with every text\'s opcode, terminator and reference address, and every place on a screen built here, blinded, reading only glyph codes and the places of left out texts, all 22 rebuild',
+test('with every text\'s place blinded in the container the description finds its way through, and every byte of the texts it does not read blinded in what it reads and in the layout, all 22 rebuild: given the roles read off the real places, the rules regenerate every place, form and address',
      skipUnless(...ALL), () => {
   let structure = 0;
   let read = 0;
+  let placesRead = 0;
   let blindedCount = 0;
   let changed = 0;
   let unchangedInAddresses = 0;
@@ -223,6 +233,13 @@ test('with every text\'s opcode, terminator and reference address, and every pla
     for (const at of first.draws.flat()) {
       if (c.blob[at] === SCREEN_TEXT_AT) for (let k = 3; k < 6; k += 1) addressBytes.add(at + k);
     }
+    // The container the description navigates: every text's place blinded, built or left out. What it still
+    // holds of the texts is where they are and what they draw, the opcodes, codes, terminators and reference
+    // addresses, which find each text and its copy; its fonts and character map are read off it too.
+    const places = new Set<number>(first.draws.flat().flatMap((at) => [at + 1, at + 2]));
+    const navigated = c.blob.slice();
+    for (const at of places) navigated[at] = 0xee;
+    // What the description reads: every byte of the texts it does not read blinded.
     const blinded = c.blob.slice();
     for (const at of first.structure) {
       if (first.described.has(at)) continue;
@@ -231,37 +248,38 @@ test('with every text\'s opcode, terminator and reference address, and every pla
       else if (addressBytes.has(at)) unchangedInAddresses += 1;
       blinded[at] = 0xee;
     }
-    const layout = takeApart(c);
+    const nav = parse(navigated);
+    const layout = takeApart(nav);
     const laid = layOutContainer(layout);
     const pieces = [layout.keyTable, ...layout.body,
       ...layout.sections.flatMap((s) => (s === undefined ? [] : [...s.before, ...s.head])), ...layout.pictures];
     const starts = pieces.map((piece) => ({ piece, at: laid.offsetOf(piece) as number })).sort((a, b) => a.at - b.at);
-    // The description is read through the blinded bytes, and the same offsets are read.
-    const d = describeScreenTexts(c, layout, (at) => blinded[at] as number);
-    assert.deepEqual([...d.described].sort((a, b) => a - b), [...first.described].sort((a, b) => a - b), `${name}: reads`);
-    // The layout's own pieces blinded too, so nothing kept from them can carry a byte.
+    // The layout's pieces blinded over every byte of the texts, read or not, so nothing kept from them can
+    // carry a byte.
     let k = 0;
     for (const at of [...first.structure].sort((a, b) => a - b)) {
-      if (first.described.has(at)) continue;
       while (k + 1 < starts.length && (starts[k + 1] as (typeof starts)[number]).at <= at) k += 1;
       const one = starts[k] as { piece: ContainerPiece; at: number };
       one.piece.bytes[at - one.at] = 0xee;
     }
-    // The fonts are read off the blinded file. Its character map is not: the map's alphabet is chosen by
-    // the codes the texts draw, and a file whose every text opcode is blinded draws none, so the map is
-    // computed off the configuration, 8.2's reading of its font table, which holds no place and no form.
-    const out = layOutContainer(withScreenTexts(layout, buildScreenTexts(d.spec, parse(blinded), characterMap(c)), d.place)).bytes;
+    const d = describeScreenTexts(nav, layout, (at) => blinded[at] as number);
+    assert.deepEqual([...d.described].sort((a, b) => a - b), [...first.described].sort((a, b) => a - b), `${name}: reads`);
+    const out = layOutContainer(withScreenTexts(layout, buildScreenTexts(d.spec, nav), d.place)).bytes;
     assert.equal(firstDifference(out, c.blob), undefined, `${name} differs`);
     structure += first.structure.size;
     read += first.described.size;
+    placesRead += [...first.described].filter((at) => places.has(at)).length;
     assert.ok([...first.described].every((at) => first.structure.has(at)), `${name}: a read outside the texts`);
   }
   assert.equal(structure, 569012);
-  assert.equal(read, 340002);
-  assert.equal(blindedCount, 229010);
-  // All but 511 were something else first, and those 511 are bytes of reference address fields, which the
-  // frame writes whatever a piece holds there.
-  assert.equal(changed, 228499);
+  // Read: every text's codes, a left out text's place, 44300 draws and 88600 bytes, and of a built text's place
+  // what finds its role, 23218 bytes; the build places it again from the role alone.
+  assert.equal(read, 363220);
+  assert.equal(placesRead, 88600 + 23218);
+  assert.equal(blindedCount, 205792);
+  // All but these were something else first, and those are bytes of reference address fields, which the frame
+  // writes whatever a piece holds there.
+  assert.equal(changed, 205281);
   assert.equal(unchangedInAddresses, blindedCount - changed);
 });
 
@@ -290,7 +308,7 @@ test('checkScreenTexts passes Logitech\'s clean compile and refuses a corner lab
   // The page counter's slash a pixel to the left.
   const slash = find('a counter slash', (k) => role(k) === 'counter' && d.spec.texts[k]?.word === '/');
   assert.throws(() => checkScreenTexts(nudge(slash + 1, -1)), refused(/'s counter '\/' is drawn at/));
-  // "Update Successful" a line lower: its y is the second byte after the opcode.
+  // "Update Successful" a pixel lower: its y is the second byte after the opcode.
   const update = find('Update Successful', (k) => d.spec.texts[k]?.word === 'Update Successful');
   assert.throws(() => checkScreenTexts(nudge(update + 2, 1)), refused(/'s template 'Update Successful' is drawn at/));
   // A bottom word a pixel higher.
@@ -303,11 +321,29 @@ test('checkScreenTexts passes Logitech\'s clean compile and refuses a corner lab
   assert.throws(() => checkScreenTexts(nudge(pointer + 3, 1)), refused(/'s title '.*' is drawn by reference where it is built inline/));
 });
 
+test('a configuration whose firmware wiring is not read is refused as one, not with the wiring reader\'s own error: the compile with no activities and the bench file of todo-compile-650 4.2',
+     skipUnless('harvest_650_two_devices', 'h650_bench_4_2_base'), () => {
+  assert.throws(() => checkScreenTexts(containerOf('harvest_650_two_devices')),
+    (error: Error) => error instanceof ScreenTextError && /wiring is not read: variable "location"/.test(error.message));
+  assert.throws(() => checkScreenTexts(containerOf('h650_bench_4_2_base')),
+    (error: Error) => error instanceof ScreenTextError && /wiring is not read: read at offset 7/.test(error.message));
+});
+
 test('checkScreenTexts refuses the test setup as todo-compile-650 6.2.13 composed it: a page counter drawn by reference before any copy of it is drawn inline',
      skipUnless('h650_7_1_base'), () => {
   assert.throws(() => checkScreenTexts(containerOf('h650_7_1_base')),
     (error: Error) => error instanceof ScreenTextError && /'s counter '3' is drawn by reference where it is built inline/.test(error.message));
 });
+
+/** The texts of the 7.5 file whose bytes the pass changes in length, in address order, as kind, role, word, lengths. */
+const CHANGED_LENGTHS = [
+  'corner page counter \'3\': 5 to 6',
+  'fixed line heading \'Starting Plasma kijken\': 29 to 26',
+  'corner page title \'Plasma kijken\': 17 to 6',
+  'corner page corner \'Teletext\': 12 to 6',
+  'corner page corner \'DVR\': 7 to 6',
+  'corner page corner \'Aspect\': 10 to 6',
+];
 
 /** The 7.5 file, as `make.ts` in the lab's `work/bench-7-5/` composes it: section 356's records, then 357's screens. */
 function composedSevenFive(): { composed: Container; seven: Container } {
@@ -325,7 +361,7 @@ function composedSevenFive(): { composed: Container; seven: Container } {
   return { composed, seven };
 }
 
-test('the premise on the 7.5 file: 718 of the 811 texts drawn on screens built here were Logitech\'s bytes, ten were drawn in another form than the rule gives, where composing put a copy in front of them, and one title was broken where Logitech does not break it',
+test('the premise on the 7.5 file: 718 of the 811 texts drawn on screens built here were Logitech\'s bytes and 2146 more are on screens left out; where composing put a copy in front of them, five were drawn in another form than the rule gives and five pointed at another copy, and one title was broken where Logitech does not break it',
      skipUnless('h650_7_1_base', 'h650_test_config_clean', 'h650_start_config'), () => {
   const { seven } = composedSevenFive();
   const layout = takeApart(seven);
@@ -334,6 +370,7 @@ test('the premise on the 7.5 file: 718 of the 811 texts drawn on screens built h
   const d = describeScreenTexts(seven, layout);
   const built = buildScreenTexts(d.spec, seven);
   const who = new Map<string, number>();
+  const left = new Map<string, number>();
   const differs: string[] = [];
   // Where each built draw's original sat, for a text drawn in as many lines as it is built in.
   const original = new Map<number, number>();
@@ -342,7 +379,10 @@ test('the premise on the 7.5 file: 718 of the 811 texts drawn on screens built h
     if (to - from === offsets.length) offsets.forEach((offset, n) => original.set(from + n, offset));
   });
   d.spec.texts.forEach((one, k) => {
-    if (one.kind === 'left out') return;
+    if (one.kind === 'left out') {
+      add(left, one.leftOut as string, (d.draws[k] as number[]).length);
+      return;
+    }
     const mode = Number(/^mode (\d+)/.exec(one.where)?.[1]);
     const label = one.kind === 'firmware' ? 'firmware screen, section 357'
       : three.has(mode) ? `${three.get(mode)}, section 356${one.role.role === 'row' || one.role.role === 'corner' ? ', a label read as glyph codes' : ''}`
@@ -375,9 +415,12 @@ test('the premise on the 7.5 file: 718 of the 811 texts drawn on screens built h
     'composed': 28,
     'Logitech\'s bytes': 718,
   });
-  // Every place already followed the rules; ten forms did not, because composing put an earlier copy of the
-  // same codes in front of them: the activity menu's "3" now precedes a device page's, and Plasma kijken's
-  // working screen draws four texts inline that the activity menu or a device page drew first. And the
+  // The texts on screens left out, by the screen: 2146 in all.
+  assert.deepEqual(Object.fromEntries(left), { help: 1564, 'no page': 472, 'status screen': 57, tour: 53 });
+  // Every place already followed the rules. Composing put an earlier copy of the same codes in front of ten
+  // texts: five are in another form, the device page's "3", which the activity menu's "3" now precedes, and
+  // four texts Plasma kijken's working screen draws inline that the activity menu or a device page drew
+  // first; and five are references in the right form pointing at a later copy, the device page's "3". And the
   // composer broke Plasma kijken's start up title, 126 pixels, at 123, where Logitech draws it on one line.
   assert.deepEqual(differs, [
     'Logitech\'s bytes: 3 inline',
@@ -392,7 +435,8 @@ test('the premise on the 7.5 file: 718 of the 811 texts drawn on screens built h
     'composed: DVR inline',
     'composed: Aspect inline',
   ]);
-  // The 2 texts whose codes the character map leaves unresolved, a J and a colon on the Denon's pages.
+  // The 2 texts whose codes the character map leaves unresolved, on the Denon's pages: the first letter of
+  // "JazzClub" and one character of "DTSNEO:X".
   assert.equal(d.unresolved.size, 2);
 });
 
@@ -426,11 +470,25 @@ test('the 7.5 file with every text generated shows a person nothing Logitech\'s 
     ...menu.slice(5),
     '1 against 0: fixed line | Starting Plasma | 19,5', '1 against 0: fixed line | kijken | 47,19',
   ].sort());
-  // A text inline is four bytes and its codes, by reference six: "3" gains one, "Plasma kijken" loses 11,
-  // "Teletext" 6, "DVR" 1 and "Aspect" 4. The five references moved to the first copy change no length.
-  // And Plasma kijken's start up title, "Starting Plasma" over "kijken", both inline, 19 and 10 bytes, is
+  // Every text whose bytes changed length, as its words and its lengths before and after. A text inline is
+  // four bytes and its codes, by reference six: the device page's "3" gains one, "Plasma kijken" loses 11,
+  // "Teletext" 6, "DVR" 1 and "Aspect" 4. The five references moved to the first copy change no length. And
+  // Plasma kijken's start up title, "Starting Plasma" over "kijken", both inline, 19 and 10 bytes, is
   // "Starting Plasma kijken" on one line, 26, which is how Logitech's compile draws it.
-  assert.equal(out.blob.length - seven.blob.length, 1 - 11 - 6 - 1 - 4 + (26 - 19 - 10));
+  const before = describeScreenTexts(seven, takeApart(seven));
+  const after = describeScreenTexts(out, takeApart(out));
+  assert.equal(after.spec.texts.length, before.spec.texts.length);
+  const lengths: string[] = [];
+  let total = 0;
+  before.spec.texts.forEach((one, k) => {
+    const [a, b] = [before.place.texts[k]?.length as number, after.place.texts[k]?.length as number];
+    assert.equal(after.spec.texts[k]?.word, one.word);
+    if (a !== b) lengths.push(`${one.kind} ${one.role.role} '${one.word}': ${a} to ${b}`);
+    total += b - a;
+  });
+  assert.deepEqual(lengths, CHANGED_LENGTHS);
+  assert.equal(total, -24);
+  assert.equal(out.blob.length - seven.blob.length, total);
   // And the pass is idempotent: run again, it changes nothing.
   assert.equal(firstDifference(rebuilt(out), out.blob), undefined);
 });
