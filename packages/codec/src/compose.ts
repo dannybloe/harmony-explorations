@@ -108,7 +108,7 @@ import {
 import {
   menuMarkerVariable, startSequenceVariables, stateVariableName, type StateVariableSpec,
 } from './statetables.ts';
-import { characterMap, decode, glyphsReferencedBy, referencedStringAddress, screenStrings } from './text.ts';
+import { type CharacterMap, characterMap, decode, glyphsReferencedBy, referencedStringAddress, screenStrings } from './text.ts';
 import { type FontSet, fontSets, glyphOf } from './font.ts';
 import {
   IR_CLASS_STREAM,
@@ -2150,12 +2150,25 @@ function textWidth(c: Container, set: FontSet, codes: readonly number[]): number
  * for a character.
  */
 export function spelledText(c: Container, font: number, text: string): { codes: number[]; width: number } {
-  const map = characterMap(c);
+  return speller(c)(font, text);
+}
+
+/**
+ * `spelledText` for many texts of one configuration: the character map and the font table are read
+ * once, where `spelledText` reads them on every call, which is what spelling every text of a
+ * configuration, section 358, cannot afford. The same refusals, from the same `codesFor`.
+ */
+export function speller(
+  c: Container, map: CharacterMap | undefined = characterMap(c),
+): (font: number, text: string) => { codes: number[]; width: number } {
   if (map === undefined) throw new ComposeError('the config draws no text this can spell from');
-  const set = (fontSets(c) ?? [])[font];
-  if (set === undefined) throw new ComposeError(`the config does not carry font ${font}`);
-  const codes = codesFor(map, c, set, text, font);
-  return { codes, width: textWidth(c, set, codes) };
+  const sets = fontSets(c) ?? [];
+  return (font, text) => {
+    const set = sets[font];
+    if (set === undefined) throw new ComposeError(`the config does not carry font ${font}`);
+    const codes = codesFor(map, c, set, text, font);
+    return { codes, width: textWidth(c, set, codes) };
+  };
 }
 
 /**
@@ -3418,8 +3431,8 @@ function fourSlotLabelLines(
  * its mode has two to nine pages, 98 of 98. A two row list's pages draw it at `0x63`, `0x6A`, `0x6F`
  * and a mode of ten pages or more further left, neither of which the composer writes.
  */
-const FOUR_SLOT_COUNTER_X: readonly [number, number, number] = [0x6a, 0x71, 0x76];
-const FOUR_SLOT_TITLE_XY: readonly [number, number] = [0, 2];
+export const FOUR_SLOT_COUNTER_X: readonly [number, number, number] = [0x6a, 0x71, 0x76];
+export const FOUR_SLOT_TITLE_XY: readonly [number, number] = [0, 2];
 
 /** The opcode sequence of a device mode page's chrome, around the part a composer writes. */
 const FOUR_SLOT_PREFIX = [OP_IMAGE, SCREEN_QUEUE_INSTRUCTION, SCREEN_DRAW_IMAGE_AT] as const;
@@ -3558,7 +3571,7 @@ const DEVICE_PAGE_LOOKS: readonly DevicePageLook[] = [
 const DEVICE_PAGE_BACKGROUND_AT: readonly number[] = [0, 0];
 const DEVICE_PAGE_TOP_BAR_AT: readonly number[] = [0, 0, 0, 0, 128, 16];
 const DEVICE_PAGE_BOTTOM_BAR_AT: readonly number[] = [0, 0, 0, 0, 128, 128];
-const DEVICE_PAGE_BACK_Y = 114;
+export const DEVICE_PAGE_BACK_Y = 114;
 /** The bottom word: what the key under the display's centre does on a device page, go back. */
 export const DEVICE_PAGE_BACK_WORD = 'Back';
 
@@ -4201,7 +4214,7 @@ function growFourSlotMenu(
  * `FOUR_SLOT_COUNTER_X`. On every two row device list page of the four arch 14 user configurations and
  * `h650_plasma_base`, section 285; measured again by `paginateFourSlot`'s test.
  */
-const TWO_ROW_COUNTER_X: readonly [number, number, number] = [0x63, 0x6a, 0x6f];
+export const TWO_ROW_COUNTER_X: readonly [number, number, number] = [0x63, 0x6a, 0x6f];
 /**
  * The most pages a menu composed here may reach: its counter is drawn as one digit either side of
  * the slash, and a compiled mode of ten pages or more moves the whole counter left, section 285,
@@ -6667,19 +6680,22 @@ function appendValueMapCase(start: Container, map: number, key: number, program:
 
 /** "Starting", then the name, at y 5 and centred, 13 of 13. */
 const STARTUP_TITLE_PREFIX = 'Starting ';
-const STARTUP_TITLE_Y = 5;
+export const STARTUP_TITLE_Y = 5;
 /**
- * The widest title a start up screen draws on one line, 123 pixels, the widest of the 11 one line
- * titles among the 13 on the four arch 14 user configurations. A longer one wraps onto a second line
- * at y 19, `STARTUP_TITLE_SECOND_Y`, and since section 323 that is composed: the words break greedily
- * at this width and each line is centred on its own, which reproduces both titles the 13 Logitech
- * compiles wrap, `Starting Watch a` over `Movie` and `Starting Play Audio` over `Cassette`, at the x
- * they are drawn at. Those two are 130 and 163 pixels whole, so where from 124 to 130 the break
- * starts is not known, and this keeps the widest one line title measured, which is also the widest of
- * the 37 one line titles on the 13 Logitech compiles, `Starting Watch Bluray`.
+ * The widest title a start up screen draws on one line, **126 pixels**, `Starting Plasma kijken` on
+ * Logitech's two compiles of the Harmony 650's test setup, `h650_test_config` and its clean twin,
+ * section 358. A longer one wraps onto a second line at y 19, `STARTUP_TITLE_SECOND_Y`, and since
+ * section 323 that is composed: the words break greedily at this width and each line is centred on
+ * its own, which reproduces both titles the Logitech compiles wrap, `Starting Watch a` over `Movie` and
+ * `Starting Play Audio` over `Cassette`, at the x they are drawn at. Those two are 130 and 163 pixels
+ * whole, so the break starts somewhere from 127 to 130, which is not known, and this keeps the widest
+ * one line title measured. **It was 123 until section 358**, the widest of the 13
+ * compiles section 336 read, `Starting Watch Bluray`; the composer then broke `Starting Plasma kijken`
+ * over two lines where Logitech draws one, on every file this project composed with Plasma kijken in
+ * it, a difference the setup comparison does not look at.
  */
-const STARTUP_TITLE_MAX = 123;
-const STARTUP_TITLE_SECOND_Y = 19;
+export const STARTUP_TITLE_MAX = 126;
+export const STARTUP_TITLE_SECOND_Y = 19;
 /**
  * Below the title every start up screen draws the same three lines, each centred in the start up font,
  * at y 82, 96 and 110, which is that font's height apart: 40 start up screens of 40 on the thirteen
@@ -6688,7 +6704,7 @@ const STARTUP_TITLE_SECOND_Y = 19;
  * and the places are measured for a start up font 14 high only, which `startupParts` refuses otherwise.
  */
 const STARTUP_FIXED_LINES: readonly string[] = ['Please keep the', 'remote pointed at', 'your system'];
-const STARTUP_FIXED_LINE_Y: readonly number[] = [82, 96, 110];
+export const STARTUP_FIXED_LINE_Y: readonly number[] = [82, 96, 110];
 /** The word under the working screen's centre key, which goes to the device list, section 290. */
 const WORKING_SCREEN_WORD = 'Devices';
 

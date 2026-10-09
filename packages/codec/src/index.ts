@@ -69,6 +69,9 @@ export * from './screenrecords.ts';
 // The firmware's own screens built whole from a description, todo-compile-650 7.4, section 357, on
 // `screenrecords.ts`'s reading, building and placing.
 export * from './firmwarescreens.ts';
+// Every text of a configuration generated from its word and its font, its place by its screen's rule and
+// its form by the first copy, todo-compile-650 8.1, section 358. After the screens it rewrites the texts of.
+export * from './screentexts.ts';
 // **The metadata archive**, section 260: the ZIP two architectures carry inside the container,
 // which on arch 16 (Harmony 300 and 350) names every device and every command. Exported for the
 // same reason the archive readers below are: FreeHarmony is what wants a command's name, and

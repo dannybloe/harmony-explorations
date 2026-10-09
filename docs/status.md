@@ -565,7 +565,7 @@ finding.
 
 `todo.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 357<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 358<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and flash has been written on five units**, the first in section 222:
@@ -953,7 +953,7 @@ come out of a Logitech compile around the pages the composer drew; now they are 
 way 22 of Logitech's compiles come back identical, including when every byte the builder claims to generate
 is blanked first. The activity menu follows the setup file's order. "Do you want to turn off your system
 now?" turned out to be a Help screen and not part of Off. Still read off a configuration: the rows' labels
-and fonts, the pictures, and where the texts drawn by reference sit.
+and fonts and the pictures; where the texts drawn by reference sit is generated since section 358.
 
 **The remote's own screens are built whole too, section 357**: "add an Activity on this button", "USB
 Connected", the battery screens, "Update Successful", the learning screens and the blanks between them,
@@ -964,6 +964,18 @@ person completes it is not read and nobody has tried it on a remote; and the var
 section 311 had left open. One more owner's 650 is refused because its letters cannot be read as an "I", and a French one for its words.
 **The welcome tour can be left out**: in the form Logitech skips it, nothing enters its ten screens, about
 1700 bytes; its seven byte start list has to stay unless three other lists change with it.
+
+**Every text on those screens is generated now, section 358**: what it says, where it sits and whether it is
+written out in full or points at an earlier copy of the same word, which is how a configuration saves room.
+The last of those turned out to be one rule for the whole file rather than one per screen: the first time a
+word appears it is written out, and every later use points back at that first one, on every one of 62609
+texts in 23 of Logitech's compiles. Rebuilt this way, 22 of them come back identical, again with every byte
+the builder claims blanked first. The test setup composed for the bench, run through it, shows a person
+nothing Logitech's own compile of that setup does not, apart from the menu's order, and is 24 bytes shorter.
+It also found one thing every earlier composed file had wrong: "Starting Plasma kijken" broken over two
+lines where Logitech draws it on one, because the limit was set at the narrowest width the evidence
+allowed. Not generated: the letters and fonts themselves, `todo-compile-650.md` 8.2, and the texts on help,
+the Remote Assistant, the tour and the status screens, which are not built.
 
 **A Harmony One's activity menu can now grow a page, section 293.** Its menu shows three activities to
 a page, and a fourth used to be refused. Now it opens a new page, and the menu says so in the three

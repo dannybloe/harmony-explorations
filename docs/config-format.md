@@ -881,7 +881,8 @@ menu against the page built from its number, its menu's page count, its fonts an
 
 The fonts are read off the configuration and not built, `todo-compile-650.md` 6.2.12. A composed page
 draws a counter and a label inline where the compiler would point at an existing copy, the kept
-difference of sections 294 and 312, so a composed configuration passes every row but the last but one.
+difference of sections 294 and 312, so a composed configuration passes every row but the last but one,
+until section 358's pass over every text runs last, which ends it.
 Refused rather than guessed: a two line label on a row, a tenth page, a page whose picture the
 configuration does not hold, which is the activity menu's page of one activity on `calibration_h600`,
 and the European skins 69, 74 and 75, whose look section 330 refuses.
@@ -960,7 +961,7 @@ u16 0;               u8 0x80 + S
 **A start up screen** is a mode of one page with an empty list, `00 00`, and 54 bindings to nothing,
 13 of 13; its program is `[02 picture, 10 02, the title, three fixed lines from y 82, 00]`, the fixed
 lines the same across a configuration's activities, 4 of 4, and the title "Starting" and the name at
-y 5 and `x = floor((128 - width) / 2)` on the 11 of 13 that fit one line, at most 123 pixels. Font 2
+y 5 and `x = floor((128 - width) / 2)` on the 11 of 13 that fit one line, at most 123 pixels there and 126 on the test setup's two compiles, section 358. Font 2
 holds only the letters the texts drawn in it use, the start up titles and the status and battery messages.
 
 **A working screen** is a four slot device mode page, section 285, whose queued `0x73` has operand 2 on
@@ -984,7 +985,7 @@ checks every activity against what is built:
 |---|---|---|
 | start up record | presses of scans 1 to 54 bound to nothing, in `compilerTagOrder`; one page, list `00 00`; page record six bytes | 40 of 40 |
 | start up program | `02 0,0 picture` by content per look, `10 02`, the title lines, the three fixed lines, `00` | 40 of 40 |
-| start up title | "Starting" and the name, broken greedily at 123 pixels, y 5 and 19, each `floor((128 - width) / 2)`; the name is the working screen's title on every page | 40 of 40 |
+| start up title | "Starting" and the name, broken greedily at 126 pixels since section 358, y 5 and 19, each `floor((128 - width) / 2)`; the name is the working screen's title on every page | 40 of 40 |
 | fixed lines | "Please keep the", "remote pointed at", "your system", centred, y 82, 96, 110 | 40 of 40 |
 | start up texts | by reference to the lowest addressed inline copy of the same glyph codes, or that copy | 163 of 163 |
 | start up font | font 2, read off the configuration's start up screens, not built | 40 of 40 |
@@ -1045,7 +1046,8 @@ glyph, fits 143 of 143 labels and was fitted on them.
 
 **Read, not built**: the mode numbers, the rows' labels (font and glyph codes), each button's base slot 10
 lists, the marker variable, the fonts, the own lists' operands, the pictures by content, and the addresses
-of the texts drawn by reference outside the three records. A blind control overwrites every other byte of
+of the texts drawn by reference outside the three records, which section 358 generates when its pass runs
+last. A blind control overwrites every other byte of
 the three records with `0xEE`, 17326 over the 22, and the rebuild is unchanged. A configuration with no
 activities is refused. Unconfirmed: any wording but English, and any architecture but arch 14.
 
@@ -1093,6 +1095,37 @@ picture off its own address fields, and "USB Connected"'s variable and list indi
 overwrites every other byte with `0xEE`, 136493 over the 21, and the rebuild is unchanged. Refused:
 `h650_issue36_config`, whose character map does not resolve the code for "I", and the French
 `h650_issue8_config`. Unconfirmed: any wording but English, any architecture but arch 14.
+
+**Every text of a configuration, generated**, section 358, `screentexts.ts`, on the 22 arch 14 compiles of
+`test/screentexts.test.ts`, byte for byte: each text's glyph codes spelled from its word in its font, its
+place by its screen kind's rule, and its form, for every text in the configuration.
+
+| what | rule | agree |
+|---|---|---|
+| form | the first text in address order to draw a run of glyph codes draws it inline, opcode 5; every later one is opcode 4 pointing at that copy's codes, its start plus 3 | 62609 of 62609 draws on 23 compiles, `h650_issue8_config` included |
+| corner page title | 0, 2 | |
+| corner page counter | `n`, `/`, `m` chained so that `m` ends at 125, y 2; the two row list's at `TWO_ROW_COUNTER_X` | |
+| corner label | from x 3, or ending at 125; y 40 or 90; a two line label from 15 higher, each line a font height below the last | |
+| row label, activity menu | centred, y 35 and 79 | |
+| bottom word | centred, y 114 | |
+| start up and Off heading | broken greedily at 126 pixels onto y 5 and 19, each line centred | |
+| fixed lines | centred, y 82, 96, 110 | |
+| firmware screens | section 357's templates | |
+
+Every place row holds on the 22 byte for byte, 16070 draws on screens built here: firmware 542, fixed line
+403, corner page 14325, two row list 528, activity menu 272. Centred is `floor((128 - width) / 2)`.
+
+**Not built, and why**: help, the Remote Assistant and the delay screens, the two countdown programs no page
+draws, the welcome tour and the thirty status screens, 44300 draws over the 22. Their texts keep their glyph
+codes and places as read; their form is generated, since a reference may cross between a built and a left out
+screen either way.
+
+**Read, not built**: each text's word through the character map, and its font, `todo-compile-650.md` 8.2; a
+label's lines, section 325's rule. A text whose codes the character map does not resolve keeps its codes and
+is still placed and given its form, 74 on built screens of the 22. A glyph code of 128 or more is refused. A
+blind control overwrites every byte of the texts the description does not read with `0xEE`, 229010 over the
+22, and the rebuild is unchanged; the character map is the one input taken from the unblinded file. Refused:
+the French `h650_issue8_config`. Unconfirmed: any wording but English, any architecture but arch 14.
 
 **The welcome tour is not built, and a configuration can leave its ten screens out**, section 357: in
 Logitech's skipped form, 19 of the 21, no instruction anywhere enters any of them. Its start list, the
@@ -1502,7 +1535,7 @@ spaces within 58, any threshold from 55 to 58 placing all 2036 measured corner l
 band's edges three of them), at y 25 and 40 (75 and 90 in the bottom row), each line placed on its own.
 No corner label line in the page's label font is wider than 59 pixels, and the one 60 pixel word is
 drawn in another font, which is not composed. The start up title breaks the
-same way at 123 pixels onto y 5 and 19, each line centred.
+same way at 126 pixels onto y 5 and 19, each line centred, section 358.
 
 Read with `gspm.handler_sets` and `gspm.handler_index`. [findings.md](findings.md) section 39.
 

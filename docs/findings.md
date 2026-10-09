@@ -42753,11 +42753,13 @@ Three things the composer refused or did not know, now measured:
   on device pages would fit the page's font. Choosing a font is not built, and a label too wide for two
   lines of the page's font is refused, which is what refuses the contributed Harmony 700's "Watch TV" in
   both copies.
-* **The start up title breaks the same way at 123 pixels** onto y 5 and 19, each line centred: `Starting
+* **The start up title breaks the same way, at 126 pixels since section 358**, onto y 5 and 19, each line
+  centred. It said 123, the bottom of the band below, until Logitech's compiles of the test setup turned out to
+  draw the 126 pixel `Starting Plasma kijken` on one line, section 358: `Starting
   Watch a` over `Movie` and `Starting Play Audio` over `Cassette`, at the x the compiler draws them. The
   37 one line start up titles of the 13, 10 distinct, are all centred and none is wider than 123,
   `Starting Watch Bluray` in the contributed pair; the broken ones, three titles and two distinct, are
-  130 and 163 whole, so where from 124 to 130 the break begins is not known.
+  130 and 163 whole, so where from 124 to 130 the break begins is not known, from 127 since section 358.
 
 The device page composer is unchanged and still draws a label on one line; only its limit moved to 59.
 
@@ -45076,7 +45078,7 @@ section 279, are composed by another path, are not built here, and keep `startup
 | record | the press of every keypad scan, 1 to 54, bound to nothing, in `compilerTagOrder`; one page; its list the two byte empty list | 40 of 40 |
 | picture | `OP_IMAGE` at 0, 0, by content per look: one for the colour look of 2026, one shared by the 2021 and 2023 colour look and the monochrome look | 40 of 40 |
 | font | font 2, read, not built | 40 of 40 |
-| title | "Starting" and the name, broken greedily at 123 pixels onto y 5 and 19, each line `floor((128 - width) / 2)`; where from 124 to 130 the break begins is not pinned, section 323 | 40 of 40, 3 on two lines |
+| title | "Starting" and the name, broken greedily onto y 5 and 19, each line `floor((128 - width) / 2)`, at 126 pixels since section 358, which corrected the 123 this said: where from 127 to 130 the break begins is not pinned, section 323 | 40 of 40, 3 on two lines |
 | fixed lines | "Please keep the", "remote pointed at", "your system", each centred, at y 82, 96 and 110 | 40 of 40 |
 
 **The fixed lines are fitted.** Every compile here draws them in English, so what a remote set to
@@ -47603,3 +47605,222 @@ its low battery flag; a skipped tour whose screens something enters.
   tour measurement, and the composed comparison.
 * `docs/config-format.md`, after the three screen records; section 311's open item and the table after the
   end marker's Harmony 700 row.
+
+## 358. Every text a configuration draws is generated from its word: its codes, its place, and whether it is drawn inline or by reference
+
+**Date:** 9 October 2026. **Status:** confirmed by construction over 22 arch 14 compiles, 2 Harmony 600,
+13 Harmony 650 and 7 Harmony 700, with a blind control and failing controls, and the form rule measured on
+23; nothing built this way has been written to a remote. Help, the Remote Assistant, the welcome tour and
+the thirty status screens are not built, and their texts keep their codes and places as read.
+
+**Todo `todo-compile-650.md` 8.1.** Sections 285 to 357 build the screens one kind at a time, and each
+builder spelled the words it knew and carried the rest. So a configuration composed onto Logitech's starting
+compile still drew most of its texts as Logitech's bytes, and even the built screens read some of theirs as
+glyph codes: a menu row's label, an activity's own device list's labels, and every text drawn by reference
+to a copy outside the built screens, by that copy's address, which sections 356 and 357 list as read.
+`packages/codec/src/screentexts.ts` is one pass over a whole configuration that makes three things of every
+text generated: its glyph codes, spelled from its word in its font; its place, by the rule its screen kind
+uses; and its form, inline (opcode 5) or by reference (opcode 4).
+
+**Sources checked**: this document, sections 285, 289, 316, 325, 326, 330, 334, 336, 352, 355, 356 and 357;
+the 23 compiles below. Logitech's client was searched for a text layout routine and its matches are its own
+interface's fonts: the texts and their places are what Logitech's compiler wrote on their server, section
+293's reasoned exemption. The firmware was not opened; what opcodes 4 and 5 draw is the screen language's
+reading.
+
+### The premise, measured on the 7.5 file
+
+The test setup as `todo-compile-650.md` 7.5 composed it, `make.ts` in the lab's `work/bench-7-5/`: section
+356's three records in the setup's menu order, then section 357's firmware screens, over `h650_7_1_base`. Of
+its 811 text draws on screens of a kind this pass builds:
+
+| where the text came from | draws |
+|---|---|
+| Logitech's bytes, carried: device pages, working screens, start up screens, activity device lists, the two row list | 718 |
+| section 356's three records | 41 |
+| of those, labels of the idle device list and the activity menu read as glyph codes | 12 |
+| section 357's firmware screens | 24 |
+| the composed activity Plasma kijken's pages, spelled by the composer | 28 |
+
+2146 more draws are on screens left out: help 1564, the countdown programs no page draws 472, status screens
+57, the tour 53. **Every place on the built screens already followed the rules.** Eleven texts did not come
+out as the rules give them, and none of them is a place:
+
+* ten forms: composing put an earlier copy of the same codes in front of a text, so the activity menu's
+  counter "3" now precedes a device page's, which Logitech's bytes draw inline and five others point past,
+  and Plasma kijken's working screen draws "Plasma kijken", "Teletext", "DVR" and "Aspect" inline where the
+  activity menu or a device page drew each first;
+* one line break: the composer broke Plasma kijken's start up title, "Starting Plasma kijken", over two lines
+  where Logitech's compile of the same setup draws it on one. That is a correction, below.
+
+### The rules
+
+**The form rule is the configuration's, not a screen's: the first text in address order to draw a run of
+glyph codes draws it inline, and every later one points at that copy's codes, three bytes past its
+start.** All 62609 text draws of the 23 arch 14 compiles in the lab, the 22 and the French
+`h650_issue8_config`, follow it, in every screen program of each. Section 334 measured it on menu pages, 336
+on start up screens and 357 inside the firmware's screens; each is this rule seen from inside one builder.
+Because it is the configuration's, the pass generates the form of the texts it leaves out too: a text on a
+built screen can be the first copy a left out text points at, or the other way round.
+
+The places, each from the word's width in its font, centred being `floor((128 - width) / 2)`:
+
+| screen kind | text | place |
+|---|---|---|
+| corner page: a device's pages, a working screen, the corner device lists | title | 0, 2 |
+| | page counter `n`, `/`, `m` | `m` ending at 125, `/` before it, `n` before that, y 2 |
+| | corner label | from x 3, or ending at 125, at y 40 or 90; a two line label from 15 higher, each line a font height below the last |
+| | bottom word | centred, y 114 |
+| two row list | counter | `TWO_ROW_COUNTER_X`, y 2; title and bottom word as a corner page's |
+| activity menu | row label | centred, y 35 and 79; title, counter and bottom word as a corner page's |
+| fixed line: start up screens and Off | heading | broken greedily at `STARTUP_TITLE_MAX`, 126 pixels, onto y 5 and 19, each line centred |
+| | fixed lines | centred, y 82, 96 and 110 |
+| firmware | each line | section 357's templates |
+
+Which kind a screen is, the description decides by navigating the file: modes below the model's firmware
+screen count are firmware, the status and system modes after them status screens, then `modeRoles` for the
+tour, the device pages and the start up and Off screens, `fourSlotMenus` for the menus, and the cases of the
+activity keyed working screen record for the working screens. Every other mode is help. A program no mode's
+page draws is "no page": the two countdowns the delay settings screens queue.
+
+**What the description reads** is each text's word, through the configuration's character map, and its font;
+a text's role on its screen, from its coordinates, which only steers; and a left out text's place. A label's
+lines are read as words, a two line label as two, since how a label is broken is the device composer's rule,
+section 325; a start up title is read whole and broken here. **A code the character map does not resolve
+leaves no word**: such a text keeps its codes, and is still placed and given its form. There are 74 on built
+screens of the 22: two a compile on 15 of them, the first letter of "JazzClub" and one character of
+"DTSNEO:X", 28 on `h650_issue36_config`, whose "I" is unresolved as section 357 found, 9 on
+`h700_power_hold_compile`, 4 on `h700_power_hold_compile_3`, 1 on `calibration_h600`, `h700_config` and
+`h700_config_2`, and none on `h600_config`. That is `todo-compile-650.md` 8.2's. A glyph code of two bytes,
+128 or more, is refused rather than written; none of the 22 draws one on a built screen.
+
+### The measurement
+
+Describe, build, write into the layout, lay out: **22 of 22 come back byte for byte**. Counted per draw:
+
+| | Harmony 600, 2 | Harmony 650, 13 | Harmony 700, 7 |
+|---|---|---|---|
+| draws on screens built here | 693 | 9943 | 5434 |
+| draws left out | 2804 | 27290 | 14206 |
+
+By kind, firmware 542, fixed line 403, corner page 14325, two row list 528, activity menu 272. By role,
+counted per text with a two line heading once: title 1498, counter part 4218, corner label line 7690, row
+221, bottom 1564, heading 100, fixed line 300, firmware template line 476. Left out: help 31496, no page
+10384, status screens 1254, tour 1166. Forms: built 5183 inline and 10887 by reference, left out 17122 and
+27178.
+
+**`h650_issue8_config`, French, is refused** at its first firmware screen, which draws six lines where the
+English template has five, as in section 357.
+
+**The blind control.** Every byte of a text instruction the description does not read, 229010 over the 22 of
+the 569012 the texts occupy, every opcode, every place on a built screen, every terminator and every
+reference address, is overwritten with `0xEE` in the bytes the reader is handed, in the layout's pieces and in
+the file the fonts are read from. The description reads the same 340002 offsets, all inside the texts, and
+**the rebuild still equals the compile on 22 of 22**. 228499 of the 229010 change; the other 511 were `0xEE`
+already and every one is a byte of a reference's address field, which the frame writes whatever a piece holds
+there. One input is not blinded and is named: the character map is taken from the unblinded configuration,
+because its alphabet is chosen by the codes the texts draw and a file whose every text opcode is blinded
+draws none. It holds no place and no form; it is the font table's reading, 8.2.
+
+**Failing controls**, by `checkScreenTexts` on `h650_test_config_clean`, which passes the unedited compile
+over 3029 texts and 27824 bytes:
+
+| edit | refusal |
+|---|---|
+| a right corner label one pixel to the right | the label "is drawn at 97, 40 where it is built at 96, 40" |
+| a page counter's slash one pixel to the left | the counter's "/" is drawn elsewhere than built |
+| "Update Successful" one line lower | the template line is drawn elsewhere than built |
+| a bottom word one pixel higher | the bottom word is drawn elsewhere than built |
+| a title's reference pointed one code into its copy | it draws a run no earlier text draws, so it "is drawn by reference where it is built inline" |
+
+And `h650_7_1_base`, the file `todo-compile-650.md` 6.2.13 composed, is refused at a page counter "3" drawn
+by reference before any copy of it is drawn inline.
+
+### The 7.5 file with every text generated
+
+`make-8-1.ts` in the lab's `work/agent-8-1/` composes the 7.5 file as the bench's `make.ts` does and then runs
+this pass. The result passes every checksum, and against `h650_test_config_clean` **a person sees nothing
+different but the activity menu's order**: `compareViews` finds no difference with the menu order not counted
+and, counted, the same four labels sections 356 and 357 found; and a comparison text by text, kind, word and
+place, over every screen built here finds those four labels in their other cells and nothing else. The second
+comparison is needed because `compareViews` reads the setup's screens and not the start up screens: on the
+7.5 file as composed it finds the menu and also "Starting Plasma kijken" in two lines.
+
+**The result is 24 bytes shorter than the 7.5 file**, 998210 against 998234, and every byte is accounted for.
+A text drawn inline is four bytes plus its codes, and by reference six:
+
+| text | bytes before and after | change |
+|---|---|---|
+| a device page's "3", Logitech's bytes, by reference to the menu's copy now in front of it instead of inline | 5, 6 | +1 |
+| "Plasma kijken" on the working screen, by reference instead of inline | 17, 6 | -11 |
+| "Teletext" | 12, 6 | -6 |
+| "DVR" | 7, 6 | -1 |
+| "Aspect" | 10, 6 | -4 |
+| the start up title on one line instead of "Starting Plasma" over "kijken" | 19 and 10, 26 | -3 |
+
+The five references that pointed past the menu's "3" at the device page's copy now point at the menu's and
+keep their length. Run again on its own output, the pass changes nothing.
+
+### Corrected: a start up title is drawn on one line up to 126 pixels, not 123
+
+Section 290 took the composer's line width for a start up title from the widest one line title of its 13
+compiles, 123 pixels, "Starting Watch Bluray", and said so: any limit from 123 to 129 separated those from the
+two that wrap, about 130 and 163 pixels. Section 323, which composed the break, kept the bottom of that band and
+said where from 124 to 130 the break begins was not known, and section 336's table restated it. Logitech's two
+compiles of the test setup, `h650_test_config` and `h650_test_config_clean`, draw "Starting Plasma kijken",
+126 pixels, on one line. So the composer's rule was wrong for every title from 124 to 126 pixels, and it broke
+this one on every file this project composed with Plasma kijken in it, the 7.5 file included. No check saw it,
+because the setup comparison does not look at start up screens. The limit is 126 now, `STARTUP_TITLE_MAX`, the
+widest one line title measured; where from 127 to 130 the compiler breaks is still not known. The wrong rule
+gave the right answer on all 40 activities of the thirteen compiles, because none of their titles is between
+124 and 126 pixels, which is why section 336's table could say 40 of 40.
+
+### What sections 356 and 357 still list as read
+
+Both say the addresses of the texts drawn by reference outside their screens are read. With this pass run
+last they are not: every reference is generated by the form rule, over the whole configuration. Section
+334's kept difference, a composed page drawing a counter or a label inline where the compiler would point at
+an existing copy, also ends when the pass runs last.
+
+### A trap met on the way
+
+`takeApart` given a container parsed straight from a Node `Buffer`, `parse(readFileSync(path))`, cuts its
+pieces with `blob.slice`, which on a `Buffer` returns a view and not a copy, so writing into a piece writes
+into the container itself. Reading the file as `new Uint8Array(readFileSync(path))` avoids it; the lab's own
+`require_` already returns a plain array, which is why no test met it.
+
+### What is still read, and so what this does not establish
+
+* The fonts, which font each text is drawn in, and the character map: `todo-compile-650.md` 8.2. A word can
+  only be spelled in letters the configuration's font holds.
+* A device or activity label's line break, the device composer's rule, section 325.
+* Every text on a screen left out, its codes and its place: help, the Remote Assistant and the delay screens,
+  the countdowns, the tour, the status screens. Only their form is generated.
+* That the remote draws a configuration whose texts were rewritten this way as it draws Logitech's: nothing
+  was written to a remote.
+* Any wording but English.
+
+### Scope, decision 16
+
+Arch 14, measured on 2 Harmony 600, 13 Harmony 650 and 7 Harmony 700 compiles, and the form rule on those
+and one French Harmony 650. Arch 12 (Harmony One), arch 9 (Harmony 525) and the contributed arch 8 and 10
+configurations were not compared: their screens and places differ, section 311's table, and the pass is
+written for arch 14 only. Refused: the French `h650_issue8_config`.
+
+### Falsification
+
+A Logitech compile of an arch 14 remote whose texts do not rebuild byte for byte, or whose rebuild from the
+blinded bytes differs; a text anywhere drawn by reference before the first inline copy of its codes, or
+pointing at a later one; a start up title wider than 126 pixels drawn on one line, which would move the
+limit again.
+
+### Where it lands
+
+* `packages/codec/src/screentexts.ts`: `describeScreenTexts`, `buildScreenTexts`, `withScreenTexts`,
+  `checkScreenTexts`, `ScreenTextError`.
+* `packages/codec/src/compose.ts`: `speller`, which `spelledText` now spells through, the place constants
+  exported once, and `STARTUP_TITLE_MAX` raised to 126.
+* `packages/codec/test/screentexts.test.ts`: the 22 byte for byte with the counts above, the form rule on 23,
+  the French refusal, the blind control with its accounting, the failing controls, the 6.2.13 file's
+  refusal, the premise on the 7.5 file, and the 7.5 file with every text generated.
+* `docs/config-format.md`, after the firmware's own screens, and the start up title limit in its two places.
