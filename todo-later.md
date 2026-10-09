@@ -42,6 +42,7 @@ home in one of the two files.
   - [ ] 3.3.2 Help held five seconds: the delay fixing menu, with a picker row and five delay screens per device
   - [ ] 3.3.3 Help's per device parts: the "Is the X off?" question for Off, the four counters the answers bump, and the "Fix it now" wizards All Off offers once a counter is high enough
   - [ ] 3.3.4 The Remote Assistant: one screen per activity, a branch on one variable before the working screen, and a shared screen for Off and after a sync
+  - [ ] 3.3.5 Save and restore lists for a composed device's delays (was todo-compile-650 4.4, L10): the remote's delay fixing menu is their only writer. The delays' truth is the configuration on the computer for now, since MyHarmony never reads a delay back off the remote; without restore lists the configuration's delay wins at start, while with them a value saved on the remote overrides it, so decide whether FreeHarmony offers the menu at all before building them (section 303)
 
 ## 4. The app
 

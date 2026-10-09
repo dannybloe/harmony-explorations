@@ -74,7 +74,7 @@ an item, ask whether the finish line moves without it; if it does, the item goes
   - [x] 4.3.1 How long the screen stays lit: timer 1 (section 292)
   - [x] 4.3.2 RemoteAssistant, set off, since 3.13 leaves the assistant out: the setting is applied by Logitech's compiler and what it changes in the bytes is not found, since every compile in the lab has it on; settling it needs one compile with it off, an account write (section 333); compiled with it off: Logitech builds no Assistant at all, six screens and seven deferred steps fewer and nothing else in count, which is the form our composer already writes (section 345)
   - [x] 4.3.3 TiltSensor, waking when picked up; compiled with it off: one flag instruction, `3F F101`, in three lists with it on and in none with it off, timer 0's among them, and nothing else changes (section 346)
-- [ ] 4.4 Save and restore lists, so a delay changed on the remote survives the next start (was L10)
+- [x] 4.4 Save and restore lists: moved to todo-later 3.3.5, since only Help held five seconds changes a delay on the remote and this track builds no Help (was L10)
 
 ## 5. Milestone: the test setup, composed on the starting configuration
 
