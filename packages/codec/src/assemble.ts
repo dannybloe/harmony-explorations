@@ -32,9 +32,8 @@
  * 10. places what is parked in front of a table and the picture bank, section 328, and lays the frame
  *     out, section 318.
  *
- * **What it does not do, and why it is a refusal rather than a gap papered over.** No composer here
- * removes anything, so a device or an activity the donor holds and the setup does not cannot be taken
- * out, and none composes an activity from the setup file alone, because the file does not say which
+ * **What it does not do, and why it is a refusal rather than a gap papered over.** No composer
+ * removes a device or an activity, so one the donor holds and the setup does not cannot be taken out, and none composes an activity from the setup file alone, because the file does not say which
  * commands go on an activity's screen or what its sequences are: those are the platform's soft button
  * list and a person's choice, section 323, and the setup file never carried them. So the devices and
  * activities themselves are the donor's, and the donor has to hold exactly the setup's. That is the
@@ -139,8 +138,8 @@ export interface ListCallSite {
  * **The one enumeration a renumbering of base slot 10 can rest on**, the same role `stateVariableSite`
  * plays for variables, and the same hazard if it is short: a site it misses keeps naming the old index
  * and the configuration parses and runs the wrong list. The walk of section 360's `orphans.ts` read
- * the same holders but not the screen programs or the number senders, which did not matter there, since
- * it counted only what a composition stopped naming. It matters for a renumbering: every list a screen
+ * the same holders but only the first instruction a value map case's program queues and not the number
+ * senders, which did not matter there, since it counted only what a composition stopped naming. It matters for a renumbering: every list a screen
  * program queues is named by that program and by nothing else, 5769 on `h650_test_config_clean`.
  * An instruction reached twice, a list two tables share, is one site.
  */
@@ -661,9 +660,16 @@ export function compareDrawnTexts(a: Container, b: Container): { text: string; a
 // Which bytes a generator reproduces
 // ---------------------------------------------------------------------------------------------------
 
-/** Who reproduces a byte, in the order a byte two of them claim is given to the first. */
+/**
+ * Who reproduces a byte. A byte two of them claim goes to the one `attributeBytes` marks first: the frame,
+ * the wiring with its description, the state tables, mode 0, the screens and the texts, and **address
+ * fields last**, so `addresses` counts only the address fields inside pieces that are otherwise carried.
+ * The frame lays those too, but a reader asking how much of a configuration is ours wants them apart:
+ * they are a pointer into the donor's bytes, rewritten, and not content.
+ */
 export const ATTRIBUTIONS = [
-  'frame', 'description', 'mode 0', 'wiring', 'state tables', 'screen records', 'firmware screens', 'texts',
+  'frame', 'addresses', 'description', 'mode 0', 'wiring', 'state tables', 'screen records', 'firmware screens',
+  'texts',
 ] as const;
 export type Attribution = (typeof ATTRIBUTIONS)[number];
 
@@ -695,14 +701,13 @@ export function attributeBytes(c: Container): AttributedBytes {
   };
   const markSet = (offsets: Iterable<number>, who: Attribution): void => { for (const at of offsets) mark(at, 1, who); };
 
-  // The frame: the header, the section table and its marker, base slots 1 and 3, every address field
-  // and the trailer.
+  // The frame: the header, the section table and its marker, base slots 1 and 3 and the trailer. Its
+  // address fields are marked after every generator, below.
   mark(0, c.markerOffset + END_MARKER_LENGTH, 'frame');
   for (const [slot, length] of [[1, ARCH_RECORD_LENGTH], [3, CLOCK_SECTION_LENGTH]] as const) {
     const at = c.blobOffsetOf((c.sections[slot] as { address: number }).address);
     if (at !== undefined) mark(at, length, 'frame');
   }
-  for (const p of pointers(c)) mark(p.at, 3, 'frame');
   mark(c.blob.length - TRAILER_CHECKSUM_OFFSET, TRAILER_CHECKSUM_OFFSET, 'frame');
 
   const layout = takeApart(c);
@@ -740,6 +745,9 @@ export function attributeBytes(c: Container): AttributedBytes {
   const texts = describeScreenTexts(c, layout);
   markSet(texts.described, 'description');
   markSet(texts.structure, 'texts');
+
+  // Every address field no generator laid: the frame's, inside a piece otherwise carried.
+  for (const p of pointers(c)) mark(p.at, 3, 'addresses');
 
   // What is left, by its owner, and an action list by whether anything reaches it.
   const named = namedLists(c);

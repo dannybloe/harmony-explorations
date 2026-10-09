@@ -1030,18 +1030,20 @@ the restore, which are what changed. Section 347's count of what it did not buil
 lists, and is corrected.
 
 **A setup file and one Logitech file now make a whole Harmony 650 configuration in one step, section 362.**
-The chain of lab scripts that built each bench file is one function, which takes the setup file and names
+The chain of lab scripts that built each composed file is one function, which takes the setup file and names
 the Logitech file it still borrows from as an input of its own, so the finish line can swap it and count what
 is left. Given Logitech's own compile of the test setup, the result shows a person the same as that compile
-apart from the menu's order, and the same as the bench file built the old way; it is 1723 bytes longer than
-that file, which is Logitech's version of Plasma kijken with its Help screens against ours, less the 70
-lists the old way left behind that nothing uses. Those are dropped now, which needed every place in a
-configuration that names a list: nine kinds, and one of them could be left out without any comparison of what
-a person sees noticing, so the dropping checks itself. About a seventh of the file is built by our generators; the
-rest is Logitech's, and most of that is pictures, infrared codes and fonts. **What the finish line still
-needs that no step names**: a starting file with no devices and no activities, since nothing here can take
-one out, and a setup file that says what goes on an activity's screen, which today's does not. Measured on
-the Harmony 650 only, and not written to a remote.
+apart from the menu's order, and the same as the file the lab's scripts composed for the wiring step, which
+was never written to the remote. It is 1723 bytes longer than that file: Logitech's version of Plasma kijken
+with its Help screens against ours, less the 70 lists that file carries and nothing uses, plus a little
+because the two started from different Logitech files. Those 70 are dropped now, which needed every place
+in a configuration that names a list: ten kinds, and one of them could be left out without any comparison
+of what a person sees noticing, so the dropping checks itself. Our generators lay about one byte in
+fourteen as content, and about one in seven counting the addresses they rewrite inside Logitech's pieces;
+the rest is Logitech's, and most of that is pictures, infrared codes and fonts. **What the finish line
+still needs that no step names**: a starting file with no devices and no activities, since nothing here can
+take one out, and a setup file that says what goes on an activity's screen, which today's does not.
+Measured on the Harmony 650 only, and not written to a remote.
 
 **A Harmony One's activity menu can now grow a page, section 293.** Its menu shows three activities to
 a page, and a fourth used to be refused. Now it opens a new page, and the menu says so in the three

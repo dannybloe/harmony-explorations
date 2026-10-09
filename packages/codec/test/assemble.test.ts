@@ -3,7 +3,7 @@
  *
  * **Three things are measured here.** The list census a renumbering of base slot 10 rests on, over 22
  * Logitech compiles of the Harmony 600, 650 and 700: dropping every list they reach by nothing changes
- * nothing a person sees and no generator's calibration, and the drop refuses a census short of any one
+ * nothing a person sees and passes the builders' checks that read the compile, and the drop refuses a census short of any one
  * holder, every holder naming lists a drop moves. The assembly of the Harmony 650's test setup with Logitech's clean compile as the donor:
  * what it drops, what a person sees against the donor and against the 10.2.2 composition, and why the
  * two differ in length. And which bytes of each a generator reproduces, which is the premise table of
@@ -51,7 +51,10 @@ import {
   withWiring,
 } from '../src/index.ts';
 
-/** The 22 arch 14 compiles sections 356 to 360 measure: 14 Harmony 650, 2 Harmony 600, 6 Harmony 700. */
+/**
+ * The 22 arch 14 compiles sections 356 to 360 measure, by the skin each states: 13 Harmony 650, 2 Harmony
+ * 600, 7 Harmony 700. Section 360's 23 adds `harvest_650_two_devices`, which holds no activity to compare.
+ */
 const TWENTY_TWO = [
   'h650_config_region', 'h650_panasonic_config', 'h600_config', 'calibration_h600',
   'h700_config', 'h700_config_2', 'h700_28_config_region',
@@ -68,9 +71,10 @@ const setupOf = (file: string): SetupDescription =>
 const front = (c: Container): number => buildWiring(describeWiring(takeApart(c))).frontLength;
 /**
  * Per holder on `h650_test_config_clean`: its places, those naming a list the drop of its 323 unreached
- * lists moves, and the lists no other holder names. A page list and its second copy name different table
- * entries holding the same lists, section 69, so each names 426 the other does not, and the copy's are
- * lists no firmware path reaches; the census keeps them, since an emitter reproduces the copies.
+ * lists moves, and the lists no other holder names. A page list and its second copy hold the same lists,
+ * section 69, but 426 of the 700 places name a different table entry from the copy's, and 274 the same
+ * one; the copy's own are lists no firmware path reaches, and the census keeps them, since an emitter
+ * reproduces the copies.
  */
 const HOLDERS_ON_THE_CLEAN_COMPILE = {
   'action list': [3308, 3308, 1837],
@@ -94,7 +98,7 @@ const unreached = (c: Container): number[] => {
 // The census
 // ---------------------------------------------------------------------------------------------------
 
-test('dropping every list a Logitech compile reaches by nothing changes nothing a person sees and no generator\'s calibration, on 22 compiles of three models',
+test('dropping every list a Logitech compile reaches by nothing changes nothing a person sees and passes the wiring, screen record, firmware screen and text checks wherever they read the compile, on 22 compiles of three models',
      skipUnless(...TWENTY_TWO), () => {
   let dropped = 0;
   let bytes = 0;
@@ -159,9 +163,17 @@ test('every holder of the census names lists a drop moves, and the drop refuses 
     assert.throws(() => dropLists(c, gone, floor, census.filter((one) => one.holder !== holder)), AssemblyError,
       `without the ${holder} places the drop is not refused`);
   }
-  // The number senders name lists only where a configuration has favourites, section 154.
-  const favourites = listCallSites(containerOf('h650_favourites_config')).filter((one) => one.holder === 'number sender');
-  assert.equal(favourites.length, 30);
+  // The tenth holder, the number senders, section 154, has no place on the clean compile: put to the same
+  // control on the favourites compile.
+  const f = containerOf('h650_favourites_config');
+  const fCensus = listCallSites(f);
+  const fGone = unreached(f);
+  const fFloor = front(f);
+  const senders = fCensus.filter((one) => one.holder === 'number sender');
+  assert.equal(senders.length, 30);
+  assert.equal(senders.filter((one) => one.list > Math.min(...fGone)).length, 30);
+  assert.equal(dropLists(f, fGone, fFloor, fCensus).dropped.length, 281);
+  assert.throws(() => dropLists(f, fGone, fFloor, fCensus.filter((one) => one.holder !== 'number sender')), AssemblyError);
 });
 
 test('a list something reaches is not dropped, and nothing below the front is',
@@ -237,7 +249,7 @@ test('the test setup assembled on Logitech\'s clean compile drops section 360\'s
   assert.ok(texts.every((one) => one.text.startsWith('activity menu|')), 'a text off the activity menu differs');
 });
 
-test('the assembled test setup and the 10.2.2 composition show and draw the same, and the 1723 bytes are Logitech\'s Plasma kijken and the 70 orphans',
+test('the assembled test setup and the 10.2.2 composition show and draw the same, and the 1723 bytes are Logitech\'s Plasma kijken with its Help, the 70 lists the old way left behind, and the two donors\' own unreached lists',
      skipUnless('h650_test_config_clean', 'h650_7_1_base'), () => {
   const ours = assembleSetup(setupOf('h650-test.json'), { donor: require_('h650_test_config_clean') }).container;
   const theirs = tenTwoTwo();
@@ -299,14 +311,14 @@ test('a setup the donor cannot serve is refused: an activity it lacks, one it ho
 // Which bytes a generator reproduces
 // ---------------------------------------------------------------------------------------------------
 
-test('a generator reproduces about a seventh of the assembled test setup, and the rest is the donor\'s by what it is',
+test('a generator lays 73830 bytes of the assembled test setup and rewrites 67890 of address fields in the donor\'s pieces, and the rest is the donor\'s by what it is',
      skipUnless('h650_test_config_clean'), () => {
   const out = assembleSetup(setupOf('h650-test.json'), { donor: require_('h650_test_config_clean') });
   const a = attributeBytes(out.container);
   assert.equal(a.total, 999922);
   assert.deepEqual(a.generated, {
-    frame: 94796, description: 17617, 'mode 0': 649, wiring: 1092, 'state tables': 17928,
-    'screen records': 774, 'firmware screens': 4532, texts: 4332,
+    frame: 122, addresses: 67890, description: 17752, 'mode 0': 649, wiring: 1143, 'state tables': 38334,
+    'screen records': 906, 'firmware screens': 4712, texts: 10212,
   });
   const carried = (...keys: string[]): number => keys.reduce((n, key) => n + (a.carried.get(key) ?? 0), 0);
   assert.equal(carried('slot-7-glyph', 'slot-7-set'), 92170);
@@ -322,7 +334,10 @@ test('a generator reproduces about a seventh of the assembled test setup, and th
 });
 
 test('the track settings are the ones the 10.2.2 file was built with, with the screen lit 20 seconds',
-     () => {
+     skipUnless('h650_7_1_base'), () => {
+  // `tenTwoTwo` takes the 6.2.13 file's settings and turns the Assistant, the restore, Help and the tour off.
+  const read = describeWiring(takeApart(containerOf('h650_7_1_base'))).settings;
+  assert.deepEqual(TRACK_SETTINGS, { ...read, remoteAssistant: false, delayRestore: false, help: false, tourShown: false });
   assert.deepEqual(TRACK_SETTINGS, {
     glowTime: 20, tiltSensor: true, remoteAssistant: false, bootStep: false, tourShown: false,
     delayRestore: false, help: false,
