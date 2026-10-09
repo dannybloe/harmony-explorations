@@ -45939,12 +45939,18 @@ none.
 changed since section 345's compile with the Remote Assistant off (`h650_assistant_off_config`), where the
 sensor was on.
 
-**The only difference is one instruction, `3F F101`.** With the sensor on, three lists hold it: timer 0's
-list `[1F E900, 3F F101]`, and two lists that end in it, `[7F 08B2, 3F F101]` and
-`[7F 08B2, 72 0225, 3F F101]`. With it off, no list holds it: timer 0 queues `1F E900` directly and its list
-is gone, and the other two lists are each one instruction shorter. Two lists fewer, 28 bytes fewer. The
-other five timers, the parameter block, the screens, the screen texts and every state variable's starting
-value are the same.
+**The only difference is one instruction, `3F F101`, and one binding.** With the sensor on, three lists
+hold the instruction: timer 0's list `[1F E900, 3F F101]`, and two lists that end in it, `[7F 08B2, 3F F101]`
+and `[7F 08B2, 72 0225, 3F F101]`. With it off, no list holds it: timer 0 queues `1F E900` directly and its
+list is gone, `[7F 08B2, 3F F101]` is gone with base slot 9 entry 2's binding of event `0x17`, which ran it,
+and the third list is one instruction shorter. Two lists fewer, 28 bytes fewer. The other five timers, the
+parameter block, the screens, the screen texts and every state variable's starting value are the same.
+
+> **Corrected by section 347.** This said the two lists ending in the flag were each one instruction
+> shorter with the sensor off. One is; the other is gone, and so is entry 2's binding of event `0x17`, 54
+> bindings where the compile with the sensor on has 55. The 28 bytes close on that reading and not on the
+> first: two lists of 7, their two table entries of 3, the binding of 5 and the one instruction of 3. The
+> count of lists fewer was right, which is why the sentence beside it was not checked.
 
 Timer 0 is the one section 292 found running ten seconds after the screen light's own timer, queueing
 `[1F E900, 3F F101]`. So with the sensor on, the remote sets this flag when it goes quiet and in the two
@@ -45973,3 +45979,188 @@ A Logitech compile with the sensor off that holds `3F F1xx`, or one with it on t
   and none with it off, and what does not change.
 * `reference/remotes/harmony-650/features.md`, the `TiltSensor` row.
 
+
+## 347. The firmware's own wiring on arch 14 is built from a description, and with the tilt sensor off a binding goes too
+
+**Date:** 9 October 2026. **Status:** confirmed by construction over the thirteen arch 14 compiles
+section 312 lists and over the six later Logitech compiles of the test record's Harmony 650, with a blind
+control and failing alternatives; nothing built this way has been written to a remote, and nothing needs
+to be for what is claimed, since the result is byte identical to files already in the lab. It also
+corrects one sentence of section 346.
+
+**Todo `todo-compile-650.md` 10.2.** Sections 318 and 324 built the frame and the state variables. What
+every arch 14 configuration carries besides its devices, activities and screens is the part connecting
+the remote's own events to the configuration: the log area, the event map, the parameter block, the
+timers, base slot 8's leading list, base slot 9's five entries nothing selects and the one left over,
+and the lists those name. `packages/codec/src/wiring.ts` builds all of it from a description.
+
+**Sources checked**: this document, sections 26, 27, 36, 43, 44, 47, 83, 140, 206, 249, 272, 286, 290,
+292, 311, 312, 313, 314, 318, 321, 324, 329, 333, 345 and 346; the thirteen compiles and
+`h650_start_config`, `h650_options_config`, `h650_sequence_config`, `h650_favourites_config`,
+`h650_assistant_off_config` and `h650_tilt_off_config`. Neither firmware nor client was opened: every
+rule below is an order, a constant or a template Logitech's compiler wrote on their server, section
+293's reasoned exemption. What the firmware does with the bytes was read in the sections named, where it
+was read at all.
+
+### The measurement
+
+`takeApart` cuts each compile into pieces, `describeWiring` reads back only what a composer would supply,
+`buildWiring` builds the pieces, `withWiring` puts them where Logitech's sat, and `layOutContainer` lays
+the container out again. **13 of 13 come back byte for byte**, and so do the six later Harmony 650
+compiles. Over the thirteen that is 751 pieces: 388 action lists, 78 base slot 9 entries, 103 timer
+records with their 13 tables, 117 parameter groups with their 13 tables, and 13 each of the log area,
+the event map and the leading list. Of their bytes, **12533 are generated and 4910 are the
+description's**.
+
+**The blind control** overwrites, in the input, every byte of every one of those pieces that
+`BuiltWiring.described` does not mark as the description's, all 12533 of them, with `0xEE`. The rebuild
+from that input still equals the compile on **13 of 13**, so none of those bytes reached the generator.
+What is marked, and so read: the operands naming a list, mode, value map or base slot 9 entry that is
+not generated here, the opcode of a write naming a variable, every timer record's opcode, which tells a
+device's timer from the firmware's, a device timer whole, the glow time, the opcode of each activity key's
+binding, and the two places the Remote Assistant and the boot step show.
+
+**The front of base slot 10 ends where the clock's hour list sits**, section 324's `hourList`, 13 of 13
+and 6 of 6: the two generators agree about where one stops and the other starts, from different fields.
+
+### What is generated
+
+| structure | rule | over the thirteen |
+|---|---|---|
+| log area, base slot 2 | 16384 records, `0x1E0000` to `0x200000` | 13 of 13 |
+| event map, base slot 4 | status code `k` to mode `N + k`, thirty codes, fallback `N`; `N` the count of the firmware's own screens at the front of base slot 6, 14 on the Harmony 600 and 650 and 19 on the Harmony 700 | 13 of 13; mode `N` draws "Go to Website / to update settings" and `N + 26` "Configuration / Corrupted", section 249's codes 0 and 26, 13 of 13 |
+| parameter block, base slot 15 | nine groups, one value set per model; the Harmony 600 and 650 differ in group 3 alone, `1 3 5 32` against `10 20 8 32`, the Harmony 700 has `3 5 10 32` there and group 6's curve in group 5 | 13 of 13 |
+| the firmware's timers, base slot 12 | below | 13 of 13 |
+| leading list, base slot 8 | eleven entry points, below | 13 of 13 |
+| entries 0 to 4, base slot 9 | below; stored in `compilerTagOrder`'s slot order, with ties measured per model | 13 of 13 |
+| the leftover entry | its four bindings and three lists, section 329's `S` and `F` brackets | 13 of 13 |
+| the front of base slot 10 | the lists the compiler emits first, in a generated order, so their indices are generated | 13 of 13 |
+| the shared lists | the lists entries 0 and 2 to 4 bind every press and event to, the boot list, the quiet list, the timers' lists | 13 of 13 |
+
+**The firmware's screens**, by what they draw, the blank ones by their neighbours:
+
+| | Harmony 600 and 650 | Harmony 700 |
+|---|---|---|
+| frames the four cycling timers enter | none | modes 0 to 3, blank |
+| "add an Activity on this button", "add Activities" | 0, 1 | 4, 5 |
+| USB Connected, Low Battery | 2, 3 | 6, 7 |
+| "Please charge your remote" | none | 8 |
+| blank, Insert batteries, Unable to charge | 4, 5, 6 | 9, 10, 11 |
+| Update Successful, Upgrade Successful, blank | 7, 8, 9 | 12, 13, 14 |
+| Ready to learn, Command Received, blank, Terminate Entry | 10 to 13 | 15 to 18 |
+
+Every named one draws its name on every compile of its model, 137 screens.
+
+**The leading list** is `[enter Terminate Entry, call start, call startUsb, call startTour, call
+startUpgraded, enter the blank after Upgrade Successful, call quiet, enter Ready to learn, call learned,
+enter the blank after Command Received, call quiet]`, which section 286 found the firmware queues by
+index. `start` is `[call boot, call reset, select the leftover entry, call last]`; `startUsb`,
+`startTour` and `startUpgraded` call `boot` and then enter USB Connected, call the tour list, and enter
+Upgrade Successful; `learned` enters Command Received and starts the timer that returns to USB Connected.
+`boot` is `[3F F00A, 3F F632, 1F FE01, 1F FEFE, 1F FEFD, 1F FEFC, 1F FE02, call events]`, the key stack
+section 333 read, with `3F F715` after `3F F632` on the Harmony 700 compiles of 2026, below. `quiet` is
+`[call everyKey, the Assistant's gate or the location map, 3F F101]`, on the Harmony 700 opening with a
+call to the list entry 1's events `0x27`, `0x10` and `0x1F` call too.
+
+**Base slot 9's fixed entries:**
+
+| entry | binds | to |
+|---|---|---|
+| 0, wide | events `0x1A` to `0x1D` | `events`, `[1F FB01, call]` |
+| 1, narrow | the three activity keys; scans 11 and 35 to `0F FFA0` and `0F FFA1`; events `0x2D` and `0x19` to `07 FFFA` and `07 FFF6`; scan 6 to a load and call; and scan 4 and events `0x10`, `0x26`, `0x27` and `0x30` to front lists, `0x26` entering USB Connected and `0x30` Insert batteries. The Harmony 700 binds five more events, `0x1E`, `0x1F`, `0x23`, `0x24` and `0x25`, to front lists, `0x24` entering Unable to charge | per model |
+| 2, wide | the press of every scan 1 to 54: scans 1 to 5, 7 to 9, 11, 34 and 35 to `elevenKeys`, the other 43 to `everyKey`; and event `0x17` to a front list `[call everyKey, 3F F101]` | |
+| 3, wide | the press of every scan to `everyKey`; on the Harmony 700 also `0x1E` to `07 FFFB` | |
+| 4, wide | events `0x18` and `0x19` to `events` | |
+| leftover, narrow | `0x01` to `[call, map, S:=1, F:=0, call, map, S:=0]`, `0x05` to `[S:=1, F:=0, the Assistant's gate or the location map, map, S:=0]`, `0x43` to a value map on the location, `0xC3` to `[07 FFFD, enter Delay Fixing]` | |
+
+Every wide entry carries flags 1. **The slot order holds on every one of these entries and three pairs
+tie**: `0x17` before `0x9E` in entry 2 and `0x1E` before `0x97` in entry 3 wherever they occur, `0x86`
+before `0x2D` in entry 1, and `0xA3` before `0x81` in entry 1 on the Harmony 600 and 650 but `0x81`
+before `0xA3` on the Harmony 700. Scored: entry 1 in slot order with its own model's tie 13 of 13, with
+the other model's 0 of 13. `tagSlotOrder` in `inventory.ts` is `compilerTagOrder`'s rule with the caller's
+ties, split out so there is one hash.
+
+**The front of base slot 10**, in order: on the Harmony 700 the USB screen's leave handler; the Low
+Battery screen's Exit, `[07 FFFC, v:=0]`; the four start lists; `learned`; then entry 1's bindings in its
+stored order, each that runs a list of its own emitting that list, an empty activity key's
+`[07 FFFD, enter add an Activity]` included, section 314; and with the tilt sensor on, entry 2's event
+`0x17` list. 12 lists on the Harmony 600 and 650, 18 on the Harmony 700, one more per empty key.
+
+**The firmware's timers**, in table order:
+
+| timer | seconds | queues |
+|---|---|---|
+| light off | 10 | `[1F E900, 3F F101]`, or `1F E900` alone with the tilt sensor off |
+| Harmony 700 only, four | 2 each | `[enter frame k, start the next]`, frames 1, 2, 3, 0 |
+| screen light | the glow time | `[1F E910, call tick]` |
+| tick | 2 | `[1F FB00, call]` |
+| screen light again | 10 | `[1F E910, call tick]` |
+| USB return | 3 | enter USB Connected |
+
+### What the description carries
+
+* **Three settings**, sections 292, 345 and 346: the glow time, 8 on `h650_config_region`, 10 on
+  `h600_config` and both 2021 and 2023 Harmony 700 compiles and 20 on the other nine; the tilt sensor,
+  on in all thirteen; the Remote Assistant, off on `h600_config` alone, which section 333 found has none
+  of its screens. The Assistant on makes `quiet` and the leftover entry's resume list call one list, the
+  gate; off, both evaluate the value map entry 1's scan 4 list evaluates.
+* **The boot step**, `3F F715`, on the five Harmony 700 compiles of 2026 and on neither of 2021 and 2023,
+  nor on any Harmony 600 or 650 compile. No MyHarmony setting is known to cause it. Whether the firmware
+  version the service compiles for or the service's own generation decides it is not established.
+* **The activity keys**: the entry each selects, or empty, on `calibration_h600` and the five 2026 Harmony
+  700 compiles, the six section 314 counts.
+* **A device's timer**: a record writing 1 into the device's `<label>_OnlinePower_2` after 30 or 45
+  seconds, section 321's connected app machinery, on 10 of the 13, one each, at index 3, 4, 5, 7 or 9.
+  What orders the table is not established, so its place is carried.
+* **Every index the generated structures name and do not generate**: lists, modes beyond the firmware's
+  screens, variables, value maps and the leftover entry.
+
+### What it does not build
+
+The lists the generated ones call, followed through every call: **1518 lists over the thirteen, 69 to 148
+per compile**, which nothing here generates. On `h650_config_region` they are 85: 30 that send or name a
+device, 14 more loads and calls, 28 comparisons, 13 else. They are a tree of conditionals on the
+firmware's own variables and on every device, the all off reset among them, plus the tour and the
+Assistant's gate. Some of it is other items' work, the devices' and the activities'; the rest is the
+part of the wiring still copied.
+
+### What it corrects
+
+**Section 346 said that with the tilt sensor off the two lists ending in the flag are each one
+instruction shorter.** One is: the quiet list, `[7F 08B2, 72 0225, 3F F101]`, loses the flag. The other,
+`[7F 08B2, 3F F101]`, is gone, and base slot 9's entry 2 loses its binding of event `0x17`, which ran it,
+54 bindings where the compile with the sensor on has 55. The 28 bytes section 346 counted close exactly
+on this reading: timer 0's list and this one, 7 each, their two base slot 10 table entries, 6, the
+binding, 5, and the quiet list's flag, 3. So `0x17` is read here as the tilt event, by the settings
+compile and not by the firmware. Section 346 is corrected in place.
+
+### Scope, decision 16
+
+Arch 14 only, the Harmony 600, 650 and 700, where every constant and template was measured. The European
+Harmony 650 and 700, skins 74 and 69, are refused. The settings are seen on the Harmony 650 alone, the
+tilt sensor off in one compile and the Assistant off in two, and `h600_config` is read as the Assistant
+off by its shape. Arch 12 (Harmony One) and the others are not compared.
+
+### What this does not establish
+
+* What the tick, `3F F00A`, `3F F632`, `3F F715`, `0F FFA0` and `0F FFA1` do, and which firmware event each of
+  the tags `0x10` to `0x30` in entries 0 to 4 is, beyond the readings above.
+* What orders the timer table when a device's timer is in it.
+* Whether the remote needs any of the front's order: nothing found reads a list's index but its callers.
+* Anything on the remote: the results are byte identical to compiles that ran.
+
+### Falsification
+
+An arch 14 Logitech compile the round trip does not reproduce; a firmware screen that does not draw its
+name; an event map whose base is not the firmware's screen count; an entry 1 stored under the other
+model's tie; a Logitech compile with the tilt sensor off that binds `0x17`.
+
+### Where it lands
+
+* `packages/codec/src/wiring.ts`: `buildWiring`, `describeWiring`, `withWiring`, `builtPieces`,
+  `FIRMWARE_SCREENS`, `PARAMETER_VALUES`, `LOG_AREA`; `tagSlotOrder` in `inventory.ts`.
+* `packages/codec/test/wiring.test.ts`: the thirteen byte for byte with the front against the hour list,
+  the blind control, the six later compiles and their settings, the tilt sensor's difference, the settings
+  over the thirteen, the event map and the named screens, the tie alternatives, the parameter block per
+  model, the lists not built, and the refusals.
+* `docs/config-format.md`, "The firmware's own wiring on arch 14".
