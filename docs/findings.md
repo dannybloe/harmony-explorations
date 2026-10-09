@@ -48409,8 +48409,8 @@ Logitech compile with no activities whose scan 4 list maps the location.
 **Date:** 10 October 2026. **Status:** confirmed by construction against two Harmony One compiles for two
 of the eight family spellings, three codes word for word; the misspelt spellings are found by a lookup that
 agrees with Logitech's own protocol id on every command of the catalogue. `Entone 56 Bit`, `Galaxis 16 Bit
-Quad Toggle` and the four misspelt spellings are composed from the definition alone, stated and unverified
-per decision 15. Nothing composed this way has been written to a remote.
+Quad Toggle` and the `Ada 40 Bit`, `AudioAnalogue 14 bit`, `DAM 12 Bit` and `Intellibus 17 Bit ` spellings are
+composed from the definition alone, stated and unverified per decision 15. Nothing composed this way has been written to a remote.
 
 `todo-process-logitech.md` 2.3, "the 8 families left over, 4 with no rhythm and 4 whose block is refused".
 An infrared command in Logitech's catalogue names its family in its own text, `G:Pioneer 32 Bit Dual:()(...)()`,
@@ -48460,13 +48460,14 @@ did not take them either. What the 67 codes state that the row does not take:
 * `Galaxis 16 Bit Quad Toggle`, 10 codes: three frames of three values each in one repeat group, where the
   `quad` shape takes three values.
 * `Philips Hurd 16 Bit LongToggle`, 3 codes: three frames of three values in the repeat group, one with a fourth
-  in the start group, where `longToggle` takes three values.
+  frame in the start group, where `longToggle` takes three values.
 * `Pioneer 32 Bit Dual`, 1 code: one value, `()(0xA55A6897)()`, where the row's block names a second.
 
 ### Logitech's own id names the family, and folding finds the same one
 
 **Every command of Logitech's service carries a `ProtocolId`, and on every command it names the keycode's
-family, exactly or but for case and spacing.** Over all 13293293 commands of the raw capture, one per device:
+family, exactly or but for case and spacing.** Over the 13293293 commands of the raw capture that carry a
+keycode, one per device (370 more carry none, and an id no definition holds):
 the id's definition is spelt as the keycode spells its family on 13292991, and on the other 302, every command
 of the five spellings counted per device, it is the definition spelt the same but for letter case and spacing
 (ids 163, 498, 428, 2 and 495). On none does the id name a different family. So the five are spellings, and
@@ -48482,8 +48483,13 @@ runs of white space made one and letter case set aside. `catalogueCode`, `catalo
 `catalogueCommandBlocks` all find a definition through it, and a code so found carries the definition's name as
 its `family`, which is what the rhythm table is looked up by. **Folding cannot merge two families here**: the 684
 definitions fold to 684 different spellings, and a folded spelling that fitted two would find neither rather
-than one of them picked, which a unit test holds. **The closure is the `protocol` field**: on all 2067863
-commands the definition `catalogueProtocol` finds is the one the field names.
+than one of them picked, which a unit test holds. **The `protocol` field reproduces it**: on all 2067863
+commands the definition `catalogueProtocol` finds is the one the field names. That is not an independent
+closure, since the field is the id's name and the id is what the rule was read from, and on the exactly spelt
+commands the rule is an exact lookup that cannot disagree; what was at risk is the fold merging two
+definitions, and it merges none. The raw capture's figures are a lab measurement, `rawids.py` in the scratch
+folder, and no regression test reads the raw capture, one pass over it taking minutes; the test holds the
+archive's `protocol` field instead.
 
 **A misspelt code composes exactly as its correctly spelt twin**: for every one of the 145 distinct codes of the
 five spellings, the composer's blocks at a count of 1 and of 3 are those of the same code with the definition's
@@ -48495,6 +48501,8 @@ row's block, as any code of that family does.
 
 **The rule**: such a code is built from the definition at the device's count, the route section 359 gave a code
 only the definition reads and section 348 a family with no whole block, where until now it was refused. The
+refusal covered a `sections` row as well, `Samsung 38 Bit`'s, and went with the rest: no code of that family
+was refused by it, and no command outside the eight spellings changes verdict. The
 ground is the same provenance argument: a row was measured or derived over the codes its shape takes, so for a
 code of another shape it holds no evidence, and the definition states the code. `make prontocheck --only` agrees
 with the archive's rendering on every first transmission of the four families, 108, 21402, 57031 and 27314
@@ -48511,13 +48519,15 @@ own train on 4797 of 4834 distinct codes.
 | `Philips Hurd 16 Bit LongToggle` | 3, `TABLE_PRESS_REPEATS` | 1675 | 1700 |
 | `Pioneer 32 Bit Dual` | 3, `TABLE_PRESS_REPEATS` | 1610 | 1611 |
 
-The 25 long toggle codes are the ones section 350 found rebuilding at no count; the other 12 differences are not
-read here, and those codes stay the table's, todo 2.4. Over every family the table holds a whole block for, the
+Of the 37 differences 26 are about how many frames a press sends: the 25 long toggle codes stating their frame
+in the start group alone, where the definition sends it once and the table three times, the ones section 350
+found rebuilding at no count, and one `Pioneer 32 Bit Dual` code stating start and repeat groups, which rebuilds
+at 5. The 11 `Galaxis 16 Bit Quad Toggle` ones differ in durations only. All 37 stay the table's, todo 2.4. Over every family the table holds a whole block for, the
 same comparison gives 97117 of 101593.
 
 ### Against Logitech's compiles
 
-Every infrared record of every container in the lab, 128 distinct, was looked up against the definition's build
+Every infrared record of every container in the lab, 128 distinct files, was looked up against the definition's build
 at 0 to 6 repetitions of every distinct code of the five spellings and of the eight definitions involved, 5096
 codes. **No container holds a code of `Entone 56 Bit`, `Galaxis 16 Bit Quad Toggle`, `ADA 40 Bit`,
 `AudioAnalogue 14 Bit`, `Dam 12 Bit` or `Intellibus 17 Bit` under any spelling**, so those rest on the
@@ -48535,10 +48545,15 @@ The Pioneer: 143 of 143 records are Logitech's, in every block, the target inclu
 targets included, and composed without its power steps 46 of 46. The 47th is the power step's long press version,
 a `Philips 13 Bit` code held 3500 ms that the composer sends as 31 frames where Logitech's record holds 33; section
 359's composer builds it the same way, so it is not this section's, and it is recorded here as an open difference
-in section 309's long press rule, not read further. **The two Philips codes are section 348's device count on a
-multi frame code**: each states three frames in its repeat group, the device states 1, and Logitech's record is
-the three frames once; at 3 it would be nine. Section 350 had named these two records as codes the table's block
-does not take.
+in section 309's long press rule, not read further. **The two Philips codes are read as section 348's device count on
+a multi frame code**: each states three frames in its repeat group, the device states 1, and Logitech's record is
+the three frames once; at 3 it would be nine. The three frames are one identical frame, so the bytes alone
+equally fit a single frame at the table's 3; the device count reading is preferred because the same device's
+other long toggle record, a one frame code, was written at 1, section 350. Section 350 had named these two records as codes the table's block
+does not take. **What no compile shows**: the same codeset is served by devices stating 3 and 2 too, where the
+definition sends nine and six frames; and the third admitted long toggle code states one frame in its start group
+before the three, which the definition sends once, the reading the table contradicts on the 25 start group codes
+above, so that code's first frame rests on the definition alone.
 
 **The controls**: section 359's composer leaves the three targets out of both devices; each target built at the
 count its device does not state, the Pioneer's at 1 and the Philips's at 3, is no record of its compile even as a
@@ -48557,16 +48572,17 @@ three of the five new tests fail, with the block refusal restored the other two.
 | codesets writing nothing, of 54118 | 766 | 761 |
 | devices writing every command, of 257720 | 251849 | 251880 |
 
-Of the 221 no rhythm commands 217 now write, and of the 87 block refused 77. The 14 left, 2 `Ada 40 Bit`, 2
-`AudioAnalogue 14 bit` and 10 `Galaxis 16 Bit Quad Toggle`, sit on a codeset whose devices state a count another
-of its families contradicts, todo 2.2.2's refusal, which is where the census now counts them. **No command that
+Of the 221 no rhythm commands 217 now write, and of the 87 block refused 77. The 14 left sit on a codeset whose devices state a count one of
+its families contradicts, todo 2.2.2's refusal: the 10 `Galaxis 16 Bit Quad Toggle` commands their own family,
+which states 1 against devices stating 3, and the 2 `Ada 40 Bit` and 2 `AudioAnalogue 14 bit` commands `LG 32
+Bit` or `Belgacom 16 Bit Quad`, which state 1, which is where the census now counts them. **No command that
 wrote before is refused now, and none that wrote before is given another block**, over every command and every
 device count of the archive, compared against section 359's composer.
 
 **What is still refused in todo 2.3's two classes: nothing.** The census prints neither reason any more. The
 other refusal classes stand: the release group, the conflicting count and the count of 0 (2.2.2 to 2.2.4),
 section 350's 64 commands whose table block and definition disagree about the frames a press sends, and section
-359's 187 codes our reader declines. Of those, `HID 16 Bit` (109), `Roku IP` (19) and `Sonos IP` (13) are not
+359's 187 commands our reader declines, 134 distinct codes. Of those, `HID 16 Bit` (109), `Roku IP` (19) and `Sonos IP` (13) are not
 infrared at all, their definitions stating no rhythm and their values no `0x`, and 46 are misspelt in the
 catalogue's values rather than its family names: 27 `Galaxis 16 Bit Quad Toggle` codes reading `0x0x`, 15
 `MemorexO1 32 Bit` codes naming a `Repeat` segment their definition lacks, three `Toshiba 32 Bit` and one `Pioneer
@@ -48584,7 +48600,28 @@ the Harmony 525 (arch 9), for which nothing compiles. Nothing was sent to a remo
 
 ### The two reviews
 
-REVIEWS
+**The blind re-measure**, given the questions and the corpus and not this section, agreed on every total: 221
+commands of 144 codes in four spellings and 87 of 67 codes in four families refused before; the five spellings,
+their `protocol` fields and the raw capture's 13292991 exact and 302 folded, ids naming the same definitions;
+no collision under this folding nor under two looser ones; 4797 of 4834; the three codes in the compiles and the
+Harmony 880 class files, 143 of 143 and 46 of 47; 294 commands now writing and the 14 left on a conflicting count;
+the census table. It added what is now said above: that 26 of the 37 calibration differences are frame counts
+and not durations, that the Philips codes at the counts 3 and 2 and the long toggle code with a start group frame
+are unconfirmed, and that `Entone 56 Bit` and `Galaxis 16 Bit Quad Toggle` have no compile evidence at all. It
+also noted that a family stating a count is built at the device's count only because a device stating another is
+refused first, so the 10 `Galaxis 16 Bit Quad Toggle` codes are refused on devices stating 3 while the family's
+other codes are written there from the table at its 1; that is section 348's rule and todo 2.2.2's question, left
+as it is. **The sentence audit**, given the whole diff, found: the 14 commands' contradicting family named wrongly
+for 10 of them, which are refused against their own family; "the four misspelt spellings" composed from the
+definition naming the wrong four, since the `toshiba 32 Bit` code gets the table's row and `Intellibus 17 Bit `
+the definition; "codes" where 187 counts commands; the raw capture's 13293293 being the commands that carry a
+keycode, of 13293663; the `protocol` field called a closure where it reproduces the id the rule was read from; the
+Philips frames identical, so the bytes alone also fit one frame at 3; a test title claiming every record where the
+body holds 46 of 47; the status summary giving all 87 commands the three frame reason and calling all eight
+composed; the dropped `sections` arm unmentioned; and docstrings counting the fifth spelling among those refused
+as having no rhythm, which the blind re-measure found too. Each is corrected above, in the code and in the summaries.
+It re-ran the claim that no command changes verdict or block one level down, per codeset, count and command,
+2167963 pairs, and it holds.
 
 ### Falsification
 

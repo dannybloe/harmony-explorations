@@ -847,13 +847,14 @@ cannot drift apart; what a reader should not expect is two independent statement
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
 
-**The last eight protocol names the device composer refused now compose, section 361.** Four of them were
-misspellings in Logitech's database, `Ada 40 Bit` where the protocol is `ADA 40 Bit` and three more like it,
-222 commands that found no protocol and were refused. Logitech's service gives every command a protocol
+**The last eight protocol names the device composer refused now compose, but for 14 commands refused for a
+conflicting repeat count, section 361.** Four of them were misspellings in Logitech's database, `Ada 40 Bit`
+where the protocol is `ADA 40 Bit` and three more like it, 221 commands that found no protocol and were
+refused. Logitech's service gives every command a protocol
 number beside its text, and on every command of the catalogue that number names the protocol the text spells,
 exactly or but for capitals and spaces, so where the exact spelling finds no protocol the composer now looks
-it up with capitals and spaces set aside; no two of Logitech's protocols are spelt alike that way. The other four were protocols whose measured signal shape did not fit some of their codes, a code
-stating three signals where the shape takes one, 87 commands; those are now built from Logitech's definition,
+it up with capitals and spaces set aside; no two of Logitech's protocols are spelt alike that way. The other four were protocols whose measured signal shape did not fit some of their codes, for
+instance a code stating three signals where the shape takes one, 87 commands; those are now built from Logitech's definition,
 like other codes the measured shapes do not cover. A Pioneer receiver and a Philips television in Logitech's
 Harmony One compiles hold three such codes, and composed they come out word for word as Logitech wrote them;
 the rest are built from the definition with no compile to check against. Over the whole database 2038315 of

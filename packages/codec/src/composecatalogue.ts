@@ -389,12 +389,13 @@ const FOLDED_OF = new WeakMap<ReadonlyMap<string, ArchiveProtocol>, Map<string, 
  * **Why the code's spelling is not always a definition's name.** Five spellings in the catalogue's codes
  * name no definition, 222 commands: `Ada 40 Bit` (82), `AudioAnalogue 14 bit` (108), `DAM 12 Bit` (29),
  * `toshiba 32 Bit` (2) and `Intellibus 17 Bit ` with a trailing space (1). Until todo-process-logitech 2.3
- * they found no definition and no rhythm and were refused, section 361.
+ * they found no definition, the first four no rhythm row either, and those four were refused as having no
+ * rhythm, section 361.
  *
  * **Why folding is Logitech's answer and not a guess.** Every command of Logitech's service carries a
  * `ProtocolId` beside its keycode, the field MyHarmony's client knows as `Command.ProtocolId`, and the
- * definitions carry the same id. Over all 13293293 commands of the raw capture behind the archive, the id
- * names the keycode's own spelling on 13292991 and on the other 302, every command of the five spellings,
+ * definitions carry the same id. Over the 13293293 commands of the raw capture behind the archive that carry a
+ * keycode, the id names the keycode's own spelling on 13292991 and on the other 302, every command of the five spellings,
  * it names the definition spelt the same but for case and spacing, and on none does it name another
  * family. The archive's `protocol` field is that id's name. **And folding merges nothing**: the 684
  * definitions fold to 684 different spellings, and a pair that folded alike would be refused here rather
@@ -647,9 +648,10 @@ export function catalogueCommandBlocks(
   // Bit Quad Toggle` codes stating three frames where the row's shape takes one, and `Entone 56 Bit` codes
   // stating their value in the start group where the row's block sends the repeat group's. The ground is
   // the one above: the row holds no evidence for a shape it does not take, and the definition states it.
-  // On the codes the four rows do take, the definition at the row's count sends the row's own train on
-  // 4797 of 4834; and Logitech's compiles of the two catalogue devices here holding such a code, a Pioneer
-  // receiver and a Philips television on a Harmony One, hold the definition's block word for word.
+  // The refusal covered a `sections` row too, `Samsung 38 Bit`'s, whose block refused no code. On the codes
+  // the four rows do take, the definition at the row's count sends the row's own train on 4797 of 4834; and
+  // Logitech's compiles of the two catalogue devices here holding such a code, a Pioneer receiver and a
+  // Philips television on a Harmony One, hold the definition's block word for word.
   if ('refusal' in press) return press;
   const protocol = catalogueProtocol(keycode, protocols);
   if (protocol === undefined) return { refusal: `the archive holds no definition of ${read.family}` };
@@ -661,8 +663,8 @@ export function catalogueCommandBlocks(
  * states, `statedCodeOfDefinition`, and at the name's only for a family the archive defines none of.
  * **The definition is found by `catalogueProtocol`**, so a code spelling its family in another letter case
  * or with a trailing space is read by its definition and carries the definition's name as its `family`,
- * which is what the rhythm table is looked up by; the 222 commands of the five such spellings were refused
- * as having no rhythm until section 361. Section 359.
+ * which is what the rhythm table is looked up by; 221 commands of four such spellings were refused as having no
+ * rhythm until section 361, and a fifth spelling's one command is refused for its device's count of 0. Section 359.
  *
  * **Why the definition and not the name.** The composer read every code at the widths the family's name
  * spells until section 359, and so refused 52658 commands of 156 families as unreadable: a name such as

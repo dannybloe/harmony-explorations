@@ -21,8 +21,8 @@
  * which differs the same way without this section. Built at the other count, none of the three is.
  *
  * **What is not claimed.** Anything on a remote; anything about the families no compile here holds,
- * `Entone 56 Bit`, `Galaxis 16 Bit Quad Toggle` and the four misspelt ones, which are composed from the
- * definition alone, stated and unverified per decision 15; and the 14 commands of these classes still
+ * `Entone 56 Bit`, `Galaxis 16 Bit Quad Toggle` and the `Ada 40 Bit`, `AudioAnalogue 14 bit`, `DAM 12 Bit` and
+ * `Intellibus 17 Bit ` spellings, which are composed from the definition alone, stated and unverified per decision 15; and the 14 commands of these classes still
  * refused for a conflicting count, todo 2.2.2's.
  */
 import test from 'node:test';
@@ -92,7 +92,8 @@ test('five family spellings in the catalogue\'s codes name no definition, 222 co
       ['Ada 40 Bit', 82], ['AudioAnalogue 14 bit', 108], ['DAM 12 Bit', 29], ['Intellibus 17 Bit ', 1], ['toshiba 32 Bit', 2],
     ]);
     // The archive's `protocol` field is the name of the protocol id Logitech's service gives every command
-    // beside its keycode, so on all 2067863 the definition found is Logitech's own.
+    // beside its keycode, so on all 2067863 the definition found is the one Logitech's id names. A reproduction
+    // rather than an independent closure: the rule was read off that id. What could fail is the fold below.
     assert.equal(agree, 2067863);
     assert.deepEqual(disagree, []);
     // And folding merges nothing: the 684 definitions fold to 684 spellings.
@@ -213,7 +214,7 @@ const CLOSURE = [
     group: 0, targets: ['InputDvd', 'InputSat'], count: 1, other: 3 },
 ] as const;
 
-test('a Pioneer receiver and a Philips television holding such codes, composed whole, are Logitech\'s records on a Harmony One, the three codes included, and at the other count none of the three is',
+test('a Pioneer receiver and a Philips television holding such codes, composed whole, are Logitech\'s records on a Harmony One but for the Philips power step\'s long press version, the three codes included, and at the other count none of the three is',
   needing(skipWithoutIrArchive(), skipUnless('h650_panasonic_config')), () => {
     const base = open('h650_panasonic_config');
     const protocols = archiveProtocolsByName(IR_ARCHIVE!);
