@@ -79,6 +79,7 @@ interface ArchitectureFolder {
  * 700 share one face, Danny's statement; `reference/remotes/harmony-650/keys.md` says so beside the table.
  */
 export const REMOTES: readonly RemoteFolder[] = [
+  { folder: 'harmony-one', skins: [54, 59], drawing: 'one', architecture: 12 },
   { folder: 'harmony-600', skins: [71, 73], drawing: 'h600', architecture: 14 },
   { folder: 'harmony-650', skins: [72, 74], drawing: 'h650', architecture: 14 },
   { folder: 'harmony-700', skins: [66, 69], drawing: 'h700', architecture: 14 },
@@ -164,7 +165,10 @@ function keyTable(drawing: Drawing): string {
   const paired = drawing.keys.filter((k) => k.scanCandidates !== undefined).length;
   const kinds = (kind: Key['kind']): number => drawing.keys.filter((k) => k.kind === kind).length;
   return [
-    `${drawing.keys.length} keys on the drawing \`${drawing.id}\`, ${kinds('keypad')} on the keypad and `
+    // A touch key is counted only where a drawing has one, the Harmony One's, so the sentence on
+    // every other model reads as it did before the One's folder existed.
+    `${drawing.keys.length} keys on the drawing \`${drawing.id}\`, ${kinds('keypad')} on the keypad`
+      + `${kinds('touch') > 0 ? `, ${kinds('touch')} on the touch panel` : ''} and `
       + `${kinds('screen')} that the screen speaks for. ${scanned} carry a measured scan code and ${paired} `
       + 'are left between two candidates by the drawing.',
     '',
