@@ -7,7 +7,7 @@ rules and the architecture comparison are written once rather than once per remo
 |---|---|---|---|
 | [memory-map-one.md](memory-map-one.md) | Harmony One | 12 | yes, three units |
 | [memory-map-600.md](memory-map-600.md) | Harmony 600 | 14 | yes, one unit |
-| [memory-map-700.md](memory-map-700.md) | Harmony 700 | 14 | **no**, package only |
+| [memory-map-700.md](memory-map-700.md) | Harmony 700 | 14 | yes, one unit, since section 295; it said package only until 9 October 2026 |
 | [memory-map-525.md](memory-map-525.md) | Harmony 525 | 9 | yes, one unit |
 
 These five documents derive nothing. Every figure in them is measured elsewhere and each row names

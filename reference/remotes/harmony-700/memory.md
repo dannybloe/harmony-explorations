@@ -6,9 +6,8 @@ That map and its constants are in
 [the architecture's memory.md](../../architectures/harmony-600-650-700/memory.md). This page states only
 where the 700 differs or has been measured on its own.
 
-**`docs/memory-map-700.md` is out of date**: it was written before any 700 was connected and marks most
-rows "presumed". The rows below are the measurements that have since replaced them; that document has
-not been revisited.
+**`docs/memory-map-700.md` was written before any 700 was connected** and marked most rows "presumed";
+it was corrected in place against the measurements below on 9 October 2026.
 
 ## Where the 700 differs
 

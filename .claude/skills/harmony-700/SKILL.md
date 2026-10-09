@@ -24,8 +24,8 @@ In this order, every time, including in an agent:
    architecture 14. In conversation say "the Harmony 700", never the bare architecture number.
 3. `docs/how-a-harmony-works.md` when the task touches what the remote does for a person.
 
-**`docs/memory-map-700.md` predates every measurement of a 700** and its "presumed" rows are not to be
-trusted; the reference's `memory.md` says which have been measured since.
+**`docs/memory-map-700.md` was written before any 700 was measured** and was corrected against the bench
+unit on 9 October 2026; the reference's `memory.md` carries the same measurements with their standing.
 
 **When the reference does not answer a question about the remote, ask** before designing around the gap,
 and land the answer in the reference afterwards with its source.

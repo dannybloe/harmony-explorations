@@ -14,6 +14,7 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import { REMOTES, expectedBlocks, regenerate, run } from '../bin/remotes.ts';
+import { MODELS } from '../src/index.ts';
 
 test('every generated block in the remote reference matches the code it is generated from', () => {
   assert.deepEqual(run(false), []);
@@ -37,6 +38,18 @@ test('a marker nothing generates and a block a file lacks are both reported', ()
   const { problems } = regenerate('x.md', '<!-- generated:stray -->\nold\n<!-- /generated -->\n', blocks);
   assert.deepEqual(problems, ['x.md: a block named stray that nothing generates',
     'x.md: block wanted is missing, add the two markers where it belongs']);
+});
+
+test('a model folder and its drawing serve the same skins', () => {
+  // Two lists of one population, and nothing compared them until 9 October 2026: the Harmony 300's
+  // folder named 78 and 79 while its drawing served 78 alone, so a drawing looked up by the skin a
+  // bench unit states about itself, 79, section 264, found nothing. A folder whose drawing is a
+  // sibling's, the 650's taking the 600's shapes, still has a drawing of its own with its own skins.
+  for (const r of REMOTES) {
+    const drawing = MODELS[r.drawing] ?? assert.fail(`${r.folder}: no drawing ${r.drawing}`);
+    assert.deepEqual([...drawing.skins].sort((a, b) => a - b), [...r.skins].sort((a, b) => a - b), r.folder);
+  }
+  assert.deepEqual(MODELS.h300!.skins, [78, 79], 'the Harmony 300 drawing serves both regional skins');
 });
 
 test('every model folder has the same ten files', () => {

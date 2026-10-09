@@ -77,7 +77,7 @@ docs/myharmony/             everything about the vendor platform, one subject in
 docs/memory-map.md              memory maps: the addressing rules and the architecture comparison
 docs/memory-map-one.md          where everything lives on a Harmony One, derived, one page
 docs/memory-map-600.md          the same for the Harmony 600
-docs/memory-map-700.md          the same for the 700, entirely unmeasured, a list of what to read
+docs/memory-map-700.md          the same for the 700, measured on the bench unit since section 295
 docs/memory-map-525.md          arch 9, predictions written down before the remote arrives
 docs/growing-a-config.md        what a length change would move, counted: the stated addresses, the
                                 implied positions and the three restamped fields. The survey behind

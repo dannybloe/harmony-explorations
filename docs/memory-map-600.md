@@ -1,8 +1,8 @@
 # Memory map: Harmony 600 (architecture 14)
 
 Where everything lives on a Harmony 600. The Harmony 700 is the same architecture and has its own
-map in [memory-map-700.md](memory-map-700.md), because the two remotes carry different images and
-only one of them has ever been read off a device.
+map in [memory-map-700.md](memory-map-700.md), because the two remotes carry different images. Both
+have been read off a device since section 295; this said only one had until 9 October 2026.
 
 Read [memory-map.md](memory-map.md) first: the addressing rules, the `0xFE` and `0xFF` notation, the
 two execution models and the comparison against architecture 12 are all there, and this document

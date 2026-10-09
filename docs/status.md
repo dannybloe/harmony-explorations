@@ -67,8 +67,10 @@ brought architecture 16 with it. Both halves were already false when written: se
 Harmony 350's configuration through concordance and it passed all fifteen framing checks, with slot 1
 stating architecture 16 and the remote itself reporting the same over USB, which is two routes with
 nothing in common. The load address argument was sound and it was answering a question that had been
-closed by other means. What remains true is that **this library cannot open one**: the file based
-protocol reaches its storage by name and no read path here goes through it.
+closed by other means. What remains true is that **`openHarmony` cannot open one**: the file based
+protocol reaches its storage by name, and the one read path that goes through it is
+`openFileBasedRemote`, which reads a configuration as a file and writes nothing, section 262. This
+said no read path here went through it until 9 October 2026, which section 262 had overtaken.
 
 Established: the MCU family, firmware load addresses, flash layouts, the firmware image
 header and its checksum, the config container, the keypad scanner, and the complete
@@ -713,9 +715,10 @@ this project's oldest rule is about. Two right copies are what precede two diver
   and never appears as a literal, which cost one wrong negative here, `reference/superseded.md`.
 * **The physical button map**, meaning the matrix keypad. **The Harmony One's touch panel is mapped**,
   section 125, and out of the config rather than the hardware: base slot 17's rectangles, the mode page
-  byte saying which page is in force, and a transform onto the display. That leaves the 44 keys around
-  the panel, and every other model. Measured as far as USB allows and no further, section 48: a remote on
-  USB never runs its **keypad handler**, because USB mode's own loop does not scan the matrix. It does
+  byte saying which page is in force, and a transform onto the display. That leaves the 40 keys around
+  the panel, and every other model; this said 44 until 9 October 2026, the drawing's count, which
+  includes the panel's four touch areas. Measured as far as USB allows and no further, section 48: a
+  remote on USB never runs its **keypad handler**, because USB mode's own loop does not scan the matrix. It does
   run the rest of its application, section 111, and "never runs its application" was the wording here
   until a Harmony One was watched ticking. **On arch 14 it does not even load its config**, section
   110: the journal's five variables are zero on the 600, so neither the container's marker check nor

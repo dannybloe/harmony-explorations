@@ -613,8 +613,11 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // the second remote whose before and after this project holds, and what it settles is what the
   // as-found configuration alone could not: raw slot 8 holds twice the device count here too, so
   // section 264's refutation was reading the **compiler's** age rather than the model, its one
-  // outlier having been built in 2011. Its own number sender is the other half, since no favourite
-  // channel was chosen for it. Outside every corpus wide population, like the four before it.
+  // outlier having been built in 2011. Its own number sender is the other half: four favourite
+  // channels, 1, 2, 3 and 666, were entered on this remote before the read and the file states those
+  // four, so it is a known answer sample. This said "no favourite channel was chosen for it"<!--superseded--> until 9
+  // October 2026, the premise section 265 withdrew. Outside every corpus wide population, like the
+  // four before it.
   h300_programmed_config: 'harmony-300-programmed-config.bin',
   phase7_before: 'phase7-before-gspm.bin',
   phase7_after: 'phase7-after-gspm.bin',

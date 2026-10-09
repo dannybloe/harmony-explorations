@@ -172,7 +172,11 @@ Each also carries a capability naming the model itself, `HarmonyOne`, `Harmony60
 models with a screen, and it agrees with the 600 seen at the bench. The 350's long press and its eight
 devices agree with the section below. Favourite channel maxima were unchecked and are the vendor's now
 for these six. **The 300 states no `Activities` capability** where the 350 states it with a maximum of
-one; what a 300 does without one is **not checked**.
+one, and states `PartiallySetupActivities` instead. What a 300 does with that is described from the
+bench as a shortcut that switches several devices on and does not remap the keypad, section 265;
+whether the configuration holds it as an activity is **not checked**, since the activity reader finds
+none on this architecture. This said only that what a 300 does without one is not checked until 9
+October 2026, which section 265 had already narrowed.
 
 **`NumOfAddDevice` is 100 on every model** and nothing in MyHarmony's source reads it, so whatever
 enforces it is on the server. It may be a lifetime budget of device adds per remote, which would explain
@@ -192,11 +196,15 @@ records declare `LongPressAction`**, none of them denied, covering 17 distinct p
 carry a skin number, and **every one of the fifteen is outside `MODELS_BY_SKIN`**:
 
 **Three of those skins have been on hardware since 27 August 2026**, and none of them is in the table
-above: 99 a Harmony Touch, 104 a Harmony 350 and 78 a Harmony 300, section 195. They stay out of it, and
-out of `packages/usb/src/models.ts`, because a row here states what a model's hardware can do and nothing
-here has read a file based remote's config: they have no firmware to read, so the doctrine that the
-firmware settles a capability has no entry point on them. What is known is the skin and the product id,
-plus the architecture on the two that were asked for it, which `reference/models.md` carries.
+above: 99 a Harmony Touch, 104 a Harmony 350, and a Harmony 300 that section 195 recorded as 78 from
+its USB descriptor and that states 79 itself, section 264. They stay out of it, and out of
+`packages/usb/src/models.ts`, because a row here states what a model's hardware can do and nothing here
+has read those fields out of their firmware: the Harmony 300 and 350's image has been in the lab since
+section 196 and six of its configuration slots are named from it, section 259, but no capability has
+been. Until 9 October 2026 this said nothing here had read a file based remote's config and that "they
+have no firmware to read"<!--superseded-->, which sections 196 and 262 had already overtaken. What is
+known of the 300 and the 350 is in `reference/architectures/harmony-300-350/`; of the Touch, the skin,
+the product id and the architecture, which `reference/models.md` carries.
 
 **Two of those three have had their configuration read now**, sections 262 to 264, and the second one
 carries a correction about skins in general: **a unit's own skin is not the one its USB descriptor
@@ -242,8 +250,11 @@ The other 22 rows report skin **0**, being regional duplicates of twelve of thos
 skin lookup could not answer for them even if this library could reach one. The cut is clean: the
 feature arrives with the Touch generation and no earlier model declares it.
 
-**Same standing as `maxDevices`, which is the vendor's word.** Nothing here confirms it and nothing can,
-since no model on that list is addressable by `packages/usb` at all, `docs/host-client.md`.
+**Same standing as `maxDevices`, which is the vendor's word.** Nothing here confirms it. Of the models
+on that list only the Harmony 350 is reachable by `packages/usb`, as a file read through
+`openFileBasedRemote`, section 262, and how its configuration states a long press is not read;
+`openHarmony` reaches none of them, `docs/host-client.md`. This said no model on that list was
+addressable by `packages/usb` at all until 9 October 2026.
 
 **Why it is a list rather than a column.** A `longPress` field on `Model` would be 35 copies of `false`,
 which states a property of this table rather than of the product, and a claim nothing can contradict is

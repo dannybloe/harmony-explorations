@@ -16,7 +16,7 @@ Memory mapped, and the application executes in place from it.
 
 | Address | Length | Contents | Source |
 |---|---|---|---|
-| `0x000000` to `0x000120` | 288 | an unidentified table | `findings.md` section 8 |
+| `0x000000` to `0x000120` | 288 | an unidentified table | `findings.md` section 9, which this row cited as section 8 until 9 October 2026; section 8 is the key table |
 | `0x002000` to `0x0042C6` | 8902 | the **safe mode config**, a `GSPM` container, format 1.6 | read off the device, and byte identical to the first part of the 3.4 package's `Region_2` |
 | `0x020000` to `0x02EA92` | 60050 | the **application firmware**, version 3.4 | read off the device, byte identical to the archived 3.4 package, own checksum verifies |
 | `0x040000` to `0x400000` | 3840 KiB | the **user config** | read off the device, byte identical to that unit's own `.EZHex` |
@@ -126,5 +126,5 @@ about the same silicon.
 * **Two of the four small records in the `0xFF` page.** `+0xF580` is the battery gauge's scale,
   section 105; `+0xF5C0`'s two words are fetched by the same helper and their consumer is not traced;
   `+0xF640` is offsets and lengths only.
-* **The table at external `0x000000`.** Named in `findings.md` section 8 and unidentified since.
+* **The table at external `0x000000`.** Named in `findings.md` section 9 and unidentified since.
 * **The part number**, per the last section of [memory-map.md](memory-map.md).

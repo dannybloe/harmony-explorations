@@ -83,10 +83,12 @@ Off, Activities, Help and Enter carry no scan because no configuration read bind
 | count | source |
 |---|---|
 | 44 on the drawing: 40 keypad keys and 4 touch keys | `one.ts`; `reference/capabilities.md` says nothing checks it |
-| "42 buttons in the photograph, two of which are the touch areas flanking the screen, leaving 40 in the matrix" | section 48 |
+| 40 matrix keys, beside four touch areas on the panel: two flanking the screen and two below it | section 48, corrected 9 October 2026; section 125 for the touch areas |
 
 A USB census on this model gives nothing, because the keypad shares one sense line, [hardware.md](hardware.md).
-The two counts agree on 40 matrix keys and differ on how many touch keys are counted beside them.
+Section 48 counted 42 off the photograph until 9 October 2026, missing the two touch points below the
+screen; section 125 said 44 keys "besides the panel" until the same day, counting those four touch areas
+as keys outside it. Both now agree with the drawing: 44 in all, 40 of them matrix keys.
 
 ## The key table
 
