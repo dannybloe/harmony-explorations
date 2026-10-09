@@ -177,10 +177,14 @@ export const MODELS_WITHOUT_A_SKIN: readonly Model[] = [];
  * either would turn a gap into a plausible wrong answer for a remote somebody actually owns.
  *
  * Three groups. The rebadges, where Logitech built the remote and another brand sold it. The later
- * cheap models, the Harmony 200, 300 and 350, whose architecture nothing here has read. And the arch
- * 15 family, which is a different case again and belongs to `OUT_OF_TRANSPORT_REACH`: the numbers are
- * known and the transport cannot reach the hardware, so a record would be a promise this library
- * cannot keep.
+ * cheap models, the Harmony 200 and 300, skins 78 to 81. The Harmony 300 is architecture 16, read off a
+ * unit's own `/sys/sysinfo` and its configuration, section 264, and it stays here because a record
+ * states capability fields nothing has read out of its firmware; the Harmony 200's architecture is not
+ * checked. The Harmony 350, skin 104, sits above this list's range and has no entry either. This said
+ * "the Harmony 200, 300 and 350, whose architecture nothing here has read"<!--superseded--> until 9
+ * October 2026, which sections 262 and 264 had overtaken. And the arch 15 family, which is a
+ * different case again and belongs to `OUT_OF_TRANSPORT_REACH`: the numbers are known and the
+ * transport cannot reach the hardware, so a record would be a promise this library cannot keep.
  *
  * A name here is Logitech's own product name and nothing else, which is why the value is a string and
  * not a record: it is enough to tell a contributor that their remote is recognised as a product and
@@ -260,8 +264,11 @@ export const OUT_OF_TRANSPORT_REACH: readonly string[] = ['900', '1000', '1000i'
  * feature arrives with the Touch generation and no earlier model has it, which is what makes this list a
  * clean cut rather than a scattering.
  *
- * **It is the vendor's word and nothing here confirms it**, the same standing as `maxDevices`. No model
- * on this list is addressable by this library at all, so there is no route to checking it: `docs/host-client.md`.
+ * **It is the vendor's word and nothing here confirms it**, the same standing as `maxDevices`. Of the
+ * models on this list only the Harmony 350, skin 104, is reachable, and only as a file read through
+ * `openFileBasedRemote`, section 262; how its configuration states a long press is not read.
+ * `openHarmony` reaches none of them, `docs/host-client.md`. This said no model on this list was
+ * addressable by this library at all until 9 October 2026.
  *
  * Two names in it are worth spelling out, because the marketing name and the record's name differ and
  * a reader will look for the marketing one. Skin 112 is `HarmonyElite`, which Logitech sold as the
@@ -273,9 +280,10 @@ export const SKINS_WITH_A_LONG_PRESS: readonly number[] =
 /**
  * Whether the model a skin names offers a long press as a separate action.
  *
- * False for every skin this library can address, which is the answer FreeHarmony needs: a button read
- * out of a config it can read never carries one, so the field on a binding is always absent after an
- * import.
+ * False for every skin `openHarmony` can open, which is the answer FreeHarmony needs: a button read
+ * out of a config it reads that way never carries one, so the field on a binding is always absent after
+ * an import. The Harmony 350, skin 104, is true here and is read only as a file, section 262, where how
+ * its configuration states a long press is not read.
  */
 export function hasLongPress(skin: number | undefined): boolean {
   return skin !== undefined && SKINS_WITH_A_LONG_PRESS.includes(skin);

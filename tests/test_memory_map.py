@@ -185,12 +185,14 @@ class TestArch14Map(unittest.TestCase):
         self.assertIn('3904 KiB is wrong', six, 'the 600 map still carries the refutation')
         self.assertIn('0x030000` to `0x200000', six, 'and the measured region')
 
-        # The 700's map may guess, but not from the refuted number. Assert the live claim rather
-        # than the absence of the dead phrase: this document records its own correction in place, so
-        # the dead words are present on purpose and an absence test fires on the correction itself.
+        # The 700's map states the region from the architecture's bound, not from the refuted
+        # number. Assert the live claim rather than the absence of the dead phrase: this document
+        # records its own correction in place, so the dead words are present on purpose and an
+        # absence test fires on the correction itself. It was a guess on that bound until 9 October
+        # 2026, when the bench unit's 2 MiB part made it the region.
         seven = _doc('memory-map-700.md')
-        self.assertIn("the architecture's own bound, `0x030000` to\n`0x200000`", seven,
-                      'the 700 guess rests on the architecture bound, not on concordance')
+        self.assertIn("runs from `0x030000` to `0x200000`", seven,
+                      'the 700 region rests on the architecture bound, not on concordance')
 
     def test_the_config_sample_sits_at_the_documented_base(self):
         c = gspm.parse(ezfile.decode_payload(lab.load('h600_config')).payload)
@@ -247,7 +249,7 @@ class TestArch14Map(unittest.TestCase):
 
 
 class TestArch14MapFor700(unittest.TestCase):
-    """docs/memory-map-700.md, which is the one map with no device behind it."""
+    """docs/memory-map-700.md, which had no device behind it until the bench unit of section 295."""
 
     def test_application_firmware_length_and_entry_point(self):
         code = lab.load('h700_code')
@@ -275,12 +277,17 @@ class TestArch14MapFor700(unittest.TestCase):
                 self.assertEqual(c.flash_base, 0x030000)
                 self.assertEqual(c.architecture, 14)
 
-    def test_the_document_says_no_700_has_been_read(self):
-        """The whole point of this map is that it is unmeasured. If that sentence goes, so does
-        the reason every row is marked presumed."""
+    def test_the_document_rests_on_the_bench_unit(self):
+        """Rewritten on 9 October 2026. This asserted the map said no 700 had been read and kept
+        its rows presumed, which section 295 made untrue: a 700 has been on the bench since, and
+        its internal pages, staging region and configuration region were read. So the map has to
+        say the unit is there, and no row of its tables may stand on presumption."""
         text = _doc('memory-map-700.md')
-        self.assertIn('No Harmony 700 has ever been connected', text)
-        self.assertIn('presumed', text)
+        self.assertIn('A Harmony 700 has been on the bench since 29 September 2026', text)
+        rows = [line for line in text.splitlines() if line.startswith('| `')]
+        self.assertEqual(len(rows), 8, 'five internal rows and three external ones')
+        presumed = [row for row in rows if 'presumed' in row]
+        self.assertEqual(presumed, [], 'a row still standing on presumption')
 
     def test_the_document_still_carries_these_addresses(self):
         text = _doc('memory-map-700.md')

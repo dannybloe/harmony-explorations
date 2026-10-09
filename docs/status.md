@@ -18,9 +18,11 @@ section. For the format as a specification, [config-format.md](config-format.md)
 
 ## Status
 
-The work targets three architectures. **Seven remotes are on the bench**, and this list is the
-hardware, not the model families: two Harmony Ones, a Harmony 600, a Harmony 525, and since 27 August
-2026 a Harmony Touch, a Harmony 350 and a Harmony 300. The last three are the file based family and
+The work targets three architectures. **Nine remotes are on the bench**, and this list is the
+hardware, not the model families: two Harmony Ones, a Harmony 600, a Harmony 525, since 27 August
+2026 a Harmony Touch, a Harmony 350 and a Harmony 300, since 27 September 2026 a Harmony 650, and since
+29 September 2026 a Harmony 700. This said seven until 9 October 2026, two units short, the same count
+`CLAUDE.md` had corrected for itself. The last three are the file based family and
 are **not targets** for the config work: `openHarmony` refuses them by product id
 rather than by accident, section 193. What they have bought so far is the reading of the descriptor
 field that names a model, section 195, the route to their firmware, section 196, and their whole
@@ -33,17 +35,19 @@ writes, so `openHarmony`'s refusal is about what has been built for the **config
 about what is reachable at all. Other models
 appear throughout this page as firmware images or contributed configurations, and the Harmony 700 is
 the one that gets mistaken for hardware, because it is the best mapped arch 14 image and is quoted
-constantly. There has never been a Harmony 700 here.
+constantly. **A Harmony 700 unit has been on the bench since 29 September 2026**, and this said there
+had never been one until 9 October 2026.
 
 * **arch 12** ("Gin"), the Harmony One, and the spare Harmony One, one of the **three** units anything
   may be written to. This said it was "the only unit anything may ever be written
   to"<!--superseded--> until 5 September 2026
-* **arch 14**, the Harmony 600 and, since 27 September 2026, a Harmony 650. The Harmony 700 belongs
-  to this architecture and is a **reference image**: two configurations and a firmware image, no
-  remote. **The 650 is the third unit that may be written to** and arch 14 the third architecture
+* **arch 14**, the Harmony 600, since 27 September 2026 a Harmony 650, and since 29 September 2026
+  a Harmony 700, which was a **reference image** before that: two configurations and a firmware image,
+  no remote. **The 650 is the third unit that may be written to** and arch 14 the third architecture
   written to: one block of its own bytes put back unchanged the day it was permitted, section 281.
-  **The 600 and the 700 may be written to since 29 September 2026**, Danny's decision, and neither
-  has been yet. The three share a product id and an architecture, so the dump names which unit is
+  **The 600 and the 700 may be written to since 29 September 2026**, Danny's decision, and both have
+  had a configuration changed since, sections 301 and 303; this said "neither has been yet" until 9
+  October 2026. The three share a product id and an architecture, so the dump names which unit is
   expected and the unit check against the identity block is what refuses any other
 * **arch 9**, the Harmony 525, connected on 8 August 2026 and a target since: its config and its
   firmware are in the lab, and its class 5 infrared, which was the last big gap in the byte
@@ -63,8 +67,10 @@ brought architecture 16 with it. Both halves were already false when written: se
 Harmony 350's configuration through concordance and it passed all fifteen framing checks, with slot 1
 stating architecture 16 and the remote itself reporting the same over USB, which is two routes with
 nothing in common. The load address argument was sound and it was answering a question that had been
-closed by other means. What remains true is that **this library cannot open one**: the file based
-protocol reaches its storage by name and no read path here goes through it.
+closed by other means. What remains true is that **`openHarmony` cannot open one**: the file based
+protocol reaches its storage by name, and the one read path that goes through it is
+`openFileBasedRemote`, which reads a configuration as a file and writes nothing, section 262. This
+said no read path here went through it until 9 October 2026, which section 262 had overtaken.
 
 Established: the MCU family, firmware load addresses, flash layouts, the firmware image
 header and its checksum, the config container, the keypad scanner, and the complete
@@ -709,9 +715,10 @@ this project's oldest rule is about. Two right copies are what precede two diver
   and never appears as a literal, which cost one wrong negative here, `reference/superseded.md`.
 * **The physical button map**, meaning the matrix keypad. **The Harmony One's touch panel is mapped**,
   section 125, and out of the config rather than the hardware: base slot 17's rectangles, the mode page
-  byte saying which page is in force, and a transform onto the display. That leaves the 44 keys around
-  the panel, and every other model. Measured as far as USB allows and no further, section 48: a remote on
-  USB never runs its **keypad handler**, because USB mode's own loop does not scan the matrix. It does
+  byte saying which page is in force, and a transform onto the display. That leaves the 40 keys around
+  the panel, and every other model; this said 44 until 9 October 2026, the drawing's count, which
+  includes the panel's four touch areas. Measured as far as USB allows and no further, section 48: a
+  remote on USB never runs its **keypad handler**, because USB mode's own loop does not scan the matrix. It does
   run the rest of its application, section 111, and "never runs its application" was the wording here
   until a Harmony One was watched ticking. **On arch 14 it does not even load its config**, section
   110: the journal's five variables are zero on the 600, so neither the container's marker check nor

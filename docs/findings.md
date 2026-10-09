@@ -370,7 +370,8 @@ the payload is whatever raw flash was read.
 ### Arch 12 content at flash 0
 Of 65536 bytes, only about 9 KiB is non-`0xFF`:
 
-* `0x000000-0x00011F` unidentified table, see section 8
+* `0x000000-0x00011F` unidentified table, see section 9 (this said section 8, the key table, until 9
+  October 2026)
 * `0x002000-0x0042C6` a **GSPM config container**, not code
 * everything else erased `0xFF`
 
@@ -5727,8 +5728,13 @@ releases within a fifth of a second. So the panel is a separate input on its own
 latching behaviour, which is consistent with section 45: its codes are the 43 to 53 block and they
 do not come out of the matrix.
 
-**A prediction, written before anything tests it.** The One has 42 buttons in the photograph, two
-of which are the touch areas flanking the screen, leaving 40 in the matrix. Its config carries
+**A prediction, written before anything tests it.** The One has 44 buttons, four of which are touch
+areas on the panel, two flanking the screen and two directly below it, leaving 40 in the matrix.
+This said "42 buttons in the photograph"<!--superseded-->, with only the two flanking areas as touch,
+until 9 October 2026. The count missed the two touch points under the screen, which section 125 later
+found in the hit map as codes 43 and 44 and which the drawing in `packages/silhouettes` carries as
+`SoftLeft` and `SoftRight`. The matrix figure came out right anyway, because both missing buttons are
+touch areas rather than matrix keys. Its config carries
 scan codes 1 to 40, then 43 to 53, then 55. So the 40 matrix buttons should be codes 1 to 40, the
 43 to 53 block is the touch panel, and **55 is not a button**. Nothing here tests that.
 
@@ -16905,9 +16911,11 @@ distinct label, three of them on one page and three and two on the others. `make
 
 ### What it does not settle
 
-**The matrix keypad is untouched by this.** The One has 44 keys besides the panel and section 48 is still
-why they cannot be mapped over USB: a remote on the bus does not run its keypad handler, and sixteen of
-its buttons share one sense line. What is mapped now is the panel, and the map came out of the config
+**The matrix keypad is untouched by this.** The One has 40 keys besides the panel and section 48 is still
+why they cannot be mapped over USB. This said "44 keys besides the panel"<!--superseded--> until 9 October
+2026, which is the drawing's whole count: its 44 include the four touch areas this section places, the two
+keys beside the screen and the two points below it. A remote on the bus does not run its keypad
+handler, and sixteen of its buttons share one sense line. What is mapped now is the panel, and the map came out of the config
 rather than out of the hardware.
 
 **Two labels in the corpus land in no rectangle at all**, both on one page of

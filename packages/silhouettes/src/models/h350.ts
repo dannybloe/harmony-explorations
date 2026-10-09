@@ -20,8 +20,10 @@
  * agree, mark for mark. A position comes from the drawing's own printed mark, which the extraction
  * reports per key, so a symbol sits where the document prints it rather than where a key's centre is.
  *
- * **No scan code appears anywhere in here, and that is not an omission.** This architecture has never
- * been opened over USB by this library, `reference/button-maps.md` has no table for it, and nothing in
+ * **No scan code appears anywhere in here, and that is not an omission.** `openHarmony` refuses this
+ * architecture, and the one path that reads it, `openFileBasedRemote`, reads its configuration as a
+ * file and sees no key press, section 262. This said the architecture had never been opened over USB
+ * by this library until 9 October 2026. `reference/button-maps.md` has no table for it, and nothing in
  * the repository or the lab ties a key on this remote to a code. The configuration does state a key
  * table, `docs/findings.md` section 259, so the codes exist; which physical key each one belongs to has
  * not been measured. Nor are there candidates: the Harmony 525's four come from its firmware's matrix

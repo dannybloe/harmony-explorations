@@ -142,8 +142,10 @@ export const ARCHITECTURES_WITH_A_WRITE_TARGET: readonly number[] = [9, 12, 14];
  * **Arch 14 joined on 27 September 2026, section 282**, Danny's decision, once the path had been read
  * on the Harmony 650's own build rather than only on the Harmony 700's, section 97: the escape's
  * `0x02` sets one flag, the main loop turns it into mode 3, and mode 3 waits and executes `RESET`,
- * with nothing on the way that writes program memory. The 600's bytes are identical, and the unit check
- * is what keeps a restart off it.
+ * with nothing on the way that writes program memory. The 600's bytes are identical. The unit check
+ * kept a restart off the 600 until 29 September 2026, when the 600 and the Harmony 700 were admitted;
+ * both have been restarted after a configuration write since, sections 301 and 303. This said the unit
+ * check "is what keeps a restart off it" until 9 October 2026.
  */
 export const ARCHITECTURES_WITH_A_RESET_TARGET: readonly number[] = [12, 14];
 

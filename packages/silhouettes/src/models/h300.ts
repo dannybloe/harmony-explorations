@@ -86,8 +86,13 @@ export const H300: Model = {
   ...H350,
   id: 'h300',
   label: 'Harmony 300',
-  // Measured: a bench Harmony 300 enumerates with bcdDevice 0x1078, which is skin 78, section 195.
-  skins: [78],
+  // Both regional skins, the Harmony 300 and the Harmony 300 EMEA. The bench unit enumerates with
+  // bcdDevice 0x1078, skin 78, section 195, and states 79 in its own /sys/sysinfo and in its
+  // configuration, section 264, so the descriptor names the family's base skin and the remote its
+  // region. The moulding this drawing takes from the 350 was stated holding that skin 79 unit; that 78
+  // and 79 print the same is not checked. This listed 78 alone until 9 October 2026, so a drawing
+  // looked up by the skin the remote itself states found nothing.
+  skins: [78, 79],
   keys: H350.keys.map(reprint),
   nameplate: { ...H350.nameplate!, text: 'Logitech' },
   captions: [

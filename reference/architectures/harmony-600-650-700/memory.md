@@ -8,13 +8,13 @@ the comparison with the Harmony One are in `docs/memory-map.md` and are not rest
 `docs/memory-map-600.md` and `docs/memory-map-700.md` stay where they are. **This file now carries the
 parts that are the architecture's**: the constants below, the external flash layout, the internal page
 layout and the settings store's shape. The per unit maps keep what is one unit's: the 600's measured
-row lengths and its 59 settings records, the 0.2 build's data memory addresses, and the 700 map's list
-of what to measure. Where a per unit map and this file disagree, `docs/findings.md` is right and both
+row lengths and its 59 settings records, the 0.2 build's data memory addresses, and the 700 map's
+measurements of its one unit with what is still unmeasured. Where a per unit map and this file disagree, `docs/findings.md` is right and both
 are checked against it. The Harmony 650's own differences are in
 [its memory.md](../../remotes/harmony-650/memory.md).
 
-**`docs/memory-map-700.md` is out of date on one point**: it says no Harmony 700 has been connected,
-and one has since section 295. Its rows marked "presumed" have not been revisited here.
+**`docs/memory-map-700.md` was corrected on 9 October 2026** against the bench unit of sections 295 to
+301; until then it said no Harmony 700 had been connected and marked most rows "presumed".
 
 ## Constants in the code
 

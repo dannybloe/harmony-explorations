@@ -17,9 +17,10 @@
  * **Five since 29 September 2026**, by Danny's decision that day: the Harmony 600 and the Harmony 700,
  * both arch 14, beside the 650. Three units of one architecture enumerate alike, so the architecture
  * no longer picks the unit: the **dump** names which one is expected, and the identity block read off
- * the remote has to match that unit's record. The 600 has neither a dump nor a record in the lab yet,
- * so it is refused until its first region read is registered; the 700 has both, and one block written
- * back, section 300. The everyday Harmony One stays excluded.
+ * the remote has to match that unit's record. Both have a dump and a record, and each has had one
+ * block written back by this script, the 700 in section 300 and the 600 in section 302. This said the
+ * 600 had "neither a dump nor a record in the lab yet"<!--superseded--> until 9 October 2026. The
+ * everyday Harmony One stays excluded.
  *
  * **What arch 9 does not get with it** is a reset at the end: nothing has read the Harmony 525's
  * escape dispatcher. Arch 14 may be restarted since section 282. This script sends none either way: `writeBlock` erases, writes and verifies, and
@@ -179,11 +180,11 @@ const SPARE_DUMPS = new Set([
 ]);
 
 /**
- * The lab images that are the **Harmony 525's** own configuration region, and it is empty.
+ * The lab images that are the **Harmony 525's** own configuration region, one per erase block.
  *
- * Deliberately empty rather than absent, so that a run against a 525 refuses with a sentence saying
- * what is missing instead of falling off the end of a table. Two things have to happen before it can
- * hold anything, both needing the remote on the cable and neither writing to it:
+ * It was empty at first, deliberately rather than absent, so that a run against a 525 refused with a
+ * sentence saying what was missing instead of falling off the end of a table. Two things had to happen
+ * before it could hold anything, both needing the remote on the cable and neither writing to it:
  *
  * 1. a **region** read. What the lab has of this unit is its configuration, 51195 bytes, which is
  *    smaller than one 64 KiB erase block, so no block is covered and the compare below has nothing
@@ -192,7 +193,8 @@ const SPARE_DUMPS = new Set([
  *    timestamped, so it cannot be written here in advance, which is why this was empty rather than
  *    holding a guess.
  *
- * **Both were done on 6 September 2026** and the set holds one entry. What made the region read
+ * **Both were done on 6 September 2026** and the set holds five entries, the whole region; this said
+ * one until 9 October 2026, the four others having been added the same day. What made the region read
  * worth trusting is that its first 51195 bytes are byte for byte identical to the configuration read
  * off the same unit a month earlier, by a different code path, so two independent reads agree; and
  * the 14341 bytes past the configuration are all `0xFF`, erased, which is worth knowing because on
@@ -274,8 +276,9 @@ interface Target {
  * **This was one hardcoded unit until 6 September 2026** and the constants were called
  * `SPARE_DUMPS` and `PERMITTED_UNIT_LABEL`, singular, with a docstring saying "one label, because
  * there is one write target". Danny's decision of 5 September made it two, the spare Harmony One and
- * the Harmony 525, and section 267 supplied the three constants arch 9 needs, so the script can now
- * read one and it still cannot write it.
+ * the Harmony 525, and section 267 supplied the three constants arch 9 needs, so the script could read
+ * one before it could write it; section 269 wrote one, and this said it "still cannot write it" until
+ * 9 October 2026. Arch 14 adds three units, the Harmony 650, 600 and 700.
  *
  * **Keyed by architecture rather than taken as an argument**, because the architecture comes off the
  * device and an argument comes off a keyboard. An operator who names the wrong unit gets a refusal
@@ -285,10 +288,10 @@ interface Target {
  * **Being in this table is still not permission to write**, and that is worth keeping now that both
  * rows happen to have it. This table decides which remotes may be **read** and compared;
  * `ARCHITECTURES_WITH_A_WRITE_TARGET` decides whether anything may be written, and `--commit` goes
- * through `writeBlock` and the rails either way. The two lists coincided on 6 September 2026 and a
- * third remote arriving here would put them back out of step, which is the ordinary case rather than
- * the exception: reading and comparing is the step that has to happen before a write is authorised at
- * all.
+ * through `writeBlock` and the rails either way. The two lists coincided on 6 September 2026 and
+ * still do, every architecture here being a write target; a remote arriving here before its first
+ * write would put them out of step, which is the ordinary case rather than the exception: reading and
+ * comparing is the step that has to happen before a write is authorised at all.
  */
 const TARGETS: Readonly<Record<number, readonly Target[]>> = {
   9: [{ model: 'the Harmony 525', unitLabel: 'h525', dumps: H525_DUMPS }],

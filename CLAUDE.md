@@ -583,7 +583,9 @@ document:
   write does not restart anything.
   Setting the clock over USB, their step 8, is
   deliberately **not** implemented, because our writer stamps the configuration and an arch 12 remote
-  reseeds its clock from that stamp at every boot. And a transfer is **3150 bytes**, which is
+  reseeds its clock from that stamp at every **cold** boot; a warm start keeps the running clock, section
+  274, and whether the restart after a write is warm or cold is not checked. This said "at every boot"
+  until 9 October 2026. And a transfer is **3150 bytes**, which is
   Logitech's client's number and concordance's alike, where ours was 32768 until 3 September 2026.
 * **An erase of the config region can only have come from a host**, section 243, which is why an
   unexplained erased block is a hole in our own record rather than something the remote did. The

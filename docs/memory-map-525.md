@@ -9,8 +9,8 @@ all, and it is the one that blocked the config read: the address a `READ_FLASH` 
 argument in [findings.md](findings.md) section 76.
 
 Read [memory-map.md](memory-map.md) first for the addressing rules and the `0xFE` and `0xFF`
-notation. [memory-map-700.md](memory-map-700.md) is the same kind of document for a model nobody
-here owns; this one differs in that the gap is about to close.
+notation. [memory-map-700.md](memory-map-700.md) was the same kind of document for a model nobody
+here owned, until a Harmony 700 arrived, section 295; this one differs in that the gap is about to close.
 
 ## Why architecture 9 is worth the trouble
 
