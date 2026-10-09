@@ -46,7 +46,7 @@
  * Arch 14 only, the Harmony 600, 650 and 700. Read only towards hardware: the result is pieces.
  */
 import { u16, u24, u8 } from './bytes.ts';
-import { ACTION_LIST_TABLE_SLOT, BINDING_SLOT } from './gspm.ts';
+import { ACTION_LIST_TABLE_SLOT, BINDING_SLOT, actionListBytes } from './gspm.ts';
 import { Writer } from './emit.ts';
 import type { ContainerLayout, ContainerPiece, PieceRef } from './frame.ts';
 import { KEY_EVENT_PRESS, KEY_EVENT_SHIFT, tagSlotOrder } from './inventory.ts';
@@ -516,14 +516,13 @@ const piece = (bytes: Uint8Array, owner: string, refs: PieceRef[] = []): Contain
 /** An action list: `u8 count` then `{u16 operand; u8 opcode}`, section 26. */
 function encodeList(body: readonly WiringInstruction[], symbols: Symbols, generated: Symbols): { bytes: Uint8Array; described: number[] } {
   if (body.length > 0xff) throw new WiringError(`a list of ${body.length} instructions is more than its count holds`);
-  const out = new Writer(1 + 3 * body.length).u8(body.length);
   const described: number[] = [];
-  body.forEach((ins, k) => {
+  const instructions = body.map((ins, k) => {
     const e = encode(ins, symbols, generated);
-    out.u16(e.operand).u8(e.opcode);
     for (const at of e.described) described.push(1 + 3 * k + at);
+    return { operand: e.operand, opcode: e.opcode };
   });
-  return { bytes: out.bytes, described };
+  return { bytes: actionListBytes(instructions), described };
 }
 
 /** A tagged list in either form, section 52; every wide entry here carries flags 1. */
@@ -580,6 +579,18 @@ function timerOrder(cat: Catalogue, deviceTimers: readonly DeviceTimer[]): strin
   let next = 0;
   for (let k = 0; k < total; k += 1) if (slots[k] === undefined) slots[k] = cat.timers[next++]!.name;
   return slots as string[];
+}
+
+/**
+ * The base slot 10 index this module generates for one of its front lists, for a structure built
+ * elsewhere that calls it: the Low Battery screen's Exit, `lowBatteryExit`, and the Harmony 700's "USB
+ * Connected" leave handler, `usbLeave`, both bound in the firmware's own screens, section 357. Refused
+ * for a name the front does not hold for that model.
+ */
+export function wiringFrontIndex(spec: Pick<WiringSpec, 'model' | 'settings' | 'activityKeys'>, name: string): number {
+  const index = catalogue(spec.model, spec.settings, spec.activityKeys).front.indexOf(name);
+  if (index < 0) throw new WiringError(`a ${spec.model}'s front holds no list ${JSON.stringify(name)}`);
+  return index;
 }
 
 /** The model a skin names, or a refusal. */

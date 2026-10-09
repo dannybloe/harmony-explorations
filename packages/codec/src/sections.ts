@@ -809,6 +809,28 @@ export function taggedListExtent(
 }
 
 /**
+ * A tagged list's bytes, `taggedListExtent`'s and `taggedList`'s inverse for a list without flags: the
+ * narrow form, a count and four bytes an entry, the tag, the operand low byte first and the opcode; and
+ * an empty list as the wide form's two zero bytes, since a narrow count of zero would read as the wide
+ * form's marker. Every empty list of a mode record or a page in the corpus is those two bytes. The one
+ * encoder of the form since section 357; the mode records of sections 356 and 357 and mode 0's list
+ * after the end marker, section 315, all spell through it.
+ */
+export function taggedListBytes(entries: readonly { tag: number; operand: number; opcode: number }[]): Uint8Array {
+  if (entries.length === 0) return new Uint8Array([0, 0]);
+  if (entries.length > 0xff) throw new RangeError(`a narrow tagged list counts to 255, not ${entries.length}`);
+  const out = new Uint8Array(1 + 4 * entries.length);
+  out[0] = entries.length;
+  entries.forEach((one, k) => {
+    if (one.tag < 0 || one.tag > 0xff || one.opcode < 0 || one.opcode > 0xff || one.operand < 0 || one.operand > 0xffff) {
+      throw new RangeError(`entry ${k} does not fit a tagged list's four bytes`);
+    }
+    out.set([one.tag, one.operand & 0xff, one.operand >>> 8, one.opcode], 1 + 4 * k);
+  });
+  return out;
+}
+
+/**
  * The tagged list at an absolute flash address, in either of its two forms.
  *
  * ```

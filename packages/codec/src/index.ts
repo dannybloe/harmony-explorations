@@ -66,6 +66,9 @@ export * from './compose.ts';
 // The idle device list's, the activity menu's and Off's whole records built from a description,
 // todo-compile-650 7.3, section 356. After `compose.ts`, whose page builders it calls.
 export * from './screenrecords.ts';
+// The firmware's own screens built whole from a description, todo-compile-650 7.4, section 357, on
+// `screenrecords.ts`'s reading, building and placing.
+export * from './firmwarescreens.ts';
 // **The metadata archive**, section 260: the ZIP two architectures carry inside the container,
 // which on arch 16 (Harmony 300 and 350) names every device and every command. Exported for the
 // same reason the archive readers below are: FreeHarmony is what wants a command's name, and

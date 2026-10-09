@@ -2144,6 +2144,21 @@ function textWidth(c: Container, set: FontSet, codes: readonly number[]): number
 }
 
 /**
+ * A text spelled in one of the configuration's fonts, `codesFor`, with the pixels it occupies,
+ * `textWidth`: for a caller that places it itself, the firmware's own screens of section 357 among them.
+ * Refused where the configuration draws no text to spell from, lacks the font, or the font has no glyph
+ * for a character.
+ */
+export function spelledText(c: Container, font: number, text: string): { codes: number[]; width: number } {
+  const map = characterMap(c);
+  if (map === undefined) throw new ComposeError('the config draws no text this can spell from');
+  const set = (fontSets(c) ?? [])[font];
+  if (set === undefined) throw new ComposeError(`the config does not carry font ${font}`);
+  const codes = codesFor(map, c, set, text, font);
+  return { codes, width: textWidth(c, set, codes) };
+}
+
+/**
  * The device list menus: the modes whose rows enter a device mode, kept to the ones that list
  * every device. A row is the measured three instruction shape, and a mode qualifies when it
  * reaches as many distinct device modes as any mode does, which is what separates the all device
@@ -3681,6 +3696,22 @@ function bottomWord(c: Container, word: string): { font: number; codes: number[]
     return { font, codes, x: Math.floor((FOUR_SLOT_SCREEN_WIDTH - textWidth(c, sets[font] as FontSet, codes)) / 2) };
   }
   throw new ComposeError(`no font of the title's size spells '${word}'`);
+}
+
+/**
+ * A screen's bottom line as parts: the bottom bar placed by `0, 0, 0, 0, 128, 128` over the picture
+ * `bar`, and `word` on the line at y 114, centred in `bottomWord`'s font, which the caller selects
+ * between the two where another is in effect. What every device mode page and menu page draws at the
+ * bottom, and since section 357 what the firmware's screens with an "Exit" draw: 22 of 22 compiles
+ * place it there.
+ */
+export function bottomLineParts(c: Container, bar: number, word: string): { bar: MenuPart; font: number; text: MenuPart } {
+  const bottom = bottomWord(c, word);
+  return {
+    bar: { op: 'bar', at: DEVICE_PAGE_BOTTOM_BAR_AT, address: bar },
+    font: bottom.font,
+    text: { op: 'text', x: bottom.x, y: DEVICE_PAGE_BACK_Y, codes: bottom.codes, role: 'bottom' },
+  };
 }
 
 /**

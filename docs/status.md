@@ -565,7 +565,7 @@ finding.
 
 `todo.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 356<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 357<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and flash has been written on five units**, the first in section 222:
@@ -954,6 +954,16 @@ way 22 of Logitech's compiles come back identical, including when every byte the
 is blanked first. The activity menu follows the setup file's order. "Do you want to turn off your system
 now?" turned out to be a Help screen and not part of Off. Still read off a configuration: the rows' labels
 and fonts, the pictures, and where the texts drawn by reference sit.
+
+**The remote's own screens are built whole too, section 357**: "add an Activity on this button", "USB
+Connected", the battery screens, "Update Successful", the learning screens and the blanks between them,
+fourteen on a Harmony 600 or 650 and nineteen on a 700. Rebuilt from a description, 21 of Logitech's
+compiles come back identical, again with every byte the builder claims blanked first. Two things turned up:
+"USB Connected" leaves when three keys are pressed in a set order, as far as the file reads, which nobody has
+tried on a remote; and the variable the Harmony 700's first screen sets is its low battery flag, which
+section 311 had left open. One more owner's 650 is refused because its letters cannot be read as an "I".
+**The welcome tour can be left out**: in the form Logitech skips it, nothing enters its ten screens, about
+1700 bytes; its seven byte start list has to stay unless three other lists change with it.
 
 **A Harmony One's activity menu can now grow a page, section 293.** Its menu shows three activities to
 a page, and a fourth used to be refused. Now it opens a new page, and the menu says so in the three

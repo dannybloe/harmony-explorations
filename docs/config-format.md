@@ -1049,6 +1049,57 @@ of the texts drawn by reference outside the three records. A blind control overw
 the three records with `0xEE`, 17326 over the 22, and the rebuild is unchanged. A configuration with no
 activities is refused. Unconfirmed: any wording but English, and any architecture but arch 14.
 
+**The firmware's own screens, built whole**, section 357, `firmwarescreens.ts`, on 21 arch 14 compiles: 2
+Harmony 600 and 12 Harmony 650 with modes 0 to 13, 7 Harmony 700 with modes 0 to 18, byte for byte. Every
+one is one page, laid out in mode order, own list, program, page record, entry; its page list and copy are
+`00 00`. 5435 bytes on a Harmony 600 or 650 and 8864 on a 700, lists included.
+
+| own key map | screens | bindings, all in `keyMapEntries`' hash order, section 315 |
+|---|---|---|
+| placeholder | the two "add an Activity" screens | every key event swallowed, `00 00 00`, but scan 25's press, `07 FFFC`; mode 0's is the table after the end marker on the 600 and 650 |
+| battery | blank, Insert batteries, Unable to charge, the 700's four frames and "Please charge your remote" | tag `0x06`, the enter handler, writing 1 to `lowBattery`, section 347's variable; every key event swallowed |
+| low battery | Low Battery | the battery map, and scan 25's press calling `lowBatteryExit`, wiring front list 0, or 1 on the 700 |
+| usb | USB Connected | tag `0x06` and every key event but three calling `key`; tag `0x07` calling `cleared`, on the 700 the wiring's front list `usbLeave`, whose first call is `cleared`; the presses of scans 11, 12 and 51 calling step 1, 2 and 3 |
+| none | Update and Upgrade Successful, the learning screens and the blanks after them | none: `00 00` |
+
+The lists "USB Connected" runs, `u` its variable, one per configuration: `key [07 FFFF, u := 1]`, `cleared
+[07 FFFF, u := 0]`, step k `[1F FB0k, 7F test k]`, test k `[71 8000|u, 7F advance k or 07 FFFC on k = 3, 7F
+key]`, advance k `[07 FFFF, u := k + 1]`. So scans 11, 12 and 51 pressed in that order pop the mode; read
+off the configuration, unconfirmed on a remote. What `07 FFFF` does is not read.
+
+| screen | lines, font, y | x |
+|---|---|---|
+| add an Activity on this button | body: "Use the Harmony" 30, "setup software to" 45, "add an Activity on" 60, "this button." 75; then the bottom line, the bar and "Exit" | 0 |
+| add Activities | body: the first two lines of the above, "add Activities." 60; the bottom line | 0 |
+| USB Connected | large: 96 | centred |
+| Low Battery | large: 5; the bottom line | centred |
+| Please charge your remote, 700 | large: "Please charge your" 5, "remote" 19 | centred |
+| Insert batteries | body: 61 | centred |
+| Unable to charge | body: "Unable to charge" 61, "batteries" 76 | centred |
+| Update Successful | body: 61 | centred |
+| Upgrade Successful | body: "Upgrade" 61, "Successful" 76 | centred |
+| Ready to learn | body: "Ready to learn" 46, "command from" 61, "other remote." 76 | centred |
+| Command Received | body: "Command" 61, "Received" 76 | centred |
+| Terminate Entry | body: 61 | centred |
+
+Each program is the background picture at `0, 0`, its lines with a font selected only where another is in
+effect, the bottom line where it has one, and the end. Centred is `floor((128 - width) / 2)`. A text is
+inline the first time these screens draw it in mode order and by reference after; no text is drawn by
+reference to a copy outside them on the 21.
+
+**Read, not built**: the wiring's description, the body and large fonts, each screen's background and bar
+picture off its own address fields, and "USB Connected"'s variable and list indices. A blind control
+overwrites every other byte with `0xEE`, 136493 over the 21, and the rebuild is unchanged. Refused:
+`h650_issue36_config`, whose character map does not resolve the code for "I", and the French
+`h650_issue8_config`. Unconfirmed: any wording but English, any architecture but arch 14.
+
+**The welcome tour is not built, and a configuration can leave its ten screens out**, section 357: in
+Logitech's skipped form, 19 of the 21, no instruction anywhere enters any of them. Its start list, the
+wiring's `tour`, `[mark := 1, 7F quiet]` in that form, is called by `startTour` and, with the Remote
+Assistant on, by the Assistant's gate `[71 8000|mark, 7F tour, 7E assistant screen]`; the mark is also read
+by `[71 mark, 7E Off]`, which `idleEnter.first` calls. Leaving the start list out as well needs those three
+lists changed and the mark variable dropped from base slot 13.
+
 Every device list's scan 25 evaluates a record keyed by `CurrentLocation` whose one case, for 0, queues
 the working screen record: the 17 those records enter and one more per configuration, 21 of 21. The
 Remote Assistant screen's "Turn off Assistant" writes 1 into the variable the chain before the working
@@ -4900,7 +4951,7 @@ the hash rule under "The order is a hash table's bucket order" below:
 | model | entries | content | containers carrying exactly these bytes |
 |---|---|---|---|
 | Harmony 600 and 650 | 162 | every scan 1 to 54 as release, press and repeat, each `00 00 00`, except the press of scan 25, `FC FF 07`: instruction `0x07` with `0xFFFC`, pop the mode stack | 19 |
-| Harmony 700 | 163 | an enter handler, tag `0x06`, setting one state variable to 1 (opcode `0x80` plus its number, which the compiler chooses: 40, 43 or 44 so far), then the 600's 162 key events in the same order, all `00 00 00`, scan 25 included | 10, in 3 variants by that one byte |
+| Harmony 700 | 163 | an enter handler, tag `0x06`, setting one state variable to 1 (opcode `0x80` plus its number: the low battery flag, the variable the Low Battery screen's Exit clears, which every battery screen sets on entry, section 357; 40, 43 or 44 so far), then the 600's 162 key events in the same order, all `00 00 00`, scan 25 included | 10, in 3 variants by that one byte |
 | Harmony One | 55 | each `0x7F`, calling the action list numbered by its own position, 0 to 54 | 34, every user configuration |
 
 Elsewhere it is not one constant: arch 8, 10 and 16 samples agree in some pairs and differ in others,

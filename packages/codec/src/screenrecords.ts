@@ -47,9 +47,14 @@
  * control `test/screenrecords.test.ts` makes. Where it would read a value it can also build, it checks
  * the two agree instead, the battery program against `fourSlotMenuChrome`'s by content route.
  *
+ * **The machinery is shared since section 357**: `recordReading` reads a mode record's frame and accounts
+ * for its bytes, `recordBuilding` makes a record's pieces, `withModeRecords` puts built records in a layout
+ * and `assertRebuilt` compares the result, and `firmwarescreens.ts` builds the firmware's own screens
+ * through the same four rather than a copy of them.
+ *
  * Arch 14 only, the Harmony 600, 650 and 700. Read only towards hardware: the result is pieces.
  */
-import type { Container } from './gspm.ts';
+import type { Container, Instruction } from './gspm.ts';
 import {
   ACTION_TABLE_SLOT,
   ComposeError,
@@ -90,7 +95,10 @@ import {
 } from './inventory.ts';
 import { STATE_WRITE_BASE } from './actions.ts';
 import { KEYPAD_FIRST_SCAN, KEYPAD_LAST_SCAN } from './modezero.ts';
-import { ACTION_LIST_INDEX_OPCODE, modePages, modeRecords, pageListCopies, taggedList } from './sections.ts';
+import {
+  ACTION_LIST_INDEX_OPCODE, type ModePage, type ModeRecord, type TaggedList, modePages, modeRecords, pageListCopies, taggedList,
+  taggedListBytes,
+} from './sections.ts';
 import { type ScreenInstruction, screenProgram } from './screen.ts';
 import { describeWiring } from './wiring.ts';
 import type { PieceTarget } from './statetables.ts';
@@ -195,15 +203,7 @@ export interface ScreenRecordsSpec {
 
 /** Where the configuration's own records sat, which `withScreenRecords` puts the built ones in place of. */
 export interface ScreenRecordsPlace {
-  screens: Record<ScreenRecordKind, {
-    own: ContainerPiece;
-    programs: ContainerPiece[];
-    records: ContainerPiece[];
-    lists: ContainerPiece[];
-    entry: ContainerPiece;
-    /** Each page list's second copy: where it sits, and its length. */
-    copies: (PieceTarget & { length: number })[];
-  }>;
+  screens: Record<ScreenRecordKind, RecordPlace>;
   /** The base slot 10 list pieces the rows run, by index. */
   rowLists: Map<number, ContainerPiece>;
   /** How many leading bytes of each piece above are the structure; the rest is carried as it is. */
@@ -285,17 +285,84 @@ export function screenRecordModes(c: Container, layout: ContainerLayout): Record
   return { 'idle device list': idle, 'activity menu': menu, off };
 }
 
+/** One page of a mode record as `RecordReading.frame` reads it, with the pieces that hold it. */
+export interface RecordPageFrame {
+  page: ModePage;
+  list: TaggedList;
+  listOff: number;
+  copy: TaggedList;
+  copyOff: number;
+  program: ScreenInstruction[];
+  programPiece: ContainerPiece;
+  recordPiece: ContainerPiece;
+  listPiece: ContainerPiece;
+  copyAt: PieceTarget & { length: number };
+}
+
+/** A mode record as `RecordReading.frame` reads it: its own key map, its entry and its pages. */
+export interface RecordFrame {
+  record: ModeRecord;
+  ownOff: number;
+  own: ContainerPiece;
+  entry: ContainerPiece;
+  pages: RecordPageFrame[];
+}
+
+/** Where one record's pieces sit in a `takeApart` layout, which `withModeRecords` replaces. */
+export interface RecordPlace {
+  /** What the record is, for a refusal's wording. */
+  what: string;
+  own: ContainerPiece;
+  programs: ContainerPiece[];
+  records: ContainerPiece[];
+  lists: ContainerPiece[];
+  entry: ContainerPiece;
+  /** Each page list's second copy: where it sits, and its length. */
+  copies: (PieceTarget & { length: number })[];
+}
+
 /**
- * Read off a configuration what a composer would supply for its three screen records, and where
- * Logitech's sat. `layout` is `takeApart(c)`; `read` is where every value is taken from, the
- * configuration's own bytes unless a caller hands another. Refuses a record this does not build: a wide
- * own key map, other tags, a row whose page and copy lists run different rows, a page short of full
- * before the last, a text named by two copies.
+ * The bookkeeping of a description read off a configuration's mode records, shared by section 356's
+ * three screen records and section 357's firmware screens so that both read a record, a page, a copy
+ * and a list the same way and account for every byte alike.
+ *
+ * `value`, `value16` and `value24` read a value through the caller's reader and record the offset in
+ * `described`; everything else finds its way through the configuration's own bytes. `frame` reads one
+ * mode record's frame and spans every byte of it in `structure`, its addresses in `addresses`, its
+ * pieces' structure lengths in `lengths`, and each program's inline texts in `inline`; `list` does the
+ * same for a base slot 10 list a record runs. `homes` resolves, once every frame is read, the texts the
+ * programs draw by reference to a copy outside them.
  */
-export function describeScreenRecords(
-  c: Container, layout: ContainerLayout, read: ValueReader = blobReader(c),
-): ScreenRecordsDescribed {
-  const modes = screenRecordModes(c, layout);
+export interface RecordReading {
+  value: ValueReader;
+  value16: (offset: number) => number;
+  value24: (offset: number) => number;
+  described: Set<number>;
+  structure: Set<number>;
+  addresses: { read: Set<number>; built: Set<number> };
+  regions: { from: number; to: number; what: string }[];
+  lengths: Map<ContainerPiece, number>;
+  inline: Map<ContainerPiece, Map<number, string>>;
+  /** The base slot 10 list pieces `list` read, by index. */
+  lists: Map<number, ContainerPiece>;
+  /** The configuration's laid out offsets, `layOutContainer(layout)`. */
+  offsetOf: (piece: ContainerPiece) => number;
+  blobOf: (address: number) => number;
+  targetOf: (address: number) => PieceTarget;
+  wholePiece: (address: number, what: string) => ContainerPiece;
+  span: (from: number, length: number, what: string) => void;
+  addressField: (from: number, kind: 'read' | 'built') => void;
+  frame: (what: string, mode: number) => RecordFrame;
+  list: (index: number, what: string) => { body: Instruction[]; off: number; piece: ContainerPiece };
+  homes: () => Map<string, PieceTarget>;
+  placeOf: (what: string, f: RecordFrame) => RecordPlace;
+}
+
+/**
+ * Start reading mode records off `c`, `layout` being `takeApart(c)` and `read` where every value is taken
+ * from. The refusals are `ScreenRecordError`s.
+ */
+export function recordReading(c: Container, layout: ContainerLayout, read: ValueReader): RecordReading {
   const described = new Set<number>();
   const value: ValueReader = (offset) => {
     described.add(offset);
@@ -337,11 +404,11 @@ export function describeScreenRecords(
   const records = modeRecords(c) ?? [];
   const allPages = modePages(c);
   const copies = pageListCopies(c);
-  const lists = c.actionLists() ?? [];
+  const actionLists = c.actionLists() ?? [];
   const listAddresses = c.pointerArrayAt(archSlot(14, ACTION_TABLE_SLOT))?.values ?? [];
   const structure = new Set<number>();
   const addresses = { read: new Set<number>(), built: new Set<number>() };
-  const regions: ScreenRecordsDescribed['regions'] = [];
+  const regions: RecordReading['regions'] = [];
   const span = (from: number, length: number, what: string): void => {
     for (let k = 0; k < length; k += 1) structure.add(from + k);
     regions.push({ from, to: from + length, what });
@@ -351,13 +418,13 @@ export function describeScreenRecords(
   };
   const lengths = new Map<ContainerPiece, number>();
   const inline = new Map<ContainerPiece, Map<number, string>>();
-  const rowLists = new Map<number, ContainerPiece>();
+  const lists = new Map<number, ContainerPiece>();
   const programPieces = new Set<ContainerPiece>();
   const textRefs: { at: number; one: ScreenInstruction }[] = [];
 
   // One record's frame: own list, pages, page lists, copies, programs, entry. What it holds is read
-  // by the kind's own reader below.
-  const frame = (kind: ScreenRecordKind, mode: number) => {
+  // by the caller.
+  const frame = (kind: string, mode: number): RecordFrame => {
     const record = records[mode];
     if (record === undefined) throw new ScreenRecordError(`mode ${mode} does not read`);
     const ownOff = blobOf(record.start);
@@ -369,7 +436,7 @@ export function describeScreenRecords(
     span(ownOff, record.length, `the ${kind}'s own key map`);
     span(entryOff, record.entryLength, `the ${kind}'s entry`);
     addressField(entryOff + 1, 'built');
-    const pages = record.pages.map((page, p) => {
+    const pages = record.pages.map((page, p): RecordPageFrame => {
       if (page.length !== PAGE_RECORD_LENGTH) throw new ScreenRecordError(`${kind}'s page ${p + 1} is not a six byte page record`);
       const recordOff = blobOf(page.address);
       addressField(entryOff + ENTRY_HEAD + 3 * p, 'built');
@@ -412,8 +479,75 @@ export function describeScreenRecords(
     return { record, ownOff, own, entry, pages };
   };
 
+  // A base slot 10 list a record runs, which the caller builds: spanned whole.
+  const list = (index: number, what: string): { body: Instruction[]; off: number; piece: ContainerPiece } => {
+    const body = actionLists[index];
+    const address = listAddresses[index];
+    if (body === undefined || address === undefined) throw new ScreenRecordError(`list ${index} does not read`);
+    const off = blobOf(address);
+    const piece = wholePiece(address, `list ${index}`);
+    lengths.set(piece, 1 + 3 * body.length);
+    lists.set(index, piece);
+    span(off, 1 + 3 * body.length, `list ${index}, ${what}`);
+    return { body, off, piece };
+  };
+
+  // The texts drawn by reference to a copy outside the records read. A text drawn by reference to a copy
+  // inside them is the builder's to place, so neither its address nor its codes are read; one drawn by
+  // reference to a copy elsewhere names that copy, read.
+  const homes = (): Map<string, PieceTarget> => {
+    const found = new Map<string, PieceTarget>();
+    for (const { at, one } of textRefs) {
+      const target = targetOf(c.blob[at]! | (c.blob[at + 1]! << 8) | (c.blob[at + 2]! << 16));
+      if (programPieces.has(target.to)) {
+        addressField(at, 'built');
+        continue;
+      }
+      addressField(at, 'read');
+      const codes = textValues(c, one, value);
+      if (codes === undefined) throw new ScreenRecordError('a text drawn by reference does not read');
+      const key = codes.join(',');
+      const named = targetOf(value24(at));
+      const was = found.get(key);
+      if (was !== undefined && (was.to !== named.to || was.offset !== named.offset)) {
+        throw new ScreenRecordError(`the screens point at two copies of one text, ${key}`);
+      }
+      found.set(key, named);
+    }
+    return found;
+  };
+
+  const placeOf = (what: string, f: RecordFrame): RecordPlace => ({
+    what, own: f.own, entry: f.entry,
+    programs: f.pages.map((one) => one.programPiece),
+    records: f.pages.map((one) => one.recordPiece),
+    lists: f.pages.map((one) => one.listPiece),
+    copies: f.pages.map((one) => one.copyAt),
+  });
+
+  return {
+    value, value16, value24, described, structure, addresses, regions, lengths, inline, lists,
+    offsetOf: (piece) => laid.offsetOf(piece) as number,
+    blobOf, targetOf, wholePiece, span, addressField, frame, list, homes, placeOf,
+  };
+}
+
+/**
+ * Read off a configuration what a composer would supply for its three screen records, and where
+ * Logitech's sat. `layout` is `takeApart(c)`; `read` is where every value is taken from, the
+ * configuration's own bytes unless a caller hands another. Refuses a record this does not build: a wide
+ * own key map, other tags, a row whose page and copy lists run different rows, a page short of full
+ * before the last, a text named by two copies.
+ */
+export function describeScreenRecords(
+  c: Container, layout: ContainerLayout, read: ValueReader = blobReader(c),
+): ScreenRecordsDescribed {
+  const modes = screenRecordModes(c, layout);
+  const reading = recordReading(c, layout, read);
+  const { value, value16, frame, targetOf } = reading;
+
   // A menu: its own key map's operands, its rows and their lists, its fonts and its pictures.
-  const menu = (kind: ScreenMenuSpec['kind']): { spec: ScreenMenuSpec; frame: ReturnType<typeof frame> } => {
+  const menu = (kind: ScreenMenuSpec['kind']): { spec: ScreenMenuSpec; frame: RecordFrame } => {
     const mode = modes[kind];
     const f = frame(kind, mode);
     const tags = menuTags(kind);
@@ -458,16 +592,10 @@ export function describeScreenRecords(
         const slot = { page: operands(one.list.entries, one.listOff), copy: operands(one.copy.entries, one.copyOff) };
         // Every list of the place runs one row: the same target and the same marker, read as values.
         const ran = [...slot.page, ...slot.copy].map((index) => {
-          const body = lists[index];
-          const address = listAddresses[index];
-          if (body === undefined || address === undefined || body.length !== 2) {
+          const { body, off } = reading.list(index, `which a ${kind} row runs`);
+          if (body.length !== 2) {
             throw new ScreenRecordError(`the ${kind}'s page ${p + 1} runs list ${index}, which is not a row's`);
           }
-          const off = blobOf(address);
-          const piece = wholePiece(address, `list ${index}`);
-          lengths.set(piece, 1 + 3 * body.length);
-          rowLists.set(index, piece);
-          span(off, 1 + 3 * body.length, `list ${index}, which a ${kind} row runs`);
           const [first, second] = body as [(typeof body)[number], (typeof body)[number]];
           const device = kind === 'idle device list';
           const shape = device
@@ -525,50 +653,28 @@ export function describeScreenRecords(
   const off: ScreenOffSpec = { mode: modes.off, font: value(select.start + 1), picture: targetOf(startupPicture(c)) };
 
   // The texts drawn by reference to a copy outside the three screens.
-  const homes = new Map<string, PieceTarget>();
-  // A text drawn by reference to a copy inside them is the builder's to place, so neither its address
-  // nor its codes are read; one drawn by reference to a copy elsewhere names that copy, read.
-  for (const { at, one } of textRefs) {
-    const target = targetOf(c.blob[at]! | (c.blob[at + 1]! << 8) | (c.blob[at + 2]! << 16));
-    if (programPieces.has(target.to)) {
-      addressField(at, 'built');
-      continue;
-    }
-    addressField(at, 'read');
-    const codes = textValues(c, one, value);
-    if (codes === undefined) throw new ScreenRecordError('a text drawn by reference does not read');
-    const key = codes.join(',');
-    const named = targetOf(value24(at));
-    const was = homes.get(key);
-    if (was !== undefined && (was.to !== named.to || was.offset !== named.offset)) {
-      throw new ScreenRecordError(`the screens point at two copies of one text, ${key}`);
-    }
-    homes.set(key, named);
-  }
+  const homes = reading.homes();
 
   const frames = { 'idle device list': idle.frame, 'activity menu': activities.frame, off: offFrame };
   const order = [...SCREEN_RECORD_KINDS].sort((a, b) =>
-    (laid.offsetOf(frames[a].pages[0]?.programPiece as ContainerPiece) as number)
-    - (laid.offsetOf(frames[b].pages[0]?.programPiece as ContainerPiece) as number));
-  const placeOf = (f: ReturnType<typeof frame>): ScreenRecordsPlace['screens'][ScreenRecordKind] => ({
-    own: f.own, entry: f.entry,
-    programs: f.pages.map((one) => one.programPiece),
-    records: f.pages.map((one) => one.recordPiece),
-    lists: f.pages.map((one) => one.listPiece),
-    copies: f.pages.map((one) => one.copyAt),
-  });
+    reading.offsetOf(frames[a].pages[0]?.programPiece as ContainerPiece)
+    - reading.offsetOf(frames[b].pages[0]?.programPiece as ContainerPiece));
   // The row lists' address fields hold none, and the copies none either; values read that are not the
   // records' own bytes, a label at a home outside them, are reads of somebody else's bytes.
   return {
     spec: { idle: idle.spec, menu: activities.spec, off, order, homes },
     place: {
-      screens: { 'idle device list': placeOf(idle.frame), 'activity menu': placeOf(activities.frame), off: placeOf(offFrame) },
-      rowLists, lengths, inline,
+      screens: {
+        'idle device list': reading.placeOf('idle device list', idle.frame),
+        'activity menu': reading.placeOf('activity menu', activities.frame),
+        off: reading.placeOf('off', offFrame),
+      },
+      rowLists: reading.lists, lengths: reading.lengths, inline: reading.inline,
     },
-    described,
-    structure,
-    addresses,
-    regions,
+    described: reading.described,
+    structure: reading.structure,
+    addresses: reading.addresses,
+    regions: reading.regions,
   };
 }
 
@@ -608,31 +714,25 @@ export interface BuiltScreenRecords {
   homes: Map<string, PieceTarget>;
 }
 
-/** A tagged list in the narrow form, which every record here is. */
-function narrowList(entries: readonly { tag: number; operand: number; opcode: number }[]): Uint8Array {
-  const out = new Uint8Array(1 + 4 * entries.length);
-  out[0] = entries.length;
-  entries.forEach((one, k) => {
-    out.set([one.tag, one.operand & 0xff, one.operand >> 8, one.opcode], 1 + 4 * k);
-  });
-  return out;
+/**
+ * The builder's half of `RecordReading`: pieces for a record's programs and for the record around them,
+ * shared by section 356's three screen records and section 357's firmware screens.
+ *
+ * `programOf` spells a program's parts through `menuPartsBytes`, a picture as a reference to
+ * `pictures[handle]` and a text by reference to its home in `homes`, else inline the first time any
+ * program this builder makes draws it and by reference to that copy afterwards, which is the compiler's
+ * one inline copy, section 334, as long as the caller builds in layout order. `inline` collects where
+ * each text was drawn inline. `recordOf` makes the page lists, the page records, the own key map and the
+ * entry: kind 0, the back pointer, the page count, one page record per program.
+ */
+export interface RecordBuilding {
+  programOf: (parts: readonly MenuPart[], pictures: readonly (PieceTarget | undefined)[]) => ContainerPiece;
+  recordOf: (own: Uint8Array, programs: ContainerPiece[], lists: Uint8Array[], copies: Uint8Array[], ownOwner?: string) => BuiltScreen;
+  inline: Map<string, PieceTarget>;
 }
 
-/**
- * Build the three screen records from a description, `todo-compile-650.md` 7.3. `c` is read for its fonts
- * and its character map only, which spell the words and place the texts, `todo-compile-650.md` 8.2's.
- *
- * Every menu page is `menuPageParts`', section 334, and Off's is `fixedLineScreenParts` with
- * `OFF_TITLE`, section 336's start up screen with another title. The rows fill the pages in order, four
- * corners or two rows to a page; each page's list binds its rows' buttons in `FOUR_SLOT_STORED_ORDER` and
- * its copy the same buttons to the copy's lists. A record's own key map is the kind's tags in
- * `compilerTagOrder`'s order, and Off's binds every keypad press to nothing, as a start up screen's
- * does. A text is drawn by reference to its home in `spec.homes`, else inline the first time the
- * screens draw it in `spec.order` and by reference to that copy after.
- */
-export function buildScreenRecords(spec: ScreenRecordsSpec, c: Container): BuiltScreenRecords {
+export function recordBuilding(homes: ReadonlyMap<string, PieceTarget>): RecordBuilding {
   const inline = new Map<string, PieceTarget>();
-  const rowLists = new Map<number, ContainerPiece>();
 
   /** A program piece from parts, its pictures named by `pictures[handle]`. */
   const programOf = (parts: readonly MenuPart[], pictures: readonly (PieceTarget | undefined)[]): ContainerPiece => {
@@ -640,10 +740,10 @@ export function buildScreenRecords(spec: ScreenRecordsSpec, c: Container): Built
     const keyOf = (part: Extract<MenuPart, { op: 'text' }>): string => part.codes.join(',');
     piece.bytes = menuPartsBytes(
       parts,
-      (part) => (spec.homes.has(keyOf(part)) || inline.has(keyOf(part)) ? 0 : undefined),
+      (part) => (homes.has(keyOf(part)) || inline.has(keyOf(part)) ? 0 : undefined),
       (handle, at, part) => {
         const target = part.op === 'text'
-          ? spec.homes.get(keyOf(part)) ?? inline.get(keyOf(part))
+          ? homes.get(keyOf(part)) ?? inline.get(keyOf(part))
           : pictures[handle];
         if (target === undefined) throw new ScreenRecordError(`a ${part.op} names nothing the description holds`);
         piece.refs.push({ at, to: target.to, offset: target.offset });
@@ -656,10 +756,9 @@ export function buildScreenRecords(spec: ScreenRecordsSpec, c: Container): Built
 
   /** A record's pieces around its programs: page lists, page records, own list and entry. */
   const recordOf = (
-    own: readonly { tag: number; operand: number; opcode: number }[], programs: ContainerPiece[],
-    lists: Uint8Array[], copies: Uint8Array[],
+    own: Uint8Array, programs: ContainerPiece[], lists: Uint8Array[], copies: Uint8Array[], ownOwner = 'slot-6-mode',
   ): BuiltScreen => {
-    const ownPiece: ContainerPiece = { bytes: narrowList(own), refs: [], owner: 'slot-6-mode' };
+    const ownPiece: ContainerPiece = { bytes: own, refs: [], owner: ownOwner };
     const listPieces = lists.map((bytes): ContainerPiece => ({ bytes, refs: [], owner: 'slot-6-page-list' }));
     const records = programs.map((program, p): ContainerPiece => ({
       bytes: new Uint8Array(PAGE_RECORD_LENGTH), owner: 'slot-6-page',
@@ -675,6 +774,29 @@ export function buildScreenRecords(spec: ScreenRecordsSpec, c: Container): Built
       entry: { bytes: entry, refs: entryRefs, owner: 'slot-6-entry' },
     };
   };
+
+  return { programOf, recordOf, inline };
+}
+
+/**
+ * Build the three screen records from a description, `todo-compile-650.md` 7.3. `c` is read for its fonts
+ * and its character map only, which spell the words and place the texts, `todo-compile-650.md` 8.2's.
+ *
+ * Every menu page is `menuPageParts`', section 334, and Off's is `fixedLineScreenParts` with
+ * `OFF_TITLE`, section 336's start up screen with another title. The rows fill the pages in order, four
+ * corners or two rows to a page; each page's list binds its rows' buttons in `FOUR_SLOT_STORED_ORDER` and
+ * its copy the same buttons to the copy's lists. A record's own key map is the kind's tags in
+ * `compilerTagOrder`'s order, and Off's binds every keypad press to nothing, as a start up screen's
+ * does. A text is drawn by reference to its home in `spec.homes`, else inline the first time the
+ * screens draw it in `spec.order` and by reference to that copy after.
+ */
+export function buildScreenRecords(spec: ScreenRecordsSpec, c: Container): BuiltScreenRecords {
+  const rowLists = new Map<number, ContainerPiece>();
+  const { programOf, recordOf: recordOfBytes, inline } = recordBuilding(spec.homes);
+  const recordOf = (
+    own: readonly { tag: number; operand: number; opcode: number }[], programs: ContainerPiece[],
+    lists: Uint8Array[], copies: Uint8Array[],
+  ): BuiltScreen => recordOfBytes(taggedListBytes(own), programs, lists, copies);
 
   const menu = (m: ScreenMenuSpec): BuiltScreen => {
     if (m.rows.length !== m.slots.length) throw new ScreenRecordError(`the ${m.kind} has ${m.rows.length} rows and ${m.slots.length} places`);
@@ -762,7 +884,42 @@ export function builtScreenPieces(built: BuiltScreenRecords): ContainerPiece[] {
 }
 
 /**
- * A layout with the three screen records swapped for the built ones, where the configuration's sat.
+ * A layout with the three screen records swapped for the built ones, where the configuration's sat:
+ * `withModeRecords` over the three, in `SCREEN_RECORD_KINDS` order.
+ */
+export function withScreenRecords(
+  layout: ContainerLayout, built: BuiltScreenRecords, place: ScreenRecordsPlace,
+): ContainerLayout {
+  return withModeRecords(
+    layout,
+    { screens: SCREEN_RECORD_KINDS.map((kind) => built.screens[kind]), lists: built.rowLists, inline: built.inline, homes: built.homes },
+    { screens: SCREEN_RECORD_KINDS.map((kind) => place.screens[kind]), lists: place.rowLists, lengths: place.lengths, inline: place.inline },
+  );
+}
+
+/** Built mode records and the lists they run, for `withModeRecords`, paired by position with a `ModeRecordsPlace`'s. */
+export interface BuiltModeRecords {
+  screens: readonly BuiltScreen[];
+  /** The base slot 10 lists built, by index. */
+  lists: ReadonlyMap<number, ContainerPiece>;
+  /** Where the built programs draw each text inline, by its glyph codes joined. */
+  inline: ReadonlyMap<string, PieceTarget>;
+  homes: ReadonlyMap<string, PieceTarget>;
+}
+
+/** Where a configuration's own mode records and lists sat, `RecordReading`'s. */
+export interface ModeRecordsPlace {
+  screens: readonly RecordPlace[];
+  lists: ReadonlyMap<number, ContainerPiece>;
+  /** How many leading bytes of each piece above are the structure; the rest is carried as it is. */
+  lengths: ReadonlyMap<ContainerPiece, number>;
+  /** Per program piece above, the glyph codes of each text it draws inline, by where the codes start. */
+  inline: ReadonlyMap<ContainerPiece, ReadonlyMap<number, string>>;
+}
+
+/**
+ * A layout with mode records swapped for built ones, where the configuration's sat, the one placing
+ * routine section 356's three screen records and section 357's firmware screens share.
  *
  * Each built piece takes the place of the piece it replaces, which keeps the layout's emission order,
  * and carries whatever followed the structure in the replaced piece, the copy pool behind an entry
@@ -770,11 +927,15 @@ export function builtScreenPieces(built: BuiltScreenRecords): ContainerPiece[] {
  * length, since nothing names a copy and so nothing could follow it moving. A reference from elsewhere
  * into a replaced program, a text another screen points at, is pointed at the built copy of the same
  * text, or at its home outside. A page count other than the configuration's is refused: a page is added
- * by `appendArch14Mode`, not here.
+ * by `appendArch14Mode`, not here. So is a built list the configuration's records do not run, and a list
+ * they run that is not built.
  */
-export function withScreenRecords(
-  layout: ContainerLayout, built: BuiltScreenRecords, place: ScreenRecordsPlace,
+export function withModeRecords(
+  layout: ContainerLayout, built: BuiltModeRecords, place: ModeRecordsPlace,
 ): ContainerLayout {
+  if (built.screens.length !== place.screens.length) {
+    throw new ScreenRecordError(`${built.screens.length} records were built for ${place.screens.length} places`);
+  }
   const replace = new Map<ContainerPiece, ContainerPiece>();
   /** Where an offset into a replaced piece lands in its replacement, for the tail it carries. */
   const moved = new Map<ContainerPiece, (offset: number) => number>();
@@ -802,9 +963,9 @@ export function withScreenRecords(
     builtAs.set(placed, made);
     moved.set(old, (offset) => (offset >= length ? offset + shift : offset));
   };
-  for (const kind of SCREEN_RECORD_KINDS) {
-    const old = place.screens[kind];
-    const made = built.screens[kind];
+  place.screens.forEach((old, k) => {
+    const made = built.screens[k] as BuiltScreen;
+    const kind = old.what;
     if (old.programs.length !== made.programs.length) {
       throw new ScreenRecordError(`the ${kind} would have ${made.programs.length} pages where the configuration has `
         + `${old.programs.length}, and a page is added by appendArch14Mode`);
@@ -816,14 +977,14 @@ export function withScreenRecords(
       swap(old.records[p] as ContainerPiece, made.records[p] as ContainerPiece);
       swap(old.lists[p] as ContainerPiece, made.lists[p] as ContainerPiece);
     });
-  }
-  for (const [index, made] of built.rowLists) {
-    const old = place.rowLists.get(index);
-    if (old === undefined) throw new ScreenRecordError(`list ${index} is not one the configuration's rows run`);
+  });
+  for (const [index, made] of built.lists) {
+    const old = place.lists.get(index);
+    if (old === undefined) throw new ScreenRecordError(`list ${index} is not one the configuration's records run`);
     swap(old, made);
   }
-  for (const index of place.rowLists.keys()) {
-    if (!built.rowLists.has(index)) throw new ScreenRecordError(`list ${index} is run by no built row`);
+  for (const index of place.lists.keys()) {
+    if (!built.lists.has(index)) throw new ScreenRecordError(`list ${index} is run by no built record`);
   }
 
   // The copies, written where the configuration's sit, into a piece of its own or a replacement.
@@ -838,9 +999,10 @@ export function withScreenRecords(
     }
     return copy;
   };
-  for (const kind of SCREEN_RECORD_KINDS) {
-    place.screens[kind].copies.forEach((at, p) => {
-      const bytes = built.screens[kind].copies[p] as Uint8Array;
+  place.screens.forEach((old, k) => {
+    const kind = old.what;
+    old.copies.forEach((at, p) => {
+      const bytes = (built.screens[k] as BuiltScreen).copies[p] as Uint8Array;
       const into = writable(at.to);
       const offset = moved.get(at.to)?.(at.offset) ?? at.offset;
       if (at.length !== bytes.length) {
@@ -852,7 +1014,7 @@ export function withScreenRecords(
       }
       into.bytes.set(bytes, offset);
     });
-  }
+  });
   for (const [old, copy] of written) replace.set(old, copy);
 
   // Every reference into a replaced piece, re-pointed.
@@ -918,7 +1080,17 @@ export interface ScreenRecordsChecked {
 export function checkScreenRecords(c: Container): ScreenRecordsChecked {
   const layout = takeApart(c);
   const d = describeScreenRecords(c, layout);
-  const out = layOutContainer(withScreenRecords(layout, buildScreenRecords(d.spec, c), d.place)).bytes;
+  assertRebuilt(layOutContainer(withScreenRecords(layout, buildScreenRecords(d.spec, c), d.place)).bytes, c, d.regions);
+  const pages = SCREEN_RECORD_KINDS.reduce((sum, kind) => sum + d.place.screens[kind].programs.length, 0);
+  return { structure: d.structure.size, rows: d.spec.idle.rows.length + d.spec.menu.rows.length, pages };
+}
+
+/**
+ * Refuse a rebuild that is not the configuration byte for byte, naming the first difference and the
+ * region of `regions` it falls in, or that it is outside them, where something they name moved. The
+ * comparison `checkScreenRecords` and section 357's `checkFirmwareScreens` share.
+ */
+export function assertRebuilt(out: Uint8Array, c: Container, regions: readonly { from: number; to: number; what: string }[]): void {
   let at = -1;
   const length = Math.min(out.length, c.blob.length);
   for (let k = 0; k < length; k += 1) {
@@ -926,12 +1098,10 @@ export function checkScreenRecords(c: Container): ScreenRecordsChecked {
   }
   if (at < 0 && out.length !== c.blob.length) at = length;
   if (at >= 0) {
-    const region = d.regions.find((one) => at >= one.from && at < one.to);
+    const region = regions.find((one) => at >= one.from && at < one.to);
     throw new ScreenRecordError(`the built records differ from the configuration's at byte ${at}`
       + (region === undefined ? ', outside them, where something they name moved' : `, in ${region.what}`));
   }
-  const pages = SCREEN_RECORD_KINDS.reduce((sum, kind) => sum + d.place.screens[kind].programs.length, 0);
-  return { structure: d.structure.size, rows: d.spec.idle.rows.length + d.spec.menu.rows.length, pages };
 }
 
 /**

@@ -12,7 +12,7 @@
  * **The population is one constant per model**, measured in section 311 on every Harmony 600 and 650
  * container: 162 entries, scans 1 to 54 each in the three events release, press and repeat. A
  * Harmony 700 carries the same 162 behind one extra entry, an enter handler of tag `0x06` setting one
- * state variable to 1, whose number the compiler chooses per configuration, and every one of its 162
+ * state variable to 1, the low battery flag every battery screen sets on entry, section 357, and every one of its 162
  * is a swallow, scan 25 included, since the 700's placeholder is another mode.
  *
  * **The order is a rule too, section 315, and it is not ours.** The firmware does not care about it,
@@ -41,6 +41,7 @@
  */
 import { STATE_WRITE_BASE } from './actions.ts';
 import { KEY_EVENT_PRESS, KEY_EVENT_SHIFT } from './inventory.ts';
+import { taggedListBytes } from './sections.ts';
 
 /** The models whose mode 0 list this generates. */
 export type ModeZeroModel = 'harmony-600' | 'harmony-650' | 'harmony-700';
@@ -57,7 +58,7 @@ export const KEYPAD_LAST_SCAN = 54;
 /** The key under "Exit" on the placeholder screen, sections 290, 294 and 311. */
 const EXIT_SCAN = 25;
 /** Instruction `0x07` with operand `0xFFFC` pops the mode stack, section 311. */
-const POP_MODE = { opcode: 0x07, operand: 0xfffc } as const;
+export const POP_MODE = { opcode: 0x07, operand: 0xfffc } as const;
 /** The 700's leading entry: tag 6, an enter handler, writing 1 into a state variable with `0x80 + v`. */
 const SEVEN_HUNDRED_HANDLER_TAG = 0x06;
 /** A state write's opcode carries seven bits of index. */
@@ -120,47 +121,64 @@ export interface ModeZeroEntry {
   opcode: number;
 }
 
+/** The empty instruction, which the queue routine drops: a key bound to it is swallowed, section 311. */
+export const SWALLOW = { operand: 0, opcode: 0 } as const;
+
+/**
+ * A key map over the whole keypad, in stored order: every key event of scans 1 to 54, release, press and
+ * repeat, bound to its entry in `bindings` or else to `otherwise`, the empty instruction unless given,
+ * and every other tag `bindings` holds, an enter or leave handler. Mode 0's list is one, and since
+ * section 357 so is the own key map of every firmware screen that binds keys at all: the battery screens
+ * swallow every key and set a flag on entry, and "USB Connected" runs one list for every key but three.
+ */
+export function keyMapEntries(
+  bindings: ReadonlyMap<number, { operand: number; opcode: number }>,
+  otherwise: { operand: number; opcode: number } = SWALLOW,
+): ModeZeroEntry[] {
+  const entries = new Map<number, ModeZeroEntry>();
+  for (const event of KEY_EVENTS) {
+    for (let scan = KEYPAD_FIRST_SCAN; scan <= KEYPAD_LAST_SCAN; scan += 1) {
+      const tag = (event << KEY_EVENT_SHIFT) | scan;
+      const bound = bindings.get(tag) ?? otherwise;
+      entries.set(tag, { tag, operand: bound.operand, opcode: bound.opcode });
+    }
+  }
+  for (const [tag, bound] of bindings) {
+    if (!entries.has(tag)) entries.set(tag, { tag, operand: bound.operand, opcode: bound.opcode });
+  }
+  return keyListOrder([...entries.keys()]).map((tag) => entries.get(tag)!);
+}
+
 /**
  * Mode 0's list as entries, in stored order. The Harmony 700 needs the variable its leading entry sets,
- * which its compiler picks per configuration (40, 43 and 44 in the samples), so it is a parameter, and
- * the 600 and 650 refuse one, since their list has no such entry.
+ * which section 357 found is the low battery flag every battery screen sets on entry (40, 43 and 44 in
+ * the samples), so it is a parameter, and the 600 and 650 refuse one, since their list has no such entry.
  */
 export function modeZeroEntries(model: ModeZeroModel, options: { variable?: number } = {}): ModeZeroEntry[] {
-  const entries = new Map<number, ModeZeroEntry>();
+  const bindings = new Map<number, { operand: number; opcode: number }>();
   if (model === 'harmony-700') {
     const variable = options.variable;
     if (variable === undefined || !Number.isInteger(variable) || variable < 0 || variable >= STATE_WRITE_LIMIT) {
       throw new RangeError(`a Harmony 700's mode 0 list sets one state variable, 0 to 127, and was given ${variable}`);
     }
-    entries.set(SEVEN_HUNDRED_HANDLER_TAG,
-                { tag: SEVEN_HUNDRED_HANDLER_TAG, operand: 1, opcode: STATE_WRITE_BASE + variable });
-  } else if (options.variable !== undefined) {
-    throw new RangeError(`a ${model}'s mode 0 list has no leading entry, so it takes no variable`);
-  }
-  for (const event of KEY_EVENTS) {
-    for (let scan = KEYPAD_FIRST_SCAN; scan <= KEYPAD_LAST_SCAN; scan += 1) {
-      const tag = (event << KEY_EVENT_SHIFT) | scan;
-      // Only the 600 and 650 placeholder pops back on Exit; on the 700 mode 0 is something else and
-      // every key is swallowed.
-      const pops = model !== 'harmony-700' && event === KEY_EVENT_PRESS && scan === EXIT_SCAN;
-      entries.set(tag, pops ? { tag, ...POP_MODE } : { tag, operand: 0, opcode: 0 });
+    bindings.set(SEVEN_HUNDRED_HANDLER_TAG, { operand: 1, opcode: STATE_WRITE_BASE + variable });
+  } else {
+    if (options.variable !== undefined) {
+      throw new RangeError(`a ${model}'s mode 0 list has no leading entry, so it takes no variable`);
     }
+    // Only the 600 and 650 placeholder pops back on Exit; on the 700 mode 0 is something else and
+    // every key is swallowed.
+    bindings.set((KEY_EVENT_PRESS << KEY_EVENT_SHIFT) | EXIT_SCAN, POP_MODE);
   }
   // The 700's tag 6 is bucket 6 of 256, ahead of every key event's, which is where Logitech stores it.
-  return keyListOrder([...entries.keys()]).map((tag) => entries.get(tag)!);
+  return keyMapEntries(bindings);
 }
 
 /**
  * Mode 0's list as the bytes that follow the end marker: a one byte count, then per entry the tag, the
- * operand low byte first, and the opcode. This is what a container built from nothing emits there.
+ * operand low byte first, and the opcode, `taggedListBytes`. This is what a container built from nothing
+ * emits there.
  */
 export function modeZeroKeyList(model: ModeZeroModel, options: { variable?: number } = {}): Uint8Array {
-  const entries = modeZeroEntries(model, options);
-  if (entries.length > 0xff) throw new RangeError('the count is one byte');
-  const out = new Uint8Array(1 + 4 * entries.length);
-  out[0] = entries.length;
-  entries.forEach((one, k) => {
-    out.set([one.tag, one.operand & 0xff, one.operand >>> 8, one.opcode], 1 + 4 * k);
-  });
-  return out;
+  return taggedListBytes(modeZeroEntries(model, options));
 }

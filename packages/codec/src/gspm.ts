@@ -533,6 +533,24 @@ export interface Instruction {
   readonly opcode: number;
 }
 
+/**
+ * An action list's bytes, the inverse of `Container.actionList`: a one byte count, then per instruction
+ * the operand, low byte first, and the opcode, section 26. The one encoder of the form for lists built
+ * from a description, `wiring.ts`'s and the firmware screens', section 357.
+ */
+export function actionListBytes(body: readonly Instruction[]): Uint8Array {
+  if (body.length > 0xff) throw new RangeError(`a list of ${body.length} instructions is more than its count holds`);
+  const out = new Uint8Array(1 + INSTRUCTION_LENGTH * body.length);
+  out[0] = body.length;
+  body.forEach((one, k) => {
+    if (one.operand < 0 || one.operand > 0xffff || one.opcode < 0 || one.opcode > 0xff) {
+      throw new RangeError(`instruction ${k} does not fit three bytes`);
+    }
+    out.set([one.operand & 0xff, one.operand >>> 8, one.opcode], 1 + INSTRUCTION_LENGTH * k);
+  });
+  return out;
+}
+
 export class Section {
   readonly slot: number;
   readonly address: number;

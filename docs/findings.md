@@ -40918,8 +40918,10 @@ byte equality. Mode 0's record, page and screen program come with it and are not
 ### Scope, decision 16
 
 The firmware reading is the Harmony 600's 0.2 image, with section 271's read of the lookup on the
-700's 2.8. The constancy is measured on arch 12 and 14 and refuted on arch 8, 10 and 16. Open: how the
-Harmony 700's compiler picks its variable, and what its mode 0 is for.
+700's 2.8. The constancy is measured on arch 12 and 14 and refuted on arch 8, 10 and 16. Left open here and
+answered since: the Harmony 700's variable is its low battery flag, the one its Low Battery screen's Exit
+clears and every battery screen sets on entry, 7 of 7 compiles, section 357; and its mode 0 is one of
+the four frames its cycling timers enter, section 347.
 
 ### Falsification
 
@@ -47390,3 +47392,202 @@ description, or whose rebuild from the blinded bytes differs.
 * `packages/codec/test/screenrecords.test.ts`: the 22 byte for byte with the totals, the French refusal,
   the blind control, Off's text and page, the mode 85 measurements, the four failing controls, the row
   order, and the composed comparison.
+
+## 357. The firmware's own screens are built whole from a description, and the welcome tour's ten screens can be left out
+
+**Date:** 9 October 2026. **Status:** confirmed by construction over 21 arch 14 compiles, 2 Harmony 600,
+12 Harmony 650 and 7 Harmony 700, with a blind control and failing controls; nothing built this way has
+been written to a remote. The tour half is a measurement and builds nothing.
+
+**Todo `todo-compile-650.md` 7.4.** Section 355 found that the firmware draws none of the thirty status
+screens out of a configuration and enters its own screens only through the configuration's wiring, which
+section 347 builds. The screens themselves, fourteen at the front of base slot 6 on the Harmony 600 and
+650 and nineteen on the Harmony 700, section 347's table, still came out of a Logitech compile: the two
+"add an Activity" placeholders, which 7.4 calls the setup screens, "USB Connected", the battery screens,
+"Update Successful" and "Upgrade Successful", the learning screens and the blanks between them.
+`packages/codec/src/firmwarescreens.ts` builds each whole on section 356's pattern, and with its
+machinery, which this section moves out of `screenrecords.ts`'s three screens into functions both share:
+`recordReading` reads a record's frame and accounts for its bytes, `recordBuilding` makes its pieces, and
+`withModeRecords` puts them in a layout.
+
+**Sources checked**: this document, sections 52, 69, 140, 286, 289, 311, 315, 317, 334, 336, 347, 355 and
+356; the 23 compiles below. Neither firmware nor client was opened for this: a record's layout and every
+rule below are what Logitech's compiler wrote on their server, section 293's reasoned exemption, and what
+the firmware does with these screens is section 355's and section 311's reading.
+
+### What the screens are made of
+
+Every one of them is one page, laid out in mode order as own list, program, page record and entry, and
+its page list and that list's copy, section 69, are the empty list `00 00`, 21 of 21. Their own key maps
+are five, each over the whole keypad in section 315's hash order where it binds keys at all:
+
+| own key map | screens | bindings |
+|---|---|---|
+| placeholder | "Use the Harmony setup software to add an Activity on this button" and "... to add Activities" | every key event of scans 1 to 54 swallowed, `00 00 00`, but the press of scan 25, `07 FFFC`, pop the mode, section 311; on the Harmony 600 and 650 mode 0's is the table after the end marker |
+| battery | the blank after Low Battery, Insert batteries, Unable to charge, and on the Harmony 700 its four frames and "Please charge your remote" | the enter handler, tag `0x06`, writing 1 into the variable section 347's `lowBatteryExit` clears; every key event swallowed |
+| low battery | Low Battery | the battery map, and scan 25's press calling `lowBatteryExit`, the wiring's front list 0, or 1 on the Harmony 700 |
+| USB | USB Connected | the enter handler and every key event but three calling one list, below |
+| none | Update and Upgrade Successful, the three learning screens, the blanks after Upgrade Successful and Command Received | nothing: `00 00` |
+
+**The Harmony 700's mode 0 variable is the low battery flag.** Section 311 found the 700's table after
+the end marker to be the 600's behind one entry setting a state variable "in three variants differing
+only in that variable's number", 40, 43 or 44, and left open how the compiler picks it. Mode 0 on the 700
+is one of the four frames its cycling timers enter, section 347, a battery screen, and its variable
+is the one every battery screen sets on entry and the Low Battery screen's Exit clears, the wiring's
+`lowBattery`, on 7 of 7 Harmony 700 compiles. Section 311's open item is answered there in place.
+
+**"USB Connected" runs nine or ten lists**, `u` a variable of its own, a different number on most
+compiles:
+
+```
+key       [07 FFFF, u := 1]          enter handler, and every key event but three
+cleared   [07 FFFF, u := 0]          leave handler on the 600 and 650; the first call of the wiring's usbLeave on the 700
+step k    [1F FB0k, 7F test k]       the press of scan 11, 12 and 51 for k = 1, 2, 3
+test k    [71 8000|u, 7F advance k, 7F key]   k = 1, 2; test 3 has 07 FFFC, pop the mode, in the middle
+advance k [07 FFFF, u := k + 1]
+```
+
+`1F FB0k` loads k into the byte register and `71 8000|u` is the two armed comparison of `u` with it,
+section 140. So entering sets `u` to 1, any other key sets it back to 1, and scans 11, 12 and 51 pressed
+in that order move it to 2, then 3, and then leave the screen. That is the configuration's reading; nobody
+has pressed it on a remote. What `07 FFFF` does is not read: section 311 found instruction `0x07` compares
+its operand's low byte with `0xFF` first. On the Harmony 700 the leave handler is the wiring's front list
+`usbLeave`, `[7F cleared, 7F second]`, whose second call is section 347's still copied tree.
+
+**The programs**: the background at `0, 0`; the screen's lines, each in the body font or the large one,
+which are fonts 0 and 2 on all 21, with a font selected only where another is in effect, section 289; on
+the placeholders and Low Battery the bottom line, the bar at `0, 0, 0, 0, 128, 128` and "Exit" centred in
+the bottom word's font, as every device and menu page draws "Back", section 334; and the end. The lines
+are centred, `floor((128 - width) / 2)`, except the placeholders', which start at x 0. Their heights are a
+measured constant per screen, `FIRMWARE_SCREEN_TEMPLATES`, and the words are spelled from the
+configuration's fonts as section 356 spells "Turning system off". A text is drawn inline the first time
+these screens draw it in mode order and by reference after, 20 inline texts on a 600 or 650 and 22 on a
+700; none points at a copy outside them, 21 of 21.
+
+### The measurement
+
+Describe, build, put back, lay out: **21 of 21 come back byte for byte**, 28 screens on the 2 Harmony
+600 compiles, 168 on the 12 Harmony 650 and 133 on the 7 Harmony 700. That is 5435 bytes a Harmony 600 or
+650 compile, 4581 of own key maps, 509 of programs, 126 of entries, 84 of page records, 28 each of page
+lists and copies and 79 of lists, and 8864 a Harmony 700, 7846, 578, 171, 114, 38, 38 and 79; 138138 over
+the 21. Of those, **136493 are generated, 469 are values the description reads and 1176 are addresses of
+pictures**, read. The 469 are two fonts a compile and "USB Connected"'s variable and list indices, 21 bytes
+on a 600 or 650 and 19 on a 700, whose `cleared` index is the wiring's; the 1176 are three bytes for each of
+17 pictures on a 600 or 650 and 22 on a 700, a background per screen and the bar on three. Every value read
+is a byte of the screens: the description reads nothing outside them.
+
+Section 356's population was 22. **The 22nd, `h650_issue36_config`, another owner's Harmony 650, is
+refused** here, at "Insert batteries": its character map leaves glyph code 44 of font 0, the "I" those
+words open with, unresolved, 73 of its 74 drawn codes resolved, where `h650_test_config_clean`'s map
+resolves the same code to "I". Why is not measured. That is the letters' item, `todo-compile-650.md` 8.2:
+the words of section 356's screens never needed an "I". `h650_issue8_config` is French and refused at its first word, as in section 356.
+
+**The blind control.** Every byte of the screens the description does not read, 136493 over the 21, is
+overwritten with `0xEE` in the bytes the reader is handed, in the layout's pieces and in the file the fonts
+are read from; the description comes back with the same 1645 offsets read and **the rebuild still equals
+the compile on 21 of 21**. 136273 of the 136493 bytes change. The other 220 were `0xEE` already, and every
+one is accounted for: 182 are the tag `0xEE`, the repeat event of scan 46, `3 << 6 | 46`, which each of the
+seven key maps over the keypad on a 600 or 650 and twelve on a 700 binds once, and 38 are bytes of address
+fields, which the frame writes whatever a piece holds there. The description still finds its way through
+the unblinded configuration, which entry holds which tag, which instruction selects a font or names a
+picture, how long a list is, which none of the blinded values decide, and the comparison checks that none
+of it decides a byte of the output.
+
+**Failing controls**, by `checkFirmwareScreens` on `h650_test_config_clean`, which passes the unedited
+compile over 5435 bytes, 14 screens and 10 lists:
+
+| edit | refusal | where |
+|---|---|---|
+| "Update Successful" one pixel to the right | differs in the updateSuccessful's program | the byte comparison |
+| the last key "USB Connected" binds to `key` bound to `cleared` instead | differs in its own key map | the byte comparison |
+| "Insert batteries"' enter handler writing the next variable | differs in its own key map | the byte comparison |
+| the second step's advance writing 2 where it moves `u` to 3 | differs in that list | the byte comparison |
+| "USB Connected"'s enter handler swallowed instead of calling `key` | it does not call a list on tag `0x6` | while the screens are read, before any comparison |
+
+### The composed comparison
+
+`h650_7_1_base`, the test setup composed by `todo-compile-650.md` 6.2.13, rebuilt with section 356's three
+records, the menu in `corpus/setups/h650-test.json`'s order, and then with these screens, compares against
+`h650_test_config_clean` with **no difference** with the menu order not counted; counted, the same four
+labels of the activity menu section 356 found, which is the order section 351 says no owner of this model
+chooses. **The result is two bytes longer than the composed file, and both are section 356's**: building
+these screens on the composed file gives it back byte for byte, since its composer carried them unchanged
+from Logitech's starting compile, and building them on section 356's result gives that back byte for byte.
+Those two bytes are section 356's text forms: page 1's total "3" drawn inline instead of by reference, an
+inline text of one glyph being five bytes and a reference six, one byte less, and page 3's three counter
+texts drawn by reference instead of inline, three more.
+
+### What the description carries, and so what is still read
+
+* the wiring's description, section 347: the model, the low battery variable, and on the Harmony 700 the
+  index of `usbLeave`'s first call;
+* the body font and the large font, read once each, `todo-compile-650.md` 8.2, and the letters, read
+  through the configuration's character map, 8.2 too;
+* each screen's background and bar picture, off the program's own address fields, 9.1;
+* "USB Connected"'s variable and the base slot 10 indices of its lists, that section's numbering;
+* the texts drawn by reference to a copy outside these screens, none on the 21.
+
+### The welcome tour, measured and not built
+
+**A configuration without the tour can leave its ten screens out.** In Logitech's skipped form, section
+286, on 19 of the 21 compiles, no instruction anywhere enters any of the ten: every action list, every
+other mode's own and page lists, base slot 9's entries, the timers, base slot 14's value maps and base
+slot 8's leading list, measured. In the shown form, on `h650_config_region` and `calibration_h600`, the one
+instruction that does is the start list's. No text anywhere else is drawn by reference into a tour
+screen's program, so leaving the programs out breaks no reference; the tour's own texts do point at
+copies elsewhere, which stay. The ten screens are 1698 to 1701 bytes a compile by the reading above, and
+they are not consecutive modes, 339 to 350 on `h650_test_config_clean`, so leaving them out of an existing
+container renumbers every mode after them; a configuration built from a description numbers its modes
+itself and pays nothing for it.
+
+**The start list cannot simply go with them.** It is the wiring's `tour`, `[mark := 1, 7F quiet]` in the
+skipped form, seven bytes, and it is called by the wiring's `startTour`, `[7F boot, 7F tour]`, front list
+3, or 4 on the Harmony 700, on 21 of 21, and with the Remote Assistant on by the Assistant's gate, on 18 of
+18. Its mark is read twice: by that gate, `[71 8000|mark, 7F tour, 7E the Remote Assistant screen]`, called
+after `1F FB00`, so while the mark is 0 the gate runs the start list and otherwise shows the Assistant; and
+on 21 of 21 by `[71 mark, 7E Off]`, the one armed form of section 140, which `idleEnter.first` calls after
+`1F FB01`, so the Off key map shows "Turning system off", section 356's Off, only once the mark is 1.
+Left without a writer the mark stays 0, and then All Off would never draw "Turning system off" and the gate
+would call a list that is gone. So leaving the start list out as well means changing `startTour`'s second
+call, the gate and the test before Off, and dropping the mark from base slot 13, section 324, whose
+`narrow` and `wide` then move too. Those are among the lists `todo-compile-650.md` 10.2.2 names and section
+347 still copies. **Keeping the seven byte start list in the skipped form costs nothing else**, and leaves
+every reader of the mark as Logitech's skipped compiles have it.
+
+### Scope, decision 16
+
+Arch 14, measured on 2 Harmony 600, 12 Harmony 650 and 7 Harmony 700 compiles; arch 12 (Harmony One) and
+arch 9 (Harmony 525) were not compared, and their screens differ, section 311's table. English only: every
+word is spelled, not read. The tour measurement is over the same 21 compiles. Nothing was written to a
+remote and nothing here was checked on one, the "USB Connected" key sequence included.
+
+### What this does not establish
+
+* That the remote accepts a configuration whose firmware screens were built here: nothing was written.
+* What `07 FFFF` does, and what the leave handler's second call on the Harmony 700 is for.
+* That a configuration with the tour's ten screens left out runs as one with them: nothing enters them,
+  measured, and nobody has written one.
+
+### Falsification
+
+A Logitech compile of an arch 14 remote whose firmware screens do not rebuild byte for byte from their
+description, or whose rebuild from the blinded bytes differs; a Harmony 700 whose mode 0 variable is not
+its low battery flag; a skipped tour whose screens something enters.
+
+### Where it lands
+
+* `packages/codec/src/firmwarescreens.ts`: `describeFirmwareScreens`, `buildFirmwareScreens`,
+  `withFirmwareScreens`, `checkFirmwareScreens`, `firmwareScreenParts`, `FIRMWARE_SCREEN_TEMPLATES`.
+* `packages/codec/src/screenrecords.ts`: `recordReading`, `recordBuilding`, `withModeRecords` and
+  `assertRebuilt`, section 356's machinery shared rather than copied, its own three screens now going
+  through them unchanged in result.
+* The encoders exported once: `taggedListBytes` in `sections.ts`, which `screenrecords.ts`'s own list
+  encoder and `modeZeroKeyList`'s loop now spell through; `actionListBytes` in `gspm.ts`, which `wiring.ts`
+  spells through too; `keyMapEntries`, `SWALLOW` and `POP_MODE` in `modezero.ts`, which `modeZeroEntries`
+  now builds through; `wiringFrontIndex` in `wiring.ts`; `spelledText` and `bottomLineParts` in
+  `compose.ts`.
+* `packages/codec/test/firmwarescreens.test.ts`: the 21 byte for byte per model, the two refusals, the
+  blind control with its accounting, the Harmony 700's mode 0 variable, the five failing controls, the
+  tour measurement, and the composed comparison.
+* `docs/config-format.md`, after the three screen records; section 311's open item and the table after the
+  end marker's Harmony 700 row.
