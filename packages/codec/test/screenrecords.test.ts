@@ -100,7 +100,7 @@ test('a French Harmony 650 configuration is refused, since the menus are built i
   assert.throws(() => rebuilt(containerOf('h650_issue8_config')), /spells 'Back'/);
 });
 
-test('the rebuild reads none of the bytes the builder owns: a blinded input rebuilds all 22',
+test('the rebuild takes no value from the bytes the builder owns: a blinded input rebuilds all 22',
      skipUnless(...ALL), () => {
   let values = 0;
   let readAddresses = 0;
@@ -256,7 +256,7 @@ test('the activity menu\'s rows follow the description\'s order: Logitech\'s row
   assert.throws(() => inActivityOrder(d.spec, entries.slice(1)), ScreenRecordError);
 });
 
-test('the test setup composed by todo-compile-650 6.2.13, its three records rebuilt with the menu in the setup file\'s order, shows a person nothing Logitech\'s clean compile does not',
+test('the test setup composed by todo-compile-650 6.2.13, its three records rebuilt with the menu in the setup file\'s order, shows a person nothing Logitech\'s clean compile does not but the menu\'s order',
      skipUnless('h650_7_1_base', 'h650_test_config_clean'), () => {
   // `h650_7_1_base` holds the 6.2.13 file as the 650 held it: `step1.ts` and `compose-activity.ts` onto
   // Logitech's starting compile.
@@ -279,6 +279,8 @@ test('the test setup composed by todo-compile-650 6.2.13, its three records rebu
     'label: activity menu | page 2 | cell 2',
     'label: activity menu | page 3 | cell 0',
   ]);
-  // Two bytes longer: the composer drew page 3's counter inline where the compiler points at page 1's.
+  // Two bytes longer: the composer drew page 1's total by reference and all three counter texts of
+  // page 3 inline; the rebuild draws page 1's inline (one byte less) and page 3's three by reference
+  // to it (three more).
   assert.equal(out.blob.length - composed.blob.length, 2);
 });

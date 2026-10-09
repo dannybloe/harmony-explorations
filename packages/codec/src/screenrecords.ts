@@ -40,7 +40,9 @@
  *
  * **How the reading is kept honest.** `describeScreenRecords` reads every value through a `ValueReader`
  * and records the offsets it reads; it finds its way, which opcode is where, how long a text is, which
- * scan a binding is for, through the container itself. So a caller can hand it a reader over bytes
+ * scan a binding is for, the generated inline texts' glyph codes, the coordinates that tell a title
+ * from a counter and assign labels to places, and the built address bytes when it classifies a
+ * reference, through the container itself. None of those decides a byte of the output. So a caller can hand it a reader over bytes
  * overwritten everywhere but the recorded offsets and get the same description back, which is the blind
  * control `test/screenrecords.test.ts` makes. Where it would read a value it can also build, it checks
  * the two agree instead, the battery program against `fourSlotMenuChrome`'s by content route.

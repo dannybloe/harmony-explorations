@@ -946,7 +946,7 @@ borrow the word from. Checked against 78 of the 82 activity lists in Logitech's 
 being a French configuration the English builders refuse; each device's label and the order of the
 devices the activity does not use are still read off the idle list.
 
-**The three screens every Harmony 600, 650 and 700 has once are built whole now, section 356**: the list of
+**The three screens every Harmony 600, 650 and 700 with activities has once are built whole now, section 356**: the list of
 devices the centre key opens while nothing runs, the activity menu, and the "Turning system off" screen All
 Off shows. Their key maps, page lists and the second copy of each, and the lists their rows run, used to
 come out of a Logitech compile around the pages the composer drew; now they are generated, and rebuilt this

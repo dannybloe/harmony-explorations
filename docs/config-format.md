@@ -1046,8 +1046,8 @@ glyph, fits 143 of 143 labels and was fitted on them.
 **Read, not built**: the mode numbers, the rows' labels (font and glyph codes), each button's base slot 10
 lists, the marker variable, the fonts, the own lists' operands, the pictures by content, and the addresses
 of the texts drawn by reference outside the three records. A blind control overwrites every other byte of
-the three records with `0xEE`, 17326 over the 22, and the rebuild is unchanged. Unconfirmed: any wording
-but English, and any architecture but arch 14.
+the three records with `0xEE`, 17326 over the 22, and the rebuild is unchanged. A configuration with no
+activities is refused. Unconfirmed: any wording but English, and any architecture but arch 14.
 
 Every device list's scan 25 evaluates a record keyed by `CurrentLocation` whose one case, for 0, queues
 the working screen record: the 17 those records enter and one more per configuration, 21 of 21. The
