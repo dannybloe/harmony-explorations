@@ -217,10 +217,13 @@ produce a config the remote accepts and mishandles.
   recovers `0x400000` and the writer disarms itself. The rail read as protection against a bad config
   is what fires on a good one, and using the facility at all would need a 64 KiB erase inside the
   config region.
-* **A glyph and an encoded picture cannot be re-encoded from their pixels**, which the emitter
-  found rather than the firmware: several control streams draw the same image, so re-encoding one
-  produces a valid file that is not the original. An editor carries every image it did not change
-  through byte for byte.
+* **A glyph or an encoded picture re-encodes to its original bytes**, section 363: several control
+  streams can draw the same image, but Logitech always writes one greedy stream, and `encodeBitmap`
+  and `encodeGlyph` reproduce every picture and glyph of 37 containers on arch 8, 10, 12 and 14
+  (Harmony 880/885, 890/895, One, 600/650/700); arch 9 (Harmony 525) is unchecked, and a drawn run
+  longer than 122 occurs nowhere, so its cut at 127 is assumed. This said an image "cannot be
+  re-encoded" until 10 October 2026, which was true of an arbitrary stream and not of Logitech's. An
+  editor still carries every image it did not change through unchanged, since that needs no encoder.
 * **A favourite channel is not a key binding**, section 154, and a writer that adds one has to touch
   four sections rather than a keypad map. Base slot 16 gains a record **per appliance** that takes a
   number, not per channel; base slot 10 gains a list per channel, loading the number and handing it to

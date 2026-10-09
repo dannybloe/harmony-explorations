@@ -569,7 +569,7 @@ export const BITMAP_DIMENSION_LIMIT = 0xff;
  *   a literal byte and its pixels for a drawn one, a trailing undrawn run included; rows are separated by
  *   `BITMAP_ROW_BREAK`, so there are `rows - 1` of them, and `BITMAP_END` follows the last. The format
  *   admits other streams for the same pixels, a trailing skip left out or a run cut elsewhere, which is
- *   what `CLAUDE.md`'s rail "a glyph and an encoded picture cannot be re-encoded" rested on; Logitech's
+ *   what `CLAUDE.md`'s rail "a glyph and an encoded picture cannot be re-encoded"<!--superseded--> rested on; Logitech's
  *   compiler emits this one for every encoded picture of the 32 containers on arch 8, 10, 12 and 14 measured,
  *   and `encodeGlyph` in `font.ts` is the same rule for a glyph. A skip over 127 is cut 127 and the rest, on
  *   four pictures; no drawn run in the corpus is longer than 122, so cutting a longer one at 127 is this
