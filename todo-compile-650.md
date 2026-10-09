@@ -126,6 +126,8 @@ an item, ask whether the finish line moves without it; if it does, the item goes
 ## 9. Pictures
 
 - [ ] 9.1 Build the backgrounds ourselves: the cross dividing the four corners, the one item page, the device list's line and the start up screen's picture; the 650 draws no device or activity icons
+  - [x] 9.1.1 The pictures drawn by rule, built from a description by `pictures.ts`: the plain background, the top and bottom bars and three corner patches, Logitech's bytes on 13 of 13 Harmony 650 compiles; Logitech's own encoding is reproduced on arch 8, 10, 12 and 14, which retired the rail that an image cannot be re-encoded (section 363)
+  - [ ] 9.1.2 Decide where the eleven designed pictures come from, the four this item names among them (section 363 found none of them drawn by rule): our own drawings, so the remote looks different, or something else; the same kind of decision as the letters in 8.2
 - [x] 9.2 Favourite channel logos: dropped with favourites, 4.1
 
 ## 10. The container from nothing

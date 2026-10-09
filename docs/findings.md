@@ -48976,7 +48976,7 @@ found.
 ### The encoder, and the rail it corrects
 
 The six rule pictures need an encoder, and `CLAUDE.md`'s table of a writer's rails said there could not be one:
-**"a glyph and an encoded picture cannot be re-encoded"**, because several control streams draw the same image.
+**"a glyph and an encoded picture cannot be re-encoded"**<!--superseded-->, because several control streams draw the same image.
 The second half is true and the first does not follow from it. The format admits other streams for the same
 pixels: a row's trailing skip draws nothing, since the row break starts the next row wherever the last one
 stopped, so a stream without it draws the same picture. **Logitech's compiler emits one stream, and it is the

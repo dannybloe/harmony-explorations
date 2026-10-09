@@ -1087,7 +1087,7 @@ file.
 | a one page screen deadens the two page turn keys | so growing a menu from one page to two must **undo** that, or the second page is unreachable while every count closes and both checksums pass. Both keys on 538 of 538 single page modes, neither on 0 of 58 multi page ones, arch 12 (Harmony One). The header's total and each page's number have to be restated too, section 293. `paginate` |
 | a section's size is not the gap to the next pointer | base slot 5's group arrays sit inside base slot 4's gap |
 | the log area's writer refuses out of range rather than erroring | and on arch 12 (Harmony One) a good config is what disarms it |
-| a glyph and an encoded picture cannot be re-encoded | several control streams draw the same image, so carry anything unchanged through byte for byte |
+| a glyph or an encoded picture re-encodes to its original bytes | Logitech writes one greedy stream of the several that draw an image, and our encoders reproduce it on arch 8, 10, 12 and 14, section 363; still carry anything unchanged through as it is |
 | a favourite channel is not a key binding | it touches four sections and adds no key binding and no infrared group |
 | and it is not one mechanism either | a channel that survives being written as an integer goes through base slot 16; one with a leading zero is spelled out digit by digit. Each side has its own precondition |
 | a record's three digit tables are three pointers and may be shared | the same check base slot 5's duration blocks need |
