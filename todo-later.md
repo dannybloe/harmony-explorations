@@ -92,9 +92,9 @@ The Harmony One is a different type, with a touch screen and its own screens, so
 - [ ] 6.11 Five documents call the spare Harmony One's first configuration a factory configuration; it is a Logitech compile with one television and one activity, so correct the claim in place and add the wording to `reference/superseded.md`
 - [ ] 6.12 Whether Logitech compiles a configuration with no activities, or none at all; MyHarmony greys out its Sync button without activities, but our compile call never goes through the button
 - [ ] 6.13 Six Python tests fail on the Harmony 650 and 700 compiles the long press work added to the lab, and the golden vector list lacks `h650_plasma_base`: the EzHex population counts 23 against 17, and the per config checks on those six files
-- [ ] 6.14 Moved to `todo-compile-650.md` 2.8.2
-- [ ] 6.15 Moved to `todo-compile-650.md` 2.8.5
-- [ ] 6.16 Moved to `todo-compile-650.md` 2.8.1
+- [ ] 6.14 Moved to `todo-process-logitech.md` 2.1
+- [ ] 6.15 Moved to `todo-process-logitech.md` 2.5
+- [ ] 6.16 Moved to `todo-compile-650.md` 2.8
 - [x] 6.17 Toolchain checks walk `.claude/worktrees/`, so an agent's worktree fails the facts, prose and write review checks until it is removed
 - [ ] 6.18 Read the battery before writing to a remote, and refuse or warn when it is too low; a threshold per model is a guess until measured, but a remote that is about 3 V fresh and reads under 2 V is likely too low. For FreeHarmony as much as for the bench
   - [ ] 6.18.1 What each model takes, from Logitech's manuals: Harmony One one lithium ion cell; Harmony 600 and 650 AA alkaline, two on the bench 650 (the manuals do not say how many); Harmony 700 NiMH AA, charged on USB; Harmony 525 four AAA; Harmony 300 and 350 two AA; Harmony Touch an internal rechargeable

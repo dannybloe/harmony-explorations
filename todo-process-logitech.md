@@ -26,7 +26,13 @@ bench procedure. Moved here from todo-later 5.7; the 525 and the Touch, which ge
 Measured on 7 October 2026 over the archive, without the service: 641 families hold a command the
 composer refuses, and the reason splits three ways.
 
-Moved to `todo-compile-650.md` 2.8, where composing every device is the item: the repeat count is 2.8.1,
-the notation 2.8.2 and the 8 left over 2.8.3.
+Done when the composer's own test over the archive refuses no command. Today four in five commands
+compose and 10046 of 54118 code sets have none that does.
+
+- [ ] 2.1 The 151 families whose catalogue notation our reader does not read, about 53000 commands; Logitech's definition exists for every one, so this is reading work, checked against the compiles in the lab; check first whether these are the 52517 commands refused because the composer takes digit widths from the family name (was `todo-later.md` 6.14)
+- [ ] 2.2 The 482 families that lack only the press repeat count: moved to `todo-compile-650.md` 2.8, the device's own count
+- [ ] 2.3 The 8 families left over, 4 with no rhythm and 4 whose block is refused
+- [ ] 2.4 The 10 families that compose except for 231 commands; Logitech's own version of those codes is `todo-secure-logitech.md` 2.4
+- [ ] 2.5 Release blocks and toggle bits as Logitech renders them: about 4360 commands compose and differ from Logitech's rendering (was `todo-later.md` 6.15)
 
 The other chapters are decided once the gathering is done, one per kind of knowledge.
