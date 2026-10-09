@@ -571,7 +571,7 @@ finding.
 
 `todo.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 361<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 362<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and flash has been written on five units**, the first in section 222:
@@ -1028,6 +1028,20 @@ key switches straight off; that is a reading of the files, in none of Logitech's
 screens and keys the comparison reads; it says nothing about the All Off wizard, Help, the Assistant or
 the restore, which are what changed. Section 347's count of what it did not build missed that key's eight
 lists, and is corrected.
+
+**A setup file and one Logitech file now make a whole Harmony 650 configuration in one step, section 362.**
+The chain of lab scripts that built each bench file is one function, which takes the setup file and names
+the Logitech file it still borrows from as an input of its own, so the finish line can swap it and count what
+is left. Given Logitech's own compile of the test setup, the result shows a person the same as that compile
+apart from the menu's order, and the same as the bench file built the old way; it is 1723 bytes longer than
+that file, which is Logitech's version of Plasma kijken with its Help screens against ours, less the 70
+lists the old way left behind that nothing uses. Those are dropped now, which needed every place in a
+configuration that names a list: nine kinds, and one of them could be left out without any comparison of what
+a person sees noticing, so the dropping checks itself. About a seventh of the file is built by our generators; the
+rest is Logitech's, and most of that is pictures, infrared codes and fonts. **What the finish line still
+needs that no step names**: a starting file with no devices and no activities, since nothing here can take
+one out, and a setup file that says what goes on an activity's screen, which today's does not. Measured on
+the Harmony 650 only, and not written to a remote.
 
 **A Harmony One's activity menu can now grow a page, section 293.** Its menu shows three activities to
 a page, and a fourth used to be refused. Now it opens a new page, and the menu says so in the three

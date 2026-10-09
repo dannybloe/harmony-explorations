@@ -112,3 +112,6 @@ export * from './pronto.ts';
 export * from './activityroles.ts';
 // Two configurations of one setup compared by what a person sees and hears, todo-compile-650 5.2.
 export * from './compare.ts';
+// A setup description and a donor in, a whole container out, and which of its bytes a generator
+// reproduces, todo-compile-650 10.6. Last, since it runs every generator above.
+export * from './assemble.ts';

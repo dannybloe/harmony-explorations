@@ -48639,3 +48639,217 @@ count.
   control, the misspelt codes against their twins, the calibration with the 67 admitted, and the two devices
   against the compiles with their controls.
 * `docs/config-format.md`, after section 359's paragraphs.
+
+## 362. A setup file and a donor make a whole Harmony 650 configuration, and what the donor still supplies is the devices, the activities, their screens and Help, the fonts and the pictures
+
+**Date:** 10 October 2026. **Status:** confirmed by construction on the Harmony 650's test setup with
+Logitech's clean compile as the donor, against that compile and against the 10.2.2 composition, with two
+control setups and four refusals; the list census it rests on is measured over 22 arch 14 compiles of the
+Harmony 600, 650 and 700. Nothing assembled this way has been written to a remote.
+
+**Todo `todo-compile-650.md` 10.6**, "a setup description in, a whole container out". Until now a
+configuration of ours was a chain of lab scripts, each starting from a Logitech compile and replacing one
+part: the 6.2.13 file's composers, the 7.5 file's three screen passes, then 10.2.2's wiring. This item
+makes that chain one function, `assembleSetup` in `packages/codec/src/assemble.ts`, with its inputs named:
+the setup file `packages/corpus/setups/` already holds, the settings, and a **donor**, the container every
+part no generator builds yet comes from. The donor is a parameter so that 11.1 can hand in another one and
+count what is left.
+
+**Sources checked**: this document, sections 315, 318, 323, 324, 328, 340, 347 and 356 to 360;
+`todo-compile-650.md` in full; the lab's composition scripts for the 7.5 and 10.2.2 files
+(`work/bench-7-5/make.ts`, `work/agent-10-2-2/make-10-2-2.ts`); the setup files and `build-setup.ts`.
+Logitech's client was not read for this item, since it assembles generators this project already has and
+asks the format nothing new; what a setup can state is section 323's reading of it. The firmware was not
+opened.
+
+### The premise, measured
+
+**No composer removes anything, and the setup file does not state an activity's screen.** The composers of
+chapters 2 to 4 add a device, an activity, a sequence or a keep on to a container; none takes one out. And
+section 323 builds an activity's screen pages from a list of device commands that the setup file does not
+carry, any more than it carries the Radio sequence on TV kijken's screen or the screen's glow time. So with
+today's generators the devices and activities of an assembled configuration are the donor's, and the donor
+has to hold exactly the setup's: the same seven devices and five activities by name. The 10.2.2 file met
+that by composing Plasma kijken onto the starting compile; with `h650_test_config_clean` as the donor all
+seven devices and all five activities are Logitech's.
+
+Which bytes of the assembled test setup a generator reproduces, by `attributeBytes`: a byte is a
+generator's where a builder lays it and the rebuild equals the input, and otherwise it is counted under the
+coverage owner that claims it, an action list split by whether anything reaches it.
+
+| piece | bytes | from | what closes it |
+|---|---|---|---|
+| the frame: header, section table, end marker, base slots 1 and 3, every address field, the trailer | 94796 | `frame.ts`, section 318 | done |
+| the state variables, value maps and name tree | 17928 | `statetables.ts`, section 324 | done |
+| the firmware's wiring and the lists it calls | 1092 | `wiring.ts`, sections 347 and 360 | done |
+| mode 0's key list | 649 | `modeZeroKeyList`, section 315 | done |
+| the device list, activity menu and Off records | 774 | `screenrecords.ts`, section 356 | done |
+| the firmware's own screens | 4532 | `firmwarescreens.ts`, section 357 | done |
+| the texts of every screen program | 4332 | `screentexts.ts`, section 358 | done |
+| what those builders write from their description | 17617 | the description, read from the donor | 11.1 asks where each value comes from |
+| the picture bank | 401730 | read from a Logitech file | 9.1, and 10.5 for where they sit |
+| the infrared records, headers and groups, base slot 5 | 220607 | read from a Logitech file | no item: the catalogue composer of chapter 2 writes them for a device it composes, and here every device is the donor's |
+| the glyph sets and glyphs, base slot 7 | 92170 | read from a Logitech file | 8.2 |
+| action lists something reaches | 74513 | read from a Logitech file | no item for the devices' and activities' own; Help's are `todo-later.md` 3.3 |
+| the screens of the devices and activities: modes, entries, page lists and copies, programs, base slot 9 lists | 66775 | read from a Logitech file | as the line above |
+| action lists nothing reaches, the donor's own | 2393 | read from a Logitech file | the census below drops them without a visible change; left here so the comparison with the donor is like for like |
+| the remainder of small tables | 14 | read from a Logitech file | |
+
+The generators lay 141720 of the 999922 bytes, about a seventh; 858202 are the donor's, and 714507 of
+those are pictures, infrared and fonts. The same attribution gives 140854 on the 10.2.2 file and 141948 on
+the donor itself, so the assembly does not move the share: what it adds is one function with the donor
+named, and the 70 lists below gone. **What 11.1 still needs, and no todo item names**: a container with no
+device and no activity for the composers to start from, and a setup format that states an activity's
+screen, its sequences and Help or their absence. Every activity of the clean compile carries Logitech's
+Help, which the comparison of section 5.2 leaves out: its scan 3 bindings reach 731 lists of 5561 bytes and
+129 of the donor's 376 reached modes.
+
+### Every place that names a list, the census a renumbering rests on
+
+Dropping a list renumbers every list after it, and a list's number is written wherever something names it.
+`listCallSites` counts those places, by holder:
+
+* an action list's own `0x7F` call;
+* a tagged list naming a list: a mode's key map at its record's start, a page list, a page list's second
+  copy (section 69, which nothing reads and which an edit still has to change), a base slot 9 entry;
+* a timer's list, four bytes into its record;
+* a state transition's list, five bytes into its value;
+* a screen program's queued instruction, opcode 17, one byte in;
+* a number sender's three lists and its digit tables, on a configuration with favourites;
+* base slot 8's leading list.
+
+`dropLists` refuses a list something reaches, a list below the wiring's front where an index is the
+firmware's own, and a piece longer than the list it drops; it rewrites every operand above a dropped
+list and rebuilds the base slot 10 table at its own width.
+
+**Over the 22 compiles of sections 356 to 360**, 14 of the Harmony 650, two of the 600 and six of the 700,
+the census finds 232309 places and 6528 lists nothing reaches, 126 to 392 per compile and 48801 bytes in
+all, none of them below the front, which sits at list 11 to 19. Dropping all of them leaves on every
+compile: every place naming the list it named, renumbered, by the drop's own check below; both checksums
+good, the view of `compareViews` equal to the compile's, every list after it
+reached by something, and `checkWiring` and `checkScreenRecords` passing; on 21 of them
+`checkFirmwareScreens` and `checkScreenTexts` pass too, and `h650_issue36_config` has no firmware screens to
+check, before or after. `harvest_650_two_devices` is refused by the comparison, since it holds no activity,
+which is why the census is 22 and not 23. What those lists are was not followed per list; on the clean
+compile they include the send lists of commands no key or screen binds.
+
+**Every holder names lists a drop moves, and one of them no reader here would miss.** On the clean
+compile, per holder, its places, those naming a list the drop of its 323 unreached lists renumbers, and the
+lists no other holder names:
+
+| holder | places | naming a moved list | lists only it names |
+|---|---|---|---|
+| action lists' own calls | 3308 | 3308 | 1837 |
+| screen programs' queued instructions | 5769 | 5759 | 5769 |
+| mode key maps | 734 | 733 | 377 |
+| page lists | 700 | 698 | 426 |
+| page list copies | 700 | 698 | 426 |
+| base slot 9 entries | 345 | 339 | 31 |
+| state transitions | 92 | 91 | 69 |
+| base slot 8's leading list | 7 | 2 | 5 |
+| timers | 4 | 4 | 3 |
+
+So none could be left out. A page list and its second copy name different table entries holding the same
+lists, section 69, which is why each names 426 the other does not; the copies' are lists no firmware path
+reaches, and the census keeps them because an emitter has to reproduce the copies. The number senders name
+lists only where a configuration has favourites, 30 places on `h650_favourites_config`; the clean compile
+has none.
+
+**The first control was built on the readers and it was too weak.** It dropped the clean compile's 323
+lists with the census short of one holder and asked whether the result failed to parse, showed a person
+something different, or failed `checkWiring`, `checkScreenRecords` or the assembly's checks. The first six
+holders in alphabetical order each broke one of those; the screen programs did not, although left at their
+old numbers 5759 of their 5769 places name a list of different content. Nothing that reads what a person
+sees follows the lists a screen program queues. So `dropLists` now checks itself, `checkRenumbering`: a
+fresh census of the result, holder by holder in walk order, has to name exactly what the input's did
+outside the dropped lists, each index less the dropped lists below it, and every kept list has to hold
+what it held, its calls renumbered the same way. It recomputes both censuses rather than trusting the one
+it was handed, and it refuses the drop short of any one of the nine holders. The state transitions and
+timers were not put to the first control, which stopped at the screen programs.
+
+### The assembly
+
+`assembleSetup` in order: checks the donor is a Harmony 650 holding exactly the setup's devices and
+activities by name; applies the setup's "keep this device on when switching Activities" with
+`keepDeviceOn`, section 340, where the donor's starts still switch the device off, and refuses a donor
+that keeps on a device the setup does not; builds the screen records with the menu in the setup's order,
+section 356, the firmware screens, section 357, and the texts, section 358; the wiring with the settings,
+`TRACK_SETTINGS` unless given, sections 347 and 360; the state tables, section 324; mode 0's key list,
+section 315; drops every list the donor named and the result names by nothing; places what is parked,
+section 328; and checks the result with both checksums and the trailer, full coverage with no overlap, the
+round trip, `assertQueueFits`, `assertStateTableConsistent`, `checkWiring`, `checkScreenRecords`,
+`checkFirmwareScreens`, `checkScreenTexts` and the state tables and mode 0 rebuilding. `startsSwitchingOff`
+was taken out of `keepDeviceOn` in `compose.ts` for the refusal, unchanged in what it reads.
+
+**On `h650_test_config_clean`**: 1000819 bytes in, 1000808 after the wiring with this track's settings,
+999922 after dropping 70 lists, 676 bytes of lists and 210 of table entries, and the same after placing.
+Those 70 are section 360's: the restore of saved delays 57, scan 6's Help list 8, the Assistant's gate 4 and
+the help hold list 1. The donor already keeps KPN on, so nothing is kept on. Against the donor, the view
+differs in four cells of the activity menu and nothing else, the menu's order, section 351; drawn text by
+drawn text, section 358's comparison, it differs in 8 texts, all on the activity menu. The glow time is 20
+seconds, this track's, where the clean compile has 10.
+
+### Against the 10.2.2 composition
+
+The 10.2.2 file recomposed from `h650_7_1_base` as the lab's script does is 998199 bytes. The assembled
+test setup shows the same in every cell `compareViews` reads and draws the same text in every place, and is
+1723 bytes longer. Every byte of the difference has an owner:
+
+| owner | bytes | what |
+|---|---|---|
+| screens: modes, entries, pages, page lists and copies, programs and their tables | +1574 | Logitech's Plasma kijken has 15 modes our composed one has not: 14 Help screens, reached only through its two Help bindings, and its Remote Assistant screen |
+| base slot 9's lists | +8 | those two Help bindings, release and hold |
+| action lists something reaches | +614 | 82 lists of 667 bytes only Logitech's Plasma kijken reaches, against 3 of 66 only ours does, +601; and the Radio sequence's list, which Logitech's compile splits in two, `[7F, 7C:14, 7C:114, 7F]`, +13 |
+| action lists nothing reaches | -554 | ours carries the clean compile's 323; the 10.2.2 file carries its own donor's 306 and the 70 |
+| the base slot 10 table | +81 | 27 entries, the 80 reached lists more less the 53 unreached fewer |
+
+1574 + 8 + 614 - 554 + 81 = 1723, and no other owner differs. So the two files are the same configuration
+to a person as far as the comparison reads, and the length is Logitech's Plasma kijken, Help included,
+against ours, and the 70 lists the assembly drops.
+
+### Two control setups and four refusals
+
+**`h650-start.json` on `h650_start_config`**, the four activity starting setup on its own compile: 996014
+bytes, 70 lists dropped, and the same view as the compile but for the menu's order. **`h650-options.json`
+on `h650_start_config`**: the setup keeps the Denon on, the compile does not, so `keepDeviceOn` is applied
+to the Denon, and the result shows what Logitech's `h650_options_config`, compiled with that setting, shows,
+the menu's order aside. The same setup on `h650_options_config` keeps nothing on, the setting already being
+in force; the two results are the same length and differ in 15578 bytes, which are the two Logitech
+compiles' own numbering and emission. **Refused**: the test setup on the starting compile, which lacks
+Plasma kijken; the starting setup on the clean compile, which holds Plasma kijken; any setup on a Harmony
+700 compile; and the starting setup on the options compile, which keeps the Denon on.
+
+### Scope
+
+**The Harmony 650 only.** `ASSEMBLY_SKINS` names its skin and refuses the others. The census holds on the
+Harmony 600 and 700 compiles too, and every generator but the keep on was calibrated on all three models.
+What the 600 and 700 would need: a setup file of theirs and a donor of each, the menu and screen records'
+own two models' rules from section 356, and on the 700 a wiring that takes the Remote Assistant off, which
+section 360's settings refuse there since no 700 compile has it off. None of that was tried.
+
+### What it does not establish
+
+Nothing assembled here was written to a remote, so what the 650 does with the 70 lists gone rests on the
+census and on section 360's reading of each, not on a bench run. The Help and Remote Assistant screens of
+Logitech's activities stay in the assembled file, reachable by their bindings; with the Assistant off they
+are not entered, which is section 360's reading and unmeasured here. The 15578 bytes between the two
+options results were not followed further than their owners.
+
+### Falsification
+
+A Logitech compile where dropping a list the census finds unreached changes what `compareViews` reads or
+fails one of the four builders' checks; a place naming a list that `listCallSites` does not count, which
+would show as a renumbering that breaks a compile; a setup that assembles on a donor and shows a person
+something other than the donor in a cell outside the activity menu.
+
+### Where it lands
+
+* `packages/codec/src/assemble.ts`: `assembleSetup`, `checkAssembled`, `listCallSites`, `namedLists`,
+  `dropLists`, `checkRenumbering`, `attributeBytes`, `drawnTexts` and `compareDrawnTexts`, and `TRACK_SETTINGS`.
+* `packages/codec/src/compose.ts`: `startsSwitchingOff`, out of `keepDeviceOn`.
+* `packages/corpus/src/setup.ts`: the setup file's device and activity are the codec's types now, since
+  the codec reads the same file.
+* `packages/codec/test/assemble.test.ts`: the census and its holder control, the refusals of `dropLists`,
+  the assembly against the donor and against the 10.2.2 file, the controls and refusals, and the
+  attribution.
+* `docs/config-format.md`, base slot 10, every place that names a list.

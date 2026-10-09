@@ -4523,6 +4523,21 @@ variable length records rather than a table, and whether it also names lists in 
 cannot be told by scanning, because that index range is wide enough for coincidences to swamp it.
 `docs/findings.md` section 26.
 
+#### Every place that names a list, and the lists nothing reaches
+
+**Confirmed on arch 14 (Harmony 600, 650 and 700), 22 compiles.** A list's index is written at nine kinds
+of place, each the `u16` operand of a `0x7F`: an action list's own call; a tagged list's entry, in a mode's
+key map, a page list, a page list's second copy and a base slot 9 entry; a timer's instruction at record
+offset 4; a state transition's at value offset 5; an instruction a screen program queues with opcode 17,
+operand at its offset 1; a number sender's three instructions at offsets 5, 8 and 11 and its digit tables;
+and base slot 8's leading list. `listCallSites` enumerates them and `checkRenumbering` holds a renumbering
+of base slot 10 to all of them. Every list a screen program queues is named by that program and by nothing
+else, and a page list and its copy name different table entries holding the same lists.
+
+Lists nothing reaches through any of these, following calls: 126 to 392 per Logitech compile, 6528 lists
+and 48801 bytes over the 22, none below the wiring's front. Dropping them all and renumbering changes
+nothing `compareViews` reads and no generator's check. `docs/findings.md` section 362.
+
 #### `{0x7A a; 0x6C b}` is most of an arch 14 config
 
 **Confirmed on architecture 14.** 2832 of the 700's 8037 lists and 1888 of the 600's 4955 are two

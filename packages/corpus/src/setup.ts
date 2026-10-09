@@ -13,19 +13,19 @@
  * input's name as the catalogue states it. Ids, the power on and off order and the activity group are
  * left for the service to assign, which is what the replies captured in the lab show it doing.
  */
-import type { ActivityRoleName } from '@harmony/codec';
+import type { ActivityRoleName, SetupActivity as AssemblyActivity, SetupDevice as AssemblyDevice } from '@harmony/codec';
 
-/** One device of a setup: what the remote calls it, and its catalogue entry as `<manufacturer>/<file>`. */
-export interface SetupDevice {
-  readonly name: string;
-  readonly device: string;
-  /**
-   * MyHarmony's "I want to keep this device on when switching Activities and only turn it off when I
-   * press the Off button": `IsPoweredOnBetweenActivities` in the device's power feature, read in the
-   * client's power settings view. Absent means the default, off.
-   */
-  readonly poweredOnBetweenActivities?: boolean;
-}
+/**
+ * One device of a setup: what the remote calls it, and its catalogue entry as `<manufacturer>/<file>`.
+ * `poweredOnBetweenActivities` is MyHarmony's "I want to keep this device on when switching Activities
+ * and only turn it off when I press the Off button": `IsPoweredOnBetweenActivities` in the device's power
+ * feature, read in the client's power settings view. Absent means the default, off.
+ *
+ * **The codec's type**, since `todo-compile-650.md` 10.6: the codec's `assembleSetup` builds a container
+ * from the same file, and the codec cannot import this package, so the shape lives there and this names
+ * it. Two copies of one shape are two copies until one of them moves.
+ */
+export type SetupDevice = AssemblyDevice;
 
 /**
  * The jobs a device can do in an activity, as the contract names their role types. The codec's list,
@@ -37,12 +37,12 @@ export type RoleName = ActivityRoleName;
 /** The activity types this setup uses, by the contract's name; `Custom` holds no activity key. */
 export const ACTIVITY_TYPES = { WatchTV: 1, WatchDvd: 2, ListenToMusic: 4, Custom: 5 } as const;
 
-export interface SetupActivity {
-  readonly name: string;
+/** The codec's activity of a setup, with its type narrowed to the four this package sends. */
+export interface SetupActivity extends AssemblyActivity {
   readonly type: keyof typeof ACTIVITY_TYPES;
-  readonly devices: readonly { device: string; input?: string; roles: readonly RoleName[] }[];
 }
 
+/** A setup, which the codec's `assembleSetup` takes as its `SetupDescription`. */
 export interface Setup {
   readonly about?: string;
   readonly devices: readonly SetupDevice[];

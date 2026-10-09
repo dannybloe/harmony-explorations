@@ -8287,38 +8287,21 @@ export function activityPowerTargets(
   ];
 }
 
-/** Where `keepDeviceOn` found and removed a device's switch off. */
-export interface KeptOn {
-  bytes: Uint8Array;
-  /** Each list a write of 0 was cut from, and the activities whose start reaches it, by name. */
-  cut: { list: number; activities: string[] }[];
-}
-
 /**
- * Apply MyHarmony's "keep this device on when switching Activities" to the activities a configuration
- * already holds: cut the write of 0 into `variable` out of every activity's start, and leave the all
- * off list alone, so only All Off switches the device off. Section 340: on the Harmony 650 that setting
- * changed exactly those writes and nothing else, and it was heard so on the remote.
+ * Which activities' starts switch a device off: every list a write of 0 into its Power `variable` sits
+ * in, with the activities whose start reaches it, by name. A start is its enter list and the lists that
+ * calls, two calls deep, which is where every power write of a Logitech start sits, section 280.
  *
- * **A start is its enter list and the lists that calls**, two calls deep, which is where every power
- * write of a Logitech start sits (section 280: "directly or through the lists it calls"). A write found
- * there is cut whole, three bytes, by `excise`, and the list's count byte lowered; the cuts go from the
- * highest offset down, re-reading after each, since every cut moves what follows it.
- *
- * **What it refuses**, each a case where a cut would change something besides an activity's start: a
- * list named twice in base slot 10, the all off list itself, and a list that holds nothing but the write,
- * which would be left empty. A device that no start switches off is refused too, since the caller asked
- * for a change that is not there: either the setting is already in force or the variable is not a device's.
- * For an activity composed after this, pass the same variable as `keepOn` to `activityPowerTargets`.
+ * `keepDeviceOn`'s reading, split out so that a caller can ask whether MyHarmony's "keep this device on
+ * when switching Activities" is already in force without cutting anything: an empty answer for a device
+ * some activity does not use is the setting in force, section 340. `assembleSetup` asks it of every
+ * device a setup names, `todo-compile-650.md` 10.6.
  */
-export function keepDeviceOn(c: Container, variable: number): KeptOn {
+export function startsSwitchingOff(c: Container, variable: number): Map<number, Set<string>> {
   const power = deviceVariables(c).find((one) => one.index === variable);
   if (power === undefined || power.property !== 'Power') {
     throw new ComposeError(`state variable ${variable} is not a device's Power variable`);
   }
-  const allOff = allOffList(c);
-  if (allOff === undefined) throw new ComposeError('no single list switches every device off');
-  if (c.architecture === undefined) throw new ComposeError('the container states no architecture');
   const sets = handlerSets(c);
   const lists = c.actionLists();
   if (sets === undefined || lists === undefined) throw new ComposeError('base slot 9 or 10 does not read');
@@ -8344,6 +8327,41 @@ export function keepDeviceOn(c: Container, variable: number): KeptOn {
     }
     walk(enter.operand, 0, one.name ?? `set ${one.set}`);
   }
+  return holders;
+}
+
+/** Where `keepDeviceOn` found and removed a device's switch off. */
+export interface KeptOn {
+  bytes: Uint8Array;
+  /** Each list a write of 0 was cut from, and the activities whose start reaches it, by name. */
+  cut: { list: number; activities: string[] }[];
+}
+
+/**
+ * Apply MyHarmony's "keep this device on when switching Activities" to the activities a configuration
+ * already holds: cut the write of 0 into `variable` out of every activity's start, and leave the all
+ * off list alone, so only All Off switches the device off. Section 340: on the Harmony 650 that setting
+ * changed exactly those writes and nothing else, and it was heard so on the remote.
+ *
+ * **A start is its enter list and the lists that calls**, two calls deep, which is where every power
+ * write of a Logitech start sits (section 280: "directly or through the lists it calls"). A write found
+ * there is cut whole, three bytes, by `excise`, and the list's count byte lowered; the cuts go from the
+ * highest offset down, re-reading after each, since every cut moves what follows it.
+ *
+ * **What it refuses**, each a case where a cut would change something besides an activity's start: a
+ * list named twice in base slot 10, the all off list itself, and a list that holds nothing but the write,
+ * which would be left empty. A device that no start switches off is refused too, since the caller asked
+ * for a change that is not there: either the setting is already in force or the variable is not a device's.
+ * For an activity composed after this, pass the same variable as `keepOn` to `activityPowerTargets`.
+ */
+export function keepDeviceOn(c: Container, variable: number): KeptOn {
+  const allOff = allOffList(c);
+  if (allOff === undefined) throw new ComposeError('no single list switches every device off');
+  if (c.architecture === undefined) throw new ComposeError('the container states no architecture');
+  const lists = c.actionLists();
+  if (lists === undefined) throw new ComposeError('base slot 10 does not read');
+  const write = STATE_WRITE_BASE + variable;
+  const holders = startsSwitchingOff(c, variable);
   if (holders.size === 0) {
     throw new ComposeError(`no activity's start switches variable ${variable} off`);
   }
