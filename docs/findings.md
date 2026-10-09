@@ -40920,7 +40920,8 @@ byte equality. Mode 0's record, page and screen program come with it and are not
 The firmware reading is the Harmony 600's 0.2 image, with section 271's read of the lookup on the
 700's 2.8. The constancy is measured on arch 12 and 14 and refuted on arch 8, 10 and 16. Left open here and
 answered since: the Harmony 700's variable is its low battery flag, the one its Low Battery screen's Exit
-clears and every battery screen sets on entry, 7 of 7 compiles, section 357; and its mode 0 is one of
+clears and every battery screen sets on entry, 7 of 7 compiles, section 357, though its number, 40, 43 or
+44, is still the compiler's choice per configuration; and its mode 0 is one of
 the four frames its cycling timers enter, section 347.
 
 ### Falsification
@@ -47324,7 +47325,7 @@ against the configuration's activities.
 `h650_7_1_base` is the test setup composed by `todo-compile-650.md` 6.2.13 as the Harmony 650 held it.
 Rerunning that composition in the lab gives a file differing from it in eight bytes, the stamp's six
 and the trailer checksum.
-Its menu rebuilt in `corpus/setups/h650-test.json`'s order, TV kijken, Film kijken, Muziek, Kodi kijken,
+Its menu rebuilt in `packages/corpus/setups/h650-test.json`'s order, TV kijken, Film kijken, Muziek, Kodi kijken,
 Plasma kijken, compares against `h650_test_config_clean` with **no difference** with the menu order not
 counted; counted, the labels of page 1's two cells, page 2's second and page 3's first differ, which is
 the order section 351 says no owner of this model chooses. The rebuilt file is two bytes longer than
@@ -47436,11 +47437,11 @@ is one of the four frames its cycling timers enter, section 347, a battery scree
 is the one every battery screen sets on entry and the Low Battery screen's Exit clears, the wiring's
 `lowBattery`, on 7 of 7 Harmony 700 compiles. Section 311's open item is answered there in place.
 
-**"USB Connected" runs nine or ten lists**, `u` a variable of its own, a different number on most
-compiles:
+**"USB Connected" runs ten lists**, one of them on the Harmony 700 only through the wiring's `usbLeave`,
+`u` a variable of its own, 11 different numbers over the 21 compiles:
 
 ```
-key       [07 FFFF, u := 1]          enter handler, and every key event but three
+key       [07 FFFF, u := 1]          enter handler, and every key event but the three presses
 cleared   [07 FFFF, u := 0]          leave handler on the 600 and 650; the first call of the wiring's usbLeave on the 700
 step k    [1F FB0k, 7F test k]       the press of scan 11, 12 and 51 for k = 1, 2, 3
 test k    [71 8000|u, 7F advance k, 7F key]   k = 1, 2; test 3 has 07 FFFC, pop the mode, in the middle
@@ -47448,9 +47449,12 @@ advance k [07 FFFF, u := k + 1]
 ```
 
 `1F FB0k` loads k into the byte register and `71 8000|u` is the two armed comparison of `u` with it,
-section 140. So entering sets `u` to 1, any other key sets it back to 1, and scans 11, 12 and 51 pressed
-in that order move it to 2, then 3, and then leave the screen. That is the configuration's reading; nobody
-has pressed it on a remote. What `07 FFFF` does is not read: section 311 found instruction `0x07` compares
+section 140. So entering sets `u` to 1, the presses of scans 11, 12 and 51 step it to 2 and 3 and on the
+third leave the screen, and every other key event resets it to 1, **the three keys' own releases and
+repeats included**, which are in the map as `0x40|scan` and `0xC0|scan`. Pressed one after another the
+release of 11 would reset `u` before 12 is pressed, so how a person completes the sequence, keys held
+together, or releases not dispatched on this screen, or `07 FFFF` doing something else, is not read and
+not tried on a remote. What `07 FFFF` does is not read: section 311 found instruction `0x07` compares
 its operand's low byte with `0xFF` first. On the Harmony 700 the leave handler is the wiring's front list
 `usbLeave`, `[7F cleared, 7F second]`, whose second call is section 347's still copied tree.
 
@@ -47472,15 +47476,18 @@ Describe, build, put back, lay out: **21 of 21 come back byte for byte**, 28 scr
 lists and copies and 79 of lists, and 8864 a Harmony 700, 7846, 578, 171, 114, 38, 38 and 79; 138138 over
 the 21. Of those, **136493 are generated, 469 are values the description reads and 1176 are addresses of
 pictures**, read. The 469 are two fonts a compile and "USB Connected"'s variable and list indices, 21 bytes
-on a 600 or 650 and 19 on a 700, whose `cleared` index is the wiring's; the 1176 are three bytes for each of
-17 pictures on a 600 or 650 and 22 on a 700, a background per screen and the bar on three. Every value read
-is a byte of the screens: the description reads nothing outside them.
+on a 600 or 650 and 19 on a 700, whose `cleared` index is the wiring's; the 1176 are 17 picture address fields on a 600 or 650 and 22 on a 700, three bytes each, a background per
+screen and the bar on three, naming 6 distinct pictures on `h650_test_config_clean`. Every byte read
+through the reader is a byte of the screens; the wiring's description (the model, the low battery
+variable and the 700's `usbLeave` first call) and the fonts are the other inputs, and the description
+finds its way through the unblinded file as well, the text reference targets among it, none of which
+decides an output byte.
 
 Section 356's population was 22. **The 22nd, `h650_issue36_config`, another owner's Harmony 650, is
 refused** here, at "Insert batteries": its character map leaves glyph code 44 of font 0, the "I" those
 words open with, unresolved, 73 of its 74 drawn codes resolved, where `h650_test_config_clean`'s map
 resolves the same code to "I". Why is not measured. That is the letters' item, `todo-compile-650.md` 8.2:
-the words of section 356's screens never needed an "I". `h650_issue8_config` is French and refused at its first word, as in section 356.
+the words of section 356's screens never needed an "I". `h650_issue8_config` is French and refused at the "w" of "software" on the first screen's second line, as in section 356.
 
 **The blind control.** Every byte of the screens the description does not read, 136493 over the 21, is
 overwritten with `0xEE` in the bytes the reader is handed, in the layout's pieces and in the file the fonts
@@ -47507,7 +47514,7 @@ compile over 5435 bytes, 14 screens and 10 lists:
 ### The composed comparison
 
 `h650_7_1_base`, the test setup composed by `todo-compile-650.md` 6.2.13, rebuilt with section 356's three
-records, the menu in `corpus/setups/h650-test.json`'s order, and then with these screens, compares against
+records, the menu in `packages/corpus/setups/h650-test.json`'s order, and then with these screens, compares against
 `h650_test_config_clean` with **no difference** with the menu order not counted; counted, the same four
 labels of the activity menu section 356 found, which is the order section 351 says no owner of this model
 chooses. **The result is two bytes longer than the composed file, and both are section 356's**: building
@@ -47531,8 +47538,8 @@ texts drawn by reference instead of inline, three more.
 
 **A configuration without the tour can leave its ten screens out.** In Logitech's skipped form, section
 286, on 19 of the 21 compiles, no instruction anywhere enters any of the ten: every action list, every
-other mode's own and page lists, base slot 9's entries, the timers, base slot 14's value maps and base
-slot 8's leading list, measured. In the shown form, on `h650_config_region` and `calibration_h600`, the one
+other mode's own and page lists, base slot 9's entries, the timers, base slot 13's transitions, base slot
+14's value maps' payloads, each `0x11` and one instruction, and base slot 8's leading list, measured. In the shown form, on `h650_config_region` and `calibration_h600`, the one
 instruction that does is the start list's. No text anywhere else is drawn by reference into a tour
 screen's program, so leaving the programs out breaks no reference; the tour's own texts do point at
 copies elsewhere, which stay. The ten screens are 1698 to 1701 bytes a compile by the reading above, and
@@ -47543,10 +47550,13 @@ itself and pays nothing for it.
 **The start list cannot simply go with them.** It is the wiring's `tour`, `[mark := 1, 7F quiet]` in the
 skipped form, seven bytes, and it is called by the wiring's `startTour`, `[7F boot, 7F tour]`, front list
 3, or 4 on the Harmony 700, on 21 of 21, and with the Remote Assistant on by the Assistant's gate, on 18 of
-18. Its mark is read twice: by that gate, `[71 8000|mark, 7F tour, 7E the Remote Assistant screen]`, called
+18. Its mark is read twice where the Assistant is on, once on the three compiles with it off: by that gate, `[71 8000|mark, 7F tour, 7E the Remote Assistant screen]`, called
 after `1F FB00`, so while the mark is 0 the gate runs the start list and otherwise shows the Assistant; and
 on 21 of 21 by `[71 mark, 7E Off]`, the one armed form of section 140, which `idleEnter.first` calls after
-`1F FB01`, so the Off key map shows "Turning system off", section 356's Off, only once the mark is 1.
+`1F FB01`, so as the configuration reads, the Off key map shows "Turning system off", section 356's Off, only once
+the mark is 1; that is a reading of the bytes, not seen on a remote. On the three compiles with the
+Assistant off the only writer that can run is `startTour`, an entry point section 286 left open whether a
+reload runs, so whether a stock compile ever sets the mark is itself unread.
 Left without a writer the mark stays 0, and then All Off would never draw "Turning system off" and the gate
 would call a list that is gone. So leaving the start list out as well means changing `startTour`'s second
 call, the gate and the test before Off, and dropping the mark from base slot 13, section 324, whose
@@ -47567,6 +47577,8 @@ remote and nothing here was checked on one, the "USB Connected" key sequence inc
 * What `07 FFFF` does, and what the leave handler's second call on the Harmony 700 is for.
 * That a configuration with the tour's ten screens left out runs as one with them: nothing enters them,
   measured, and nobody has written one.
+* That All Off draws "Turning system off" only once the tour's mark is set: read, not seen.
+* How a person completes "USB Connected"'s three key sequence, given that the keys' releases reset it.
 
 ### Falsification
 

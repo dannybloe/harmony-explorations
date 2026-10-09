@@ -28,12 +28,13 @@
  *   left edge; and on the placeholders and Low Battery the bottom line, the bar and "Exit",
  *   `bottomLineParts`. Every word is spelled from the configuration's fonts, as section 356 spells
  *   "Turning system off", and is English, measured on 22 compiles;
- * * **the lists "USB Connected" runs**, nine or ten. Every key but three, and the screen's enter
+ * * **the lists "USB Connected" runs**, ten, one of them on the Harmony 700 only through the wiring's
+ *   `usbLeave`. Every key event but three presses, and the screen's enter
  *   handler, run `key`, `[07 FFFF, usb := 1]`. The presses of scans 11, 12 and 51 each load their step,
  *   1, 2 and 3, into the byte register and run a two armed test of `usb` against it, section 140, which
  *   moves `usb` on to 2 and 3 and on the last step pops the mode, `07 FFFC`, section 311, and otherwise
- *   runs `key`. So pressing those three keys in that order leaves the screen, as far as the configuration
- *   reads; not checked on a remote. The leave handler, tag 7, runs `cleared`, `[07 FFFF, usb := 0]`, on
+ *   runs `key`. Every other key event resets it, the three keys' own releases and repeats included, so how
+ *   a person completes the sequence is not read; not checked on a remote. The leave handler, tag 7, runs `cleared`, `[07 FFFF, usb := 0]`, on
  *   the Harmony 600 and 650, and on the Harmony 700 the front list `usbLeave` `wiring.ts` builds, whose
  *   first call is `cleared`. What `07 FFFF` does is not read: section 311 found instruction `0x07`
  *   compares its operand's low byte with `0xFF` first.

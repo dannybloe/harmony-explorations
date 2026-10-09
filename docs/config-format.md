@@ -1059,13 +1059,14 @@ one is one page, laid out in mode order, own list, program, page record, entry; 
 | placeholder | the two "add an Activity" screens | every key event swallowed, `00 00 00`, but scan 25's press, `07 FFFC`; mode 0's is the table after the end marker on the 600 and 650 |
 | battery | blank, Insert batteries, Unable to charge, the 700's four frames and "Please charge your remote" | tag `0x06`, the enter handler, writing 1 to `lowBattery`, section 347's variable; every key event swallowed |
 | low battery | Low Battery | the battery map, and scan 25's press calling `lowBatteryExit`, wiring front list 0, or 1 on the 700 |
-| usb | USB Connected | tag `0x06` and every key event but three calling `key`; tag `0x07` calling `cleared`, on the 700 the wiring's front list `usbLeave`, whose first call is `cleared`; the presses of scans 11, 12 and 51 calling step 1, 2 and 3 |
+| usb | USB Connected | tag `0x06` and every key event but the three presses calling `key`, those keys' releases and repeats included; tag `0x07` calling `cleared`, on the 700 the wiring's front list `usbLeave`, whose first call is `cleared`; the presses of scans 11, 12 and 51 calling step 1, 2 and 3 |
 | none | Update and Upgrade Successful, the learning screens and the blanks after them | none: `00 00` |
 
 The lists "USB Connected" runs, `u` its variable, one per configuration: `key [07 FFFF, u := 1]`, `cleared
 [07 FFFF, u := 0]`, step k `[1F FB0k, 7F test k]`, test k `[71 8000|u, 7F advance k or 07 FFFC on k = 3, 7F
-key]`, advance k `[07 FFFF, u := k + 1]`. So scans 11, 12 and 51 pressed in that order pop the mode; read
-off the configuration, unconfirmed on a remote. What `07 FFFF` does is not read.
+key]`, advance k `[07 FFFF, u := k + 1]`. So the presses of scans 11, 12 and 51 step `u` and the third
+pops the mode, while every other key event, the three keys' own releases included, resets it; how a person
+completes the sequence is not read, and nothing here was tried on a remote. What `07 FFFF` does is not read.
 
 | screen | lines, font, y | x |
 |---|---|---|

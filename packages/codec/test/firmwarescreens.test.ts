@@ -54,6 +54,7 @@ import {
   timers,
   withFirmwareScreens,
   withScreenRecords,
+  valueMaps,
 } from '../src/index.ts';
 
 /** The thirteen arch 14 compiles section 312 names. */
@@ -285,13 +286,21 @@ test('the welcome tour, measured and not built: in Logitech\'s skipped form noth
     }
     assert.equal(screens.size, 10, name);
     // Every instruction outside those screens: action lists, the other modes' own and page lists, base
-    // slot 9's entries, the timers, base slot 14's value maps and the leading list.
+    // slot 9's entries, the timers, base slot 13's transitions, base slot 14's value maps' payloads,
+    // each `0x11` and one instruction, and the leading list.
     const sites: { opcode: number; operand: number; list?: number }[] = [];
     lists.forEach((list, index) => list.forEach((one) => sites.push({ ...one, list: index })));
     records.forEach((_, mode) => { if (!screens.has(mode)) sites.push(...bindings(mode)); });
     for (const address of handlerSets(c)?.addresses ?? []) sites.push(...(taggedList(c, address)?.entries ?? []));
     for (const timer of timers(c)?.records ?? []) sites.push(timer.instruction);
     for (const record of stateRecords(c) ?? []) sites.push(...record.values);
+    for (const map of valueMaps(c) ?? []) {
+      for (const address of [...map.entries.map((one) => one[1]), ...map.ranges.map((one) => one[2])]) {
+        const at = c.blobOffsetOf(address);
+        if (at === undefined || c.blob[at] !== 0x11) continue;
+        sites.push({ operand: (c.blob[at + 1] as number) | ((c.blob[at + 2] as number) << 8), opcode: c.blob[at + 3] as number });
+      }
+    }
     const lead = layout.sections[8]?.head[0]?.bytes as Uint8Array;
     for (let k = 0; k < (lead[0] as number); k += 1) {
       sites.push({ operand: (lead[1 + 3 * k] as number) | ((lead[2 + 3 * k] as number) << 8), opcode: lead[3 + 3 * k] as number });

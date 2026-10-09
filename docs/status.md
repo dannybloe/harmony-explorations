@@ -959,9 +959,9 @@ and fonts, the pictures, and where the texts drawn by reference sit.
 Connected", the battery screens, "Update Successful", the learning screens and the blanks between them,
 fourteen on a Harmony 600 or 650 and nineteen on a 700. Rebuilt from a description, 21 of Logitech's
 compiles come back identical, again with every byte the builder claims blanked first. Two things turned up:
-"USB Connected" leaves when three keys are pressed in a set order, as far as the file reads, which nobody has
-tried on a remote; and the variable the Harmony 700's first screen sets is its low battery flag, which
-section 311 had left open. One more owner's 650 is refused because its letters cannot be read as an "I".
+"USB Connected" has a three key sequence that leaves it, though letting go of a key resets it, so how a
+person completes it is not read and nobody has tried it on a remote; and the variable the Harmony 700's first screen sets is its low battery flag, which
+section 311 had left open. One more owner's 650 is refused because its letters cannot be read as an "I", and a French one for its words.
 **The welcome tour can be left out**: in the form Logitech skips it, nothing enters its ten screens, about
 1700 bytes; its seven byte start list has to stay unless three other lists change with it.
 
