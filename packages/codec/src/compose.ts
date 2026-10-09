@@ -2584,6 +2584,34 @@ function textGlyphs(c: Container, one: ScreenInstruction): Uint8Array | undefine
   return undefined;
 }
 
+/**
+ * How a reader takes a value off a configuration's bytes: one byte at a blob offset. The readers that
+ * describe a configuration for a builder take one, section 356, so a caller can record which bytes are
+ * read as values and hand them bytes it has overwritten everywhere else; where the reading only finds
+ * its way, by an opcode, a count or a position, it reads the container itself.
+ */
+export type ValueReader = (offset: number) => number;
+
+/** The plain reader: the configuration's own bytes. */
+export function blobReader(c: Container): ValueReader {
+  return (offset) => c.blob[offset] as number;
+}
+
+/**
+ * The glyph codes a text instruction draws, as `textGlyphs` finds them, taken through `read`: the
+ * inline codes where it draws them inline, and where it draws them by reference the address read
+ * through `read` and the codes at it, as many as the reference names. Undefined for anything else.
+ */
+export function textValues(c: Container, one: ScreenInstruction, read: ValueReader): number[] | undefined {
+  const glyphs = textGlyphs(c, one);
+  if (glyphs === undefined) return undefined;
+  if (one.opcode === OP_TEXT_INLINE) return [...glyphs].map((_, k) => read(one.start + 3 + k));
+  const address = read(one.start + 3) | (read(one.start + 4) << 8) | (read(one.start + 5) << 16);
+  const off = c.blobOffsetOf(address);
+  if (off === undefined) return undefined;
+  return [...glyphs].map((_, k) => read(off + k));
+}
+
 /** The text instruction a program draws at `(x, y)`, its index and the font in effect there. */
 function textAt(
   program: readonly ScreenInstruction[], x: number, y: number,
@@ -3664,7 +3692,7 @@ function bottomWord(c: Container, word: string): { font: number; codes: number[]
  * of 164; the device mode pages' half was measured by that section's review, 4613 texts by reference
  * and 2336 inline on 639 pages with no exception, and only their bottom word is checked.
  */
-function inlineHomes(c: Container): Map<string, number> {
+export function inlineHomes(c: Container): Map<string, number> {
   const homes = new Map<string, number>();
   for (const [, program] of reachablePrograms(c)) {
     for (const one of program) {
@@ -3836,8 +3864,8 @@ function builtChrome(chrome: PageFrame): PageChrome {
  * under which a device mode runs the battery program its pages queue. What the second tag is a press
  * of, if anything, is not read.
  */
-const DEVICES_KEY_TAG = (KEY_EVENT_PRESS << KEY_EVENT_SHIFT) | 25;
-const DEVICE_MODE_PROGRAM_TAG = 0x2d;
+export const DEVICES_KEY_TAG = (KEY_EVENT_PRESS << KEY_EVENT_SHIFT) | 25;
+export const DEVICE_MODE_PROGRAM_TAG = 0x2d;
 
 /** One entry of a mode's own key map as a composer writes it: always the narrow form, so no flags. */
 export type KeyMapEntry = Pick<TaggedEntry, 'tag' | 'operand' | 'opcode'>;
@@ -4466,7 +4494,7 @@ function menuOnRows(kind: FourSlotMenuKind): boolean {
  * entering the idle list. Read rather than built, since which list is the idle one is a mode number,
  * which is the description's order, section 324.
  */
-function idleDeviceList(c: Container): number {
+export function idleDeviceList(c: Container): number {
   const menu = activityMenus(c).menu;
   const entry = menu === undefined ? undefined
     : modeRecords(c)?.[menu]?.entries.find((one) => one.tag === DEVICES_KEY_TAG);
@@ -4574,10 +4602,24 @@ export function fourSlotMenuChrome(c: Container, kind: FourSlotMenuKind): FourSl
     }
     battery = drawing[0];
   }
-  const word = MENU_BOTTOM_WORD[kind];
   return {
     kind, look: look.name, one, several, battery,
     topBar: device.topBar, bottomBar: device.bottomBar,
+    ...fourSlotMenuWords(c, kind),
+  };
+}
+
+/**
+ * The part of a menu kind's chrome that is words and places, not pictures: the title, the counter's
+ * places and the bottom word spelled in the first font of the title's size that spells it, centred.
+ * Split out of `fourSlotMenuChrome` for the screen records of section 356, which build a page from
+ * pictures their description names and so need only this half.
+ */
+export function fourSlotMenuWords(
+  c: Container, kind: FourSlotMenuKind,
+): Pick<FourSlotMenuChrome, 'title' | 'counterX' | 'bottom'> {
+  const word = MENU_BOTTOM_WORD[kind];
+  return {
     title: MENU_TITLE[kind],
     counterX: kind === 'two row device list' ? TWO_ROW_COUNTER_X : FOUR_SLOT_COUNTER_X,
     bottom: { word, ...bottomWord(c, word) },
@@ -4604,7 +4646,7 @@ export interface FourSlotMenuPageContent {
 }
 
 /** One instruction of a built menu page, before it is spelled as bytes. */
-type MenuPart =
+export type MenuPart =
   | { op: 'image'; address: number }
   | { op: 'queue'; program: number }
   | { op: 'bar'; at: readonly number[]; address: number }
@@ -4650,7 +4692,7 @@ function menuLabelPlaces(
  * in fill order, the bottom bar, the bottom word and the end, **a font being selected only where another
  * is in effect**, which is the compiler's rule, section 289.
  */
-function menuPageParts(c: Container, chrome: FourSlotMenuChrome, page: FourSlotMenuPageContent): MenuPart[] {
+export function menuPageParts(c: Container, chrome: FourSlotMenuChrome, page: FourSlotMenuPageContent): MenuPart[] {
   const map = characterMap(c);
   if (map === undefined) throw new ComposeError('the config draws no text this can spell from');
   const setOf = (font: number): FontSet => {
@@ -4711,18 +4753,51 @@ function menuPageBytes(
   parts: readonly MenuPart[], homes: ReadonlyMap<string, number>, pointed: ReadonlySet<string>,
   shifted: (address: number) => number,
 ): Uint8Array {
+  return menuPartsBytes(
+    parts,
+    (part) => (pointed.has(part.role) ? homes.get(part.codes.join(',')) : undefined),
+    (one) => [...new Writer(3).u24(shifted(one)).bytes],
+  );
+}
+
+/**
+ * The one encoder of a built page's parts, which `menuPageBytes` and the screen records of
+ * `screenrecords.ts`, section 356, both spell through. `home` gives the value a text is drawn by
+ * reference to, or undefined to draw it inline; `address` spells a three byte address field for a
+ * value at byte `at` of the program, for the part it belongs to, which is how a caller that writes addresses itself and a caller
+ * that leaves them to the frame as references share it; `inline`, where given, is told where an inline
+ * text's glyph codes start, which is the address a later text drawing the same codes points at.
+ */
+export function menuPartsBytes(
+  parts: readonly MenuPart[],
+  home: (part: Extract<MenuPart, { op: 'text' }>) => number | undefined,
+  address: (value: number, at: number, part: MenuPart) => readonly number[],
+  inline?: (part: Extract<MenuPart, { op: 'text' }>, at: number) => void,
+): Uint8Array {
   const out: number[] = [];
-  const address = (one: number): number[] => [...new Writer(3).u24(shifted(one)).bytes];
   for (const part of parts) {
-    if (part.op === 'image') out.push(OP_IMAGE, ...DEVICE_PAGE_BACKGROUND_AT, ...address(part.address));
-    else if (part.op === 'queue') out.push(SCREEN_QUEUE_INSTRUCTION, part.program & 0xff, part.program >> 8, RUN_SCREEN_PROGRAM);
-    else if (part.op === 'bar') out.push(SCREEN_DRAW_IMAGE_AT, ...part.at, ...address(part.address));
-    else if (part.op === 'font') out.push(OP_FONT, part.font);
-    else if (part.op === 'end') out.push(OP_END);
-    else {
-      const home = pointed.has(part.role) ? homes.get(part.codes.join(',')) : undefined;
-      if (home === undefined) out.push(OP_TEXT_INLINE, part.x, part.y, ...part.codes, 0);
-      else out.push(OP_TEXT_AT, part.x, part.y, ...address(home));
+    if (part.op === 'image') {
+      out.push(OP_IMAGE, ...DEVICE_PAGE_BACKGROUND_AT);
+      out.push(...address(part.address, out.length, part));
+    } else if (part.op === 'queue') {
+      out.push(SCREEN_QUEUE_INSTRUCTION, part.program & 0xff, part.program >> 8, RUN_SCREEN_PROGRAM);
+    } else if (part.op === 'bar') {
+      out.push(SCREEN_DRAW_IMAGE_AT, ...part.at);
+      out.push(...address(part.address, out.length, part));
+    } else if (part.op === 'font') {
+      out.push(OP_FONT, part.font);
+    } else if (part.op === 'end') {
+      out.push(OP_END);
+    } else {
+      const target = home(part);
+      if (target === undefined) {
+        out.push(OP_TEXT_INLINE, part.x, part.y);
+        inline?.(part, out.length);
+        out.push(...part.codes, 0);
+      } else {
+        out.push(OP_TEXT_AT, part.x, part.y);
+        out.push(...address(target, out.length, part));
+      }
     }
   }
   return new Uint8Array(out);
@@ -4735,7 +4810,9 @@ function menuPageBytes(
  * prefix of the fill order and as many as the page's own list binds, which is a closure between the
  * screen and base slot 6, so a page whose labels and bindings disagree is refused.
  */
-function menuPageContent(c: Container, kind: FourSlotMenuKind, menu: number, index: number): FourSlotMenuPageContent {
+export function menuPageContent(
+  c: Container, kind: FourSlotMenuKind, menu: number, index: number, read: ValueReader = blobReader(c),
+): FourSlotMenuPageContent {
   const record = modeRecords(c)?.[menu];
   const page = record?.pages[index];
   const program = page === undefined ? undefined : screenProgram(c, page.program);
@@ -4746,23 +4823,27 @@ function menuPageContent(c: Container, kind: FourSlotMenuKind, menu: number, ind
   }
   if (layout.rows !== menuOnRows(kind)) throw new ComposeError(`menu ${menu}'s page ${index + 1} is not a ${kind} page`);
   const rows = menuOnRows(kind);
-  let font: number | undefined;
+  // Where the font in effect was selected, read as a value only where a text that is the page's own
+  // content is drawn in it: the bottom word's font is the builder's, `bottomWord`.
+  let fontAt: number | undefined;
+  const fontNow = (): number | undefined => (fontAt === undefined ? undefined : read(fontAt));
   let titleFont: number | undefined;
   let counterFont: number | undefined;
   const byPlace = new Map<number, FourSlotMenuLabel>();
   for (const one of program) {
-    if (one.opcode === OP_FONT) { font = one.operands[0]; continue; }
+    if (one.opcode === OP_FONT) { fontAt = one.start + 1; continue; }
     if (one.opcode !== OP_TEXT_AT && one.opcode !== OP_TEXT_INLINE) continue;
     const [x, y] = [one.operands[0] as number, one.operands[1] as number];
     if (y === MENU_TOP_LINE_Y) {
-      if (x === FOUR_SLOT_TITLE_XY[0]) titleFont = font;
-      else counterFont ??= font;
+      if (x === FOUR_SLOT_TITLE_XY[0]) titleFont = fontNow();
+      else counterFont ??= fontNow();
       continue;
     }
     if (y === MENU_BOTTOM_LINE_Y) continue;
     const cell = fourSlotCellAt(x, y);
     const place = cell === undefined ? undefined : rows ? FOUR_SLOT_ITEMS[cell]?.row : cell;
-    const codes = textGlyphs(c, one);
+    const codes = textValues(c, one, read);
+    const font = fontNow();
     if (place === undefined || codes === undefined || font === undefined) {
       throw new ComposeError(`menu ${menu}'s page ${index + 1} draws a text at ${x}, ${y} no place owns`);
     }
@@ -4891,11 +4972,21 @@ function assertTextsAtHome(
  * are `00 00`, section 290, and the one byte form cost a whole run of list copies to the reader.
  */
 function fourSlotPageList(itemLists: readonly number[]): Uint8Array {
-  if (itemLists.length === 0) return new Uint8Array([0, 0]);
-  const bytes = new Writer(1 + 4 * itemLists.length).u8(itemLists.length);
-  const placed = itemLists.map((list, k) => ({ scan: FOUR_SLOT_ITEMS[k]?.scan as number, list }))
-    .sort((a, b) => FOUR_SLOT_STORED_ORDER.indexOf(a.scan) - FOUR_SLOT_STORED_ORDER.indexOf(b.scan));
+  return menuPageListBytes(itemLists.map((list, k) => ({ scan: FOUR_SLOT_ITEMS[k]?.scan as number, list })));
+}
+
+/**
+ * A page's tagged list from its bindings, each the press of a scan running a list, stored in
+ * `FOUR_SLOT_STORED_ORDER`: the encoder `fourSlotPageList` and the screen records of section 356 share,
+ * the second binding the two buttons of a two row page's row as well as a corner's one. Empty, it is
+ * the two byte `00 00` the comment above explains.
+ */
+export function menuPageListBytes(bindings: readonly { scan: number; list: number }[]): Uint8Array {
+  if (bindings.length === 0) return new Uint8Array([0, 0]);
+  const bytes = new Writer(1 + 4 * bindings.length).u8(bindings.length);
+  const placed = [...bindings].sort((a, b) => FOUR_SLOT_STORED_ORDER.indexOf(a.scan) - FOUR_SLOT_STORED_ORDER.indexOf(b.scan));
   for (const one of placed) {
+    if (!FOUR_SLOT_STORED_ORDER.includes(one.scan)) throw new ComposeError(`scan ${one.scan} is no place on a menu page`);
     bytes.u8((KEY_EVENT_PRESS << KEY_EVENT_SHIFT) | one.scan).u16(one.list).u8(ACTION_LIST_INDEX_OPCODE);
   }
   return bytes.bytes;
@@ -6098,9 +6189,7 @@ function composeFourSlotActivityRow(
   const actionTable = c.pointerArrayAt(actionSlot);
   if (actionTable === undefined) throw new ComposeError('base slot 10 does not read as a table');
   const rowList = actionTable.values.length;
-  const oneRow = new Writer(1 + 3 * 2).u8(2)
-    .u16(SELECT_BINDING_SET_MASK | set).u8(SELECT_BINDING_SET)
-    .u16(ACTIVITY_MENU_MARKER_VALUE).u8(marker.opcode).bytes;
+  const oneRow = activityRowListBody(set, marker.opcode);
   const rowAt = actionTable.start;
   const rowHole = relocate(c, rowAt, oneRow.length * rowLists);
   for (let k = 0; k < rowLists; k += 1) rowHole.bytes.set(oneRow, rowAt + k * oneRow.length);
@@ -6924,6 +7013,23 @@ function startupFontOf(c: Container, starts: Arch14Starts): number {
 }
 
 /**
+ * The start up screen's picture, one per look, located by content: what every start up screen draws
+ * under its title, section 336, and All Off's working screen too, section 356. Refused where the
+ * configuration holds it more than once or not at all.
+ */
+export function startupPicture(c: Container): number {
+  const look = DEVICE_PAGE_LOOKS.find((one) => one.name === deviceModeChrome(c).look) as DevicePageLook;
+  return startupPictureIn(look, picturesByContent(c));
+}
+
+function startupPictureIn(look: DevicePageLook, pictures: Map<string, number[]>): number {
+  const found = pictures.get(look.startup) ?? [];
+  if (found.length > 1) throw new ComposeError(`${look.name}'s start up picture is stored ${found.length} times`);
+  if (found[0] === undefined) throw new ComposeError(`the configuration holds no start up picture of ${look.name}`);
+  return found[0];
+}
+
+/**
  * An activity's start up screen and working screen chrome on a Harmony 600, 650 or 700, built,
  * `todo-compile-650.md` 6.2.10, section 336:
  *
@@ -6960,8 +7066,7 @@ export function activityScreenChrome(c: Container): ActivityScreenChrome {
     if (found.length > 1) throw new ComposeError(`${look.name}'s ${role} picture is stored ${found.length} times`);
     return found[0];
   };
-  const startupPicture = held(look.startup, 'start up');
-  if (startupPicture === undefined) throw new ComposeError(`the configuration holds no start up picture of ${look.name}`);
+  const startupPicture = startupPictureIn(look, pictures);
   if (menu.battery === undefined) throw new ComposeError('the activity menu queues no battery program');
   const battery = menu.battery;
   const word = bottomWord(c, WORKING_SCREEN_WORD);
@@ -6997,33 +7102,43 @@ export function activityScreenChrome(c: Container): ActivityScreenChrome {
  * fixed lines, each centred, and the end. A title that does not fit two lines is refused.
  */
 function startupParts(c: Container, chrome: ActivityScreenChrome, label: string): MenuPart[] {
+  return fixedLineScreenParts(c, chrome.startupPicture, chrome.startupFont, STARTUP_TITLE_PREFIX + label);
+}
+
+/**
+ * The screen a start up screen is, with any title: the picture, the font, the title broken greedily at
+ * `STARTUP_TITLE_MAX` onto at most two lines at y 5 and 19, each centred, the three fixed lines, each
+ * centred, and the end. `startupParts` gives it "Starting" and an activity's name; All Off's working
+ * screen, "Turning system off", is the same screen with its own title, section 356.
+ */
+export function fixedLineScreenParts(c: Container, picture: number, font: number, title: string): MenuPart[] {
   const map = characterMap(c);
-  const set = (fontSets(c) ?? [])[chrome.startupFont];
+  const set = (fontSets(c) ?? [])[font];
   if (map === undefined) throw new ComposeError('the config draws no text this can spell from');
-  if (set === undefined) throw new ComposeError(`the config does not carry font ${chrome.startupFont}`);
+  if (set === undefined) throw new ComposeError(`the config does not carry font ${font}`);
   // The fixed lines' places are measured, not derived: 14 apart, which is font 2's height on all thirteen
   // compiles. A start up font of another height has no measured places, so it is refused.
   if (set.height !== (STARTUP_FIXED_LINE_Y[1] as number) - (STARTUP_FIXED_LINE_Y[0] as number)) {
     throw new ComposeError(`the start up font is ${set.height} high, and the fixed lines are measured only for one 14 high`);
   }
-  const codesOf = (text: string): number[] => codesFor(map, c, set, text, chrome.startupFont);
+  const codesOf = (text: string): number[] => codesFor(map, c, set, text, font);
   const widthOf = (text: string): number => textWidth(c, set, codesOf(text));
   const lines: string[] = [];
-  for (const word of (STARTUP_TITLE_PREFIX + label).split(' ')) {
+  for (const word of title.split(' ')) {
     const last = lines.at(-1);
     if (last !== undefined && widthOf(`${last} ${word}`) <= STARTUP_TITLE_MAX) lines[lines.length - 1] = `${last} ${word}`;
     else lines.push(word);
   }
   if (lines.length > 2 || lines.some((line) => widthOf(line) > STARTUP_TITLE_MAX)) {
-    throw new ComposeError(`'${STARTUP_TITLE_PREFIX}${label}' does not fit a start up screen's two lines of `
+    throw new ComposeError(`'${title}' does not fit a start up screen's two lines of `
       + `${STARTUP_TITLE_MAX} pixels: give the activity a shorter label`);
   }
   const centred = (text: string, y: number, role: 'title' | 'fixed'): MenuPart => ({
     op: 'text', x: Math.floor((FOUR_SLOT_SCREEN_WIDTH - widthOf(text)) / 2), y, codes: codesOf(text), role,
   });
   return [
-    { op: 'image', address: chrome.startupPicture },
-    { op: 'font', font: chrome.startupFont },
+    { op: 'image', address: picture },
+    { op: 'font', font },
     ...lines.map((line, k) => centred(line, k === 0 ? STARTUP_TITLE_Y : STARTUP_TITLE_SECOND_Y, 'title')),
     ...STARTUP_FIXED_LINES.map((line, k) => centred(line, STARTUP_FIXED_LINE_Y[k] as number, 'fixed')),
     { op: 'end' },
@@ -7393,8 +7508,20 @@ function deviceListCentreKeyOperand(c: Container, starts: Arch14Starts): number 
 }
 
 /** A device list row's own list: enter the device's mode, then write 1 into the device mode marker. */
-function deviceListRowBody(mode: number, marker: Instruction): Uint8Array {
+export function deviceListRowBody(mode: number, marker: Instruction): Uint8Array {
   return new Writer(1 + 3 * 2).u8(2).u16(mode).u8(ENTER_MODE).u16(marker.operand).u8(marker.opcode).bytes;
+}
+
+/**
+ * An arch 14 activity menu row's own list: select the activity's base slot 9 entry, then write 0 into
+ * the menu marker, `markerOpcode` being the write's opcode, `0x80` plus the variable. Section 289's row
+ * without the Harmony One's beep, and the one encoder of it, `composeFourSlotActivityRow` and the screen
+ * records of section 356 both writing it.
+ */
+export function activityRowListBody(set: number, markerOpcode: number): Uint8Array {
+  return new Writer(1 + 3 * 2).u8(2)
+    .u16(SELECT_BINDING_SET_MASK | set).u8(SELECT_BINDING_SET)
+    .u16(ACTIVITY_MENU_MARKER_VALUE).u8(markerOpcode).bytes;
 }
 
 /** The roles a built device list page draws by reference where the configuration has drawn them before. */

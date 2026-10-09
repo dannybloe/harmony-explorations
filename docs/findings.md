@@ -47218,3 +47218,158 @@ structure at other addresses, section 257, and was not read for this; arch 12 (H
   19 literal section lookups with base slot 4 named once, the walker's two callers, the seek's six
   callers, the five call sites and their codes, the select bit cleared before code 22, Missing License
   clearing the verdict, and the sleep state cleared before the loop head, on both builds.
+
+## 356. The idle device list's, the activity menu's and Off's whole records are built from a description, the menu in the setup's order
+
+**Date:** 9 October 2026. **Status:** confirmed by construction over the thirteen arch 14 compiles
+section 312 lists, the eight later Logitech compiles of the test record's Harmony 650 and another owner's
+Harmony 650, 22 in all, with a blind control and failing controls; nothing built this way has been
+written to a remote.
+
+**Todo `todo-compile-650.md` 7.3.** Sections 334 and 336 build a menu page's program and a start up
+screen's, and section 352 an activity's own device list. Three screens every arch 14 configuration has
+once still came out of a Logitech compile around those programs: the record's own key map, its entry,
+its page records, each page's tagged list, that list's second copy, section 69, and the lists the rows
+run. They are the idle device list, the corner list the key under the display's centre opens while no
+activity runs; the activity menu; and Off. `packages/codec/src/screenrecords.ts` builds all three whole,
+on section 347's pattern: `describeScreenRecords` reads off a configuration only what a composer would
+supply, `buildScreenRecords` generates the rest as pieces, and `withScreenRecords` puts them where
+Logitech's sat in a `takeApart` layout.
+
+**Sources checked**: this document, sections 52, 66, 69, 285, 316, 329, 330, 334, 335, 336, 347, 351 and
+352; the 22 compiles. Neither firmware nor client was opened for this: a record's layout and every rule
+below are what Logitech's compiler wrote on their server, section 293's reasoned exemption, and section
+351 already read the client for the one thing it could decide, the activity menu's order, and found that
+it leaves the order to nobody on these models.
+
+### Which mode is Off, and where "Do you want to turn off your system now?" belongs
+
+**Off is All Off's working screen**: "Turning system off" where a start up screen draws "Starting" and
+the activity's name, over the three lines every start up screen draws, "Please keep the", "remote
+pointed at", "your system", one page, on 22 of 22. The route is the Off key map's, base slot 9's idle
+entry, sections 329 and 347: its enter list calls `idleEnter.first` before anything else, and the first
+`0x7E` that list reaches, depth first, enters this mode on 22 of 22. So it is to All Off what an
+activity's start up screen is to that activity, and it is built as one. Its record is the start up
+record's shape too: every keypad press, scans 1 to 54, bound to nothing in `compilerTagOrder`, one
+page, the page list `00 00`. Mode 104 on `h650_test_config_clean`.
+
+**"Do you want to turn off your system now?" is not part of Off and is not built here.** It is one mode
+per compile, 85 on the clean compile, none of the three, and it is entered by between 27 and 67 lists a
+compile, 1210 over the 22, which are the Help lists asking that question; the Off key map's route does
+not reach it. Its record is a different shape: the wide own list with flags, bindings popping the mode,
+a queued program, and two calls, which on 22 of 22 are both `[07 FFF5, 1F FF00 | idle entry]`, so its
+Yes selects the Off key map, which then puts Off up. It belongs with Help and its records, not with Off.
+
+### The measurement
+
+Describe, build, put back, lay out: **22 of 22 come back byte for byte**. Over the 22 that is 143 device
+rows on 41 idle list pages, 78 activity rows on 43 menu pages and 22 Off pages, 598 row lists, and
+22464 bytes of record structure: each record's own list, entry, page records, page lists, programs and
+copies, and the rows' lists. Of those, **16504 are generated, 3686 are values the description reads and
+2274 are addresses it reads**, and it reads 1893 further bytes outside the three records: the fonts'
+glyphs it spells with and the texts it names by reference. `h650_issue8_config`'s screens are in French
+and it is refused, as section 352's builder refuses it, on "Back".
+
+**The blind control.** The description reads every value through a `ValueReader` that records the
+offsets, and finds its way, which opcode is where, how long a text is, which scan a binding is for,
+through the container. The test overwrites with `0xEE` every byte of the three records it did not
+record, in the bytes the reader is handed, in the layout's pieces and in the file the fonts are read
+from: 17326 bytes over the 22, of which 17316 change, the other 10 being address bytes already `0xEE`.
+The description comes back with the same offsets read and **the rebuild still equals the compile on 22
+of 22**, so none of those bytes reached the builder.
+
+**Failing controls**, by `checkScreenRecords` on `h650_test_config_clean`, which passes the unedited
+compile over 1196 bytes, 12 rows and 6 pages:
+
+| edit | refusal |
+|---|---|
+| two entries of the activity menu's first page list's copy swapped | differs in the activity menu's page 1's copy |
+| the activity menu's page count 3 written as 2 | Off is not one page binding nothing: the orphaned copy pairs with Off by rank, section 69 |
+| Off's title one pixel to the right | differs in Off's page 1's program |
+| an activity row writing the menu marker 1 instead of 0 | a menu row writes the marker another value |
+
+### What is generated
+
+| structure | rule | over the 22 |
+|---|---|---|
+| own list, idle device list | `0x99` `0x72` on the back key's record, `0x2D` `0x73` on the battery program, narrow | 22 of 22 |
+| own list, activity menu | `0x99` `0x72` on the Devices key's record, scan 4's press `0x72` on the back key's record, `0x2D` `0x73` on the battery program, narrow | 22 of 22 |
+| own list, Off | the 54 keypad presses to nothing, `compilerTagOrder` | 22 of 22 |
+| entry | kind 0, back pointer, page count, one page record pointer per page | 22 of 22 |
+| page record | six bytes, `u24 list; u24 program` | 106 of 106 |
+| page list | the press of each button's scan calling that button's list, in `FOUR_SLOT_STORED_ORDER`, 9, 8, 34, 2; a device row is one corner, an activity row two buttons, scans 8 and 2 or 9 and 34; `00 00` on Off | 106 of 106 |
+| copy | the same bindings calling each button's other list, written in place where the compile's copy sits, paired by rank in mode page order | 106 of 106 |
+| row list, device | `[7E mode, marker := 1]`, one per button on the page and another on the copy | 143 rows, 286 lists |
+| row list, activity | `[1F FF00 \| entry, marker := 0]`, the same per button | 78 rows, 312 lists |
+| programs | section 334's `menuPageParts` for the two menus, section 336's fixed line screen for Off with the title "Turning system off" | 106 of 106 |
+| text form | a text whose glyph codes have an inline copy outside the three records is drawn by reference to it; otherwise inline the first time this builder draws it and by reference afterwards | 22 of 22 |
+
+**The activity menu follows the description's order.** `inActivityOrder` reorders the rows to the base
+slot 9 entries a setup file lists, each row keeping its own lists, and the rebuild draws them in that
+order: Logitech's own rows of the clean compile with the first two swapped rebuild a menu whose bytes
+differ and whose comparison, `compareViews` with the menu order not counted, is empty; counted, the
+labels of page 1's two cells differ and nothing else. `activityEntriesByName` reads a setup's names
+against the configuration's activities.
+
+### The composed comparison
+
+`h650_7_1_base` is the test setup composed by `todo-compile-650.md` 6.2.13 as the Harmony 650 held it.
+Rerunning that composition in the lab gives a file differing from it in the eight stamp bytes alone.
+Its menu rebuilt in `corpus/setups/h650-test.json`'s order, TV kijken, Film kijken, Muziek, Kodi kijken,
+Plasma kijken, compares against `h650_test_config_clean` with **no difference** with the menu order not
+counted; counted, the labels of page 1's two cells, page 2's second and page 3's first differ, which is
+the order section 351 says no owner of this model chooses. The rebuilt file is two bytes longer than
+the composed one: the composer drew page 3's counter "3" inline, and the rebuild draws it by reference
+to an inline copy, the form every text of the three records takes on the 22 compiles.
+
+Section 334's text form check fails on both the composed file and the rebuilt one at the same text, a
+"14" on the two row list, which is outside these three records and kept as it was; with that check left
+out, both pass on all 19 pages.
+
+### What the description carries, and so what is still read
+
+* which mode each screen is, the configuration's numbering, section 324;
+* per row, in the menu's order, the device mode it enters or the base slot 9 entry it selects, and its
+  label: font and lines of glyph codes, `todo-compile-650.md` 8.2;
+* per button, the base slot 10 lists it runs on the page and the copy, base slot 10's numbering;
+* the menu marker variable, the title, counter and Off fonts;
+* the operands of each own list: the records the two keys map through and the battery program;
+* the pictures, by content, `todo-compile-650.md` 9.1, and the battery program checked against
+  `fourSlotMenuChrome`'s by content route rather than trusted;
+* the addresses of the texts drawn by reference outside the three records, 297 over the 22.
+
+### Refused rather than guessed
+
+Two rows in one place; a page short of full before the last; two inline copies of one text outside the
+records; an Off that does not bind every key to nothing, or that is not one page; a configuration whose
+words the fonts cannot spell, which is the French one; a built piece whose length differs from the copy
+it overwrites in place.
+
+### Scope, decision 16
+
+Arch 14, measured on 2 Harmony 600, 7 Harmony 700 and 13 Harmony 650 compiles. Arch 12 (Harmony One)
+and arch 9 (Harmony 525) were not measured and their menus differ in shape, section 316. English only:
+"Turning system off" and the menu words are spelled, not read.
+
+### What this does not establish
+
+* That the remote accepts a configuration whose three records were built here: nothing was written.
+* The rows' lists' place in base slot 10, which remains that section's numbering.
+* Why the count of lists entering mode 85 runs from 27 to 67: not measured per Help step.
+
+### Falsification
+
+A Logitech compile of an arch 14 remote whose three records do not rebuild byte for byte from their
+description, or whose rebuild from the blinded bytes differs.
+
+### Where it lands
+
+* `packages/codec/src/screenrecords.ts`: `describeScreenRecords`, `buildScreenRecords`,
+  `withScreenRecords`, `checkScreenRecords`, `screenRecordModes`, `inActivityOrder`,
+  `activityEntriesByName`.
+* `packages/codec/src/compose.ts`: the encoders the menus and start up screens already used, exported once
+  rather than copied, `menuPartsBytes`, `menuPageListBytes`, `fourSlotMenuWords`, `fixedLineScreenParts`,
+  `startupPicture`, `activityRowListBody`, and `menuPageContent` reading through a `ValueReader`.
+* `packages/codec/test/screenrecords.test.ts`: the 22 byte for byte with the totals, the French refusal,
+  the blind control, Off's text and page, the mode 85 measurements, the four failing controls, the row
+  order, and the composed comparison.
