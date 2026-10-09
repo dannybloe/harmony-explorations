@@ -215,6 +215,8 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // Logitech's compile of the whole test setup, todo-compile-650 5.2's other half.
   h650_test_config: '20261009T1123Z-h650-test-config.bin',
   // The same compiled again once the account matched the setup: 4.2's sequence off TV kijken's Red.
+  // The region read before todo-compile-650 5.2.5's write of Logitech's clean compile, its compare base.
+  h650_5_2_5_base: '20261009T1259Z-h650-5-2-5-before-region.bin',
   h650_test_config_clean: '20261009T1203Z-h650-test-config-clean.bin',
   // Our 5.1 file as written to the 650: the starting compile with the rest of the test setup composed on.
   h650_milestone_5_1_config: '20261009T1007Z-h650-milestone-5-1-config.bin',
@@ -766,7 +768,7 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
     'h650_options_base', 'h650_options_config', 'h650_bench_4_2_base', 'h650_sequence_config',
     'h650_favourites_config', 'h650_favourites_base', 'h650_assistant_off_config',
     'h650_tilt_off_config', 'h650_milestone_5_1_base', 'h650_test_config',
-    'h650_milestone_5_1_config', 'h650_test_config_clean',
+    'h650_milestone_5_1_config', 'h650_test_config_clean', 'h650_5_2_5_base',
     // External flash of the bench Harmony 700 from 0x000000, kept for the staged application at its
     // start. The container at 0x020000 is byte for byte `h700_gspm`, the embedded config the 2.8
     // package carries as its region 3, so counting it would count that one twice. Section 295.
