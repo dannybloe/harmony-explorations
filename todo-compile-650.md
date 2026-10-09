@@ -34,7 +34,7 @@ an item, ask whether the finish line moves without it; if it does, the item goes
 - [x] 1.2 Skip the welcome tour after a write (section 286)
 - [x] 1.3 Every write to the 650 stamps the clock records and the build timestamp, small edits included, since every restart puts its clock back to the stamp (section 310); `write-config.ts` stamps every write now and saves the stamped file over `--config` before the first erase, `--as-is` for a compile written back unchanged, and a rerun after a run stopped past its erase reuses that run's stamp (`packages/corpus/src/stamp.ts`); still to check on the 650 that after the next write's restart its clock, the first seven state variables, holds the moment of the write: read over USB with `READ_MISC` selector 7 (section 283), since the 650 shows no clock on its screen; checked on 8 October 2026, a write stamped 08:34:37 and the clock read 08:34:48 eleven seconds after the restart, every date field equal (`reference/remotes/harmony-650/memory.md`, lab `h650_clock_base`)
   - [x] 1.3.1 Read a build timestamp Logitech stamped on the 1st of a month: the day counts from 0 and the weekday from Sunday, so day 0 is the 1st and every date we read or wrote before was a day off; the 650 runs a day ahead until its next write (section 322)
-- [x] 1.4 Choose the test setup: devices and activities that between them use every feature in chapters 2 to 4, passthrough device and favourites included. No real device is needed, since the bench's infrared receiver hears what the remote sends: seven devices that each compose completely and five activities, [plan 006](docs/plans/006-the-650-test-setup.md)
+- [x] 1.4 Choose the test setup: devices and activities that between them use every feature in chapters 2 to 4, passthrough device and favourites included. No real device is needed, since the bench's infrared receiver hears what the remote sends: seven devices that each compose completely and five activities, [plan 006](docs/plans/006-the-650-test-setup.md); favourites dropped from the test setup since, 4.1
 - [x] 1.5 Choose the starting setup out of it: part of the test setup, with at least one activity and names that hold every letter the whole test setup needs: all seven devices and four activities, everything but Plasma kijken, `packages/corpus/setups/h650-start.json`, settings at their defaults. Measured on the compile 1.6 put on the remote, through our character map: the names font holds every letter of Plasma kijken, the title font every letter of its start message, and the screen label font every letter of Radio and every digit the favourites need
 - [x] 1.6 Have Logitech compile it for the 650, read it into the lab, write it back unchanged and register it as the compare base: put on the first test account's 650 record by `packages/corpus/bin/build-setup.ts`, devices in one add and each activity in one `SaveActivities`; the compile started there stayed at Compiling and then answered an internal error, so MyHarmony's own sync compiled it and wrote it to the remote. Read off the 650 as `h650_start_base` and `h650_start_config`, seven devices and four activities by our reader; the writer finds the file byte identical to the remote, so writing it back unchanged writes nothing
 
@@ -68,7 +68,7 @@ an item, ask whether the finish line moves without it; if it does, the item goes
 
 ## 4. What else the test setup uses
 
-- [ ] 4.1 Favourite channels, up to 23 on the 650, under Favorites in the Watch TV activity, four to a page, each a number or a logo: both forms, the number sender and the spelled out one, read on the Harmony One only (sections 154 and 156); nothing composes them
+- [x] 4.1 Favourite channels: dropped from this track, since FreeHarmony does not offer them and generalises them as screen sub-pages instead (`todo-freeharmony.md` 2.1); what Logitech compiles for them on the 650 is read (section 344)
 - [x] 4.2 Sequences, on their own, composed within the queue limit `assertQueueFits` already enforces (section 238); `composeSequence` built and calibrated on the Harmony One's four compiles, its arch 14 form inferred and listed in `ARCH14_INFERRED` (section 327); on the 650 one press of Red in TV kijken sent KPN 1, 2, Red with the 2 s and 20 s pauses, and a Volume Up pressed during the pause waited for it, since a pause holds every device of the activity (section 342); Logitech's compile of the same sequence is our list instruction for instruction, sending single block copies of the codes where ours sends the keys' records (section 343); a sequence as a step in an activity's start is dropped from this track, since Logitech's schema has no form for it and the test setup has none (`todo-later.md` 4.3)
 - [ ] 4.3 The three settings MyHarmony lists for the 650, at the values chosen
   - [x] 4.3.1 How long the screen stays lit: timer 1 (section 292)
@@ -114,7 +114,7 @@ an item, ask whether the finish line moves without it; if it does, the item goes
 ## 9. Pictures
 
 - [ ] 9.1 Build the backgrounds ourselves: the cross dividing the four corners, the one item page, the device list's line and the start up screen's picture; the 650 draws no device or activity icons
-- [ ] 9.2 Favourite channel logos
+- [x] 9.2 Favourite channel logos: dropped with favourites, 4.1
 
 ## 10. The container from nothing
 

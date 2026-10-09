@@ -4,7 +4,8 @@ Everything that has to be done eventually for the library and FreeHarmony to be 
 not on the route to a configuration built entirely by us for the Harmony 650. That route is
 [todo-compile-650.md](todo-compile-650.md). An item moves there when it turns out to block it. What needs
 Logitech's service is gathered first, in [todo-secure-logitech.md](todo-secure-logitech.md), and processed
-in [todo-process-logitech.md](todo-process-logitech.md).
+in [todo-process-logitech.md](todo-process-logitech.md). The application's own items are in
+[todo-freeharmony.md](todo-freeharmony.md).
 
 The old numbers in brackets are [todo.md](todo.md)'s, which stays as it is until everything in it has a
 home in one of the two files.
@@ -44,9 +45,7 @@ home in one of the two files.
 
 ## 4. The app
 
-- [ ] 4.1 The interface
-- [ ] 4.2 Publish `packages/*` so somebody without this checkout can build it (decision 4)
-- [ ] 4.3 A sequence as a step in an activity's start, which Logitech's schema has no form for: an addition of ours, if FreeHarmony wants it (was `todo-compile-650.md` 4.2)
+Moved to [todo-freeharmony.md](todo-freeharmony.md) chapter 1.
 
 ## 5. Other remotes, after the Harmony 650
 
