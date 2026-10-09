@@ -4,8 +4,12 @@
  * **Why a diff and not a rebuild.** Three arch 8 configs generated ten minutes apart differ in 73
  * to 84 percent of their bytes, so reproducing what Logitech's generator would have emitted is not
  * achievable and is not the goal. An editor changes what the user changed and carries everything
- * else through byte for byte, which is also the only way to keep the structures no reader can
- * reconstruct: a glyph and an encoded picture cannot be re-encoded from their pixels.
+ * else through byte for byte. This also said that carrying was the only way to keep a glyph or an
+ * encoded picture, which could not be re-encoded from its pixels; section 363 found Logitech's compiler
+ * writes one greedy stream for both, and `encodeBitmap` and `encodeGlyph` give every picture and glyph of
+ * the 37 containers measured on arch 8, 10, 12 and 14 back byte for byte; arch 9 (Harmony 525) is not
+ * measured. Carrying them through is still what an editor does with an image it
+ * did not change.
  *
  * **So this API cannot move a byte.** Every edit replaces a run with a run of the same length, and
  * there is deliberately no way to insert, delete or resize anything. That is not a limitation to be

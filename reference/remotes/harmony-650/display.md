@@ -50,11 +50,14 @@ of every screen:
 * **Status screens** for a configuration the remote rejects, the architecture's 35, section 244 and
   the `recovering-a-remote` skill.
 
-**The configuration carries 19 pictures**, byte identical on every compile for this skin, among them
-the single item and crossed four corner backgrounds and the bars, section 317. **No device or activity
-icons** are drawn on the 650, `todo-compile-650.md` 9.1. Four of the pictures are drawn only by
-programs switching on state variable 17, which this project reads as a battery gauge, section 317;
-whether one is ever seen on the bench unit is **not checked**.
+**A configuration carries 18 or 19 pictures** of nineteen, each byte identical on every compile for
+this skin that holds it, among them the single item and crossed four corner backgrounds and the bars,
+sections 317 and 363. **No device or activity icons** are drawn on the 650, `todo-compile-650.md` 9.1.
+Six are a fill or a band of one coloured rows and are built by this project; the curved backgrounds, the
+start up picture, the corner mark and the firmware screens' battery and USB pictures are designed images,
+section 363. Four of the pictures are drawn only by programs switching on state variable 17, which this
+project reads as a battery gauge, section 317: a small mark at 114, 112 and three patches in the colour of
+the background under it; whether one is ever seen on the bench unit is **not checked**.
 
 **Fonts**: a font set holds only the letters its screens use, 76 codes each with between 13 and 66
 filled, section 317. Which typefaces they are is not named anywhere.

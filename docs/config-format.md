@@ -1947,6 +1947,22 @@ byte, and its glyphs are two bit grey where 1 is ink and 2 is paper.
 **A skipped pixel in an encoded picture is transparent, not background**, which is what lets an icon be
 drawn over a screen already painted.
 
+**A picture and a glyph are written back from their pixels by one rule**, section 363, measured on arch 8,
+10, 12 and 14 and not on arch 9 (Harmony 525):
+
+* **kind**: encoded (1) when any pixel is undrawn, raw (0) otherwise; no encoded picture in the corpus draws
+  every pixel;
+* **stream**, kind 1: per row, left to right, maximal runs of undrawn and drawn pixels, each cut at 127 (measured
+  for a skip only: no drawn run in the corpus exceeds 122); an
+  undrawn run is `0x80 | n`, a drawn run is `n` and its `n` pixels high byte first; the row's trailing undrawn
+  run is written; `0x80` between rows, `rows - 1` of them; `0x00` after the last row;
+* **a glyph**, base slot 7: its width byte, then the same stream with pixels low byte first, as the glyph
+  reader takes them.
+
+The format admits other streams for the same pixels, a row without its trailing skip for one; Logitech's
+compiler emits this one for every picture and glyph of the 37 containers on arch 8, 10, 12 and 14 measured,
+so a re-encoded Logitech image is its original bytes. `encodeBitmap`, `encodeGlyph`.
+
 **The display is what the config's own full screen pictures say**, section 129: 128 by 160 on arch 8
 (Harmony 880), 96 by 64 on arch 9 (Harmony 525), 176 by 220 on arch 12 (Harmony One) and 128 by 128 on
 arch 14 (Harmony 600 and 700). Every architecture's drawn text stops just inside its own figure.
@@ -2359,6 +2375,18 @@ index a numbered table, which variable a state write writes, and the number of a
 variable above 17 are placement and abstracted away.
 On the Harmony 650, 40 of the 55 fixed modes are also byte identical once relocated and 15 have to be
 re-encoded with the configuration's own numbers.
+
+**The Harmony 650's pictures by source**, section 363. Nineteen across the 13 Harmony 650 compiles, 18 or 19
+in each, every one byte identical wherever held; `HARMONY_650_PICTURES` names each by its content key.
+
+| source | pictures | bytes |
+|---|---|---|
+| rule, built by `buildPictures` | the plain background (fill `0x2945`, 128 by 128), the top bar (16 rows, one colour each), the bottom bar (16 rows from row 112, inset 22, 20, 19, 18, 17, 17, then 16, end pixels in their own colour on rows 113 to 119), three corner patches (fills `0x2945` 12 by 12, `0xB944` and `0x4A49` 12 by 10) | 41066 |
+| artwork, a donor's | device page crossed and of one item, activity menu of two and of one, working screen crossed, start up picture, corner mark, and the four firmware screen pictures of USB Connected, Low Battery, the battery blank screen and the upgrade and learn blank screens | 327891 where all are held |
+| left out with Help | the black delay picker with a dotted cross and the black delay screen with a dotted line | 65546 |
+
+The six rule pictures are also Logitech's bytes on the five Harmony 700 compiles of 2026; the top bar and the
+red patch on all seven Harmony 700 compiles, and the top bar on both Harmony 600 compiles.
 
 | configuration | screen bytes | fixed | dynamic | setup |
 |---|---|---|---|---|

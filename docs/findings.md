@@ -48639,3 +48639,223 @@ count.
   control, the misspelt codes against their twins, the calibration with the 67 admitted, and the two devices
   against the compiles with their controls.
 * `docs/config-format.md`, after section 359's paragraphs.
+
+## 363. Six of a Harmony 650's pictures are drawn by rule and built, the four backgrounds 9.1 names are artwork, and a picture or a glyph does re-encode from its pixels
+
+**Todo `todo-compile-650.md` 9.1**: build the backgrounds ourselves, the cross dividing the four corners, the
+one item page, the device list's line and the start up screen's picture. Measuring the premise first changed
+the item: on the Harmony 650 those four are designed images, and the pictures a rule does draw are six others.
+
+**Sources checked**: this document, sections 50, 54, 55, 85, 129, 146, 317, 328, 330, 336 and 357, for the
+picture object, the bank, the looks and where each picture is drawn; the 22 Logitech compiles of sections 356
+to 358 and, for the encoder, the codec's nineteen corpus containers and the two clean Harmony 890 and 895
+reads. Logitech's client, `../lab/work/myharmony/src/`, was searched for a picture encoder and holds none: its
+background image type carries a key, a position and a path, and the compile that encodes pictures is the
+service's. The firmware was not read again; section 50's reading of the encoded kind is what the encoder
+inverts.
+
+### What a Harmony 650 configuration holds
+
+The 13 Harmony 650 compiles hold **19 distinct pictures**, 18 on nine compiles and 19 on four, and a picture is
+**byte identical on every compile that holds it**. Which ones a compile holds follows from its programs, since a
+configuration carries a picture only where a program draws it, sections 146 and 330: the device page of one
+item is on 5 of them, the activity menu of one on 12, and the other 17 on all 13. On `h650_config_region`, the 19 hold 434503
+bytes:
+
+| picture | size, kind | drawn by, on `h650_config_region` | source |
+|---|---|---|---|
+| plain background, one colour | 128 by 128, raw | the firmware's own screens without a battery or USB picture, the status screens, the tour, Help's and the Remote Assistant's screens: 246 drawing instructions | **rule** |
+| top bar | 128 by 16, raw | opcode 3, 128 by 16, on every device page, menu page and working screen | **rule** |
+| bottom bar | 128 by 128, encoded | opcode 3, the whole screen, under the bottom word | **rule** |
+| corner patch, plain | 12 by 12, raw | one program switching on state variable 17, at 114, 112 | **rule** |
+| corner patch, red | 12 by 10, raw | the program the activity menu queues, at 114, 112 | **rule** |
+| corner patch, grey | 12 by 10, raw | the program the device pages queue, at 114, 112 | **rule** |
+| device page crossed | 128 by 128, raw | device pages of several commands and the device lists | artwork |
+| device page of one item | 128 by 128, raw | device pages and device list pages of one item | artwork |
+| activity menu of two | 128 by 128, raw | the activity menu's page of two: the "line" | artwork |
+| activity menu of one | 128 by 128, raw | the activity menu's page of one, a working page of one command | artwork |
+| working screen crossed | 128 by 128, raw | an activity's working page of several commands | artwork |
+| start up picture | 128 by 128, raw | every start up screen, Off, and Help's "Attempting to fix" | artwork |
+| corner mark | 12 by 10, encoded | the same three programs, at 114, 112 | artwork |
+| USB Connected, Low Battery, the battery blank screen, the upgrade and learn blank screens | 128 by 128, raw, four | the firmware's own screens of those names | artwork |
+| black, dotted cross; black, dotted line | 128 by 128, raw, two | the delay picker and delay screens Help opens when held | left out |
+
+So of the four 9.1 names, the cross dividing the four corners is the crossed device page, or on an activity's
+working screen its red twin; the one item page is the device page of one item, or the activity menu of one; the
+line is the activity menu's page of two, the only one with a line and no cross, the dotted delay pictures
+aside; and the start up screen's picture is an icon of waves above a
+dot. **All four are designed images.** The device page and activity backgrounds are a curved grey or red shape
+with shading, the start up picture and the four firmware screen pictures are drawn icons, and the corner mark is
+a small pictogram, a filled fan above a dot much like the start up picture's waves. Section 317 read the three
+programs that draw the mark and the patches as the battery's, from state variable 17; what they do is measured:
+at 0 they draw the patch, from 1 to 3 the mark. The names here say where they draw and not what they mean.
+
+**The cross and the line cannot be laid over a plain background by rule either.** The crossed device page and
+the device page of one item differ in 98 pixels off the cross's column 64 and row 63, all within seven pixels of
+the cross, 59 of them along row 62 just above its arm, and each one colour step off; of the 190 pixels on the
+cross that differ, 183 are `0x94B2`, 6 `0x9492` and one `0x52AA`. The red pairs differ more: the working screen
+crossed and the activity menu of one in 221 pixels off the lines, the menu of two and of one in 129. Logitech
+flattened each picture whole, so laying a cross over the one item picture does not give its bytes; rounding in
+a drawn stroke could explain the steps beside the line, and nothing here tells the two readings apart. Either
+way the item as worded cannot be done by rule over a plain background we hold; what can is below. **The black
+pair is the exception**: the dotted cross is exactly the dotted line plus a dotted column, the blind re-measure
+found.
+
+### The encoder, and the rail it corrects
+
+The six rule pictures need an encoder, and `CLAUDE.md`'s table of a writer's rails said there could not be one:
+**"a glyph and an encoded picture cannot be re-encoded"**, because several control streams draw the same image.
+The second half is true and the first does not follow from it. The format admits other streams for the same
+pixels: a row's trailing skip draws nothing, since the row break starts the next row wherever the last one
+stopped, so a stream without it draws the same picture. **Logitech's compiler emits one stream, and it is the
+greedy one**: each row cut left to right into maximal runs of drawn and undrawn pixels, 127 at a time, a skip
+byte for an undrawn run and a literal byte and its pixels for a drawn one, the trailing undrawn run included; a
+row break between rows, so `rows - 1` of them; the end byte after the last row. A glyph is the same rule after
+its width byte, with its pixels low byte first as `glyphAt` reads them.
+
+Measured over 40 containers, the codec's nineteen, the two clean Harmony 890 and 895 reads and the 22 compiles,
+of which 37 are on arch 8, 10, 12 and 14: three are arch 9 (Harmony 525) and not encoded. The pictures come from
+32 of the 37, since five are safe mode containers with glyphs and no picture bank; the glyphs from all 37.
+Counting each distinct picture or glyph once per architecture:
+
+| architecture | raw pictures | encoded pictures | glyphs |
+|---|---|---|---|
+| 8, Harmony 880 and 885 | 16 | 20 | 322 |
+| 10, Harmony 890 and 895 | 14 | 23 | 256 |
+| 12, Harmony One | 53 | 25 | 540 |
+| 14, Harmony 600, 650 and 700 | 48 | 3 | 708 |
+
+**Every one comes back byte for byte from its own pixels**, `encodeBitmap` in `screen.ts` and `encodeGlyph` in
+`font.ts`. **The kind follows from the pixels as well**: no encoded picture draws every one of its pixels, and a
+raw one cannot leave one undrawn. The check that the data can tell the other stream apart: all 71 encoded
+pictures and all 1826 glyphs have a row ending undrawn, so a stream without trailing skips differs from the
+stored one on every one of them; given the byte equality that is a consequence and not a second failing control,
+and it is what pins the trailing skip. **One half of the cut is not measured**: a skip over 127 is cut 127 and
+then the rest, on four pictures, each a 128 pixel row left undrawn, but no drawn run in the corpus is longer than
+122 and no glyph wider than 15, so cutting a longer drawn run at 127 is the encoder's assumption. None of the six
+pictures built here has a drawn run over 96.
+An earlier pass over every image the lab registers, not this population, found three objects that do not
+re-encode, all in the two reads of the second Harmony 890 configuration, which carry inserted bytes: each
+states 298 by 298, larger than any display, and its rows do not decode to that width, so they are not pictures
+as compiled. Those two reads also hold three pictures whose walk runs off the end, and their glyphs do not
+decode at all, so neither read's glyphs are in any measurement here. Not traced further.
+
+**Scope, decision 16**: the encoder is measured on arch 8, 10, 12 and 14. Arch 9 (Harmony 525) packs glyphs two
+bits a pixel and stores its pictures one bit a pixel with no encoding choice, and has no encoder here; the file
+based Harmony 300 and 350 are not checked. So the rail is narrowed rather than reversed: an editor may still
+carry an image through unchanged, and nothing obliges it to, because re-encoding a Logitech picture or glyph
+gives Logitech's bytes. **`CLAUDE.md`'s rail row and the `writing-a-config` skill's bullet still state the old
+rail**; correcting them is left to whoever owns those files, and `edit.ts` and `docs/status.md` are corrected
+here.
+
+### The six rule pictures
+
+`HARMONY_650_PICTURES` in `pictures.ts` states each by a drawing and nothing else:
+
+* **a fill**, one colour over the whole picture: the plain background 128 by 128 in `0x2945`, and the three
+  corner patches, 12 by 12 in `0x2945` and 12 by 10 in `0xB944` and `0x4A49`, which are the colours of the
+  plain, the red and the grey backgrounds at 114 to 125, 112 to 123, uniform there on every picture of each;
+* **a band**, rows from a stated top, each one colour between two end pixels of their own, inset equally from
+  both sides: the top bar, sixteen full width rows, and the bottom bar, sixteen rows from row 112 inset 22, 20,
+  19, 18, 17, 17 and then 16, which rounds its top corners, nothing drawn above it; on rows 113 to 119 its end
+  pixels have a colour of their own, on the others the row's.
+
+**What makes a picture rule drawn here** is that test: a fill, or a band of rows each one colour, a shape a
+person would draw with a ruler. The colours themselves, 16 for the top bar, 16 rows of inset, end and fill for
+the bottom bar and the three fills, are values read off Logitech's pictures and carried in `pictures.ts`. That is
+the reading this section takes and it is open to the project's decision like the artwork's below.
+
+The kind and the stream follow from the drawing by the encoder above. Built, the six are **41066 bytes**, 9.5%
+of `h650_config_region`'s bank, and they equal Logitech's bytes wherever a compile holds them. **These counts
+are not independent confirmations**: each of the six has one content on every compile that holds it, and its
+drawing was read off that content, so the table counts copies of six pictures read off one compile, each
+reproduced once. What is tested independently of them is the encoder, above:
+
+| picture | Harmony 650 | Harmony 700 | Harmony 600 |
+|---|---|---|---|
+| plain background, bottom bar, plain and grey patches | 13 of 13 | 5 of 7 | 0 of 2 |
+| top bar | 13 of 13 | 7 of 7 | 2 of 2 |
+| red patch | 13 of 13 | 7 of 7 | 0 of 2 |
+
+The five Harmony 700 compiles of 2026 share the 650's look, section 317; the two of 2021 and 2023 carry an
+older one, and the two Harmony 600 compiles their own, one of them compiled in 2026, so the 600's look goes with
+the model and not the year. The other pictures of those looks are not built here, nor the Harmony 700's own five
+in the compiles of 2026.
+
+**The round trip**: `checkPictures` takes each of the 22 compiles apart, names each picture by its content key,
+replaces every rule picture by its built bytes and lays the container out again, and all 22 come back byte for
+byte, six pictures built on 18 compiles, two on the older Harmony 700 pair and one on the two Harmony 600s.
+**The blind control** overwrites every byte of the named rule pictures in the layout, 756082 bytes over the
+22, after they are named and before they are built: the rebuild still equals each compile, and the overwritten
+layout laid out without the built pictures does not, on all 22. Naming reads the bytes, through their content
+key; the build reads only the entry it names. **The failing controls**: the grey patch a colour off is refused
+at that picture; the encoder refuses a picture wider than 255, which the firmware would read modulo 256, a row
+not its stride wide, and a band that does not fit.
+
+### What this track takes from where
+
+For the finish line, a Harmony 650 configuration with nothing copied out of a Logitech file:
+
+* **built**: the six, 41066 bytes;
+* **artwork, still a donor's**: the eleven the track's screens draw, 327891 bytes on a compile holding all
+  eleven; their pixels are not written into this repository, only their content keys, which name a picture
+  without holding any of it. Where they come from is an open decision, the same shape as the letters' in 8.2;
+* **left out**: the two black pictures with a dotted cross and a dotted line, 65546 bytes, drawn only by the
+  delay screens Help opens when held, which the track leaves out. Their dots are not a regular rule either:
+  the dotted row holds pairs and single pixels at irregular steps.
+
+Where the bank places each picture is 10.5's and untouched: a built picture takes the place of the one it
+replaces.
+
+### Reviewer 1, blind
+
+A second agent, given the questions and the corpus and not this section, measured with its own scripts and
+reached the same figures throughout: 19 pictures on the 13 Harmony 650 compiles at 434503 bytes, 19 on four
+and 18 on nine, the same two absent, each byte identical wherever held, and every bank picture addressed on all
+22 compiles; the same reading of which picture is the cross, the one item page, the line and the start up
+picture, and the same six rule drawn ones; 98 pixels off the cross between the grey pair, and 221 and 129 off the
+lines for the red ones, which this section now gives; 131 raw pictures, 71 encoded and 1826 glyphs on arch 8, 10,
+12 and 14, all reproduced by a rule it derived from the streams, with no encoded picture fully drawn; the six's
+counts per model and their 41066 bytes. **It was not fully blind on the encoder**: reading the bank walk in
+`screen.ts` showed it `encodeBitmap`, so it had seen the stated rule before deriving its own, and it pinned each
+choice against alternative streams instead. It added three things now said above: the black dotted cross is the
+dotted line plus a dotted column exactly; no drawn run reaches 127, so that half of the cut is untested; and the
+glyphs carry the trailing skip too. It guessed why two pictures are absent from some compiles and did not
+measure it, as this section does not.
+
+### Reviewer 2, the sentences
+
+A third agent audited the whole diff against the corpus. What it found, each corrected above and in the code:
+"40 containers" said where three are arch 9 (Harmony 525) and unencoded, pictures coming from 32 and glyphs from
+37, and `edit.ts` stating no architecture at all; the cut at 127 measured for skips only; the 98 pixels called
+scattered through the shading where all lie within seven pixels of the cross, 59 along row 62 by this test's count
+(its 60 took in the column's own pixel on that row); the test asserting them titled as proving the cross is not
+drawn by rule; the per model table read as thirteen confirmations where it counts copies of one picture each, the
+drawings having been read off them; the glyphs' trailing skip unstated; the line called the only picture with a
+line where both crossed pictures carry one; the Harmony 600's look read as the year's; the lab wide pass's two
+Harmony 890 reads, whose glyphs do not decode, unmentioned; the one item picture's drawers missing the device
+list; `describePictures` omitting the Harmony 700's own five; the bottom bar's end pixels their own colour on 7 of
+16 rows and not all; "framing buys nothing" beside what framing would buy; and the register's file counts. It also
+observed that the mark the corner programs draw looks like the start up picture's waves and not like a battery,
+so the names here are by place, and that the rule drawn criterion was never stated as the copyright test, which
+it now is. It confirmed the rest, including the battery corner's colour on every background, the drawing counts
+of the plain background and both bars, and Logitech's client holding no encoder.
+
+### Falsification
+
+A Logitech compile holding an encoded picture or a glyph whose bytes are not the greedy stream of its pixels,
+or a drawn run over 127 cut otherwise; a Harmony 650 compile holding a picture none of the nineteen names, or one
+of the six with other bytes; a stroke rule that draws the cross over the one item picture and gives the crossed
+picture's bytes, the 98 one step pixels included.
+
+### Where it lands
+
+* `packages/codec/src/screen.ts`: `encodeBitmap`, beside the extent walk, the inverse of `bitmapPixels`.
+* `packages/codec/src/font.ts`: `encodeGlyph`, beside `glyphAt`.
+* `packages/codec/src/pictures.ts`: `HARMONY_650_PICTURES`, `pictureRows`, `buildPictures`, `describePictures`,
+  `withPictures` and `checkPictures`.
+* `packages/codec/test/pictures.test.ts`: the encoder over every picture and glyph of the 37 containers on arch
+  8, 10, 12 and 14 among 40, with the other stream as its check, the nineteen named on the 13 Harmony 650 compiles, the six against every compile
+  per model, the round trip, the blind control, the crossed picture against the plain one, and the refusals.
+* `docs/config-format.md`, the picture object's encoding and the 650's pictures by source.
+* `edit.ts`'s docstring and `docs/status.md`, the rail narrowed.
