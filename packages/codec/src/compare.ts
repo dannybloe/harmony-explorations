@@ -216,8 +216,42 @@ export interface ViewDifference {
   b?: ViewItem;
 }
 
+/** What `compareViews` treats as a difference. */
+export interface CompareOptions {
+  /**
+   * Whether the activity menu's order counts, true by default. **MyHarmony gives a Harmony 600, 650 or
+   * 700 owner no control over it**, section 351: the reorder screen is offered only to a product
+   * carrying the `ActivityReorder` capability, which every other remote with a screen does, the Harmony
+   * One among them, and Logitech's 650 compiles follow the account's stored order in none of eight menus. So a configuration of
+   * ours places activities in its setup description's order and is not wrong for disagreeing with
+   * Logitech's; with `false` the menu is compared by which activities it holds, one slot
+   * `activity menu | activities` whose label is their names sorted.
+   */
+  menuOrder?: boolean;
+}
+
+/** The menu's position slots, and the one slot that stands in for them when order is not compared. */
+const MENU_SLOT = 'activity menu | ';
+const MENU_SET = 'activity menu | activities';
+
+/** A view with the menu's positions replaced by the set of activities the menu holds. */
+function withoutMenuOrder(view: SetupView): SetupView {
+  const out: SetupView = new Map();
+  const names: string[] = [];
+  for (const [key, item] of view) {
+    if (key.startsWith(MENU_SLOT)) names.push(item.label ?? '');
+    else out.set(key, item);
+  }
+  if (names.length > 0) out.set(MENU_SET, { label: names.sort().join(', '), frames: [], records: [] });
+  return out;
+}
+
 /** Every slot where two views differ, in key order. A frame difference hides a record one. */
-export function compareViews(a: SetupView, b: SetupView): ViewDifference[] {
+export function compareViews(a: SetupView, b: SetupView, options: CompareOptions = {}): ViewDifference[] {
+  if (options.menuOrder === false) {
+    a = withoutMenuOrder(a);
+    b = withoutMenuOrder(b);
+  }
   const out: ViewDifference[] = [];
   const keys = [...new Set([...a.keys(), ...b.keys()])].sort();
   const same = (x: readonly string[], y: readonly string[]): boolean =>

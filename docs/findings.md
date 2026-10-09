@@ -46487,3 +46487,81 @@ or a group holding two copies of one record with the sequence sending the later.
 * `packages/codec/src/sequence.ts`, `ComposeSequence.records` and `ARCH14_INFERRED`;
   `packages/codec/src/compare.ts`, `listSends`, the view's own reading of what a list sends.
 * `docs/config-format.md` under "A sequence is one action list of calls and per device pauses".
+
+## 351. MyHarmony gives a Harmony 600, 650 or 700 owner no control over the activity menu's order, so ours follows the setup description
+
+`todo-compile-650.md` 5.2.2. The comparison of 5.2 put the test setup's five activities in a different
+order on Logitech's menu than on ours: Logitech's reads Kodi kijken, Plasma kijken, Muziek, TV kijken,
+Film kijken, three pages of two, where our composer had appended Plasma kijken after Logitech's four. The
+item asked for Logitech's rule. What was found instead is that on this model the order is not the
+owner's to choose, which changes what the item is for.
+
+**Sources checked first.** Logitech's client: `work/myharmony/src/`, twelve assemblies decompiled
+before this section, and the dashboard assembly `Web.MartiniWeb.Tasks.Dashboard.Main`, 213 source files,
+decompiled for it. The product catalogue, `GetAllProducts` in the lab's three account captures, and the
+`ActivityList` replies each compile session here captured. The firmware was not read: a menu is a list
+of pages the configuration states, and our own 5.1 file with Plasma kijken last ran on the bench as
+predicted.
+
+**What the client does.** An account stores an `ActivityOrder` per activity. MyHarmony lists the
+activities in that order, a new activity gets the next number (`ActivitySettingsConfirmationViewModel`),
+and a drag and drop screen (`ActivitiesReorderingViewModel`) renumbers them from 0 and saves the list
+back. That screen is reached from the dashboard's buttons and screens section, as the first entry of its
+list of screens, captioned "Activities Screen", and `ButtonsControlViewModel` adds that entry only when
+the remote's product carries capability 11, `ActivityReorder`. One other dashboard,
+`RavenswoodButtonsControlViewModel`, offers the same entry without the check; it serves the Harmony 800
+alone (`IsActiveRemoteHarmony800`), which carries the capability anyway.
+
+**Which products carry it.** Of the catalogue's 120 product records, 81 lack capability 11. The enabled
+ones among them are the Harmony 200, 300, 350, 600, 650, 665 and 700 and two hubs, each 600, 650 and 700
+in both its regional variants. Every other remote with a screen carries it, the Harmony One, One+, One
+EMEA and 800 among them. The 200, 300 and 350 have no screen to put an activity menu on and the hubs no
+remote of their own, so among remotes with an activity screen **the 600 family is the exception**, and
+the per model captures of the One, 600, 650 and 700 agree with the catalogue.
+
+**What the compiles do.** On the Harmony One the menu is the account's order: the spare Harmony One's
+account stores Bluetooth, HDMI Extra, Heos/Spotify, PlayStation 3, Kodi kijken, TV kijken, LG WebOS as
+`ActivityOrder` 0 to 6, which is neither creation nor id order, and Logitech's compile shows exactly
+those seven in that order, three to a page and one on the last. On the Harmony 650 it is not. The lab
+holds eight of Logitech's compiles of the bench account, and the account's order is captured in three
+sessions: TV kijken, Film kijken, Muziek, Kodi kijken as 0 to 3, then Watch TV2 at 4, then Plasma kijken
+after it, the order they were made in. None of the eight menus follows it: the starting setup's reads
+Kodi kijken, Muziek, TV kijken, Film kijken, and both activities added later landed second, Watch TV2
+where the account has it last of five and Plasma kijken where the account has it last of five or six,
+with the four older activities keeping their relative order. Creation order, name, type, the account's
+activity group and its id each fail on both the starting and the test setup. So what the menu follows is
+not a stored order; whether the moment an activity is added decides its place is open, and two additions
+on one account do not settle it.
+
+**A fitted reading, recorded so nobody takes it for a rule.** The compiler numbers the activities
+internally, the value an activity's state variable takes; taking those in order and moving value 1 to the
+end reproduces the bench account's starting and test setup menus and the Harmony 600's (`h600_config`),
+and fails four: the Watch TV2 compile (`h650_assistant_off_config`), Logitech's compile on the account
+with the Panasonic (`h650_panasonic_config`), another owner's 650 (`h650_issue8_config`), whose menu is
+plain value order, and the Harmony 700's file (`h700_config`), which disagrees in three places. Issue
+36's 650 fits only because it has two activities. A description, not a finding.
+
+**Consequence.** Matching Logitech's menu order buys the finish line nothing: the remote shows whatever
+order the configuration states, and the owner of a 650 could not have chosen Logitech's either. So a
+configuration of ours places activities in its setup description's order, which is the owner's. Composed
+onto a Logitech compile, as 5.1 was, a new activity goes after Logitech's rows, its place in the
+description, and Logitech's own rows stay as Logitech put them until the activity menu is built by us,
+7.3. The 5.2 comparison accordingly compares the menu by which activities it holds:
+`compareViews(a, b, { menuOrder: false })`, the default of `compare-setup.ts`, with `--menu-order` to see
+positions. With it, our 5.1 file and Logitech's clean compile of the test setup differ in one item, how
+Radio's two commands are stored, which section 349 has since made the same. Giving the owner the order on
+every model is `todo-freeharmony.md` 1.4.
+
+**Scope.** The capability gate is read in the client for the dashboard every model but the Harmony 800
+uses, and the catalogue states the capability per product. The menu order is measured on arch 12 (the
+Harmony One, one account, two compiles of one setup) and arch 14 (the Harmony 650, eight compiles of the
+bench account with its order captured in three sessions; the 600 and 700 files and the other two 650s
+carry no captured account order). What would falsify it: a Harmony 650 compile whose menu follows the
+account's `ActivityOrder` where the two differ, or a MyHarmony control that reorders a 650's activities.
+
+* `packages/codec/test/compare.test.ts`: "MyHarmony offers activity reordering to every remote with a
+  screen but the Harmony 600, 650, 665 and 700", over the catalogue; "the Harmony One's activity menu
+  follows its account's stored order and the Harmony 650's does not", which reads the account replies;
+  and the comparison with the menu's order not counted, with the starting compile as the control that a
+  missing activity still shows.
+* `packages/codec/src/compare.ts`, `CompareOptions.menuOrder`.

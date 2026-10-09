@@ -13,6 +13,7 @@ about the product.
 - [ ] 1.1 The interface (was `todo-later.md` 4.1)
 - [ ] 1.2 Publish `packages/*` so somebody without this checkout can build it (decision 4) (was `todo-later.md` 4.2)
 - [ ] 1.3 A sequence as a step in an activity's start, which Logitech's schema has no form for: an addition of ours, if FreeHarmony wants it (was `todo-later.md` 4.3)
+- [ ] 1.4 The activity menu's order chosen by the user on every model: MyHarmony offers reordering to every remote with a screen except the Harmony 600, 650, 665 and 700, where its compiler picks an order the owner cannot set; the remote shows whatever order the configuration states, so ours is the setup description's (section 351)
 
 ## 2. Screens
 

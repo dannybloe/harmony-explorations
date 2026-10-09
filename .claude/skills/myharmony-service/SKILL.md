@@ -21,7 +21,10 @@ Danny's instruction of 28 August 2026: everything Harmony Desktop's web applicat
 can do too, and better, so a reading off the newer client describes the hub generation rather than the
 remotes on this bench.
 
-**And it is decompiled to C# in the lab**, `work/myharmony/src/`, 1999 files across seven assemblies.
+**And it is decompiled to C# in the lab**, `work/myharmony/src/`, thirteen assemblies and 3414 `.cs`
+files: the first seven held 1999, five more followed, and the dashboard assembly
+`Web.MartiniWeb.Tasks.Dashboard.Main` came with section 351. Other assemblies in
+`xap/` are still compiled only; `ilspycmd` with `DOTNET_ROOT` set to Homebrew's dotnet decompiles one.
 Read that, not the compiled DLLs beside it: section 202 was a wrong reading published in four
 documents because a method name found by searching an assembly looked like a call site, and the source
 was there the whole time.

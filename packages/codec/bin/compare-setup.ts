@@ -2,11 +2,15 @@
  * Two configurations of the same setup compared by what a person sees and hears, `todo-compile-650.md`
  * 5.2: every key and screen item in every activity, device mode and the idle state.
  *
- *   node packages/codec/bin/compare-setup.ts --a <lab name or file> --b <lab name or file> [--records]
+ *   node packages/codec/bin/compare-setup.ts --a <lab name or file> --b <lab name or file> [--records] [--menu-order]
  *
  * Prints how many slots each file has, then every difference grouped by kind. Record differences, the
  * same command stored differently, are counted and only listed with `--records`, since they are what
  * the receiver cannot hear. `compare.ts` says what the comparison does not see.
+ *
+ * The activity menu is compared by which activities it holds and not by their order, unless
+ * `--menu-order` is given: MyHarmony gives a Harmony 650 owner no control over that order, so ours
+ * follows the setup description and Logitech's compiler picks its own, section 351.
  */
 import { existsSync, readFileSync } from 'node:fs';
 
@@ -27,8 +31,10 @@ const open = (name: string | undefined): Uint8Array => {
 
 const a = setupView(parse(open(argument('a'))));
 const b = setupView(parse(open(argument('b'))));
-const differences = compareViews(a, b);
-console.log(`a: ${a.size} slots, b: ${b.size} slots, ${differences.length} differences`);
+const menuOrder = process.argv.includes('--menu-order');
+const differences = compareViews(a, b, { menuOrder });
+console.log(`a: ${a.size} slots, b: ${b.size} slots, ${differences.length} differences` +
+  (menuOrder ? '' : ', the activity menu compared by which activities it holds'));
 const kinds = ['only in a', 'only in b', 'label', 'frames', 'records'] as const;
 for (const kind of kinds) {
   const of = differences.filter((one) => one.kind === kind);
