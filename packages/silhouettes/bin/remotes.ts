@@ -23,7 +23,9 @@
  * any dependency, which is what FreeHarmony consumes.
  *
  * Adding a model is two lines: a row in `REMOTES` and the folder with its ten files, whose blocks
- * this then fills. Adding an architecture is a row in `ARCHITECTURES` the same way.
+ * this then fills. Adding an architecture is a row in `ARCHITECTURES` the same way, naming the blocks
+ * its folder carries. A model whose skins have no record in `MODELS_BY_SKIN`, or that has no screen,
+ * gets rows that say so rather than a failure, which is what the Harmony 300 and 350 need.
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -44,6 +46,7 @@ import {
   FLASH_TOP_BYTE_BOUND,
   MODELS_BY_SKIN,
   REINSTALL_MAX_IMAGE,
+  SKINS_WITHOUT_A_MODEL_RECORD,
   SETTINGS_WRITE_READ_ON,
   STAGING_REGION,
   STATUS_BYTE_READ_ON_APPLICATION,
@@ -68,10 +71,20 @@ interface RemoteFolder {
   readonly architecture: number;
 }
 
+/** The blocks an architecture folder can carry. */
+type ArchitectureBlock = 'skins' | 'memory-constants' | 'usb-identity' | 'write-rails';
+
 /** One architecture folder under `reference/architectures/`. */
 interface ArchitectureFolder {
   readonly folder: string;
   readonly architecture: number;
+  /**
+   * Which blocks the folder carries. The memory constants and the write rails are stated for the
+   * Harmony 600, 650 and 700, whose settings store and three alike units their text names, so an
+   * architecture the library never opens, the Harmony 300 and 350's, carries neither: a table of
+   * `none` and `no` would say less than its folder's prose and look like a measurement.
+   */
+  readonly blocks: readonly ArchitectureBlock[];
 }
 
 /**
@@ -80,14 +93,25 @@ interface ArchitectureFolder {
  */
 export const REMOTES: readonly RemoteFolder[] = [
   { folder: 'harmony-one', skins: [54, 59], drawing: 'one', architecture: 12 },
+  // Neither model has a record in `MODELS_BY_SKIN`, so their skin and capability rows say so rather
+  // than failing: 78 and 79 are named by `SKINS_WITHOUT_A_MODEL_RECORD`, and 104 by nothing in
+  // models.ts but `SKINS_WITH_A_LONG_PRESS`. The 300 uses its own drawing, which takes the 350's shapes.
+  { folder: 'harmony-300', skins: [78, 79], drawing: 'h300', architecture: 16 },
+  { folder: 'harmony-350', skins: [104], drawing: 'h350', architecture: 16 },
   { folder: 'harmony-600', skins: [71, 73], drawing: 'h600', architecture: 14 },
   { folder: 'harmony-650', skins: [72, 74], drawing: 'h650', architecture: 14 },
   { folder: 'harmony-700', skins: [66, 69], drawing: 'h700', architecture: 14 },
 ];
 
 export const ARCHITECTURES: readonly ArchitectureFolder[] = [
-  { folder: 'harmony-600-650-700', architecture: 14 },
+  { folder: 'harmony-600-650-700', architecture: 14, blocks: ['skins', 'memory-constants', 'usb-identity', 'write-rails'] },
+  { folder: 'harmony-300-350', architecture: 16, blocks: ['skins', 'usb-identity'] },
 ];
+
+/** Every skin a folder of this architecture names, so a skin with no model record still gets a row. */
+function folderSkins(architecture: number): number[] {
+  return REMOTES.filter((r) => r.architecture === architecture).flatMap((r) => r.skins);
+}
 
 function hex(n: number, width = 6): string {
   return `0x${n.toString(16).toUpperCase().padStart(width, '0')}`;
@@ -105,17 +129,30 @@ function provenance(source: string): string {
   return `Generated from ${source} by \`make remote-reference-write\`. Change the source, not this block.`;
 }
 
+/** The cell a skin with no record in `MODELS_BY_SKIN` gets for a field only that table holds. */
+const NO_RECORD = 'no record';
+
+/** A skin's model name: the record's, else the catalogue name `SKINS_WITHOUT_A_MODEL_RECORD` keeps. */
 function modelName(skin: number): string {
   const m = MODELS_BY_SKIN[skin];
-  if (m === undefined) throw new Error(`skin ${skin} has no record in models.ts`);
-  return `Harmony ${m.name}`;
+  if (m !== undefined) return `Harmony ${m.name}`;
+  const named = SKINS_WITHOUT_A_MODEL_RECORD[skin];
+  return named === undefined ? `${NO_RECORD} in models.ts` : `Harmony ${named}, ${NO_RECORD}`;
 }
 
 /** The skins of one model folder, with the fields models.ts holds for each. */
-function skinTable(skins: readonly number[], source: string): string {
+function skinTable(skins: readonly number[], architecture: number): string {
+  // The provenance names `SKINS_WITHOUT_A_MODEL_RECORD` only where a row came from it.
+  // Skin 104 has neither a record nor a catalogue name, so its folder cites the first table alone.
+  const source = skins.every((s) => SKINS_WITHOUT_A_MODEL_RECORD[s] === undefined)
+    ? '`MODELS_BY_SKIN` in `packages/usb/src/models.ts`'
+    : '`MODELS_BY_SKIN` and `SKINS_WITHOUT_A_MODEL_RECORD` in `packages/usb/src/models.ts`';
   const rows = skins.map((skin) => {
     const m = MODELS_BY_SKIN[skin];
-    if (m === undefined) throw new Error(`skin ${skin} has no record in models.ts`);
+    if (m === undefined) {
+      // The architecture is the folder's, not the table's, and the row says which of the two it is.
+      return `| ${skin} | ${modelName(skin)} |  | ${architecture}, the folder's | ${NO_RECORD} | ${NO_RECORD} |  |`;
+    }
     return `| ${skin} | ${modelName(skin)} | ${m.alias === undefined ? '' : `Harmony ${m.alias}`} `
       + `| ${m.architecture} | ${m.panel} | ${yes(m.touch)} | ${m.firmwareSeen ?? ''} |`;
   });
@@ -132,7 +169,10 @@ function skinTable(skins: readonly number[], source: string): string {
 function featureTable(skins: readonly number[]): string {
   const rows = skins.map((skin) => {
     const m = MODELS_BY_SKIN[skin];
-    if (m === undefined) throw new Error(`skin ${skin} has no record in models.ts`);
+    if (m === undefined) {
+      const none = NO_RECORD;
+      return `| ${skin} | ${none} | ${none} | ${none} | ${none} | ${none} | ${yes(hasLongPress(skin))} |`;
+    }
     return `| ${skin} | ${m.maxDevices} | ${m.favourites ?? 'none'} | ${yes(m.macros)} | ${yes(m.pageButton)} `
       + `| ${yes(m.soundPictureButtons)} | ${yes(hasLongPress(skin))} |`;
   });
@@ -182,14 +222,27 @@ function keyTable(drawing: Drawing): string {
 
 function displayTable(architecture: number, skins: readonly number[], drawing: Drawing): string {
   const size = SCREEN_SIZES[architecture];
-  if (size === undefined) throw new Error(`no screen size for architecture ${architecture}`);
-  const panels = [...new Set(skins.map((s) => MODELS_BY_SKIN[s]?.panel ?? 'unknown'))].join(', ');
-  const touch = [...new Set(skins.map((s) => yes(MODELS_BY_SKIN[s]?.touch ?? false)))].join(', ');
+  // A model with no screen has neither a raster nor a screen on its drawing, and both are stated as
+  // absent. A raster with no screen on the drawing, or the reverse, is a disagreement and refused.
+  if ((size === undefined) !== (drawing.screen === undefined)) {
+    throw new Error(`architecture ${architecture} and the drawing ${drawing.id} disagree about a screen`);
+  }
+  const panels = [...new Set(skins.map((s) => MODELS_BY_SKIN[s]?.panel ?? NO_RECORD))].join(', ');
+  const touch = [...new Set(skins.map((s) => {
+    const m = MODELS_BY_SKIN[s];
+    return m === undefined ? NO_RECORD : yes(m.touch);
+  }))].join(', ');
+  const raster = size === undefined
+    ? `| raster | none: no entry for architecture ${architecture} | \`SCREEN_SIZES\` in \`packages/codec/src/render.ts\` |`
+    : `| raster | ${size.width} by ${size.height} pixels | \`SCREEN_SIZES\` in \`packages/codec/src/render.ts\`, measured from the configurations' full screen pictures |`;
+  const drawn = drawing.screen === undefined
+    ? `| raster on the drawing | no screen on the drawing | \`${drawing.id}.ts\` |`
+    : `| raster on the drawing | ${drawing.screen.pixels.width} by ${drawing.screen.pixels.height} | \`${drawing.id}.ts\`, which must agree with the row above |`;
   return [
     '| field | value | from |',
     '|---|---|---|',
-    `| raster | ${size.width} by ${size.height} pixels | \`SCREEN_SIZES\` in \`packages/codec/src/render.ts\`, measured from the configurations' full screen pictures |`,
-    `| raster on the drawing | ${drawing.screen?.pixels.width ?? '?'} by ${drawing.screen?.pixels.height ?? '?'} | \`${drawing.id}.ts\`, which must agree with the row above |`,
+    raster,
+    drawn,
     `| panel | ${panels} | \`packages/usb/src/models.ts\` |`,
     `| touch | ${touch} | \`packages/usb/src/models.ts\`, and \`touch\` on the drawing's screen is ${yes(drawing.screen?.touch ?? false)} |`,
     '',
@@ -213,20 +266,26 @@ function usbIdentity(architecture: number): string {
 }
 
 function architectureSkins(architecture: number): string {
-  const skins = Object.keys(MODELS_BY_SKIN).map(Number)
-    .filter((s) => MODELS_BY_SKIN[s]?.architecture === architecture)
-    .sort((a, b) => a - b);
+  const recorded = Object.keys(MODELS_BY_SKIN).map(Number)
+    .filter((s) => MODELS_BY_SKIN[s]?.architecture === architecture);
+  const unrecorded = folderSkins(architecture).filter((s) => MODELS_BY_SKIN[s] === undefined);
+  const skins = [...new Set([...recorded, ...unrecorded])].sort((a, b) => a - b);
   const rows = skins.map((skin) => {
     const m = MODELS_BY_SKIN[skin];
-    if (m === undefined) throw new Error('unreachable');
+    if (m === undefined) return `| ${skin} | ${modelName(skin)} | ${NO_RECORD} | ${NO_RECORD} | ${NO_RECORD} |  |`;
     return `| ${skin} | ${modelName(skin)} | ${m.panel} | ${m.maxDevices} | ${m.favourites ?? 'none'} | ${m.firmwareSeen ?? ''} |`;
   });
+  // The provenance names the second table only where a row came from it, so a folder whose skins all
+  // have a record reads exactly as it did before.
+  const source = unrecorded.length === 0
+    ? '`MODELS_BY_SKIN` in `packages/usb/src/models.ts`'
+    : '`MODELS_BY_SKIN` and `SKINS_WITHOUT_A_MODEL_RECORD` in `packages/usb/src/models.ts`, and the skins the model folders name';
   return [
     '| skin | model | panel | max devices | favourite channel buttons | newest firmware the forum table knows |',
     '|---|---|---|---|---|---|',
     ...rows,
     '',
-    provenance('`MODELS_BY_SKIN` in `packages/usb/src/models.ts`'),
+    provenance(source),
   ].join('\n');
 }
 
@@ -283,7 +342,7 @@ export function expectedBlocks(): Map<string, Map<string, string>> {
     const drawing = MODELS[r.drawing];
     if (drawing === undefined) throw new Error(`no drawing ${r.drawing}`);
     const dir = join('reference', 'remotes', r.folder);
-    put(join(dir, 'README.md'), 'skins', skinTable(r.skins, '`MODELS_BY_SKIN` in `packages/usb/src/models.ts`'));
+    put(join(dir, 'README.md'), 'skins', skinTable(r.skins, r.architecture));
     put(join(dir, 'features.md'), 'capabilities', featureTable(r.skins));
     put(join(dir, 'keys.md'), 'keys', keyTable(drawing));
     put(join(dir, 'display.md'), 'display', displayTable(r.architecture, r.skins, drawing));
@@ -291,10 +350,12 @@ export function expectedBlocks(): Map<string, Map<string, string>> {
   }
   for (const a of ARCHITECTURES) {
     const dir = join('reference', 'architectures', a.folder);
-    put(join(dir, 'README.md'), 'skins', architectureSkins(a.architecture));
-    put(join(dir, 'memory.md'), 'memory-constants', memoryConstants(a.architecture));
-    put(join(dir, 'usb.md'), 'usb-identity', usbIdentity(a.architecture));
-    put(join(dir, 'usb.md'), 'write-rails', writeRails(a.architecture));
+    if (a.blocks.includes('skins')) put(join(dir, 'README.md'), 'skins', architectureSkins(a.architecture));
+    if (a.blocks.includes('memory-constants')) {
+      put(join(dir, 'memory.md'), 'memory-constants', memoryConstants(a.architecture));
+    }
+    if (a.blocks.includes('usb-identity')) put(join(dir, 'usb.md'), 'usb-identity', usbIdentity(a.architecture));
+    if (a.blocks.includes('write-rails')) put(join(dir, 'usb.md'), 'write-rails', writeRails(a.architecture));
   }
   return files;
 }
