@@ -47002,4 +47002,27 @@ comparison. The control: leaving out any one class of field is caught, by the pa
 elsewhere. Measured on arch 8, 9, 12 and 14, the corpus's span; arch 10 and 16 have no container here
 this census reads.
 
+### The probe, run: the remote refuses the library as a configuration
+
+`work/probe-7-1/make-probe.ts` linked the library for `0x030000` and set its two log area fields to
+`0x1E0000` and `0x200000`, four bytes different from the plain rebase, two fields and the checksum. It
+was written to the 650 and read back identical (`h650_7_1_probe`), and the remote restarted. Against the
+committed predictions, as reported from the remote:
+
+| | prediction | outcome |
+|---|---|---|
+| P1 | the write succeeds and reads back identical, one block | right |
+| P2 | a status screen, most likely "Needs to be setup", or "Go to Website" or "Configuration Corrupted" if it rejects the file | **"Go to Website to update settings"** off the cable, and on the cable "USB CONNECTED" without the picture the 650's own USB screen draws |
+| P3 | no key makes the receiver hear anything | not measured with the receiver: no bench run was recorded. Reported from the remote: no key changed anything |
+| P4 | the remote still answers over USB | right: the 6.2.13 file was written back over it and reads back identical |
+
+**"Go to Website to update settings" is screen 0**, which section 249 read on the Harmony One as the
+validator failing one of three markers before it reaches the checksum, and section 253 found the 650's
+images choosing between the same two codes. So the remote did not run the library as a configuration at
+all: it refused it at the markers and showed status screens. **Which marker failed is not measured.** The
+first two, `GSPM` at offset 0 and `LWJL` at `0x5B`, are in the probe file; a quick read of the third,
+`PTYY` where base slot 4 points, read wrong bytes for the working 6.2.13 file as well, so that read and
+not the probe is what is in doubt. What the probe establishes is the floor: a configuration with nothing
+in it, built as the firmware's own status library, is not accepted as one.
+
 * `packages/codec/test/relocate.test.ts`: the three rebase tests.

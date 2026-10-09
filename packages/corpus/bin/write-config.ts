@@ -195,6 +195,7 @@ const H650_DUMPS = new Set([
   'h650_6_2_13_base',
   'h650_7_1_base',
   'h650_7_1_stopped',
+  'h650_7_1_probe',
 ]);
 
 /**

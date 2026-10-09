@@ -223,6 +223,8 @@ export const IMAGES: Readonly<Record<string, string>> = {
   h650_7_1_base: '20261009T1416Z-h650-7-1-before-region.bin',
   // The region after 7.1's first probe stopped at its read back: the status library at 0x30000, unrelocated.
   h650_7_1_stopped: '20261009T1418Z-h650-7-1-stopped-region.bin',
+  // The region with 7.1.2's probe on it, the status screen library linked for 0x30000, as the remote held it.
+  h650_7_1_probe: '20261009T1429Z-h650-7-1-probe-region.bin',
   h650_test_config_clean: '20261009T1203Z-h650-test-config-clean.bin',
   // Our 5.1 file as written to the 650: the starting compile with the rest of the test setup composed on.
   h650_milestone_5_1_config: '20261009T1007Z-h650-milestone-5-1-config.bin',
@@ -776,6 +778,7 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
     'h650_tilt_off_config', 'h650_milestone_5_1_base', 'h650_test_config',
     'h650_milestone_5_1_config', 'h650_test_config_clean', 'h650_5_2_5_base',
     'h650_6_2_13_base', 'h650_7_1_base', 'h650_7_1_stopped',
+    'h650_7_1_probe',
     // External flash of the bench Harmony 700 from 0x000000, kept for the staged application at its
     // start. The container at 0x020000 is byte for byte `h700_gspm`, the embedded config the 2.8
     // package carries as its region 3, so counting it would count that one twice. Section 295.
