@@ -173,15 +173,18 @@ export interface ComposeCommand {
    */
   readonly holdMs?: number;
   /**
-   * The press's blocks where the caller derived them, for a family the rhythm table holds no whole block
-   * for, section 348: `once` is the record's first block without its lead in and `held` the second.
+   * The press's blocks where the caller derived them at the device's count, sections 348 and 350: `once`
+   * is the record's first block without its lead in and `held` the second.
    *
    * **The table cannot hold these because the count is the device's and not the family's.** A whole block
    * is the family's shape plus how many repetitions a press sends, and for the families whose definition
    * states no count the compiler takes it from the device, so one family has as many blocks as its
    * devices have counts. `catalogueCommandBlocks` in `composecatalogue.ts` derives them from the
-   * family's definition at the device's count; a caller without the archive leaves this out and such a
-   * family is refused, as before. Ignored where the table has a block, which wins.
+   * family's definition at the device's count, where the table holds no block for the family and where
+   * its block was measured on a device stating another count; a caller without the archive leaves this
+   * out and gets the table's block, or a refusal where it has none. **Given, they win over the table's
+   * block**, which until section 350 won over them: a table block carries the count of the one device it
+   * was measured on, so where the caller has derived another one the table's is the wrong one.
    */
   readonly blocks?: StatedBlocks;
 }
@@ -372,11 +375,10 @@ export function composeIrGroup(
       built.push({ periodNs: entry.periodNs, once: irBuildBlock(compiledBlockWords(block)) });
       continue;
     }
-    // The table's block where it has one; the caller's, derived at the device's count, where the
-    // family's definition states no count and so the table cannot hold one, section 348.
-    const tabled = blockOfStatedCode(read, undefined, 'once');
-    const given = tabled === undefined ? command.blocks : undefined;
-    const once = tabled ?? (given === undefined ? undefined : [...given.once]);
+    // The caller's blocks, derived at the device's count, where it gives them, sections 348 and 350;
+    // the table's block otherwise, whose count is the one device's it was measured on.
+    const given = command.blocks;
+    const once = given === undefined ? blockOfStatedCode(read, undefined, 'once') : [...given.once];
     if (once === undefined || once.length === 0) {
       throw new ComposeError(`${read.family} has no measured whole block, so nothing can be sent`);
     }

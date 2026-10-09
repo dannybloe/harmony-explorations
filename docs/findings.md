@@ -29420,12 +29420,20 @@ still needs the measured row, which is why the 29 keep their measured blocks.
 **`MemorexO1 32 Bit` is the informative one, and the looser statement was ours.** Their definition pads
 every copy to a constant 107600 microseconds, so the gap after the frame depends on the code's bits. Our
 row states a **literal** gap of 35101, measured because all three of the corpus's records of that family
-carry the same gap. Both are right at once: this is a 32 bit scheme whose code is an address plus a
-command plus that command complemented, so every code of the family has exactly twenty set bits and
-therefore exactly the same frame duration. A padded gap is then indistinguishable from a literal one, and
+carry the same gap. Both are right at once **on those three records**, which carry twenty set bits each
+and therefore the same frame duration. A padded gap is then indistinguishable from a literal one, and
 three records could never have told them apart. 107600 less the frame at twenty set bits is 35100, and the
 stored 35101 is that plus the one microsecond rule. The two statements agree exactly, and at nineteen set
 bits they part company, which is the control.
+
+> **Corrected by section 350.** This said the family is an address plus a command plus that command
+> complemented, so that every code of the family has exactly twenty set bits, and so both statements are
+> right for the whole family. The archive's own codes of the family say otherwise: of its 3671 distinct
+> codes, 22 carry twenty set bits and the rest anything from 2 to 19. On 3634 of those the row's literal
+> gap is not the definition's padded one, and the other 15 the definition cannot build. Which gap
+> Logitech's compiler writes for them is unconfirmed, since no compile in the lab holds such a code; the
+> definition states the padded one. The reasoning was a property of the three corpus records extended to
+> the family by a reading of the scheme that nothing checked.
 
 So the general lesson, and it is about our own tail measurement rather than about this family: **a family
 whose codes all carry the same number of set bits cannot show whether its gap is padded or literal.** Every
@@ -46297,7 +46305,8 @@ one device and fix a count for every device. Rebuilding each table block from th
 Bit` is at 1 on all its codes, `MemorexO1 32 Bit` on 22 and `Samsung 38 Bit` on 53, and the rest are at 3
 on most codes, with a few codes of four families at another count, 0, 1 or 5. Several thousand codes, most
 of `MemorexO1 32 Bit` and all of `Philips Hurd 16 Bit LongToggle`, are not rebuilt by this route at any
-count, so their table count is not read. Over the archive, about 8900 of the 257720 devices with a codeset
+count, so their table count is not read. (Section 350 reads 1675 of the long toggle family's codes at 3,
+forgiving the one microsecond its table block ends short.) Over the archive, about 8900 of the 257720 devices with a codeset
 hold a table family whose majority table count is not the device's, about 316000 commands counted per
 device (8864 and 8911 devices by two counts that differ in how the families not read are treated). On the
 65 groups, over the 24 table families whose count is read, the table agrees with Logitech on 2594 records
@@ -46305,6 +46314,11 @@ and disagrees on the Dell's 34 and the Yamaha's 4; the Philips 70FA930's three `
 LongToggle` records at 1, against a table block measured at 3 on another device, are likely a third case
 and are not checked here. **Left as it is**: the table still wins where it has a block, and whether the
 device's count should override it is open.
+
+> **Taken up by section 350**: the composer now builds such a command from the definition at the
+> device's count, shown on two devices, two families and 35 records, the Dell's and this Philips's. The
+> Philips 70FA930's long toggle record is a third case, at its own 1; its other two records are of codes
+> the table's block does not take.
 
 ### Configurations whose settings are unknown
 
@@ -46318,7 +46332,9 @@ this is evidence for or against the catalogue's number, and none of it is counte
 The catalogue composer builds a command whose family has no block in the table from Logitech's definition
 at the device's count, `catalogueCommandBlocks` and `cataloguePressRepeats` in
 `packages/codec/src/composecatalogue.ts`, and passes the blocks to `composeIrGroup` beside the code; the
-table's block wins wherever it has one. It refuses three things still unknown:
+table's block wins wherever it has one (since section 350, not where a device states another count that
+is not refused). It
+refuses three things still unknown:
 
 * a device stating 0, 215 commands. The README says the hub then sends no repeat; no compile here shows it.
   Section 258's games console is at 0 in its account and was written at 1, but its family states 1, so it
@@ -46487,6 +46503,187 @@ or a group holding two copies of one record with the sequence sending the later.
 * `packages/codec/src/sequence.ts`, `ComposeSequence.records` and `ARCH14_INFERRED`;
   `packages/codec/src/compare.ts`, `listSends`, the view's own reading of what a list sends.
 * `docs/config-format.md` under "A sequence is one action list of calls and per device pauses".
+
+## 350. The rhythm table's blocks hold the count their measured records repeat, and the composer now builds them at the device's own
+
+`todo-process-logitech.md` 2.2.5, which section 348 left open. A press sends a code's start once, its
+repeating part some number of times and its finish, and for a family whose definition states no number
+the number is the device's, section 348. The rhythm table, `packages/codec/src/protocols.ts`, holds a
+whole first block for 26 such families, each measured off records Logitech compiled, so each block carries
+the count those records repeat and the composer gave it to every device. `Memorex 32 Bit` was measured on
+a Toshiba television's records, written at 1 (that device states 3 and is section 348's second refusal),
+and the Dell 2300MP, which states 3 and was written at 3 by MyHarmony, got 1 on all 34 of its ordinary
+records.
+
+**Sources read before deriving.** Section 348's reading of where the count comes from stands: the archive
+README's trace of the hub firmware and MyHarmony's `DeviceCommandRepeatsViewModel`, a per device setting
+whose default is the catalogue device's own. Nothing new was read in the client, since the question here
+is about our own table and not about the product. Section 228, which built the table's blocks from the
+definitions and calibrated them, and section 309 (todo L13), which first saw the Dell's three.
+
+### What count each table block carries
+
+Read by rebuilding: every distinct code of the 26 families in the archive whose table block the composer
+sends, built from Logitech's definition at 0 to 6 repetitions with `waveformOfArchiveCommand` and
+`asStored`, the count being the one at which the two trains agree interval for interval, the silence a
+block opens with dropped. **One microsecond is forgiven, on the last interval only**: the table's long
+toggle shape leaves off the microsecond Logitech's compiler adds to every stored block, section 230, so
+`Philips Hurd 16 Bit LongToggle`'s table block is the definition's at 3 short of exactly that on 1675 of its
+1700 codes, and read exactly it would rebuild at no count. Over all 37520 codes those 1675 are the only
+ones the forgiveness changes. That is `sameTrain`.
+
+| | distinct codes |
+|---|---|
+| rebuild at their family's count | 33264 |
+| rebuild at another count, every one a code whose own groups state a frame more than once | 22 |
+| rebuild at no count | 4234 |
+| total, over 26 families | 37520 |
+
+A family's count is the one most of its codes that rebuild at all rebuild at: 1 for `Memorex 32 Bit`,
+`MemorexO1 32 Bit` and `Samsung 38 Bit`, 3 for the other 23. **For two of the three at 1 that rests on a
+minority**: 22 of `MemorexO1 32 Bit`'s 3671 codes rebuild at any count, and 53 of `Samsung 38 Bit`'s 400.
+Each count is `TABLE_PRESS_REPEATS` in `composecatalogue.ts`; a test names one code per family that
+rebuilds at its count and at no other, chosen as such, and `make composecensus` rereads every code and
+flags a family whose majority moved. The map names exactly the rows carrying a whole block whose
+definition states no count, asserted, so a row the generator adds is refused until it is read.
+
+**The codes not rebuilt at their family's count, 4256, split by what differs.** None rebuilds at 7 to 12
+either.
+
+| | distinct codes |
+|---|---|
+| the table's block and the definition's at the table's count send a different number of intervals | 252 |
+| the same number of intervals, a duration differs | 3989 |
+| the definition cannot build the code | 15 |
+
+The 252, the 22 above among them, are 191 `Magnavox 13 Bit` (189 of them codes with no repeat group, three
+copies in the table and one from the definition), 25 `Philips Hurd 16 Bit LongToggle`, 20 `Microsoft 30
+Bit` (four frame codes among them), 7 `Philips RC5 13 Bit Toggle` and 9 in five other families. The 3989 are
+3634 `MemorexO1 32 Bit` (the last gap), 347 `Samsung 38 Bit` (the closing silence on all 347, and on 133
+the space between its two sections as well) and 8 `MemorexV2 32 Bit Dual` (the gap after a frame). The 15
+are `MemorexO1 32 Bit` codes naming a `Repeat` segment our keycode reader declines through the definition.
+
+### What the composer does now
+
+Where a device's count is the table's, the table's block is sent as before, and that includes the 22
+codes above, whose table block is the definition at another count. Where the device's count differs, the
+command is built from the definition at the device's count, both blocks, the way section 348 builds a
+family the table holds no block for, and `composeIrGroup` and `longPressBlockOfStatedCode` let given blocks
+win over the table's, where before this the table won. Two exceptions:
+
+* **A device whose count is not known**, a count of 0 or a codeset holding a family that states another
+  count, keeps the table's block: that is 2.2.2 and 2.2.4, and refusing there would take away records the
+  compiles show right, the Sony KE-50MR1E's 35 `Sony 15 Bit` records at 3 among them.
+* **The 252 codes whose table block and definition disagree about how many frames a press sends are
+  refused** at any count but the table's. That disagreement is the very question, and no compile shows
+  which a press sends at another count.
+
+**The 3989 that differ only in a duration are built from the definition, and that was a choice.** The
+first version refused every code not rebuilt at the table's count, which refused 19081 commands of the
+archive, counted per codeset, 17628 of them `MemorexO1 32 Bit`'s. That family's definition pads every copy
+to 107600 microseconds and the table states a literal gap, measured on three corpus records that all carry
+twenty set bits; section 228 reasoned that every code of the family does, which is wrong, below. So on the
+other 3634 codes the definition's gap and the table's differ at the table's own count as well, and
+refusing them only at another count protects nothing. **That the definition's gap is what Logitech's
+compiler writes for them is a reading of the definition and is unconfirmed**: no compile in the lab holds
+a code of the family with other than twenty set bits. The 347 `Samsung 38 Bit` codes are not settled
+either way, and compose from the definition the way every family without a table block does.
+
+### Against Logitech's compiles
+
+The population is section 348's 65 pinned device groups, compiles our own accounts produced whose devices
+are known from outside their bytes, on the Harmony One (arch 12) and the Harmony 600, 650 and 700 (arch 14).
+A record counts when it rebuilds, at some count from 0 to 6, as a command of its device's codeset that the
+table composes and whose family states no count. Each record is scored exactly against the table's first
+block, before, and the composer's, now. Per group, a device compiled in several groups counted once per
+group, and per distinct record of each distinct device:
+
+| | per group | per distinct record |
+|---|---|---|
+| records | 2636 | 1948 |
+| right, table's block / composer's | 2551 / 2586 | 1866 / 1900 |
+| right but for the last microsecond | 46 / 46 | 44 / 44 |
+| wrong | 39 / 4 | 38 / 4 |
+
+**What this shows is two devices.** Of the 41 distinct devices, 36 state the table's count, 1871 distinct
+records, where the two rules agree and nothing is tested; 3 have their count refused, 43 records; and 2
+state another count, 34 records, both now right. Those two are the Dell 2300MP's 33 distinct `Memorex 32
+Bit` records (34 per group) at its 3, a Harmony 650 compile, and the Philips 70FA930's one long toggle
+record at its 1, a Harmony One compile. 21 of the 23 families at 3 have no record on a device stating
+another count. **No record the table got right does the composer get wrong.**
+
+**The four still wrong** are the Yamaha DSP-A592's `PanasonicV2 48 Bit` records, written at 1 on a device
+stating 3 whose codeset is mostly `Toshiba 32 Bit`: its count is refused, so the table's 3 stays, which is
+2.2.2's case. **The 46** are the Yamaha DVD-S501's long toggle records at the table's own 3, one microsecond
+short at the end, and composed without the held block 44 of them carry; that is the table's long toggle
+shape and not the count, and is left.
+
+**The closure is the composer's output against Logitech's bytes.** The Dell composed whole onto the Harmony
+650's configuration: 35 of 35 records identical to the compile's in all three blocks, its power step held
+for a time included, where the table's blocks gave 1 of 35, the held step alone. **The control**: the
+table's own block for each of the Dell's codes is the first block of none of Logitech's 35 records. The
+Philips composed whole onto the same configuration and compared on what follows each record's opening
+silence, since a Harmony One compile opens its blocks with none: 44 of its 45 records identical in all
+three blocks against 43 before, the long toggle record now carrying the held block the definition states
+and Logitech wrote. Its remaining record is a power step, not read here, and two more long toggle commands
+are codes stating their frame three times, which the table's block does not take and the composer leaves
+out, as before.
+
+### Section 228 corrected
+
+Section 228 read `MemorexO1 32 Bit` as an address, a command and the command complemented, so that every
+code of the family carries twenty set bits and a literal gap and a padded one can never differ. Of the
+family's 3671 distinct codes in the archive, 22 carry twenty set bits and the rest anything from 2 to 19;
+on 3634 of those the table's gap is not the definition's and the other 15 the definition cannot build. The
+three corpus records the row was measured on do carry twenty, which is all section 228 had. Corrected in
+place there and in `archive.test.ts`, which now names a code of twelve set bits. **What it means for the
+composer**: on a device at the table's 1, those codes still go out with the table's gap, which is the
+row's and is not changed here.
+
+### What it moves
+
+`make composecensus`, the composer over every command of the archive:
+
+| | section 348 | now |
+|---|---|---|
+| commands written, of 2067863 | 1999026 | 1998947 |
+| families refusing a command, of 687 | 513 | 516 |
+| codesets writing nothing, of 54118 | 2115 | 2119 |
+| devices writing every command, of 257720 | 244487 | 244478 |
+
+Of the 1676125 commands the table composes, counted per codeset, 63681 are now built at a device's own
+count for at least one of its devices, and 8724 devices get at least one such command. Section 348's
+"about 8900" was counted by another route, a family's majority table count against the device's, and is
+not reproduced here. 79 commands stop composing for some device: 64 whose table block and definition
+disagree about the frames a press sends, and 15 `MemorexO1 32 Bit` codes the definition cannot build, on
+devices stating 3.
+
+### Scope, decision 16
+
+The two devices that move are a Harmony 650 compile (arch 14) and a Harmony One compile (arch 12), by
+MyHarmony; the population spans the Harmony One, 600, 650 and 700. Not checked on the Harmony 525 (arch 9),
+for which nothing compiles; the Harmony 880 to 895 (arch 8 and 10) are contributed configurations whose
+settings are unknown; the Harmony 300 and 350 (arch 16) not looked at. Nothing was sent to a remote.
+
+### Falsification
+
+A MyHarmony compile, on one of our accounts with the device's count at the catalogue's, of a device whose
+count differs from one of these 26 families' table count, where the family's records repeat the table's
+count rather than the device's and no family on the device states a count. For the duration half: a
+compile holding a `MemorexO1 32 Bit` code of other than twenty set bits with the table's literal gap.
+
+### Where it lands
+
+* `packages/codec/src/composecatalogue.ts`: `TABLE_PRESS_REPEATS`, `sameTrain`, and
+  `catalogueCommandBlocks` building a table family at the device's count; `compose.ts` and `stated.ts`, the
+  caller's blocks winning over the table's.
+* `packages/codec/test/pressrepeats.test.ts`: a named code per family and the microsecond's control, the
+  composer's choice per count and its refusal, the 2636 records before and after, and the Dell and the
+  Philips composed whole, the Dell with its control.
+* `packages/codec/test/archive.test.ts`: section 228's correction.
+* `packages/codec/bin/composecensus.ts`: the table's commands rebuilt and refused, and every table count
+  reread.
+* `docs/config-format.md`, the press count paragraph; `reference/superseded.md`, the twenty set bits.
 
 ## 351. MyHarmony gives a Harmony 600, 650 or 700 owner no control over the activity menu's order, so ours follows the setup description
 

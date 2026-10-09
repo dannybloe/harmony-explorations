@@ -39,7 +39,8 @@ import {
 } from './catalogue.ts';
 import { catalogueDriving, type DeviceDriving } from './driving.ts';
 import { archiveProtocols, waveformOfArchiveCommand, type ArchiveProtocol } from './archive.ts';
-import { statedCode, statedProtocol } from './stated.ts';
+import { blockOfStatedCode, statedCode, statedProtocol } from './stated.ts';
+import { mergedIntervals, type Pulse } from './irframe.ts';
 import { catalogueDevicePower, type CataloguePower } from './devicepower.ts';
 import { commandIndex, composeDeviceInputs, inputPlan, type ComposedInputs } from './inputs.ts';
 import { composableKeycode, deviceModeLayout } from './devicemode.ts';
@@ -424,8 +425,145 @@ export function cataloguePressRepeats(
 }
 
 /**
- * The press's blocks for one command whose family the rhythm table holds no whole block for, at the
- * device's count; `undefined` where the table composes the command itself; a refusal otherwise.
+ * How many times the rhythm table's whole block repeats the code, for each family whose definition states
+ * no count and which the table holds a whole block for, section 350.
+ *
+ * **Why this exists.** Each row was measured off records Logitech compiled, so its block carries the count
+ * those records repeat and gives it to every device: `Memorex 32 Bit` was measured on a Toshiba
+ * television's records, written at 1, and the Dell 2300MP, which states 3 and was written at 3, got 1 on
+ * all 34 of its ordinary records. The count is the device's, section 348, so where the device states
+ * another number the command is built from the definition at the device's count instead,
+ * `catalogueCommandBlocks`.
+ *
+ * **How each number was read**: by rebuilding the table's block of every distinct code of the family in
+ * the archive from Logitech's definition at 0 to 6 repetitions, the count being the one at which the two
+ * agree interval for interval, `sameTrain`. Each number is the count most of the family's codes that
+ * rebuild at any count rebuild at. Of the 37520 distinct codes, 33264 rebuild at their family's number,
+ * 22 at another one, every one of them a code whose own groups already state a frame more than once, and
+ * 4234 at none; on `MemorexO1 32 Bit` and `Samsung 38 Bit` the ones that rebuild are a minority, 22 of
+ * 3671 and 53 of 400, so their number rests on those. `make composecensus` prints the tally per family, and
+ * a test names one code per family that rebuilds at its number and at no other. A family the generator
+ * adds later and this map does not name is refused rather than given a guessed count.
+ */
+export const TABLE_PRESS_REPEATS: ReadonlyMap<string, number> = new Map([
+  ['JVC 16 Bit', 3],
+  ['Magnavox 13 Bit', 3],
+  ['Memorex 32 Bit', 1],
+  ['MemorexO1 32 Bit', 1],
+  ['MemorexV2 32 Bit', 3],
+  ['MemorexV2 32 Bit Dual', 3],
+  ['Microsoft 30 Bit', 3],
+  ['PanasonicV2 48 Bit', 3],
+  ['Philips Hurd 16 Bit LongToggle', 3],
+  ['Philips RC5 13 Bit Toggle', 3],
+  ['Philips RECS80 11 Bit', 3],
+  ['Pioneer 32 Bit', 3],
+  ['Pioneer 32 Bit 2', 3],
+  ['Pioneer 32 Bit Dual', 3],
+  ['PioneerO1 32 Bit', 3],
+  ['PioneerO1 32 Bit Dual', 3],
+  ['RCAV1 LF 24 Bit', 3],
+  ['Samsung 38 Bit', 1],
+  ['Sharp 15 Bit', 3],
+  ['Sharp 15 Bit 2', 3],
+  ['Sharp 48 Bit 2', 3],
+  ['Short 11 Bit 2', 3],
+  ['Sony 15 Bit', 3],
+  ['Sony 20 Bit', 3],
+  ['Thomson 12 Bit Toggle', 3],
+  ['Videocrypt 11 Bit Toggle', 3],
+]);
+
+/** A block's intervals with adjacent ones of a kind joined and the silence it opens with dropped. */
+function trimmedTrain(pulses: readonly Pulse[]): Pulse[] {
+  const merged = mergedIntervals(pulses);
+  while (merged.length > 0 && !merged[0]!.mark) merged.shift();
+  return merged;
+}
+
+/**
+ * Whether two blocks send the same train: adjacent intervals of a kind joined, the silence a block opens
+ * with dropped, and the last interval allowed to differ by the one microsecond a stored block ends in.
+ *
+ * **Why the microsecond is forgiven, and only there.** Logitech's compiler adds it to every block it
+ * stores, section 230, and the definition route adds it too; the table's long toggle shape does not, so
+ * `Philips Hurd 16 Bit LongToggle`'s table block is the definition's at 3 short of exactly that microsecond
+ * on 1675 of its 1700 codes. Compared exactly it would read at no count. Over all 37520 distinct codes of
+ * these families, that family's 1675 are the only ones this forgiveness changes.
+ */
+export function sameTrain(a: readonly Pulse[], b: readonly Pulse[]): boolean {
+  const [x, y] = [trimmedTrain(a), trimmedTrain(b)];
+  return x.length === y.length && x.every((one, at) => one.mark === y[at]!.mark
+    && (one.us === y[at]!.us || (at === x.length - 1 && Math.abs(one.us - y[at]!.us) === 1)));
+}
+
+/**
+ * Where the rhythm table composes a code whose family states no count, the blocks at the device's count:
+ * `undefined` where the table's own block is at it, the definition's blocks at the device's count where
+ * it is not, and a refusal where the two disagree about how many frames a press sends. Section 350.
+ *
+ * * **A family stating a count** is the table's: its row carries that count, sections 228 and 348.
+ * * **A device whose count is not known**, `cataloguePressRepeats`'s two refusals, keeps the table's
+ *   block, which is what it was composed with before this: what the compiler writes on such a device is
+ *   `todo-process-logitech.md` 2.2.2 and 2.2.4, and refusing here would take away records the compiles
+ *   show right, the Sony KE-50MR1E's 35 `Sony 15 Bit` ones at 3 among them.
+ * * **Both blocks come from the definition**, the held one too, so a record is one source's and not two.
+ *   On the Dell 2300MP both are Logitech's own, all 35 records whole, held power step included.
+ * * **A code whose table block sends a different number of intervals from the definition's at the table's
+ *   count is refused** at any other count. That is a disagreement about how many frames a press sends,
+ *   which is the very thing in question: a `Magnavox 13 Bit` code with a start group only, three copies in
+ *   the table and one from the definition, or a four frame `Microsoft 30 Bit` code. 252 of the 37520
+ *   distinct codes are of this kind, the 22 that rebuild at another count among them, and no compile shows
+ *   which a press sends at another count.
+ * * **3989 of the other codes the definition does not rebuild differ only in a duration**, and those are
+ *   built from the definition; 15 more it cannot build at all and they are refused. 3634 are
+ *   `MemorexO1 32 Bit`'s, where the definition pads every copy to a
+ *   constant 107600 microseconds and the row states a literal gap measured on three records that all carry
+ *   twenty set bits, which only 22 of the family's codes in the archive do, section 228 corrected; that the
+ *   definition's gap is what Logitech's compiler writes for the others is a reading of their definition
+ *   and no compile here shows it. 347 are `Samsung 38 Bit`'s, a closing silence and on 133 a space
+ *   between its two sections, not settled either way, and 8 `MemorexV2 32 Bit Dual`'s, a gap after a frame.
+ */
+function tableBlocksAtDeviceCount(
+  keycode: string, family: string, press: PressRepeats, protocols: ReadonlyMap<string, ArchiveProtocol>,
+): StatedBlocks | { readonly refusal: string } | undefined {
+  const protocol = protocols.get(family);
+  if (protocol === undefined || protocol.pressMinimumRepeats !== null) return undefined;
+  if ('refusal' in press) return undefined;
+  const tabled = TABLE_PRESS_REPEATS.get(family);
+  if (tabled === undefined) {
+    return { refusal: `the rhythm table's count for ${family} has not been read, so its block's count is not known` };
+  }
+  if (tabled === press.repeats) return undefined;
+  const table = blockOfStatedCode(keycode, undefined, 'once');
+  const atTable = waveformOfArchiveCommand(protocol, keycode, { repeats: tabled, asStored: true });
+  if (table !== undefined && !('refusal' in atTable)
+    && trimmedTrain(table).length !== trimmedTrain(atTable.once).length) {
+    return {
+      refusal: `the rhythm table's block for this code and the definition at the table's ${tabled} send `
+        + 'different numbers of frames, so how many a press sends at the device\'s count is not known',
+    };
+  }
+  return blocksAtDeviceCount(protocol, keycode, press.repeats);
+}
+
+/** A command's blocks from its family's definition at the device's count, or why there are none. */
+function blocksAtDeviceCount(
+  protocol: ArchiveProtocol, keycode: string, repeats: number,
+): StatedBlocks | { readonly refusal: string } {
+  const built = waveformOfArchiveCommand(protocol, keycode, { repeats, asStored: true });
+  if ('refusal' in built) return { refusal: built.refusal };
+  if (built.release !== undefined) {
+    return { refusal: 'the code names a release group, which no Logitech compile here shows stored' };
+  }
+  if (built.once.length === 0) return { refusal: 'the code sends nothing on a press' };
+  return { once: built.once, ...(built.held.length === 0 ? {} : { held: built.held }) };
+}
+
+/**
+ * The press's blocks for one command at the device's count: for a family the rhythm table holds no whole
+ * block for, section 348, and for one it holds a block for at another device's count, section 350.
+ * `undefined` where the table's block is the one to send; a refusal where neither is known.
  *
  * Read through `waveformOfArchiveCommand`, the one composition of a definition's readings, so the frames
  * are the ones `make prontocheck` holds against two million of Logitech's renderings, sent as the code
@@ -436,7 +574,10 @@ export function cataloguePressRepeats(
 export function catalogueCommandBlocks(
   keycode: string, press: PressRepeats, protocols: ReadonlyMap<string, ArchiveProtocol>,
 ): StatedBlocks | { readonly refusal: string } | undefined {
-  if (composableKeycode(keycode)) return undefined;
+  if (composableKeycode(keycode)) {
+    const family = /^G:([^:]+):/.exec(keycode)?.[1];
+    return family === undefined ? undefined : tableBlocksAtDeviceCount(keycode, family, press, protocols);
+  }
   const read = statedCode(keycode);
   if (read === undefined) return { refusal: 'our keycode reader declines the code' };
   const entry = statedProtocol(read.family);
@@ -448,13 +589,7 @@ export function catalogueCommandBlocks(
   if ('refusal' in press) return press;
   const protocol = protocols.get(read.family);
   if (protocol === undefined) return { refusal: `the archive holds no definition of ${read.family}` };
-  const built = waveformOfArchiveCommand(protocol, keycode, { repeats: press.repeats, asStored: true });
-  if ('refusal' in built) return { refusal: built.refusal };
-  if (built.release !== undefined) {
-    return { refusal: 'the code names a release group, which no Logitech compile here shows stored' };
-  }
-  if (built.once.length === 0) return { refusal: 'the code sends nothing on a press' };
-  return { once: built.once, ...(built.held.length === 0 ? {} : { held: built.held }) };
+  return blocksAtDeviceCount(protocol, keycode, press.repeats);
 }
 
 /** A delay variable's name: its property, the device's identifier, and its number of values. */

@@ -11,6 +11,15 @@
  * command counts as written when it composes for **every** device serving its codeset, and the ones that
  * compose for some only are counted apart. A codeset no device serves is judged by the table alone.
  *
+ * **And since section 350 that holds for the table's own blocks too.** A table block of a family stating
+ * no count carries the count its measured records repeat, `TABLE_PRESS_REPEATS`, so on a device stating
+ * another count the command is built from the definition at the device's count, or refused where the
+ * definition cannot build it or disagrees with the table about the frames a press sends. Those commands are
+ * counted twice below: how many the table composes and are now built at a device's own count instead, and
+ * how many it composes and are now refused for some device. The census also rereads every table count, by
+ * rebuilding each code's table block from the definition at 0 to 6 repetitions, and says so loudly where a
+ * family's majority is not the number `TABLE_PRESS_REPEATS` holds.
+ *
  * It prints the composer's verdict before section 348, the table alone, beside the verdict now, so the
  * one number this step moves is visible next to the ones it does not.
  *
@@ -21,8 +30,8 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { IR_ARCHIVE } from '@harmony/lab';
 import {
-  archiveProtocolsByName, catalogueCommandBlocks, cataloguePressRepeats, composableKeycode, statedCode,
-  statedProtocol, type PressRepeats,
+  archiveProtocolsByName, blockOfStatedCode, catalogueCommandBlocks, cataloguePressRepeats, composableKeycode,
+  sameTrain, statedCode, statedProtocol, TABLE_PRESS_REPEATS, waveformOfArchiveCommand, type PressRepeats,
 } from '../src/index.ts';
 
 const root = IR_ARCHIVE;
@@ -70,19 +79,50 @@ let sets = 0;
 let setsNoneBefore = 0;
 let setsNoneAfter = 0;
 let devicesWholeBefore = 0;
+/** Devices given at least one of the table's commands at their own count rather than the table's. */
+let devicesRebuilt = 0;
 let devicesWholeAfter = 0;
 const perFamily = new Map<string, { commands: number; before: number; after: number }>();
-/** A command's verdict at one device count, memoised: a code recurs across thousands of codesets. */
-const verdictOf = new Map<string, { refusal: string } | true>();
-function derive(keycode: string, press: PressRepeats): { refusal: string } | true {
+/**
+ * A command's verdict at one device count, memoised, since a code recurs across thousands of codesets:
+ * the table's block, a block derived at the device's count, or why it is refused.
+ */
+type Verdict = 'table' | 'derived' | { refusal: string };
+const verdictOf = new Map<string, Verdict>();
+function derive(keycode: string, press: PressRepeats): Verdict {
   const key = `${keycode}|${'refusal' in press ? press.refusal : press.repeats}`;
   let found = verdictOf.get(key);
   if (found === undefined) {
     const built = catalogueCommandBlocks(keycode, press, protocols);
-    found = built === undefined || !('refusal' in built) ? true : { refusal: built.refusal };
+    found = built === undefined ? 'table' : 'refusal' in built ? { refusal: built.refusal } : 'derived';
     verdictOf.set(key, found);
   }
   return found;
+}
+const refused = (one: Verdict): one is { refusal: string } => typeof one !== 'string';
+
+/** The table's commands built at a device's own count instead, and refused for some device, section 350. */
+let tableRebuilt = 0;
+let tableRefused = 0;
+/** Per family stating no count, how many distinct codes' table blocks rebuild at each count, or at none. */
+const tableCounts = new Map<string, Map<string, number>>();
+const readTableCount = new Set<string>();
+function readTable(keycode: string, family: string): void {
+  if (readTableCount.has(keycode)) return;
+  readTableCount.add(keycode);
+  const protocol = protocols.get(family);
+  if (protocol === undefined || protocol.pressMinimumRepeats !== null) return;
+  const table = blockOfStatedCode(keycode, undefined, 'once');
+  if (table === undefined) return;
+  const at: number[] = [];
+  for (let n = 0; n <= 6; n += 1) {
+    const built = waveformOfArchiveCommand(protocol, keycode, { repeats: n, asStored: true });
+    if (!('refusal' in built) && built.once.length > 0 && sameTrain(built.once, table)) at.push(n);
+  }
+  const key = at.length === 0 ? 'none' : at.join(' or ');
+  const mine = tableCounts.get(family) ?? new Map<string, number>();
+  mine.set(key, (mine.get(key) ?? 0) + 1);
+  tableCounts.set(family, mine);
 }
 
 /** Why a command still does not compose, its first refusing device's reason, by command. */
@@ -107,6 +147,7 @@ for (const bucket of readdirSync(join(root, 'codesets'))) {
     let anyAfter = false;
     const refusedAt = new Set<number>();
     let refusedByTable = false;
+    const derivedAt = new Set<number>();
     for (const keycode of keycodes) {
       const family = familyOf(keycode);
       if (family === undefined) continue;
@@ -115,8 +156,21 @@ for (const bucket of readdirSync(join(root, 'codesets'))) {
       perFamily.set(family, tally);
       tally.commands += 1;
       if (byTable(keycode)) {
-        before += 1; after += 1; tally.before += 1; tally.after += 1;
-        anyBefore = true; anyAfter = true;
+        before += 1; tally.before += 1; anyBefore = true;
+        readTable(keycode, family);
+        // The table's block is one device's count, section 350: judged per device like the rest.
+        const verdicts = presses.map((press) => derive(keycode, press));
+        if (verdicts.includes('derived')) tableRebuilt += 1;
+        verdicts.forEach((one, k) => { if (one === 'derived') derivedAt.add(distinct[k] ?? -1); });
+        if (verdicts.some(refused)) {
+          tableRefused += 1;
+          verdicts.forEach((one, k) => { if (refused(one)) refusedAt.add(distinct[k] ?? -1); });
+          if (verdicts.some((one) => !refused(one))) someDevices += 1;
+          const reason = verdicts.find(refused)!.refusal.replace(/table's \d+ send/, "table's count send");
+          reasons.set(reason, (reasons.get(reason) ?? 0) + 1);
+          continue;
+        }
+        after += 1; tally.after += 1; anyAfter = true;
         continue;
       }
       refusedByTable = true;
@@ -133,11 +187,11 @@ for (const bucket of readdirSync(join(root, 'codesets'))) {
       const kinds = refusedBefore.get(family) ?? new Set<string>();
       kinds.add(kind);
       refusedBefore.set(family, kinds);
-      const ok = verdicts.map((one) => one === true);
+      const ok = verdicts.map((one) => !refused(one));
       ok.forEach((good, k) => { if (!good) refusedAt.add(distinct[k] ?? -1); });
       if (ok.every(Boolean)) { after += 1; tally.after += 1; anyAfter = true; continue; }
       if (ok.some(Boolean)) someDevices += 1;
-      const why = verdicts.find((one) => one !== true) as { refusal: string };
+      const why = verdicts.find(refused)!;
       const reason = why.refusal.replace(/ \d+ and its .* commands' family states \d+/, ' N and a family on its codeset states another')
         .replace(/no rhythm for .*/, 'no rhythm for the family').replace(/^.*'s block does not take this code$/, "the family's table block does not take this code")
         .replace(/the archive holds no definition of .*/, 'the archive holds no definition of the family');
@@ -151,6 +205,7 @@ for (const bucket of readdirSync(join(root, 'codesets'))) {
     // A device composes whole when every command does for it: by the table, or derived at its count.
     for (const n of counts) {
       if (!refusedByTable) devicesWholeBefore += 1;
+      if (derivedAt.has(n)) devicesRebuilt += 1;
       if (!refusedAt.has(n)) devicesWholeAfter += 1;
     }
   }
@@ -168,6 +223,17 @@ console.log(`families writing nothing           ${String(nothing('before').lengt
 console.log(`codesets writing nothing           ${String(setsNoneBefore).padStart(11)}   ${setsNoneAfter}`);
 console.log(`devices writing every command      ${String(devicesWholeBefore).padStart(11)}   ${devicesWholeAfter}`);
 console.log(`\n${someDevices} commands write for some of their codeset's devices and not all, counted as refused`);
+console.log(`\nthe table's blocks at another device's count, section 350: of the ${before} commands the table composes, `
+  + `${tableRebuilt} are built at a device's own count instead and ${tableRefused} refused for some device; `
+  + `${devicesRebuilt} devices get at least one command at their own count rather than the table's`);
+console.log('the count each table block of a family stating none rebuilds at, by distinct code:');
+for (const [family, counts] of [...tableCounts].sort((a, b) => a[0].localeCompare(b[0]))) {
+  const majority = [...counts].filter(([key]) => key !== 'none').sort((a, b) => b[1] - a[1])[0]?.[0];
+  const held = TABLE_PRESS_REPEATS.get(family);
+  const flag = held === undefined ? '  ** not in TABLE_PRESS_REPEATS **'
+    : String(held) !== majority ? `  ** TABLE_PRESS_REPEATS holds ${held} **` : '';
+  console.log(`  ${family}: ${[...counts].sort().map(([key, n]) => `${n} at ${key}`).join(', ')}${flag}`);
+}
 console.log('\nwhy a command is still refused, by its first refusing device:');
 for (const [why, n] of [...reasons].sort((a, b) => b[1] - a[1])) console.log(`  ${String(n).padStart(7)}  ${why}`);
 // The families the table refused only for want of a whole block, todo-process-logitech 2.2's share.

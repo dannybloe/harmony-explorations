@@ -15,6 +15,11 @@
  * Every count is read off the record by **rebuilding** it: a record's first block is taken to repeat `n`
  * times when Logitech's definition of the command, built at `n`, is that block, interval for interval.
  *
+ * **And since section 350, the rhythm table's own blocks.** Each of the table's 26 families stating no
+ * count carries the one count it was measured at, read here off a named code each; where a device states
+ * another, the composer builds the command at the device's count, scored on the same pins before and after,
+ * and the Dell 2300MP composes whole as Logitech compiled it.
+ *
  * **What is not claimed.** Other people's configurations and the everyday Harmony One's disagree with the device's number in both directions, and their accounts' settings, which
  * MyHarmony lets an owner change per device, are not known; section 348 names them. Nothing here was
  * checked on a remote.
@@ -27,11 +32,13 @@ import { join } from 'node:path';
 import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
 import {
   archiveProtocolsByName,
+  blockOfStatedCode,
   catalogueCommandBlocks,
   catalogueCommands,
   catalogueDevice,
   catalogueDriving,
   cataloguePressRepeats,
+  composableKeycode,
   composeCatalogueDevices,
   type Container,
   devices,
@@ -42,7 +49,10 @@ import {
   mergedIntervals,
   parse,
   payloadOf,
+  PROTOCOLS,
   type Pulse,
+  sameTrain,
+  TABLE_PRESS_REPEATS,
   waveformOfArchiveCommand,
 } from '../src/index.ts';
 
@@ -461,4 +471,234 @@ test('what is still unknown is refused: a count of 0, a device whose codeset hol
     // shows stored.
     assert.deepEqual(catalogueCommandBlocks('G:Finlux 16 Bit:(Start)(0x7FFB)(Finish):3', { repeats: 3 }, protocols),
       { refusal: 'the code names a release group, which no Logitech compile here shows stored' });
+  });
+
+// ---------------------------------------------------------------------------------------------------
+// The rhythm table's own blocks, each measured on one device, at the device's count: section 350
+
+/**
+ * One code per family `TABLE_PRESS_REPEATS` names, from the archive's codesets, whose table block
+ * Logitech's definition rebuilds at the family's number and at no other count from 0 to 6. The census,
+ * `make composecensus`, rereads every code of every family; these are what a test can name.
+ */
+const TABLE_SAMPLES: Readonly<Record<string, string>> = {
+  'JVC 16 Bit': 'G:JVC 16 Bit:(Start)(0xCD06)():3',
+  'Magnavox 13 Bit': 'G:Magnavox 13 Bit:()(0x057F)():3',
+  'Memorex 32 Bit': 'G:Memorex 32 Bit:()(0x53AA9A65)():3',
+  'MemorexO1 32 Bit': 'G:MemorexO1 32 Bit:()(0xEFF2B04F)():3',
+  'MemorexV2 32 Bit': 'G:MemorexV2 32 Bit:()(0x76899867)():3',
+  'MemorexV2 32 Bit Dual': 'G:MemorexV2 32 Bit Dual:()(0x120A6897_1x120A6897)():3',
+  'Microsoft 30 Bit': 'G:Microsoft 30 Bit:()(0x3FD942CD)():3',
+  'PanasonicV2 48 Bit': 'G:PanasonicV2 48 Bit:()(0x40040D009895)():3',
+  'Philips Hurd 16 Bit LongToggle': 'G:Philips Hurd 16 Bit LongToggle:()(0x7_1x0_2xFF26)():3',
+  'Philips RC5 13 Bit Toggle': 'G:Philips RC5 13 Bit Toggle:()(0x10C6)():3',
+  'Philips RECS80 11 Bit': 'G:Philips RECS80 11 Bit:()(0x54E)():3',
+  'Pioneer 32 Bit': 'G:Pioneer 32 Bit:()(0x55AAE916)():3',
+  'Pioneer 32 Bit 2': 'G:Pioneer 32 Bit 2:(0x659A45BA)(0xF50AB649)():3',
+  'Pioneer 32 Bit Dual': 'G:Pioneer 32 Bit Dual:()(0x55AACB34_0xF50A3CC3)():3',
+  'PioneerO1 32 Bit': 'G:PioneerO1 32 Bit:()(0x55AA00FF)():3',
+  'PioneerO1 32 Bit Dual': 'G:PioneerO1 32 Bit Dual:()(0x25DAC837_0x25DAC837)():3',
+  'RCAV1 LF 24 Bit': 'G:RCAV1 LF 24 Bit:()(0x0CFF30)():3',
+  'Samsung 38 Bit': 'G:Samsung 38 Bit:()(0x00801_1x1DA05F)():3',
+  'Sharp 15 Bit': 'G:Sharp 15 Bit:()(0x120C_0x11F3)():3',
+  'Sharp 15 Bit 2': 'G:Sharp 15 Bit 2:()(0x6142_0x62BD)():3',
+  'Sharp 48 Bit 2': 'G:Sharp 48 Bit 2:()(0x2A4C028974FF)():3',
+  'Short 11 Bit 2': 'G:Short 11 Bit 2:()(0x031)():3',
+  'Sony 15 Bit': 'G:Sony 15 Bit:()(0x5CE9)():3',
+  'Sony 20 Bit': 'G:Sony 20 Bit:()(0x2CB9C)():3',
+  'Thomson 12 Bit Toggle': 'G:Thomson 12 Bit Toggle:()(0xA0E)():3',
+  'Videocrypt 11 Bit Toggle': 'G:Videocrypt 11 Bit Toggle:()(0x1CE)():3',
+};
+
+/** The counts 0 to 6 at which a code's definition rebuilds its table block, by the given comparison. */
+function tableReads(keycode: string, same: (a: readonly Pulse[], b: readonly Pulse[]) => boolean): number[] {
+  const protocols = archiveProtocolsByName(IR_ARCHIVE!);
+  const family = /^G:([^:]+):/.exec(keycode)![1]!;
+  const table = blockOfStatedCode(keycode, undefined, 'once')!;
+  const reads: number[] = [];
+  for (let n = 0; n <= 6; n += 1) {
+    const built = waveformOfArchiveCommand(protocols.get(family)!, keycode, { repeats: n, asStored: true });
+    if (!('refusal' in built) && built.once.length > 0 && same(built.once, table)) reads.push(n);
+  }
+  return reads;
+}
+
+test('a named code of each rhythm table family stating no count rebuilds at that family\'s count and no other, and the map names every such family',
+  needing(skipWithoutIrArchive()), () => {
+    const protocols = archiveProtocolsByName(IR_ARCHIVE!);
+    // Every row carrying a whole block whose family's definition states no count is in the map, and
+    // nothing else is: a row the generator adds would otherwise compose at a guessed count.
+    const owed = [...new Set(PROTOCOLS.filter((row) => (row.tail ?? row.quad ?? row.longToggle ?? row.sections) !== undefined
+      && protocols.get(row.family)?.pressMinimumRepeats === null).map((row) => row.family))].sort();
+    assert.deepEqual([...TABLE_PRESS_REPEATS.keys()].sort(), owed);
+    assert.equal(owed.length, 26);
+    assert.deepEqual(Object.keys(TABLE_SAMPLES).sort(), owed);
+    const read: string[] = [];
+    for (const [family, keycode] of Object.entries(TABLE_SAMPLES)) {
+      assert.ok(composableKeycode(keycode), `${family}: the table composes the named code`);
+      read.push(`${family} ${tableReads(keycode, sameTrain).join('/')}`);
+    }
+    assert.deepEqual(read.sort(), [...TABLE_PRESS_REPEATS].map(([family, n]) => `${family} ${n}`).sort());
+    // Three families at 1: the two Memorex families and Samsung's sectioned one. The rest at 3.
+    assert.deepEqual([...TABLE_PRESS_REPEATS].filter(([, n]) => n !== 3).map(([family]) => family),
+      ['Memorex 32 Bit', 'MemorexO1 32 Bit', 'Samsung 38 Bit']);
+    // **The control for the one microsecond `sameTrain` forgives.** Compared exactly, the long toggle
+    // family's table block rebuilds at no count, because its emitter leaves off the microsecond every
+    // stored block ends in; every other named code reads the same either way.
+    const exact = (a: readonly Pulse[], b: readonly Pulse[]) => train(a) === train(b);
+    assert.deepEqual(tableReads(TABLE_SAMPLES['Philips Hurd 16 Bit LongToggle']!, exact), []);
+    assert.deepEqual(Object.entries(TABLE_SAMPLES).filter(([, keycode]) =>
+      tableReads(keycode, exact).join() !== tableReads(keycode, sameTrain).join()).map(([family]) => family),
+    ['Philips Hurd 16 Bit LongToggle']);
+  });
+
+test('a code the table composes is built at the device\'s count where that is not the table\'s, keeps the table\'s block where it is or where the count is not known, and is refused where the two disagree about the frames a press sends',
+  needing(skipWithoutIrArchive()), () => {
+    const protocols = archiveProtocolsByName(IR_ARCHIVE!);
+    const memorex = TABLE_SAMPLES['Memorex 32 Bit']!;
+    // At the table's own 1, and on a device whose count is refused, the table's block is sent.
+    assert.equal(catalogueCommandBlocks(memorex, { repeats: 1 }, protocols), undefined);
+    assert.equal(catalogueCommandBlocks(memorex, { refusal: 'why' }, protocols), undefined);
+    // At 3, the definition's blocks at 3, which is not the table's block.
+    const at3 = catalogueCommandBlocks(memorex, { repeats: 3 }, protocols);
+    assert.ok(at3 !== undefined && !('refusal' in at3));
+    if (at3 === undefined || 'refusal' in at3) return;
+    assert.ok(!sameTrain(at3.once, blockOfStatedCode(memorex, undefined, 'once')!));
+    assert.deepEqual(tableReads(memorex, sameTrain), [1]);
+    const built = waveformOfArchiveCommand(protocols.get('Memorex 32 Bit')!, memorex, { repeats: 3, asStored: true });
+    assert.ok(!('refusal' in built));
+    if ('refusal' in built) return;
+    assert.equal(train(at3.once), train(built.once));
+    // A family that states its own count is the table's at every count.
+    const toshiba = 'G:Toshiba 32 Bit:()(0x02FD48B7)():3';
+    assert.ok(composableKeycode(toshiba));
+    assert.equal(protocols.get('Toshiba 32 Bit')!.pressMinimumRepeats, 1);
+    assert.equal(catalogueCommandBlocks(toshiba, { repeats: 3 }, protocols), undefined);
+    // A code whose table block sends another number of frames than the definition at the table's count:
+    // this one states its start frame three times, so the table's three copies are the definition at 0.
+    // At the table's 3 the table's block is sent; at any other count it is refused.
+    const sony = 'G:Sony 15 Bit:(0x420A_0x420A_0x420A)(0x4B0B)():3';
+    assert.ok(composableKeycode(sony));
+    assert.deepEqual(tableReads(sony, sameTrain), [0]);
+    assert.equal(catalogueCommandBlocks(sony, { repeats: 3 }, protocols), undefined);
+    assert.deepEqual(catalogueCommandBlocks(sony, { repeats: 1 }, protocols), {
+      refusal: 'the rhythm table\'s block for this code and the definition at the table\'s 3 send different '
+        + 'numbers of frames, so how many a press sends at the device\'s count is not known',
+    });
+  });
+
+/**
+ * Over the pins of the first test, every record that rebuilds as a command of a family stating no count
+ * which the table composes, scored exactly: right, wrong only by the one microsecond a stored block ends
+ * in, or wrong. Before is the table's block, which is what the composer sent until section 350; after is
+ * the composer's block now. A device compiled in several groups is counted once per group.
+ */
+test('the table\'s families stating no count, built at the device\'s count, are right on 2586 of 2636 pinned records where the table was on 2551',
+  needing(skipWithoutIrArchive(), skipUnless(...FIXTURES)), () => {
+    const protocols = archiveProtocolsByName(IR_ARCHIVE!);
+    const familyOf = (keycode: string) => /^G:([^:]+):/.exec(keycode)?.[1];
+    const lastMicrosecond = (a: string, b: string) => {
+      const [x, y] = [a.split(','), b.split(',')];
+      return x.length === y.length && x.slice(0, -1).join() === y.slice(0, -1).join()
+        && Math.abs(Number(x.at(-1)!.slice(1)) - Number(y.at(-1)!.slice(1))) === 1;
+    };
+    const tally = { records: 0, before: new Map<string, number>(), after: new Map<string, number>() };
+    const off: string[] = [];
+    for (const pin of PINS) {
+      const c = open(pin.fixture);
+      const commands = catalogueCommands(IR_ARCHIVE!, catalogueDevice(IR_ARCHIVE!, pin.manufacturer, pin.file).codeset!);
+      const press = cataloguePressRepeats(catalogueDriving(IR_ARCHIVE!, pin.manufacturer, pin.file),
+        commands.map((one) => one.keycode), protocols);
+      // Which of the table's commands of a family stating no count each record is, by rebuilding at 0 to 6.
+      const who = new Map<string, Set<string>>();
+      for (const { keycode } of commands) {
+        const protocol = protocols.get(familyOf(keycode) ?? '');
+        if (protocol === undefined || protocol.pressMinimumRepeats !== null || !composableKeycode(keycode)) continue;
+        for (let n = 0; n <= 6; n += 1) {
+          const built = waveformOfArchiveCommand(protocol, keycode, { repeats: n, asStored: true });
+          if ('refusal' in built || built.once.length === 0) continue;
+          who.set(train(built.once), (who.get(train(built.once)) ?? new Set()).add(keycode));
+        }
+      }
+      for (const address of irGroups(c)![pin.group]!.addresses) {
+        const [once] = irHeaderPointers(c, address);
+        const theirs = train(pulsesOfWords(irBlockWords(c, once!)!.filter((word) => word !== 0)));
+        const keycodes = who.get(theirs);
+        if (keycodes === undefined) continue;
+        tally.records += 1;
+        const score = (block: (keycode: string) => string | undefined): string => {
+          const mine = [...keycodes].map(block);
+          if (mine.includes(theirs)) return 'right';
+          if (mine.every((one) => one === undefined)) return 'refused';
+          return mine.some((one) => one !== undefined && lastMicrosecond(one, theirs)) ? 'last microsecond' : 'wrong';
+        };
+        const before = score((keycode) => train(blockOfStatedCode(keycode, undefined, 'once')!));
+        const after = score((keycode) => {
+          const blocks = catalogueCommandBlocks(keycode, press, protocols);
+          if (blocks === undefined) return train(blockOfStatedCode(keycode, undefined, 'once')!);
+          return 'refusal' in blocks ? undefined : train(blocks.once);
+        });
+        tally.before.set(before, (tally.before.get(before) ?? 0) + 1);
+        tally.after.set(after, (tally.after.get(after) ?? 0) + 1);
+        if (before !== 'right' || after !== 'right') off.push(`${pin.file} ${familyOf([...keycodes][0]!)}: ${before}, now ${after}`);
+      }
+    }
+    assert.equal(tally.records, 2636);
+    assert.deepEqual(Object.fromEntries(tally.before), { right: 2551, 'last microsecond': 46, wrong: 39 });
+    assert.deepEqual(Object.fromEntries(tally.after), { right: 2586, 'last microsecond': 46, wrong: 4 });
+    // Before: the Dell's 34 at the table's 1 where it was written at its own 3, the Philips 70FA930's long
+    // toggle record at the table's 3 where it was written at its own 1, and the Yamaha DSP-A592's 4 at the
+    // table's 3 where it was written at 1. After: only the Yamaha, whose count `cataloguePressRepeats`
+    // refuses, so the table's block stays, todo-process-logitech 2.2.2. The 46 are the Yamaha DVD-S501's
+    // long toggle records at the table's own 3, one microsecond short at the end, a fault of the table's
+    // emitter and not of the count, so section 350 leaves it.
+    const counted = new Map<string, number>();
+    for (const one of off) counted.set(one, (counted.get(one) ?? 0) + 1);
+    assert.deepEqual([...counted].map(([one, n]) => `${one} x${n}`).sort(), [
+      '2300MP Memorex 32 Bit: wrong, now right x34',
+      '70FA930_00S Philips Hurd 16 Bit LongToggle: wrong, now right x1',
+      'DSP-A592 PanasonicV2 48 Bit: wrong, now wrong x4',
+      'DVD-S501 Philips Hurd 16 Bit LongToggle: last microsecond, now last microsecond x46',
+    ]);
+  });
+
+test('the Dell 2300MP, whose family\'s table block holds a count it does not state, composed whole at its own count presses as Logitech compiled it, and the Philips 70FA930 gains its long toggle record',
+  needing(skipWithoutIrArchive(), skipUnless('h650_panasonic_config', 'h650_power_hold_compile_2')), () => {
+    const composed = composeCatalogueDevices(open('h650_panasonic_config'), IR_ARCHIVE!, [{ manufacturer: 'Dell',
+      model: '2300MP', label: 'Test', full: true, inputs: true }], { maxDevices: 99 });
+    assert.deepEqual(composed.devices[0]!.leftOut, []);
+    const c = parse(composed.bytes);
+    const mine = recordBlocks(c, devices(c).find((d) => d.name === 'Test')!.group!).map((blocks) => blocks.join('|'));
+    const theirList = recordBlocks(open('h650_power_hold_compile_2'), 0).map((blocks) => blocks.join('|'));
+    const theirs = new Set(theirList);
+    // Every record, once, held and tail block, is one of Logitech's for the device, its power step held
+    // for a time included, and the two groups are the same size. Two of Logitech's records are alike,
+    // two commands of one code, so they hold 34 distinct records and so does ours.
+    assert.equal(mine.length, 35);
+    assert.equal(theirList.length, 35);
+    assert.equal(theirs.size, 34);
+    assert.equal(new Set(mine).size, 34);
+    assert.equal(mine.filter((one) => theirs.has(one)).length, 35);
+    // **The control**: the table's own block for each of its codes, at the 1 it was measured at, is the
+    // first block of none of Logitech's 35 records.
+    const firsts = new Set(recordBlocks(open('h650_power_hold_compile_2'), 0).map((blocks) =>
+      train(pulsesOfWords(blocks[0]!.split(',').map(Number)))));
+    const codes = catalogueCommands(IR_ARCHIVE!, catalogueDevice(IR_ARCHIVE!, 'Dell', '2300MP').codeset!);
+    assert.equal(codes.filter(({ keycode }) => firsts.has(train(blockOfStatedCode(keycode, undefined, 'once')!))).length, 0);
+
+    // **The Philips 70FA930**, a Harmony One compile of the harvest, states 1 and its one long toggle
+    // record the table composes was written at 1, against the table's 3. Composed whole onto the same
+    // configuration and compared on what follows each record's opening silence, since a Harmony One
+    // compile opens its blocks with none: 44 of its 45 records are Logitech's in all three blocks, the long
+    // toggle one now among them with the held block the definition states. The other is a power step,
+    // not read here; two more long toggle codes state their frame three times, which the table's block does
+    // not take, and are left out as before.
+    const philips = composeCatalogueDevices(open('h650_panasonic_config'), IR_ARCHIVE!, [{ manufacturer: 'Philips',
+      model: '70FA930_00S', label: 'Test', full: true }], { maxDevices: 99 });
+    assert.deepEqual(philips.devices[0]!.leftOut, ['InputDvd', 'InputSat']);
+    const p = parse(philips.bytes);
+    const ours = recordBlocks(p, devices(p).find((d) => d.name === 'Test')!.group!).map(withoutLead);
+    const logitech = new Set(recordBlocks(open(HARVEST('families-one', 2)), 0).map(withoutLead));
+    assert.equal(ours.length, 45);
+    assert.equal(ours.filter((one) => logitech.has(one)).length, 44);
   });

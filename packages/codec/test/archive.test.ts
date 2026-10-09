@@ -418,10 +418,15 @@ test('a padded gap can look like a literal one, and MemorexO1 32 Bit is where th
   // therefore on the code's bits. Our row states a **literal** gap of 35101, measured because all three
   // of the corpus's records of this family carry the same gap.
   //
-  // Both are right. This is a 32 bit scheme whose code is an address plus a command plus that command
-  // complemented, so **every** code of the family has exactly the same number of set bits, twenty, and
-  // therefore exactly the same frame duration. A padded gap is then indistinguishable from a literal
-  // one, and three records could never have told them apart.
+  // Both are right **on the three records**, which carry twenty set bits each and so the same frame
+  // duration. A padded gap is then indistinguishable from a literal one, and three records could never
+  // have told them apart.
+  //
+  // **Corrected by section 350**: this said every code of the family carries twenty set bits, an address
+  // plus a command plus that command complemented. The archive's codes of the family do not: of its 3671
+  // distinct codes 22 carry twenty, and the rest anything from 2 to 19, so on those the row's literal gap
+  // is not the definition's padded one at any count. Which one Logitech's compiler writes for them no
+  // compile here shows. The named code below carries twelve.
   //
   // 35100 is 107600 less the frame at twenty set bits, and the stored 35101 is that plus the one
   // microsecond their compiler adds to a block's last duration. So the two statements agree exactly.
@@ -443,6 +448,16 @@ test('a padded gap can look like a literal one, and MemorexO1 32 Bit is where th
   const nineteen = [{ bits: 32, value: (1n << 19n) - 1n }];
   assert.notEqual(wireOf(pulsesOfBlock(shape, nineteen, built.tail)),
                   wireOf(pulsesOfBlock(shape, nineteen, row.tail!)));
+  // **And the archive holds such codes**, section 350's correction: one of the family's catalogue codes,
+  // twelve set bits, whose table block is not the definition's. The two agree once the gap is the padded
+  // one, which is the only difference.
+  const archived = 'G:MemorexO1 32 Bit:()(0x4B78A0C0)():3';
+  assert.equal((0x4B78A0C0).toString(2).split('').filter((c) => c === '1').length, 12);
+  const value = [{ bits: 32, value: 0x4B78A0C0n }];
+  assert.equal(wireOf(blockOfStatedCode(archived)!), wireOf(pulsesOfBlock(shape, value, row.tail!)));
+  assert.notEqual(wireOf(pulsesOfBlock(shape, value, built.tail)), wireOf(pulsesOfBlock(shape, value, row.tail!)));
+  const frameOnly = (pulses: readonly Pulse[]) => wireOf(pulses).split(',').slice(0, -1).join(',');
+  assert.equal(frameOnly(pulsesOfBlock(shape, value, built.tail)), frameOnly(pulsesOfBlock(shape, value, row.tail!)));
 });
 
 test('the repeat count is stated for five of the blocks we measured, and right on all five',

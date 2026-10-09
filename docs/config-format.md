@@ -3343,10 +3343,23 @@ states a count is written at it, 1021 records. **Unconfirmed** where the
 device's codeset holds a family stating a different count: two devices were written at their main
 family's stated 1 against their own 3, one record at the device's 3 against its family's stated 1, and the
 composer refuses such a device. Also refused as unknown: a device count of 0, and a code naming a release
-group. A count of 2 is built as the rule says and is unconfirmed: no compile shows one. The rhythm table's
-whole blocks for 26 families stating no count were each measured on one device and fix its count for
-every device, wrong for the Dell 2300MP's `Memorex 32 Bit`; the composer still prefers the table there,
-and that is open.
+group. A count of 2 is built as the rule says and is unconfirmed: no compile shows one.
+
+**The rhythm table's whole blocks for the 26 families stating no count carry the count their measured
+records repeat**, section 350: 1 for `Memorex 32 Bit`, `MemorexO1 32 Bit` and `Samsung 38 Bit`, 3 for the
+other 23, `TABLE_PRESS_REPEATS` in `packages/codec/src/composecatalogue.ts`, the count most of a family's
+codes rebuild at when its table blocks are rebuilt from the definition (for `MemorexO1 32 Bit` and `Samsung
+38 Bit` a minority of the codes rebuild at any count). Where a device states another count, the composer
+builds the command from the definition at the device's count, both blocks; it sends the table's block where
+the counts agree or the device's count is refused, and refuses the 252 codes whose table block and
+definition differ in how many frames a press sends. Against our own compiles, 2586 of 2636 records of
+these families are right where the table alone was right on 2551, and what moved is two devices: the Dell
+2300MP's 34 `Memorex 32 Bit` records at its 3, and one `Philips Hurd 16 Bit LongToggle` record at the
+Philips 70FA930's 1. **Unconfirmed** beyond those two: 21 of the 23 families at 3 have no record on a
+device stating another count, and the 3989 codes whose definition differs from the table in a duration
+only, `MemorexO1 32 Bit`'s gap above all, follow the definition with no compile showing either. Left: the
+Yamaha DSP-A592's 4, whose count is refused, and 46 long toggle records the table writes one microsecond
+short at the end, which is the table's long toggle shape and not the count.
 
 **How many times a press sends the code is also stated twice outside the file**, and both agree with
 the ratio: `pressMinimumRepeats` on 39 of Logitech's 1368 protocol definition records, values 0, 1 and
