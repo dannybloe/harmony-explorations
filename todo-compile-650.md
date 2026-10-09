@@ -90,7 +90,7 @@ an item, ask whether the finish line moves without it; if it does, the item goes
 ## 6. Our composers stop borrowing parts from Logitech's file
 
 - [x] 6.1 List what each composer copies out of the configuration it is given: the list is 6.2's sub-items, checked against `compose.ts`
-- [ ] 6.2 Build each of those ourselves, and write and check the setup again as in 5.2
+- [x] 6.2 Build each of those ourselves, and write and check the setup again as in 5.2
   - [x] 6.2.1 The command prelude's operands: the constant load and a test of the start variable, built and checked against the configuration's own (section 319)
   - [x] 6.2.2 The power on delay table's case order: the compiler's hash order, generated (section 319)
   - [x] 6.2.3 A new device's identifier, one past the highest in the configuration, computed (section 319)
@@ -103,7 +103,7 @@ an item, ask whether the finish line moves without it; if it does, the item goes
   - [x] 6.2.10 The start up and working screens off an existing activity's (`workingTemplate14`), and the Devices key's case: built by `activityScreenChrome` and checked, 40 start up screens, 63 working pages and 186 cases of 40 activities on 13 compiles; the start up font is read, 6.2.12's (section 336)
   - [x] 6.2.11 An activity's own device list, copied from the idle list, its "Activity" word from another activity's list: built by `activityDeviceList` (rows from the setup's devices, row lists of their own, the record's entries, pages and "Activity" from `menuPageParts`) and checked, 78 of the 82 lists the 23 compiles hold, 53 of 57 on the Harmony 650, the four left being a French configuration; each device's label and the order of the devices the activity leaves off are still read (section 352)
   - [x] 6.2.12 Letters and fonts off the configuration's own (`codesFor`, `fontThatSpells`): moved to 8.2, since a Logitech font holds only the letters its own names use, so ending this borrowing is building our own font
-  - [ ] 6.2.13 Write the setup again and check it as in 5.2, with the screen lit 20 s, the 650's default: 10 s was only there to show a changed setting lands, which 5.1 and 5.2.5 both heard
+  - [x] 6.2.13 Write the setup again and check it as in 5.2, with the screen lit 20 s, the 650's default: 10 s was only there to show a changed setting lands, which 5.1 and 5.2.5 both heard; composed again in the lab's `work/bench-6-2-13/` with chapter 6's composers and 5.2.4's sequence records, no difference from Logitech's clean compile in 639 items, written and read back identical, and heard the same as Logitech's file to a hundredth of a second, Radio included, KPN 2 2.2 s after a single KPN 1 (`reads/20261009T140835Z-ir-test-harmony-650-the-test-setup-rebuilt-by-our-composers.json`); the screen went dark at 20 s, and the remote did not restart
 
 ## 7. Screens built by us
 
