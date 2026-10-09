@@ -1,0 +1,24 @@
+{
+  "name": "Harmony 650, the test setup composed onto Logitech's starting configuration",
+  "description": "todo-compile-650 5.1. Logitech's compile of the starting setup (seven devices, four activities) with four things of ours added: Plasma kijken, the fifth activity, on the third page of the activity menu (KPN and Plasma on HDMI 1, volume to the Plasma, channels to the KPN box); a sequence called Radio in Plasma kijken's lower right corner, KPN 1, a 2 s pause, KPN 2; the screen light at 10 s instead of 20; and the KPN box kept on when switching activities, so only TV kijken and Plasma kijken switch it on and only All Off switches it off. Predicted: Plasma kijken sends the Plasma's power on (seven frames, its long press version) and the KPN box's power, then the Plasma's HDMI 1 about 6.5 s later, and nothing else. Radio sends KPN 1, then KPN 2 about 2 s later. Muziek sends Kodi's and the Sony's power, the Sony's Function three times and the Plasma's power off, and nothing to the KPN box. All Off sends Kodi's, the Sony's and the KPN box's power. The screen goes dark about 10 s after the last key. Keep the remote off the cable and pointed at the Flirc.",
+  "steps": [
+    {
+      "instruction": "Straight after the write the remote restarts and may show 'If any devices are still On press Help now'. Do NOT press Help. Take the remote off the cable, point it at the Flirc and press All Off once. Mark when it is quiet"
+    },
+    {
+      "instruction": "Press the centre key below the screen until the screen says Activities 1/3 at the top, then the right arrow below the screen twice. Expect Activities 3/3 with Plasma kijken alone at the top. Press the button beside Plasma kijken (upper left). Expect 'Starting Plasma kijken', the Plasma's power on and the KPN box's power, about 6.5 s later the Plasma's HDMI 1, then a screen titled Plasma kijken with Teletext, DVR, Aspect and Radio in its corners. Mark when it settles"
+    },
+    {
+      "instruction": "Touch nothing and watch the screen: note roughly how many seconds after the last press it goes dark. Then press any key once to wake it, and mark"
+    },
+    {
+      "instruction": "Press the button beside Radio (lower right) once and touch nothing. Expect the KPN box's 1 and about 2 s later its 2. Mark when the 2 has been heard, or when 10 s have passed without it"
+    },
+    {
+      "instruction": "Press the Listen to Music key (Muziek). Expect Kodi's and the Sony's power, the Sony's Function three times and the Plasma's power off, and nothing for the KPN box. Mark when it settles"
+    },
+    {
+      "instruction": "Press All Off. Expect Kodi's, the Sony's and the KPN box's power. Mark when it is quiet"
+    }
+  ]
+}
