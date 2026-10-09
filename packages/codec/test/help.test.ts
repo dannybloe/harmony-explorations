@@ -345,7 +345,7 @@ test('with MyHarmony\'s Remote Assistant off, Logitech\'s compile drops its six 
     assert.deepEqual(off.activities, on.activities);
   });
 
-test('with MyHarmony\'s tilt sensor off, timer 0 queues 1F E900 alone and no list sets 3F F101, and nothing else changes',
+test('with MyHarmony\'s tilt sensor off, timer 0 queues 1F E900 alone and no list sets 3F F101, and the other timers, the parameter block, the screens and the variables do not change',
   skipUnless('h650_assistant_off_config', 'h650_tilt_off_config'), async () => {
     // Section 346, todo-compile-650 4.3.3. Two Logitech compiles of the same Harmony 650 setup, the
     // second with the tilt sensor disabled in MyHarmony's "Remote Backlight Settings".
@@ -360,7 +360,9 @@ test('with MyHarmony\'s tilt sensor off, timer 0 queues 1F E900 alone and no lis
     assert.deepEqual(on.actionLists()![t0on.instruction.operand]!.map((i) => [i.opcode, i.operand]), [[0x1f, 0xe900], [0x3f, 0xf101]]);
     assert.deepEqual([t0off.instruction.opcode, t0off.instruction.operand], [0x1f, 0xe900]);
     // Three lists hold the flag instruction with the sensor on, timer 0's and two that end in it; none with
-    // it off, where timer 0's list is gone and the other two are a step shorter: two lists fewer.
+    // it off, where timer 0's list is gone, one of the other two is gone with base slot 9 entry 2's binding
+    // of event 0x17, and the third is a step shorter: two lists fewer. Section 346 said both were a step
+    // shorter; section 347 corrected it, and `wiring.test.ts` asserts the binding.
     const flag = (c: typeof on) => c.actionLists()!.filter((l) => l.some((i) => i.opcode === 0x3f && (i.operand >> 8) === 0xf1)).length;
     assert.equal(flag(on), 3);
     assert.equal(flag(off), 0);

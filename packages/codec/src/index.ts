@@ -60,6 +60,8 @@ export * from './frame.ts';
 export * from './placer.ts';
 // The state variables, value maps and name tree built from a description, todo-compile-650 10.3.
 export * from './statetables.ts';
+// The firmware's own wiring built from a description, todo-compile-650 10.2.
+export * from './wiring.ts';
 export * from './compose.ts';
 // **The metadata archive**, section 260: the ZIP two architectures carry inside the container,
 // which on arch 16 (Harmony 300 and 350) names every device and every command. Exported for the

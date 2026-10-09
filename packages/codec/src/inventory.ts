@@ -1043,6 +1043,20 @@ const MEASURED_TAG_TIES: ReadonlyMap<string, readonly [number, number]> = new Ma
  * or one given twice, is refused too.
  */
 export function compilerTagOrder(tags: readonly number[]): number[] {
+  return tagSlotOrder(tags, MEASURED_TAG_TIES);
+}
+
+/**
+ * `compilerTagOrder`'s slot order with the ties the caller has measured, for a tagged list whose shared
+ * slots are not a device mode's. Split out for `wiring.ts`, section 347: base slot 9's fixed entries
+ * share slots a mode's lists never do, and one pair, `0x81` and `0xA3`, is stored one way round on the
+ * Harmony 600 and 650 and the other way on the Harmony 700, so a tie there is a per model constant and
+ * not something this module's one table can hold. One hash and one slot rule, so the two cannot drift.
+ */
+export function tagSlotOrder(
+  tags: readonly number[],
+  ties: ReadonlyMap<string, readonly [number, number]>,
+): number[] {
   const hash = (key: number): number => {
     const h = key ^ (key >>> 20) ^ (key >>> 12);
     return h ^ (h >>> 7) ^ (h >>> 4);
@@ -1056,7 +1070,7 @@ export function compilerTagOrder(tags: readonly number[]): number[] {
   const slot = (tag: number): number => hash(tag) & (size - 1);
   return [...tags].sort((a, b) => {
     if (slot(a) !== slot(b)) return slot(a) - slot(b);
-    const tie = MEASURED_TAG_TIES.get([a, b].sort((x, y) => x - y).join(','));
+    const tie = ties.get([a, b].sort((x, y) => x - y).join(','));
     if (tie === undefined) {
       throw new RangeError(`tags 0x${a.toString(16)} and 0x${b.toString(16)} share a slot whose stored order is not measured`);
     }

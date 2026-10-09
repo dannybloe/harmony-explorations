@@ -532,3 +532,4 @@ it reachable in the same commit and the test comparing the two tables is what ca
 | `it only acts while an activity starts` | section 335, 7 October 2026 | the same claim in `docs/status.md`'s words |
 | `runs only inside a start sequence` | section 335, 7 October 2026 | the same claim in a docstring |
 | `they act only while an activity starts` | section 335, 7 October 2026 | the same claim in `docs/status.md`'s plural, said of both delays; the inter device delay acts in All Off and Help too |
+| `the other two lists are each one instruction shorter` | section 347, 9 October 2026 | with MyHarmony's tilt sensor off, one of the two lists ending in `3F F101` is one instruction shorter and the other is gone, with base slot 9 entry 2's binding of event `0x17` |
