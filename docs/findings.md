@@ -45837,9 +45837,17 @@ were saved on the KPN box and four on the LG in MyHarmony, on the Harmony 650's 
 on a page "Favorite Channels for device" with the device chosen at the top, showing the LG's four in two
 pages beside a "Commands" button.
 
-**Logitech's compile held only the KPN box's** (`h650_favourites_config`): on TV kijken's own screen pages,
-"Commands" then `FvKPN1`, `FvKPN2`, `FvKPN33` on the first page and `FvKPN666` on the second, and one
-number sender record. No text of the LG's favourites is anywhere in the file. The person at the bench then
+**Logitech's compile held only the KPN box's** (`h650_favourites_config`): on a favourites page of TV
+kijken's, "Commands" then `FvKPN1`, `FvKPN2`, `FvKPN33` on the first page and `FvKPN666` on the second,
+and one number sender record. **The favourites page is a sub-page**: the activity's working screen carries
+a "Favorite Channels" button, scan 8, whose press is `7E` entering the favourites mode, and the favourites
+page's "Commands" button, also scan 8, enters the working screen's mode again; plain enters both ways, no
+push and pop. Each favourite writes its index into a state variable and calls one shared list.
+
+> **Corrected while this section was written**, 9 October 2026: it first read the favourites page as the
+> activity's front page with the commands behind "Commands", because the favourites page carries the
+> activity's name as its title. The person at the bench pointed out that the activity opens on its
+> commands with "Favorite Channels" as a link; the key lists agree, mode 163's scan 8 entering mode 226. No text of the LG's favourites is anywhere in the file. The person at the bench then
 worked out the rule in MyHarmony: an activity has one device that changes its channels, or none, and its
 favourites are that device's. TV kijken's channel device is the KPN box, and no activity had the LG change
 channels. An activity `Watch TV2` was added with the LG changing channels and synced with MyHarmony; read

@@ -382,7 +382,8 @@ took the appliance from the page would be wrong for exactly this one case.
 on 9 October 2026 on a Harmony 650, section 344, which narrows the sentence above to what the records
 **allow**. Favourites are kept **per device**: MyHarmony has a page "Favorite Channels for device" with a
 device chosen at the top. An activity has one device that changes its channels, or none, and the activity
-shows that device's favourites, on its own screen pages after a "Commands" button. So the KPN box's
+shows that device's favourites on a page of their own: a "Favorite Channels" button among the activity's
+commands opens it, and a "Commands" button on it goes back. So the KPN box's
 favourites appeared in TV kijken, where the KPN box changes channels, and the LG's, saved on the account
 just the same, appeared nowhere and were not in the compiled file at all, until an activity was added in
 which the LG changes channels. A device's favourites therefore reach the remote only through an activity

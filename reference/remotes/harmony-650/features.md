@@ -55,8 +55,9 @@ plus its inputs, so the device count binds first on every configuration measured
 * **23**, **Logitech's service**, `MaxFavoriteChannels` in `GetProductCapabilities2`, read 7 October
   2026, `reference/capabilities.md`. It agrees with the forum table's figure. The manual gives no number.
 * **Kept per device, shown per activity**: MyHarmony saves favourites for a device, and an activity shows
-  the favourites of the one device that changes its channels, on the activity's own screen pages after a
-  "Commands" button, three beside it on the first page. A device that changes channels in no activity has
+  the favourites of the one device that changes its channels, on a page of their own: a "Favorite
+  Channels" button among the activity's commands opens it, and a "Commands" button on it, three
+  favourites beside it on its first page, goes back. A device that changes channels in no activity has
   its favourites in no screen and not in the file. Logitech's compile and the bench, section 344.
 * How each favourite's sending is built on this model is **not read**; on the Harmony One it is sections
   154 and 156. The compiled file holds one number sender record per device whose favourites are shown.

@@ -408,8 +408,9 @@ test('the control has no digit spelling at all, because none of its channels car
 test('the KPN box\'s favourites appear in TV kijken alone, and the LG\'s only once an activity has the LG change channels',
   skipUnless('h650_favourites_config', 'h650_favourites_base'), async () => {
     // Section 344. Four favourites on the KPN box and four on the LG, saved per device in MyHarmony on the
-    // Harmony 650's test record. Logitech's compile put only the KPN box's in, on TV kijken's own screen
-    // pages after "Commands", since the KPN box changes channels there and no activity has the LG do so.
+    // Harmony 650's test record. Logitech's compile put only the KPN box's in, on TV kijken's favourites
+    // page, opened by "Favorite Channels" among its commands, since the KPN box changes channels there and
+    // no activity has the LG do so.
     // A second activity with the LG changing channels, synced and read off the remote, holds the LG's.
     const { activities, characterMap, modeRecords, screenStrings } = await import('../src/index.ts');
     const favouritesByActivity = (name: string): Record<string, string[]> => {
