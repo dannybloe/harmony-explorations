@@ -15,8 +15,9 @@
  * `h700_28_config_region` and each of `h700_power_hold_compile` to `_4`, three each. The 650's second
  * compile joined at section 348: one of its two devices, the Panasonic TX-28A1U, composed nothing until
  * its family's codes were built at the device's own repeat count. What these compare is placement,
- * variables and the power actions; the Dell 2300MP's ordinary command records, which the rhythm table
- * builds at one repetition where Logitech wrote three, are not among them, section 348.
+ * variables and the power actions; the Dell 2300MP's ordinary command records are not among them. The
+ * rhythm table builds them at one repetition where Logitech wrote three, and the composer builds them at
+ * the device's three since section 350, which `pressrepeats.test.ts` compares record for record.
  *
  * **The base cannot draw the devices' own names**: a configuration carries only the glyphs its texts
  * use, so neither base spells `Panasonic TX-29AK40F`, and the composer draws a device list label on one
