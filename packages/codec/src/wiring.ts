@@ -32,14 +32,16 @@
  *   press to, the one entries 0 and 4 bind their events to, the stack the boot list pushes, and the
  *   list the lead calls when the remote goes quiet. Entry 2 is the first the key walk consults,
  *   section 333, so these run under every activity.
+ * * **The tree the generated lists call**, section 359: comparisons on the firmware's own variables
+ *   and three of the configuration's, `conditionals`, built since `todo-compile-650.md` 10.2.2.
  *
  * **What is carried**, the description: which list, mode, variable, value map or base slot 9 entry a
- * generated structure names when that thing is not itself generated here. Every list the generated
- * lists call is named by index and is somebody else's; the program behind them is a tree of
- * conditionals on the firmware's own variables and on every device, and how much of it there is per
- * configuration is section 347's measurement, not this module's work. Also carried: three settings,
- * the screen light's time, the tilt sensor and the Remote Assistant, sections 292, 345 and 346, which
- * are the configuration's own; which base slot 9 entry each activity key selects, or that it is
+ * generated structure names when that thing is not itself generated here, every list's index among
+ * them. Three lists the generated ones call are not built, each belonging to something the Harmony
+ * 650's track leaves out: the restore of saved delays, the Assistant's gate and the All Off key's Help
+ * list; three settings leave them out, `delayRestore`, `remoteAssistant` and `help`. Also carried:
+ * the settings, the screen light's time, the tilt sensor, the Remote Assistant and the tour's form,
+ * sections 292, 345, 346 and 357, which are the configuration's own; which base slot 9 entry each activity key selects, or that it is
  * empty, section 314; and a device's own timer, a power timer writing one variable, with its place in
  * the table, since what orders the table is not established.
  *
@@ -49,6 +51,8 @@ import { u16, u24, u8 } from './bytes.ts';
 import { ACTION_LIST_TABLE_SLOT, BINDING_SLOT, actionListBytes } from './gspm.ts';
 import { Writer } from './emit.ts';
 import type { ContainerLayout, ContainerPiece, PieceRef } from './frame.ts';
+import { layOutContainer, takeApart } from './frame.ts';
+import type { Container } from './gspm.ts';
 import { KEY_EVENT_PRESS, KEY_EVENT_SHIFT, tagSlotOrder } from './inventory.ts';
 import type { ModeZeroModel } from './modezero.ts';
 import { KEYPAD_FIRST_SCAN, KEYPAD_LAST_SCAN } from './modezero.ts';
@@ -142,7 +146,15 @@ export type WiringInstruction =
   | { readonly write: string; readonly value: number }
   | { readonly map: string; readonly on: string }
   | { readonly select: string }
-  | { readonly start: string };
+  | { readonly start: string }
+  /** `0x1F 0xEA00 | timer`, which the light lists send before starting a timer again; read as a stop. */
+  | { readonly stop: string }
+  /**
+   * `0x71 form | variable`, a comparison of a variable the description names with the byte register,
+   * section 140: `form` is the operand's high byte, bit 15 the else arm and bits 8 to 11 the operation.
+   * A comparison of one of the firmware's own variables, 0 to 17, is written with `op` instead.
+   */
+  | { readonly test: string; readonly form: number };
 
 /** The settings a configuration carries, MyHarmony's names in the comments. */
 export interface WiringSettings {
@@ -159,6 +171,28 @@ export interface WiringSettings {
    * decides it is not established, so it is carried, and refused on a model that has never shown it.
    */
   bootStep: boolean;
+  /**
+   * Whether the tour's start list enters the welcome tour's first screen, the shown form, or marks it
+   * seen and goes quiet, the skipped form, section 286. Shown on two of the 22 compiles of section 357's
+   * population; a configuration that leaves the tour's screens out has the skipped form, section 357.
+   */
+  tourShown: boolean;
+  /**
+   * Whether the start list restores the delays saved on the remote, section 303: `start`'s second call,
+   * a list that clears the settings store's marks, reads every saved delay back into its variable, and
+   * erases what no read marked. On every Logitech compile. A configuration without it leaves `start`
+   * one call shorter and never touches the store, so the configuration's delay wins at start, which is
+   * `todo-later.md` 3.3.5's reading; the restore itself belongs to that item and is not built here.
+   */
+  delayRestore: boolean;
+  /**
+   * Whether the configuration carries Help, section 333, which every Logitech compile does. With it,
+   * the All Off key runs a list of Help's that can offer a "Fix it now" wizard instead of switching
+   * off, `todo-later.md` 3.3.3, and the idle entry binds Help's release and hold. Without it, which is
+   * this track's configuration, the All Off key selects the idle entry itself, which is where every
+   * path of Help's list that runs none of Help's own lists ends, and the idle entry binds neither.
+   */
+  help: boolean;
 }
 
 /** A device's own timer, carried whole, and the index it has in the table. */
@@ -195,8 +229,10 @@ export interface BuiltWiring {
   timerRecords: ContainerPiece[];
   /** Base slot 9 index to the entry built for it: 0 to 4 and the leftover entry. */
   entries: Map<number, ContainerPiece>;
-  /** Base slot 10 index to the list built for it: the front and the shared lists. */
+  /** Base slot 10 index to the list built for it: the front, the shared lists and the tree they call. */
   lists: Map<number, ContainerPiece>;
+  /** Base slot 10 index to the name this module gives the list built there, for a caller that reports. */
+  listNames: Map<number, string>;
   /** How many lists the front holds, which is the index the clock's hour list takes, section 324. */
   frontLength: number;
   /**
@@ -222,9 +258,32 @@ const BOOT_STEP_AT = 2;
 /** `0x1F 0xFB01`, load 1 into the byte register before a call that tests it, section 140. */
 const LOAD_ONE = { op: 0x1f, operand: 0xfb01 } as const;
 const LOAD_ZERO = { op: 0x1f, operand: 0xfb00 } as const;
+const LOAD_TWO = { op: 0x1f, operand: 0xfb02 } as const;
+/** `0x07 0xFFF6`, which entry 1 binds event `0x19` to as well; what it does is not read. */
+const FFF6 = { op: 0x07, operand: 0xfff6 } as const;
+
+/**
+ * The comparisons the tree makes of the firmware's own variables, 0 to 17, whose numbers are the
+ * firmware's and the same on every arch 14 compile, section 324: `0x71`, the form in the high byte and
+ * the variable in the low one, section 140. Named by the variable and the form, not by a meaning: what
+ * variables 9, 14, 15, 16 and 17 hold is not read here.
+ */
+const FIRMWARE_TEST = (form: number, variable: number): WiringInstruction => ({ op: 0x71, operand: form | variable });
+const ONE_ARMED = 0x0000;
+const TWO_ARMED = 0x8000;
+/** `0x3F 0xD000`, which takes the next instruction as its argument, section 73. */
+const SIX_BYTE = { op: 0x3f, operand: 0xd000 } as const;
+/** The light lists' firmware operations, `0x1F` with high bytes `0xE8` and `0xE9`, the same on every compile. */
+const E8 = (low: number): WiringInstruction => ({ op: 0x1f, operand: 0xe800 | low });
+const E9 = (low: number): WiringInstruction => ({ op: 0x1f, operand: 0xe900 | low });
 
 /** The screen key presses a shared list of their own serves in entry 2: scans 1 to 5, 7 to 9, 11, 34, 35. */
 const ELEVEN_KEY_SCANS: ReadonlySet<number> = new Set([1, 2, 3, 4, 5, 7, 8, 9, 11, 34, 35]);
+/**
+ * The All Off key's scan. Read from its binding in entry 1, whose every path that runs none of Help's own
+ * lists ends by selecting the idle entry, which is All Off, section 335; not pressed on a remote to check.
+ */
+export const ALL_OFF_SCAN = 6;
 /** The activity keys of entry 1: Watch a Movie, Watch TV and Listen to Music, section 314. */
 export const ACTIVITY_KEY_SCANS = [1, 5, 7] as const;
 
@@ -260,6 +319,132 @@ interface Catalogue {
 }
 
 const tie = (a: number, b: number): [string, readonly [number, number]] => [[a, b].sort((x, y) => x - y).join(','), [a, b]];
+
+/**
+ * The lists the generated ones call, `todo-compile-650.md` 10.2.2: a tree of comparisons on the
+ * firmware's own variables, whose numbers are the firmware's, and on three of the configuration's, the
+ * low battery flag, the tour's mark and, on the Harmony 700, the variable the Assistant's gate tests.
+ *
+ * Almost every one has one shape, `[load k, call test]` and `test = [compare, then, else]`, section
+ * 140: the compiler emits a comparison as a list of its own behind the list that loads what it compares
+ * against. `branch` writes that pair. The arms are lists of their own where they hold more than one
+ * instruction. Logitech does not share identical lists: the same body at two call sites is two lists,
+ * so every site has a name of its own here, and a list two sites share, `stopLights`, is one list on
+ * every compile.
+ *
+ * Measured per model over the 22 compiles of sections 356 to 358; the shapes are the same on every
+ * compile of a model, the Harmony 600's and 650's identical. Three lists the generated ones call are
+ * not built, and the description names them by index: the restore of saved delays, `start.reset`,
+ * `todo-later.md` 3.3.5; the Assistant's gate, `assistantGate`, `todo-later.md` 3.3; and the All Off
+ * key's Help list, `allOff`, `todo-later.md` 3.3.3. The configuration this track builds has none of
+ * the three, `WiringSettings`.
+ */
+function conditionals(model: WiringModel, settings: WiringSettings, lists: Map<string, WiringInstruction[]>): void {
+  const seven = model === 'harmony-700';
+  const branch = (name: string, load: WiringInstruction, test: WiringInstruction, ...arms: WiringInstruction[]): void => {
+    lists.set(name, [load, { call: `${name}.test` }]);
+    lists.set(`${name}.test`, [test, ...arms]);
+  };
+  const lowBatteryPush = (name: string): void => branch(name, LOAD_ZERO, { test: 'lowBattery', form: ONE_ARMED }, PUSH_MODE);
+
+  // `start`'s last call: with variable 16 at 1 the remote starts on "USB Connected".
+  branch('start.last', LOAD_ONE, FIRMWARE_TEST(ONE_ARMED, 16), { call: 'start.last.usb' });
+  lists.set('start.last.usb', [PUSH_MODE, { enter: 'usbConnected' }]);
+
+  // Entry 1's event 0x27: last, `0x07 0xFFF6` while variable 9 is 1.
+  branch('entry1.0x27.last', LOAD_ONE, FIRMWARE_TEST(ONE_ARMED, 9), FFF6);
+
+  // Entry 1's event 0x10: the Low Battery screen while variable 9 is 2, and the battery screen after it
+  // while it is 1, each pushed over the current mode.
+  const battery = (name: string, load: WiringInstruction, screen: string): void => {
+    branch(name, load, FIRMWARE_TEST(ONE_ARMED, 9), { call: `${name}.then` });
+    lists.set(`${name}.then`, [PUSH_MODE, { enter: screen }, { call: 'everyKey' }]);
+  };
+  if (seven) {
+    // On the Harmony 700 both sit behind a test of variable 14, and the second screen is "Please charge".
+    branch('entry1.0x10.second', LOAD_ZERO, FIRMWARE_TEST(ONE_ARMED, 14), { call: 'entry1.0x10.second.then' });
+    lists.set('entry1.0x10.second.then', [{ call: 'entry1.0x10.second.low' }, { call: 'entry1.0x10.second.charge' }]);
+    battery('entry1.0x10.second.low', LOAD_TWO, 'lowBattery');
+    battery('entry1.0x10.second.charge', LOAD_ONE, 'pleaseCharge');
+  } else {
+    battery('entry1.0x10.first', LOAD_TWO, 'lowBattery');
+    battery('entry1.0x10.second', LOAD_ONE, 'batteryBlank');
+  }
+
+  // Entry 1's event 0x30, "Insert batteries": push the mode only while the low battery flag is 0.
+  lowBatteryPush('entry1.0x30.first');
+
+  // Entry 0's and 4's events, and the boot list's last call.
+  branch('events', LOAD_ONE, FIRMWARE_TEST(TWO_ARMED, 14), E8(0x03), { call: 'events.1' });
+  branch('events.1', LOAD_ONE, FIRMWARE_TEST(TWO_ARMED, 16), E8(0x03), { call: 'events.2' });
+  branch('events.2', LOAD_TWO, FIRMWARE_TEST(TWO_ARMED, 9), E8(0x00), E8(0x04));
+  // `events`, `elevenKeys` and `everyKey` were already `[load 1, call <name>.test]` above, so `branch`
+  // writes each again unchanged and adds its comparison.
+
+  // The light: stop both light timers and the light off, then light the screen and start one of them.
+  lists.set('stopLights', [{ stop: 'lightOn' }, { stop: 'lightOnAgain' }, { stop: 'lightOff' }]);
+  const relight = (name: string, extra: WiringInstruction[], timer?: string): void => {
+    lists.set(name, [{ call: 'stopLights' }, E9(0x0c), ...extra, ...(timer === undefined ? [] : [{ start: timer }])]);
+  };
+  // The eleven screen keys of entry 2.
+  branch('elevenKeys', LOAD_ONE, FIRMWARE_TEST(TWO_ARMED, 14), E9(0x0c), { call: 'elevenKeys.1' });
+  branch('elevenKeys.1', LOAD_ONE, FIRMWARE_TEST(TWO_ARMED, 16), E9(0x0c), { call: 'elevenKeys.2' });
+  branch('elevenKeys.2', LOAD_TWO, FIRMWARE_TEST(TWO_ARMED, 9), { call: 'elevenKeys.again' }, { call: 'elevenKeys.on' });
+  relight('elevenKeys.again', [], 'lightOnAgain');
+  relight('elevenKeys.on', [], 'lightOn');
+  // Every other key.
+  if (seven) {
+    branch('everyKey', LOAD_ONE, FIRMWARE_TEST(TWO_ARMED, 14), { call: 'everyKey.on' }, { call: 'everyKey.1' });
+    relight('everyKey.on', [E9(0x18)], 'lightOn');
+    branch('everyKey.1', LOAD_ONE, FIRMWARE_TEST(TWO_ARMED, 16), { call: 'everyKey.lit' }, { call: 'everyKey.2' });
+    relight('everyKey.lit', [E9(0x18)]);
+    branch('everyKey.2', LOAD_TWO, FIRMWARE_TEST(TWO_ARMED, 9), { call: 'everyKey.again' }, { call: 'everyKey.on' });
+    relight('everyKey.again', [E9(0x18)], 'lightOnAgain');
+  } else {
+    branch('everyKey', LOAD_ONE, FIRMWARE_TEST(TWO_ARMED, 16), { call: 'everyKey.lit' }, { call: 'everyKey.1' });
+    relight('everyKey.lit', [E9(0x18)]);
+    branch('everyKey.1', LOAD_TWO, FIRMWARE_TEST(TWO_ARMED, 9), { call: 'everyKey.again' }, { call: 'everyKey.on' });
+    relight('everyKey.again', [E9(0x18)], 'lightOnAgain');
+    relight('everyKey.on', [E9(0x18)], 'lightOn');
+  }
+  // The screen light's tick.
+  branch('lightTick', LOAD_ZERO, FIRMWARE_TEST(TWO_ARMED, 17), { call: 'lightTick.off' }, { start: 'lightTick' });
+  lists.set('lightTick.off', [E9(0x03), { start: 'lightOff' }]);
+
+  // The idle entry's enter list: Off, section 356, once the tour's mark is 1, section 357; then, with
+  // variable 16's other comparison, the Assistant's gate or the location map behind `0x3F 0xD000`.
+  branch('idleEnter.first', LOAD_ONE, { test: 'tourMark', form: ONE_ARMED }, { enter: 'off' });
+  branch('idleEnter.second', LOAD_ONE, FIRMWARE_TEST(ONE_ARMED | 0x0100, 16), { call: 'idleEnter.second.then' });
+  lists.set('idleEnter.second.then', [
+    SIX_BYTE, settings.remoteAssistant ? { call: 'assistantGate' } : { map: 'locationMap', on: 'location' },
+  ]);
+
+  // The tour's start list, section 357: the mark, then the tour's first screen or the quiet list.
+  lists.set('tour', [{ write: 'tourMark', value: 1 }, settings.tourShown ? { enter: 'tourFirst' } : { call: 'quiet' }]);
+
+  if (!seven) return;
+  // The Harmony 700's own: its USB screen's leave handler's second call, the battery events 0x23 to
+  // 0x25, 0x1E and 0x30, and the list entry 1's events 0x27, 0x10 and 0x1F and the quiet list share.
+  branch('usbLeave.second', LOAD_ZERO, { test: 'assistantSeen', form: ONE_ARMED }, { map: 'usbLeaveMap', on: 'location' });
+  lowBatteryPush('entry1.0x23.first');
+  lists.set('entry1.0x23.second', [{ enter: 'frame0' }, { start: 'cycle1' }]);
+  branch('entry1.0x27.shared', LOAD_ONE, FIRMWARE_TEST(ONE_ARMED, 14), { call: 'entry1.0x27.shared.then' });
+  branch('entry1.0x27.shared.then', LOAD_ZERO, FIRMWARE_TEST(TWO_ARMED, 15), { call: 'entry1.0x27.shared.off' }, { call: 'entry1.0x27.shared.on' });
+  branch('entry1.0x27.shared.off', LOAD_ZERO, FIRMWARE_TEST(ONE_ARMED, 16), { op: 0x3f, operand: 0xf201 });
+  branch('entry1.0x27.shared.on', LOAD_ONE, FIRMWARE_TEST(ONE_ARMED, 16), { op: 0x3f, operand: 0xf200 });
+  lowBatteryPush('entry1.0x24.first');
+  lists.set('entry1.0x24.shared', [{ stop: 'cycle1' }, { stop: 'cycle2' }, { stop: 'cycle3' }, { stop: 'cycle0' }]);
+  lowBatteryPush('entry1.0x25.third');
+  branch('entry1.0x1e.third', LOAD_ONE, FIRMWARE_TEST(ONE_ARMED | 0x0400, 9), FFF6);
+  lists.set('entry1.0x1e.fourth', [{ call: 'entry1.0x24.shared' }, { call: 'entry1.0x1e.fourth.1' }]);
+  branch('entry1.0x1e.fourth.1', LOAD_ONE, FIRMWARE_TEST(TWO_ARMED, 9), { call: 'entry1.0x1e.fourth.charge' }, { call: 'entry1.0x1e.fourth.2' });
+  lists.set('entry1.0x1e.fourth.charge', [{ call: 'entry1.0x1e.fourth.charge.push' }, { enter: 'pleaseCharge' }]);
+  lowBatteryPush('entry1.0x1e.fourth.charge.push');
+  branch('entry1.0x1e.fourth.2', LOAD_TWO, FIRMWARE_TEST(TWO_ARMED, 9), { call: 'entry1.0x1e.fourth.low' }, { call: 'entry1.0x1e.fourth.pop' });
+  lists.set('entry1.0x1e.fourth.low', [{ call: 'entry1.0x1e.fourth.low.push' }, { enter: 'lowBattery' }]);
+  lowBatteryPush('entry1.0x1e.fourth.low.push');
+  branch('entry1.0x1e.fourth.pop', LOAD_ONE, { test: 'lowBattery', form: ONE_ARMED }, POP_MODE);
+}
 
 /**
  * Every generated structure for one model and one set of settings and activity keys.
@@ -302,7 +487,8 @@ function catalogue(model: WiringModel, settings: WiringSettings, activityKeys: R
     settings.remoteAssistant ? { call: 'assistantGate' } : { map: 'locationMap', on: 'location' },
     { map: 'idleMap', on: 'location' }, { write: 'start', value: 0 },
   ]);
-  lists.set('helpHold', [PUSH_MODE, { enter: 'delayFixing' }]);
+  // Help held five seconds while no activity runs, Help's delay fixing screen, `todo-later.md` 3.3.5.
+  if (settings.help) lists.set('helpHold', [PUSH_MODE, { enter: 'delayFixing' }]);
 
   // The timers' lists.
   lists.set('lightOff', [{ op: 0x1f, operand: 0xe900 }, TILT_FLAG]);
@@ -315,6 +501,7 @@ function catalogue(model: WiringModel, settings: WiringSettings, activityKeys: R
     lists.set('cycle3', [{ enter: 'frame3' }, { start: 'cycle0' }]);
     lists.set('cycle0', [{ enter: 'frame0' }, { start: 'cycle1' }]);
   }
+  conditionals(model, settings, lists);
 
   // The front, in the order the compiler emits it. First what the firmware's screens bind: the Harmony
   // 700's USB screen's leave handler, then the Low Battery screen's Exit.
@@ -326,7 +513,11 @@ function catalogue(model: WiringModel, settings: WiringSettings, activityKeys: R
   if (seven) addFront('usbLeave', [{ call: 'usbLeave.first' }, { call: 'usbLeave.second' }]);
   addFront('lowBatteryExit', [POP_MODE, { write: 'lowBattery', value: 0 }]);
   // The lead's four start up entry points, then the learned command's screen.
-  addFront('start', [{ call: 'boot' }, { call: 'start.reset' }, { select: 'idle' }, { call: 'start.last' }]);
+  // `start.reset` is the restore of the delays saved on the remote, section 303, which is carried and
+  // not built: `todo-later.md` 3.3.5. Without it the start list goes straight to the idle entry.
+  addFront('start', settings.delayRestore
+    ? [{ call: 'boot' }, { call: 'start.reset' }, { select: 'idle' }, { call: 'start.last' }]
+    : [{ call: 'boot' }, { select: 'idle' }, { call: 'start.last' }]);
   addFront('startUsb', [{ call: 'boot' }, { enter: 'usbConnected' }]);
   addFront('startTour', [{ call: 'boot' }, { call: 'tour' }]);
   addFront('startUpgraded', [{ call: 'boot' }, { enter: 'upgradeSuccessful' }]);
@@ -349,8 +540,18 @@ function catalogue(model: WiringModel, settings: WiringSettings, activityKeys: R
     entry1.set(0x25, { front: [{ op: 0x3f, operand: 0xf200 }, { call: 'entry1.0x24.shared' }, { call: 'entry1.0x25.third' }, { enter: 'batteryBlank' }, { call: 'everyKey' }] });
   }
   entry1.set(press(35), { op: 0x0f, operand: 0xffa1 });
-  entry1.set(press(4), { front: [{ write: 'menuMarker', value: 0 }, { map: 'locationMap', on: 'location' }] });
-  entry1.set(press(6), { call: 'entry1.0x86' });
+  // Scan 4's press maps the location, which reaches the activity menu, or with no activity at all pushes
+  // the "add Activities" placeholder: all three activity keys are empty exactly when there is none,
+  // section 340, and `harvest_650_two_devices` is the one compile of that kind, so the rule is one sample's.
+  const noActivities = ACTIVITY_KEY_SCANS.every((scan) => activityKeys[scan] === null);
+  entry1.set(press(4), {
+    front: noActivities
+      ? [{ write: 'menuMarker', value: 0 }, PUSH_MODE, { enter: 'addActivities' }]
+      : [{ write: 'menuMarker', value: 0 }, { map: 'locationMap', on: 'location' }],
+  });
+  // The All Off key. With Help, a list of Help's that may offer a "Fix it now" wizard before switching
+  // off, carried and not built, `todo-later.md` 3.3.3; without, the Off key map itself, section 335.
+  entry1.set(press(ALL_OFF_SCAN), settings.help ? { call: 'allOff' } : { select: 'idle' });
   entry1.set(0x2d, { op: 0x07, operand: 0xfffa });
   entry1.set(0x10, {
     front: seven ? [{ call: 'entry1.0x27.shared' }, { call: 'entry1.0x10.second' }] : [{ call: 'entry1.0x10.first' }, { call: 'entry1.0x10.second' }],
@@ -407,7 +608,8 @@ function catalogue(model: WiringModel, settings: WiringSettings, activityKeys: R
       index: 'idle', wide: false, ties: none,
       bindings: new Map<number, WiringInstruction>([
         [0x01, { call: 'idleEnter' }], [0x05, { call: 'idleResume' }],
-        [0x43, { map: 'helpRelease', on: 'location' }], [0xc3, { call: 'helpHold' }],
+        // Help's release and hold, scan 3, section 333: Help's and only with it.
+        ...(settings.help ? [[0x43, { map: 'helpRelease', on: 'location' }], [0xc3, { call: 'helpHold' }]] as const : []),
       ]),
     },
   ];
@@ -451,6 +653,8 @@ function namedBy(ins: WiringInstruction): [SymbolKind, string][] {
   if ('map' in ins) return [['maps', ins.map], ['variables', ins.on]];
   if ('select' in ins) return [['entries', ins.select]];
   if ('start' in ins) return [['timers', ins.start]];
+  if ('stop' in ins) return [['timers', ins.stop]];
+  if ('test' in ins) return [['variables', ins.test]];
   return [];
 }
 
@@ -491,6 +695,11 @@ function encode(ins: WiringInstruction, symbols: Symbols, generated: Symbols): {
   if ('select' in ins) {
     return { operand: 0xff00 | checkRange('an entry', lookup(symbols, 'entries', ins.select), 0xff), opcode: 0x1f, described: [0] };
   }
+  if ('test' in ins) {
+    const v = checkRange('a compared variable', lookup(symbols, 'variables', ins.test), 0xff);
+    return { operand: ins.form | v, opcode: 0x71, described: [0] };
+  }
+  if ('stop' in ins) return { operand: 0xea00 | checkRange('a timer', lookup(symbols, 'timers', ins.stop), 0xff), opcode: 0x1f, described: [] };
   return { operand: 0xeb00 | checkRange('a timer', lookup(symbols, 'timers', ins.start), 0xff), opcode: 0x1f, described: [] };
 }
 
@@ -509,6 +718,7 @@ function decode(ins: WiringInstruction, operand: number, opcode: number, symbols
   else if ('write' in ins) take('variables', ins.write, opcode - 0x80);
   else if ('map' in ins) { take('maps', ins.map, operand >>> 8); take('variables', ins.on, operand & 0xff); }
   else if ('select' in ins) take('entries', ins.select, operand & 0xff);
+  else if ('test' in ins) take('variables', ins.test, operand & 0xff);
 }
 
 const piece = (bytes: Uint8Array, owner: string, refs: PieceRef[] = []): ContainerPiece => ({ bytes, refs, owner });
@@ -612,6 +822,11 @@ export function buildWiring(spec: WiringSpec): BuiltWiring {
   if (spec.settings.bootStep && spec.model !== 'harmony-700') {
     throw new WiringError(`no ${spec.model} compile carries the boot list's 3F F715`);
   }
+  // The Harmony 700's USB leave handler compares the variable the Assistant's gate compares, and no
+  // Harmony 700 compile with the Assistant off has been read, so what it compares then is not known.
+  if (!spec.settings.remoteAssistant && spec.model === 'harmony-700') {
+    throw new WiringError('no Harmony 700 compile with the Remote Assistant off has been read, and its USB leave handler compares the Assistant\'s variable');
+  }
   const cat = catalogue(spec.model, spec.settings, spec.activityKeys);
   const order = timerOrder(cat, spec.deviceTimers);
   const generated = generatedSymbols(cat, order);
@@ -705,6 +920,8 @@ export function buildWiring(spec: WiringSpec): BuiltWiring {
     if (template.index === 1) {
       const order1 = orderOf(template);
       for (const scan of ACTIVITY_KEY_SCANS) marks.push(1 + 4 * order1.indexOf(press(scan)) + 3);
+      // So is whether the All Off key calls Help's list or selects the idle entry: `help`.
+      marks.push(1 + 4 * order1.indexOf(press(ALL_OFF_SCAN)) + 3);
     }
     if (entries.has(index)) throw new WiringError(`base slot 9 entry ${index} is built twice`);
     entries.set(index, made(e.bytes, 'slot-9-list', marks));
@@ -712,6 +929,7 @@ export function buildWiring(spec: WiringSpec): BuiltWiring {
 
   // Base slot 10: the front at its generated indices, the shared lists at the description's.
   const lists = new Map<number, ContainerPiece>();
+  const listNames = new Map<number, string>();
   for (const [name, body] of cat.lists) {
     const index = lookup(symbols, 'lists', name);
     const e = encodeList(body, symbols, generated);
@@ -720,13 +938,17 @@ export function buildWiring(spec: WiringSpec): BuiltWiring {
     if (name === 'quiet') marks.push(1 + 3 * (spec.model === 'harmony-700' ? 2 : 1) + 2);
     // So does the boot list's third instruction, for the boot step.
     if (name === 'boot') marks.push(...[0, 1, 2].map((at) => 1 + 3 * BOOT_STEP_AT + at));
-    if (lists.has(index)) throw new WiringError(`action list ${index} is built twice`);
+    // The start list's second instruction, a call or a select, says whether delays are restored, and the
+    // tour's second, an enter or a call, whether the tour is shown.
+    if (name === 'start' || name === 'tour') marks.push(1 + 3 * 1 + 2);
+    if (lists.has(index)) throw new WiringError(`action list ${index} is built twice, as ${listNames.get(index)} and as ${name}`);
     lists.set(index, made(e.bytes, 'slot-10-list', marks));
+    listNames.set(index, name);
   }
 
   return {
     logArea, eventMap, leadingList, parameterTable, parameterGroups: groups, timerTable, timerRecords,
-    entries, lists, frontLength: cat.front.length, described,
+    entries, lists, listNames, frontLength: cat.front.length, described,
   };
 }
 
@@ -775,7 +997,9 @@ export function describeWiring(layout: ContainerLayout): WiringSpec {
   const tiltSensor = u8(firmware[0]!.bytes, 6) === 0x7f;
 
   // Entry 1's activity keys, at the places the generated order puts them.
-  const probe = catalogue(model, { glowTime: 0, tiltSensor, remoteAssistant: true, bootStep: false }, { 1: null, 5: null, 7: null });
+  const probe = catalogue(model, {
+    glowTime: 0, tiltSensor, remoteAssistant: true, bootStep: false, tourShown: false, delayRestore: true, help: true,
+  }, { 1: null, 5: null, 7: null });
   const entry1 = probe.entries.find((e) => e.index === 1)!;
   const order1 = orderOf(entry1);
   const activityKeys: Record<number, number | null> = {};
@@ -796,7 +1020,19 @@ export function describeWiring(layout: ContainerLayout): WiringSpec {
   const bootIndex = u16(listPieces[startIndex]!.bytes, 1);
   const step = instructionAt(listPieces[bootIndex]!.bytes, 1 + 3 * BOOT_STEP_AT);
   const bootStep = step.opcode === BOOT_STEP.op && step.operand === BOOT_STEP.operand;
-  const settings: WiringSettings = { glowTime: u24(firmware[glowAt]!.bytes, 1), tiltSensor, remoteAssistant, bootStep };
+  // The start list's second instruction calls the restore of saved delays or selects the idle entry.
+  const delayRestore = u8(listPieces[startIndex]!.bytes, 1 + 3 * 1 + 2) === 0x7f;
+  // The tour's start list is `startTour`'s second call, and its own second instruction enters the tour
+  // or calls the quiet list.
+  const tourIndex = u16(listPieces[probe.front.indexOf('startTour')]!.bytes, 1 + 3 * 1);
+  const tourPiece = listPieces[tourIndex];
+  if (tourPiece === undefined) throw new WiringError(`the tour's start list would be action list ${tourIndex}, which the table does not hold`);
+  const tourShown = u8(tourPiece.bytes, 1 + 3 * 1 + 2) === 0x7e;
+  // The All Off key calls Help's list or selects the idle entry.
+  const help = instructionAt(entryPieces[1]!.bytes, 1 + 4 * order1.indexOf(press(ALL_OFF_SCAN)) + 1).opcode === 0x7f;
+  const settings: WiringSettings = {
+    glowTime: u24(firmware[glowAt]!.bytes, 1), tiltSensor, remoteAssistant, bootStep, tourShown, delayRestore, help,
+  };
   const cat = catalogue(model, settings, activityKeys);
   if (firmware.length !== cat.timers.length) {
     throw new WiringError(`base slot 12 holds ${firmware.length} firmware timers where a ${model} has ${cat.timers.length}`);
@@ -926,4 +1162,43 @@ export function builtPieces(built: BuiltWiring): ContainerPiece[] {
     built.logArea, built.eventMap, built.leadingList, built.parameterTable, ...built.parameterGroups,
     built.timerTable, ...built.timerRecords, ...built.entries.values(), ...built.lists.values(),
   ];
+}
+
+/** What `checkWiring` compared. */
+export interface WiringChecked {
+  /** Bytes of every built piece. */
+  bytes: number;
+  lists: number;
+  entries: number;
+}
+
+/**
+ * The configuration's wiring against the one built from its own description: described, built, put
+ * back, laid out and compared byte for byte, refused with the first difference and the built piece it
+ * falls in, by its name where it is a list. The calibration of sections 347 and 359.
+ */
+export function checkWiring(c: Container): WiringChecked {
+  const layout = takeApart(c);
+  const built = buildWiring(describeWiring(layout));
+  const laid = layOutContainer(withWiring(layout, built));
+  const out = laid.bytes;
+  let at = -1;
+  const length = Math.min(out.length, c.blob.length);
+  for (let k = 0; k < length; k += 1) {
+    if (out[k] !== c.blob[k]) { at = k; break; }
+  }
+  if (at < 0 && out.length !== c.blob.length) at = length;
+  if (at >= 0) {
+    const names = new Map<ContainerPiece, string>();
+    for (const [index, p] of built.lists) names.set(p, `list ${index}, ${built.listNames.get(index)}`);
+    for (const [index, p] of built.entries) names.set(p, `base slot 9 entry ${index}`);
+    const where = builtPieces(built).find((p) => {
+      const from = laid.offsetOf(p);
+      return from !== undefined && at >= from && at < from + p.bytes.length;
+    });
+    throw new WiringError(`the built wiring differs from the configuration's at byte ${at}`
+      + (where === undefined ? ', outside it, where something it names moved' : `, in ${names.get(where) ?? where.owner ?? 'a built piece'}`));
+  }
+  const pieces = builtPieces(built);
+  return { bytes: pieces.reduce((n, p) => n + p.bytes.length, 0), lists: built.lists.size, entries: built.entries.size };
 }
