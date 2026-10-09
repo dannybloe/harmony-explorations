@@ -46387,3 +46387,103 @@ device's count.
   compared.
 * `packages/codec/bin/composecensus.ts`, `make composecensus`.
 * `docs/config-format.md`, the press count paragraph.
+
+## 349. A sequence on the Harmony 650 sends each command's one block copy, the group's own where there is one, and the composer now makes the same record
+
+`todo-compile-650.md` 5.2.4. Section 343 found that Logitech's compile of a sequence on the Harmony 650
+sends single block records where ours sends the record the activity's key sends, and 5.2.3 left that as
+the one record difference between our 5.1 file and Logitech's clean compile of the same test setup: the
+screen item Radio in Plasma kijken, KPN 1, 2 s, KPN 2, heard the same and stored differently. This is
+which record Logitech sends, and the composer changed to send it.
+
+**Sources checked**: this document, sections 69, 127, 287, 320, 327, 337 and 343; the composer and the
+lab script that built the 5.1 file, `work/bench-5-1/step1.ts`; `h650_start_config`, the starting compile
+5.1 is built on; `h650_test_config_clean`, Logitech's compile of the test setup; `h650_options_config` and
+`h650_sequence_config`, Logitech's compiles before and after section 343's sequence. MyHarmony's client was
+not read: the compile is made by Logitech's service, and the two compiles answer the question directly.
+Two reviewers ran before the commit, one measuring blind and one auditing the text against the numbers;
+every figure here came back the same, and the second's points went in: the copy shared by several
+records, the narrow evidence under the rule, the scope of two summaries, and a refusal test that matched
+no message.
+
+### What a copy is, and that the compiles already hold them
+
+A device's command is a two block record, a first block played once and a held block played while a key
+stays down, section 127, and on the Harmony 650 the first block opens with 50 ms of silence, the words
+`32767, 17233`, on all 407 two block records of the test setup's compiles. Beside them a compile holds
+**one block copies** of some, section 337: the first block with that silence dropped, at the same carrier,
+no held block and no tail. In `h650_start_config` 97 of the 407 two block records have such a copy in their
+own group and none has two, and 91 of the 94 one block records are one; the other three, two of the
+Plasma's and one of the LG's, are not identified here. The 97 is more than the 91 because one copy can
+serve several records whose first blocks are identical, six records over the Switch, the Denon and the LG,
+and the composer's match by bytes then finds that shared copy. On the KPN box it is 11 of 38, among them
+its 1 and its 2, codes 41 and 11 beside the keys' 14 and 34, each with a send list at the box's quantity
+that nothing in that compile calls, which fits section 320's uncalled number copies.
+
+### What Logitech's sequences send
+
+| compile | the sequence | what each command sends |
+|---|---|---|
+| `h650_test_config_clean` | Radio, KPN 1, 2 s, KPN 2, on Plasma kijken's screen | the copies the starting compile already held, through their lists at 1; no record added |
+| `h650_sequence_config` | KPN 1, 2 s, KPN 2, 20 s, KPN Red, on Red in TV kijken | the copies of 1 and 2 already held, and for Red, which had none, **a copy added** to the KPN box's group, code 22, numbered among the group's records so that every later KPN code moves up one |
+
+So the rule on this model is the one section 327 read on the Harmony One with the lead changed: a
+sequence's command sends the command's one block copy, the group's own where it has one and a new one
+where it does not, and on arch 14 the copy opens with no silence, section 337.
+
+### The composer
+
+`composeSequence` takes `records`, `'copy'` by default on arch 14: for each distinct command it finds the
+group's copy of the named record by the bytes of its one block and its carrier, and otherwise appends one,
+the named record's first block less every space word before the first mark, below base slot 5's table
+where `composeIrGroup` puts a new group's records, with one more entry in the group's array. Two
+relocations, the array entry first holding the group's first record's address so the second relocation's
+census reads a whole container, then the block and header above every group array, then the entry pointed
+at the new header. It appends rather than numbering the copy among the group's records as Logitech does,
+so no other code moves; the stored bytes are the same. A send list follows the existing rule, the group's
+own at the asked quantity or a new one with its delay step, section 287. `'named'` sends the record named,
+which is what the composer did before and what the bench sequence of section 342 sent. On the Harmony One
+`'copy'` is refused, since a One's copy opens with the device's delay between devices, section 337, which
+nothing here composes; there the default stays `'named'`.
+
+### What it reproduces
+
+* **Radio**, composed again with step 1's calls onto `h650_start_config`: its list sends the records
+  Logitech's clean compile stores for Radio, block for block, through the starting compile's own copies and
+  lists, so nothing is created. The same calls with `'named'` give exactly the 5.1 file's Radio records,
+  which differ, so the comparison can tell the two apart.
+* **Section 343's sequence**, composed onto `h650_options_config`: its three sends store what
+  `h650_sequence_config`'s do, one copy made for Red with its send list and delay step. Every byte of the
+  result is claimed once, the gaps are the base's, the trailer agrees, the emitter reproduces the file and
+  the action queue fits. The keys keep their own records.
+
+**And the screen copy is seen.** The list Radio's corner calls in the clean compile is the composer's body
+given their two send lists, four instructions with no beeper in front, and a second list of the same body
+is the page's copy, section 69. So `ARCH14_INFERRED` loses its screen copy entry and holds one, the send's
+quantity, which neither compile separates, since the one device both sequences send to, the KPN box,
+states 100 ms on the account, section 343.
+
+### Scope, decision 16
+
+The Harmony 650's compiles only, two sequences of the KPN box in two compiles of one account: three
+distinct commands, of which 1 and 2 show the group's own copy being used, twice, and Red alone shows one
+being made. Two arms of the composer have no sample: the lowest of several copies, since no group holds
+two, and a named record that already has no held block being sent as it is. The Harmony 600 and 700 are
+not compiled with a sequence and the composer's default applies to them by architecture, unseen. The Harmony
+One sends copies too, section 327, with a lead this does not compose. Nothing was written to a remote: the
+copy drops the 50 ms silence our 5.1 file sends before each code, and that difference is not heard here.
+
+### Falsification
+
+A Logitech compile for the Harmony 600, 650 or 700 whose sequence sends a two block record, or a copy that
+keeps a lead or a held block, or a copy whose block is not the key's first block less its opening silence;
+or a group holding two copies of one record with the sequence sending the later.
+
+### Where it lands
+
+* `packages/codec/test/sequence.test.ts`: Radio composed again against the clean compile with its control,
+  the screen copy, section 343's sequence composed onto the compile before it with the copy made, and the
+  refusal on the Harmony One; the two earlier tests that pin what the bench sent pass `'named'`.
+* `packages/codec/src/sequence.ts`, `ComposeSequence.records` and `ARCH14_INFERRED`;
+  `packages/codec/src/compare.ts`, `listSends`, the view's own reading of what a list sends.
+* `docs/config-format.md` under "A sequence is one action list of calls and per device pauses".

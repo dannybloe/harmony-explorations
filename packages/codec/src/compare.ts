@@ -66,16 +66,21 @@ export type SetupView = Map<string, ViewItem>;
 /** Event type 2, a press: the only event that sends a code, section 128. */
 const PRESS = 2;
 
-export function setupView(c: Container): SetupView {
-  const view: SetupView = new Map();
+/**
+ * What one action list sends, as the view states it: the frames a receiver hears and the records the
+ * remote stores, in order. Exported so a list nothing binds yet, a sequence just composed, is described
+ * by the same derivation as a binding the view reaches, rather than by a second copy of it.
+ */
+export function listSends(c: Container, list: number): Pick<ViewItem, 'frames' | 'records'> {
+  return sender(c)(list);
+}
+
+/** The reader behind `listSends`, with the whole configuration's lookups made once. */
+function sender(c: Container): (list: number) => Pick<ViewItem, 'frames' | 'records'> {
   const codes = infraredCodesPerList(c);
   const groups = irGroups(c) ?? [];
   const named = new Map(devices(c).map((one) => [one.group, one.name ?? `group ${one.group}`]));
-  const drawn = screenStrings(c, characterMap(c));
-  const records = modeRecords(c) ?? [];
-  const lists = c.actionLists() ?? [];
-
-  const sent = (list: number): Pick<ViewItem, 'frames' | 'records'> => {
+  return (list: number): Pick<ViewItem, 'frames' | 'records'> => {
     const frames: string[] = [];
     const stored: string[] = [];
     for (const one of codes.get(list) ?? []) {
@@ -93,6 +98,15 @@ export function setupView(c: Container): SetupView {
     }
     return { frames, records: stored };
   };
+}
+
+export function setupView(c: Container): SetupView {
+  const view: SetupView = new Map();
+  const drawn = screenStrings(c, characterMap(c));
+  const records = modeRecords(c) ?? [];
+  const lists = c.actionLists() ?? [];
+  const named = new Map(devices(c).map((one) => [one.group, one.name ?? `group ${one.group}`]));
+  const sent = sender(c);
 
   // A key map: every press binding by its scan, and a press that sends nothing as an empty item, so a
   // key bound in one file and not the other is still seen.

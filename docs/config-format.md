@@ -4165,8 +4165,9 @@ pushes. `docs/findings.md` section 238.
 **Confirmed on arch 12 (Harmony One) from four compiles of one account holding the same two sequences,
 five of each compile's six lists reproduced instruction for instruction from the account's statement of
 their steps; on arch 14 confirmed from one Logitech compile of a Harmony 650 holding one sequence,
-section 343, for the shape, the pause's devices and order, and a 20 second pause as one `0x7C`; the screen
-copy and the send's quantity are still inferred there.**
+section 343, for the shape, the pause's devices and order, and a 20 second pause as one `0x7C`, and from a
+second on the same model, section 349, for the screen copy and the record a command sends; the send's
+quantity is still inferred there.**
 [findings.md](findings.md) section 327. **On a Harmony 650 the composed form runs as written**, section 342:
 one press sent the three commands with the two pauses, 2 and 20 seconds, between them, and Logitech's
 compile of the same sequence is the same list, section 343, sending single block records of its own.
@@ -4175,15 +4176,16 @@ pause, Volume Up to the receiver, was sent only when the pause ended.
 
 | step | what a list holds |
 |---|---|
-| a command | one `0x7F` call of that command's send list `{0x7D, 0x7C}`, whose `0x7C` is the device's **inter key delay** in tenths, so a device at 200 ms calls lists at 2 where its device mode keys call lists at 1. The one separating device in the sequences is that one; the send is a single block record of its own where the key's is two blocks, and the composer makes no record. A single block copy opens on arch 12 (Harmony One) with its device's delay between devices, 500 or 1000 ms, and on arch 14 (Harmony 600, 650 and 700) with no silence, where the wait is section 287's delay step, section 337 |
+| a command | one `0x7F` call of that command's send list `{0x7D, 0x7C}`, whose `0x7C` is the device's **inter key delay** in tenths, so a device at 200 ms calls lists at 2 where its device mode keys call lists at 1. The one separating device in the sequences is that one; the send is a single block record of its own where the key's is two blocks. On arch 14, as measured on the Harmony 650 alone, that record is the key's **one block copy**, section 349: its first block less the opening silence, two words of 50 ms on all 407 two block records of the Harmony 650 compiles measured, at the same carrier, with no held block and no tail; the group's own where the configuration holds one, which Logitech's compile of the test setup holds for 97 of its 407 two block records and for none twice, and one the compiler adds to the group where it does not, numbered among the group's records. `composeSequence` makes the same record, appended at the group's end, and on arch 12 sends the record named. A single block copy opens on arch 12 (Harmony One) with its device's delay between devices, 500 or 1000 ms, and on arch 14 (Harmony 600, 650 and 700) with no silence, where the wait is section 287's delay step, section 337 |
 | a pause | one `0x7C (group << 8) \| tenths` per device the **activity** switches on, in the order its start switches them on, whatever device the neighbouring steps send to. Four of four compiles, three of them with the devices renumbered |
 | a pause of 20 seconds | one `0x7C` of 200 per device, not runs of 100 |
 | two pauses in a row, and a pause at the end | kept as written, not merged |
 
 * **One send list per distinct command**, shared by every step and every copy that sends it.
 * **One copy of the list per binding.** On arch 12 a screen button's copy opens with the beeper
-  `0x75 0x0FCA` and has the page's second copy; a key's copy has none. No screen item on arch 14 opens
-  with the beeper, so its copy is taken to be the key's.
+  `0x75 0x0FCA` and has the page's second copy; a key's copy has none. On arch 14 the screen copy is the
+  key's, no beeper, and the page's second copy is a second list of the same body, seen on the Harmony 650,
+  section 349.
 * **On arch 14 every send list opens with its delay step**, section 287, and a send list a sequence
   needs that the compile lacks, a code with no list at the quantity asked for, is three lists: the send, its private load, its private condition calling
   the device's one shared delay list.
