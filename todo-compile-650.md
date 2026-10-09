@@ -81,7 +81,7 @@ an item, ask whether the finish line moves without it; if it does, the item goes
 - [ ] 5.1 Compose the rest of the test setup onto 1.6's starting configuration and write it
 - [ ] 5.2 Check it against the same test setup compiled by Logitech: every key and every screen item, in every activity and in device mode, shows the same and sends the same infrared, as the bench's receiver hears it, Help and the Remote Assistant apart
 
-## 6. The composers copy nothing
+## 6. Our composers stop borrowing parts from Logitech's file
 
 - [x] 6.1 List what each composer copies out of the configuration it is given: the list is 6.2's sub-items, checked against `compose.ts`
 - [ ] 6.2 Build each of those ourselves, and write and check the setup again as in 5.2
