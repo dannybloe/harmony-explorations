@@ -193,6 +193,8 @@ const H650_DUMPS = new Set([
   'h650_milestone_5_1_base',
   'h650_5_2_5_base',
   'h650_6_2_13_base',
+  'h650_7_1_base',
+  'h650_7_1_stopped',
 ]);
 
 /**
