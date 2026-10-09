@@ -571,7 +571,7 @@ finding.
 
 `todo.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 359<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 360<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and flash has been written on five units**, the first in section 222:
@@ -847,6 +847,20 @@ cannot drift apart; what a reader should not expect is two independent statement
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
 
+**The device composer reads Logitech's infrared codes the way their own definitions say to, and 39074
+more of the catalogue's commands compose, section 359.** A code in Logitech's database is a protocol name
+and a number, and how many bits each part of the number takes is stated by the protocol's definition. The
+composer took it from the protocol's name instead, and a name like "Russound 9 Bit Quad" gives the number
+of base four digits, not bits, so 52658 commands of 156 protocols were refused as unreadable. Read the
+definition's way, 39074 of them compose; the rest are refused for reasons other items hold, and 172 are not
+infrared at all or are misspelt in the database. Three devices from a Harmony One compile, one of which
+composed nothing before, came out word for word as Logitech wrote them; those are protocols whose name was
+right and whose numbers ran over it, so the main case, a name giving the wrong width, is checked against
+Logitech only as signals, on two protocols in configurations whose devices are not known. Two smaller
+fixes came with it: 1217 commands of three protocols the name had read wrongly now send what the definition
+describes, and a long silence is spelt in the words Logitech uses. Over the whole database, 2038021 of
+2067863 commands compose now, and 766 of 54118 code sets have none that does.
+
 **The delay between devices has been watched on a Harmony 650, and it acts in All Off as well as when
 an activity starts, section 335.** Each device has a setting for how long the remote pauses between
 devices. With both at half a second, the Denon's command came 0.62 s after the KPN box's finished when
@@ -988,7 +1002,7 @@ generated: the letters and fonts themselves, `todo-compile-650.md` 8.2, and the 
 Assistant, the tour and the status screens, which are not built.
 
 **The remote's own wiring calls nothing copied any more in the configuration this track builds, section
-359.** The lists behind the remote's own events, the screen light, the battery screens and starting up
+360.** The lists behind the remote's own events, the screen light, the battery screens and starting up
 are a tree of small tests on the firmware's own settings, 40 lists on a Harmony 650, and they are generated
 now; 23 of Logitech's compiles, the one with no activities among them, come back identical, again with
 every byte but the few the description reads blanked first, apart from the file's frame, which says where

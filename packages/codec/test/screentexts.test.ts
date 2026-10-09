@@ -170,7 +170,7 @@ test('on the 22 Harmony 600, 650 and 700 compiles every text on a screen built h
 /**
  * Every Logitech compile of a Harmony 600, 650 or 700 in the lab: the 22, the French one, and a compile with
  * two devices and no activities, which the pass refuses at its menus as section 356 refuses it, and until
- * section 359 refused for its wiring.
+ * section 360 refused for its wiring.
  */
 const FORM_RULE = [...ALL, 'h650_issue8_config', 'harvest_650_two_devices'] as const;
 
@@ -324,7 +324,7 @@ test('checkScreenTexts passes Logitech\'s clean compile and refuses a corner lab
 
 test('a configuration whose firmware wiring or menus are not read is refused as one, not with a reader\'s own error: the bench file of todo-compile-650 4.2 at its wiring, and the compile with no activities at its menus',
      skipUnless('harvest_650_two_devices', 'h650_bench_4_2_base'), () => {
-  // The compile with no activities was refused at its wiring here until section 359 read it; it has no
+  // The compile with no activities was refused at its wiring here until section 360 read it; it has no
   // activity menu, which is where section 356 refuses it too.
   assert.throws(() => checkScreenTexts(containerOf('harvest_650_two_devices')),
     (error: Error) => error instanceof ScreenTextError && /menus are not read: the activity menu does not map the key under Devices/.test(error.message));

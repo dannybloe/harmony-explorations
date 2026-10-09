@@ -46175,14 +46175,14 @@ firmware's own variables and on every device, the all off reset<!--superseded-->
 Assistant's gate. Some of it is other items' work, the devices' and the activities'; the rest is the
 part of the wiring still copied.
 
-**Corrected by section 359.** That walk followed calls out of the built lists only, and for that walk
+**Corrected by section 360.** That walk followed calls out of the built lists only, and for that walk
 1518 and 69 to 148 stand; it missed the eight lists entry 1's binding of scan 6, read as All Off's, calls,
 and counting those it is 1622 over the thirteen, 77 to 156 per compile, 93 on `h650_config_region`. Its
 parts are other than this paragraph names. "The all off reset"<!--superseded--> is the restore of the delays saved on
 the remote, section 303, which `start` calls between the boot list and the idle entry; it is the part "on
 every device", one list and four per saved delay. Scan 6's own list, the eight missed, is Help's, and the
 gate is the Remote Assistant's. The rest is a tree of comparisons on the firmware's variables, which
-section 359 builds; none of it is the devices' or the activities' work, as this paragraph supposed. So on
+section 360 builds; none of it is the devices' or the activities' work, as this paragraph supposed. So on
 `h650_config_region` the 93 are 41 lists of the restore, one and four for each of its ten saved delays, 8
 of Help's list, 4 of the gate and 40 of the tree, which is the breakdown by part; the one above, 30, 14, 28
 and 13, was of the 85 and by kind of list, and is not recounted by kind.
@@ -47684,7 +47684,7 @@ start.** All 63992 text draws of the 24 Harmony 600, 650 and 700 compiles in the
 screen program of each: the 22, 60370 draws, the French `h650_issue8_config`, 2239, and
 `harvest_650_two_devices`, 1383, a Logitech compile of a Harmony 650 with two devices and no activities,
 which is not among the 22 because section 356 refuses a configuration with no activities and this pass
-refuses its wiring, below; since section 359 reads that wiring, the pass refuses it at its menus instead. Section 334 measured it on menu pages, 336 on start up screens and 357 inside the
+refuses its wiring, below; since section 360 reads that wiring, the pass refuses it at its menus instead. Section 334 measured it on menu pages, 336 on start up screens and 357 inside the
 firmware's screens; each is this rule seen from inside one builder. Because it is the configuration's, the
 pass generates the form of the texts it leaves out too: a text on a built screen can be the first copy a left
 out text points at, or the other way round.
@@ -47797,7 +47797,7 @@ reader cannot read is refused as one**, where it used to fall through with that 
 `harvest_650_two_devices`, whose location variable differs between two places, and `h650_bench_4_2_base`,
 the region read of `todo-compile-650.md` 4.2, where a wiring list runs past the end of its section, which was
 "read at offset 7 is outside a 7 byte buffer" and is now that message inside a refusal. **Changed by section
-359**, which reads the wiring of a configuration with no activities: the location variable differed because
+360**, which reads the wiring of a configuration with no activities: the location variable differed because
 scan 4's list there enters the "add Activities" placeholder instead of mapping the location. The pass now
 refuses `harvest_650_two_devices` at its menus, "the menus are not read", the refusal section 356 makes.
 
@@ -47922,7 +47922,219 @@ wrong.
   text generated and its six changed lengths.
 * `docs/config-format.md`, after the firmware's own screens, and the start up title limit in its two places.
 
-## 359. The lists the firmware's wiring calls are built from a description, and the three left are the delay restore, the Assistant's gate and the Help list of the key read as All Off
+## 359. The catalogue composer reads a code at the widths its family's definition states, and writes 39074 commands more
+
+**Date:** 9 October 2026. **Status:** confirmed by construction against one Harmony One compile, three
+devices word for word, but those are codes whose name states the right width and whose value overflows
+it, 185 of the commands this section reads; the width reading proper, the other 52300 or so, is checked
+against Logitech only as trains, on two families in two configurations whose devices are not catalogue
+matched. The rest of what it admits is composed from Logitech's definition and is unconfirmed. Nothing
+composed this way has been written to a remote.
+
+`todo-process-logitech.md` 2.1. An infrared command in Logitech's catalogue is a family name and a value
+written in a notation, `G:Motorola 16 Bit Hex:()(0x...)():3`. How wide each value is and what base its
+digits are written in is stated by the family's definition, `keycodeFields` and the cell count of the
+segment a value names, sections 231 to 233. The renderer, `waveformOfArchiveCommand`, has read codes that
+way since section 233. The catalogue composer did not: it read every code with `statedCode` alone, which
+takes the width from the number before `Bit` in the family's name. On the 142 families whose cell
+carries more than one bit that number is the digit count on 66, the bit count on 4 and neither on 72,
+section 231, and 43 names state no width at all, section 233.
+
+**Sources checked before the work started.** This document, sections 228, 231 to 233, 309, 348 and 350.
+MyHarmony's client, `../lab/work/myharmony/src/`: it holds `ParsedKeyCode`, whose `Start`, `Repeat` and
+`Finish` are lists of `KeyCodeElement`, a segment name and a segment type, as data contracts of the
+service proxy, and parses no keycode string and states no width; the compile runs on Logitech's server,
+section 293's exemption. The archive's own protocol definitions, which state every width this section
+uses. No firmware was read: what a remote does with a record is not in question here, only which record.
+
+### The premise, measured
+
+The item asked whether its 151 families and about 53000 commands were the 52517 commands `todo-later.md`
+6.14 had counted as refused because the composer takes digit widths from the family name. They are, as one
+rule and not 151 readers, though neither number is reproduced:
+
+| `make composecensus` before this section | commands |
+|---|---|
+| refused with "our keycode reader declines the code" | 52673 |
+| of which the name's widths cannot read the code, in 156 families | 52658 |
+| of which the definition's widths cannot build a `MemorexO1 32 Bit` code, section 350 | 15 |
+
+Of the 52658, the definition's widths read 52486, in 150 families that read whole. Why the name failed
+them, per field, from the sentence audit: on 59 families, 9019 commands, the name states no width; on 64,
+20924 commands, it is the digit count; on about 21800 commands it is neither, the six `... 16 Bit Hex`
+families above all, whose values are eight hexadecimal digits under a name saying 16; and on 7 families,
+185 commands, the name's width is right and a value overflows it, which the definition's route masks to
+the width as Logitech's renderer does, section 233. 49 of the 156 families, 197 commands, are Logitech's
+`QE ...` test patterns, frequency and timing tests rather than equipment. The 172 left are not
+infrared codes a remote can send: `HID 16 Bit`'s 109, `Roku IP`'s 19 and `Sonos IP`'s 13, whose values
+carry no `0x` and whose definitions state no rhythm, and 31 codes misspelt in the catalogue itself, `0x0x`
+on 27 `Galaxis 16 Bit Quad Toggle` codes, a stray letter or a command name on three `Toshiba 32 Bit` ones
+and `(c)` on one `Pioneer 32 Bit`. None of the 172 has a rendering in the archive either. The 52517 was
+counted before sections 348 and 350 by another route and the 151 families are not named anywhere, so
+neither is reconciled here.
+
+### The rule
+
+**The composer reads every catalogue code at the definition's widths**, `statedCodeOfDefinition` in
+`archive.ts`, the three lines `waveformOfArchiveCommand` held, lifted out so that both read through one
+function. `catalogueCode` in `composecatalogue.ts` picks the family's definition; `ComposeCommand.read`
+carries the reading into `composeIrGroup`, which until now read `stated` again by the name.
+
+**Calibration, on every code both readings read.** Of the archive's 152110 distinct codes, both read
+141517, and the rhythm table has a block under both for 101593. The block is the same under either reading
+on 101369 and differs on 224, every one of them a code of `Motorola 16 Bit Quad Toggle` (99), `Kathrein 16
+Bit Quad Toggle` (80) or `Pace 18 Bit Quad Toggle` (45), whose toggle field the name made sixteen bits wide
+and the definition makes one. **The name's block on all 224 is the definition built at no count from 0 to
+6, and the definition's reading gives the definition's block at 1, the count the three families state.** So
+the composer was sending a frame no definition describes on 1217 commands, and sends the definition's now.
+No compile in the lab holds any of the three families, so that is a reading of the definition, and
+`make prontocheck` agrees with it on every command of the three. No code loses or gains a table block by
+the reading.
+
+**A code only the definition reads goes to the definition, never to a table block.** The ground is
+provenance: every row was measured or derived over codes the name reads, `bin/protocols.ts` reading them
+with `statedCode`, so for the others the table holds no evidence. Thirteen families have a whole block in
+the table that takes such a code, 2975 distinct codes, and on 78 the block sends fewer intervals than the
+definition does at the family's own count: a `Samsung 16 and 20 Bit` code stating three to five pairs gets
+the row's one pair (39 codes, and 2 more stating start and release groups), a `Pace 16 Bit Quad` code
+stating two values gets one (35), and an `iMonFixed2` code stating only its start and release groups gets
+nothing (2). **The 78 do not by themselves draw the line at the name**: on codes the name does read, in
+families stating a count, the table's block is shorter than the definition's on 122 (86 `Samsung 42 Bit
+2`, 25 `Toshiba 32 Bit`, 7 `JerroldO1 16 Bit`, 3 `Logitech 24 Bit`, 1 `Galaxis 16 Bit Quad Toggle`) and
+longer on 88, against 63853 the same, the sentence audit's count, and those are left as the table sends
+them, since they are what todo 2.4 and 2.5 are about. The composer builds the ones only the definition
+reads from the definition at the device's count, the route of a family with no whole block, section 348: 1138 of the 2975 as the definition's block, 1833
+refused for a release group, which is that route's refusal, and 4 `iMonFixed2` codes sending nothing at the
+0 their family states. The table route would have composed the 1833 with the release dropped, which is
+todo 2.5's open question rather than an answer to it.
+
+**A gap longer than a word is spelt whole.** `blockOfDefinition` chunks a literal gap into words of 32767,
+and `compiledBlockWords` spelt each chunk on its own, where Logitech's compiler spells a silence by the half
+word rule, phase 7 and section 174: `Microsoft 30 Bit`'s 68643 went out as 32767, 32767 and 3109, and
+Logitech writes 32767, 17938 and 17938 in every container in the lab holding that silence, eight of
+them, on the Harmony 880 and 885 (arch 8), the Harmony One (arch 12), a contributed Harmony 650 (arch 14)
+and both Harmony 350s (arch 16), and spells it chunk by chunk in none. The same signal in other words,
+and no train comparison could see it. `joinedGaps` in `archive.ts`, beside the chunking it undoes, joins a
+space of a whole number of chunks to the space after it and nothing else, since a biphase family's two
+adjacent half cells are two words in Logitech's records too, and `compiledBlockWords` calls it. It changes
+the words of 24 families whose definition states a gap with a remainder under half a word, measured over
+every distinct code built at 1 and at 3: `Microsoft 30 Bit`, `Philips RC5Ex`, `Vaux 33 Bit`, `NRC 17 Bit`
+and twenty more, three of them `Entone` families whose table rows carry the chunks as well. The 292 tests
+of every file that composes pass unchanged, every word for word comparison an earlier section made among
+them.
+
+### Against Logitech's compiles
+
+Every infrared record of every container in the lab, 128 distinct containers outside the agents' scratch
+and 132 with it, was looked up against the definition's build at 0 to 6 repetitions of every distinct code
+this section admits or re-reads, 10672 codes. Three containers hold any:
+
+| container | remote | family | records | at |
+|---|---|---|---|---|
+| the harvest's third compile on the first test account | Harmony One (arch 12) | `Microsoft 30 Bit` | 72 | 3 |
+| the same | Harmony One (arch 12) | `Sony 20 Bit`, `LG 32 Bit` | 1 each | 3, 1 |
+| the factory configuration, `h350_config` | Harmony 350 (arch 16) | `Philips RC5Ex` | 30 | 3 |
+| a contributed configuration | Harmony 880 (arch 8) | `Russound 9 Bit Quad` | 66 | 3, 20 of them 1 or 3 |
+
+Every record found carries the definition's carrier. **The closure is the composer's output against the
+first compile's bytes.** The Gemini TestQuhd, all 70 of whose codes only the definition reads, the Sony
+RDR-GXD500 and the Rosen 0602-2XX-8, one such code each, composed whole onto the Harmony 650's configuration
+at their own counts, 3, 3 and 1, and compared on what follows each record's opening silence, since a Harmony
+One compile opens its blocks with none: 72 of 72, 63 of 63 and 48 of 48 records are Logitech's in all three
+blocks, and nothing of any of the three is left out. The Sony's group holds ten records more, the digits
+again with a first block only, which the composer does not emit and which is not read here. **What this closure covers is narrower than the section**: all three families are of the
+overflow class above, a name stating the right width, 30, 20 and 32 bits, and a value wider than it, so it
+confirms the definition's route and its masking word for word, and says nothing about a width the name got
+wrong. **The controls**: read at the name's widths not one of the TestQuhd's 70 codes composes, so
+the device had nothing to compose before this; spelt chunk by chunk, as the writer did before, none of its
+70 presses is one of Logitech's words, though every one is the same signal; and built at 1 rather than its
+3, none is even that signal.
+
+The Harmony 350's factory configuration and the Harmony 880's contributed one are the only checks of the
+width reading proper against Logitech, `Philips RC5Ex` stating no width and `Russound 9 Bit Quad` a digit
+count, and they check the frames and not the count: the first is Logitech's factory set, whose records are
+not tied to catalogue entries here, section 263, and the second's owner may have changed the count, section
+348. Neither is evidence about which count a device of the family repeats, and 96 records cover at most 96
+of the two families' 1277 distinct codes, so the row below attributes whole families on that.
+
+### What it moves
+
+`make composecensus`, a command counted as written when it composes for every device serving its codeset:
+
+| | section 350 | now |
+|---|---|---|
+| commands written, of 2067863 | 1998947 | 2038021 |
+| families refusing a command, of 687 | 516 | 441 |
+| families writing nothing | 209 | 95 |
+| codesets writing nothing, of 54118 | 2119 | 766 |
+| devices writing every command, of 257720 | 244478 | 251849 |
+
+**Of the 52658 commands the name could not read, 39074 now write, in 127 of the 156 families**, 78 of them
+writing every one. Counted per family by what checked them:
+
+| | families | commands written |
+|---|---|---|
+| word for word against a Logitech compile of a known device, Harmony One (arch 12) | 3 | 72 |
+| frames against a Logitech configuration whose device or settings are not known, Harmony 350 (arch 16) and Harmony 880 (arch 8) | 2 | 14987 |
+| on the definition alone, stated and unverified per decision 15 | 122, 49 of them `QE` test patterns | 24015 |
+
+The 13584 not written are refused by rules other sections hold: 11288 name a release group (2.2.3), 1464 sit
+on a device whose codeset holds a family stating another count (2.2.2), 660 on a device stating 0 (2.2.4),
+and the 172 above; which reason a command is counted under depends on which of its devices refuses
+first, and the blind re-measure, taking each count's reason in another order, got 11359, 1336, 717 and 172
+over the same total. 1050 commands compose for some of their codeset's devices and not all, against 442,
+counted as refused. 438 written commands sit on a codeset with a device stating a count of 2, which
+section 348 composes unconfirmed. **The 2.1 refusal itself is down to 187**: the 172 and section 350's 15.
+Not in any of these: about 222 commands whose family is spelt with another letter case or a trailing space,
+`AudioAnalogue 14 bit` against the definition's `14 Bit` and four more, which find no definition and are
+refused as having no rhythm, todo 2.3's class rather than this one's.
+
+### Scope, decision 16
+
+The word for word check is one Harmony One compile (arch 12), three devices, composed onto a Harmony 650
+configuration (arch 14) and compared on the block words, which are the same format on both. No Harmony 600,
+650 or 700 container (arch 14) in the lab holds a code only the definition reads, so on those models it is
+the definition's reading only; the families are there, `Sony 20 Bit` on every bench Harmony 650 compile and
+`Microsoft 30 Bit` on a contributed Harmony 650, through codes the name reads. The Harmony 350 (arch 16)
+and Harmony 880 (arch 8) agree on frames. The gap spelling holds on arch 8, 12, 14 and 16 (Harmony 880 and
+885, Harmony One, Harmony 650, Harmony 350). Not checked
+on the Harmony 525 (arch 9), for which nothing compiles. Nothing was sent to a remote.
+
+### The two reviews
+
+**The blind re-measure**, given the questions and not this section, agreed on every total: 52658 commands of
+156 families, 39074 written, 127 families writing some and 78 all, the 224 and their counts, the three
+containers and the three closures, 72, 63 and 48. It split the refusals in another order, above, and found
+the docstring of `catalogueCode` wrong in saying every family has a definition, the 222 above. **The
+sentence audit** found that the word for word closure is of the overflow class and not the width class,
+now said in the status and above; "a digit count on most" where section 231 measured 66 of 142, corrected
+here, in `docs/config-format.md` and in two docstrings; `Motorola 16 Bit Hex` given as a digit count name
+where its values are 32 bits; the scope sentence true per code and not per family; the Samsung codes
+stating three to five pairs and not four; the line at the name resting on the 78 when 122 named codes show
+the same shortfall, now rested on provenance; the `QE` test families inside the family counts; and four
+test titles naming more than their bodies, two renamed and two given the check their titles claimed.
+
+### Falsification
+
+A Logitech compile holding a code only the definition reads whose record is not the definition's block at
+the device's count, or a code of the three Quad Toggle families written as the name read it; a Logitech
+record of a gap longer than a word spelt as maximal words and a remainder under half a word.
+
+### Where it lands
+
+* `packages/codec/src/archive.ts`: `statedCodeOfDefinition`, which `waveformOfArchiveCommand` now calls,
+  `GAP_CHUNK_US` and `joinedGaps`.
+* `packages/codec/src/composecatalogue.ts`: `catalogueCode`, `catalogueCommandBlocks` reading through it and
+  sending the table's block only for a code the name reads too, the reading attached to every command.
+* `packages/codec/src/compose.ts`: `ComposeCommand.read` and `ComposePowerStep.read`, read by
+  `composeIrGroup`; `compiledBlockWords` joining chunked gaps.
+* `packages/codec/src/devicemode.ts`: `composableKeycode` takes the reading.
+* `packages/codec/bin/composecensus.ts`: the section's tally and `--families`.
+* `packages/codec/test/cataloguereading.test.ts`: the premise counts, the calibration with its control, the
+  78, the three devices against the compile with their three controls, `joinedGaps`, and the Harmony 350.
+* `docs/config-format.md`, after the press count paragraphs.
+
+## 360. The lists the firmware's wiring calls are built from a description, and the three left are the delay restore, the Assistant's gate and the Help list of the key read as All Off
 
 **Date:** 9 October 2026. **Status:** confirmed by construction over the 22 arch 14 compiles of sections
 356 to 358 and `harvest_650_two_devices`, 23 in all, with a blind control that blinds everything but the
@@ -47930,7 +48142,9 @@ frame and the skin, and failing controls; the settings that leave the three carr
 reading, in no Logitech compile, and nothing built this way has been written to a remote. Corrects section
 347's count and its naming of the parts in place, and section 358's refusal of the compile with no
 activities. Corrected in place after a sentence audit the same day: the sharing of lists, the rule with no
-activities, the blind control's own control and the scope of three counts.
+activities, the blind control's own control and the scope of three counts. Numbered 359 until the
+infrared section of `todo-process-logitech.md` 2.1 took that number. Checked by an independent blind
+re-measure, below, which agrees and adds the restore's device constant.
 
 **Todo `todo-compile-650.md` 10.2.2.** Section 347 built the firmware's wiring, the front of base slot 10
 and the shared lists every key press runs, and named by index every list those call. This section builds
@@ -47991,8 +48205,11 @@ variables 9, 14, 15, 16 and 17, whose numbers are the firmware's and the same on
 configuration's: the low battery flag, the tour's mark, and on the Harmony 700 the variable the
 Assistant's gate compares. Timers are named by their place in the table, `1F EB00|k` to start one and
 `1F EA00|k`, read here as stopping one, so a device timer's place moves them as section 347's table does.
-**Whether call sites share a list or each get a list of the same body is per model**, and the generator
-follows each compile. Shared on all 23: `stopLights`, five callers, and `tour`, two on the 20 with the
+**Within the tree's conditional lists, 40 on a Harmony 600 or 650 and 78 on a Harmony 700, whether call
+sites share a list or each get a list of the same body is per model**, and the generator follows each
+compile. Elsewhere in the wiring sharing is the rule: section 347's own lists are called from many sites,
+`everyKey` from 104 sites on a Harmony 600 or 650 and 109 on a 700 by the blind re-measure's count below, and the send lists and the delay maps'
+callers are shared across activities. Within the tree, shared on all 23: `stopLights`, five callers, and `tour`, two on the 20 with the
 Assistant on. Shared on the seven Harmony 700 compiles as well: `everyKey.on`, two callers, and
 `entry1.0x27.shared` and `entry1.0x24.shared`, four each. Repeated per call site: `lightOn` and
 `lightOnAgain`, one body, on all 23, the three empty activity keys' lists on the compile with no
@@ -48047,6 +48264,30 @@ scan 6's opcode in entry 1 removed, the description reads Help off a blinded byt
 other form, and finds the idle entry at one index from the mode table and another from that binding, so it
 refuses while reading, `entry "idle" is 8 in one place and 47 in another` on `h650_test_config_clean`, and
 likewise on all 23, which the test asserts. The rebuild never differs; nothing gets that far.
+
+**The independent check.** The blind re-measure, given the question and the 23 and not this text, in
+the lab's `work/review-360-blind/`, agrees on the counts the section rests on: base slot 9 holds the
+activities and six more on 23 of 23; `start` is the boot list, the restore, the selection of the entry this
+section calls idle and the USB check; the restore is `2 + 2d` instructions for `d` devices, each call a
+chain of four lists, so `1 + 8d` lists, which is 57 on `h650_test_config_clean` and 41 on
+`h650_config_region`; scan 6's list is a chain of eight whose paths end selecting that entry or at a per
+device "does not seem to switch inputs" or "turn on correctly ... Fix it now" screen, `8 + 2d` with the
+screens' value maps; and what the leading list reaches is `30 + 8d` on a Harmony 600 or 650, `26 + 8d`
+with the Assistant's gate replaced by a map, and `40 + 8d` on a Harmony 700. Across every reachable list it
+finds sharing the norm: `boot` called from 4 sites, `events` from 9, 10 on the 700, `everyKey` from 104,
+109 on the 700 and 103 with the tilt sensor off, `elevenKeys` from 11 and `quiet` from 2 or 3, with send
+lists shared across activities and the delay maps' callers per device; the byte identical bodies it finds
+are mostly `[71 v, 7F map caller]`, one per send list. Those counts are the re-measure's and not reproduced
+here; they are why the sharing statement above is scoped to the tree.
+
+It measured two things this section had not. **The restore's device constant**: every restore leaf is
+`[7A K, 0F FF40 or FF41, 1F ED00|v]`, and `K` is the device identifier's last five decimal digits, or its
+last four where five would exceed 65535, on **290 of 290 leaves over the 23**: 44063548 gives 63548,
+92595307 gives 5307. Section 303 found the last four digits fitting some configurations and the last five
+others and left the key unconfirmed; this one rule fits both. Reproduced here, `restorekey.ts` in
+`work/agent-10-2-2/`. Nothing builds on it, since the restore is left out; `todo-later.md` 3.3.5 is where
+it would be used. **The restore's device order** is ascending by identifier on 20 of the 23 and not on
+`h600_config`, `h700_config` and `h700_config_2`; what orders those three is unread.
 
 **Failing controls**, by `checkWiring` on `h650_test_config_clean`, which passes the unedited compile
 over 64 lists and 6 entries:
@@ -48130,6 +48371,8 @@ One) and arch 9 (Harmony 525) were not compared. Refused as before: the European
   reading says: nothing was written. The bench check is that All Off switches off without offering a
   wizard, that the remote starts with no restore, and that Help pressed with no activity running does
   nothing.
+* That the restore's device constant rule holds beyond these 23, and what orders the restore's devices
+  on the three where it is not ascending.
 * What variables 9, 14, 15, 16 and 17 hold, what `1F E8xx`, `1F E9xx` and `07 FFF6` do, and that
   `1F EA00|k` stops a timer: the tree is built from its shapes, not its meaning.
 * That scan 6 is the key printed All Off: read from what its list selects, and
@@ -48154,4 +48397,6 @@ Logitech compile with no activities whose scan 4 list maps the location.
   lists, this track's configuration, the five failing controls, the refusals of the rule with no activities
   and the Harmony 700 refusal; `screentexts.test.ts`'s refusal of the compile with no
   activities at its menus.
-* `docs/config-format.md`, "The firmware's own wiring on arch 14".
+* `docs/config-format.md`, "The firmware's own wiring on arch 14", and the restore's key in section 303's
+  delay table.
+* `todo-later.md` 3.3.5.1: the restore's device constant rule and order, for when the restore is built.

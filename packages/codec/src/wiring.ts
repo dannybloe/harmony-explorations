@@ -32,7 +32,7 @@
  *   press to, the one entries 0 and 4 bind their events to, the stack the boot list pushes, and the
  *   list the lead calls when the remote goes quiet. Entry 2 is the first the key walk consults,
  *   section 333, so these run under every activity.
- * * **The tree the generated lists call**, section 359: comparisons on the firmware's own variables
+ * * **The tree the generated lists call**, section 360: comparisons on the firmware's own variables
  *   and three of the configuration's, `conditionals`, built since `todo-compile-650.md` 10.2.2.
  *
  * **What is carried**, the description: which list, mode, variable, value map or base slot 9 entry a
@@ -217,7 +217,7 @@ export interface WiringSpec {
   /**
    * How many activities the configuration has. Read off base slot 9's table, whose entries are the five
    * fixed ones, the leftover entry and one per activity, `FIXED_ENTRIES` plus the count, which equals the
-   * name tree's activity count, `activityCount`, on the 23 compiles of section 359.
+   * name tree's activity count, `activityCount`, on the 23 compiles of section 360.
    */
   activityCount: number;
   deviceTimers: readonly DeviceTimer[];
@@ -343,9 +343,11 @@ const tie = (a: number, b: number): [string, readonly [number, number]] => [[a, 
  * loads what it compares against. `branch` writes that pair. The arms are lists of their own where they
  * hold more than one instruction.
  *
- * Whether two call sites share one list or each get a list of the same body is the compiler's, per
- * model, and each list has one name here, so a shared list is one name several templates call and a
- * repeated body is several names. Shared on all 23 compiles of section 359: `stopLights`, five callers;
+ * Within these lists, 40 on a Harmony 600 or 650 and 78 on a Harmony 700, whether two call sites share
+ * one list or each get a list of the same body is the compiler's, per model; elsewhere in the wiring,
+ * section 347's own lists, sharing is the rule, `everyKey` alone called from over a hundred sites. Each
+ * list has one name here, so a shared list is one name several templates call and a
+ * repeated body is several names. Shared on all 23 compiles of section 360: `stopLights`, five callers;
  * `tour`, two where the Assistant is on. Also shared on the Harmony 700: `everyKey.on`, two, and
  * `entry1.0x27.shared` and `entry1.0x24.shared`, four each. Repeated: `lightOn` and `lightOnAgain` on
  * all 23, and on the Harmony 700 `cycle0` and `entry1.0x23.second` and six battery comparisons of one
@@ -1215,7 +1217,7 @@ export interface WiringChecked {
 /**
  * The configuration's wiring against the one built from its own description: described, built, put
  * back, laid out and compared byte for byte, refused with the first difference and the built piece it
- * falls in, by its name where it is a list. The calibration of sections 347 and 359.
+ * falls in, by its name where it is a list. The calibration of sections 347 and 360.
  */
 export function checkWiring(c: Container): WiringChecked {
   const layout = takeApart(c);

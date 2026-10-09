@@ -38,8 +38,10 @@ import {
   catalogueDevice,
 } from './catalogue.ts';
 import { catalogueDriving, type DeviceDriving } from './driving.ts';
-import { archiveProtocols, waveformOfArchiveCommand, type ArchiveProtocol } from './archive.ts';
-import { blockOfStatedCode, statedCode, statedProtocol } from './stated.ts';
+import {
+  archiveProtocols, statedCodeOfDefinition, waveformOfArchiveCommand, type ArchiveProtocol,
+} from './archive.ts';
+import { blockOfStatedCode, statedCode, statedProtocol, type StatedCode } from './stated.ts';
 import { mergedIntervals, type Pulse } from './irframe.ts';
 import { catalogueDevicePower, type CataloguePower } from './devicepower.ts';
 import { commandIndex, composeDeviceInputs, inputPlan, type ComposedInputs } from './inputs.ts';
@@ -161,10 +163,15 @@ export function composeCatalogueDevice(
     const blocks = blocksOf(keycode);
     return blocks === undefined || !('refusal' in blocks);
   };
-  /** The command as the composer takes it, its derived blocks attached where it has them. */
+  /**
+   * The command as the composer takes it: the code as its definition reads it, section 359, and its
+   * derived blocks where it has them.
+   */
   const withBlocks = <T extends { stated: string }>(one: T): T => {
     const blocks = blocksOf(one.stated);
-    return blocks === undefined || 'refusal' in blocks ? one : { ...one, blocks };
+    const read = catalogueCode(one.stated, protocols);
+    const withRead = read === undefined ? one : { ...one, read };
+    return blocks === undefined || 'refusal' in blocks ? withRead : { ...withRead, blocks };
   };
 
   // Under `full`, every name whose code composes, in catalogue order; the layout is computed over all
@@ -525,8 +532,9 @@ export function sameTrain(a: readonly Pulse[], b: readonly Pulse[]): boolean {
  *   between its two sections, not settled either way, and 8 `MemorexV2 32 Bit Dual`'s, a gap after a frame.
  */
 function tableBlocksAtDeviceCount(
-  keycode: string, family: string, press: PressRepeats, protocols: ReadonlyMap<string, ArchiveProtocol>,
+  keycode: string, read: StatedCode, press: PressRepeats, protocols: ReadonlyMap<string, ArchiveProtocol>,
 ): StatedBlocks | { readonly refusal: string } | undefined {
+  const family = read.family;
   const protocol = protocols.get(family);
   if (protocol === undefined || protocol.pressMinimumRepeats !== null) return undefined;
   if ('refusal' in press) return undefined;
@@ -535,7 +543,7 @@ function tableBlocksAtDeviceCount(
     return { refusal: `the rhythm table's count for ${family} has not been read, so its block's count is not known` };
   }
   if (tabled === press.repeats) return undefined;
-  const table = blockOfStatedCode(keycode, undefined, 'once');
+  const table = blockOfStatedCode(read, undefined, 'once');
   const atTable = waveformOfArchiveCommand(protocol, keycode, { repeats: tabled, asStored: true });
   if (table !== undefined && !('refusal' in atTable)
     && trimmedTrain(table).length !== trimmedTrain(atTable.once).length) {
@@ -574,22 +582,51 @@ function blocksAtDeviceCount(
 export function catalogueCommandBlocks(
   keycode: string, press: PressRepeats, protocols: ReadonlyMap<string, ArchiveProtocol>,
 ): StatedBlocks | { readonly refusal: string } | undefined {
-  if (composableKeycode(keycode)) {
-    const family = /^G:([^:]+):/.exec(keycode)?.[1];
-    return family === undefined ? undefined : tableBlocksAtDeviceCount(keycode, family, press, protocols);
-  }
-  const read = statedCode(keycode);
+  const read = catalogueCode(keycode, protocols);
   if (read === undefined) return { refusal: 'our keycode reader declines the code' };
+  // **The table's whole block is for a code its family's name reads as well**, section 359. Every row was
+  // measured or derived over such codes, `bin/protocols.ts` reading them by the name, so a code only the
+  // definition's widths read is a shape no row was checked against: on 78 of them a row's block takes
+  // the code and sends fewer frames than it states, or none. Those go to the definition at the device's
+  // count below, the route of a family with no whole block, section 348.
+  const named = statedCode(keycode) !== undefined;
+  if (named && composableKeycode(keycode, read)) {
+    return tableBlocksAtDeviceCount(keycode, read, press, protocols);
+  }
   const entry = statedProtocol(read.family);
   if (entry === undefined) return { refusal: `no rhythm for ${read.family}` };
-  if (entry.tail !== undefined || entry.quad !== undefined || entry.longToggle !== undefined
-    || entry.sections !== undefined) {
+  if (named && (entry.tail !== undefined || entry.quad !== undefined || entry.longToggle !== undefined
+    || entry.sections !== undefined)) {
     return { refusal: `${read.family}'s block does not take this code` };
   }
   if ('refusal' in press) return press;
   const protocol = protocols.get(read.family);
   if (protocol === undefined) return { refusal: `the archive holds no definition of ${read.family}` };
   return blocksAtDeviceCount(protocol, keycode, press.repeats);
+}
+
+/**
+ * A catalogue code as the composer reads it: at the widths and in the bases its family's definition
+ * states, `statedCodeOfDefinition`, and at the name's only for a family the archive defines none of. Five
+ * family spellings in the codesets are such, about 222 commands, all but one a letter case away from a
+ * defined family (`AudioAnalogue 14 bit`) and one with a trailing space; they are refused later as having no
+ * rhythm, which is todo-process-logitech 2.3's class. Section 359.
+ *
+ * **Why the definition and not the name.** The composer read every code at the widths the family's name
+ * spells until section 359, and so refused 52658 commands of 156 families as unreadable: a name such as
+ * `Russound 9 Bit Quad` gives the digit count, `Motorola 16 Bit Hex`, whose values are 32 bits, neither
+ * count, and `Philips RC5Ex` no number at all, sections 231 and 233. On the codes both read, the table's block is the same under either reading on 101369
+ * of 101593 and differs on 224, all of `Motorola 16 Bit Quad Toggle`, `Kathrein 16 Bit Quad Toggle` and
+ * `Pace 18 Bit Quad Toggle`, whose toggle field the name made sixteen bits wide where the definition makes
+ * it one: the name's block is the definition's at no count, the definition's at the count the family
+ * states, 1.
+ */
+export function catalogueCode(
+  keycode: string, protocols: ReadonlyMap<string, ArchiveProtocol>,
+): StatedCode | undefined {
+  const family = /^G:([^:]+):/.exec(keycode)?.[1];
+  const protocol = family === undefined ? undefined : protocols.get(family);
+  return protocol === undefined ? statedCode(keycode) : statedCodeOfDefinition(protocol, keycode);
 }
 
 /** A delay variable's name: its property, the device's identifier, and its number of values. */

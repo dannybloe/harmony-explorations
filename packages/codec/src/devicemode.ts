@@ -28,7 +28,7 @@
  */
 import type { Container } from './gspm.ts';
 import { fontSets, glyphOf, type FontSet } from './font.ts';
-import { blockOfStatedCode, statedCode, statedProtocol } from './stated.ts';
+import { blockOfStatedCode, statedCode, statedProtocol, type StatedCode } from './stated.ts';
 import { FOUR_SLOT_LEFT_X, FOUR_SLOT_RIGHT_END, FOUR_SLOT_LABEL_Y } from './inventory.ts';
 
 // ---------------------------------------------------------------------------------------------------
@@ -174,9 +174,13 @@ export function deviceModeLayout(commands: readonly string[]): DeviceModeLayout 
  * Whether a catalogue keycode can be composed into a record at all: a code the notation reads, a family
  * with a rhythm, and a whole block the rhythm table can build. The same three checks `composeIrGroup`
  * refuses on, asked in advance so a whole device can leave out what it cannot send and say how much.
+ *
+ * `read` is the code as its family's definition reads it, `statedCodeOfDefinition`, where the caller has
+ * the archive, which is what the catalogue composer passes since section 359; without it the code is read
+ * at the widths its family's name spells, which is the verdict `make composecensus` prints as the table
+ * alone, before section 348.
  */
-export function composableKeycode(keycode: string): boolean {
-  const read = statedCode(keycode);
+export function composableKeycode(keycode: string, read: StatedCode | undefined = statedCode(keycode)): boolean {
   if (read === undefined || statedProtocol(read.family) === undefined) return false;
   return blockOfStatedCode(read, undefined, 'once') !== undefined;
 }

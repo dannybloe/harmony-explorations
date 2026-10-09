@@ -240,7 +240,7 @@ function textsOf(program: readonly ScreenInstruction[]): DrawnText[] {
  * mode table. A configuration whose wiring that reader cannot read is refused here as one this pass does not
  * describe, whatever the reader's own error: a bench file whose wiring lists run past their end,
  * `h650_bench_4_2_base`, section 358. A Logitech compile with no activities, `harvest_650_two_devices`, was
- * refused here too until section 359 read its wiring, and is refused at its menus instead, `menusOf`.
+ * refused here too until section 360 read its wiring, and is refused at its menus instead, `menusOf`.
  */
 function modelOf(layout: ContainerLayout): ReturnType<typeof describeWiring>['model'] {
   try {
@@ -253,7 +253,7 @@ function modelOf(layout: ContainerLayout): ReturnType<typeof describeWiring>['mo
 /**
  * The configuration's menus, `fourSlotMenus`, or a refusal as one this pass does not describe. A Logitech
  * compile with no activities, `harvest_650_two_devices`, has no activity menu to read, and its wiring is
- * read since section 359, so this is where the pass refuses it now, as section 356 does.
+ * read since section 360, so this is where the pass refuses it now, as section 356 does.
  */
 function menusOf(c: Container): ReturnType<typeof fourSlotMenus> {
   try {

@@ -23,15 +23,18 @@
  * It prints the composer's verdict before section 348, the table alone, beside the verdict now, so the
  * one number this step moves is visible next to the ones it does not.
  *
- * Usage: `make composecensus`. Needs the public infrared archive checkout, no lab and no network. Not in
- * `make all`: it reads every one of the archive's device and codeset files, about half a minute.
+ * Usage: `make composecensus`; `--families` lists, family by family, the commands whose code the family's
+ * name cannot read, section 359, and how many of them now write. Needs the public infrared archive
+ * checkout, no lab and no network. Not in `make all`: it reads every one of the archive's device and
+ * codeset files, about half a minute.
  */
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { IR_ARCHIVE } from '@harmony/lab';
 import {
   archiveProtocolsByName, blockOfStatedCode, catalogueCommandBlocks, cataloguePressRepeats, composableKeycode,
-  sameTrain, statedCode, statedProtocol, TABLE_PRESS_REPEATS, waveformOfArchiveCommand, type PressRepeats,
+  sameTrain, statedCode, statedCodeOfDefinition, statedProtocol, TABLE_PRESS_REPEATS, waveformOfArchiveCommand,
+  type PressRepeats,
 } from '../src/index.ts';
 
 const root = IR_ARCHIVE;
@@ -61,6 +64,19 @@ for (const { s: slug } of manufacturers) {
 }
 
 const familyOf = (keycode: string): string | undefined => /^G:([^:]+):/.exec(keycode)?.[1];
+/** Whether the table's block for a code the name reads changes when the code is read by its definition. */
+const rereadVerdict = new Map<string, boolean>();
+function rereadChanges(keycode: string, family: string): boolean {
+  let changes = rereadVerdict.get(keycode);
+  if (changes === undefined) {
+    const protocol = protocols.get(family);
+    const read = protocol === undefined ? undefined : statedCodeOfDefinition(protocol, keycode);
+    changes = read !== undefined
+      && JSON.stringify(blockOfStatedCode(keycode, undefined, 'once')) !== JSON.stringify(blockOfStatedCode(read, undefined, 'once'));
+    rereadVerdict.set(keycode, changes);
+  }
+  return changes;
+}
 const tableVerdict = new Map<string, boolean>();
 const byTable = (keycode: string): boolean => {
   let ok = tableVerdict.get(keycode);
@@ -125,6 +141,17 @@ function readTable(keycode: string, family: string): void {
   tableCounts.set(family, mine);
 }
 
+/**
+ * The commands whose code the family's name cannot read, `todo-process-logitech.md` 2.1, section 359: the
+ * composer reads them at the widths the definition states now, so how many compose and why the rest do not.
+ */
+let unnamed = 0;
+let unnamedWritten = 0;
+const unnamedFamilies = new Map<string, { commands: number; written: number }>();
+const unnamedWhy = new Map<string, number>();
+/** Commands the table composes whose block the definition's reading changes, section 359. */
+let tableReread = 0;
+
 /** Why a command still does not compose, its first refusing device's reason, by command. */
 const reasons = new Map<string, number>();
 /** Per family, why its commands are still refused, by command. */
@@ -157,6 +184,7 @@ for (const bucket of readdirSync(join(root, 'codesets'))) {
       tally.commands += 1;
       if (byTable(keycode)) {
         before += 1; tally.before += 1; anyBefore = true;
+        if (rereadChanges(keycode, family)) tableReread += 1;
         readTable(keycode, family);
         // The table's block is one device's count, section 350: judged per device like the rest.
         const verdicts = presses.map((press) => derive(keycode, press));
@@ -188,6 +216,17 @@ for (const bucket of readdirSync(join(root, 'codesets'))) {
       kinds.add(kind);
       refusedBefore.set(family, kinds);
       const ok = verdicts.map((one) => !refused(one));
+      if (read === undefined) {
+        unnamed += 1;
+        const row = unnamedFamilies.get(family) ?? { commands: 0, written: 0 };
+        row.commands += 1;
+        if (ok.every(Boolean)) { unnamedWritten += 1; row.written += 1; } else {
+          const why = verdicts.find(refused)!.refusal.replace(/ \d+ and its .* commands' family states \d+/, ' N and a family on its codeset states another')
+            .replace(/no rhythm for .*/, 'no rhythm for the family');
+          unnamedWhy.set(why, (unnamedWhy.get(why) ?? 0) + 1);
+        }
+        unnamedFamilies.set(family, row);
+      }
       ok.forEach((good, k) => { if (!good) refusedAt.add(distinct[k] ?? -1); });
       if (ok.every(Boolean)) { after += 1; tally.after += 1; anyAfter = true; continue; }
       if (ok.some(Boolean)) someDevices += 1;
@@ -234,6 +273,20 @@ for (const [family, counts] of [...tableCounts].sort((a, b) => a[0].localeCompar
     : String(held) !== majority ? `  ** TABLE_PRESS_REPEATS holds ${held} **` : '';
   console.log(`  ${family}: ${[...counts].sort().map(([key, n]) => `${n} at ${key}`).join(', ')}${flag}`);
 }
+// Section 359: the codes the family's name cannot read, read at the widths the definition states.
+const unnamedWhole = [...unnamedFamilies.values()].filter((one) => one.written === one.commands).length;
+const unnamedSome = [...unnamedFamilies.values()].filter((one) => one.written > 0).length;
+console.log(`\ncodes the family's name cannot read, section 359: ${unnamed} commands in ${unnamedFamilies.size} families, `
+  + `read at the definition's widths; ${unnamedWritten} now write, ${unnamedSome} families write at least one `
+  + `and ${unnamedWhole} every one`);
+for (const [why, n] of [...unnamedWhy].sort((a, b) => b[1] - a[1])) console.log(`  ${String(n).padStart(7)}  ${why}`);
+// `--families` lists them one by one: commands the name cannot read, and how many of those now write.
+if (process.argv.includes('--families')) {
+  for (const [family, row] of [...unnamedFamilies].sort((a, b) => b[1].commands - a[1].commands)) {
+    console.log(`    ${String(row.written).padStart(6)} of ${String(row.commands).padStart(6)}  ${family}`);
+  }
+}
+console.log(`and of the commands the table composes, ${tableReread} get another block read at the definition's widths`);
 console.log('\nwhy a command is still refused, by its first refusing device:');
 for (const [why, n] of [...reasons].sort((a, b) => b[1] - a[1])) console.log(`  ${String(n).padStart(7)}  ${why}`);
 // The families the table refused only for want of a whole block, todo-process-logitech 2.2's share.
