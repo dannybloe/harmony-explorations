@@ -101,7 +101,7 @@ an item, ask whether the finish line moves without it; if it does, the item goes
   - [x] 6.2.8 The device mode and activity menu markers: one variable, 1 on every device row and 0 on every activity row, generated and checked (section 329)
   - [x] 6.2.9 Menu growth off existing pages: every menu page built per kind by `fourSlotMenuChrome` and checked, 164 of 164 on 13 compiles (section 334)
   - [x] 6.2.10 The start up and working screens off an existing activity's (`workingTemplate14`), and the Devices key's case: built by `activityScreenChrome` and checked, 40 start up screens, 63 working pages and 186 cases of 40 activities on 13 compiles; the start up font is read, 6.2.12's (section 336)
-  - [ ] 6.2.11 An activity's own device list, copied from the idle list, its "Activity" word from another activity's list
+  - [x] 6.2.11 An activity's own device list, copied from the idle list, its "Activity" word from another activity's list: built by `activityDeviceList` (rows from the setup's devices, row lists of their own, the record's entries, pages and "Activity" from `menuPageParts`) and checked, 78 of the 82 lists the 23 compiles hold, 53 of 57 on the Harmony 650, the four left being a French configuration; each device's label and the order of the devices the activity leaves off are still read (section 352)
   - [x] 6.2.12 Letters and fonts off the configuration's own (`codesFor`, `fontThatSpells`): moved to 8.2, since a Logitech font holds only the letters its own names use, so ending this borrowing is building our own font
   - [ ] 6.2.13 Write the setup again and check it as in 5.2
 

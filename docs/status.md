@@ -565,7 +565,7 @@ finding.
 
 `todo.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 350<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 351<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and flash has been written on five units**, the first in section 222:
@@ -940,6 +940,11 @@ list meant for when nothing is running, with "Activities" at the bottom. The rul
 thirteen real activities: rebuilt from the idle list, each of their lists comes out identical to the
 compiler's on the screen, 21 pages of 21. Written to the 650 for its own "LG kijken", and on the remote the list
 shows LG and Denon first, then PS3, KPN, Kodi and TV, with "Activity" leading back to the activity.
+**Since section 352 that list is built rather than copied**: its rows, the lists they run, its own key
+entries and every page, the word "Activity" included, so it no longer needs another activity's list to
+borrow the word from. Checked against 78 of the 82 activity lists in Logitech's compiles, the other four
+being a French configuration the English builders refuse; each device's label and the order of the
+devices the activity does not use are still read off the idle list.
 
 **A Harmony One's activity menu can now grow a page, section 293.** Its menu shows three activities to
 a page, and a fourth used to be refused. Now it opens a new page, and the menu says so in the three

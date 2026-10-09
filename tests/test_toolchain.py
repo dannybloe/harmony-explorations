@@ -448,8 +448,8 @@ class ATypeScriptSampleLoopStatesItsPopulation(unittest.TestCase):
         # `packages/codec/test/driving.test.ts`, section 305. 67 since `packages/codec/test/tagfive.ts`,
         # section 313's tag 5 check shared by the corpus test and the composer's, which is a helper
         # rather than a test file and is counted because the glob reads every `.ts` under `test/`. 69 with
-        # section 315's two and 70 with `packages/codec/test/screencategories.test.ts`, section 317. 71 with frame.test.ts, section 318, and 72 with devicepower.test.ts, section 320, and 73 with inputs.test.ts, section 321, and 74 with activityroles.test.ts, section 323, and 75 with statetables.test.ts, section 324, and 76 with devicemode.test.ts, section 325. 77 with tworowlist.test.ts, section 326, and 78 with sequence.test.ts, section 327. 80 with devicepage.test.ts, section 330, and 81 with composecatalogue.test.ts, section 331. 82 with `packages/silhouettes/test/remotes.test.ts`, the per remote reference's generated blocks. 83 with `packages/codec/test/catalogueraw.test.ts`, todo-later 1.3 and 1.4. 84 with help.test.ts, section 333, and 85 with menupage.test.ts, section 334. 86 with `packages/corpus/test/stamp.test.ts`, todo-compile-650 1.3. 87 with activityscreen.test.ts, section 336. 88 with `packages/corpus/test/harvest.test.ts`, the harvest script of todo-secure-logitech 1.1, which did not move this count when it landed. 89 with `packages/corpus/test/setup.test.ts`, the setup builder of todo-compile-650 1.6. 90 with `packages/codec/test/passthrough.test.ts`, the pass through device of todo-compile-650 3.14. 91 with `packages/codec/test/wiring.test.ts`, section 347, and 92 with pressrepeats.test.ts, section 348. 93 with compare.test.ts, todo-compile-650 5.2.
-        self.assertEqual(scanned, 93, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
+        # section 315's two and 70 with `packages/codec/test/screencategories.test.ts`, section 317. 71 with frame.test.ts, section 318, and 72 with devicepower.test.ts, section 320, and 73 with inputs.test.ts, section 321, and 74 with activityroles.test.ts, section 323, and 75 with statetables.test.ts, section 324, and 76 with devicemode.test.ts, section 325. 77 with tworowlist.test.ts, section 326, and 78 with sequence.test.ts, section 327. 80 with devicepage.test.ts, section 330, and 81 with composecatalogue.test.ts, section 331. 82 with `packages/silhouettes/test/remotes.test.ts`, the per remote reference's generated blocks. 83 with `packages/codec/test/catalogueraw.test.ts`, todo-later 1.3 and 1.4. 84 with help.test.ts, section 333, and 85 with menupage.test.ts, section 334. 86 with `packages/corpus/test/stamp.test.ts`, todo-compile-650 1.3. 87 with activityscreen.test.ts, section 336. 88 with `packages/corpus/test/harvest.test.ts`, the harvest script of todo-secure-logitech 1.1, which did not move this count when it landed. 89 with `packages/corpus/test/setup.test.ts`, the setup builder of todo-compile-650 1.6. 90 with `packages/codec/test/passthrough.test.ts`, the pass through device of todo-compile-650 3.14. 91 with `packages/codec/test/wiring.test.ts`, section 347, and 92 with pressrepeats.test.ts, section 348. 93 with compare.test.ts, todo-compile-650 5.2, and 94 with activitydevicelist.test.ts, section 352.
+        self.assertEqual(scanned, 94, 'the TypeScript test files, as ABoundOnACorpusTotalIsExact counts them')
         self.assertEqual(
             {name: len(lines) for name, lines in counted.items()},
             TYPESCRIPT_LOOPS_ALLOWED_TO_SKIP_A_SAMPLE,
@@ -589,8 +589,8 @@ class ABoundOnACorpusTotalIsExact(unittest.TestCase):
         # 88 with `packages/corpus/test/harvest.test.ts`, todo-secure-logitech 1.1.
         # 89 with `packages/corpus/test/setup.test.ts`, todo-compile-650 1.6.
         # 90 with `packages/codec/test/passthrough.test.ts`, todo-compile-650 3.14.
-        # 91 with `packages/codec/test/wiring.test.ts`, section 347, and 92 with pressrepeats.test.ts, section 348. 93 with compare.test.ts, todo-compile-650 5.2.
-        self.assertEqual(len(scanned), 93, 'TypeScript test files, which moves when one is added')
+        # 91 with `packages/codec/test/wiring.test.ts`, section 347, and 92 with pressrepeats.test.ts, section 348. 93 with compare.test.ts, todo-compile-650 5.2, and 94 with activitydevicelist.test.ts, section 352.
+        self.assertEqual(len(scanned), 94, 'TypeScript test files, which moves when one is added')
         self.assertIn(self.CONTROL, found, 'the pattern matches nothing it should match')
 
     def test_every_remaining_bound_says_why_it_is_not_a_measurement(self):
@@ -1268,8 +1268,8 @@ class TheLabRegisterCoversTheSiteAtArtefactLevel(unittest.TestCase):
         # `work/test-setup/`, the scan behind plan 006, and 92 since `work/harvest/`, todo-secure-logitech.
         # 93 since `work/setups/`, the setup builder of todo-compile-650 1.6, and 94 since
         # `work/bench-2-3/`, todo-compile-650 2.3. 96 since `work/bench-3-9/` and `work/agent-3-14/`, 3.9 and 3.14. 97 since `work/bench-3-14/`. 98 since `work/bench-3-11/`, section 341. 99 since `work/bench-4-2/`, section 342. 100 since `work/bench-5-1/`, todo-compile-650 5.1.
-        # 101 with `work/agent-5-2-4/`, todo-compile-650 5.2.4.
-        self.assertEqual(len(named), 101, "lab paths the register names, as at 8 October 2026")
+        # 101 with `work/agent-5-2-4/`, todo-compile-650 5.2.4, and 102 with `work/agent-6-2-11/`, 6.2.11.
+        self.assertEqual(len(named), 102, "lab paths the register names, as at 9 October 2026")
         for path in sorted(named):
             with self.subTest(path=path):
                 if '*' in path:
@@ -1372,9 +1372,9 @@ class TheRegisterQueryAnswersForThePathThatWasOpened(unittest.TestCase):
         # 70 since `work/setups/`, todo-compile-650 1.6, and 71 since `work/bench-2-3/`, 2.3.
         # 73 since `work/bench-3-9/` and `work/agent-3-14/`, 3.9 and 3.14, and 74 since `work/bench-3-14/`.
         # 75 since `work/bench-3-11/`, section 341, and 76 since `work/bench-4-2/`, section 342.
-        # 77 since `work/bench-5-1/`, todo-compile-650 5.1, and 78 with `work/agent-5-2-4/`, 5.2.4.
-        self.assertEqual(len(rows), 78)
-        self.assertEqual(len(dict(rows)), 78, 'a duplicated path would make a query ambiguous')
+        # 77 since `work/bench-5-1/`, todo-compile-650 5.1, and 78 with `work/agent-5-2-4/`, 5.2.4, and 79 with `work/agent-6-2-11/`, 6.2.11.
+        self.assertEqual(len(rows), 79)
+        self.assertEqual(len(dict(rows)), 79, 'a duplicated path would make a query ambiguous')
         self.assertNotIn('unseen', dict(rows), 'the status legend is not an artefact')
 
     def test_a_query_is_answered_by_ancestors_and_by_descendants(self):

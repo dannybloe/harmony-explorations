@@ -4151,7 +4151,8 @@ const FOUR_SLOT_MAX_PAGES = 9;
 /**
  * The texts a page opened here draws by reference where the compiler has drawn the same codes before,
  * the title and the bottom word, and the ones it draws inline, the counter and the label. The two
- * inline kinds are section 294's and 312's kept difference: `paginateFourSlot` restates every counter
+ * inline kinds are section 312's kept difference, and were section 294's until an activity's own list
+ * was built, section 352, which points every text it can: `paginateFourSlot` restates every counter
  * through `pageTexts`, which keeps the borrowers of an inline text it changes, and a new label has no
  * copy anywhere to point at.
  */
@@ -4979,12 +4980,19 @@ function fourSlotPageProgram(
 function appendArch14Mode(
   start: Container, mode: number, own: readonly { tag: number; operand: number; opcode: number }[],
   lists: readonly Uint8Array[], programsFor: (current: Container) => Arch14Program[],
+  // The pool copies, page for page, where they are not the lists' own bytes: a copy that binds row
+  // lists of its own, as the compiler's do, differs from its page's list in its operands only, section
+  // 69. Omitted, each copy is its page's list byte for byte.
+  copies: readonly Uint8Array[] = lists,
 ): Container {
   let current = start;
   const stale = modeTable(current);
   if (stale === undefined) throw new ComposeError('base slot 6 stopped reading');
   if (stale.addresses.length !== mode) {
     throw new ComposeError(`the new mode would be ${stale.addresses.length}, not the ${mode} expected`);
+  }
+  if (copies.length !== lists.length || copies.some((one, k) => one.length !== (lists[k] as Uint8Array).length)) {
+    throw new ComposeError('a page list and its copy differ in length');
   }
   const placeholderEntry = stale.addresses[0];
   if (placeholderEntry === undefined) throw new ComposeError('a config with no modes has no menus');
@@ -4994,12 +5002,17 @@ function appendArch14Mode(
   tableHole.bytes.set(new Writer(3).u24(mode + 1).bytes, stale.start);
   current = parse(tableHole.bytes);
 
-  const allLists = new Uint8Array(lists.reduce((sum, bytes) => sum + bytes.length, 0));
-  lists.reduce((offset, bytes) => { allLists.set(bytes, offset); return offset + bytes.length; }, 0);
+  const joined = (parts: readonly Uint8Array[]): Uint8Array => {
+    const out = new Uint8Array(parts.reduce((sum, bytes) => sum + bytes.length, 0));
+    parts.reduce((offset, bytes) => { out.set(bytes, offset); return offset + bytes.length; }, 0);
+    return out;
+  };
+  const allLists = joined(lists);
+  const allCopies = joined(copies);
   const lastPool = taggedListPools(current).at(-1);
   if (lastPool === undefined) throw new ComposeError('no copy pool to extend');
-  const copyHole = relocate(current, lastPool.end, allLists.length);
-  copyHole.bytes.set(allLists, lastPool.end);
+  const copyHole = relocate(current, lastPool.end, allCopies.length);
+  copyHole.bytes.set(allCopies, lastPool.end);
   current = parse(copyHole.bytes);
   const listAt = Math.max(...modePages(current).map((page) => {
     const off = current.blobOffsetOf(page.list);
@@ -6515,7 +6528,7 @@ function appendValueMapCase(start: Container, map: number, key: number, program:
  * second form is the one a composed activity takes. **Nor is the activity's own device list, here**:
  * the key under Devices of a composed activity opens the idle value's, the one saying "Activities", its
  * case built as `caseProgram` on `idleDeviceList` since section 336, and `composeActivityDeviceList` then
- * gives it a list of its own, section 294. Its centre
+ * gives it a list of its own, section 294, built since section 352. Its centre
  * key leads back to the composed activity's working screen either way, through `CurrentLocation` and
  * the working screen record.
  *
@@ -7266,7 +7279,7 @@ export interface ComposedActivityDeviceList {
   bytes: Uint8Array;
   /** The new device list, base slot 6. */
   mode: number;
-  /** The device list it was copied from, the one the key under Devices opens while no activity runs. */
+  /** The idle device list, whose devices and labels the new one lists: the one the key under Devices opens while no activity runs. */
   idleMode: number;
   /** The device modes its rows enter, in the order they are drawn, page after page. */
   order: number[];
@@ -7335,28 +7348,243 @@ function activitySwitchedOn(c: Container, activity: number, starts: Arch14Starts
 }
 
 /**
+ * What an activity's own device list is built from, `activityDeviceList`, section 352: everything a
+ * list holds, each part either built or named as read.
+ */
+export interface ActivityDeviceList {
+  /** The idle device list, the one the key under Devices opens while no activity runs. */
+  idleMode: number;
+  /** The device modes the rows enter, page after page: the activity's devices, then the rest. */
+  order: number[];
+  /** Per page, the device modes on it in `FOUR_SLOT_ITEMS` fill order, four to a page. */
+  pages: number[][];
+  /** The list record's own entries, built: the centre key and the queued program. */
+  entries: KeyMapEntry[];
+  /** Per page, what `menuPageParts` draws it from: its number, the fonts and its labels. */
+  contents: FourSlotMenuPageContent[];
+}
+
+/**
+ * The operand the key under a device list's bottom word is mapped with, `0x72` on
+ * `(record << 8) | CurrentLocation`, found by content: the one base slot 14 record with a single case, for
+ * 0, whose program queues a `0x72` mapping the activity counter through the working screen record,
+ * `activityMaps`. That is section 290's route back to the running activity, and every device list and
+ * the activity menu's `0x84` entry name this operand on all 23 arch 14 compiles in the lab, 151 of 151,
+ * section 352. The record's index is read, since it is the description's order, section 324; what it
+ * holds is what finds it.
+ */
+function deviceListCentreKeyOperand(c: Container, starts: Arch14Starts): number {
+  const location = stateVariables(c).find((one) => one.label === LOCATION_STATE_NAME)?.index;
+  if (location === undefined) throw new ComposeError(`no ${LOCATION_STATE_NAME} variable to map the centre key through`);
+  const working = activityMaps(c, starts).working;
+  const want = (working << 8) | starts.counter;
+  const found: number[] = [];
+  (valueMaps(c) ?? []).forEach((map, index) => {
+    if (map.ranges.length !== 0 || map.entries.length !== 1 || map.entries[0]?.[0] !== 0) return;
+    const queued = caseQueued(c, map.entries[0][1]);
+    if (queued?.opcode === MAP_VALUE_OPCODE && queued.operand === want) found.push(index);
+  });
+  if (found.length !== 1) {
+    throw new ComposeError(`${found.length} records lead from ${LOCATION_STATE_NAME} back to the working screen record, not one`);
+  }
+  return ((found[0] as number) << 8) | location;
+}
+
+/** A device list row's own list: enter the device's mode, then write 1 into the device mode marker. */
+function deviceListRowBody(mode: number, marker: Instruction): Uint8Array {
+  return new Writer(1 + 3 * 2).u8(2).u16(mode).u8(ENTER_MODE).u16(marker.operand).u8(marker.opcode).bytes;
+}
+
+/** The roles a built device list page draws by reference where the configuration has drawn them before. */
+const DEVICE_LIST_POINTED: ReadonlySet<string> = new Set(['title', 'counter', 'label', 'bottom']);
+
+/**
+ * An activity's own device list on a Harmony 600, 650 or 700, built, `todo-compile-650.md` 6.2.11,
+ * section 352. Until then `composeActivityDeviceList` moved the idle list's label instructions to their
+ * new corners, ran the idle list's row lists and took the word "Activity" off another activity's list;
+ * now each part is built:
+ *
+ * * **the rows are the setup's devices**: the devices the idle list holds, the activity's first, in the
+ *   order its enter list switches them on, `activitySwitchedOn`, then the rest in the idle list's order,
+ *   four to a page in `FOUR_SLOT_ITEMS` order. The idle order is **read**: it is the two row list's on 23
+ *   of 23 compiles and ascending device identifier on 17 of 20, and neither builds it, section 352;
+ * * **each row runs a list of its own**, `deviceListRowBody`, and the page's pool copy another, as the
+ *   compiler writes them, section 285;
+ * * **the record's two entries are built**: the centre key mapped through `deviceListCentreKeyOperand`'s
+ *   record, and the program tag running the device pages' battery program, `fourSlotMenuChrome`, stored
+ *   in `compilerTagOrder`'s order;
+ * * **the pages are `menuPageParts`'**, section 334: background, queued program, bars, title, counter,
+ *   the labels at their places and the bottom word "Activity" spelled in the title's size, `bottomWord`,
+ *   so no other activity's list is needed.
+ *
+ * **What is read and why**: each device's label, its font and its lines of glyph codes, as the idle list
+ * draws it for that device, which is the configuration's own spelling of the device's name in its own
+ * fonts, `todo-compile-650.md` 6.2.12 and chapter 8's letters; the title and counter fonts likewise; and
+ * the idle list itself, which is a mode number, the description's order.
+ */
+export function activityDeviceList(c: Container, activity: number): ActivityDeviceList {
+  if (c.architecture !== 14) {
+    throw new ComposeError("a device list of an activity's own is built for the Harmony 600, 650 and 700 alone");
+  }
+  return builtActivityDeviceList(c, activity, arch14Starts(c), fourSlotMenuChrome(c, 'activity device list'));
+}
+
+/**
+ * `activityDeviceList` with what every activity's list shares read once by the caller: the starts and the
+ * chrome, whose device page check is the expensive part, so a check over every list builds it once.
+ */
+function builtActivityDeviceList(
+  c: Container, activity: number, starts: Arch14Starts, chrome: FourSlotMenuChrome,
+): ActivityDeviceList {
+  if (!starts.startup.has(activity)) {
+    throw new ComposeError(`${activity} is not an activity with a start up screen and a menu row`);
+  }
+  const idleMode = idleDeviceList(c);
+  const idleRecord = (modeRecords(c) ?? [])[idleMode];
+  if (idleRecord === undefined) throw new ComposeError(`mode ${idleMode} does not read`);
+  const lists = c.actionLists() ?? [];
+  const marker = deviceModeMarker(c);
+  // The idle list's devices, page by page in fill order, and each one's label as that list draws it.
+  const labelOf = new Map<number, FourSlotMenuLabel>();
+  const idleOrder: number[] = [];
+  const idleContents = idleRecord.pages.map((page, p) => {
+    const content = menuPageContent(c, 'idle device list', idleMode, p);
+    const entries = taggedList(c, page.list)?.entries ?? [];
+    content.labels.forEach((label, k) => {
+      const item = FOUR_SLOT_ITEMS[k] as (typeof FOUR_SLOT_ITEMS)[number];
+      const entry = entries.find((one) => (one.tag & SCAN_MASK) === item.scan);
+      const mode = entry === undefined ? undefined : deviceListRowMode(lists[entry.operand], c.architecture, marker);
+      if (mode === undefined || labelOf.has(mode)) {
+        throw new ComposeError(`the idle device list's page ${p + 1} has no row of its own at place ${k + 1}`);
+      }
+      labelOf.set(mode, label);
+      idleOrder.push(mode);
+    });
+    return content;
+  });
+  const first = activitySwitchedOn(c, activity, starts, idleOrder);
+  const order = [...first, ...idleOrder.filter((mode) => !first.includes(mode))];
+  const perPage = FOUR_SLOT_ITEMS.length;
+  const pages = Array.from({ length: Math.ceil(order.length / perPage) }, (_, p) => order.slice(p * perPage, (p + 1) * perPage));
+  const firstContent = idleContents[0];
+  if (firstContent === undefined) throw new ComposeError('the idle device list has no page');
+  if (chrome.battery === undefined) throw new ComposeError('a corner device list queues no battery program here');
+  const battery = chrome.battery;
+  const centre = deviceListCentreKeyOperand(c, starts);
+  const entries = compilerTagOrder([DEVICES_KEY_TAG, DEVICE_MODE_PROGRAM_TAG]).map((tag): KeyMapEntry => (tag === DEVICES_KEY_TAG
+    ? { tag, operand: centre, opcode: MAP_VALUE_OPCODE }
+    : { tag, operand: battery, opcode: RUN_SCREEN_PROGRAM }));
+  const contents = pages.map((modes, p): FourSlotMenuPageContent => ({
+    number: p + 1, total: pages.length, titleFont: firstContent.titleFont, counterFont: firstContent.counterFont,
+    labels: modes.map((mode) => labelOf.get(mode) as FourSlotMenuLabel),
+  }));
+  return { idleMode, order, pages, entries, contents };
+}
+
+/** What `checkActivityDeviceLists` compared, per kind of part. */
+export interface ActivityDeviceListsChecked {
+  lists: number;
+  pages: number;
+  rows: number;
+  /** Row bindings, page and pool copy, whose list is a list of their own rather than another's. */
+  ownRowLists: number;
+}
+
+/**
+ * Every activity's own device list in the configuration against the one `activityDeviceList` builds for
+ * that activity, refused with the activity and the first difference, section 352: the record's own
+ * entries, the page count, every row's device and the list it runs, the pool copy's rows, and every page
+ * against `menuPageParts` with the page record. The idle list's own entries are checked against the built
+ * ones too, since a list composed here takes them. Section 334's check already compares every menu
+ * page with the page built from what **it** holds; this one builds the page from the activity and the
+ * idle list's rows instead, so it is what tests the order and the labels' places.
+ */
+export function checkActivityDeviceLists(c: Container): ActivityDeviceListsChecked {
+  const starts = arch14Starts(c);
+  const maps = activityMaps(c, starts);
+  const valueRecords = valueMaps(c) ?? [];
+  const records = modeRecords(c) ?? [];
+  const lists = c.actionLists() ?? [];
+  const marker = deviceModeMarker(c);
+  if (marker === undefined) throw new ComposeError('no device mode marker to read a row by');
+  const copies = pageListCopies(c);
+  const allPages = modePages(c);
+  const chrome = fourSlotMenuChrome(c, 'activity device list');
+  const idleMode = idleDeviceList(c);
+  const checked: ActivityDeviceListsChecked = { lists: 0, pages: 0, rows: 0, ownRowLists: 0 };
+  const sameEntries = (mode: number, built: readonly KeyMapEntry[]): boolean => {
+    const own = records[mode]?.entries ?? [];
+    return own.length === built.length && own.every((one, k) => one.flags === undefined
+      && one.tag === built[k]?.tag && one.operand === built[k]?.operand && one.opcode === built[k]?.opcode);
+  };
+  for (const activity of [...starts.startup.keys()].sort((a, b) => a - b)) {
+    const target = valueRecords[maps.devices[0] as number]?.entries.find(([key]) => key === activity)?.[1];
+    const queued = target === undefined ? undefined : caseQueued(c, target);
+    if (queued?.opcode !== ENTER_MODE || queued.operand === idleMode) continue;
+    const mode = queued.operand;
+    const where = `activity ${activity}'s device list ${mode}`;
+    const built = builtActivityDeviceList(c, activity, starts, chrome);
+    if (!sameEntries(idleMode, built.entries)) throw new ComposeError('the idle device list\'s own entries are not the ones built');
+    if (!sameEntries(mode, built.entries)) throw new ComposeError(`${where}: its own entries are not the ones built`);
+    const record = records[mode];
+    if (record === undefined || record.pages.length !== built.pages.length) {
+      throw new ComposeError(`${where}: ${record?.pages.length ?? 0} pages where ${built.pages.length} are built`);
+    }
+    record.pages.forEach((page, p) => {
+      const modes = built.pages[p] as number[];
+      const copyAt = copies[allPages.findIndex((one) => one.address === page.address)];
+      const own = taggedList(c, page.list)?.entries ?? [];
+      const copy = copyAt === undefined ? undefined : taggedList(c, c.flashBase + copyAt)?.entries;
+      if (copy === undefined || own.length !== modes.length || copy.length !== modes.length) {
+        throw new ComposeError(`${where}: page ${p + 1} or its copy binds other than its ${modes.length} rows`);
+      }
+      modes.forEach((device, k) => {
+        const scan = (FOUR_SLOT_ITEMS[k] as (typeof FOUR_SLOT_ITEMS)[number]).scan;
+        const pair = [own, copy].map((entries) => entries.find((one) =>
+          one.tag === ((KEY_EVENT_PRESS << KEY_EVENT_SHIFT) | scan) && one.opcode === ACTION_LIST_INDEX_OPCODE));
+        for (const entry of pair) {
+          const body = entry === undefined ? undefined : lists[entry.operand];
+          if (body?.length !== 2 || body[0]?.opcode !== ENTER_MODE || body[0].operand !== device
+              || body[1]?.opcode !== marker.opcode || body[1].operand !== marker.operand) {
+            throw new ComposeError(`${where}: page ${p + 1}'s place ${k + 1} does not enter mode ${device} and mark it`);
+          }
+        }
+        const [a, b] = pair as [TaggedEntry, TaggedEntry];
+        if (a.operand !== b.operand) checked.ownRowLists += 1;
+        checked.rows += 1;
+      });
+      const program = screenProgram(c, page.program);
+      if (program === undefined) throw new ComposeError(`${where}: page ${p + 1} does not read`);
+      const difference = partsDifference(c, menuPageParts(c, chrome, built.contents[p] as FourSlotMenuPageContent), program)
+        ?? pageRecordDifference(c, page);
+      if (difference !== undefined) throw new ComposeError(`${where}: page ${p + 1}: ${difference}`);
+      checked.pages += 1;
+    });
+    checked.lists += 1;
+  }
+  return checked;
+}
+
+/**
  * Give a composed activity on a Harmony 600, 650 or 700 a device list of its own, and make the key
  * under Devices open it.
  *
- * **Every activity on those remotes has one**, 13 of 13 on the four arch 14 user configurations,
- * section 294: the list the key shows while an activity runs is the idle one's with the rows reordered,
- * and its bottom word says "Activity" where the idle one's says "Activities". `composeActivityScreen`
- * points a composed activity's key at the idle list, which works and draws the wrong word, and this
- * replaces that with the list the compiler would have made.
+ * **Every activity on those remotes has one**, section 294: the list the key shows while an activity
+ * runs holds every device, the activity's first, and its bottom word says "Activity" where the idle
+ * one's says "Activities". `composeActivityScreen` points a composed activity's key at the idle list,
+ * which works and draws the wrong word, and this replaces that with the list the compiler would have
+ * made.
  *
- * **The order is the activity's devices first**, in the order its enter list switches them on, **then
- * the rest in the idle list's order**, 13 of 13. Nothing else moves: the pages hold as many rows each as
- * the idle list's, so the page count, the page counters, the backgrounds and the record's own entries
- * are the idle list's. Each label is the idle list's instructions for that device, fonts and all, moved
- * to its new corner: a label that changes column starts at x 3 or ends at 125, and one that changes row
- * moves by the rows' 50 pixels, which puts all 63 labels of the thirteen real lists where the compiler
- * drew them. The rows run the idle list's own row lists, since a row list only enters its device's mode
- * and the real lists hold byte identical copies of them.
+ * **The list is `activityDeviceList`'s**, built since section 352: the rows, each running a row list of
+ * its own and its copy another, the record's entries, and every page from `menuPageParts`, every text
+ * drawn by reference where the configuration already draws it, as the compiler's are. **The
+ * configuration's own activity lists are checked against the builder first**, `checkActivityDeviceLists`,
+ * so one whose lists disagree is refused rather than extended. Nothing is taken off another activity's
+ * list any more, so a configuration whose activities have none is composed too.
  *
  * Run it after `composeActivity`, which writes the enter list the order is read from, and after
  * `composeActivityMenuRow`, since an activity is found through the menu row that starts it. It refuses an
- * activity whose key already opens something other than the idle list, and it needs one activity that
- * already has a list of its own, to take the word "Activity" from.
+ * activity whose key already opens something other than the idle list.
  */
 export function composeActivityDeviceList(c: Container, activity: number): ComposedActivityDeviceList {
   if (c.architecture !== 14) {
@@ -7376,7 +7604,7 @@ export function composeActivityDeviceList(c: Container, activity: number): Compo
   };
   const idleModes = new Set(maps.devices.map((map) => queuedFor(map, starts.idle)?.operand));
   const idleMode = [...idleModes][0];
-  if (idleModes.size !== 1 || idleMode === undefined) {
+  if (idleModes.size !== 1 || idleMode === undefined || idleMode !== idleDeviceList(c)) {
     throw new ComposeError('the records under Devices do not agree on the idle device list');
   }
   for (const map of maps.devices) {
@@ -7395,136 +7623,50 @@ export function composeActivityDeviceList(c: Container, activity: number): Compo
       }
     }
   }
-  const template = (() => {
-    for (const [key] of valueRecords[maps.devices[0] as number]?.entries ?? []) {
-      const mode = queuedFor(maps.devices[0] as number, key)?.operand;
-      if (key !== starts.idle && key !== activity && mode !== undefined && mode !== idleMode) return mode;
-    }
-    throw new ComposeError('no activity here has a device list of its own to take the word "Activity" from');
-  })();
-
-  // The idle list: each page's rows in item order, the device mode and row list of each.
-  const lists = c.actionLists() ?? [];
+  checkActivityDeviceLists(c);
+  const built = builtActivityDeviceList(c, activity, starts, fourSlotMenuChrome(c, 'activity device list'));
   const marker = deviceModeMarker(c);
-  const idleRecord = (modeRecords(c) ?? [])[idleMode];
-  if (idleRecord === undefined) throw new ComposeError(`mode ${idleMode} does not read`);
-  if (idleRecord.entries.some((entry) => entry.flags !== undefined)) {
-    throw new ComposeError("the idle device list's record is not in the narrow form");
-  }
-  const rowList = new Map<number, number>();
-  const cellOf = new Map<number, { page: number; item: number }>();
-  const perPage = idleRecord.pages.map((page, p) => {
-    const entries = taggedList(c, page.list)?.entries ?? [];
-    const layout = menuLayout(c, entries);
-    if (layout === undefined || layout.rows) throw new ComposeError('the idle device list is not in the corner layout');
-    const modes: number[] = [];
-    FOUR_SLOT_ITEMS.forEach((item, k) => {
-      const entry = entries.find((one) => (one.tag & SCAN_MASK) === item.scan);
-      if (entry === undefined) return;
-      const mode = deviceListRowMode(lists[entry.operand], c.architecture, marker);
-      if (mode === undefined || modes.length !== k) throw new ComposeError(`the idle device list's page ${p} is not rows filled in order`);
-      modes.push(mode);
-      rowList.set(mode, entry.operand);
-      cellOf.set(mode, { page: p, item: k });
-    });
-    return modes.length;
-  });
-  const idleOrder = [...cellOf.keys()];
-  const first = activitySwitchedOn(c, activity, starts, idleOrder);
-  const order = [...first, ...idleOrder.filter((mode) => !first.includes(mode))];
-  const pageModes = perPage.map((count, p) => {
-    const from = perPage.slice(0, p).reduce((sum, one) => sum + one, 0);
-    return order.slice(from, from + count);
-  });
+  if (marker === undefined) throw new ComposeError('no device mode marker for the rows to write');
 
-  const isText = (one: ScreenInstruction): boolean => one.opcode === OP_TEXT_AT || one.opcode === OP_TEXT_INLINE;
-  const mode = modeTable(c)?.addresses.length;
+  // 1. The row lists, one per row on the pages and another per row on their pool copies, appended to
+  // base slot 10 the way `composeFourSlotDeviceScreen` appends its own: page rows first, then the copies'.
+  const actionSlot = archSlot(c.architecture as number, ACTION_TABLE_SLOT);
+  const actionTable = c.pointerArrayAt(actionSlot);
+  if (actionTable === undefined) throw new ComposeError('base slot 10 does not read as a table');
+  const rowList = actionTable.values.length;
+  const rows = built.order.length;
+  const bodies = [...built.order, ...built.order].map((mode) => deviceListRowBody(mode, marker));
+  const rowAt = actionTable.start;
+  const rowHole = relocate(c, rowAt, bodies.reduce((sum, one) => sum + one.length, 0));
+  const rowAddresses: number[] = [];
+  bodies.reduce((at, body) => {
+    rowHole.bytes.set(body, at);
+    rowAddresses.push(c.flashBase + at);
+    return at + body.length;
+  }, rowAt);
+  let current = parse(appendTableEntries(parse(rowHole.bytes), actionSlot, rowAddresses));
+
+  // 2. The mode, its pages built, through the step every arch 14 mode composer shares.
+  const mode = modeTable(current)?.addresses.length;
   if (mode === undefined) throw new ComposeError('base slot 6 states no table');
-  let current = appendArch14Mode(c, mode, idleRecord.entries.map((entry) =>
-    ({ tag: entry.tag, operand: entry.operand, opcode: entry.opcode })),
-  pageModes.map((modes) => fourSlotPageList(modes.map((one) => rowList.get(one) as number))), (now) => {
-    const records = modeRecords(now) ?? [];
-    const programOf = (m: number, p: number): ScreenInstruction[] => {
-      const page = records[m]?.pages[p];
-      const program = page === undefined ? undefined : screenProgram(now, page.program);
-      if (program === undefined) throw new ComposeError(`mode ${m}'s page ${p} does not read`);
-      return program;
-    };
-    // The bottom word: the font and text after the closing bar, which are the last two instructions
-    // before the end on every device list page.
-    const shaped = (program: ScreenInstruction[], what: string): number => {
-      const bar = program.findLastIndex((one) => one.opcode === SCREEN_DRAW_IMAGE_AT);
-      if (bar < 0 || program.length !== bar + 4 || program[bar + 1]?.opcode !== OP_FONT
-          || !isText(program[bar + 2] as ScreenInstruction) || program[bar + 3]?.opcode !== OP_END) {
-        throw new ComposeError(`${what} does not end in its bar, a font and one word`);
-      }
-      return bar;
-    };
-    const word = programOf(template, 0);
-    const wordAt = shaped(word, `mode ${template}'s first page`);
-    // Every label line of the idle list, per device, with the font it is drawn in.
-    const lines = new Map<number, { font: number; instruction: ScreenInstruction }[]>();
-    const heads = idleRecord.pages.map((_, p) => {
-      const program = programOf(idleMode, p);
-      const bar = shaped(program, `the idle device list's page ${p}`);
-      const labelsFrom = 1 + program.findLastIndex((one, k) => k < bar && isText(one)
-        && fourSlotCellAt(one.operands[0] as number, one.operands[1] as number) === undefined);
-      let font = program.slice(0, labelsFrom).findLast((one) => one.opcode === OP_FONT)?.operands[0];
-      if (font === undefined) throw new ComposeError(`the idle device list's page ${p} selects no font`);
-      for (const one of program.slice(labelsFrom, bar)) {
-        if (one.opcode === OP_FONT) { font = one.operands[0] as number; continue; }
-        const cell = isText(one) ? fourSlotCellAt(one.operands[0] as number, one.operands[1] as number) : undefined;
-        const device = [...cellOf].find(([, at]) => at.page === p && at.item === cell)?.[0];
-        if (device === undefined) throw new ComposeError(`the idle device list's page ${p} draws something no row owns`);
-        lines.set(device, [...(lines.get(device) ?? []), { font, instruction: one }]);
-      }
-      return { program, labelsFrom, bar, font: program.slice(0, labelsFrom).findLast((one) => one.opcode === OP_FONT)?.operands[0] as number };
-    });
-    return pageModes.map((modes, p) => {
-      const head = heads[p] as (typeof heads)[number];
-      // Each piece is an instruction to copy, moved to (x, y) where it is a label, or a font select.
-      const pieces: ({ instruction: ScreenInstruction; x?: number; y?: number } | { font: number })[] = [];
-      let font = head.font;
-      modes.forEach((device, k) => {
-        const to = FOUR_SLOT_ITEMS[k] as (typeof FOUR_SLOT_ITEMS)[number];
-        const from = FOUR_SLOT_ITEMS[(cellOf.get(device) as { item: number }).item] as (typeof FOUR_SLOT_ITEMS)[number];
-        for (const line of lines.get(device) ?? []) {
-          if (line.font !== font) { pieces.push({ font: line.font }); font = line.font; }
-          const set = (fontSets(now) ?? [])[line.font];
-          const codes = line.instruction.opcode === OP_TEXT_INLINE ? line.instruction.glyphs
-            : glyphsReferencedBy(now, line.instruction);
-          if (set === undefined || codes === undefined) throw new ComposeError('a label of the idle list does not read');
-          const x = to.column === from.column ? line.instruction.operands[0] as number
-            : to.column === 0 ? FOUR_SLOT_LEFT_X : FOUR_SLOT_RIGHT_END - textWidth(now, set, [...codes]);
-          const y = (line.instruction.operands[1] as number)
-            + (FOUR_SLOT_LABEL_Y[to.row] as number) - (FOUR_SLOT_LABEL_Y[from.row] as number);
-          pieces.push({ instruction: line.instruction, x, y });
-        }
-      });
-      const kept = head.program.slice(0, head.labelsFrom);
-      const tail = [head.program[head.bar], word[wordAt + 1], word[wordAt + 2], head.program[head.bar + 3]] as ScreenInstruction[];
-      const size = (piece: (typeof pieces)[number]): number => ('font' in piece ? 2 : piece.instruction.length);
+  const firstOf = built.pages.map((_, p) => built.pages.slice(0, p).reduce((sum, one) => sum + one.length, 0));
+  const pageLists = built.pages.map((modes, p) =>
+    fourSlotPageList(modes.map((_, k) => rowList + (firstOf[p] as number) + k)));
+  const copyLists = built.pages.map((modes, p) =>
+    fourSlotPageList(modes.map((_, k) => rowList + rows + (firstOf[p] as number) + k)));
+  current = appendArch14Mode(current, mode, built.entries, pageLists, (now) => {
+    const chrome = fourSlotMenuChrome(now, 'activity device list');
+    const homes = inlineHomes(now);
+    return built.contents.map((content) => {
+      const parts = menuPageParts(now, chrome, content);
       return {
-        length: [...kept, ...tail].reduce((sum, one) => sum + one.length, 0)
-          + pieces.reduce((sum, one) => sum + size(one), 0),
-        build: (shifted: (address: number) => number) => {
-          const out: number[] = [];
-          for (const one of kept) out.push(...copiedInstruction(now, one, shifted));
-          for (const piece of pieces) {
-            if ('font' in piece) { out.push(OP_FONT, piece.font); continue; }
-            const bytes = copiedInstruction(now, piece.instruction, shifted);
-            bytes[1] = piece.x as number;
-            bytes[2] = piece.y as number;
-            out.push(...bytes);
-          }
-          for (const one of tail) out.push(...copiedInstruction(now, one, shifted));
-          return new Uint8Array(out);
-        },
+        length: menuPageBytes(parts, homes, DEVICE_LIST_POINTED, (address) => address).length,
+        build: (shifted: (address: number) => number) => menuPageBytes(parts, homes, DEVICE_LIST_POINTED, shifted),
       };
     });
-  });
+  }, copyLists);
 
-  // The key under Devices: each record's case for the activity queues the new list instead. The
+  // 3. The key under Devices: each record's case for the activity queues the new list instead. The
   // operand is the instruction's first two bytes after the opcode, low byte first, as `caseQueued`
   // reads them.
   for (const map of maps.devices) {
@@ -7534,7 +7676,7 @@ export function composeActivityDeviceList(c: Container, activity: number): Compo
     current.blob.set(new Writer(2).u16(mode).bytes, at + 1);
   }
   current = parse(current.blob);
-  return { bytes: restamped(current.blob), mode, idleMode, order, maps: [...maps.devices] };
+  return { bytes: restamped(current.blob), mode, idleMode, order: built.order, maps: [...maps.devices] };
 }
 
 /**

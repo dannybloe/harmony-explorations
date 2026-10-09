@@ -46565,3 +46565,197 @@ account's `ActivityOrder` where the two differ, or a MyHarmony control that reor
   and the comparison with the menu's order not counted, with the starting compile as the control that a
   missing activity still shows.
 * `packages/codec/src/compare.ts`, `CompareOptions.menuOrder`.
+
+## 352. An arch 14 activity's own device list, built instead of copied off the idle list and another activity's list, its labels and the order of the devices it does not use still read
+
+**Date:** 9 October 2026. **Status:** confirmed by calibration against every activity device list of
+Logitech's arch 14 compiles in the lab but one configuration's, with edits the check refuses; nothing
+written to a remote or to an account.
+
+**Todo `todo-compile-650.md` 6.2.11.** Until here `composeActivityDeviceList`, section 294, built an
+activity's own device list by copying: each label was the idle list's instructions for that device moved
+to its new corner, each row ran the idle list's own row list for that device, the record's two entries,
+the backgrounds, the title and the counters were the idle list's, and the bottom word "Activity" was the
+last two instructions of another activity's list, so a configuration with no activity holding a list of
+its own was refused. Now the list is built by `activityDeviceList` and every activity's own list the
+configuration holds is checked against it, `checkActivityDeviceLists`, before the composer extends it.
+
+**Sources checked**: this document, sections 285, 290, 294, 312, 316, 326, 329, 330, 334 and 336, and the
+compiles below. Neither firmware nor client was opened, section 293's reasoned exemption: all of it is
+what Logitech's compiler wrote, and the remote draws what a page states and enters what a row runs.
+
+**The population** is every configuration with an activity that Logitech compiled for an arch 14 remote
+and the lab holds as a container, 23: the thirteen of section 312, the Harmony 700 pair counted twice;
+the eight later compiles of the test record's Harmony 650, `h650_start_config`, `h650_options_config`,
+`h650_sequence_config`, `h650_favourites_config`, `h650_assistant_off_config`, `h650_tilt_off_config`,
+`h650_test_config` and `h650_test_config_clean`; and the two Harmony 650 configurations other owners
+posted, `h650_issue36_config` and `h650_issue8_config`. They hold **82 activity device lists, 57 of them on
+the 14 Harmony 650 configurations**. The region reads of the same compiles are left out as copies, and the
+harvest compiles hold no activity.
+
+**Every figure below is per configuration, and the configurations are far fewer setups.** The 22 the
+builder reads hold 13 distinct sets of devices: the eight later Harmony 650 compiles are one, the Harmony
+700 pair is one, and `h650_config_region` and `h700_28_config_region` list the same devices. That one
+eight compile setup supplies 36 of the 78 lists checked, 72 of the 149 pages and 252 of the 515 rows, and
+36 of the 53 lists checked on the Harmony 650. Where a sentence argues from a proportion, the per setup
+split is given beside it.
+
+**Scope, decision 16.** Arch 14 (Harmony 600, 650 and 700) only. Whether a Harmony One activity has a
+device list of its own is not measured, as in section 294; arch 8, 9, 10 and 16 not checked.
+
+### What is built
+
+* **The rows are the setup's devices**: every device the idle list holds, the activity's first in the
+  order its enter list switches them on, section 294's `activitySwitchedOn`, then the rest in the idle
+  list's order, four to a page in `FOUR_SLOT_ITEMS` order.
+* **Each row runs a list of its own and its pool copy another**, `[7E device mode, write 1 into the device
+  mode marker]`, as section 285 found the compiler's: on the compiles all 515 rows checked bind a
+  different list on the page and on its copy, 1030 bindings, each that body, and no binding of an
+  activity list shares its list with any other binding of any device list, which the prose audit measured
+  over 1944 bindings on the 23. The composer appends them to base slot 10 as the device screen composer
+  appends its own. `appendArch14Mode` takes the copies' list bytes separately for this, since a copy then
+  differs from its page's list in its operands, section 69.
+* **The record's two entries are built**: `0x99` `0x72` mapping `CurrentLocation` through a record found by
+  content, and `0x2D` `0x73` running the device mode pages' battery program, `fourSlotMenuChrome`, in
+  `compilerTagOrder`'s order. The record is the one base slot 14 record with a single case, for 0, whose
+  program queues a `0x72` mapping the activity counter through the working screen record, which is
+  section 290's route back to the running activity. On all 23 configurations every device list of all
+  three kinds and the activity menu's `0x84` entry name exactly that operand, 151 entries: 82 activity
+  lists, 23 idle, 23 two row and 23 activity menus, `h650_issue8_config` measured by both reviewers
+  directly since the builder refuses it. The index is read, since a record's index is the description's
+  order, section 324; what the record holds is what finds it.
+* **Every page is `menuPageParts`'**, section 334: the background for one place or more, the queued
+  program, the bars, "Devices" at 0, 2, the counter, each label at its place, a left one from x 3 and a
+  right one ending at 125, one line at y 40 or 90 and two from 15 higher, and **"Activity" spelled in the
+  first font of the title's size that spells it, centred at 39, 114**, `bottomWord`, font 1 spelling it on
+  all 23. So nothing is taken off another activity's list. Every text is drawn by reference to the lowest
+  addressed inline copy of the same glyph codes where the configuration holds one, `inlineHomes`, which is
+  what the compiler does with a text it has drawn before, and inline where it holds none. **On every
+  compile the one inline copy of "Activity" is on the first page of its lowest numbered activity list**,
+  the two row list drawing it by reference, so a configuration whose bytes hold no activity list gets the
+  word drawn inline, spelled from its font; no configuration here is like that, so that case is not
+  exercised.
+
+### What is read, and why
+
+* **Each device's label**, its font and its lines of glyph codes, as the idle list draws it for that
+  device. That is the configuration's own spelling of the device's name in its own fonts, and building it
+  is two items further on: the letters are chapter 8's and the fonts `todo-compile-650.md` 6.2.12. Measured
+  against building it from the name tree instead, over the 143 device labels of the 22 idle lists the
+  builder reads, 83 per distinct setup: the name tree's name, an underscore read as a space, is the drawn
+  text on 123, 65 per setup, differs on 8, where the label is cut or broken differently, and is missing on
+  12, 10 per setup, whose names come from the screen or by elimination. 120 labels are drawn in the list's
+  main label font and 23 in another, 61 and 22 per setup. **A candidate rule for the font, unconfirmed**,
+  the prose audit's: the main font unless a line would be wider than 59 pixels in it, or it lacks a glyph
+  the label needs. It fits 143 of 143, 83 of 83 per setup: the widest main font line is 58 pixels, 21 of
+  the 23 have a line of 61 or more, and the other 2, `GChromeca..` and `Zgemma`, use a glyph the main font
+  lacks. The threshold is fitted between 58 and 61 on the same labels with none held out, and which
+  smaller font is then chosen is not tested. So the name route is not taken here. Scratch measurements,
+  not asserted.
+* **The order of the devices the activity does not switch on**, the idle list's. It is the two row device
+  list's order on 23 of 23, 14 of 14 per setup, which is another compiled list, section 326, and ascending
+  device identifier on 17 of the 20 configurations whose devices all have one, failing on `h600_config`
+  and the Harmony 700 pair. Device mode order fits 0 of 23, and a Java `HashMap` order of the identifier,
+  as an integer or a string, 1 of 20, `calibration_h600`'s three devices; of the device's name, 0 of 23.
+  So nothing here builds it. Scratch measurements, not asserted.
+* **The title and counter fonts**, the idle list's first page's, 6.2.12's; and **which list is the idle
+  one**, `idleDeviceList`, a mode number.
+
+### Every activity's list against the list built for it
+
+`checkActivityDeviceLists` compares every activity's own list with the one built for that activity: the
+record's two entries, the idle list's too, the page count, every row's device and the body of its list on
+the page and on the copy, and every page against `menuPageParts` with its six byte page record, a text
+compared by its place and glyph codes whether drawn inline or by reference. **78 of the 82 lists, 149
+pages and 515 rows, and on the Harmony 650 53 of 57, 104 pages and 363 rows.** The four not checked are
+`h650_issue8_config`'s, refused before any list is read. Its screens are in French: its device lists are
+titled "Dispositifs" and end in "Activités" and "Activité", and its device pages' bottom line reads
+"Sélection pr.." where every other compile's says "Back", so `deviceModeChrome` finds no font of the
+title's size that spells "Back". That is the builders' language, English throughout, and not this list's
+rule; section 336's chrome refuses the configuration for the same reason. Its four lists do follow the
+order rule, the blind review found, 82 of 82 over the 23.
+
+Section 334 already compared every menu page with the page built from what **that page** holds. This check
+builds the page from the activity and the idle list's rows instead, so it is what tests the order, the
+place each label moves to and the rows.
+
+### The calibration
+
+Every real activity's two cases under Devices pointed back at the idle list and its list composed again,
+78 lists on the 22 configurations: **149 pages of 149 draw the compiler's raster**. 110 page programs are
+the compiler's byte for byte; the other 39 differ in 228 texts and nothing else, 137 labels, 51 counters,
+18 titles and 22 bottom words, each a text the compiler's list draws inline that the composed list draws
+by reference to that very copy, which is the compiler's own rule for a text drawn before, the real list
+still being in the configuration. That explanation can only be tested while the real list is there.
+Putting the activity's devices first gives another order than the idle list's on 77 of the 78, so the rule
+bites; the one where it does not is `calibration_h600`'s. Every composed configuration passes
+`checkActivityDeviceLists` with the new list in place of the real one, 78 of 78, and section 334's whole
+check, where every text points included, on the last composition of each of the 22 configurations.
+
+**One kept difference of section 294 is gone and the other is smaller.** Its rows ran the idle list's row
+lists where the compiler's run lists of their own; now they are the compiler's shape. And on that
+section's own four configurations, 21 pages, the form of a text differed on 89 of 164 lines, labels inline
+and words copied; now it differs on 18 texts over 5 pages, each one the compiler's list drawing inline what
+the composed one points at.
+
+**And a list is composed where no activity's key opens one**: `h650_config_region` with all three
+activities' cases pointed back at the idle list, which section 294's composer refused for want of a list
+to take "Activity" off, gives the first activity a list drawing the compiler's raster on both its pages.
+The real lists are still in its bytes, unreached, so its "Activity" points at one of them.
+
+### Controls
+
+Two edits of `h650_config_region`, each refused: the first activity list's first page binding its top left
+and bottom left places, the first two entries as the list stores them, to each other's row lists, on the
+page and not on its copy; and the list's record mapping the centre key through the record after the built
+one, one byte. The unedited configuration is accepted. The label places, the bars, the backgrounds, the
+queued program and the words have section 334's controls.
+
+### What it changes in the composer
+
+`composeActivityDeviceList` checks the configuration's own lists, builds the list, appends its row lists
+and its mode through `appendArch14Mode` with the page programs from `menuPageParts`, and points the two
+cases at it, as before. It no longer needs another activity's list, and it refuses what it refused before
+otherwise: an activity whose key already opens something other than the idle list, a case program another
+key also runs, and anything off the Harmony 600, 650 and 700; and now also a configuration whose own
+activity lists are not the built ones. The configurations this project wrote to the 650 with section
+294's composer pass that check, `h650_devicelist_region` and `h650_milestone_5_1_config` among them,
+whose composed lists bind a page and its copy to one row list, which the check does not require, since
+nothing reads a copy, section 69. A scratch run, not asserted.
+
+### Falsification
+
+An arch 14 compile whose activity list binds a page and its copy to one list, whose centre key maps through
+another record than the one found by content, whose list orders its devices otherwise, or whose list a
+page of `menuPageParts` does not draw. And on the remote, which has not been run with this composer: a
+composed list that does not lead back to its activity or does not say "Activity".
+
+### The reviewers
+
+**The blind re-measure**, given the questions and the 23 configurations and none of this section, agreed on
+the population, 82 lists and 57 on the Harmony 650; the order rule, 82 of 82; four to a page; every row
+body and every copy binding its own list; the record's two entries and the one record behind the centre
+key on 23 of 23; and every activity list label being the idle list's glyph codes in the idle list's font,
+531 of 531 over the 23. It found this section's first draft wrong about `h650_issue8_config`, said to read
+"Retour" on its device pages, which nobody had read; corrected above from its reading and a second one.
+
+**The prose audit** re-ran every figure one level down and found five things wrong, all corrected above.
+The order of the devices an activity does not use had been measured in the order a page **stores** its
+rows, which is not the order it fills them, so the first draft said the two row list's order fits 0 of 23
+and that nothing fits; in fill order the two row list's fits 23 of 23 and ascending identifier 17 of 20.
+The first draft said the composed list points at the copy of "Activity" its two row list draws, where the
+two row list draws it by reference and the copy is in an activity list. It said both of section 294's kept
+differences were gone, where the text form's is smaller. It said no rule chooses a label's font, where a
+width rule fits all 143, fitted and unconfirmed. And it named the control's swapped places as the first
+two, which are the first two stored, top left and bottom left. It also asked for the per setup split, the
+1030 bindings behind "515 rows", the centre key's 151 of 151 on all 23, a length check in the calibration
+test, and test titles that do not claim the labels are built. All taken; none overruled.
+
+### Code
+
+* `packages/codec/src/compose.ts`: `activityDeviceList`, `checkActivityDeviceLists`,
+  `deviceListCentreKeyOperand`, `deviceListRowBody`, `composeActivityDeviceList` rebuilt on them, and
+  `appendArch14Mode`'s copies.
+* `packages/codec/test/activitydevicelist.test.ts`: the check over the 23 compiles, the calibration and
+  the controls.
+* `docs/config-format.md`, after section 294's paragraph.
