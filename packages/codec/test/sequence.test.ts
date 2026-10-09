@@ -22,8 +22,9 @@ import { LAB, require_, skipUnless } from '@harmony/lab';
 import {
   ACTION_QUEUE_INSTRUCTIONS, ARCH14_INFERRED, ComposeError, EditError, QueueError, SCREEN_ITEM_BEEP,
   activities, activityPauseGroups, applyEdits, devices, assertQueueFits, bindKeyToList, composeSequence,
-  handlerSets, infraredCodesPerList, irFrames, irGroups, irRecordBlocks, modeRecords, parse, payloadOf, queueRun, sendPreludes, sequenceBody,
-  taggedList,
+  coverage, deviceKeypadLists, handlerSets, infraredCodesPerList, irCarrier, irFrames, irGroups, irRecordBlocks,
+  keepDeviceOn, listSends, modeRecords, parse, payloadOf, queueRun, roundTrip, sendPreludes, sequenceBody,
+  setupView, taggedList, trailerAgrees,
   type Container, type Instruction, type SequenceStep,
 } from '../src/index.ts';
 
@@ -142,15 +143,17 @@ test('each compile holding the two sequences has six sequence lists in four bind
 test('none of the thirteen earlier Harmony 600, 650 and 700 compiles holds a pause across devices',
      skipUnless(...ARCH14), () => {
   // This made the arch 14 composer an inference until a compile with a sequence arrived, section 343,
-  // which scored three of the five entries `ARCH14_INFERRED` carried; two remain, and the next test
-  // is the one that scored the three.
+  // which scored three of the five entries `ARCH14_INFERRED` carried; section 349's compile of the test
+  // setup scored the screen copy, so one remains. The Logitech comparisons near the end of this file
+  // are what scored the four.
   for (const name of ARCH14) assert.deepEqual(pauseShaped(open(name)), [], name);
-  assert.equal(ARCH14_INFERRED.length, 2);
+  assert.equal(ARCH14_INFERRED.length, 1);
 });
 
 test('no screen item on a Harmony 600, 650 or 700 opens with the beeper every spare Harmony One screen item opens with',
      skipUnless('one_spare_20260830', ...ARCH14), () => {
-  // The ground for the third inference: a sequence's screen copy on arch 14 is its key copy.
+  // The ground for the third inference, that a sequence's screen copy on arch 14 is its key copy, which
+  // Logitech's compile of the 650's test setup then showed, section 349.
   const opened = (c: Container): { all: number; beeped: number } => {
     let all = 0;
     let beeped = 0;
@@ -369,6 +372,9 @@ test('a sequence composed onto the Harmony 650: a missing send list is made with
     steps: [{ send: { group: 0, code: 3 } }, { pause: 10 }, { send: { group: 1, code } }],
     pauseGroups: groups,
     interKeyDelays: { 0: 1, 1: 2 },
+    // The records as named, so this stays a claim about send lists: under the default the television's
+    // code 3 sends its one block copy, code 23, section 349, which has a list of its own.
+    records: 'named',
   });
   const out = parse(composed.bytes);
   assert.equal(composed.created.length, 1);
@@ -485,6 +491,9 @@ test('the sequence heard on the Harmony 650: three of the KPN box\'s own sends a
     const composed = composeSequence(c, {
       steps: [{ send: code(one) }, { pause: 20 }, { send: code(two) }, { pause: 200 }, { send: code(red) }],
       pauseGroups: groups, interKeyDelays: { [kpn]: 1 },
+      // What was written to the bench then: the keys' own records. The default since section 349 sends
+      // their one block copies, which is the test after this one.
+      records: 'named',
     });
     assert.deepEqual(composed.created, []);
     assert.equal(composed.peak, 12);
@@ -548,3 +557,146 @@ test('Logitech\'s sequence on the Harmony 650 is the composer\'s list, given its
     assert.deepEqual([24, 47, 13].map((scan) => blocksIn(before, beforeCode(scan), kpn)), [2, 2, 2]);
   });
 
+
+/** What a list sends, as the setup comparison states it, `compare.ts`. */
+const PLASMA_RADIO = 'activity Plasma kijken | page 1 | scan 34';
+
+test('the Radio sequence composed again as 5.1 composed it now stores what Logitech\'s compile of the test setup stores',
+  skipUnless('h650_start_config', 'h650_test_config_clean', 'h650_milestone_5_1_config'), () => {
+    // Section 349, todo-compile-650 5.2.4. The composer calls of the lab's `work/bench-5-1/step1.ts`, which
+    // built our 5.1 file: the KPN box kept on, then KPN 1, 2 s, KPN 2 for Plasma kijken's screen, with the
+    // records the KPN box's own 1 and 2 keys send in device mode.
+    const start = parse(require_('h650_start_config'));
+    const c = parse(keepDeviceOn(start, 63).bytes);
+    const [PLASMA, KPN] = [0, 1];
+    assert.equal(devices(c).find((one) => one.group === KPN)?.name, 'KPN');
+    const keypad = deviceKeypadLists(c, KPN);
+    const lists = c.actionLists()!;
+    const codeOf = (list: number): number => lists[list]!.find((one) => one.opcode === 0x7d)!.operand & 0xff;
+    const quantityOf = (list: number): number => lists[list]!.find((one) => one.opcode === QUANTITY)!.operand & 0xff;
+    const [one, two] = [keypad.get(24)!, keypad.get(47)!];
+    const steps: SequenceStep[] = [
+      { send: { group: KPN, code: codeOf(one) } }, { pause: 20 }, { send: { group: KPN, code: codeOf(two) } }];
+    const compose = (records?: 'named'): ReturnType<typeof composeSequence> => composeSequence(c, {
+      steps, pauseGroups: [PLASMA, KPN], interKeyDelays: { [KPN]: quantityOf(one) }, copies: ['screen'],
+      ...(records === undefined ? {} : { records }),
+    });
+
+    const theirs = setupView(parse(require_('h650_test_config_clean'))).get(PLASMA_RADIO)!;
+    const composed = compose();
+    const ours = listSends(parse(composed.bytes), composed.lists[0]!);
+    // What is heard was already the same; what is stored is now the same too, block for block.
+    assert.deepEqual(ours.frames, theirs.frames);
+    assert.deepEqual(ours.records, theirs.records);
+    // Both copies are the starting compile's own, codes 41 and 11 beside the keys' 14 and 34, and each
+    // already has a send list at the KPN box's quantity, which nothing in that compile calls.
+    assert.deepEqual([...composed.sent], [[`${KPN}:14`, 41], [`${KPN}:34`, 11]]);
+    assert.deepEqual(composed.recordsCreated, []);
+    assert.deepEqual(composed.created, []);
+    assert.deepEqual(theirs.records.map((record) => record.split(' | ').filter((block) => block !== '').length), [1, 1]);
+
+    // **Logitech's screen copy is the key copy**, the first of `ARCH14_INFERRED`'s entries seen: the list
+    // Radio's corner calls is the composer's body given their two send lists, with no beeper in front, and
+    // a second list of the same body is the page's copy, section 69.
+    const clean = parse(require_('h650_test_config_clean'));
+    const plasma = modeRecords(clean)!.find((record) => record.pages.some((page) =>
+      taggedList(clean, page.list)?.entries.some((entry) => (entry.tag & 0x3f) === 34
+        && listSends(clean, entry.operand).records.join() === theirs.records.join())));
+    assert.ok(plasma !== undefined, 'the mode record whose page binds Radio');
+    const radio = plasma.pages.flatMap((page) => taggedList(clean, page.list)?.entries ?? [])
+      .find((entry) => (entry.tag & 0x3f) === 34)!.operand;
+    const theirBody = body(clean, radio);
+    assert.notEqual(theirBody[0]?.opcode, SCREEN_ITEM_BEEP.opcode);
+    const calls = theirBody.filter((one) => one.opcode === CALL).map((one) => one.operand);
+    assert.deepEqual(theirBody, sequenceBody(
+      [{ send: { group: KPN, code: 0 } }, { pause: 20 }, { send: { group: KPN, code: 1 } }],
+      (_group, code) => calls[code]!, [PLASMA, KPN]));
+    assert.equal((clean.actionLists() ?? []).filter((list) => same(list, theirBody)).length, 2);
+    assert.deepEqual(body(parse(composed.bytes), composed.lists[0]!).map((one) => one.opcode),
+                     theirBody.map((one) => one.opcode));
+
+    // **The control**: the records as named are what the 5.1 file sends, and they differ from Logitech's,
+    // which is the one record difference `compare.test.ts` pins.
+    const named = compose('named');
+    const before = listSends(parse(named.bytes), named.lists[0]!);
+    const fiveOne = setupView(parse(require_('h650_milestone_5_1_config'))).get(PLASMA_RADIO)!;
+    assert.deepEqual(before, { frames: fiveOne.frames, records: fiveOne.records });
+    assert.deepEqual(before.frames, theirs.frames);
+    assert.notDeepEqual(before.records, theirs.records);
+  });
+
+test('a command whose one block copy the group lacks gets one, as Logitech\'s compile of the 4.2 sequence did',
+  skipUnless('h650_options_config', 'h650_sequence_config'), () => {
+    // Section 349's second sample, and the one where a copy has to be made: section 343's sequence, KPN 1,
+    // 2 s, KPN 2, 20 s, KPN Red on Red in TV kijken, composed onto Logitech's compile of the same setup
+    // before it was authored, and held against Logitech's compile after.
+    const c = parse(require_('h650_options_config'));
+    const tv = activities(c).find((one) => one.name === 'TV kijken')!;
+    const map = taggedList(c, handlerSets(c)!.addresses[tv.set]!)!;
+    const keyList = (scan: number): number => map.entries.find((one) => one.tag === (0x80 | scan))!.operand;
+    const sendOf = new Map(sendPreludes(c).map((p) => [p.list, p]));
+    const code = (list: number): { group: number; code: number } =>
+      ({ group: sendOf.get(list)!.group, code: c.actionLists()![list]![1]!.operand & 0xff });
+    const [one, two, red] = [24, 47, 13].map((scan) => code(keyList(scan))) as
+      [{ group: number; code: number }, { group: number; code: number }, { group: number; code: number }];
+    const kpn = one.group;
+    const recordsBefore = irGroups(c)![kpn]!.addresses.length;
+    const composed = composeSequence(c, {
+      steps: [{ send: one }, { pause: 20 }, { send: two }, { pause: 200 }, { send: red }],
+      pauseGroups: activityPauseGroups(c, tv.set), interKeyDelays: { [kpn]: 1 },
+    });
+    const out = parse(composed.bytes);
+
+    // KPN 1 and 2 have copies already; Red does not, so one record is appended to the group, with a send
+    // list of its own and that list's delay step, section 287.
+    assert.deepEqual(composed.recordsCreated, [`${kpn}:${recordsBefore}`]);
+    assert.equal(irGroups(out)![kpn]!.addresses.length, recordsBefore + 1);
+    assert.equal(composed.sent.get(`${kpn}:${red.code}`), recordsBefore);
+    assert.equal(composed.created.length, 1);
+    const madeList = composed.created[0]!;
+    assert.deepEqual(out.actionLists()![madeList]!.slice(1), [
+      { opcode: 0x7d, operand: (kpn << 8) | recordsBefore }, { opcode: QUANTITY, operand: (kpn << 8) | 1 }]);
+    assert.ok(sendPreludes(out).some((p) => p.list === madeList), 'with its own delay step');
+    const made = irGroups(out)![kpn]!.addresses[recordsBefore]!;
+    assert.equal(irRecordBlocks(out, made).length, 1);
+    const keyRecord = irGroups(c)![kpn]!.addresses[red.code]!;
+    assert.equal(irCarrier(out, made)?.periodNs, irCarrier(c, keyRecord)?.periodNs);
+
+    // Logitech's: the list Red calls in their compile.
+    const seq = parse(require_('h650_sequence_config'));
+    const seqTv = activities(seq).find((a) => a.name === 'TV kijken')!;
+    const seqMap = taggedList(seq, handlerSets(seq)!.addresses[seqTv.set]!)!;
+    const theirs = listSends(seq, seqMap.entries.find((e) => e.tag === 0x8d)!.operand);
+    const ours = listSends(out, composed.lists[0]!);
+    assert.deepEqual(ours.frames, theirs.frames);
+    assert.deepEqual(ours.records, theirs.records);
+    // The carrier too, which the view does not state: Logitech's added copy is its KPN code 22.
+    assert.equal(irCarrier(out, made)?.periodNs, irCarrier(seq, irGroups(seq)![kpn]!.addresses[22]!)?.periodNs);
+    // And what the keys send is unchanged: only the sequence takes the copies.
+    for (const scan of [24, 47, 13]) assert.deepEqual(listSends(out, keyList(scan)), listSends(c, keyList(scan)));
+
+    // The appended bytes are all claimed, once, and the emitter reproduces the file.
+    const base = coverage(c);
+    const report = coverage(out);
+    assert.equal(report.gapBytes, base.gapBytes);
+    assert.deepEqual(report.overlaps, []);
+    assert.ok(trailerAgrees(out));
+    assert.equal(roundTrip(out).equal, true);
+    assert.doesNotThrow(() => assertQueueFits(out));
+    // The same command twice resolves to the one copy made the first time.
+    const twice = composeSequence(c, {
+      steps: [{ send: red }, { pause: 20 }, { send: red }], pauseGroups: [kpn], interKeyDelays: { [kpn]: 1 },
+    });
+    assert.deepEqual(twice.recordsCreated, [`${kpn}:${recordsBefore}`]);
+  });
+
+test('a one block copy is refused on the Harmony One, whose copies open with the device\'s delay between devices',
+  skipUnless('one_spare_20260830'), () => {
+    const one = parse(require_('one_spare_20260830'));
+    const sequence = { steps: [{ send: { group: 2, code: 19 } }], pauseGroups: [3, 2, 0], interKeyDelays: { 2: 2 } };
+    assert.throws(() => composeSequence(one, { ...sequence, records: 'copy' }),
+                  (error: unknown) => error instanceof ComposeError && /Harmony One's open with the device's delay/.test(error.message));
+    // The control: the same sequence composes with the records named, the Harmony One's default.
+    assert.doesNotThrow(() => composeSequence(one, sequence));
+    assert.doesNotThrow(() => composeSequence(one, { ...sequence, records: 'named' }));
+  });

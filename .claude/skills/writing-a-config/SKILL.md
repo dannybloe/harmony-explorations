@@ -273,8 +273,13 @@ produce a config the remote accepts and mishandles.
   Three things a writer gets wrong otherwise. A device's sequence sends carry its **inter key delay**, so
   the spare Harmony One's set top box, at 200 ms, calls lists at 2 where its device mode keys call lists
   at 1. A 20 second wait is **one** `0x7C` of 200, which is what Logitech's compiler wrote, and not runs of
-  100. And on arch 14 (Harmony 600, 650 and 700) no compile holds a sequence, so five parts of the form
-  are inferences, named in `ARCH14_INFERRED`, until one does.
+  100. On arch 14 (Harmony 600, 650 and 700) Logitech's Harmony 650 compiles have since confirmed four of
+  the five parts carried over, sections 343 and 349, and `ARCH14_INFERRED` names the one left, the send's
+  quantity. **And on the Harmony 650 a sequence's command sends its one block copy, not the key's record**,
+  section 349, the 600 and 700 having no compile with a sequence: the key's first block with its opening silence dropped and no held block, the group's own where the
+  configuration already holds one, a record appended to the group where it does not. `composeSequence`
+  does that by default on arch 14 and refuses it on the Harmony One, whose copies open with the device's
+  delay between devices instead.
 * **Two erase blocks is the floor for any edit, not a page binding's quirk**, section 237. The
   trailer checksum sits at the far end of the container and `applyEdits` restamps it, so a one byte
   change to a device's power on delay moves `0x083BFD` and `0x1D6B66` on the spare Harmony One, 1.3
