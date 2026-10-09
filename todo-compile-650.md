@@ -120,7 +120,7 @@ an item, ask whether the finish line moves without it; if it does, the item goes
 
 ## 8. Text and fonts
 
-- [ ] 8.1 Generate the text inside every screen program, Logitech's included, rather than carrying it (was 3.4)
+- [x] 8.1 Generate the text inside every screen program, Logitech's included, rather than carrying it (was 3.4): every text on a screen we build is spelled from its word, placed by its screen's rule and written out or pointed at by one rule for the whole file; 22 of Logitech's compiles rebuild byte for byte; the start up title's one line limit is 126, measured on the 650; the fonts stay read (8.2) and the left out screens keep their texts, section 358
 - [ ] 8.2 Decide where the letter shapes come from, then build the font table; this also ends the composers' borrowing of letters (was 6.2.12)
 
 ## 9. Pictures
