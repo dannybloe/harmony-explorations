@@ -109,7 +109,8 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // 227 with the favourites compile and the region read after its sync, section 344.
   // 228 with the Remote Assistant off compile, section 345.
   // 229 with the tilt sensor off compile, section 346.
-  assert.equal(Object.keys(pythonImages()).length, 229, 'every fixture tests/lab.py names');
+  // 230 with the region read before todo-compile-650 5.1's write.
+  assert.equal(Object.keys(pythonImages()).length, 230, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {
@@ -194,6 +195,7 @@ test('the two sides exclude the same fixtures from the parseable population', ()
   // 79 with the favourites compile and region.
   // 80 with the Remote Assistant off compile.
   // 81 with the tilt sensor off compile.
-  assert.equal(names.length, 81, 'each one a container already counted, that container plus a known '
+  // 82 with the region read before 5.1's write.
+  assert.equal(names.length, 82, 'each one a container already counted, that container plus a known '
     + 'edit, or a compare base whose remote is not yet in the corpus');
 });
