@@ -208,6 +208,8 @@ export const IMAGES: Readonly<Record<string, string>> = {
   h650_favourites_base: '20261009T0847Z-h650-favourites-synced-region.bin',
   // The same setup compiled with MyHarmony's Remote Assistant set off, section 345.
   h650_assistant_off_config: '20261009T0930Z-h650-assistant-off-config.bin',
+  // And with the tilt sensor off as well, section 346.
+  h650_tilt_off_config: '20261009T0950Z-h650-tilt-off-config.bin',
   h650_gap_ir_all5: '20261007T054551Z-ir-test-harmony-650-help-does-nothing-and-the-gap-between-devices.json',
   h650_gap_ir_kpn20: '20261007T060756Z-ir-test-harmony-650-the-kpn-box-s-delay-between-devices-at-2-s.json',
   h650_gap_ir_denon20: '20261007T061443Z-ir-test-harmony-650-the-denon-s-delay-between-devices-at-2-s.json',
@@ -755,6 +757,7 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
     'h650_start_base', 'h650_start_config', 'h650_bench_2_3_base', 'h650_bench_3_9_base',
     'h650_options_base', 'h650_options_config', 'h650_bench_4_2_base', 'h650_sequence_config',
     'h650_favourites_config', 'h650_favourites_base', 'h650_assistant_off_config',
+    'h650_tilt_off_config',
     // External flash of the bench Harmony 700 from 0x000000, kept for the staged application at its
     // start. The container at 0x020000 is byte for byte `h700_gspm`, the embedded config the 2.8
     // package carries as its region 3, so counting it would count that one twice. Section 295.

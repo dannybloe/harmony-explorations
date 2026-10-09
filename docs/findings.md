@@ -45931,3 +45931,45 @@ none.
   in the on file, none in the off file, and the counts that do and do not move.
 * `reference/remotes/harmony-650/features.md`, the `RemoteAssistant` row.
 
+## 346. MyHarmony's tilt sensor setting is one flag instruction, `3F F101`, that the compile leaves out when it is off
+
+`todo-compile-650.md` 4.3.3. The tilt sensor wakes the remote when it is picked up. It is set in MyHarmony's
+"Remote Backlight Settings" dialog, beside the glow time, and the service then reads `TiltSensor` as
+`false`. The test record's Harmony 650 was compiled with it off (`h650_tilt_off_config`), with nothing else
+changed since section 345's compile with the Remote Assistant off (`h650_assistant_off_config`), where the
+sensor was on.
+
+**The only difference is one instruction, `3F F101`.** With the sensor on, three lists hold it: timer 0's
+list `[1F E900, 3F F101]`, and two lists that end in it, `[7F 08B2, 3F F101]` and
+`[7F 08B2, 72 0225, 3F F101]`. With it off, no list holds it: timer 0 queues `1F E900` directly and its list
+is gone, and the other two lists are each one instruction shorter. Two lists fewer, 28 bytes fewer. The
+other five timers, the parameter block, the screens, the screen texts and every state variable's starting
+value are the same.
+
+Timer 0 is the one section 292 found running ten seconds after the screen light's own timer, queueing
+`[1F E900, 3F F101]`. So with the sensor on, the remote sets this flag when it goes quiet and in the two
+other places, and with it off it never does. **What the flag does in the firmware is not read**; that it is
+the sensor's wake is the reading the setting's name suggests, and it is not checked on the remote. Neither
+is what `1F E900` selects, and the two lists ending in the flag are not traced to their callers here.
+
+**For the 650 track** this is the last of the three settings: a configuration built by us sets the sensor on
+by carrying the flag where Logitech does and off by leaving it out. The starting configuration was compiled
+with it on, at its default.
+
+**Sources.** MyHarmony's screen for where the setting lives, Logitech's service for the value, and the two
+Logitech files; the firmware was not read.
+
+### Scope, decision 16
+
+The Harmony 650, one setup. The Harmony 600 and 700 list the same setting and are not compiled with it off.
+
+### Falsification
+
+A Logitech compile with the sensor off that holds `3F F1xx`, or one with it on that does not.
+
+### Where it lands
+
+* `packages/codec/test/help.test.ts`: timer 0's instruction in both files, the three lists holding the flag
+  and none with it off, and what does not change.
+* `reference/remotes/harmony-650/features.md`, the `TiltSensor` row.
+

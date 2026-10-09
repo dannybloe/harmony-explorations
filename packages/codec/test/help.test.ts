@@ -344,3 +344,32 @@ test('with MyHarmony\'s Remote Assistant off, Logitech\'s compile drops its six 
     assert.equal(off.variables, on.variables);
     assert.deepEqual(off.activities, on.activities);
   });
+
+test('with MyHarmony\'s tilt sensor off, timer 0 queues 1F E900 alone and no list sets 3F F101, and nothing else changes',
+  skipUnless('h650_assistant_off_config', 'h650_tilt_off_config'), async () => {
+    // Section 346, todo-compile-650 4.3.3. Two Logitech compiles of the same Harmony 650 setup, the
+    // second with the tilt sensor disabled in MyHarmony's "Remote Backlight Settings".
+    const { modeRecords, parameterGroups, stateVariables, timers } = await import('../src/index.ts');
+    const on = parse(require_('h650_assistant_off_config'));
+    const off = parse(require_('h650_tilt_off_config'));
+    const t0on = timers(on)!.records[0]!;
+    const t0off = timers(off)!.records[0]!;
+    assert.equal(t0on.duration, 10);
+    assert.equal(t0off.duration, 10);
+    assert.equal(t0on.instruction.opcode, 0x7f);
+    assert.deepEqual(on.actionLists()![t0on.instruction.operand]!.map((i) => [i.opcode, i.operand]), [[0x1f, 0xe900], [0x3f, 0xf101]]);
+    assert.deepEqual([t0off.instruction.opcode, t0off.instruction.operand], [0x1f, 0xe900]);
+    // Three lists hold the flag instruction with the sensor on, timer 0's and two that end in it; none with
+    // it off, where timer 0's list is gone and the other two are a step shorter: two lists fewer.
+    const flag = (c: typeof on) => c.actionLists()!.filter((l) => l.some((i) => i.opcode === 0x3f && (i.operand >> 8) === 0xf1)).length;
+    assert.equal(flag(on), 3);
+    assert.equal(flag(off), 0);
+    assert.equal(on.actionLists()!.length - off.actionLists()!.length, 2);
+    // The rest of the timers, the parameter block, the screens and the variables are unchanged.
+    assert.deepEqual(timers(off)!.records.slice(1).map((t) => [t.duration, t.instruction.opcode]),
+                     timers(on)!.records.slice(1).map((t) => [t.duration, t.instruction.opcode]));
+    assert.deepEqual(parameterGroups(off)!.map((g) => g.values), parameterGroups(on)!.map((g) => g.values));
+    assert.equal(modeRecords(off)!.length, modeRecords(on)!.length);
+    assert.equal(stateVariables(off).length, stateVariables(on).length);
+  });
+
