@@ -161,7 +161,7 @@ export interface ComposeCommand {
    * no width at all, so a code
    * the name cannot read is one the table's block and the held power step cannot be built for either. The
    * catalogue composer passes this for every command, so the record is built from one reading of the
-   * string, the one `make prontocheck` holds against Logitech's renderings.
+   * string, the one `make prontocheck` holds against the archive's renderings.
    */
   readonly read?: StatedCode;
   /**
@@ -200,13 +200,40 @@ export interface ComposeCommand {
    * was measured on, so where the caller has derived another one the table's is the wrong one.
    */
   readonly blocks?: StatedBlocks;
+  /**
+   * The same command with its toggle bit flipped, which becomes the record's **second pointer group**,
+   * todo-process-logitech 2.5: `read` and `blocks` as above, for the flipped code, composed the same way as
+   * the command itself, so the second group is the first group's derivation applied to other frames.
+   *
+   * **Why a record carries the code twice.** A toggle family's code holds one bit that must change on every
+   * press so an appliance can tell a second press from a held key, and the remote has no arithmetic to
+   * change it. So Logitech's compiler writes two groups, the code as stated and the code flipped, on every
+   * record of every toggle family in every compile in the lab, and the firmware alternates between them per
+   * device. `withToggleFlipped` in `archive.ts` carries the measurement. Absent for a code with no toggle bit.
+   */
+  readonly toggled?: ToggledCode;
 }
 
-/** A press's two blocks as pulses, derived outside the rhythm table, `ComposeCommand.blocks`. */
+/** A press's blocks as pulses, derived outside the rhythm table, `ComposeCommand.blocks`. */
 export interface StatedBlocks {
   readonly once: readonly Pulse[];
   /** Absent for a command that repeats nothing while held. */
   readonly held?: readonly Pulse[];
+  /**
+   * What the key sends when it comes up, the code's third group: the record's **third** pointer, which the
+   * firmware plays at the end whether the key was held or not, section 127. Logitech's compiler puts a
+   * code's release group there, todo-process-logitech 2.5, section 365: the PlayStation 3's `StopSpacer`, a
+   * six second silence, on the Harmony One, 650 and 700, and `Microsoft 36 Bit`'s constant release on the
+   * contributed Harmony 880 or 885 configurations, the two distinct tails in the lab. Absent for a code
+   * naming no release group.
+   */
+  readonly release?: readonly Pulse[];
+}
+
+/** A command's code with its toggle bit flipped, `ComposeCommand.toggled`. */
+export interface ToggledCode {
+  readonly read: StatedCode;
+  readonly blocks?: StatedBlocks;
 }
 
 /**
@@ -223,6 +250,8 @@ export interface ComposePowerStep {
   readonly holdMs?: number;
   /** The press's blocks where the rhythm table has none for its family, `ComposeCommand.blocks`. */
   readonly blocks?: StatedBlocks;
+  /** The code with its toggle bit flipped, the record's second group, `ComposeCommand.toggled`. */
+  readonly toggled?: ToggledCode;
 }
 
 /** The lead-in the generator gives a command nothing says more about, measured in phase 7. */
@@ -249,7 +278,12 @@ export const COMPILED_LEAD_IN_US = 50000;
  * of the corpus and the compiles, carving first is the only spelling that fits on thousands and
  * carving last is the only one on none.
  */
-export function compiledBlockWords(pulses: readonly Pulse[], leadInUs = 0): IrPulse[] {
+export function compiledBlockWords(
+  pulses: readonly Pulse[], leadInUs = 0,
+  // **A release block is spelt without the carved microsecond**, todo-process-logitech 2.5: every record
+  // tail of every configuration in the lab ends on its gap or a mark, never on the one microsecond word.
+  options: { readonly carve?: boolean } = {},
+): IrPulse[] {
   // **A silence handed over in chunks is spelt whole**, section 359: Logitech's definition route states a
   // gap longer than a word as chunks of one word each, `joinedGaps` in `archive.ts`, and the rule below
   // can only be applied to a silence it sees whole. Spelt chunk by chunk, `Microsoft 30 Bit`'s 68643 was
@@ -259,7 +293,7 @@ export function compiledBlockWords(pulses: readonly Pulse[], leadInUs = 0): IrPu
   const words: IrPulse[] = [];
   // The trailing gap gives up its last microsecond first, then the rest is spelled like any silence.
   const lastAt = led.length - 1;
-  const carved = lastAt >= 0 && !led[lastAt]!.mark && led[lastAt]!.us >= 2;
+  const carved = options.carve !== false && lastAt >= 0 && !led[lastAt]!.mark && led[lastAt]!.us >= 2;
   for (const [at, pulse] of led.entries()) {
     if (pulse.mark) {
       // A mark over the ceiling is spelt maximal first like blockWordsOf spells it; none of the
@@ -374,31 +408,29 @@ export function composeIrGroup(
   const table = c.pointerArrayAt(slot);
   if (table === undefined) throw new ComposeError('base slot 5 does not read as a group table');
 
-  // Every command's blocks, derived and refused early: composing half a device helps nobody.
-  const built: { periodNs: number; once: Uint8Array; held?: Uint8Array }[] = [];
-  for (const command of commands) {
-    // The caller's reading where it gives one, which is the definition's, section 359.
-    const read = command.read ?? statedCode(command.stated);
-    if (read === undefined) throw new ComposeError(`not a catalogue code: ${command.stated}`);
-    const entry = statedProtocol(read.family);
-    if (entry === undefined) {
-      throw new ComposeError(`no measured rhythm for ${read.family}, so nothing can be sent`);
-    }
+  // Every command's blocks, derived and refused early: composing half a device helps nobody. A record is
+  // one pointer group per reading of the code: the code as stated and, where it toggles, the code with its
+  // toggle bit flipped, todo-process-logitech 2.5, both built by the steps below so they cannot drift apart.
+  type BuiltGroup = { once: Uint8Array; held?: Uint8Array; release?: Uint8Array };
+  const groupOf = (command: ComposeCommand, read: StatedCode, given: StatedBlocks | undefined): BuiltGroup => {
     if (command.holdMs !== undefined) {
       if (command.held === true || (command.leadInUs ?? 0) !== 0) {
         throw new ComposeError('a held power step has no held block and no lead in');
       }
-      const block = longPressBlockOfStatedCode(read, command.holdMs, undefined, command.blocks?.once);
+      // A held step is cut from the press, section 309, and no compile here holds a held step of a code
+      // naming a release group, so where its release would go is not seen.
+      if (given?.release !== undefined) {
+        throw new ComposeError(`${command.stated} names a release group, and no compile shows a held power step of one`);
+      }
+      const block = longPressBlockOfStatedCode(read, command.holdMs, undefined, given?.once);
       if (block === undefined) {
         throw new ComposeError(`${command.stated} cannot be composed held for ${command.holdMs} ms: `
           + 'its family has no measured press block or stated segment lengths, or the hold is shorter than a press');
       }
-      built.push({ periodNs: entry.periodNs, once: irBuildBlock(compiledBlockWords(block)) });
-      continue;
+      return { once: irBuildBlock(compiledBlockWords(block)) };
     }
     // The caller's blocks, derived at the device's count, where it gives them, sections 348 and 350;
     // the table's block otherwise, whose count is the one device's it was measured on.
-    const given = command.blocks;
     const once = given === undefined ? blockOfStatedCode(read, undefined, 'once') : [...given.once];
     if (once === undefined || once.length === 0) {
       throw new ComposeError(`${read.family} has no measured whole block, so nothing can be sent`);
@@ -409,10 +441,30 @@ export function composeIrGroup(
     if (command.held === true && held === undefined) {
       throw new ComposeError(`${read.family} has no measured held block and one was demanded`);
     }
-    built.push({
-      periodNs: entry.periodNs,
+    // The release goes behind the third pointer, todo-process-logitech 2.5, spelt as any trailing block is.
+    const release = given?.release === undefined || given.release.length === 0 ? undefined : [...given.release];
+    return {
       once: irBuildBlock(compiledBlockWords(once, command.leadInUs ?? COMPILED_LEAD_IN_US)),
       ...(held === undefined ? {} : { held: irBuildBlock(compiledBlockWords(held)) }),
+      ...(release === undefined ? {} : { release: irBuildBlock(compiledBlockWords(release, 0, { carve: false })) }),
+    };
+  };
+  const built: { periodNs: number; groups: BuiltGroup[] }[] = [];
+  for (const command of commands) {
+    // The caller's reading where it gives one, which is the definition's, section 359.
+    const read = command.read ?? statedCode(command.stated);
+    if (read === undefined) throw new ComposeError(`not a catalogue code: ${command.stated}`);
+    const entry = statedProtocol(read.family);
+    if (entry === undefined) {
+      throw new ComposeError(`no measured rhythm for ${read.family}, so nothing can be sent`);
+    }
+    const toggled = command.toggled;
+    built.push({
+      periodNs: entry.periodNs,
+      groups: [
+        groupOf(command, read, command.blocks),
+        ...(toggled === undefined ? [] : [groupOf(command, toggled.read, toggled.blocks)]),
+      ],
     });
   }
 
@@ -432,12 +484,17 @@ export function composeIrGroup(
   };
   const laid = built.map((one) => ({
     periodNs: one.periodNs,
-    once: place(one.once),
-    held: one.held === undefined ? undefined : place(one.held),
+    groups: one.groups.map((group) => ({
+      once: place(group.once),
+      held: group.held === undefined ? undefined : place(group.held),
+      release: group.release === undefined ? undefined : place(group.release),
+    })),
   }));
   const blocksSize = cursor;
-  const recordSize = 12 + 3 * IR_POINTERS_PER_GROUP;
-  const arrayAt = blocksSize + recordSize * commands.length;
+  // A header is twelve bytes and nine per pointer group, so a toggling code's record is nine longer.
+  const recordSizes = laid.map((one) => 12 + 3 * IR_POINTERS_PER_GROUP * one.groups.length);
+  const recordAt = recordSizes.map((_, k) => blocksSize + recordSizes.slice(0, k).reduce((a, b) => a + b, 0));
+  const arrayAt = blocksSize + recordSizes.reduce((a, b) => a + b, 0);
   const holeSize = arrayAt + 3 + 3 * commands.length;
 
   // The hole goes exactly where the group arrays end and the section begins, so the new group sits
@@ -447,18 +504,19 @@ export function composeIrGroup(
   const base = c.flashBase + at;
   const array = new Writer(3 + 3 * commands.length).u8(0).u16(commands.length);
   laid.forEach((one, k) => {
-    const start = base + blocksSize + recordSize * k;
+    const start = base + recordAt[k]!;
     const record = irBuildRecord({
       periodNs: one.periodNs,
       start,
       encoding: IR_CLASS_STREAM,
-      pointers: [
-        base + one.once,
-        one.held === undefined ? 0 : base + one.held,
-        0,
-      ],
+      // Once, held and tail per group, section 127; the tail is the release where the code names one.
+      pointers: one.groups.flatMap((group) => [
+        base + group.once,
+        group.held === undefined ? 0 : base + group.held,
+        group.release === undefined ? 0 : base + group.release,
+      ]),
     });
-    first.bytes.set(record.bytes, at + blocksSize + recordSize * k);
+    first.bytes.set(record.bytes, at + recordAt[k]!);
     array.u24(record.pointer);
   });
   let offset = 0;
@@ -844,6 +902,7 @@ export function composeDevice(c: Container, device: ComposeDevice): ComposedDevi
         : { stated: step.stated, holdMs: step.holdMs }),
       ...(step.blocks === undefined ? {} : { blocks: step.blocks }),
       ...(step.read === undefined ? {} : { read: step.read }),
+      ...(step.toggled === undefined ? {} : { toggled: step.toggled }),
     })),
   ];
 

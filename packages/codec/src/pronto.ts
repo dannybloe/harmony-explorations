@@ -113,7 +113,7 @@ export function prontoUnits(
   // skipped outright, which contradicted the floor twenty lines below: that floor exists precisely so a
   // word of zero cannot silently merge its two neighbours, and skipping the interval performed the merge
   // the floor was there to prevent. And a zero duration has no sign, so once it was kept it merged with
-  // whatever came before it regardless of which side of the carrier it was on. Logitech's own renderer
+  // whatever came before it regardless of which side of the carrier it was on. The archive's renderer
   // answers both cases and the nine `QE` test patterns are where it says so: a zero mark between two
   // spaces cannot merge and is rendered `1`, and a zero space before another space merges and adds
   // nothing to it.
@@ -127,7 +127,7 @@ export function prontoUnits(
   // **A section never opens on a space, so a leading one is dropped.** The format's first burst word is
   // a mark by construction, and silence before a transmission carries nothing a receiver could time
   // from. It matters for a family whose cell states its carried half first: its repeat group opens on
-  // the first bit's own space, and Logitech's renderer drops it, which their README states as the rule.
+  // the first bit's own space, and the archive's renderer drops it, which its README states as the rule.
   // One consequence worth knowing rather than hiding: **their repeat section for such a family cannot be
   // played back correctly**, the first bit having gone with the space. Our block keeps it, and the
   // comparison is made on their spelling.
@@ -144,7 +144,7 @@ export function prontoUnits(
  * A train padded out to whole pairs, which is the form a Pronto section takes.
  *
  * A Pronto section is counted in **pairs**, so a transmission whose last interval is a mark needs a
- * space after it. Logitech's renderer writes **one unit** there rather than zero, consistent with the
+ * space after it. The archive's renderer writes **one unit** there rather than zero, consistent with the
  * floor above, and the value carries no signal: it is the shortest space that can be written down. A
  * comparison passes both sides through this so a family whose trailer ends on a mark is not reported as
  * a disagreement about its final space.

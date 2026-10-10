@@ -233,12 +233,12 @@ test('a code only the definition reads is built from the definition, never the t
     // and release groups gets nothing at all. The row was measured or derived over codes the name reads.
     assert.deepEqual([...short].sort(), [['Pace 16 Bit Quad', 35], ['Samsung 16 and 20 Bit', 41], ['iMonFixed2', 2]]);
     // So the composer never sends the table's block for such a code: the definition's at the count, or a
-    // refusal for a release group, section 348's, or for a press that sends nothing, `iMonFixed2` at the 0
-    // it states, whose device's count of 0 is refused before this is asked anyway.
+    // refusal for a press that sends nothing, `iMonFixed2` at the 0 it states, whose device's count of 0 is
+    // refused before this is asked anyway. 1833 of the definition's were refused for naming a release group
+    // until todo-process-logitech 2.5, which puts the release behind the record's third pointer.
     assert.deepEqual([...outcomes].sort(), [
-      ['the code names a release group, which no Logitech compile here shows stored', 1833],
       ['the code sends nothing on a press', 4],
-      ['the definition\'s', 1138],
+      ['the definition\'s', 2971],
     ]);
   });
 

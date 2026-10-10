@@ -328,7 +328,7 @@ function frameSegment(protocol: ArchiveProtocol): Segment | undefined {
  * convention it has to survive is: positive is a mark, zero or negative is a space. A zero space is
  * therefore expressible and a zero mark is not. Both are then handled the same way downstream, since a
  * zero contributes nothing to the merge of adjacent same polarity intervals and any word left standing
- * after it is floored to one unit. Logitech's renderer answers both cases exactly that way, measured:
+ * after it is floored to one unit. The archive's renderer answers both cases exactly that way, measured:
  * `QE Pulse Test 1`'s zero mark sits between two spaces, cannot merge, and is rendered `1`, while
  * `QE Space 100K Old`'s zero space is followed by another space, merges, and adds nothing to it.
  */
@@ -345,7 +345,7 @@ function cellRhythm(
     const atoms = one.Atoms ?? [];
     // **A zero length atom is kept**, section 233, which is the reverse of what this did for a day. It
     // was dropped on the argument that no renderer can express a zero, since a Pronto word floors at
-    // one; Logitech's own renderer expresses it as exactly that floor, measured on the nine `QE` test
+    // one; the archive's renderer expresses it as exactly that floor, measured on the nine `QE` test
     // patterns, whose trailer is a zero mark and a long space and whose rendering is `1` and then the
     // space. So the definition's own statement is carried through and each consumer floors it.
     // **An empty cell is carried rather than refusing the whole family**, section 233. Two families
@@ -531,7 +531,7 @@ function twoCellRhythm(
   // 32 of them the wire is identical: the segment's own header is a lone mark of exactly the constant
   // length, so it **is** the first constant half and the rest is one alternating chain. `FrameTimings`
   // carries the full argument on `carriedFirst`; two things break the equivalence and both were found by
-  // comparing against Logitech's own renderings, section 230.
+  // comparing against the archive's renderings, section 230.
   //
   // This was a pair of refusals for one day, which was the honest answer while the emitter could not
   // say it: 1058 commands of five families were being emitted wrongly, and refusing beat approximating.
@@ -732,7 +732,7 @@ export function familiesOfRhythm(
  * frame's width from the name, which is where Logitech put it and which is right for 179 of the 202
  * families whose codes state several values: `Akai 32 Bit` states two values of 32 bits each. On the
  * other **23** the name states the **total**: `Daewoo 16 Bit` sends two frames of 8 bits, and reading
- * both as 16 sends twice the bits, which is what comparing against Logitech's own renderings showed on
+ * both as 16 sends twice the bits, which is what comparing against the archive's renderings showed on
  * every one of its 9492 commands.
  *
  * The definition settles it: `keycodeFields` states a width per field, and the fields are ordered by
@@ -802,7 +802,7 @@ function statedShape(
   // the reason it applies to a cell family alone is what makes it a reading rather than a fit. Where a
   // digit is a whole cell, the number of digits **is** the number of cells the code sends, so a code
   // writing eight digits against a width of seven is stating a longer frame: `Galaxis 16 Bit Quad
-  // Toggle` has one such command out of 21398 and Logitech's renderer sends its eighth cell.
+  // Toggle` has one such command out of 21398 and the archive's renderer sends its eighth cell.
   //
   // For a two symbol family the digit count says nothing, since the value is written in hexadecimal and
   // a leading zero costs a digit and no bits. `Game Elements 15 Bit` is the case: 13 bits stated, four
@@ -1031,7 +1031,7 @@ ${body}
  * section 230's correction and which nothing here read for a while. `RCAV1 24 Bit 2` defaults to
  * repeating its second segment, whose lead in is 4000 microseconds; every command of it in Logitech's
  * catalogue writes `(0xE301CF)(0xE301CF)()`, both groups naming segment 0, whose lead in is 19800, and
- * Logitech's own renderer sends the 19800 in the repeat. So a held block built from the definition alone
+ * the archive's renderer sends the 19800 in the repeat. So a held block built from the definition alone
  * is the family's default rather than that command's, and for this family they differ on every code.
  *
  * Returns undefined where a group names an id the definition does not hold, which is a refusal rather
@@ -1113,7 +1113,7 @@ export function withStatedWidths(
 ): readonly { readonly bits: number; readonly value: bigint }[] {
   // **In bits, like everything that leaves this file.** Their field states a digit count where a cell
   // carries more than one bit, and taking it raw is what made every base four family emit half its
-  // symbols: `Mapletree 11 Bit Quad` sent six cells where Logitech's renderer sends eleven, on all 1972
+  // symbols: `Mapletree 11 Bit Quad` sent six cells where the archive's renderer sends eleven, on all 1972
   // of its commands. Section 231.
   return frames.map((frame, at) => {
     // **The digit width is the field's own segment's**, section 232, since a family sending several
@@ -1129,11 +1129,48 @@ export function withToggleCleared(
   frames: readonly { readonly bits: number; readonly value: bigint }[],
 ): readonly { readonly bits: number; readonly value: bigint }[] {
   return frames.map((frame, at) => {
-    const toggle = fieldAt(protocol, at, frames.length)?.toggleBit;
-    if (toggle === undefined || toggle === null || toggle < 0 || toggle >= frame.bits) return frame;
-    const mask = 1n << BigInt(frame.bits - 1 - toggle);
-    return { ...frame, value: frame.value & ~mask };
+    const mask = toggleMask(protocol, at, frames.length, frame.bits);
+    return mask === undefined ? frame : { ...frame, value: frame.value & ~mask };
   });
+}
+
+/**
+ * Where a frame's toggle bit sits, as a mask over its value, or `undefined` where its field states none or
+ * states one outside the frame. The one place the position is computed, for clearing it and for flipping it.
+ */
+function toggleMask(protocol: ArchiveProtocol, at: number, of: number, bits: number): bigint | undefined {
+  const toggle = fieldAt(protocol, at, of)?.toggleBit;
+  if (toggle === undefined || toggle === null || toggle < 0 || toggle >= bits) return undefined;
+  return 1n << BigInt(bits - 1 - toggle);
+}
+
+/**
+ * The same frames with every toggle bit flipped: what the code sends on every second press, and what
+ * Logitech's compiler writes into a record's **second pointer group**, todo-process-logitech 2.5.
+ *
+ * **What a configuration stores for a toggling code.** The remote cannot compute a bit, since the action
+ * list language has no arithmetic reaching a duration stream, section 134, so the record carries the code
+ * twice: the first pointer group as the code states it and the second with its toggle bit flipped, in its
+ * first and held blocks; no toggling record in the lab has a tail. Measured on every record matched to a
+ * toggling catalogue code in the lab's configurations, on the Harmony One, 650, 700 and 350 and the
+ * contributed Harmony 880 or 885 configurations: the second group is this function's frames and nothing
+ * else. The firmware picks the group, one bit per infrared group flipped on each send that reaches the
+ * record start, read on the Harmony 650's 0.2 image and the Harmony One's 3.4, section 365.
+ *
+ * `undefined` where no frame carries a toggle bit, so a caller can tell a code that toggles from one whose
+ * flip would change nothing.
+ */
+export function withToggleFlipped<F extends { readonly bits: number; readonly value: bigint }>(
+  protocol: ArchiveProtocol, frames: readonly F[],
+): readonly F[] | undefined {
+  let flipped = false;
+  const out = frames.map((frame, at): F => {
+    const mask = toggleMask(protocol, at, frames.length, frame.bits);
+    if (mask === undefined) return frame;
+    flipped = true;
+    return { ...frame, value: frame.value ^ mask };
+  });
+  return flipped ? out : undefined;
 }
 
 /**
@@ -1186,7 +1223,7 @@ export type WaveformRefusal =
  * table family threw, and it had drifted silently once before that.
  *
  * `storedForm` is the one microsecond a configuration's last duration carries and a rendering does not,
- * so a comparison against Logitech's renderer passes `false` and a writer wants the default.
+ * so a comparison against the archive's renderer passes `false` and a writer wants the default.
  *
  * **`asStored` is the writer's other two differences from a rendering**, section 348, and it exists so
  * that the composer reads a command through these same seven readings rather than an eighth copy. A
@@ -1194,11 +1231,17 @@ export type WaveformRefusal =
  * the value the code states, which is what Logitech's compiles hold on every toggle family section 348
  * compared. And a rendering appends the release block to the first transmission, where a configuration
  * keeps it behind a pointer of its own: so under `asStored` the release block comes back separately as
- * `release`, and `once` is the record's first block alone.
+ * `release`, and `once` is the record's first block alone. `toggleFlipped` builds the record's second
+ * pointer group, todo-process-logitech 2.5: the same blocks with the toggle bit flipped, and the stated
+ * frames where no frame carries one.
  */
 export function waveformOfArchiveCommand(
   protocol: ArchiveProtocol, keycode: string,
-  options: { readonly storedForm?: boolean; readonly repeats?: number; readonly asStored?: boolean } = {},
+  options: {
+    readonly storedForm?: boolean; readonly repeats?: number; readonly asStored?: boolean;
+    /** Under `asStored`, the code with its toggle bit flipped, `withToggleFlipped`: a record's second group. */
+    readonly toggleFlipped?: boolean;
+  } = {},
 ): { once: Pulse[]; held: Pulse[]; release?: Pulse[] } | { refusal: WaveformRefusal } {
   const rhythm = rhythmOfDefinition(protocol);
   if ('refusal' in rhythm) return { refusal: 'no rhythm derivable for the family' };
@@ -1213,7 +1256,8 @@ export function waveformOfArchiveCommand(
   });
   if ('refusal' in built) return { refusal: built.refusal };
   const widened = withStatedWidths(protocol, code.frames, slots);
-  const frames = options.asStored === true ? widened : withToggleCleared(protocol, widened);
+  const frames = options.asStored !== true ? withToggleCleared(protocol, widened)
+    : options.toggleFlipped === true ? withToggleFlipped(protocol, widened) ?? widened : widened;
   const shape: FrameShape = { ...shapeOfRhythm(rhythm), also: built.also };
   try {
     if (options.asStored === true) {
@@ -1225,7 +1269,7 @@ export function waveformOfArchiveCommand(
     }
     return {
       // **The release block goes on the end of the first transmission**, section 233, which is where
-      // Logitech's own renderer puts it: their string has two sections and a press cycle has three
+      // the archive's renderer puts it: its string has two sections and a press cycle has three
       // blocks. A configuration keeps it in a pointer of its own, which is why `built` hands it over
       // separately rather than already joined.
       once: [
@@ -1263,7 +1307,7 @@ export interface ArchiveBlock {
    * The block a remote sends when the key comes up, on the 60 families whose keycode names a third
    * group and undefined on the rest. Section 233.
    *
-   * A configuration's record holds three block pointers and this is the third. Logitech's own renderer
+   * A configuration's record holds three block pointers and this is the third. The archive's renderer
    * has only two sections and appends this one to the **first**, which is how it was read.
    */
   readonly release?: BlockTail;
@@ -1326,7 +1370,7 @@ export function joinedGaps(pulses: readonly Pulse[]): Pulse[] {
  *   every one of the measured families that can show it, in both places it can land: the last pad where
  *   the block is padded, and the last literal word where it is not. **It is the stored form's and not
  *   the signal's**, section 230, which is what `storedForm: false` turns off: Logitech's compiler adds
- *   it when writing a configuration and their renderer does not when producing a waveform.
+ *   it when writing a configuration and the archive's renderer does not when producing a waveform.
  * * A **padded copy** becomes a pad our emitter solves, against a block total where one repetition holds
  *   a single frame and against a per copy period where it holds several. The second branch is the two
  *   `Sharp 15` families, whose two frames differ in duration so one shared pad cannot state both.
@@ -1601,8 +1645,8 @@ export function blockOfDefinition(
     // differ. A copy's header comes from the shape, which is one per family, so a header of its own is
     // emitted as literal words and the copy is `bare`.
     //
-    // Found by comparing against Logitech's own renderings, section 230: taking the second copy as
-    // `full` sent the frame's 8400 lead in where their renderer sends 525, on every code of the family.
+    // Found by comparing against the archive's renderings, section 230: taking the second copy as
+    // `full` sent the frame's 8400 lead in where the archive's renderer sends 525, on every code of the family.
     const ownHead = (segment.Header ?? []).map(atomUs);
     const frameHead = (frame?.Header ?? []).map(atomUs);
     // **Only where the copy goes out in the frame's own rhythm**, section 232. A segment with a rhythm
@@ -1619,7 +1663,7 @@ export function blockOfDefinition(
     //
     // `Bell 16 Bit` and `Panasonic 31 Bit` are the case, section 230: both open on a lead in whose last
     // atom is a mark and both close each copy on a mark, so every one of their 905 commands disagreed
-    // with Logitech's own rendering on that one interval. Refused rather than approximated.
+    // with the archive's rendering on that one interval. Refused rather than approximated.
     const of = readings[which] ?? rhythm;
     if (of.cellCarriedFirst && !ownHeader && of.timings?.carriedFirst !== true) {
       const before = previous;
@@ -1658,6 +1702,9 @@ export function blockOfDefinition(
   const build = (
     refs: readonly (readonly SegmentRef[])[], first: boolean, from: number,
     named?: readonly ('start' | 'repeat' | 'finish')[],
+    // Whether this block carries the stored microsecond: the first and held blocks do and a release block
+    // does not, todo-process-logitech 2.5.
+    stored: boolean = storedForm,
   ): BlockTail | BlockRefusal => {
     base = from;
     payloads = 0;
@@ -1711,7 +1758,7 @@ export function blockOfDefinition(
     }
     // The one microsecond the compiler adds to a block's last duration, in whichever of the two places
     // that block ends.
-    const last = storedForm ? items[items.length - 1] : undefined;
+    const last = stored ? items[items.length - 1] : undefined;
     if (last !== undefined && 'pad' in last) items[items.length - 1] = { pad: 1 };
     else if (last !== undefined && 'words' in last && last.words.length > 0) {
       const words = [...last.words];
@@ -1756,7 +1803,7 @@ export function blockOfDefinition(
     // the division does not come out whole and the emitter refuses. Both tests are load bearing.
     if (cyclePayloads > 1 || paddedFrames.size > 1) return { items, copyPeriod: period! };
     if (!known) return 'a padded cycle of several frames whose shared period is not one number';
-    return { items, total: nominal + lead + (storedForm ? 1 : 0) };
+    return { items, total: nominal + lead + (stored ? 1 : 0) };
   };
 
   // The first block is the start block then the cycle as many times as asked; the held block is one
@@ -1782,7 +1829,7 @@ export function blockOfDefinition(
   // block pair had nowhere to put it. A configuration's record holds **three** block pointers, once,
   // held and tail, and the third is exactly this: what a remote sends when the key comes up.
   //
-  // What settled it was Logitech's own rendering, which has only two sections and puts the release
+  // What settled it was the archive's rendering, which has only two sections and puts the release
   // group at the end of the **first** one. Ours was an exact prefix of theirs on every one of the 60
   // families, and every length difference was a whole number of the release group's own frames, so
   // reading it as a block appended to the first transmission is a measurement rather than a guess.
@@ -1791,10 +1838,17 @@ export function blockOfDefinition(
   // pointer of its own and because appending it would move the pad arithmetic: the pad rule reads the
   // payload count of the **last** group it walked, and the stored form's one extra microsecond lands on
   // the block's last duration.
+  //
+  // **And a release block carries no stored microsecond**, todo-process-logitech 2.5, section 365: every
+  // first and held block of every configuration in the lab but the Harmony 525's, whose blocks are of another
+  // class, ends in the one microsecond word the compiler carves off its trailing gap, and neither of the
+  // lab's two distinct record tails does: the PlayStation 3's `StopSpacer` on the Harmony One, 650 and 700 and
+  // `Microsoft 36 Bit`'s release on the contributed Harmony 880 or 885 configurations, each the definition's
+  // finish group to the microsecond with nothing added.
   const finish = keycode?.Finish ?? [];
   let release: BlockTail | undefined;
   if (finish.length > 0) {
-    const built = build([finish], false, startPayloads + cyclePayloadCount, ['finish']);
+    const built = build([finish], false, startPayloads + cyclePayloadCount, ['finish'], false);
     if (typeof built === 'string') return { refusal: built };
     release = built;
   }

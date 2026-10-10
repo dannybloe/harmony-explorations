@@ -694,7 +694,7 @@ make catalogue-raw pull the archive checkout, fetch its newest raw release when 
 make protocols     what rhythm each protocol family uses, measured off the corpus against the family
                    names Logitech's analyser gave it, and the table that turns a code stated as a name
                    and a number into pulses. --write regenerates it. Needs a lab, no network
-make prontocheck   our own waveforms against the ones Logitech's renderer produced for every command in
+make prontocheck   our own waveforms against the ones the archive's renderer produced for every command in
                    their catalogue, both sections of a Pronto string, sections 230 to 232. Two million commands
                    in about forty seconds, needs the public archive checkout and no network and no lab,
                    and it is the strongest check the infrared encoder gets: everything else that judges

@@ -27,6 +27,11 @@
  * refused them: a family spelt otherwise than its definition, which found no rhythm, and a code the family's
  * whole table block does not take; and how many of each now write.
  *
+ * **Since todo-process-logitech 2.5, section 365**, a command composes when its toggle bit flipped composes
+ * too, since a toggling code's record carries both as two pointer groups, and a code naming a release group
+ * is built from the definition with the release behind the record's third pointer. The census prints how
+ * many written commands carry each.
+ *
  * Usage: `make composecensus`; `--families` lists, family by family, the commands whose code the family's
  * name cannot read, section 359, and how many of them now write. Needs the public infrared archive
  * checkout, no lab and no network. Not in `make all`: it reads every one of the archive's device and
@@ -36,8 +41,8 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { IR_ARCHIVE } from '@harmony/lab';
 import {
-  archiveProtocolsByName, blockOfStatedCode, catalogueCommandBlocks, cataloguePressRepeats, composableKeycode,
-  sameTrain, statedCode, statedCodeOfDefinition, statedProtocol, TABLE_PRESS_REPEATS, waveformOfArchiveCommand,
+  archiveProtocolsByName, blockOfStatedCode, catalogueCommandBlocks, cataloguePressRepeats, catalogueToggledCode,
+  composableKeycode, namesReleaseGroup, sameTrain, statedCode, statedCodeOfDefinition, statedProtocol, TABLE_PRESS_REPEATS, waveformOfArchiveCommand,
   type PressRepeats,
 } from '../src/index.ts';
 
@@ -81,6 +86,12 @@ function rereadChanges(keycode: string, family: string): boolean {
   }
   return changes;
 }
+/** A written command's share of section 365's two figures, counted per command rather than per code. */
+function tallyWritten(keycode: string, byTheTable: boolean): void {
+  if (releaseCodes.has(keycode)) releaseWritten += 1;
+  if (toggleCodes.has(keycode)) toggleWritten += 1;
+  if (namesReleaseGroup(keycode)) { releaseNamed += 1; if (byTheTable) releaseNamedByTable += 1; }
+}
 const tableVerdict = new Map<string, boolean>();
 const byTable = (keycode: string): boolean => {
   let ok = tableVerdict.get(keycode);
@@ -114,12 +125,29 @@ function derive(keycode: string, press: PressRepeats): Verdict {
   let found = verdictOf.get(key);
   if (found === undefined) {
     const built = catalogueCommandBlocks(keycode, press, protocols);
-    found = built === undefined ? 'table' : 'refusal' in built ? { refusal: built.refusal } : 'derived';
+    // As the composer judges it, `composeCatalogueDevice`: a toggling code composes when its flipped
+    // reading does too, since the record carries both, section 365.
+    const toggled = catalogueToggledCode(keycode, press, protocols);
+    found = built !== undefined && 'refusal' in built ? { refusal: built.refusal }
+      : toggled !== undefined && 'refusal' in toggled ? { refusal: toggled.refusal }
+        : built === undefined ? 'table' : 'derived';
+    if (found !== 'table' && !refused(found) && built !== undefined && !('refusal' in built) && built.release !== undefined) {
+      releaseCodes.add(keycode);
+    }
+    if (!refused(found) && toggled !== undefined) toggleCodes.add(keycode);
     verdictOf.set(key, found);
   }
   return found;
 }
-const refused = (one: Verdict): one is { refusal: string } => typeof one !== 'string';
+function refused(one: Verdict): one is { refusal: string } { return typeof one !== 'string'; }
+/** Codes written with a release behind the third pointer, and with a second, toggled, group: section 365. */
+const releaseCodes = new Set<string>();
+const toggleCodes = new Set<string>();
+let releaseWritten = 0;
+let toggleWritten = 0;
+/** Written commands naming a release group, and of those how many the table composed without one. */
+let releaseNamed = 0;
+let releaseNamedByTable = 0;
 
 /** The table's commands built at a device's own count instead, and refused for some device, section 350. */
 let tableRebuilt = 0;
@@ -209,6 +237,7 @@ for (const bucket of readdirSync(join(root, 'codesets'))) {
           continue;
         }
         after += 1; tally.after += 1; anyAfter = true;
+        tallyWritten(keycode, true);
         continue;
       }
       refusedByTable = true;
@@ -245,7 +274,7 @@ for (const bucket of readdirSync(join(root, 'codesets'))) {
         unnamedFamilies.set(family, row);
       }
       ok.forEach((good, k) => { if (!good) refusedAt.add(distinct[k] ?? -1); });
-      if (ok.every(Boolean)) { after += 1; tally.after += 1; anyAfter = true; continue; }
+      if (ok.every(Boolean)) { after += 1; tally.after += 1; anyAfter = true; tallyWritten(keycode, false); continue; }
       if (ok.some(Boolean)) someDevices += 1;
       const why = verdicts.find(refused)!;
       const reason = why.refusal.replace(/ \d+ and its .* commands' family states \d+/, ' N and a family on its codeset states another')
@@ -332,8 +361,7 @@ for (const family of countOnlyStill) {
 for (const [why, { commands: n, families: f }] of [...stillWhy].sort((a, b) => b[1].commands - a[1].commands)) {
   console.log(`  ${String(n).padStart(7)} commands in ${String(f).padStart(3)} families  ${why}`);
 }
-const onlyOne = (why: string) => countOnlyStill.filter((one) => {
-  const m = familyReasons.get(one); return m !== undefined && m.size === 1 && m.has(why);
-}).length;
-console.log(`  families held back by the release group alone: `
-  + `${onlyOne('the code names a release group, which no Logitech compile here shows stored')}`);
+// Section 365: the record's second pointer group and its third pointer, as the composer now writes them.
+console.log(`\nwritten with a second pointer group, the code with its toggle bit flipped, section 365: ${toggleWritten} commands`);
+console.log(`written with a release behind the record's third pointer: ${releaseWritten} commands; `
+  + `${releaseNamed} written commands name a release group, ${releaseNamedByTable} of them ones the table alone composed without it`);

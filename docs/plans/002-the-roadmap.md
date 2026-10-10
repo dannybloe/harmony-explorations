@@ -351,7 +351,7 @@ remote:
    states one **cell** per symbol value, and the number of cells is what says which base it is. So 142
    families read rather than 75, the table goes from 461 entries to 600, and it now answers for **599 of
    Logitech's 684** families.
-   **Every command that can be built agrees with Logitech's own rendering**: 1,923,128 of 1,923,128
+   **Every command that can be built agrees with Logitech's own rendering<!--superseded-->**: 1,923,128 of 1,923,128
    first transmissions and 1,135,097 of 1,135,097 held repetitions, over 428 families, up from 368 and
    three outstanding. The 34 of 35 rhythm calibration and the 29 of 29 block calibration both pass
    unaltered, which is the control saying none of this was bought by moving our own measurements.

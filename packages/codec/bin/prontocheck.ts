@@ -1,5 +1,5 @@
 /**
- * Compare the waveform our encoder builds against the one Logitech's own renderer produced, for every
+ * Compare the waveform our encoder builds against the one the archive's renderer produced, for every
  * command in the infrared archive that carries one.
  *
  * **Why this is the strongest check our infrared encoder will ever get.** Everything else that judges

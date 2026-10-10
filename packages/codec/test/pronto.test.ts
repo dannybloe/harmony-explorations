@@ -1,5 +1,5 @@
 /**
- * Pronto Hex, and our waveforms against Logitech's own renderings of them.
+ * Pronto Hex, and our waveforms against the archive's renderings of them.
  *
  * **Why this file is the strongest evidence the infrared encoder has.** Everything else that judges it
  * is small: 3017 codes in the corpus, 35 rhythms measured off Logitech's compiler, a few hundred codes
@@ -88,7 +88,7 @@ test('no Pronto word is zero, and a section is whole pairs', () => {
 });
 
 /**
- * One command's waveform against Logitech's rendering of it, or undefined where we do not claim one.
+ * One command's waveform against the archive's rendering of it, or undefined where we do not claim one.
  *
  * This is `packages/codec/bin/prontocheck.ts` in miniature and deliberately a second copy of nothing:
  * the four steps are all library calls, and what the binary adds is the walk and the counting.
@@ -429,7 +429,7 @@ test('the three conditions the comparison honours each change the answer',
 test('the stored form and the signal differ by one microsecond, and it is the compiler\'s',
   { ...skipWithoutIrArchive() }, () => {
     // The one microsecond Logitech's compiler adds to a block's last duration is not in the waveform
-    // their renderer produces. Before that was separated, every padded family disagreed on its last
+    // the archive's renderer produces. Before that was separated, every padded family disagreed on its last
     // word and nothing else, which read as our arithmetic being wrong.
     const root = IR_ARCHIVE!;
     const nec = archiveProtocols(root).find((one) => one.name === 'Toshiba 32 Bit')!;
@@ -494,7 +494,7 @@ test('a stated zero length interval keeps its side of the carrier', { ...skipWit
 test('a press cycle has three blocks and a Pronto string has two sections',
   { ...skipWithoutIrArchive() }, () => {
     // **Section 233.** A keycode may name a third group, sent when the key comes up, and 60 families do.
-    // A configuration's record has a pointer for it; Logitech's renderer has only two sections and puts
+    // A configuration's record has a pointer for it; the archive's renderer has only two sections and puts
     // it at the end of the first, which is how it was read.
     const root = IR_ARCHIVE!;
     const pace = archiveProtocols(root).find((one) => one.name === 'Pace 16 Bit Quad')!;
@@ -567,7 +567,7 @@ test('a value\'s width comes from the segment its own index names', { ...skipWit
 test('a value too wide for its stated field is cut to it, not refused',
   { ...skipWithoutIrArchive() }, () => {
     // **Section 233.** `Microsoft 30 Bit` writes values needing 31 bits on 70 of its commands and
-    // `Philips RC6` needs 7 where its field states 6. Logitech's own renderer masks both to the stated
+    // `Philips RC6` needs 7 where its field states 6. The archive's renderer masks both to the stated
     // width, so a value that overflows a **definition's** width is their statement rather than our
     // misreading, and only a width taken from the family's **name** is checked against the value.
     const microsoft = archiveProtocols(IR_ARCHIVE!).find((one) => one.name === 'Microsoft 30 Bit')!;

@@ -571,7 +571,7 @@ finding.
 
 `todo.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 364<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 365<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and flash has been written on five units**, the first in section 222:
@@ -846,6 +846,21 @@ figures common to both carry `fact:` markers, so `make facts` moves every copy t
 cannot drift apart; what a reader should not expect is two independent statements of one measurement.
 Recorded on 29 August 2026 after an audit found the move had also planted a **second copy of the byte
 accounting table** here, which was a real duplicate with nothing added and has been removed.*
+
+**Toggling codes are written the way Logitech's compiler writes them, twice per record, and codes with a
+release part compose, section 365.** Some remote codes carry one bit the sender flips on every new press, so
+the device can tell a second press from a key held down. Logitech's compiles store such a code twice in its
+record, once as the catalogue states it and once with that bit flipped, and the firmware of the Harmony 650 and
+the Harmony One alternates between the two from one send to that device to the next; the composer wrote only
+the first. Some codes also have a part sent once when the key comes up, which Logitech keeps in the record's third
+slot: of the 27353 commands that have one the composer refused 25200 and wrote 2153 without it. Both are written
+now: eighteen catalogue devices composed and compared with the seventeen device groups Logitech compiled for our
+accounts give 774 of 797 records word for word as Logitech wrote them, where the rest differ for reasons other
+findings hold. Over the whole database 2063341 of 2067863 commands compose, and 73
+of 54118 code sets have none that does. Where Logitech's definition and the measured signal shape disagree about
+what a press sends, 880 commands, the shape stays as it was. And the public archive's ready made waveforms, which
+the encoder had been checked against, are the archive maintainer's rendering of Logitech's definitions and not
+Logitech's own; the documents and comments that said otherwise are corrected.
 
 **The last eight protocol names the device composer refused now compose, but for 14 commands refused for a
 conflicting repeat count, section 361.** Four of them were misspellings in Logitech's database, `Ada 40 Bit`
@@ -1790,7 +1805,8 @@ catalogue default, with the configuration carrying the tuned value. Their record
 device delay, and no instruction in that configuration carries it, so where the Harmony One keeps
 that one stays open on a measurement rather than on nobody having looked.
 
-**Two million of Logitech's own waveforms, against our encoder, and nothing disagrees**,
+**Two million of the archive's waveforms, rendered from Logitech's definitions, against our encoder, and
+nothing disagrees**,
 sections 230 and 231. The infrared archive carries a rendered waveform for every command in their catalogue,
 produced by somebody else's code from Logitech's own protocol definitions, which makes it an answer key
 two million entries long that nobody here had a hand in. **1,894,306 of 1,894,309 first transmissions
@@ -1807,7 +1823,7 @@ lead in is 19800 microseconds where its definition's default repeats the one at 
 code sends is the greater of what the definition names and what the cycles ask for, and taking it from the
 definition alone made `Revox 11 Bit` send its first value twice and its second never, which is the
 failure hardest to see from outside because the waveform is well formed and carries the wrong number.
-A Pronto section cannot open on silence, and ours was keeping a leading space where Logitech's renderer
+A Pronto section cannot open on silence, and ours was keeping a leading space where the archive's renderer
 drops it. And a pad shared across two copies is wrong wherever those copies carry different values.
 
 **The seventh is the one with a lesson in it.** A cell may state the half that carries the bit **first**,

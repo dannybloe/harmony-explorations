@@ -160,7 +160,7 @@ function valueOf(digits: string, base: number): bigint {
  * argument was that a quaternary reading of hexadecimal digits refuses on the digit set alone, so a
  * wrongly quaternary family would be caught rather than mis-sent. Every digit of every `Quad 5 Bit` code
  * is 0 to 3, so all twenty passed the digit check, and three of the five whose waveform can be built
- * came out as a different number with no refusal anywhere. What caught it was Logitech's own rendering.
+ * came out as a different number with no refusal anywhere. What caught it was the archive's rendering.
  * The digit set stays as corroboration and is not evidence: six families have codes whose digits all
  * happen to be 0 to 3.
  *
@@ -261,7 +261,7 @@ export function statedCode(
   // **Stated widths are used where they pair with the values and the name's are used otherwise**, which
   // is narrower than it first was and the difference was measured: taking the last stated width for
   // every extra value accepted 39 `Samsung 16 and 20 Bit` codes the name's rule had been refusing, and
-  // every one of them disagreed with Logitech's own rendering. A code stating more values than its
+  // every one of them disagreed with the archive's rendering. A code stating more values than its
   // definition has fields is a shape nobody has read, so it stays a refusal.
   const stateds = options.widths !== undefined && values.length % options.widths.length === 0
     ? options.widths : undefined;
@@ -280,7 +280,7 @@ export function statedCode(
   // is the only reading that gives each value its own field's width: taking the last field for the
   // extras made all nine 14 bits and put 48 spurious intervals on the wire. A count that is not a whole
   // multiple stays a refusal, which is what keeps `Samsung 16 and 20 Bit`'s 39 two-width three-value
-  // codes out, every one of which disagreed with Logitech's own rendering.
+  // codes out, every one of which disagreed with the archive's rendering.
   const width = (at: number): number => {
     if (stateds !== undefined) return stateds[at % stateds.length]!;
     return widths.length === 1 ? widths[0]! : widths[at]!;

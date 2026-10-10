@@ -448,7 +448,7 @@ test('the control: the set top box built at the other count matches none of Logi
     assert.equal(matched(3), 0);
   });
 
-test('what is still unknown is refused: a count of 0, a device whose codeset holds a family stating another count, and a release group',
+test('what is still unknown is refused: a count of 0 and a device whose codeset holds a family stating another count, while a release group builds',
   needing(skipWithoutIrArchive()), () => {
     const protocols = archiveProtocolsByName(IR_ARCHIVE!);
     // The Toshiba 20VL44G2 states 3, and its codeset is mostly `Toshiba 32 Bit`, which states 1: Logitech
@@ -467,10 +467,13 @@ test('what is still unknown is refused: a count of 0, a device whose codeset hol
       { refusal: 'the device states a repeat count of 0, which no Logitech compile here shows' });
     // A refused count refuses every command it would build, and a code the table composes is not built.
     assert.deepEqual(catalogueCommandBlocks(box[0]!, { refusal: 'why' }, protocols), { refusal: 'why' });
-    // A code naming a release group, which section 233 says the tail pointer would hold and no compile here
-    // shows stored.
-    assert.deepEqual(catalogueCommandBlocks('G:Finlux 16 Bit:(Start)(0x7FFB)(Finish):3', { repeats: 3 }, protocols),
-      { refusal: 'the code names a release group, which no Logitech compile here shows stored' });
+    // A code naming a release group was refused here until todo-process-logitech 2.5, section 365, which
+    // found Logitech's compiles storing the release behind the record's third pointer. It builds now, once,
+    // held and release, and the release is the definition's finish group alone.
+    const finlux = catalogueCommandBlocks('G:Finlux 16 Bit:(Start)(0x7FFB)(Finish):3', { repeats: 3 }, protocols);
+    assert.ok(finlux !== undefined && !('refusal' in finlux));
+    assert.deepEqual([finlux.once.length > 0, (finlux.held?.length ?? 0) > 0, (finlux.release?.length ?? 0) > 0],
+      [true, true, true]);
   });
 
 // ---------------------------------------------------------------------------------------------------
@@ -593,7 +596,7 @@ test('a code the table composes is built at the device\'s count where that is no
  * in, or wrong. Before is the table's block, which is what the composer sent until section 350; after is
  * the composer's block now. A device compiled in several groups is counted once per group.
  */
-test('the table\'s families stating no count, built at the device\'s count, are right on 2586 of 2636 pinned records where the table was on 2551',
+test('the table\'s families stating no count, built at the device\'s count, are right on 2632 of 2636 pinned records where the table was on 2551',
   needing(skipWithoutIrArchive(), skipUnless(...FIXTURES)), () => {
     const protocols = archiveProtocolsByName(IR_ARCHIVE!);
     const familyOf = (keycode: string) => /^G:([^:]+):/.exec(keycode)?.[1];
@@ -645,20 +648,22 @@ test('the table\'s families stating no count, built at the device\'s count, are 
     }
     assert.equal(tally.records, 2636);
     assert.deepEqual(Object.fromEntries(tally.before), { right: 2551, 'last microsecond': 46, wrong: 39 });
-    assert.deepEqual(Object.fromEntries(tally.after), { right: 2586, 'last microsecond': 46, wrong: 4 });
+    assert.deepEqual(Object.fromEntries(tally.after), { right: 2632, wrong: 4 });
     // Before: the Dell's 34 at the table's 1 where it was written at its own 3, the Philips 70FA930's long
     // toggle record at the table's 3 where it was written at its own 1, and the Yamaha DSP-A592's 4 at the
     // table's 3 where it was written at 1. After: only the Yamaha, whose count `cataloguePressRepeats`
     // refuses, so the table's block stays, todo-process-logitech 2.2.2. The 46 are the Yamaha DVD-S501's
     // long toggle records at the table's own 3, one microsecond short at the end, a fault of the table's
-    // emitter and not of the count, so section 350 leaves it.
+    // emitter and not of the count, which section 350 left; since todo-process-logitech 2.5, section 365, a
+    // code of a whole record row is built from the definition where it sends the row's train, and all 46 are
+    // right.
     const counted = new Map<string, number>();
     for (const one of off) counted.set(one, (counted.get(one) ?? 0) + 1);
     assert.deepEqual([...counted].map(([one, n]) => `${one} x${n}`).sort(), [
       '2300MP Memorex 32 Bit: wrong, now right x34',
       '70FA930_00S Philips Hurd 16 Bit LongToggle: wrong, now right x1',
       'DSP-A592 PanasonicV2 48 Bit: wrong, now wrong x4',
-      'DVD-S501 Philips Hurd 16 Bit LongToggle: last microsecond, now last microsecond x46',
+      'DVD-S501 Philips Hurd 16 Bit LongToggle: last microsecond, now right x46',
     ]);
   });
 

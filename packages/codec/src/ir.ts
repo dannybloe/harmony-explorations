@@ -50,8 +50,11 @@ export const IR_HEADER_CLASSES: ReadonlySet<number> = new Set([IR_CLASS_STREAM, 
  * The fixed part of a record header, before the pointer groups.
  *
  * Section 61 read the header as a flat 21 bytes with two block pointers and a NULL. That is the
- * `count == 1` case and it is every record on arch 12 (Harmony One) and arch 14 (Harmony 600 and 700),
- * which is why it held on the architectures this project reads code on.
+ * `count == 1` case, which is every record of a code that does not toggle, and which is why it held on
+ * the arch 12 (Harmony One) and arch 14 (Harmony 600 and 700) corpus this project read code on first:
+ * that corpus held no toggling code. ~~It is every record on arch 12 and arch 14~~<!--superseded-->: a
+ * toggling code's record has two groups there, section 365, 572 distinct in the lab's Harmony One
+ * configurations and 253 in its Harmony 650 and 700 ones.
  */
 export const IR_HEADER_BASE = 12;
 /** One group: three `u24` block pointers, any of which may be NULL. */

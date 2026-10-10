@@ -45,7 +45,7 @@ test('the table states six hundred and eighty one entries, of which thirty seven
   //
   // 421 for part of one day: section 230 withdrew three families whose rhythm this table's shape states
   // wrongly, and then gave the shape the missing spelling instead, `carriedFirst`, so all three are back
-  // and reproduce Logitech's own renderings exactly.
+  // and reproduce the archive's renderings exactly.
   //
   // 424 until section 231, which read the families whose cell is one of four or sixteen whole shapes
   // rather than one of two lengths. That is 139 more rows and took the table to 599 of their 684.

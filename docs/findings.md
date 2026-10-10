@@ -18103,6 +18103,10 @@ Marked unconfirmed on one point only, and it is the firmware: which of the two g
 uses, and on what the firmware alternates, has not been traced. The structure and the difference between
 the groups are measured.
 
+*Traced since section 365, on the Harmony 650's 0.2 and the Harmony One's 3.4: one bit per infrared group,
+flipped on every send to it, and the first group plays while it is set. That section also finds the two groups
+on every record of a toggling catalogue code in the lab's compiles, on four architectures.*
+
 ### It also corrects section 75's own claim
 
 Section 75 offered as a falsifier: an arch 8 config whose count of two group records is not thirty seven.
@@ -29279,7 +29283,7 @@ of Logitech's families and answering for 461 of their 684.
 **424 and 461 are the counts of the day and they are 421 and 458 now**, section 230: three of these rows
 were withdrawn on 31 August 2026, their rhythm being one this table's shape states **wrongly** rather
 than one it cannot state, which is a worse failure than a refusal and was found by comparing against
-Logitech's own renderings. The counts below are left as they were measured, and the live figures carry a
+Logitech's own renderings. The counts below are left as they were measured, and the live figures carry a<!--superseded-->
 `fact:` marker in `docs/status.md` and `docs/config-format.md`.
 
 Three things about those rows are deliberate:
@@ -29624,7 +29628,13 @@ database, whatever else is done with it.
 tests name each codeset rather than searching for it, so they run in a tenth of a second and a codeset
 that stops holding a device's codes fails by name.
 
-## 230. Two million of Logitech's own renderings, against our encoder, and five defects it found
+## 230. Two million of Logitech's own renderings, against our encoder, and five defects it found<!--superseded-->
+
+*Correction, section 365: the renderings are the archive maintainer's, produced from Logitech's definitions,
+which the next paragraph says and which the archive's README calls "our rendering". The heading and the
+shorthand below and in later sections called them Logitech's, and so did the code's comments, which now name
+the archive's renderer. What they judge is our reading of Logitech's definitions against another reading of
+the same definitions, independent of ours and not of Logitech's.*
 
 **31 August 2026.** The infrared archive carries a rendered waveform for every command in Logitech's
 catalogue: 13,293,293 of them across the devices, 2,067,863 across the distinct command sets those
@@ -29662,7 +29672,7 @@ agreement. One consequence to keep: agreement here is agreement to within half a
 **No Pronto word is ever zero, and that is a floor rather than rounding.** A word states a count of
 cycles and a count of zero states no interval, which would silently merge the two neighbours around it.
 `Nokia 11 Bit` carries a 20 microsecond mark at a 15.3 kHz carrier, where one unit is 65 microseconds,
-and Logitech's renderer writes 1 for it on all 149 of its commands. Ours wrote 0 until this was found.
+and Logitech's renderer writes 1 for it on all 149 of its commands. Ours wrote 0 until this was found.<!--superseded-->
 The same floor is why a section ending on a mark is padded to whole pairs with **one** unit and not
 with zero.
 
@@ -29720,7 +29730,7 @@ the correction with the sharpest edge, because the definition's `KeyCode` had on
 looked authoritative. It is the family's **default**. `RCAV1 24 Bit 2` defaults to repeating its second
 segment, whose lead in is 4000 microseconds; every one of its 815 commands writes
 `(0xE301CF)(0xE301CF)()`, both groups naming segment **0**, whose lead in is 19800, and Logitech's own
-renderer sends the 19800 in the repeat. So a held block derived from the definition alone is the wrong
+renderer sends the 19800 in the repeat. So a held block derived from the definition alone is the wrong<!--superseded-->
 block for every code of that family. `keyCodeOfStatedCode` builds the cycles from the command, through
 `segmentRefs`, which is the join between the short ids a keycode names and the full names a definition
 uses. `StatedCode.groups` exists for it: `items` deliberately loses the slot boundary because an encoder
@@ -29772,7 +29782,7 @@ defect the field exists to fix.
 
 **Six. A Pronto section never opens on a space.** The format's first burst word is a mark by
 construction, and silence before a transmission carries nothing a receiver could time from. It matters
-for a carried-first family, whose repeat group opens on the first bit's own space: Logitech's renderer
+for a carried-first family, whose repeat group opens on the first bit's own space: Logitech's renderer<!--superseded-->
 drops it, which their README states as the rule, and until `prontoUnits` did the same, Bell's and
 Panasonic's 905 held repetitions disagreed while their first transmissions had come right. One
 consequence worth recording rather than hiding: **their repeat section for such a family cannot be
@@ -29802,7 +29812,7 @@ follows and which are a separate segment that no copy's period counts.
 ### What is left, and it is three commands
 
 **`Quad 5 Bit`, three of its five commands.** This said "its values are written in base four, and its<!--superseded-->
-numbers come out rotated by one bit against Logitech's rendering", and **both halves are wrong**,
+numbers come out rotated by one bit against Logitech's rendering", and **both halves are wrong**,<!--superseded-->
 corrected the same day by section 231. The family states two symbols and five bits and its values are
 ordinary hexadecimal; nothing is rotated. What put it in this paragraph is that its **name** contains
 the word `Quad`, which section 227 read as the base of a family's digits. The wrong attribution was made
@@ -29835,7 +29845,7 @@ after it is long or short. Logitech's own catalogue spells it another way on **1
 families**: the pause is one of **four** lengths, or one of **sixteen**, so one pause carries two bits
 or four. Those 142 were refused wholesale, in two buckets of 75 and 67, and reading them takes the
 rhythm table from 459 of Logitech's families to **599**, and the number of families whose codes can be
-checked against Logitech's own renderings from 374 to 428.
+checked against Logitech's own renderings from 374 to 428.<!--superseded-->
 
 **The reading is one shape and not two, which is the finding rather than the counts.** Base four and
 base sixteen looked like two problems and are one: a family states a **cell per symbol value**, and the
@@ -29875,7 +29885,7 @@ nothing measured changed. `make golden` matches 47 of 47.
 ### A correction: `Quad 5 Bit` is not a base four family, and its name says it is
 
 Section 230 left three commands outstanding and attributed them to the base four shape, "its values are
-written in base four, and its numbers come out rotated by one bit against Logitech's rendering". Both
+written in base four, and its numbers come out rotated by one bit against Logitech's rendering". Both<!--superseded-->
 halves of that are wrong and the second was a guess dressed as a reading.
 
 `Quad 5 Bit` states **two** symbols and five bits. Its values are ordinary hexadecimal. Read as base
@@ -29893,7 +29903,7 @@ name is the fallback only for a caller holding a table row and no definition.
 argument in section 227 was that a wrongly quaternary family would refuse on its digit set alone, since
 a base four reading accepts no digit above 3. Every digit of every `Quad 5 Bit` code is 0 to 3, so all
 twenty passed that check, and the three wrong numbers were emitted with no refusal anywhere. What
-caught it was Logitech's own rendering and nothing else could have. The digit set stays as corroboration
+caught it was Logitech's own rendering and nothing else could have. The digit set stays as corroboration<!--superseded-->
 and is not evidence.
 
 **A second reading died the same afternoon and it died to a test.** Reading the cell families made a
@@ -30047,7 +30057,7 @@ the same as taking the only width, and 31 `Galaxis 16 Bit Quad Toggle` codes wri
 repetitions**, nine values over three fields, where taking the last field for the extras made all nine
 14 bits and put 48 spurious intervals on the wire. A count that is not a whole multiple stays a
 refusal, which is what keeps `Samsung 16 and 20 Bit`'s 39 two-width three-value codes out, every one of
-which disagreed with Logitech's own rendering.
+which disagreed with Logitech's own rendering.<!--superseded-->
 
 **A code may state fewer values than the definition has fields.** `Revox 11 Bit 2` declares two fields
 and 73 of its codes state one value, naming the second segment, so a copy clamped at the field count
@@ -30082,7 +30092,7 @@ against how many the row holds.
 ### What is left
 
 **One command of 1,950,619.** `Galaxis 16 Bit Quad Toggle`'s `2x02121031` writes eight base four digits
-where its field states seven, and Logitech's renderer emits eight. Taking the code's own width where it
+where its field states seven, and Logitech's renderer emits eight. Taking the code's own width where it<!--superseded-->
 exceeds the field's was measured and **costs a different single command**, `Game Elements 15 Bit`, whose
 masking section 230 established. Two candidate rules each costing exactly one command is a coin flip
 with no evidence, so the measured rule stays and this is a named remainder rather than a fitted rule.
@@ -30162,7 +30172,7 @@ throughout the reader, and zero has none, so a stated zero mark arrived downstre
 merged with what followed. A zero mark is therefore carried as **one microsecond**, the narrowest mark
 there is, and a zero space stays zero. Both then behave the same way: a zero contributes nothing to the
 merge of adjacent same polarity intervals, and any word left standing is floored to one unit.
-Logitech's renderer answers both cases and the two `QE` test patterns are where it says so.
+Logitech's renderer answers both cases and the two `QE` test patterns are where it says so.<!--superseded-->
 
 Two defects fell out of this one. The Pronto converter **skipped** a zero outright, which contradicted
 the floor twenty lines below it in the same function: that floor exists precisely so a word of zero
@@ -30176,7 +30186,7 @@ seven, eight, nine and ten digits and its codes pick one per group, so a width t
 position sends a command a cell short. Ten families of 684 disagree between the two. The digit count
 then widens it where the family spells a digit as a whole cell, since there the number of digits **is**
 the number of cells: `Galaxis 16 Bit Quad Toggle` has one command in 21,398 that writes eight digits
-against a stated seven, and Logitech's renderer sends the eighth. That last rule applies to a cell
+against a stated seven, and Logitech's renderer sends the eighth. That last rule applies to a cell<!--superseded-->
 family alone, and the reason is what makes it a reading: for a two symbol family the value is written
 in hexadecimal and a leading zero costs a digit and no bits, so `Game Elements 15 Bit`'s four digits
 against 13 stated bits mean nothing at all. This is the one that had been recorded in section 230 as a
@@ -30186,7 +30196,7 @@ cell families costs neither.
 **7. A press cycle has three blocks.** A keycode may name a third group, sent when the key comes up,
 and 60 families do. This was refused outright, 17,230 codes, on the ground that our block pair had
 nowhere to put it. A configuration's record has **three** block pointers, once, held and tail, and the
-third is exactly this. What settled how it is sent is Logitech's own rendering, which has two sections
+third is exactly this. What settled how it is sent is Logitech's own rendering, which has two sections<!--superseded-->
 and puts the release group at the end of the **first**: ours was an exact prefix of theirs on every one
 of the 60 families and every length difference was a whole number of the release group's own frames.
 It is built as a block of its own rather than appended, because a configuration keeps it in its own
@@ -46375,7 +46385,11 @@ refuses three things still unknown:
   says nothing about 0;
 * a device whose codeset holds a family stating another count, 1744 commands, the reading above;
 * a code naming a release group, 13912 commands. Section 233 puts a release in the tail pointer and no
-  compile here shows one stored.
+  compile here shows one stored.<!--superseded-->
+
+  *Corrected by section 365: the Sony PlayStation 3's `Logitech 24 Bit` code holds its release in the tail
+  pointer on Harmony One, 650 and 700 configurations, and so do the `Microsoft 36 Bit` codes of the contributed
+  arch 8 configurations, and the composer now writes it there.*
 
 These three are over all families, each command counted by its first refusing device; the figures below
 for the 478 families are a subset. **A count of 2 is composed, unconfirmed**: 1518 devices with a codeset
@@ -47967,7 +47981,7 @@ them, per field, from the sentence audit: on 59 families, 9019 commands, the nam
 20924 commands, it is the digit count; on about 21800 commands it is neither, the six `... 16 Bit Hex`
 families above all, whose values are eight hexadecimal digits under a name saying 16; and on 7 families,
 185 commands, the name's width is right and a value overflows it, which the definition's route masks to
-the width as Logitech's renderer does, section 233. 49 of the 156 families, 197 commands, are Logitech's
+the width as Logitech's renderer does, section 233. 49 of the 156 families, 197 commands, are Logitech's<!--superseded-->
 `QE ...` test patterns, frequency and timing tests rather than equipment. The 172 left are not
 infrared codes a remote can send: `HID 16 Bit`'s 109, `Roku IP`'s 19 and `Sonos IP`'s 13, whose values
 carry no `0x` and whose definitions state no rhythm, and 31 codes misspelt in the catalogue itself, `0x0x`
@@ -49372,3 +49386,301 @@ overclaimed; the no screen test's "nothing else" held only with the menu order a
 now asserted; the `<manufacturer>_<model>` name was fitted to this project's own compiles; and the device
 count was a second copy of the model table's, now an option the caller takes from it. The start route's
 attribution and the 1308 bytes, untested before, are asserted now.
+
+## 365. A toggling code's record holds the code twice, as stated and with its toggle bit flipped, the firmware alternates the two, and a release sits behind the third pointer
+
+**Date:** 10 October 2026. **Status:** confirmed. The two group layout is confirmed on every record of a
+toggling code matched in the lab's configurations, on four architectures, and the composer writes it word for
+word on 623 toggling records of fifteen catalogue devices. Which group a send plays is read in the firmware of two
+architectures. The release in the third pointer is confirmed on two families, one of which the composer
+reproduces. Nothing composed this way has been written to a remote.
+
+`todo-process-logitech.md` 2.5, "release blocks and toggle bits as Logitech renders them: about 4360 commands
+compose and differ from Logitech's rendering", and 2.2.3, 13909 commands refused for naming a release group.<!--superseded-->
+Some infrared codes carry a **toggle bit**, one bit the sender flips on every new press, so that a device can tell
+a second press of the same key from a key held down. Some codes also name a **release group**, a part sent once
+when the key comes up.
+
+**Sources checked before the work started.** This document, sections 127, 134, 228, 230, 233, 309, 337, 348, 350,
+359 and 361. The archive's README, on its `pronto` field. MyHarmony's client, `../lab/work/myharmony/src/`: its
+device manager's `Payload` data contract carries a `ToggleBit` field beside the code's other fields, and nothing in
+the client builds an infrared record, which is the service's compile. The firmware: the bench Harmony 650's own
+0.2 application and the Harmony One's 3.4, read for which group a send plays; the Harmony 600's 0.2, the Harmony
+700's 2.8, the Harmony 650's published 0.4 and the Harmony 350's 1.4, searched for the same update routine. Every
+configuration and harvest compile in the lab: 253 files read, of which 153 parse as configurations and 100 are
+firmware images, logs and memory reads.
+
+### The premise, measured
+
+**The rendering the item names is not Logitech's.** The archive's `pronto` field is what its README calls "our
+rendering": the archive maintainer's renderer, applied to Logitech's definitions. Per that README it plays the
+start group, the repeat group once and the finish group, puts the repeat group in a second section, and renders
+every toggle bit as 0, with the advice to flip it yourself for a second press. `make prontocheck` agrees with it
+on all 2067623 commands it renders, section 233, by building our waveform the same way: toggle cleared, release
+appended to the first transmission, no stored microsecond. So a command "differing from the rendering" is mostly
+the rendering's conventions, and the question that matters is what **Logitech's compiler** writes, which the
+compiles in the lab answer. Section 230 said the renderings were somebody else's code, and its heading and the
+shorthand after it called them Logitech's; corrected in place there, and in every summary and comment that said so.
+
+**The figure 4360 has no recorded derivation.** It came with the item from `todo-later.md` 6.15. Measured here,
+before any change, over every command the composer wrote and every device count serving its codeset, against
+the definition at the composer's count:
+
+| kind | commands | families | what the composer wrote |
+|---|---|---|---|
+| a code naming a release group, composed by the rhythm table | 2153 | 8 | the press without its release |
+| a code naming a release group, refused | 25200 | 53 | nothing |
+| a code stating its toggle bit set | 645 | 12 | the stated value, where the rendering writes 0 |
+| a whole record row with no held block | 75085 | 3 | a press block and no held block |
+| a first block the definition builds with another frame count | 476 | 14 | the row's block |
+| durations, section 350's | 4094 | 2 | the row's block |
+
+The rows overlap: the 476 include 189 of the 2153. The release rows are `Motorola LF 32 Bit` 835, `Dream
+Multimedia 32 Bit` 445, `Quickline 16 Bit` 416, `Motorola HF 32 Bit` 262, `Magnavox 13 Bit` 157, `Toshiba 32 Bit`
+26, `JerroldO1 16 Bit` 7 and `Logitech 24 Bit` 5. The whole record rows are `Philips Hurd 16 Bit LongToggle` 52628,
+`Galaxis 16 Bit Quad Toggle` 21367 and `Samsung 38 Bit` 1090, whose `longToggle`, `quad` and `sections` rows build
+the press's first block only. And every one of the 70 families whose definition states a toggle bit was written
+with one pointer group, the code as stated.
+
+### What Logitech's compiles hold for a toggling code
+
+Over those 153 configurations, every record matched to a catalogue code of a toggling family holds **two pointer
+groups**, and the second is the first with the toggle bit flipped, in its first and held blocks; no toggling
+record in the lab has a tail. Records, counted per configuration and then distinct, since several dumps hold the
+same configuration:
+
+| architecture | remotes | records | distinct | families |
+|---|---|---|---|---|
+| 12 | Harmony One | 665 | 572 | 10, `Philips RC5 13 Bit Toggle`, `Thomson 12 Bit Toggle`, `Microsoft 30 Bit`, `Magnavox 13 Bit` and six more |
+| 14 | Harmony 650 and 700 | 326 | 253 | 5 |
+| 16 | Harmony 350 | 178 | 130 | 3, `Philips RC5Ex` among them |
+| 8 | Harmony 880 or 885, contributed | 148 | 36 | `Microsoft 30 Bit` |
+
+On six records of the Harmony One two catalogue codes fit the first group, and on each one of the two fits both
+groups in full. Records with two groups this match leaves over: 2 on the Harmony One and 5 on the Harmony 700's
+power hold compiles, which the blind re-measure found to be the long press versions of toggling power codes,
+`Magnavox 13 Bit`, `Philips RECS80 11 Bit`, `Thomson 12 Bit Toggle` and `Philips 13 Bit` built at 7 to 130
+repetitions, stated then flipped like the rest; and the Harmony 525's 168 distinct (arch 9), whose class 5
+records spell a code from a dictionary this match does not read. The blind re-measure rebuilt those into
+durations and found the same layout, 107 `Magnavox 13 Bit` and 61 `Microsoft 30 Bit` records, where section 134
+had read them as RC6; no test here asserts it. The Harmony 600's configurations hold no record of a toggling
+family.
+
+**The first group is the code as the catalogue states it, not the code with its bit cleared.** That is the
+calibration case, since a code stating its bit clear fits both readings. On the devices pinned in
+`pressrepeats.test.ts`, 14 records ambiguous between two codes left out, 23 records hold a code stating the bit
+set, 21 `Thomson 12 Bit Toggle` and 2 `Philips 13 Bit`, and every first group holds it set and every second clear.
+Over the whole lab 27 records unambiguously hold such a code first, and the 50 whose first group is the cleared
+form of a code stating it set all fit another code stating it clear. The swap control below is what asserts it.
+
+A record that sends nothing else in a sequence, the **one block copy** of section 349, keeps both groups too: 44
+such copies on the Harmony 650 and 700, 30 on the Harmony 350, each group its record's first block less the
+opening silence.
+
+### Which group a send plays, read in the firmware
+
+On the bench Harmony 650's 0.2 image (arch 14) and the Harmony One's 3.4 (arch 12) the record start reads the
+group count and then skips groups of nine bytes, and one flag makes it skip one fewer when the count is 2. The
+flag is one bit of a sixteen bit word holding a bit per infrared group: a send reaching the record start XORs
+`1 << (tag & 0x0F)` into it, the tag being the queue entry's byte whose low nibble is the infrared group, and the
+flag is whether that bit is set afterwards. On the Harmony 650 and the Harmony 600 a tag with bit 4 or 5 set
+returns before the XOR, at `0x1284C`, and what those bits mean is not read; the Harmony One's path has no such
+test.
+
+| | Harmony 650 0.2 | Harmony One 3.4 |
+|---|---|---|
+| the mask, `1 << (W & 0x0F)` | `0x1A24C` | `0x20CE6` |
+| the update: tag, mask, XOR into the word | `0x1285C`, word `0x3DA` | `0x277C8`, word `0x6A9` |
+| the flag, then the record start's copy | `0xD17`, `0x71F` | `0xD16`, `0x2B0` |
+| the group skip | `0x167FE` | `0x299DA` |
+
+So a set bit plays the first group and a clear one the second. On the Harmony 650 the word is cleared at
+`0x11D08`, in the infrared initialiser, which the blind re-measure found called from the start up sequence and
+from one place not read; the first send after that clear sets its bit and plays the first group, the code as
+stated, and the next send the second. The bit is the device's and not the command's: every send to that
+infrared group flips it, a record with one group included. The blind re-measure also found the Harmony One's
+clear, at `0x26F0E`, and the Harmony 700's 2.8 group skip, at `0x1815C`, which no test here asserts. The
+calibration is the count of 1, which goes through the same loop with no extra skip and plays its one group.
+
+The same update, a mask routine and the XOR of a two byte word, is found at the same shape on the Harmony 600's
+0.2 (`0x1A258`, `0x1285C`, word `0x3DA`), the Harmony 700's 2.8 (`0x1BB22`, `0x13D04`, word `0x088`), the Harmony
+650's published 0.4 (`0x1B642`, `0x12C50`) and the Harmony 350's 1.4 (`0x1AEBE`, `0x12C28`); on those the group
+skip is not read. The Harmony 525's application image is in the lab and was not searched.
+
+This settles what section 134 left unconfirmed, and corrects `docs/config-format.md`'s "the count is 1 in every
+record on arch 12, arch 14", which was true of the corpus it was measured on, a corpus with no toggling family on
+those architectures.
+
+### A release behind the third pointer
+
+The third pointer of a group is the tail, which section 127 read as played once, whether or not the key is held.
+Two families in the lab put the release group there, alone, as its own block:
+
+* `Logitech 24 Bit`'s `()(0x2D11EE)(StopSpacer)`, the Sony PlayStation 3's Stop, whose release is a six second
+  silence: in the tail of one record per configuration on the Harmony One, 25 dumps, the Harmony 650 and 700, 32,
+  and one contributed Harmony 880. On the Harmony 600, the everyday Harmony One and the Harmony 350 the
+  PlayStation's group holds the code once and no tail, and whether Stop was compiled there is not read.
+* `Microsoft 36 Bit`'s codes on the four contributed arch 8 configurations, which spell `()(0xV)(1x400000000)`, a
+  release that is the same for every code: one distinct tail block, in 463 records of 116 distinct ones.
+
+**And a tail carries no stored microsecond.** Every first and held block in the lab outside the Harmony 525, whose
+class 5 blocks are another encoding, ends on the carved one microsecond word, 16286 and 8749 distinct blocks on the
+Harmony One, 27538 and 14764 on arch 14, and so on for arch 8, 10 and 16. The lab holds two distinct tails, the
+PlayStation 3's Stop and `Microsoft 36 Bit`'s release, and neither carries the stored microsecond: the first is
+the definition's silence uncarved, the second the definition's release word for word, ending on a mark, which a
+microsecond added breaks. So `blockOfDefinition` builds the release without the stored microsecond and
+`compiledBlockWords` spells it uncarved; the uncarved spelling is shown on the silence alone, since a release
+ending on a mark is not carved either way.
+
+Section 348 said no compile here showed a release stored; the PlayStation 3's records and the arch 8
+configurations above do, so that sentence is corrected in place.
+
+### What the composer writes now
+
+* **A toggling code gets its second group**, `catalogueToggledCode`: the same command with its toggle bit flipped,
+  `withToggleFlipped`, built by the route the command's own blocks took, and `composeIrGroup` lays out both. A
+  one block copy of such a record copies both groups, `oneBlockCopy`.
+* **A code naming a release group** is built from the definition with its release as `StatedBlocks.release`, the
+  third pointer. It was refused until now.
+* **A code of a whole record row**, `Philips Hurd 16 Bit LongToggle`, `Galaxis 16 Bit Quad Toggle` or `Samsung 38
+  Bit`, is built from the definition, which states the held block the row lacks.
+* **Only where the definition sends the row's own first block**, `definitionKeepsTheRow`, for a code the rhythm
+  table composed. Where the two disagree no compile says which a press sends, and no compile in the lab holds a
+  code the gate keeps, so the row's block stays. That is 189 commands naming a release group: 156 `Magnavox 13
+  Bit` codes of the form `(V_V)()(W_W)`, a start group and no repeat group, 26 `Toshiba 32 Bit` codes whose
+  release is the segment `Repeat`, and 7 `JerroldO1 16 Bit`. And 691 commands of the whole record rows, `Samsung
+  38 Bit` 587 of them, the durations section 350 left open, `Galaxis 16 Bit Quad Toggle` 68 and `Philips Hurd 16
+  Bit LongToggle` 36, for which no reason is read.
+* **A rerouted code keeps the count the row carried**: a family stating a count is built at it whatever the
+  device states, as the row's block was, and on a device whose count is not known a family stating none at
+  `TABLE_PRESS_REPEATS`'s. Without that, a command the table composed would be refused on such a device.
+
+On 53 distinct `Samsung 38 Bit` codes the definition's first block sends the row's train in other words: the
+4470 microsecond space between the two sections as 1477 and 2993. All 35 records of the Samsung BDC8000's compile
+spell it so, which the row did not.
+
+### Against Logitech's compiles
+
+Eighteen catalogue devices, composed whole onto the Harmony 650's configuration and compared record for record
+with the seventeen device groups Logitech compiled for them for our own accounts, the two PlayStation 3 entries
+sharing one, all pointers of all groups word for word, each of their records matched at most once: **774 of 797
+records**, `togglegroups.test.ts`.
+
+* The fifteen devices with a toggling family give 639 records with two groups, of which 623 are Logitech's. Before
+  this change none of their records was whole on the Yamaha DVD-S501 and the Microsoft VIP2250, nor on the Samsung
+  BDC8000, which take the whole record rows, and on the others only the first group could have matched.
+* The PlayStation 3's `StopSpacer` record is Logitech's, in the Harmony 650's own configuration, its release spelt
+  uncarved; spelt carved, or with the stored microsecond, it is not.
+* The 23 left: 16 Harmony One power step records, which are Logitech's but for the device's delay their compiler
+  opens them with, section 337; three on each PlayStation 3, records ours holds more times than the compile does,
+  where the codeset states four codes under five more names; and the Philips 70FA930's held power step, which did
+  not match before this either.
+* The seven two group one block copies composed on the Harmony 700's four devices are all Logitech's.
+* Counted from Logitech's side, 774 of their 931 records: the other 134 are records a device's own composition
+  never makes, about ten digit records per device with no held block, beside the ordinary digit records, which
+  match, and a few more like them.
+
+**The controls**, on the same composed records: with the second group dropped only the 151 records that never had
+one match; with the two groups swapped, which is the cleared code first for a code stating the bit set, 163 do,
+those 151 and 12 toggling records whose swapped form is another of the device's own records, a code the
+catalogue states in both of its toggle states under two names.
+
+### What it moves
+
+`make composecensus`:
+
+| | section 361 | now |
+|---|---|---|
+| commands written, of 2067863 | 2038315 | 2063341 |
+| family spellings refusing a command, of 687 | 437 | 423 |
+| family spellings writing nothing | 91 | 45 |
+| codesets writing nothing, of 54118 | 761 | 73 |
+| devices writing every command, of 257720 | 251880 | 255511 |
+
+Of the 25200 commands refused for naming a release group 25026 now write, and the other 174 are refused for a
+conflicting count, which is where the census counts them now. 297861 written commands carry a second group, and
+26990 a release. Of the 478 families section 348 found refused only for want of a whole block, 338 still refuse
+1955 commands, 1740 for a conflicting count and 215 for a count of 0, and the 12 held back by the release group
+alone write every command.
+
+**Every command and every device count, compared with section 361's composer**, `lab/work/agent-2-5/diff.ts`:
+no command that wrote before is refused now. Of those written both times, 1961916 have the same first group,
+1964 gain a release and keep their first group, and 74435 of the whole record rows send the same first block's
+train and gain the definition's held block, all but 4 `Galaxis 16 Bit Quad Toggle` codes whose definition states
+none.
+
+### What stays different, and why
+
+* The 189 and 691 commands above, whose first block the definition and the row disagree about.
+* Section 350's `MemorexO1 32 Bit` durations and the other commands of the 476 whose first block the definition
+  builds with another frame count, which are the row's as before.
+* A code that both toggles and names a release group gets its release in both groups. No compile in the lab holds
+  that shape: the one rerouted `Magnavox 13 Bit` code and the 17 `LifesizeIconA/B 17 Bit Toggle` commands are
+  written so, stated and unverified.
+* A held power step of a code naming a release group, which the composer refuses: no compile here holds one. And
+  a one block copy of a record with a tail, refused for the same reason.
+* The Harmony One's power step lead, section 337, and the counts of 0 and the conflicting counts, todo 2.2.2 and
+  2.2.4.
+
+### Scope, decision 16
+
+The two groups are confirmed on configurations of arch 12 (Harmony One), arch 14 (Harmony 650 and 700), arch 16
+(Harmony 350) and arch 8 (contributed); the composer's are checked word for word on the Harmony One's and the
+Harmony 700's compiles and the Harmony 650's own configuration, composed onto a Harmony 650 configuration. Which
+group plays is read on the Harmony 650's 0.2 and the Harmony One's 3.4, and only found, not read, on four more arch
+14 and arch 16 images. Not checked on the Harmony 525 (arch 9), whose two group records are not matched here and
+whose image was not searched, nor on the Harmony 890 (arch 10). The release in the tail is two families, one on
+arch 12, 14 and 8 and one on arch 8; every other family's release is the definition's, stated and unverified per
+decision 15. Nothing was sent to a remote.
+
+### The two reviews
+
+Both ran on this section's question, and the second on the whole diff.
+
+**The blind re-measure**, given the questions and the corpus and not this section, deduplicated 138 containers
+and agreed on the layout everywhere it looked: every two group record a toggling code, stated then flipped in
+once and held, no tail, and none of 45747 single group records a toggling code; the 23 calibration records; the
+two distinct tails, each the definition's release word for word with no microsecond; the firmware's flip, flag,
+skip and clear on the Harmony 650 and One, and the same on the Harmony 700's 2.8, 650's 0.4, 600's 0.2 and 350's
+1.4; 774 records agreeing on the eighteen devices, where the composer on `main` gave 115; and the census and the
+comparison with `main` command for command, 25026 newly written, 76399 changed and none refused that wrote. It
+added what is now above: the seven leftover records are long press power codes, the Harmony 525's 168 are the
+same layout once rebuilt, the PlayStation 3's tail on a Harmony 880, the bit being the device's, the initialiser
+and its callers, the 134 records counted from Logitech's side, and the Samsung space split into two words, which
+the BDC8000's compile settles. Its record totals differ from the ones above because it counted its own
+population, 427 records on arch 14 with the Harmony 600's dumps and 276 on arch 16 with the Harmony 300's.
+
+**The sentence audit**, given the whole diff, found nineteen things and all are corrected above, in the code and
+in the summaries: the Harmony 350 does not hold the PlayStation's release, two of the three tail counts having
+counted records with no tail; the Harmony 525's image is in the lab, where this said none existed; "253
+configurations" counted files, of which 153 parse; the record counts counted dumps of one configuration several
+times, now beside their distinct counts, and the Harmony 525's 275 was 168; the tail spelling rested on two
+distinct blocks, now said, and "every first and held block" excluded the Harmony 525 silently; `Microsoft 36
+Bit`'s release is a constant and not the code's own value; fifteen toggling devices and seventeen compiled groups,
+not sixteen and eighteen; a test title saying the composer writes both groups on 774 records where 158 have one;
+the 189 kept codes' explanation fitted to one family and wrong for the rest; no compile holding a code the gate
+keeps; "a held block on every record" of three devices where power steps and copies have none; the firmware's
+"every send" where the Harmony 650 and 600 return before the XOR on a tag with bit 4 or 5 set; "all three
+pointers" where no toggling record has a tail, and the release written into both groups of a code that toggles
+and names one, which no compile shows; the calibration scoped wider than measured; two firmware tests whose
+titles said more than their bodies, now reading branch targets and banks, the arithmetic one retitled; "refused
+all 25200" where 2153 more were written without their release; a heading of `docs/status.md` the rendering sweep
+missed; and a stale section number in the census.
+
+### Falsification
+
+A compile holding a toggling code in one group, or with its second group anything but the first flipped; a code
+stating its bit set whose first group holds it clear; a firmware image whose group skip reads the flag the other
+way; a compile holding a release other than in the tail, or with the stored microsecond.
+
+### Where it lands
+
+* `packages/codec/src/archive.ts`: `withToggleFlipped`, and the release built without the stored microsecond.
+* `packages/codec/src/compose.ts`: `ToggledCode`, `StatedBlocks.release`, two groups per record, and the
+  uncarved release.
+* `packages/codec/src/composecatalogue.ts`: `catalogueToggledCode`, `namesReleaseGroup`, `definitionKeepsTheRow`
+  and the route.
+* `packages/codec/src/sequence.ts`: a one block copy of two groups.
+* `packages/codec/bin/composecensus.ts`: the second groups and the releases written.
+* `packages/codec/test/togglegroups.test.ts` and `tests/test_toggle_groups.py`, the compiles and the firmware.
+* `docs/config-format.md`, the record header's count, the group a send plays and the release.

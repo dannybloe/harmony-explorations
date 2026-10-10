@@ -1035,7 +1035,7 @@ export function pulsesOfBlock(
     // **A copy that already overruns its period gets no gap, rather than a negative one**, section 233.
     // A period is a minimum the copy is stretched to, so a frame longer than it has nothing to add:
     // `Samsung 38 Bit` states 30800 microseconds for a segment whose frame runs to 31699 when enough of
-    // its bits are set, and Logitech's renderer emits the frame and moves straight on to the next copy.
+    // its bits are set, and the archive's renderer emits the frame and moves straight on to the next copy.
     // 90 of its commands threw here. The block **total** rule is left alone, since there a shortfall
     // means the block does not fit and is an error rather than a clamp.
     const us = period === undefined ? padValue + item.pad

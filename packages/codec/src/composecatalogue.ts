@@ -39,7 +39,7 @@ import {
 } from './catalogue.ts';
 import { catalogueDriving, type DeviceDriving } from './driving.ts';
 import {
-  archiveProtocols, statedCodeOfDefinition, waveformOfArchiveCommand, type ArchiveProtocol,
+  archiveProtocols, statedCodeOfDefinition, waveformOfArchiveCommand, withToggleFlipped, type ArchiveProtocol,
 } from './archive.ts';
 import { blockOfStatedCode, statedCode, statedProtocol, type StatedCode } from './stated.ts';
 import { mergedIntervals, type Pulse } from './irframe.ts';
@@ -57,6 +57,7 @@ import {
   type StatedBlocks,
   type ComposedScreen,
   type JoinedPowerOff,
+  type ToggledCode,
 } from './compose.ts';
 import { devices, stateVariables } from './inventory.ts';
 
@@ -158,20 +159,32 @@ export function composeCatalogueDevice(
     if (!derived.has(keycode)) derived.set(keycode, catalogueCommandBlocks(keycode, press, protocols));
     return derived.get(keycode);
   };
-  /** True where the table composes the code or its blocks were derived at the device's count. */
-  const composable = (keycode: string): boolean => {
-    const blocks = blocksOf(keycode);
-    return blocks === undefined || !('refusal' in blocks);
+  const toggledOf = new Map<string, ReturnType<typeof catalogueToggledCode>>();
+  const flippedOf = (keycode: string) => {
+    if (!toggledOf.has(keycode)) toggledOf.set(keycode, catalogueToggledCode(keycode, press, protocols));
+    return toggledOf.get(keycode);
   };
   /**
-   * The command as the composer takes it: the code as its definition reads it, section 359, and its
-   * derived blocks where it has them.
+   * True where the table composes the code or its blocks were derived at the device's count, and where
+   * its toggle bit flipped composes as well, since a toggling code's record carries both.
+   */
+  const composable = (keycode: string): boolean => {
+    const blocks = blocksOf(keycode);
+    const toggled = flippedOf(keycode);
+    return (blocks === undefined || !('refusal' in blocks)) && (toggled === undefined || !('refusal' in toggled));
+  };
+  /**
+   * The command as the composer takes it: the code as its definition reads it, section 359, its derived
+   * blocks where it has them, and the code with its toggle bit flipped where it toggles, todo-process-logitech
+   * 2.5, which becomes the record's second pointer group.
    */
   const withBlocks = <T extends { stated: string }>(one: T): T => {
     const blocks = blocksOf(one.stated);
     const read = catalogueCode(one.stated, protocols);
+    const toggled = flippedOf(one.stated);
     const withRead = read === undefined ? one : { ...one, read };
-    return blocks === undefined || 'refusal' in blocks ? withRead : { ...withRead, blocks };
+    const withToggled = toggled === undefined || 'refusal' in toggled ? withRead : { ...withRead, toggled };
+    return blocks === undefined || 'refusal' in blocks ? withToggled : { ...withToggled, blocks };
   };
 
   // Under `full`, every name whose code composes, in catalogue order; the layout is computed over all
@@ -581,6 +594,7 @@ export function sameTrain(a: readonly Pulse[], b: readonly Pulse[]): boolean {
  */
 function tableBlocksAtDeviceCount(
   keycode: string, read: StatedCode, press: PressRepeats, protocols: ReadonlyMap<string, ArchiveProtocol>,
+  toggleFlipped: boolean,
 ): StatedBlocks | { readonly refusal: string } | undefined {
   const family = read.family;
   const protocol = protocols.get(family);
@@ -600,20 +614,45 @@ function tableBlocksAtDeviceCount(
         + 'different numbers of frames, so how many a press sends at the device\'s count is not known',
     };
   }
-  return blocksAtDeviceCount(protocol, keycode, press.repeats);
+  return blocksAtDeviceCount(protocol, keycode, press.repeats, toggleFlipped);
 }
 
 /** A command's blocks from its family's definition at the device's count, or why there are none. */
 function blocksAtDeviceCount(
-  protocol: ArchiveProtocol, keycode: string, repeats: number,
+  protocol: ArchiveProtocol, keycode: string, repeats: number, toggleFlipped: boolean,
 ): StatedBlocks | { readonly refusal: string } {
-  const built = waveformOfArchiveCommand(protocol, keycode, { repeats, asStored: true });
+  const built = waveformOfArchiveCommand(protocol, keycode, { repeats, asStored: true, toggleFlipped });
   if ('refusal' in built) return { refusal: built.refusal };
-  if (built.release !== undefined) {
-    return { refusal: 'the code names a release group, which no Logitech compile here shows stored' };
-  }
   if (built.once.length === 0) return { refusal: 'the code sends nothing on a press' };
-  return { once: built.once, ...(built.held.length === 0 ? {} : { held: built.held }) };
+  return {
+    once: built.once,
+    ...(built.held.length === 0 ? {} : { held: built.held }),
+    // The release behind the record's third pointer, todo-process-logitech 2.5, which until then refused
+    // the command: Logitech's compiles put it there, `StatedBlocks.release` carries the measurement.
+    ...(built.release === undefined || built.release.length === 0 ? {} : { release: built.release }),
+  };
+}
+
+/** Whether a catalogue code names a release group, its third: `G:<family>:(start)(repeat)(release)`. */
+export function namesReleaseGroup(keycode: string): boolean {
+  const groups = /^G:[^:]+:\(([^)]*)\)\(([^)]*)\)\(([^)]*)\)/.exec(keycode);
+  return groups !== null && groups[3]!.trim() !== '';
+}
+
+/**
+ * Whether the definition, at the count the rhythm table's row carries, sends the row's own first block for
+ * a code the row composes: the family's stated count, or `TABLE_PRESS_REPEATS`'s for a family stating none.
+ * The gate on moving a code naming a release group, or of a whole record row, from the row to the
+ * definition, todo-process-logitech 2.5: only the blocks the row lacks may change, so a code whose first
+ * block the two disagree about stays the row's. Judged on the code as stated, so its toggled group takes
+ * the same route.
+ */
+function definitionKeepsTheRow(protocol: ArchiveProtocol, keycode: string, read: StatedCode): boolean {
+  const count = protocol.pressMinimumRepeats ?? TABLE_PRESS_REPEATS.get(read.family);
+  if (count === undefined) return false;
+  const row = blockOfStatedCode(read, undefined, 'once');
+  const built = waveformOfArchiveCommand(protocol, keycode, { repeats: count, asStored: true });
+  return row !== undefined && !('refusal' in built) && built.once.length > 0 && sameTrain(row, built.once);
 }
 
 /**
@@ -622,14 +661,19 @@ function blocksAtDeviceCount(
  * `undefined` where the table's block is the one to send; a refusal where neither is known.
  *
  * Read through `waveformOfArchiveCommand`, the one composition of a definition's readings, so the frames
- * are the ones `make prontocheck` holds against two million of Logitech's renderings, sent as the code
- * states them rather than with the toggle cleared. **A command naming a release group is refused**: a
- * configuration's record has a pointer for it, section 233, and no compile here holds one, so where
- * Logitech's compiler puts it is not seen.
+ * are the ones `make prontocheck` holds against two million of the archive's renderings, sent as the code
+ * states them rather than with the toggle cleared. **A command naming a release group gets the release as
+ * its own block**, `StatedBlocks.release`, the record's third pointer, todo-process-logitech 2.5; it was
+ * refused until then, on the ground that no compile here held one, and two families' compiles do.
+ *
+ * `toggleFlipped` gives the same command's blocks with its toggle bit flipped, by the same route: what a
+ * record's second pointer group holds, `catalogueToggledCode`.
  */
 export function catalogueCommandBlocks(
   keycode: string, press: PressRepeats, protocols: ReadonlyMap<string, ArchiveProtocol>,
+  options: { readonly toggleFlipped?: boolean } = {},
 ): StatedBlocks | { readonly refusal: string } | undefined {
+  const toggleFlipped = options.toggleFlipped === true;
   const read = catalogueCode(keycode, protocols);
   if (read === undefined) return { refusal: 'our keycode reader declines the code' };
   // **The table's whole block is for a code its family's name reads as well**, section 359. Every row was
@@ -637,11 +681,41 @@ export function catalogueCommandBlocks(
   // definition's widths read is a shape no row was checked against: on 78 of them a row's block takes
   // the code and sends fewer frames than it states, or none. Those go to the definition at the device's
   // count below, the route of a family with no whole block, section 348.
+  //
+  //
+  // **And so is a code naming a release group, or of a family whose row is a whole record shape, where the
+  // definition sends the row's own first block**, todo-process-logitech 2.5, section 365. No row holds a
+  // release, and the `quad`, `longToggle` and `sections` rows build no held block, where Logitech's compiles
+  // hold both: the release behind the record's third pointer on a `Logitech 24 Bit` code of the Sony
+  // PlayStation 3, and a held block on every record but the power steps and copies of the Yamaha DVD-S501,
+  // the Microsoft VIP2250 and the Samsung BDC8000 on a Harmony One, which got none of their records whole from the row and 44 of 46, 36 of
+  // 37 and 34 of 35 from the definition. The definition states both, so such a code goes below.
+  //
+  // **Only where the two agree about the first block**, `definitionKeepsTheRow`: the definition at the row's
+  // count sends the row's train, so what moves is the block the row lacks and nothing it measured. Where
+  // they disagree, `Samsung 38 Bit`'s durations section 350 left unsettled among them and `Magnavox 13 Bit`
+  // codes whose release group names another value, no compile here shows which a press sends, so those
+  // keep the row's block as before, without a held block or a release.
   const named = statedCode(keycode) !== undefined;
-  if (named && composableKeycode(keycode, read)) {
-    return tableBlocksAtDeviceCount(keycode, read, press, protocols);
+  const entry = statedProtocol(read.family);
+  const wholeRecord = entry !== undefined
+    && (entry.quad !== undefined || entry.longToggle !== undefined || entry.sections !== undefined);
+  const byTable = named && composableKeycode(keycode, read);
+  const own = catalogueProtocol(keycode, protocols);
+  const rerouted = byTable && (namesReleaseGroup(keycode) || wholeRecord) && own !== undefined
+    && definitionKeepsTheRow(own, keycode, read);
+  if (byTable && !rerouted) return tableBlocksAtDeviceCount(keycode, read, press, protocols, toggleFlipped);
+  if (entry === undefined) return { refusal: `no rhythm for ${read.family}` };
+  // **A rerouted code keeps the count the row's block carried** where the device's would not be used for
+  // it, as `tableBlocksAtDeviceCount` does: a family stating its own count is built at that count whatever
+  // the device states, its row carrying it, sections 228 and 348; and on a device whose count is not known
+  // a family stating none is built at `TABLE_PRESS_REPEATS`'s. Without this a code the table composed would
+  // be refused on such a device. A code the table did not compose takes the device's count as before, so the
+  // refusals of todo-process-logitech 2.2.3 are untouched.
+  if (rerouted) {
+    const count = own!.pressMinimumRepeats ?? ('refusal' in press ? TABLE_PRESS_REPEATS.get(read.family) : press.repeats);
+    if (count !== undefined) return blocksAtDeviceCount(own!, keycode, count, toggleFlipped);
   }
-  if (statedProtocol(read.family) === undefined) return { refusal: `no rhythm for ${read.family}` };
   // **A code the name reads and the family's whole block does not take goes to the definition too**,
   // section 361, which until then refused it: 87 commands of four families, a `Pioneer 32 Bit Dual` code
   // stating one value where the row's block names two, `Philips Hurd 16 Bit LongToggle` and `Galaxis 16
@@ -655,7 +729,31 @@ export function catalogueCommandBlocks(
   if ('refusal' in press) return press;
   const protocol = catalogueProtocol(keycode, protocols);
   if (protocol === undefined) return { refusal: `the archive holds no definition of ${read.family}` };
-  return blocksAtDeviceCount(protocol, keycode, press.repeats);
+  return blocksAtDeviceCount(protocol, keycode, press.repeats, toggleFlipped);
+}
+
+/**
+ * A catalogue code with its toggle bit flipped, as the composer takes it for a record's **second pointer
+ * group**, todo-process-logitech 2.5: the flipped reading, and its blocks by the route the code's own took,
+ * `catalogueCommandBlocks` with `toggleFlipped`, so the table's block where the code's own is the table's.
+ * `undefined` for a code whose family's definition states no toggle bit or states one outside its frames.
+ *
+ * **What Logitech's compiler writes.** On every record of a toggle family in every compile in the lab, the
+ * record holds two groups and the second is the first with the toggle bit flipped, in its first and held
+ * blocks; none in the lab has a tail. The first is the code as the catalogue states it, which a code stating its toggle bit set shows,
+ * `withToggleFlipped` in `archive.ts`. The firmware alternates the two per device, section 365.
+ */
+export function catalogueToggledCode(
+  keycode: string, press: PressRepeats, protocols: ReadonlyMap<string, ArchiveProtocol>,
+): ToggledCode | { readonly refusal: string } | undefined {
+  const protocol = catalogueProtocol(keycode, protocols);
+  const read = catalogueCode(keycode, protocols);
+  if (protocol === undefined || read === undefined) return undefined;
+  const frames = withToggleFlipped(protocol, read.frames);
+  if (frames === undefined) return undefined;
+  const blocks = catalogueCommandBlocks(keycode, press, protocols, { toggleFlipped: true });
+  if (blocks !== undefined && 'refusal' in blocks) return blocks;
+  return { read: { ...read, frames }, ...(blocks === undefined ? {} : { blocks }) };
 }
 
 /**

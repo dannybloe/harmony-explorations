@@ -70,7 +70,7 @@ help:
 	@echo "activities   which activity each key starts, and which label is its name"
 	@echo "catalogue    what Logitech's device catalogue says about our own configs' devices"
 	@echo "catalogue-raw  update the infrared archive and its raw capture, and derive what the archive drops"
-	@echo "prontocheck  our waveforms against Logitech's own renderings of two million commands"
+	@echo "prontocheck  our waveforms against the archive's renderings of two million commands"
 	@echo "composecensus  which archive commands the catalogue composer writes, and why it refuses the rest"
 	@echo "devices      which devices a config drives, and what each one is called"
 	@echo "alphabets    regenerate the glyph shape table; ALPHABETS_ARGS=--write"
@@ -285,7 +285,7 @@ segmentlengths:
 	@node packages/codec/bin/segmentlengths.ts $(SEGMENTLENGTHS_ARGS)
 
 # The strongest check our infrared encoder gets, section 230: build the waveform for every command in
-# Logitech's own catalogue and compare it against the one their renderer produced, both sections. Two
+# Logitech's own catalogue and compare it against the one the archive's renderer produced, both sections. Two
 # million commands in about forty seconds, no network and no lab, and it needs the public archive
 # checkout. Not in `make all`, since a fresh clone has no archive and the number is a research one
 # rather than a regression: PRONTOCHECK_ARGS=--codesets 400 for a sample, --only '<family>' --detail

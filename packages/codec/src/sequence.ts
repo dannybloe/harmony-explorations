@@ -198,9 +198,9 @@ export interface ComposedSequence {
   peak: number;
 }
 
-/** What a one block copy is made of: the bytes of its one block, and the header fields it keeps. */
+/** What a one block copy is made of: the bytes of its one block per pointer group, and the header fields it keeps. */
 interface CopyRecord {
-  block: Uint8Array;
+  blocks: Uint8Array[];
   periodNs: number;
   spare: number;
 }
@@ -225,28 +225,40 @@ const sameBytes = (a: Uint8Array, b: Uint8Array): boolean =>
  * first block less its two words of 50 ms silence, at the same carrier, no held block and no tail, and
  * none has two. A named record that already has no held block is sent as it is: it is a copy, or a power
  * step's own record, and nothing here makes a copy of a copy.
+ *
+ * **A record of two pointer groups gets a copy of two**, todo-process-logitech 2.5: a toggling code's
+ * record holds the code as stated and with its toggle bit flipped, and Logitech's copy of one holds each
+ * group's first block less its silence, no held block and no tail, in both groups. Measured on the Harmony
+ * 700's power hold compiles, 32 copies, and another owner's Harmony 650 configuration, 12; every one of
+ * them has a source record in its group whose two groups give its two blocks. A record with a tail, a code
+ * naming a release group, is still refused: no compile here shows a copy of one.
  */
 function oneBlockCopy(
   c: Container, records: readonly number[], code: number,
 ): { code: number } | { copy: CopyRecord } {
   const address = records[code] as number;
-  const [once = 0, held = 0, tail = 0] = irHeaderPointers(c, address);
-  if (held === 0) return { code };
-  if (irGroupCount(c, address) !== 1 || tail !== 0 || once === 0) {
-    throw new ComposeError(`code ${code}'s record is not one group of a first and a held block, `
+  const pointers = irHeaderPointers(c, address);
+  const groups = irGroupCount(c, address);
+  if ((pointers[1] ?? 0) === 0) return { code };
+  const firsts = Array.from({ length: groups }, (_, g) => pointers.slice(3 * g, 3 * g + 3));
+  if (groups > 2 || firsts.some(([once = 0, , tail = 0]) => tail !== 0 || once === 0)) {
+    throw new ComposeError(`code ${code}'s record is not one or two groups of a first and a held block, `
       + 'which is the only record a copy has been measured for');
   }
-  const first = blockBytes(c, once);
-  if (first === undefined) throw new ComposeError(`code ${code}'s first block does not close`);
   // The opening silence is every space word before the first mark: two words of 50 ms on every two
   // block record of the Harmony 650 measured, `COMPILED_LEAD_IN_US`.
-  let lead = 0;
-  while (2 * lead + 2 < first.length) {
-    const word = (first[2 * lead] as number) | ((first[2 * lead + 1] as number) << 8);
-    if ((word & IR_PULSE_MARK) !== 0) break;
-    lead += 1;
-  }
-  const block = first.slice(2 * lead);
+  const unled = (once: number): Uint8Array => {
+    const first = blockBytes(c, once);
+    if (first === undefined) throw new ComposeError(`code ${code}'s first block does not close`);
+    let lead = 0;
+    while (2 * lead + 2 < first.length) {
+      const word = (first[2 * lead] as number) | ((first[2 * lead + 1] as number) << 8);
+      if ((word & IR_PULSE_MARK) !== 0) break;
+      lead += 1;
+    }
+    return first.slice(2 * lead);
+  };
+  const blocks = firsts.map(([once = 0]) => unled(once));
   const carrier = irCarrier(c, address);
   if (carrier === undefined || carrier.onNs !== carrier.periodNs >> 1) {
     throw new ComposeError(`code ${code}'s carrier is not one this can copy`);
@@ -256,13 +268,17 @@ function oneBlockCopy(
   if (spare === undefined) throw new ComposeError(`code ${code}'s record has no header`);
   // The group's own copy, the lowest where there were several: none of the KPN box's has two.
   const found = records.findIndex((other) => {
-    const [o = 0, h = 0, t = 0] = irHeaderPointers(c, other);
-    if (h !== 0 || t !== 0 || o === 0 || irGroupCount(c, other) !== 1) return false;
-    const bytes = blockBytes(c, o);
-    return bytes !== undefined && sameBytes(bytes, block) && irCarrier(c, other)?.periodNs === carrier.periodNs;
+    if (irGroupCount(c, other) !== groups) return false;
+    const its = irHeaderPointers(c, other);
+    return blocks.every((block, g) => {
+      const [o = 0, h = 0, t = 0] = its.slice(3 * g, 3 * g + 3);
+      if (h !== 0 || t !== 0 || o === 0) return false;
+      const bytes = blockBytes(c, o);
+      return bytes !== undefined && sameBytes(bytes, block);
+    }) && irCarrier(c, other)?.periodNs === carrier.periodNs;
   });
   if (found >= 0) return { code: found };
-  return { copy: { block, periodNs: carrier.periodNs, spare } };
+  return { copy: { blocks, periodNs: carrier.periodNs, spare } };
 }
 
 /**
@@ -299,14 +315,18 @@ function appendCopyRecord(c: Container, group: number, copy: CopyRecord): { byte
   if (table === undefined) throw new ComposeError('base slot 5 does not read as a group table');
   const at = table.start;
   if (end + 3 > at) throw new ComposeError(`group ${group}'s array does not sit below base slot 5's table`);
-  const headerLength = IR_HEADER_BASE + IR_HEADER_GROUP;
-  const second = relocate(middle, at, copy.block.length + headerLength);
+  // The blocks, one per pointer group in group order, then the header naming each as its group's first.
+  const headerLength = IR_HEADER_BASE + IR_HEADER_GROUP * copy.blocks.length;
+  const blocksLength = copy.blocks.reduce((n, block) => n + block.length, 0);
+  const second = relocate(middle, at, blocksLength + headerLength);
   const base = middle.flashBase + at;
+  const offsets = copy.blocks.map((_, g) => copy.blocks.slice(0, g).reduce((n, block) => n + block.length, 0));
   const record = irBuildRecord({
-    periodNs: copy.periodNs, start: base + copy.block.length, pointers: [base, 0, 0], spare: copy.spare,
+    periodNs: copy.periodNs, start: base + blocksLength,
+    pointers: offsets.flatMap((offset) => [base + offset, 0, 0]), spare: copy.spare,
   });
-  second.bytes.set(copy.block, at);
-  second.bytes.set(record.bytes, at + copy.block.length);
+  copy.blocks.forEach((block, g) => second.bytes.set(block, at + offsets[g]!));
+  second.bytes.set(record.bytes, at + blocksLength);
   second.bytes.set(new Writer(3).u24(record.pointer).bytes, end);
   const bytes = restamped(second.bytes);
   if ((irGroups(parse(bytes)) ?? [])[group]?.addresses[code] !== record.pointer) {

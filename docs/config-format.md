@@ -3096,15 +3096,18 @@ at 256000 and moves the Timer 2 prescaler when it no longer fits in sixteen bits
 The carrier is **per record, not per config and not per device**. One Harmony One config carries
 56.3 kHz and 38 kHz inside a single infrared group.
 
-The count is **1 in every record on arch 12, arch 14 and most of arch 9**, and that case is exactly
-the 21 byte header with two pointers and a trailing NULL that section 61 described. ~~On arch 8 it is
+~~The count is 1 in every record on arch 12, arch 14 and most of arch 9~~<!--superseded--> **The count is 1 in
+every record matched to a code that does not toggle**, and that case is exactly the 21 byte header with two
+pointers and a trailing NULL that section 61 described. **A record of a toggling code has 2 on every architecture
+whose configurations hold one**, section 365: 572 distinct records on arch 12 (Harmony One), 253 on arch 14
+(Harmony 650 and 700), 130 on arch 16 (Harmony 350) and 36 on arch 8, every record of the lab's configurations
+matched to a toggling catalogue code. The corpus the 1 was counted on held no toggling family on arch 12 or 14. ~~On arch 8 it is
 2 in exactly 37 records of every config~~<!--superseded--> **it is 2 in 37 records of four arch 8
 configs and in none of two others**, and the count follows the **devices** rather than the
 architecture, section 134. On arch 9 it is 2 in 61 of `h525_config`'s 200 records and in **all 107** of
 the second 525 config, so 168 against 139 corpus wide: more than half, which four comments in
 `packages/codec/src/ir.ts` denied outright while this page said it. A two group header is 30 bytes and names
-up to six blocks. `620 + 208 + 21` is the whole of a typical Harmony One record, since arch 12 has one
-group everywhere.
+up to six blocks. `620 + 208 + 21` is the whole of a typical Harmony One record that does not toggle.
 
 **A second group is the same code with one bit inverted**, section 134. Block `i` of the second group
 and block `i` of the first differ in exactly two adjacent words, which are a mark and a space of equal
@@ -3113,8 +3116,34 @@ that have any. Exchanging equal halves of a pair is what inverting one cell of a
 and those records read as RC6 mode 6 at 36200 Hz: a six and two unit leader on a 441 us unit, a start
 bit of one, mode bits 110 and a double width trailer. So the two groups are the two states of a bit
 the protocol requires the sender to alternate between presses, and a config stores both because the
-action list language has no arithmetic that could compute one. Which group a given press uses is
-**unconfirmed**: the firmware side has not been traced.
+action list language has no arithmetic that could compute one. ~~Which group a given press uses is
+unconfirmed~~<!--superseded-->
+
+**Which group a send plays**, section 365, read on the Harmony 650's 0.2 image (arch 14) and the Harmony One's
+3.4 (arch 12):
+
+* the firmware keeps a sixteen bit word with **one bit per infrared group**, and a send reaching the record
+  start XORs `1 << (tag & 0x0F)` into it, the tag's low nibble being the infrared group; on the Harmony 650 and
+  600 a tag with bit 4 or 5 set returns before the XOR, and what those bits mean is not read;
+* the record start reads the count and skips groups of nine bytes, **one fewer when the count is 2 and that bit
+  is set** after the XOR, so a set bit plays the first group and a clear one the second;
+* the Harmony 650 clears the word at `0x11D08`, so the first send after that plays the first group. What
+  calls the clear, and where the Harmony One clears its word, is not read.
+
+The same update is found, and the skip not read, on the Harmony 600's 0.2, the Harmony 700's 2.8, the
+Harmony 650's 0.4 and the Harmony 350's 1.4. The Harmony 525's image is in the lab and was not searched.
+
+**The first group is the code as the catalogue states it**, and the second the same code with the toggle
+bit its definition names flipped, in its first and held blocks; no toggling record in the lab has a tail. The
+calibration is the 23 records of the pinned devices whose code states the bit set: every first group holds it
+set. A one block copy of such a record,
+section 349, keeps two groups, each its record's first block less the opening silence.
+
+**A release group is the tail**, the third pointer, section 365: a block of its own holding the code's
+release, `Logitech 24 Bit`'s Stop on arch 12, 14 and one arch 8 configuration and `Microsoft 36 Bit`'s on arch 8. **A tail carries no
+stored microsecond**: every first and held block in the lab outside the Harmony 525 ends on the carved one
+microsecond word, and the lab's two distinct tails are the definition's release with nothing added, the
+silence uncarved.
 
 **A block ends at a zero word, and that is not a validity check.** Over **4692 blocks in thirteen
 configs the terminator agrees exactly with the region's tiling on every one of them**, and none stops
