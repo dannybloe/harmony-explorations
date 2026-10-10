@@ -657,7 +657,7 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    of each Logitech picture, which would have kept Logitech's sharing of one picture across two states.
    What it took is section 366: the idle state needs a battery program of its own, since the corner the
    battery icon sits in is patched in the background's colour. The letters are white with a one pixel
-   black shadow, the shape every two colour glyph of Logitech's has. **Open**: the titles, the page
-   counter and the bottom words sit on the light top and bottom bars, where Logitech draws them near
-   black and unshadowed, and white there would barely show; whether those stay dark, or the bars change,
-   is not decided.
+   black shadow, the shape every two colour glyph of Logitech's has, except on the bars: **the top and
+   bottom bars are plain white**, their shapes kept, and the titles, the page counter and the bottom
+   words on them stay dark and unshadowed as Logitech draws them, since white there would not show.
+   Decided the same day, after a preview; this item said the bars were open until then.

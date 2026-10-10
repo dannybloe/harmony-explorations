@@ -49787,9 +49787,17 @@ Logitech's compile as it is ("still draws"), the result checked against the devi
 swapped, a result whose activity patch had one pixel painted black, one idle page put back on the
 activity battery program, one device page pointed at the plain background, and a Harmony 700 compile.
 
+**The bars are made white too**, decided after the preview (decision 20): the top bar's sixteen rows
+and the bottom bar's rounded band keep their shapes, drawn in one colour instead of section 363's shading,
+their bytes changed in place since every screen names one of the two pieces. Every composer locates a bar
+by its content key, so `withStateBackgrounds` runs after all of them. The check tells the bottom bar from
+a background by its kind, the one whole screen picture that leaves pixels undrawn, and refuses Logitech's
+bars in the bank. The 7.5 file built so keeps its 965708 bytes, a flat band encoding to as many bytes as a
+shaded one.
+
 **What is still Logitech's** among the pictures: the start up picture, the corner battery icon and
 the four firmware screen pictures of section 363, which are not a state's background; the plain
-background, the bars and the plain patch are drawn by rule since section 363. Not checked on the remote:
+background and the plain patch are drawn by rule since section 363. Not checked on the remote:
 that the colours show as chosen, which depends on the panel's byte order the renderer assumes for
 pictures (section 363 decodes a picture high byte first, the order its encoder reproduces Logitech's
 bytes in, which settles the bytes and not the panel). One more hint, still not the panel: read high

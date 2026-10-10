@@ -25,7 +25,11 @@
  * to base slot 11's table, and the two idle screens' records rebuilt through `screenrecords.ts` naming it.
  * The two shared programs keep their table entries and get their state's patch.
  *
- * What is left as it was: the plain background, the bars, the start up picture, the corner icon and the
+ * **The two bars become one flat colour too**, white by default (decision 20), their shapes kept, and the
+ * words on them stay dark. Every other result here reads a bar by its content key, so this runs last, after
+ * every composer and every screen generator.
+ *
+ * What is left as it was: the plain background, the start up picture, the corner icon and the
  * firmware screens' pictures, which are not a state's (section 363's other rows). A designed background no
  * screen draws any more is dropped from the picture bank, so the result holds none of the five.
  *
@@ -39,7 +43,7 @@ import type { Container } from './gspm.ts';
 import { archSlot } from './gspm.ts';
 import { HARMONY_650_PICTURES, pictureRows } from './pictures.ts';
 import {
-  SCREEN_QUEUE_INSTRUCTION, SCREEN_TABLE_SLOT, bitmapAt, encodeBitmap, pictureReference, reachablePrograms, screenProgram,
+  BITMAP_ENCODED, SCREEN_QUEUE_INSTRUCTION, SCREEN_TABLE_SLOT, bitmapAt, encodeBitmap, pictureReference, reachablePrograms, screenProgram,
 } from './screen.ts';
 import { contentKey, modeRoles } from './screencategories.ts';
 import { buildScreenRecords, describeScreenRecords, screenRecordModes, withScreenRecords } from './screenrecords.ts';
@@ -62,6 +66,12 @@ export const DEFAULT_BACKGROUND_COLOURS: BackgroundColours = {
   activity: rgbTo565(18, 37, 200),
   idle: rgbTo565(1, 136, 53),
 };
+
+/**
+ * The top and bottom bars' one colour, white, decided with the state colours (decision 20): Logitech's
+ * shaded light grey bars made flat. The words on them stay dark.
+ */
+export const DEFAULT_BAR_COLOUR = 0xffff;
 
 /** The five designed backgrounds, by `HARMONY_650_PICTURES` name: the ones a state's colour replaces. */
 export const DESIGNED_BACKGROUNDS: readonly string[] = [
@@ -250,7 +260,9 @@ export interface StateBackgrounds {
  * same colour, and the designed backgrounds gone. `layout` is a `takeApart` of a Harmony 650 configuration
  * and is left as it was.
  */
-export function withStateBackgrounds(layout: ContainerLayout, colours: BackgroundColours = DEFAULT_BACKGROUND_COLOURS): StateBackgrounds {
+export function withStateBackgrounds(layout: ContainerLayout, colours: BackgroundColours = DEFAULT_BACKGROUND_COLOURS,
+  barColour: number = DEFAULT_BAR_COLOUR): StateBackgrounds {
+  rgbCheck(barColour, 'device');
   for (const state of SCREEN_STATES) rgbCheck(colours[state], state);
   const backgrounds = Object.fromEntries(SCREEN_STATES.map((state) =>
     [state, { bytes: flat(BACKGROUND_SIZE, BACKGROUND_SIZE, colours[state]), refs: [] } as ContainerPiece])) as Record<ScreenState, ContainerPiece>;
@@ -374,6 +386,19 @@ export function withStateBackgrounds(layout: ContainerLayout, colours: Backgroun
     }
     return true;
   });
+  // 5. The two bars in the bar colour, same shape: the top bar's sixteen full rows and the bottom bar's
+  // rounded band. Every screen that draws a bar draws one of these two pieces, so their bytes change in
+  // place and nothing is repointed.
+  let bars = 0;
+  for (const piece of step.pictures) {
+    const name = pictureNameOfPiece(piece);
+    const entry = HARMONY_650_PICTURES.find((one) => one.name === name);
+    if ((name !== 'top bar' && name !== 'bottom bar') || entry?.drawing?.kind !== 'band') continue;
+    const { drawing } = entry;
+    piece.bytes = encodeBitmap(pictureRows({ ...drawing, rows: drawing.rows.map((row) => ({ ...row, end: barColour, fill: barColour })) }));
+    bars += 1;
+  }
+  if (bars !== 2) throw new BackgroundError(`the bank holds ${bars} of the two bars`);
   return { layout: step, modes, idleBattery, dropped };
 }
 
@@ -401,7 +426,8 @@ export interface StateBackgroundsChecked {
  * **Which modes are checked is not independent of the builder**: both take it from `screenStates`, whose
  * second pass reads an activity's further screens off their battery program, so a favourite channels page
  * moved to the device program would leave the check unseen. The 13 device modes with no battery program,
- * the two row device list of each compile, have no corner to check.
+ * the two row device list of each compile, have no corner to check. Logitech's shaded bars are refused in the
+ * bank, the bars being made flat.
  */
 export function checkStateBackgrounds(c: Container, layout: ContainerLayout,
   colours: BackgroundColours = DEFAULT_BACKGROUND_COLOURS): StateBackgroundsChecked {
@@ -432,7 +458,9 @@ export function checkStateBackgrounds(c: Container, layout: ContainerLayout,
           const address = pictureReference(instruction);
           if (address === undefined) continue;
           const b = bitmapAt(c, address);
-          if (b?.stride !== BACKGROUND_SIZE || b.rows !== BACKGROUND_SIZE || pictureName(c, address) === 'bottom bar') continue;
+          // The bottom bar is the one whole screen picture that leaves pixels undrawn, so it is told by its kind,
+          // which holds whatever colour it is drawn in.
+          if (b?.stride !== BACKGROUND_SIZE || b.rows !== BACKGROUND_SIZE || b.kind === BITMAP_ENCODED) continue;
           if (!flatIn(address, colours[state], BACKGROUND_SIZE, BACKGROUND_SIZE)) {
             const name = pictureName(c, address);
             throw new BackgroundError(`mode ${mode}, a ${state} screen, draws ${name === undefined ? 'a background that is not its colour' : name} on page ${k}`);
@@ -474,7 +502,7 @@ export function checkStateBackgrounds(c: Container, layout: ContainerLayout,
       if (patched !== 1) throw new BackgroundError(`mode ${mode}'s battery program draws ${patched} patches`);
     }
   }
-  for (const name of DESIGNED_BACKGROUNDS) {
+  for (const name of [...DESIGNED_BACKGROUNDS, 'top bar', 'bottom bar']) {
     const key = HARMONY_650_PICTURES.find((entry) => entry.name === name)?.key;
     for (const piece of layout.pictures) if (contentKey(piece.bytes) === key) throw new BackgroundError(`the bank still holds ${name}`);
   }
