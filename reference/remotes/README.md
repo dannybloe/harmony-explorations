@@ -33,7 +33,11 @@ reference/
     harmony-600-650-700/      architecture 14: what the three models share, stated once
       README.md, memory.md, firmware.md, usb.md, misc.md
     harmony-300-350/          architecture 16, the file based family: the same five files
+    harmony-5xx/              architecture 9, measured on the Harmony 525 alone: the same five files
 ```
+
+The Harmony Touch has a model folder and no architecture folder, because its architecture number is
+disputed and nothing here has read a second model on either number; its `misc.md` says why.
 
 **Every model folder holds the same ten files**, including a model where a file says little, because a
 missing file reads as "nothing known" and an empty section that says "not checked" reads as what it is.

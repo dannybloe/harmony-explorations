@@ -1512,9 +1512,14 @@ found. The full description is in `docs/usb-protocol.md` section 6, which is the
 it is a protocol description; this entry is the ledger line saying it is believed on the client's
 word alone.
 
-**Unconfirmed, entirely.** Nothing in this project has sent one of these packets, and no remote of
-that family has ever answered anything here beyond its USB descriptors. The standing caveat applies
-with full force: the client states what it sends, never what the remote does with it, and section 197
+**Confirmed on hardware for the read path, and only for it.** A Harmony Touch answered the open, read
+and close packets, section 200, once the request framing was taken from Logitech's own encoder; the
+Harmony 350 and the Harmony 300 answered the same packets and gave up their configurations as files,
+sections 262 and 264. Nothing in this project has sent any other packet of the family, the write, the
+device control and the HBus command among them, so those stay unconfirmed entirely. This said
+nothing here had sent one of these packets and no remote of the family had answered beyond its USB
+descriptors until 10 October 2026, which section 200 had already overtaken. The standing caveat
+applies with full force to the rest: the client states what it sends, never what the remote does with it, and section 197
 already has this family disagreeing with the hardware about its own architecture number.
 
 Three things in it that change what is possible rather than only what is known.

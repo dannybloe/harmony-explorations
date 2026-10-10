@@ -281,7 +281,11 @@ which operations each class implements rather than in any table.
 |---|---|---|---|
 | flash addressed | arch 2 through 14, so everything on the list above except the 900, 1000 and 1100 | `READ_FLASH` at an address | firmware, RAM, misc registers, the whole memory map |
 | network | arch 15: 900, 1000, 1000i, 1100, 1100i | a network class interface, not HID | not investigated here |
-| file based | 200, 300, 350, Link, Hub, Touch, Ultimate, and presumably 950 | reading a **named file**, `/cfg/usercfg` | nothing: flash, RAM, misc and firmware are all refused |
+| file based | 200, 300, 350, Link, Hub, Touch, Ultimate, and presumably 950 | reading a **named file**, `/cfg/usercfg`, on the Harmony 300 and 350, sections 262 and 264. **A Harmony Touch has no such file** and its configuration is not reachable as one, section 200 | nothing: flash, RAM, misc and firmware are all refused |
+
+This row said the whole family's configuration is read as `/cfg/usercfg` until 10 October 2026. It
+holds for the Harmony 300 and 350 and is refuted for the Touch, the one other model of the family read
+here; the other models in the row have not been read.
 
 The third row is the one that surprises. Those remotes are HID, 64 byte reports, and they
 enumerate in the same Logitech product range, so the transport in `packages/usb` reaches them.

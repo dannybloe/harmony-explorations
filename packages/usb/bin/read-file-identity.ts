@@ -10,8 +10,11 @@
  * so nothing this script can be made to do will change a byte on the remote.
  *
  * The first thing worth reading in the output is `arch`. Logitech's own specification says a Harmony
- * Touch is architecture 18 and the remote's USB descriptor implies 17, and section 197 records that
- * disagreement as unresolved. This is the read that settles it.
+ * Touch is architecture 18 and concordance, reading the remote, reported 17, section 197. This read was
+ * taken on a Touch and the remote states 17 itself, section 200, which settles what the remote reports
+ * and not which number is right: both sources read what they read, and nothing here depends on the
+ * choice. This said the USB descriptor implied 17 and that this read would settle the disagreement
+ * until 10 October 2026.
  *
  *     node packages/usb/bin/read-file-identity.ts [--product 0xc12b] [--path <path>] [--raw]
  */

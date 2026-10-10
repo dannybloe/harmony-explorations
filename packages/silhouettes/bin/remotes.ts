@@ -120,6 +120,13 @@ export const REMOTES: readonly RemoteFolder[] = [
   // other regional name in `MODELS_BY_SKIN`, but its face lacks the four teletext keys this drawing
   // carries, `reference/capabilities.md`, so it is not this drawing's skin and not this folder's.
   { folder: 'harmony-525', skins: [22], drawing: 'h525', architecture: 9 },
+  // **Architecture 17 is what the remote reports**, `/sys/sysinfo` read off a unit, section 200, and
+  // Logitech's own specification says 18, section 197. The drawing takes the remote's word and so
+  // does this row; the folder states both.
+  {
+    folder: 'harmony-touch', skins: [99], drawing: 'touch', architecture: 17,
+    rasterFromDrawing: '`touch.ts`, the size of every screen capture in Logitech\'s user guide; no configuration of this model has been read',
+  },
 ];
 
 export const ARCHITECTURES: readonly ArchitectureFolder[] = [

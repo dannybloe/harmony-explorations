@@ -37201,8 +37201,9 @@ in the safe mode containers, so never inside the block; and an
 
 Firmware read on arch 8, 9, 12 and 14, seven images plus the Harmony 525's; configurations on the same
 four. Arch 10 (Harmony 890 and 895) is not checked, because nothing here reads its state table, and gets
-the widest block by default; arch 16 (Harmony 300 and 350) and arch 18 (Harmony Touch) have no state
-table read here. What 13 to 17 mean is unread, beyond 13 on the Harmony One being set from an input pin.
+the widest block by default; arch 16 (Harmony 300 and 350) and the Harmony Touch have no state
+table read here. This named the Touch arch 18 until 10 October 2026: Logitech's templates say 18 and
+the remote reports 17, sections 197 and 200, so neither number identifies it alone. What 13 to 17 mean is unread, beyond 13 on the Harmony One being set from an input pin.
 
 ### Sources
 
