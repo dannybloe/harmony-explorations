@@ -97,6 +97,12 @@ const SEEDS: Seed[] = [
       // glyph and then confirmed by the word it sits in: `HDMI`, `Zoom`, an underscore inside a
       // label, the quotes around `"Help"`, and a button label beginning with the letter.
       { container: 'h700_config', codes: { 47: 'I', 70: 'Z', 71: '_', 72: '"', 75: 'Q' } },
+      // The Harmony 650's, for three characters in eight shapes neither draws in the fonts the 650 uses, found when
+      // `todo-compile-650.md` 8.2 re-lettered every glyph and needed every one named. Each was read from
+      // its glyph and confirmed by its word: the colon in the Denon's sound mode `DTS NEO:X`, the `J` of
+      // `JazzClub`, both on 12 of the 13 compiles, and another owner's `I` of `Insert batteries`.
+      { container: 'h650_test_config_clean', codes: { 74: ':', 76: 'J' } },
+      { container: 'h650_issue36_config', codes: { 44: 'I' } },
     ],
     proof: 'Display',
   },

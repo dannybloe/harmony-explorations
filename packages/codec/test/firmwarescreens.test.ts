@@ -65,8 +65,8 @@ const THIRTEEN = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 
 /** Logitech's later compiles of the test record's Harmony 650. */
 const LATER_650 = ['h650_start_config', 'h650_options_config', 'h650_sequence_config', 'h650_favourites_config',
   'h650_assistant_off_config', 'h650_tilt_off_config', 'h650_test_config', 'h650_test_config_clean'] as const;
-/** Section 356's 22 less another owner's Harmony 650, issue 36, which is refused below. */
-const BUILT = [...THIRTEEN, ...LATER_650] as const;
+/** Section 356's 22: those and another owner's Harmony 650, issue 36, refused for its "I" until section 368. */
+const BUILT = [...THIRTEEN, ...LATER_650, 'h650_issue36_config'] as const;
 const SEVEN_HUNDREDS = ['h700_config', 'h700_config_2', 'h700_28_config_region', 'h700_power_hold_compile',
   'h700_power_hold_compile_2', 'h700_power_hold_compile_3', 'h700_power_hold_compile_4'] as const;
 
@@ -85,7 +85,7 @@ function rebuilt(c: Container): Uint8Array {
   return layOutContainer(withFirmwareScreens(layout, buildFirmwareScreens(d.spec, c), d.place)).bytes;
 }
 
-test('the firmware screens of 21 arch 14 Logitech compiles are rebuilt byte for byte from a description',
+test('the firmware screens of 22 arch 14 Logitech compiles are rebuilt byte for byte from a description',
      skipUnless(...BUILT), () => {
   const perModel = new Map<string, { compiles: number; screens: number; structure: number; lists: number }>();
   for (const name of BUILT) {
@@ -106,23 +106,21 @@ test('the firmware screens of 21 arch 14 Logitech compiles are rebuilt byte for 
     assert.equal(d.spec.homes.size, 0, name);
   }
   assert.deepEqual(Object.fromEntries(perModel), {
-    'harmony-650': { compiles: 12, screens: 168, structure: 12 * 5435, lists: 120 },
+    'harmony-650': { compiles: 13, screens: 182, structure: 13 * 5435, lists: 130 },
     'harmony-600': { compiles: 2, screens: 28, structure: 2 * 5435, lists: 20 },
     'harmony-700': { compiles: 7, screens: 133, structure: 7 * 8864, lists: 70 },
   });
 });
 
-test('another owner\'s Harmony 650 is refused for want of an "I" its letters do not resolve, and a French one for its words',
-     skipUnless('h650_issue36_config', 'h650_issue8_config'), () => {
-  // The character map leaves the code "Insert batteries" opens with unresolved on issue 36, which is the
-  // letters' item, todo-compile-650 8.2, and not this one; section 356's words never needed an "I".
-  assert.throws(() => rebuilt(containerOf('h650_issue36_config')),
-    (error: Error) => error instanceof ScreenRecordError && /insertBatteries: font 0 has no glyph for 'I'/.test(error.message));
+test('a French Harmony 650 is refused for its words',
+     skipUnless('h650_issue8_config'), () => {
+  // Another owner's Harmony 650, issue 36, was refused here too, for the "I" of "Insert batteries", which the
+  // character map did not resolve until section 368 named it; it is rebuilt with the others now.
   assert.throws(() => rebuilt(containerOf('h650_issue8_config')),
     (error: Error) => error instanceof ScreenRecordError && /addActivityHere: font 0 has no glyph for 'w'/.test(error.message));
 });
 
-test('a blinded input rebuilds all 21: no byte the builder generates is taken from the screens\' own bytes, though the description finds its way through them',
+test('a blinded input rebuilds all 22: no byte the builder generates is taken from the screens\' own bytes, though the description finds its way through them',
      skipUnless(...BUILT), () => {
   let values = 0;
   let readAddresses = 0;
@@ -175,20 +173,20 @@ test('a blinded input rebuilds all 21: no byte the builder generates is taken fr
     readAddresses += first.addresses.read.size;
     generated += first.structure.size - first.described.size - [...first.addresses.read].filter((at) => !first.described.has(at)).length;
   }
-  // Of the 138138 bytes: values the description reads, 469, which are two fonts a compile and "USB
+  // Of the 143573 bytes: values the description reads, 492, which are two fonts a compile and "USB
   // Connected"'s variable and list indices, 21 bytes a Harmony 600 or 650 and 19 a Harmony 700, whose leave
-  // list's index is the wiring's; addresses naming a picture, 1176, three bytes for each of 17 pictures on a
-  // 600 or 650 and 22 on a 700; and the builder's, 136493, every one of them blinded.
+  // list's index is the wiring's; addresses naming a picture, 1227, three bytes for each of 17 pictures on a
+  // 600 or 650 and 22 on a 700; and the builder's, 141854, every one of them blinded.
   assert.deepEqual({ structure, values, readAddresses, generated, blindedCount }, {
-    structure: 138138, values: 14 * (2 + 21) + 7 * (2 + 19), readAddresses: 3 * (14 * 17 + 7 * 22), generated: 136493,
-    blindedCount: 136493,
+    structure: 143573, values: 15 * (2 + 21) + 7 * (2 + 19), readAddresses: 3 * (15 * 17 + 7 * 22), generated: 141854,
+    blindedCount: 141854,
   });
   assert.equal(values + readAddresses + generated, structure);
-  // All but 220 were something else first: 182 are the tag 0xEE of a key map over the keypad, one in each
-  // of seven on a 600 or 650 and twelve on a 700, and 38 are bytes of address fields, which the frame
+  // All but 228 were something else first: 189 are the tag 0xEE of a key map over the keypad, one in each
+  // of seven on a 600 or 650 and twelve on a 700, and 39 are bytes of address fields, which the frame
   // writes whatever a piece holds there.
-  assert.equal(changed, blindedCount - 220);
-  assert.deepEqual(already, { tags: 14 * 7 + 7 * 12, addresses: 38 });
+  assert.equal(changed, blindedCount - 228);
+  assert.deepEqual(already, { tags: 15 * 7 + 7 * 12, addresses: 39 });
 });
 
 test('the Harmony 700\'s mode 0 sets the low battery flag the wiring clears, which is the variable section 311 found chosen per configuration',
@@ -350,8 +348,8 @@ test('the welcome tour, measured and not built: in Logitech\'s skipped form noth
     sizes.add(reading.structure.size);
     assert.equal(lists[tour.list]?.length, 2, name);
   }
-  assert.deepEqual(forms, { shown: 2, skipped: 19 });
-  assert.deepEqual(assistant, { on: 18, off: 3 });
+  assert.deepEqual(forms, { shown: 3, skipped: 19 });
+  assert.deepEqual(assistant, { on: 19, off: 3 });
   assert.deepEqual([...sizes].sort((a, b) => a - b), [1698, 1699, 1701]);
 });
 

@@ -86,7 +86,7 @@ const STATE_PATCHES = new Set(['corner patch, grey', 'corner patch, red']);
  * compiles share the look and run through this too, which nobody has checked on a 700, and the 600's do
  * not, so the model is gated rather than the architecture.
  */
-const HARMONY_650_SKINS: ReadonlySet<number> = new Set([72, 74]);
+export const HARMONY_650_SKINS: ReadonlySet<number> = new Set([72, 74]);
 const BACKGROUND_SIZE = 128;
 /** The action that enters a mode, `0x7E`; a private constant in seven other modules as well. */
 const OP_ENTER_MODE = 0x7e;

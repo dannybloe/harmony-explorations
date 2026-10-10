@@ -497,10 +497,11 @@ const places = (s: Score): Record<string, string[]> =>
  * * **the archive's name is not the compile's** on the Panasonic TH-42PA30: one command is `Pip` in the
  *   archive and drawn `Multi`, `Window` by the compile, so the compile sorts it as `MultiWindow`, before
  *   `Normalize`, where the rules sort `Pip` after it. Two items;
- * * **a character with no width or no code**: `J`, in `AspectJust` and in the JVC's title on all three
- *   of its pages, and `#`, the Blu-ray player's. The compiles draw a glyph for each, but the character
- *   map names no code for either, so the glyph cannot be filed under its character and the table holds
- *   no width for it. The rules decline to measure them rather than guess;
+ * * **a character with no width or no code**: `#`, the Blu-ray player's. The compile draws a glyph for
+ *   it, but the character map names no code for it, so the glyph cannot be filed under its character and
+ *   the table holds no width for it. The rules decline to measure it rather than guess. `J`, in
+ *   `AspectJust` and in the JVC's title on all three of its pages, was the other until section 368 named
+ *   the Harmony 650's `J`, and the table holds its width since;
  * * **`-/--` is drawn `-/`** on the TH-42PA30, one line, with the rest dropped: one label, unexplained;
  * * **`Pip Channel Down` is drawn `Pip`, `Channel`** in the second size on the Sony KE-50MR1E, its third
  *   word dropped, where the rules, finding no size for `Channel Down`, cut it in the smallest. One label of
@@ -508,9 +509,7 @@ const places = (s: Score): Record<string, string[]> =>
  */
 const NAMED = {
   'item differs': ['Panasonic_TH-42PA30 item 12', 'Panasonic_TH-42PA30 item 13'],
-  'label differs': ['Panasonic_TH-42PA30 item 6', 'Panasonic_CS-29FJ20S item 12', 'Sony_KE-50MR1E item 66',
-    'Panasonic_Blu-ray_Player item 7'],
-  'title differs': ['JVC_DLA-HD10KU page 1', 'JVC_DLA-HD10KU page 2', 'JVC_DLA-HD10KU page 3'],
+  'label differs': ['Panasonic_TH-42PA30 item 6', 'Sony_KE-50MR1E item 66', 'Panasonic_Blu-ray_Player item 7'],
 };
 
 /** The thirteen arch 14 configurations Logitech compiled, section 312, which the width table is the union of. */
@@ -569,7 +568,7 @@ test('section 325: the compiler\'s device mode rules against twenty catalogue de
     assert.equal(lines, 734);
     // Every key of every device, and all but the named items, labels and titles.
     assert.deepEqual(tallies(s), {
-      pages: '20/20', keys: '546/546', items: '474/476', labels: '470/474', titles: '125/128', counters: '128/128',
+      pages: '20/20', keys: '546/546', items: '474/476', labels: '471/474', titles: '128/128', counters: '128/128',
     });
     assert.deepEqual(places(s), NAMED);
   });
@@ -668,19 +667,21 @@ test('section 325: a catalogue device composed whole reads back as the compiler\
     // device's repeat count since section 348, which `composecatalogue.test.ts` compares.
     assert.deepEqual(notWhole, ['Panasonic_TX-28A1U: every command']);
     // The texts reported as substituted are exactly the ones the rules could not measure.
-    assert.deepEqual(substituted, ['JVC_DLA-HD10KU: title \'JVC DLA-HD10KU\'',
-      'Panasonic_CS-29FJ20S: label \'AspectJust\'', 'Panasonic_Blu-ray_Player: label \'#\'']);
+    assert.deepEqual(substituted, ['Panasonic_Blu-ray_Player: label \'#\'']);
     // Page for page, the composed device reads as Logitech's, but for the differences named. The named
-    // differences sit on nine pages; the five programs that differ are among them, and the other four
-    // differ in text only, which `shape` does not see: it compares instruction kinds and font sizes.
+    // differences sit on five pages, the four programs that differ and the TH-42PA30's page 2, whose label
+    // differs in text only. The JVC's three titles and the
+    // CS-29FJ20S's `AspectJust` page, which differed until section 368 named the `J`, read as Logitech's
+    // now; three of them had differed in text only, which `shape` does not see: it compares instruction
+    // kinds and font sizes.
     assert.deepEqual(tallies(s), {
-      pages: '19/19', keys: '527/527', items: '466/468', labels: '462/466', titles: '123/126',
-      counters: '126/126', backgrounds: '126/126', programs: '121/126',
+      pages: '19/19', keys: '527/527', items: '466/468', labels: '463/466', titles: '126/126',
+      counters: '126/126', backgrounds: '126/126', programs: '122/126',
     });
     assert.deepEqual(places(s), {
       ...NAMED,
-      'program differs': ['Panasonic_TH-42PA30 page 3', 'Panasonic_TH-42PA30 page 4', 'Panasonic_CS-29FJ20S page 3',
-        'Sony_KE-50MR1E page 17', 'Panasonic_Blu-ray_Player page 2'],
+      'program differs': ['Panasonic_TH-42PA30 page 3', 'Panasonic_TH-42PA30 page 4', 'Sony_KE-50MR1E page 17',
+        'Panasonic_Blu-ray_Player page 2'],
     });
     // The control: the same three devices in catalogue order agree on 2 items of 155, so the comparison
     // sees the order, and on every key, since the key map does not depend on it.
@@ -812,7 +813,6 @@ test('section 331: several catalogue devices composed in one run each read back 
     // evidence that their pads agree with Logitech's. Composed alone they are the same, which the score
     // above already says.
     assert.deepEqual(places(logitech), {
-      'title differs': NAMED['title differs'],
       'item differs': ['Mivar_14_M3_TVD item 1', 'Mivar_14_M3_TVD item 2', 'Thomson_DSI-4400 item 1'],
       'label differs': ['Sony_KE-50MR1E item 66'],
       'program differs': ['Sony_KE-50MR1E page 17'],

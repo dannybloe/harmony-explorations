@@ -571,7 +571,7 @@ finding.
 
 `todo.md` is the plan of record and tracks its own progress. Steps 1, 2, 4 and 5 are done,
 and step 3 is done as far as the firmware can take it. **This section is a status board, not a
-summary of what is known**: that is `docs/findings.md`, 367<!--fact:findings_sections--> sections, and `docs/config-format.md`
+summary of what is known**: that is `docs/findings.md`, 368<!--fact:findings_sections--> sections, and `docs/config-format.md`
 for the structured form. Section numbers below are the pointer into them.
 
 **The read path works, and flash has been written on five units**, the first in section 222:
@@ -1026,8 +1026,8 @@ it, shows a person nothing Logitech's own compile of that setup does not, apart 
 24 bytes shorter. It also found one thing every earlier composed file had wrong: "Starting Plasma kijken"
 broken over two lines where Logitech draws it on one, because the limit was set at the narrowest width the
 evidence allowed. The new limit is measured on the Harmony 650 and assumed for the 600 and 700. Not
-generated: the letters and fonts themselves, `todo-compile-650.md` 8.2, and the texts on help, the Remote
-Assistant, the tour and the status screens, which are not built.
+generated: the texts on help, the Remote Assistant, the tour and the status screens, which are not built.
+The letters and fonts themselves are generated since section 368, in Oxanium, on the Harmony 650 alone.
 
 **Six of a Harmony 650's pictures are built now, section 363, and the four backgrounds `todo-compile-650.md` 9.1
 names are not among them.** A 650 configuration holds 18 or 19 pictures, each the same on every compile that

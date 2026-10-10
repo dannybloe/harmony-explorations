@@ -191,7 +191,8 @@ test('a shape that draws two characters keeps both, so the ambiguity is reported
         both += 1;
       }
     }
-    assert.equal(both, 22, 'shapes that draw two characters');
+    // 23 since section 368's `I`, which another owner's Harmony 650 draws in a font where `l` looks the same.
+    assert.equal(both, 23, 'shapes that draw two characters');
     // Wherever a container is left holding one, the pair is that same one and nothing else, and the
     // container still decodes: the fallbacks name a character rather than dropping the code.
     let ambiguous = 0;

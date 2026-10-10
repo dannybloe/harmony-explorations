@@ -1112,8 +1112,9 @@ last. A blind control overwrites every other byte of
 the three records with `0xEE`, 17326 over the 22, and the rebuild is unchanged. A configuration with no
 activities is refused. Unconfirmed: any wording but English, and any architecture but arch 14.
 
-**The firmware's own screens, built whole**, section 357, `firmwarescreens.ts`, on 21 arch 14 compiles: 2
-Harmony 600 and 12 Harmony 650 with modes 0 to 13, 7 Harmony 700 with modes 0 to 18, byte for byte. Every
+**The firmware's own screens, built whole**, section 357, `firmwarescreens.ts`, on 22 arch 14 compiles: 2
+Harmony 600 and 13 Harmony 650 with modes 0 to 13, 7 Harmony 700 with modes 0 to 18, byte for byte; the 13th
+Harmony 650, another owner's, was refused for its `I` until section 368 named it. Every
 one is one page, laid out in mode order, own list, program, page record, entry; its page list and copy are
 `00 00`. 5435 bytes on a Harmony 600 or 650 and 8864 on a 700, lists included.
 
@@ -1183,7 +1184,7 @@ screen either way.
 
 **Read, not built**: each text's word through the character map, and its font, `todo-compile-650.md` 8.2; a
 label's lines, section 325's rule. A text whose codes the character map does not resolve keeps its codes and
-is still placed and given its form, 74 on built screens of the 22. A glyph code of 128 or more is refused. A
+is still placed and given its form, 3 on built screens of the 22, 74 until section 368 named three more letters. A glyph code of 128 or more is refused. A
 built text's place is read to find its role and placed again from the role. A blind control overwrites every
 byte of the texts the description does not read with `0xEE`, 205792 over the 22, every byte of the texts in
 the layout, and every text's place in the container the description navigates, and the rebuild is unchanged:
@@ -1192,8 +1193,29 @@ the opcodes, codes and reference addresses, and is the second input. Refused: th
 a configuration whose firmware wiring is not read, `h650_bench_4_2_base`, and one whose menus are not read,
 `harvest_650_two_devices`, refused at its wiring until section 360 read it. Unconfirmed: any wording but English, any architecture but arch 14.
 
+**The font table, generated**, section 368, `fonttable.ts`. Each of Logitech's sets is re-lettered in place:
+its table position, height, header form and every code it had are kept, each glyph is the same character in
+our letters, and every printable ASCII character with no code gets one after the highest, the same in every
+set, so every set holds codes for all 95. The face is read off the set:
+
+| height | measured | face |
+|---|---|---|
+| 15 | median ink run 1 / 2 | R15 / F15 |
+| 14 | median ink run 1 | R14 |
+| 14 | run 2, capitals' median top row 1 / otherwise | F14W / F14 |
+| 13 | median ink run 1 / 2 | R13 / F13 |
+| 11, 10 | | F11, F10 |
+
+A set with a drop shadow is drawn white, `0xFFFF`, over a black shadow, `0x0000`, one pixel right and down;
+a set with none, the bars' words, in `0x2104` alone. One glyph per face, colouring and character, 95 per
+pair, which every set of that face and colouring points at. All 13 Harmony 650 compiles, setup and every
+text's words unchanged, and a fourteenth out of sample; the rule was derived on the 13. A shared glyph is read safe in the firmware of the Harmony 650 0.2 and the 700 2.8, which
+find a glyph per character from the set's address and the pointer at `3 + 3 * (code - 1)` and decode it to
+its own `0x00`; not yet drawn on a remote. The firmware ignores a set's first code byte, so a set not
+starting at code 1 is refused. Refused too: any model but the Harmony 650.
+
 **The welcome tour is not built, and a configuration can leave its ten screens out**, section 357: in
-Logitech's skipped form, 19 of the 21, no instruction anywhere enters any of them. Its start list, the
+Logitech's skipped form, 19 of the 22, no instruction anywhere enters any of them. Its start list, the
 wiring's `tour`, `[mark := 1, 7F quiet]` in that form, is called by `startTour` and, with the Remote
 Assistant on, by the Assistant's gate `[71 8000|mark, 7F tour, 7E assistant screen]`; the mark is also read
 by `[71 mark, 7E Off]`, which `idleEnter.first` calls. Leaving the start list out as well needs those three
@@ -1596,7 +1618,7 @@ device's own screen pages, the same list under the same label, so a command is n
 and label (`activityScreenRows`). Which commands, and in which order, is the platform's soft button
 list and an input. They fill four corners a page in the order given, and a label is broken onto two
 lines as the compiler breaks one: kept whole without a space or within 58 pixels, else greedily at
-spaces within 58, any threshold from 55 to 58 placing all 2036 measured corner labels (422 distinct, the
+spaces within 58, any threshold from 55 to 58 placing all 2037 measured corner labels (2036 until section 368 named a colon and a `J`; 422 distinct then, the
 band's edges three of them), at y 25 and 40 (75 and 90 in the bottom row), each line placed on its own.
 No corner label line in the page's label font is wider than 59 pixels, and the one 60 pixel word is
 drawn in another font, which is not composed. The start up title breaks the

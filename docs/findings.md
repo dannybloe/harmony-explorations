@@ -42756,7 +42756,8 @@ Three things the composer refused or did not know, now measured:
   their page's most common font where a corner label sits, one line at y 40 or 90, two at 25 and 40 or 75
   and 90, a left one from x 3 and a right one ending at 125 line by line, counted once per configuration,
   label and place: 2037, 1156 on one line and 880 on two, 2036 measurable, the other a glyph the
-  character map does not name. That is 422 distinct texts. A label without a space stays whole, one within
+  character map does not name. Since section 368 named the Harmony 650's colon and `J` the census finds
+  2038, 881 on two lines and 2037 measurable. That is 422 distinct texts. A label without a space stays whole, one within
   58 pixels stays whole, and a wider one breaks at spaces with as many words to a line as fit within 58.
   Every width from 55 to 58 reproduces all 2036. The band's edges are three distinct labels, `TV Vol+` at
   55 in the contributed Harmony 700 the widest whole label with a space, and `Sony TV` in the calibration
@@ -47763,8 +47764,8 @@ a text's role on its screen, from its place, read through the same reader and so
 only steers, the build placing the text again from its role alone; and a left out text's place. A label's
 lines are read as words, a two line label as two, since how a label is broken is the device composer's rule,
 section 325; a start up title is read whole and broken here. **A code the character map does not resolve
-leaves no word**: such a text keeps its codes, and is still placed and given its form. There are 74 on built
-screens of the 22: two a compile on 15 of them, the first letter of "JazzClub" and one character of
+leaves no word**: such a text keeps its codes, and is still placed and given its form. There were 74 on built
+screens of the 22, and are 3 since section 368 named the colon, the `J` and issue 36's `I`: two a compile on 15 of them, the first letter of "JazzClub" and one character of
 "DTSNEO:X", 28 on `h650_issue36_config`, whose "I" is unresolved as section 357 found, 9 on
 `h700_power_hold_compile`, 4 on `h700_power_hold_compile_3`, 1 on `calibration_h600`, `h700_config` and
 `h700_config_2`, and none on `h600_config`. That is `todo-compile-650.md` 8.2's. A glyph code of two bytes,
@@ -49854,3 +49855,125 @@ re-encoded from Logitech's bytes by an encoder and decoder that agreed.
 * `packages/codec/src/font.ts`, `glyphAt` and `encodeGlyph`; `packages/codec/src/text.ts`, `shapeKey`.
 * `packages/codec/test/render.test.ts`: the five colours, and two neutral read the other way.
 * `docs/config-format.md`, the glyph stream's pixel order.
+
+## 368. Logitech's Harmony 650 fonts fall into nine faces by measurement, and the font table is rebuilt in Oxanium with every printable character in every set
+
+`todo-compile-650.md` 8.2, decisions 19 and 20. Sources checked first: Logitech's own fonts in the 13
+Harmony 650 compiles (`work/fonts-8-2/faces.ts`, `work/sample-8-2/`), `font.ts` and `text.ts` for the
+structure and the character map, section 367 for the pixel order, and the firmware for the text routine,
+below. MyHarmony's source was grepped and holds no glyph and no font data beyond interface files; the
+letters are drawn by Logitech's compiler on its service.
+
+**What a font set is, measured.** The lab holds 15 Harmony 650 compiles of Logitech's. The rule below was
+derived on 13 of them, the ones section 366 used; a fourteenth, `harvest_650_two_devices`, is the out of
+sample check, and the fifteenth, the French `h650_issue8_config`, is refused at its character map, which
+reads none of its accented letters. Each of the 13 holds 17 to 19 sets, 235 in all, every one starting at
+code 1. Four measurements per set tell them apart: the height, whether the glyphs carry a shadow (a colour
+every pixel of which, off the top row and the first column, has the ink one up and one left of it), the
+stroke as the median run of ink along a row, and on the 14 pixel bold sets the median row a capital starts
+on. They fall into twelve groups and those into nine faces, `fonttable.ts`'s table: 15 pixels with a one
+pixel stroke (26 sets) or two (13); 14 pixels with one (39, white over black, or the start up, Off and
+status screens' light grey `0xD6BB` over dark grey), two with a capital from row 1 (26) or lower (39
+shadowed, and 39 on the bars with no shadow); 13 with two (25) or one (1); 11 (14); 10 (13). The margin is
+wide: in a one pixel set 85 to 87 percent of the runs along a row are one pixel, in a two pixel set 1 to 9
+percent. Of the 13 compiles' sets, the bars' 39 are the only ones with no shadow, all holding one ink,
+`0x2104` and drawn only at y 2 and 114. The one 13 pixel set with a one pixel stroke and a black shadow,
+`h650_power_hold_compile`'s set 12, draws ten texts, all Help; the French compile holds five sets of that
+style at 13 and 11 pixels, so it is a Help style and not a one off, and it gets a regular face of its own,
+R13. Out of sample, the fourteenth compile's 18 sets fall into the same groups and it re-letters and checks.
+
+**The rebuild re-letters each set in place.** A code is the configuration's own number for a character and
+is the same in every set, so keeping every set's codes keeps every text reading the same, the texts no
+builder here generates among them. Each glyph becomes the same character in the set's face from
+`oxanium.ts` (Oxanium, SIL Open Font License, rendered to one bit masks by `tools/oxanium_glyphs.py`), white
+over a black shadow where Logitech had a shadow and `0x2104` alone where it had none, decision 20. Every
+printable ASCII character the configuration has no code for gets one, after the highest, the same in every
+set: 19 characters on ten of the compiles, 20 on two, 21 on another owner's. So every set spells all 95,
+which makes the composers' borrowing of letters from other sets unnecessary; removing it is 8.2.3.
+
+**Glyphs are shared.** One face in one colouring draws a character once, 95 glyphs a pair: 855 on twelve
+compiles, nine pairs, and 950 on the one holding the regular 13 pixel set. Every set of the pair points at
+them, where Logitech carries a copy per set, 729 glyphs on the test compile. The font table changes by -2.9
+to +7.4 percent on twelve compiles while every set now holds every character, and grows 36 percent on
+another owner's, whose sets held few characters; a whole compile grows by 5050 to 26794 bytes or, on two,
+shrinks.
+
+**Three characters had no name.** The character map reads a Harmony 650 compile through the alphabet
+seeded from a 600's and a 700's configurations, which never draw eight shapes the 650's fonts hold, so
+three codes were unresolved: a colon and a `J` on 12 of the 13 compiles, five shapes of the colon and two of
+the `J` across their sets, and an `I` on another owner's, whose one shape was named `l` at 14 pixels and `I`
+at 11, a contradiction the map leaves unresolved. Re-lettering a glyph needs its character, so they were
+read from their glyphs and confirmed by their words, `DTS NEO:X`, `JazzClub` and `Insert batteries`, and
+added to the hand read seed in `packages/codec/bin/alphabets.ts` as a third source; the shared shape now
+names both `I` and `l`, which one code to one character settles. Every drawn code of the 13 then resolves,
+and over every lab image with a character map, 127, the change only adds characters to codes that had none
+and gives no character a second code.
+
+**Our letters read back through the same map.** `text.ts`'s `oxaniumAlphabet` is built from the masks, all
+nine faces in both colourings, 1666 distinct shapes; `I` and `l` share a shape in four faces, F13, F11, F10
+and R13, and no other two characters share one. A rebuilt compile's map picks it with every drawn code
+resolved and none ambiguous, since the other five faces tell `I` from `l` and one code is one character.
+
+**Measured on all 13 compiles**: each rebuilt one passes its own checks, its setup view is unchanged, its
+screen strings read the same words, and `checkOxaniumFonts` finds every set's 95 glyphs to be exactly its
+face's letters. The control: the check refuses Logitech's own letters, and one pixel of one shared glyph
+changed, which the pixel comparison catches and the character map does not. A Harmony 700 compile is
+refused, since its fonts share the look and were not measured.
+
+**What naming the three letters moved elsewhere**, each a reader now reading what it could not, and each
+count updated in its test: the firmware screens of another owner's Harmony 650 rebuild byte for byte, 22
+of 22 compiles where section 357 refused it for its `I`; the device composer reads the JVC DLA-HD10KU's title
+on all three pages and the Panasonic CS-29FJ20S's `AspectJust` as Logitech's compile draws them, and links
+all 16 composed devices to their pages, 14 before; the label width table holds the colon and the `J` in the
+sizes that draw them; the corner label census finds one label more, 2038 with 2037 measurable, where section
+325 found 2037 and 2036; and on the 22 compiles the text pass leaves 3 texts with an unresolved code where
+section 358 left 74.
+
+**Our letters are wider in the regular faces and mostly narrower in the bold ones**, measured over the
+bench file's texts drawn in each: wider in R14 on 221 of 259, the same width in R15 on 335 of 530, and
+narrower in F14 on 72 of 74, in F15 on 99 of 151, and in F13, F11 and F10 on all.
+
+**On the bench file** (the 7.5 file in 9.1.2's colours, `work/fonts-8-2/make.ts`), the text pass then
+re-spells and re-places all 2956 texts with the new widths, every code resolved: the file passes its checks,
+its setup is unchanged, and every text reads the same words, but one start up title, `Starting Plasma
+kijken`, drawn in R14, now breaks onto two lines, since a line holds 126 pixels.
+
+**What our letters do to the screens this track leaves as read.** Help, the welcome tour, the status
+screens and the one text programs the delay countdowns reach keep Logitech's places, section 358. On the
+bench file, of 823 distinct texts on them (one text programs 451, help 273, tour 50, status 49), 10 now
+reach past column 127, by 1 to 5 pixels counting the shadow column, all lines of Help or of the tour
+starting at x 3 or 4, such as `The remote will try to` and `touch activity control.`. Of the 629 that sat
+centred within a pixel in Logitech's letters, the drift is between 5 to the left and 6 to the right, median
+0; among the one text programs 127 of 451 move, by 0 to 2 pixels, and among the status screens, which the
+650 never draws, 36 of 49, by -5 to +1. A configuration of our own carries neither Help nor the tour
+(`todo-compile-650.md` 3.13 and chapter 10), so the overflow reaches only a file composed onto Logitech's
+compile; the drift of the one text programs reaches any configuration that keeps them. It is 8.2.4.
+
+**Shared glyphs, read in the firmware rather than assumed**, since no Logitech container shares one or
+lays one away from its set, 40 of 40 over arch 8, 9, 12 and 14 (`work/agent-glyph-sharing/`). On the
+Harmony 650 0.2 image, read in full, the screen opcode switch at `0x16E38` sends opcode 16 to the font
+select at `0x16BA4`, which seeks base slot 7 and keeps one thing, the chosen set's address, and opcodes 4
+and 5 to the text routine at `0x16BE6`. For every character that routine restarts the read at the set,
+drops the height, computes `code - 1`, reads the first code and count bytes into scratch nothing reads
+again, follows the pointer at `3 + 3 * (code - 1)` and decodes the glyph through the picture decoder at
+`0x132CE`, which stops at the glyph's own `0x00` and returns the width byte as the advance. Nothing compares
+the code with the count, no NULL pointer is checked, nothing is cached and no neighbouring pointer bounds a
+glyph, so a shared glyph draws as an own one. The Harmony 700 2.8 runs the same steps at `0x1854A` and
+`0x0E530`. Two consequences: the first code byte is ignored, the firmware always subtracting 1, so
+`withOxaniumFonts` refuses a set that does not start at 1; and a row ends only at a `0x80`, never at the
+width, so the remote relies on the `0x80` `encodeGlyph` writes between rows, where `glyphAt` wraps at the
+width and agrees only because every stored glyph carries it, as every one on six arch 14 compiles does. The
+Harmony 650 0.4, 600 0.2, One, 525 and 880 and 890 images are not read. Nothing of this was tried on a
+remote; the bench run of the file is the confirmation.
+
+**The two reviewers** (`work/review-368-blind/`, `work/review-368/`). The blind one, given the question and
+not the answer, found the same 235 sets in the same twelve groups, the same three unresolved codes and
+their words, and the same 19, 20 and 21 missing characters. The sentence audit found the regular Help set
+lettered in a bold face, which R13 now draws; the shadow test failing on an accent's clipped shadow pixel
+in the French compile, which now skips the top row and first column; and these sentences wrong as first
+written: the colon and `J` claimed on all 13 compiles, three shapes for eight, 7 lines past the edge
+counting the ink alone, our letters called wider throughout, the overflow's reach claimed for the drift
+too, the table called about as large on every compile, and the borrowing called ended.
+
+* `packages/codec/src/lettering.ts`, `fonttable.ts`, `oxanium.ts`; `text.ts`, `oxaniumAlphabet`.
+* `packages/codec/test/fonttable.test.ts`.

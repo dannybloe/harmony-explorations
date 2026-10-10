@@ -342,8 +342,8 @@ test('devices composed several at a time are where Logitech\'s compile of the sa
       assert.deepEqual(theirAdded, theirAdded.map((_, k) => theirAdded[0]! + k), `${pair.compile}: consecutive`);
       // And directly: each added device's own identifier, read through the delays' defaults page, in
       // the order the devices are composed, which is their rows' order. Pairing `theirAdded` by index
-      // below rests on this. The reader links a page to a device on 14 of the 16 and not on the JVC and
-      // the CS-29FJ20S, so those two are checked only by elimination, the one identifier left.
+      // below rests on this. The reader links a page to a device on all 16; on 14 until section 368 named
+      // the `J` the JVC's and the CS-29FJ20S's pages draw, which were checked only by elimination until then.
       const theirIdOfGroup = deviceIdOfGroup(theirs);
       const theirIdOf = new Map(devices(theirs).map((one) =>
         [one.name, one.group === undefined ? undefined : theirIdOfGroup.get(one.group)]));
@@ -401,7 +401,7 @@ test('devices composed several at a time are where Logitech\'s compile of the sa
       assert.ok(treeInOrder(ours), `${pair.compile}: ours`);
     }
     assert.equal(devicesCompared, 16);
-    assert.equal(linked, 14);
+    assert.equal(linked, 16);
     // Counted rather than bounded: the reset calls composed here and found in Logitech's on transition.
     assert.equal(resetsCompared, RESETS_COMPARED);
     assert.equal(lists, 28, 'six device lists on each 650 compile and four on each 700 compile');

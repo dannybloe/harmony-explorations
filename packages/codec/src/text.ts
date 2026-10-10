@@ -43,6 +43,7 @@ import {
 import type { ScreenInstruction } from './screen.ts';
 import { ALPHABETS } from './alphabets.ts';
 import type { Alphabet } from './alphabets.ts';
+import { LETTERING_CHARACTERS, LETTERING_FACES, letterGlyph } from './lettering.ts';
 
 /**
  * The glyph code a font set starts at when the codes are ASCII rather than assigned.
@@ -316,12 +317,37 @@ export function usesAscii(c: Container): boolean {
 export function characterMap(c: Container): CharacterMap | undefined {
   let best: CharacterMap | undefined;
   const context = resolveContext(c);
-  for (const alphabet of ALPHABETS) {
+  for (const alphabet of [...ALPHABETS, oxaniumAlphabet()]) {
     const found = resolveWith(alphabet, context);
     if (found.drawn.resolved === 0) continue;
     if (best === undefined || found.drawn.resolved > best.drawn.resolved) best = found;
   }
   return best;
+}
+
+/**
+ * Our own letters' alphabet, `lettering.ts`: every face in both colourings, made from the masks the letters
+ * are drawn from rather than seeded from a configuration, so it has no `codes` to fall back on. A shape two
+ * characters share carries both, as a seeded alphabet's does. Built once, on first use.
+ */
+let oxanium: Alphabet | undefined;
+
+export function oxaniumAlphabet(): Alphabet {
+  if (oxanium !== undefined) return oxanium;
+  const shapes: Record<string, string> = {};
+  for (const face of LETTERING_FACES) {
+    for (const lettering of ['shadowed', 'plain'] as const) {
+      for (const ch of LETTERING_CHARACTERS) {
+        const glyph = letterGlyph(face, ch, lettering);
+        if (isBlank(glyph)) continue;
+        const key = shapeKey(glyph.rows.length, glyph);
+        const had = shapes[key] ?? '';
+        if (!had.includes(ch)) shapes[key] = had + ch;
+      }
+    }
+  }
+  oxanium = { name: 'oxanium', container: 'tools/oxanium_glyphs.py', shapes };
+  return oxanium;
 }
 
 /** The character a code stands for, or `undefined` when nothing settles it. */

@@ -445,8 +445,8 @@ test('a corner label breaks at spaces greedily within 55 to 58 pixels, and no co
     }
   }
   const measured = labels.filter((one) => one.lines.every((line) => !Number.isNaN(one.width(line))));
-  assert.deepEqual([labels.length, measured.length], [2037, 2036]);
-  assert.deepEqual([measured.filter((one) => one.lines.length === 1).length, measured.filter((one) => one.lines.length === 2).length], [1156, 880]);
+  assert.deepEqual([labels.length, measured.length], [2038, 2037]);
+  assert.deepEqual([measured.filter((one) => one.lines.length === 1).length, measured.filter((one) => one.lines.length === 2).length], [1156, 881]);
   assert.equal(Math.max(...measured.flatMap((one) => one.lines.map((line) => one.width(line)))), 59);
   // The corner cells drawn in a font other than their page's most common one, most of them help and
   // dialog text, which the wrap rule does not cover.
@@ -465,5 +465,5 @@ test('a corner label breaks at spaces greedily within 55 to 58 pixels, and no co
   };
   const placedBy = (limit: number): number => measured.filter((one) => JSON.stringify(wrap(one, limit)) === JSON.stringify(one.lines)).length;
   // The band, and the two widths either side of it, which is the control.
-  assert.deepEqual([54, 55, 56, 57, 58, 59].map(placedBy), [2035, 2036, 2036, 2036, 2036, 2033]);
+  assert.deepEqual([54, 55, 56, 57, 58, 59].map(placedBy), [2036, 2037, 2037, 2037, 2037, 2034]);
 });

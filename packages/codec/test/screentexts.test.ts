@@ -163,8 +163,10 @@ test('on the 22 Harmony 600, 650 and 700 compiles every text on a screen built h
   assert.deepEqual(Object.fromEntries(forms), {
     'built inline': 5183, 'built by reference': 10887, 'left out inline': 17122, 'left out by reference': 27178,
   });
-  // On built screens, texts with a code the character map does not resolve keep their codes, 8.2's.
-  assert.equal(unresolved, 74);
+  // On built screens, texts with a code the character map does not resolve keep their codes. 74 until section
+  // 368 named the Harmony 650's colon and `J` and another owner's `I`; the 3 left are a 600 calibration
+  // compile's lone glyph and a character after "Options" on two Harmony 700 compiles.
+  assert.equal(unresolved, 3);
 });
 
 /**
@@ -438,9 +440,9 @@ test('the premise on the 7.5 file: 718 of the 811 texts drawn on screens built h
     'composed: DVR inline',
     'composed: Aspect inline',
   ]);
-  // The 2 texts whose codes the character map leaves unresolved, on the Denon's pages: the first letter of
-  // "JazzClub" and one character of "DTSNEO:X".
-  assert.equal(d.unresolved.size, 2);
+  // No text's codes are left unresolved: the 2 there were until section 368, on the Denon's pages, were the
+  // first letter of "JazzClub" and the colon of "DTSNEO:X".
+  assert.equal(d.unresolved.size, 0);
 });
 
 test('the 7.5 file with every text generated shows a person nothing Logitech\'s clean compile does not but the menu\'s order, text by text on every screen built here, and is 24 bytes shorter: five texts drawn by reference instead of inline, and one title on one line instead of two',

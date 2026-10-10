@@ -1,0 +1,24 @@
+{
+  "name": "Harmony 650: every letter in our own font",
+  "description": "todo-compile-650 8.2.2, section 368, one write of lab/work/fonts-8-2/h650-8-2-config.bin. It is the 9.1.2 file (one flat colour per screen state, white bars) with every letter of every font replaced by Oxanium, drawn by our own generator, and every text on the screens we build placed again for the new letter widths. White letters with a black shadow on the coloured screens, dark letters without a shadow on the white bars. Nothing else changes: the same screens, the same words, the same codes. One title differs in layout: 'Starting Plasma kijken' now takes two lines, 'Starting Plasma' and 'kijken', since our letters are wider in the regular face that title is drawn in. What this run settles beyond the look: our font table shares one copy of each letter between all the fonts of the same face and colouring, which no Logitech file does, so a letter that draws as garbage, as a box or not at all on any screen is the finding. Prediction: every screen as in the 9.1.2 run, every word readable in the new letters.",
+  "steps": [
+    {
+      "instruction": "Straight after the write the remote restarts and may show 'If any devices are still On press Help now'. Do NOT press Help. Read that sentence on the screen: is it in the new, squarer letters and readable? Take the remote off the cable, point it at the Flirc and press All Off once. Expect the dark 'Turning system off' screen with 'Please keep the remote pointed at your system' in the new letters. Mark when it settles"
+    },
+    {
+      "instruction": "Press the centre key below the screen until the screen says Activities 1/3 at the top, dark letters on the white bar, the counter 1/3 at the right. Expect GREEN: TV kijken in the top half and Film kijken in the bottom half, white letters with a black shadow, and Devices in the white bar at the bottom. Press the right arrow below the screen twice: Activities 2/3 (Muziek, Kodi kijken), then 3/3 (Plasma kijken). Mark any letter that looks broken, missing or out of place"
+    },
+    {
+      "instruction": "Press the centre key below the screen (Devices). Expect Devices 1/2 on GREEN: LG TV top left, Plasma top right, Denon bottom left, KPN bottom right, Activities in the bottom bar. Press the right arrow: Devices 2/2, Kodi, Sony HT, Switch. Check the y of 'Sony' hangs below the line and is not cut off. Mark if anything differs"
+    },
+    {
+      "instruction": "Press the right arrow back to Devices 1/2 and press the button beside KPN (lower right). Expect a page titled KPN on RED: 'Power' over 'Toggle' top left, Teletext top right, DVR bottom left, Back at the bottom. Press the button beside Teletext (upper right): expect the KPN box's Teletext. Press the centre key (Back), then the centre key again until Activities 1/3 shows"
+    },
+    {
+      "instruction": "Press the right arrow twice to Activities 3/3 and press the button beside Plasma kijken (upper left). Expect the dark start up screen with its title on TWO lines, 'Starting Plasma' and below it 'kijken', then the Plasma's power on and the KPN box's power, about 6.5 s later the Plasma's HDMI 1, then a BLUE screen titled Plasma kijken with Teletext top left, DVR top right, Aspect bottom left, Radio bottom right and Devices at the bottom. Mark when it settles, and whether the title lines look right"
+    },
+    {
+      "instruction": "Press the centre key (Devices). Expect Devices 1/2 on RED, Activity in the bottom bar. Press the centre key (Activity): back to the BLUE Plasma kijken screen. Press All Off. Expect the dark 'Turning system off' screen, then the screen it settles on. Mark it, and any letter on any screen of this run that did not draw as a letter"
+    }
+  ]
+}
