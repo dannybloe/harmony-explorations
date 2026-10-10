@@ -626,3 +626,23 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    checksum whose seed and algorithm are public does not show where an image came from. **The rail
    admits any arch 14 unit**, the 600 and the 650 on safe mode status byte handlers nobody has read,
    which is section 295's width carried over and not a reading.
+
+19. **The letters our configurations draw come from Oxanium.** *Taken by the project owner on 10 October
+   2026, closing the first half of `todo-compile-650.md` 8.2.* A Logitech configuration's fonts hold only
+   the letters its own names use, so a composer spelling a new name borrowed letters it could not always
+   find: section 364 measured the font of the smallest Harmony 650 compile having no K, and no font
+   spelling "Eject". Copying Logitech's letter shapes into a configuration we build would also be the
+   copy the finish line excludes. Oxanium is a typeface by the Oxanium Project Authors, published through
+   Google Fonts, kept in the lab's `fonts/Oxanium/` with its `OFL.txt`.
+
+   **The licence.** SIL Open Font License 1.1, and the copyright line names no Reserved Font Name. It
+   may be used, rendered, embedded and bundled with software under any licence, MIT here and GPLv3 in
+   FreeHarmony alike, on two conditions that bite: the licence text travels with any copy of the font
+   or of a version derived from it, and the font is never sold on its own. Neither touches this project,
+   which sells nothing; its purpose is keeping working remotes out of landfill. So the font file, or
+   letters rendered from it, may enter this repository and FreeHarmony with `OFL.txt` beside them.
+
+   **What it costs.** A remote programmed by us draws text in a different typeface from Logitech's,
+   which is the intended consequence rather than a defect; a bench test describes screens by their words
+   and positions, never by their letter shapes. How the letters are rendered at the remote's sizes, and
+   the eleven designed pictures of `todo-compile-650.md` 9.1.2, are separate and still open.
