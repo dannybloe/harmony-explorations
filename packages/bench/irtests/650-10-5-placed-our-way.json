@@ -1,0 +1,51 @@
+{
+  "name": "Harmony 650, the test setup placed our way",
+  "description": "todo-compile-650 10.5, one write of lab/work/bench-10-5/h650-10-5-config.bin. It is the 7.5 file with every picture and every screen page's button list moved to another place in the file, and nothing else changed: the 18 pictures in an order where none keeps its place, about 200 KB each on average, and all 437 lists that say what each screen page's buttons do in an order where none keeps its place, the 243 whose order Logitech's habit fixes first and the other 194 rotated. Every screen draws pixel for pixel as in the 7.5 file and every key and screen item sends the same code, so the prediction is that everything below looks and sounds exactly as with the 7.5 file; run 650-7-5-chapter-7-screens first if it has not been run, so there is something to compare with. A difference anywhere, a missing or garbled picture, a wrong label, a key that does something else, a restart, is the finding. Screens: the activity menu and an activity's working screen on the red curved background, the device lists and device pages on the grey one, the start up and Turning system off screens dark with the signal mark. Infrared as 7.5 predicts it: Plasma kijken sends the Plasma's power on (seven frames, its long press version) and the KPN box's power, then the Plasma's HDMI 1 about 6.5 s later; Radio sends KPN 1 and KPN 2 about 2 s later; Muziek sends Kodi's and the Sony's power, the Plasma's power off and the Sony's Function three times, nothing to the KPN box; All Off sends Kodi's, the Sony's and the KPN box's power. Device mode presses below avoid the power keys, so the activities start as 7.5 predicts. Keep the remote off the cable and pointed at the Flirc.",
+  "steps": [
+    {
+      "instruction": "Straight after the write the remote restarts and may show 'If any devices are still On press Help now'. Do NOT press Help. Take the remote off the cable, point it at the Flirc and press All Off once. Expect the Flirc to hear nothing, since every device starts off, and the dark 'Turning system off' screen with the signal mark while it runs. Mark when it is quiet"
+    },
+    {
+      "instruction": "Press the centre key below the screen until the screen says Activities 1/3 at the top, on a red background: TV kijken in the top half, Film kijken in the bottom half, Devices in the bar at the bottom. Press the right arrow below the screen: Activities 2/3 with Muziek on top and Kodi kijken below. Press it again: Activities 3/3 with Plasma kijken alone on top. The Flirc hears nothing. Mark if any page differs"
+    },
+    {
+      "instruction": "Press the centre key below the screen (Devices). Expect Devices 1/2 on a grey background with a cross: LG TV top left, Plasma top right, Denon bottom left, KPN bottom right, Activities in the bar at the bottom. Press the right arrow: Devices 2/2 with Kodi top left, Switch top right, Sony HT bottom left. Press the left arrow to go back to 1/2. The Flirc hears nothing"
+    },
+    {
+      "instruction": "Press the button beside Plasma (upper right). Expect 'Plasma 1/7' with Power Toggle top left, Power On top right, Power Off bottom left, Teletext bottom right, Back at the bottom. Press the button beside Teletext (lower right) once: expect the Plasma's Teletext. Press Volume up once: expect the Plasma's VolumeUp. Press the right arrow once: expect 'Plasma 2/7' with Aspect, Return, 3D and AV. Press the button beside Aspect (upper left): expect the Plasma's Aspect. Then press the centre key (Back): expect Devices 1/2 again. Mark"
+    },
+    {
+      "instruction": "Press the button beside KPN (lower right). Expect a page titled KPN with Power Toggle top left, Teletext top right, DVR bottom left and nothing bottom right. Press the button beside Teletext (upper right): expect the KPN box's Teletext. Press 1: expect the KPN box's 1. Press Channel up: expect the KPN box's ChannelUp. Press the centre key (Back). Mark"
+    },
+    {
+      "instruction": "Press the button beside Denon (lower left). Expect 'Denon 1/23' with Power Toggle, Power On, Power Off and Return. Press the button beside Return (lower right): expect the Denon's Return. Press Volume up, then Mute, once each: expect the Denon's VolumeUp and Mute. Press the centre key (Back). Mark"
+    },
+    {
+      "instruction": "Press the button beside LG TV (upper left). Expect 'LG TV 1/7' with Power Toggle, Power On, Power Off and Home. Press the button beside Home (lower right): expect the LG's Home. Press Volume up once: expect the LG's VolumeUp. Press the centre key (Back). Mark"
+    },
+    {
+      "instruction": "Press the right arrow to Devices 2/2 and press the button beside Kodi (upper left). Expect 'Kodi 1/5' with Power Toggle, Aspect, F1 and F10. Press the button beside Aspect (upper right): expect Kodi's Aspect. Press OK: expect Kodi's OK. Press the centre key (Back). Mark"
+    },
+    {
+      "instruction": "Go to Devices 2/2 again if needed and press the button beside Sony HT (lower left). Expect 'Sony HT 1/7' with Power Toggle, Power On, Power Off and Eject. Press the button beside Eject (lower right): expect the Sony's Eject. Press Volume up once: expect the Sony's VolumeUp. Press the centre key (Back). Mark"
+    },
+    {
+      "instruction": "Go to Devices 2/2 and press the button beside Switch (upper right). Expect 'Switch 1/2' with Power On, Power Off, Input1 and Input2. Press the button beside Input2 (lower right): expect the Switch's Input2. Press the centre key (Back), then the centre key again (Activities): expect Activities 1/3. Mark"
+    },
+    {
+      "instruction": "Press the right arrow twice to Activities 3/3 and press the button beside Plasma kijken (upper left). Expect the dark 'Starting Plasma kijken' screen on one line with the signal mark, the Plasma's power on (seven frames) and the KPN box's power, about 6.5 s later the Plasma's HDMI 1, then a red screen titled Plasma kijken with Teletext top left, DVR top right, Aspect bottom left, Radio bottom right and Devices at the bottom. If the remote restarts instead, note what the screen showed. Mark when it settles"
+    },
+    {
+      "instruction": "Press the button beside Aspect (lower left): expect the Plasma's Aspect. Press Volume up: expect the Plasma's VolumeUp. Press 1: expect the KPN box's 1. Then press the button beside Radio (lower right) once and touch nothing: expect the KPN box's 1 and about 2 s later its 2. Mark when the 2 has been heard, or when 10 s have passed without it"
+    },
+    {
+      "instruction": "Press the centre key (Devices). Expect Devices 1/2 with a different order from the one before: Plasma top left, KPN top right, LG TV bottom left, Denon bottom right, and Activity in the bar at the bottom. Press the right arrow: Devices 2/2 with Kodi, Switch and Sony HT. Press the left arrow, then the button beside KPN (upper right), then the button beside DVR (lower left): expect the KPN box's DVR. Press the centre key (Back): expect this Devices 1/2 again, Plasma first. Press the centre key (Activity): expect the Plasma kijken screen again, and nothing sent. Mark"
+    },
+    {
+      "instruction": "Press the Listen to Music key (Muziek). Expect the dark 'Starting Muziek' screen, Kodi's and the Sony's power, the Sony's Function three times and the Plasma's power off, and nothing for the KPN box. When it settles press Volume up once: expect the Sony's VolumeUp. Mark"
+    },
+    {
+      "instruction": "Press All Off. Expect Kodi's, the Sony's and the KPN box's power, and the dark 'Turning system off' screen while it sends. If anything is sent for the Switch, the Plasma, the LG or the Denon, note it. Mark when it is quiet"
+    }
+  ]
+}

@@ -841,8 +841,10 @@ const QUANTITY_OPCODE = 0x7c;
  * compiles: on `h650_test_config_clean`, `h650_start_config`, `h700_config` and `h600_config` every key
  * map is in the body, the activities' in one run that ends with the last. So each piece goes after the
  * body's last piece of its own kind, which is our choice, as the page lists' order is, section 328.
+ * Exported for a caller that places a composed file itself rather than through `assembleSetup`, the
+ * todo-compile-650 10.5 bench file, so that file takes this step rather than a copy of it.
  */
-function composedIntoBody(layout: ContainerLayout): { layout: ContainerLayout; moved: number } {
+export function composedIntoBody(layout: ContainerLayout): { layout: ContainerLayout; moved: number } {
   const ruled = new Set<string | undefined>(LOOSE_KINDS);
   const moving = layout.sections.flatMap((s) => s?.before.filter((piece) => !ruled.has(piece.owner)) ?? []);
   if (moving.length === 0) return { layout, moved: 0 };
