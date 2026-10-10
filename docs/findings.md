@@ -47620,7 +47620,14 @@ remote and nothing here was checked on one, the "USB Connected" key sequence inc
 * What `07 FFFF` does, and what the leave handler's second call on the Harmony 700 is for.
 * That a configuration with the tour's ten screens left out runs as one with them: nothing enters them,
   measured, and nobody has written one.
-* That All Off draws "Turning system off" only once the tour's mark is set: read, not seen.
+* That All Off draws "Turning system off" only once the tour's mark is set: read, not seen. **Seen in part
+  on 10 October 2026**: the 7.5 test setup written to the bench 650 (`todo-compile-650.md` 7.5, run
+  `reads/20261010T071954Z-ir-test-harmony-650-the-test-setup-with-chapter-7-s-screens.json`) drew no
+  "Turning system off" on either All Off press, one straight after the write and restart and one after two
+  activities had run, while every infrared step, the menu's order, the one line start up title and the
+  20 s screen light came out as predicted. That fits the mark staying 0 because nothing ran a writer of it,
+  and it does not show which: whether the start list runs on a restart, and whether Logitech's own compile
+  of the same setup draws the screen, are both unobserved.
 * How a person completes "USB Connected"'s three key sequence, given that the keys' releases reset it.
 
 ### Falsification
