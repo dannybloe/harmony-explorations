@@ -139,6 +139,8 @@ export interface Glyph {
   rows: (number | undefined)[][];
   /** Bytes the encoded glyph occupies, the leading width byte included. */
   length: number;
+  /** Set on arch 9's packed glyphs, whose values are two bit grey levels rather than RGB565. */
+  packed?: true;
 }
 
 export function glyphHeight(glyph: Glyph): number {
@@ -366,7 +368,10 @@ export function glyphAt(
     } else {
       if (at + IMAGE_PIXEL_BYTES * op > end) return undefined;
       for (let k = 0; k < op; k += 1) {
-        row.push(u16(c.blob, at));
+        // High byte first, as a picture's pixel: the firmware sends a glyph's two bytes to the panel in
+        // stored order through the routine that sends a picture's, read on the Harmony 600, 650, 700 and
+        // One. This read them low byte first until section 367, which drew every text in the wrong colour.
+        row.push((u8(c.blob, at) << 8) | u8(c.blob, at + 1));
         at += IMAGE_PIXEL_BYTES;
       }
     }
@@ -386,7 +391,7 @@ export function glyphAt(
  * **The same greedy rule `encodeBitmap` in `screen.ts` follows for a picture**, section 363: each row cut
  * into maximal runs of skipped and literal pixels, 127 at a time, a trailing skip included, a `0x80`
  * between rows, which `glyphAt` reads as a skip of nothing and which every stored glyph carries, and the
- * end byte after the last row. A pixel is stored as `glyphAt` reads it, low byte first. Every glyph of the
+ * end byte after the last row. A pixel is stored high byte first, as `glyphAt` reads it, section 367. Every glyph of the
  * 37 containers on arch 8, 10, 12 and 14 `test/pictures.test.ts` reads comes back byte for byte from its own
  * rows by this rule, so the rail
  * that a glyph cannot be re-encoded from its pixels does not hold for Logitech's glyphs; which letters a
@@ -409,7 +414,8 @@ export function encodeGlyph(width: number, rows: readonly (readonly (number | un
         out.push(run);
         for (let k = 0; k < run; k += 1) {
           const value = line[x + k] as number;
-          out.push(value & 0xff, value >> 8);
+          // High byte first, `glyphAt`'s order and the panel's, section 367.
+          out.push(value >> 8, value & 0xff);
         }
       }
       x += run;
@@ -438,7 +444,7 @@ function packedGlyph(
     const leader = u8(c.blob, at);
     at += 1;
     if (leader === IMAGE_END) {
-      return rows.length === 0 ? undefined : { address, width, rows, length: at - off };
+      return rows.length === 0 ? undefined : { address, width, rows, length: at - off, packed: true };
     }
     if ((leader & IMAGE_PACKED_ROW_TAG_MASK) !== IMAGE_PACKED_ROW_TAG) return undefined;
     const stop = at + (leader & 0x0f);

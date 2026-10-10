@@ -73,8 +73,13 @@ function fnv1a(text: string, seed: number): number {
  * the height prefix prevents.
  */
 export function shapeKey(height: number, glyph: Glyph): string {
+  // Each pixel is hashed with its two bytes swapped, as `glyphAt` read it before section 367 found glyphs
+  // are stored high byte first. A key is an identity and not a colour, and every key in `alphabets.ts` was
+  // made that way, so the key keeps its form rather than the table being regenerated. Arch 9's packed
+  // glyphs hold grey levels, not RGB565, and were never swapped.
+  const legacy = (p: number): number => (glyph.packed ? p : ((p & 0xff) << 8) | (p >> 8));
   const body = glyph.rows
-    .map((row) => row.map((p) => (p === undefined ? '_' : p.toString(36))).join(','))
+    .map((row) => row.map((p) => (p === undefined ? '_' : legacy(p).toString(36))).join(','))
     .join(';');
   const low = fnv1a(body, 0x811c9dc5).toString(16).padStart(8, '0');
   const high = fnv1a(body, 0x01000193).toString(16).padStart(8, '0');

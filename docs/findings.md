@@ -49015,7 +49015,8 @@ stopped, so a stream without it draws the same picture. **Logitech's compiler em
 greedy one**: each row cut left to right into maximal runs of drawn and undrawn pixels, 127 at a time, a skip
 byte for an undrawn run and a literal byte and its pixels for a drawn one, the trailing undrawn run included; a
 row break between rows, so `rows - 1` of them; the end byte after the last row. A glyph is the same rule after
-its width byte, with its pixels low byte first as `glyphAt` reads them.
+its width byte, with its pixels high byte first like a picture's, section 367; this said "low byte
+first as `glyphAt` reads them"<!--superseded-->, which was how the reader took them and is not how they are stored.
 
 Measured over 40 containers, the codec's nineteen, the two clean Harmony 890 and 895 reads and the 22 compiles,
 of which 37 are on arch 8, 10, 12 and 14: three are arch 9 (Harmony 525) and not encoded. The pictures come from
@@ -49803,3 +49804,45 @@ Where it lives:
 * `packages/codec/src/png.ts`: `rgbTo565`, beside the decoder `rgb565`.
 * `packages/codec/test/backgrounds.test.ts`: the closure, the 13 compiles, the five controls and the
   Harmony 700's refusal.
+
+## 367. A glyph's pixel is stored high byte first, like a picture's, and the codec read it the other way
+
+**Found while drawing section 366's screens**: every text came out green, mint or pink, where the
+Harmony 650's screens show white, grey and near black letters. `glyphAt` read a glyph's pixel with
+`u16`, low byte first, and `encodeGlyph` wrote it so, where a picture's pixel is read and written high
+byte first (section 50's correction, `status.md`'s "a pixel is big endian RGB565"). Nothing had
+settled the glyph's order: it was the container's habit carried over, and section 363's re-encoding
+could not see it, since an encoder and a decoder that agree with each other round trip either way.
+Sources checked: the firmware, below, and Logitech's client, which renders no glyph or picture
+anywhere (MyHarmony only scales and encodes PNGs), so it is not a second source.
+
+**The firmware settles it** (`lab/work/agent-glyph-order/`): the screen interpreter's text draw, opcodes 4
+and 5, seeks the font and the glyph and then calls the routine an encoded picture uses, and both that
+routine and the raw picture routine push pixels through one routine that clocks a byte in from flash and
+writes it to the panel, twice per pixel, no swap and no buffer. On the Harmony 700 2.8 that is the loop at
+`0x0E3A2` (SSP1 is the flash, SSP2 the panel), on the bench Harmony 650 0.2 and the Harmony 600 0.2 the
+loop at `0x1313C`, and on the Harmony One 3.4 the routine at `0x228AA`, where the panel takes the bytes
+off the external bus in address order, an inference from the loop having no other output and resting on
+an eight bit bus, which the configuration word suggests and nothing here confirms. So on arch 14 and on
+arch 12 a glyph's pixel and a picture's leave in the same order, the byte stored first going first; the
+Harmony 650 0.4 image has the same loop shape at `0xE3A6`, found by its pattern and not followed. Arch 8,
+10 and 9 are not read; arch 9's glyphs are packed grey levels and have no byte order.
+
+**The measurement beside it**: read high byte first, the Harmony 650's 13 compiles hold exactly five
+glyph colours, black, `rgb(33 32 33)`, `rgb(49 48 49)`, `rgb(214 215 222)` and white, all neutral; read
+low byte first three of them are green, pink and mint. On a Harmony One and an arch 8 compile the same
+read gives an amber, an orange, a light blue and greys, where the other gives magentas. Which half the
+panel treats as red, and whether it swaps red and blue (the 650 sends `0x36 0x48`, which sets the
+controller's BGR bit), is not read; neither touches the relative answer.
+
+**What changed**: `glyphAt` and `encodeGlyph` read and write high byte first, and the Python reader in
+`src/harmony/gspm.py` with them. `shapeKey`, the identity `text.ts` turns glyphs back into characters
+by, hashes each pixel swapped, as before, since every key in `alphabets.ts` was made that way and a key
+names a shape rather than a colour; arch 9's packed glyphs, now marked `packed`, are not swapped. The
+fill colour of opcode 1, which the codec does not render, is stored in the same order, by the same
+reading. No configuration this project wrote changes: every glyph written so far was copied or
+re-encoded from Logitech's bytes by an encoder and decoder that agreed.
+
+* `packages/codec/src/font.ts`, `glyphAt` and `encodeGlyph`; `packages/codec/src/text.ts`, `shapeKey`.
+* `packages/codec/test/render.test.ts`: the five colours, and two neutral read the other way.
+* `docs/config-format.md`, the glyph stream's pixel order.

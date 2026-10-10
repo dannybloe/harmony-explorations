@@ -2560,7 +2560,9 @@ class Container:
                 if at + IMAGE_PIXEL_BYTES * op > end:
                     return None
                 for _ in range(op):
-                    row.append(int.from_bytes(self.blob[at:at + IMAGE_PIXEL_BYTES], 'little'))
+                    # High byte first, as a picture's pixel and as the firmware sends both to the panel,
+                    # docs/findings.md section 367; this read 'little' until then.
+                    row.append(int.from_bytes(self.blob[at:at + IMAGE_PIXEL_BYTES], 'big'))
                     at += IMAGE_PIXEL_BYTES
             if len(row) == width:
                 rows.append(row)

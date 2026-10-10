@@ -1956,8 +1956,9 @@ drawn over a screen already painted.
   for a skip only: no drawn run in the corpus exceeds 122); an
   undrawn run is `0x80 | n`, a drawn run is `n` and its `n` pixels high byte first; the row's trailing undrawn
   run is written; `0x80` between rows, `rows - 1` of them; `0x00` after the last row;
-* **a glyph**, base slot 7: its width byte, then the same stream with pixels low byte first, as the glyph
-  reader takes them.
+* **a glyph**, base slot 7: its width byte, then the same stream with pixels high byte first, as a
+  picture's: the firmware sends both to the panel in stored order through one routine, section 367. This
+  said "low byte first"<!--superseded--> until then, which was the reader's assumption and drew every text in the wrong colour.
 
 The format admits other streams for the same pixels, a row without its trailing skip for one; Logitech's
 compiler emits this one for every picture and glyph of the 37 containers on arch 8, 10, 12 and 14 measured,

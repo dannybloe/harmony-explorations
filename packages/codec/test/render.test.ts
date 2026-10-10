@@ -29,6 +29,7 @@ import {
   contactSheetPng,
   IMAGE_PACKED_PAPER,
   fontSets,
+  rgb565,
   glyphOf,
   glyphs,
   modePages,
@@ -507,4 +508,32 @@ test('a contact sheet refuses rasters of mixed sizes rather than drawing them wr
   // side rather than a different rule.
   assert.equal(contactSheetPng([raster(21, 10), ...same], 2), undefined);
   assert.equal(contactSheetPng([], 2), undefined, 'and an empty sheet is still nothing');
+});
+
+const H650_GLYPH_COMPILES = [
+  'h650_config_region', 'h650_panasonic_config', 'h650_power_hold_compile', 'h650_power_hold_compile_2',
+  'h650_start_config', 'h650_options_config', 'h650_sequence_config', 'h650_favourites_config',
+  'h650_assistant_off_config', 'h650_tilt_off_config', 'h650_test_config', 'h650_test_config_clean',
+  'h650_issue36_config',
+] as const;
+
+test('a glyph\'s pixel is high byte first like a picture\'s: every Harmony 650 letter colour is a neutral grey, and three are not when swapped',
+     skipUnless(...H650_GLYPH_COMPILES), () => {
+  // The firmware sends a glyph's two bytes to the panel in stored order through the routine a picture's go
+  // through, section 367; this is the measurement beside it. A colour is neutral when its three channels
+  // are within eight levels of each other.
+  const colours = new Set<number>();
+  for (const name of H650_GLYPH_COMPILES) {
+    const c = parse(require_(name));
+    for (const set of fontSets(c) ?? []) {
+      for (let k = 0; k < set.glyphs.length; k += 1) {
+        for (const row of glyphOf(c, set, set.first + k)?.rows ?? []) for (const p of row) if (p !== undefined) colours.add(p);
+      }
+    }
+  }
+  const neutral = (v: number): boolean => { const ch = rgb565(v); return Math.max(...ch) - Math.min(...ch) <= 8; };
+  const swap = (v: number): number => ((v & 0xff) << 8) | (v >> 8);
+  assert.deepEqual([...colours].sort((a, b) => a - b), [0x0000, 0x2104, 0x3186, 0xd6bb, 0xffff]);
+  assert.equal([...colours].filter(neutral).length, 5);
+  assert.equal([...colours].map(swap).filter(neutral).length, 2, 'read low byte first only black and white stay neutral');
 });
