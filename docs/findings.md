@@ -49697,3 +49697,109 @@ way; a compile holding a release other than in the tail, or with the stored micr
 * `packages/codec/bin/composecensus.ts`: the second groups and the releases written.
 * `packages/codec/test/togglegroups.test.ts` and `tests/test_toggle_groups.py`, the compiles and the firmware.
 * `docs/config-format.md`, the record header's count, the group a send plays and the release.
+
+## 366. Each screen state gets one flat background colour, Logitech's pictures do not follow the states, and the idle state takes a battery program of its own
+
+`todo-compile-650.md` 9.1.2. **Decided on 10 October 2026 by the project owner**: the designed
+backgrounds of section 363 are replaced by one colour per state, `rgb(184 32 55)` for device mode,
+`rgb(18 37 200)` for an activity and `rgb(1 136 53)` while nothing runs, to become a user's setting,
+a colour or a picture, later. Sources checked first: section 363's picture table and its reading of
+the battery programs, sections 317 and 334 for the battery switch on state variable 17, section 356
+for the idle device list and the activity menu, section 336 for the working screen record. Logitech's
+client was not consulted, since the question is which of our screens is in which state, which the
+configuration answers. Measured on the 13 Harmony 650 compiles (arch 14) alone, and the module refuses
+anything but the 650's two skins, 72 and 74. **The Harmony 700 is refused deliberately and not because
+it fails**: the sentence auditor ran a 2026 Harmony 700 compile through it and it built, its own check
+passed and its setup was unchanged, 8 device, 2 activity and 2 idle modes; nobody has looked at a 700
+so built, so the gate is the model and not the architecture. The Harmony 600 compiles fail on their own,
+their activity menu's battery program drawing no state patch. This said "the module refuses any
+architecture but 14" until the audit, which was true and did not keep the 700 out.
+
+**Logitech's pictures do not follow these states, so a swap of pictures cannot do it.** Three of the
+five designed backgrounds are shared across states, which said two until the sentence audit while
+listing three: the idle device list draws the device pages'
+crossed picture (24 page drawings) and their one item picture (1), and the activity menu's page of one
+row draws the same picture as an activity's page of one command (5 against 31). So each mode is given
+its state's picture by repointing the references its own pages' programs make, and a reference two
+states share is refused.
+
+**The battery corner has to follow, and two programs cannot paint three colours.** Every device
+screen, every device list but the two row one, and the idle device list queue one battery program,
+base slot 11 entry 0 on the 7.5 file, whose patch at 0 is section 363's grey; the activity menu and
+every activity screen queue another, entry 2, with the red patch; every other screen, Help's, the
+Remote Assistant's, the delay settings and the setup prompts among them, queues a third with the plain
+one. Per mode over the 13: 87 device modes, 53 device lists and 13 idle device lists on the grey
+program, 13 activity menus and 58 activity screens on the red, 24 drawing only the one item picture and
+34 the crossed one, 7 of those 34 two page modes whose second page is the one item picture, and 2828
+other modes on the plain. **The two row device list queues none**, one mode per compile, 13 in all, from
+neither its key map nor its pages, so 13 of the 153 device modes below have no corner to patch; this
+section first said every device list queued the grey program.
+So `withStateBackgrounds` copies the activity menu's program for the idle state, its switch piece
+and its patch case piece with the patch the idle colour, the icon case and the shared tail named
+rather than copied, appends it to base slot 11's table (6653 entries on the 7.5 file, a `u16` count),
+and rebuilds the idle device list's and the activity menu's records through `screenrecords.ts` naming
+it and the idle picture. The two shared programs keep their entries and get their state's patch.
+
+**Which state a mode is in is read by structure, never by what it draws**, so the check reads our
+result as it reads Logitech's: the idle device list and the activity menu, `screenRecordModes`; any
+other mode `modeRoles` calls a device's or a device list; the modes the working screen record's cases
+enter with `0x7E`, `activityKeyedRecords`; and any other mode queuing those modes' battery program,
+which is how an activity's favourite channels page is found (`h650_favourites_config` mode 49, whose
+"Commands" corner leads to the working screen; the working record names only that). **The closure**:
+Logitech's five backgrounds come in two looks, a grey curve and a red one, and on the 13 compiles the
+structural reading agrees with the look on every device and activity page, 813 device pages on grey
+and 67 activity pages on red, 880 of the 934 pages drawing one; the 54 idle pages are on both, 25 grey
+and 29 red, so the idle state is not visible in Logitech's pictures at all, which is this section's
+point. The two ends are independent: the state comes from the mode table, base slot 14 and the battery
+operands, the look from each page's own program. **This first claimed all 934**, by scoring the idle
+pages as idle whatever they drew, which takes the idle modes from the same reader on both ends and
+labels the activity menu's page of two idle only because nothing else draws it; the sentence auditor
+found it, and the test now asserts the four counts above.
+
+**The blind re-measure** (`lab/work/review-366-blind/`), given the question and not this answer, found
+the same 934 drawings in the same three states, the same two shared battery programs, and no draw
+instruction reached from pages of two states. It placed an activity's further screens by following
+what a working screen enters, where this follows the battery program, and both give the same 5 modes
+over the 13. It also found what the first check missed: **a page's own program queues its battery
+program again**, so the idle state's change has to reach every idle page and not only the mode's key
+map. The rebuild through `screenrecords.ts` does that, every idle page of the 7.5 file queuing the new
+entry afterwards, and `checkStateBackgrounds` now refuses a page queuing a program its mode's key map
+does not name; a control puts one idle page back on the activity program and is refused. It noted as
+well that 13 device modes, the two row device list of each compile, queue no battery program at all.
+
+**The sentence audit** (`lab/work/review-366/`) found the closure above overclaimed, three shared
+pictures counted as two, the two row device list missing from the battery census, and, worst, **a
+check that could pass while wrong**: it compared only whole screen pictures carrying no name, so
+pointing all 66 device backgrounds of a result at Logitech's plain background passed. It now requires
+exactly one whole screen picture per page besides the bottom bar, in the state's colour, and a control
+points one device page at the plain background. It also found that **which modes are checked is not
+independent of the builder**, both taking it from `screenStates`, whose second pass finds an activity's
+further screens by their battery program; that is stated in the check's docstring rather than removed.
+And the scope gate on the model, above.
+
+**Result.** On all 13 compiles every state's pages draw its colour, its battery corner is patched in
+it, no designed background is left in the bank, and `compareViews` finds nothing a setup shows
+changed: 153 device, 58 activity and 26 idle modes, 1158 picture drawings checked from their pixels by
+`checkStateBackgrounds`, 82 pictures dropped. The 7.5 file built this way is
+`lab/work/colours-9-1-2/h650-9-1-2-config.bin`, 32502 bytes smaller. **Controls**: the check refuses
+Logitech's compile as it is ("still draws"), the result checked against the device and idle colours
+swapped, a result whose activity patch had one pixel painted black, one idle page put back on the
+activity battery program, one device page pointed at the plain background, and a Harmony 700 compile.
+
+**What is still Logitech's** among the pictures: the start up picture, the corner battery icon and
+the four firmware screen pictures of section 363, which are not a state's background; the plain
+background, the bars and the plain patch are drawn by rule since section 363. Not checked on the remote:
+that the colours show as chosen, which depends on the panel's byte order the renderer assumes for
+pictures (section 363 decodes a picture high byte first, the order its encoder reproduces Logitech's
+bytes in, which settles the bytes and not the panel). One more hint, still not the panel: read high
+byte first the grey patch `0x4a49` and the plain background `0x2945` are neutral greys, and read the other
+way purple and green. The decided colours reach the panel as `rgb(181 32 57)`, `rgb(16 36 198)` and
+`rgb(0 138 49)` through the renderer's decoder, the panel holding fewer levels than eight bits.
+
+Where it lives:
+
+* `packages/codec/src/backgrounds.ts`: `screenStates`, `withStateBackgrounds`, `checkStateBackgrounds`
+  and the decided colours.
+* `packages/codec/src/png.ts`: `rgbTo565`, beside the decoder `rgb565`.
+* `packages/codec/test/backgrounds.test.ts`: the closure, the 13 compiles, the five controls and the
+  Harmony 700's refusal.

@@ -38,6 +38,18 @@ function chunk(kind: string, body: Uint8Array): Uint8Array {
   return out;
 }
 
+/**
+ * Eight bits a channel to RGB565, each rounded to its 5, 6 and 5 bits: `rgb565`'s inverse, beside it so the
+ * two scalings are read together. A round trip does not return the input, since the panel holds fewer
+ * levels: `rgb(184 32 55)` comes back as `rgb(181 32 58)`.
+ */
+export function rgbTo565(red: number, green: number, blue: number): number {
+  for (const channel of [red, green, blue]) {
+    if (!Number.isInteger(channel) || channel < 0 || channel > 255) throw new RangeError(`${channel} is not a colour channel`);
+  }
+  return (Math.round((red * 31) / 255) << 11) | (Math.round((green * 63) / 255) << 5) | Math.round((blue * 31) / 255);
+}
+
 /** RGB565 to eight bits a channel, low bits replicated so that `0xffff` comes out as white. */
 export function rgb565(value: number): [number, number, number] {
   const red = (value >> 11) & 0x1f;

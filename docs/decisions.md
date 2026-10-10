@@ -648,3 +648,16 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    open on purpose: which of its weights, which size and which letter spacing each of the remote's fonts
    gets is chosen when the font table is built, and tuned per use after that. That, and
    the eleven designed pictures of `todo-compile-650.md` 9.1.2, are separate and still open.
+
+20. **Our screens are one colour per state, and our letters are white with a black shadow.** *Taken by
+   the project owner on 10 October 2026, for `todo-compile-650.md` 9.1.2 and 8.2; both become a user's
+   setting later, a colour or a picture for a background.* Device mode is `rgb(184 32 55)`, an activity's
+   screens `rgb(18 37 200)`, and while nothing runs and no device is chosen, the activity menu and the
+   idle device list, `rgb(1 136 53)`. This replaced, the same day, an earlier choice of the average colour
+   of each Logitech picture, which would have kept Logitech's sharing of one picture across two states.
+   What it took is section 366: the idle state needs a battery program of its own, since the corner the
+   battery icon sits in is patched in the background's colour. The letters are white with a one pixel
+   black shadow, the shape every two colour glyph of Logitech's has. **Open**: the titles, the page
+   counter and the bottom words sit on the light top and bottom bars, where Logitech draws them near
+   black and unshadowed, and white there would barely show; whether those stay dark, or the bars change,
+   is not decided.

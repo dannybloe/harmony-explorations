@@ -75,6 +75,7 @@ export * from './screentexts.ts';
 // The Harmony 650's pictures, those drawn by rule built from their drawing and the artwork named,
 // todo-compile-650 9.1, section 363.
 export * from './pictures.ts';
+export * from './backgrounds.ts';
 // **The metadata archive**, section 260: the ZIP two architectures carry inside the container,
 // which on arch 16 (Harmony 300 and 350) names every device and every command. Exported for the
 // same reason the archive readers below are: FreeHarmony is what wants a command's name, and

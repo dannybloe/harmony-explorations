@@ -121,13 +121,15 @@ an item, ask whether the finish line moves without it; if it does, the item goes
 ## 8. Text and fonts
 
 - [x] 8.1 Generate the text inside every screen program, Logitech's included, rather than carrying it (was 3.4): every text on a screen we build is spelled from its word, placed by its screen's rule and written out or pointed at by one rule for the whole file; 22 of Logitech's compiles rebuild byte for byte; the start up title's one line limit is 126, measured on the 650; the fonts stay read (8.2) and the left out screens keep their texts, section 358
-- [ ] 8.2 Decide where the letter shapes come from, then build the font table; this also ends the composers' borrowing of letters (was 6.2.12); decided: Oxanium, SIL Open Font License, in the lab's `fonts/Oxanium/` (decision 19); the font table is still to build
+- [ ] 8.2 Decide where the letter shapes come from, then build the font table; this also ends the composers' borrowing of letters (was 6.2.12); decided: Oxanium, SIL Open Font License, in the lab's `fonts/Oxanium/` (decision 19); letters white with a black shadow (decision 20), whether the words on the light bars stay dark open; the font table is still to build
 
 ## 9. Pictures
 
 - [ ] 9.1 Build the backgrounds ourselves: the cross dividing the four corners, the one item page, the device list's line and the start up screen's picture; the 650 draws no device or activity icons
   - [x] 9.1.1 The pictures drawn by rule, built from a description by `pictures.ts`: the plain background, the top and bottom bars and three corner patches, Logitech's bytes on 13 of 13 Harmony 650 compiles; Logitech's own encoding is reproduced on arch 8, 10, 12 and 14, which retired the rail that an image cannot be re-encoded (section 363)
-  - [ ] 9.1.2 The eleven designed pictures, the four this item names among them (section 363 found none of them drawn by rule): decided on 10 October 2026, our own, and to start each is one flat colour, the average colour of the Logitech picture it replaces, at the same size; drawings may follow
+  - [ ] 9.1.2 The eleven designed pictures, the four this item names among them (section 363 found none of them drawn by rule): decided on 10 October 2026, our own: one flat colour per screen state, a user's setting later (decision 20), which replaced the same day the average colour of each Logitech picture
+    - [x] 9.1.2.1 The state backgrounds: `withStateBackgrounds` gives device mode `rgb(184 32 55)`, an activity's screens `rgb(18 37 200)` and the idle device list and activity menu `rgb(1 136 53)`, its battery corner patched to match through a battery program of its own for the idle state, and drops the five designed backgrounds; all 13 compiles checked and their setup unchanged (section 366); the 7.5 file built so is `lab/work/colours-9-1-2/h650-9-1-2-config.bin`, not yet written to the 650
+    - [ ] 9.1.2.2 The pictures that are no state's background: the start up picture, the corner battery icon, and the USB Connected, Low Battery, battery blank and upgrade blank screens
 - [x] 9.2 Favourite channel logos: dropped with favourites, 4.1
 
 ## 10. The container from nothing
