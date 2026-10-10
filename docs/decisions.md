@@ -644,5 +644,7 @@ remote and 2 in the second, which is what section 117 measured as a generator er
 
    **What it costs.** A remote programmed by us draws text in a different typeface from Logitech's,
    which is the intended consequence rather than a defect; a bench test describes screens by their words
-   and positions, never by their letter shapes. How the letters are rendered at the remote's sizes, and
+   and positions, never by their letter shapes. How the letters are rendered at the remote's sizes is left
+   open on purpose: which of its weights, which size and which letter spacing each of the remote's fonts
+   gets is chosen when the font table is built, and tuned per use after that. That, and
    the eleven designed pictures of `todo-compile-650.md` 9.1.2, are separate and still open.
