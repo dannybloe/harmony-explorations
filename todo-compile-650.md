@@ -127,7 +127,7 @@ an item, ask whether the finish line moves without it; if it does, the item goes
 
 - [ ] 9.1 Build the backgrounds ourselves: the cross dividing the four corners, the one item page, the device list's line and the start up screen's picture; the 650 draws no device or activity icons
   - [x] 9.1.1 The pictures drawn by rule, built from a description by `pictures.ts`: the plain background, the top and bottom bars and three corner patches, Logitech's bytes on 13 of 13 Harmony 650 compiles; Logitech's own encoding is reproduced on arch 8, 10, 12 and 14, which retired the rail that an image cannot be re-encoded (section 363)
-  - [ ] 9.1.2 Decide where the eleven designed pictures come from, the four this item names among them (section 363 found none of them drawn by rule): our own drawings, so the remote looks different, or something else; the same kind of decision as the letters in 8.2
+  - [ ] 9.1.2 The eleven designed pictures, the four this item names among them (section 363 found none of them drawn by rule): decided on 10 October 2026, our own, and to start each is one flat colour, the average colour of the Logitech picture it replaces, at the same size; drawings may follow
 - [x] 9.2 Favourite channel logos: dropped with favourites, 4.1
 
 ## 10. The container from nothing
@@ -145,4 +145,5 @@ an item, ask whether the finish line moves without it; if it does, the item goes
 ## 11. The finish line
 
 - [ ] 11.1 Build the test setup with no Logitech file as input, and check that every byte comes from one of our generators
+  - [ ] 11.1.1 An empty starting configuration built by our own generators, no device and no activity, decided on 10 October 2026 over stripping a Logitech compile; the composers then add the first device and the first activity to it, which on the smallest Logitech compile they refuse today (section 364)
 - [ ] 11.2 Write it to the 650 and check it as in 5.2

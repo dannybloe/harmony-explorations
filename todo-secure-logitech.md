@@ -51,6 +51,7 @@ have no command that writes.
 - [x] 2.3 Check each compile holds the records of the families it was made for: the 3 compiles filed before the pause hold 9 families over 7 devices, every frame the rhythm table builds found in the compile (610 of 610), and the 75 commands it cannot build, 73 of them in Microsoft 30 Bit and Philips Hurd 16 Bit LongToggle, present by record count; to repeat for any compile if 2.2 resumes
 - [ ] 2.4 The 10 families that write except for a few odd codes: compile a device holding those codes, and check the codes are in it
 - [x] 2.5 The bench's KPN box, the Motorola VIP 1853 (Kreatel IP 22 Bit): the 650's configuration in the lab (`h650_config_region`) holds all 38 of the catalogue entry's commands, every frame found, in a group of 51 records, so it needs no new compile
+- [ ] 2.6 The commands the composer still refuses for want of a compile, `todo-process-logitech.md` 2.2.2 (1740 commands, a device mixing two counts), 2.2.4 (215, a count of 0) and 2.4 (231): a few devices holding them, compiled on the test account under 2.2.3's rules; parked on 10 October 2026, the Harmony 650 track goes first
 
 ## 3. How the compiler handles every feature, on every supported model
 
