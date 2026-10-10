@@ -47628,6 +47628,9 @@ remote and nothing here was checked on one, the "USB Connected" key sequence inc
   this file that is `startTour`'s call of the start list, so the start list runs, on the write's restart or
   later, which section 286 had left open. The first report from the bench said the screen did not show; it
   showed for a moment and was missed, and this paragraph said so for a few minutes before being corrected.
+  How long it shows follows from what it is: Off is All Off's working screen, up while All Off's list
+  sends, as a start up screen is while a start sends (section 356), so with nothing or little to switch
+  off it is up only for a moment. That is the bench's account and fits the reading; nothing timed it.
 * How a person completes "USB Connected"'s three key sequence, given that the keys' releases reset it.
 
 ### Falsification
