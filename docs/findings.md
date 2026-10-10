@@ -48709,7 +48709,8 @@ The donor supplies 858202 bytes outright, and 714507 of those are pictures, infr
 donor itself the same attribution gives 73848 and 141948, and on the 10.2.2 file 73372 and 140854, so the
 assembly does not move the share: what it adds is one function with the donor named, and the 70 lists
 below gone. **What 11.1 still needs, and no todo item names**, measured further in section 364: a container
-with no device and no activity for the composers to start from, and a setup format that states an activity's screen, its sequences and
+with no device and no activity for the composers to start from<!--superseded-->, which **section 364 found the
+composers refuse**, since they need a donor that holds an activity, and a setup format that states an activity's screen, its sequences and
 Help or their absence. Every activity of the clean compile binds Logitech's Help, release and hold, which
 todo 5.2's comparison leaves out. In the assembled file those bindings are the only way to 731 lists of
 5561 bytes and 129 of its 376 reached modes; on the clean compile, whose wiring still has Help's own
@@ -48792,8 +48793,9 @@ without the timers.
 
 ### The assembly
 
-`assembleSetup` in order: checks the donor is a Harmony 650 holding exactly the setup's devices and
-activities by name; applies the setup's "keep this device on when switching Activities" with
+`assembleSetup` in order: checks the donor is a Harmony 650 holding exactly the setup's devices<!--superseded--> and
+activities by name, **corrected by section 364**: the donor holds nothing the setup does not, and the
+composers add what it lacks; applies the setup's "keep this device on when switching Activities" with
 `keepDeviceOn`, section 340, where the donor's starts still switch the device off, and refuses a donor
 that keeps on a device the setup does not; builds the screen records with the menu in the setup's order,
 section 356, the firmware screens, section 357, and the texts, section 358; the wiring with the settings,
@@ -48848,7 +48850,8 @@ of them, by the sentence audit's split 9385 in action lists, 3362 in page lists,
 691 in the base slot 10 table and the rest in pages, the name tree, modes, copies, base slot 9 lists, state
 records, the build stamp and the trailer. 30 lists with no call in them differ in content as well, so it is
 not renumbering alone; the two are different Logitech compiles of one setup, and the bytes were not
-followed further. **Refused**: the test setup on the starting compile, which lacks Plasma kijken; the
+followed further. **Refused**: the test setup on the starting compile, which lacks Plasma kijken, and since
+section 364 that is refused only when no catalogue archive is given to compose it with; the
 starting setup on the clean compile, which holds Plasma kijken; any setup on a Harmony 700 compile, by its
 skin; and the starting setup on the options compile, which keeps the Denon on.
 
@@ -49139,9 +49142,9 @@ picture's bytes, the 98 one step pixels included.
 ## 364. The assembly composes the setup's devices and activities a donor lacks, the smallest compile takes no composer, and an activity's screen is an input of its own
 
 **Date:** 10 October 2026. **Status:** confirmed by construction on the Harmony 650: the test setup's fifth
-activity composed from the setup file onto Logitech's starting compile, the result equal to the lab's
-composed file but for its build stamp; a device composed into an assembly as a control; and the smallest
-compile's refusals, each named by the composer that refuses. Nothing assembled this way has been written to
+activity composed from the setup file onto Logitech's starting compile, the result equal, but for its build
+stamp, to the 6.2.13 file put through the same assembly; a device composed into an assembly as a control;
+and the small compiles' refusals, each named by the composer that refuses. Nothing assembled this way has been written to
 a remote. Corrects section 362's premise in place: the donor no longer has to hold the setup's devices and
 activities.
 
@@ -49161,29 +49164,45 @@ input an activity names is the name the setup file saves. The firmware was not o
 
 Every arch 14 container the lab registers, by its devices and activities. The Harmony 650 user
 configurations hold 2 to 8 devices and 0 to 6 activities; the twelve 7115 byte containers with none, on
-the three models, are safe mode images and the status screen library of section 353, whose wiring does not
-read. Of the user configurations, three kinds hold nothing the test setup does not: `harvest_650_two_devices`, two devices and no
-activity, the LG television and the Denon receiver under the names Logitech's compiler gives a catalogue
-device nobody renamed, `LG_OLED65G26LA` and `Denon_AVR-X4800H`; `h650_start_config`, the seven devices and
-four activities; and the compiles holding all five activities. So the smallest donor is
-`harvest_650_two_devices`, and the assembly now takes a donor device by the setup's name or by that
-`<manufacturer>_<model>` name, keeping the donor's label either way.
+the three models, are the status screen library of section 353, as the firmware packages carry it and as
+region reads found it, whose wiring does not read. Of the user configurations, three kinds hold nothing the
+test setup does not: `harvest_650_two_devices`, two devices and no activity, the LG television and the Denon
+receiver as `LG_OLED65G26LA` and `Denon_AVR-X4800H`, the `<manufacturer>_<model>` name the service's compiles
+of catalogue devices for this project carry, where other owners' configurations name a device by
+manufacturer and type; seven containers with the seven devices and four activities, `h650_start_config`
+among them; and the files holding all five activities, Logitech's and ours. So the smallest registered donor
+is `harvest_650_two_devices`, and the assembly now takes a donor device by the setup's name or by that
+`<manufacturer>_<model>` name, keeping the donor's label either way. **The blind reviewer found a smaller
+one** outside the registered images, `work/harvest/check-650-after-refusal/compile-001-Result.EzHex`: 615129
+bytes, the Denon alone and no activity, a compile Logitech's service reported successful.
 
 **It takes no composer.** Composing the five devices it lacks is refused at the first, and each alone is
 refused as follows:
 
 | device | first refusal | what refuses |
 |---|---|---|
-| Plasma, Switch | the activity menu does not map the key under Devices through the activity counter | `idleDeviceList`: the device composer finds the device list the key under Devices opens through the activity menu, and a configuration with no activity has none |
+| Plasma, Switch | the activity menu does not map the key under Devices through the activity counter | `idleDeviceList`: the device composer finds the device list the key under Devices opens through the activity menu, which it knows as the mode whose rows select the most activities, and with no activity there is none to know it by; the file does map that key through the activity counter, in three modes |
 | KPN, Kodi | font 6 has no glyph for 'K', so it cannot be drawn | the label's letters, which a Logitech font holds only where its own names use them, todo 8.2 |
 | Sony HT | no font in this config spells 'Eject' | a command label on its device pages, likewise |
 
-What a device would meet past its first refusal was not measured. An activity on the donor's own two
-devices is refused too: with the television's input named, because the donor's television has **no input
-variable at all**, where the catalogue lists ten inputs; and without it, by the activity composer, "no
-activity here, so the records keyed by the activity cannot be told apart", since it tells those records
-apart by the activities already there, section 329. So on the lab's containers the composers need a donor
-that already holds an activity, and the only one holding nothing the test setup does not is
+What a device would meet past its first refusal was not measured; the menu check comes later in the same
+composer and depends on the donor alone, so the other three would meet it too, which is read off the code
+order and not run. An activity on the donor's own two devices is refused too: with an input named, because
+**neither device has an input variable**, where the catalogue lists ten inputs for the television; and
+without, by the activity composer, "no activity here, so the records keyed by the activity cannot be told
+apart", since it tells those records apart by the activities already there, section 329. Even the
+donor's own two devices with no activity are refused, by the assembly's screen record pass, which finds the
+idle device list the same way.
+
+**The one device compile refuses earlier.** Every composition onto it, the whole setup, each missing
+device alone, and an activity on the Denon without an input, is refused with "no single list switches every
+device off": the device composer joins a new device to the list Off runs, and a one device configuration
+has none. With an input named, the Denon has no input variable either.
+
+So on the lab's containers the composers need a donor that already holds an activity. Seven hold the test
+setup's seven devices and four activities and nothing else; two are `h650_start_config` and the region read
+back after it was written, the same bytes, and the other five are refused because they keep the Denon on in
+Muziek and Kodi kijken, which the test setup does not. So the donor the composing route runs on is
 `h650_start_config`, which holds every device.
 
 ### The assembly, composing
@@ -49196,8 +49215,12 @@ the way `compose-activity.ts` composes one from roles: the start's writes and th
 `activityFromRoles`, every input written by its place in the catalogue's list of the device's inputs, which
 is how the composer numbers a composed device's and how Logitech's compiler numbers its own, section 321; no
 write of 0 for a device the setup keeps on, section 340; the working screen; the menu row, the activity's
-own device list, and the activity key by its type, section 314. Naming a donor device's input needs the
-catalogue's archive, and composing a device does.
+own device list, and the activity key by its type. That last is an inference: the type to key table
+agrees with Logitech's compiles of the test setup, the only ones whose types are known here, while section
+314 reads the account's root button map as what decides which activity a key starts; and its three typed
+branches run in no test, since every donor the composers take holds its typed activities already. Naming a
+donor device's input needs the catalogue's archive, and composing a device does, with the model's device
+count, `options.maxDevices`, which the caller takes from the one model table.
 
 **The working screen is an input of its own, `options.screens`**, since the setup file does not state it,
 section 323: device commands by the label the device's own screen draws them under, and a sequence by its
@@ -49217,20 +49240,25 @@ which is our choice as the page lists' order is.
 ### The test setup on the starting compile
 
 The assembly keeps the KPN box on in the donor's three activities that switched it off, composes Plasma
-kijken, and runs the passes: 997313 bytes, 70 lists dropped. **It is the lab's composed file, section 362's
-route through `h650_7_1_base`, byte for byte but its build stamp**: the two have the same length and differ
-in ten bytes, five of base slot 3's clock record and the same five in base slot 13's clock records, the
-starting compile's date against the 6.2.13 file's. Against Logitech's compile of the setup, `compareViews`
-finds the activity menu's order and nothing else, and the drawn texts differ in the menu's 8; against the
-10.2.2 file, nothing in either, and it is 886 bytes shorter, the 70 lists of section 360 and their table
-entries. So the device order and ids are Logitech's here, since every device is the donor's.
+kijken, and runs the passes: 997313 bytes, 70 lists dropped. **It is the 6.2.13 file, `h650_7_1_base`, put
+through the same assembly, byte for byte but its build stamp**: the two have the same length and differ in
+ten bytes, five of base slot 3's clock record and the same five in base slot 13's clock records, the
+starting compile's date against the 6.2.13 file's. It matches no lab file as it stands, since the drop and
+the placement are new. Against Logitech's compile of the setup, `compareViews` finds the activity menu's
+order and nothing else, and the drawn texts differ in the menu's 8; against the 10.2.2 file, nothing in
+either, and it is 886 bytes shorter, the 70 lists of section 360 and their table entries. So the device
+order and ids are Logitech's here, since every device is the donor's. The blind reviewer went one step
+further: the same assembly stopped before the drop and stamped with the 10.2.2 file's build time is that
+file byte for byte, and stopped after the texts it is the 7.5 file; so composing Plasma kijken here
+reproduces the lab's chain of composers itself, not only its result through the passes.
 
 **Without `options.screens`**, Plasma kijken composes with an empty working screen, and what a person
-misses against Logitech's compile is its four items, Teletext, DVR, Aspect and Radio, and nothing else.
+misses against Logitech's compile, the menu's order aside, is its four items, Teletext, DVR, Aspect and
+Radio; the drawn texts differ in 12, the menu's 8 and four the empty screen does not draw.
 
 **The device half, as a control**, since the test setup does not reach it on any donor that takes a
 composer: the starting setup plus an eighth device, the Panasonic plasma again as `Pana`, and an activity on
-it, on the starting compile. The device composes from the catalogue, 70968 bytes of it, the activity on it,
+it, on the starting compile. The device composes from the catalogue, 70968 bytes composed, the activity on it,
 and the result passes every check of section 362 and section 363's pictures, 1068094 bytes. A label too wide
 for a corner is the composer's refusal, named with the device: "Plasma 2" is 61 pixels against 59.
 
@@ -49262,26 +49290,31 @@ Plasma kijken, whose difference is what composing it added:
 
 Of the 997313 bytes the generators lay 114438 as content, 11.5 percent, 96856 of them without the values
 the descriptions read off the donor; with the address fields, 181710, 18.2 percent. Composing Plasma kijken
-added 1308 bytes, of which 850 are its own lists and screens and the rest generators' structure around them;
-its lists reached by nothing fall by 44 bytes, read as lists of the donor's an item of its screen now names,
-not followed further. The donor supplies 815603 bytes outright. Measured the same way the test setup on the
+added 1308 bytes, of which 850 are lists and screens and the rest generators' structure around them. The
+lists reached by nothing fall by 44 bytes net, and that hides two movements, measured by content by the
+sentence audit: six of the donor's lists leave the set, two KPN send lists and four short ones, because
+Plasma kijken's lists name them now; and one list the composer added joins it, reached by nothing, which the
+drop cannot remove, since it drops only lists the donor named. So the 850 counts donor lists now reached as
+well as Plasma kijken's own. The donor supplies 815603 bytes outright. Measured the same way the test setup on the
 clean compile, section 362's route, lays 114896 as content and 182786 with the address fields; the six rule
 pictures are the 41066 that moved since section 362's table, which counted them carried.
 
 ### What 11.1 still needs, measured
 
-* **A donor with an activity, or composers that do without one.** On the smallest Harmony 650 compile the
-  device composer and the activity composer both refuse, for the reasons above; the one donor they accept
-  that holds nothing the test setup does not already holds all seven devices. So either a composer that
-  removes a device or an activity, from which a configuration of one activity could be cut, or a base built
-  from nothing with an activity menu, a device list the key under Devices opens, and records keyed by an
-  activity. Neither exists.
+* **A donor with an activity, or composers that do without one.** On the two small Harmony 650 compiles
+  the device composer and the activity composer both refuse, for the reasons above; the one donor they
+  accept that holds nothing the test setup does not already holds all seven devices. So either a composer
+  that removes a device or an activity, from which a configuration of one activity could be cut; or
+  composers that find the activity menu without an activity row to know it by, which the two device file
+  may already hold, join a device without an all off list, and tell an activity's records apart without
+  another activity; or a base built from nothing with all of that. None exists.
 * **Fonts that spell what the setup's labels need**, todo 8.2: the smallest donor lacks 'K' in the font a
   label is drawn in and any font spelling 'Eject'.
 * **The designed pictures**, 360664 bytes: the eleven 9.1 leaves open.
 * **The working screens**, which the setup file does not state, and the Help the donor's activities carry.
 * With those, the infrared, the devices' screens and lists and the activities' are what the composers
-  already write; on this donor they are 220607, 65353 and 73674 bytes of Logitech's.
+  already write; on this donor they are 220607, 65353 and 73674 bytes of Logitech's, and the 65353 includes
+  Help's screens, which no composer writes.
 
 Placement, todo 10.5, moves no byte between ours and the donor's: its open part is a bench check.
 
@@ -49300,12 +49333,42 @@ and whether a Logitech compile with no activity ever gives a device an input var
 
 A Harmony 650 compile with no activity on which the device composer finds its device list; a composed
 activity that shows a person something Logitech's compile of the same setup does not, its screen given; the
-starting compile's route differing from the lab's composed file anywhere but the build stamp.
+starting compile's route differing from the 6.2.13 file's assembly anywhere but the build stamp.
 
 ### Where it lands
 
 * `packages/codec/src/assemble.ts`: the donor matched by the setup's name or the catalogue's, the device and
-  activity composition, `options.archive` and `options.screens`, the pictures pass, `composedIntoBody`, and
-  the attribution's `pictures`.
+  activity composition, `options.archive`, `options.maxDevices` and `options.screens`, the pictures pass,
+  `composedIntoBody`, and the attribution's `pictures`.
 * `packages/codec/test/assemble.test.ts`: the starting compile's route against the lab's composed file, the
-  clean compile and the 10.2.2 file; the empty screen; the smallest donor's refusals; the device control.
+  clean compile and the 10.2.2 file, with its attribution and what composing Plasma kijken added; the empty
+  screen; the smallest registered donor's refusals and the three modes its reader cannot place; the device
+  control. The one device compile is not a registered image, so its refusals are the reviewer's and this
+  section's measurement and have no test.
+* Section 362 corrected in place, and its dead phrase in `reference/superseded.md`. `docs/config-format.md`
+  is unchanged: no field's meaning moved, only which generator writes it.
+* Written beside section 362 rather than into it, because 362 is the assembly from a donor that holds
+  everything, which stays a mode of `assembleSetup`, and this is what a donor that lacks something takes.
+
+### Reviews
+
+Both reviewers of the `finding` skill ran on the whole diff. **The blind re-measure** reproduced the
+starting compile's route, 997313 bytes, the 70 lists, the views and texts against all three files and the
+attribution table to the byte, and found two things the section had wrong: a one device Harmony 650 compile
+smaller than the donor called the smallest, now named above with its own refusal, measured again here; and
+that the two device donor gives the receiver no input variable either, not the television alone. It also
+found that the route reproduces the 10.2.2 and 7.5 files themselves when stopped early, which is added.
+**The sentence audit** re-ran every figure one level down and found the table, the refusals and the device
+control as written, and thirteen sentences to correct, all taken: "byte for byte" had named the wrong file,
+which is the 6.2.13 file through the same assembly and not the lab's file as it stands, with the dropped
+count now asserted; the smallest donor's refusal had been worded as the file lacking an activity menu, where
+it holds three modes mapping the key under Devices through the activity counter and what refuses is a reader
+that knows the menu by its activity rows, now asserted; "the only one" hid five containers refused for
+keeping the Denon on; the twelve 7115 byte containers are one library and not two things; the 44 byte fall
+hid a composed list nothing reaches; the type to key table was cited to a section that does not establish it
+and claimed two models it was never run on; three lines of section 362 and two of `docs/status.md` the first
+correction had not reached; "the smallest Logitech file" and "the one thing the setup file does not say"
+overclaimed; the no screen test's "nothing else" held only with the menu order aside, and 12 drawn texts are
+now asserted; the `<manufacturer>_<model>` name was fitted to this project's own compiles; and the device
+count was a second copy of the model table's, now an option the caller takes from it. The start route's
+attribution and the 1308 bytes, untested before, are asserted now.

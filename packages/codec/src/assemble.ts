@@ -18,10 +18,11 @@
  * it calibrated against Logitech's compiles:
  *
  * 1. checks that the donor holds nothing the setup does not, a device by the setup's name or by the
- *    `<manufacturer>_<model>` name Logitech's compiler gives one nobody renamed, since no composer
- *    removes a device or an activity;
+ *    `<manufacturer>_<model>` name the service's compiles of catalogue devices here carry, since no
+ *    composer removes a device or an activity;
  * 2. composes every device the setup names and the donor lacks from the catalogue, in the setup's order,
- *    `composeCatalogueDevices`, section 331, which needs the archive, `options.archive`;
+ *    `composeCatalogueDevices`, section 331, which needs the archive, `options.archive`, and the model's
+ *    device count, `options.maxDevices`;
  * 3. applies the setup's "keep this device on when switching Activities" with `keepDeviceOn` to the
  *    donor's activities, section 340, and refuses where the donor keeps a device on that the setup does not;
  * 4. composes every activity the setup names and the donor lacks, in the setup's order,
@@ -44,10 +45,14 @@
  * **What it cannot do yet, measured in section 364.** An activity's working screen is not in the setup
  * file, which is the platform's soft button list and a person's choice, section 323, so it is an input of
  * its own, `options.screens`, named rather than read off a Logitech file. And the composers need a donor
- * that already holds an activity: on `harvest_650_two_devices`, the smallest Harmony 650 compile in the
- * lab with no activity, the device composer finds the device list through the activity menu, which a
- * configuration with no activity has not got, the fonts lack letters the setup's labels need, and the
- * activity composer tells the records keyed by an activity apart by the activities already there.
+ * that already holds an activity. On `harvest_650_two_devices`, two devices and no activity, the device
+ * composer finds the device list through the activity menu, which it knows by its activity rows, and
+ * there are none, though three modes map the key under Devices through the activity counter; the fonts
+ * lack letters the setup's labels need; and the activity composer tells the records keyed by an activity
+ * apart by the activities already there. On a one device compile the lab also holds, every composition
+ * is refused first because no single list switches every device off. And the assembly's own screen
+ * record pass reads the activity menu the same way, so even a setup of nothing but such a donor's devices
+ * is refused.
  *
  * Arch 14 only and measured on the Harmony 650 alone; the Harmony 600 and 700 are refused, see
  * `ASSEMBLY_SKINS`. Read only towards hardware, like everything in this package: the result is bytes.
@@ -142,7 +147,12 @@ export type AssemblyScreenItem =
   | { readonly sequence: string; readonly steps: readonly AssemblySequenceStep[] };
 export type AssemblySequenceStep = { readonly device: string; readonly scan: number } | { readonly pause: number };
 
-/** MyHarmony's activity type to the Harmony 600, 650 and 700's activity key, section 314; `Custom` holds none. */
+/**
+ * MyHarmony's activity type to the Harmony 650's activity key; `Custom` holds none. An inference: it agrees
+ * with Logitech's compiles of the test setup, the only ones whose types are known here, while section 314
+ * reads the account's root button map as what decides which activity a key starts. The three typed
+ * branches run in no test, since every donor the composers take already holds its typed activities.
+ */
 const KEY_OF_TYPE: Readonly<Record<string, ActivityKey | undefined>> = {
   WatchTV: 'Watch TV', WatchDvd: 'Watch a Movie', ListenToMusic: 'Listen to Music', Custom: undefined,
 };
@@ -479,6 +489,11 @@ export interface AssembleOptions {
    */
   readonly archive?: string;
   /**
+   * The most devices the model holds, which composing a device needs: `maxDevices` in `packages/usb`'s
+   * model table, eight on a Harmony 650, passed in since this package does not depend on that one.
+   */
+  readonly maxDevices?: number;
+  /**
    * Each composed activity's working screen by the activity's name, which the setup file does not state.
    * Absent for an activity composes it with an empty working screen.
    */
@@ -525,8 +540,9 @@ export function assembleSetup(setup: SetupDescription, options: AssembleOptions)
   note('donor');
 
   // 1. The donor holds nothing the setup does not, since no composer removes a device or an activity.
-  //    A donor device is the setup's by the setup's name, or by the name Logitech's compiler gives a
-  //    catalogue device nobody renamed, `<manufacturer>_<model>`; it keeps the donor's label either way.
+  //    A donor device is the setup's by the setup's name, or by `<manufacturer>_<model>`, the name the
+  //    service's compiles of catalogue devices for this project carry; other owners' configurations name
+  //    a device by manufacturer and type instead. It keeps the donor's label either way.
   const wantedDevices = new Set(setup.devices.map((one) => one.name));
   if (wantedDevices.size !== setup.devices.length) throw new AssemblyError('the setup names one device twice');
   const setupDeviceOf = (label: string | undefined): SetupDevice | undefined =>
@@ -555,6 +571,9 @@ export function assembleSetup(setup: SetupDescription, options: AssembleOptions)
     if (options.archive === undefined) {
       throw new AssemblyError(`the donor lacks ${missingDevices.map((one) => one.name).join(', ')}, and composing a device needs the catalogue's archive`);
     }
+    if (options.maxDevices === undefined) {
+      throw new AssemblyError(`the donor lacks ${missingDevices.map((one) => one.name).join(', ')}, and composing a device needs the model's device count`);
+    }
     const requests = missingDevices.map((one) => {
       const [manufacturer, model] = one.device.split('/');
       if (manufacturer === undefined || model === undefined) throw new AssemblyError(`${one.name}'s device is not <manufacturer>/<model>`);
@@ -562,7 +581,7 @@ export function assembleSetup(setup: SetupDescription, options: AssembleOptions)
     });
     let result;
     try {
-      result = composeCatalogueDevices(c, options.archive, requests, { maxDevices: MAX_DEVICES_650 });
+      result = composeCatalogueDevices(c, options.archive, requests, { maxDevices: options.maxDevices });
     } catch (error) {
       if (error instanceof ComposeError) throw new AssemblyError(`composing ${missingDevices.map((one) => one.name).join(', ')}: ${error.message}`);
       throw error;
@@ -689,9 +708,6 @@ export function assembleSetup(setup: SetupDescription, options: AssembleOptions)
   return { bytes: c.blob, container: c, steps, dropped: dropped.dropped, keptOn, composed };
 }
 
-/** The most devices a Harmony 650 holds, Logitech's figure, `maxDevices` in `packages/usb`'s model table. */
-const MAX_DEVICES_650 = 8;
-
 /** The group of the device a setup names, through its label in the container. */
 function groupOfDevice(c: Container, label: string | undefined, name: string): number {
   const group = label === undefined ? undefined : devices(c).find((one) => one.name === label)?.group;
@@ -734,8 +750,9 @@ function composeSetupActivity(
     // A device with one input that does not step has no input variable, and Logitech's compiler writes
     // none for it, section 321: the input named is the only one there is.
     if (names === undefined && variable === undefined) return { group, roles: one.roles };
-    // Logitech's compile of the smallest donor gives its television no input variable at all, where the
-    // catalogue lists ten inputs, so that is said apart from an input name the catalogue does not know.
+    // Logitech's compile of the two device donor gives neither device an input variable, where the
+    // catalogue lists ten inputs for its television, so that is said apart from an input name the
+    // catalogue does not know.
     if (variable === undefined) throw new AssemblyError(`${one.device} has no input variable here to put on ${one.input}`);
     const value = names?.indexOf(one.input) ?? -1;
     if (value < 0) throw new AssemblyError(`${one.device} has no input called ${JSON.stringify(one.input)}`);

@@ -1051,24 +1051,27 @@ with its Help screens against ours, less the 70 lists that file carries and noth
 because the two started from different Logitech files. Those 70 are dropped now, which needed every place
 in a configuration that names a list: ten kinds, and one of them could be left out without any comparison
 of what a person sees noticing, so the dropping checks itself. Our generators lay about one byte in
-fourteen as content, and about one in seven counting the addresses they rewrite inside Logitech's pieces;
+fourteen as content, and about one in seven counting the addresses they rewrite inside Logitech's pieces,
+which is one in nine and one in five and a half since sections 363 and 364;
 the rest is Logitech's, and most of that is pictures, infrared codes and fonts. **What the finish line
 still needs that no step names**: a starting file with no devices and no activities, since nothing here can
-take one out, and a setup file that says what goes on an activity's screen, which today's does not.
+take one out, which section 364 found the composers cannot start from, and a setup file that says what goes on an activity's screen, which today's does not.
 Measured on the Harmony 650 only, and not written to a remote.
 
 **The assembly now composes what the starting file lacks, section 364.** It adds every device and activity
 the setup names that the Logitech file it starts from does not hold, with the composers that built the bench
 files, and builds the six pictures of section 363. Started from Logitech's compile of the four activities,
-it composes Plasma kijken from the setup file and comes out as the file the lab's scripts composed, byte for
-byte but the date it was built, and shows a person what Logitech's own compile of the setup shows, the
-menu's order aside. The one thing the setup file does not say is what goes on an activity's screen, so that
-is handed in beside it; without it, the activity's four screen items are missing and nothing else.
-**The smallest Logitech file in the lab, two devices and no activity, takes none of it**: the device
-composer finds the device list through the activity menu, which that file has not got; its fonts lack a K
-and the word Eject; and the activity composer needs another activity to tell its records apart. So the
-finish line needs either a way to take devices and activities out of a file, or a starting file built from
-nothing that already has a menu, plus the fonts and the eleven designed pictures. About one byte in nine is
+it composes Plasma kijken from the setup file and comes out as the file the lab's scripts composed would
+come out of the same steps, byte for byte but the date it was built, and shows a person what Logitech's own
+compile of the setup shows, the menu's order aside. The setup file does not say what goes on an activity's
+screen, so that is handed in beside it; without it, the activity's four screen items are missing.
+**The two smallest Harmony 650 compiles in the lab, one and two devices and no activity, take none of
+it**: on the two device one the device composer cannot recognise the activity menu without an activity in
+it, its fonts lack a K and the word Eject, and the activity composer needs another activity to tell its
+records apart; on the one device one every device is refused because there is no list that switches all
+devices off to join. So the finish line needs either a way to take devices and activities out of a file,
+composers that manage without an activity, or a starting file built from nothing that has what they need,
+plus the fonts and the eleven designed pictures. About one byte in nine is
 ours as content now, and one in five and a half with the addresses we rewrite.
 
 **A Harmony One's activity menu can now grow a page, section 293.** Its menu shows three activities to

@@ -1,20 +1,21 @@
 /**
  * A setup description and a donor in, a whole container out: `todo-compile-650.md` 10.6, sections 362 and 364.
  *
- * **Three things are measured here.** The list census a renumbering of base slot 10 rests on, over 22
+ * **Four things are measured here.** The list census a renumbering of base slot 10 rests on, over 22
  * Logitech compiles of the Harmony 600, 650 and 700: dropping every list they reach by nothing changes
  * nothing a person sees and passes the builders' checks that read the compile, and the drop refuses a census short of any one
  * holder, every holder naming lists a drop moves. The assembly of the Harmony 650's test setup with Logitech's clean compile as the donor:
  * what it drops, what a person sees against the donor and against the 10.2.2 composition, and why the
  * two differ in length. And which bytes of each a generator reproduces, which is the premise table of
- * section 362: what is still the donor's. Since section 364 the assembly composes the setup's devices and
- * activities the donor lacks: on the starting compile, and refused on the smallest one.
+ * section 362: what is still the donor's. And, since section 364, the assembly composing the setup's
+ * devices and activities the donor lacks: on the starting compile, and refused on the smallest one.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import { IR_ARCHIVE, needing, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
+import { modelForSkin } from '@harmony/usb/models';
 import type { AssemblyScreenItem, Container, SetupDescription } from '../src/index.ts';
 import {
   AssemblyError,
@@ -36,6 +37,9 @@ import {
   describeScreenRecords,
   describeScreenTexts,
   describeWiring,
+  ACTIVITY_STATE_NAME,
+  DEVICES_KEY_TAG,
+  MAP_VALUE_OPCODE,
   devices,
   dropLists,
   inActivityOrder,
@@ -46,6 +50,7 @@ import {
   namedLists,
   parse,
   setupView,
+  stateVariables,
   takeApart,
   withFirmwareScreens,
   withScreenRecords,
@@ -68,6 +73,9 @@ const TWENTY_TWO = [
 ] as const;
 
 const containerOf = (name: string): Container => parse(new Uint8Array(require_(name)));
+/** What composing needs beside the donor: the catalogue's archive and the Harmony 650's device count. */
+const composing = (): { archive: string; maxDevices: number } =>
+  ({ archive: IR_ARCHIVE!, maxDevices: modelForSkin(72)!.maxDevices });
 const setupOf = (file: string): SetupDescription =>
   JSON.parse(readFileSync(new URL(`../../corpus/setups/${file}`, import.meta.url), 'utf8')) as SetupDescription;
 const front = (c: Container): number => buildWiring(describeWiring(takeApart(c))).frontLength;
@@ -362,14 +370,15 @@ const PLASMA_KIJKEN_SCREEN: readonly AssemblyScreenItem[] = [
   { sequence: 'Radio', steps: [{ device: 'KPN', scan: 24 }, { pause: 20 }, { device: 'KPN', scan: 47 }] },
 ];
 
-test('on Logitech\'s starting compile the test setup\'s fifth activity is composed from the setup file and its screen, and the result is the lab\'s composed file, 70 lists lighter, but for its build stamp',
+test('on Logitech\'s starting compile the test setup\'s fifth activity is composed from the setup file and its screen, and the result is the 6.2.13 file put through the same assembly but for its build stamp, and lays 114438 bytes as content',
      needing(skipWithoutIrArchive(), skipUnless('h650_start_config', 'h650_7_1_base', 'h650_test_config_clean')), () => {
   const out = assembleSetup(setupOf('h650-test.json'), {
-    donor: require_('h650_start_config'), archive: IR_ARCHIVE!, screens: { 'Plasma kijken': PLASMA_KIJKEN_SCREEN },
+    donor: require_('h650_start_config'), ...composing(), screens: { 'Plasma kijken': PLASMA_KIJKEN_SCREEN },
   });
   assert.deepEqual(out.composed, { devices: [], activities: ['Plasma kijken'] });
   assert.deepEqual(out.keptOn, ['KPN']);
   assert.equal(out.bytes.length, 997313);
+  assert.equal(out.dropped.length, 70);
   // The 6.2.13 file, the lab's chain of composers on the same compile, through the same passes: the same
   // bytes but the build stamp, five in base slot 3 and the same five in the clock's records.
   const chain = assembleSetup(setupOf('h650-test.json'), { donor: require_('h650_7_1_base') });
@@ -387,11 +396,22 @@ test('on Logitech\'s starting compile the test setup\'s fifth activity is compos
   assert.deepEqual(compareViews(setupView(out.container), setupView(ten)), []);
   assert.deepEqual(compareDrawnTexts(out.container, ten), []);
   assert.equal(ten.blob.length - out.bytes.length, 886);
+  // Which bytes are ours, and what composing Plasma kijken added: the same assembly without it.
+  const a = attributeBytes(out.container);
+  assert.deepEqual(a.generated, {
+    frame: 122, addresses: 67272, description: 17582, 'mode 0': 649, wiring: 1143, 'state tables': 38334,
+    'screen records': 906, 'firmware screens': 4712, texts: 9924, pictures: 41066,
+  });
+  assert.equal([...a.carried.values()].reduce((n, v) => n + v, 0), 815603);
+  const setup = setupOf('h650-test.json');
+  const without = assembleSetup({ ...setup, activities: setup.activities.filter((one) => one.name !== 'Plasma kijken') },
+    { donor: require_('h650_start_config'), ...composing() });
+  assert.equal(out.bytes.length - without.bytes.length, 1308);
 });
 
-test('with no screen stated, the composed activity\'s screen is empty: its four items are what a person misses, and nothing else',
+test('with no screen stated, the composed activity\'s screen is empty: the menu\'s order aside, its four items are what a person misses',
      needing(skipWithoutIrArchive(), skipUnless('h650_start_config', 'h650_test_config_clean')), () => {
-  const out = assembleSetup(setupOf('h650-test.json'), { donor: require_('h650_start_config'), archive: IR_ARCHIVE! });
+  const out = assembleSetup(setupOf('h650-test.json'), { donor: require_('h650_start_config'), ...composing() });
   const missing = compareViews(setupView(out.container), setupView(containerOf('h650_test_config_clean')), { menuOrder: false });
   assert.deepEqual(missing.map((one) => [one.key, one.kind, one.b?.label]).sort(), [
     ['activity Plasma kijken | page 1 | scan 2', 'only in b', 'DVR'],
@@ -399,21 +419,32 @@ test('with no screen stated, the composed activity\'s screen is empty: its four 
     ['activity Plasma kijken | page 1 | scan 8', 'only in b', 'Teletext'],
     ['activity Plasma kijken | page 1 | scan 9', 'only in b', 'Aspect'],
   ]);
+  // The drawn texts: the menu's 8 as with the screen given, and the four the empty screen does not draw.
+  const texts = compareDrawnTexts(out.container, containerOf('h650_test_config_clean'));
+  assert.equal(texts.length, 12);
+  assert.equal(texts.filter((one) => one.text.startsWith('activity menu|')).length, 8);
 });
 
-test('the smallest Harmony 650 compile, two devices and no activity, takes no composer: the device list is found through an activity menu it has not got, its fonts lack letters, and an activity needs another to be told apart from',
+test('the smallest Harmony 650 compile the lab registers, two devices and no activity, takes no composer: the device composer knows the activity menu by its activity rows and it has none, its fonts lack letters, and an activity needs another to be told apart from',
      needing(skipWithoutIrArchive(), skipUnless('harvest_650_two_devices')), () => {
   const smallest = require_('harvest_650_two_devices');
   // Its two devices are the setup's LG television and Denon receiver under the names Logitech gives them.
   assert.deepEqual(devices(parse(smallest)).map((one) => one.name), ['LG_OLED65G26LA', 'Denon_AVR-X4800H']);
-  assert.throws(() => assembleSetup(setupOf('h650-test.json'), { donor: smallest, archive: IR_ARCHIVE! }),
+  // The file does map the key under Devices through the activity counter, in three modes; what refuses is
+  // the reader, which picks the activity menu as the mode whose rows select the most activities.
+  const c = parse(smallest);
+  const counter = stateVariables(c).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME));
+  const mapped = (modeRecords(c) ?? []).flatMap((record, index) => record.entries.some((one) =>
+    one.tag === DEVICES_KEY_TAG && one.opcode === MAP_VALUE_OPCODE && (one.operand & 0xff) === counter?.index) ? [index] : []);
+  assert.deepEqual(mapped, [96, 97, 101]);
+  assert.throws(() => assembleSetup(setupOf('h650-test.json'), { donor: smallest, ...composing() }),
     /composing Plasma, KPN, Kodi, Switch, Sony HT: the activity menu does not map the key under Devices through the activity counter/);
   // Each device alone, by its first refusal.
   const alone = (name: string): string => {
     const setup = setupOf('h650-test.json');
     const one = { devices: setup.devices.filter((d) => ['LG TV', 'Denon', name].includes(d.name)), activities: [] };
     try {
-      assembleSetup(one, { donor: smallest, archive: IR_ARCHIVE! });
+      assembleSetup(one, { donor: smallest, ...composing() });
       return 'composed';
     } catch (error) {
       return (error as Error).message.replace(/^composing [^:]+: /, '');
@@ -426,16 +457,16 @@ test('the smallest Harmony 650 compile, two devices and no activity, takes no co
     Switch: 'the activity menu does not map the key under Devices through the activity counter',
     'Sony HT': 'no font in this config spells \'Eject\'',
   });
-  // And an activity on its own two devices: with an input, the television has no input variable to put on
-  // it, since the compile with no activity gave it none; without, the activity composer refuses.
+  // And an activity on its own two devices: with an input, the television has no input variable to put it
+  // on, nor has the receiver, since this compile gave neither one; without, the activity composer refuses.
   const tv = (input?: string): SetupDescription => ({
     devices: setupOf('h650-test.json').devices.filter((d) => ['LG TV', 'Denon'].includes(d.name)),
     activities: [{ name: 'TV', type: 'Custom', devices: [
       { device: 'LG TV', ...(input === undefined ? {} : { input }), roles: ['Display'] }, { device: 'Denon', roles: ['Volume'] }] }],
   });
-  assert.throws(() => assembleSetup(tv('HDMI 1'), { donor: smallest, archive: IR_ARCHIVE! }),
+  assert.throws(() => assembleSetup(tv('HDMI 1'), { donor: smallest, ...composing() }),
     /composing TV: LG TV has no input variable here to put on HDMI 1/);
-  assert.throws(() => assembleSetup(tv(), { donor: smallest, archive: IR_ARCHIVE! }),
+  assert.throws(() => assembleSetup(tv(), { donor: smallest, ...composing() }),
     /composing TV: no activity here, so the records keyed by the activity cannot be told apart/);
 });
 
@@ -447,13 +478,16 @@ test('a device the donor lacks is composed from the catalogue with an activity o
     activities: [...start.activities, { name: 'Kijk twee', type: 'Custom', devices: [
       { device: 'Pana', input: 'HDMI 2', roles: ['Display', 'Volume'] }, { device: 'KPN', roles: ['ChannelChanging'] }] }],
   };
-  const out = assembleSetup(setup, { donor: require_('h650_start_config'), archive: IR_ARCHIVE! });
+  const out = assembleSetup(setup, { donor: require_('h650_start_config'), ...composing() });
   assert.deepEqual(out.composed, { devices: ['Pana'], activities: ['Kijk twee'] });
   assert.equal(out.bytes.length, 1068094);
   assert.ok(devices(out.container).some((one) => one.name === 'Pana'));
+  // Unbounded composing is refused rather than run: the model's device count is the caller's to give.
+  assert.throws(() => assembleSetup(setup, { donor: require_('h650_start_config'), archive: IR_ARCHIVE! }),
+    /composing a device needs the model's device count/);
   // A label the corner cannot hold is the composer's refusal, named with the device.
   const wide = { ...setup, devices: [...start.devices, { name: 'Plasma 2', device: 'Panasonic/TX-P42GT30E' }],
     activities: start.activities };
-  assert.throws(() => assembleSetup(wide, { donor: require_('h650_start_config'), archive: IR_ARCHIVE! }),
+  assert.throws(() => assembleSetup(wide, { donor: require_('h650_start_config'), ...composing() }),
     /composing Plasma 2: 'Plasma 2' is 61 pixels wide and a corner holds 59/);
 });
