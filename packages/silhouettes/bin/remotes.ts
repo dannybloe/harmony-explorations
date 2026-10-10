@@ -34,6 +34,9 @@ import { fileURLToPath } from 'node:url';
 import { SCREEN_SIZES } from '@harmony/codec';
 import { PROFILES } from '@harmony/corpus/read';
 import {
+  ARCH9_FLASH_TOP_MAX,
+  ARCH9_FLASH_TOP_MIN,
+  ARCH9_WINDOWS,
   ARCHITECTURES_WITH_A_RAM_WRITE_TARGET,
   ARCHITECTURES_WITH_A_REINSTALL_TARGET,
   ARCHITECTURES_WITH_A_RESET_TARGET,
@@ -69,6 +72,18 @@ interface RemoteFolder {
   /** The drawing it uses, which may be a sibling's where the face is shared. */
   readonly drawing: string;
   readonly architecture: number;
+  /**
+   * Where the screen size on the drawing comes from, for a model whose architecture has no entry in
+   * `SCREEN_SIZES`.
+   *
+   * `displayTable` refuses a drawing with a screen on an architecture the codec has no raster for,
+   * because that is usually two sources disagreeing. **The Harmony Touch is the case where it is not**:
+   * `SCREEN_SIZES` is measured from configurations' own full screen pictures, no configuration of a
+   * Touch has been read, section 200, so the codec has nothing to say and the drawing's raster comes
+   * from Logitech's user guide. A model that states a source here gets a row saying so instead of the
+   * refusal, and every other model keeps the refusal.
+   */
+  readonly rasterFromDrawing?: string;
 }
 
 /** The blocks an architecture folder can carry. */
@@ -80,8 +95,8 @@ interface ArchitectureFolder {
   readonly architecture: number;
   /**
    * Which blocks the folder carries. The memory constants and the write rails are stated for the
-   * Harmony 600, 650 and 700, whose settings store and three alike units their text names, so an
-   * architecture the library never opens, the Harmony 300 and 350's, carries neither: a table of
+   * architectures this library writes to, the Harmony 600, 650 and 700's and the Harmony 525's, so
+   * an architecture the library never opens, the Harmony 300 and 350's, carries neither: a table of
    * `none` and `no` would say less than its folder's prose and look like a measurement.
    */
   readonly blocks: readonly ArchitectureBlock[];
@@ -101,12 +116,43 @@ export const REMOTES: readonly RemoteFolder[] = [
   { folder: 'harmony-600', skins: [71, 73], drawing: 'h600', architecture: 14 },
   { folder: 'harmony-650', skins: [72, 74], drawing: 'h650', architecture: 14 },
   { folder: 'harmony-700', skins: [66, 69], drawing: 'h700', architecture: 14 },
+  // Skin 22 alone, as the drawing serves it. Skin 18, the Harmony 520, is the same remote under its
+  // other regional name in `MODELS_BY_SKIN`, but its face lacks the four teletext keys this drawing
+  // carries, `reference/capabilities.md`, so it is not this drawing's skin and not this folder's.
+  { folder: 'harmony-525', skins: [22], drawing: 'h525', architecture: 9 },
 ];
 
 export const ARCHITECTURES: readonly ArchitectureFolder[] = [
   { folder: 'harmony-600-650-700', architecture: 14, blocks: ['skins', 'memory-constants', 'usb-identity', 'write-rails'] },
   { folder: 'harmony-300-350', architecture: 16, blocks: ['skins', 'usb-identity'] },
+  // Named for the 5xx series rather than for the one bench model, because the skins it lists are every
+  // model `MODELS_BY_SKIN` places on architecture 9, the Harmony 510, 515, 520 and the Xbox 360 remote
+  // among them, the way the arch 14 folder lists the Harmony 665 it holds nothing of.
+  { folder: 'harmony-5xx', architecture: 9, blocks: ['skins', 'memory-constants', 'usb-identity', 'write-rails'] },
 ];
+
+/**
+ * Where an architecture's external flash sits in the protocol's address space, and the constants that
+ * say so.
+ *
+ * Every architecture but one states a ceiling, `FLASH_TOP_BYTE_BOUND`, with the flash starting at the
+ * bottom of the space. **Arch 9 (Harmony 525) states a window instead**, top bytes `0x80` to `0x87`, a
+ * megabyte up, sections 76 and 119, so reading its size off the ceiling table finds nothing and reading
+ * it as a ceiling would call 512 KiB eight and a half megabytes. The literal 9 is the one
+ * `validateRegionByte` in `packages/usb/src/protocol.ts` tests as well.
+ */
+function flashSpan(architecture: number): { start: number; end: number; constants: string } | undefined {
+  const bound = FLASH_TOP_BYTE_BOUND[architecture];
+  if (bound !== undefined) return { start: 0, end: bound << 16, constants: '`FLASH_TOP_BYTE_BOUND`' };
+  if (architecture === 9) {
+    return {
+      start: ARCH9_FLASH_TOP_MIN << 16,
+      end: (ARCH9_FLASH_TOP_MAX + 1) << 16,
+      constants: '`ARCH9_FLASH_TOP_MIN` and `ARCH9_FLASH_TOP_MAX`',
+    };
+  }
+  return undefined;
+}
 
 /** Every skin a folder of this architecture names, so a skin with no model record still gets a row. */
 function folderSkins(architecture: number): number[] {
@@ -220,11 +266,14 @@ function keyTable(drawing: Drawing): string {
   ].join('\n');
 }
 
-function displayTable(architecture: number, skins: readonly number[], drawing: Drawing): string {
+function displayTable(remote: RemoteFolder, drawing: Drawing): string {
+  const { architecture, skins } = remote;
   const size = SCREEN_SIZES[architecture];
   // A model with no screen has neither a raster nor a screen on its drawing, and both are stated as
-  // absent. A raster with no screen on the drawing, or the reverse, is a disagreement and refused.
-  if ((size === undefined) !== (drawing.screen === undefined)) {
+  // absent. A raster with no screen on the drawing, or the reverse, is a disagreement and refused,
+  // unless the folder names where the drawing's raster comes from, which is the Harmony Touch's case.
+  const unread = size === undefined && drawing.screen !== undefined && remote.rasterFromDrawing !== undefined;
+  if (!unread && (size === undefined) !== (drawing.screen === undefined)) {
     throw new Error(`architecture ${architecture} and the drawing ${drawing.id} disagree about a screen`);
   }
   const panels = [...new Set(skins.map((s) => MODELS_BY_SKIN[s]?.panel ?? NO_RECORD))].join(', ');
@@ -237,7 +286,7 @@ function displayTable(architecture: number, skins: readonly number[], drawing: D
     : `| raster | ${size.width} by ${size.height} pixels | \`SCREEN_SIZES\` in \`packages/codec/src/render.ts\`, measured from the configurations' full screen pictures |`;
   const drawn = drawing.screen === undefined
     ? `| raster on the drawing | no screen on the drawing | \`${drawing.id}.ts\` |`
-    : `| raster on the drawing | ${drawing.screen.pixels.width} by ${drawing.screen.pixels.height} | \`${drawing.id}.ts\`, which must agree with the row above |`;
+    : `| raster on the drawing | ${drawing.screen.pixels.width} by ${drawing.screen.pixels.height} | ${unread ? remote.rasterFromDrawing : `\`${drawing.id}.ts\`, which must agree with the row above`} |`;
   return [
     '| field | value | from |',
     '|---|---|---|',
@@ -254,11 +303,20 @@ function usbIdentity(architecture: number): string {
   const profiles = PROFILES.filter((p) => p.architecture === architecture);
   const bound = FLASH_TOP_BYTE_BOUND[architecture];
   const escapes = ESCAPE_SUB_COMMANDS[architecture] ?? [];
+  const span = flashSpan(architecture);
+  // A ceiling is one row and the arch 9 window is two: where the flash is, and the four smaller
+  // windows the same validator serves before it reaches the flash test, section 119.
+  const flashRows = bound === undefined && span !== undefined
+    ? [
+      `| flash top bytes accepted | ${hex(ARCH9_FLASH_TOP_MIN, 2)} to ${hex(ARCH9_FLASH_TOP_MAX, 2)}, so external flash is ${hex(span.start)} to ${hex(span.end)} | ${span.constants} in \`packages/usb/src/protocol.ts\` |`,
+      `| the other windows | ${Object.entries(ARCH9_WINDOWS).map(([top, w]) => `${hex(Number(top), 2)} ${w.region} below ${hex(w.bound, 4)}`).join(', ')} | \`ARCH9_WINDOWS\` in \`packages/usb/src/protocol.ts\` |`,
+    ]
+    : [`| first refused flash top byte | ${bound === undefined ? 'none read' : `${hex(bound, 2)}, so external flash ends at ${hex(bound << 16)}`} | \`FLASH_TOP_BYTE_BOUND\` in \`packages/usb/src/protocol.ts\` |`];
   return [
     '| field | value | from |',
     '|---|---|---|',
     `| USB product id | ${profiles.map((p) => hex(p.productId, 4)).join(', ') || 'none'} | \`PROFILES\` in \`packages/corpus/src/read.ts\` |`,
-    `| first refused flash top byte | ${bound === undefined ? 'none read' : `${hex(bound, 2)}, so external flash ends at ${hex(bound << 16)}`} | \`FLASH_TOP_BYTE_BOUND\` in \`packages/usb/src/protocol.ts\` |`,
+    ...flashRows,
     `| escape sub commands dispatched | ${escapes.map((e) => hex(e, 2)).join(', ') || 'none read'} | \`ESCAPE_SUB_COMMANDS\` in \`packages/usb/src/protocol.ts\` |`,
     '',
     provenance('`packages/corpus` and `packages/usb`'),
@@ -293,18 +351,28 @@ function memoryConstants(architecture: number): string {
   const base = CONFIG_REGION_BASE[architecture];
   const ceiling = WRITABLE_CEILING[architecture];
   const block = ERASE_BLOCK_SIZE[architecture];
-  const bound = FLASH_TOP_BYTE_BOUND[architecture];
+  const span = flashSpan(architecture);
   const staging = STAGING_REGION[architecture];
   const cell = (n: number | undefined, f: (n: number) => string): string => (n === undefined ? 'none' : f(n));
+  // A flash that starts at the bottom of the space is stated by its size alone, as it always was; one
+  // that sits in a window says where, since the size alone would not tell a reader which addresses.
+  const flash = span === undefined
+    ? 'none'
+    : `${kib(span.end - span.start)}${span.start === 0 ? '' : `, at external ${hex(span.start)} to ${hex(span.end)}`}`;
+  // The settings store's constants are the arch 14 store's, so an architecture off that list gets a
+  // row saying none is read rather than the arch 14 offsets under its own name.
+  const store = ARCHITECTURES_WITH_A_SETTINGS_WRITE_TARGET.includes(architecture)
+    ? `| settings store | internal page \`0xFF\` \`+${hex(STORE_OFFSET_IN_PAGE, 4)}\`, two blocks of ${kib(STORE_BLOCK_BYTES)} | \`STORE_OFFSET_IN_PAGE\` and \`STORE_BLOCK_BYTES\`, \`settings.ts\` |`
+    : `| settings store | none read: its constants are architecture ${ARCHITECTURES_WITH_A_SETTINGS_WRITE_TARGET.join(', ')}'s | \`ARCHITECTURES_WITH_A_SETTINGS_WRITE_TARGET\`, \`rails.ts\` |`;
   return [
     '| what | value | constant |',
     '|---|---|---|',
-    `| external flash size | ${cell(bound, (b) => kib(b << 16))} | \`FLASH_TOP_BYTE_BOUND\`, \`protocol.ts\` |`,
+    `| external flash size | ${flash} | ${span?.constants ?? '`FLASH_TOP_BYTE_BOUND`'}, \`protocol.ts\` |`,
     `| user configuration starts at | ${cell(base, (n) => `external ${hex(n)}`)} | \`CONFIG_REGION_BASE\`, \`rails.ts\` |`,
     `| highest address a write may reach | ${cell(ceiling, (n) => `external ${hex(n)}`)} | \`WRITABLE_CEILING\`, \`rails.ts\` |`,
     `| erase block | ${cell(block, kib)} | \`ERASE_BLOCK_SIZE\`, \`rails.ts\` |`,
     `| firmware staging region | ${staging === undefined ? 'none' : `external ${hex(staging.start)} to ${hex(staging.end)}`} | \`STAGING_REGION\`, \`rails.ts\` |`,
-    `| settings store | internal page \`0xFF\` \`+${hex(STORE_OFFSET_IN_PAGE, 4)}\`, two blocks of ${kib(STORE_BLOCK_BYTES)} | \`STORE_OFFSET_IN_PAGE\` and \`STORE_BLOCK_BYTES\`, \`settings.ts\` |`,
+    store,
     '',
     provenance('`packages/usb/src/protocol.ts`, `rails.ts` and `settings.ts`'),
   ].join('\n');
@@ -314,6 +382,14 @@ function writeRails(architecture: number): string {
   const on = (list: readonly number[]): string => yes(list.includes(architecture));
   const builds = (table: Readonly<Record<number, readonly string[]>>): string =>
     (table[architecture] ?? []).join(', ') || 'none';
+  // The qualifiers describe an open path, so a closed one reads "no" and stops, rather than "no, on
+  // builds none", which is what the Harmony 525's row said the first time it was generated.
+  const settings = ARCHITECTURES_WITH_A_SETTINGS_WRITE_TARGET.includes(architecture)
+    ? `yes, on builds ${builds(SETTINGS_WRITE_READ_ON)}`
+    : 'no';
+  const reinstall = ARCHITECTURES_WITH_A_REINSTALL_TARGET.includes(architecture)
+    ? `yes, at most ${REINSTALL_MAX_IMAGE} bytes; from a running application on builds ${builds(STATUS_BYTE_READ_ON_APPLICATION)}`
+    : 'no';
   return [
     '| path | open on this architecture | list |',
     '|---|---|---|',
@@ -321,10 +397,12 @@ function writeRails(architecture: number): string {
     `| drop the cached region descriptors, \`WRITE_MISC\` 0x02 | ${on(ARCHITECTURES_WITH_AN_INVALIDATE_TARGET)} | \`ARCHITECTURES_WITH_AN_INVALIDATE_TARGET\` |`,
     `| restart, the escape's 0x02 | ${on(ARCHITECTURES_WITH_A_RESET_TARGET)} | \`ARCHITECTURES_WITH_A_RESET_TARGET\` |`,
     `| write a byte of data memory, \`WRITE_MISC\` 0x07 | ${on(ARCHITECTURES_WITH_A_RAM_WRITE_TARGET)} | \`ARCHITECTURES_WITH_A_RAM_WRITE_TARGET\` |`,
-    `| append to the settings store | ${on(ARCHITECTURES_WITH_A_SETTINGS_WRITE_TARGET)}, on builds ${builds(SETTINGS_WRITE_READ_ON)} | \`ARCHITECTURES_WITH_A_SETTINGS_WRITE_TARGET\`, \`SETTINGS_WRITE_READ_ON\` |`,
-    `| ask safe mode to install the staged firmware | ${on(ARCHITECTURES_WITH_A_REINSTALL_TARGET)}, at most ${REINSTALL_MAX_IMAGE} bytes; from a running application on builds ${builds(STATUS_BYTE_READ_ON_APPLICATION)} | \`ARCHITECTURES_WITH_A_REINSTALL_TARGET\`, \`REINSTALL_MAX_IMAGE\`, \`STATUS_BYTE_READ_ON_APPLICATION\` |`,
+    `| append to the settings store | ${settings} | \`ARCHITECTURES_WITH_A_SETTINGS_WRITE_TARGET\`, \`SETTINGS_WRITE_READ_ON\` |`,
+    `| ask safe mode to install the staged firmware | ${reinstall} | \`ARCHITECTURES_WITH_A_REINSTALL_TARGET\`, \`REINSTALL_MAX_IMAGE\`, \`STATUS_BYTE_READ_ON_APPLICATION\` |`,
     '',
-    'Every row also needs `HARMONY_ENABLE_WRITES=1`, its own named door where it has one, and the unit check on the identity block. Which **unit** may be written is not in this table and cannot be, because three units of this architecture enumerate alike.',
+    // This named "three units of this architecture" until the Harmony 525's folder took the block,
+    // which is one architecture's count stated in a sentence every architecture's folder now carries.
+    'Every row also needs `HARMONY_ENABLE_WRITES=1`, its own named door where it has one, and the unit check on the identity block. Which **unit** may be written is not in this table and cannot be: an architecture names a kind of remote, and the unit check compares the identity block read off the remote with the lab\'s record of a permitted unit.',
     '',
     provenance('`packages/usb/src/rails.ts`'),
   ].join('\n');
@@ -345,7 +423,7 @@ export function expectedBlocks(): Map<string, Map<string, string>> {
     put(join(dir, 'README.md'), 'skins', skinTable(r.skins, r.architecture));
     put(join(dir, 'features.md'), 'capabilities', featureTable(r.skins));
     put(join(dir, 'keys.md'), 'keys', keyTable(drawing));
-    put(join(dir, 'display.md'), 'display', displayTable(r.architecture, r.skins, drawing));
+    put(join(dir, 'display.md'), 'display', displayTable(r, drawing));
     put(join(dir, 'usb.md'), 'usb-identity', usbIdentity(r.architecture));
   }
   for (const a of ARCHITECTURES) {

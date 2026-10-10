@@ -20648,9 +20648,11 @@ direction, so the hypothesis is confirmed and the "minus the two hubs" qualifier
 comparing 27 records against 19 skins rather than skins against skins. A skin can appear more than
 once in the table.
 
-That settles why an arch 9 (Harmony 525) remote cannot be registered and why its compile ends in a
-bare `status='Error'`: it is a policy field in the vendor's own product table, not a property of the
-remote, the config or the architecture.
+That settles why an arch 9 (Harmony 525) remote is offered by no setup flow and why its compile ends
+in a bare `status='Error'`: it is a policy field in the vendor's own product table, not a property of
+the remote, the config or the architecture. This said such a remote cannot be registered until 10
+October 2026, which section 135 had already refuted: added through the account call, the 525 was
+accepted and given a remote id, and only its compile fails.
 
 ### Two fields that would have answered open questions and answer nothing
 

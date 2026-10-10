@@ -172,7 +172,9 @@ the contributor's "77 of 384 KiB" is the same arithmetic from the other side.
 > `containerBase`, and computing the length from the wrong one gives minus 8337413.
 
 Where the application firmware sits in flash is **not predicted at all**. On arch 12 it is external
-and on arch 14 internal, and arch 9 has never been examined either way.
+and on arch 14 internal, and on arch 9 it is **external**, at `0x810000`, one 64 KiB block below the
+configuration, with the safe mode image at `0x800000`, section 267. This said arch 9 had never been
+examined either way until 10 October 2026, a sentence section 267 had already overtaken.
 
 **The unit identity is in the EEPROM here, where a Harmony One keeps it in program memory**,
 section 268. `0x200010`, 48 bytes by concordance's reckoning and read as 64 here, holding the same
@@ -326,9 +328,13 @@ for that slot has not been traced.
 The rails in [../CLAUDE.md](../CLAUDE.md) apply unchanged, and one thing about this model makes them
 matter more rather than less. Section 56 established that Logitech's MyHarmony service is alive and
 still compiles configs. **That is not the service this remote used.** The 5xx series belongs to the
-classic platform, whose site now serves a discontinuation notice, so there is no path that would put
-a working config back on a 525 if one were destroyed. The remote is read only, the same as every
-other, and the fallback that exists for a Harmony One does not exist for this one.
+classic platform, whose site now serves a discontinuation notice, so nothing can compile a
+configuration for a 525, and the fallback that exists for a Harmony One does not exist for this one.
+**What can put one back is the lab's own region reads**: the five blocks of the configuration region
+were read before the first write, and the rehearsal writes a block of them back, section 269, which
+is also why the 525 is one of the units "Never write to a remote" in `CLAUDE.md` permits. This said
+the remote is read only, the same as every other, and that there was no path that would put a working
+config back on a 525, until 10 October 2026; both stopped being true with section 269.
 
 **The firmware helps less here than on either other architecture**, section 267, and that is the
 second reason. An `ERASE_FLASH` is bounded to the flash part and nowhere finer: every one of the
