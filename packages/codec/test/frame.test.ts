@@ -128,6 +128,17 @@ test('every arch 14 compile is laid out again byte for byte from its pieces',
   assert.equal(takeApart(containerOf('h650_panasonic_config')).builtAt, '2026-10-01T14:32:27');
 });
 
+test('taking apart a configuration read as a Node Buffer leaves its bytes as they were',
+     skipUnless('h650_test_config_clean'), () => {
+  const file = Buffer.from(load('h650_test_config_clean') as Uint8Array);
+  const before = Buffer.from(file);
+  const c = parse(file);
+  takeApart(c);
+  // A Buffer's slice is a view, so a piece cut with it and zeroed wrote into the file: 93796 bytes.
+  assert.equal(Buffer.compare(file, before), 0);
+  assert.equal(firstDifference(layOutContainer(takeApart(c)).bytes, c.blob), undefined);
+});
+
 /**
  * Assert what sits in front of each table of `layout`, by owner kind, against `parked`.
  *

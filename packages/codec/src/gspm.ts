@@ -1157,7 +1157,11 @@ export function containerExtent(data: Uint8Array): { family: Family; start: numb
   if (endMarker < 0) {
     throw new GspmError(`no ${family.endMarker} end marker found after ${family.magic}`);
   }
-  return { family, start, blob: data.subarray(start, endMarker + 4) };
+  // A plain view, never the caller's own type: a Node `Buffer` passes as a `Uint8Array`, and its `slice`
+  // returns a view where a `Uint8Array`'s returns a copy, so a reader that slices a piece out and fills it
+  // wrote into the caller's file. `takeApart` did, zeroing 93796 bytes of a configuration read with
+  // `readFileSync`; the lab loader copies into a `Uint8Array`, which is why no test saw it.
+  return { family, start, blob: new Uint8Array(data.buffer, data.byteOffset + start, endMarker + 4 - start) };
 }
 
 export function parse(data: Uint8Array): Container {
