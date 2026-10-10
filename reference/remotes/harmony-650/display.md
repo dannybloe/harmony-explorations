@@ -64,7 +64,7 @@ filled, section 317. Which typefaces they are is not named anywhere.
 
 ## What the screen does not show
 
-**No clock.** The ordinary screen of the Harmony 600, 650 and 700 has no time on it, Danny's
+**No clock.** The ordinary screen of the Harmony 600, 650 and 700 has no time on it, the project owner's
 observation at the bench on 4 October 2026, recorded in `docs/how-a-harmony-works.md`. The remote keeps
 a clock all the same: the first seven state variables, which every restart of the 0.2 build resets to
 the configuration's stamp, measured in the 650's memory, sections 283 and 310. So a wrong stamp is

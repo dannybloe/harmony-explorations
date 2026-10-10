@@ -35,7 +35,7 @@ again only where the 650 adds something.
 | learning | yes, up to 200 kHz | Logitech's manual. Learning on this unit is **not checked** |
 | keypad backlight | yes, **yellow** | Logitech's manual. The Harmony 600's and 700's manuals say white |
 | size and weight | 8.75 x 2.3 x 1.3 inch, 6 oz with batteries | Logitech's manual; the same figures as the 600 and 700 manuals |
-| face | the Harmony 600's, key for key | Danny's statement, [keys.md](keys.md) |
+| face | the Harmony 600's, key for key | the project owner's statement, [keys.md](keys.md) |
 
 ## A sensor for being picked up
 

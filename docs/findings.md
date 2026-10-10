@@ -34430,7 +34430,7 @@ list at a 525. The dry run against the connected 525:
 
 ```
 firmware 3.0, flash id FF:12, architecture 9, skin 22
-unit identity 7f2d51a9..., which matches the recorded h525
+unit identity <withheld; the value lives in the lab's units/>, which matches the recorded h525
 the block matches h525_region_820000 byte for byte, so writing it back is a write that changes nothing
 the erase span will be checked against the neighbouring blocks 0x810000 and 0x830000
 plan: ... erase 0x10000 bytes at 0x820000, then 21 transfer(s) ... 1084 reports in total

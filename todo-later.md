@@ -75,9 +75,9 @@ The Harmony One is a different type, with a touch screen and its own screens, so
   - [ ] 5.4.2 Whether the 0xFE fill above the state variable storage happens on the Harmony 525 too: unmeasured (was 1.3.2)
 - [ ] 5.5 The Harmony 300 and 350, and the Harmony Touch: the file based family, read only so far
 - [ ] 5.6 The legacy remotes, Harmony 880, 885, 890 and 895: contributed configurations only, no compiler
-- [ ] 5.7 A reference folder and a skill for every remote on the bench, the way the Harmony 650 has `reference/remotes/harmony-650/` and the `harmony-650` skill: the folder holds the model's facts with a source each, the skill says to read it first and carries that remote's write and bench procedure, so an agent sent to any remote starts from what is known; the One, 600, 700, 300 and 350 moved to [todo-process-logitech.md](todo-process-logitech.md), whose processing lands in their folders
-  - [ ] 5.7.4 Harmony 525, with an architecture folder of its own, and the hazard that its application firmware sits one erase block below its configuration
-  - [ ] 5.7.6 Harmony Touch, file based as well, read only
+- [x] 5.7 A reference folder and a skill for every remote on the bench, the way the Harmony 650 has `reference/remotes/harmony-650/` and the `harmony-650` skill: the folder holds the model's facts with a source each, the skill says to read it first and carries that remote's write and bench procedure, so an agent sent to any remote starts from what is known; the One, 600, 700, 300 and 350 moved to [todo-process-logitech.md](todo-process-logitech.md), whose processing lands in their folders
+  - [x] 5.7.4 Harmony 525, with an architecture folder of its own, and the hazard that its application firmware sits one erase block below its configuration
+  - [x] 5.7.6 Harmony Touch, file based as well, read only
 
 ## 6. Fine tuning and loose ends
 

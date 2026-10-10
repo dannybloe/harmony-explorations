@@ -2,7 +2,7 @@
 
 Everything known about one Harmony model, in one place, so that a session never has to assume
 something about a remote that nobody has stated. The trigger was exactly that: a session assumed the
-Harmony 600, 650 and 700 show a clock on their screen, and they show none, which Danny saw at the
+Harmony 600, 650 and 700 show a clock on their screen, and they show none, which the project owner saw at the
 bench. Every fact that bore on the question was already somewhere in this repository, in a different
 document each time.
 
@@ -55,7 +55,7 @@ A row or a sentence says where the fact came from and how strong it is, in one o
 | standing | what it means |
 |---|---|
 | **measured** | read off one of our own units, over USB or with an instrument such as the infrared receiver. Names the unit and the findings section |
-| **seen at the bench** | Danny looked at the remote and said so. Strong for what a person can see, silent on why |
+| **seen at the bench** | The project owner looked at the remote and said so. Strong for what a person can see, silent on why |
 | **read in the firmware** | from the disassembled image, with the image named. What the code does, not proof the hardware does it |
 | **Logitech's manual** | the user manual for that model, in the lab's `Docs/`. The vendor's word, sometimes about a different software generation |
 | **Logitech's service** | stated by their live service, usually a product record. The vendor's word, current |
@@ -109,7 +109,7 @@ remotes attached to this machine.
 1. Make `reference/remotes/harmony-<model>/` with the same ten files, copying the headings of an
    existing folder.
 2. Add the model to `REMOTES` in `packages/silhouettes/bin/remotes.ts`: its skins, the drawing it
-   uses and its architecture. A model with no drawing of its own uses its sibling's where Danny or the
+   uses and its architecture. A model with no drawing of its own uses its sibling's where the project owner or the
    manual says the face is shared, and says so in `keys.md`.
 3. Put the markers where the generator expects them and run `make remote-reference-write`.
 4. If its architecture has no folder yet, add one and a row in `ARCHITECTURES`.

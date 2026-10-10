@@ -8,7 +8,7 @@ stated once in [the architecture folder](../../architectures/harmony-600-650-700
 folder states what is the 650's own.
 
 The 650 is the **colour** sibling of the Harmony 600 and the **battery** sibling of the Harmony 700:
-same face (Danny's statement), same 128 by 128 raster, the 700's colour, and AA cells where the 700
+same face (the project owner's statement), same 128 by 128 raster, the 700's colour, and AA cells where the 700
 charges. Standing words and their meaning are in [the reference's README](../README.md).
 
 ## Skins
@@ -30,7 +30,7 @@ section 131; no skin 74 unit or compile has been read, and the composer refuses 
 
 | unit | standing | source |
 |---|---|---|
-| one Harmony 650, skin 72, second hand | **a write target** since 27 September 2026, Danny's decision: it may be reprogrammed freely as the work needs. Its identity record is `h650` in the lab's `units/` | `CLAUDE.md`, findings section 281 |
+| one Harmony 650, skin 72, second hand | **a write target** since 27 September 2026, the project owner's decision: it may be reprogrammed freely as the work needs. Its identity record is `h650` in the lab's `units/` | `CLAUDE.md`, findings section 281 |
 
 It arrived programmed through MyHarmony on the second test account with the KPN set top box, the Denon
 receiver and the LG television, section 281. Its later configurations add a PS3, Kodi and a Panasonic
@@ -47,7 +47,7 @@ activities onto it. What it holds at any moment is in the lab's
 | firmware on the bench unit | 0.2, hardware version 1.2 | measured, version block, lab `reads/20260927T0840Z-h650-programmed-config.json` |
 | newest firmware published | 0.4 | the package in the lab, section 30 |
 | screen | 1.5 inch, 128 by 128, 65,000 colours | Logitech's manual; raster also measured from configurations |
-| keys | 54 scan codes, the 600's face | configurations, section 311; Danny's statement for the face |
+| keys | 54 scan codes, the 600's face | configurations, section 311; the project owner's statement for the face |
 | devices | 8 per Logitech's service, **5 per Logitech's manual** | open disagreement, [features.md](features.md) |
 | power | AA alkaline cells, no charger | Logitech's manual |
 | external flash | 2 MiB SPI, EON F16, id `15:1C` | measured, section 281 |

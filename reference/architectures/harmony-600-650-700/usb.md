@@ -66,7 +66,7 @@ Generated from `packages/usb/src/rails.ts` by `make remote-reference-write`. Cha
 <!-- /generated -->
 
 **Units**: all three bench units of this architecture are write targets, the 650 since 27 September
-2026 and the 600 and 700 since 29 September, Danny's decisions, `CLAUDE.md`. The configuration writer
+2026 and the 600 and 700 since 29 September, the project owner's decisions, `CLAUDE.md`. The configuration writer
 further refuses a commit on a build whose cache drop and restart have not been read: 0.2 on the 600 and
 650, 2.8 on the 700, `packages/corpus/bin/write-config.ts`.
 

@@ -1,7 +1,7 @@
 # Harmony 650: keys
 
 **The Harmony 650 has the Harmony 600's face**, key for key: the 600, 650 and 700 share one layout
-and one form factor, and the only difference on the face is the model number at the bottom, Danny's
+and one form factor, and the only difference on the face is the model number at the bottom, the project owner's
 statement holding all three. So its drawing,
 [`reference/silhouettes/h650.svg`](../../silhouettes/h650.svg), is generated from
 `packages/silhouettes/src/models/h650.ts`, which takes every shape and scan code from the 600's model by

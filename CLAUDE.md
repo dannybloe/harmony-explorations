@@ -663,9 +663,9 @@ architecture numbers are this project's internal handle and map to nothing on th
 | 14 | Harmony 600, Harmony 650 or Harmony 700; the 700 was a reference image until a unit arrived. All three are write targets since 29 September 2026 and they enumerate alike, so name which |
 | 8 | Harmony 880 or 885, contributed configs only |
 | 10 | Harmony 890 or 895, contributed configs only |
-| 16 | Harmony 300 or Harmony 350, on the bench since 27 August 2026, never opened by **this** library, which refuses the file based family; its configuration was read with concordance and is a lab fixture, section 194. **Its firmware is in the lab since 28 August 2026**, from Logitech's own update service, section 196, and **six of its fifteen container slots are named out of it**, section 259 |
+| 16 | Harmony 300 or Harmony 350, on the bench since 27 August 2026. `openHarmony` refuses the file based family, and both are read as files through `openFileBasedRemote` on the inert path list, the 350 since section 262 and the 300 since section 264; this said they were never opened by this library until 10 October 2026. Its configuration was first read with concordance, section 194. **Its firmware is in the lab since 28 August 2026**, from Logitech's own update service, section 196, and **six of its fifteen container slots are named out of it**, section 259 |
 | 17 | the hub family in Logitech's own template map, section 197: 82, 97, 106, 113, 115 |
-| 18 | Harmony Touch, on the bench since 27 August 2026, never opened over USB. **Logitech's specification says 18 and the remote reports 17**, section 197, and that disagreement is unresolved |
+| 18 | Harmony Touch, on the bench since 27 August 2026, opened over USB read only as a file based remote, `/sys/sysinfo` and `/rf/deviceinfo`, section 200, and refused by `openHarmony`; this said never opened over USB until 10 October 2026. **Logitech's specification says 18 and the remote reports 17**, section 197, and that disagreement is unresolved |
 
 **The failure mode is the trailing mention.** It gets done in headings and first mentions and dropped
 mid-sentence in enumerations, as in "measured on arch 12 and on arch 9 and arch 14 not". That is the

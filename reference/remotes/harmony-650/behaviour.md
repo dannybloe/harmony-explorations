@@ -56,7 +56,7 @@ television, with "Activity" at the bottom, section 294.
 | **The introduction tour**, ten screens from `Welcome to your Harmony 650 remote` to `You can now enjoy your entertainment system with one-touch activity control`, to be pressed through before use | seen at the bench after this project's writes, section 286. The manual says it appears "the first time you've updated your remote" |
 | with the tour skipped in the configuration, no tour | seen at the bench, section 286 |
 | off the cable, the Remote Assistant screen, `If any devices are still On press "Help" now`, also after an ordinary restart | seen at the bench, section 286 |
-| a restart over USB: off the bus after about 2 seconds, back after about 8, running its application, and Danny saw it restart | measured, section 282 |
+| a restart over USB: off the bus after about 2 seconds, back after about 8, running its application, and the project owner saw it restart | measured, section 282 |
 | **every restart puts the clock back to the configuration's stamp**, a restart with nothing written included | measured in memory, section 283. Not visible, since the screen shows no clock, [display.md](display.md) |
 | a restart undoes the running activity's state: an activity started off the cable was gone after a bare restart | seen and measured, section 283 |
 | a changed power on delay is in force straight after the write and restart | measured in memory, section 283 |
