@@ -1,0 +1,33 @@
+{
+  "name": "Harmony 650: one flat background colour per screen state",
+  "description": "todo-compile-650 9.1.2, section 366, one write of lab/work/colours-9-1-2/h650-9-1-2-config.bin. It is the 7.5 file with Logitech's five curved backgrounds replaced by one flat colour per state, and nothing else a setup shows changed: device mode (a device's own pages, and the device list opened while an activity runs) red, rgb(184 32 55); an activity's screens blue, rgb(18 37 200); the activity menu and the device list opened while nothing runs green, rgb(1 136 53). The top and bottom bars, the words, the dark start up and Off screens and the battery icon stay as they were. The corner bottom right, where the battery icon sits, is painted in the background's own colour, through a battery program of its own for the green screens, so no square of another colour shows there on any screen. Prediction: every screen below in its colour, the same words in the same places as the 7.5 file, and the same codes. The colours are what the file says; whether the panel shows them as chosen is what this run settles, since the byte order the panel takes is not read.",
+  "steps": [
+    {
+      "instruction": "Straight after the write the remote restarts and may show 'If any devices are still On press Help now'. Do NOT press Help. Take the remote off the cable, point it at the Flirc and press All Off once. Expect the dark 'Turning system off' screen for a moment, as in the 7.5 run. Mark when it settles, and say which screen it settles on and its colour"
+    },
+    {
+      "instruction": "Press the centre key below the screen until the screen says Activities 1/3 at the top. Expect a GREEN background: TV kijken in the top half, Film kijken in the bottom half, Devices in the light bar at the bottom. Press the right arrow below the screen: Activities 2/3, Muziek and Kodi kijken, green. Press it again: Activities 3/3 with Plasma kijken alone on top, green. Check the corner bottom right on each: no square of another colour. Mark if any page differs"
+    },
+    {
+      "instruction": "Press the centre key below the screen (Devices). Expect Devices 1/2 on a GREEN background with no cross: LG TV top left, Plasma top right, Denon bottom left, KPN bottom right, Activities in the bar at the bottom. Press the right arrow: Devices 2/2, Kodi, Sony HT, Switch, green. Mark if either page differs"
+    },
+    {
+      "instruction": "Press the right arrow back to Devices 1/2 and press the button beside Plasma (upper right). Expect 'Plasma 1/7' on a RED background with no cross: Power Toggle top left, Power On top right, Power Off bottom left, Teletext bottom right, Back at the bottom. Press the button beside Teletext (lower right): expect the Plasma's Teletext"
+    },
+    {
+      "instruction": "Press the centre key (Back) to the device list, then press the button beside KPN (lower right). Expect a page titled KPN on a RED background: Power Toggle top left, Teletext top right, DVR bottom left, nothing bottom right. Press the centre key (Back), then the centre key again until Activities 1/3 shows, green. Mark if anything differs"
+    },
+    {
+      "instruction": "Press the right arrow twice to Activities 3/3 and press the button beside Plasma kijken (upper left). Expect the dark 'Starting Plasma kijken' screen as before, the Plasma's power on and the KPN box's power, about 6.5 s later the Plasma's HDMI 1, then a BLUE screen titled Plasma kijken with Teletext top left, DVR top right, Aspect bottom left, Radio bottom right and Devices at the bottom. Press the button beside Aspect (lower left): expect the Plasma's Aspect"
+    },
+    {
+      "instruction": "Press the centre key (Devices). Expect Devices 1/2 on a RED background: Plasma top left, KPN top right, LG TV bottom left, Denon bottom right, and Activity in the bar at the bottom. This is the device list while an activity runs, so red and not green. Press the centre key (Activity): back to the BLUE Plasma kijken screen. Mark if either differs"
+    },
+    {
+      "instruction": "Press the Listen to Music key (Muziek). Expect the dark 'Starting Muziek' screen, then a BLUE screen titled Muziek with Sleep alone at the top left, a page of one item. Check the corner bottom right: blue, no square of another colour. Mark when it settles"
+    },
+    {
+      "instruction": "Press All Off. Expect the dark 'Turning system off' screen for a moment, then the screen it settles on. Mark it, with the screen's colour"
+    }
+  ]
+}
