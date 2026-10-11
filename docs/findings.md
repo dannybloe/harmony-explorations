@@ -50051,9 +50051,15 @@ conservative since every way a configuration names a program writes the operand 
 repoints that entry; the table keeps its length. Base slot 11 has no other reader, so the old program
 behind that entry was dead on the remote.
 
+**On the remote**: the rebuilt file, the idle corner at entry 5, written to the Harmony 650 on 11 October
+2026 and run through section 366's bench test without a stall: every key answered at once, the screen went
+dark, every state showed its colour (in bright test colours, `h650-9-1-2-bright-config.bin`, red, blue and
+yellow, for a colourblind tester on a dim panel; the decided colours differ only in value), the corner
+matched the background, and every code the Flirc heard was the one the file binds
+(`reads/20261011T124108Z-ir-test-harmony-650-one-flat-background-colour-per-screen-state.json`).
+
 **Falsification**: an image of these models whose run routine reads the operand's high byte, or a second
-seek of base slot 11 on an arch 14 image; or the rebuilt file, entry 5 for the idle corner, stalling the
-650 the same way.
+seek of base slot 11 on an arch 14 image.
 
 * `tests/test_findings.py`, `TestAQueuedScreenProgramIsIndexedByOneByte`: the routine and its indexer on
   five images, and the one seek site on the four arch 14 images.
