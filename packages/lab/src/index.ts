@@ -232,6 +232,8 @@ export const IMAGES: Readonly<Record<string, string>> = {
   h650_9_1_2_base: '20261011T1018Z-h650-9-1-2-base-region.bin',
   h650_stuck_9_1_2: '20261011T1046Z-h650-stuck-9-1-2-region.bin',
   h650_freeze_a_base: '20261011T1057Z-h650-freeze-a-base-region.bin',
+  h650_9_1_2_fixed_base: '20261011T1154Z-h650-9-1-2-fixed-base-region.bin',
+  h650_bright_base: '20261011T1236Z-h650-bright-base-region.bin',
   h650_test_config_clean: '20261009T1203Z-h650-test-config-clean.bin',
   // Our 5.1 file as written to the 650: the starting compile with the rest of the test setup composed on.
   h650_milestone_5_1_config: '20261009T1007Z-h650-milestone-5-1-config.bin',
@@ -794,7 +796,7 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
     'h650_tilt_off_config', 'h650_milestone_5_1_base', 'h650_test_config',
     'h650_milestone_5_1_config', 'h650_test_config_clean', 'h650_5_2_5_base',
     'h650_6_2_13_base', 'h650_7_1_base', 'h650_7_1_stopped',
-    'h650_7_1_probe', 'h650_7_5_base', 'h650_10_5_base', 'h650_9_1_2_base', 'h650_stuck_9_1_2', 'h650_freeze_a_base',
+    'h650_7_1_probe', 'h650_7_5_base', 'h650_10_5_base', 'h650_9_1_2_base', 'h650_stuck_9_1_2', 'h650_freeze_a_base', 'h650_9_1_2_fixed_base', 'h650_bright_base',
     // External flash of the bench Harmony 700 from 0x000000, kept for the staged application at its
     // start. The container at 0x020000 is byte for byte `h700_gspm`, the embedded config the 2.8
     // package carries as its region 3, so counting it would count that one twice. Section 295.

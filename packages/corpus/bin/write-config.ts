@@ -201,6 +201,8 @@ const H650_DUMPS = new Set([
   'h650_9_1_2_base',
   'h650_stuck_9_1_2',
   'h650_freeze_a_base',
+  'h650_9_1_2_fixed_base',
+  'h650_bright_base',
 ]);
 
 /**
