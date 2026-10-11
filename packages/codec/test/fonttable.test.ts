@@ -81,9 +81,11 @@ test('a shadowed letter is white over black one pixel down and right, a plain on
 
 test('our alphabet tells every character apart but I from l, which four faces draw alike', () => {
   const shapes = Object.values(oxaniumAlphabet().shapes);
-  // 9 faces, 2 colourings, 94 characters with ink: 1692, less 18 keys a character shares with itself across
-  // faces, which name one character, and 8 that are `I` and `l` in one shape, in F13, F11, F10 and R13.
-  assert.equal(shapes.length, 1666);
+  // 9 faces, 2 colourings, 94 characters with ink: 1692, less 138 keys a character shares with itself across
+  // faces, which name one character, and 8 that are `I` and `l` in one shape, in F11, F10, R14 and R13. The
+  // faces drawn in one weight share more shapes since the weights were chosen by look (Medium for labels,
+  // ExtraLight for R15 and R14); R13 is Regular because ExtraLight draws `O` and `D` alike there.
+  assert.equal(shapes.length, 1546);
   assert.deepEqual(shapes.filter((one) => one.length > 1), Array(8).fill('Il'));
 });
 

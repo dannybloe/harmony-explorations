@@ -49943,8 +49943,11 @@ and over every lab image with a character map, 127, the change only adds charact
 and gives no character a second code.
 
 **Our letters read back through the same map.** `text.ts`'s `oxaniumAlphabet` is built from the masks, all
-nine faces in both colourings, 1666 distinct shapes; `I` and `l` share a shape in four faces, F13, F11, F10
-and R13, and no other two characters share one. A rebuilt compile's map picks it with every drawn code
+nine faces in both colourings, 1546 distinct shapes; `I` and `l` share a shape in four faces, F11, F10, R14
+and R13, and no other two characters share one. This said 1666 shapes with the pair in F13, F11, F10 and R13
+until 11 October 2026, when the weights were chosen by look instead of by Logitech's stem (Medium for the
+six label faces, ExtraLight for R15 and R14, `tools/oxanium_glyphs.py`); R13 stays Regular, since at its
+size ExtraLight and Light draw `O` and `D` alike. A rebuilt compile's map picks it with every drawn code
 resolved and none ambiguous, since the other five faces tell `I` from `l` and one code is one character.
 
 **Measured on all 13 compiles**: each rebuilt one passes its own checks, its setup view is unchanged, its

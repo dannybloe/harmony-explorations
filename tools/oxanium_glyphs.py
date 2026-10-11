@@ -13,9 +13,12 @@ from the lab's `fonts/Oxanium/static/`:
 **The faces** are the nine Logitech draws its Harmony 650 screens in, measured over the 13 compiles in
 the lab's `work/sample-8-2/` (survey.ts, metrics.py): each one's cell height, the row its baseline sits
 on, whether a glyph opens with a blank column, and the width of a space. For each, the Oxanium pixel size
-whose one bit capitals and x-height land on Logitech's rows, and the lightest weight whose stem is
-Logitech's stem at that size; they are tunable (decision 19), and changing one is a change here and a
-regenerated module.
+whose one bit capitals and x-height land on Logitech's rows. The weight was first the lightest whose
+stem is Logitech's stem at that size; since 11 October 2026 it is chosen by look, ExtraLight for the three
+regular faces Logitech uses for the start up, Off, Remote Assistant, Help and tour screens, and Medium for
+the six label faces, a step bolder and still one pixel strokes below 14 px. R13 stays Regular: at its 11 px
+ExtraLight and Light draw `O` and `D` alike, Regular does not. They are tunable (decision
+19), and changing one is a change here and a regenerated module.
 
 **A glyph** is the lead column if the face has one, the ink from its leftmost to its rightmost column, and
 one trailing column, which is where the shadow of the last ink column falls and what spaces two letters:
@@ -33,14 +36,14 @@ from PIL import Image, ImageDraw, ImageFont
 
 # name: (what Logitech draws in it, cell, baseline row, lead column, Oxanium weight, Oxanium px, space width)
 FACES = {
-    'F15': ('bold 15, corner labels and menu rows', 15, 11, 1, 'SemiBold', 14, 4),
-    'F14W': ('bold 14 wide, corner labels', 14, 10, 1, 'SemiBold', 13, 4),
-    'F14': ('bold 14, titles, counter, bottom words, corner labels', 14, 10, 0, 'Bold', 12, 3),
-    'F13': ('bold 13, corner labels', 13, 9, 0, 'ExtraBold', 11, 3),
+    'F15': ('bold 15, corner labels and menu rows', 15, 11, 1, 'Medium', 14, 4),
+    'F14W': ('bold 14 wide, corner labels', 14, 10, 1, 'Medium', 13, 4),
+    'F14': ('bold 14, titles, counter, bottom words, corner labels', 14, 10, 0, 'Medium', 12, 3),
+    'F13': ('bold 13, corner labels', 13, 9, 0, 'Medium', 11, 3),
     'F11': ('thin 11, corner labels', 11, 8, 1, 'Medium', 9, 3),
     'F10': ('thin 10, corner labels', 10, 7, 0, 'Medium', 9, 3),
-    'R15': ('regular 15, firmware and status screens, Help', 15, 11, 1, 'Regular', 14, 4),
-    'R14': ('regular 14, start up and Off screens, Help, the tour', 14, 10, 1, 'Regular', 12, 3),
+    'R15': ('regular 15, firmware and status screens, Help', 15, 11, 1, 'ExtraLight', 14, 4),
+    'R14': ('regular 14, start up and Off screens, Help, the tour', 14, 10, 1, 'ExtraLight', 12, 3),
     'R13': ('regular 13, Help', 13, 9, 0, 'Regular', 11, 3),
 }
 CHARACTERS = [chr(code) for code in range(32, 127)]
