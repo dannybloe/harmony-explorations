@@ -49943,8 +49943,9 @@ and over every lab image with a character map, 127, the change only adds charact
 and gives no character a second code.
 
 **Our letters read back through the same map.** `text.ts`'s `oxaniumAlphabet` is built from the masks, all
-nine faces in both colourings, 1546 distinct shapes; `I` and `l` share a shape in four faces, F11, F10, R14
-and R13, and no other two characters share one. This said 1666 shapes with the pair in F13, F11, F10 and R13
+nine faces in both colourings, 1616 distinct shapes; `I` and `l` share a shape in three faces, F11, F10 and
+R13, and no other two characters share one. This said "1546 distinct shapes"<!--superseded--> with the pair in four faces
+until decision 22 made the labels SemiBold and R15 and R14 Regular, section 370, and before that 1666 shapes with the pair in F13, F11, F10 and R13
 until 11 October 2026, when the weights were chosen by look instead of by Logitech's stem (Medium for the
 six label faces, ExtraLight for R15 and R14, `tools/oxanium_glyphs.py`); R13 stays Regular, since at its
 size ExtraLight and Light draw `O` and `D` alike. A rebuilt compile's map picks it with every drawn code
@@ -50070,3 +50071,76 @@ seek of base slot 11 on an arch 14 image.
   refusal; `packages/codec/test/backgrounds.test.ts`: the entries per compile and a control naming the
   idle corner as entry 5 plus `0x1900`.
 * Section 73 corrected in place; `docs/config-format.md`, base slot 11 and the `0x73` row.
+
+## 370. Our letters are blended into the colour under them, one copy of a set per background, where Logitech's are one bit
+
+`todo-compile-650.md` 8.2.6, decision 22. Sources checked first: Logitech's own sets in the 13 Harmony 650
+compiles (`work/fonts-aa/logitech.ts`), section 368's firmware reading of the text routine and the font
+select, `font.ts` for the glyph encoding and `render.ts` for what is drawn under a text.
+
+**Logitech never blends a letter.** Every one of the 235 sets of the 13 compiles holds an ink and at most
+one shadow colour, four pairs in all: `0xFFFF` over `0x3186`, `0xFFFF` over `0x0000`, `0x2104` alone, and
+`0xD6BB` over `0x3186`. Their letters are drawn for the size, so the staircase at an edge is a designed one.
+Ours are a typeface scaled to 9 to 14 pixels, and in one bit Oxanium's curves come out ragged, which the bench
+run of section 368's file showed. But a glyph's pixel is a full RGB565 colour, section 367, decoded by the
+same routine as a picture's, so the remote draws a letter of any number of colours as it draws Logitech's.
+
+**What blending is.** `tools/oxanium_glyphs.py` writes each letter twice: the one bit mask as before, and
+its grey coverage on the same box, sixteen levels a pixel. `lettering.ts` then mixes the ink into the
+background by the coverage `v`: the ink times `v` plus what is under the letter times `1 - v`, where what is
+under a shadowed letter is the background darkened towards black by the coverage one pixel up and left, so
+the shadow is soft as well. A pixel neither covers is skipped, as around a one bit letter. A letter blended
+for one colour is wrong on any other, which is why a set is copied per background.
+
+**The grey box is the mask's box.** A blended letter is exactly as wide as the one bit one, so every text is
+placed the same either way, and the text pass needs nothing. Oxanium's grey drawing fits that box in all but
+two ways, measured over every face and character. On the four faces with no lead column, F14, F13, F10 and
+R13, most letters have a faint column left of the box, at most 116 of 255, which is left out. And the `j`
+is drawn a column further right in grey than in one bit: on F14 and R15 the box held 81 percent of it, and
+on R14 its stem fell in the trailing column, so it stood apart from the letter before, `ki jken` on the
+preview. The window slides right to the place that holds the most of the letter and, of those, lies most on
+the one bit ink; that moves the `j` of seven faces one column and nothing else.
+
+**Reading a blended letter back.** A shape key is the pixels, and a blended letter's pixels depend on its
+background, so `text.ts` also names a glyph by its structure, `letterStructure`: per pixel skipped, the
+white ink, the dark ink, or anything else. A letter reaches its ink only where it covers the whole pixel,
+and `letterRows` keeps every part covered pixel one blue step off both inks, which is needed: on the dark
+start up screen, `0x2945`, a shadow of coverage 3 of 15 comes out exactly `0x2104`. So a structure is the
+same on every background, which the test checks on ten. Our alphabet then holds 1675 structures, `I` and
+`l` sharing one in the shadowed F11, F10 and R13 and no other two characters sharing any; the one bit shapes
+are 1616, the pair shared in F11, F10 and R13 in both colourings. Section 368's 1546 shapes, the pair in four faces, were the Medium and ExtraLight weights; decision 22 made the labels SemiBold and R15 and R14 Regular.
+
+**Which colour a text is on, read off the rendering.** `renderVariants` takes an observer now, and for each
+string it reports the select that chose its set and the pixels in its box before it is drawn: the glyphs
+side by side, the set's height high. `blending.ts` draws every variant of every page, up to 64 a page, and
+gives a select a copy when every string it governs sits on one colour, a box counting as one colour when no
+pixel is more than one step from its commonest in any channel. That allowance is for the dark start up and
+Off screens: their second line, `kijken` of `Starting Plasma kijken`, sits on a dithered band of five
+colours a step apart. Without it five selects on the bench file and 58 on the 13 compiles kept the one bit
+letters, and the second line looked unlike the first.
+
+**Measured on all 13 compiles**, each in the decided state colours and our letters: every select of every
+page has its strings on one colour, none on two, none unseen and none on a picture, so no text keeps the one
+bit letters. 307 copies are appended, 22 to 27 a compile, 16612 selects repointed, 19190 blended glyphs; the
+colours are the device colour on 117 copies, the dark screens' `0x2945` on 79, white under the bars' words
+on 39, black on 32, and the activity and idle colours on 20 each. Every result passes its checks, its setup
+is unchanged, every string reads the same words, and `checkBlendedLetters` finds every glyph of every copy to
+be its letter blended for the copy's colour and every string drawn in a copy to sit on that colour in a
+rendering of the result. The two ends are independent: the colour is the build's record on one side and
+the result's pixels on the other. The controls: the check refuses Logitech's own letters, one select moved to
+a copy for another colour, and one pixel of one blended glyph changed.
+
+**What it costs.** A compile grows from 743 to 1076 KB to 1002 to 1309 KB, and the bench file from 970 to
+1156 KB, counting a KB as 1000 bytes. The region from `0x030000` to the chip's end at `0x200000` holds 1901
+KB, so all fit; but the largest file this project has written to the Harmony 650 is section 368's, 970 KB,
+and whether its firmware bounds a configuration's size short of the chip is not read. Nor is whether the
+font select at `0x16BA4` bounds its index by the table's count: the copies are sets 17 to 45 here where
+Logitech's highest is 18, and the operand is one byte, so at most 256 sets, which `withBlendedLetters`
+refuses past. The bench run of the file is the confirmation of both.
+
+* `tools/oxanium_glyphs.py`, the grey levels and the window; `packages/codec/src/lettering.ts`,
+  `letterCoverage`, the blended `letterRows`, `letterStructure`; `text.ts`, the structures in
+  `oxaniumAlphabet`; `render.ts`, `TextDrawn`; `blending.ts`, `withBlendedLetters`, `checkBlendedLetters`,
+  `flatColour`.
+* `packages/codec/test/blending.test.ts`; `fonttable.test.ts`, the shape count.
+* Section 368's shape count corrected in place.

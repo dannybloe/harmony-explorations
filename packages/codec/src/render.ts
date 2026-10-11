@@ -283,6 +283,33 @@ function drawString(
   return missing;
 }
 
+/** What `TextDrawn` reports for a string about to be drawn: its box, and the raster in it so far. */
+function textDrawn(
+  c: Container,
+  raster: Raster,
+  set: FontSet | undefined,
+  codes: Uint8Array,
+  x: number,
+  y: number,
+  at: number,
+  selectAt: number | undefined,
+  font: number,
+): TextDrawn {
+  let width = 0;
+  for (const code of codes) {
+    const glyph = set === undefined ? undefined : glyphOf(c, set, code);
+    if (glyph !== undefined) width += glyph.width + GLYPH_ADVANCE;
+  }
+  const height = set?.height ?? 0;
+  const under: number[] = [];
+  for (let row = Math.max(0, y); row < Math.min(raster.height, y + height); row += 1) {
+    for (let column = Math.max(0, x); column < Math.min(raster.width, x + width); column += 1) {
+      under.push(raster.pixels[row * raster.width + column] as number);
+    }
+  }
+  return { at, selectAt, font, x, y, width, height, under };
+}
+
 /**
  * Run the screen program at `address` into a raster.
  *
@@ -325,6 +352,7 @@ export function renderVariants(
   c: Container,
   address: number,
   limit = 12,
+  observe?: (text: TextDrawn) => void,
 ): { variants: ScreenVariant[]; truncated: boolean } {
   const variants: ScreenVariant[] = [];
   const queue: number[][] = [[]];
@@ -336,7 +364,7 @@ export function renderVariants(
       break;
     }
     const prefix = queue.shift() as number[];
-    const { page, choices, forks } = run(c, address, prefix);
+    const { page, choices, forks } = run(c, address, prefix, observe);
     if (page === undefined) continue;
     // Two prefixes can reach the same set of choices when a switch is never met, so the taken arms
     // rather than the prefix are what makes a variant distinct.
@@ -350,6 +378,29 @@ export function renderVariants(
 }
 
 /**
+ * A string as the renderer met it, for a caller that wants to know what a text was drawn over:
+ * `blending.ts` blends a letter into the colour under it, and this is where that colour is read.
+ *
+ * `under` is the raster in the string's box at the moment before the string was drawn, so it is what the
+ * program had painted there by then: pictures, earlier strings, or `UNDRAWN`. The box is the string's
+ * glyphs side by side, its set's height high, clipped to the screen. A path met twice reports twice.
+ */
+export interface TextDrawn {
+  /** Blob offset of the text instruction. */
+  at: number;
+  /** Blob offset of the `SCREEN_SELECT_FONT` whose choice the string was drawn in, undefined when none was met. */
+  selectAt: number | undefined;
+  /** The base slot 7 entry that select chose, -1 before any. */
+  font: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  /** The pixels in the box before the draw, row major, clipped to the screen. */
+  under: number[];
+}
+
+/**
  * Draw one path through a program.
  *
  * `decisions` is the arm to take at the switches met so far, one entry each in encounter order; a
@@ -360,10 +411,11 @@ function run(
   c: Container,
   address: number,
   decisions: readonly number[] = [],
+  observe?: (text: TextDrawn) => void,
 ): { page: RenderedPage | undefined; choices: ScreenChoice[]; forks: number[][] } {
   const choices: ScreenChoice[] = [];
   const forks: number[][] = [];
-  const page = draw(c, address, decisions, choices, forks);
+  const page = draw(c, address, decisions, choices, forks, observe);
   return { page, choices, forks };
 }
 
@@ -373,6 +425,7 @@ function draw(
   decisions: readonly number[],
   choices: ScreenChoice[],
   forks: number[][],
+  observe?: (text: TextDrawn) => void,
 ): RenderedPage | undefined {
   const raster = blankScreen(c);
   if (raster === undefined) return undefined;
@@ -388,14 +441,17 @@ function draw(
   const seen = new Set<number>();
   let at: number | undefined = address;
   let font = -1;
+  let selectAt: number | undefined;
   while (at !== undefined && !seen.has(at)) {
     seen.add(at);
     const program: ScreenInstruction[] | undefined = screenProgram(c, at);
     if (program === undefined) return out;
     let next: number | undefined;
     for (const instruction of program) {
-      if (instruction.opcode === SCREEN_SELECT_FONT) font = instruction.operands[0] ?? -1;
-      else if (instruction.opcode === SCREEN_DRAW_IMAGE
+      if (instruction.opcode === SCREEN_SELECT_FONT) {
+        font = instruction.operands[0] ?? -1;
+        selectAt = instruction.start;
+      } else if (instruction.opcode === SCREEN_DRAW_IMAGE
                || instruction.opcode === SCREEN_DRAW_IMAGE_AT) {
         const named = pictureReference(instruction);
         const picture = named === undefined ? undefined : bitmapAt(c, named);
@@ -417,8 +473,10 @@ function draw(
           ? instruction.glyphs
           : glyphsReferencedBy(c, instruction);
         if (codes !== undefined) {
-          out.glyphsMissing += drawString(c, raster, sets[font], codes,
-            instruction.operands[0] ?? 0, instruction.operands[1] ?? 0);
+          const x = instruction.operands[0] ?? 0;
+          const y = instruction.operands[1] ?? 0;
+          if (observe !== undefined) observe(textDrawn(c, raster, sets[font], codes, x, y, instruction.start, selectAt, font));
+          out.glyphsMissing += drawString(c, raster, sets[font], codes, x, y);
           out.strings += 1;
         }
       }

@@ -78,6 +78,7 @@ export * from './pictures.ts';
 export * from './backgrounds.ts';
 export * from './oxanium.ts';
 export * from './lettering.ts';
+export * from './blending.ts';
 export * from './fonttable.ts';
 // **The metadata archive**, section 260: the ZIP two architectures carry inside the container,
 // which on arch 16 (Harmony 300 and 350) names every device and every command. Exported for the

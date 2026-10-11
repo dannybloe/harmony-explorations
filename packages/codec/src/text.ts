@@ -43,7 +43,7 @@ import {
 import type { ScreenInstruction } from './screen.ts';
 import { ALPHABETS } from './alphabets.ts';
 import type { Alphabet } from './alphabets.ts';
-import { LETTERING_CHARACTERS, LETTERING_FACES, letterGlyph } from './lettering.ts';
+import { LETTERING_CHARACTERS, LETTERING_FACES, letterGlyph, letterRows, letterStructure } from './lettering.ts';
 
 /**
  * The glyph code a font set starts at when the codes are ASCII rather than assigned.
@@ -183,16 +183,20 @@ export function glyphsReferencedBy(c: Container, instruction: ScreenInstruction)
  * is the answer. An empty intersection means the two disagree, which is a contradiction rather
  * than an ambiguity, so it is reported as such by leaving the code out of `codes`.
  */
-function resolveWith(alphabet: Alphabet, context: ResolveContext): CharacterMap {
+function resolveWith(alphabet: LetteredAlphabet, context: ResolveContext): CharacterMap {
   const candidates = new Map<number, Set<string>>();
   const blankOnly = new Map<number, boolean>();
-  for (const { code, blank, key } of context.shapes) {
+  for (const shape of context.shapes) {
+      const { code, blank, key } = shape;
       if (blank) {
         if (!blankOnly.has(code)) blankOnly.set(code, true);
         continue;
       }
       blankOnly.set(code, false);
-      const character = alphabet.shapes[key];
+      // A glyph no shape names may still be one of our letters blended into a background, which only its
+      // structure can say, and only our alphabet has structures to ask.
+      const character = alphabet.shapes[key]
+        ?? (alphabet.structures === undefined ? undefined : alphabet.structures[structureOf(shape)]);
       if (character === undefined) continue;
       const had = candidates.get(code);
       candidates.set(
@@ -278,8 +282,11 @@ function resolveWith(alphabet: Alphabet, context: ResolveContext): CharacterMap 
  * catching. Section 139.
  */
 interface ResolveContext {
-  /** One entry per decoded glyph, in set then address order, with its shape already hashed. */
-  shapes: { code: number; blank: boolean; key: string }[];
+  /**
+   * One entry per decoded glyph, in set then address order, with its shape already hashed. Its structure,
+   * `letterStructure`, is worked out on first asking and kept, since only our alphabet asks for it.
+   */
+  shapes: { code: number; blank: boolean; key: string; height: number; glyph: Glyph; structure?: string }[];
   ascii: boolean;
   drawn: Set<number>;
 }
@@ -295,7 +302,7 @@ function resolveContext(c: Container): ResolveContext {
       const blank = isBlank(glyph);
       // The key's height prefix is the set's declared height, which `decodedSet` has just refused to
       // return a glyph disagreeing with, so it is now the decoded height as well.
-      shapes.push({ code: set.first + index, blank, key: blank ? '' : shapeKey(set.height, glyph) });
+      shapes.push({ code: set.first + index, blank, key: blank ? '' : shapeKey(set.height, glyph), height: set.height, glyph });
     }
   }
   return { shapes, ascii: usesAscii(c), drawn: drawnCodes(c) };
@@ -326,27 +333,46 @@ export function characterMap(c: Container): CharacterMap | undefined {
 }
 
 /**
+ * An alphabet that can also name a glyph by its `letterStructure`, keyed `height:structure`. Only ours has
+ * structures: a blended letter's pixels depend on what it was blended into, its structure does not.
+ */
+interface LetteredAlphabet extends Alphabet {
+  structures?: Readonly<Record<string, string>>;
+}
+
+function structureOf(shape: ResolveContext['shapes'][number]): string {
+  shape.structure ??= `${shape.height}:${letterStructure(shape.glyph.rows)}`;
+  return shape.structure;
+}
+
+/**
  * Our own letters' alphabet, `lettering.ts`: every face in both colourings, made from the masks the letters
  * are drawn from rather than seeded from a configuration, so it has no `codes` to fall back on. A shape two
- * characters share carries both, as a seeded alphabet's does. Built once, on first use.
+ * characters share carries both, as a seeded alphabet's does. The blended letters are named by structure,
+ * built on black since a structure is the same on every background. Built once, on first use.
  */
-let oxanium: Alphabet | undefined;
+let oxanium: LetteredAlphabet | undefined;
 
-export function oxaniumAlphabet(): Alphabet {
+export function oxaniumAlphabet(): LetteredAlphabet {
   if (oxanium !== undefined) return oxanium;
   const shapes: Record<string, string> = {};
+  const structures: Record<string, string> = {};
+  const add = (table: Record<string, string>, key: string, ch: string): void => {
+    const had = table[key] ?? '';
+    if (!had.includes(ch)) table[key] = had + ch;
+  };
   for (const face of LETTERING_FACES) {
     for (const lettering of ['shadowed', 'plain'] as const) {
       for (const ch of LETTERING_CHARACTERS) {
         const glyph = letterGlyph(face, ch, lettering);
         if (isBlank(glyph)) continue;
-        const key = shapeKey(glyph.rows.length, glyph);
-        const had = shapes[key] ?? '';
-        if (!had.includes(ch)) shapes[key] = had + ch;
+        add(shapes, shapeKey(glyph.rows.length, glyph), ch);
+        const blended = letterRows(face, ch, lettering, 0x0000);
+        add(structures, `${blended.length}:${letterStructure(blended)}`, ch);
       }
     }
   }
-  oxanium = { name: 'oxanium', container: 'tools/oxanium_glyphs.py', shapes };
+  oxanium = { name: 'oxanium', container: 'tools/oxanium_glyphs.py', shapes, structures };
   return oxanium;
 }
 

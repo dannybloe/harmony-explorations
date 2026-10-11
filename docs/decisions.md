@@ -675,3 +675,13 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    written to the spare Harmony One, whose serial it blocks, since both report firmware 3.4 and skin 54
    and a configuration carries no serial; and todo-secure-logitech 2.2.3's slower harvest has a serial
    whose loss costs nothing.
+
+22. **Our letters are blended into the colour under them, the labels in SemiBold and the regular faces in
+   Regular.** *Taken by the project owner on 11 October 2026, after the bench run of the one bit letters and
+   a preview of both, for `todo-compile-650.md` 8.2.6.* Decision 20's white letters over a black shadow
+   stand, and the dark words on the bars; what changes is the edge. In one bit, Oxanium at the remote's
+   sizes is ragged, and Logitech's letters only look smooth because they were drawn for the size. So every
+   letter is drawn from its grey coverage, mixed into the colour it is drawn on with a soft shadow, and each
+   background gets its own copy of a font, section 370. The weights were chosen on the same preview: the six
+   label faces one step heavier than the Medium first tried, SemiBold, and the three regular faces of the
+   start up, Off and Help screens Regular rather than ExtraLight. All remain tunable under decision 19.

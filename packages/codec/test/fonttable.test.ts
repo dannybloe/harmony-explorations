@@ -1,9 +1,9 @@
 /**
  * The Harmony 650's font table in our own letters, `todo-compile-650.md` 8.2, decisions 19 and 20.
  *
- * Three claims. Our letters are whole: eight faces, each holding every printable ASCII character on its
+ * Three claims. Our letters are whole: nine faces, each holding every printable ASCII character on its
  * cell, coloured by two rules, and read back by an alphabet in which only `I` and `l` ever share a shape.
- * Logitech's font sets fall into those eight faces by measurement, on all 13 compiles, in the same counts.
+ * Logitech's font sets fall into those nine faces by measurement, on all 13 compiles, in the same counts.
  * And `withOxaniumFonts` re-letters all 13 with every text still reading the same character and the setup
  * unchanged, which `checkOxaniumFonts` reads back from the pixels and refuses when one glyph is off.
  */
@@ -79,14 +79,14 @@ test('a shadowed letter is white over black one pixel down and right, a plain on
   assert.deepEqual([LETTERING_INK.shadowed, LETTERING_INK.plain, LETTERING_SHADOW], [0xffff, 0x2104, 0x0000]);
 });
 
-test('our alphabet tells every character apart but I from l, which four faces draw alike', () => {
+test('our alphabet tells every character apart but I from l, which three faces draw alike', () => {
   const shapes = Object.values(oxaniumAlphabet().shapes);
-  // 9 faces, 2 colourings, 94 characters with ink: 1692, less 138 keys a character shares with itself across
-  // faces, which name one character, and 8 that are `I` and `l` in one shape, in F11, F10, R14 and R13. The
-  // faces drawn in one weight share more shapes since the weights were chosen by look (Medium for labels,
-  // ExtraLight for R15 and R14); R13 is Regular because ExtraLight draws `O` and `D` alike there.
-  assert.equal(shapes.length, 1546);
-  assert.deepEqual(shapes.filter((one) => one.length > 1), Array(8).fill('Il'));
+  // 9 faces, 2 colourings, 94 characters with ink: 1692, less 70 keys a character shares with itself across
+  // faces, which name one character, and 6 that are `I` and `l` in one shape, in F11, F10 and R13. The
+  // faces drawn in one weight share shapes since the weights were chosen by look (SemiBold for labels,
+  // Regular for the three regular faces).
+  assert.equal(shapes.length, 1616);
+  assert.deepEqual(shapes.filter((one) => one.length > 1), Array(6).fill('Il'));
 });
 
 test('withOxaniumFonts re-letters all 13 Harmony 650 compiles, every text reading the same, the setup unchanged',

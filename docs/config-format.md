@@ -1207,7 +1207,11 @@ set, so every set holds codes for all 95. The face is read off the set:
 | 11, 10 | | F11, F10 |
 
 A set with a drop shadow is drawn white, `0xFFFF`, over a black shadow, `0x0000`, one pixel right and down;
-a set with none, the bars' words, in `0x2104` alone. One glyph per face, colouring and character, 95 per
+a set with none, the bars' words, in `0x2104` alone. **Blended copies**, section 370, `blending.ts`: each set
+is then copied once per colour its texts are drawn on, every glyph mixed into that colour from Oxanium's grey
+coverage with a soft shadow, the copies appended after Logitech's sets and each font select (opcode 16, a
+one byte operand, so at most 256 sets) pointed at its copy. A glyph pixel is any RGB565 colour, though every
+one of Logitech's 235 sets holds only an ink and at most one shadow colour. One glyph per face, colouring and character, 95 per
 pair, which every set of that face and colouring points at. All 13 Harmony 650 compiles, setup and every
 text's words unchanged, and a fourteenth out of sample; the rule was derived on the 13. A shared glyph is read safe in the firmware of the Harmony 650 0.2 and the 700 2.8, which
 find a glyph per character from the set's address and the pointer at `3 + 3 * (code - 1)` and decode it to
