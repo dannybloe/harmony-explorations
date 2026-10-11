@@ -437,6 +437,12 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // their own, since every harvest compile carries that name. Section 337.
   harvest_one_two_devices: 'harvest-one-two-devices.EzHex',
   harvest_650_two_devices: 'harvest-650-two-devices.EzHex',
+  // Two remotes given by a friend, Danny's own since 11 October 2026: a Harmony One with a dead display
+  // as it came and after his legacy setup was synced onto it, and a Harmony 525 as it came.
+  // `dumps/danny/harmony-one-friend/` and `harmony-525-friend/`.
+  one_friend_asfound_config: 'one-friend-asfound-config.bin',
+  one_friend_legacy_sync_config: 'one-friend-legacy-sync-config.bin',
+  h525_friend_asfound_config: 'h525-friend-asfound-config.bin',
   // The spare Harmony One either side of a sync, 7 August 2026. findings.md section 58.
   one_spare_before_sync: 'one-spare-before-sync-config.bin',
   one_spare_after_sync: 'one-spare-after-sync-config.bin',
@@ -798,7 +804,10 @@ export const PARSEABLE_EXCLUDED: readonly string[] =
     'h650_issue36_config', 'h650_issue8_config',
     // Two harvest compiles of test devices removed straight afterwards, so no remote ever held either,
     // the reason section 306's compiles are here.
-    'harvest_one_two_devices', 'harvest_650_two_devices'];
+    'harvest_one_two_devices', 'harvest_650_two_devices',
+    // The friend's Harmony One and Harmony 525, out of the corpus wide totals until joining is decided,
+    // as for the contributed Harmony 650s: adding them moves every total, which is a step of its own.
+    'one_friend_asfound_config', 'one_friend_legacy_sync_config', 'h525_friend_asfound_config'];
 
 const cache = new Map<string, string[]>();
 

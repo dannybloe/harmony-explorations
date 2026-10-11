@@ -375,7 +375,7 @@ files already here rather than for incoming ones.
 
 ## Never write to a remote
 
-Read paths only, except on **five units**, deliberately and behind two flags, all five of which have had flash written. On the **spare Harmony
+Read paths only, except on **seven units**, deliberately and behind two flags, five of which have had flash written; the friend's Harmony One and Harmony 525, decision 21 of 11 October 2026, are permitted and have had none yet. On the **spare Harmony
 One**: a block written back unchanged on 30 August 2026, section 222; a delay byte changed and
 reverted on 1 September, sections 236 and 237; a device added on 3 September, section 242, 25 blocks,
 after which the television answered it; and one power on delay raised the same day, section 247, two
@@ -391,7 +391,7 @@ which landed in flash and was overridden by a delay saved on the remote; that sa
 cleared over USB, section 305, four records appended to the settings store in its internal program
 memory, the first append to that store from a host, with its own rail, `assertSettingsWriteAllowed`,
 behind `HARMONY_SETTINGS_WRITE=1`. **No other remote has had flash written and
-no other may be**, which said "the spare is the only one that may be"<!--superseded--> until 6
+no other may be but the friend's two of decision 21**, which said "the spare is the only one that may be"<!--superseded--> until 6
 September 2026. **The Harmony 600 and the Harmony 700 may be written to since 29 September 2026**,
 Danny's decision that day, and both have had a configuration changed since, sections 301 and 303: each first gets its identity and a
 whole region read into the lab, then one block back unchanged, then a real write, the order every unit
@@ -438,10 +438,12 @@ document:
   check and not `stageFirmware`'s. It took the bench Harmony 700 from 2.5 to 2.8, and the way back is
   the same route since section 298 read 2.8's status byte handler and restart, with the 2.5 image cut to
   its 71552 bytes out of the unit's first staging read, since no standalone copy exists. Nothing writes the processor's flash, and this is not a route to modifying firmware.
-* **Five units may be written to and no others**: the **spare Harmony One** and the **Harmony 525**,
-  Danny's decision of 5 September 2026, the **Harmony 650**, his decision of 27 September 2026, and
-  the **Harmony 600** and the **Harmony 700**, his decision of 29 September 2026. The exclusion is the
-  point: his everyday Harmony One. This said the 600 was excluded as "the only arch 14 remote in
+* **Seven units may be written to and no others**: the **spare Harmony One** and the **Harmony 525**,
+  Danny's decision of 5 September 2026, the **Harmony 650**, his decision of 27 September 2026,
+  the **Harmony 600** and the **Harmony 700**, his decision of 29 September 2026, and the **friend's
+  Harmony One** (dead display) and the **friend's Harmony 525**, given to him and his own, decision 21
+  of 11 October 2026, neither yet in `write-config.ts`'s targets. The exclusion is the point: his
+  everyday Harmony One. This said the 600 was excluded as "the only arch 14 remote in
   existence here"<!--superseded--> until the 650 arrived, which is what the rule named as the
   condition for an arch 14 write target, and then that the unit check "is what refuses the
   600"<!--superseded--> until it was admitted. **The 600 and the 650 are one product id and one
@@ -482,9 +484,10 @@ document:
   which the existing model predicted: it keeps its configuration on a serial chip and executes nothing
   out of the block being erased, where arch 12 does and does restart, section 247.
   **The old wording said the spare Harmony One was the only write target**<!--superseded--> and that
-  arch 9 had none either. **Nine remotes are on the bench**: a programmed Harmony One, a Harmony 600, the spare Harmony
+  arch 9 had none either. **Eleven remotes are on the bench**: a programmed Harmony One, a Harmony 600, the spare Harmony
   One, a Harmony 525, since 27 August 2026 a Harmony Touch, a Harmony 350 and a Harmony 300, since
-  27 September 2026 a Harmony 650, and since 29 September 2026 a Harmony 700.
+  27 September 2026 a Harmony 650, since 29 September 2026 a Harmony 700, and since 11 October 2026 a
+  friend's Harmony One with a dead display and a friend's Harmony 525.
   This said four until 29 August 2026, twelve lines above an architecture table that dates the other
   three. None of the three changes the write argument, since none is arch 12 (Harmony One) and
   `openHarmony` refuses all three, which is why the stale count survived. **Arch 14 had no write

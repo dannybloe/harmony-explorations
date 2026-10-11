@@ -428,6 +428,11 @@ IMAGES = {
     # and no activity, under names of their own. Section 337.
     'harvest_one_two_devices': 'harvest-one-two-devices.EzHex',
     'harvest_650_two_devices': 'harvest-650-two-devices.EzHex',
+    # Two remotes given by a friend, Danny's own since 11 October 2026: a Harmony One with a dead display
+    # as it came and after his legacy setup was synced onto it, and a Harmony 525 as it came.
+    'one_friend_asfound_config': 'one-friend-asfound-config.bin',
+    'one_friend_legacy_sync_config': 'one-friend-legacy-sync-config.bin',
+    'h525_friend_asfound_config': 'h525-friend-asfound-config.bin',
     # The spare Harmony One either side of a sync, 7 August 2026. The change was decided and
     # written down before it was made, which no other pair here can say, and the second half was
     # compiled by the live service rather than found. findings.md section 58.
@@ -765,7 +770,11 @@ PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_confi
                       # `h650_config_region` is.
                       'h650_issue36_config', 'h650_issue8_config',
                       # Two harvest compiles no remote ever held, section 306's reason.
-                      'harvest_one_two_devices', 'harvest_650_two_devices')
+                      'harvest_one_two_devices', 'harvest_650_two_devices',
+                      # The friend's Harmony One and Harmony 525, out of the corpus wide totals
+                      # until joining them is decided.
+                      'one_friend_asfound_config', 'one_friend_legacy_sync_config',
+                      'h525_friend_asfound_config')
 
 CONTAINERS = (
     'h700_config', 'h700_config_2', 'h600_config', 'h525_config', 'h525_config_2', 'one_config',

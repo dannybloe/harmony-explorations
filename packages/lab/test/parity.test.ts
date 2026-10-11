@@ -112,7 +112,8 @@ test('the Python table was actually parsed, rather than read as empty', () => {
   // 230 with the region read before todo-compile-650 5.1's write.
   // 231 with Logitech's compile of the whole test setup, 5.2.
   // 232 with our 5.1 file as written, 233 with Logitech's clean compile of the test setup, 234 with the region before 5.2.5, 235 before 6.2.13, 236 before 7.1, 237 after its stopped probe, 238 with the probe, 239 before 7.5.
-  assert.equal(Object.keys(pythonImages()).length, 239, 'every fixture tests/lab.py names');
+  // 242 with the friend's Harmony One, two reads, and Harmony 525.
+  assert.equal(Object.keys(pythonImages()).length, 242, 'every fixture tests/lab.py names');
 });
 
 test('the two sides exclude the same fixtures from the parseable population', () => {
@@ -199,7 +200,7 @@ test('the two sides exclude the same fixtures from the parseable population', ()
   // 81 with the tilt sensor off compile.
   // 82 with the region read before 5.1's write.
   // 83 with Logitech's compile of the whole test setup.
-  // 84 with our 5.1 file as written, 85 with Logitech's clean compile of the test setup, 86 with the region before 5.2.5, 87 before 6.2.13, 88 before 7.1, 89 after its stopped probe, 90 with the probe, 91 before 7.5.
-  assert.equal(names.length, 91, 'each one a container already counted, that container plus a known '
+  // 84 with our 5.1 file as written, 85 with Logitech's clean compile of the test setup, 86 with the region before 5.2.5, 87 before 6.2.13, 88 before 7.1, 89 after its stopped probe, 90 with the probe, 91 before 7.5. 94 with the friend's Harmony One's two reads and Harmony 525, out of the totals until joining is decided.
+  assert.equal(names.length, 94, 'each one a container already counted, that container plus a known '
     + 'edit, or a compare base whose remote is not yet in the corpus');
 });

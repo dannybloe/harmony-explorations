@@ -661,3 +661,17 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    bottom bars are plain white**, their shapes kept, and the titles, the page counter and the bottom
    words on them stay dark and unshadowed as Logitech draws them, since white there would not show.
    Decided the same day, after a preview; this item said the bars were open until then.
+
+21. **The friend's Harmony One and Harmony 525 are the project owner's own, and write targets.** *Taken
+   by the project owner on 11 October 2026.* A Harmony One with a dead display and a Harmony 525, given by
+   a friend, are his to do with as he wants, and so are their serials: Logitech's service may be shown
+   either, and either may be registered, synced or blocked, with nobody else's hardware at stake. Both
+   are permitted write targets, the sixth and seventh, beside the spare Harmony One, the Harmony 525, 650,
+   600 and 700; his everyday Harmony One stays excluded. **Permitted is not capable**, as for the 525 in
+   section 269: neither is in `write-config.ts`'s targets yet, and each takes the order every unit here
+   has, its identity and a whole region read into the lab first, then one block written back unchanged,
+   then a real write. Their identities are `units/one_friend.txt` and `units/h525_friend.txt`. What it
+   opens: a Logitech compile for the friend's One, whose serial the service still accepts, can be
+   written to the spare Harmony One, whose serial it blocks, since both report firmware 3.4 and skin 54
+   and a configuration carries no serial; and todo-secure-logitech 2.2.3's slower harvest has a serial
+   whose loss costs nothing.

@@ -220,7 +220,10 @@ reasoning instead of querying.
   serial off real hardware passes (three brace wrapped GUIDs, the first sixteen `0xEE` bytes on
   every unit read here), a synthetic one is refused with `ErrorCode 5` (section 136). So a model
   nobody here owns cannot be registered, and **a contributor's serial is never used**: their
-  hardware's identity is theirs.
+  hardware's identity is theirs. A remote given to the project owner is not a contributor's: the
+  friend's Harmony One and Harmony 525 are his, serials included, decision 21, so either may be
+  registered, synced or put at risk of a block; the friend's One is linked to the first test account
+  and carries his legacy setup since 11 October 2026.
 * **`AccountManager/RemoveAccountFromHousehold`** is the one write with an undo character:
   `cleanup.py` uses it and refuses any record holding a remote, a device or an activity unless
   named explicitly with `--record`.
