@@ -42,6 +42,7 @@ const LAST = 0xc14f
 const MICROCHIP = 0x04d8
 const BOOTLOADER = 0x000b
 const MODELS: Record<number, string> = {
+  0xc111: 'Harmony 525',
   0xc121: 'Harmony One',
   0xc122: 'Harmony 600/650/700',
   0xc124: 'Harmony 300/350',
