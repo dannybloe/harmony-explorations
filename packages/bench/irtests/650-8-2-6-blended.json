@@ -1,0 +1,24 @@
+{
+  "name": "Harmony 650: our letters blended into their background",
+  "description": "todo-compile-650 8.2.6, section 370, decision 22, one write of lab/work/fonts-8-2-6/h650-8-2-6-bright-config.bin. It is the 8.2 bench file in the bright test colours (orange while nothing runs, red in device mode, blue in an activity, the white bars, the dark start up and Off screens) with every letter drawn from Oxanium's grey levels and mixed into the colour under it, with a soft shadow; labels, titles and menu rows in SemiBold, the start up and Off text in Regular. Each background has its own copy of every font, so the file is 1156 KB, larger than anything written to this remote before, and its fonts sit at table positions up to 45 where Logitech's stop at 18. Nothing else changes: the same screens, the same words, the same codes. What this run settles: the remote accepts a file this size and font positions past Logitech's, and a blended letter draws as smooth letters. A letter blended for the wrong colour would show as a faint box or a halo of another colour around it; a missing font would show as blank text or garbage. Prediction: every screen as in the 8.2 run, the letters smoother at their curves, no box or halo anywhere. One known change: 'Starting Plasma kijken' is in Regular now and breaks onto two lines, 'kijken' on the second.",
+  "steps": [
+    {
+      "instruction": "Straight after the write the remote restarts and may show 'If any devices are still On press Help now'. Do NOT press Help. Is that sentence readable, with no box around the letters? Take the remote off the cable, point it at the Flirc and press All Off once. Expect the dark 'Turning system off' screen with 'Please keep the remote pointed at your system' in light letters with soft edges. Mark when it settles, and anything that looks like a box, a halo or a smear around letters"
+    },
+    {
+      "instruction": "Press the centre key below the screen until the screen says Activities 1/3 at the top, dark letters on the white bar, the counter 1/3 at the right. Expect TV kijken in the top half and Film kijken in the bottom half, white letters with a soft shadow on orange, and Devices in the white bar at the bottom. Press the right arrow below the screen twice: Activities 2/3 (Muziek, Kodi kijken), then 3/3 (Plasma kijken). Look at the j of 'kijken': it should sit next to the i, not apart from it. Mark any letter that looks broken, missing, boxed or out of place"
+    },
+    {
+      "instruction": "Press the centre key below the screen (Devices). Expect Devices 1/2 on orange: LG TV top left, Plasma top right, Denon bottom left, KPN bottom right, Activities in the bottom bar. Press the right arrow: Devices 2/2, Kodi, Switch, Sony HT. Look at the y of 'Sony': is its tail visible? Mark if anything differs"
+    },
+    {
+      "instruction": "Press the right arrow back to Devices 1/2 and press the button beside KPN (lower right). Expect a red page titled KPN: 'Power' over 'Toggle' top left, Teletext top right, DVR bottom left, Back at the bottom. Press the button beside Teletext (upper right): expect the KPN box's Teletext. Press the centre key (Back), then the centre key again until Activities 1/3 shows"
+    },
+    {
+      "instruction": "Press the right arrow twice to Activities 3/3 and press the button beside Plasma kijken (upper left). Expect the dark start up screen titled 'Starting Plasma' with 'kijken' on a second line, both in the same light letters, then the Plasma's power on and the KPN box's power, about 6.5 s later the Plasma's HDMI 1, then a blue screen titled Plasma kijken with Teletext top left, DVR top right, Aspect bottom left, Radio bottom right and Devices at the bottom. Mark when it settles, and whether the two title lines look alike"
+    },
+    {
+      "instruction": "Press the centre key (Devices). Expect a red Devices 1/2, Activity in the bottom bar. Press the centre key (Activity): back to the blue Plasma kijken screen. Press All Off. Expect the dark 'Turning system off' screen, then the screen it settles on. Mark it, and any letter on any screen of this run that did not draw as a smooth letter"
+    }
+  ]
+}
