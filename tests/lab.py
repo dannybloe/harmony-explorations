@@ -223,6 +223,9 @@ IMAGES = {
     'h650_7_1_probe': '20261009T1429Z-h650-7-1-probe-region.bin',
     'h650_7_5_base': '20261010T0710Z-h650-7-5-base-region.bin',
     'h650_10_5_base': '20261011T0953Z-h650-10-5-base-region.bin',
+    'h650_9_1_2_base': '20261011T1018Z-h650-9-1-2-base-region.bin',
+    'h650_stuck_9_1_2': '20261011T1046Z-h650-stuck-9-1-2-region.bin',
+    'h650_freeze_a_base': '20261011T1057Z-h650-freeze-a-base-region.bin',
     'h650_test_config_clean': '20261009T1203Z-h650-test-config-clean.bin',
     'h650_milestone_5_1_config': '20261009T1007Z-h650-milestone-5-1-config.bin',
     'h650_assistant_off_config': '20261009T0930Z-h650-assistant-off-config.bin',
@@ -758,7 +761,7 @@ PARSEABLE_EXCLUDED = ('vendor_region_user_config', 'vendor_region_embedded_confi
                       'h650_tilt_off_config', 'h650_milestone_5_1_base', 'h650_test_config',
                       'h650_milestone_5_1_config', 'h650_test_config_clean', 'h650_5_2_5_base',
                       'h650_6_2_13_base', 'h650_7_1_base', 'h650_7_1_stopped',
-                      'h650_7_1_probe', 'h650_7_5_base', 'h650_10_5_base',
+                      'h650_7_1_probe', 'h650_7_5_base', 'h650_10_5_base', 'h650_9_1_2_base', 'h650_stuck_9_1_2', 'h650_freeze_a_base',
                       # External flash of the bench Harmony 700 from 0x000000, kept for the staged
                       # application; its container at 0x020000 is byte for byte `h700_gspm`.
                       # Section 295.

@@ -49818,6 +49818,20 @@ byte first the grey patch `0x4a49` and the plain background `0x2945` are neutral
 way purple and green. The decided colours reach the panel as `rgb(181 32 57)`, `rgb(16 36 198)` and
 `rgb(0 138 49)` through the renderer's decoder, the panel holding fewer levels than eight bits.
 
+**On the remote the file stalls the Harmony 650, and the appended corner program is what does it**, measured
+on 11 October 2026. The 9.1.2 file written and read back identical, the colours showed as chosen, and after
+the fourth key press the remote stopped answering keys, taking one press about every 20 seconds; the screen
+never went dark, and in the end it no longer showed the USB screen even after a battery pull with the cable
+in, while it still answered USB commands. The 10.5 file written back over it (`h650_stuck_9_1_2`, the region
+as stuck) restored normal behaviour. **The control is one change**: the same file with the seven references
+to the appended entry 6653, the two idle key map entries and the five idle page programs, pointed back at
+the activity menu's entry 2, sixteen bytes with the checksum, entry 6653 left in the table unreferenced
+(`lab/work/freeze-9-1-2/make-a.ts`). It ran without a stall and the screen went dark. So queuing entry 6653
+is what stalls the remote, and its presence in base slot 11 does not. **Why is not read**: the index itself,
+6653 where every queued program of the 13 compiles is entry 0, 2 or 3, or something in the copied program.
+Every check above passed on this file, so none of them reads what the firmware does with a queued program.
+Harmony 650 alone.
+
 Where it lives:
 
 * `packages/codec/src/backgrounds.ts`: `screenStates`, `withStateBackgrounds`, `checkStateBackgrounds`
