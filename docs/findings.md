@@ -43829,6 +43829,18 @@ pictures and body agree and whose banks agree too, which would point at a rule a
 banks differ while the body and the build time agree too, which would rule out a dependence on those; or an arch 14
 image that reaches the bank or the key table through a fixed position.
 
+### On the remote
+
+Run on the Harmony 650 on 11 October 2026, todo 10.5.1: `lab/work/bench-10-5/h650-10-5-config.bin`, the 7.5
+file with all 18 pictures and all 437 page lists moved and none at the index it held, written over a read of
+the unit's region, `h650_10_5_base`, in 14 blocks and read back identical. Every screen of the fifteen step
+bench test showed as the 7.5 file's did, the second device list in its own order included, and every code
+the Flirc heard is the one the written file binds to the key pressed
+(`reads/20261011T100142Z-ir-test-harmony-650-the-test-setup-placed-our-way.json`, named against the written
+file by `lab/work/bench-10-5/run.ts`). So the firmware reached every moved picture and page list through its
+pointer, which is what reading no fixed position predicted. The Plasma's power on was heard as 6 frames
+where the test said 7, the same count the 7.5 run heard for the same code. Harmony 650 alone.
+
 ### Where it lands
 
 * `packages/codec/src/placer.ts`: `placePieces`, `loosen`, `LOOSE_KINDS`.
