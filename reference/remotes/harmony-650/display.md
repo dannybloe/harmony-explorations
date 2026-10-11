@@ -39,7 +39,8 @@ of every screen:
   arch 14 configuration and **nothing on the remote opens it**, section 326.
 * **The page counter** `n/m` in the upper right corner, Logitech's manual and section 285.
 * **An infrared status indicator** that "flashes in the bottom right corner whenever command is being
-  sent", Logitech's manual. **Not checked** at the bench.
+  sent", Logitech's manual. **Seen at the bench** on 11 October 2026: an icon in the bottom right corner
+  while the remote sends, watched routinely to tell when a bench test step has finished sending.
 * **A start up screen** for an activity, "Starting" and its name at the top and three fixed lines from
   y 82 asking to keep the remote pointed at the system, read from configurations, section 290; seen on
   the 650 for a composed activity, section 291.
@@ -56,8 +57,10 @@ sections 317 and 363. **No device or activity icons** are drawn on the 650, `tod
 Six are a fill or a band of one coloured rows and are built by this project; the curved backgrounds, the
 start up picture, the corner mark and the firmware screens' battery and USB pictures are designed images,
 section 363. Four of the pictures are drawn only by programs switching on state variable 17, which this
-project reads as a battery gauge, section 317: a small mark at 114, 112 and three patches in the colour of
-the background under it; whether one is ever seen on the bench unit is **not checked**.
+project read as a battery gauge, section 317: a small mark at 114, 112 and three patches in the colour of
+the background under it. **The mark is the infrared indicator above**, by its place and by the bench, so
+state variable 17 is most likely the sending flag rather than a battery level; that the firmware sets it
+around a send is **not read**.
 
 **Fonts**: a font set holds only the letters its screens use, 76 codes each with between 13 and 66
 filled, section 317. Which typefaces they are is not named anywhere.
@@ -81,7 +84,6 @@ such as a volume or channel readout, is **not checked**: nothing here states it 
 ## Not checked
 
 * The colour of the bench unit's panel, as seen. The manual and the compiled look agree it is colour.
-* Whether the infrared indicator appears, and where.
 * Whether any battery picture is ever drawn on the 650.
 * What timer 3, the other arm of the screen light pair, does, section 292.
 * Once, after the 20 second write, the screen stayed black after unplugging until the batteries came
