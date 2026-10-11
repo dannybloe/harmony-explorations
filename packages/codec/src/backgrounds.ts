@@ -21,9 +21,17 @@
  * programs, each a switch on state variable 17 that draws the icon from 1 to 3 and at 0 a patch in the colour
  * of the background under it, section 363; one program serves every device screen and the idle device list,
  * another the activity menu and every working screen. Two programs cannot paint three colours, so the
- * activity menu's program is copied for the idle state, its patch drawn in the idle colour, the copy appended
- * to base slot 11's table, and the two idle screens' records rebuilt through `screenrecords.ts` naming it.
- * The two shared programs keep their table entries and get their state's patch.
+ * activity menu's program is copied for the idle state, its patch drawn in the idle colour, the copy given
+ * a low base slot 11 entry nothing runs, and the two idle screens' records rebuilt through `screenrecords.ts`
+ * naming it. The two shared programs keep their table entries and get their state's patch.
+ *
+ * **The entry has to be below 256, and appending one is never that.** The firmware that runs a queued program
+ * indexes base slot 11 with the operand's low byte alone, section 369, read on the Harmony 600 and 650 0.2,
+ * the 650 0.4, the 700 2.8 and the Harmony One 3.4, while a Harmony 650 table holds about 6653 entries. The
+ * first build appended entry 6653, which runs as entry 253, a program raising the sending signal, which
+ * re-runs the corner program: the 650 stalled after four presses. So an entry from 0 to 255 that nothing
+ * names is taken over instead. Base slot 11 has no other reader in that firmware, so such an entry is dead
+ * on the remote and its pointer is free.
  *
  * **The two bars become one flat colour too**, white by default (decision 20), their shapes kept, and the
  * words on them stay dark. Every other result here reads a bar by its content key, so this runs last, after
@@ -101,6 +109,24 @@ const nameByKey = new Map(HARMONY_650_PICTURES.map((entry) => [entry.key, entry.
 /** A fill of one colour, encoded. */
 const flat = (width: number, height: number, colour: number): Uint8Array =>
   encodeBitmap(pictureRows({ kind: 'fill', width, height, colour }));
+
+/** The most entries of base slot 11 a queued program can reach: the firmware indexes it with one byte, section 369. */
+export const RUNNABLE_SCREEN_PROGRAMS = 256;
+
+/**
+ * The lowest base slot 11 entry nothing names, for a program of our own to take over. A program is run only
+ * by action `0x73`, and every way a configuration names one writes its operand low byte first and then the
+ * action, `lo hi 0x73`: a key map entry after its tag, a page program after `0x11`, an action list's step.
+ * So an entry whose `lo 00 0x73` occurs nowhere in the container is named by nothing, which a byte scan
+ * shows conservatively: a chance match elsewhere only rules an entry out. Refused when none is left.
+ */
+function freeLowProgram(c: Container, count: number): number {
+  const named = new Set<number>();
+  const bytes = c.blob;
+  for (let k = 0; k + 2 < bytes.length; k++) if (bytes[k + 1] === 0 && bytes[k + 2] === RUN_SCREEN_PROGRAM) named.add(bytes[k]!);
+  for (let i = 0; i < Math.min(count, RUNNABLE_SCREEN_PROGRAMS); i++) if (!named.has(i)) return i;
+  throw new BackgroundError('no base slot 11 entry below 256 is free for the idle battery program');
+}
 
 /** Every piece of a layout, in the order `takeApart` keeps them. */
 function piecesOf(layout: ContainerLayout): ContainerPiece[] {
@@ -249,7 +275,7 @@ export interface StateBackgrounds {
   layout: ContainerLayout;
   /** Per state, the modes given its background. */
   modes: Record<ScreenState, number[]>;
-  /** The base slot 11 entry of the idle battery program appended here. */
+  /** The base slot 11 entry the idle battery program was given, below 256 and named by nothing before. */
   idleBattery: number;
   /** Designed backgrounds dropped from the bank, by name. */
   dropped: string[];
@@ -299,14 +325,11 @@ export function withStateBackgrounds(layout: ContainerLayout, colours: Backgroun
   if (!switchCopy.refs.some((ref) => 'to' in ref && ref.to === caseCopy)) throw new BackgroundError('the battery switch does not name its patch case');
   const tablePiece = step.sections[slot]?.head[0];
   if (tablePiece === undefined) throw new BackgroundError('base slot 11 has no table');
-  const idleBattery = table.length;
-  if (idleBattery >= 0xffff) throw new BackgroundError('base slot 11 is full');
-  const grown = new Uint8Array(tablePiece.bytes.length + 3);
-  grown.set(tablePiece.bytes);
-  grown[0] = (idleBattery + 1) & 0xff;
-  grown[1] = (idleBattery + 1) >> 8;
-  tablePiece.bytes = grown;
-  tablePiece.refs.push({ at: 2 + 3 * idleBattery, to: switchCopy, offset: 0 });
+  const idleBattery = freeLowProgram(c, table.length);
+  const entryRef = tablePiece.refs.find((ref) => ref.at === 2 + 3 * idleBattery);
+  if (entryRef === undefined || !('to' in entryRef)) throw new BackgroundError(`base slot 11 entry ${idleBattery} is not a reference`);
+  const index = tablePiece.refs.indexOf(entryRef);
+  tablePiece.refs[index] = { at: entryRef.at, to: switchCopy, offset: 0 };
   step.body = [...step.body, switchCopy, caseCopy];
 
   // 2. The two idle screens rebuilt naming the idle program and the idle background.
@@ -484,6 +507,8 @@ export function checkStateBackgrounds(c: Container, layout: ContainerLayout,
       }
     }
     for (const index of batteryOperands(c, mode)) {
+      // The firmware runs entry `index & 0xff`, section 369, so a higher entry runs some other program.
+      if (index >= RUNNABLE_SCREEN_PROGRAMS) throw new BackgroundError(`mode ${mode} queues base slot 11 entry ${index}, which the firmware runs as entry ${index & 0xff}`);
       const address = table[index];
       if (address === undefined) throw new BackgroundError(`mode ${mode} queues base slot 11 entry ${index}, which does not exist`);
       let patched = 0;

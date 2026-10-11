@@ -1078,6 +1078,7 @@ file.
 | base slot 15's group lengths are demanded | a group whose length differs is silently replaced by compiled in defaults. A group index is **not** portable between architectures |
 | base slot 15's entry count is demanded | 9 on arch 14 (Harmony 600 and 700), 11 on arch 12 (Harmony One). A different count is a silent no-op, not an error |
 | a timer fires one instruction, not a list | and its duration is clamped to sixteen bits with no error |
+| a queued screen program runs entry `operand & 0xff` | so a program of ours takes a free base slot 11 entry below 256 and is never appended; entry 6653 ran as 253 and stalled a Harmony 650 in a loop. Read on the Harmony 600, 650, 700 and One images, section 369 |
 | infrared duration blocks are shared | check who else names a block before editing it in place |
 | a record's three block pointers are once, held and tail | slot 1 repeats for as long as the key is down, so its trailing gap **is** the repeat rate. A duration word caps at 32767 us |
 | how many times a press sends the code is the **ratio** of the first two blocks | so changing it adds or removes a whole copy and its gap, which is a length change and goes through `relocate.ts`. Reading the first block's copies alone gets a two code family wrong: 6 copies and 2 is the same 3 sends as 3 copies and 1 |

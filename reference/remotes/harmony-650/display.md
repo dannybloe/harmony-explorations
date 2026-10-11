@@ -58,9 +58,8 @@ Six are a fill or a band of one coloured rows and are built by this project; the
 start up picture, the corner mark and the firmware screens' battery and USB pictures are designed images,
 section 363. Four of the pictures are drawn only by programs switching on state variable 17, which this
 project read as a battery gauge, section 317: a small mark at 114, 112 and three patches in the colour of
-the background under it. **The mark is the infrared indicator above**, by its place and by the bench, so
-state variable 17 is most likely the sending flag rather than a battery level; that the firmware sets it
-around a send is **not read**.
+the background under it. **The mark is the infrared indicator above**, by its place and by the bench, and
+state variable 17 is the sending flag: its writers are on the firmware's send path, section 369.
 
 **Fonts**: a font set holds only the letters its screens use, 76 codes each with between 13 and 66
 filled, section 317. Which typefaces they are is not named anywhere.

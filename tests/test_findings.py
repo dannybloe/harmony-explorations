@@ -2464,5 +2464,89 @@ class TestBaseSlot17IsReadAsAHitMapAndNoLiteralNamesTheKeyTable(unittest.TestCas
                 letters = [i.fields['k'] for i in after if i.mnemonic == 'MOVLW' and 0x41 <= i.fields['k'] <= 0x5A]
                 self.assertEqual(bytes(letters[:4]), b'LWJL')
 
+
+class TestAQueuedScreenProgramIsIndexedByOneByte(unittest.TestCase):
+    """
+    Section 369: action `0x73` runs base slot 11 entry `operand & 0xff`, on the Harmony 600 0.2, the
+    Harmony 650 0.2 and 0.4, the Harmony 700 2.8 and the Harmony One 3.4. Section 73 read a sixteen bit
+    index there and it is one byte.
+
+    The run routine seeks the screen program slot, copies the operand's **low** byte alone into the
+    indexer's argument with `MOVFF`, loads the count header's size, 2, and calls the indexer; it never
+    names the operand's high byte. The indexer moves that one byte into the low half of its product and
+    clears the high half before multiplying by three. So a table of 6653 entries on a Harmony 650 has 256
+    a configuration can run, and section 366's appended entry 6653 ran as entry 253 and stalled the remote.
+
+    On the four arch 14 images the seeker is called with base slot 11 at exactly one site, this routine,
+    so nothing else in that firmware reads the table and an entry from 256 up is never reached.
+    """
+
+    # image -> (base, run routine, operand low register, slot literal, seeker)
+    IMAGES = {
+        'h650_bench_code': (0x9000, 0x16EB0, 0x738, 0x0B, 0x18020),
+        'h600_code_complete': (0x9000, 0x16EB0, 0x738, 0x0B, 0x18020),
+        'h650_code': (0x9000, 0x185EC, 0x391, 0x0B, 0x10B72),
+        'h700_code': (0x9000, 0x18814, 0x39D, 0x0B, 0x10B92),
+        'one34_code': (0x20000, 0x296F4, 0x2F1, 0x0C, 0x2BA76),
+    }
+
+    def routine(self, code, base, addr, limit=40):
+        """Instructions from `addr` up to and including the first `RETURN`."""
+        out = []
+        offset = addr - base
+        for _ in range(limit):
+            instr = isa.decode(code, offset, base)
+            out.append(instr)
+            if instr.mnemonic == 'RETURN':
+                break
+            offset += 2 * instr.words
+        return out
+
+    def test_the_run_routine_copies_the_operand_low_byte_alone_and_the_indexer_clears_the_high(self):
+        lab.require(*self.IMAGES)
+        for name, (base, run, low, slot, seeker) in self.IMAGES.items():
+            code = lab.load(name)
+            with self.subTest(image=name):
+                body = self.routine(code, base, run)
+                self.assertEqual([i.fields['k'] for i in body if i.mnemonic == 'MOVLW'], [slot, 2])
+                calls = [i.fields['target'] for i in body if i.mnemonic == 'CALL']
+                self.assertEqual(calls[0], seeker)
+                moves = [i for i in body if i.mnemonic == 'MOVFF']
+                self.assertEqual([m.fields['src'] for m in moves], [low])
+                # The high byte is named nowhere in the routine, by MOVFF or by a banked access.
+                touched = {i.fields.get('src') for i in body} | {i.fields.get('f') for i in body}
+                self.assertNotIn(low + 1, touched)
+                self.assertNotIn((low + 1) & 0xFF, {i.fields.get('f') for i in body if i.mnemonic != 'MOVLB'})
+                index = moves[0].fields['dst']
+                indexer = calls[1]
+                head = self.routine(code, base, indexer, 8)
+                multiply = next(k for k, i in enumerate(head) if i.mnemonic == 'MULWF')
+                before = head[:multiply]
+                reads = [i for i in before if i.mnemonic == 'MOVF']
+                self.assertEqual([r.fields['f'] for r in reads], [index & 0xFF])
+                cleared = [i for i in before if i.mnemonic == 'CLRF']
+                self.assertEqual(len(cleared), 1)
+                self.assertEqual(before[multiply - 1].mnemonic, 'MOVLW')
+                self.assertEqual(before[multiply - 1].fields['k'], 3)
+
+    def test_on_arch_14_the_screen_program_slot_is_sought_at_one_site_only(self):
+        arch14 = [name for name, spec in self.IMAGES.items() if spec[3] == 0x0B]
+        lab.require(*arch14)
+        for name in arch14:
+            base, run, _, slot, seeker = self.IMAGES[name]
+            code = lab.load(name)
+            sites = []
+            for site in trace.xrefs(code, base, [seeker])[seeker]:
+                offset = site.addr - base
+                for back in range(2, 30, 2):
+                    instr = isa.decode(code, offset - back, base)
+                    if instr.mnemonic == 'MOVLW':
+                        if instr.fields['k'] == slot:
+                            sites.append(site.addr)
+                        break
+            with self.subTest(image=name):
+                self.assertEqual(len(sites), 1)
+                self.assertTrue(run < sites[0] < run + 0x20, hex(sites[0]))
+
 if __name__ == '__main__':
     unittest.main()

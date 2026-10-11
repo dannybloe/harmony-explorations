@@ -8479,16 +8479,21 @@ The second is the stronger one, because the first only says the indices are smal
 
 ### `0x73` runs a screen program
 
-`0x18814` loads slot `0x0B` into `0x6DD`, seeks with `0x10B92`, puts the operand in the sixteen bit
-index at `0x6E1` with element size 2 at `0x6E0`, indexes with `0x10BEE`, follows the pointer with
-`0x10A30` and calls the screen interpreter at `0x1879C`. So **`0x73` runs the base slot 11 screen
-program its operand indexes**, the same table `0x7F` does for action lists.
+`0x18814` loads slot `0x0B` into `0x6DD`, seeks with `0x10B92`, puts the operand's **low byte** in the
+one byte index at `0x6E1` with the count header's size, 2, at `0x6E0`, indexes with `0x10BEE`, follows the
+pointer with `0x10A30` and calls the screen interpreter at `0x1879C`. So **`0x73` runs the base slot 11
+screen program its operand's low byte indexes**, from the same kind of table `0x7F` reads for action lists
+with a sixteen bit index. **Corrected by section 369**: this read
+"the operand in the sixteen bit index at `0x6E1` with element size 2 at `0x6E0`"<!--superseded-->,
+which took the header offset for an element size and the index for two bytes; the indexer clears the high byte before multiplying by three. It mattered when a
+configuration of ours named entry 6653 and the remote ran entry 253.
 
 **No arch 14 config issues it**, so that reading was about to be published against a handler nothing
 in the corpus reaches. Checked on the architecture that does use it: the One's dispatcher at
 `0x25128` copies the operand into `0x2F1/0x2F2` and calls `0x296F4`, which asks for arch slot `0x0C`
-(base slot 11), indexes with element size 2 and jumps to `0x295AC`, the arch 12 screen interpreter.
-Same structure, different addresses.
+(base slot 11), indexes with the low byte `0x2F1` alone past the two byte header (section 369; this said
+"indexes with element size 2"<!--superseded-->) and jumps to `0x295AC`, the arch 12 screen interpreter. Same structure, different
+addresses.
 
 3927 uses across 8 containers, all of them arch 8, 9 or 12, **0 outside the table**.
 
@@ -49827,10 +49832,12 @@ as stuck) restored normal behaviour. **The control is one change**: the same fil
 to the appended entry 6653, the two idle key map entries and the five idle page programs, pointed back at
 the activity menu's entry 2, sixteen bytes with the checksum, entry 6653 left in the table unreferenced
 (`lab/work/freeze-9-1-2/make-a.ts`). It ran without a stall and the screen went dark. So queuing entry 6653
-is what stalls the remote, and its presence in base slot 11 does not. **Why is not read**: the index itself,
-6653 where every queued program of the 13 compiles is entry 0, 2 or 3, or something in the copied program.
-Every check above passed on this file, so none of them reads what the firmware does with a queued program.
-Harmony 650 alone.
+is what stalls the remote, and its presence in base slot 11 does not. **Why is read in section 369**: the
+firmware runs entry `6653 & 0xff`, 253, a program of Logitech's that raises the sending flag, which re-runs
+the corner program. `withStateBackgrounds` now takes over a free entry below 256, entry 5 on ten of the 13
+compiles, 6 on two and 7 on one, and `checkStateBackgrounds` refuses a queued entry of 256 or more. Every
+check above passed on the stalling file, so none of them read what the firmware does with a queued
+program. Harmony 650 alone.
 
 Where it lives:
 
@@ -50003,3 +50010,54 @@ too, the table called about as large on every compile, and the borrowing called 
 
 * `packages/codec/src/lettering.ts`, `fonttable.ts`, `oxanium.ts`; `text.ts`, `oxaniumAlphabet`.
 * `packages/codec/test/fonttable.test.ts`.
+
+## 369. A queued screen program is indexed by one byte, so only base slot 11's first 256 entries can run
+
+**Found because section 366's file stalled the Harmony 650**, and the control there pinned it on the idle
+screens queuing base slot 11 entry 6653. Sources checked: the firmware, by control flow from the action
+dispatcher (`lab/work/agent-freeze-9-1-2/`, an agent's reading, each step below then checked here by
+disassembly); section 73, which had read this routine and got its index wrong; Logitech's client draws no
+screen, so it is not a source.
+
+**The run routine reads the operand's low byte alone.** On the bench Harmony 650 0.2 the dispatcher's
+`0x73` arm at `0x0EA44` copies the operand to `0x738`/`0x739` and calls `0x16EB0`, its only caller. That
+routine seeks slot `0x0B`, does `MOVFF 0x738,0x6DE`, loads 2 into `0x6DD` and calls the indexer `0x1807C`,
+which moves `0x6DE` into the low half of its product, `CLRF`s the high half and multiplies by three; the 2
+is the count header skipped. `0x739` is named nowhere in the routine. The same shape, other addresses: the
+Harmony 600 0.2 at the same addresses, the Harmony 650 0.4 (`0x185EC`, low byte `0x391`, indexer
+`0x10BCE`), the Harmony 700 2.8 (`0x18814`, `0x39D`, `0x10BEE`) and the Harmony One 3.4 (`0x296F4`,
+`0x2F1`, `0x2BAD2`). **On the four arch 14 images the seeker is called with slot `0x0B` at that one site**,
+so nothing else reads the table there; the Harmony One's other seeks are not counted. Arch 8, 9 and 10 are
+not read.
+
+**So a Harmony 650 table of about 6653 entries has 256 a configuration can run**, and entry 6653 ran as
+253. On the stalled file entry 253 is Logitech's `11 73 17 7F 00`, which queues action list 6003, three
+`0x7C` steps for device group 6. Each `0x7C` that lands while state variable 17 is 0 calls `0x11D34`, the
+one routine that writes that variable with a value, and it raises event `0x2D` every time, which is the
+event the idle screens bind to their corner program. So the corner program queued itself again. That the
+loop is what the bench saw is **inferred**: the stall, the screen never going dark and the USB screen not
+coming back are consistent with it, and the 20 seconds between keys is not read. What Logitech's entries
+from 256 up are for is not checked.
+
+**State variable 17 is the sending flag**, by the same reading: its writers are on the infrared send path,
+`0x11D9A` setting 2 for a send and `0x11DC0` 1 for a `0x7C` among seven, and the corner switch draws the
+icon for 1 to 3 and the patch for 0. The bench says the bottom right icon shows while the remote sends
+(`reference/remotes/harmony-650/display.md`). Section 317 read the variable as a battery level; the
+programs this project calls battery programs are the sending indicator.
+
+**What a writer does**: a program of ours that is queued takes an entry below 256 that nothing names.
+`withStateBackgrounds` finds the lowest entry whose `lo 00 73` occurs nowhere in the container, which is
+conservative since every way a configuration names a program writes the operand and then `0x73`, and
+repoints that entry; the table keeps its length. Base slot 11 has no other reader, so the old program
+behind that entry was dead on the remote.
+
+**Falsification**: an image of these models whose run routine reads the operand's high byte, or a second
+seek of base slot 11 on an arch 14 image; or the rebuilt file, entry 5 for the idle corner, stalling the
+650 the same way.
+
+* `tests/test_findings.py`, `TestAQueuedScreenProgramIsIndexedByOneByte`: the routine and its indexer on
+  five images, and the one seek site on the four arch 14 images.
+* `packages/codec/src/backgrounds.ts`: `RUNNABLE_SCREEN_PROGRAMS`, `freeLowProgram`, and the check's
+  refusal; `packages/codec/test/backgrounds.test.ts`: the entries per compile and a control naming the
+  idle corner as entry 5 plus `0x1900`.
+* Section 73 corrected in place; `docs/config-format.md`, base slot 11 and the `0x73` row.

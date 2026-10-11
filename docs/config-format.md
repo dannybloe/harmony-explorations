@@ -2036,6 +2036,12 @@ One of the six recognised pointer arrays. Each entry is a screen program. On arc
 700's 5711 entries are the same two instruction program, queue one action list instruction and end,
 so the table is mostly indirection.
 
+**Only entries 0 to 255 can run.** Action `0x73` is the table's one reader and it indexes with the
+operand's low byte, read on the Harmony 600 0.2, the Harmony 650 0.2 and 0.4, the Harmony 700 2.8 and
+the Harmony One 3.4; on the four arch 14 images the table is sought at that one site and no other. So
+an operand of 256 or more runs entry `operand & 0xff`, and a program of ours has to take a free entry
+below 256 rather than be appended. [findings.md](findings.md) section 369.
+
 **A program's storage ends with a `SCREEN_END` byte even where the last instruction is a jump or a
 switch**, which no execution can reach. Confirmed positionally: in the same place, in front of a
 mode page record, 91 to 294 programs per container end with a terminator that is reached, against
@@ -2390,7 +2396,7 @@ base slot 17's two bytes on arch 14 (`SCREEN_OWNERS`). Base slot 14 is excluded.
 | category | means | units on a Harmony 650 |
 |---|---|---|
 | fixed | emitted for every setup, content independent of it | the 44 head modes of the mode table (7 binding a keypad, 37 binding nothing), the 10 tour modes, Off, 15 of the 19 pictures, the glyphs those and the dynamic programs draw where their count agrees across compiles, the font set holding only such glyphs, base slot 17's two bytes |
-| dynamic | draws state the remote holds at run time, by switching on a state variable | the 5 base slot 11 entries no value map names (three icons switching on state variable 17, read here as the battery, and the two delay countdowns) and the 4 pictures only they draw |
+| dynamic | draws state the remote holds at run time, by switching on a state variable | the 5 base slot 11 entries no value map names (three icons switching on state variable 17, the sending flag (section 369; read as the battery until then), and the two delay countdowns) and the 4 pictures only they draw |
 | setup | exists, repeats or holds content because of the devices, activities and names | device modes, device lists, start up screens, help, Remote Assistant, the activity menu and working screens, every case program (keyed by a device's delay or the running activity, or refused by the census), glyphs only setup screens draw and the few whose count varies, the other font set headers, the three tables whose lengths count modes, programs or fonts |
 
 **Fixed means the same look**: addresses, glyph codes, font indices, the operands of instructions that
@@ -5029,7 +5035,7 @@ Placed by their handlers:
 | `0x76` | **position the serial flash cursor** at the record its operand indexes, remembering the index so a later instruction walks forward. Which array it indexes is *not established*, section 108 |
 | `0x74`, `0x75` | ~~**one instruction, not two**: the dispatcher never tests `0x75` and nothing downstream reads the opcode~~<!--superseded--> **two instructions**, section 74. Arch 14 issues neither, and the arch 12 dispatcher tests both: `0x75` **sounds a tone**, `0x74` accumulates a digit |
 | `0x7C` | **a delay before the next code to that device**, tenths of a second, into the same infrared queue `0x7D` uses, below |
-| `0x73` | **run the base slot 11 screen program** the operand indexes |
+| `0x73` | **run the base slot 11 screen program** the operand's low byte indexes, section 369 |
 | `0x75` | **sound a tone**: low byte the half period, high byte the cycles. Four operands in the corpus, 461 Hz to 4.7 kHz, below |
 | `0x07` with operand `0xF8xx` | **step the date** held in state variables 3, 5 and 6 |
 | `0x07` with operand `0xFFxx` | **make the next state variable write silent**, one write and no more |

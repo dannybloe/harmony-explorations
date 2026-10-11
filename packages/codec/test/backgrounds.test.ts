@@ -93,6 +93,7 @@ test('on the 13 Harmony 650 compiles the device and activity screens draw Logite
 test('withStateBackgrounds gives every state its colour on all 13 compiles and changes nothing else a setup shows',
      skipUnless(...H650), () => {
   const totals = { device: 0, activity: 0, idle: 0, pictures: 0, dropped: 0 };
+  const entries: number[] = [];
   for (const name of H650) {
     const original = containerOf(name);
     const made = withStateBackgrounds(takeApart(containerOf(name)));
@@ -105,12 +106,17 @@ test('withStateBackgrounds gives every state its colour on all 13 compiles and c
     totals.idle += checked.modes.idle;
     totals.pictures += checked.pictures;
     totals.dropped += made.dropped.length;
-    assert.equal(made.idleBattery, (original.pointerArray(11) ?? []).length, `${name}: the idle battery program is not appended`);
+    // A free entry below 256 taken over, section 369, the table keeping its length.
+    assert.ok(made.idleBattery < 256, `${name}: the idle battery program is entry ${made.idleBattery}`);
+    assert.equal((out.pointerArray(11) ?? []).length, (original.pointerArray(11) ?? []).length, `${name}: base slot 11 changed length`);
+    entries.push(made.idleBattery);
   }
   assert.deepEqual(totals, { device: 153, activity: 58, idle: 26, pictures: 1158, dropped: 82 });
+  // The lowest entry no `lo 00 0x73` names, per compile in `H650`'s order: 5 on ten, 6 on two, 7 on one.
+  assert.deepEqual(entries, [6, 5, 6, 5, 5, 5, 5, 5, 5, 5, 7, 5, 5]);
 });
 
-test('the check refuses Logitech\'s own backgrounds, a state in another colour, a corner patched in another, a page left on the old corner and a page on the plain background',
+test('the check refuses Logitech\'s own backgrounds, a state in another colour, a corner patched in another, a page left on the old corner, a page on the plain background and an idle corner program past entry 255',
      skipUnless('h650_test_config_clean'), () => {
   const logitech = containerOf('h650_test_config_clean');
   assert.throws(() => checkStateBackgrounds(logitech, takeApart(containerOf('h650_test_config_clean'))), /draws device page crossed on page 0/);
@@ -153,6 +159,15 @@ test('the check refuses Logitech\'s own backgrounds, a state in another colour, 
   repointed[field + 1] = (plain.address >> 8) & 0xff;
   repointed[field + 2] = plain.address >> 16;
   assert.throws(() => checkStateBackgrounds(parse(repointed), takeApart(parse(made.blob))), /draws (plain background|2 backgrounds)/);
+  // The idle corner program named as entry 5 + 0x1900, which the firmware runs as entry 5 and section 369's
+  // stalled file named as 6653: every key map entry and page program naming 5 given the high byte 0x19.
+  const high = Uint8Array.from(made.blob);
+  let named = 0;
+  for (let k = 1; k + 2 < high.length; k++) {
+    if ((high[k - 1] === 0x2d || high[k - 1] === 0x11) && high[k] === 5 && high[k + 1] === 0 && high[k + 2] === 0x73) { high[k + 1] = 0x19; named++; }
+  }
+  assert.equal(named, 7, 'two idle key maps and five idle pages name the idle corner program');
+  assert.throws(() => checkStateBackgrounds(parse(high), takeApart(parse(made.blob))), /runs as entry 5/);
 });
 
 test('a Harmony 700 compile, which shares the look, is refused, since nobody has checked it on a 700',
