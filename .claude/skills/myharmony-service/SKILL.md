@@ -333,7 +333,7 @@ and then restored as a developer option. Not established: no feature flag on eit
 XMPP, and `SpecialSUSStream=preview` appears in every mode. Both hub images are in the lab, so
 comparing them is what would settle it.
 
-## A remote's serial can be blocked for good, and a harvest did it
+## A remote's serial can be blocked, and a harvest did it
 
 **Read this before any write to either account.** On 7 October 2026 the family harvest of
 `todo-secure-logitech.md` 2.2 got the **spare Harmony One** blocked by Logitech's service. Harmony
@@ -358,6 +358,10 @@ service for that serial.
 * Then the entry was gone from `GetMyHousehold`, and the spare was refused by Harmony Desktop on other
   accounts too.
 
+**The block was lifted by Logitech, reported on 12 October 2026.** So a block is not necessarily for
+good; how it came to be lifted is not recorded here, and nothing has been written to the spare's entries
+since.
+
 **Not known**: the threshold, whether it counts adds, removals or both, whether a time window applies,
 and whether a block is ever lifted by itself.
 
@@ -373,12 +377,12 @@ the service.
 
 | entry | carries the serial of |
 |---|---|
-| account 1: 16315365 (Harmony One) | the spare Harmony One, **blocked** |
+| account 1: 16315365 (Harmony One) | the spare Harmony One, **blocked**, lifted since |
 | account 1: 16315370 (Harmony 600) | the bench Harmony 600 |
 | account 1: 16315388, account 2: twelve entries from 16318261 to 16318284, the 600 entry 16318263 among them | the Harmony 525 |
 | account 1: 16326458 (Harmony 650) | the bench Harmony 650 |
 | account 1: 16327048, account 2: 16327049 (Harmony 700) | the bench Harmony 700 |
-| account 2: 16318180 (Harmony One) | the spare Harmony One, **blocked** |
+| account 2: 16318180 (Harmony One) | the spare Harmony One, **blocked**, lifted since |
 | account 1: 16319183, 16321262 (350), 16321288 (300); account 2: 16319182 | no unit with a record in the lab; the 300 and 350 have none, so these may be theirs |
 
 Writes made the same day on the others, for scale: the 650 entry 3 add calls, the 700 entry 2, the

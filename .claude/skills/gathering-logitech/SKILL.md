@@ -53,7 +53,7 @@ of the item, not of the next todo.
 * **One compile at a time, with a pause between**, watching for refusals; stop and report the first one.
 * **An account entry is a real remote's entry.** The harvest got the spare Harmony One blocked by
   Logitech's service on 7 October 2026, after about 42 devices went on and off the entry carrying its
-  serial. Before any write, read the `myharmony-service` skill's section on it: whose serial the entry
+  serial; Logitech lifted the block, reported on 12 October 2026. Before any write, read the `myharmony-service` skill's section on it: whose serial the entry
   carries, the volume per entry, and that a refusal with `ErrorCode` 5 means stop.
 * **Never touch the real records**: not the Harmony 650's record with its owner's devices, not the
   spare Harmony One's protected record. Use the disposable records that skill lists.
