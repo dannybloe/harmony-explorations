@@ -286,7 +286,11 @@ export function buildNameTree(named: readonly { index: number; name: string }[])
   }
   const nodes = [
     ...NAME_TREE_ROOTS.map((name, index) => nameNode(0, index, name)),
-    ...nameTreeOrder([...byIndex.keys()]).map((index) => nameNode(NAME_LEVEL_STATE_VARIABLE, index, byIndex.get(index)!)),
+    // A shared bucket in the composers' order, larger index first, since a configuration of ours rebuilds a
+    // tree composers extended: an empty configuration's tree is small, so a composed device's variables can
+    // share a bucket, where no Logitech arch 14 tree does. The order is the one observed on every tie
+    // Logitech's compilers wrote, `composedNameTreeOrder`, and only the host reads it. Section 378.
+    ...composedNameTreeOrder([...byIndex.keys()]).map((index) => nameNode(NAME_LEVEL_STATE_VARIABLE, index, byIndex.get(index)!)),
   ];
   const body = nodes.reduce((sum, node) => sum + node.length, 0);
   const length = FRAME_HEADER + body;

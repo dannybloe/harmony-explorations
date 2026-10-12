@@ -102,7 +102,7 @@ import { buildFirmwareScreens, checkFirmwareScreens, describeFirmwareScreens, wi
 import { buildScreenTexts, checkScreenTexts, describeScreenTexts, withScreenTexts } from './screentexts.ts';
 import { checkOxaniumFonts, withOxaniumFonts, type SetFace } from './fonttable.ts';
 import { LETTERING_FACES, letterForm, maskForm } from './lettering.ts';
-import { IMAGE_SET_HEADER, fontSets, glyphOf } from './font.ts';
+import { type FontSet, IMAGE_SET_HEADER, fontSets, glyphOf } from './font.ts';
 import {
   ComposeError, composeActivity, composeActivityDeviceList, composeActivityMenuRow, keepDeviceOn,
   nextActivityValue, startsSwitchingOff,
@@ -116,10 +116,10 @@ import { inputPlan, inputTarget } from './inputs.ts';
 import { catalogueDriving } from './driving.ts';
 import { activityPauseGroups, composeSequence } from './sequence.ts';
 import { FOUR_SLOT } from './families/four-slot/index.ts';
-import { type FourSlotChoices, type FourSlotChoicesGiven, fourSlotChoices } from './families/four-slot/choices.ts';
-import { checkStateBackgrounds, ourPictureName, withStateBackgrounds } from './backgrounds.ts';
-import { cornerPrograms } from './families/four-slot/chrome.ts';
-import { cornerProgramAt } from './families/four-slot/empty.ts';
+import { FOUR_SLOT_CHOICES, type FourSlotChoices, type FourSlotChoicesGiven, fourSlotChoices } from './families/four-slot/choices.ts';
+import { SCREEN_STATES, checkStateBackgrounds, ourPictureName, withStateBackgrounds } from './backgrounds.ts';
+import { cornerPrograms, inOurLook } from './families/four-slot/chrome.ts';
+import { cornerProgramAt, emptyFontTable } from './families/four-slot/empty.ts';
 import { caseProgram } from './shared/menus.ts';
 import { valueMaps } from './valuemap.ts';
 import { type BlendedSet, checkBlendedLetters, type LettersBlended, withBlendedLetters } from './blending.ts';
@@ -497,12 +497,29 @@ export function assembleSetup(setup: Recipe, options: AssembleOptions): Assemble
   };
   note('donor');
 
+  // A donor of ours, an empty configuration, section 377: its letters, its state colours and its pictures are
+  // ours already, so steps 0, 14 and 15, which turn Logitech's artwork into ours, are not run on it. Its faces
+  // are the empty configuration's description, held to its font sets byte for byte, so blending, the one
+  // look step left, letters exactly the sets it holds; it has to be unblended, since blending runs once,
+  // last, over every text the composers add.
+  const ours = inOurLook(c);
+  let faces: SetFace[] | undefined;
+  if (ours) {
+    if (choices.letters !== 'oxanium' || choices.backgrounds !== 'state colours' || choices.pictures !== 'ours') {
+      throw new AssemblyError('a donor of ours is in our letters, the state colours and our pictures, and the choices ask for another');
+    }
+    if (SCREEN_STATES.some((state) => choices.stateColours[state] !== FOUR_SLOT_CHOICES.stateColours[state])) {
+      throw new AssemblyError('a donor of ours takes the default state colours, which the composers draw in');
+    }
+    faces = donorFaces(c, choices);
+    note('a donor of ours', `${faces.length} sets of our letters`);
+  }
+
   // 0. Our letters, before any composer spells a label, so none has to borrow one. Lettering the donor
   //    in our own font table means every set spells every printable character, so every label a composer
   //    writes is drawn in the font its page uses and none is borrowed from another size, and the text
   //    step places every text in our letters' widths, `withOxaniumFonts`, decision 19, 8.2.3.
-  let faces: SetFace[] | undefined;
-  if (choices.letters === 'oxanium') {
+  if (!ours && choices.letters === 'oxanium') {
     const lettered = withOxaniumFonts(takeApart(c), choices.letterInks, choices.faceWeights);
     c = layOutContainer(lettered.layout).container;
     checkOxaniumFonts(c, lettered.faces);
@@ -679,7 +696,7 @@ export function assembleSetup(setup: Recipe, options: AssembleOptions): Assemble
   checkAssembled(c);
 
   // 14. The state colours, on the placed file.
-  if (choices.backgrounds === 'state colours') {
+  if (!ours && choices.backgrounds === 'state colours') {
     const coloured = withStateBackgrounds(takeApart(c), choices.stateColours, choices.barColour);
     c = layOutContainer(coloured.layout).container;
     checkStateBackgrounds(c, takeApart(c), choices.stateColours);
@@ -690,7 +707,7 @@ export function assembleSetup(setup: Recipe, options: AssembleOptions): Assemble
   //     and after the checks and the colours, since the composers, several checks and the colours' screen
   //     records find the start up picture by Logitech's artwork; before the blending, which reads the colour
   //     under each text.
-  if (choices.pictures === 'ours') {
+  if (!ours && choices.pictures === 'ours') {
     const before = c;
     layout = takeApart(c);
     const ours = buildOurPictures({ icons: choices.icons, colour: choices.iconColour, background: choices.iconBackground });
@@ -714,6 +731,32 @@ export function assembleSetup(setup: Recipe, options: AssembleOptions): Assemble
 
   return { bytes: c.blob, container: c, steps, dropped: dropped.dropped, keptOn, composed, ...(faces === undefined ? {} : { faces }),
     ...(blended === undefined ? {} : { blended: blended.blended }) };
+}
+
+/**
+ * The faces of a donor of ours: the empty configuration's font table as described, `emptyFontTable`, in the
+ * choices' inks and weights, refused unless the donor holds exactly those sets, glyph for glyph. A donor
+ * already blended holds more sets than the description and is refused with the rest.
+ */
+function donorFaces(c: Container, choices: FourSlotChoices): SetFace[] {
+  const built = emptyFontTable(choices.letterInks, choices.faceWeights);
+  const sets = fontSets(c) ?? [];
+  if (sets.length !== built.sets.length) {
+    throw new AssemblyError(`a donor of ours holds ${sets.length} font sets where the empty configuration's are ${built.sets.length}, `
+      + 'so it is blended or not one of ours');
+  }
+  built.sets.forEach((set, k) => {
+    const theirs = sets[k] as FontSet;
+    set.refs.forEach((ref, n) => {
+      const glyph = glyphOf(c, theirs, n + 1);
+      const at = glyph === undefined ? undefined : c.blobOffsetOf(glyph.address);
+      const want = 'to' in ref ? ref.to.bytes : undefined;
+      if (at === undefined || want === undefined || !sameBytes(c.blob.subarray(at, at + want.length), want)) {
+        throw new AssemblyError(`a donor of ours letters set ${k} other than the empty configuration in these inks and weights`);
+      }
+    });
+  });
+  return built.faces;
 }
 
 /** The group of the device a setup names, through its label in the container. */
@@ -845,7 +888,8 @@ function composeSetupActivity(
  * names, exact on the thirteen compiles of section 328, so everything else is a body piece in its
  * compiles: on `h650_test_config_clean`, `h650_start_config`, `h700_config` and `h600_config` every key
  * map is in the body, the activities' in one run that ends with the last. So each piece goes after the
- * body's last piece of its own kind, which is our choice, as the page lists' order is, section 328.
+ * body's last piece of its own kind, which is our choice, as the page lists' order is, section 328, and at
+ * the end of the body where it holds none of that kind, section 378.
  * Exported for a caller that places a composed file itself rather than through `assembleSetup`, the
  * todo-compile-650 10.5 bench file, so that file takes this step rather than a copy of it.
  */
@@ -859,8 +903,10 @@ export function composedIntoBody(layout: ContainerLayout): { layout: ContainerLa
     body.forEach((one, k) => {
       if (one.owner === piece.owner) last = k;
     });
-    if (last < 0) throw new AssemblyError(`the body holds no ${piece.owner ?? 'unnamed'} piece to put a composed one after`);
-    body.splice(last + 1, 0, piece);
+    // A body with none of its kind, an empty configuration's first device's infrared records, takes it last:
+    // where it goes is our choice either way, and Logitech's compiles interleave those records with the
+    // state records, 73 of 73 arch 14 compiles, so no one kind marks where the first would go. Section 378.
+    body.splice(last < 0 ? body.length : last + 1, 0, piece);
   }
   const gone = new Set(moving);
   return {

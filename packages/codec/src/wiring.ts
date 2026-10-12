@@ -60,7 +60,7 @@ import {
 import { DEFERRED, POP_MODE as POP_MODE_INSTRUCTION, PUSH_MODE as PUSH_MODE_INSTRUCTION, STATE_BAND } from './actions.ts';
 import type { ModeZeroModel } from './modezero.ts';
 import { KEYPAD_FIRST_SCAN, KEYPAD_LAST_SCAN } from './modezero.ts';
-import { EVENT_MAP_SLOT, HANDLER_TABLE_SLOT, LOG_AREA_SLOT } from './sections.ts';
+import { EVENT_MAP_SLOT, HANDLER_TABLE_SLOT, LOG_AREA_SLOT, taggedListExtent } from './sections.ts';
 import { PARAMETER_SLOT, TIMER_KIND_SCHEDULED, TIMER_RECORD_LENGTH, TIMER_SLOT } from './tables.ts';
 
 /** A refusal, named so a caller can tell a bad description from a bug. */
@@ -1235,10 +1235,28 @@ export function withWiring(layout: ContainerLayout, built: BuiltWiring): Contain
     }
     replace.set(old, { ...old, refs: old.refs.map((ref) => ('to' in ref && byIndex.size > 0 && replace.has(ref.to) ? { ...ref, to: replace.get(ref.to)! } : ref)) });
   };
+  // A handler set is a tagged list, and the bytes behind it that no address names travel with its piece,
+  // `takeApart`: the page lists' copies where a set ends the pool, which is how an empty configuration of
+  // ours lays its pool and where the device composer appends a new mode's copies. A rebuilt set keeps
+  // them behind it, or they are lost with every checksum passing. Logitech's compiles hold no such tail on
+  // a set this rebuilds. Section 378.
+  // Laid as a piece of their own straight behind the built set, so the built piece stays the one it is.
+  const handlers = tableTargets(tablePiece(layout, HANDLER_TABLE_SLOT));
+  const tails = new Map<ContainerPiece, ContainerPiece>();
+  for (const [index, p] of built.entries) {
+    const old = handlers[index];
+    const extent = old === undefined ? undefined : taggedListExtent(old.bytes, 0);
+    if (old === undefined || extent === undefined || extent.length >= old.bytes.length) continue;
+    if (old.refs.some((ref) => ref.at >= extent.length)) throw new WiringError(`base slot 9 entry ${index} carries an address behind its list`);
+    tails.set(old, { bytes: old.bytes.slice(extent.length), refs: [], ...(old.owner === undefined ? {} : { owner: old.owner }) });
+  }
   redirect(HANDLER_TABLE_SLOT, built.entries);
   redirect(ACTION_LIST_TABLE_SLOT, built.lists);
 
-  const rewrite = (run: ContainerPiece[]): ContainerPiece[] => run.map((p) => replace.get(p) ?? p);
+  const rewrite = (run: ContainerPiece[]): ContainerPiece[] => run.flatMap((p) => {
+    const tail = tails.get(p);
+    return tail === undefined ? [replace.get(p) ?? p] : [replace.get(p) ?? p, tail];
+  });
   const sections = layout.sections.map((s) => (s === undefined ? s : { before: rewrite(s.before), head: rewrite(s.head) }));
   const body = rewrite(layout.body);
   const pictures = rewrite(layout.pictures);

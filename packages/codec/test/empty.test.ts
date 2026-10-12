@@ -27,7 +27,8 @@ import { IR_ARCHIVE, require_, skipUnless, skipWithoutIrArchive } from '@harmony
 import { archSlot, parse } from '../src/index.ts';
 import { checkFirmwareScreens } from '../src/firmwarescreens.ts';
 import { checkScreenRecords } from '../src/screenrecords.ts';
-import { attributeBytes } from '../src/assemble.ts';
+import { assembleSetup, attributeBytes } from '../src/assemble.ts';
+import type { Recipe } from '../src/index.ts';
 import { fourSlotActivityMenu, fourSlotMenuMarkerWriter } from '../src/families/four-slot/chrome.ts';
 import { activityMenuByRows, menuMarkerOf } from '../src/shared/menus.ts';
 import { allOffList, composeDevice, coverage, deviceIds, joinPowerOff } from '../src/index.ts';
@@ -297,4 +298,24 @@ test('section 377: the first catalogue device onto the empty configuration draws
   const idle = fourSlotMenus(c).find((one) => one.kind === 'idle device list')!.menu;
   const page = screenProgram(c, modeRecords(c)![idle]!.pages[0]!.program)!;
   assert.equal(bitmapReference(page[0]!), stateLookOf(c, FOUR_SLOT_CHOICES.stateColours.idle)?.background);
+});
+
+test('section 378: the assembly takes the empty configuration as its donor, runs none of the steps that turn Logitech\'s look into ours, and carries only the composed device', skipWithoutIrArchive(), () => {
+  const recipe = { model: { name: 'Harmony 650', skin: 72 }, devices: [{ name: 'TV', device: 'LG/OLED65G26LA' }], activities: [],
+    choices: { letters: 'oxanium', backgrounds: 'state colours', pictures: 'ours', blendLetters: false } } as Recipe;
+  const out = assembleSetup(recipe, { donor: buildEmpty().bytes, archive: IR_ARCHIVE! });
+  const steps = out.steps.map((one) => one.step);
+  assert.ok(steps.includes('a donor of ours'));
+  for (const skipped of ['our letters', 'state colours', 'our pictures']) assert.ok(!steps.includes(skipped), skipped);
+  const c = out.container;
+  assert.deepEqual(deviceListRows(c).map((row) => row.label), ['TV']);
+  // Every page list has its copy again after the first row went into a list of none, the two zero bytes.
+  assert.equal(pageListCopies(c).length, modePages(c).length);
+  // What no generator describes is the composed device alone: its lists, its mode and pages, its infrared.
+  assert.deepEqual([...attributeBytes(c).carried.keys()].sort(), [
+    'slot-10-list reached', 'slot-10-list reached by nothing', 'slot-11-program', 'slot-5-block', 'slot-5-group', 'slot-5-header',
+    'slot-6-entry', 'slot-6-mode', 'slot-6-page-list', 'slot-6-page-list-copy',
+  ]);
+  // A blended donor holds more sets than the description, and blending runs once, last.
+  assert.throws(() => assembleSetup(recipe, { donor: buildEmpty(true).bytes, archive: IR_ARCHIVE! }), /is blended or not one of ours/);
 });

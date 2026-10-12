@@ -29,7 +29,7 @@ import {
 } from '../../screen.ts';
 import {
   ACTION_LIST_INDEX_OPCODE, type ModePage, modePages, type ModeRecord, modeRecords, pageListCopies, type TaggedEntry,
-  taggedList,
+  taggedList, taggedListExtent,
 } from '../../sections.ts';
 import { ComposeError } from '../../shared/core.ts';
 import { activityMenus, deviceListMenus, pageTexts } from '../../shared/menus.ts';
@@ -231,7 +231,14 @@ export function growFourSlotMenu(
   // whole in the stored order, so a new bottom right lands between top left and top right.
   const grow = (listStart: number): void => {
     const width = 4;
-    const end = listStart + 1 + width * entries;
+    // An empty list is the wide form's two zero bytes, `taggedListBytes`, which the narrow list of one
+    // entry replaces whole; a list with entries is narrow, a count and four bytes an entry. An empty menu,
+    // which only a configuration of ours holds, is where the first case arises, section 377.
+    const extent = taggedListExtent(current.blob, listStart);
+    if (extent === undefined || extent.count !== entries || (extent.wide && entries > 0)) {
+      throw new ComposeError(`menu ${menu}'s page list is not the narrow form of its ${entries} entries`);
+    }
+    const end = listStart + extent.length;
     const kept = Array.from({ length: entries }, (_, k) =>
       current.blob.slice(listStart + 1 + width * k, listStart + 1 + width * (k + 1)));
     const added = scans.map((scan) => {
@@ -243,7 +250,7 @@ export function growFourSlotMenu(
     const all = [...kept, ...added].sort((a, b) =>
       FOUR_SLOT_STORED_ORDER.indexOf((a[0] as number) & SCAN_MASK)
         - FOUR_SLOT_STORED_ORDER.indexOf((b[0] as number) & SCAN_MASK));
-    const hole = relocate(current, end, width * added.length);
+    const hole = relocate(current, end, 1 + width * all.length - extent.length);
     hole.bytes[listStart] = all.length;
     all.forEach((one, k) => hole.bytes.set(one, listStart + 1 + width * k));
     current = parse(hole.bytes);

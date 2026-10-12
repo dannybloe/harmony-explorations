@@ -50688,3 +50688,57 @@ ones, or a composed device list page that `menuPageDifference` refuses.
   absent before and present after, every device page checked against the chrome built in our look, the
   fonts read back off the pages equal to the described ones, and the idle list's one row in the idle look;
   `test/assemble.test.ts`: the two device compile's new refusals.
+
+## 378. The assembly on the empty Harmony 650 configuration
+
+`todo-compile-650.md` 11.1.1.5. Section 377 composed a device onto the empty configuration directly; the
+assembly, which every bench file goes through, still took its donor for a Logitech compile and re-lettered
+it as one. It takes a donor of ours now, and the one device recipe assembles: 400240 bytes, every check of
+the assembly passing, the pages as in section 377, and every byte attributed to a generator but the
+composed device's own, its lists, its mode and pages with their copies, and its infrared records, which no
+generator describes yet. With blended letters it assembles too; reading a blended file back stays open,
+as section 375 left it.
+
+**A donor of ours skips the three steps that turn Logitech's look into ours**, letters, state colours and
+pictures, since it is in all three already, `inOurLook`. Its faces are the empty configuration's
+description in the choices' inks and weights, `emptyFontTable`, held to its font sets glyph for glyph, so
+blending, the one look step left, letters exactly the sets the donor holds. A donor already blended holds
+more sets than that and is refused, since blending runs once and last, over every text the composers add;
+so is a choice of another look, and state colours other than the defaults the composers draw in.
+
+**The first entry of an empty list was written one byte short of replacing it.** An empty tagged list is
+the wide form's two zero bytes, `taggedListBytes`; the menu growth step took every list for the narrow
+form, a count and four bytes an entry, so it wrote the one entry after the first zero and left the second
+behind. The pool walk then misread every list from there on: on the composed file 24 mode pages had no
+copy at all, with both checksums passing. The list is rewritten whole now. Only an empty menu, which only a
+configuration of ours holds, has such a list.
+
+**A rebuilt handler set dropped the bytes behind it.** A piece is cut only where an address lands, so what
+follows a structure unnamed travels with the piece before it, `takeApart`, and the page lists' copies are
+such bytes. The empty configuration lays its pool as the copies and then base slot 9's six sets, and the
+device composer appends a new mode's copies at the pool's end, behind the last set. The wiring step
+rebuilds that set and put only the set back, so the device's seven copies vanished, again with every
+checksum passing. A rebuilt set's trailing bytes are now laid as a piece of their own straight behind it.
+Logitech's pools end in a set as often, 55 of 86 arch 14 files, but the sets behind which the copies
+travel there are not the ones the wiring rebuilds: the 6.2.13 reassembly is unchanged by this.
+
+**Two variables can share a bucket of the name tree** on a configuration this small, which no Logitech arch
+14 tree does, so the generator refused. It orders a shared bucket as the composers do, the larger index
+first, the order of all 15 ties Logitech's compilers wrote on the Harmony One's, 880's and 885's trees, section 324. Base slot 0
+is read by the host alone.
+
+**A composed piece of a kind the body holds none of goes last.** The placer puts a composed piece after the
+body's last piece of its kind, which is our choice, section 328; an empty configuration's first device's
+infrared records have none to follow. Logitech's compiles interleave those records with the state
+records, the first following one, 73 of 73 arch 14 files, so no one kind marks where the first would go.
+
+**Scope**: the Harmony 650, the one model whose empty configuration is built.
+
+**Falsification**: a donor of ours whose reassembly loses a page list's copy, which the test counts, or
+whose attribution carries anything but the composed device.
+
+* `packages/codec/src/assemble.ts`, the donor of ours, `donorFaces`, `composedIntoBody`;
+  `families/four-slot/menus.ts`, `growFourSlotMenu`'s list rewritten whole; `wiring.ts`, `withWiring`'s
+  tails; `statetables.ts`, `buildNameTree`.
+* `packages/codec/test/empty.test.ts`: the assembly on the empty configuration, its steps, its one row,
+  a copy for every page, what it carries, and the blended donor refused.
