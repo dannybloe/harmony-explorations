@@ -1,0 +1,15 @@
+{
+  "name": "Harmony 650: the Remote Assistant screen without blended letters",
+  "description": "todo-compile-650 8.2.6, the control for the open point of section 370. In the 8.2.6 run, after All Off, the Remote Assistant screen showed 'your system', the last line of the dark 'Turning system off' screen, behind 'Exit' in its bottom bar, which the file does not draw: the Remote Assistant screen paints the whole screen before its text. This writes lab/work/fonts-8-2/h650-8-2-bright-config.bin, the same screens, places and weights (SemiBold labels, Regular start up and Off text) with one bit letters and no blending. If 'your system' shows behind 'Exit' here too, the overlap has nothing to do with blending; if it does not, blending is what changed it. Prediction: not known, which is why this runs.",
+  "steps": [
+    {
+      "instruction": "Straight after the write the remote restarts and may show 'If any devices are still On press Help now'. Do NOT press Help. Is the bottom bar a clean 'Exit', or is there text behind it? Mark what you see"
+    },
+    {
+      "instruction": "Take the remote off the cable, point it at the Flirc and press All Off once. Expect the dark 'Turning system off' screen, 'Please keep the remote pointed at your system' on three lines, then the Remote Assistant screen. Look at its bottom bar: a clean 'Exit', or 'your system' behind it? Mark it, and if you can, take a photo"
+    },
+    {
+      "instruction": "Press All Off once more and look at the Remote Assistant screen's bottom bar again. Mark whether it is the same as the first time"
+    }
+  ]
+}
