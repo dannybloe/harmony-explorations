@@ -45,5 +45,5 @@ test('the six pictures are built at the sizes of the pictures they replace, the 
   for (const [name, bytes] of made) assert.equal(bytes.length, name === 'corner mark' ? 109 : 5 + 128 * 128 * 2, name);
   const digest = createHash('sha256');
   for (const [name, bytes] of made) digest.update(name).update(bytes);
-  assert.equal(digest.digest('hex').slice(0, 16), '4ca97cdec81b2062');
+  assert.equal(digest.digest('hex').slice(0, 16), '59376e0fdc89b070');
 });

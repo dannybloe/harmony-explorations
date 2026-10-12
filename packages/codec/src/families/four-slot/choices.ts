@@ -123,7 +123,7 @@ export const FOUR_SLOT_CHOICES: FourSlotChoices = {
   faceWeights: Object.fromEntries(LETTERING_FACES.map((face) => [face, defaultWeight(face)])) as Record<OxaniumFaceName, OxaniumWeight>,
   pictures: 'logitech',
   icons: {
-    'start up picture': 'remote-tv',
+    'start up picture': 'remote',
     'corner mark': 'wifi',
     'USB Connected': 'usb',
     'Low Battery': 'battery-alert-variant-outline',
