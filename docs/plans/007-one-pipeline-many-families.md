@@ -144,6 +144,13 @@ The names are placeholders for the plan; 10.7.2 settles them.
 * **Every fact once**, a named constant with the measurement that gives it, in the shared part or the
   family it belongs to. The duplicated opcodes go in the first step.
 * **Every choice once**, a family's choice with its default, set from the recipe.
+* **Nothing from the lab.** The codec's source imports nothing from `../lab` and reads nothing there:
+  the lab is for tests and research scripts, through `@harmony/lab`, a development dependency only. What
+  a build needs comes from the recipe, the model's definition, the catalogue archive whose location the
+  caller passes, or this repository. Measured when this was written: no module of `packages/codec/src`
+  imports the lab. The one gap is a source, not a build: our letters are generated from the Oxanium
+  font in the lab's `fonts/`, so the font files a build depends on, Oxanium's and later the icons', are to
+  live in this repository with their licences, which both permit.
 * **Build, do not patch.** A configuration of ours is serialized from its description through the
   linker. Patching a donor retires for our own builds at 11.1.1; the readers of Logitech's compiles stay
   as they are, since reading is not building and they already work per architecture.
