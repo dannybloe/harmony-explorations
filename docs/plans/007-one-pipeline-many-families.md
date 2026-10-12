@@ -1,7 +1,7 @@
 # Plan 007: one pipeline, a family per kind of remote
 
 **Status: open.** Written 12 October 2026 for `todo-compile-650.md` 10.7.1. Items 10.7.2 to 10.7.4 and
-11.1.1 carry it out.
+11.1.1 carry it out; 10.7 is ticked with steps 1 to 3 done, and step 4 is 11.1.1's.
 
 ## What it is for
 
