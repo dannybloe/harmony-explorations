@@ -902,17 +902,16 @@ export function buildWiring(spec: WiringSpec): BuiltWiring {
   if (!spec.settings.remoteAssistant && spec.model === 'harmony-700') {
     throw new WiringError('no Harmony 700 compile with the Remote Assistant off has been read, and its USB leave handler compares the Assistant\'s variable');
   }
-  // With no activity, scan 4 pushes the "add Activities" placeholder; that is one Harmony 650 compile's,
-  // and what a configuration with activities and every activity key empty binds there is not read.
+  // With no activity, scan 4 pushes the "add Activities" placeholder; that is one Harmony 650 compile's.
+  // What Logitech's compiler binds there with activities and every activity key empty is not read, and
+  // this binds what it binds with any activity, the location map that reaches the activity menu: our
+  // choice, for an activity of the Custom type on a configuration of ours, section 379.
   const emptyKeys = ACTIVITY_KEY_SCANS.filter((scan) => spec.activityKeys[scan] === null).length;
   if (!Number.isInteger(spec.activityCount) || spec.activityCount < 0) throw new WiringError(`${spec.activityCount} activities is not a count`);
   if (spec.activityCount === 0 && spec.model !== 'harmony-650') {
     throw new WiringError(`no ${spec.model} compile with no activity has been read, only a Harmony 650's`);
   }
   if (spec.activityCount === 0 && emptyKeys !== ACTIVITY_KEY_SCANS.length) throw new WiringError('an activity key selects an entry and there is no activity');
-  if (spec.activityCount > 0 && emptyKeys === ACTIVITY_KEY_SCANS.length) {
-    throw new WiringError('every activity key is empty while there are activities, and what the compiler binds scan 4 to then is not read');
-  }
   const cat = catalogue(spec.model, spec.settings, spec.activityKeys, spec.activityCount);
   const order = timerOrder(cat, spec.deviceTimers);
   const generated = generatedSymbols(cat, order);
@@ -1060,17 +1059,16 @@ function tableTargets(table: ContainerPiece): ContainerPiece[] {
 }
 
 /**
- * Read a description back off a laid out arch 14 container, `takeApart`'s result.
- *
- * Reads the model off the skin, and then only the bytes `BuiltWiring.described` marks: the symbols
- * the generated structures name and do not generate, the three settings where they show, which timer
- * records are a device's, and how each activity key is bound. So a rebuild that equals the container
- * computed every other byte of these structures, which the blind control in `test/wiring.test.ts`
- * checks by overwriting them first.
+ * What a layout's wiring is shaped by and the description's symbols are not: the model, the timers a
+ * device owns, the tilt sensor's flag, how many activities base slot 9 holds and how each activity key is
+ * bound. Read off the bytes alone, so it reads a layout whose wiring a composer has just made stale, which
+ * is what `rewiredForActivities` needs it for.
  */
-export function describeWiring(layout: ContainerLayout): WiringSpec {
+function wiringShape(layout: ContainerLayout): {
+  model: WiringModel; entryPieces: ContainerPiece[]; firmware: ContainerPiece[]; deviceTimers: DeviceTimer[];
+  tiltSensor: boolean; activityCount: number; activityKeys: Record<number, number | null>; probe: Catalogue;
+} {
   const model = wiringModelOfSkin(layout.skin);
-  const listPieces = tableTargets(tablePiece(layout, ACTION_LIST_TABLE_SLOT));
   const entryPieces = tableTargets(tablePiece(layout, HANDLER_TABLE_SLOT));
   const timerPieces = tableTargets(tablePiece(layout, TIMER_SLOT));
   const instructionAt = (bytes: Uint8Array, at: number): { operand: number; opcode: number } => ({ operand: u16(bytes, at), opcode: u8(bytes, at + 2) });
@@ -1092,13 +1090,49 @@ export function describeWiring(layout: ContainerLayout): WiringSpec {
   const probe = catalogue(model, {
     glowTime: 0, tiltSensor, remoteAssistant: true, bootStep: false, tourShown: false, delayRestore: true, help: true,
   }, { 1: null, 5: null, 7: null }, activityCount);
-  const entry1 = probe.entries.find((e) => e.index === 1)!;
-  const order1 = orderOf(entry1);
+  const order1 = orderOf(probe.entries.find((e) => e.index === 1)!);
   const activityKeys: Record<number, number | null> = {};
   for (const scan of ACTIVITY_KEY_SCANS) {
     const ins = instructionAt(entryPieces[1]!.bytes, 1 + 4 * order1.indexOf(press(scan)) + 1);
     activityKeys[scan] = ins.opcode === 0x7f ? null : ins.operand & 0xff;
   }
+  return { model, entryPieces, firmware, deviceTimers, tiltSensor, activityCount, activityKeys, probe };
+}
+
+/**
+ * The layout with its wiring rebuilt for the activities and activity keys it holds now, from `before`,
+ * the description read off it before a composer changed them. `todo-compile-650.md` 11.1.1.5, section 379.
+ *
+ * Two of the wiring's structures follow the activities: scan 4's front list pushes the "add Activities"
+ * screen while there is none and maps the location once there is one, and an empty activity key calls a
+ * front list of its own that a key selecting an activity has no use for. So the first activity, or an
+ * activity on an empty key, leaves a wiring that describes nothing, the front a list too long and scan 4
+ * pushing a screen it should not, and every reader after it refuses. The symbols are what they were,
+ * since a composer appends lists, modes and entries and renumbers none, and only the shape is read again.
+ * A front list the shorter front no longer holds keeps its bytes and is named by nothing: the assembly's
+ * step 12 drops it, and a composition outside the assembly keeps its few bytes, since dropping a list
+ * renumbers every list after it and that is the assembly's step.
+ */
+export function rewiredForActivities(layout: ContainerLayout, before: WiringSpec): ContainerLayout {
+  const { model, deviceTimers, activityCount, activityKeys } = wiringShape(layout);
+  if (model !== before.model) throw new WiringError(`the wiring was described on a ${before.model} and the layout is a ${model}`);
+  return withWiring(layout, buildWiring({ ...before, activityCount, activityKeys, deviceTimers }));
+}
+
+/**
+ * Read a description back off a laid out arch 14 container, `takeApart`'s result.
+ *
+ * Reads the model off the skin, and then only the bytes `BuiltWiring.described` marks: the symbols
+ * the generated structures name and do not generate, the three settings where they show, which timer
+ * records are a device's, and how each activity key is bound. So a rebuild that equals the container
+ * computed every other byte of these structures, which the blind control in `test/wiring.test.ts`
+ * checks by overwriting them first.
+ */
+export function describeWiring(layout: ContainerLayout): WiringSpec {
+  const { model, entryPieces, firmware, deviceTimers, tiltSensor, activityCount, activityKeys, probe } = wiringShape(layout);
+  const listPieces = tableTargets(tablePiece(layout, ACTION_LIST_TABLE_SLOT));
+  const instructionAt = (bytes: Uint8Array, at: number): { operand: number; opcode: number } => ({ operand: u16(bytes, at), opcode: u8(bytes, at + 2) });
+  const order1 = orderOf(probe.entries.find((e) => e.index === 1)!);
 
   // The lead names the quiet list, whose second instruction says whether the Assistant is on.
   const leadPiece = tablePiece(layout, BINDING_SLOT);

@@ -4996,11 +4996,11 @@ test('the activity keyed records are found by key sets the counter generates, in
     const [built] = activityStateVariables(activities.length);
     if (counter.record!.first === built!.first && counter.record!.second === built!.max) idleAtTop += 1;
     const maps = valueMaps(c)!;
-    for (const index of [found.working, ...found.devices, found.select]) {
+    for (const index of [found.working, ...found.devices, found.select!]) {
       const keys = maps[index]!.entries.map(([key]) => key);
       assert.deepEqual(compilerCaseOrder(keys), keys, `${name}: record ${index}`);
     }
-    assert.deepEqual(maps[found.select]!.entries.map(([key]) => key).sort((a, b) => a - b), activities);
+    assert.deepEqual(maps[found.select!]!.entries.map(([key]) => key).sort((a, b) => a - b), activities);
     assert.equal(found.devices.length, 2, `${name}: records under the key under Devices`);
     devicesKey += found.devices.length;
   }

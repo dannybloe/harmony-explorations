@@ -8,7 +8,7 @@ import { DEFERRED, SILENT_WRITE } from '../actions.ts';
 import type { FamilyTraits } from '../families/family.ts';
 import { traitsOf } from '../families/registry.ts';
 import { STATE_WRITE_BASE } from '../actions.ts';
-import { type ActivityKey, activityKeyEntry, setActivityKey } from '../activitykeys.ts';
+import { type ActivityKey, activityKeyEntry, activityKeys, setActivityKey } from '../activitykeys.ts';
 import { u24 } from '../bytes.ts';
 import { applyEdits } from '../edit.ts';
 import { Writer } from '../emit.ts';
@@ -18,6 +18,7 @@ import {
   handlerSetRoles, INPUT_PROPERTY, KEY_EVENT_PRESS, KEY_EVENT_SHIFT, MAP_VALUE_OPCODE, SELECT_BINDING_SET,
   SELECT_BINDING_SET_MASK, stateVariables,
 } from '../inventory.ts';
+import { layOutContainer, takeApart } from '../frame.ts';
 import { relocate } from '../relocate.ts';
 import {
   ACTION_LIST_INDEX_OPCODE, HANDLER_TAG_ENTER, HANDLER_TAG_LEAVE, handlerSets, NAME_NODE_HEADER, type NameNode,
@@ -28,6 +29,7 @@ import {
 } from '../shared/core.ts';
 import { appendTableEntries } from '../shared/infrared.ts';
 import { startSequenceVariables, type StateVariableSpec } from '../statetables.ts';
+import { describeWiring, rewiredForActivities, type WiringSpec } from '../wiring.ts';
 
 /**
  * One device's target state when an activity is running: a base slot 13 variable and its value.
@@ -269,6 +271,18 @@ export function composeActivityFor(c: Container, activity: ComposeActivity, trai
     } catch (error) {
       throw new ComposeError(`the activity cannot go on ${activity.activityKey}: ${(error as Error).message}`);
     }
+  }
+
+  // On the Harmony 600, 650 and 700 the first activity, or one put on an empty key, changes the shape of
+  // the wiring, scan 4's front list and the empty keys' own, so the wiring is described before anything is
+  // built and rebuilt at the end, section 379. Only then, so a donor whose wiring is already right for the
+  // activity is left byte for byte as it was.
+  let wiringBefore: WiringSpec | undefined;
+  if (c.architecture === 14) {
+    const keys = activityKeys(c);
+    const none = keys.every((one) => one.kind !== 'activity');
+    const onEmpty = activity.activityKey !== undefined && keys.find((one) => one.key === activity.activityKey)?.kind === 'placeholder';
+    if (none || onEmpty) wiringBefore = describeWiring(takeApart(c));
   }
 
   // Every list index a caller hands over is checked against base slot 10 before anything is
@@ -544,6 +558,7 @@ export function composeActivityFor(c: Container, activity: ComposeActivity, trai
     const finished = parse(bytes);
     bytes = applyEdits(finished, setActivityKey(finished, activity.activityKey, set)).bytes;
   }
+  if (wiringBefore !== undefined) bytes = layOutContainer(rewiredForActivities(takeApart(parse(bytes)), wiringBefore)).bytes;
 
   return {
     bytes, activity: value, set, enterList, selectList, resumeList,

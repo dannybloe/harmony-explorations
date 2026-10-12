@@ -496,6 +496,10 @@ export function assembleSetup(setup: Recipe, options: AssembleOptions): Assemble
     steps.push({ step, bytes: c.blob.length, ...(detail === undefined ? {} : { detail }) });
   };
   note('donor');
+  // What the donor names, for step 12: a composer renumbers no list, so these indices still mean the same
+  // lists after it. Read here as well as after the composers, since the first activity on a donor of ours
+  // shortens the wiring's front and leaves the list behind it named by nothing, section 379.
+  const namedByDonor = namedLists(c);
 
   // A donor of ours, an empty configuration, section 377: its letters, its state colours and its pictures are
   // ours already, so steps 0, 14 and 15, which turn Logitech's artwork into ours, are not run on it. Its faces
@@ -626,7 +630,7 @@ export function assembleSetup(setup: Recipe, options: AssembleOptions): Assemble
     composed.activities.push(activity.name);
     note('activity composed', activity.name);
   }
-  const namedBefore = namedLists(c);
+  const namedBefore = new Set([...namedByDonor, ...namedLists(c)]);
 
   // 5. The idle device list, the activity menu in the setup's order, and Off.
   let layout = takeApart(c);

@@ -50742,3 +50742,76 @@ whose attribution carries anything but the composed device.
   tails; `statetables.ts`, `buildNameTree`.
 * `packages/codec/test/empty.test.ts`: the assembly on the empty configuration, its steps, its one row,
   a copy for every page, what it carries, and the blended donor refused.
+
+## 379. The first activity on the empty Harmony 650 configuration
+
+`todo-compile-650.md` 11.1.1.5. The assembly composes the first activity onto the empty configuration now:
+two catalogue devices, the LG television and the Denon receiver, and an activity "TV" over both, assemble
+to 540784 bytes with every check of the assembly passing, on the Watch TV key or, as a Custom activity, on
+no key. The pages render as the state colours mean them: the activity menu green with its one row, the
+start up screen in Off's picture and font, the working screen blue with "Devices" in its corner, and the
+device pages red. Six things stood in the way, each a reading of a file with activities met by a file
+with none.
+
+**The records keyed by the activity are told apart by what their idle case does.** With no activity each
+holds the idle case alone, so the keys that tell them apart on a compile, section 329, are all one key.
+Among the records mapped through on the activity counter, `0x72` on it from a mode's key map, an action
+list or a case's program, the working screen record's idle case queues a further record, the one that
+enters the activity menu, section 336, and each record under the key under Devices enters a mode, the idle
+device list, section 330. The counter is the condition: the location's records hold an idle looking case
+too, and without it two working screen records are found.
+
+**An empty configuration holds no keypad map record, and the first activity adds none.** On a compile it is
+the record whose case per activity selects that activity's handler set, `1F FF00 + set`, in 55 of 55
+distinct arch 14 compiles, and with no activity it has no case to hold. An earlier scan here read it as
+named by nothing; that was wrong. It is named once per file, by the case 0 program of record 32, which
+nothing found here maps through, so what runs it is open. The activity's own start lists select its
+handler set themselves, four of them on the composed file, so starting the activity installs its keypad
+map either way; whether returning from device mode keeps it is for the bench.
+
+**The wiring has a shape per activity count, and the composer rebuilds it.** Scan 4's front list pushes the
+"add Activities" screen while there is no activity and maps the location once there is one, section 360;
+an empty activity key calls a front list of its own, which a key selecting an activity has no use for. So
+the first activity, or one put on an empty key, left a wiring that describes nothing, and every reader
+after it refused, the first of them with "map locationMap is 2 in one place and 255 in another": scan 4's
+list still held the push, `07 FFFD`, where a map was expected. The activity composer describes the wiring
+before it builds anything and rebuilds it at the end from that description and the shape the file has now,
+`rewiredForActivities`; the symbols are unchanged, since a composer appends lists, modes and entries and
+renumbers none. A donor whose wiring is already right for the activity is left as it was. The front list
+the shorter front no longer holds is named by nothing; the assembly's step 12 drops it, which it does now
+for every list the donor named and nothing names, not only for those named after the composers.
+
+**Activities with every activity key empty bind scan 4 as any activity does.** What Logitech's compiler
+binds there is not read, and the builder refused; it binds the location map now, our choice, so a Custom
+activity, which goes on no key, is reachable from the activity menu.
+
+**A menu page with one activity has nothing to tell its footer from its label by.** The activity menu draws
+"TV" and the footer "Devices", the activity's working screen draws both, and both chrome rules of the name
+reader need a second activity, so the activity read back with no name and the assembly could not find it.
+A tie is broken by the rest of the configuration: a candidate drawn identically on a screen of neither the
+page's mode nor the activity's own is chrome, as the device lists' title "Devices" is. Only where it leaves
+a candidate, so a label some device page happens to draw too is never lost when it is the only one.
+
+**The activity's screens in our look.** The working screen takes the activity state's flat background and
+corner program, added on the first activity as the device state's was on the first device, section 377.
+The start up screen takes Off's picture and font off Off's own page, since All Off's screen is a start up
+screen with another title, section 356, and the empty configuration has no other; where start up screens
+exist their font is read off them. The menu's first row takes the device pages' label font, the first set
+of the largest label size, which is the font of 87 of the 99 labelled activity menu pages on the arch 14
+compiles, and an empty page of the activity menu reads as the two row layout it is.
+
+**Scope**: the Harmony 650, the one model whose empty configuration is built. The wiring's rebuild and the
+name reader's tie break are arch 14 and generic respectively; the tie break changes no name on the corpus,
+which the inventory tests hold.
+
+**Falsification**: a composed activity whose name does not read back, whose wiring `checkWiring` refuses,
+or a bench run on which pressing a key after returning from device mode sends nothing.
+
+* `packages/codec/src/families/four-slot/activityscreen.ts`, `noActivityMaps`, the optional keypad map
+  record, `ourActivityScreenChrome`, the first row's font; `wiring.ts`, `wiringShape` and
+  `rewiredForActivities`, the all keys empty rule; `shared/activities.ts`, the rewiring;
+  `inventory.ts`, the tie break in `activityNames`; `assemble.ts`, step 12 on the donor's lists too.
+* `packages/codec/test/empty.test.ts`: the first activity through the assembly on the Watch TV key and on
+  none, its name, its key, its wiring, the three looks and the dropped front list; `test/wiring.test.ts`:
+  scan 4 with every key empty built as with its keys set; `test/assemble.test.ts`: the two device
+  compile's new refusal.

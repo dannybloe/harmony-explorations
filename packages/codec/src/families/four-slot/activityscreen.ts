@@ -9,7 +9,7 @@ import { Writer } from '../../emit.ts';
 import {
   bottomWord, builtChrome, checkPageFrames, DEVICE_MODE_PROGRAM_TAG, DEVICE_PAGE_LOOKS, deviceModeChrome,
   type DevicePageLook, DEVICES_KEY_TAG, devicesKeyOperand, FOUR_SLOT_TITLE_XY, fourSlotCounterX, fourSlotLabelLines,
-  inlineHomes, type KeyMapEntry, type PageFrame, picturesByContent, smallerLabelFonts,
+  inlineHomes, inOurLook, type KeyMapEntry, OUR_LOOK, type PageFrame, picturesByContent, smallerLabelFonts,
 } from '../../families/four-slot/chrome.ts';
 import { activityRowListBody } from '../../families/four-slot/devicelist.ts';
 import { appendArch14Mode, fourSlotPageProgram } from '../../families/four-slot/devicescreen.ts';
@@ -43,7 +43,11 @@ import {
 import { codesFor, fontThatSpells, textWidth } from '../../shared/spelling.ts';
 import { stateVariableName } from '../../statetables.ts';
 import { characterMap, screenStrings } from '../../text.ts';
-import { valueMaps } from '../../valuemap.ts';
+import { type ValueMap, valueMaps } from '../../valuemap.ts';
+import { stateLookOf, withStateLook } from './statelook.ts';
+import { screenRecordModes } from '../../screenrecords.ts';
+import { takeApart } from '../../frame.ts';
+import { u24 } from '../../bytes.ts';
 
 /**
  * The picture a page of the arch 14 activity menu holding **one** activity draws, section 316: the
@@ -154,7 +158,10 @@ export function composeFourSlotActivityRow(
   const record = modeRecords(c)?.[menu];
   const page = record?.pages.at(-1);
   if (record === undefined || page === undefined) throw new ComposeError('the activity menu has no page');
-  const layout = menuLayout(c, taggedList(c, page.list)?.entries ?? []);
+  // A page that binds nothing reads as either layout, and the activity menu's is the two row one: an empty
+  // menu of ours, section 379.
+  const read = menuLayout(c, taggedList(c, page.list)?.entries ?? []);
+  const layout = read?.used === 0 ? { rows: true, used: 0, capacity: FOUR_SLOT_ROWS.length } : read;
   if (layout === undefined || !layout.rows) {
     throw new ComposeError("the activity menu's last page is not the two row layout");
   }
@@ -191,8 +198,11 @@ export function composeFourSlotActivityRow(
   if (map === undefined) throw new ComposeError('the config draws no text this can spell from');
   const lastProgram = screenProgram(c, page.program) ?? [];
   const bar = lastProgram.findLastIndex((one) => one.opcode === SCREEN_DRAW_IMAGE_AT);
-  const preferred = lastProgram.slice(0, bar < 0 ? 0 : bar)
-    .findLast((one) => one.opcode === SCREEN_SELECT_FONT)?.operands[0];
+  // A page with no label has only its title's font in effect there, so the first label takes the device
+  // pages' label font, the first set of the largest label size: the font of 87 of the 99 labelled activity
+  // menu pages on the arch 14 compiles, the rest smaller ones for long names. Section 379.
+  const preferred = layout.used === 0 ? fourSlotTemplate(c, undefined).labelFont
+    : lastProgram.slice(0, bar < 0 ? 0 : bar).findLast((one) => one.opcode === SCREEN_SELECT_FONT)?.operands[0];
   if (preferred === undefined) throw new ComposeError("the activity menu's last page selects no label font");
   const font = fontThatSpells(c, map, label, preferred);
   const fontSet = (fontSets(c) ?? [])[font];
@@ -325,7 +335,12 @@ const WORKING_SCREEN_WORD = 'Devices';
 interface ActivityMaps {
   working: number;
   devices: number[];
-  select: number;
+  /**
+   * The keypad map record, whose case per activity selects its handler set. Undefined on a configuration
+   * with no activity, which has no case to hold, so an empty configuration of ours holds no such record,
+   * section 379; the first activity composed there adds none either.
+   */
+  select: number | undefined;
 }
 
 /**
@@ -373,11 +388,9 @@ export function activityMaps(c: Container, starts: Arch14Starts): ActivityMaps {
     throw new ComposeError(`the counter states activities ${activities.join(', ') || 'none'} and the start lists `
       + `hold ${held.join(', ') || 'none'}`);
   }
-  if (activities.length === 0) {
-    throw new ComposeError('no activity here, so the records keyed by the activity cannot be told apart');
-  }
   const same = (keys: number[], want: number[]): boolean =>
     keys.length === want.length && [...keys].sort((a, b) => a - b).every((key, k) => key === want[k]);
+  if (activities.length === 0) return noActivityMaps(c, maps, starts.idle, starts.counter, same);
   const working: number[] = [];
   const devices: number[] = [];
   const select: number[] = [];
@@ -395,9 +408,11 @@ export function activityMaps(c: Container, starts: Arch14Starts): ActivityMaps {
       select.push(index);
     }
   });
-  if (working.length !== 1 || devices.length === 0 || select.length !== 1) {
+  // The keypad map record is in every Logitech compile, 55 of 55 distinct arch 14 ones, and in none of ours,
+  // whose first activity was composed with no record to add a case to, section 379.
+  if (working.length !== 1 || devices.length === 0 || select.length > 1) {
     throw new ComposeError(`the activity keyed records read as ${working.length} working screen, `
-      + `${devices.length} Devices key and ${select.length} keypad map records, not 1, some and 1`);
+      + `${devices.length} Devices key and ${select.length} keypad map records, not 1, some and at most 1`);
   }
   // Each record's stored order, generated and compared: a record in another order is not one whose
   // order an appended case keeps the compiler's.
@@ -407,7 +422,47 @@ export function activityMaps(c: Container, starts: Arch14Starts): ActivityMaps {
       throw new ComposeError(`base slot 14 record ${index} holds its cases in an order compilerCaseOrder does not give, or past the keys it pins`);
     }
   }
-  return { working: working[0] as number, devices, select: select[0] as number };
+  return { working: working[0] as number, devices, select: select[0] };
+}
+
+/**
+ * The records keyed by the activity on a configuration with no activity, section 379, where each holds the
+ * idle case alone and the keys cannot tell them apart, among the records mapped through on the counter.
+ * What the case does can: the working screen record's
+ * queues a further record, the one that enters the activity menu, section 336, and each record under the key
+ * under Devices enters a mode, the idle device list, section 330. One of the first and at least one of the
+ * second, as on every compile with activities; the keypad map record has no idle case and so does not exist.
+ * An empty configuration of ours is the file this is for; Logitech's one compile with no activity,
+ * `harvest_650_two_devices`, reads the same way and stops later, at a start up screen it does not hold.
+ */
+function noActivityMaps(
+  c: Container, maps: readonly ValueMap[], idle: number, counter: number, same: (keys: number[], want: number[]) => boolean,
+): ActivityMaps {
+  // Only the records something maps through on the counter: a mode's key map, an action list or a case's
+  // program, `0x72` on `(record << 8) | counter`. The location's records hold an idle looking case too.
+  const named = new Set<number>();
+  const note = (opcode: number, operand: number): void => {
+    if (opcode === MAP_VALUE_OPCODE && (operand & 0xff) === counter) named.add(operand >> 8);
+  };
+  for (const record of modeRecords(c) ?? []) for (const entry of record.entries) note(entry.opcode, entry.operand);
+  for (const list of c.actionLists() ?? []) for (const one of list) note(one.opcode, one.operand);
+  for (const map of maps) for (const [, target] of map.entries) {
+    const queued = caseQueued(c, target);
+    if (queued !== undefined) note(queued.opcode, queued.operand);
+  }
+  const working: number[] = [];
+  const devices: number[] = [];
+  maps.forEach((map, index) => {
+    if (!named.has(index) || map.ranges.length !== 0 || !same(map.entries.map(([key]) => key), [idle])) return;
+    const queued = caseQueued(c, (map.entries[0] as [number, number])[1]);
+    if (queued?.opcode === MAP_VALUE_OPCODE) working.push(index);
+    else if (queued?.opcode === ENTER_MODE) devices.push(index);
+  });
+  if (working.length !== 1 || devices.length === 0) {
+    throw new ComposeError(`with no activity the records keyed by it read as ${working.length} working screen and `
+      + `${devices.length} Devices key records, not 1 and some`);
+  }
+  return { working: working[0] as number, devices, select: undefined };
 }
 
 /**
@@ -415,7 +470,7 @@ export function activityMaps(c: Container, starts: Arch14Starts): ActivityMaps {
  * check `activityMaps` makes: the start sequence against the Off key map, the key sets against the
  * counter, and the stored order against the compiler's. Exported for the calibration, section 329.
  */
-export function activityKeyedRecords(c: Container): { working: number; devices: number[]; select: number } {
+export function activityKeyedRecords(c: Container): ActivityMaps {
   if (c.architecture !== 14) throw new ComposeError('the activity keyed records are the Harmony 600, 650 and 700\'s alone');
   return activityMaps(c, arch14Starts(c));
 }
@@ -521,6 +576,7 @@ export function activityScreenChrome(c: Container): ActivityScreenChrome {
   if (c.architecture !== 14) {
     throw new ComposeError('an activity\'s screens are built here for the Harmony 600, 650 and 700 only');
   }
+  if (inOurLook(c)) return ourActivityScreenChrome(c);
   const device = deviceModeChrome(c);
   const menu = fourSlotMenuChrome(c, 'activity menu');
   const look = DEVICE_PAGE_LOOKS.find((one) => one.name === device.look) as DevicePageLook;
@@ -554,6 +610,53 @@ export function activityScreenChrome(c: Container): ActivityScreenChrome {
     workingKeyMap: compilerTagOrder([DEVICES_KEY_TAG, DEVICE_MODE_PROGRAM_TAG]).map((tag) => (tag === DEVICES_KEY_TAG
       ? { tag, operand: devicesKey, opcode: MAP_VALUE_OPCODE }
       : { tag, operand: corner, opcode: RUN_SCREEN_PROGRAM })),
+    idleList: idleDeviceList(c),
+  };
+  checkActivityScreensWith(c, chrome, starts);
+  return chrome;
+}
+
+/**
+ * An activity's screens' chrome in our look, section 379. The start up screen draws the picture Off draws and
+ * in Off's font, read off Off's own page, its first `0x02` and its second instruction: All Off's screen is a
+ * start up screen with another title, section 356, and on a configuration with no activity Off is the one
+ * there is. Where start up screens exist their font is read off them, as on Logitech's. The working screen
+ * is the activity state's: its flat background on a page of any number of commands and its corner program,
+ * `stateLookOf` in the activity colour, which the composer adds where the file holds none, `withStateLook`.
+ * The rest as on Logitech's pages.
+ */
+function ourActivityScreenChrome(c: Container): ActivityScreenChrome {
+  const device = deviceModeChrome(c);
+  const look = stateLookOf(c, FOUR_SLOT_CHOICES.stateColours.activity);
+  if (look === undefined) throw new ComposeError('the configuration holds no activity look to draw a working screen in');
+  const off = screenRecordModes(c, takeApart(c)).off;
+  const offPage = modeRecords(c)?.[off]?.pages[0];
+  const offProgram = offPage === undefined ? [] : screenProgram(c, offPage.program) ?? [];
+  const offImage = offProgram.find((one) => one.opcode === SCREEN_DRAW_IMAGE);
+  const offFont = offProgram[1];
+  if (offImage === undefined || offFont?.opcode !== SCREEN_SELECT_FONT) {
+    throw new ComposeError(`Off, mode ${off}, draws no picture or selects no font second`);
+  }
+  const word = bottomWord(c, WORKING_SCREEN_WORD);
+  const starts = arch14Starts(c);
+  const press = (scan: number): number => (KEY_EVENT_PRESS << KEY_EVENT_SHIFT) | scan;
+  const keypad = Array.from({ length: KEYPAD_LAST_SCAN - KEYPAD_FIRST_SCAN + 1 }, (_, k) => press(KEYPAD_FIRST_SCAN + k));
+  const devicesKey = devicesKeyOperand(c);
+  const chrome: ActivityScreenChrome = {
+    look: OUR_LOOK,
+    startupPicture: u24(offImage.operands, offImage.operands.length - 3),
+    startupFont: starts.startup.size > 0 ? startupFontOf(c, starts) : offFont.operands[0] as number,
+    startupKeyMap: compilerTagOrder(keypad).map((tag) => ({ tag, operand: 0, opcode: 0 })),
+    working: {
+      look: OUR_LOOK,
+      single: look.background, crossed: look.background,
+      topBar: device.topBar, bottomBar: device.bottomBar, corner: look.corner,
+      word: WORKING_SCREEN_WORD, backFont: word.font, backCodes: word.codes, backX: word.x,
+      backHome: inlineHomes(c).get(word.codes.join(',')),
+    },
+    workingKeyMap: compilerTagOrder([DEVICES_KEY_TAG, DEVICE_MODE_PROGRAM_TAG]).map((tag) => (tag === DEVICES_KEY_TAG
+      ? { tag, operand: devicesKey, opcode: MAP_VALUE_OPCODE }
+      : { tag, operand: look.corner, opcode: RUN_SCREEN_PROGRAM })),
     idleList: idleDeviceList(c),
   };
   checkActivityScreensWith(c, chrome, starts);
@@ -724,9 +827,11 @@ function checkActivityScreensWith(c: Container, chrome: ActivityScreenChrome, st
     }
     if (ownList.operand !== chrome.idleList) listsTaken.add(ownList.operand);
     for (const map of maps.devices) expect(map, activity, ENTER_MODE, ownList.operand, 'device list case');
-    expect(maps.select, activity, SELECT_BINDING_SET, SELECT_BINDING_SET_MASK | (starts.sets.get(activity) as number),
-           'keypad map case');
-    checked.cases += 2 + maps.devices.length;
+    if (maps.select !== undefined) {
+      expect(maps.select, activity, SELECT_BINDING_SET, SELECT_BINDING_SET_MASK | (starts.sets.get(activity) as number),
+             'keypad map case');
+    }
+    checked.cases += (maps.select === undefined ? 1 : 2) + maps.devices.length;
   }
   for (const map of maps.devices) {
     expect(map, starts.idle, ENTER_MODE, chrome.idleList, 'idle device list case');
@@ -740,6 +845,9 @@ export function composeFourSlotActivityScreen(
   options: WithChoices<ComposeActivityScreenOptions, FourSlotChoices>,
 ): ComposedActivityScreen {
   const choices = options.choices ?? FOUR_SLOT_CHOICES;
+  // A configuration of ours draws its working screens in the activity state's look, which it does not hold
+  // until its first activity, section 379.
+  if (inOurLook(c)) c = withStateLook(c, FOUR_SLOT_CHOICES.stateColours.activity);
   const starts = arch14Starts(c);
   if (starts.startup.has(activity) || activity === starts.idle) {
     throw new ComposeError(`activity ${activity} already has a working screen`);
@@ -751,7 +859,8 @@ export function composeFourSlotActivityScreen(
   if (activity !== nextActivityValue(c)) {
     throw new ComposeError(`activity ${activity} is not the next one, ${nextActivityValue(c)}: one past the counter's highest`);
   }
-  for (const map of [maps.working, ...maps.devices, maps.select]) {
+  const keyed = [maps.working, ...maps.devices, ...(maps.select === undefined ? [] : [maps.select])];
+  for (const map of keyed) {
     const keys = [...(valueMaps(c)?.[map]?.entries ?? []).map(([key]) => key), activity];
     if (caseOrderOf(keys)?.join() !== keys.join()) {
       throw new ComposeError(`a case for ${activity} appended to record ${map} is out of compilerCaseOrder's order, or past the keys it pins`);
@@ -852,12 +961,16 @@ export function composeFourSlotActivityScreen(
   const idleList = idleDeviceList(current);
   current = appendValueMapCase(current, maps.working, activity, caseProgram(ENTER_MODE, mode));
   for (const map of maps.devices) current = appendValueMapCase(current, map, activity, caseProgram(ENTER_MODE, idleList));
-  current = appendValueMapCase(current, maps.select, activity,
-                               caseProgram(SELECT_BINDING_SET, SELECT_BINDING_SET_MASK | set));
+  // The keypad map record's case, where the configuration holds the record: an empty one of ours does not,
+  // and the activity's start list selects its handler set itself, section 379.
+  if (maps.select !== undefined) {
+    current = appendValueMapCase(current, maps.select, activity,
+                                 caseProgram(SELECT_BINDING_SET, SELECT_BINDING_SET_MASK | set));
+  }
 
   return {
     bytes: restamped(current.blob), activity, mode, startupMode, map: maps.working, scans: [],
     startVariable: starts.startVariable, flagVariable: starts.flagVariable, set,
-    maps: [maps.working, ...maps.devices, maps.select], pages: pageCount,
+    maps: keyed, pages: pageCount,
   };
 }

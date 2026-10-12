@@ -208,10 +208,13 @@ export function growFourSlotMenu(
   const pages = modeRecords(current)?.[menu]?.pages.length ?? 0;
   const list = page === undefined ? undefined : taggedList(current, page.list);
   if (page === undefined || list === undefined) throw new ComposeError('a menu lost its page');
-  const layout = menuLayout(current, list.entries);
-  if (layout === undefined) throw new ComposeError('a menu page changed layout');
-  // A page that binds nothing reads as either layout, so only a page with places can be the wrong kind.
-  if (layout.used > 0 && layout.rows !== menuOnRows(kind)) throw new ComposeError(`menu ${menu} is not a ${kind}`);
+  const read = menuLayout(current, list.entries);
+  if (read === undefined) throw new ComposeError('a menu page changed layout');
+  // A page that binds nothing reads as either layout, so only a page with places can be the wrong kind, and
+  // an empty one takes its kind's, section 379.
+  if (read.used > 0 && read.rows !== menuOnRows(kind)) throw new ComposeError(`menu ${menu} is not a ${kind}`);
+  const layout = read.used > 0 ? read
+    : { rows: menuOnRows(kind), used: 0, capacity: menuOnRows(kind) ? FOUR_SLOT_ROWS.length : FOUR_SLOT_ITEMS.length };
   if (layout.used >= layout.capacity) throw new ComposeError(`menu ${menu}'s last page is full`);
   // The page as it is has to be the built one, so the growth below starts from a page the builder owns.
   const before = menuPageDifference(current, fourSlotMenuChrome(current, kind), menu, pages - 1);

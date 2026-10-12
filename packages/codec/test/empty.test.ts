@@ -22,9 +22,10 @@ import { fourSlotMenus, fourSlotTemplate } from '../src/families/four-slot/menus
 import { stateLookOf } from '../src/families/four-slot/statelook.ts';
 import { composeCatalogueDevices } from '../src/composecatalogue.ts';
 import { bitmapReference } from '../src/screen.ts';
-import { deviceListRows } from '../src/inventory.ts';
+import { activities, deviceListRows } from '../src/inventory.ts';
+import { activityKeys } from '../src/activitykeys.ts';
 import { IR_ARCHIVE, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
-import { archSlot, parse } from '../src/index.ts';
+import { archSlot, checkWiring, parse } from '../src/index.ts';
 import { checkFirmwareScreens } from '../src/firmwarescreens.ts';
 import { checkScreenRecords } from '../src/screenrecords.ts';
 import { assembleSetup, attributeBytes } from '../src/assemble.ts';
@@ -318,4 +319,31 @@ test('section 378: the assembly takes the empty configuration as its donor, runs
   ]);
   // A blended donor holds more sets than the description, and blending runs once, last.
   assert.throws(() => assembleSetup(recipe, { donor: buildEmpty(true).bytes, archive: IR_ARCHIVE! }), /is blended or not one of ours/);
+});
+
+test('section 379: the first activity goes onto the empty configuration through the assembly, on the Watch TV key or on none, and its wiring, its name and its looks read back', skipWithoutIrArchive(), () => {
+  const recipe = (type: string): Recipe => ({
+    model: { name: 'Harmony 650', skin: 72 },
+    devices: [{ name: 'LG TV', device: 'LG/OLED65G26LA' }, { name: 'Denon', device: 'Denon/AVR-X4800H' }],
+    activities: [{ name: 'TV', type, devices: [
+      { device: 'LG TV', input: 'HDMI 1', roles: ['Display'] }, { device: 'Denon', input: 'CBL/SAT', roles: ['Volume'] }] }],
+    choices: { letters: 'oxanium', backgrounds: 'state colours', pictures: 'ours', blendLetters: false },
+  } as Recipe);
+  const donor = buildEmpty().bytes;
+  for (const [type, key] of [['WatchTV', 'Watch TV'], ['Custom', undefined]] as const) {
+    const out = assembleSetup(recipe(type), { donor, archive: IR_ARCHIVE! });
+    const c = out.container;
+    // Read back by its name, which on a menu of one activity only the tie break finds.
+    const found = activities(c);
+    assert.deepEqual(found.map((one) => one.name), ['TV'], type);
+    // On its key or on none, the other keys still opening the "add an Activity" screen.
+    assert.deepEqual(activityKeys(c).map((one) => [one.key, one.kind, one.set ?? null]),
+      ['Watch TV', 'Watch a Movie', 'Listen to Music'].map((name) => (name === key ? [name, 'activity', found[0]!.set] : [name, 'placeholder', null])), type);
+    // The wiring is the one its description builds, scan 4 mapping the location now there is an activity.
+    checkWiring(c);
+    // The activity's look was added next to the idle and the device ones.
+    for (const state of ['idle', 'device', 'activity'] as const) assert.ok(stateLookOf(c, FOUR_SLOT_CHOICES.stateColours[state]), `${type} ${state}`);
+    // The front list the key no longer needs is dropped with the lists nothing names.
+    if (key !== undefined) assert.match(out.steps.find((one) => one.step === 'lists dropped')?.detail ?? '', /^1 lists, 7 bytes/);
+  }
 });

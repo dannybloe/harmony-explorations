@@ -602,7 +602,7 @@ test('9.1.2.2: our pictures replace the six that are no state\'s background, aft
     /icons has no Help/);
 });
 
-test('the smallest Harmony 650 compile the lab registers, two devices and no activity, takes no composer: the device composer meets its two row device list, whose page draws no title, its fonts lack letters, and an activity needs another to be told apart from',
+test('the smallest Harmony 650 compile the lab registers, two devices and no activity, takes no composer: the device composer meets its two row device list, whose page draws no title, its fonts lack letters, and an activity finds no start up screen to take its font from',
      needing(skipWithoutIrArchive(), skipUnless('harvest_650_two_devices')), () => {
   const smallest = require_('harvest_650_two_devices');
   // Its two devices are the setup's LG television and Denon receiver under the names Logitech gives them.
@@ -664,8 +664,10 @@ test('the smallest Harmony 650 compile the lab registers, two devices and no act
   });
   assert.throws(() => assembleSetup(tv('HDMI 1'), { donor: smallest, ...composing() }),
     /composing TV: LG TV has no input variable here to put on HDMI 1/);
+  // Without, the records keyed by the activity are told apart by what their idle case does since section
+  // 379, and the composer goes on to the start up screen, of which a compile with no activity holds none.
   assert.throws(() => assembleSetup(tv(), { donor: smallest, ...composing() }),
-    /composing TV: no activity here, so the records keyed by the activity cannot be told apart/);
+    /composing TV: the start up screens select 0 fonts, so none is the start up font/);
 });
 
 test('a device the donor lacks is composed from the catalogue with an activity on it, and every check passes',

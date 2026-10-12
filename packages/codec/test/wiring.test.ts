@@ -43,6 +43,7 @@ import {
   builtPieces,
   describeStateTables,
   describeWiring,
+  wiringFrontIndex,
   eventMap,
   layOutContainer,
   logArea,
@@ -648,14 +649,19 @@ test('section 360: checkWiring passes Logitech\'s clean compile and refuses a co
   refused(edited('elevenKeys.again', 0, 0, (spec.lists.stopLights! + 1) & 0xff), /list "stopLights" is \d+ in one place and \d+ in another/);
 });
 
-test('section 360: the "add Activities" rule is keyed on the activity count and refused where it is not read: no activity with an activity key set, activities with every activity key empty, and no activity outside the Harmony 650',
+test('section 360: the "add Activities" rule is keyed on the activity count and refused where it is not read: no activity with an activity key set and no activity outside the Harmony 650; activities with every activity key empty bind scan 4 as any activity does, section 379',
      skipUnless(NO_ACTIVITIES, 'h650_config_region'), () => {
   const none = describeWiring(takeApart(containerOf(NO_ACTIVITIES)));
   const some = describeWiring(takeApart(containerOf('h650_config_region')));
   const refuses = (spec: WiringSpec, pattern: RegExp): void => assert.throws(() => buildWiring(spec), (e: unknown) => e instanceof WiringError && pattern.test(e.message));
   assert.equal(none.activityCount, 0);
   refuses({ ...none, activityKeys: some.activityKeys }, /activity key selects an entry and there is no activity/);
-  refuses({ ...some, activityKeys: none.activityKeys }, /every activity key is empty while there are activities/);
+  // Activities on no key, our choice and not read: scan 4's front list is the one the compile with its keys
+  // set builds, byte for byte, where the compile with no activity pushes the placeholder.
+  const scan4 = (spec: WiringSpec): Uint8Array => buildWiring(spec).lists.get(wiringFrontIndex(spec, 'entry1.0x84'))!.bytes;
+  const keyless = { ...some, activityKeys: none.activityKeys };
+  assert.deepEqual(scan4(keyless), scan4(some));
+  assert.notDeepEqual(scan4(keyless), scan4(none));
   refuses({ ...none, model: 'harmony-600' }, /no harmony-600 compile with no activity/);
   refuses({ ...none, model: 'harmony-700' }, /no harmony-700 compile with no activity/);
   // The control: both as read build.

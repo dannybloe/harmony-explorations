@@ -793,6 +793,35 @@ export function activityNames(c: Container): ActivityName[] {
   }));
   resolve(drafts);
 
+  // **A page with one activity has nothing to tell its footer from its label by**, and a configuration
+  // of ours with one activity is that page: its menu draws "TV" and the footer "Devices", and the
+  // activity's own screen draws both, the name as its title and "Devices" in its corner. Neither chrome
+  // rule above can fire, since both need a second activity. So a tie is broken by what the rest of the
+  // configuration draws: a candidate drawn identically on a screen of neither the page's mode nor the
+  // activity's own is chrome, the way the device lists' title "Devices" is. Only as a tie break, and only
+  // where it leaves a candidate, so a label some device's page happens to draw too is never lost when it
+  // is the only one. Section 379.
+  const drawnByMode = new Map<string, Set<number>>();
+  records.forEach((record, mode) => {
+    for (const page of record.pages) {
+      for (const one of textOf(page.program)) {
+        const modes = drawnByMode.get(one.text) ?? new Set<number>();
+        modes.add(mode);
+        drawnByMode.set(one.text, modes);
+      }
+    }
+  });
+  let broken = false;
+  for (const draft of drafts) {
+    if (assigned.has(draft.binding.activity) || draft.candidates.size < 2) continue;
+    const own = new Set([modeOfPage(records, draft.binding.page), ...draft.modes]);
+    const elsewhere = [...draft.candidates].filter(([, label]) => [...(drawnByMode.get(label.text) ?? [])].some((mode) => !own.has(mode)));
+    if (elsewhere.length === 0 || elsewhere.length === draft.candidates.size) continue;
+    for (const [key] of elsewhere) draft.candidates.delete(key);
+    broken = true;
+  }
+  if (broken) resolve(drafts);
+
   // Hop five, and only for what is left: **a label the menu wraps onto a second row**, which is the
   // Harmony 525 and nothing else here. Its menu is two columns of two lines each, so an activity's own
   // label is drawn as two strings on consecutive rows, and matching one row at a time returns a
