@@ -50221,6 +50221,14 @@ refusal of a compile with no activity, which placing the texts in our letters re
 `fontThatSpells` keeps its fallback: the composers serve the Harmony One, 600, 525 and 880 and assemblies
 in Logitech's letters, and in ours it is unreachable, since every set spells all 95 characters, 8.2.1.
 
+**The tally counts our letters.** `attributeBytes`, the count 11.1 asks for, measures a file with no memory
+of how it was built, and had no entry for letters, so it filed our glyphs as carried. It now counts a glyph
+as `letters` where it is exactly one of our faces' letters for its character, in either colouring, read
+only through our alphabet. On the test setup assembled in our letters that is all 93475 glyph bytes and
+none carried; Logitech's compiles count none. A blended copy, section 370, is not recognised yet, since its
+glyphs depend on a colour the copy does not state. What is still Logitech's in that file is the picture
+bank, 361 KB, the infrared blocks, 220 KB, and about 140 KB of lists, screen programs and menus.
+
 * `packages/codec/src/devicemode.ts`, `OXANIUM_LABEL_SIZES`, `TITLE_RUNG`, `ladderOf` and the ladder
   parameter; `compose.ts`, `fourSlotLabelLines`, `smallerLabelFonts`, `fourSlotCounterX`;
   `assemble.ts`, `ourLetters`.

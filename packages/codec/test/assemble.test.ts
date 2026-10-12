@@ -333,7 +333,7 @@ test('a generator lays 114896 bytes of the test setup assembled on the clean com
   assert.equal(a.total, 999922);
   assert.deepEqual(a.generated, {
     frame: 122, addresses: 67890, description: 17752, 'mode 0': 649, wiring: 1143, 'state tables': 38334,
-    'screen records': 906, 'firmware screens': 4712, texts: 10212, pictures: 41066,
+    'screen records': 906, 'firmware screens': 4712, texts: 10212, pictures: 41066, letters: 0,
   });
   const carried = (...keys: string[]): number => keys.reduce((n, key) => n + (a.carried.get(key) ?? 0), 0);
   assert.equal(carried('slot-7-glyph', 'slot-7-set'), 92170);
@@ -404,7 +404,7 @@ test('on Logitech\'s starting compile the test setup\'s fifth activity is compos
   const a = attributeBytes(out.container);
   assert.deepEqual(a.generated, {
     frame: 122, addresses: 67272, description: 17582, 'mode 0': 649, wiring: 1143, 'state tables': 38334,
-    'screen records': 906, 'firmware screens': 4712, texts: 9924, pictures: 41066,
+    'screen records': 906, 'firmware screens': 4712, texts: 9924, pictures: 41066, letters: 0,
   });
   assert.equal([...a.carried.values()].reduce((n, v) => n + v, 0), 815603);
   const setup = setupOf('h650-test.json');
@@ -453,6 +453,11 @@ test('8.2.3: in our letters the test setup assembles on Logitech\'s starting com
   assert.equal(sets[labelFont]!.height, 15);
   assert.equal(sets[labels[0]!.font]!.height, 14);
   assert.equal(out.faces[labels[0]!.font]!.face, 'F14W');
+  // The tally knows our letters with no memory of the build: every glyph byte is ours, none carried, and
+  // Logitech's letters count none, in the tests above.
+  const a = attributeBytes(out.container);
+  assert.equal(a.generated.letters, 93475);
+  assert.equal(a.carried.get('slot-7-glyph'), undefined);
 });
 
 test('the smallest Harmony 650 compile the lab registers, two devices and no activity, takes no composer: the device composer knows the activity menu by its activity rows and it has none, its fonts lack letters, and an activity needs another to be told apart from',

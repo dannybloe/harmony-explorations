@@ -89,6 +89,8 @@ import {
 import { buildFirmwareScreens, checkFirmwareScreens, describeFirmwareScreens, withFirmwareScreens } from './firmwarescreens.ts';
 import { buildScreenTexts, checkScreenTexts, describeScreenTexts, withScreenTexts } from './screentexts.ts';
 import { checkOxaniumFonts, withOxaniumFonts, type SetFace } from './fonttable.ts';
+import { LETTERING_FACES, letterRows } from './lettering.ts';
+import { fontSets, glyphOf } from './font.ts';
 import {
   ComposeError, composeActivity, composeActivityDeviceList, composeActivityMenuRow, composeActivityScreen, keepDeviceOn,
   nextActivityValue, startsSwitchingOff,
@@ -975,7 +977,7 @@ export function compareDrawnTexts(a: Container, b: Container): { text: string; a
  */
 export const ATTRIBUTIONS = [
   'frame', 'addresses', 'description', 'mode 0', 'wiring', 'state tables', 'screen records', 'firmware screens',
-  'texts', 'pictures',
+  'texts', 'pictures', 'letters',
 ] as const;
 export type Attribution = (typeof ATTRIBUTIONS)[number];
 
@@ -1059,6 +1061,30 @@ export function attributeBytes(c: Container): AttributedBytes {
     if (one.entry?.source !== 'rule') continue;
     const at = laidPictures.offsetOf(one.piece);
     if (at !== undefined) mark(at, one.piece.bytes.length, 'pictures');
+  }
+
+  // Our letters, section 368: a glyph that is exactly one of our faces' letters for its character, in
+  // either colouring. Read only where the character map reads our alphabet, so a Logitech compile has
+  // none. A blended copy's glyphs, section 370, are not recognised: their pixels depend on the colour
+  // they were blended for, which the copy does not state, so they count as carried until it is read.
+  const lettersMap = characterMap(c);
+  if (lettersMap?.alphabet === 'oxanium') {
+    const ours = new Map<string, Set<string>>(); // per character, every one bit drawing of it, as rows
+    for (const ch of new Set(lettersMap.codes.values())) {
+      const drawings = new Set<string>();
+      for (const face of LETTERING_FACES) {
+        for (const lettering of ['shadowed', 'plain'] as const) drawings.add(JSON.stringify(letterRows(face, ch, lettering)));
+      }
+      ours.set(ch, drawings);
+    }
+    for (const set of fontSets(c) ?? []) {
+      for (const [code, ch] of lettersMap.codes) {
+        const glyph = glyphOf(c, set, code);
+        if (glyph === undefined || !ours.get(ch)?.has(JSON.stringify(glyph.rows))) continue;
+        const at = c.blobOffsetOf(glyph.address);
+        if (at !== undefined) mark(at, glyph.length, 'letters');
+      }
+    }
   }
 
   // Every address field no generator laid: the frame's, inside a piece otherwise carried.
