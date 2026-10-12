@@ -16,6 +16,8 @@ import { readFileSync } from 'node:fs';
 
 import { IR_ARCHIVE, needing, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
 import type { Container, Recipe, RecipeScreenItem } from '../src/index.ts';
+import { screenProgram } from '../src/screen.ts';
+import { valueMaps } from '../src/valuemap.ts';
 import {
   AssemblyError,
   FOUR_SLOT_CHOICES,
@@ -383,7 +385,7 @@ const PLASMA_KIJKEN_SCREEN: readonly RecipeScreenItem[] = [
   { sequence: 'Radio', steps: [{ device: 'KPN', scan: 24 }, { pause: 20 }, { device: 'KPN', scan: 47 }] },
 ];
 
-test('on Logitech\'s starting compile the test setup\'s fifth activity is composed from the setup file and its screen, and the result is the 6.2.13 file put through the same assembly but for its build stamp, and lays 147798 bytes as content',
+test('on Logitech\'s starting compile the test setup\'s fifth activity is composed from the setup file and its screen, and the result is the 6.2.13 file put through the same assembly but for its build stamp and where its new case programs sit, and lays 147798 bytes as content',
      needing(skipWithoutIrArchive(), skipUnless('h650_start_config', 'h650_7_1_base', 'h650_test_config_clean')), () => {
   // The setup file states the screen, since 10.7.4.
   assert.deepEqual(setupOf('h650-test.json').activities.find((one) => one.name === 'Plasma kijken')?.screen, PLASMA_KIJKEN_SCREEN);
@@ -393,14 +395,24 @@ test('on Logitech\'s starting compile the test setup\'s fifth activity is compos
   assert.equal(out.bytes.length, 997313);
   assert.equal(out.dropped.length, 70);
   // The 6.2.13 file, the lab's chain of composers on the same compile, through the same passes: the same
-  // bytes but the build stamp, five in base slot 3 and the same five in the clock's records.
+  // bytes but the build stamp, five in base slot 3 and the same five in the clock's records, and where the
+  // new cases' programs sit. Until section 376 a new case's program went in front of the case program just
+  // below the one the record's lowest case names, because its address was written before the hole moved
+  // it; a case entry and a case program are both five bytes, so that was always a program's start, and the
+  // 6.2.13 file was made so. The same programs, the same records and the same views.
   const chain = assembleSetup(setupOf('h650-test.json'), { donor: require_('h650_7_1_base') });
   assert.deepEqual(chain.composed, { devices: [], activities: [] });
   const owners = claims(out.container);
   const differing = [...out.bytes.keys()].filter((k) => out.bytes[k] !== chain.bytes[k])
     .map((k) => owners.find((one) => k >= one.start && k < one.start + one.length)?.owner);
   assert.equal(chain.bytes.length, out.bytes.length);
-  assert.deepEqual(differing, [...Array(5).fill('slot-13-record'), ...Array(5).fill('slot-3-clock')]);
+  assert.deepEqual([...new Set(differing)].sort(), ['slot-11-program', 'slot-11-table', 'slot-13-record', 'slot-14-record', 'slot-3-clock', 'trailer']);
+  assert.equal(differing.filter((one) => one === 'slot-3-clock').length, 5);
+  assert.deepEqual(compareViews(setupView(out.container), setupView(chain.container)), []);
+  assert.deepEqual(compareDrawnTexts(out.container, chain.container), []);
+  const programs = (c: typeof out.container): string[] => (valueMaps(c) ?? []).flatMap((map) => map.entries.map(([key, target]) =>
+    `${key}:${[...(screenProgram(c, target) ?? [])].map((one) => `${one.opcode}/${[...one.operands].join('.')}`).join(' ')}`)).sort();
+  assert.deepEqual(programs(out.container), programs(chain.container));
   // Against Logitech's compile of the setup, the menu's order alone; against the 10.2.2 file, nothing.
   const clean = containerOf('h650_test_config_clean');
   assert.deepEqual(compareViews(setupView(out.container), setupView(clean), { menuOrder: false }), []);

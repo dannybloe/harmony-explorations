@@ -53,7 +53,7 @@ import { buildOurPictures, buildPictures, type OurPictureChoices, type OurPictur
 import { ENTER_MODE, MAP_VALUE_OPCODE } from '../../inventory.ts';
 import { STATE_WRITE_BASE } from '../../actions.ts';
 import { SENDING_FLAG_VARIABLE } from './chrome.ts';
-import { caseProgram as caseProgramBytes } from './activityscreen.ts';
+import { caseProgram as caseProgramBytes } from '../../shared/menus.ts';
 import { type BuiltFirmwareScreens, buildFirmwareScreens, firmwareScreenTemplates } from '../../firmwarescreens.ts';
 import {
   type BuiltScreen, type BuiltScreenRecords, type ScreenMenuSpec, buildScreenRecords,
@@ -285,7 +285,7 @@ function throughMap(map: EmptyMapName, variable: string): number {
 
 /**
  * A base slot 14 case's program as every compile writes one: queue one action, `0x11` and its operand and
- * opcode, then the end, five bytes, `activityscreen.ts`'s `caseProgram`.
+ * opcode, then the end, five bytes, `shared/menus.ts`' `caseProgram`.
  */
 function caseProgram(opcode: number, operand: number): ContainerPiece {
   return { bytes: caseProgramBytes(opcode, operand), refs: [], owner: 'slot-11-program' };

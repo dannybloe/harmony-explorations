@@ -123,6 +123,7 @@ import {
   reachablePrograms,
 } from '../src/index.ts';
 import { startAndFlag, startTargets, tagFiveMisfit, tagFiveShape } from './tagfive.ts';
+import { FIRST_DEVICE_IDENTIFIER } from '../src/shared/core.ts';
 
 /**
  * The goal device's commands, as the catalogue states them for the LG 42LM3400: power is a toggle
@@ -4552,6 +4553,36 @@ for (const host of HOSTS) {
   });
 }
 
+// Section 376: the four Logitech built configurations with one device, on the Harmony 525 and the Harmony
+// One, switch it off from the idle record's case directly, and a second device makes the list of both.
+const ONE_DEVICE = ['h525_config_2', 'one_config_unprogrammed', 'one_spare_after_sync', 'vendor_region_user_config'] as const;
+
+for (const host of ONE_DEVICE) {
+  test(`section 376: ${host}, with one device, switches it off from the idle record's case, and a second device makes the all off list of both`, skipUnless(host), () => {
+    const before = parse(require_(host));
+    const power = deviceVariables(before).filter((one) => one.property === 'Power').map((one) => one.index);
+    assert.equal(power.length, 1);
+    assert.equal(allOffList(before), undefined);
+    const composed = composeDevice(before, { label: 'LG', commands: TELEVISION, power: 0 });
+    const joined = joinPowerOff(parse(composed.bytes), composed.variable);
+    const after = parse(joined.bytes);
+    const now = allOffList(after);
+    assert.ok(now !== undefined, `${host}: no all off list after the second device`);
+    assert.deepEqual(now.variables, [power[0], composed.variable]);
+    assert.equal(joined.allOff, now.list);
+    // Every activity's start writes the new device 0 too, as with a list already there.
+    const lists = after.actionLists() ?? [];
+    for (const list of joined.enterLists) {
+      assert.ok((lists[list] ?? []).some((one) => one.opcode === 0x80 + composed.variable && one.operand === 0), `${host}: list ${list}`);
+    }
+    const report = coverage(after);
+    assert.equal(report.accounted, report.total, 'every byte is claimed');
+    assert.deepEqual(report.overlaps, []);
+    assert.ok(trailerAgrees(after));
+    assert.equal(roundTrip(after).equal, true);
+  });
+}
+
 test('joining the power off lists refuses what is not a new device\'s power variable', skipUnless('one_config'), () => {
   const c = parse(require_('one_config'));
   const found = allOffList(c);
@@ -4783,8 +4814,9 @@ test('on the 650\'s two configurations a composed device holds what copying gave
     assert.equal(device.delay!.identifier, expected);
     assert.ok(deviceIds(after).includes(expected), `${name}: the names carry it`);
   }
-  // A configuration naming no identifier is refused rather than given a first one of ours.
-  assert.throws(() => nextDeviceIdentifier(parse(require_('one_config'))), ComposeError);
+  // A configuration naming no identifier was refused until section 376 gave it a first one of ours, which
+  // nothing on the remote reads.
+  assert.equal(nextDeviceIdentifier(parse(require_('one_config'))), FIRST_DEVICE_IDENTIFIER);
 });
 
 /*

@@ -263,7 +263,8 @@ export function blockWordsOf(pulses: readonly Pulse[]): IrPulse[] {
 export function appendTableEntries(
   c: Container, slot: number, targets: readonly number[],
 ): Uint8Array {
-  const table = c.pointerArrayAt(slot);
+  // The caller names a table, so an empty one is one, section 376.
+  const table = c.pointerArrayAt(slot, true);
   if (table === undefined) throw new ComposeError(`slot ${slot} does not read as a pointer table`);
   const at = table.start + table.length;
   const grown = relocate(c, at, 3 * targets.length);
@@ -293,7 +294,8 @@ export function composeIrGroup(
   if (commands.length === 0) throw new ComposeError('a device with no commands is not a device');
   if (c.architecture === undefined) throw new ComposeError('the container states no architecture');
   const slot = archSlot(c.architecture, IR_TABLE_SLOT);
-  const table = c.pointerArrayAt(slot);
+  // An empty table is one, in a configuration with no device yet.
+  const table = c.pointerArrayAt(slot, true);
   if (table === undefined) throw new ComposeError('base slot 5 does not read as a group table');
 
   // Every command's blocks, derived and refused early: composing half a device helps nobody. A record is

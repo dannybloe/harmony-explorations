@@ -1716,6 +1716,13 @@ The walk is from `CurrentLocation`'s record, whose one case, value 0, queues the
 is conditional on it. Every activity's enter list writes every one of those variables, 1 or 0,
 directly or through the lists it calls, up to three calls down. `allOffList`.
 
+**With one device there is no list, and the case writes it**, section 376: on all four Logitech built
+configurations with one device, the Harmony 525's two reads and three of the Harmony One, the record's one
+case, for 0, queues the write of 0 into that device's `Power` variable itself, a five byte case program.
+A configuration of ours with no device has the record with no case. `joinPowerOff` gives the first device
+the case and turns it into a call to a new list of both writes for the second. No Harmony 600, 650 or 700
+compile with one device is in the lab, so that model's form is the other architectures'.
+
 **On arch 14 every record leads with 2 and has no range table**, 501 of 501 over the thirteen compiles,
 and no address points into another record, so `buildValueMap` writes each record whole from its cases.
 [findings.md](findings.md) section 324.

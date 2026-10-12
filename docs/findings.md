@@ -50537,3 +50537,73 @@ or base slot 9 entry 1's scan 4 list writes another variable than the rows; a pi
   `cornerProgramAt`; `statetables.ts`, `hourListBytes`.
 * `packages/codec/test/empty.test.ts`: the empty configuration read back and attributed whole, and both
   structural readings against all 24 compiles.
+
+## 376. Composing the first devices onto the empty Harmony 650 configuration
+
+**Status: confirmed for the switch off on the Harmony 525 and the Harmony One, built for the Harmony
+650 on their form.** `todo-compile-650.md` 11.1.1.5, the device composer's lookups on a configuration
+with no device. Sources: the corpus and the codec; no firmware question arose.
+
+Composing one catalogue device onto section 374's empty configuration met four refusals in turn. Three
+are moved here; the fourth, the device page's template, is a design question and is not.
+
+**An infrared table with no entry is a table.** The generic table reader takes a section as a count and
+that many addresses only when the count is not zero, which an empty configuration's base slot 5 is. It is
+not widened for everyone: 222 sections of one or two zero bytes over the lab's 153 containers are not known tables,
+one of them an empty infrared table in an embedded configuration, so a caller that names a table opts in,
+`pointerArrayAt(slot, true)`, the infrared composer and the table append.
+
+**The first device's identifier is ours.** A device takes one more than the highest identifier in the
+configuration's variable names, section 319; with none, `FIRST_DEVICE_IDENTIFIER`, 10000000, eight digits
+as the compiler writes them and the lowest. Nothing on the remote reads a name, so it is a choice and not a
+measurement.
+
+**A device's switch off with fewer than two devices.** Section 280's all off list exists only with two
+devices or more. On all four Logitech built configurations with one device, `h525_config_2`,
+`one_config_unprogrammed`, `one_spare_after_sync` and `vendor_region_user_config`, the idle key map's
+enter list maps through two records and one of them, whose one case is for 0, queues the write of 0 into
+the device's `Power` variable itself: `0x8F`, `0xA4`, `0x9C` and `0xA4` for variables 15, 36, 28 and 36.
+With two devices, `harvest_650_two_devices`, the same case queues a call to a list of both writes,
+`[0xA6 0, 0x92 0]`. So `joinPowerOff` now has two forms below the list: the first device gives the record,
+which on ours has no case, a case queuing its write; the second makes a list of the first's write and its
+own, appended at the end of base slot 10, and turns the case into a call to it in place, a call being the
+same five bytes. The enter lists of any activities gain the write as before. The record is found by shape,
+`idleOffRecord`: of the records the idle key map's enter list maps through, the one with no case, or whose
+one case for 0 writes a `Power` variable 0 or calls the all off list. A device left with nothing to
+switch it off is refused.
+
+**The case program is shared now.** `caseProgram`, five bytes queuing one action, moved from the Harmony
+650's activity screens to `shared/menus.ts`, since the Harmony One's and the 525's cases have the same
+form, and `appendValueMapCase` takes a record with no case, putting the program in front of the lowest one
+any record names.
+
+**And the new case's address is written after the hole it goes into is made**, which is a correction. The
+case entry first holds a provisional address, the lowest program the record names, and the program is put
+in front of whatever the grown record's lowest address is. That address was written before the case's own
+five bytes were inserted below it, so it named a point five bytes early, and for a record that already had
+cases that was the start of the case program before the lowest, since a case entry and a case program are
+both five bytes. So the program landed one program further down than intended, harmlessly, and the 6.2.13
+file was built so. For a record with no case the provisional address is the lowest program of any record,
+and nothing says five bytes before that is a program. Corrected: the address moves with the hole. The 6.2.13 file's
+reassembly now differs from it in base slot 11's programs and table, base slot 14's records and the
+trailer, besides the build stamp, and every case runs the same program, which the test asserts per key,
+along with the same views and the same drawn texts.
+
+**What stops the device composer now** is its template: a new device's pages and key map are built from
+an existing device's, its fonts, its look found by Logitech's pictures, and, under the plain layout, which
+command goes on which key. An empty configuration has no device to copy and no picture in the device
+state's colour.
+
+**Scope**: the one device form is read on arch 9 (Harmony 525) and arch 12 (Harmony One); arch 14
+(Harmony 600, 650 and 700) has no compile with one device here and takes theirs. Arch 8 and arch 10 not
+checked.
+
+**Falsification**: a Logitech built configuration with one device that switches it off through a list,
+or whose idle key map maps through no record of that shape.
+
+* `packages/codec/src/gspm.ts`, `pointerArrayAt`'s opt in; `shared/infrared.ts`; `shared/core.ts`,
+  `FIRST_DEVICE_IDENTIFIER`; `shared/power.ts`, `joinPowerOff`, `idleOffRecord`, `firstPowerOffs`;
+  `shared/menus.ts`, `caseProgram` and `appendValueMapCase`.
+* `packages/codec/test/compose.test.ts`: the four configurations with one device take a second and gain
+  the list of both, every byte claimed and the file round tripping; `test/empty.test.ts`: the first and
+  second device onto the empty configuration, with a control that a write of 1 fails it.

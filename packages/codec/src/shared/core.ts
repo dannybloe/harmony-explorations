@@ -404,6 +404,9 @@ export function queueing(operand: number, opcode: number): Uint8Array {
   return new Writer(5).u8(SCREEN_QUEUE_INSTRUCTION).u16(operand).u8(opcode).u8(SCREEN_END).bytes;
 }
 
+/** The identifier of the first device of a configuration that has none: eight digits, as the compiler writes, the lowest. */
+export const FIRST_DEVICE_IDENTIFIER = 10_000_000;
+
 /**
  * The identifier a device composed onto `c` takes, section 319: one more than the highest any of the
  * configuration's variable names carries.
@@ -427,12 +430,13 @@ export function queueing(operand: number, opcode: number): Uint8Array {
  * 1349 above it. This reads which numbers are taken, which is the input every composer reads to place
  * anything; the number itself is built, and is checked against nothing else in the configuration.
  *
- * A configuration that names no identifier is refused: a first identifier would be a choice of ours
- * with nothing to measure it against, and composing onto such a configuration has not come up.
+ * **A configuration that names no identifier takes `FIRST_DEVICE_IDENTIFIER`**, one of ours built from
+ * nothing, section 376: a choice with nothing to measure it against, since nothing on the remote reads a
+ * name, made in the shape the compiler writes.
  */
 export function nextDeviceIdentifier(c: Container): number {
   const identifiers = deviceIds(c);
-  if (identifiers.length === 0) throw new ComposeError('no variable here names a device identifier');
+  if (identifiers.length === 0) return FIRST_DEVICE_IDENTIFIER;
   const identifier = Math.max(...identifiers) + 1;
   // `stateVariables` reads six digits or more as an identifier and the compiler writes eight, so a
   // ninth digit would still read back; a number that would not is refused rather than written.

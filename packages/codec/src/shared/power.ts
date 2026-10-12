@@ -6,11 +6,13 @@ import { STATE_WRITE_BASE } from '../actions.ts';
 import { Writer } from '../emit.ts';
 import { archSlot, Container, type Instruction, parse } from '../gspm.ts';
 import {
-  activities, ACTIVITY_STATE_NAME, allOffList, deviceVariables, handlerSetRoles, stateVariables,
+  activities, ACTIVITY_STATE_NAME, allOffList, caseQueued, deviceVariables, handlerSetRoles, MAP_VALUE_OPCODE, stateVariables,
 } from '../inventory.ts';
+import { valueMaps } from '../valuemap.ts';
+import { appendValueMapCase, caseProgram } from './menus.ts';
 import { excise, relocate } from '../relocate.ts';
 import { ACTION_LIST_INDEX_OPCODE, HANDLER_TAG_ENTER, handlerSets, taggedList } from '../sections.ts';
-import { ACTION_TABLE_SLOT, ComposeError, restamped } from '../shared/core.ts';
+import { ACTION_TABLE_SLOT, appendActionLists, ComposeError, restamped } from '../shared/core.ts';
 
 /*
  * ---- Switching a device off, section 280 ----
@@ -32,8 +34,8 @@ import { ACTION_TABLE_SLOT, ComposeError, restamped } from '../shared/core.ts';
 
 export interface JoinedPowerOff {
   bytes: Uint8Array;
-  /** The all off list the write was appended to. */
-  allOff: number;
+  /** The all off list the write was appended to, or made; undefined for a first device, whose write the case holds. */
+  allOff: number | undefined;
   /** The enter lists that gained a write, one per activity, in base slot 9 order. */
   enterLists: number[];
 }
@@ -45,9 +47,15 @@ export interface JoinedPowerOff {
  * everything at or above the insertion and every pointer to it; the list's own count byte is then
  * raised. In an enter list the write goes **immediately before the write of the activity counter**:
  * every power write of a real enter list sits before that write, and directly in front of it in
- * every user configuration. A configuration with one device has no all off list and is refused,
- * since its idle map queues the one zero write itself and a second device would need the list made. A list named by two base slot 10 entries is refused, because growing it would
+ * every user configuration. A list named by two base slot 10 entries is refused, because growing it would
  * change the other one too.
+ *
+ * **With fewer than two devices there is no list**, section 376: a configuration with one device has its
+ * idle switch off record's case queue that device's write of 0 itself, on all four Logitech built ones
+ * with one, on the Harmony 525 and the Harmony One, and one with none has a record with no case,
+ * `idleOffRecord`. So the first device gives that record its case, and the second turns the case into a
+ * call to a list of both writes, the first device's first, as the list of two Logitech's Harmony 650
+ * compile with two devices holds; no compile of a Harmony 600, 650 or 700 with one device is in the lab.
  */
 export function joinPowerOff(c: Container, variable: number): JoinedPowerOff {
   const power = deviceVariables(c).find((one) => one.index === variable);
@@ -55,8 +63,7 @@ export function joinPowerOff(c: Container, variable: number): JoinedPowerOff {
     throw new ComposeError(`state variable ${variable} is not a device's Power variable`);
   }
   const allOff = allOffList(c);
-  if (allOff === undefined) throw new ComposeError('no single list switches every device off');
-  if (allOff.variables.includes(variable)) {
+  if (allOff !== undefined && allOff.variables.includes(variable)) {
     throw new ComposeError(`the all off list already writes variable ${variable}`);
   }
   const counter = stateVariables(c).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME));
@@ -79,7 +86,9 @@ export function joinPowerOff(c: Container, variable: number): JoinedPowerOff {
   const write = new Writer(3).u16(0).u8(STATE_WRITE_BASE + variable).bytes;
   if (c.architecture === undefined) throw new ComposeError('the container states no architecture');
   const actionSlot = archSlot(c.architecture, ACTION_TABLE_SLOT);
-  let current = c;
+  // With fewer than two devices the all off step is its own, and the enter lists keep their indices,
+  // since it appends its one list at the table's end.
+  let current = allOff === undefined ? parse(firstPowerOffs(c, variable)) : c;
   // Each insertion re-reads the table, since every one moves what follows it.
   const insert = (list: number, position: (body: readonly Instruction[]) => number): void => {
     const table = current.pointerArrayAt(actionSlot);
@@ -100,7 +109,7 @@ export function joinPowerOff(c: Container, variable: number): JoinedPowerOff {
     hole.bytes[start] = body.length + 1;
     current = parse(hole.bytes);
   };
-  insert(allOff.list, (body) => body.length);
+  if (allOff !== undefined) insert(allOff.list, (body) => body.length);
   for (const list of enterLists) {
     insert(list, (body) => {
       const at = body.findIndex((one) => one.opcode === counterWrite);
@@ -108,7 +117,88 @@ export function joinPowerOff(c: Container, variable: number): JoinedPowerOff {
       return at;
     });
   }
-  return { bytes: restamped(Uint8Array.from(current.blob)), allOff: allOff.list, enterLists };
+  return { bytes: restamped(Uint8Array.from(current.blob)), allOff: allOff?.list ?? allOffList(current)?.list, enterLists };
+}
+
+/** The record the idle key map switches every device off through, and its case for 0's program if it has one. */
+interface IdleOffRecord {
+  map: number;
+  target: number | undefined;
+}
+
+/**
+ * The base slot 14 record the idle key map's enter list maps through to switch every device off, found by
+ * shape, section 376: of the records that enter list maps through, the one with no case at all, or whose
+ * one case, for 0, queues a write of 0 into a `Power` variable, or a call to the all off list. On the
+ * Harmony One, the 525 and the 650 compiles the enter list maps through two records and the other's case
+ * writes something else. Refused unless exactly one fits.
+ */
+function idleOffRecord(c: Container): IdleOffRecord {
+  const sets = handlerSets(c);
+  const roles = handlerSetRoles(c);
+  const lists = c.actionLists() ?? [];
+  const maps = valueMaps(c) ?? [];
+  const power = new Set(deviceVariables(c).filter((one) => one.property === 'Power').map((one) => one.index));
+  const allOff = allOffList(c)?.list;
+  const found: IdleOffRecord[] = [];
+  sets?.addresses.forEach((address, index) => {
+    if (roles[index] !== 'idle') return;
+    const enter = (taggedList(c, address)?.entries ?? []).find((one) => one.tag === HANDLER_TAG_ENTER);
+    if (enter?.opcode !== ACTION_LIST_INDEX_OPCODE) return;
+    for (const one of lists[enter.operand] ?? []) {
+      if (one.opcode !== MAP_VALUE_OPCODE) continue;
+      const map = one.operand >> 8;
+      const record = maps[map];
+      if (record === undefined || found.some((already) => already.map === map)) continue;
+      if (record.entries.length === 0 && record.ranges.length === 0) {
+        found.push({ map, target: undefined });
+        continue;
+      }
+      const [first] = record.entries;
+      if (record.entries.length !== 1 || record.ranges.length !== 0 || first === undefined || first[0] !== 0) continue;
+      const queued = caseQueued(c, first[1]);
+      const offWrite = queued !== undefined && queued.opcode >= STATE_WRITE_BASE && queued.operand === 0
+        && power.has(queued.opcode - STATE_WRITE_BASE);
+      const offCall = queued?.opcode === ACTION_LIST_INDEX_OPCODE && queued.operand === allOff;
+      if (offWrite || offCall) found.push({ map, target: first[1] });
+    }
+  });
+  if (found.length !== 1) {
+    throw new ComposeError(`${found.length} records the idle key map maps through switch every device off, not one`);
+  }
+  return found[0] as IdleOffRecord;
+}
+
+/**
+ * A device's switch off where there is no all off list yet, `joinPowerOff`'s two forms for fewer than two
+ * devices: the record with no case gains one queuing the write of 0, and a case queuing one write becomes
+ * a call to a new list of that write and this one, in place, since a call is the same five bytes.
+ */
+function firstPowerOffs(c: Container, variable: number): Uint8Array {
+  const record = idleOffRecord(c);
+  const write = (one: number): [number, number] => [0, STATE_WRITE_BASE + one];
+  // Every other device has to be the one the case already switches off, or none, else one is left on.
+  const others = deviceVariables(c).filter((one) => one.property === 'Power' && one.index !== variable).map((one) => one.index);
+  if (record.target === undefined) {
+    if (others.length > 0) throw new ComposeError(`devices ${others.join(', ')} have a power variable and nothing switches them off`);
+    return restamped(appendValueMapCase(c, record.map, 0, caseProgram(STATE_WRITE_BASE + variable, 0)).blob);
+  }
+  const queued = caseQueued(c, record.target);
+  if (queued === undefined || queued.opcode < STATE_WRITE_BASE || queued.operand !== 0) {
+    throw new ComposeError(`record ${record.map}'s case does not queue one write of 0`);
+  }
+  const before = queued.opcode - STATE_WRITE_BASE;
+  if (before === variable) throw new ComposeError(`record ${record.map}'s case already switches variable ${variable} off`);
+  if (others.some((one) => one !== before)) throw new ComposeError(`record ${record.map}'s case switches variable ${before} off and leaves others on`);
+  const made = appendActionLists(c, [[write(before), write(variable)]]);
+  const appended = parse(made.bytes);
+  // The case's program is found again, since appending the list moved what lay above the action table.
+  const target = valueMaps(appended)?.[record.map]?.entries[0]?.[1];
+  const at = target === undefined ? undefined : appended.blobOffsetOf(target);
+  if (at === undefined) throw new ComposeError(`record ${record.map} stopped reading`);
+  const bytes = Uint8Array.from(appended.blob);
+  bytes.set(caseProgram(ACTION_LIST_INDEX_OPCODE, made.first), at);
+  return restamped(bytes);
 }
 
 /**

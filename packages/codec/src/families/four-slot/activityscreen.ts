@@ -37,7 +37,7 @@ import { arch14Starts, type Arch14Starts, nextActivityValue } from '../../shared
 import { ACTION_TABLE_SLOT, ComposeError, restamped } from '../../shared/core.ts';
 import { appendTableEntries } from '../../shared/infrared.ts';
 import {
-  appendValueMapCase, type ComposeActivityRowOptions, type ComposeActivityScreenOptions, type ComposedActivityRow,
+  appendValueMapCase, caseProgram, type ComposeActivityRowOptions, type ComposeActivityScreenOptions, type ComposedActivityRow,
   type ComposedActivityScreen, type ComposeRow,
 } from '../../shared/menus.ts';
 import { codesFor, fontThatSpells, textWidth } from '../../shared/spelling.ts';
@@ -431,17 +431,6 @@ function caseOrderOf(keys: readonly number[]): number[] | undefined {
     if (error instanceof RangeError) return undefined;
     throw error;
   }
-}
-
-/**
- * A base slot 14 case's program as the compiler writes every one an activity keyed record holds: queue
- * one action, `0x11` and its operand and opcode, then the end, five bytes. Every case of the working
- * screen, key under Devices and keypad map records has this shape on the thirteen compiles but the
- * working screen record's idle case, which queues a further record, section 336; one derivation for the
- * composer and the check.
- */
-export function caseProgram(opcode: number, operand: number): Uint8Array {
-  return new Writer(5).u8(SCREEN_QUEUE_INSTRUCTION).u16(operand).u8(opcode).u8(SCREEN_END).bytes;
 }
 
 /** What an activity's own two screens are drawn with in one Harmony 600, 650 or 700 configuration. */

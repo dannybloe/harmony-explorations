@@ -749,12 +749,19 @@ export class Container {
    */
   pointerArrayAt(
     slot: number,
+    empty = false,
   ): { values: number[]; start: number; length: number; width: number } | undefined {
     const length = this.sectionLength(slot);
     const section = this.sections[slot];
     if (length === undefined || section === undefined || this.blob.length === 0) return undefined;
     const off = this.blobOffsetOf(section.address);
     if (off === undefined) return undefined;
+    // A table with no entry is its count alone, zero, and only a caller that knows the section is a table
+    // may take it as one: 222 sections of one or two zero bytes over the lab's 153 containers are not
+    // tables, or not known to be, while a configuration with no device holds an empty infrared table, section 376.
+    if (empty && (length === 1 || length === 2) && uint(this.blob, off, length) === 0) {
+      return { values: [], start: off, length, width: length };
+    }
     for (const width of [1, 2]) {
       if (off + width > this.blob.length) continue;
       const count = uint(this.blob, off, width);

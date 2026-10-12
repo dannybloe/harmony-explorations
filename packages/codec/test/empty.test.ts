@@ -24,6 +24,8 @@ import { checkScreenRecords } from '../src/screenrecords.ts';
 import { attributeBytes } from '../src/assemble.ts';
 import { fourSlotActivityMenu, fourSlotMenuMarkerWriter } from '../src/families/four-slot/chrome.ts';
 import { activityMenuByRows, menuMarkerOf } from '../src/shared/menus.ts';
+import { allOffList, composeDevice, coverage, deviceIds, joinPowerOff } from '../src/index.ts';
+import { FIRST_DEVICE_IDENTIFIER } from '../src/shared/core.ts';
 
 const BUILT_AT = '2026-10-12T12:00:00';
 
@@ -233,3 +235,32 @@ test('section 375: the activity menu and the menu marker found by structure are 
     assert.equal(fourSlotActivityMenu(ours), EMPTY_MODES.activityMenu);
     assert.equal(fourSlotMenuMarkerWriter(ours), emptyVariable('menuMarker'));
   });
+
+test('section 376: the first device onto the empty configuration is switched off by the idle record\'s case, and the second makes the all off list of both', () => {
+  const empty = buildEmpty().container;
+  // Our base slot 5 is a table with no entry, which only a caller naming a table takes as one.
+  assert.equal(empty.pointerArrayAt(archSlot(14, 5)), undefined);
+  assert.deepEqual(empty.pointerArrayAt(archSlot(14, 5), true)?.values, []);
+  const television = [
+    { stated: 'G:Toshiba 32 Bit:(0x20DF10EF)(Repeat)():3', held: false },
+    { stated: 'G:Toshiba 32 Bit:(0x20DF40BF)(Repeat)():3', held: true },
+  ];
+  const first = composeDevice(empty, { label: 'TV', commands: television, power: 0 });
+  assert.equal(deviceIds(parse(first.bytes))[0], FIRST_DEVICE_IDENTIFIER);
+  const one = parse(joinPowerOff(parse(first.bytes), first.variable).bytes);
+  assert.equal(allOffList(one), undefined);
+  // The idle map's one case writes the device's power 0, as Logitech's configurations with one device do.
+  const idle = describeWiring(takeApart(one)).maps['idleMap'] as number;
+  const [entry] = valueMaps(one)![idle]!.entries;
+  assert.deepEqual(queued(one, entry![1]), { opcode: 0x80 + first.variable, operand: 0 });
+  const second = composeDevice(one, { label: 'Amp', commands: television, power: 0 });
+  const two = parse(joinPowerOff(parse(second.bytes), second.variable).bytes);
+  const list = allOffList(two);
+  assert.deepEqual(list?.variables, [first.variable, second.variable]);
+  assert.deepEqual(queued(two, valueMaps(two)![idle]!.entries[0]![1]), { opcode: 0x7f, operand: list?.list });
+  for (const c of [one, two]) {
+    const report = coverage(c);
+    assert.equal(report.accounted, report.total);
+    assert.ok(c.allChecksPass);
+  }
+});

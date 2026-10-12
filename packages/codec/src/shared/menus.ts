@@ -16,7 +16,7 @@ import {
 } from '../inventory.ts';
 import { excise, relocate } from '../relocate.ts';
 import {
-  SCREEN_SELECT_FONT, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, type ScreenInstruction, screenProgram,
+  SCREEN_END, SCREEN_QUEUE_INSTRUCTION, SCREEN_SELECT_FONT, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, type ScreenInstruction, screenProgram,
 } from '../screen.ts';
 import { ACTION_LIST_INDEX_OPCODE, modeRecords, taggedList } from '../sections.ts';
 import { assertGeneratedRecord, ComposeError, restamped } from '../shared/core.ts';
@@ -549,6 +549,18 @@ export interface ComposedActivityScreen {
 }
 
 /**
+ * A base slot 14 case's program as the compiler writes every one an activity keyed record holds: queue
+ * one action, `0x11` and its operand and opcode, then the end, five bytes. Every case of the working
+ * screen, key under Devices and keypad map records has this shape on the thirteen compiles but the
+ * working screen record's idle case, which queues a further record, section 336; one derivation for the
+ * composer and the check. The Harmony One's and the Harmony 525's cases have it too, which is why it is
+ * shared since section 376.
+ */
+export function caseProgram(opcode: number, operand: number): Uint8Array {
+  return new Writer(5).u8(SCREEN_QUEUE_INSTRUCTION).u16(operand).u8(opcode).u8(SCREEN_END).bytes;
+}
+
+/**
  * One more case in an existing base slot 14 record: `key` runs `program`, a screen language program
  * ending in its own `0x00`. The step both architectures' activity screen composers share.
  *
@@ -556,7 +568,8 @@ export interface ComposedActivityScreen {
  * see it, then the program is inserted in front of the lowest one the record names, then the case is
  * swapped onto it. Moved out of the Harmony One's `composeActivityScreen` unchanged, section 279, with
  * one refusal added: a key the record already has a case for, since the walk stops at the first match
- * and a second case for the same key would never run.
+ * and a second case for the same key would never run. **A record with no case** points its first at the
+ * lowest program any record names, and the program goes in front of that one, section 376.
  */
 export function appendValueMapCase(start: Container, map: number, key: number, program: Uint8Array): Container {
   // A record is a byte, a count of `VALUE_MAP_COUNT_WIDTH` bytes, then the cases: the count is one
@@ -572,9 +585,15 @@ export function appendValueMapCase(start: Container, map: number, key: number, p
     throw new ComposeError(`base slot 14 record ${map} already has a case for ${key}`);
   }
   const stride = VALUE_MAP_KEY_WIDTH + 3;
+  const anchor = record.entries[0]?.[1]
+    ?? Math.min(...(valueMaps(start) ?? []).flatMap((one) => [...one.entries.map(([, to]) => to), ...one.ranges.map(([, , to]) => to)]));
+  if (!Number.isFinite(anchor)) throw new ComposeError(`no base slot 14 record names a program for record ${map}'s first case to go in front of`);
   const caseAt = recordAt + 1 + width + stride * record.entries.length;
   const caseHole = relocate(start, caseAt, stride);
-  caseHole.bytes.set(new Writer(stride).u16(key).u24((record.entries[0] as [number, number])[1]).bytes, caseAt);
+  // Written after the hole is made, so an anchor above it has moved by the case's length.
+  const anchorAt = start.blobOffsetOf(anchor);
+  const moved = anchorAt !== undefined && anchorAt >= caseAt ? anchor + stride : anchor;
+  caseHole.bytes.set(new Writer(stride).u16(key).u24(moved).bytes, caseAt);
   const count = new Writer(width);
   if (width === 1) count.u8(record.entries.length + 1); else count.u16(record.entries.length + 1);
   caseHole.bytes.set(count.bytes, recordAt + 1);

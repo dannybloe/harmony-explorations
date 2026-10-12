@@ -120,7 +120,7 @@ import { type FourSlotChoices, type FourSlotChoicesGiven, fourSlotChoices } from
 import { checkStateBackgrounds, ourPictureName, withStateBackgrounds } from './backgrounds.ts';
 import { cornerPrograms } from './families/four-slot/chrome.ts';
 import { cornerProgramAt } from './families/four-slot/empty.ts';
-import { caseProgram } from './families/four-slot/activityscreen.ts';
+import { caseProgram } from './shared/menus.ts';
 import { valueMaps } from './valuemap.ts';
 import { type BlendedSet, checkBlendedLetters, type LettersBlended, withBlendedLetters } from './blending.ts';
 import type { ComposeRow } from './compose.ts';
