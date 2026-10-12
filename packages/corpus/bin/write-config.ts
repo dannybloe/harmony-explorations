@@ -207,6 +207,8 @@ const H650_DUMPS = new Set([
   'h650_8_2_6_base',
   'h650_8_2_6_after',
   'h650_8_2_6_control',
+  'h650_empty_base',
+  'h650_empty_blended_base',
 ]);
 
 /**

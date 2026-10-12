@@ -48,6 +48,7 @@ import {
   LETTERING_CHARACTERS, OXANIUM_FACE_SPECS, defaultWeight, letterRows, type LetterInks, type Lettering,
   type OxaniumFaceName, type OxaniumWeight,
 } from '../../lettering.ts';
+import { type BlendedSet, checkBlendedLetters, withBlendedLetters } from '../../blending.ts';
 import { HARMONY_650_SKINS, barBytes, stateBackgroundBytes, statePatchBytes } from '../../backgrounds.ts';
 import { buildOurPictures, buildPictures, type OurPictureChoices, type OurPictureName } from '../../pictures.ts';
 import { ENTER_MODE, MAP_VALUE_OPCODE } from '../../inventory.ts';
@@ -557,6 +558,8 @@ function dense(what: string, byIndex: ReadonlyMap<number, ContainerPiece>): Cont
 export interface EmptyConfigurationOptions extends EmptyOptions {
   settings: WiringSettings;
   look: EmptyLook;
+  /** Our letters blended into the colour under each text, `FourSlotChoices.blendLetters`, decision 22. */
+  blendLetters: boolean;
 }
 
 /** What the empty configuration came to, with the numbering a composer continues from. */
@@ -567,6 +570,8 @@ export interface EmptyConfiguration extends EmptyBuilt {
   corner: number;
   /** Base slot 10 index to list, every one the configuration holds. */
   lists: Map<number, ContainerPiece>;
+  /** With blending, the copies of each set blended for a background, which `checkBlendedLetters` reads. */
+  blended?: BlendedSet[];
 }
 
 /**
@@ -655,5 +660,11 @@ export function buildEmptyConfiguration(options: EmptyConfigurationOptions): Emp
     ],
   });
   const laid = layOutContainer(placed.layout);
-  return { bytes: laid.bytes, container: laid.container, faces: fonts.faces, wiring: numbered, pictures, corner, lists };
+  const built = { faces: fonts.faces, wiring: numbered, pictures, corner, lists };
+  if (!options.blendLetters) return { bytes: laid.bytes, container: laid.container, ...built };
+  // Our letters blended into the colour under each text, as the assembly's last step does it, then read back.
+  const blending = withBlendedLetters(placed.layout, fonts.faces);
+  const blended = layOutContainer(blending.layout);
+  checkBlendedLetters(blended.container, fonts.faces, blending.blended);
+  return { bytes: blended.bytes, container: blended.container, ...built, blended: blending.blended };
 }

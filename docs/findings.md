@@ -50433,10 +50433,19 @@ copy is where the reader finds it; the bank holds the eleven pictures the screen
 resolves to a character of ours. The rendered sheet shows all seventeen screens in our letters, our
 pictures and the idle colour.
 
+**On the remote it starts and runs**, written to the bench Harmony 650 on 12 October 2026 with no device and
+no activity: "USB Connected" on the cable, then the empty Activities screen; Devices and Activities lead to
+each other, an activity key shows the "add an Activity" screen and Exit returns, All Off shows "Turning
+system off" and comes back, the screen goes dark and wakes
+(`reads/20261012T170707Z-ir-test-harmony-650-the-empty-configuration-built-from-nothing.json`; the codes the
+Flirc heard were the camera's). More Activities did nothing, as predicted for ours. So a Harmony 650 needs no
+activity to start. The letters were one bit, since the builder had no blending step; it has one now,
+`blendLetters`, the assembly's step 16, and the firmware screens are checked before it as the assembly
+checks them, since after it each screen selects the copy blended for its own background.
+
 **Not yet**: `describeScreenRecords` cannot read our device list and activity menu back, because
 `activityMenus` finds the activity menu by its activity rows and an empty one has none, which is plan 008
-step 5's first lookup to move. The bytes are not yet attributed to a generator, and the file has not been
-on a remote: both are 11.1.1.4.
+step 5's first lookup to move. The bytes are not yet attributed to a generator, 11.1.1.4's other half.
 
 **Falsification**: a Harmony 600, 650 or 700 compile whose corner program has another shape; a bench run
 in which the empty file's Back or Devices key does not reach the other menu.

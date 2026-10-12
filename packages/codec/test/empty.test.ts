@@ -59,9 +59,9 @@ const LOOK = {
   pictures: { icons: FOUR_SLOT_CHOICES.icons, colour: FOUR_SLOT_CHOICES.iconColour, background: FOUR_SLOT_CHOICES.iconBackground },
 };
 
-function buildEmpty() {
+function buildEmpty(blendLetters = false) {
   return buildEmptyConfiguration({
-    skin: 72, builtAt: BUILT_AT, inks: FOUR_SLOT_CHOICES.letterInks, settings: FOUR_SLOT_CHOICES.settings, look: LOOK,
+    skin: 72, builtAt: BUILT_AT, inks: FOUR_SLOT_CHOICES.letterInks, settings: FOUR_SLOT_CHOICES.settings, look: LOOK, blendLetters,
   });
 }
 
@@ -148,6 +148,20 @@ test('11.1.1.3: every page has its copy where the reader finds it, and the bank 
   assert.equal(takeApart(c).pictures.length, 11);
   // Every code the screens draw is a character of ours.
   assert.equal(characterMap(c)?.drawn.resolved, characterMap(c)?.drawn.total);
+});
+
+test('11.1.1.4: our letters blend into the colour under each text, read back as the assembly reads them', () => {
+  const one = buildEmpty(false);
+  const built = buildEmpty(true);
+  const c = built.container;
+  assert.ok(c.allChecksPass);
+  assert.ok((built.blended?.length ?? 0) > 0, 'a set blended');
+  // The copies are appended, so the table grows by exactly them, and every drawn code still reads.
+  assert.equal(fontSets(c)!.length, fontSets(one.container)!.length + built.blended!.length);
+  assert.equal(characterMap(c)?.drawn.resolved, characterMap(c)?.drawn.total);
+  // The firmware screens are checked before the blending, as the assembly checks them: after it each screen
+  // selects the copy blended for its own background, and their description reads one body font for all.
+  assert.throws(() => checkFirmwareScreens(c), /differ/);
 });
 
 /** Every Harmony 600, 650 and 700 compile the lab holds, as `activitydevicelist.test.ts` lists them, and the harvest. */
