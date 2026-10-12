@@ -50146,8 +50146,18 @@ colour anywhere, the `j` of `kijken` beside its `i`, the tail of the `y` of `Son
 of `Starting Plasma` and `kijken` alike. One thing the file does not draw: on the Remote Assistant screen
 that follows All Off, `your system`, the Off screen's third line at y 110, showed behind the bar's `Exit`.
 The Remote Assistant program paints the whole screen with a picture of no skipped pixel before any text, in
-this file and in the 9.1.2 file alike, so something drew the Off screen's line after it; what, and whether
-it is new with this file, is open.
+this file and in the 9.1.2 file alike, so something drew the Off screen's line after it, or it was never
+painted over. The control: the same file with one bit letters, written and run by hand, showed no overlap
+anywhere; the blended file written back afterwards could not be made to show it again, however often All
+Off was pressed. The firmware rules out the obvious cause, read on the 650 0.2 image (the interpreter loop at
+`0x16E38` returns only on opcode 0 or an unknown one, and neither interrupt routine reaches it): a screen program runs from start to end in one call, nothing slices it and no interrupt draws, so
+the Off program cannot draw after the Remote Assistant's has begun. Two candidates remain, neither shown.
+The timer 0 interrupt's infrared players at `0x09628` and `0x1900A` load `TBLPTR` and do not restore it,
+while the screen code keeps its flash position there, so a picture drawn while infrared is sent can seek
+wrongly and stop early, leaving the old screen's pixels. And the photograph shows only the grey edge and
+shadow pixels of `your system` on the white bar, with faint traces of `remote pointed at` beside
+`Assistant`, which is what a panel slow to move between two greys would leave for a moment, and a blended
+letter is mostly greys. Not reproduced, so open and watched.
 
 * `tools/oxanium_glyphs.py`, the grey levels and the window; `packages/codec/src/lettering.ts`,
   `letterCoverage`, the blended `letterRows`, `letterStructure`; `text.ts`, the structures in
