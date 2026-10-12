@@ -548,15 +548,15 @@ export function describeScreenRecords(
     const backKey = operandOf(kind === 'idle device list' ? DEVICES_KEY_TAG : SCAN_FOUR_TAG);
     const devicesKey = kind === 'activity menu' ? operandOf(DEVICES_KEY_TAG) : undefined;
     const battery = operandOf(DEVICE_MODE_PROGRAM_TAG);
-    // The program queued has to be a battery program, by structure; and where Logitech's artwork is held,
-    // the one drawing the look's battery icon, by content. Our look holds none, section 375.
+    // The program queued has to be a corner program, the sending mark's, section 369, by structure; and where
+    // Logitech's artwork is held, the one drawing the look's own mark, by content. Our look holds none, section 375.
     if (!batteryPrograms(c).includes(battery)) {
-      throw new ScreenRecordError(`the ${kind} runs program ${battery}, which is no battery program`);
+      throw new ScreenRecordError(`the ${kind} runs program ${battery}, which is no corner program`);
     }
     if (holdsLogitechLook(c)) {
       const chrome = fourSlotMenuChrome(c, kind);
       if (chrome.battery !== battery) {
-        throw new ScreenRecordError(`the ${kind} runs program ${battery} where its battery program is ${chrome.battery}`);
+        throw new ScreenRecordError(`the ${kind} runs program ${battery} where its corner program is ${chrome.battery}`);
       }
     }
     const rows: ScreenMenuRow[] = [];
