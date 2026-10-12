@@ -99,6 +99,7 @@ test('the options setup is the starting setup with the Denon kept on and Muziek 
   const strip = (setup: Setup) => JSON.stringify({ devices: setup.devices, activities: setup.activities });
   assert.notEqual(strip(OPTIONS), strip(START));
   const undo: Setup = {
+    model: OPTIONS.model,
     devices: OPTIONS.devices.map(({ poweredOnBetweenActivities: _, ...rest }) => rest),
     activities: OPTIONS.activities.map((one) => one.name === 'Muziek' ? { ...one, type: 'ListenToMusic' as const } : one),
   };

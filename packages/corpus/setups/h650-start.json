@@ -1,5 +1,6 @@
 {
  "about": "The Harmony 650's starting setup, todo-compile-650.md 1.5: all seven devices of docs/plans/006-the-650-test-setup.md and four of its five activities. Plan 006 is the source of every name and input here; the settings stay at their defaults.",
+ "model": { "name": "Harmony 650", "skin": 72 },
  "devices": [
   { "name": "LG TV", "device": "LG/OLED65G26LA" },
   { "name": "Plasma", "device": "Panasonic/TX-P42GT30E" },

@@ -7,15 +7,15 @@
  * then 10.2.2's wiring. This is that chain as one function with its inputs named, so that the
  * finish line's audit, 11.1, has one thing to look at and one input to swap:
  *
- * * **the setup**, the file `packages/corpus/setups/` already holds, which states the devices, the
- *   activities and their order, and which devices stay on between activities;
+ * * **the recipe**, the file `packages/corpus/setups/` already holds, `recipe/recipe.ts`: the model it is
+ *   for, the devices, the activities and their order, which devices stay on between activities, each
+ *   activity's working screen, and the choices. What the model can hold comes from its definition;
  * * **the donor**, a container every part comes from that no generator builds yet, named as a
  *   parameter rather than buried in a script, so that 11.1 can hand in a different one and count what
  *   is left;
- * * **the choices**, every choice of ours the four slot family makes, `FourSlotChoices`: the letters, the
- *   backgrounds and their colours, blending, the settings, which activity key a type of activity takes,
- *   what to do with a label too wide and the delays a device starts with, each the family's default
- *   unless given, `todo-compile-650.md` 10.7.3.
+ *   its choices are the four slot family's, `FourSlotChoices`: the letters, the backgrounds and their
+ *   colours, blending, the settings, which activity key a type of activity takes, what to do with a label
+ *   too wide and the delays a device starts with, each the family's default unless given, 10.7.3.
  *
  * **What it does, in order**, each a generator or a composer this project already has and a check that
  * it calibrated against Logitech's compiles:
@@ -25,12 +25,12 @@
  *    composer removes a device or an activity;
  * 2. composes every device the setup names and the donor lacks from the catalogue, in the setup's order,
  *    `composeCatalogueDevices`, section 331, which needs the archive, `options.archive`, and the model's
- *    device count, `options.maxDevices`;
+ *    device count, which the recipe's model's definition states;
  * 3. applies the setup's "keep this device on when switching Activities" with `keepDeviceOn` to the
  *    donor's activities, section 340, and refuses where the donor keeps a device on that the setup does not;
  * 4. composes every activity the setup names and the donor lacks, in the setup's order,
  *    `composeSetupActivity`: the start and the keypad from the roles, the inputs by name, the working
- *    screen from `options.screens`, the menu row, the activity's device list and its activity key;
+ *    screen from the recipe, the menu row, the activity's device list and its activity key;
  * 5. the idle device list, the activity menu in the setup's order and Off, section 356;
  * 6. the firmware's own screens, section 357;
  * 7. every text, section 358;
@@ -52,9 +52,7 @@
  *
  * Step 0 letters the donor in ours when that is chosen, before any composer spells a label.
  *
- * **What it cannot do yet, measured in section 364.** An activity's working screen is not in the setup
- * file, which is the platform's soft button list and a person's choice, section 323, so it is an input of
- * its own, `options.screens`, named rather than read off a Logitech file. And the composers need a donor
+ * **What it cannot do yet, measured in section 364.** The composers need a donor
  * that already holds an activity. On `harvest_650_two_devices`, two devices and no activity, the device
  * composer finds the device list through the activity menu, which it knows by its activity rows, and
  * there are none, though three modes map the key under Devices through the activity counter; the fonts
@@ -67,6 +65,7 @@
  * Arch 14 only and measured on the Harmony 650 alone; the Harmony 600 and 700 are refused, see
  * `ASSEMBLY_SKINS`. Read only towards hardware, like everything in this package: the result is bytes.
  */
+import { type Recipe, type RecipeActivity, type RecipeDevice, recipeTarget } from './recipe/recipe.ts';
 import { u16, u8 } from './bytes.ts';
 import { ARCH_RECORD_LENGTH, BINDING_SLOT, CLOCK_SECTION_LENGTH, END_MARKER_LENGTH, INSTRUCTION_LENGTH,
   TRAILER_CHECKSUM_OFFSET, parse, type Container } from './gspm.ts';
@@ -122,46 +121,6 @@ import type { ComposeRow } from './compose.ts';
 /** A refusal, named so a caller can tell a setup the donor cannot serve from a bug. */
 export class AssemblyError extends Error {}
 
-// ---------------------------------------------------------------------------------------------------
-// The setup, as `packages/corpus/setups/` states it
-// ---------------------------------------------------------------------------------------------------
-
-/**
- * One device of a setup: what the remote calls it, its catalogue entry as `<manufacturer>/<file>`, and
- * MyHarmony's "I want to keep this device on when switching Activities", absent meaning off. The
- * corpus package's `SetupDevice` is this type; it lives here because the assembly reads it and the
- * corpus package depends on this one, not the other way round.
- */
-export interface SetupDevice {
-  readonly name: string;
-  readonly device: string;
-  readonly poweredOnBetweenActivities?: boolean;
-}
-
-/** One activity of a setup: its name, MyHarmony's type, and its devices with their input and jobs. */
-export interface SetupActivity {
-  readonly name: string;
-  readonly type: string;
-  readonly devices: readonly { device: string; input?: string; roles: readonly ActivityRoleName[] }[];
-}
-
-/** A setup: devices and the activities that use them, in the order the activity menu lists them. */
-export interface SetupDescription {
-  readonly about?: string;
-  readonly devices: readonly SetupDevice[];
-  readonly activities: readonly SetupActivity[];
-}
-
-/**
- * One item of an activity's working screen, which the setup file does not state, section 323: a device's
- * command by the label that device's own screen draws it under, or a sequence, Logitech's "sequence" of
- * MyHarmony, by its name and its steps. A step sends the command a device's key sends, by the key's scan
- * code, `keys.md`, or pauses, in tenths of a second.
- */
-export type AssemblyScreenItem =
-  | { readonly device: string; readonly command: string }
-  | { readonly sequence: string; readonly steps: readonly AssemblySequenceStep[] };
-export type AssemblySequenceStep = { readonly device: string; readonly scan: number } | { readonly pause: number };
 
 // ---------------------------------------------------------------------------------------------------
 // Which lists are named, and dropping the ones that are not
@@ -468,8 +427,6 @@ export const ASSEMBLY_SKINS: ReadonlySet<number> = new Set([72]);
 export interface AssembleOptions {
   /** The container every part no generator builds is taken from: a Logitech compile, or a library. */
   readonly donor: Uint8Array;
-  /** Choices over the four slot family's defaults, `FOUR_SLOT_CHOICES`. */
-  readonly choices?: FourSlotChoicesGiven;
   /** The build time to stamp, `YYYY-MM-DDTHH:MM:SS`; absent keeps the donor's. A write stamps again. */
   readonly builtAt?: string;
   /** False keeps the donor's placement of parked pieces and pictures instead of `placePieces`'. */
@@ -479,16 +436,6 @@ export interface AssembleOptions {
    * naming a donor device's input does, since an input's value is its place in the catalogue's list.
    */
   readonly archive?: string;
-  /**
-   * The most devices the model holds, which composing a device needs: `maxDevices` in `packages/usb`'s
-   * model table, eight on a Harmony 650, passed in since this package does not depend on that one.
-   */
-  readonly maxDevices?: number;
-  /**
-   * Each composed activity's working screen by the activity's name, which the setup file does not state.
-   * Absent for an activity composes it with an empty working screen.
-   */
-  readonly screens?: Readonly<Record<string, readonly AssemblyScreenItem[]>>;
 }
 
 /** One step of the assembly, for a caller that reports. */
@@ -522,12 +469,17 @@ const spoken = (name: string | undefined): string => (name ?? '').replaceAll('_'
  * Build the setup's container out of the donor and every generator there is, refusing where the donor
  * cannot serve the setup, and check the result as every generator's own calibration checks a compile.
  */
-export function assembleSetup(setup: SetupDescription, options: AssembleOptions): Assembled {
+export function assembleSetup(setup: Recipe, options: AssembleOptions): Assembled {
+  // The recipe's model, whose definition says what it can hold and whose family builds for it.
+  const target = recipeTarget(setup);
+  if (target.family !== FOUR_SLOT || !ASSEMBLY_SKINS.has(target.skin)) {
+    throw new AssemblyError(`the assembly is measured on the Harmony 650, skin 72, and the recipe is for the ${setup.model.name}`);
+  }
   let c = parse(options.donor);
   if (c.architecture !== 14) throw new AssemblyError(`the assembly is arch 14's, and the donor is arch ${c.architecture}`);
   const skin = (c.versionWord ?? -1) & 0xff;
-  if (!ASSEMBLY_SKINS.has(skin)) throw new AssemblyError(`the assembly is measured on the Harmony 650, skin 72, and the donor is skin ${skin}`);
-  const choices = fourSlotChoices(options.choices);
+  if (skin !== target.skin) throw new AssemblyError(`the recipe is for skin ${target.skin}, and the donor is skin ${skin}`);
+  const choices = fourSlotChoices(setup.choices as FourSlotChoicesGiven | undefined);
   if (choices.blendLetters && choices.letters !== 'oxanium') {
     throw new AssemblyError('only our letters can be blended, since only theirs come with grey levels');
   }
@@ -563,7 +515,7 @@ export function assembleSetup(setup: SetupDescription, options: AssembleOptions)
   //    a device by manufacturer and type instead. It keeps the donor's label either way.
   const wantedDevices = new Set(setup.devices.map((one) => one.name));
   if (wantedDevices.size !== setup.devices.length) throw new AssemblyError('the setup names one device twice');
-  const setupDeviceOf = (label: string | undefined): SetupDevice | undefined =>
+  const setupDeviceOf = (label: string | undefined): RecipeDevice | undefined =>
     setup.devices.find((one) => one.name === spoken(label) || one.device.replace('/', '_') === label);
   for (const one of devices(c)) {
     if (setupDeviceOf(one.name) === undefined) {
@@ -589,9 +541,6 @@ export function assembleSetup(setup: SetupDescription, options: AssembleOptions)
     if (options.archive === undefined) {
       throw new AssemblyError(`the donor lacks ${missingDevices.map((one) => one.name).join(', ')}, and composing a device needs the catalogue's archive`);
     }
-    if (options.maxDevices === undefined) {
-      throw new AssemblyError(`the donor lacks ${missingDevices.map((one) => one.name).join(', ')}, and composing a device needs the model's device count`);
-    }
     const requests = missingDevices.map((one) => {
       const [manufacturer, model] = one.device.split('/');
       if (manufacturer === undefined || model === undefined) throw new AssemblyError(`${one.name}'s device is not <manufacturer>/<model>`);
@@ -599,7 +548,7 @@ export function assembleSetup(setup: SetupDescription, options: AssembleOptions)
     });
     let result;
     try {
-      result = composeCatalogueDevices(c, options.archive, requests, { maxDevices: options.maxDevices, delays: choices.delays });
+      result = composeCatalogueDevices(c, options.archive, requests, { maxDevices: target.model.maxDevices, delays: choices.delays });
     } catch (error) {
       if (error instanceof ComposeError) throw new AssemblyError(`composing ${missingDevices.map((one) => one.name).join(', ')}: ${error.message}`);
       throw error;
@@ -638,7 +587,7 @@ export function assembleSetup(setup: SetupDescription, options: AssembleOptions)
   if (keptOn.length > 0) note('kept on', keptOn.join(', '));
 
   // 4. The setup's activities the donor lacks, in the setup's order: the start and the keypad from the
-  //    roles, section 323, the inputs by their names, the working screen from `options.screens`, its
+  //    roles, section 323, the inputs by their names, the working screen from the recipe, its
   //    sequences first, the menu row and the activity's own device list, `compose-activity.ts`'s route.
   for (const activity of setup.activities) {
     if (activities(c).some((one) => spoken(one.name) === activity.name)) continue;
@@ -760,12 +709,12 @@ function groupOfDevice(c: Container, label: string | undefined, name: string): n
  * and the keypad from the roles, `activityFromRoles`, with each input written by its place in the
  * catalogue's list of the device's inputs, which is how the composer numbers a composed device's and how
  * Logitech's compiler numbers its own, section 321; the devices the setup keeps on between activities get
- * no write of 0, section 340; the working screen from `options.screens`, a sequence composed first as
+ * no write of 0, section 340; the working screen from the recipe, a sequence composed first as
  * `composeSequence` composes one; then the menu row, the activity's own device list, and its activity key
  * by its type, section 314.
  */
 function composeSetupActivity(
-  c: Container, setup: SetupDescription, activity: SetupActivity, options: AssembleOptions, choices: FourSlotChoices,
+  c: Container, setup: Recipe, activity: RecipeActivity, options: AssembleOptions, choices: FourSlotChoices,
   labelOf: (name: string) => string | undefined, powerOf: (name: string) => number | undefined,
   composedDevices: ReadonlyMap<string, ComposedCatalogueDevice>,
 ): Container {
@@ -820,7 +769,7 @@ function composeSetupActivity(
   const pauseGroups = listed.filter((one) => powered(one.group)).map((one) => one.group);
   const rows: ComposeRow[] = [];
   let sequenced = false;
-  for (const item of options.screens?.[activity.name] ?? []) {
+  for (const item of activity.screen ?? []) {
     if ('device' in item) {
       const group = groupOfDevice(c, labelOf(item.device), item.device);
       rows.push(...activityScreenRows(c, [{ group, label: item.command }]));

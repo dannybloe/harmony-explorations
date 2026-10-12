@@ -13,7 +13,7 @@
  * input's name as the catalogue states it. Ids, the power on and off order and the activity group are
  * left for the service to assign, which is what the replies captured in the lab show it doing.
  */
-import type { ActivityRoleName, SetupActivity as AssemblyActivity, SetupDevice as AssemblyDevice } from '@harmony/codec';
+import type { ActivityRoleName, Recipe, RecipeActivity, RecipeDevice } from '@harmony/codec';
 
 /**
  * One device of a setup: what the remote calls it, and its catalogue entry as `<manufacturer>/<file>`.
@@ -21,11 +21,11 @@ import type { ActivityRoleName, SetupActivity as AssemblyActivity, SetupDevice a
  * and only turn it off when I press the Off button": `IsPoweredOnBetweenActivities` in the device's power
  * feature, read in the client's power settings view. Absent means the default, off.
  *
- * **The codec's type**, since `todo-compile-650.md` 10.6: the codec's `assembleSetup` builds a container
- * from the same file, and the codec cannot import this package, so the shape lives there and this names
+ * **The codec's type**, since `todo-compile-650.md` 10.6: a setup file is the codec's recipe since 10.7.4,
+ * which its `assembleSetup` builds a container from, and the codec cannot import this package, so the shape lives there and this names
  * it. Two copies of one shape are two copies until one of them moves.
  */
-export type SetupDevice = AssemblyDevice;
+export type SetupDevice = RecipeDevice;
 
 /**
  * The jobs a device can do in an activity, as the contract names their role types. The codec's list,
@@ -38,14 +38,15 @@ export type RoleName = ActivityRoleName;
 export const ACTIVITY_TYPES = { WatchTV: 1, WatchDvd: 2, ListenToMusic: 4, Custom: 5 } as const;
 
 /** The codec's activity of a setup, with its type narrowed to the four this package sends. */
-export interface SetupActivity extends AssemblyActivity {
+export interface SetupActivity extends RecipeActivity {
   readonly type: keyof typeof ACTIVITY_TYPES;
 }
 
-/** A setup, which the codec's `assembleSetup` takes as its `SetupDescription`. */
-export interface Setup {
-  readonly about?: string;
-  readonly devices: readonly SetupDevice[];
+/**
+ * A setup: the codec's recipe, whose model, screens and choices this package does not send, with its
+ * activities' types narrowed to the four it does.
+ */
+export interface Setup extends Recipe {
   readonly activities: readonly SetupActivity[];
 }
 

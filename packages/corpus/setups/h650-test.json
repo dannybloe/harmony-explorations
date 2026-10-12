@@ -1,5 +1,9 @@
 {
- "about": "The Harmony 650's test setup as todo-compile-650.md 5.1 composed it onto the starting compile, for 5.2's Logitech compile: h650-start.json plus the KPN box kept on when switching activities and Plasma kijken, a Custom activity on the menu only. Not stated here and set by hand in MyHarmony: the screen light, 10 s for 5.1 and 5.2 and set back to 20 s, the default, in the account after them, since 10 s made bench runs hard to perform, and a sequence called Radio on Plasma kijken's screen, KPN 1, a 2 s pause, KPN 2. Plan 006 is the source of every name and input.",
+ "about": "The Harmony 650's test setup as todo-compile-650.md 5.1 composed it onto the starting compile, for 5.2's Logitech compile: h650-start.json plus the KPN box kept on when switching activities and Plasma kijken, a Custom activity on the menu only. Set by hand in MyHarmony, since build-setup.ts sends neither: the screen light, 10 s for 5.1 and 5.2 and set back to 20 s, the default, in the account after them, since 10 s made bench runs hard to perform, and Plasma kijken's screen with its sequence called Radio, KPN 1, a 2 s pause, KPN 2. The screen is stated here since todo-compile-650.md 10.7.4, for the codec's assembly, and the screen light is the Harmony 650's choice of 20 s by default. Plan 006 is the source of every name and input.",
+ "model": {
+  "name": "Harmony 650",
+  "skin": 72
+ },
  "devices": [
   {
    "name": "LG TV",
@@ -144,6 +148,36 @@
      "device": "KPN",
      "roles": [
       "ChannelChanging"
+     ]
+    }
+   ],
+   "screen": [
+    {
+     "device": "KPN",
+     "command": "Teletext"
+    },
+    {
+     "device": "KPN",
+     "command": "DVR"
+    },
+    {
+     "device": "Plasma",
+     "command": "Aspect"
+    },
+    {
+     "sequence": "Radio",
+     "steps": [
+      {
+       "device": "KPN",
+       "scan": 24
+      },
+      {
+       "pause": 20
+      },
+      {
+       "device": "KPN",
+       "scan": 47
+      }
      ]
     }
    ]

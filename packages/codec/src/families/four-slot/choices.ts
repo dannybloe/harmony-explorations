@@ -117,8 +117,23 @@ export const FOUR_SLOT_CHOICES: FourSlotChoices = {
   delays: { powerOn: 15, interDevice: 5 },
 };
 
+/** A recipe's choice this family does not make, named, so a misspelt one is not silently a default. */
+export class ChoiceError extends Error {}
+
 /** The family's choices with a recipe's over its defaults. */
 export function fourSlotChoices(given: FourSlotChoicesGiven = {}): FourSlotChoices {
+  for (const name of Object.keys(given)) {
+    if (!(name in FOUR_SLOT_CHOICES)) throw new ChoiceError(`the Harmony 600, 650 and 700 make no choice called ${name}`);
+  }
+  for (const [name, part, defaults] of [
+    ['settings', given.settings, FOUR_SLOT_CHOICES.settings],
+    ['stateColours', given.stateColours, FOUR_SLOT_CHOICES.stateColours],
+    ['delays', given.delays, FOUR_SLOT_CHOICES.delays],
+  ] as const) {
+    for (const key of Object.keys(part ?? {})) {
+      if (!(key in defaults)) throw new ChoiceError(`${name} has no ${key}`);
+    }
+  }
   return {
     ...FOUR_SLOT_CHOICES,
     ...given,

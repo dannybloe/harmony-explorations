@@ -15,8 +15,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import { IR_ARCHIVE, needing, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
-import { modelForSkin } from '@harmony/usb/models';
-import type { AssemblyScreenItem, Container, SetupDescription } from '../src/index.ts';
+import type { Container, Recipe, RecipeScreenItem } from '../src/index.ts';
 import {
   AssemblyError,
   FOUR_SLOT_CHOICES,
@@ -53,6 +52,7 @@ import {
   modeRecords,
   namedLists,
   parse,
+  readRecipe,
   screenStrings,
   setupView,
   stateVariables,
@@ -78,11 +78,14 @@ const TWENTY_TWO = [
 ] as const;
 
 const containerOf = (name: string): Container => parse(new Uint8Array(require_(name)));
-/** What composing needs beside the donor: the catalogue's archive and the Harmony 650's device count. */
-const composing = (): { archive: string; maxDevices: number } =>
-  ({ archive: IR_ARCHIVE!, maxDevices: modelForSkin(72)!.maxDevices });
-const setupOf = (file: string): SetupDescription =>
-  JSON.parse(readFileSync(new URL(`../../corpus/setups/${file}`, import.meta.url), 'utf8')) as SetupDescription;
+/** What composing needs beside the donor: the catalogue's archive. The device count is the recipe's model's. */
+const composing = (): { archive: string } => ({ archive: IR_ARCHIVE! });
+/** A setup file, read as a recipe, which checks its shape. */
+const setupOf = (file: string): Recipe =>
+  readRecipe(JSON.parse(readFileSync(new URL(`../../corpus/setups/${file}`, import.meta.url), 'utf8')));
+/** A recipe with no working screen stated for any activity. */
+const withoutScreens = (recipe: Recipe): Recipe =>
+  ({ ...recipe, activities: recipe.activities.map(({ screen: _, ...rest }) => rest) });
 const front = (c: Container): number => buildWiring(describeWiring(takeApart(c))).frontLength;
 /**
  * Per holder on `h650_test_config_clean`: its places, those naming a list the drop of its 323 unreached
@@ -371,16 +374,16 @@ test('the track settings are the ones the 10.2.2 file was built with, with the s
  * Radio sequence Logitech's compile of the setup draws there, the sequence as the setup's `about` states
  * it, KPN 1, a two second pause, KPN 2, by the keys' scan codes, `keys.md`.
  */
-const PLASMA_KIJKEN_SCREEN: readonly AssemblyScreenItem[] = [
+const PLASMA_KIJKEN_SCREEN: readonly RecipeScreenItem[] = [
   { device: 'KPN', command: 'Teletext' }, { device: 'KPN', command: 'DVR' }, { device: 'Plasma', command: 'Aspect' },
   { sequence: 'Radio', steps: [{ device: 'KPN', scan: 24 }, { pause: 20 }, { device: 'KPN', scan: 47 }] },
 ];
 
 test('on Logitech\'s starting compile the test setup\'s fifth activity is composed from the setup file and its screen, and the result is the 6.2.13 file put through the same assembly but for its build stamp, and lays 114438 bytes as content',
      needing(skipWithoutIrArchive(), skipUnless('h650_start_config', 'h650_7_1_base', 'h650_test_config_clean')), () => {
-  const out = assembleSetup(setupOf('h650-test.json'), {
-    donor: require_('h650_start_config'), ...composing(), screens: { 'Plasma kijken': PLASMA_KIJKEN_SCREEN },
-  });
+  // The setup file states the screen, since 10.7.4.
+  assert.deepEqual(setupOf('h650-test.json').activities.find((one) => one.name === 'Plasma kijken')?.screen, PLASMA_KIJKEN_SCREEN);
+  const out = assembleSetup(setupOf('h650-test.json'), { donor: require_('h650_start_config'), ...composing() });
   assert.deepEqual(out.composed, { devices: [], activities: ['Plasma kijken'] });
   assert.deepEqual(out.keptOn, ['KPN']);
   assert.equal(out.bytes.length, 997313);
@@ -417,7 +420,7 @@ test('on Logitech\'s starting compile the test setup\'s fifth activity is compos
 
 test('with no screen stated, the composed activity\'s screen is empty: the menu\'s order aside, its four items are what a person misses',
      needing(skipWithoutIrArchive(), skipUnless('h650_start_config', 'h650_test_config_clean')), () => {
-  const out = assembleSetup(setupOf('h650-test.json'), { donor: require_('h650_start_config'), ...composing() });
+  const out = assembleSetup(withoutScreens(setupOf('h650-test.json')), { donor: require_('h650_start_config'), ...composing() });
   const missing = compareViews(setupView(out.container), setupView(containerOf('h650_test_config_clean')), { menuOrder: false });
   assert.deepEqual(missing.map((one) => [one.key, one.kind, one.b?.label]).sort(), [
     ['activity Plasma kijken | page 1 | scan 2', 'only in b', 'DVR'],
@@ -433,8 +436,8 @@ test('with no screen stated, the composed activity\'s screen is empty: the menu\
 
 test('8.2.3: in our letters the test setup assembles on Logitech\'s starting compile with every label in its page\'s font, and Teletext, too wide for it in ours, a size down',
      needing(skipWithoutIrArchive(), skipUnless('h650_start_config', 'h650_test_config_clean')), () => {
-  const out = assembleSetup(setupOf('h650-test.json'), {
-    donor: require_('h650_start_config'), ...composing(), screens: { 'Plasma kijken': PLASMA_KIJKEN_SCREEN }, choices: { letters: 'oxanium' },
+  const out = assembleSetup({ ...setupOf('h650-test.json'), choices: { letters: 'oxanium' } }, {
+    donor: require_('h650_start_config'), ...composing(),
   });
   assert.deepEqual(out.composed, { devices: [], activities: ['Plasma kijken'] });
   assert.ok(out.container.allChecksPass);
@@ -464,19 +467,15 @@ test('8.2.3: in our letters the test setup assembles on Logitech\'s starting com
 
 test('10.7.3: the four slot family\'s choices reach the assembly: state colours and blended letters as its last two steps, a label too wide refused when that is chosen, and blending refused without our letters',
      needing(skipWithoutIrArchive(), skipUnless('h650_start_config', 'h650_test_config_clean')), () => {
-  const given = {
-    donor: require_('h650_start_config'), ...composing(), screens: { 'Plasma kijken': PLASMA_KIJKEN_SCREEN },
-  };
+  const given = { donor: require_('h650_start_config'), ...composing() };
   const setup = setupOf('h650-test.json');
   // Blending needs grey levels, which only our letters have: refused before anything is built.
-  assert.throws(() => assembleSetup(setup, { ...given, choices: { blendLetters: true } }), /only our letters can be blended/);
+  assert.throws(() => assembleSetup({ ...setup, choices: { blendLetters: true } }, given), /only our letters can be blended/);
   // A label too wide for its corner refused rather than drawn a size down: Teletext, 60 pixels in ours.
-  assert.throws(() => assembleSetup(setup, { ...given, choices: { letters: 'oxanium', labelTooWide: 'refuse' } }),
+  assert.throws(() => assembleSetup({ ...setup, choices: { letters: 'oxanium', labelTooWide: 'refuse' } }, given),
     /'Teletext' is 60 pixels wide and a corner holds 59/);
   // The look the Harmony 650 was written with, 9.1.2.1 and 8.2.6, from the assembly alone.
-  const out = assembleSetup(setup, {
-    ...given, choices: { letters: 'oxanium', backgrounds: 'state colours', blendLetters: true },
-  });
+  const out = assembleSetup({ ...setup, choices: { letters: 'oxanium', backgrounds: 'state colours', blendLetters: true } }, given);
   assert.deepEqual(out.steps.slice(-2).map((one) => one.step), ['state colours', 'blended letters']);
   assert.ok(out.container.allChecksPass);
   assert.deepEqual(compareViews(setupView(out.container), setupView(containerOf('h650_test_config_clean')), { menuOrder: false }), []);
@@ -502,7 +501,7 @@ test('the smallest Harmony 650 compile the lab registers, two devices and no act
   // Each device alone, by its first refusal.
   const alone = (name: string): string => {
     const setup = setupOf('h650-test.json');
-    const one = { devices: setup.devices.filter((d) => ['LG TV', 'Denon', name].includes(d.name)), activities: [] };
+    const one = { model: setup.model, devices: setup.devices.filter((d) => ['LG TV', 'Denon', name].includes(d.name)), activities: [] };
     try {
       assembleSetup(one, { donor: smallest, ...composing() });
       return 'composed';
@@ -521,9 +520,9 @@ test('the smallest Harmony 650 compile the lab registers, two devices and no act
   // left is the menu reader, which placing the compile's texts in our letters meets before any composer.
   const ours = (name: string): string => {
     const setup = setupOf('h650-test.json');
-    const one = { devices: setup.devices.filter((d) => ['LG TV', 'Denon', name].includes(d.name)), activities: [] };
+    const one = { model: setup.model, devices: setup.devices.filter((d) => ['LG TV', 'Denon', name].includes(d.name)), activities: [] };
     try {
-      assembleSetup(one, { donor: smallest, ...composing(), choices: { letters: 'oxanium' } });
+      assembleSetup({ ...one, choices: { letters: 'oxanium' } }, { donor: smallest, ...composing() });
       return 'composed';
     } catch (error) {
       return (error as Error).message;
@@ -534,7 +533,8 @@ test('the smallest Harmony 650 compile the lab registers, two devices and no act
   }
   // And an activity on its own two devices: with an input, the television has no input variable to put it
   // on, nor has the receiver, since this compile gave neither one; without, the activity composer refuses.
-  const tv = (input?: string): SetupDescription => ({
+  const tv = (input?: string): Recipe => ({
+    model: setupOf('h650-test.json').model,
     devices: setupOf('h650-test.json').devices.filter((d) => ['LG TV', 'Denon'].includes(d.name)),
     activities: [{ name: 'TV', type: 'Custom', devices: [
       { device: 'LG TV', ...(input === undefined ? {} : { input }), roles: ['Display'] }, { device: 'Denon', roles: ['Volume'] }] }],
@@ -548,7 +548,8 @@ test('the smallest Harmony 650 compile the lab registers, two devices and no act
 test('a device the donor lacks is composed from the catalogue with an activity on it, and every check passes',
      needing(skipWithoutIrArchive(), skipUnless('h650_start_config')), () => {
   const start = setupOf('h650-start.json');
-  const setup: SetupDescription = {
+  const setup: Recipe = {
+    model: start.model,
     devices: [...start.devices, { name: 'Pana', device: 'Panasonic/TX-P42GT30E' }],
     activities: [...start.activities, { name: 'Kijk twee', type: 'Custom', devices: [
       { device: 'Pana', input: 'HDMI 2', roles: ['Display', 'Volume'] }, { device: 'KPN', roles: ['ChannelChanging'] }] }],
@@ -557,9 +558,10 @@ test('a device the donor lacks is composed from the catalogue with an activity o
   assert.deepEqual(out.composed, { devices: ['Pana'], activities: ['Kijk twee'] });
   assert.equal(out.bytes.length, 1068094);
   assert.ok(devices(out.container).some((one) => one.name === 'Pana'));
-  // Unbounded composing is refused rather than run: the model's device count is the caller's to give.
-  assert.throws(() => assembleSetup(setup, { donor: require_('h650_start_config'), archive: IR_ARCHIVE! }),
-    /composing a device needs the model's device count/);
+  // A device past the model's count is refused rather than composed: the Harmony 650 holds eight, which
+  // its definition states and the recipe does not.
+  const ninth = { ...setup, devices: [...setup.devices, { name: 'Pana 2', device: 'Panasonic/TX-P42GT30E' }] };
+  assert.throws(() => assembleSetup(ninth, { donor: require_('h650_start_config'), ...composing() }), /this model holds 8/);
   // A label the corner cannot hold is the composer's refusal, named with the device.
   const wide = { ...setup, devices: [...start.devices, { name: 'Plasma 2', device: 'Panasonic/TX-P42GT30E' }],
     activities: start.activities };

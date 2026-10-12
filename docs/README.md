@@ -79,6 +79,10 @@ docs/memory-map-one.md          where everything lives on a Harmony One, derived
 docs/memory-map-600.md          the same for the Harmony 600
 docs/memory-map-700.md          the same for the 700, measured on the bench unit since section 295
 docs/memory-map-525.md          arch 9, predictions written down before the remote arrives
+docs/recipe.md                  the recipe a configuration of ours is built from, preliminary:
+                                its fields, what it holds and what the model's definition holds
+                                instead, and each field against FreeHarmony's data model with the
+                                gaps FreeHarmony would fill to produce one
 docs/growing-a-config.md        what a length change would move, counted: the stated addresses, the
                                 implied positions and the three restamped fields. The survey behind
                                 edit.ts's refusal to change a length, and since section 172 also the
@@ -221,7 +225,8 @@ The TypeScript workspace, per `docs/plans/002-the-roadmap.md` step 4:
                                 a family only through the registry, no family imports another,
                                 and compose.ts is the entry that re-exports both. Every choice
                                 of ours a family makes, with its default, is in that family's
-                                choices.ts
+                                choices.ts, and src/recipe/ reads the recipe a build starts from,
+                                docs/recipe.md
 packages/lab/                   TS: finds the private lab directory, mirrors tests/lab.py. Also
                                 finds the **public** infrared archive checkout, which is a
                                 separate locator on purpose: both make their tests skip when

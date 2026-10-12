@@ -220,6 +220,18 @@ changes no caller at once.
    names its model; the description is a written type and the front end builds it; the format is
    written down as a preliminary definition FreeHarmony can produce, its fields checked against
    FreeHarmony's data model.
+   **The recipe done 12 October 2026, the description not.** `src/recipe/recipe.ts` reads and checks a
+   recipe and looks its model up in `packages/usb`'s table, which made that package a dependency of the
+   codec rather than of its tests; the registry chooses a family by the model's architecture, and a
+   model no family serves is refused there. The setup files are recipes: each names the Harmony 650,
+   skin 72, and the test setup states Plasma kijken's working screen. The assembly takes the recipe and
+   two inputs that are not a configuration's content, the donor and the catalogue's checkout; the
+   device count comes from the model, the screens and choices from the recipe. `docs/recipe.md` is the
+   format, with FreeHarmony's model beside it: three gaps there (the catalogue entry behind a device,
+   the keep on flag, a pass through device) and the choices. The assembled test setup is byte equal.
+   **The description was not built**, and `todo-compile-650.md` 10.7.4 never asked for it: while the
+   composers patch a donor, nothing would read one, so it would be a type with no consumer and no test
+   that can fail. It belongs with 11.1.1, where a family's layout and serializer are what read it.
 4. **11.1.1, the 650 built from its description.** The four slot family serializes from the description
    with no donor, which retires its patching; the starting configuration is empty and ours.
 

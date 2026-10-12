@@ -226,7 +226,8 @@ export function activityRolesFromSends(c: Container, activity: number): Activity
  * amplifier that only routes the picture. MyHarmony states it as a role of its own; here it is the
  * empty list, because it does none of the jobs and the compile gives it nothing a job would.
  */
-export type ActivityRoleName = 'Display' | 'Volume' | 'ChannelChanging' | 'PlayMovie' | 'PlayMedia' | 'PlayGame';
+export const ACTIVITY_ROLE_NAMES = ['Display', 'Volume', 'ChannelChanging', 'PlayMovie', 'PlayMedia', 'PlayGame'] as const;
+export type ActivityRoleName = (typeof ACTIVITY_ROLE_NAMES)[number];
 
 /** The roles that make a device the control device when no device changes channels, section 323. */
 const PLAY_ROLES: readonly ActivityRoleName[] = ['PlayMovie', 'PlayMedia', 'PlayGame'];

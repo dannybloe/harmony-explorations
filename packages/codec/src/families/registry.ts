@@ -2,24 +2,29 @@
  * The one place a configuration's family is chosen, plan 007. Nothing else in the codec tests which
  * remote a configuration is for in order to pick behaviour; it asks for the family and calls it.
  *
- * Today the choice reads the architecture the container states, since a configuration composed onto a
- * donor carries it. When the recipe names its target model, `todo-compile-650.md` 10.7.4, the choice
- * reads the model's definition instead, `packages/usb/src/models.ts`, and a model no family serves is
- * refused there. A switch rather than a table built at load time, so the choice never depends on the
- * order the modules happen to be evaluated in.
+ * The choice reads an architecture: the one a recipe's model has in its definition,
+ * `packages/usb/src/models.ts`, `todo-compile-650.md` 10.7.4, where a model no family serves is refused,
+ * or the one a container states, which a configuration composed onto a donor carries. A switch rather
+ * than a table built at load time, so the choice never depends on the order the modules happen to be
+ * evaluated in.
  */
 import type { Container } from '../gspm.ts';
 import type { CommonChoices, Family, FamilyTraits } from './family.ts';
 import { FOUR_SLOT } from './four-slot/index.ts';
 import { TOUCH } from './touch/index.ts';
 
-/** The family a configuration's remote is in, or undefined for one no family serves yet. */
-export function familyOf(c: Container): Family | undefined {
-  switch (c.architecture) {
+/** The family of the remotes of an architecture, or undefined for one no family serves yet. */
+export function familyOfArchitecture(architecture: number | undefined): Family | undefined {
+  switch (architecture) {
     case 12: return TOUCH;
     case 14: return FOUR_SLOT;
     default: return undefined;
   }
+}
+
+/** The family a configuration's remote is in, by the architecture the container states. */
+export function familyOf(c: Container): Family | undefined {
+  return familyOfArchitecture(c.architecture);
 }
 
 /**

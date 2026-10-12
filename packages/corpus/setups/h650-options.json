@@ -1,5 +1,9 @@
 {
  "about": "The Harmony 650's starting setup with two options changed, todo-compile-650.md 3.10 and 3.11: the Denon kept on when switching activities, MyHarmony's per device power setting, and Muziek made a Custom activity, so the Listen to Music key holds none. Everything else is h650-start.json.",
+ "model": {
+  "name": "Harmony 650",
+  "skin": 72
+ },
  "devices": [
   {
    "name": "LG TV",

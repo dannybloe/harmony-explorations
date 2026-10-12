@@ -123,3 +123,5 @@ export * from './compare.ts';
 // A setup description and a donor in, a whole container out, and which of its bytes a generator
 // reproduces, todo-compile-650 10.6. Last, since it runs every generator above.
 export * from './assemble.ts';
+// The recipe a configuration of ours is built from, todo-compile-650 10.7.4, `docs/recipe.md`.
+export * from './recipe/recipe.ts';
