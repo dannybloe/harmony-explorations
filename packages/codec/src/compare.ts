@@ -33,7 +33,7 @@ import {
   devices,
   fourSlotCellAt,
   handlerSetRoles,
-  infraredCodesPerList,
+  infraredCodesPerList, ENTER_MODE,
 } from './inventory.ts';
 import { irBlockWords, irGroups, irHeaderPointers } from './ir.ts';
 import { irFrame } from './irframe.ts';
@@ -188,8 +188,6 @@ export function setupView(c: Container): SetupView {
   return view;
 }
 
-/** The base slot 6 mode `0x7E` enters, the opcode a case's queued instruction carries. */
-const ENTER_MODE = 0x7e;
 
 /**
  * Activity value to the mode of its working screen. The Harmony One's route is `activityScreens`; on

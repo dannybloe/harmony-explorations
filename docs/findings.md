@@ -50213,6 +50213,19 @@ the F14W set one size down, and the other three labels stay in the page's font. 
 rests on beyond width is still not read, section 323's 16 labels drawn smaller that would fit, so this is
 our rule and not a reproduction of theirs.
 
+**Corrected 12 October 2026: the rule as first written refused a label it should have drawn.** It tried
+each smaller set without asking whether the set could spell the label, and a set carries only the glyphs
+its compiler needed, so on the second copy of the contributed Harmony 700 configuration a label with a
+space reached a set holding none and the composer refused with "font 8 has no glyph for ' '". The test
+that composes every compile's activity screens from its commands caught it, `activityroles.test.ts`, which
+had not been run with this change. A smaller set that cannot spell the label is now passed over,
+`spellsIn`. **With that, both copies' `Watch TV` compose, `Antenna` included, and on the second copy every
+page is Logitech's**, so on the one compile where the compiler's smaller label exists to compare against,
+this rule picks the set it picked. On the first copy the pages differ for the reason three activities
+already did, a gap the user left that a list of commands cannot state, which here costs a whole page:
+eight pages of Logitech's against seven of ours. One agreement is not a reproduction, so the sentence
+above stands.
+
 **The result.** The test setup with the Plasma kijken screen assembles on Logitech's starting compile in
 our letters, passes its checks, shows what Logitech's compile of the setup shows but for the menu's order,
 and keeps every set in our letters spelling every printable character. On the smallest compile, two devices
@@ -50230,7 +50243,9 @@ glyphs depend on a colour the copy does not state. What is still Logitech's in t
 bank, 361 KB, the infrared blocks, 220 KB, and about 140 KB of lists, screen programs and menus.
 
 * `packages/codec/src/devicemode.ts`, `OXANIUM_LABEL_SIZES`, `TITLE_RUNG`, `ladderOf` and the ladder
-  parameter; `compose.ts`, `fourSlotLabelLines`, `smallerLabelFonts`, `fourSlotCounterX`;
+  parameter; `families/four-slot/chrome.ts` since the split of todo 10.7.2, `fourSlotLabelLines`,
+  `smallerLabelFonts`, `fourSlotCounterX`; `shared/spelling.ts`, `spellsIn`;
   `assemble.ts`, `ourLetters`.
 * `packages/codec/test/devicemode.test.ts`, the ladder and the 13 compiles' sizes; `assemble.test.ts`, the
-  assembly in our letters and the smallest compile's refusals.
+  assembly in our letters and the smallest compile's refusals; `activityroles.test.ts`, no activity of the
+  13 compiles refused and `Antenna`'s pages Logitech's on the second Harmony 700 copy.

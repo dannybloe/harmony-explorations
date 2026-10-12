@@ -873,7 +873,11 @@ function continuations(one: ScreenString, rows: readonly ScreenString[]): string
 }
 
 /** Opcode `0x7E`: enter the base slot 6 mode the operand indexes. Section 36. */
-const ENTER_MODE = 0x7e;
+export const ENTER_MODE = 0x7e;
+/** Opcode `0x73`: run the base slot 11 screen program its operand indexes, by its low byte, section 369. */
+export const RUN_SCREEN_PROGRAM = 0x73;
+/** Opcode `0x75`: the beeper, which every menu row in the corpus opens with, section 73. */
+export const BEEP_OPCODE = 0x75;
 /**
  * How far to follow `0x7F` from the bound list.
  *
@@ -1486,12 +1490,12 @@ export function isDeviceListRowShape(
   if (list === undefined) return false;
   if (architecture === 14) {
     return list.length === 2
-      && list[0]?.opcode === ENTER_MODE_OPCODE
+      && list[0]?.opcode === ENTER_MODE
       && (list[1] as Instruction).opcode >= STATE_WRITE_BASE;
   }
   return list.length === 3
-    && list[0]?.opcode === 0x75
-    && list[1]?.opcode === ENTER_MODE_OPCODE
+    && list[0]?.opcode === BEEP_OPCODE
+    && list[1]?.opcode === ENTER_MODE
     && (list[2] as Instruction).opcode >= STATE_WRITE_BASE;
 }
 
@@ -1509,11 +1513,9 @@ export function deviceListRowMode(
   const rows = list as readonly Instruction[];
   const end = rows[rows.length - 1] as Instruction;
   if (end.opcode !== marker.opcode || end.operand !== marker.operand) return undefined;
-  return (rows.find((one) => one.opcode === ENTER_MODE_OPCODE) as Instruction).operand;
+  return (rows.find((one) => one.opcode === ENTER_MODE) as Instruction).operand;
 }
 
-/** Opcode `0x7e`: enter the mode the operand indexes. */
-const ENTER_MODE_OPCODE = 0x7e;
 
 /**
  * The instruction a device list row ends with, which marks the remote as being in device mode.

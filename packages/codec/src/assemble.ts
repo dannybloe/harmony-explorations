@@ -72,7 +72,7 @@ import {
 import { numberSenders, timers } from './tables.ts';
 import { SCREEN_QUEUE_INSTRUCTION, SCREEN_TEXT_INLINE, reachablePrograms, screenProgram } from './screen.ts';
 import { characterMap, decode, glyphsReferencedBy } from './text.ts';
-import { activities, devices, deviceVariables } from './inventory.ts';
+import { activities, devices, deviceVariables, SEND_INFRARED, DEVICE_QUANTITY } from './inventory.ts';
 import type { ContainerLayout, ContainerPiece } from './frame.ts';
 import { layOutContainer, takeApart } from './frame.ts';
 import { LOOSE_KINDS, loosen, placePieces } from './placer.ts';
@@ -822,8 +822,8 @@ function composeSetupActivity(
       const group = groupOfDevice(c, labelOf(step.device), step.device);
       const list = deviceKeypadLists(c, group).get(step.scan);
       const body = list === undefined ? undefined : lists[list];
-      const send = body?.find((one) => one.opcode === SEND_OPCODE);
-      const quantity = body?.find((one) => one.opcode === QUANTITY_OPCODE);
+      const send = body?.find((one) => one.opcode === SEND_INFRARED);
+      const quantity = body?.find((one) => one.opcode === DEVICE_QUANTITY);
       if (send === undefined || quantity === undefined) {
         throw new AssemblyError(`${item.sequence}: ${step.device}'s key ${step.scan} sends no code to put in a sequence`);
       }
@@ -858,9 +858,6 @@ function composeSetupActivity(
   return after;
 }
 
-/** A send's opcode and its quantity's, the pair section 278 requires, read off a key's send list. */
-const SEND_OPCODE = 0x7d;
-const QUANTITY_OPCODE = 0x7c;
 
 /**
  * Every parked piece of a kind the placer has no rule for, into the body. A composer parks what it adds

@@ -70,6 +70,7 @@ import {
 } from './screenrecords.ts';
 import type { PieceTarget } from './statetables.ts';
 import { FIRMWARE_SCREENS, type WiringModel, type WiringSpec, describeWiring, wiringFrontIndex } from './wiring.ts';
+import { SCREEN_SELECT_FONT } from './screen.ts';
 
 /** Which of the five own key maps a firmware screen has. */
 export type FirmwareKeyMap = 'placeholder' | 'battery' | 'low battery' | 'usb' | 'none';
@@ -147,7 +148,6 @@ const LOAD_BASE = 0xfb00;
 const USB_MARK = { opcode: 0x07, operand: 0xffff } as const;
 const OP_IMAGE = 0x02;
 const OP_BAR = 0x03;
-const OP_FONT = 0x10;
 
 const press = (scan: number): number => (KEY_EVENT_PRESS << KEY_EVENT_SHIFT) | scan;
 const call = (list: number): Instruction => ({ opcode: CALL, operand: list });
@@ -222,7 +222,7 @@ export function describeFirmwareScreens(
 
   // A font, read once, at the first font selection of the screen named.
   const fontAt = (name: string): number => {
-    const select = frameOf(name).pages[0]?.program.find((one) => one.opcode === OP_FONT);
+    const select = frameOf(name).pages[0]?.program.find((one) => one.opcode === SCREEN_SELECT_FONT);
     if (select === undefined) throw new ScreenRecordError(`${name} selects no font`);
     return value(select.start + 1);
   };

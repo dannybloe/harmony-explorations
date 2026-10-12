@@ -47,7 +47,7 @@ import {
   KEY_EVENT_SHIFT,
   SELECT_BINDING_SET,
   SELECT_BINDING_SET_MASK,
-  stateVariables,
+  stateVariables, ENTER_MODE,
 } from './inventory.ts';
 import { STATE_WRITE_BASE } from './actions.ts';
 import { characterMap, screenStrings } from './text.ts';
@@ -76,8 +76,6 @@ export const ACTIVITY_KEY_MAP_ENTRY = 1;
 
 /** Instruction `0x07` with this operand pushes the current mode; `0xFFFC` pops it. Section 311. */
 export const PUSH_MODE = { opcode: 0x07, operand: 0xfffd } as const;
-/** Opcode `0x7E`: enter the mode the operand indexes. */
-const ENTER_MODE = 0x7e;
 
 /**
  * The text that identifies the placeholder mode, the screen an empty activity key opens.

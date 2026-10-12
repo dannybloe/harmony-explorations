@@ -58,6 +58,7 @@ import { buildScreenRecords, describeScreenRecords, screenRecordModes, withScree
 import { DEVICE_MODE_PROGRAM_TAG, activityKeyedRecords } from './compose.ts';
 import { valueMaps } from './valuemap.ts';
 import { modeRecords } from './sections.ts';
+import { ENTER_MODE, RUN_SCREEN_PROGRAM } from './inventory.ts';
 
 /** A refusal, named so a caller can tell a configuration this does not handle from a bug. */
 export class BackgroundError extends Error {}
@@ -96,10 +97,6 @@ const STATE_PATCHES = new Set(['corner patch, grey', 'corner patch, red']);
  */
 export const HARMONY_650_SKINS: ReadonlySet<number> = new Set([72, 74]);
 const BACKGROUND_SIZE = 128;
-/** The action that enters a mode, `0x7E`; a private constant in seven other modules as well. */
-const OP_ENTER_MODE = 0x7e;
-/** The action that runs a base slot 11 program, `0x73`, as a page's program queues its battery program. */
-const RUN_SCREEN_PROGRAM = 0x73;
 /** The two state patches' size, 12 by 10, at 114, 112. */
 const PATCH_WIDTH = 12;
 const PATCH_HEIGHT = 10;
@@ -265,7 +262,7 @@ function workingModes(c: Container): Set<number> {
     if (first?.opcode !== SCREEN_QUEUE_INSTRUCTION || first.operands.length !== 3) {
       throw new BackgroundError('a working screen case does not queue one instruction');
     }
-    if (first.operands[2] === OP_ENTER_MODE) out.add((first.operands[0] as number) | ((first.operands[1] as number) << 8));
+    if (first.operands[2] === ENTER_MODE) out.add((first.operands[0] as number) | ((first.operands[1] as number) << 8));
   }
   return out;
 }

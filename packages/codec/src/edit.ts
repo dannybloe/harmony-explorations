@@ -50,7 +50,7 @@ import {
 } from './sections.ts';
 import type { StateRecord, TaggedEntry } from './sections.ts';
 import {
-  deviceIdOfGroup, FIRMWARE_STATE_VARIABLES, POWER_ON_DELAY_CASES, powerOnInstructions, stateVariables,
+  deviceIdOfGroup, FIRMWARE_STATE_VARIABLES, POWER_ON_DELAY_CASES, powerOnInstructions, stateVariables, ENTER_MODE,
 } from './inventory.ts';
 import {
   CLOCK_FIELDS_OFFSET,
@@ -719,8 +719,6 @@ export function setPageListEntry(
   return out;
 }
 
-/** Opcode 0x7E: enter the mode the operand indexes. */
-const ENTER_MODE = 0x7e;
 
 /** Where a configuration's introduction tour starts and how it ends, as `introductionTour` found it. */
 export interface IntroductionTour {

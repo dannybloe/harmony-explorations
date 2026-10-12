@@ -91,7 +91,7 @@ import {
   SELECT_BINDING_SET,
   SELECT_BINDING_SET_MASK,
   activities,
-  compilerTagOrder,
+  compilerTagOrder, ENTER_MODE, RUN_SCREEN_PROGRAM,
 } from './inventory.ts';
 import { STATE_WRITE_BASE } from './actions.ts';
 import { KEYPAD_FIRST_SCAN, KEYPAD_LAST_SCAN } from './modezero.ts';
@@ -116,12 +116,8 @@ export const SCREEN_RECORD_KINDS: readonly ScreenRecordKind[] = ['idle device li
  */
 export const OFF_TITLE = 'Turning system off';
 
-/** `0x7E` enters a mode, section 37. */
-const ENTER_MODE = 0x7e;
 /** `0x72` maps a variable through a base slot 14 record, section 280. */
 const MAP_VALUE = 0x72;
-/** `0x73` queues a screen program, section 334. */
-const RUN_PROGRAM = 0x73;
 /** The marker values a row writes: 1 on a device row, 0 on an activity row, section 329. */
 const DEVICE_ROW_MARKER = 1;
 const ACTIVITY_ROW_MARKER = 0;
@@ -553,7 +549,7 @@ export function describeScreenRecords(
     const tags = menuTags(kind);
     const ownEntries = f.record.entries;
     if (c.blob[f.ownOff] === 0 || ownEntries.length !== tags.length || ownEntries.some((one, k) => one.tag !== tags[k]
-      || one.opcode !== (one.tag === DEVICE_MODE_PROGRAM_TAG ? RUN_PROGRAM : MAP_VALUE))) {
+      || one.opcode !== (one.tag === DEVICE_MODE_PROGRAM_TAG ? RUN_SCREEN_PROGRAM : MAP_VALUE))) {
       throw new ScreenRecordError(`the ${kind}'s own key map is not the one built`);
     }
     const operandOf = (tag: number): number => value16(f.ownOff + 1 + 4 * tags.indexOf(tag) + 1);
@@ -849,7 +845,7 @@ export function buildScreenRecords(spec: ScreenRecordsSpec, c: Container): Built
       return m.backKey;
     };
     const own = menuTags(m.kind).map((tag) => ({
-      tag, operand: operand(tag), opcode: tag === DEVICE_MODE_PROGRAM_TAG ? RUN_PROGRAM : MAP_VALUE,
+      tag, operand: operand(tag), opcode: tag === DEVICE_MODE_PROGRAM_TAG ? RUN_SCREEN_PROGRAM : MAP_VALUE,
     }));
     return recordOf(own, programs, lists, copies);
   };

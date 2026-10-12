@@ -66,6 +66,7 @@
  * peaked at 35 of the 40, under the ceiling, so passing this rail is not a promise the remote copes:
  * the softer bound is a decision nobody has taken, section 238.
  */
+import { familyOf, traitsOf } from './families/registry.ts';
 import type { Container, Instruction } from './gspm.ts';
 import { parse } from './gspm.ts';
 import { archSlot } from './gspm.ts';
@@ -96,16 +97,6 @@ import type { Edit } from './edit.ts';
 
 /** Opcode `0x75`, the beeper, and the operand every Harmony One screen item opens with, section 73. */
 export const SCREEN_ITEM_BEEP: Readonly<Instruction> = { opcode: 0x75, operand: 0x0fca };
-
-/**
- * The architectures this composes for: arch 12 (Harmony One), where a compiled sequence exists to
- * score against, and arch 14 (Harmony 600, 650 and 700), where the form is carried over. A send list
- * on arch 8, 9 and 10 has a shape this module has not been taught, so they are refused.
- */
-const SEQUENCE_ARCHITECTURES: readonly number[] = [12, 14];
-
-/** The architecture whose send lists open with a delay step, section 287. */
-const PRELUDE_ARCHITECTURE = 14;
 
 /**
  * The longest wait one pause step can carry: the operand's low byte, in tenths of a second, so 25.5
@@ -438,7 +429,7 @@ interface SendList {
 function sendListsOf(c: Container): SendList[] {
   const lists = c.actionLists() ?? [];
   const out: SendList[] = [];
-  if (c.architecture === PRELUDE_ARCHITECTURE) {
+  if (traitsOf(c).sendPrelude) {
     for (const one of sendPreludes(c)) {
       const body = lists[one.list] as Instruction[];
       const send = body[1] as Instruction;
@@ -474,8 +465,11 @@ function sendListsOf(c: Container): SendList[] {
  * to the page composers. So the lists exist and nothing runs them until a binding names them.
  */
 export function composeSequence(given: Container, sequence: ComposeSequence): ComposedSequence {
+  // Composed for the families in the registry: the Harmony One, where a compiled sequence exists to
+  // score against, and the Harmony 600, 650 and 700, where the form is carried over. A send list of any
+  // other remote has a shape this module has not been taught, so it is refused.
   const architecture = given.architecture;
-  if (architecture === undefined || !SEQUENCE_ARCHITECTURES.includes(architecture)) {
+  if (architecture === undefined || familyOf(given) === undefined) {
     throw new ComposeError(
       `a sequence is composed for a Harmony One or a Harmony 600, 650 or 700, not architecture ${architecture ?? 'none'}`);
   }
@@ -506,8 +500,9 @@ export function composeSequence(given: Container, sequence: ComposeSequence): Co
 
   // The record each command sends, before any list is made, since a copy the group lacks is a record
   // appended to base slot 5 and the lists below are numbered in the container that results.
-  const mode = sequence.records ?? (architecture === PRELUDE_ARCHITECTURE ? 'copy' : 'named');
-  if (mode === 'copy' && architecture !== PRELUDE_ARCHITECTURE) {
+  const traits = traitsOf(given);
+  const mode = sequence.records ?? (traits.sendPrelude ? 'copy' : 'named');
+  if (mode === 'copy' && !traits.sendPrelude) {
     throw new ComposeError('a one block copy is composed on the Harmony 600, 650 and 700 only: the Harmony One\'s '
       + 'open with the device\'s delay between devices, section 337, which this does not compose');
   }
@@ -559,7 +554,7 @@ export function composeSequence(given: Container, sequence: ComposeSequence): Co
     }
     created.push(next);
     sendLists.set(key, next);
-    if (architecture !== PRELUDE_ARCHITECTURE) {
+    if (!traits.sendPrelude) {
       bodies.push([[(group << 8) | code, SEND_INFRARED], [(group << 8) | quantity, DEVICE_QUANTITY]]);
       next += 1;
       continue;
@@ -594,7 +589,7 @@ export function composeSequence(given: Container, sequence: ComposeSequence): Co
     // The beeper on the Harmony One's screen copy only: no screen item on the 600, 650 or 700 opens
     // with one, and Logitech's compile of the Harmony 650's test setup gives its Radio item the key
     // copy's body with none, section 349.
-    const opened = copy === 'screen' && architecture !== PRELUDE_ARCHITECTURE ? [SCREEN_ITEM_BEEP, ...body] : body;
+    const opened = copy === 'screen' && traits.screenItemsBeep ? [SCREEN_ITEM_BEEP, ...body] : body;
     if (opened.length > 0xff) throw new ComposeError(`a list states its count in a byte and this is ${opened.length}`);
     bodies.push(opened.map((one) => [one.operand, one.opcode] as const));
     lists.push(next);

@@ -375,17 +375,21 @@ test('an activity\'s screens composed from its commands are Logitech\'s page for
   // Every command on the screens of the ten uncustomised compiles is a device's own screen command
   // under the same label, and some on the customised ones are too.
   assert.deepEqual(resolved, { plain: { items: 64, resolved: 64 }, customised: { items: 101, resolved: 16 } });
-  // Refused: the one label wider than a corner's line in the label font, which the compiler draws in a
-  // smaller one, on the same activity of both copies of one contributed configuration.
-  assert.deepEqual(refused, ['h700_config', 'h700_config_2'].map((name) =>
-    `${name} Watch TV: 'Antenna' is 60 pixels wide and a corner holds 59: give it a shorter label`));
-  assert.deepEqual(records, { same: 38, differ: 0 });
-  assert.deepEqual(titles, { same: 38, differ: 0 });
-  assert.deepEqual(pages, { same: 41, differ: 6 });
-  // The three activities that differ, two pages each, are all customised ones, and each has a page
-  // Logitech left short before its last: a gap the user left, which a list of commands cannot state,
-  // so every later command sits one corner earlier in ours.
-  assert.deepEqual(differing, ['h600_config PS3', 'h700_config Watch Bluray', 'h700_config_2 Watch Bluray']);
+  // Refused: none. The one label wider than a corner's line in the label font, 'Antenna' on the same
+  // activity of both copies of one contributed configuration, goes down a size the way the compiler's
+  // does, `todo-compile-650.md` 8.2.3; its pages are Logitech's on the second copy, which is what shows
+  // the smaller font chosen is the compiler's, and on the first they differ for the gap below.
+  assert.deepEqual(refused, []);
+  assert.deepEqual(records, { same: 40, differ: 0 });
+  assert.deepEqual(titles, { same: 40, differ: 0 });
+  assert.deepEqual(pages, { same: 49, differ: 14 });
+  // The four activities that differ are all customised ones, and each has a page Logitech left short
+  // before its last: a gap the user left, which a list of commands cannot state, so every later command
+  // sits one corner earlier in ours. Two pages each on three of them; on the first copy's 'Watch TV' the
+  // gap costs a whole page, eight of Logitech's against seven of ours, so all eight differ, each at
+  // least in its page counter.
+  assert.deepEqual(differing,
+    ['h600_config PS3', 'h700_config Watch Bluray', 'h700_config Watch TV', 'h700_config_2 Watch Bluray']);
   for (const key of differing) {
     const [name, ...rest] = key.split(' ');
     const c = load(name as string);

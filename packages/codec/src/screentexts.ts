@@ -80,7 +80,7 @@ import {
   FOUR_SLOT_SCREEN_WIDTH,
   TWO_ROW_LABEL_Y,
   caseQueued,
-  fourSlotCellAt,
+  fourSlotCellAt, ENTER_MODE,
 } from './inventory.ts';
 import { TWO_LINE_RISE } from './devicemode.ts';
 import { modeRecords } from './sections.ts';
@@ -207,8 +207,6 @@ export interface BuiltScreenTexts {
   spans: [number, number][];
 }
 
-/** `0x7E` enters a mode, section 37. */
-const ENTER_MODE = 0x7e;
 /** A text drawn inline is the opcode, two place bytes, the codes and a zero; by reference, six bytes. */
 const INLINE_HEAD = 3;
 /** Below this y a text is on the title's line, the title and the counter; from this y it is the bottom word. */

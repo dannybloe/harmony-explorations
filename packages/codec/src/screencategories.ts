@@ -112,7 +112,7 @@ import {
   deviceVariables,
   devices,
   handlerSetRoles,
-  stateVariables,
+  stateVariables, ENTER_MODE,
 } from './inventory.ts';
 import { introductionTour } from './edit.ts';
 
@@ -199,8 +199,6 @@ export interface ScreenUnit {
  * A state variable write carries its index in the opcode, `0x80 + n`, and is folded to one opcode.
  */
 export const PLACEMENT_OPCODES: ReadonlySet<number> = new Set([0x7e, 0x7f, 0x72, 0x73, 0x1f, 0x7d]);
-/** Opcode `0x7E`, enter the mode the operand indexes. */
-const ENTER_MODE = 0x7e;
 /** Opcode `0x72`, look a state variable's value up in a base slot 14 record. */
 const MAP_VALUE = 0x72;
 /**

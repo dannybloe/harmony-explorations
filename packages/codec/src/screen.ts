@@ -88,6 +88,8 @@ export const SCREEN_JUMP = 20;
  * of eight pixels on a 96 by 64 screen, which is the picture the bank's own walk finds twice.
  */
 export const SCREEN_CALL = 22;
+/** Arch 12's return from a `SCREEN_CALL`, no operand, `SCREEN_CALL`'s docstring. */
+export const SCREEN_RETURN = 23;
 export const SCREEN_OPERANDS_BY_ARCHITECTURE: Readonly<Record<number, Record<number, number>>> = {
   9: { 22: 1 },
   // Arch 10 (Harmony 890 and 895) takes three, like arch 12, section 185. **Measured per program and

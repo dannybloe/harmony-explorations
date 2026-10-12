@@ -184,6 +184,17 @@ changes no caller at once.
    functions gone. **Every existing test passes unchanged**, and the assembled test setup is byte equal
    before and after, which is what shows the move changed nothing. The 650's composers still patch the
    donor at the end of this step; they are only in their place.
+   **Done 12 October 2026.** The names it settled: `Family` in `src/families/family.ts`, which carries
+   the three screen composers and `FamilyTraits`, the three ways a family's action lists differ that the
+   shared composers ask about (the delay prelude on every send, the shape of an activity's start, a beep
+   opening every screen item); `familyOf` and `traitsOf` in `src/families/registry.ts`, the only place
+   that maps a configuration to a family, with `PLAIN_TRAITS` for a configuration no family serves; the
+   shared parts in `src/shared/`, which reach a family only through the registry. `lay` and `serialize`
+   of the interface above are not there yet: they arrive with 11.1.1, when a family builds rather than
+   patches. What stays as an architecture test is a guard at the door of a family's own exported
+   function, eight of them, and the check that a container states an architecture at all. The three
+   hashes of the assembled test setup, Logitech's letters, ours, and no working screen, were equal
+   after each of the three stages.
 2. **10.7.3, the choices.** Every constant sorted into fact or choice; each choice a field of its family's
    choices with today's value as its default.
 3. **10.7.4, the recipe and the description.** The recipe holds everything a configuration depends on and
