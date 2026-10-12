@@ -88,6 +88,7 @@ import {
 } from './screenrecords.ts';
 import { buildFirmwareScreens, checkFirmwareScreens, describeFirmwareScreens, withFirmwareScreens } from './firmwarescreens.ts';
 import { buildScreenTexts, checkScreenTexts, describeScreenTexts, withScreenTexts } from './screentexts.ts';
+import { checkOxaniumFonts, withOxaniumFonts, type SetFace } from './fonttable.ts';
 import {
   ComposeError, composeActivity, composeActivityDeviceList, composeActivityMenuRow, composeActivityScreen, keepDeviceOn,
   nextActivityValue, startsSwitchingOff,
@@ -498,6 +499,14 @@ export interface AssembleOptions {
    * Absent for an activity composes it with an empty working screen.
    */
   readonly screens?: Readonly<Record<string, readonly AssemblyScreenItem[]>>;
+  /**
+   * Letter the donor in our own font table before anything is composed, `withOxaniumFonts`, decision 19,
+   * `todo-compile-650.md` 8.2.3. Every set then spells every printable character, so every label a
+   * composer writes is drawn in the font its page uses and none is borrowed from another size, and the
+   * text step places every text in our letters' widths. Absent keeps Logitech's letters, which is what
+   * every assembly measured against a Logitech compile needs.
+   */
+  readonly ourLetters?: boolean;
 }
 
 /** One step of the assembly, for a caller that reports. */
@@ -518,6 +527,8 @@ export interface Assembled {
   keptOn: string[];
   /** The setup's devices and activities the composers added, by the setup's name, in the order added. */
   composed: { devices: string[]; activities: string[] };
+  /** With `ourLetters`, the face and colouring each font set was given, which `withBlendedLetters` needs. */
+  faces?: SetFace[];
 }
 
 /** A device's name as base slot 0 spells it, with `_` for a space, read back as the setup writes it. */
@@ -538,6 +549,22 @@ export function assembleSetup(setup: SetupDescription, options: AssembleOptions)
     steps.push({ step, bytes: c.blob.length, ...(detail === undefined ? {} : { detail }) });
   };
   note('donor');
+
+  // 0. Our letters, before any composer spells a label, so none has to borrow one.
+  let faces: SetFace[] | undefined;
+  if (options.ourLetters === true) {
+    const lettered = withOxaniumFonts(takeApart(c));
+    c = layOutContainer(lettered.layout).container;
+    checkOxaniumFonts(c, lettered.faces);
+    faces = lettered.faces;
+    // Re-lettering keeps every text where Logitech placed it in Logitech's widths, and the composers
+    // check their pages against the donor's, the bottom word centred among them, so the donor's texts
+    // are placed again in ours before any composer reads them. Step 7 does the same for the whole result.
+    const placing = takeApart(c);
+    const described = describeScreenTexts(c, placing);
+    c = parse(layOutContainer(withScreenTexts(placing, buildScreenTexts(described.spec, c), described.place)).bytes);
+    note('our letters', `${lettered.glyphs} glyphs, ${lettered.added.length} characters given a code, every text placed in them`);
+  }
 
   // 1. The donor holds nothing the setup does not, since no composer removes a device or an activity.
   //    A donor device is the setup's by the setup's name, or by `<manufacturer>_<model>`, the name the
@@ -705,7 +732,7 @@ export function assembleSetup(setup: SetupDescription, options: AssembleOptions)
   }
 
   checkAssembled(c);
-  return { bytes: c.blob, container: c, steps, dropped: dropped.dropped, keptOn, composed };
+  return { bytes: c.blob, container: c, steps, dropped: dropped.dropped, keptOn, composed, ...(faces === undefined ? {} : { faces }) };
 }
 
 /** The group of the device a setup names, through its label in the container. */

@@ -30,6 +30,7 @@ import type { Container } from './gspm.ts';
 import { fontSets, glyphOf, type FontSet } from './font.ts';
 import { blockOfStatedCode, statedCode, statedProtocol, type StatedCode } from './stated.ts';
 import { FOUR_SLOT_LEFT_X, FOUR_SLOT_RIGHT_END, FOUR_SLOT_LABEL_Y } from './inventory.ts';
+import { OXANIUM_FACES } from './oxanium.ts';
 
 // ---------------------------------------------------------------------------------------------------
 // Keys and screen
@@ -231,8 +232,26 @@ export const LABEL_SIZES: readonly LabelSize[] = [
     '34555777773677767677a75656556633866645466866'),
 ];
 
-/** The size the title and the page counter are drawn in, the third rung of the ladder, on every page. */
-export const TITLE_SIZE = LABEL_SIZES[2] as LabelSize;
+/** The rung the title and the page counter are drawn in, the third of the ladder, on every page. */
+export const TITLE_RUNG = 2;
+
+/** The size the title and the page counter are drawn in, in Logitech's letters. */
+export const TITLE_SIZE = LABEL_SIZES[TITLE_RUNG] as LabelSize;
+
+/**
+ * The same six sizes in our letters, `todo-compile-650.md` 8.2.3: each rung is the face `oxanium_glyphs.py`
+ * letters Logitech's sets of that size in, `F15`, `F14W`, `F14`, `F13`, `F11` and `F10`, at Logitech's
+ * heights and with every printable character's width. A configuration re-lettered by `withOxaniumFonts`
+ * carries these widths and no others, so its sizes are recognised by this table and its labels, titles
+ * and counters measured in it, `ladderOf`; the rules themselves, where a label breaks and how far a title
+ * may run, are the compiler's in pixels and stay as they are.
+ */
+export const OXANIUM_LABEL_SIZES: readonly LabelSize[] = (['F15', 'F14W', 'F14', 'F13', 'F11', 'F10'] as const)
+  .map((face, k) => ({
+    name: (LABEL_SIZES[k] as LabelSize).name,
+    height: OXANIUM_FACES[face].cell,
+    widths: new Map(Object.entries(OXANIUM_FACES[face].glyphs).map(([ch, rows]) => [ch, (rows[0] as string).length])),
+  }));
 
 /**
  * The widest a label line may be, in pixels: 59, the widest one line label on the twenty devices' pages,
@@ -361,10 +380,10 @@ function cut(sizeOf: LabelSize, text: string, limit: number): string | undefined
  * be and each part cut with `..`. Undefined when a character has no width in the size that decides it,
  * which is a label nothing here can lay out without guessing.
  */
-export function labelLayout(text: string): LabelLayout | undefined {
+export function labelLayout(text: string, ladder: readonly LabelSize[] = LABEL_SIZES): LabelLayout | undefined {
   const split = labelBreak(text);
-  for (let k = 0; k < LABEL_SIZES.length; k += 1) {
-    const sizeOf = LABEL_SIZES[k] as LabelSize;
+  for (let k = 0; k < ladder.length; k += 1) {
+    const sizeOf = ladder[k] as LabelSize;
     const whole = textWidthIn(sizeOf, text);
     if (whole !== undefined && whole <= (split === undefined ? LABEL_WIDTH : LABEL_WRAP_WIDTH)) {
       return { size: k, lines: [text] };
@@ -375,8 +394,8 @@ export function labelLayout(text: string): LabelLayout | undefined {
       if (widths.every((one) => one !== undefined && one <= LABEL_WIDTH)) return { size: k, lines: [...lines] };
     }
   }
-  const last = LABEL_SIZES.length - 1;
-  const sizeOf = LABEL_SIZES[last] as LabelSize;
+  const last = ladder.length - 1;
+  const sizeOf = ladder[last] as LabelSize;
   const fitOrCut = (part: string): string | undefined => {
     const wide = textWidthIn(sizeOf, part);
     return wide !== undefined && wide <= LABEL_WIDTH ? part : cut(sizeOf, part, LABEL_WIDTH);
@@ -398,8 +417,10 @@ export interface PlacedText {
  * One line sits at y 40 in the top row and 90 in the bottom; two start 15 higher, the second one height
  * of the label's size below the first, `FOUR_SLOT_LABEL_Y`'s docstring.
  */
-export function placeLabel(layout: LabelLayout, column: 0 | 1, row: 0 | 1): PlacedText[] {
-  const sizeOf = LABEL_SIZES[layout.size] as LabelSize;
+export function placeLabel(
+  layout: LabelLayout, column: 0 | 1, row: 0 | 1, ladder: readonly LabelSize[] = LABEL_SIZES,
+): PlacedText[] {
+  const sizeOf = ladder[layout.size] as LabelSize;
   const top = FOUR_SLOT_LABEL_Y[row] - (layout.lines.length > 1 ? TWO_LINE_RISE : 0);
   return layout.lines.map((text, k) => ({
     text,
@@ -411,9 +432,12 @@ export function placeLabel(layout: LabelLayout, column: 0 | 1, row: 0 | 1): Plac
 /** How far a two line label starts above where a one line label sits. */
 export const TWO_LINE_RISE = 15;
 
-/** The width of the page counter's digits and of its slash, in the title's size: 7 and 5. */
-const COUNTER_DIGIT = 7;
-const COUNTER_SLASH = 5;
+/**
+ * The width of a counter's number and of its slash in the title's size of a ladder: in Logitech's
+ * letters every digit is 7 and the slash 5, and in ours the digits are measured one by one.
+ */
+const counterWidth = (ladder: readonly LabelSize[], text: string): number =>
+  textWidthIn(ladder[TITLE_RUNG] as LabelSize, text) ?? 0;
 /** The gap the title keeps from the counter's leftmost glyph on any page of its mode. */
 const TITLE_GAP = 3;
 
@@ -423,13 +447,12 @@ const TITLE_GAP = 3;
  * digit total moves all three left, `1/24` at 99, 106 and 111 and `10/12` starting at 92. A mode of one
  * page draws none. Every device mode page of the population, single and two digit totals alike.
  */
-export function pageCounter(page: number, total: number): PlacedText[] {
+export function pageCounter(page: number, total: number, ladder: readonly LabelSize[] = LABEL_SIZES): PlacedText[] {
   if (total < 2) return [];
-  const wide = (text: string): number => text.length * COUNTER_DIGIT;
-  const totalX = FOUR_SLOT_RIGHT_END - wide(String(total));
-  const slashX = totalX - COUNTER_SLASH;
+  const totalX = FOUR_SLOT_RIGHT_END - counterWidth(ladder, String(total));
+  const slashX = totalX - counterWidth(ladder, '/');
   return [
-    { text: String(page), x: slashX - wide(String(page)), y: 2 },
+    { text: String(page), x: slashX - counterWidth(ladder, String(page)), y: 2 },
     { text: '/', x: slashX, y: 2 },
     { text: String(total), x: totalX, y: 2 },
   ];
@@ -445,19 +468,24 @@ export function pageCounter(page: number, total: number): PlacedText[] {
  * joins them, and no whole name here falls between 98 and 106 pixels to test it in between. A mode of one page has no counter and its title may run to the right edge, which no title
  * here reaches. Undefined where a character has no width.
  */
-export function deviceModeTitle(name: string, total: number): string | undefined {
+export function deviceModeTitle(
+  name: string, total: number, ladder: readonly LabelSize[] = LABEL_SIZES,
+): string | undefined {
+  const title = ladder[TITLE_RUNG] as LabelSize;
+  // The widest counter: the page number as many digits as the total, every digit the widest one.
+  const widest = Math.max(...[...'0123456789'].map((digit) => counterWidth(ladder, digit)));
   const limit = total < 2
     ? FOUR_SLOT_RIGHT_END
-    : FOUR_SLOT_RIGHT_END - 2 * String(total).length * COUNTER_DIGIT - COUNTER_SLASH - TITLE_GAP;
-  const wide = textWidthIn(TITLE_SIZE, name);
-  if (wide !== undefined) return wide <= limit ? name : cut(TITLE_SIZE, name, limit);
+    : FOUR_SLOT_RIGHT_END - 2 * String(total).length * widest - counterWidth(ladder, '/') - TITLE_GAP;
+  const wide = textWidthIn(title, name);
+  if (wide !== undefined) return wide <= limit ? name : cut(title, name, limit);
   // A character with no width: the name is still measurable as too long when what precedes that
   // character already is, and then the cut stops short of it, `Panasonic CS-29FJ20S` cut at `CS-`
   // before its `J` is reached.
-  const unknown = [...name].findIndex((ch) => !TITLE_SIZE.widths.has(ch));
-  const before = textWidthIn(TITLE_SIZE, name.slice(0, unknown));
+  const unknown = [...name].findIndex((ch) => !title.widths.has(ch));
+  const before = textWidthIn(title, name.slice(0, unknown));
   if (before === undefined || before <= limit) return undefined;
-  return cut(TITLE_SIZE, name, limit);
+  return cut(title, name, limit);
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -470,14 +498,14 @@ export function deviceModeTitle(name: string, total: number): string | undefined
  * the device list's labels among them.
  */
 export function sizeOfSet(
-  c: Container, set: FontSet, map: { codes: ReadonlyMap<number, string> },
+  c: Container, set: FontSet, map: { codes: ReadonlyMap<number, string> }, ladder: readonly LabelSize[] = LABEL_SIZES,
 ): number | undefined {
   const own = new Map<string, number>();
   for (const [code, ch] of map.codes) {
     const glyph = glyphOf(c, set, code);
     if (glyph !== undefined && !own.has(ch)) own.set(ch, glyph.width);
   }
-  const found = LABEL_SIZES.findIndex((sizeOf) => {
+  const found = ladder.findIndex((sizeOf) => {
     if (sizeOf.height !== set.height) return false;
     let shared = 0;
     for (const [ch, wide] of own) {
@@ -493,12 +521,21 @@ export function sizeOfSet(
 
 /** Every font of a configuration, by the rung of `LABEL_SIZES` it is, in font order. */
 export function fontsBySize(
-  c: Container, map: { codes: ReadonlyMap<number, string> },
+  c: Container, map: { codes: ReadonlyMap<number, string> }, ladder: readonly LabelSize[] = LABEL_SIZES,
 ): Map<number, number[]> {
   const out = new Map<number, number[]>();
   (fontSets(c) ?? []).forEach((set, font) => {
-    const found = sizeOfSet(c, set, map);
+    const found = sizeOfSet(c, set, map, ladder);
     if (found !== undefined) out.set(found, [...(out.get(found) ?? []), font]);
   });
   return out;
+}
+
+/**
+ * The ladder a configuration's letters are measured in: ours, `OXANIUM_LABEL_SIZES`, where a set of the
+ * title's size is one of our faces, which is every configuration `withOxaniumFonts` has re-lettered, and
+ * Logitech's otherwise. Re-lettering leaves no set of Logitech's widths behind, so the two never mix.
+ */
+export function ladderOf(c: Container, map: { codes: ReadonlyMap<number, string> }): readonly LabelSize[] {
+  return (fontsBySize(c, map, OXANIUM_LABEL_SIZES).get(TITLE_RUNG) ?? []).length > 0 ? OXANIUM_LABEL_SIZES : LABEL_SIZES;
 }

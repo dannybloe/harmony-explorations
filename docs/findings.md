@@ -47548,7 +47548,8 @@ Section 356's population was 22. **The 22nd, `h650_issue36_config`, another owne
 refused** here, at "Insert batteries": its character map leaves glyph code 44 of font 0, the "I" those
 words open with, unresolved, 73 of its 74 drawn codes resolved, where `h650_test_config_clean`'s map
 resolves the same code to "I". Why is not measured. That is the letters' item, `todo-compile-650.md` 8.2:
-the words of section 356's screens never needed an "I". `h650_issue8_config` is French and refused at the "w" of "software" on the first screen's second line, as in section 356.
+the words of section 356's screens never needed an "I". **Corrected by section 368**, which named that
+code `I` from its words, so this compile's firmware screens read since then. `h650_issue8_config` is French and refused at the "w" of "software" on the first screen's second line, as in section 356.
 
 **The blind control.** Every byte of the screens the description does not read, 136493 over the 21, is
 overwritten with `0xEE` in the bytes the reader is handed, in the layout's pieces and in the file the fonts
@@ -48787,8 +48788,9 @@ compile and 48801 bytes in all, none of them below the front, which sits at list
 them leaves on every compile: every place naming the list it named, renumbered, by the drop's own check
 below; both checksums good; the view of `compareViews` equal to the compile's; every list after it reached
 by something; and `checkWiring`, `checkScreenRecords` and `checkScreenTexts` passing. `checkFirmwareScreens`
-passes on 21, and refuses `h650_issue36_config` before the drop already, its font having no glyph for "I",
-todo 7.4's open letter, so it was not asked after. The state tables and mode 0 were not rebuilt on the 22,
+passed on 21 and refused `h650_issue36_config` before the drop already, its font having no glyph for "I",
+todo 7.4's open letter, so it was not asked after. **Since section 368 named that `I` it passes on all 22**,
+before the drop and after; the test said 21 until section 371's run found the count stale. The state tables and mode 0 were not rebuilt on the 22,
 and the drawn texts not compared. `harvest_650_two_devices`, section 360's 23rd, is refused by the
 comparison, since it holds no activity. What those lists are, on the clean compile, by the blind
 re-measure: 145 of the 323 are named by no place at all and the rest only from inside them; among them 88
@@ -50165,3 +50167,62 @@ letter is mostly greys. Not reproduced, so open and watched.
   `flatColour`.
 * `packages/codec/test/blending.test.ts`; `fonttable.test.ts`, the shape count.
 * Section 368's shape count corrected in place.
+
+## 371. A configuration in our letters is measured in our letters' widths, and a corner label too wide for its font goes down a size
+
+`todo-compile-650.md` 8.2.3. Harmony 650 only: our letters are built for its faces and nothing else.
+Sources checked first: `devicemode.ts` and `compose.ts` for what the composers measure, section 325 for the
+device mode rules, section 323 for the corner labels; no firmware or client question arises, since how a
+composer chooses a font is ours.
+
+**Lettering the donor broke recognition, not spelling.** With `ourLetters`, `assembleSetup` letters the
+donor before any composer runs, and the first composer refused: "no font of the title's size spells
+'Back'". Every set spelled `Back`; none was recognised as the title's size, because a size is recognised by
+its glyph widths, `sizeOfSet`, against a table of Logitech's widths, `LABEL_SIZES`, and re-lettering
+changes the widths of every set. The same table measures every label, title and counter the device mode
+composer lays out. So there are two tables now, a ladder each: Logitech's, and `OXANIUM_LABEL_SIZES`, the
+same six sizes at the same heights in the widths of the six label faces `oxanium_glyphs.py` letters them in,
+F15 to F10, with all 95 printable characters. `ladderOf` picks ours where a set of the title's size is one
+of our faces, and every function that measures takes the ladder, defaulting to Logitech's.
+
+**Every set keeps its size.** Over the 13 Harmony 650 compiles, 235 sets: the 169 Logitech's table sizes
+are sized at the same rung by ours once re-lettered, 13, 26, 78, 25, 14 and 13 from the largest down, the 66
+in the three regular faces are of no size in either, and Logitech's table sizes none of the re-lettered
+sets. `ladderOf` names Logitech's ladder on every original and ours on every re-lettered one. The two
+ladders do disagree about layout: of the 915 distinct texts the 13 compiles draw that the device mode rules
+can lay out in both, 408 come out in another size or broken differently.
+
+**Places, then the pages.** Re-lettering keeps every text where Logitech placed it, and the composers check
+the donor's pages against what they build, the bottom word centred among them: `Back` is at x 49 in
+Logitech's letters and 51 in ours, which refused the next attempt. So the assembly places the donor's texts
+again in our letters right after lettering, `describeScreenTexts` and `withScreenTexts`, as its text step
+does for the whole result at the end. The page counter's places were a constant, `FOUR_SLOT_COUNTER_X`,
+106, 113 and 118, which is the right edge chain in Logitech's letters, digits 7 wide and the slash 5; in ours
+the digits are 6 and the slash 6, so the chain is 107, 113 and 119, `fourSlotCounterX`. Every digit of the
+title's size is one width in both ladders, so `1/2` stands for every one digit counter.
+
+**A corner label too wide for its font goes down a size.** Oxanium's `T` and `t` are wider than Logitech's in
+the largest size, 10 and 6 where Logitech's are 8 and 5, so `Teletext`, 58 pixels in Logitech's letters, is
+60 in ours, and a corner holds 59. The activity screen composer refused a label the page's font cannot
+hold, "give it a shorter label", which on the test setup's own Plasma kijken screen would refuse a label
+Logitech's compile draws. Logitech's compiler draws `Antenna`, 60 pixels in the page's font, in another
+font, section 323, and walks the sizes down by the same test on device mode pages, section 325, so a corner
+label now does too: the first smaller set of the ladder, of the same colours as the page's label font and
+none of the title's, counter's or bottom word's, in which it fits on one line or two. `Teletext` is drawn in
+the F14W set one size down, and the other three labels stay in the page's font. What the compiler's choice
+rests on beyond width is still not read, section 323's 16 labels drawn smaller that would fit, so this is
+our rule and not a reproduction of theirs.
+
+**The result.** The test setup with the Plasma kijken screen assembles on Logitech's starting compile in
+our letters, passes its checks, shows what Logitech's compile of the setup shows but for the menu's order,
+and keeps every set in our letters spelling every printable character. On the smallest compile, two devices
+and no activity, no refusal names a font any more where three of five did; all five meet the menu reader's
+refusal of a compile with no activity, which placing the texts in our letters reaches first.
+`fontThatSpells` keeps its fallback: the composers serve the Harmony One, 600, 525 and 880 and assemblies
+in Logitech's letters, and in ours it is unreachable, since every set spells all 95 characters, 8.2.1.
+
+* `packages/codec/src/devicemode.ts`, `OXANIUM_LABEL_SIZES`, `TITLE_RUNG`, `ladderOf` and the ladder
+  parameter; `compose.ts`, `fourSlotLabelLines`, `smallerLabelFonts`, `fourSlotCounterX`;
+  `assemble.ts`, `ourLetters`.
+* `packages/codec/test/devicemode.test.ts`, the ladder and the 13 compiles' sizes; `assemble.test.ts`, the
+  assembly in our letters and the smallest compile's refusals.

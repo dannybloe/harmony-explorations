@@ -27,6 +27,7 @@ import {
   buildScreenTexts,
   buildWiring,
   checkFirmwareScreens,
+  checkOxaniumFonts,
   checkScreenRecords,
   checkScreenTexts,
   checkWiring,
@@ -42,6 +43,7 @@ import {
   MAP_VALUE_OPCODE,
   devices,
   dropLists,
+  fontSets,
   inActivityOrder,
   activityEntriesByName,
   layOutContainer,
@@ -49,6 +51,7 @@ import {
   modeRecords,
   namedLists,
   parse,
+  screenStrings,
   setupView,
   stateVariables,
   takeApart,
@@ -142,8 +145,9 @@ test('dropping every list a Logitech compile reaches by nothing changes nothing 
       passing.set(tally, (passing.get(tally) ?? 0) + 1);
     }
   }
-  // `h650_issue36_config`'s firmware screens do not read before the drop either.
-  assert.deepEqual(Object.fromEntries(passing), { 'firmware screens': 21, texts: 22 });
+  // All 22 read before the drop and after. `h650_issue36_config`'s firmware screens did not read until
+  // section 368 named its capital `I`, which their battery screen spells, and this said 21 until then.
+  assert.deepEqual(Object.fromEntries(passing), { 'firmware screens': 22, texts: 22 });
   assert.equal(sites, 232309);
   assert.equal(dropped, 6528);
   assert.equal(bytes, 48801);
@@ -425,6 +429,32 @@ test('with no screen stated, the composed activity\'s screen is empty: the menu\
   assert.equal(texts.filter((one) => one.text.startsWith('activity menu|')).length, 8);
 });
 
+test('8.2.3: in our letters the test setup assembles on Logitech\'s starting compile with every label in its page\'s font, and Teletext, too wide for it in ours, a size down',
+     needing(skipWithoutIrArchive(), skipUnless('h650_start_config', 'h650_test_config_clean')), () => {
+  const out = assembleSetup(setupOf('h650-test.json'), {
+    donor: require_('h650_start_config'), ...composing(), screens: { 'Plasma kijken': PLASMA_KIJKEN_SCREEN }, ourLetters: true,
+  });
+  assert.deepEqual(out.composed, { devices: [], activities: ['Plasma kijken'] });
+  assert.ok(out.container.allChecksPass);
+  assert.deepEqual(compareViews(setupView(out.container), setupView(containerOf('h650_test_config_clean')), { menuOrder: false }), []);
+  // Every set still our letters and spelling every printable character, so no composer had to borrow one.
+  assert.ok(out.faces !== undefined);
+  checkOxaniumFonts(out.container, out.faces);
+  // The composed working screen: the title, the four labels and the bottom word, three labels in the
+  // page's label font and Teletext, 60 pixels in it, in a set one size down of the same colours.
+  const program = Math.max(...screenStrings(out.container).filter((one) => one.text === 'Radio').map((one) => one.program));
+  const drawn = screenStrings(out.container).filter((one) => one.program === program);
+  assert.deepEqual(drawn.map((one) => one.text), ['Plasma kijken', 'Teletext', 'DVR', 'Aspect', 'Radio', 'Devices']);
+  const sets = fontSets(out.container)!;
+  const labels = drawn.slice(1, -1);
+  assert.deepEqual(labels.map((one) => one.text), ['Teletext', 'DVR', 'Aspect', 'Radio']);
+  const labelFont = labels[1]!.font;
+  assert.ok(labels.slice(1).every((one) => one.font === labelFont));
+  assert.equal(sets[labelFont]!.height, 15);
+  assert.equal(sets[labels[0]!.font]!.height, 14);
+  assert.equal(out.faces[labels[0]!.font]!.face, 'F14W');
+});
+
 test('the smallest Harmony 650 compile the lab registers, two devices and no activity, takes no composer: the device composer knows the activity menu by its activity rows and it has none, its fonts lack letters, and an activity needs another to be told apart from',
      needing(skipWithoutIrArchive(), skipUnless('harvest_650_two_devices')), () => {
   const smallest = require_('harvest_650_two_devices');
@@ -457,6 +487,21 @@ test('the smallest Harmony 650 compile the lab registers, two devices and no act
     Switch: 'the activity menu does not map the key under Devices through the activity counter',
     'Sony HT': 'no font in this config spells \'Eject\'',
   });
+  // In our letters no refusal names a font, 8.2.3: every set spells every printable character, and what is
+  // left is the menu reader, which placing the compile's texts in our letters meets before any composer.
+  const ours = (name: string): string => {
+    const setup = setupOf('h650-test.json');
+    const one = { devices: setup.devices.filter((d) => ['LG TV', 'Denon', name].includes(d.name)), activities: [] };
+    try {
+      assembleSetup(one, { donor: smallest, ...composing(), ourLetters: true });
+      return 'composed';
+    } catch (error) {
+      return (error as Error).message;
+    }
+  };
+  for (const name of ['Plasma', 'KPN', 'Kodi', 'Switch', 'Sony HT']) {
+    assert.equal(ours(name), 'the menus are not read: the activity menu does not map the key under Devices through the activity counter', name);
+  }
   // And an activity on its own two devices: with an input, the television has no input variable to put it
   // on, nor has the receiver, since this compile gave neither one; without, the activity composer refuses.
   const tv = (input?: string): SetupDescription => ({

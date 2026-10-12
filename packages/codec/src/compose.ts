@@ -133,8 +133,8 @@ import {
 } from './inventory.ts';
 import { excise, relocate } from './relocate.ts';
 import {
-  deviceModeTitle, fontsBySize, HARD_KEYS, labelLayout, LABEL_SIZES, LABEL_WIDTH, LABEL_WRAP_WIDTH, pageCounter,
-  placeLabel, TITLE_SIZE, TWO_LINE_RISE, wrapAtSpaces,
+  deviceModeTitle, fontsBySize, HARD_KEYS, labelLayout, LABEL_WIDTH, LABEL_WRAP_WIDTH, ladderOf, pageCounter, sizeOfSet,
+  placeLabel, TITLE_RUNG, TWO_LINE_RISE, wrapAtSpaces,
 } from './devicemode.ts';
 import { type ActivityKey, activityKeyEntry, setActivityKey } from './activitykeys.ts';
 import { applyEdits } from './edit.ts';
@@ -3472,8 +3472,9 @@ export function composeDeviceScreen(
  */
 
 /**
- * Break a corner label the way the compiler does, and refuse what it would draw in another font: a third
- * line, or a line wider than a corner holds. Returns the glyph codes per line, one or two.
+ * Break a corner label the way the compiler does, and where its font cannot hold it, a third line or a
+ * line wider than a corner holds, draw it in the first of `smaller` that can, or refuse it. Returns the
+ * font and the glyph codes per line, one or two.
  *
  * **The rule is `devicemode.ts`'s**, section 330: a label with no space stays whole, one no wider than
  * `LABEL_WRAP_WIDTH` stays whole, and a wider one is broken by `wrapAtSpaces`, measured here in the
@@ -3484,35 +3485,85 @@ export function composeDeviceScreen(
  * top row and 75 and 90 in the bottom, on all 880 such labels section 323 counted, which is the label
  * font's line height and also had a copy here.
  *
- * What it does not cover is a label the compiler draws in another font, which is not chosen by width
- * alone and is not composed, so a label too wide for two lines of this font is refused.
+ * **A label its font cannot hold goes down a size**, `smaller`, `todo-compile-650.md` 8.2.3: the compiler
+ * draws `Antenna`, 60 pixels in the page's font, in another font, section 323, the one such corner label
+ * in its compiles, and on a device mode page it walks the sizes down by the same test, section 325. It is
+ * the case our letters make common, whose `T` and `t` are wider than Logitech's in the largest size, so
+ * `Teletext`, 58 pixels in Logitech's letters, is 60 in ours. What the compiler's choice rests on beyond
+ * width is not read, section 323's 16 labels drawn smaller that would fit, and no rule here reproduces it.
  */
 function fourSlotLabelLines(
   map: NonNullable<ReturnType<typeof characterMap>>, c: Container, set: FontSet, font: number, label: string,
-): number[][] {
-  const width = (text: string): number => textWidth(c, set, codesFor(map, c, set, text, font));
-  const lines = !label.includes(' ') || width(label) <= LABEL_WRAP_WIDTH
-    ? [label]
-    : wrapAtSpaces(label, width) as string[];
-  if (lines.length > 2) {
-    throw new ComposeError(`'${label}' breaks onto ${lines.length} lines and a corner holds two in its font: `
-      + 'give it a shorter label');
-  }
-  for (const line of lines) {
-    const wide = width(line);
-    if (wide > LABEL_WIDTH) {
-      throw new ComposeError(`'${line}' is ${wide} pixels wide and a corner holds ${LABEL_WIDTH}: `
-        + 'give it a shorter label');
+  smaller: readonly number[] = [],
+): { font: number; lines: number[][] } {
+  let refusal: ComposeError | undefined;
+  for (const one of [font, ...smaller]) {
+    const oneSet = one === font ? set : (fontSets(c) ?? [])[one] as FontSet;
+    const width = (text: string): number => textWidth(c, oneSet, codesFor(map, c, oneSet, text, one));
+    const lines = !label.includes(' ') || width(label) <= LABEL_WRAP_WIDTH
+      ? [label]
+      : wrapAtSpaces(label, width) as string[];
+    const tooWide = lines.find((line) => width(line) > LABEL_WIDTH);
+    if (lines.length <= 2 && tooWide === undefined) {
+      return { font: one, lines: lines.map((line) => codesFor(map, c, oneSet, line, one)) };
     }
+    // The refusal names the page's own font, the one a shorter label would be drawn in.
+    refusal ??= lines.length > 2
+      ? new ComposeError(`'${label}' breaks onto ${lines.length} lines and a corner holds two in its font: `
+        + 'give it a shorter label')
+      : new ComposeError(`'${tooWide}' is ${width(tooWide as string)} pixels wide and a corner holds ${LABEL_WIDTH}: `
+        + 'give it a shorter label');
   }
-  return lines.map((line) => codesFor(map, c, set, line, font));
+  throw refusal as ComposeError;
 }
+
+/**
+ * The fonts a corner label in `font` may go down to, smallest last: every set of a smaller size of the
+ * configuration's ladder, `ladderOf`, drawn in the same colours as `font`, since a set carries its colour
+ * in its glyphs and a label in the title's green showed as its shadow alone at the bench, and none of
+ * `avoid`. Empty where `font` is of no size the ladder knows.
+ */
+function smallerLabelFonts(
+  c: Container, map: NonNullable<ReturnType<typeof characterMap>>, font: number, avoid: ReadonlySet<number>,
+): number[] {
+  const sets = fontSets(c) ?? [];
+  const ladder = ladderOf(c, map);
+  const rung = sizeOfSet(c, sets[font] as FontSet, map, ladder);
+  if (rung === undefined) return [];
+  const colours = (set: FontSet): string => {
+    const seen = new Set<number>();
+    for (const code of map.codes.keys()) {
+      for (const row of glyphOf(c, set, code)?.rows ?? []) for (const p of row) if (p !== undefined) seen.add(p);
+    }
+    return [...seen].sort((a, b) => a - b).join(',');
+  };
+  const own = colours(sets[font] as FontSet);
+  const bySize = fontsBySize(c, map, ladder);
+  return [...bySize.keys()].filter((k) => k > rung).sort((a, b) => a - b)
+    .flatMap((k) => bySize.get(k) ?? [])
+    .filter((one) => !avoid.has(one) && colours(sets[one] as FontSet) === own);
+}
+
 /**
  * The page counter's three glyphs, `n`, `/`, `m`, at these x on the title's y: a corner page's, when
  * its mode has two to nine pages, 98 of 98. A two row list's pages draw it at `0x63`, `0x6A`, `0x6F`
- * and a mode of ten pages or more further left, neither of which the composer writes.
+ * and a mode of ten pages or more further left, neither of which the composer writes. In Logitech's
+ * letters; `fourSlotCounterX` gives the places in a configuration's own.
  */
 export const FOUR_SLOT_COUNTER_X: readonly [number, number, number] = [0x6a, 0x71, 0x76];
+
+/**
+ * A corner page's counter places in the letters a configuration carries, `ladderOf`: the chain
+ * `pageCounter` puts against the right edge, which is `FOUR_SLOT_COUNTER_X` in Logitech's letters and
+ * `107, 113, 119` in ours, `todo-compile-650.md` 8.2.3. Measured on `1/2`, which stands for every one
+ * digit counter because every digit of the title's size is one width in both ladders, which
+ * `devicemode.test.ts` holds.
+ */
+export function fourSlotCounterX(c: Container): readonly [number, number, number] {
+  const map = characterMap(c);
+  if (map === undefined) return FOUR_SLOT_COUNTER_X;
+  return pageCounter(1, 2, ladderOf(c, map)).map((one) => one.x) as [number, number, number];
+}
 export const FOUR_SLOT_TITLE_XY: readonly [number, number] = [0, 2];
 
 /** The opcode sequence of a device mode page's chrome, around the part a composer writes. */
@@ -3778,8 +3829,7 @@ function bottomWord(c: Container, word: string): { font: number; codes: number[]
   const map = characterMap(c);
   if (map === undefined) throw new ComposeError('the config draws no text this can spell from');
   const sets = fontSets(c) ?? [];
-  const titleRung = LABEL_SIZES.indexOf(TITLE_SIZE);
-  for (const font of fontsBySize(c, map).get(titleRung) ?? []) {
+  for (const font of fontsBySize(c, map, ladderOf(c, map)).get(TITLE_RUNG) ?? []) {
     let codes: number[];
     try {
       codes = codesFor(map, c, sets[font] as FontSet, word, font);
@@ -4746,7 +4796,7 @@ export function fourSlotMenuWords(
   const word = MENU_BOTTOM_WORD[kind];
   return {
     title: MENU_TITLE[kind],
-    counterX: kind === 'two row device list' ? TWO_ROW_COUNTER_X : FOUR_SLOT_COUNTER_X,
+    counterX: kind === 'two row device list' ? TWO_ROW_COUNTER_X : fourSlotCounterX(c),
     bottom: { word, ...bottomWord(c, word) },
   };
 }
@@ -5140,6 +5190,12 @@ function fourSlotPageProgram(
      * is what every caller passed before the activity screen wrapped its labels.
      */
     second?: readonly (readonly number[] | undefined)[];
+    /**
+     * The font of each label, where `fourSlotLabelLines` took one a size down: a font select goes in
+     * front of a label only where the font changes, and its two lines sit its own height apart, as
+     * `placeLabel` puts them. Omitted, every label is in the template's label font.
+     */
+    fonts?: readonly number[];
   },
 ): Arch14Program {
   const text = (x: number, y: number, codes: readonly number[]): number[] =>
@@ -5147,20 +5203,26 @@ function fourSlotPageProgram(
   const middle: number[] = [OP_FONT, template.titleFont,
     ...text(FOUR_SLOT_TITLE_XY[0], FOUR_SLOT_TITLE_XY[1], page.titleCodes)];
   if (page.counter !== undefined) {
+    const counterX = fourSlotCounterX(c);
     middle.push(OP_FONT, template.counterFont,
-      ...page.counter.flatMap((codes, k) => text(FOUR_SLOT_COUNTER_X[k] as number, FOUR_SLOT_TITLE_XY[1], codes)));
+      ...page.counter.flatMap((codes, k) => text(counterX[k] as number, FOUR_SLOT_TITLE_XY[1], codes)));
   }
-  if (page.labels.length > 0) middle.push(OP_FONT, template.labelFont);
+  let selected: number | undefined;
   page.labels.forEach((codes, k) => {
     const item = FOUR_SLOT_ITEMS[k] as (typeof FOUR_SLOT_ITEMS)[number];
+    const font = page.fonts?.[k] ?? template.labelFont;
+    if (font !== selected) middle.push(OP_FONT, font);
+    selected = font;
+    const set = font === template.labelFont ? measuring : (fontSets(c) ?? [])[font] as FontSet;
     const xOf = (line: readonly number[]): number =>
-      item.column === 0 ? FOUR_SLOT_LEFT_X : FOUR_SLOT_RIGHT_END - textWidth(c, measuring, line);
+      item.column === 0 ? FOUR_SLOT_LEFT_X : FOUR_SLOT_RIGHT_END - textWidth(c, set, line);
     const second = page.second?.[k];
     if (second === undefined) {
       middle.push(...text(xOf(codes), FOUR_SLOT_LABEL_Y[item.row], codes));
     } else {
-      middle.push(...text(xOf(codes), FOUR_SLOT_LABEL_Y[item.row] - TWO_LINE_RISE, codes));
-      middle.push(...text(xOf(second), FOUR_SLOT_LABEL_Y[item.row], second));
+      const top = FOUR_SLOT_LABEL_Y[item.row] - TWO_LINE_RISE;
+      middle.push(...text(xOf(codes), top, codes));
+      middle.push(...text(xOf(second), font === template.labelFont ? FOUR_SLOT_LABEL_Y[item.row] : top + set.height, second));
     }
   });
   const length = 1 + 5 + template.chrome.headLength + template.chrome.tailLength + middle.length;
@@ -5332,7 +5394,9 @@ function compiledDeviceModePages(
   const map = characterMap(c);
   if (map === undefined) throw new ComposeError('the config draws no text this can spell from');
   const sets = fontSets(c) ?? [];
-  const bySize = fontsBySize(c, map);
+  // Our letters are measured in our widths, Logitech's in theirs, `ladderOf`.
+  const ladder = ladderOf(c, map);
+  const bySize = fontsBySize(c, map, ladder);
   const substituted: string[] = [];
   const spell = (font: number, text: string): number[] | undefined => {
     const set = sets[font];
@@ -5356,7 +5420,7 @@ function compiledDeviceModePages(
       const codes = texts.map((text) => spell(font, text));
       if (codes.every((one) => one !== undefined)) return { font, codes: codes as number[][] };
     }
-    const height = rung === undefined ? sets[preferred]?.height ?? 0 : (LABEL_SIZES[rung]?.height ?? 0);
+    const height = rung === undefined ? sets[preferred]?.height ?? 0 : (ladder[rung]?.height ?? 0);
     const able = sets.map((_, font) => font)
       .filter((font) => !avoid.has(font) && texts.every((text) => spell(font, text) !== undefined))
       .sort((a, b) => Math.abs((sets[a] as FontSet).height - height) - Math.abs((sets[b] as FontSet).height - height));
@@ -5393,8 +5457,8 @@ function compiledDeviceModePages(
   };
 
   // The title, the same on every page.
-  const titleRung = LABEL_SIZES.indexOf(TITLE_SIZE);
-  const ruled = deviceModeTitle(title, pageCount);
+  const titleRung = TITLE_RUNG;
+  const ruled = deviceModeTitle(title, pageCount, ladder);
   let titleText: CompiledText;
   if (ruled !== undefined) {
     const one = pick(titleRung, [ruled], template.titleFont, `title '${title}'`);
@@ -5402,7 +5466,7 @@ function compiledDeviceModePages(
   } else {
     // The limit `deviceModeTitle` would have applied, left of the widest counter less its gap.
     const limit = pageCount < 2 ? FOUR_SLOT_RIGHT_END
-      : (pageCounter(pageCount, pageCount)[0] as { x: number }).x - 3;
+      : (pageCounter(pageCount, pageCount, ladder)[0] as { x: number }).x - 3;
     const one = unruled(title, template.titleFont, limit, `title '${title}'`);
     titleText = { font: one.font, codes: one.codes, x: FOUR_SLOT_TITLE_XY[0], y: FOUR_SLOT_TITLE_XY[1] };
   }
@@ -5412,7 +5476,7 @@ function compiledDeviceModePages(
   // where the size changes, which two sets of one size side by side would break, and the set the first
   // label happens to fit need not spell the second.
   const perPageOf = FOUR_SLOT_ITEMS.length;
-  const layouts = rows.map((row) => labelLayout(row.label));
+  const layouts = rows.map((row) => labelLayout(row.label, ladder));
   const shared = new Map<string, number>();
   layouts.forEach((layout, index) => {
     if (layout === undefined) return;
@@ -5432,7 +5496,7 @@ function compiledDeviceModePages(
       const x = item.column === 0 ? FOUR_SLOT_LEFT_X : FOUR_SLOT_RIGHT_END - width(one.font, one.codes);
       return [{ font: one.font, codes: one.codes, x, y: FOUR_SLOT_LABEL_Y[item.row] }];
     }
-    const placed = placeLabel(layout, item.column, item.row);
+    const placed = placeLabel(layout, item.column, item.row, ladder);
     const chosen = pick(layout.size, layout.lines,
                         shared.get(`${Math.floor(index / perPageOf)}:${layout.size}`) ?? template.labelFont,
                         `label '${row.label}'`, chromeFonts);
@@ -5448,7 +5512,7 @@ function compiledDeviceModePages(
 
   const perPage = FOUR_SLOT_ITEMS.length;
   const pages = Array.from({ length: pageCount }, (_, p): CompiledPage => {
-    const counter = pageCounter(p + 1, pageCount);
+    const counter = pageCounter(p + 1, pageCount, ladder);
     const counterFont = counter.length === 0 ? undefined
       : pick(titleRung, counter.map((one) => one.text), template.counterFont, 'the page counter');
     return {
@@ -7447,12 +7511,16 @@ function composeFourSlotActivityScreen(
   if (pageCount > 9) throw new ComposeError('a page counter of two digits is not composed');
   const titleCodes = codesFor(charMap, c, setOf(device.titleFont), label, device.titleFont);
   const titleWidth = textWidth(c, setOf(device.titleFont), titleCodes);
-  const titleRoom = (pageCount > 1 ? FOUR_SLOT_COUNTER_X[0] : FOUR_SLOT_SCREEN_WIDTH) - FOUR_SLOT_TITLE_XY[0];
+  const titleRoom = (pageCount > 1 ? fourSlotCounterX(c)[0] : FOUR_SLOT_SCREEN_WIDTH) - FOUR_SLOT_TITLE_XY[0];
   if (titleWidth > titleRoom) {
     throw new ComposeError(`'${label}' is ${titleWidth} pixels wide and the working screen's title holds ${titleRoom}`);
   }
   // Each label broken the way the compiler breaks a corner label, section 323: one line or two.
-  const rowLines = rows.map((row) => fourSlotLabelLines(charMap, c, setOf(device.labelFont), device.labelFont, row.label));
+  const smaller = smallerLabelFonts(c, charMap, device.labelFont,
+                                   new Set([device.titleFont, device.counterFont, device.device.backFont]));
+  const rowLabels = rows.map((row) =>
+    fourSlotLabelLines(charMap, c, setOf(device.labelFont), device.labelFont, row.label, smaller));
+  const rowLines = rowLabels.map((one) => one.lines);
   const existingLists = c.actionLists()?.length ?? 0;
   for (const row of rows) {
     if (!Number.isInteger(row.list) || row.list < 0 || row.list >= existingLists) {
@@ -7504,6 +7572,7 @@ function composeFourSlotActivityScreen(
       counter: pageCount > 1 ? [digitCodes(p + 1), slashCodes, digitCodes(pageCount)] : undefined,
       labels: onPage.map((_, k) => (rowLines[p * perPage + k] as number[][])[0] as number[]),
       second: onPage.map((_, k) => (rowLines[p * perPage + k] as number[][])[1]),
+      fonts: onPage.map((_, k) => (rowLabels[p * perPage + k] as { font: number }).font),
     }));
   });
 
