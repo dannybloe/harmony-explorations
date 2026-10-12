@@ -54,7 +54,8 @@
  *
  * Arch 14 only, the Harmony 600, 650 and 700. Read only towards hardware: the result is pieces.
  */
-import { ACTIVITY_MENU_MARKER_VALUE, DEVICE_MENU_MARKER_VALUE } from './shared/menus.ts';
+import { ACTIVITY_MENU_MARKER_VALUE, DEVICE_MENU_MARKER_VALUE, menuMarkerOf } from './shared/menus.ts';
+import { SCAN_FOUR_TAG, batteryPrograms, holdsLogitechLook } from './families/four-slot/chrome.ts';
 import { MAP_VALUE_OPCODE } from './inventory.ts';
 import type { Container, Instruction } from './gspm.ts';
 import {
@@ -101,7 +102,7 @@ import {
   ACTION_LIST_INDEX_OPCODE, type ModePage, type ModeRecord, type TaggedList, modePages, modeRecords, pageListCopies, taggedList,
   taggedListBytes,
 } from './sections.ts';
-import { type ScreenInstruction, screenProgram } from './screen.ts';
+import { SCREEN_DRAW_IMAGE, SCREEN_DRAW_IMAGE_AT, type ScreenInstruction, screenProgram } from './screen.ts';
 import { describeWiring } from './wiring.ts';
 import type { PieceTarget } from './statetables.ts';
 
@@ -122,12 +123,6 @@ export const OFF_TITLE = 'Turning system off';
 const PAGE_RECORD_LENGTH = 6;
 /** A mode entry: kind, the back pointer, the page count, then three bytes per page, section 52. */
 const ENTRY_HEAD = 6;
-/**
- * The press of scan 4, which the reference names More Activities without having measured it. The
- * activity menu maps it through the same record a device list's centre key maps through, back to the
- * running activity, section 352's 151 entries.
- */
-const SCAN_FOUR_TAG = (KEY_EVENT_PRESS << KEY_EVENT_SHIFT) | 4;
 
 
 /** One row of a menu: what it enters or selects, and its label as the configuration spells it. */
@@ -537,7 +532,7 @@ export function describeScreenRecords(
 ): ScreenRecordsDescribed {
   const modes = screenRecordModes(c, layout);
   const reading = recordReading(c, layout, read);
-  const { value, value16, frame, targetOf } = reading;
+  const { value, value16, value24, frame, targetOf } = reading;
 
   // A menu: its own key map's operands, its rows and their lists, its fonts and its pictures.
   const menu = (kind: ScreenMenuSpec['kind']): { spec: ScreenMenuSpec; frame: RecordFrame } => {
@@ -553,13 +548,21 @@ export function describeScreenRecords(
     const backKey = operandOf(kind === 'idle device list' ? DEVICES_KEY_TAG : SCAN_FOUR_TAG);
     const devicesKey = kind === 'activity menu' ? operandOf(DEVICES_KEY_TAG) : undefined;
     const battery = operandOf(DEVICE_MODE_PROGRAM_TAG);
-    const chrome = fourSlotMenuChrome(c, kind);
-    if (chrome.battery !== battery) {
-      throw new ScreenRecordError(`the ${kind} runs program ${battery} where its battery program is ${chrome.battery}`);
+    // The program queued has to be a battery program, by structure; and where Logitech's artwork is held,
+    // the one drawing the look's battery icon, by content. Our look holds none, section 375.
+    if (!batteryPrograms(c).includes(battery)) {
+      throw new ScreenRecordError(`the ${kind} runs program ${battery}, which is no battery program`);
+    }
+    if (holdsLogitechLook(c)) {
+      const chrome = fourSlotMenuChrome(c, kind);
+      if (chrome.battery !== battery) {
+        throw new ScreenRecordError(`the ${kind} runs program ${battery} where its battery program is ${chrome.battery}`);
+      }
     }
     const rows: ScreenMenuRow[] = [];
     const slots: ScreenMenuSlot[] = [];
     let marker: number | undefined;
+    const pictures: { one?: PieceTarget; several?: PieceTarget; topBar?: PieceTarget; bottomBar?: PieceTarget } = {};
     let titleFont: number | undefined;
     let counterFont: number | undefined;
     f.pages.forEach((one, p) => {
@@ -571,6 +574,24 @@ export function describeScreenRecords(
       counterFont = content.counterFont;
       if (p + 1 < f.pages.length && content.labels.length !== capacity(kind)) {
         throw new ScreenRecordError(`the ${kind}'s page ${p + 1} is not full and is not its last`);
+      }
+      // The page's pictures, off its own address fields: its background is the first `0x02` it draws, the
+      // one item background on a page of one place or none and the crossed one on a page of more, and its
+      // two bars the first and the last `0x03`. Read rather than found by content, section 375.
+      const drawn = (ins: ScreenInstruction | undefined, what: string): PieceTarget => {
+        if (ins === undefined) throw new ScreenRecordError(`the ${kind}'s page ${p + 1} draws no ${what}`);
+        return targetOf(value24(ins.start + ins.length - 3));
+      };
+      const bars = one.program.filter((ins) => ins.opcode === SCREEN_DRAW_IMAGE_AT);
+      const background = drawn(one.program.find((ins) => ins.opcode === SCREEN_DRAW_IMAGE), 'background');
+      const pagePictures = { topBar: drawn(bars[0], 'top bar'), bottomBar: drawn(bars.at(-1), 'bottom bar') };
+      const role = content.labels.length > 1 ? 'several' : 'one';
+      for (const [name, target] of [[role, background], ['topBar', pagePictures.topBar], ['bottomBar', pagePictures.bottomBar]] as const) {
+        const was = pictures[name];
+        if (was !== undefined && (was.to !== target.to || was.offset !== target.offset)) {
+          throw new ScreenRecordError(`the ${kind}'s pages draw two different ${name} pictures`);
+        }
+        pictures[name] = target;
       }
       const bound = content.labels.flatMap((_, k) => placeScans(kind, k));
       if (one.list.entries.length !== bound.length || one.copy.entries.length !== bound.length) {
@@ -608,19 +629,22 @@ export function describeScreenRecords(
         slots.push(slot);
       });
     });
-    if (marker === undefined || titleFont === undefined || counterFont === undefined) {
-      throw new ScreenRecordError(`the ${kind} has no row`);
+    // A menu with no row, in a configuration with no device or no activity, writes no marker itself: it is
+    // the configuration's, `menuMarkerOf`, which holds every writer to one answer.
+    const written = marker ?? menuMarkerOf(c);
+    if (written === undefined) throw new ScreenRecordError(`the ${kind} has no row and the configuration names no menu marker`);
+    if (titleFont === undefined || counterFont === undefined || pictures.topBar === undefined || pictures.bottomBar === undefined) {
+      throw new ScreenRecordError(`the ${kind} has no page`);
     }
-    const picture = (address: number | undefined): PieceTarget | undefined => (address === undefined ? undefined : targetOf(address));
     return {
       frame: f,
       spec: {
-        kind, mode, rows, slots, titleFont, counterFont, backKey, battery, marker,
+        kind, mode, rows, slots, titleFont, counterFont, backKey, battery, marker: written,
         ...(devicesKey === undefined ? {} : { devicesKey }),
         pictures: {
-          ...(chrome.one === undefined ? {} : { one: picture(chrome.one) as PieceTarget }),
-          ...(chrome.several === undefined ? {} : { several: picture(chrome.several) as PieceTarget }),
-          topBar: targetOf(chrome.topBar), bottomBar: targetOf(chrome.bottomBar),
+          ...(pictures.one === undefined ? {} : { one: pictures.one }),
+          ...(pictures.several === undefined ? {} : { several: pictures.several }),
+          topBar: pictures.topBar, bottomBar: pictures.bottomBar,
         },
       },
     };
@@ -643,7 +667,19 @@ export function describeScreenRecords(
   }
   const select = offPage.program[1];
   if (select?.opcode !== 0x10) throw new ScreenRecordError('Off selects no font second');
-  const off: ScreenOffSpec = { mode: modes.off, font: value(select.start + 1), picture: targetOf(startupPicture(c)) };
+  // Its picture off its own address field, the first `0x02` it draws, and on a configuration in one of
+  // Logitech's looks held to that look's start up picture as well, which is how it was found before
+  // section 375.
+  const offImage = offPage.program.find((one) => one.opcode === SCREEN_DRAW_IMAGE);
+  if (offImage === undefined) throw new ScreenRecordError('Off draws no picture');
+  const offPicture = targetOf(value24(offImage.start + offImage.length - 3));
+  if (holdsLogitechLook(c)) {
+    const startup = targetOf(startupPicture(c));
+    if (startup.to !== offPicture.to || startup.offset !== offPicture.offset) {
+      throw new ScreenRecordError('Off draws another picture than the start up screens');
+    }
+  }
+  const off: ScreenOffSpec = { mode: modes.off, font: value(select.start + 1), picture: offPicture };
 
   // The texts drawn by reference to a copy outside the three screens.
   const homes = reading.homes();

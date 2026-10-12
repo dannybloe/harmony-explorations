@@ -951,7 +951,8 @@ export function buildWiring(spec: WiringSpec): BuiltWiring {
   const base = carried ? cat.screens.length : cat.screens.indexOf(NO_STATUS_SCREEN);
   const event = new Writer(5 + 4 * EVENT_COUNT).u24(base).u16(EVENT_COUNT);
   for (let k = 0; k < EVENT_COUNT; k += 1) event.u8(k).u24(carried ? base + k : base);
-  const eventMap = made(event.bytes, 'slot-4-event', []);
+  // Its base is what the description reads to tell the two forms apart, section 375.
+  const eventMap = made(event.bytes, 'slot-4-event', [0, 1, 2]);
 
   // Base slot 8's leading list.
   const lead = encodeList(cat.lead, symbols, generated);
@@ -1181,9 +1182,15 @@ export function describeWiring(layout: ContainerLayout): WiringSpec {
     throw new WiringError(`nothing names ${[...pending.keys(), ...entriesPending.map((e) => String(e.index))].join(', ')}`);
   }
 
+  // The status screens, by where the event map's base points: past the model's screens where they are
+  // carried, every compile's form, or at the blank that binds nothing where they are not, ours.
+  const eventBase = u24(tablePiece(layout, EVENT_MAP_SLOT).bytes, 0);
+  const statusScreens = eventBase === cat.screens.length ? undefined
+    : eventBase === cat.screens.indexOf(NO_STATUS_SCREEN) ? false : null;
+  if (statusScreens === null) throw new WiringError(`the event map's base, ${eventBase}, is neither form the wiring builds`);
   const record = (kind: SymbolKind): Record<string, number> => Object.fromEntries(symbols[kind]);
   return {
-    model, settings, activityKeys, activityCount, deviceTimers,
+    model, settings, activityKeys, activityCount, deviceTimers, ...(statusScreens === false ? { statusScreens } : {}),
     lists: record('lists'), modes: record('modes'), variables: record('variables'), maps: record('maps'), entries: record('entries'),
   };
 }

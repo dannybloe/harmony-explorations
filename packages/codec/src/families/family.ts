@@ -65,6 +65,18 @@ export interface Family<Choices extends CommonChoices = CommonChoices> {
   readonly choices: Choices;
   /** A device's own screen: its page or pages, `composeDeviceScreen`. */
   composeDeviceScreen(c: Container, label: string, rows: readonly ComposeRow[], options: WithChoices<ComposeScreenOptions, Choices>): ComposedScreen;
+  /**
+   * The activity menu's mode, or undefined where the configuration has none this family can find. How a
+   * family finds it differs: by structure on the four slot screens, section 375, by its rows on the touch
+   * screens, section 275.
+   */
+  activityMenu(c: Container): number | undefined;
+  /**
+   * The menu marker as a writer other than a menu row names it, or undefined where the family has none
+   * measured, which `menuMarkerOf` holds to the rows' answer: on the four slot screens the list the press of
+   * More Activities runs from base slot 9 entry 1 writes it 0 first, section 375.
+   */
+  menuMarkerWriter(c: Container): number | undefined;
   /** A row on the activity menu, once the shared prelude has found the menu and its marker. */
   composeActivityRow(
     c: Container, label: string, set: number, menu: number, marker: Instruction, options: WithChoices<ComposeActivityRowOptions, Choices>,

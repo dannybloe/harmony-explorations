@@ -26,7 +26,8 @@ import {
   SCREEN_TABLE_SLOT, SCREEN_TEXT_AT, SCREEN_TEXT_INLINE, type ScreenInstruction, screenProgram,
 } from '../../screen.ts';
 import { contentKey } from '../../screencategories.ts';
-import { ACTION_LIST_INDEX_OPCODE, modeRecords, type TaggedEntry, taggedList } from '../../sections.ts';
+import { ACTION_LIST_INDEX_OPCODE, handlerSets, modeRecords, type TaggedEntry, taggedList } from '../../sections.ts';
+import { STATE_WRITE_BASE } from '../../actions.ts';
 import { ComposeError } from '../../shared/core.ts';
 import { activityMenus } from '../../shared/menus.ts';
 import { codesFor, spellsIn, textWidth } from '../../shared/spelling.ts';
@@ -481,6 +482,18 @@ export function inlineHomes(c: Container): Map<string, number> {
 }
 
 /**
+ * Whether the configuration holds one of Logitech's device page looks whole, the artwork `deviceModeChrome`
+ * finds by content. A configuration in our look, section 366's state colours, holds none, so a reader
+ * checking against Logitech's artwork has nothing to check against there, section 375.
+ */
+export function holdsLogitechLook(c: Container): boolean {
+  const skin = (c.versionWord ?? -1) & 0xff;
+  const pictures = picturesByContent(c);
+  return DEVICE_PAGE_LOOKS.some((look) => look.skins.includes(skin)
+    && (['crossed', 'topBar', 'bottomBar', 'battery'] as const).every((role) => (pictures.get(look[role])?.length ?? 0) > 0));
+}
+
+/**
  * A device mode page's chrome in this configuration, built, `todo-compile-650.md` 6.2.6: the look its
  * skin and its pictures decide, the five pictures located by content, the battery program by
  * `batteryProgram`, and the bottom word spelled in the first font of the title's size, which is the
@@ -641,6 +654,50 @@ export function builtChrome(chrome: PageFrame): PageChrome {
 export const DEVICES_KEY_TAG = (KEY_EVENT_PRESS << KEY_EVENT_SHIFT) | 25;
 
 export const DEVICE_MODE_PROGRAM_TAG = 0x2d;
+
+/**
+ * The press of scan 4, which the reference names More Activities without having measured it. The
+ * activity menu maps it through the same record a device list's centre key maps through, back to the
+ * running activity, section 352's 151 entries.
+ */
+export const SCAN_FOUR_TAG = (KEY_EVENT_PRESS << KEY_EVENT_SHIFT) | 4;
+
+/**
+ * The activity menu of a Harmony 600, 650 or 700 configuration, by structure, section 375: **the one mode
+ * whose own key map maps the key under Devices through a base slot 14 record on the activity counter and
+ * binds the press of scan 4**. A device list maps that key through a record on the location and binds no
+ * scan 4; a working screen maps it through the counter and binds no scan 4 either. On all 23 compiles with
+ * activities it is the mode `activityMenuByRows` finds, and it also finds the menu on Logitech's compile
+ * with no activity, where scan 4 calls a list, and on ours, which has no row to find it by. Undefined
+ * where no mode has that shape; refused where two do.
+ */
+/**
+ * The menu marker as the wiring writes it, section 375: the list base slot 9 entry 1 runs on the press of
+ * More Activities, scan 4, opens by writing the marker 0, `wiring.ts`'s entry 1. The same variable the
+ * rows write on 24 of 24 compiles, Logitech's with no activity included, and on our empty configuration
+ * the only writer there is. Undefined where that list does not open with a write of 0.
+ */
+export function fourSlotMenuMarkerWriter(c: Container): number | undefined {
+  const entry = handlerSets(c)?.addresses[1];
+  const binding = entry === undefined ? undefined : taggedList(c, entry)?.entries.find((one) => one.tag === SCAN_FOUR_TAG);
+  if (binding?.opcode !== ACTION_LIST_INDEX_OPCODE) return undefined;
+  const first = c.actionLists()?.[binding.operand]?.[0];
+  if (first === undefined || first.opcode < STATE_WRITE_BASE || first.operand !== 0) return undefined;
+  return first.opcode - STATE_WRITE_BASE;
+}
+
+export function fourSlotActivityMenu(c: Container): number | undefined {
+  const counter = stateVariables(c).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME))?.index;
+  if (counter === undefined) return undefined;
+  const found: number[] = [];
+  (modeRecords(c) ?? []).forEach((record, mode) => {
+    const devices = record.entries.find((one) => one.tag === DEVICES_KEY_TAG);
+    if (devices?.opcode !== MAP_VALUE_OPCODE || (devices.operand & 0xff) !== counter) return;
+    if (record.entries.some((one) => one.tag === SCAN_FOUR_TAG)) found.push(mode);
+  });
+  if (found.length > 1) throw new ComposeError(`modes ${found.join(' and ')} both have the activity menu's own key map`);
+  return found[0];
+}
 
 /** One entry of a mode's own key map as a composer writes it: always the narrow form, so no flags. */
 export type KeyMapEntry = Pick<TaggedEntry, 'tag' | 'operand' | 'opcode'>;

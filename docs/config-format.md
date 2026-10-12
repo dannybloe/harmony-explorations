@@ -921,6 +921,13 @@ only the device mode's measured pair is answered and any other is refused. Which
 named follows no index, lower on seven compiles and higher on the six power hold ones, so it is read off
 the activity menu.
 
+**The activity menu is found by its record, not its rows**, section 375: it is the one mode whose own key
+map maps the centre key's press, `0x99`, through `0x72` on a record keyed by the activity counter and binds
+scan 4's press, `0x84`. That is the menu its activity rows find on 23 of 23 Harmony 600, 650 and 700
+compiles with an activity, and it finds the menu on the one compile with none, `harvest_650_two_devices`'
+mode 101, and on a configuration of ours with none. `fourSlotActivityMenu`; the rows' rule is
+`activityMenuByRows`, the Harmony One's and the calibration.
+
 **An arch 14 menu page, built**, section 334, on the 79 menus and 164 pages of the thirteen compiles: 40
 activity device lists of 75 pages, 13 idle ones of 24, 13 two row lists of 43 and 13 activity menus of
 22. `fourSlotMenuChrome` builds a kind's chrome and `checkFourSlotMenuPages` checks every page of every
@@ -981,6 +988,10 @@ name, 27 of 27. No action list reads it, 0 of 27. Rows are not its only writers:
 written 0 once on each of the 27, and 1 a further 2 to 9 times on each Harmony One configuration. Its
 index differs per configuration, sections 239 and 285, fifteen distinct over the 27. `menuMarkerOf`; `menuMarkerVariable` in
 `statetables.ts` is the record.
+**The write outside the rows is base slot 9 entry 1's**, section 375: its scan 4 press binding calls a list
+whose first instruction writes the marker 0, on 24 of 24 Harmony 600, 650 and 700 compiles, the rows
+agreeing on every one. So a configuration with no row still names its marker. `fourSlotMenuMarkerWriter`;
+the Harmony One is not read for it.
 
 **Its pictures differ from the device list's**: a page of one activity draws a picture the activities'
 own screens draw too, 3 of 3, and none of the 6 one item device pages beside it, and its full pages one picture of

@@ -48,9 +48,9 @@ import type { ContainerLayout, ContainerPiece, PieceRef } from './frame.ts';
 import { layOutContainer } from './frame.ts';
 import type { Container } from './gspm.ts';
 import { archSlot } from './gspm.ts';
-import { HARMONY_650_PICTURES, pictureRows } from './pictures.ts';
+import { HARMONY_650_PICTURES, type OurPictureName, buildOurPictures, pictureRows } from './pictures.ts';
 import {
-  BITMAP_ENCODED, SCREEN_QUEUE_INSTRUCTION, SCREEN_TABLE_SLOT, bitmapAt, encodeBitmap, pictureReference, reachablePrograms, screenProgram,
+  BITMAP_ENCODED, BITMAP_END, BITMAP_HEADER, BITMAP_RAW, SCREEN_QUEUE_INSTRUCTION, SCREEN_TABLE_SLOT, bitmapAt, encodeBitmap, pictureReference, reachablePrograms, screenProgram,
 } from './screen.ts';
 import { contentKey, modeRoles } from './screencategories.ts';
 import { buildScreenRecords, describeScreenRecords, screenRecordModes, withScreenRecords } from './screenrecords.ts';
@@ -101,6 +101,56 @@ export const stateBackgroundBytes = (colour: number): Uint8Array => flat(BACKGRO
 
 /** A state's battery corner patch, the 12 by 10 a battery program draws at 114, 112, in its colour, encoded. */
 export const statePatchBytes = (colour: number): Uint8Array => flat(PATCH_WIDTH, PATCH_HEIGHT, colour);
+
+/**
+ * The colours a picture's pixels hold, most frequent first, read off its bytes: a raw picture's pixels
+ * one after another and an encoded one's literal runs, each pixel high byte first, `encodeBitmap`.
+ */
+function pictureColours(bytes: Uint8Array): number[] {
+  const counts = new Map<number, number>();
+  const count = (at: number): void => {
+    const colour = ((bytes[at] as number) << 8) | (bytes[at + 1] as number);
+    counts.set(colour, (counts.get(colour) ?? 0) + 1);
+  };
+  if (bytes[0] === BITMAP_RAW) {
+    for (let at = BITMAP_HEADER; at + 1 < bytes.length; at += 2) count(at);
+  } else if (bytes[0] === BITMAP_ENCODED) {
+    for (let at = BITMAP_HEADER; at < bytes.length;) {
+      const control = bytes[at] as number;
+      at += 1;
+      if (control === BITMAP_END) break;
+      if ((control & 0x80) !== 0) continue;
+      for (let k = 0; k < control; k += 1, at += 2) count(at);
+    }
+  }
+  return [...counts].sort((a, b) => b[1] - a[1]).map(([colour]) => colour);
+}
+
+/**
+ * Which of our own pictures a picture is, by rebuilding it from the colours it holds: a state's background
+ * or corner patch from its one colour, a bar from its fill, and one of the six icon pictures,
+ * `buildOurPictures` with `icons`, from its two most frequent colours either way round. Undefined where none
+ * of them comes out byte for byte, which is every picture of Logitech's: the rule pictures are named by their
+ * content key instead, `describePictures`, and are not asked here. Section 375.
+ */
+export function ourPictureName(bytes: Uint8Array, icons: Readonly<Record<OurPictureName, string>>): string | undefined {
+  const colours = pictureColours(bytes);
+  const [first, second] = colours;
+  if (first === undefined) return undefined;
+  const same = (built: Uint8Array): boolean => built.length === bytes.length && built.every((value, k) => value === bytes[k]);
+  if (colours.length === 1 && bytes[0] === BITMAP_RAW) {
+    if (same(stateBackgroundBytes(first))) return 'state background';
+    if (same(statePatchBytes(first))) return 'state corner patch';
+  }
+  for (const name of ['top bar', 'bottom bar'] as const) if (same(barBytes(name, first))) return name;
+  const pairs = second === undefined ? [[first, first]] : [[first, second], [second, first]];
+  for (const [colour, background] of pairs) {
+    for (const [name, built] of buildOurPictures({ icons, colour: colour as number, background: background as number })) {
+      if (same(built)) return name;
+    }
+  }
+  return undefined;
+}
 
 /** One of the two bars in one colour, its shape kept: the top bar's sixteen full rows or the bottom bar's rounded band. */
 export function barBytes(name: 'top bar' | 'bottom bar', colour: number): Uint8Array {

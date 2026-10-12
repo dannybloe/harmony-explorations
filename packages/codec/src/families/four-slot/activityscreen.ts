@@ -440,7 +440,7 @@ function caseOrderOf(keys: readonly number[]): number[] | undefined {
  * working screen record's idle case, which queues a further record, section 336; one derivation for the
  * composer and the check.
  */
-function caseProgram(opcode: number, operand: number): Uint8Array {
+export function caseProgram(opcode: number, operand: number): Uint8Array {
   return new Writer(5).u8(SCREEN_QUEUE_INSTRUCTION).u16(operand).u8(opcode).u8(SCREEN_END).bytes;
 }
 

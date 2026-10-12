@@ -151,11 +151,12 @@ test('the rebuild takes no value from the bytes the builder owns: a blinded inpu
   assert.equal(generated, 16504);
   assert.equal(values + readAddresses + generated, 22464);
   assert.equal(readOutside, 1893);
-  // The blind overwrote the builder's bytes and the picture addresses, which the description reads by
-  // content rather than off these bytes. All but 10 were something else first, and those 10 are bytes of
-  // address fields, which the frame writes whatever a piece holds there.
-  assert.equal(blindedCount, 17326);
-  assert.equal(changed, 17316);
+  // The blind overwrote the builder's bytes, exactly those, since section 375 reads the pictures off the
+  // pages' own address fields where it read them by content and blinded them too. All but 4 were
+  // something else first, and those 4 are bytes of address fields, which the frame writes whatever a
+  // piece holds there.
+  assert.equal(blindedCount, 16504);
+  assert.equal(changed, 16500);
 });
 
 test('Off is All Off\'s working screen: the first mode the Off key map\'s first called list enters, drawing "Turning system off" over the three lines',

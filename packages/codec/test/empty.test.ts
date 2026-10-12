@@ -1,7 +1,8 @@
 /**
  * The Harmony 650 built from nothing, `todo-compile-650.md` 11.1.1 and plan 008. No lab: the point of
- * these is that a configuration comes out of the codec with no Logitech file as input. The one test that
- * reads the lab is a calibration, our corner program against every compile's, and it skips without it.
+ * these is that a configuration comes out of the codec with no Logitech file as input. The tests that read
+ * the lab are calibrations against every compile, our corner program and the structural readings of
+ * section 375, and they skip without it.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -15,10 +16,14 @@ import {
   EMPTY_FONT_SETS, EMPTY_MODES, EMPTY_VARIABLES, buildEmptyConfiguration, buildEmptySkeleton, emptyCodeOf, emptyVariable,
 } from '../src/families/four-slot/empty.ts';
 import { DEVICES_KEY_TAG, DEVICE_MODE_PROGRAM_TAG, batteryPrograms } from '../src/families/four-slot/chrome.ts';
-import { cornerProgram } from '../src/families/four-slot/empty.ts';
+import { cornerProgramAt } from '../src/families/four-slot/empty.ts';
 import { require_, skipUnless } from '@harmony/lab';
 import { archSlot, parse } from '../src/index.ts';
 import { checkFirmwareScreens } from '../src/firmwarescreens.ts';
+import { checkScreenRecords } from '../src/screenrecords.ts';
+import { attributeBytes } from '../src/assemble.ts';
+import { fourSlotActivityMenu, fourSlotMenuMarkerWriter } from '../src/families/four-slot/chrome.ts';
+import { activityMenuByRows, menuMarkerOf } from '../src/shared/menus.ts';
 
 const BUILT_AT = '2026-10-12T12:00:00';
 
@@ -175,33 +180,56 @@ const COMPILES = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 
 
 test('section 374: our corner program is every compile\'s, byte for byte but its four addresses, 70 of 70 on 24',
   skipUnless(...COMPILES), () => {
-    const picture = (): { bytes: Uint8Array; refs: []; owner: string } => ({ bytes: new Uint8Array(0), refs: [], owner: 'picture-bank' });
-    const ours = cornerProgram(picture(), picture());
+    // Read by `cornerProgramAt`, the one reading the attribution uses too: the three pieces in the
+    // compiler's order, back to back, each compared with its address fields blanked, then the four
+    // addresses, the two cases right behind the switch, each jumping to the tail.
     let count = 0;
     for (const name of COMPILES) {
       const c = parse(require_(name));
       const table = c.pointerArray(archSlot(14, 11))!;
       for (const index of batteryPrograms(c)) {
-        const root = table[index]!;
-        const at = c.blobOffsetOf(root)!;
-        // The three pieces in the compiler's order, back to back, each compared with its address fields
-        // blanked; then the four addresses: the two cases right behind the switch, each jumping to the tail.
-        let off = at;
-        for (const piece of ours) {
-          const theirs = Uint8Array.from(c.blob.subarray(off, off + piece.bytes.length));
-          for (const ref of piece.refs) theirs.fill(0, ref.at, ref.at + 3);
-          assert.deepEqual([...theirs], [...piece.bytes], `${name} entry ${index}`);
-          off += piece.bytes.length;
-        }
-        const u24 = (o: number): number => c.blob[o]! | (c.blob[o + 1]! << 8) | (c.blob[o + 2]! << 16);
-        assert.equal(c.blobOffsetOf(u24(at + 4)), at + ours[0]!.bytes.length, `${name} entry ${index}'s case 0`);
-        assert.equal(c.blobOffsetOf(u24(at + 10)), at + ours[0]!.bytes.length + ours[1]!.bytes.length, `${name} entry ${index}'s range`);
-        for (const k of [1, 2]) {
-          const caseAt = c.blobOffsetOf(u24(at + (k === 1 ? 4 : 10)))!;
-          assert.equal(u24(caseAt + 7) - root, 13, `${name} entry ${index} case ${k} jumps to the tail`);
-        }
+        const pieces = cornerProgramAt(c, table[index]!);
+        assert.ok(pieces !== undefined, `${name} entry ${index}`);
+        assert.deepEqual(pieces.map((one) => one.length), [18, 10, 10]);
         count += 1;
       }
     }
     assert.equal(count, 70);
+  });
+
+test('11.1.1.4: the empty configuration reads back as ours, its three screens rebuilt and every byte attributed to a generator, none carried', () => {
+  const c = buildEmpty().container;
+  assert.deepEqual(checkScreenRecords(c), { structure: 485, rows: 0, pages: 3 });
+  const a = attributeBytes(c);
+  assert.deepEqual(Object.fromEntries(a.carried), {});
+  assert.deepEqual(a.generated, {
+    frame: 136, addresses: 2910, description: 537, 'mode 0': 649, wiring: 1165, 'state tables': 480, 'screen records': 451,
+    'firmware screens': 4712, 'corner programs': 38, texts: 0, pictures: 237275, letters: 93702,
+  });
+  assert.equal(Object.values(a.generated).reduce((n, v) => n + v, 0), a.total);
+});
+
+test('section 375: the activity menu and the menu marker found by structure are the ones the rows find on 23 compiles, and found with no row on the other and on ours',
+  skipUnless(...COMPILES), () => {
+    let agree = 0;
+    for (const name of COMPILES) {
+      const c = parse(require_(name));
+      // The marker: the family's writer outside the rows joins the rows' own in `menuMarkerOf`, which refuses
+      // two variables, so an answer is their agreement. Every compile holds device rows.
+      assert.equal(menuMarkerOf(c), fourSlotMenuMarkerWriter(c), name);
+      const rows = activityMenuByRows(c);
+      if (rows === undefined) {
+        // The one compile with no activity: the rows find nothing, and the structure finds the menu.
+        assert.equal(name, 'harvest_650_two_devices');
+        assert.equal(fourSlotActivityMenu(c), 101);
+        continue;
+      }
+      assert.equal(fourSlotActivityMenu(c), rows, name);
+      agree += 1;
+    }
+    assert.equal(agree, 23);
+    const ours = buildEmpty().container;
+    assert.equal(activityMenuByRows(ours), undefined);
+    assert.equal(fourSlotActivityMenu(ours), EMPTY_MODES.activityMenu);
+    assert.equal(fourSlotMenuMarkerWriter(ours), emptyVariable('menuMarker'));
   });

@@ -70,6 +70,7 @@ import {
   speller,
 } from './compose.ts';
 import type { ContainerLayout, ContainerPiece, PieceRef } from './frame.ts';
+import { arch14Starts } from './shared/activities.ts';
 import { layOutContainer, takeApart } from './frame.ts';
 import { fontSets, glyphOf } from './font.ts';
 import {
@@ -289,6 +290,9 @@ function modeKinds(c: Container, layout: ContainerLayout): { kind: TextScreenKin
     kinds[menu.menu] = { kind: menu.kind === 'two row device list' ? 'two row list'
       : menu.kind === 'activity menu' ? 'activity menu' : 'corner page' };
   }
+  // A configuration with no activity has no working screen, and its activity keyed records hold the idle
+  // case alone, so there is nothing to look for, section 375.
+  if (arch14Starts(c).startup.size === 0) return kinds;
   const working = valueMaps(c)?.[activityKeyedRecords(c).working];
   for (const [, target] of working?.entries ?? []) {
     const queued = caseQueued(c, target);

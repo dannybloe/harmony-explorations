@@ -334,24 +334,25 @@ test('a setup the donor cannot serve is refused: an input named with no catalogu
 // Which bytes a generator reproduces
 // ---------------------------------------------------------------------------------------------------
 
-test('a generator lays 114896 bytes of the test setup assembled on the clean compile and rewrites 67890 of address fields in the donor\'s pieces, and the rest is the donor\'s by what it is',
+test('a generator lays 148256 bytes of the test setup assembled on the clean compile and rewrites 67836 of address fields in the donor\'s pieces, and the rest is the donor\'s by what it is',
      skipUnless('h650_test_config_clean'), () => {
   const out = assembleSetup(setupOf('h650-test.json'), { donor: require_('h650_test_config_clean') });
   const a = attributeBytes(out.container);
   assert.equal(a.total, 999922);
   assert.deepEqual(a.generated, {
-    frame: 122, addresses: 67890, description: 17752, 'mode 0': 649, wiring: 1143, 'state tables': 38334,
-    'screen records': 906, 'firmware screens': 4712, texts: 10212, pictures: 41066, letters: 0,
+    frame: 136, addresses: 67836, description: 37738, 'mode 0': 649, wiring: 1140, 'state tables': 51631,
+    'screen records': 858, 'firmware screens': 4712, 'corner programs': 114, texts: 10212, pictures: 41066, letters: 0,
   });
   const carried = (...keys: string[]): number => keys.reduce((n, key) => n + (a.carried.get(key) ?? 0), 0);
   assert.equal(carried('slot-7-glyph', 'slot-7-set'), 92170);
   // The eleven designed pictures, todo 9.1.2; the six a rule draws are the generators' since section 363.
   assert.equal(carried('picture-bank'), 360664);
   assert.equal(carried('slot-5-block', 'slot-5-header', 'slot-5-group'), 220607);
-  assert.equal(carried('slot-10-list reached'), 74513);
+  // Less the clock's hour list since section 375.
+  assert.equal(carried('slot-10-list reached'), 74506);
   assert.equal(carried('slot-10-list reached by nothing'), 2393);
   assert.equal(carried('slot-11-program', 'slot-6-mode', 'slot-6-entry', 'slot-6-page-list', 'slot-6-page-list-copy',
-    'slot-9-list'), 66775);
+    'slot-9-list'), 33490);
   const generated = Object.values(a.generated).reduce((n, v) => n + v, 0);
   assert.equal(generated + [...a.carried.values()].reduce((n, v) => n + v, 0), a.total);
   assert.equal(a.carried.get('unclaimed'), undefined);
@@ -382,7 +383,7 @@ const PLASMA_KIJKEN_SCREEN: readonly RecipeScreenItem[] = [
   { sequence: 'Radio', steps: [{ device: 'KPN', scan: 24 }, { pause: 20 }, { device: 'KPN', scan: 47 }] },
 ];
 
-test('on Logitech\'s starting compile the test setup\'s fifth activity is composed from the setup file and its screen, and the result is the 6.2.13 file put through the same assembly but for its build stamp, and lays 114438 bytes as content',
+test('on Logitech\'s starting compile the test setup\'s fifth activity is composed from the setup file and its screen, and the result is the 6.2.13 file put through the same assembly but for its build stamp, and lays 147798 bytes as content',
      needing(skipWithoutIrArchive(), skipUnless('h650_start_config', 'h650_7_1_base', 'h650_test_config_clean')), () => {
   // The setup file states the screen, since 10.7.4.
   assert.deepEqual(setupOf('h650-test.json').activities.find((one) => one.name === 'Plasma kijken')?.screen, PLASMA_KIJKEN_SCREEN);
@@ -411,10 +412,10 @@ test('on Logitech\'s starting compile the test setup\'s fifth activity is compos
   // Which bytes are ours, and what composing Plasma kijken added: the same assembly without it.
   const a = attributeBytes(out.container);
   assert.deepEqual(a.generated, {
-    frame: 122, addresses: 67272, description: 17582, 'mode 0': 649, wiring: 1143, 'state tables': 38334,
-    'screen records': 906, 'firmware screens': 4712, texts: 9924, pictures: 41066, letters: 0,
+    frame: 136, addresses: 67218, description: 37568, 'mode 0': 649, wiring: 1140, 'state tables': 51631,
+    'screen records': 858, 'firmware screens': 4712, 'corner programs': 114, texts: 9924, pictures: 41066, letters: 0,
   });
-  assert.equal([...a.carried.values()].reduce((n, v) => n + v, 0), 815603);
+  assert.equal([...a.carried.values()].reduce((n, v) => n + v, 0), 782297);
   const setup = setupOf('h650-test.json');
   const without = assembleSetup({ ...setup, activities: setup.activities.filter((one) => one.name !== 'Plasma kijken') },
     { donor: require_('h650_start_config'), ...composing() });
@@ -464,7 +465,8 @@ test('8.2.3: in our letters the test setup assembles on Logitech\'s starting com
   // The tally knows our letters with no memory of the build: every glyph byte is ours, none carried, and
   // Logitech's letters count none, in the tests above.
   const a = attributeBytes(out.container);
-  assert.equal(a.generated.letters, 93675);
+  // 93675 until section 375 counted the eighteen sets' three byte headers.
+  assert.equal(a.generated.letters, 93729);
   assert.equal(a.carried.get('slot-7-glyph'), undefined);
 });
 
@@ -588,20 +590,21 @@ test('9.1.2.2: our pictures replace the six that are no state\'s background, aft
     /icons has no Help/);
 });
 
-test('the smallest Harmony 650 compile the lab registers, two devices and no activity, takes no composer: the device composer knows the activity menu by its activity rows and it has none, its fonts lack letters, and an activity needs another to be told apart from',
+test('the smallest Harmony 650 compile the lab registers, two devices and no activity, takes no composer: the device composer meets the records keyed by the activity, which with none cannot be told apart, its fonts lack letters, and an activity needs another to be told apart from',
      needing(skipWithoutIrArchive(), skipUnless('harvest_650_two_devices')), () => {
   const smallest = require_('harvest_650_two_devices');
   // Its two devices are the setup's LG television and Denon receiver under the names Logitech gives them.
   assert.deepEqual(devices(parse(smallest)).map((one) => one.name), ['LG_OLED65G26LA', 'Denon_AVR-X4800H']);
-  // The file does map the key under Devices through the activity counter, in three modes; what refuses is
-  // the reader, which picks the activity menu as the mode whose rows select the most activities.
+  // The file does map the key under Devices through the activity counter, in three modes. What refused here
+  // until section 375 was the reader, which picked the activity menu as the mode whose rows select the most
+  // activities; it finds it by its record now, and the device composer goes on to the activity keyed records.
   const c = parse(smallest);
   const counter = stateVariables(c).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME));
   const mapped = (modeRecords(c) ?? []).flatMap((record, index) => record.entries.some((one) =>
     one.tag === DEVICES_KEY_TAG && one.opcode === MAP_VALUE_OPCODE && (one.operand & 0xff) === counter?.index) ? [index] : []);
   assert.deepEqual(mapped, [96, 97, 101]);
   assert.throws(() => assembleSetup(setupOf('h650-test.json'), { donor: smallest, ...composing() }),
-    /composing Plasma, KPN, Kodi, Switch, Sony HT: the activity menu does not map the key under Devices through the activity counter/);
+    /composing Plasma, KPN, Kodi, Switch, Sony HT: no activity here, so the records keyed by the activity cannot be told apart/);
   // Each device alone, by its first refusal.
   const alone = (name: string): string => {
     const setup = setupOf('h650-test.json');
@@ -614,14 +617,14 @@ test('the smallest Harmony 650 compile the lab registers, two devices and no act
     }
   };
   assert.deepEqual(Object.fromEntries(['Plasma', 'KPN', 'Kodi', 'Switch', 'Sony HT'].map((name) => [name, alone(name)])), {
-    Plasma: 'the activity menu does not map the key under Devices through the activity counter',
+    Plasma: 'no activity here, so the records keyed by the activity cannot be told apart',
     KPN: 'font 6 has no glyph for \'K\', so it cannot be drawn',
     Kodi: 'font 6 has no glyph for \'K\', so it cannot be drawn',
-    Switch: 'the activity menu does not map the key under Devices through the activity counter',
+    Switch: 'no activity here, so the records keyed by the activity cannot be told apart',
     'Sony HT': 'no font in this config spells \'Eject\'',
   });
   // In our letters no refusal names a font, 8.2.3: every set spells every printable character, and what is
-  // left is the menu reader, which placing the compile's texts in our letters meets before any composer.
+  // left is the activity keyed records, which every device composer meets, plan 008 step 5's next lookup.
   const ours = (name: string): string => {
     const setup = setupOf('h650-test.json');
     const one = { model: setup.model, devices: setup.devices.filter((d) => ['LG TV', 'Denon', name].includes(d.name)), activities: [] };
@@ -633,7 +636,7 @@ test('the smallest Harmony 650 compile the lab registers, two devices and no act
     }
   };
   for (const name of ['Plasma', 'KPN', 'Kodi', 'Switch', 'Sony HT']) {
-    assert.equal(ours(name), 'the menus are not read: the activity menu does not map the key under Devices through the activity counter', name);
+    assert.equal(ours(name), `composing ${name}: no activity here, so the records keyed by the activity cannot be told apart`, name);
   }
   // And an activity on its own two devices: with an input, the television has no input variable to put it
   // on, nor has the receiver, since this compile gave neither one; without, the activity composer refuses.

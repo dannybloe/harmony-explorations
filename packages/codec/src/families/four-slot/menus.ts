@@ -167,7 +167,8 @@ export function growFourSlotMenu(
   if (page === undefined || list === undefined) throw new ComposeError('a menu lost its page');
   const layout = menuLayout(current, list.entries);
   if (layout === undefined) throw new ComposeError('a menu page changed layout');
-  if (layout.rows !== menuOnRows(kind)) throw new ComposeError(`menu ${menu} is not a ${kind}`);
+  // A page that binds nothing reads as either layout, so only a page with places can be the wrong kind.
+  if (layout.used > 0 && layout.rows !== menuOnRows(kind)) throw new ComposeError(`menu ${menu} is not a ${kind}`);
   if (layout.used >= layout.capacity) throw new ComposeError(`menu ${menu}'s last page is full`);
   // The page as it is has to be the built one, so the growth below starts from a page the builder owns.
   const before = menuPageDifference(current, fourSlotMenuChrome(current, kind), menu, pages - 1);
@@ -324,7 +325,8 @@ export function openFourSlotMenuPage(
   if (last === undefined || lastList === undefined) throw new ComposeError(`menu ${menu} has no page`);
   const layout = menuLayout(current, lastList.entries);
   if (layout === undefined) throw new ComposeError(`menu ${menu}'s last page is neither arch 14 layout`);
-  if (layout.rows !== menuOnRows(kind)) throw new ComposeError(`menu ${menu} is not a ${kind}`);
+  // A page that binds nothing reads as either layout, so only a page with places can be the wrong kind.
+  if (layout.used > 0 && layout.rows !== menuOnRows(kind)) throw new ComposeError(`menu ${menu} is not a ${kind}`);
   if (layout.used < layout.capacity) {
     throw new ComposeError(`menu ${menu}'s last page has room, so the item goes on it and not on a new page`);
   }
@@ -603,8 +605,9 @@ export function idleDeviceList(c: Container): number {
 /**
  * Every arch 14 menu of a configuration with its kind: the device lists, `deviceListMenus`, each a corner
  * or a two row list by its first page, the corner one the key under Devices opens with no activity
- * running being the idle one; and the activity menu, `activityMenus`. Refused where the idle list is not
- * one of the corner lists, or where the configuration has no activity menu.
+ * running being the idle one; and the activity menu, `activityMenus`. An idle list with no row, in a
+ * configuration with no device, is the one page binding nothing that key opens, section 375. Refused where
+ * the idle list is neither, or where the configuration has no activity menu.
  */
 export function fourSlotMenus(c: Container): FourSlotMenu[] {
   if (c.architecture !== 14) throw new ComposeError('the four slot menus are the Harmony 600, 650 and 700\'s alone');
@@ -617,7 +620,15 @@ export function fourSlotMenus(c: Container): FourSlotMenu[] {
     return { menu, kind: menu === idle ? 'idle device list' as const : 'activity device list' as const };
   });
   if (!out.some((one) => one.kind === 'idle device list')) {
-    throw new ComposeError(`mode ${idle}, which the key under Devices opens with no activity running, is not a corner device list`);
+    // A device list is found by its rows, and an idle list with none, a configuration with no device,
+    // section 375, is found only through the activity menu's record, as here. Its page then binds nothing,
+    // which is the one layout that cannot say it is a corner list, and every idle list is one, section 334.
+    const pages = modeRecords(c)?.[idle]?.pages ?? [];
+    const empty = pages.length === 1 && (taggedList(c, pages[0]?.list ?? 0)?.entries.length ?? -1) === 0;
+    if (!empty || out.some((one) => one.menu === idle)) {
+      throw new ComposeError(`mode ${idle}, which the key under Devices opens with no activity running, is not a corner device list`);
+    }
+    out.push({ menu: idle, kind: 'idle device list' });
   }
   const activities = activityMenus(c).menu;
   if (activities === undefined) throw new ComposeError('no activity menu here');
@@ -905,7 +916,8 @@ export function menuPageContent(
   if (record === undefined || program === undefined || layout === undefined) {
     throw new ComposeError(`menu ${menu}'s page ${index + 1} does not read as an arch 14 menu page`);
   }
-  if (layout.rows !== menuOnRows(kind)) throw new ComposeError(`menu ${menu}'s page ${index + 1} is not a ${kind} page`);
+  // A page that binds nothing reads as either layout, so only a page with places can be the wrong kind.
+  if (layout.used > 0 && layout.rows !== menuOnRows(kind)) throw new ComposeError(`menu ${menu}'s page ${index + 1} is not a ${kind} page`);
   const rows = menuOnRows(kind);
   // Where the font in effect was selected, read as a value only where a text that is the page's own
   // content is drawn in it: the bottom word's font is the builder's, `bottomWord`.

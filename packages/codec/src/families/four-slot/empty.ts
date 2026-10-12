@@ -31,6 +31,7 @@ import { CLOCK_STATE_MAXIMA } from '../../sections.ts';
 import {
   FIRMWARE_STATE_VARIABLE_COUNT, activityStateVariables, buildStateTables, menuMarkerVariable, startSequenceVariables,
   type BuiltStateTables, type PieceTarget, type StateTablesSpec, type StateVariableSpec, type ValueMapSpec,
+  hourListBytes,
 } from '../../statetables.ts';
 import {
   ACTIVITY_KEY_SCANS, FIRMWARE_SCREENS, FIXED_ENTRIES, buildWiring, wiringNeeds, type BuiltWiring, type WiringSettings,
@@ -40,8 +41,6 @@ import {
   SCREEN_DRAW_IMAGE, SCREEN_END, SCREEN_JUMP, SCREEN_QUEUE_INSTRUCTION, SCREEN_SELECT_FONT, SCREEN_SWITCH_NARROW,
   SCREEN_TEXT_INLINE,
 } from '../../screen.ts';
-import { actionListBytes } from '../../gspm.ts';
-import { Writer } from '../../emit.ts';
 import { modeZeroKeyList } from '../../modezero.ts';
 import { type SetFace, letterFaceOf } from '../../fonttable.ts';
 import {
@@ -54,6 +53,7 @@ import { buildOurPictures, buildPictures, type OurPictureChoices, type OurPictur
 import { ENTER_MODE, MAP_VALUE_OPCODE } from '../../inventory.ts';
 import { STATE_WRITE_BASE } from '../../actions.ts';
 import { BATTERY_STATE_VARIABLE } from './chrome.ts';
+import { caseProgram as caseProgramBytes } from './activityscreen.ts';
 import { type BuiltFirmwareScreens, buildFirmwareScreens, firmwareScreenTemplates } from '../../firmwarescreens.ts';
 import {
   type BuiltScreen, type BuiltScreenRecords, type ScreenMenuSpec, buildScreenRecords,
@@ -288,7 +288,7 @@ function throughMap(map: EmptyMapName, variable: string): number {
  * opcode, then the end, five bytes, `activityscreen.ts`'s `caseProgram`.
  */
 function caseProgram(opcode: number, operand: number): ContainerPiece {
-  return { bytes: new Writer(5).u8(SCREEN_QUEUE_INSTRUCTION).u16(operand).u8(opcode).u8(SCREEN_END).bytes, refs: [], owner: 'slot-11-program' };
+  return { bytes: caseProgramBytes(opcode, operand), refs: [], owner: 'slot-11-program' };
 }
 
 /** What the wiring and state tables of an empty configuration came to, numbered. */
@@ -364,7 +364,7 @@ export function emptyWiring(settings: WiringSettings, builtAt: string): EmptyWir
   });
 
   const lists = new Map(wiring.lists);
-  lists.set(hourList, { bytes: actionListBytes([{ opcode: 0x1f, operand: 0xf203 }, { opcode: 0x1f, operand: 0xf204 }]), refs: [], owner: 'slot-10-list' });
+  lists.set(hourList, { bytes: hourListBytes(), refs: [], owner: 'slot-10-list' });
   return { spec, wiring, states, lists, programs: [enterIdle, toMenu, toWorking, toLocation, toIdleList], hourList };
 }
 
@@ -449,6 +449,36 @@ export function cornerProgram(patch: ContainerPiece, mark: ContainerPiece): Cont
   const markCase = draw(mark);
   root.refs = [{ at: 4, to: patchCase, offset: 0 }, { at: 10, to: markCase, offset: 0 }];
   return [root, patchCase, markCase];
+}
+
+/**
+ * The corner program at base slot 11 address `root`, read against `cornerProgram`: its three pieces back to
+ * back in the compiler's order, each byte for byte the built one but its address fields, the switch's two
+ * cases naming the two pieces behind it and each case jumping back to the tail. Returns each piece's blob
+ * offset and length, or undefined where any of that fails. One reading for the calibration, section 374,
+ * and for `attributeBytes`, section 375.
+ */
+export function cornerProgramAt(c: Container, root: number): { at: number; length: number }[] | undefined {
+  const blank = (): ContainerPiece => ({ bytes: new Uint8Array(0), refs: [], owner: 'picture-bank' });
+  const built = cornerProgram(blank(), blank());
+  const start = c.blobOffsetOf(root);
+  if (start === undefined) return undefined;
+  const u24 = (o: number): number => (c.blob[o] ?? 0) | ((c.blob[o + 1] ?? 0) << 8) | ((c.blob[o + 2] ?? 0) << 16);
+  const out: { at: number; length: number }[] = [];
+  let off = start;
+  for (const piece of built) {
+    const theirs = Uint8Array.from(c.blob.subarray(off, off + piece.bytes.length));
+    for (const ref of piece.refs) theirs.fill(0, ref.at, ref.at + 3);
+    if (theirs.length !== piece.bytes.length || theirs.some((value, k) => value !== piece.bytes[k])) return undefined;
+    out.push({ at: off, length: piece.bytes.length });
+    off += piece.bytes.length;
+  }
+  const [rootPiece, patchCase] = built as [ContainerPiece, ContainerPiece, ContainerPiece];
+  const cases = [rootPiece.refs[0], rootPiece.refs[1]].map((ref) => c.blobOffsetOf(u24(start + (ref as PieceRef & { at: number }).at)));
+  if (cases[0] !== out[1]?.at || cases[1] !== out[2]?.at) return undefined;
+  const jump = patchCase.refs[1] as PieceRef & { at: number };
+  if (out.slice(1).some((one) => u24(one.at + jump.at) - root !== CORNER_SWITCH_LENGTH)) return undefined;
+  return out;
 }
 
 /** The index of a font set of ours by its face and lettering, `EMPTY_FONT_SETS`. */

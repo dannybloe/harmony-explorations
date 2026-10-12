@@ -80,6 +80,9 @@ export function menuMarkerOf(c: Container): number {
       if (end.operand !== value) wrong.push(`list ${index} writes ${end.operand} where ${value} is built`);
     }
   }
+  // The family's own writer outside the rows, held to the same agreement, and the only one with no row.
+  const writer = familyOf(c)?.menuMarkerWriter(c);
+  if (writer !== undefined) variables.add(writer);
   if (variables.size !== 1) {
     throw new ComposeError(variables.size === 0
       ? 'no menu row here to read the menu marker variable from'
@@ -395,7 +398,7 @@ export interface ComposeScreenOptions {
 }
 
 /**
- * The activity menu's mode, and the marker its rows write, read off the rows the config has.
+ * The activity menu's mode, as its family finds it, `Family.activityMenu`, and the marker its rows write.
  *
  * The shape of an activity row is the device list row's with one instruction swapped: beep, then
  * **select a base slot 9 entry** where a device row enters a mode, then the same per configuration
@@ -408,10 +411,21 @@ export interface ComposeScreenOptions {
  *
  * **The marker it returns is built**, section 329: `menuMarkerOf`'s variable with
  * `ACTIVITY_MENU_MARKER_VALUE`, checked against every row of both kinds, rather than the last
- * instruction of the last row this walk met. The menu itself is still the one whose rows select the
- * most entries, `todo-compile-650.md` 6.2.9.
+ * instruction of the last row this walk met. A configuration no family serves is read by its rows,
+ * `activityMenuByRows`, and gets no marker.
  */
 export function activityMenus(c: Container): { menu: number | undefined; marker: Instruction | undefined } {
+  const family = familyOf(c);
+  const menu = family === undefined ? activityMenuByRows(c) : family.activityMenu(c);
+  return { menu, marker: menu === undefined || family === undefined ? undefined : menuMarkerWrite(c, ACTIVITY_MENU_MARKER_VALUE) };
+}
+
+/**
+ * The activity menu found by its rows: the mode whose rows select the most base slot 9 entries,
+ * `todo-compile-650.md` 6.2.9. The touch family's rule, and the four slot family's before section 375,
+ * kept there as its calibration. A menu with no row is not found.
+ */
+export function activityMenuByRows(c: Container): number | undefined {
   const lists = c.actionLists() ?? [];
   const records = modeRecords(c) ?? [];
   let menu: number | undefined;
@@ -428,8 +442,7 @@ export function activityMenus(c: Container): { menu: number | undefined; marker:
     }
     if (sets.size > most) { most = sets.size; menu = index; }
   });
-  const measured = familyOf(c) !== undefined;
-  return { menu, marker: menu === undefined || !measured ? undefined : menuMarkerWrite(c, ACTIVITY_MENU_MARKER_VALUE) };
+  return menu;
 }
 
 /**

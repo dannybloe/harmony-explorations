@@ -324,12 +324,14 @@ test('checkScreenTexts passes Logitech\'s clean compile and refuses a corner lab
   assert.throws(() => checkScreenTexts(nudge(pointer + 3, 1)), refused(/'s title '.*' is drawn by reference where it is built inline/));
 });
 
-test('a configuration whose firmware wiring or menus are not read is refused as one, not with a reader\'s own error: the bench file of todo-compile-650 4.2 at its wiring, and the compile with no activities at its menus',
+test('a configuration whose firmware wiring is not read is refused as one, not with a reader\'s own error, the bench file of todo-compile-650 4.2; and the compile with no activities, whose menus are read since section 375, at its two row list\'s title',
      skipUnless('harvest_650_two_devices', 'h650_bench_4_2_base'), () => {
-  // The compile with no activities was refused at its wiring here until section 360 read it; it has no
-  // activity menu, which is where section 356 refuses it too.
+  // The compile with no activities was refused at its wiring here until section 360 read it, then at its
+  // menus, whose activity menu has no row, until section 375 found it by its record. What refuses now is a
+  // difference of Logitech's: its two row device list draws its title 3 pixels right of where the rule,
+  // from every compile with activities, puts it.
   assert.throws(() => checkScreenTexts(containerOf('harvest_650_two_devices')),
-    (error: Error) => error instanceof ScreenTextError && /menus are not read: the activity menu does not map the key under Devices/.test(error.message));
+    (error: Error) => error instanceof ScreenTextError && /mode 98 page 1's title 'Devices' is drawn at 3, 2 where it is built at 0, 2/.test(error.message));
   assert.throws(() => checkScreenTexts(containerOf('h650_bench_4_2_base')),
     (error: Error) => error instanceof ScreenTextError && /wiring is not read: read at offset 7/.test(error.message));
 });

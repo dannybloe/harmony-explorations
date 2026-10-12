@@ -6,6 +6,7 @@
 import type { Family } from '../family.ts';
 import { composeFourSlotActivityRow, composeFourSlotActivityScreen } from './activityscreen.ts';
 import { composeFourSlotDeviceScreen } from './devicescreen.ts';
+import { fourSlotActivityMenu, fourSlotMenuMarkerWriter } from './chrome.ts';
 import { FOUR_SLOT_CHOICES, type FourSlotChoices } from './choices.ts';
 
 export const FOUR_SLOT: Family<FourSlotChoices> = {
@@ -13,6 +14,8 @@ export const FOUR_SLOT: Family<FourSlotChoices> = {
   traits: { sendPrelude: true, startSequence: 'start variable and flag', screenItemsBeep: false },
   choices: FOUR_SLOT_CHOICES,
   composeDeviceScreen: composeFourSlotDeviceScreen,
+  activityMenu: fourSlotActivityMenu,
+  menuMarkerWriter: fourSlotMenuMarkerWriter,
   composeActivityRow: composeFourSlotActivityRow,
   composeActivityScreen: composeFourSlotActivityScreen,
 };

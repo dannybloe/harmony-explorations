@@ -69,6 +69,7 @@
  */
 import { type Recipe, type RecipeActivity, type RecipeDevice, recipeTarget } from './recipe/recipe.ts';
 import { u16, u8 } from './bytes.ts';
+import { archSlot } from './gspm.ts';
 import { ARCH_RECORD_LENGTH, BINDING_SLOT, CLOCK_SECTION_LENGTH, END_MARKER_LENGTH, INSTRUCTION_LENGTH,
   TRAILER_CHECKSUM_OFFSET, parse, type Container } from './gspm.ts';
 import { assertQueueFits } from './queue.ts';
@@ -81,13 +82,13 @@ import {
   stateRecords, taggedListExtent,
 } from './sections.ts';
 import { numberSenders, timers } from './tables.ts';
-import { SCREEN_QUEUE_INSTRUCTION, SCREEN_TEXT_INLINE, reachablePrograms, screenProgram } from './screen.ts';
+import { SCREEN_QUEUE_INSTRUCTION, SCREEN_TABLE_SLOT, SCREEN_TEXT_INLINE, reachablePrograms, screenProgram } from './screen.ts';
 import { characterMap, decode, glyphsReferencedBy, oxaniumAlphabet } from './text.ts';
 import { activities, devices, deviceVariables, SEND_INFRARED, DEVICE_QUANTITY } from './inventory.ts';
 import type { ContainerLayout, ContainerPiece } from './frame.ts';
 import { layOutContainer, takeApart } from './frame.ts';
 import { LOOSE_KINDS, loosen, placePieces } from './placer.ts';
-import { buildStateTables, describeStateTables, withStateTables } from './statetables.ts';
+import { buildStateTables, describeStateTables, hourListBytes, withStateTables } from './statetables.ts';
 import {
   buildWiring, builtPieces, checkWiring, describeWiring, withWiring, wiringModelOfSkin, type WiringSettings,
 } from './wiring.ts';
@@ -101,7 +102,7 @@ import { buildFirmwareScreens, checkFirmwareScreens, describeFirmwareScreens, wi
 import { buildScreenTexts, checkScreenTexts, describeScreenTexts, withScreenTexts } from './screentexts.ts';
 import { checkOxaniumFonts, withOxaniumFonts, type SetFace } from './fonttable.ts';
 import { LETTERING_FACES, letterForm, maskForm } from './lettering.ts';
-import { fontSets, glyphOf } from './font.ts';
+import { IMAGE_SET_HEADER, fontSets, glyphOf } from './font.ts';
 import {
   ComposeError, composeActivity, composeActivityDeviceList, composeActivityMenuRow, keepDeviceOn,
   nextActivityValue, startsSwitchingOff,
@@ -116,7 +117,11 @@ import { catalogueDriving } from './driving.ts';
 import { activityPauseGroups, composeSequence } from './sequence.ts';
 import { FOUR_SLOT } from './families/four-slot/index.ts';
 import { type FourSlotChoices, type FourSlotChoicesGiven, fourSlotChoices } from './families/four-slot/choices.ts';
-import { checkStateBackgrounds, withStateBackgrounds } from './backgrounds.ts';
+import { checkStateBackgrounds, ourPictureName, withStateBackgrounds } from './backgrounds.ts';
+import { batteryPrograms } from './families/four-slot/chrome.ts';
+import { cornerProgramAt } from './families/four-slot/empty.ts';
+import { caseProgram } from './families/four-slot/activityscreen.ts';
+import { valueMaps } from './valuemap.ts';
 import { type BlendedSet, checkBlendedLetters, type LettersBlended, withBlendedLetters } from './blending.ts';
 import type { ComposeRow } from './compose.ts';
 
@@ -948,7 +953,7 @@ export function compareDrawnTexts(a: Container, b: Container): { text: string; a
  */
 export const ATTRIBUTIONS = [
   'frame', 'addresses', 'description', 'mode 0', 'wiring', 'state tables', 'screen records', 'firmware screens',
-  'texts', 'pictures', 'letters',
+  'corner programs', 'texts', 'pictures', 'letters',
 ] as const;
 export type Attribution = (typeof ATTRIBUTIONS)[number];
 
@@ -958,6 +963,8 @@ export interface AttributedBytes {
   /** The rest, by what claims it, `coverage.ts`'s owner names, a list split into named and not. */
   carried: Map<string, number>;
   total: number;
+  /** Per byte of the blob: 0xff where carried, 0 where nothing claims it, else 1 + its `ATTRIBUTIONS` index. */
+  owners: Uint8Array;
 }
 
 /**
@@ -1001,12 +1008,31 @@ export function attributeBytes(c: Container): AttributedBytes {
     mark(at, piece.bytes.length, 'wiring');
   }
   // The state tables, likewise, the whole of what they build.
-  const tables = buildStateTables(describeStateTables(layout));
+  const tablesSpec = describeStateTables(layout);
+  const tables = buildStateTables(tablesSpec);
   const tablesLaid = layOutContainer(withStateTables(layout, tables));
   if (!sameBytes(tablesLaid.bytes, c.blob)) throw new AssemblyError('the state tables do not rebuild from their description');
   for (const piece of [tables.nameTree, tables.stateTable, tables.valueMapTable, ...tables.records, ...tables.valueMaps]) {
     const at = tablesLaid.offsetOf(piece);
     if (at !== undefined) mark(at, piece.bytes.length, 'state tables');
+  }
+  // What the state tables name and do not build, section 375: the clock's hour list at the index they
+  // state, and every value map case that is a `caseProgram`, five bytes queuing one action, the action read
+  // and its frame built. On Logitech's compiles the working screen record's idle case queues more and is
+  // not one.
+  const hourAt = c.blobOffsetOf((c.pointerArray(10) ?? [])[tablesSpec.hourList] ?? -1);
+  const hour = hourListBytes();
+  if (hourAt !== undefined && sameBytes(c.blob.subarray(hourAt, hourAt + hour.length), hour)) mark(hourAt, hour.length, 'state tables');
+  for (const map of valueMaps(c) ?? []) {
+    for (const target of [...map.entries.map(([, to]) => to), ...map.ranges.map(([, , to]) => to)]) {
+      const at = c.blobOffsetOf(target);
+      if (at === undefined) continue;
+      const operand = u16(c.blob, at + 1);
+      const built = caseProgram(c.blob[at + 3] ?? 0, operand);
+      if (!sameBytes(c.blob.subarray(at, at + built.length), built)) continue;
+      mark(at + 1, 3, 'description');
+      mark(at, built.length, 'state tables');
+    }
   }
   // Mode 0, the key table.
   const zeroAt = c.markerOffset + END_MARKER_LENGTH;
@@ -1020,6 +1046,13 @@ export function attributeBytes(c: Container): AttributedBytes {
   const firmware = describeFirmwareScreens(c, layout);
   markSet(firmware.described, 'description');
   markSet(firmware.structure, 'firmware screens');
+  // The corner programs every menu and device page queues, each read as `cornerProgram` builds it, its
+  // three pieces whole, section 374's shape, which every compile's 70 hold.
+  const screenTable = c.pointerArray(archSlot(14, SCREEN_TABLE_SLOT)) ?? [];
+  for (const index of batteryPrograms(c)) {
+    const root = screenTable[index];
+    for (const one of (root === undefined ? undefined : cornerProgramAt(c, root)) ?? []) mark(one.at, one.length, 'corner programs');
+  }
   checkScreenTexts(c);
   const texts = describeScreenTexts(c, layout);
   markSet(texts.described, 'description');
@@ -1030,6 +1063,14 @@ export function attributeBytes(c: Container): AttributedBytes {
   const laidPictures = layOutContainer(layout);
   for (const one of describePictures(layout)) {
     if (one.entry?.source !== 'rule') continue;
+    const at = laidPictures.offsetOf(one.piece);
+    if (at !== undefined) mark(at, one.piece.bytes.length, 'pictures');
+  }
+  // And our own, section 375: a state's colour, the bars made flat, and the six icon pictures in the icons
+  // the family offers, each rebuilt from the colours it holds. A picture of Logitech's rebuilds as none.
+  const { icons } = fourSlotChoices(undefined);
+  for (const one of describePictures(layout)) {
+    if (one.entry?.source === 'rule' || ourPictureName(one.piece.bytes, icons) === undefined) continue;
     const at = laidPictures.offsetOf(one.piece);
     if (at !== undefined) mark(at, one.piece.bytes.length, 'pictures');
   }
@@ -1052,11 +1093,31 @@ export function attributeBytes(c: Container): AttributedBytes {
       return form !== undefined && (forms[form.form] ?? '').includes(ch);
     };
     for (const set of fontSets(c) ?? []) {
+      let mine = 0;
       for (const [code, ch] of lettersMap.codes) {
         const glyph = glyphOf(c, set, code);
         if (glyph === undefined || !ours(glyph.rows, ch)) continue;
+        mine += 1;
         const at = c.blobOffsetOf(glyph.address);
         if (at !== undefined) mark(at, glyph.length, 'letters');
+      }
+      // A set every glyph of which is ours is ours whole, its three byte header too: its height is its
+      // glyphs', and its first code and count are the character map's, section 375.
+      const at = c.blobOffsetOf(set.address);
+      if (mine === set.count && at !== undefined) mark(at, IMAGE_SET_HEADER, 'letters');
+    }
+  }
+
+  // A table's count, which the entries it names state: a count of one, two or three bytes and as many
+  // three byte addresses as it says, and nothing else, section 375.
+  for (const claim of claims(c)) {
+    if (!/^slot-\d+-table$/.test(claim.owner)) continue;
+    for (const width of [1, 2, 3]) {
+      let count = 0;
+      for (let k = width - 1; k >= 0; k -= 1) count = count * 256 + (c.blob[claim.start + k] ?? 0);
+      if (width + 3 * count === claim.length) {
+        mark(claim.start, width, 'frame');
+        break;
       }
     }
   }
@@ -1091,5 +1152,5 @@ export function attributeBytes(c: Container): AttributedBytes {
   owner.forEach((tag) => { if (tag !== 0 && tag !== 0xff) generated[ATTRIBUTIONS[tag - 1] as Attribution] += 1; });
   const unclaimed = owner.reduce((n, tag) => n + (tag === 0 ? 1 : 0), 0);
   if (unclaimed > 0) carried.set('unclaimed', unclaimed);
-  return { generated, carried, total: c.blob.length };
+  return { generated, carried, total: c.blob.length, owners: owner };
 }

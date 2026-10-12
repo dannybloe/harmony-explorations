@@ -52,7 +52,7 @@
  * Read only towards hardware, like everything in this package. The result is pieces in memory.
  */
 import { Writer } from './emit.ts';
-import { CLOCK_FIELD_COUNT, FRAME_COOKIE, FRAME_END } from './gspm.ts';
+import { CLOCK_FIELD_COUNT, FRAME_COOKIE, FRAME_END, actionListBytes } from './gspm.ts';
 import { u16, u24, u8 } from './bytes.ts';
 import type { ContainerLayout, ContainerPiece, PieceRef } from './frame.ts';
 import { compilerCaseOrder, firmwareStateVariableMax } from './inventory.ts';
@@ -314,6 +314,18 @@ export function buildStateRecord(first: number, max: number, transitions: readon
     out.u8(0).u16(t.from & 0xffff).u16(t.to & 0xffff).u16(t.operand).u8(t.opcode);
   }
   return out.bytes;
+}
+
+/** The weekday, the clock's record 4, which the hour list increments beside the day. */
+const CLOCK_WEEKDAY = 4;
+
+/**
+ * The clock's hour list, the action list the hour's rollover calls: increment the day, then the weekday,
+ * `[0x1F 0xF203, 0x1F 0xF204]`, `docs/config-format.md` under the clock's transitions. Its index is the
+ * configuration's, `StateTablesSpec.hourList`.
+ */
+export function hourListBytes(): Uint8Array {
+  return actionListBytes([CLOCK_DAY, CLOCK_WEEKDAY].map((variable) => ({ opcode: STATE_BAND, operand: (INCREMENT << 8) | variable })));
 }
 
 /** The clock's transitions, section 130: the three rollovers that increment, and the hour's call. */

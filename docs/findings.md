@@ -50445,7 +50445,7 @@ checks them, since after it each screen selects the copy blended for its own bac
 
 **Not yet**: `describeScreenRecords` cannot read our device list and activity menu back, because
 `activityMenus` finds the activity menu by its activity rows and an empty one has none, which is plan 008
-step 5's first lookup to move. The bytes are not yet attributed to a generator, 11.1.1.4's other half.
+step 5's first lookup to move. The bytes are not yet attributed to a generator, 11.1.1.4's other half. Both are done in section 375.
 
 **Falsification**: a Harmony 600, 650 or 700 compile whose corner program has another shape; a bench run
 in which the empty file's Back or Devices key does not reach the other menu.
@@ -50456,3 +50456,84 @@ in which the empty file's Back or Devices key does not reach the other menu.
 * `packages/codec/test/empty.test.ts`: the wiring and state tables read back, the firmware screens
   rebuilt, the menus' keys followed, the copies and the bank, and the corner program against all 24
   compiles, with a control that one changed byte fails it.
+
+## 375. The empty Harmony 650 configuration read back, and every byte of it attributed to a generator
+
+**Status: confirmed, on 24 Harmony 600, 650 and 700 compiles and on the empty configuration of section
+374.** `todo-compile-650.md` 11.1.1.4's other half and 11.1.1.5's first lookups. Sources: the codec and
+the compiles; no firmware question arose.
+
+**The readers found the menus by Logitech's content, and an empty configuration has none.** The activity
+menu was the mode whose rows run the most activity row lists, the menu marker the variable those rows write,
+and the menus' pictures and Off's picture were the ones Logitech's look stores. Each is a refusal on a
+configuration with no row and in our look, so `describeScreenRecords` could not read section 374's file.
+
+**Each moved to a structural reading that gives the same answer on Logitech's compiles**:
+
+* **The activity menu** is the one mode whose own key map maps the centre key's press, `0x99`, through
+  `0x72` on a record keyed by the activity counter and binds scan 4's press, `0x84`. On 23 of 23 compiles
+  with an activity it is the menu the rows find; on `harvest_650_two_devices`, which has none, the rows
+  find nothing and this finds mode 101; on ours it finds mode 15. `fourSlotActivityMenu`, the four slot
+  family's `activityMenu`; the touch family keeps the rows' rule, `activityMenuByRows`, which stays as the
+  calibration.
+* **The menu marker** is also written outside the rows, by base slot 9 entry 1's scan 4 press binding,
+  whose list starts by writing it 0, 24 of 24 compiles. `menuMarkerOf` adds that writer to the rows' own
+  and still refuses two variables, so on every compile its answer is their agreement, and on ours, with no
+  row, it is the writer's alone.
+* **A menu page's pictures** are read off the page's own address fields: its background is the first
+  `0x02` it draws, the one item picture on a page of one place or none and the crossed one on a page of
+  more, and its bars the first and last `0x03`. **Off's picture** is the first `0x02` Off draws. Where the
+  configuration holds one of Logitech's looks whole the old check by content still runs beside it.
+* **A page that binds nothing reads as either layout**, corner or two row, so the layout check now asks
+  only of a page with places; the empty idle device list, which the activity menu's Devices route reaches
+  and which no device row identifies, is taken as the idle list when its one page binds nothing.
+* **A configuration with no activity has no working screen**, so the text reader skips the activity
+  keyed records there rather than refusing.
+
+**Read back, the empty configuration's three screens rebuild byte for byte**: `checkScreenRecords` gives
+485 bytes of structure over three pages and no row.
+
+**Every byte is attributed, none carried.** `attributeBytes` was taught five things, each a rebuild that
+has to come out byte for byte, so a Logitech compile is measured by the same rules:
+
+* **our pictures**: a state's background and corner patch from their one colour, a bar from its fill, and
+  the six icon pictures in the icons the family offers from their two most frequent colours,
+  `ourPictureName`; 204502 bytes of the bank that counted as carried;
+* **a pointer table's count**, which the entries it names state: one, two or three bytes and as many
+  three byte addresses as it says and nothing else, to the frame;
+* **a font set's three byte header**, to the letters, where every glyph of the set is ours;
+* **the value maps' case programs**, five bytes queuing one action, `caseProgram`, the action counted as
+  description, and **the clock's hour list** at the index the state tables state, `hourListBytes`;
+* **the corner programs**, section 374's shape, read by `cornerProgramAt`, which the calibration of
+  section 374 now uses too, so the two cannot drift.
+
+The empty configuration's 342055 bytes then come to: the frame 136, addresses 2910, description 537,
+mode 0 649, wiring 1165, state tables 480, screen records 451, firmware screens 4712, corner programs 38,
+pictures 237275 and letters 93702.
+
+**The same rules move a Logitech based assembly's count**, since they are rebuilds and not memory of
+our build: the test setup assembled on the clean compile, section 362's route, now lays 148256 bytes as
+content where it laid 114896, and 216092 with the address fields where it laid 182786. Of the rise, 33225
+bytes are 6645 value map cases, the hour list 7, three corner programs 114 and the tables' counts 14; the
+menus' picture addresses, 48 bytes, move from the screen records to the description, being read now. The
+wiring marks the event map's base as read, three bytes. In our letters the eighteen sets' headers add 54
+bytes to the letters.
+
+**Two copies of a derivation were found and made one**: the case program's bytes were written in both
+`activityscreen.ts` and the empty builder, and the hour list's in the empty builder alone beside the state
+tables that name it. Both agree; the builder now takes `caseProgram` and `hourListBytes`.
+
+**Not covered**: the blended file. Blending gives each screen its own copy of a set, so the screen records
+no longer rebuild against the shared sets, the same as an assembly with blended letters, whose read back
+section 370 left open. The attribution is of the configuration before blending.
+
+**Falsification**: a Harmony 600, 650 or 700 compile on which `fourSlotActivityMenu` and the rows disagree,
+or base slot 9 entry 1's scan 4 list writes another variable than the rows; a picture of Logitech's that
+`ourPictureName` names.
+
+* `packages/codec/src/families/four-slot/chrome.ts`: `fourSlotActivityMenu`, `fourSlotMenuMarkerWriter`,
+  `holdsLogitechLook`; `shared/menus.ts`, `activityMenuByRows`; `screenrecords.ts`, the pictures read off
+  the pages; `backgrounds.ts`, `ourPictureName`; `assemble.ts`, `attributeBytes`; `empty.ts`,
+  `cornerProgramAt`; `statetables.ts`, `hourListBytes`.
+* `packages/codec/test/empty.test.ts`: the empty configuration read back and attributed whole, and both
+  structural readings against all 24 compiles.
