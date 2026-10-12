@@ -19,7 +19,7 @@ import {
   FOUR_SLOT_CHOICES,
   LETTERING_CHARACTERS,
   LETTERING_FACES,
-  OXANIUM_FACES,
+  oxaniumFace,
   UNDRAWN,
   checkBlendedLetters,
   compareViews,
@@ -64,7 +64,7 @@ const BACKGROUNDS = [0xb107, 0x1138, 0x0446, 0xf800, 0x031f, 0xfc60, 0xffff, 0x2
 
 test('the grey levels of every letter sit on its one bit box, sixteen levels a pixel', () => {
   for (const face of LETTERING_FACES) {
-    const { glyphs, greys } = OXANIUM_FACES[face];
+    const { glyphs, greys } = oxaniumFace(face);
     for (const ch of LETTERING_CHARACTERS) {
       const mask = (glyphs as Record<string, readonly string[]>)[ch]!;
       const grey = (greys as Record<string, readonly string[]>)[ch]!;

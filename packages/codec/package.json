@@ -12,7 +12,8 @@
     "typecheck": "tsc --build"
   },
   "dependencies": {
-    "@harmony/usb": "workspace:*"
+    "@harmony/usb": "workspace:*",
+    "opentype.js": "2.0.0"
   },
   "devDependencies": {
     "@harmony/lab": "workspace:*"

@@ -45,6 +45,9 @@ importers:
       '@harmony/usb':
         specifier: workspace:*
         version: link:../usb
+      opentype.js:
+        specifier: 2.0.0
+        version: 2.0.0
     devDependencies:
       '@harmony/lab':
         specifier: workspace:*
@@ -122,6 +125,10 @@ packages:
     engines: {node: '>=10.16'}
     hasBin: true
 
+  opentype.js@2.0.0:
+    resolution: {integrity: sha512-kCyjv6xdDY1W/jLWZ/L3QhhTlKUqDZMQ5+Jdlw12b3dXkKNpYBqqlMMj0YDQPShWFTMwgZI1hG14kN3XUDSg/A==}
+    hasBin: true
+
   pkg-prebuilds@1.1.0:
     resolution: {integrity: sha512-jyai+KTQ2OwbN6iRYw88XbYOMgtpoSYJpjYebx7d9ihqz3txNi3ucsBt3va0iVWe6svSlaqpijMHFF/eJCMZzg==}
     engines: {node: '>= 14.15.0'}
@@ -187,6 +194,8 @@ snapshots:
     dependencies:
       node-addon-api: 8.9.1
       pkg-prebuilds: 1.1.0
+
+  opentype.js@2.0.0: {}
 
   pkg-prebuilds@1.1.0: {}
 

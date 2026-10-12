@@ -30,7 +30,7 @@ import type { Container } from './gspm.ts';
 import { fontSets, glyphOf, type FontSet } from './font.ts';
 import { blockOfStatedCode, statedCode, statedProtocol, type StatedCode } from './stated.ts';
 import { FOUR_SLOT_LEFT_X, FOUR_SLOT_RIGHT_END, FOUR_SLOT_LABEL_Y } from './inventory.ts';
-import { OXANIUM_FACES } from './oxanium.ts';
+import { oxaniumFace } from './lettering.ts';
 
 // ---------------------------------------------------------------------------------------------------
 // Keys and screen
@@ -243,15 +243,20 @@ export const TITLE_SIZE = LABEL_SIZES[TITLE_RUNG] as LabelSize;
  * letters Logitech's sets of that size in, `F15`, `F14W`, `F14`, `F13`, `F11` and `F10`, at Logitech's
  * heights and with every printable character's width. A configuration re-lettered by `withOxaniumFonts`
  * carries these widths and no others, so its sizes are recognised by this table and its labels, titles
- * and counters measured in it, `ladderOf`; the rules themselves, where a label breaks and how far a title
+ * and counters measured in it, `ladderOf`. Built on first use, since the faces are rendered on demand,
+ * `todo-compile-650.md` 10.8; the rules themselves, where a label breaks and how far a title
  * may run, are the compiler's in pixels and stay as they are.
  */
-export const OXANIUM_LABEL_SIZES: readonly LabelSize[] = (['F15', 'F14W', 'F14', 'F13', 'F11', 'F10'] as const)
-  .map((face, k) => ({
+export function oxaniumLabelSizes(): readonly LabelSize[] {
+  oxaniumSizes ??= (['F15', 'F14W', 'F14', 'F13', 'F11', 'F10'] as const).map((face, k) => ({
     name: (LABEL_SIZES[k] as LabelSize).name,
-    height: OXANIUM_FACES[face].cell,
-    widths: new Map(Object.entries(OXANIUM_FACES[face].glyphs).map(([ch, rows]) => [ch, (rows[0] as string).length])),
+    height: oxaniumFace(face).cell,
+    widths: new Map(Object.entries(oxaniumFace(face).glyphs).map(([ch, rows]) => [ch, (rows[0] as string).length])),
   }));
+  return oxaniumSizes;
+}
+
+let oxaniumSizes: readonly LabelSize[] | undefined;
 
 /**
  * The widest a label line may be, in pixels: 59, the widest one line label on the twenty devices' pages,
@@ -532,10 +537,11 @@ export function fontsBySize(
 }
 
 /**
- * The ladder a configuration's letters are measured in: ours, `OXANIUM_LABEL_SIZES`, where a set of the
+ * The ladder a configuration's letters are measured in: ours, `oxaniumLabelSizes`, where a set of the
  * title's size is one of our faces, which is every configuration `withOxaniumFonts` has re-lettered, and
  * Logitech's otherwise. Re-lettering leaves no set of Logitech's widths behind, so the two never mix.
  */
 export function ladderOf(c: Container, map: { codes: ReadonlyMap<number, string> }): readonly LabelSize[] {
-  return (fontsBySize(c, map, OXANIUM_LABEL_SIZES).get(TITLE_RUNG) ?? []).length > 0 ? OXANIUM_LABEL_SIZES : LABEL_SIZES;
+  const ours = oxaniumLabelSizes();
+  return (fontsBySize(c, map, ours).get(TITLE_RUNG) ?? []).length > 0 ? ours : LABEL_SIZES;
 }

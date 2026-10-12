@@ -76,7 +76,8 @@ export * from './screentexts.ts';
 // todo-compile-650 9.1, section 363.
 export * from './pictures.ts';
 export * from './backgrounds.ts';
-export * from './oxanium.ts';
+export * from './raster.ts';
+export * from './typeface.ts';
 export * from './lettering.ts';
 export * from './blending.ts';
 export * from './fonttable.ts';

@@ -788,6 +788,8 @@ tools/usbprobe.py      [--json]   reads a CONNECTED remote, enumeration only, ne
 tools/oxanium_glyphs.py [--fonts DIR]   Oxanium rendered into the Harmony 650's letter masks,
                        packages/codec/src/oxanium.ts, from packages/codec/fonts/Oxanium/ (the typeface
                        and its OFL.txt, in the repository since plan 007); needs Pillow, the lab's venv
+                       To be retired by packages/codec/src/typeface.ts, which draws the same faces from
+                       the outlines in the codec (raster.ts), once its letters are approved, todo 10.8
 node packages/usb/bin/list-remotes.ts    the same question over HID, also enumeration only
 node packages/usb/bin/read-burst-probe.ts [--count 16384] [--stall-after N] [--stall-ms MS]
                        the positive control for a dropped chunk, section 223: read one window report

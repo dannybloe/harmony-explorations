@@ -32,7 +32,7 @@ import {
   type Container,
   IR_PULSE_MARK,
   LABEL_SIZES,
-  OXANIUM_LABEL_SIZES,
+  oxaniumLabelSizes,
   SEND_INFRARED,
   TITLE_RUNG,
   bitmapAt,
@@ -525,19 +525,19 @@ const NAMED = {
 /** The thirteen arch 14 configurations Logitech compiled, section 312, which the width table is the union of. */
 test('8.2.3: the six sizes in our letters are Logitech\'s heights with every printable character, and the rules measure in them',
   () => {
-    assert.deepEqual(OXANIUM_LABEL_SIZES.map((one) => [one.name, one.height]), LABEL_SIZES.map((one) => [one.name, one.height]));
-    for (const one of OXANIUM_LABEL_SIZES) assert.equal(one.widths.size, 95, one.name);
+    assert.deepEqual(oxaniumLabelSizes().map((one) => [one.name, one.height]), LABEL_SIZES.map((one) => [one.name, one.height]));
+    for (const one of oxaniumLabelSizes()) assert.equal(one.widths.size, 95, one.name);
     // Every digit of the title's size is one width in both, which is what lets `1/2` stand for every one
     // digit counter: 7 and a slash of 5 in Logitech's letters, 6 and 6 in ours.
-    for (const ladder of [LABEL_SIZES, OXANIUM_LABEL_SIZES]) {
+    for (const ladder of [LABEL_SIZES, oxaniumLabelSizes()]) {
       assert.equal(new Set([...'0123456789'].map((digit) => ladder[TITLE_RUNG]!.widths.get(digit))).size, 1);
     }
-    assert.deepEqual(pageCounter(1, 7, OXANIUM_LABEL_SIZES).map((one) => one.x), [107, 113, 119]);
+    assert.deepEqual(pageCounter(1, 7, oxaniumLabelSizes()).map((one) => one.x), [107, 113, 119]);
     assert.deepEqual(pageCounter(1, 7).map((one) => one.x), [106, 113, 118]);
     // `Teletext` is 58 pixels in Logitech's largest size and 60 in ours, whose `T` and `t` are wider, and
     // it has nowhere to split, so in ours it goes down a size.
     assert.deepEqual(labelLayout('Teletext'), { size: 0, lines: ['Teletext'] });
-    assert.deepEqual(labelLayout('Teletext', OXANIUM_LABEL_SIZES), { size: 1, lines: ['Teletext'] });
+    assert.deepEqual(labelLayout('Teletext', oxaniumLabelSizes()), { size: 1, lines: ['Teletext'] });
   });
 
 const H650_13 = ['h650_config_region', 'h650_panasonic_config', 'h650_power_hold_compile', 'h650_power_hold_compile_2',
@@ -555,12 +555,12 @@ test('8.2.3: re-lettered, every set of the 13 Harmony 650 compiles is the size i
       const map = characterMap(c)!;
       const oursMap = characterMap(ours)!;
       assert.equal(ladderOf(c, map), LABEL_SIZES, name);
-      assert.equal(ladderOf(ours, oursMap), OXANIUM_LABEL_SIZES, name);
+      assert.equal(ladderOf(ours, oursMap), oxaniumLabelSizes(), name);
       const oursSets = fontSets(ours)!;
       fontSets(c)!.forEach((set, font) => {
         const was = sizeOfSet(c, set, map);
         assert.equal(sizeOfSet(ours, oursSets[font]!, oursMap), undefined, `${name} font ${font} by Logitech's table`);
-        const key = `${was} ${sizeOfSet(ours, oursSets[font]!, oursMap, OXANIUM_LABEL_SIZES)} ${built.faces[font]!.face}`;
+        const key = `${was} ${sizeOfSet(ours, oursSets[font]!, oursMap, oxaniumLabelSizes())} ${built.faces[font]!.face}`;
         tally.set(key, (tally.get(key) ?? 0) + 1);
       });
     }

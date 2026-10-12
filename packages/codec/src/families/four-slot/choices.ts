@@ -19,7 +19,7 @@
  *   choice when a configuration is built rather than patched, todo 11.1.1.
  * * **Which of our faces letters each size**, `withOxaniumFonts`'s pick by a set's height and weight. The
  *   composers measure every label, title and counter in a ladder of sizes built from those faces,
- *   `OXANIUM_LABEL_SIZES`, and recognise a configuration in our letters by it, so another face would be
+ *   `oxaniumLabelSizes`, and recognise a configuration in our letters by it, so another face would be
  *   measured in the wrong widths. It becomes a choice when the ladder is computed from the faces a
  *   configuration carries, which rendering any face on demand needs anyway, 10.8.
  */

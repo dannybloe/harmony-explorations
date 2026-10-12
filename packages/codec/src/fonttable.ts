@@ -53,8 +53,7 @@ import type { ContainerLayout, ContainerPiece, PieceRef } from './frame.ts';
 import { layOutContainer } from './frame.ts';
 import { IMAGE_TABLE_SLOT, encodeGlyph, fontSets, glyphOf, type FontSet, type Glyph } from './font.ts';
 import { characterMap, type CharacterMap } from './text.ts';
-import { LETTERING_CHARACTERS, type LetterInks, letterRows, type Lettering } from './lettering.ts';
-import type { OxaniumFaceName } from './oxanium.ts';
+import { LETTERING_CHARACTERS, type LetterInks, letterRows, type Lettering, type OxaniumFaceName } from './lettering.ts';
 import { HARMONY_650_SKINS } from './backgrounds.ts';
 
 /** A refusal, named so a caller can tell a configuration this does not describe from a bug. */

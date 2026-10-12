@@ -17,7 +17,7 @@ import {
   FontTableError,
   LETTERING_CHARACTERS,
   LETTERING_FACES,
-  OXANIUM_FACES,
+  oxaniumFace,
   checkOxaniumFonts,
   compareViews,
   layOutContainer,
@@ -46,7 +46,7 @@ test('every face holds the 95 printable characters on its own cell, each ending 
   assert.equal(LETTERING_CHARACTERS.length, 95);
   assert.deepEqual(LETTERING_FACES, ['F15', 'F14W', 'F14', 'F13', 'F11', 'F10', 'R15', 'R14', 'R13']);
   for (const face of LETTERING_FACES) {
-    const { cell, glyphs } = OXANIUM_FACES[face];
+    const { cell, glyphs } = oxaniumFace(face);
     for (const ch of LETTERING_CHARACTERS) {
       const mask = (glyphs as Record<string, readonly string[]>)[ch]!;
       assert.equal(mask.length, cell, `${face} '${ch}'`);
@@ -60,7 +60,7 @@ test('a shadowed letter is white over black one pixel down and right, a plain on
   let shadows = 0;
   for (const face of LETTERING_FACES) {
     for (const ch of LETTERING_CHARACTERS) {
-      const mask = (OXANIUM_FACES[face].glyphs as Record<string, readonly string[]>)[ch]!;
+      const mask = (oxaniumFace(face).glyphs as Record<string, readonly string[]>)[ch]!;
       // Shadowed: the ink where the mask has ink, black exactly where the mask has ink one up and one
       // left and none here, and nothing anywhere else.
       letterRows(face, ch, 'shadowed', INKS).forEach((row, y) => row.forEach((p, x) => {

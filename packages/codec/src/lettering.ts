@@ -30,8 +30,9 @@
  * It sits apart from `fonttable.ts` because `text.ts` needs the alphabet and `fonttable.ts` needs `text.ts`.
  */
 import type { Glyph } from './font.ts';
-import { OXANIUM_FACES, type OxaniumFaceName } from './oxanium.ts';
+import { OXANIUM_FACES as PILLOW_FACES } from './oxanium.ts';
 import { rgb565, rgbTo565 } from './png.ts';
+import { renderFace, type FaceSpec, type RenderedFace } from './typeface.ts';
 
 /** The two colourings a letter is drawn in, decision 20. */
 export type Lettering = 'shadowed' | 'plain';
@@ -51,14 +52,70 @@ export interface LetterInks {
 /** The characters every face holds: printable ASCII, the space included. */
 export const LETTERING_CHARACTERS: readonly string[] = Array.from({ length: 95 }, (_, k) => String.fromCharCode(32 + k));
 
-export const LETTERING_FACES = Object.keys(OXANIUM_FACES) as OxaniumFaceName[];
+/**
+ * The nine faces our letters come in, one per face Logitech draws its Harmony 650 screens in, measured in
+ * 8.2 over the 13 compiles in the lab's `work/sample-8-2/`: each one's cell height, the row its baseline
+ * sits on, whether a glyph opens with a blank column, and the width of a space; the Oxanium cut and pixel
+ * size whose capitals and x-height land on Logitech's rows, the weight chosen by look, Regular for the
+ * three regular faces and SemiBold for the six label faces; and the rows its letters reach, which are the
+ * rows the letters `tools/oxanium_glyphs.py` drew with Pillow reach, approved in 8.2 (`todo-compile-650.md`
+ * 10.8), and which the renderer fits the outlines to. Tunable, decision 19.
+ */
+export const OXANIUM_FACE_SPECS = {
+  F15: { what: 'bold 15, corner labels and menu rows', cell: 15, baseline: 11, lead: 1, weight: 'SemiBold', px: 14, space: 4,
+    rows: { cap: 10, x: 8, ascender: 11, descender: 3 } },
+  F14W: { what: 'bold 14 wide, corner labels', cell: 14, baseline: 10, lead: 1, weight: 'SemiBold', px: 13, space: 4,
+    rows: { cap: 10, x: 7, ascender: 10, descender: 3 } },
+  F14: { what: 'bold 14, titles, counter, bottom words, corner labels', cell: 14, baseline: 10, lead: 0, weight: 'SemiBold', px: 12, space: 3,
+    rows: { cap: 9, x: 7, ascender: 9, descender: 3 } },
+  F13: { what: 'bold 13, corner labels', cell: 13, baseline: 9, lead: 0, weight: 'SemiBold', px: 11, space: 3,
+    rows: { cap: 8, x: 6, ascender: 8, descender: 2 } },
+  F11: { what: 'thin 11, corner labels', cell: 11, baseline: 8, lead: 1, weight: 'SemiBold', px: 9, space: 3,
+    rows: { cap: 7, x: 5, ascender: 7, descender: 2 } },
+  F10: { what: 'thin 10, corner labels', cell: 10, baseline: 7, lead: 0, weight: 'SemiBold', px: 9, space: 3,
+    rows: { cap: 7, x: 5, ascender: 7, descender: 2 } },
+  R15: { what: 'regular 15, firmware and status screens, Help', cell: 15, baseline: 11, lead: 1, weight: 'Regular', px: 14, space: 4,
+    rows: { cap: 10, x: 8, ascender: 11, descender: 3 } },
+  R14: { what: 'regular 14, start up and Off screens, Help, the tour', cell: 14, baseline: 10, lead: 1, weight: 'Regular', px: 12, space: 3,
+    rows: { cap: 9, x: 7, ascender: 9, descender: 3 } },
+  R13: { what: 'regular 13, Help', cell: 13, baseline: 9, lead: 0, weight: 'Regular', px: 11, space: 3,
+    rows: { cap: 8, x: 6, ascender: 8, descender: 2 } },
+} as const satisfies Record<string, FaceSpec>;
+
+export type OxaniumFaceName = keyof typeof OXANIUM_FACE_SPECS;
+
+/** A face and its letters: per character the one bit mask and the grey coverage on the same box. */
+export interface OxaniumFace extends FaceSpec, RenderedFace {}
+
+export const LETTERING_FACES = Object.keys(OXANIUM_FACE_SPECS) as OxaniumFaceName[];
+
+const faces = new Map<OxaniumFaceName, OxaniumFace>();
+
+/**
+ * One of our faces with its letters, rendered once and kept. **Two sources while 10.8 is open**: the
+ * letters Pillow drew, `oxanium.ts`, which are the approved ones and the default; and the codec's own
+ * renderer, `typeface.ts`, which draws them from Oxanium's outlines when `HARMONY_RENDERED_LETTERS=1`,
+ * for the preview that decides whether it replaces them. Read once, so a process letters with one source
+ * throughout.
+ */
+export function oxaniumFace(name: OxaniumFaceName): OxaniumFace {
+  let face = faces.get(name);
+  if (face === undefined) {
+    const spec = OXANIUM_FACE_SPECS[name];
+    const letters: RenderedFace = process.env.HARMONY_RENDERED_LETTERS === '1'
+      ? renderFace(spec, LETTERING_CHARACTERS) : PILLOW_FACES[name];
+    face = { ...spec, glyphs: letters.glyphs, greys: letters.greys };
+    faces.set(name, face);
+  }
+  return face;
+}
 
 /** The highest grey level `oxanium.ts` writes, one hexadecimal digit, `0` being no ink. */
 export const LETTERING_GREY_LEVELS = 15;
 
 /** A character's grey coverage on its glyph's box, each pixel from 0 to 1. */
 export function letterCoverage(face: OxaniumFaceName, character: string): number[][] {
-  const greys = (OXANIUM_FACES[face].greys as Readonly<Record<string, readonly string[]>>)[character];
+  const greys = oxaniumFace(face).greys[character];
   if (greys === undefined) throw new RangeError(`face ${face} has no letter '${character}'`);
   return greys.map((line) => [...line].map((cell) => (cell === '.' ? 0 : parseInt(cell, 16) / LETTERING_GREY_LEVELS)));
 }
@@ -95,7 +152,7 @@ export function letterRows(
 
 /** A character's one bit mask in a face, `#` for ink and anything else for none. */
 function letterMask(face: OxaniumFaceName, character: string): readonly string[] {
-  const mask = (OXANIUM_FACES[face].glyphs as Readonly<Record<string, readonly string[]>>)[character];
+  const mask = oxaniumFace(face).glyphs[character];
   if (mask === undefined) throw new RangeError(`face ${face} has no letter '${character}'`);
   return mask;
 }
