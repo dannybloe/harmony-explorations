@@ -70,8 +70,7 @@ import {
   sendPreludes,
   interDeviceDelayCases,
   INTER_DEVICE_DELAY_VALUES,
-  INTER_DEVICE_DELAY_DEFAULT,
-  POWER_ON_DELAY_DEFAULT,
+  FOUR_SLOT_CHOICES,
   POWER_ON_DELAY_CASES,
   powerOnDelays,
   powerOnDelayCases,
@@ -701,8 +700,8 @@ test('every arch 14 command opens with a private load and condition and its devi
   // What the compiled devices hold, the second Harmony 700 configuration left out as a repeat: the
   // composer's default is the value nearly all of them carry.
   assert.equal(held.length, 17, 'the devices with commands');
-  assert.equal(held.filter((one) => one === INTER_DEVICE_DELAY_DEFAULT).length, 15);
-  assert.deepEqual(held.filter((one) => one !== INTER_DEVICE_DELAY_DEFAULT).sort((a, b) => a - b), [3, 10]);
+  assert.equal(held.filter((one) => one === FOUR_SLOT_CHOICES.delays.interDevice).length, 15);
+  assert.deepEqual(held.filter((one) => one !== FOUR_SLOT_CHOICES.delays.interDevice).sort((a, b) => a - b), [3, 10]);
 });
 
 test('no command opens with the prelude on the Harmony One, the 525 or the arch 8 configuration',
@@ -1027,8 +1026,8 @@ test('every arch 14 device with a Power variable switches on through its power c
   assert.equal(second, 18, 'the fifteen and the three devices with no Power variable');
   assert.equal(offSame, 7, 'devices whose off sends the same code as their on, of 20 with both 700s counted');
   assert.equal(orders.size, 1, 'one case order on every table');
-  assert.equal(held.filter((one) => one === POWER_ON_DELAY_DEFAULT).length, 9);
-  assert.deepEqual(held.filter((one) => one !== POWER_ON_DELAY_DEFAULT).sort((a, b) => a - b),
+  assert.equal(held.filter((one) => one === FOUR_SLOT_CHOICES.delays.powerOn).length, 9);
+  assert.deepEqual(held.filter((one) => one !== FOUR_SLOT_CHOICES.delays.powerOn).sort((a, b) => a - b),
                    [35, 50, 50, 60, 75, 80]);
 });
 
@@ -1069,7 +1068,7 @@ test('a device composed on the Harmony 650 switches on with a power on delay in 
   assert.equal(variable.record?.count, 0, 'no transitions');
   const plain = composeDevice(pristine, { label: 'LG', commands: TELEVISION });
   assert.equal(stateVariables(parse(plain.bytes)).find((one) => one.index === plain.powerOnDelay!.variable)
-    ?.record?.first, POWER_ON_DELAY_DEFAULT);
+    ?.record?.first, FOUR_SLOT_CHOICES.delays.powerOn);
   assert.throws(() => composeDevice(pristine, { label: 'LG', commands: TELEVISION, powerOnDelay: 451 }),
                 ComposeError);
 });
@@ -1191,7 +1190,7 @@ test('a device composed on the Harmony 650 opens every command in the compiler\'
   assert.ok(delay.variable >= stateTable(after)!.narrow, 'a two byte variable');
   assert.equal(variable.name, `InterDeviceDelay_${delay.identifier}_65278`);
   assert.equal(delay.identifier, Math.max(...wasIds) + 1);
-  assert.equal(variable.record?.first, INTER_DEVICE_DELAY_DEFAULT);
+  assert.equal(variable.record?.first, FOUR_SLOT_CHOICES.delays.interDevice);
   assert.equal(variable.record?.second, 65277);
   assert.equal(variable.record?.count, 0, 'no transitions');
 

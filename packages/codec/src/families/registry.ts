@@ -9,7 +9,7 @@
  * order the modules happen to be evaluated in.
  */
 import type { Container } from '../gspm.ts';
-import type { Family, FamilyTraits } from './family.ts';
+import type { CommonChoices, Family, FamilyTraits } from './family.ts';
 import { FOUR_SLOT } from './four-slot/index.ts';
 import { TOUCH } from './touch/index.ts';
 
@@ -35,4 +35,9 @@ export const PLAIN_TRAITS: FamilyTraits = {
 /** The traits a shared composer asks about, of the configuration's family or `PLAIN_TRAITS`. */
 export function traitsOf(c: Container): FamilyTraits {
   return familyOf(c)?.traits ?? PLAIN_TRAITS;
+}
+
+/** The choices a shared composer asks about, of the configuration's family or none. */
+export function choicesOf(c: Container): CommonChoices {
+  return familyOf(c)?.choices ?? {};
 }

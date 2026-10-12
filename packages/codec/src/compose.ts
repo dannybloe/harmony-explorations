@@ -10,7 +10,8 @@
  * Today it reads the architecture the container states; when the recipe names its model,
  * `todo-compile-650.md` 10.7.4, it reads the model's definition instead.
  */
-import { familyOf, traitsOf } from './families/registry.ts';
+import { choicesOf, familyOf, traitsOf } from './families/registry.ts';
+import type { DelayDefaults } from './families/family.ts';
 import { Container } from './gspm.ts';
 import { handlerSets } from './sections.ts';
 import { composeActivityFor, type ComposeActivity, type ComposedActivity } from './shared/activities.ts';
@@ -105,8 +106,6 @@ export {
 export {
   type ComposedDevice,
   type ComposeDevice,
-  INTER_DEVICE_DELAY_DEFAULT,
-  POWER_ON_DELAY_DEFAULT,
 } from './shared/devices.ts';
 export {
   appendTableEntries,
@@ -241,11 +240,14 @@ export function composeActivityMenuRow(
 }
 
 /**
- * Compose a device into a configuration, with the traits of the family its remote is in: `composeDeviceFor`
+ * Compose a device into a configuration, with the traits of the family its remote is in and, where the
+ * device states no delay, the family's delays or the ones given: `composeDeviceFor`
  * in `shared/devices.ts` carries the whole account.
  */
-export function composeDevice(c: Container, device: ComposeDevice): ComposedDevice {
-  return composeDeviceFor(c, device, traitsOf(c));
+export function composeDevice(
+  c: Container, device: ComposeDevice, delays: DelayDefaults | undefined = choicesOf(c).delays,
+): ComposedDevice {
+  return composeDeviceFor(c, device, traitsOf(c), delays);
 }
 
 /**
@@ -255,3 +257,7 @@ export function composeDevice(c: Container, device: ComposeDevice): ComposedDevi
 export function composeActivity(c: Container, activity: ComposeActivity): ComposedActivity {
   return composeActivityFor(c, activity, traitsOf(c));
 }
+
+export { FOUR_SLOT_CHOICES, type FourSlotChoices, type FourSlotChoicesGiven, fourSlotChoices } from './families/four-slot/choices.ts';
+export { TOUCH_CHOICES, type TouchChoices } from './families/touch/choices.ts';
+export type { CommonChoices, DelayDefaults, FamilyTraits, WithChoices } from './families/family.ts';

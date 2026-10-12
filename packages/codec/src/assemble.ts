@@ -12,7 +12,10 @@
  * * **the donor**, a container every part comes from that no generator builds yet, named as a
  *   parameter rather than buried in a script, so that 11.1 can hand in a different one and count what
  *   is left;
- * * **the settings**, MyHarmony's and this track's, `TRACK_SETTINGS` unless given.
+ * * **the choices**, every choice of ours the four slot family makes, `FourSlotChoices`: the letters, the
+ *   backgrounds and their colours, blending, the settings, which activity key a type of activity takes,
+ *   what to do with a label too wide and the delays a device starts with, each the family's default
+ *   unless given, `todo-compile-650.md` 10.7.3.
  *
  * **What it does, in order**, each a generator or a composer this project already has and a check that
  * it calibrated against Logitech's compiles:
@@ -40,7 +43,14 @@
  *     numbering: with the wiring's three settings off that is the 70 lists section 360 counted;
  * 13. moves what the composers parked where Logitech's compiler parks nothing into the body, places
  *     what is parked in front of a table and the picture bank, section 328, and lays the frame out,
- *     section 318.
+ *     section 318;
+ * 14. with the state colours chosen, one flat colour per screen state in place of the designed
+ *     backgrounds, decision 20, `withStateBackgrounds`;
+ * 15. with blending chosen, our letters blended into the colour under each text, decision 22,
+ *     `withBlendedLetters`. Both run on the placed file, the order the files written to the Harmony 650
+ *     were built in, `todo-compile-650.md` 9.1.2.1 and 8.2.6.
+ *
+ * Step 0 letters the donor in ours when that is chosen, before any composer spells a label.
  *
  * **What it cannot do yet, measured in section 364.** An activity's working screen is not in the setup
  * file, which is the platform's soft button list and a person's choice, section 323, so it is an input of
@@ -92,7 +102,7 @@ import { checkOxaniumFonts, withOxaniumFonts, type SetFace } from './fonttable.t
 import { LETTERING_FACES, letterRows } from './lettering.ts';
 import { fontSets, glyphOf } from './font.ts';
 import {
-  ComposeError, composeActivity, composeActivityDeviceList, composeActivityMenuRow, composeActivityScreen, keepDeviceOn,
+  ComposeError, composeActivity, composeActivityDeviceList, composeActivityMenuRow, keepDeviceOn,
   nextActivityValue, startsSwitchingOff,
 } from './compose.ts';
 import {
@@ -103,7 +113,10 @@ import { composeCatalogueDevices, type ComposedCatalogueDevice } from './compose
 import { inputPlan, inputTarget } from './inputs.ts';
 import { catalogueDriving } from './driving.ts';
 import { activityPauseGroups, composeSequence } from './sequence.ts';
-import type { ActivityKey } from './activitykeys.ts';
+import { FOUR_SLOT } from './families/four-slot/index.ts';
+import { type FourSlotChoices, type FourSlotChoicesGiven, fourSlotChoices } from './families/four-slot/choices.ts';
+import { checkStateBackgrounds, withStateBackgrounds } from './backgrounds.ts';
+import { type BlendedSet, checkBlendedLetters, type LettersBlended, withBlendedLetters } from './blending.ts';
 import type { ComposeRow } from './compose.ts';
 
 /** A refusal, named so a caller can tell a setup the donor cannot serve from a bug. */
@@ -149,16 +162,6 @@ export type AssemblyScreenItem =
   | { readonly device: string; readonly command: string }
   | { readonly sequence: string; readonly steps: readonly AssemblySequenceStep[] };
 export type AssemblySequenceStep = { readonly device: string; readonly scan: number } | { readonly pause: number };
-
-/**
- * MyHarmony's activity type to the Harmony 650's activity key; `Custom` holds none. An inference: it agrees
- * with Logitech's compiles of the test setup, the only ones whose types are known here, while section 314
- * reads the account's root button map as what decides which activity a key starts. The three typed
- * branches run in no test, since every donor the composers take already holds its typed activities.
- */
-const KEY_OF_TYPE: Readonly<Record<string, ActivityKey | undefined>> = {
-  WatchTV: 'Watch TV', WatchDvd: 'Watch a Movie', ListenToMusic: 'Listen to Music', Custom: undefined,
-};
 
 // ---------------------------------------------------------------------------------------------------
 // Which lists are named, and dropping the ones that are not
@@ -462,26 +465,11 @@ export function checkRenumbering(before: Container, after: Container, dropped: r
  */
 export const ASSEMBLY_SKINS: ReadonlySet<number> = new Set([72]);
 
-/**
- * This track's settings, `todo-compile-650.md`: the screen lit 20 seconds, the 650's default (6.2.13),
- * the tilt sensor on (4.3.3), and the Remote Assistant, the restore of saved delays, Help and the tour
- * all left out (4.3.2, 3.13, 7.4, section 360). The boot step is the Harmony 700's alone.
- */
-export const TRACK_SETTINGS: Readonly<WiringSettings> = {
-  glowTime: 20,
-  tiltSensor: true,
-  remoteAssistant: false,
-  bootStep: false,
-  tourShown: false,
-  delayRestore: false,
-  help: false,
-};
-
 export interface AssembleOptions {
   /** The container every part no generator builds is taken from: a Logitech compile, or a library. */
   readonly donor: Uint8Array;
-  /** Settings over `TRACK_SETTINGS`. */
-  readonly settings?: Partial<WiringSettings>;
+  /** Choices over the four slot family's defaults, `FOUR_SLOT_CHOICES`. */
+  readonly choices?: FourSlotChoicesGiven;
   /** The build time to stamp, `YYYY-MM-DDTHH:MM:SS`; absent keeps the donor's. A write stamps again. */
   readonly builtAt?: string;
   /** False keeps the donor's placement of parked pieces and pictures instead of `placePieces`'. */
@@ -501,14 +489,6 @@ export interface AssembleOptions {
    * Absent for an activity composes it with an empty working screen.
    */
   readonly screens?: Readonly<Record<string, readonly AssemblyScreenItem[]>>;
-  /**
-   * Letter the donor in our own font table before anything is composed, `withOxaniumFonts`, decision 19,
-   * `todo-compile-650.md` 8.2.3. Every set then spells every printable character, so every label a
-   * composer writes is drawn in the font its page uses and none is borrowed from another size, and the
-   * text step places every text in our letters' widths. Absent keeps Logitech's letters, which is what
-   * every assembly measured against a Logitech compile needs.
-   */
-  readonly ourLetters?: boolean;
 }
 
 /** One step of the assembly, for a caller that reports. */
@@ -529,8 +509,10 @@ export interface Assembled {
   keptOn: string[];
   /** The setup's devices and activities the composers added, by the setup's name, in the order added. */
   composed: { devices: string[]; activities: string[] };
-  /** With `ourLetters`, the face and colouring each font set was given, which `withBlendedLetters` needs. */
+  /** With our letters, the face and colouring each font set was given, which `withBlendedLetters` needs. */
   faces?: SetFace[];
+  /** With blending, the copies of each set blended for a background, which `checkBlendedLetters` reads. */
+  blended?: BlendedSet[];
 }
 
 /** A device's name as base slot 0 spells it, with `_` for a space, read back as the setup writes it. */
@@ -545,16 +527,23 @@ export function assembleSetup(setup: SetupDescription, options: AssembleOptions)
   if (c.architecture !== 14) throw new AssemblyError(`the assembly is arch 14's, and the donor is arch ${c.architecture}`);
   const skin = (c.versionWord ?? -1) & 0xff;
   if (!ASSEMBLY_SKINS.has(skin)) throw new AssemblyError(`the assembly is measured on the Harmony 650, skin 72, and the donor is skin ${skin}`);
-  const settings: WiringSettings = { ...TRACK_SETTINGS, ...options.settings };
+  const choices = fourSlotChoices(options.choices);
+  if (choices.blendLetters && choices.letters !== 'oxanium') {
+    throw new AssemblyError('only our letters can be blended, since only theirs come with grey levels');
+  }
+  const settings: WiringSettings = choices.settings;
   const steps: AssemblyStep[] = [];
   const note = (step: string, detail?: string): void => {
     steps.push({ step, bytes: c.blob.length, ...(detail === undefined ? {} : { detail }) });
   };
   note('donor');
 
-  // 0. Our letters, before any composer spells a label, so none has to borrow one.
+  // 0. Our letters, before any composer spells a label, so none has to borrow one. Lettering the donor
+  //    in our own font table means every set spells every printable character, so every label a composer
+  //    writes is drawn in the font its page uses and none is borrowed from another size, and the text
+  //    step places every text in our letters' widths, `withOxaniumFonts`, decision 19, 8.2.3.
   let faces: SetFace[] | undefined;
-  if (options.ourLetters === true) {
+  if (choices.letters === 'oxanium') {
     const lettered = withOxaniumFonts(takeApart(c));
     c = layOutContainer(lettered.layout).container;
     checkOxaniumFonts(c, lettered.faces);
@@ -610,7 +599,7 @@ export function assembleSetup(setup: SetupDescription, options: AssembleOptions)
     });
     let result;
     try {
-      result = composeCatalogueDevices(c, options.archive, requests, { maxDevices: options.maxDevices });
+      result = composeCatalogueDevices(c, options.archive, requests, { maxDevices: options.maxDevices, delays: choices.delays });
     } catch (error) {
       if (error instanceof ComposeError) throw new AssemblyError(`composing ${missingDevices.map((one) => one.name).join(', ')}: ${error.message}`);
       throw error;
@@ -654,7 +643,7 @@ export function assembleSetup(setup: SetupDescription, options: AssembleOptions)
   for (const activity of setup.activities) {
     if (activities(c).some((one) => spoken(one.name) === activity.name)) continue;
     try {
-      c = composeSetupActivity(c, setup, activity, options, labelOf, powerOf, composedDevices);
+      c = composeSetupActivity(c, setup, activity, options, choices, labelOf, powerOf, composedDevices);
     } catch (error) {
       if (error instanceof ComposeError || error instanceof AssemblyError) {
         throw new AssemblyError(`composing ${activity.name}: ${error.message}`);
@@ -728,13 +717,35 @@ export function assembleSetup(setup: SetupDescription, options: AssembleOptions)
     c = parse(layOutContainer(placePieces(loosen(into.layout)).layout).bytes);
     note('placed', into.moved === 0 ? undefined : `${into.moved} composed pieces moved into the body first`);
   }
+
+  // The assembly's own checks run here, before the look: several of them know a page by Logitech's
+  // designed backgrounds, which the state colours replace. Each look step is held to its own check instead.
+  checkAssembled(c);
+
+  // 14. The state colours, on the placed file.
+  if (choices.backgrounds === 'state colours') {
+    const coloured = withStateBackgrounds(takeApart(c), choices.stateColours, choices.barColour);
+    c = layOutContainer(coloured.layout).container;
+    checkStateBackgrounds(c, takeApart(c), choices.stateColours);
+    note('state colours');
+  }
+
+  // 15. Our letters blended into the colour under each text.
+  let blended: LettersBlended | undefined;
+  if (choices.blendLetters) {
+    blended = withBlendedLetters(takeApart(c), faces as SetFace[]);
+    c = layOutContainer(blended.layout).container;
+    checkBlendedLetters(c, faces as SetFace[], blended.blended);
+    note('blended letters', `${blended.blended.length} sets blended, ${blended.repointed} selects pointed at them`);
+  }
+
   if (options.builtAt !== undefined) {
     c = parse(saveEdits(c, [], options.builtAt).bytes);
     note('stamped', options.builtAt);
   }
 
-  checkAssembled(c);
-  return { bytes: c.blob, container: c, steps, dropped: dropped.dropped, keptOn, composed, ...(faces === undefined ? {} : { faces }) };
+  return { bytes: c.blob, container: c, steps, dropped: dropped.dropped, keptOn, composed, ...(faces === undefined ? {} : { faces }),
+    ...(blended === undefined ? {} : { blended: blended.blended }) };
 }
 
 /** The group of the device a setup names, through its label in the container. */
@@ -754,11 +765,11 @@ function groupOfDevice(c: Container, label: string | undefined, name: string): n
  * by its type, section 314.
  */
 function composeSetupActivity(
-  c: Container, setup: SetupDescription, activity: SetupActivity, options: AssembleOptions,
+  c: Container, setup: SetupDescription, activity: SetupActivity, options: AssembleOptions, choices: FourSlotChoices,
   labelOf: (name: string) => string | undefined, powerOf: (name: string) => number | undefined,
   composedDevices: ReadonlyMap<string, ComposedCatalogueDevice>,
 ): Container {
-  if (!(activity.type in KEY_OF_TYPE)) throw new AssemblyError(`${activity.name}'s type ${activity.type} is not one this assembly knows`);
+  if (!(activity.type in choices.activityKeys)) throw new AssemblyError(`${activity.name}'s type ${activity.type} is not one this assembly knows`);
   const listed: ActivityDevice[] = activity.devices.map((one) => {
     const label = labelOf(one.device);
     const group = groupOfDevice(c, label, one.device);
@@ -836,8 +847,8 @@ function composeSetupActivity(
     sequenced = true;
   }
 
-  const screen = composeActivityScreen(c, nextActivityValue(c), activity.name, rows);
-  const key = KEY_OF_TYPE[activity.type];
+  const screen = FOUR_SLOT.composeActivityScreen(c, nextActivityValue(c), activity.name, rows, { choices });
+  const key = choices.activityKeys[activity.type];
   const built = composeActivity(parse(screen.bytes), {
     label: activity.name, targets, keys,
     screen: {

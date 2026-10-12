@@ -66,6 +66,7 @@
  * peaked at 35 of the 40, under the ceiling, so passing this rail is not a promise the remote copes:
  * the softer bound is a decision nobody has taken, section 238.
  */
+import { SCREEN_ITEM_BEEP } from './inventory.ts';
 import { familyOf, traitsOf } from './families/registry.ts';
 import type { Container, Instruction } from './gspm.ts';
 import { parse } from './gspm.ts';
@@ -95,8 +96,7 @@ import { Writer } from './emit.ts';
 import { EditError } from './edit.ts';
 import type { Edit } from './edit.ts';
 
-/** Opcode `0x75`, the beeper, and the operand every Harmony One screen item opens with, section 73. */
-export const SCREEN_ITEM_BEEP: Readonly<Instruction> = { opcode: 0x75, operand: 0x0fca };
+export { SCREEN_ITEM_BEEP };
 
 /**
  * The longest wait one pause step can carry: the operand's low byte, in tenths of a second, so 25.5

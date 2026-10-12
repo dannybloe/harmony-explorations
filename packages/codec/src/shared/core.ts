@@ -18,7 +18,7 @@ import {
 } from '../sections.ts';
 import { appendTableEntries } from '../shared/infrared.ts';
 import { headerOf } from '../shared/spelling.ts';
-import { composedNameTreeOrder, type StateVariableSpec } from '../statetables.ts';
+import { composedNameTreeOrder, type StateVariableSpec, VALUE_MAP_LEAD } from '../statetables.ts';
 import {
   countedPointers, VALUE_MAP_COUNT_WIDTH, VALUE_MAP_KEY_WIDTH, VALUE_MAP_SECTION_COUNT_WIDTH, VALUE_MAP_SLOT,
   valueMaps,
@@ -267,8 +267,6 @@ export function appendNarrowStateVariable(
   return { bytes: appendNameNode(current, name, variable), variable };
 }
 
-/** Base slot 14 records open with a byte the firmware steps over, 2 in every record of the corpus. */
-const VALUE_MAP_LEAD = 2;
 
 /**
  * Append action lists at the foot of the action table, where `composeDevice` puts its own, and

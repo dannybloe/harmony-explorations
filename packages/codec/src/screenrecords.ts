@@ -54,6 +54,8 @@
  *
  * Arch 14 only, the Harmony 600, 650 and 700. Read only towards hardware: the result is pieces.
  */
+import { ACTIVITY_MENU_MARKER_VALUE, DEVICE_MENU_MARKER_VALUE } from './shared/menus.ts';
+import { MAP_VALUE_OPCODE } from './inventory.ts';
 import type { Container, Instruction } from './gspm.ts';
 import {
   ACTION_TABLE_SLOT,
@@ -116,11 +118,6 @@ export const SCREEN_RECORD_KINDS: readonly ScreenRecordKind[] = ['idle device li
  */
 export const OFF_TITLE = 'Turning system off';
 
-/** `0x72` maps a variable through a base slot 14 record, section 280. */
-const MAP_VALUE = 0x72;
-/** The marker values a row writes: 1 on a device row, 0 on an activity row, section 329. */
-const DEVICE_ROW_MARKER = 1;
-const ACTIVITY_ROW_MARKER = 0;
 /** A page record on arch 14 is two pointers, the list then the program, section 66. */
 const PAGE_RECORD_LENGTH = 6;
 /** A mode entry: kind, the back pointer, the page count, then three bytes per page, section 52. */
@@ -549,7 +546,7 @@ export function describeScreenRecords(
     const tags = menuTags(kind);
     const ownEntries = f.record.entries;
     if (c.blob[f.ownOff] === 0 || ownEntries.length !== tags.length || ownEntries.some((one, k) => one.tag !== tags[k]
-      || one.opcode !== (one.tag === DEVICE_MODE_PROGRAM_TAG ? RUN_SCREEN_PROGRAM : MAP_VALUE))) {
+      || one.opcode !== (one.tag === DEVICE_MODE_PROGRAM_TAG ? RUN_SCREEN_PROGRAM : MAP_VALUE_OPCODE))) {
       throw new ScreenRecordError(`the ${kind}'s own key map is not the one built`);
     }
     const operandOf = (tag: number): number => value16(f.ownOff + 1 + 4 * tags.indexOf(tag) + 1);
@@ -595,9 +592,9 @@ export function describeScreenRecords(
           const [first, second] = body as [(typeof body)[number], (typeof body)[number]];
           const device = kind === 'idle device list';
           const shape = device
-            ? first.opcode === ENTER_MODE && second.opcode >= STATE_WRITE_BASE && second.operand === DEVICE_ROW_MARKER
+            ? first.opcode === ENTER_MODE && second.opcode >= STATE_WRITE_BASE && second.operand === DEVICE_MENU_MARKER_VALUE
             : first.opcode === SELECT_BINDING_SET && (first.operand & SELECT_BINDING_SET_MASK) === SELECT_BINDING_SET_MASK
-              && second.opcode >= STATE_WRITE_BASE && second.operand === ACTIVITY_ROW_MARKER;
+              && second.opcode >= STATE_WRITE_BASE && second.operand === ACTIVITY_MENU_MARKER_VALUE;
           if (!shape) throw new ScreenRecordError(`the ${kind}'s page ${p + 1} runs list ${index}, which is not a row's`);
           return { target: device ? value16(off + 1) : value(off + 1), marker: value(off + 6) - STATE_WRITE_BASE };
         });
@@ -826,7 +823,7 @@ export function buildScreenRecords(spec: ScreenRecordsSpec, c: Container): Built
     m.rows.forEach((row, r) => {
       const slot = m.slots[r] as ScreenMenuSlot;
       const body = m.kind === 'idle device list'
-        ? deviceListRowBody(row.target, { opcode: STATE_WRITE_BASE + m.marker, operand: DEVICE_ROW_MARKER })
+        ? deviceListRowBody(row.target, { opcode: STATE_WRITE_BASE + m.marker, operand: DEVICE_MENU_MARKER_VALUE })
         : activityRowListBody(row.target, STATE_WRITE_BASE + m.marker);
       for (const index of [...slot.page, ...slot.copy]) {
         const was = rowLists.get(index);
@@ -845,7 +842,7 @@ export function buildScreenRecords(spec: ScreenRecordsSpec, c: Container): Built
       return m.backKey;
     };
     const own = menuTags(m.kind).map((tag) => ({
-      tag, operand: operand(tag), opcode: tag === DEVICE_MODE_PROGRAM_TAG ? RUN_SCREEN_PROGRAM : MAP_VALUE,
+      tag, operand: operand(tag), opcode: tag === DEVICE_MODE_PROGRAM_TAG ? RUN_SCREEN_PROGRAM : MAP_VALUE_OPCODE,
     }));
     return recordOf(own, programs, lists, copies);
   };

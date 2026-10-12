@@ -35,7 +35,7 @@ import { VALUE_MAP_COUNT_WIDTH, VALUE_MAP_KEY_WIDTH, valueMaps } from '../valuem
 export const ACTIVITY_MENU_MARKER_VALUE = 0;
 
 /** What a **device list** row writes into the same variable, section 239. */
-const DEVICE_MENU_MARKER_VALUE = 1;
+export const DEVICE_MENU_MARKER_VALUE = 1;
 
 // The menu rows are measured on the remotes a family serves, `familyOf`: arch 12 (Harmony One) and
 // arch 14 (Harmony 600, 650 and 700). Arch 8, 9 and 10 (Harmony 880 and 885, 525, 890 and 895) are not

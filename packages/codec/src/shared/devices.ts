@@ -4,7 +4,8 @@
  * send prelude are still chosen by the architecture inside these functions; `todo-compile-650.md` 10.7.2's
  * last stage hands them to the family.
  */
-import type { FamilyTraits } from '../families/family.ts';
+import { DELAY_MAX } from '../statetables.ts';
+import type { DelayDefaults, FamilyTraits } from '../families/family.ts';
 import { STATE_BAND } from '../actions.ts';
 import { u24 } from '../bytes.ts';
 import { Writer } from '../emit.ts';
@@ -128,7 +129,9 @@ function callingList(lists: readonly number[]): Writer {
   return body;
 }
 
-export function composeDeviceFor(c: Container, device: ComposeDevice, traits: FamilyTraits): ComposedDevice {
+export function composeDeviceFor(
+  c: Container, device: ComposeDevice, traits: FamilyTraits, delayDefaults?: DelayDefaults,
+): ComposedDevice {
   if (device.label === '' || device.label.includes('_')
       || [...device.label].some((ch) => ch.charCodeAt(0) < 0x20 || ch.charCodeAt(0) > 0x7e)) {
     throw new ComposeError('a label is printable ASCII with no underscore, per the name grammar');
@@ -190,10 +193,12 @@ export function composeDeviceFor(c: Container, device: ComposeDevice, traits: Fa
 
   // The Harmony 600, 650 and 700, `FamilyTraits.sendPrelude`: the device's two delays, each a variable and the base slot 14 table that maps it,
   // which every command's prelude and the power on list below name. Sections 287 and 288.
-  const delay = traits.sendPrelude
+  // A delay the device does not state is its family's choice, `CommonChoices.delays`.
+  if (traits.sendPrelude && delayDefaults === undefined) throw new ComposeError('the family states no delays a device starts with');
+  const delay = traits.sendPrelude && delayDefaults !== undefined
     ? composeDelays(current, group.group,
-                    device.interDeviceDelay ?? INTER_DEVICE_DELAY_DEFAULT,
-                    device.powerOnDelay ?? POWER_ON_DELAY_DEFAULT)
+                    device.interDeviceDelay ?? delayDefaults.interDevice,
+                    device.powerOnDelay ?? delayDefaults.powerOn)
     : undefined;
   if (delay !== undefined) current = parse(delay.bytes);
 
@@ -407,25 +412,7 @@ export function composeDeviceFor(c: Container, device: ComposeDevice, traits: Fa
  */
 
 
-/**
- * The inter device delay a composed device starts with, in tenths: 15 of the 17 devices with
- * commands Logitech compiled on the four distinct arch 14 configurations carry 5, one 10 and one 3.
- */
-export const INTER_DEVICE_DELAY_DEFAULT = 5;
 
-/**
- * The power on delay a composed device starts with, in tenths: 9 of the 15 devices with a `Power`
- * variable on the four distinct arch 14 configurations carry 15. The other six are 35 to 80, and they
- * include all four televisions, none of which carries 15, so a television is composed with the value
- * given rather than this.
- */
-export const POWER_ON_DELAY_DEFAULT = 15;
-
-/**
- * The highest value either delay variable states, on every one of them: the name ends `_65278`,
- * one more, like every variable's, section 86. Wider than either table, which is the compiler's.
- */
-const DELAY_VARIABLE_MAX = 65277;
 
 interface ComposedDelays {
   bytes: Uint8Array;
@@ -449,7 +436,7 @@ function appendDelayVariable(
   const recordAt = stateRecordEnd(c);
   const recordHole = relocate(c, recordAt, STATE_RECORD_HEADER);
   recordHole.bytes.set(new Writer(STATE_RECORD_HEADER)
-    .u16(first).u16(DELAY_VARIABLE_MAX).u16(0).u8(0).bytes, recordAt);
+    .u16(first).u16(DELAY_MAX).u16(0).u8(0).bytes, recordAt);
   let current = parse(recordHole.bytes);
   const states = stateTable(current);
   if (states === undefined) throw new ComposeError('base slot 13 stopped reading');
@@ -508,9 +495,9 @@ function composeDelays(c: Container, group: number, interDevice: number, powerOn
 
   // The variables, power on first, which is the order the compiler numbers them in on 9 of the 15
   // devices and not a rule; nothing reads the order.
-  const powered = appendDelayVariable(c, `PowerOnDelay_${identifier}_${DELAY_VARIABLE_MAX + 1}`, powerOn);
+  const powered = appendDelayVariable(c, `PowerOnDelay_${identifier}_${DELAY_MAX + 1}`, powerOn);
   const spaced = appendDelayVariable(parse(powered.bytes),
-    `InterDeviceDelay_${identifier}_${DELAY_VARIABLE_MAX + 1}`, interDevice);
+    `InterDeviceDelay_${identifier}_${DELAY_MAX + 1}`, interDevice);
   let current = parse(spaced.bytes);
 
   // The lists a case above 100 calls, one per value from 101 to 450, laid out as the compiler lays

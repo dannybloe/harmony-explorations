@@ -5,10 +5,11 @@
  * differences between remotes cut across each other (the Harmony One and the 650 share a container and
  * infrared but not a screen) and a base class would grow conditions for its exceptions.
  *
- * The interface grows as `todo-compile-650.md` 10.7 moves more of the composers' choices to the
- * families: the start sequence's shape and the delays next, then the layout and serializer steps of
- * plan 007's pipeline. A new family implements every member; the compiler refuses one that does not.
- * `FamilyTraits` carries what differs as data, for the shared composers.
+ * The interface grows with plan 007's pipeline, the layout and serializer steps next. A new family
+ * implements every member; the compiler refuses one that does not. `FamilyTraits` carries what differs
+ * as data, for the shared composers, and `choices` every choice of ours the family makes, at its default,
+ * `todo-compile-650.md` 10.7.3: a composer takes its family's choices in its options and falls back to
+ * these.
  */
 import type { Container, Instruction } from '../gspm.ts';
 import type {
@@ -39,18 +40,37 @@ export interface FamilyTraits {
   readonly screenItemsBeep: boolean;
 }
 
-export interface Family {
+/** The delays a composed device starts with where nothing states one, in tenths of a second. */
+export interface DelayDefaults {
+  readonly powerOn: number;
+  readonly interDevice: number;
+}
+
+/**
+ * The choices a shared composer asks a family for, which every family's own choices include: a family
+ * whose devices carry no delay variables, `FamilyTraits.sendPrelude` false, has no delays to choose.
+ */
+export interface CommonChoices {
+  readonly delays?: DelayDefaults;
+}
+
+/** A composer's options with the family's choices, which default to the family's own. */
+export type WithChoices<Options, Choices> = Options & { readonly choices?: Choices };
+
+export interface Family<Choices extends CommonChoices = CommonChoices> {
   /** For a refusal or a report: the models this family serves, as a person names them. */
   readonly name: string;
   readonly traits: FamilyTraits;
+  /** Every choice of ours this family makes, at its default: what a recipe may set for it. */
+  readonly choices: Choices;
   /** A device's own screen: its page or pages, `composeDeviceScreen`. */
-  composeDeviceScreen(c: Container, label: string, rows: readonly ComposeRow[], options: ComposeScreenOptions): ComposedScreen;
+  composeDeviceScreen(c: Container, label: string, rows: readonly ComposeRow[], options: WithChoices<ComposeScreenOptions, Choices>): ComposedScreen;
   /** A row on the activity menu, once the shared prelude has found the menu and its marker. */
   composeActivityRow(
-    c: Container, label: string, set: number, menu: number, marker: Instruction, options: ComposeActivityRowOptions,
+    c: Container, label: string, set: number, menu: number, marker: Instruction, options: WithChoices<ComposeActivityRowOptions, Choices>,
   ): ComposedActivityRow;
   /** An activity's working screen, `composeActivityScreen`. */
   composeActivityScreen(
-    c: Container, activity: number, label: string, rows: readonly ComposeRow[], options: ComposeActivityScreenOptions,
+    c: Container, activity: number, label: string, rows: readonly ComposeRow[], options: WithChoices<ComposeActivityScreenOptions, Choices>,
   ): ComposedActivityScreen;
 }

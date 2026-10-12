@@ -197,6 +197,25 @@ changes no caller at once.
    after each of the three stages.
 2. **10.7.3, the choices.** Every constant sorted into fact or choice; each choice a field of its family's
    choices with today's value as its default.
+   **Done 12 October 2026, three choices excepted.** The census ran over every constant of the composer
+   modules, about 200. What came out a choice is in `src/families/four-slot/choices.ts`, `FourSlotChoices`:
+   the letters (Logitech's or ours), blending, the backgrounds (designed or a colour per state) and their
+   colours, the bars' colour, a label too wide (a size down or refused), the activity type to key mapping,
+   the settings and the delays a device starts with; and in `src/families/touch/choices.ts` the Harmony
+   One's device title font, the one of its three row fonts that is ours. `Family` carries them as
+   `choices`, a composer takes them in its options and falls back to its family's, and `assembleSetup`
+   takes one `choices` input in place of its `settings` and `ourLetters` options. The state colours and
+   blending, until then steps only the lab's scripts ran, are steps 14 and 15 of the assembly, each held
+   to its own check, and the assembly's own checks now run before them, since several know a page by
+   Logitech's designed backgrounds. With the defaults the assembled test setup is byte equal to before.
+   Fixed for now, with the reason on `FourSlotChoices`: the words, until a configuration is built rather
+   than patched (11.1.1); the letters' colours, until our letters are read by shape rather than ink
+   (10.7.5); which face letters each size, until the ladder is computed from the faces a configuration
+   carries (10.8). The sort also found facts with two copies outside `compose.ts`, which went to one
+   home each: the mode push and pop, the silent flag, the deferred instruction, the screen item beep, the
+   condition's two arms, the value map's lead byte, the menu marker values, a delay's stated maximum and
+   the firmware's variable count. Constants a recipe should never reach stayed facts even where the
+   value is ours, the activity row's marker value for one, since readers depend on it.
 3. **10.7.4, the recipe and the description.** The recipe holds everything a configuration depends on and
    names its model; the description is a written type and the front end builds it; the format is
    written down as a preliminary definition FreeHarmony can produce, its fields checked against

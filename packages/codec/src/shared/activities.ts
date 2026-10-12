@@ -4,6 +4,7 @@
  * `compose.ts` unchanged. The start sequence's shape still differs by family inside `composeActivity`;
  * `todo-compile-650.md` 10.7.2's last stage hands it to the family.
  */
+import { DEFERRED, SILENT_WRITE } from '../actions.ts';
 import type { FamilyTraits } from '../families/family.ts';
 import { traitsOf } from '../families/registry.ts';
 import { STATE_WRITE_BASE } from '../actions.ts';
@@ -568,17 +569,11 @@ export function composeActivityFor(c: Container, activity: ComposeActivity, trai
  * `screen` option, because the enter list is that function's.
  */
 
-/** Opcode `0x3F` with the operand's high nibble `0xD`: the six byte instruction whose second half is
- *  an ordinary instruction carried as data. Every one of the eight on the spare Harmony One is the
- *  operand `0xD000` heading a two slot list whose payload is a `0x7F`, section 139 and 279. */
-const DEFERRED = { opcode: 0x3f, operand: 0xd000 } as const;
-
 /** `0x07` band `0xFB`: cancel every running timer, the second instruction of every enter list that
  *  enters a start up screen on the Harmony One, section 279. */
 const CANCEL_TIMERS = { opcode: 0x07, operand: 0xfffb } as const;
 
-/** `0x07` band `0xFF`, the silent flag, which the "an activity is running" list writes first. */
-export const SILENT_WRITE = { opcode: 0x07, operand: 0xffff } as const;
+export { SILENT_WRITE };
 
 /** The value the next composed activity will take: one past the counter's highest, section 273. */
 export function nextActivityValue(c: Container): number {

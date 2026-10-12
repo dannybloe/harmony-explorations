@@ -31,6 +31,8 @@
  *   for an account, `maxDevices`. Refused before anything is composed, since a ninth device's composition
  *   would succeed and leave a configuration no Logitech account could have produced.
  */
+import type { DelayDefaults } from './families/family.ts';
+import { choicesOf } from './families/registry.ts';
 import type { Container } from './gspm.ts';
 import { parse } from './gspm.ts';
 import {
@@ -132,7 +134,7 @@ export interface ComposedCatalogueDevices {
  * screen. A refusal is a `ComposeError` naming why.
  */
 export function composeCatalogueDevice(
-  c: Container, archive: string, request: CatalogueDeviceRequest,
+  c: Container, archive: string, request: CatalogueDeviceRequest, delays?: DelayDefaults,
 ): ComposedCatalogueDevice {
   const { manufacturer, model, label } = request;
   const full = request.full === true;
@@ -260,7 +262,7 @@ export function composeCatalogueDevice(
     }),
     ...(powerOnDelay === undefined ? {} : { powerOnDelay }),
     ...(interDeviceDelay === undefined ? {} : { interDeviceDelay }),
-  });
+  }, delays ?? choicesOf(c).delays);
   let current = parse(device.bytes);
   // The inputs before the power variable joins the off lists, the input composer's own test's order:
   // its variables go in at `narrow`, below which the power variable already sits.
@@ -323,6 +325,8 @@ export interface ComposeCatalogueDevicesOptions {
    * 650. Absent means no bound, which is what a calibration composing onto a full compile needs.
    */
   readonly maxDevices?: number;
+  /** The delays a device starts with where neither the request nor the catalogue states one; the family's. */
+  readonly delays?: DelayDefaults;
 }
 
 /**
@@ -359,7 +363,7 @@ export function composeCatalogueDevices(
     // device it was and how many came before, since the same device alone would compose.
     let one: ComposedCatalogueDevice;
     try {
-      one = composeCatalogueDevice(current, archive, request);
+      one = composeCatalogueDevice(current, archive, request, options.delays);
     } catch (error) {
       if (!(error instanceof ComposeError) || k === 0) throw error;
       throw new ComposeError(`${request.label}, after ${k} composed in this run: ${error.message}`);

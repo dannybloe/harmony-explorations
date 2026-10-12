@@ -37,6 +37,7 @@ import {
   takeApart,
   withBlendedLetters,
   withOxaniumFonts,
+  FOUR_SLOT_CHOICES,
   withStateBackgrounds,
 } from '../src/index.ts';
 
@@ -51,7 +52,7 @@ const containerOf = (name: string): Container => parse(load(name) as Uint8Array)
 
 /** Logitech's compile in our state colours and our one bit letters, and the faces its sets were given. */
 function lettered(name: string): { c: Container; faces: ReturnType<typeof withOxaniumFonts>['faces'] } {
-  const coloured = parse(layOutContainer(withStateBackgrounds(takeApart(containerOf(name))).layout).bytes);
+  const coloured = parse(layOutContainer(withStateBackgrounds(takeApart(containerOf(name)), FOUR_SLOT_CHOICES.stateColours, FOUR_SLOT_CHOICES.barColour).layout).bytes);
   const fonts = withOxaniumFonts(takeApart(coloured));
   return { c: parse(layOutContainer(fonts.layout).bytes), faces: fonts.faces };
 }

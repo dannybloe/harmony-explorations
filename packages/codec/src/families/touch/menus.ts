@@ -52,14 +52,10 @@ export const MODE_TITLE_X = 0x06;
 export const MODE_TITLE_Y = 0x04;
 
 /**
- * The fonts, as base slot 7 indices. The corpus titles its device modes with font 10, and that set
- * carries only the glyphs the existing titles use, so a new title would be refused for most words;
- * font 9 is the row font, the same height, and the one set that carries the whole alphabet the
- * config draws anywhere. The menus label their rows with font 7.
+ * The fonts, as base slot 7 indices: a device page's rows in font 9 and a menu's in font 7, as the
+ * corpus draws them. A composed device page's title is a choice, `TouchChoices.deviceTitleFont`.
  */
 export const DEVICE_ROW_FONT = 9;
-
-export const DEVICE_TITLE_FONT = 9;
 
 export const MENU_ROW_FONT = 7;
 
@@ -139,8 +135,6 @@ export function menuRowCapacity(areas: readonly number[]): number | undefined {
 /** The device page layout: six command slots, the bottom pair and the side keys. */
 export const DEVICE_PAGE_LEAD = 10;
 
-/** The beeper's operand on every menu row in the corpus, opcode 0x75, section 73. */
-export const ROW_BEEP_OPERAND = 0x0fca;
 
 /** The first op 2 drawing at `(x, y)` in the program at `address`, as a picture address. */
 export function pictureDrawnAt(

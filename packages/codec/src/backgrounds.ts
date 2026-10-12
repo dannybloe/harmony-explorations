@@ -46,7 +46,6 @@
  */
 import type { ContainerLayout, ContainerPiece, PieceRef } from './frame.ts';
 import { layOutContainer } from './frame.ts';
-import { rgbTo565 } from './png.ts';
 import type { Container } from './gspm.ts';
 import { archSlot } from './gspm.ts';
 import { HARMONY_650_PICTURES, pictureRows } from './pictures.ts';
@@ -69,18 +68,8 @@ export const SCREEN_STATES: readonly ScreenState[] = ['device', 'activity', 'idl
 /** A colour per state, as the panel's RGB565. */
 export type BackgroundColours = Record<ScreenState, number>;
 
-/** The colours decided on 10 October 2026, until a user's setting replaces them. */
-export const DEFAULT_BACKGROUND_COLOURS: BackgroundColours = {
-  device: rgbTo565(184, 32, 55),
-  activity: rgbTo565(18, 37, 200),
-  idle: rgbTo565(1, 136, 53),
-};
-
-/**
- * The top and bottom bars' one colour, white, decided with the state colours (decision 20): Logitech's
- * shaded light grey bars made flat. The words on them stay dark.
- */
-export const DEFAULT_BAR_COLOUR = 0xffff;
+// Which colours, and the bars', are the four slot family's choices, `FourSlotChoices.stateColours` and
+// `barColour`, decision 20.
 
 /** The five designed backgrounds, by `HARMONY_650_PICTURES` name: the ones a state's colour replaces. */
 export const DESIGNED_BACKGROUNDS: readonly string[] = [
@@ -283,8 +272,8 @@ export interface StateBackgrounds {
  * same colour, and the designed backgrounds gone. `layout` is a `takeApart` of a Harmony 650 configuration
  * and is left as it was.
  */
-export function withStateBackgrounds(layout: ContainerLayout, colours: BackgroundColours = DEFAULT_BACKGROUND_COLOURS,
-  barColour: number = DEFAULT_BAR_COLOUR): StateBackgrounds {
+export function withStateBackgrounds(layout: ContainerLayout, colours: Readonly<BackgroundColours>,
+  barColour: number): StateBackgrounds {
   rgbCheck(barColour, 'device');
   for (const state of SCREEN_STATES) rgbCheck(colours[state], state);
   const backgrounds = Object.fromEntries(SCREEN_STATES.map((state) =>
@@ -450,7 +439,7 @@ export interface StateBackgroundsChecked {
  * bank, the bars being made flat.
  */
 export function checkStateBackgrounds(c: Container, layout: ContainerLayout,
-  colours: BackgroundColours = DEFAULT_BACKGROUND_COLOURS): StateBackgroundsChecked {
+  colours: Readonly<BackgroundColours>): StateBackgroundsChecked {
   const states = screenStates(c, layout);
   const records = modeRecords(c) ?? [];
   const table = c.pointerArray(archSlot(14, SCREEN_TABLE_SLOT)) ?? [];

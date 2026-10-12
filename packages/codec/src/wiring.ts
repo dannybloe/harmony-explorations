@@ -54,7 +54,10 @@ import { Writer } from './emit.ts';
 import type { ContainerLayout, ContainerPiece, PieceRef } from './frame.ts';
 import { layOutContainer, takeApart } from './frame.ts';
 import type { Container } from './gspm.ts';
-import { KEY_EVENT_PRESS, KEY_EVENT_SHIFT, tagSlotOrder } from './inventory.ts';
+import {
+  BYTE_REGISTER_LOAD, CONDITION_OPCODE, CONDITION_TWO_ARMS, KEY_EVENT_PRESS, KEY_EVENT_SHIFT, tagSlotOrder,
+} from './inventory.ts';
+import { DEFERRED, POP_MODE as POP_MODE_INSTRUCTION, PUSH_MODE as PUSH_MODE_INSTRUCTION, STATE_BAND } from './actions.ts';
 import type { ModeZeroModel } from './modezero.ts';
 import { KEYPAD_FIRST_SCAN, KEYPAD_LAST_SCAN } from './modezero.ts';
 import { EVENT_MAP_SLOT, HANDLER_TABLE_SLOT, LOG_AREA_SLOT } from './sections.ts';
@@ -256,19 +259,22 @@ export interface BuiltWiring {
 // The catalogue: every generated structure per model, as templates over symbols.
 // ---------------------------------------------------------------------------------------------------
 
-/** `0x07 0xFFFD` pushes the current mode before entering another, `0xFFFC` pops it, section 311. */
-const PUSH_MODE = { op: 0x07, operand: 0xfffd } as const;
-const POP_MODE = { op: 0x07, operand: 0xfffc } as const;
+/** The catalogue's form of an instruction other modules spell, `actions.ts` and `inventory.ts`. */
+const asWiring = (one: { readonly opcode: number; readonly operand: number }): WiringInstruction =>
+  ({ op: one.opcode, operand: one.operand });
+const PUSH_MODE = asWiring(PUSH_MODE_INSTRUCTION);
+const POP_MODE = asWiring(POP_MODE_INSTRUCTION);
 /** The tilt sensor's flag, section 346. */
 const TILT_FLAG = { op: 0x3f, operand: 0xf101 } as const;
 /** The Harmony 700's later boot step, `WiringSettings.bootStep`. */
 const BOOT_STEP = { op: 0x3f, operand: 0xf715 } as const;
 /** Where it goes in the boot list, and so where a reader looks for it. */
 const BOOT_STEP_AT = 2;
-/** `0x1F 0xFB01`, load 1 into the byte register before a call that tests it, section 140. */
-const LOAD_ONE = { op: 0x1f, operand: 0xfb01 } as const;
-const LOAD_ZERO = { op: 0x1f, operand: 0xfb00 } as const;
-const LOAD_TWO = { op: 0x1f, operand: 0xfb02 } as const;
+/** `0x1F 0xFB0k`, load k into the byte register before a call that tests it, section 140. */
+const load = (k: number): WiringInstruction => ({ op: STATE_BAND, operand: (BYTE_REGISTER_LOAD << 8) | k });
+const LOAD_ONE = load(1);
+const LOAD_ZERO = load(0);
+const LOAD_TWO = load(2);
 /** `0x07 0xFFF6`, which entry 1 binds event `0x19` to as well; what it does is not read. */
 const FFF6 = { op: 0x07, operand: 0xfff6 } as const;
 
@@ -278,11 +284,11 @@ const FFF6 = { op: 0x07, operand: 0xfff6 } as const;
  * the variable in the low one, section 140. Named by the variable and the form, not by a meaning: what
  * variables 9, 14, 15, 16 and 17 hold is not read here.
  */
-const FIRMWARE_TEST = (form: number, variable: number): WiringInstruction => ({ op: 0x71, operand: form | variable });
+const FIRMWARE_TEST = (form: number, variable: number): WiringInstruction => ({ op: CONDITION_OPCODE, operand: form | variable });
 const ONE_ARMED = 0x0000;
-const TWO_ARMED = 0x8000;
+const TWO_ARMED = CONDITION_TWO_ARMS;
 /** `0x3F 0xD000`, which takes the next instruction as its argument, section 73. */
-const SIX_BYTE = { op: 0x3f, operand: 0xd000 } as const;
+const SIX_BYTE = asWiring(DEFERRED);
 /** The light lists' firmware operations, `0x1F` with high bytes `0xE8` and `0xE9`, the same on every compile. */
 const E8 = (low: number): WiringInstruction => ({ op: 0x1f, operand: 0xe800 | low });
 const E9 = (low: number): WiringInstruction => ({ op: 0x1f, operand: 0xe900 | low });

@@ -60,9 +60,11 @@ import { actionListBytes } from './gspm.ts';
 import { ComposeError, type MenuPart, type ValueReader, blobReader, bottomLineParts, spelledText } from './compose.ts';
 import type { ContainerLayout, ContainerPiece } from './frame.ts';
 import { layOutContainer, takeApart } from './frame.ts';
-import { FOUR_SLOT_SCREEN_WIDTH, KEY_EVENT_PRESS, KEY_EVENT_SHIFT } from './inventory.ts';
-import { STATE_WRITE_BASE } from './actions.ts';
-import { POP_MODE, keyMapEntries } from './modezero.ts';
+import {
+  BYTE_REGISTER_LOAD, CONDITION_OPCODE, CONDITION_TWO_ARMS, FOUR_SLOT_SCREEN_WIDTH, KEY_EVENT_PRESS, KEY_EVENT_SHIFT,
+} from './inventory.ts';
+import { POP_MODE, SILENT_WRITE, STATE_BAND, STATE_WRITE_BASE } from './actions.ts';
+import { keyMapEntries } from './modezero.ts';
 import { ACTION_LIST_INDEX_OPCODE, taggedListBytes } from './sections.ts';
 import {
   type BuiltScreen, type RecordFrame, type RecordPlace, ScreenRecordError, assertRebuilt, recordBuilding, recordReading,
@@ -70,7 +72,7 @@ import {
 } from './screenrecords.ts';
 import type { PieceTarget } from './statetables.ts';
 import { FIRMWARE_SCREENS, type WiringModel, type WiringSpec, describeWiring, wiringFrontIndex } from './wiring.ts';
-import { SCREEN_SELECT_FONT } from './screen.ts';
+import { SCREEN_DRAW_IMAGE, SCREEN_DRAW_IMAGE_AT, SCREEN_SELECT_FONT } from './screen.ts';
 
 /** Which of the five own key maps a firmware screen has. */
 export type FirmwareKeyMap = 'placeholder' | 'battery' | 'low battery' | 'usb' | 'none';
@@ -140,14 +142,6 @@ const EXIT_SCAN = 25;
 export const USB_STEP_SCANS = [11, 12, 51] as const;
 /** `0x7F` calls a list, `0x71` tests a variable against the byte register, `0x1F 0xFB0k` loads k, section 140. */
 const CALL = ACTION_LIST_INDEX_OPCODE;
-const TEST = 0x71;
-const TEST_VARIABLE = 0x8000;
-const LOAD = 0x1f;
-const LOAD_BASE = 0xfb00;
-/** The instruction every list of "USB Connected" opens with, `0x07`'s `0xFF` arm, whose effect is not read. */
-const USB_MARK = { opcode: 0x07, operand: 0xffff } as const;
-const OP_IMAGE = 0x02;
-const OP_BAR = 0x03;
 
 const press = (scan: number): number => (KEY_EVENT_PRESS << KEY_EVENT_SHIFT) | scan;
 const call = (list: number): Instruction => ({ opcode: CALL, operand: list });
@@ -235,9 +229,9 @@ export function describeFirmwareScreens(
       const one = program.find((ins) => ins.opcode === opcode);
       return one === undefined ? undefined : reading.targetOf(value24(one.start + one.length - 3));
     };
-    const background = addressOf(OP_IMAGE);
+    const background = addressOf(SCREEN_DRAW_IMAGE);
     if (background === undefined) throw new ScreenRecordError(`mode ${mode} draws no background`);
-    const bar = addressOf(OP_BAR);
+    const bar = addressOf(SCREEN_DRAW_IMAGE_AT);
     return bar === undefined ? { background } : { background, bar };
   });
 
@@ -372,18 +366,18 @@ export function buildFirmwareScreens(spec: FirmwareScreensSpec, c: Container): B
     if (was !== undefined && was.bytes.join(',') !== bytes.join(',')) throw new ScreenRecordError(`list ${index} would hold two lists`);
     lists.set(index, { bytes, refs: [], owner: 'slot-10-list' });
   };
-  list(usb.key, [USB_MARK, write(usb.variable, 1)]);
-  list(usb.cleared, [USB_MARK, write(usb.variable, 0)]);
+  list(usb.key, [SILENT_WRITE, write(usb.variable, 1)]);
+  list(usb.cleared, [SILENT_WRITE, write(usb.variable, 0)]);
   USB_STEP_SCANS.forEach((_, k) => {
     const step = k + 1;
-    list(usb.steps[k] as number, [{ opcode: LOAD, operand: LOAD_BASE | step }, call(usb.tests[k] as number)]);
+    list(usb.steps[k] as number, [{ opcode: STATE_BAND, operand: (BYTE_REGISTER_LOAD << 8) | step }, call(usb.tests[k] as number)]);
     const last = k === USB_STEP_SCANS.length - 1;
     list(usb.tests[k] as number, [
-      { opcode: TEST, operand: TEST_VARIABLE | usb.variable },
+      { opcode: CONDITION_OPCODE, operand: CONDITION_TWO_ARMS | usb.variable },
       last ? POP_MODE : call(usb.advances[k] as number),
       call(usb.key),
     ]);
-    if (!last) list(usb.advances[k] as number, [USB_MARK, write(usb.variable, step + 1)]);
+    if (!last) list(usb.advances[k] as number, [SILENT_WRITE, write(usb.variable, step + 1)]);
   });
 
   const { programOf, recordOf, inline } = recordBuilding(spec.homes);

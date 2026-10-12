@@ -26,8 +26,7 @@ import {
   ComposeError,
   type Container,
   DEVICE_QUANTITY_DEFAULT,
-  INTER_DEVICE_DELAY_DEFAULT,
-  POWER_ON_DELAY_DEFAULT,
+  FOUR_SLOT_CHOICES,
   catalogueCommands,
   catalogueDevice,
   catalogueDevicePower,
@@ -219,8 +218,8 @@ test('a device composed from the catalogue switches with the records and the wir
         assert.equal(b.states, which === 'on' ? power.onResetStates : 0, `${one.name} ${which}: reset states`);
         statesNotComposed += b.states;
         before.amount += b.sends.filter((sent) => sent.amount !== DEVICE_QUANTITY_DEFAULT).length;
-        before.interDevice += b.sends.filter((sent) => sent.interDevice !== INTER_DEVICE_DELAY_DEFAULT).length;
-        if (b.powerOnDelay !== undefined && b.powerOnDelay !== POWER_ON_DELAY_DEFAULT) before.powerOnDelay += 1;
+        before.interDevice += b.sends.filter((sent) => sent.interDevice !== FOUR_SLOT_CHOICES.delays.interDevice).length;
+        if (b.powerOnDelay !== undefined && b.powerOnDelay !== FOUR_SLOT_CHOICES.delays.powerOn) before.powerOnDelay += 1;
         if (b.sends.length > 1) before.several += 1;
       }
       seen.push(`${one.name} ${power.type} on ${mine.on.sends.length} off ${mine.off.sends.length}`);

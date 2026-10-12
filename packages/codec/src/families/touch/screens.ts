@@ -3,19 +3,21 @@
  * screen, each the One's half of a composer `compose.ts` dispatches through the family registry. Plan
  * 007's touch family, cut out of `compose.ts` unchanged.
  */
+import type { WithChoices } from '../family.ts';
+import { TOUCH_CHOICES, type TouchChoices } from './choices.ts';
 import { STATE_WRITE_BASE } from '../../actions.ts';
 import { u24 } from '../../bytes.ts';
 import { Writer } from '../../emit.ts';
 import {
   composeMenuPage, DEVICE_LABEL_DROP, DEVICE_PAGE_LEAD, DEVICE_PAGE_SCANS, DEVICE_PAGE_SLOTS, DEVICE_ROW_FONT,
-  DEVICE_TITLE_FONT, MENU_EDGE_SCANS, MENU_ICON_OFFSET, MENU_LABEL_X, MENU_ROW1_BG, MENU_ROW1_LABEL_Y, MENU_ROW3_BG,
+  MENU_EDGE_SCANS, MENU_ICON_OFFSET, MENU_LABEL_X, MENU_ROW1_BG, MENU_ROW1_LABEL_Y, MENU_ROW3_BG,
   MENU_ROW3_LABEL_Y, MENU_ROW_FONT, MENU_ROW_PITCH, menuRowCapacity, MODE_TITLE_X, MODE_TITLE_Y, paginate,
-  pictureDrawnAt, ROW_BEEP_OPERAND, withHitPage,
+  pictureDrawnAt, withHitPage,
 } from '../../families/touch/menus.ts';
 import { type FontSet, fontSets } from '../../font.ts';
 import { archSlot, Container, type Instruction, parse, SCAN_MASK } from '../../gspm.ts';
 import {
-  activityBindings, activityNames, activityScreens, type ActivityScreens, BEEP_OPCODE, ENTER_MODE,
+  activityBindings, activityNames, activityScreens, type ActivityScreens, BEEP_OPCODE, ENTER_MODE, SCREEN_ITEM_BEEP,
   SELECT_BINDING_SET, SELECT_BINDING_SET_MASK,
 } from '../../inventory.ts';
 import { relocate } from '../../relocate.ts';
@@ -44,21 +46,22 @@ import { EDGE_CODES, LIST_ROW_PITCH, PANEL_LEFT, touchOwner, touchPageOf } from 
  * The Harmony One's half of `composeDeviceScreen`, whose docstring describes it.
  */
 export function composeTouchDeviceScreen(
-  c: Container, label: string, rows: readonly ComposeRow[], options: ComposeScreenOptions = {},
+  c: Container, label: string, rows: readonly ComposeRow[], options: WithChoices<ComposeScreenOptions, TouchChoices> = {},
 ): ComposedScreen {
+  const titleFont = (options.choices ?? TOUCH_CHOICES).deviceTitleFont;
   if (rows.length === 0 || rows.length > DEVICE_PAGE_SCANS.length) {
     throw new ComposeError(`a device page has one to six rows, not ${rows.length}`);
   }
   const map = characterMap(c);
   if (map === undefined) throw new ComposeError('the config draws no text this can spell from');
   const sets = fontSets(c) ?? [];
-  const titleSet = sets[DEVICE_TITLE_FONT];
+  const titleSet = sets[titleFont];
   const rowSet = sets[DEVICE_ROW_FONT];
   const menuSet = sets[MENU_ROW_FONT];
   if (titleSet === undefined || rowSet === undefined || menuSet === undefined) {
     throw new ComposeError('the config does not carry the three fonts the layout uses');
   }
-  const titleCodes = codesFor(map, c, titleSet, label, DEVICE_TITLE_FONT);
+  const titleCodes = codesFor(map, c, titleSet, label, titleFont);
   const menuCodes = codesFor(map, c, menuSet, label, MENU_ROW_FONT);
   const rowCodes = rows.map((row) => codesFor(map, c, rowSet, row.label, DEVICE_ROW_FONT));
 
@@ -78,7 +81,7 @@ export function composeTouchDeviceScreen(
   if (actionTable === undefined) throw new ComposeError('base slot 10 does not read as a table');
   const rowList = actionTable.values.length;
   const rowBytes = new Writer(1 + 3 * 3).u8(3)
-    .u16(ROW_BEEP_OPERAND).u8(0x75)
+    .u16(SCREEN_ITEM_BEEP.operand).u8(SCREEN_ITEM_BEEP.opcode)
     .u16(mode).u8(ENTER_MODE)
     .u16(found.marker.operand).u8(found.marker.opcode);
   const rowAt = actionTable.start;
@@ -173,7 +176,7 @@ export function composeTouchDeviceScreen(
   const shifted = (address: number): number => (address >= base ? address + blockLength : address);
   const chrome = new Writer(chromeLength);
   chrome.u8(SCREEN_DRAW_IMAGE).u8(0).u8(0).u24(shifted(bar));
-  chrome.u8(SCREEN_SELECT_FONT).u8(DEVICE_TITLE_FONT);
+  chrome.u8(SCREEN_SELECT_FONT).u8(titleFont);
   chrome.u8(SCREEN_TEXT_INLINE).u8(MODE_TITLE_X).u8(MODE_TITLE_Y);
   titleCodes.forEach((code) => chrome.u8(code));
   chrome.u8(0).u8(SCREEN_RETURN).u8(SCREEN_END);
@@ -542,7 +545,7 @@ export function composeTouchActivityRow(
   if (actionTable === undefined) throw new ComposeError('base slot 10 does not read as a table');
   const rowList = actionTable.values.length;
   const rowBytes = new Writer(1 + 3 * 3).u8(3)
-    .u16(ROW_BEEP_OPERAND).u8(BEEP_OPCODE)
+    .u16(SCREEN_ITEM_BEEP.operand).u8(SCREEN_ITEM_BEEP.opcode)
     .u16(SELECT_BINDING_SET_MASK | set).u8(SELECT_BINDING_SET)
     .u16(ACTIVITY_MENU_MARKER_VALUE).u8(marker.opcode);
   const rowAt = actionTable.start;
@@ -1000,7 +1003,7 @@ export function composeTouchActivityScreen(
     if (table === undefined) throw new ComposeError('base slot 10 does not read as a table');
     devicesList = table.values.length;
     const bytes = new Writer(1 + 3 * 2).u8(2)
-      .u16(ROW_BEEP_OPERAND).u8(BEEP_OPCODE).u16(devicesMenu).u8(ENTER_MODE).bytes;
+      .u16(SCREEN_ITEM_BEEP.operand).u8(SCREEN_ITEM_BEEP.opcode).u16(devicesMenu).u8(ENTER_MODE).bytes;
     const hole = relocate(current, table.start, bytes.length);
     hole.bytes.set(bytes, table.start);
     current = parse(appendTableEntries(parse(hole.bytes), actionSlot,

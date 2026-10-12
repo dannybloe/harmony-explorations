@@ -39,6 +39,26 @@ export const STATE_WRITE_BASE = 0x80;
  */
 export const STATE_BAND = 0x1f;
 
+/**
+ * Instruction `0x07` with operand `0xFFFD` pushes the current mode before entering another, and `0xFFFC`
+ * pops it, section 311.
+ */
+export const PUSH_MODE = { opcode: 0x07, operand: 0xfffd } as const;
+export const POP_MODE = { opcode: 0x07, operand: 0xfffc } as const;
+/**
+ * `0x07` band `0xFF`, the silent flag: it sets one byte, `0xE24` on arch 12 (Harmony One), and the state
+ * write that follows skips its notification while it is nonzero, sections 73 and 276. The "an activity is
+ * running" list writes it first, and every list of the 600, 650 and 700's "USB Connected" opens with it,
+ * where its effect is not read.
+ */
+export const SILENT_WRITE = { opcode: 0x07, operand: 0xffff } as const;
+/**
+ * Opcode `0x3F` with the operand's high nibble `0xD`: the six byte instruction whose second half is an
+ * ordinary instruction carried as data, its argument, section 73. Every one of the eight on the spare
+ * Harmony One is the operand `0xD000` heading a two slot list whose payload is a `0x7F`, sections 139 and 279.
+ */
+export const DEFERRED = { opcode: 0x3f, operand: 0xd000 } as const;
+
 /** Sub opcode `0xF0`: the byte register takes the state variable the operand's low byte names. */
 export const BYTE_REGISTER_FROM_STATE = 0xf0;
 

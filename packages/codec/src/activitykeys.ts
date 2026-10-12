@@ -49,7 +49,7 @@ import {
   SELECT_BINDING_SET_MASK,
   stateVariables, ENTER_MODE,
 } from './inventory.ts';
-import { STATE_WRITE_BASE } from './actions.ts';
+import { PUSH_MODE, STATE_WRITE_BASE } from './actions.ts';
 import { characterMap, screenStrings } from './text.ts';
 import { EditError } from './edit.ts';
 import type { Edit } from './edit.ts';
@@ -74,8 +74,6 @@ export type ActivityKey = keyof typeof ACTIVITY_KEYS;
 /** The base slot 9 entry whose press entries are the activity keys. Section 314. */
 export const ACTIVITY_KEY_MAP_ENTRY = 1;
 
-/** Instruction `0x07` with this operand pushes the current mode; `0xFFFC` pops it. Section 311. */
-export const PUSH_MODE = { opcode: 0x07, operand: 0xfffd } as const;
 
 /**
  * The text that identifies the placeholder mode, the screen an empty activity key opens.

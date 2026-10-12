@@ -3,6 +3,8 @@
  * screen, its working screen and the records keyed by the activity, with their checks. Plan 007's four
  * slot family, cut out of `compose.ts` unchanged.
  */
+import type { WithChoices } from '../family.ts';
+import { FOUR_SLOT_CHOICES, type FourSlotChoices } from './choices.ts';
 import { Writer } from '../../emit.ts';
 import {
   bottomWord, builtChrome, checkPageFrames, DEVICE_MODE_PROGRAM_TAG, DEVICE_PAGE_LOOKS, deviceModeChrome,
@@ -746,8 +748,9 @@ function checkActivityScreensWith(c: Container, chrome: ActivityScreenChrome, st
 
 export function composeFourSlotActivityScreen(
   c: Container, activity: number, label: string, rows: readonly ComposeRow[],
-  options: ComposeActivityScreenOptions,
+  options: WithChoices<ComposeActivityScreenOptions, FourSlotChoices>,
 ): ComposedActivityScreen {
+  const choices = options.choices ?? FOUR_SLOT_CHOICES;
   const starts = arch14Starts(c);
   if (starts.startup.has(activity) || activity === starts.idle) {
     throw new ComposeError(`activity ${activity} already has a working screen`);
@@ -794,8 +797,9 @@ export function composeFourSlotActivityScreen(
     throw new ComposeError(`'${label}' is ${titleWidth} pixels wide and the working screen's title holds ${titleRoom}`);
   }
   // Each label broken the way the compiler breaks a corner label, section 323: one line or two.
-  const smaller = smallerLabelFonts(c, charMap, device.labelFont,
-                                   new Set([device.titleFont, device.counterFont, device.device.backFont]));
+  // A label too wide for its corner goes down a size or is refused, `FourSlotChoices.labelTooWide`.
+  const smaller = choices.labelTooWide === 'refuse' ? [] : smallerLabelFonts(c, charMap, device.labelFont,
+    new Set([device.titleFont, device.counterFont, device.device.backFont]));
   const rowLabels = rows.map((row) =>
     fourSlotLabelLines(charMap, c, setOf(device.labelFont), device.labelFont, row.label, smaller));
   const rowLines = rowLabels.map((one) => one.lines);

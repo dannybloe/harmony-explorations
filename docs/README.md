@@ -219,7 +219,9 @@ The TypeScript workspace, per `docs/plans/002-the-roadmap.md` step 4:
                                 the one place that chooses a family. A shared module asks its
                                 family's traits rather than testing an architecture and reaches
                                 a family only through the registry, no family imports another,
-                                and compose.ts is the entry that re-exports both
+                                and compose.ts is the entry that re-exports both. Every choice
+                                of ours a family makes, with its default, is in that family's
+                                choices.ts
 packages/lab/                   TS: finds the private lab directory, mirrors tests/lab.py. Also
                                 finds the **public** infrared archive checkout, which is a
                                 separate locator on purpose: both make their tests skip when

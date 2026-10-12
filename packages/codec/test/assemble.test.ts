@@ -19,7 +19,7 @@ import { modelForSkin } from '@harmony/usb/models';
 import type { AssemblyScreenItem, Container, SetupDescription } from '../src/index.ts';
 import {
   AssemblyError,
-  TRACK_SETTINGS,
+  FOUR_SLOT_CHOICES,
   assembleSetup,
   attributeBytes,
   buildFirmwareScreens,
@@ -27,7 +27,9 @@ import {
   buildScreenTexts,
   buildWiring,
   checkFirmwareScreens,
+  checkBlendedLetters,
   checkOxaniumFonts,
+  checkStateBackgrounds,
   checkScreenRecords,
   checkScreenTexts,
   checkWiring,
@@ -353,8 +355,8 @@ test('the track settings are the ones the 10.2.2 file was built with, with the s
      skipUnless('h650_7_1_base'), () => {
   // `tenTwoTwo` takes the 6.2.13 file's settings and turns the Assistant, the restore, Help and the tour off.
   const read = describeWiring(takeApart(containerOf('h650_7_1_base'))).settings;
-  assert.deepEqual(TRACK_SETTINGS, { ...read, remoteAssistant: false, delayRestore: false, help: false, tourShown: false });
-  assert.deepEqual(TRACK_SETTINGS, {
+  assert.deepEqual(FOUR_SLOT_CHOICES.settings, { ...read, remoteAssistant: false, delayRestore: false, help: false, tourShown: false });
+  assert.deepEqual(FOUR_SLOT_CHOICES.settings, {
     glowTime: 20, tiltSensor: true, remoteAssistant: false, bootStep: false, tourShown: false,
     delayRestore: false, help: false,
   });
@@ -432,7 +434,7 @@ test('with no screen stated, the composed activity\'s screen is empty: the menu\
 test('8.2.3: in our letters the test setup assembles on Logitech\'s starting compile with every label in its page\'s font, and Teletext, too wide for it in ours, a size down',
      needing(skipWithoutIrArchive(), skipUnless('h650_start_config', 'h650_test_config_clean')), () => {
   const out = assembleSetup(setupOf('h650-test.json'), {
-    donor: require_('h650_start_config'), ...composing(), screens: { 'Plasma kijken': PLASMA_KIJKEN_SCREEN }, ourLetters: true,
+    donor: require_('h650_start_config'), ...composing(), screens: { 'Plasma kijken': PLASMA_KIJKEN_SCREEN }, choices: { letters: 'oxanium' },
   });
   assert.deepEqual(out.composed, { devices: [], activities: ['Plasma kijken'] });
   assert.ok(out.container.allChecksPass);
@@ -458,6 +460,29 @@ test('8.2.3: in our letters the test setup assembles on Logitech\'s starting com
   const a = attributeBytes(out.container);
   assert.equal(a.generated.letters, 93475);
   assert.equal(a.carried.get('slot-7-glyph'), undefined);
+});
+
+test('10.7.3: the four slot family\'s choices reach the assembly: state colours and blended letters as its last two steps, a label too wide refused when that is chosen, and blending refused without our letters',
+     needing(skipWithoutIrArchive(), skipUnless('h650_start_config', 'h650_test_config_clean')), () => {
+  const given = {
+    donor: require_('h650_start_config'), ...composing(), screens: { 'Plasma kijken': PLASMA_KIJKEN_SCREEN },
+  };
+  const setup = setupOf('h650-test.json');
+  // Blending needs grey levels, which only our letters have: refused before anything is built.
+  assert.throws(() => assembleSetup(setup, { ...given, choices: { blendLetters: true } }), /only our letters can be blended/);
+  // A label too wide for its corner refused rather than drawn a size down: Teletext, 60 pixels in ours.
+  assert.throws(() => assembleSetup(setup, { ...given, choices: { letters: 'oxanium', labelTooWide: 'refuse' } }),
+    /'Teletext' is 60 pixels wide and a corner holds 59/);
+  // The look the Harmony 650 was written with, 9.1.2.1 and 8.2.6, from the assembly alone.
+  const out = assembleSetup(setup, {
+    ...given, choices: { letters: 'oxanium', backgrounds: 'state colours', blendLetters: true },
+  });
+  assert.deepEqual(out.steps.slice(-2).map((one) => one.step), ['state colours', 'blended letters']);
+  assert.ok(out.container.allChecksPass);
+  assert.deepEqual(compareViews(setupView(out.container), setupView(containerOf('h650_test_config_clean')), { menuOrder: false }), []);
+  checkStateBackgrounds(out.container, takeApart(out.container), FOUR_SLOT_CHOICES.stateColours);
+  assert.ok(out.faces !== undefined && out.blended !== undefined && out.blended.length > 0);
+  checkBlendedLetters(out.container, out.faces, out.blended);
 });
 
 test('the smallest Harmony 650 compile the lab registers, two devices and no activity, takes no composer: the device composer knows the activity menu by its activity rows and it has none, its fonts lack letters, and an activity needs another to be told apart from',
@@ -498,7 +523,7 @@ test('the smallest Harmony 650 compile the lab registers, two devices and no act
     const setup = setupOf('h650-test.json');
     const one = { devices: setup.devices.filter((d) => ['LG TV', 'Denon', name].includes(d.name)), activities: [] };
     try {
-      assembleSetup(one, { donor: smallest, ...composing(), ourLetters: true });
+      assembleSetup(one, { donor: smallest, ...composing(), choices: { letters: 'oxanium' } });
       return 'composed';
     } catch (error) {
       return (error as Error).message;

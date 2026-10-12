@@ -55,9 +55,11 @@ import { Writer } from './emit.ts';
 import { CLOCK_FIELD_COUNT, FRAME_COOKIE, FRAME_END } from './gspm.ts';
 import { u16, u24, u8 } from './bytes.ts';
 import type { ContainerLayout, ContainerPiece, PieceRef } from './frame.ts';
-import { compilerCaseOrder } from './inventory.ts';
+import { compilerCaseOrder, firmwareStateVariableMax } from './inventory.ts';
+import { STATE_BAND } from './actions.ts';
 import { keyListCapacity, keyListHash } from './modezero.ts';
 import {
+  ACTION_LIST_INDEX_OPCODE,
   FRAME_HEADER,
   NAME_LEVEL_STATE_VARIABLE,
   NAME_NODE_FIELDS,
@@ -77,7 +79,7 @@ export class StateTablesError extends Error {}
 export const NAME_TREE_SLOT = 0;
 
 /** How many state variables the firmware owns on arch 14, 0 to 17, section 284. */
-export const FIRMWARE_STATE_VARIABLE_COUNT = 18;
+export const FIRMWARE_STATE_VARIABLE_COUNT = firmwareStateVariableMax(14) + 1;
 
 /**
  * Records 7 to 17 on arch 14 as `[first, max]`: the same on all thirteen compiles, none with a
@@ -102,10 +104,9 @@ export const NARROW_MAX_MEASURED = 100;
 export const WIDE_MAX_MEASURED = 254;
 
 /** `0x1F` sub opcode `0xF2` increments the state variable its operand's low byte names, section 73. */
-const STATE_BAND = 0x1f;
 const INCREMENT = 0xf2;
 /** `0x7F` calls the action list its operand names, section 238. */
-const CALL = 0x7f;
+const CALL = ACTION_LIST_INDEX_OPCODE;
 /** The sentinel a transition's `from` holds when it fires on reaching `to` from any value. */
 const FROM_ANY = -2;
 
@@ -354,8 +355,12 @@ export function deviceDelayVariables(
   ];
 }
 
-/** A delay variable's stated maximum, which bounds nothing, section 301, and its default's. */
-const DELAY_MAX = 65277;
+/**
+ * A delay variable's stated maximum, which bounds nothing, section 301, and its default's. On every one of
+ * them the name ends `_65278`, one more, like every variable's, section 86; wider than either table, which
+ * is the compiler's.
+ */
+export const DELAY_MAX = 65277;
 const DEFAULT_DELAY_MAX = 254;
 
 /**

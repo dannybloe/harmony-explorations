@@ -70,6 +70,7 @@
  * roles rest on readers whose arch 14 shapes are the ones checked, and a Harmony One's pages call
  * shared programs, which would put its chrome into shared units with no meaning of their own.
  */
+import { MAP_VALUE_OPCODE, RUN_SCREEN_PROGRAM, SEND_INFRARED, firmwareStateVariableMax } from './inventory.ts';
 import { type Container, archSlot } from './gspm.ts';
 import { claims, namedContentEnd } from './coverage.ts';
 import { decodedSet, fontSets } from './font.ts';
@@ -104,7 +105,7 @@ import {
 } from './sections.ts';
 import { glyphRunAt, referencedStringAddress } from './text.ts';
 import { valueMaps } from './valuemap.ts';
-import { STATE_WRITE_BASE } from './actions.ts';
+import { STATE_BAND, STATE_WRITE_BASE } from './actions.ts';
 import {
   ACTIVITY_STATE_NAME,
   deviceListRowMode,
@@ -198,14 +199,14 @@ export interface ScreenUnit {
  * a state variable, `0x73` a base slot 11 entry, `0x1F` a base slot 9 set, `0x7D` an infrared code.
  * A state variable write carries its index in the opcode, `0x80 + n`, and is folded to one opcode.
  */
-export const PLACEMENT_OPCODES: ReadonlySet<number> = new Set([0x7e, 0x7f, 0x72, 0x73, 0x1f, 0x7d]);
-/** Opcode `0x72`, look a state variable's value up in a base slot 14 record. */
-const MAP_VALUE = 0x72;
+export const PLACEMENT_OPCODES: ReadonlySet<number> = new Set([
+  ENTER_MODE, ACTION_LIST_INDEX_OPCODE, MAP_VALUE_OPCODE, RUN_SCREEN_PROGRAM, STATE_BAND, SEND_INFRARED,
+]);
 /**
  * The state variables the arch 14 firmware owns, 0 to 17, section 284. A switch on one of these is a
  * switch on the same thing in every configuration, so its index is content; above it is placement.
  */
-const FIRMWARE_VARIABLE_MAX = 17;
+const FIRMWARE_VARIABLE_MAX = firmwareStateVariableMax(14);
 /**
  * A mode whose own list binds more than this many keys carries a whole keypad. The head of an arch 14
  * mode table is modes of that kind and modes binding nothing; a later mode binds at most 54 on every
@@ -456,10 +457,10 @@ function setupKeyedMaps(c: Container): Map<number, string> {
       || variable.name.split('_')[0] === ACTIVITY_STATE_NAME;
     if (setup && !out.has(record)) out.set(record, variable.name);
   };
-  for (const list of c.actionLists() ?? []) for (const one of list) if (one.opcode === MAP_VALUE) note(one.operand);
+  for (const list of c.actionLists() ?? []) for (const one of list) if (one.opcode === MAP_VALUE_OPCODE) note(one.operand);
   for (const [, program] of reachablePrograms(c)) {
     for (const one of program) {
-      if (one.opcode === SCREEN_QUEUE_INSTRUCTION && one.operands[2] === MAP_VALUE) {
+      if (one.opcode === SCREEN_QUEUE_INSTRUCTION && one.operands[2] === MAP_VALUE_OPCODE) {
         note((one.operands[0] as number) | ((one.operands[1] as number) << 8));
       }
     }
@@ -468,7 +469,7 @@ function setupKeyedMaps(c: Container): Map<number, string> {
     ...(modeRecords(c) ?? []).flatMap((r) => [...r.entries, ...r.pages.flatMap((p) => taggedList(c, p.list)?.entries ?? [])]),
     ...(handlerSets(c)?.addresses ?? []).flatMap((a) => taggedList(c, a)?.entries ?? []),
   ];
-  for (const entry of tagged) if (entry.opcode === MAP_VALUE) note(entry.operand);
+  for (const entry of tagged) if (entry.opcode === MAP_VALUE_OPCODE) note(entry.operand);
   return out;
 }
 

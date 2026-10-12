@@ -878,6 +878,8 @@ export const ENTER_MODE = 0x7e;
 export const RUN_SCREEN_PROGRAM = 0x73;
 /** Opcode `0x75`: the beeper, which every menu row in the corpus opens with, section 73. */
 export const BEEP_OPCODE = 0x75;
+/** The beeper and the operand every Harmony One screen item and menu row opens with, section 73. */
+export const SCREEN_ITEM_BEEP = { opcode: BEEP_OPCODE, operand: 0x0fca } as const;
 /**
  * How far to follow `0x7F` from the bound list.
  *
@@ -962,6 +964,8 @@ export const DEVICE_QUANTITY_DEFAULT = 1;
  * comparison, 0 being equality with the byte register, and bit 15 gives it two arms.
  */
 export const CONDITION_OPCODE = 0x71;
+/** Bit 15 of a `0x71` condition's operand: the condition has two arms, section 34. */
+export const CONDITION_TWO_ARMS = 0x8000;
 /**
  * `0x1F` sub opcode `0xFB`: load the byte register with the operand's low byte, which is what the
  * `0x71` after it compares a variable against. The sub opcode is the operand's high byte.

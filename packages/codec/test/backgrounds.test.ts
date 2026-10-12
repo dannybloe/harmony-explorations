@@ -15,7 +15,7 @@ import { load, skipUnless } from '@harmony/lab';
 import type { Container } from '../src/index.ts';
 import {
   BackgroundError,
-  DEFAULT_BACKGROUND_COLOURS,
+  FOUR_SLOT_CHOICES,
   HARMONY_650_PICTURES,
   bitmapAt,
   bitmaps,
@@ -47,13 +47,13 @@ const containerOf = (name: string): Container => parse(load(name) as Uint8Array)
 
 test('the colours decided are rgb(184 32 55), rgb(18 37 200) and rgb(1 136 53) in the panel\'s RGB565', () => {
   assert.deepEqual(
-    [DEFAULT_BACKGROUND_COLOURS.device, DEFAULT_BACKGROUND_COLOURS.activity, DEFAULT_BACKGROUND_COLOURS.idle],
+    [FOUR_SLOT_CHOICES.stateColours.device, FOUR_SLOT_CHOICES.stateColours.activity, FOUR_SLOT_CHOICES.stateColours.idle],
     [0xb107, 0x1138, 0x0446],
   );
   assert.equal(rgbTo565(255, 255, 255), 0xffff);
   assert.throws(() => rgbTo565(256, 0, 0), RangeError);
   // What the panel shows of the device colour, through the renderer's own decoder: fewer levels than eight bits.
-  assert.deepEqual(rgb565(DEFAULT_BACKGROUND_COLOURS.device), [181, 32, 57]);
+  assert.deepEqual(rgb565(FOUR_SLOT_CHOICES.stateColours.device), [181, 32, 57]);
 });
 
 test('on the 13 Harmony 650 compiles the device and activity screens draw Logitech\'s grey and red looks, and the idle ones both',
@@ -96,11 +96,11 @@ test('withStateBackgrounds gives every state its colour on all 13 compiles and c
   const entries: number[] = [];
   for (const name of H650) {
     const original = containerOf(name);
-    const made = withStateBackgrounds(takeApart(containerOf(name)));
+    const made = withStateBackgrounds(takeApart(containerOf(name)), FOUR_SLOT_CHOICES.stateColours, FOUR_SLOT_CHOICES.barColour);
     const out = parse(layOutContainer(made.layout).bytes);
     assert.ok(out.allChecksPass, `${name}: the result fails its own checks`);
     assert.deepEqual(compareViews(setupView(out), setupView(original)), [], `${name}: the setup changed`);
-    const checked = checkStateBackgrounds(out, takeApart(parse(out.blob)));
+    const checked = checkStateBackgrounds(out, takeApart(parse(out.blob)), FOUR_SLOT_CHOICES.stateColours);
     totals.device += checked.modes.device;
     totals.activity += checked.modes.activity;
     totals.idle += checked.modes.idle;
@@ -119,20 +119,20 @@ test('withStateBackgrounds gives every state its colour on all 13 compiles and c
 test('the check refuses Logitech\'s own backgrounds, a state in another colour, a corner patched in another, a page left on the old corner, a page on the plain background and an idle corner program past entry 255',
      skipUnless('h650_test_config_clean'), () => {
   const logitech = containerOf('h650_test_config_clean');
-  assert.throws(() => checkStateBackgrounds(logitech, takeApart(containerOf('h650_test_config_clean'))), /draws device page crossed on page 0/);
-  const made = parse(layOutContainer(withStateBackgrounds(takeApart(containerOf('h650_test_config_clean'))).layout).bytes);
-  const swapped = { ...DEFAULT_BACKGROUND_COLOURS, device: DEFAULT_BACKGROUND_COLOURS.idle, idle: DEFAULT_BACKGROUND_COLOURS.device };
+  assert.throws(() => checkStateBackgrounds(logitech, takeApart(containerOf('h650_test_config_clean')), FOUR_SLOT_CHOICES.stateColours), /draws device page crossed on page 0/);
+  const made = parse(layOutContainer(withStateBackgrounds(takeApart(containerOf('h650_test_config_clean')), FOUR_SLOT_CHOICES.stateColours, FOUR_SLOT_CHOICES.barColour).layout).bytes);
+  const swapped = { ...FOUR_SLOT_CHOICES.stateColours, device: FOUR_SLOT_CHOICES.stateColours.idle, idle: FOUR_SLOT_CHOICES.stateColours.device };
   assert.throws(() => checkStateBackgrounds(made, takeApart(parse(made.blob)), swapped), /not its colour/);
   // Built with the activity patch only in another colour: every background is right and the corner is not.
-  const odd = withStateBackgrounds(takeApart(containerOf('h650_test_config_clean')));
+  const odd = withStateBackgrounds(takeApart(containerOf('h650_test_config_clean')), FOUR_SLOT_CHOICES.stateColours, FOUR_SLOT_CHOICES.barColour);
   const patch = odd.layout.pictures.find((piece) => piece.bytes.length === 5 + 2 * 12 * 10
-    && piece.bytes[5] === DEFAULT_BACKGROUND_COLOURS.activity >> 8 && piece.bytes[6] === (DEFAULT_BACKGROUND_COLOURS.activity & 0xff));
+    && piece.bytes[5] === FOUR_SLOT_CHOICES.stateColours.activity >> 8 && piece.bytes[6] === (FOUR_SLOT_CHOICES.stateColours.activity & 0xff));
   assert.ok(patch !== undefined, 'the activity patch is in the bank');
   patch.bytes = Uint8Array.from(patch.bytes);
   patch.bytes[5] = 0;
   patch.bytes[6] = 0;
   const oddOut = parse(layOutContainer(odd.layout).bytes);
-  assert.throws(() => checkStateBackgrounds(oddOut, takeApart(parse(oddOut.blob))), /patches its battery corner/);
+  assert.throws(() => checkStateBackgrounds(oddOut, takeApart(parse(oddOut.blob)), FOUR_SLOT_CHOICES.stateColours), /patches its battery corner/);
   // One idle page's own program put back on the activity battery program, its mode's key map unchanged.
   const blob = Uint8Array.from(made.blob);
   const c = parse(blob);
@@ -142,7 +142,7 @@ test('the check refuses Logitech\'s own backgrounds, a state in another colour, 
   assert.ok(queue !== undefined, 'the activity menu\'s first page queues its battery program');
   blob[queue.start + 1] = 2;
   blob[queue.start + 2] = 0;
-  assert.throws(() => checkStateBackgrounds(parse(blob), takeApart(parse(made.blob))), /a page queuing program 2/);
+  assert.throws(() => checkStateBackgrounds(parse(blob), takeApart(parse(made.blob)), FOUR_SLOT_CHOICES.stateColours), /a page queuing program 2/);
   // One device page pointed at the plain background, which is a named picture and not a designed one.
   const plainKey = HARMONY_650_PICTURES.find((entry) => entry.name === 'plain background')?.key;
   const plain = bitmaps(made).find((b) => b.length !== undefined
@@ -158,7 +158,7 @@ test('the check refuses Logitech\'s own backgrounds, a state in another colour, 
   repointed[field] = plain.address & 0xff;
   repointed[field + 1] = (plain.address >> 8) & 0xff;
   repointed[field + 2] = plain.address >> 16;
-  assert.throws(() => checkStateBackgrounds(parse(repointed), takeApart(parse(made.blob))), /draws (plain background|2 backgrounds)/);
+  assert.throws(() => checkStateBackgrounds(parse(repointed), takeApart(parse(made.blob)), FOUR_SLOT_CHOICES.stateColours), /draws (plain background|2 backgrounds)/);
   // The idle corner program named as entry 5 + 0x1900, which the firmware runs as entry 5 and section 369's
   // stalled file named as 6653: every key map entry and page program naming 5 given the high byte 0x19.
   const high = Uint8Array.from(made.blob);
@@ -167,10 +167,10 @@ test('the check refuses Logitech\'s own backgrounds, a state in another colour, 
     if ((high[k - 1] === 0x2d || high[k - 1] === 0x11) && high[k] === 5 && high[k + 1] === 0 && high[k + 2] === 0x73) { high[k + 1] = 0x19; named++; }
   }
   assert.equal(named, 7, 'two idle key maps and five idle pages name the idle corner program');
-  assert.throws(() => checkStateBackgrounds(parse(high), takeApart(parse(made.blob))), /runs as entry 5/);
+  assert.throws(() => checkStateBackgrounds(parse(high), takeApart(parse(made.blob)), FOUR_SLOT_CHOICES.stateColours), /runs as entry 5/);
 });
 
 test('a Harmony 700 compile, which shares the look, is refused, since nobody has checked it on a 700',
      skipUnless('h700_28_config_region'), () => {
-  assert.throws(() => withStateBackgrounds(takeApart(containerOf('h700_28_config_region'))), /Harmony 650 alone/);
+  assert.throws(() => withStateBackgrounds(takeApart(containerOf('h700_28_config_region')), FOUR_SLOT_CHOICES.stateColours, FOUR_SLOT_CHOICES.barColour), /Harmony 650 alone/);
 });

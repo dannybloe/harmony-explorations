@@ -39,7 +39,7 @@
  * 55 entries, each calling the action list numbered by its own position, have three ties at their
  * capacity whose order this rule does not give.
  */
-import { STATE_WRITE_BASE } from './actions.ts';
+import { POP_MODE, STATE_WRITE_BASE } from './actions.ts';
 import { KEY_EVENT_PRESS, KEY_EVENT_SHIFT } from './inventory.ts';
 import { taggedListBytes } from './sections.ts';
 
@@ -57,8 +57,6 @@ export const KEYPAD_FIRST_SCAN = 1;
 export const KEYPAD_LAST_SCAN = 54;
 /** The key under "Exit" on the placeholder screen, sections 290, 294 and 311. */
 const EXIT_SCAN = 25;
-/** Instruction `0x07` with operand `0xFFFC` pops the mode stack, section 311. */
-export const POP_MODE = { opcode: 0x07, operand: 0xfffc } as const;
 /** The 700's leading entry: tag 6, an enter handler, writing 1 into a state variable with `0x80 + v`. */
 const SEVEN_HUNDRED_HANDLER_TAG = 0x06;
 /** A state write's opcode carries seven bits of index. */
