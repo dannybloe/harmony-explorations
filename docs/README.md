@@ -770,7 +770,8 @@ tools/facts.py         [--write] [--list]   the document checks behind `make fac
 tools/usbdesc.py       <file> <base> [--raw] [--json]
 tools/usbprobe.py      [--json]   reads a CONNECTED remote, enumeration only, needs pyusb
 tools/oxanium_glyphs.py [--fonts DIR]   Oxanium rendered into the Harmony 650's letter masks,
-                       packages/codec/src/oxanium.ts; needs Pillow, the lab's venv, todo-compile-650 8.2
+                       packages/codec/src/oxanium.ts, from packages/codec/fonts/Oxanium/ (the typeface
+                       and its OFL.txt, in the repository since plan 007); needs Pillow, the lab's venv
 node packages/usb/bin/list-remotes.ts    the same question over HID, also enumeration only
 node packages/usb/bin/read-burst-probe.ts [--count 16384] [--stall-after N] [--stall-ms MS]
                        the positive control for a dropped chunk, section 223: read one window report

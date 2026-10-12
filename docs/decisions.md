@@ -633,7 +633,9 @@ remote and 2 in the second, which is what section 117 measured as a generator er
    find: section 364 measured the font of the smallest Harmony 650 compile having no K, and no font
    spelling "Eject". Copying Logitech's letter shapes into a configuration we build would also be the
    copy the finish line excludes. Oxanium is a typeface by the Oxanium Project Authors, published through
-   Google Fonts, kept in the lab's `fonts/Oxanium/` with its `OFL.txt`.
+   Google Fonts, kept in this repository's `packages/codec/fonts/Oxanium/` with its `OFL.txt`, the seven
+   static weights. It was kept in the lab's `fonts/Oxanium/`<!--superseded--> until 12 October 2026, when the
+   project owner decided that a source a build depends on lives in the repository, plan 007.
 
    **The licence.** SIL Open Font License 1.1, and the copyright line names no Reserved Font Name. It
    may be used, rendered, embedded and bundled with software under any licence, MIT here and GPLv3 in

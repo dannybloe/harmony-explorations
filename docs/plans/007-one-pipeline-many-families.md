@@ -150,7 +150,9 @@ The names are placeholders for the plan; 10.7.2 settles them.
   caller passes, or this repository. Measured when this was written: no module of `packages/codec/src`
   imports the lab. The one gap is a source, not a build: our letters are generated from the Oxanium
   font in the lab's `fonts/`, so the font files a build depends on, Oxanium's and later the icons', are to
-  live in this repository with their licences, which both permit.
+  live in this repository with their licences, which both permit. **Closed the same day**: Oxanium's
+  seven static weights and its `OFL.txt` are in `packages/codec/fonts/Oxanium/`, and the letters
+  regenerated from that copy are byte identical to the committed module.
 * **Build, do not patch.** A configuration of ours is serialized from its description through the
   linker. Patching a donor retires for our own builds at 11.1.1; the readers of Logitech's compiles stay
   as they are, since reading is not building and they already work per architecture.
