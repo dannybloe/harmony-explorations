@@ -34,7 +34,7 @@ import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
+import { IR_ARCHIVE, LAB, needing, require_, skipUnless, skipWithoutIrArchive, skipWithoutLab } from '@harmony/lab';
 import {
   archiveProtocolsByName,
   blockOfStatedCode,
@@ -275,7 +275,8 @@ test('three devices holding codes only the definition reads, composed whole, pre
   });
 
 test('the controls: read at the name\'s widths the TestQuhd composes nothing, spelt without its gaps joined no record is Logitech\'s, and built at 1 no press is',
-  needing(skipWithoutIrArchive()), () => {
+  // The harvest compile it compares against is a lab file, so it skips without the lab as well.
+  needing(skipWithoutIrArchive(), skipWithoutLab()), () => {
     const protocols = archiveProtocolsByName(IR_ARCHIVE!);
     const codes = catalogueCommands(IR_ARCHIVE!, catalogueDevice(IR_ARCHIVE!, 'Gemini', 'TestQuhd').codeset!);
     assert.equal(codes.length, 70);

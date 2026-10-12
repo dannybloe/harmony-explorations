@@ -173,7 +173,9 @@ class TestArch12RegionSplit(unittest.TestCase):
 # loaded while the class is defined, and a fresh clone has none.
 BARE_CONTAINERS_NAMED_EZHEX = (
     'h650_power_hold_compile', 'h650_power_hold_compile_2', 'h700_power_hold_compile',
-    'h700_power_hold_compile_2', 'h700_power_hold_compile_3', 'h700_power_hold_compile_4')
+    'h700_power_hold_compile_2', 'h700_power_hold_compile_3', 'h700_power_hold_compile_4',
+    # Logitech's compiles gathered by `packages/corpus/bin/harvest.ts`, saved under the service's own name.
+    'harvest_650_two_devices', 'harvest_one_two_devices')
 _BARE = BARE_CONTAINERS_NAMED_EZHEX
 
 
@@ -218,11 +220,13 @@ class TestEzHexHeader(unittest.TestCase):
         and none of them counted. So the count is the claim and the four exclusions are named.
         """
         ez = {n for n, f in lab.IMAGES.items() if f.lower().endswith('.ezhex')}
-        self.assertEqual(len(ez), 23)
+        # 27 since two contributed Harmony 650 configs, section 323's issue 8 and issue 36, and two harvest
+        # compiles, bare containers, were registered.
+        self.assertEqual(len(ez), 27)
         self.assertEqual(sorted(ez - set(self.CONFIGS)),
                          sorted(['h890_config', 'h890_config_2', 'h890_config_2_rescan',
                                  'h890_config_rescan', *self.BARE_CONTAINERS_NAMED_EZHEX]))
-        self.assertEqual(len(self.CONFIGS), 13)
+        self.assertEqual(len(self.CONFIGS), 15)
 
     def test_every_config_verifies_its_own_split(self):
         # The population up front, so a partial lab skips this whole test rather than shrinking its
