@@ -166,4 +166,9 @@ an item, ask whether the finish line moves without it; if it does, the item goes
 
 - [ ] 11.1 Build the test setup with no Logitech file as input, and check that every byte comes from one of our generators
   - [ ] 11.1.1 An empty starting configuration built by our own generators, no device and no activity, decided on 10 October 2026 over stripping a Logitech compile; the composers then add the first device and the first activity to it, which on the smallest Logitech compile they refuse today (section 364)
+    - [ ] 11.1.1.1 The skeleton, [plan 008](docs/plans/008-the-650-from-nothing.md) step 1: every section table, an empty name tree, mode 0's key list and our font table described in code, laid out and passing every parse check
+    - [ ] 11.1.1.2 The wiring and the state tables on our own numbers, with what nobody builds yet: the hour list, the battery programs, the case programs of the idle, idle entry and location maps, an all off list for no device
+    - [ ] 11.1.1.3 The screens: the firmware's fourteen, the idle device list and the activity menu with no row, and Off, in the state colours with our pictures and letters
+    - [ ] 11.1.1.4 The empty configuration checked: every byte attributed to a generator, then written once to the 650 with a bench test that it starts, shows both empty menus and switches off
+    - [ ] 11.1.1.5 The composers on it, each lookup of Logitech's content moved to the builder's description, then the first device and the first activity composed onto it
 - [ ] 11.2 Write it to the 650 and check it as in 5.2
