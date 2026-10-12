@@ -126,3 +126,4 @@ export * from './compare.ts';
 export * from './assemble.ts';
 // The recipe a configuration of ours is built from, todo-compile-650 10.7.4, `docs/recipe.md`.
 export * from './recipe/recipe.ts';
+export * from './icons.ts';

@@ -46,8 +46,10 @@
  *     section 318;
  * 14. with the state colours chosen, one flat colour per screen state in place of the designed
  *     backgrounds, decision 20, `withStateBackgrounds`;
- * 15. with blending chosen, our letters blended into the colour under each text, decision 22,
- *     `withBlendedLetters`. Both run on the placed file, the order the files written to the Harmony 650
+ * 15. with our pictures chosen, the six pictures that are no state's background drawn from icons,
+ *     `todo-compile-650.md` 9.1.2.2, `buildOurPictures`;
+ * 16. with blending chosen, our letters blended into the colour under each text, decision 22,
+ *     `withBlendedLetters`. All three run on the placed file, the order the files written to the Harmony 650
  *     were built in, `todo-compile-650.md` 9.1.2.1 and 8.2.6.
  *
  * Step 0 letters the donor in ours when that is chosen, before any composer spells a label.
@@ -90,7 +92,7 @@ import {
   buildWiring, builtPieces, checkWiring, describeWiring, withWiring, wiringModelOfSkin, type WiringSettings,
 } from './wiring.ts';
 import { modeZeroKeyList } from './modezero.ts';
-import { checkPictures, describePictures, withPictures } from './pictures.ts';
+import { buildOurPictures, buildPictures, checkOurPictures, checkPictures, describePictures, withPictures } from './pictures.ts';
 import {
   activityEntriesByName, buildScreenRecords, checkScreenRecords, describeScreenRecords, inActivityOrder,
   withScreenRecords,
@@ -623,9 +625,9 @@ export function assembleSetup(setup: Recipe, options: AssembleOptions): Assemble
   c = parse(layOutContainer(withScreenTexts(layout, buildScreenTexts(texts.spec, c), texts.place)).bytes);
   note('texts');
 
-  // 8. The pictures a rule draws, section 363; the artwork and any picture its table does not know stay.
+  // 8. The pictures a rule draws, section 363; the rest of the artwork and any picture its table does not know stay.
   layout = takeApart(c);
-  c = parse(layOutContainer(withPictures(layout, describePictures(layout))).bytes);
+  c = parse(layOutContainer(withPictures(layout, describePictures(layout), buildPictures())).bytes);
   note('pictures');
 
   // 9. The wiring, with the settings.
@@ -679,7 +681,19 @@ export function assembleSetup(setup: Recipe, options: AssembleOptions): Assemble
     note('state colours');
   }
 
-  // 15. Our letters blended into the colour under each text.
+  // 15. Our pictures, the six that are no state's background drawn from icons, 9.1.2.2. On the placed file
+  //     and after the checks and the colours, since the composers, several checks and the colours' screen
+  //     records find the start up picture by Logitech's artwork; before the blending, which reads the colour
+  //     under each text.
+  if (choices.pictures === 'ours') {
+    const before = c;
+    layout = takeApart(c);
+    const ours = buildOurPictures({ icons: choices.icons, colour: choices.iconColour, background: choices.iconBackground });
+    c = layOutContainer(withPictures(layout, describePictures(layout), new Map([...buildPictures(), ...ours]))).container;
+    note('our pictures', checkOurPictures(before, c, ours).join(', '));
+  }
+
+  // 16. Our letters blended into the colour under each text.
   let blended: LettersBlended | undefined;
   if (choices.blendLetters) {
     blended = withBlendedLetters(takeApart(c), faces as SetFace[]);

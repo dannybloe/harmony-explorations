@@ -228,7 +228,9 @@ The TypeScript workspace, per `docs/plans/002-the-roadmap.md` step 4:
                                 choices.ts, and src/recipe/ reads the recipe a build starts from,
                                 docs/recipe.md. Our letters are drawn from the typeface in fonts/
                                 (Oxanium, with its OFL.txt) by src/typeface.ts on src/raster.ts, the
-                                one rasteriser for outlines, with opentype.js reading the font
+                                one rasteriser for outlines, with opentype.js reading the font;
+                                src/icons.ts draws icons of Material Design Icons (@mdi/font) on
+                                the same rasteriser, for the pictures of 9.1.2.2
 packages/lab/                   TS: finds the private lab directory, mirrors tests/lab.py. Also
                                 finds the **public** infrared archive checkout, which is a
                                 separate locator on purpose: both make their tests skip when

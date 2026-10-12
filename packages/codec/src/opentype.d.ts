@@ -15,6 +15,8 @@ declare module 'opentype.js' {
 
   export interface Font {
     readonly unitsPerEm: number;
+    readonly ascender: number;
+    readonly descender: number;
     charToGlyph(character: string): Glyph;
   }
 

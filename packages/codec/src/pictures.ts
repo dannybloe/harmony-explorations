@@ -18,8 +18,10 @@
  *   the activity menu and an activity's working screen, with their cross or line; the start up screen's
  *   picture; the small mark those programs draw there from 1 to 3; and the four pictures of the firmware screens with a
  *   battery or a USB plug. They are designed images, so their pixels are not written into this
- *   repository and a configuration takes them from a Logitech compile, a donor, until it is decided where
- *   they come from. The cross and the line cannot be laid over a plain curved background by rule either:
+ *   repository and a configuration takes them from a Logitech compile, a donor, unless ours are chosen:
+ *   the five backgrounds give way to one flat colour per screen state, `backgrounds.ts`, 9.1.2.1, and the
+ *   other six to icons drawn from a font, `buildOurPictures`, 9.1.2.2, section 373, put in by
+ *   `withPictures` and read back by `checkOurPictures`. The cross and the line cannot be laid over a plain curved background by rule either:
  *   the crossed background differs from the plain one in 98 pixels off its cross, all within seven pixels
  *   of it and each one colour step off, so Logitech flattened each whole;
  * * **left out**, two: the black background with a dotted cross and the one with a dotted line, which only
@@ -37,6 +39,8 @@
 import type { ContainerLayout, ContainerPiece, PieceRef } from './frame.ts';
 import { layOutContainer, takeApart } from './frame.ts';
 import type { Container } from './gspm.ts';
+import { drawIcon } from './icons.ts';
+import { rgb565, rgbTo565 } from './png.ts';
 import { encodeBitmap } from './screen.ts';
 import { contentKey } from './screencategories.ts';
 
@@ -57,7 +61,25 @@ export interface BandRow {
  */
 export type PictureDrawing =
   | { kind: 'fill'; width: number; height: number; colour: number }
-  | { kind: 'band'; width: number; height: number; top: number; rows: readonly BandRow[] };
+  | { kind: 'band'; width: number; height: number; top: number; rows: readonly BandRow[] }
+  | IconDrawing;
+
+/**
+ * An icon of Material Design Icons, `icons.ts`, `todo-compile-650.md` 9.1.2.2: its grid square `size`
+ * pixels wide centred at `centre`, in `colour`. Over a `background` it is blended into it by coverage, as
+ * our letters are, and every pixel is drawn; with none it is one bit, the colour where it inks and nothing
+ * elsewhere, which makes the picture the encoded kind and lets what is under it show.
+ */
+export interface IconDrawing {
+  kind: 'icon';
+  width: number;
+  height: number;
+  icon: string;
+  centre: readonly [number, number];
+  size: number;
+  colour: number;
+  background?: number;
+}
 
 /** Why a picture is not drawn by rule. */
 export type PictureSource = 'rule' | 'artwork' | 'left out';
@@ -139,6 +161,7 @@ export const HARMONY_650_PICTURES: readonly PictureEntry[] = [
 
 /** A drawing's pixels, one row per row, `undefined` where nothing is drawn. */
 export function pictureRows(drawing: PictureDrawing): (number | undefined)[][] {
+  if (drawing.kind === 'icon') return iconRows(drawing);
   if (drawing.kind === 'fill') {
     return Array.from({ length: drawing.height }, () => new Array<number | undefined>(drawing.width).fill(drawing.colour));
   }
@@ -153,6 +176,88 @@ export function pictureRows(drawing: PictureDrawing): (number | undefined)[][] {
     for (let x = row.inset; x <= last; x += 1) line[x] = x === row.inset || x === last ? row.end : row.fill;
     return line;
   });
+}
+
+/** An icon's pixels: blended by coverage over its background, or one bit where it has none. */
+function iconRows(drawing: IconDrawing): (number | undefined)[][] {
+  const { width, height, icon, centre, size, colour, background } = drawing;
+  const drawn = drawIcon(icon, width, height, centre[0], centre[1], size);
+  const ink = rgb565(colour);
+  const paper = background === undefined ? undefined : rgb565(background);
+  return Array.from({ length: height }, (_, y) => Array.from({ length: width }, (_, x): number | undefined => {
+    const k = y * width + x;
+    if (paper === undefined) return drawn.ink[k] === 1 ? colour : undefined;
+    const v = drawn.coverage[k]!;
+    const mixed = [0, 1, 2].map((c) => Math.round(ink[c]! * v + paper[c]! * (1 - v)));
+    return rgbTo565(mixed[0]!, mixed[1]!, mixed[2]!);
+  }));
+}
+
+/**
+ * Where our own picture of each of Logitech's six artwork pictures that is no state's background draws its
+ * icon, measured on Logitech's, section 363, `todo-compile-650.md` 9.1.2.2: the four firmware screen
+ * pictures fill the square from 32 to 95 each way, the start up picture's runs from row 32 to 79 since
+ * the title is above it and three lines below, and the corner mark is the whole of its 12 by 10. A fact of
+ * the screen's layout; the icon in each place is a choice, `OurPictureChoices`.
+ */
+export const OUR_PICTURE_PLACES = {
+  'start up picture': { width: 128, height: 128, centre: [64, 56], size: 48, opaque: true },
+  'corner mark': { width: 12, height: 10, centre: [6, 5], size: 12, opaque: false },
+  'USB Connected': { width: 128, height: 128, centre: [64, 64], size: 64, opaque: true },
+  'Low Battery': { width: 128, height: 128, centre: [64, 64], size: 64, opaque: true },
+  'battery blank screen': { width: 128, height: 128, centre: [64, 64], size: 64, opaque: true },
+  'upgrade and learn blank screens': { width: 128, height: 128, centre: [64, 64], size: 64, opaque: true },
+} as const satisfies Record<string, { width: number; height: number; centre: readonly [number, number]; size: number; opaque: boolean }>;
+
+export type OurPictureName = keyof typeof OUR_PICTURE_PLACES;
+
+/** Which icon each of our pictures draws, and in which colours: a family's choice, `FourSlotChoices.pictures`. */
+export interface OurPictureChoices {
+  readonly icons: Readonly<Record<OurPictureName, string>>;
+  /** The icons' colour. */
+  readonly colour: number;
+  /** The colour the opaque pictures are filled with, under every text and icon those screens draw. */
+  readonly background: number;
+}
+
+/** Our six pictures drawn and encoded, by the name of Logitech's picture each replaces. */
+export function buildOurPictures(choices: OurPictureChoices): Map<string, Uint8Array> {
+  const out = new Map<string, Uint8Array>();
+  for (const [name, place] of Object.entries(OUR_PICTURE_PLACES) as [OurPictureName, (typeof OUR_PICTURE_PLACES)[OurPictureName]][]) {
+    const drawing: IconDrawing = {
+      kind: 'icon', width: place.width, height: place.height, icon: choices.icons[name], centre: place.centre, size: place.size,
+      colour: choices.colour, ...(place.opaque ? { background: choices.background } : {}),
+    };
+    out.set(name, encodeBitmap(pictureRows(drawing)));
+  }
+  return out;
+}
+
+/**
+ * Our pictures read back: `after` holds the bank of `before` picture for picture, with every one of the six
+ * Logitech's artwork drew there now holding exactly the bytes `buildOurPictures` made and every other picture
+ * unchanged. Each of the six has to be found, so a donor that lacks one is refused rather than half lettered.
+ */
+export function checkOurPictures(before: Container, after: Container, ours: ReadonlyMap<string, Uint8Array>): string[] {
+  const was = describePictures(takeApart(before));
+  const now = takeApart(after).pictures;
+  if (now.length !== was.length) throw new PictureError(`the picture bank holds ${now.length} pictures where it held ${was.length}`);
+  const placed: string[] = [];
+  was.forEach(({ piece, entry }, k) => {
+    const mine = entry === undefined ? undefined : ours.get(entry.name);
+    const want = mine ?? piece.bytes;
+    if (!sameBytes(now[k]!.bytes, want)) {
+      throw new PictureError(`picture ${k}${entry === undefined ? '' : `, ${entry.name},`} ${mine === undefined ? 'changed' : 'is not ours'}`);
+    }
+    if (mine !== undefined) placed.push((entry as PictureEntry).name);
+  });
+  const missing = [...ours.keys()].filter((name) => !placed.includes(name));
+  if (missing.length > 0) throw new PictureError(`the configuration holds no ${missing.join(', ')} to draw ours over`);
+  return placed;
+}
+
+function sameBytes(a: Uint8Array, b: Uint8Array): boolean {
+  return a.length === b.length && a.every((v, k) => v === b[k]);
 }
 
 /** Every rule picture of `entries` drawn and encoded, by name. */
@@ -193,9 +298,11 @@ export function withPictures(layout: ContainerLayout, described: readonly Descri
   built: ReadonlyMap<string, Uint8Array> = buildPictures()): ContainerLayout {
   const replace = new Map<ContainerPiece, ContainerPiece>();
   for (const { piece, entry } of described) {
-    if (entry?.source !== 'rule') continue;
+    if (entry === undefined) continue;
     const bytes = built.get(entry.name);
-    if (bytes === undefined) throw new PictureError(`${entry.name} was not built`);
+    // A rule picture is always built; an artwork one only where `built` brings our own, `buildOurPictures`.
+    if (bytes === undefined && entry.source === 'rule') throw new PictureError(`${entry.name} was not built`);
+    if (bytes === undefined) continue;
     replace.set(piece, { bytes, refs: [], ...(piece.owner === undefined ? {} : { owner: piece.owner }) });
   }
   const all = [layout.keyTable, ...layout.body,

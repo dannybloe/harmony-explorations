@@ -563,6 +563,31 @@ test('10.8.5: the weight each face is drawn in is a choice, and a configuration 
     /F15 in Light is lighter than R15 in Regular/);
 });
 
+test('9.1.2.2: our pictures replace the six that are no state\'s background, after the checks and the colours, the setup and every text unchanged',
+     needing(skipWithoutIrArchive(), skipUnless('h650_start_config', 'h650_test_config_clean')), () => {
+  const given = { donor: require_('h650_start_config'), ...composing() };
+  const setup = setupOf('h650-test.json');
+  const look = { letters: 'oxanium', backgrounds: 'state colours', blendLetters: true } as const;
+  const theirs = assembleSetup({ ...setup, choices: look }, given);
+  const out = assembleSetup({ ...setup, choices: { ...look, pictures: 'ours' } }, given);
+  assert.ok(out.container.allChecksPass);
+  assert.deepEqual(compareViews(setupView(out.container), setupView(containerOf('h650_test_config_clean')), { menuOrder: false }), []);
+  // Between the colours and the blending, all six found and replaced; `checkOurPictures` read them back.
+  assert.deepEqual(out.steps.slice(-3).map((one) => one.step), ['state colours', 'our pictures', 'blended letters']);
+  assert.deepEqual(out.steps.at(-2)!.detail!.split(', ').sort(), [
+    'Low Battery', 'USB Connected', 'battery blank screen', 'corner mark', 'start up picture', 'upgrade and learn blank screens']);
+  const texts = (c: Container): string[] => screenStrings(c).map((one) => one.text).sort();
+  assert.deepEqual(texts(out.container), texts(theirs.container));
+  checkBlendedLetters(out.container, out.faces!, out.blended!);
+  // The five raw pictures are the size of Logitech's; our corner mark encodes in 109 bytes where theirs is 161.
+  assert.equal(theirs.bytes.length - out.bytes.length, 161 - 109);
+  // Refused: an icon the font lacks, and a picture that is not one of the six.
+  assert.throws(() => assembleSetup({ ...setup, choices: { pictures: 'ours', icons: { 'USB Connected': 'no-such-icon' } } }, given),
+    /USB Connected cannot draw no-such-icon/);
+  assert.throws(() => assembleSetup({ ...setup, choices: { pictures: 'ours', icons: { 'Help': 'usb' } as never } }, given),
+    /icons has no Help/);
+});
+
 test('the smallest Harmony 650 compile the lab registers, two devices and no activity, takes no composer: the device composer knows the activity menu by its activity rows and it has none, its fonts lack letters, and an activity needs another to be told apart from',
      needing(skipWithoutIrArchive(), skipUnless('harvest_650_two_devices')), () => {
   const smallest = require_('harvest_650_two_devices');

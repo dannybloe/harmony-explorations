@@ -45,6 +45,9 @@ importers:
       '@harmony/usb':
         specifier: workspace:*
         version: link:../usb
+      '@mdi/font':
+        specifier: 7.4.47
+        version: 7.4.47
       opentype.js:
         specifier: 2.0.0
         version: 2.0.0
@@ -102,6 +105,9 @@ importers:
         version: link:../lab
 
 packages:
+
+  '@mdi/font@7.4.47':
+    resolution: {integrity: sha512-43MtGpd585SNzHZPcYowu/84Vz2a2g31TvPMTm9uTiCSWzaheQySUcSyUH/46fPnuPQWof2yd0pGBtzee/IQWw==}
 
   '@types/node@24.13.3':
     resolution: {integrity: sha512-Dh8vAsV36ig5wa9OX4pXvMc9D3Veibfw2wix0CUwYODLD8nkj9UsLjASr49nPg+2eKzxhBV+v7L8pXvT4e639Q==}
@@ -177,6 +183,8 @@ packages:
     resolution: {integrity: sha512-8TsGPNMIMiiBdkORgRSvLjuiEIiAFtO+KssmYWxQ+uSVvlf7RjK8YKCOjPzZ+YA04jXEV7+7LvkSmHkhpNS99g==}
 
 snapshots:
+
+  '@mdi/font@7.4.47': {}
 
   '@types/node@24.13.3':
     dependencies:

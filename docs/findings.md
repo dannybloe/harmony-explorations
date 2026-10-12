@@ -50324,3 +50324,54 @@ with the default weights the assembly is byte equal to before.
   `opentype.d.ts`, the part of opentype.js used.
 * `packages/codec/test/typeface.test.ts`, the rasteriser on known shapes, each face's rows and the digest;
   `blending.test.ts` and `fonttable.test.ts`, the alphabet's forms and structures in the new letters.
+
+## 373. Our own six pictures that are no state's background, icons drawn from a font on the placed file
+
+`todo-compile-650.md` 9.1.2.2. The Harmony 650's colour look of 2026 only, the six artwork pictures of
+section 363 that section 366's state colours do not replace: the start up picture, the corner mark, and the
+pictures of the USB Connected, Low Battery, battery blank and upgrade and learn blank screens. No firmware or
+client question arises: which icon a screen shows is ours. Sources checked first: the six pictures in the
+starting compile, measured for where their ink sits and which screens draw them, and section 363's table.
+
+**The icons are Material Design Icons**, by Pictogrammers, Apache 2.0, the npm package `@mdi/font` pinned at
+7.4.47, which depends on nothing. Its font is read with opentype.js and drawn by `raster.ts`, the rasteriser
+our letters use, section 372, so an icon is an outline rendered on demand and nothing of it is a Logitech
+compile's. An icon is named as the package names it, 7447 names read from its own list. The font's em square
+is the icons' 24 unit design grid, so one rule places any icon: the grid's square at a size in pixels, its
+centre where the picture asks, the icon keeping the margin it has inside the grid.
+
+**Where each icon goes is measured on Logitech's and is a fact of the screen**, `OUR_PICTURE_PLACES`: the four
+firmware screen pictures draw their ink in the square from 32 to 95 each way, so ours is 64 pixels centred on
+64, 64; the start up picture's ink runs from row 32 to 79, between its title and the three lines below, so ours
+is 48 pixels centred on 64, 56; the corner mark is the whole of its 12 by 10. The five large ones are drawn on
+a solid background, every pixel stated, blended into it like our letters, so every text the firmware writes
+over them sits on one known colour; the corner mark is one bit and encoded, so the state's colour shows
+through, as Logitech's does. **Which icon and which two colours are choices**, `FourSlotChoices`: `pictures`
+is `'logitech'` by default and `'ours'` builds them; `icons` names one per picture, refused where the font has
+no icon of that name or the picture is not one of the six; `iconColour` white and `iconBackground` Logitech's
+plain dark grey.
+
+**They are built late, between the state colours and the blending**, step 15 of `assembleSetup`. The composers,
+several of the assembly's checks and the state colours' screen records find the start up picture by Logitech's
+artwork, by its content key, so with ours in step 8 beside the rule pictures the first composer that needed the
+start up picture refused the file. After the colours, every reader that needs Logitech's artwork has run; before
+the blending, the text the firmware screens and the start up screen draw over our pictures is blended into
+our background. `checkOurPictures` reads the bank back: the same number of pictures, each of the six in our
+bytes, every other unchanged, and all six found, so a donor lacking one is refused.
+
+**The test setup assembled with ours passes its checks**, its setup and every text as with Logitech's pictures,
+and is 52 bytes shorter: the five large pictures are raw, 32773 bytes each like Logitech's, and our corner mark
+encodes in 109 where theirs is 161. With the default choices the assembly is unchanged. The corner mark is
+drawn by the programs switching on state variable 17, which section 317 read as a battery gauge from the
+pictures' size; section 340's firmware reading found its writers raising it when a message is queued, and
+Logitech's mark looks like a signal, so the default icon is one.
+
+**Not yet**: the byte attribution, `attributeBytes`, knows a picture as generated only by Logitech's content
+keys, so our six count as carried; 11.1, which builds the starting configuration with no Logitech file, is
+where the attribution is rebuilt. The start up icon becomes a FreeHarmony design later.
+
+* `packages/codec/src/icons.ts`, `iconNames`, `iconPath`, `drawIcon`; `pictures.ts`, `OUR_PICTURE_PLACES`,
+  `buildOurPictures`, `checkOurPictures`; `families/four-slot/choices.ts`, the four choices; `assemble.ts`,
+  step 15.
+* `packages/codec/test/icons.test.ts`, the names, the placement and the pictures' digest; `assemble.test.ts`,
+  the 9.1.2.2 assembly and its refusals.

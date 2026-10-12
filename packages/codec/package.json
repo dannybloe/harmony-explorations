@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@harmony/usb": "workspace:*",
+    "@mdi/font": "7.4.47",
     "opentype.js": "2.0.0"
   },
   "devDependencies": {

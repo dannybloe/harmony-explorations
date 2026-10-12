@@ -502,7 +502,9 @@ export function checkStateBackgrounds(c: Container, layout: ContainerLayout,
         for (const instruction of program) {
           const picture = pictureReference(instruction);
           const b = picture === undefined ? undefined : bitmapAt(c, picture);
-          if (picture === undefined || b?.stride !== PATCH_WIDTH || b.rows !== PATCH_HEIGHT || pictureName(c, picture) === 'corner mark') continue;
+          // A patch is a raw fill; the mark the same program draws from 1 to 3 is the encoded kind, Logitech's
+          // and ours alike, `todo-compile-650.md` 9.1.2.2, so its shape tells the two apart and not its bytes.
+          if (picture === undefined || b?.stride !== PATCH_WIDTH || b.rows !== PATCH_HEIGHT || b.kind === BITMAP_ENCODED) continue;
           if (!flatIn(picture, colours[state], PATCH_WIDTH, PATCH_HEIGHT)) {
             throw new BackgroundError(`mode ${mode}, a ${state} screen, patches its battery corner in another colour`);
           }

@@ -28,6 +28,8 @@ import {
   LETTERING_FACES, OXANIUM_WEIGHTS, defaultWeight, type LetterInks, type OxaniumFaceName, type OxaniumWeight,
 } from '../../lettering.ts';
 import type { WiringSettings } from '../../wiring.ts';
+import { iconNames } from '../../icons.ts';
+import type { OurPictureName } from '../../pictures.ts';
 import type { CommonChoices, DelayDefaults } from '../family.ts';
 
 export interface FourSlotChoices extends CommonChoices {
@@ -56,6 +58,23 @@ export interface FourSlotChoices extends CommonChoices {
    * every weight and a configuration's size table is built from the weights its letters are in, `ladderOf`.
    */
   readonly faceWeights: Readonly<Record<OxaniumFaceName, OxaniumWeight>>;
+  /**
+   * The six pictures that are no state's background, the start up picture, the corner mark and the four
+   * firmware screen pictures: Logitech's, as the donor carries them, or ours, an icon of Material Design
+   * Icons each, `todo-compile-650.md` 9.1.2.2 (`buildOurPictures`). Every assembly measured against a
+   * Logitech compile needs theirs.
+   */
+  readonly pictures: 'logitech' | 'ours';
+  /**
+   * Which icon each of our pictures draws, by Material Design Icons' own name, chosen by look beside
+   * Logitech's in 9.1.2.2: a remote for starting an activity, the USB symbol, a battery with an alert, a
+   * battery crossed out, two turning arrows for upgrading and learning, and a signal fan for the mark,
+   * the one of the candidates still legible at 12 by 10.
+   */
+  readonly icons: Readonly<Record<OurPictureName, string>>;
+  /** The icons' colour, white as Logitech's, and the solid colour under them, Logitech's plain dark grey. */
+  readonly iconColour: number;
+  readonly iconBackground: number;
   /**
    * The backgrounds of the five designed screens: Logitech's pictures, as the donor carries them, or one
    * flat colour per screen state, decision 20, `todo-compile-650.md` 9.1.2.1 (`withStateBackgrounds`).
@@ -88,7 +107,8 @@ export interface FourSlotChoices extends CommonChoices {
 }
 
 /** What a recipe gives: any choice, a settings and colours object in part. */
-export type FourSlotChoicesGiven = Partial<Omit<FourSlotChoices, 'settings' | 'stateColours' | 'delays' | 'letterInks' | 'faceWeights'>> & {
+export type FourSlotChoicesGiven = Partial<Omit<FourSlotChoices, 'settings' | 'stateColours' | 'delays' | 'letterInks' | 'faceWeights' | 'icons'>> & {
+  readonly icons?: Partial<Record<OurPictureName, string>>;
   readonly letterInks?: Partial<LetterInks>;
   readonly faceWeights?: Partial<Record<OxaniumFaceName, OxaniumWeight>>;
   readonly settings?: Partial<WiringSettings>;
@@ -101,6 +121,17 @@ export const FOUR_SLOT_CHOICES: FourSlotChoices = {
   blendLetters: false,
   letterInks: { shadowed: 0xffff, plain: 0x2104, shadow: 0x0000 },
   faceWeights: Object.fromEntries(LETTERING_FACES.map((face) => [face, defaultWeight(face)])) as Record<OxaniumFaceName, OxaniumWeight>,
+  pictures: 'logitech',
+  icons: {
+    'start up picture': 'remote-tv',
+    'corner mark': 'wifi',
+    'USB Connected': 'usb',
+    'Low Battery': 'battery-alert-variant-outline',
+    'battery blank screen': 'battery-off-outline',
+    'upgrade and learn blank screens': 'sync',
+  },
+  iconColour: 0xffff,
+  iconBackground: 0x2945,
   backgrounds: 'designed',
   // Decided on 10 October 2026, until a user's setting replaces them.
   stateColours: {
@@ -149,6 +180,7 @@ export function fourSlotChoices(given: FourSlotChoicesGiven = {}): FourSlotChoic
     ['delays', given.delays, FOUR_SLOT_CHOICES.delays],
     ['letterInks', given.letterInks, FOUR_SLOT_CHOICES.letterInks],
     ['faceWeights', given.faceWeights, FOUR_SLOT_CHOICES.faceWeights],
+    ['icons', given.icons, FOUR_SLOT_CHOICES.icons],
   ] as const) {
     for (const key of Object.keys(part ?? {})) {
       if (!(key in defaults)) throw new ChoiceError(`${name} has no ${key}`);
@@ -158,6 +190,9 @@ export function fourSlotChoices(given: FourSlotChoicesGiven = {}): FourSlotChoic
     if (!(OXANIUM_WEIGHTS as readonly string[]).includes(weight)) {
       throw new ChoiceError(`${face} cannot be drawn in ${weight}: Oxanium's weights are ${OXANIUM_WEIGHTS.join(', ')}`);
     }
+  }
+  for (const [picture, icon] of Object.entries(given.icons ?? {})) {
+    if (!iconNames().has(icon)) throw new ChoiceError(`the ${picture} cannot draw ${icon}: Material Design Icons has no icon of that name`);
   }
   // A label face and the regular face of its height are one geometry in two weights, so a reader tells
   // them apart only by Logitech's convention, the label face the heavier, `ladderOf`.
@@ -176,5 +211,6 @@ export function fourSlotChoices(given: FourSlotChoicesGiven = {}): FourSlotChoic
     delays: { ...FOUR_SLOT_CHOICES.delays, ...given.delays },
     letterInks: { ...FOUR_SLOT_CHOICES.letterInks, ...given.letterInks },
     faceWeights: { ...FOUR_SLOT_CHOICES.faceWeights, ...given.faceWeights },
+    icons: { ...FOUR_SLOT_CHOICES.icons, ...given.icons },
   };
 }
