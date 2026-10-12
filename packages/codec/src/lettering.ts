@@ -5,8 +5,8 @@
  * A glyph on the Harmony 600, 650 and 700 is rows of pixels, each either a colour or skipped, so the
  * background shows through. Logitech's letters are one ink colour, and on most fonts a drop shadow: the ink
  * again one pixel right and one down, under the ink. That shape is the whole of what is copied from them,
- * and `oxanium.ts` holds the letters themselves as one bit masks, rendered from Oxanium by
- * `tools/oxanium_glyphs.py`. This module only colours a mask in:
+ * and `typeface.ts` draws the letters themselves from Oxanium's outlines, a one bit mask and grey levels per
+ * character, `todo-compile-650.md` 10.8. This module only colours a mask in:
  *
  * * **shadowed**, white ink over a black shadow, decision 20, for every font Logitech draws with a shadow;
  * * **plain**, dark ink and no shadow, for the fonts Logitech draws without one, which are the words on the
@@ -30,7 +30,6 @@
  * It sits apart from `fonttable.ts` because `text.ts` needs the alphabet and `fonttable.ts` needs `text.ts`.
  */
 import type { Glyph } from './font.ts';
-import { OXANIUM_FACES as PILLOW_FACES } from './oxanium.ts';
 import { rgb565, rgbTo565 } from './png.ts';
 import { renderFace, type FaceSpec, type RenderedFace } from './typeface.ts';
 
@@ -58,8 +57,8 @@ export const LETTERING_CHARACTERS: readonly string[] = Array.from({ length: 95 }
  * sits on, whether a glyph opens with a blank column, and the width of a space; the Oxanium cut and pixel
  * size whose capitals and x-height land on Logitech's rows, the weight chosen by look, Regular for the
  * three regular faces and SemiBold for the six label faces; and the rows its letters reach, which are the
- * rows the letters `tools/oxanium_glyphs.py` drew with Pillow reach, approved in 8.2 (`todo-compile-650.md`
- * 10.8), and which the renderer fits the outlines to. Tunable, decision 19.
+ * rows the letters drawn with Pillow in 8.2 reached, which the renderer fits the outlines to since that is
+ * what Pillow's hinting did, `todo-compile-650.md` 10.8. Tunable, decision 19.
  */
 export const OXANIUM_FACE_SPECS = {
   F15: { what: 'bold 15, corner labels and menu rows', cell: 15, baseline: 11, lead: 1, weight: 'SemiBold', px: 14, space: 4,
@@ -92,25 +91,22 @@ export const LETTERING_FACES = Object.keys(OXANIUM_FACE_SPECS) as OxaniumFaceNam
 const faces = new Map<OxaniumFaceName, OxaniumFace>();
 
 /**
- * One of our faces with its letters, rendered once and kept. **Two sources while 10.8 is open**: the
- * letters Pillow drew, `oxanium.ts`, which are the approved ones and the default; and the codec's own
- * renderer, `typeface.ts`, which draws them from Oxanium's outlines when `HARMONY_RENDERED_LETTERS=1`,
- * for the preview that decides whether it replaces them. Read once, so a process letters with one source
- * throughout.
+ * One of our faces with its letters, drawn from Oxanium's outlines by `typeface.ts` on first use and kept.
+ * They replaced the letters `tools/oxanium_glyphs.py` drew with Pillow once a preview of the two side by
+ * side was approved, `todo-compile-650.md` 10.8.
  */
 export function oxaniumFace(name: OxaniumFaceName): OxaniumFace {
   let face = faces.get(name);
   if (face === undefined) {
     const spec = OXANIUM_FACE_SPECS[name];
-    const letters: RenderedFace = process.env.HARMONY_RENDERED_LETTERS === '1'
-      ? renderFace(spec, LETTERING_CHARACTERS) : PILLOW_FACES[name];
+    const letters = renderFace(spec, LETTERING_CHARACTERS);
     face = { ...spec, glyphs: letters.glyphs, greys: letters.greys };
     faces.set(name, face);
   }
   return face;
 }
 
-/** The highest grey level `oxanium.ts` writes, one hexadecimal digit, `0` being no ink. */
+/** The highest grey level `typeface.ts` draws, one hexadecimal digit, `0` being no ink. */
 export const LETTERING_GREY_LEVELS = 15;
 
 /** A character's grey coverage on its glyph's box, each pixel from 0 to 1. */
@@ -126,7 +122,7 @@ export function letterCoverage(face: OxaniumFaceName, character: string): number
  * With no `background`, the one bit letter Logitech's sets are drawn like: a pixel the ink where the mask has
  * ink, the shadow where a shadowed letter's mask has ink one up and one left and none here, and skipped
  * elsewhere. The shadow of the bottom row and of the last column falls outside the glyph only where the mask
- * put ink there, which `oxanium_glyphs.py` avoids for the columns by ending every glyph on a blank one.
+ * put ink there, which `typeface.ts` avoids for the columns by ending every glyph on a blank one.
  *
  * With a `background`, the RGB565 colour the letter will be drawn on, the letter blended into it from its
  * grey coverage `v`: the ink times `v` over what is under it times `1 - v`, where what is under a shadowed

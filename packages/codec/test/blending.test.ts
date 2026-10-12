@@ -72,9 +72,11 @@ test('the grey levels of every letter sit on its one bit box, sixteen levels a p
       assert.ok(grey.every((row) => /^[.1-9a-f]*$/.test(row)), `${face} '${ch}'`);
     }
   }
-  // The space covers nothing; a stroke covers its pixels whole.
+  // The space covers nothing; a stroke covers its pixels whole where it sits on the pixel grid, the foot
+  // of F15's `!`, and not where it does not, its tapering stem above.
   assert.ok(letterCoverage('F15', ' ').flat().every((v) => v === 0));
-  assert.deepEqual(letterCoverage('F15', '!')[2], [0, 1, 12 / 15, 0]);
+  assert.deepEqual(letterCoverage('F15', '!')[10], [0, 1, 12 / 15, 0]);
+  assert.deepEqual(letterCoverage('F15', '!')[2], [0, 14 / 15, 11 / 15, 0]);
 });
 
 test('a blended pixel is the ink where covered, skipped where nothing is, otherwise between and never an ink', () => {
@@ -97,15 +99,20 @@ test('a blended pixel is the ink where covered, skipped where nothing is, otherw
       }
     }
   }
-  // By hand: F15's `!` covers 12 of 15 of the pixel right of its stem, no shadow over it, on the bench orange
-  // 0xfc60, which the panel shows as rgb(255 142 0): white times 0.8 plus orange times 0.2 is rgb(255 232 204).
-  assert.equal(letterRows('F15', '!', 'shadowed', INKS, 0xfc60)[2]![2], (31 << 11) | (57 << 5) | 25);
+  // By hand: the foot of F15's `!` covers 12 of 15 of the pixel right of its stem, no shadow over it since
+  // the row above is the gap, on the bench orange 0xfc60, which the panel shows as rgb(255 142 0): white
+  // times 0.8 plus orange times 0.2 is rgb(255 232 204).
+  assert.equal(letterRows('F15', '!', 'shadowed', INKS, 0xfc60)[10]![2], (31 << 11) | (57 << 5) | 25);
 });
 
-test('our alphabet names a blended letter by its structure, I and l alike in three shadowed faces', () => {
+test('our alphabet names a blended letter by its structure, which tells every character apart but eight pairs and triples in the three smallest faces', () => {
   const structures = Object.values(oxaniumAlphabet().structures ?? {});
   assert.equal(structures.length, 1675);
-  assert.deepEqual(structures.filter((one) => one.length > 1), Array(3).fill('Il'));
+  // Drawn from the outlines, 10.8, fewer pixels of a thin stroke are covered whole than in the letters Pillow
+  // hinted, and a structure is full coverage against any: so `!` is `I`, `]` is `}` and one `0` is a `9` in
+  // F11, F10 and R13, where Pillow's left `I` and `l` alone. None is a misreading: a code is settled across
+  // every set that draws it, the unblended set among them, and by its ASCII value, `characterMap`.
+  assert.deepEqual(structures.filter((one) => one.length > 1).sort(), ['!I', '!I', '!Il', '!Il', '09', 'Il', ']}', ']}']);
 });
 
 test('flatColour takes a box of one colour, or dithered by one step, and nothing else', () => {

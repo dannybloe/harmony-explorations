@@ -239,7 +239,7 @@ export const TITLE_RUNG = 2;
 export const TITLE_SIZE = LABEL_SIZES[TITLE_RUNG] as LabelSize;
 
 /**
- * The same six sizes in our letters, `todo-compile-650.md` 8.2.3: each rung is the face `oxanium_glyphs.py`
+ * The same six sizes in our letters, `todo-compile-650.md` 8.2.3: each rung is the face `withOxaniumFonts`
  * letters Logitech's sets of that size in, `F15`, `F14W`, `F14`, `F13`, `F11` and `F10`, at Logitech's
  * heights and with every printable character's width. A configuration re-lettered by `withOxaniumFonts`
  * carries these widths and no others, so its sizes are recognised by this table and its labels, titles

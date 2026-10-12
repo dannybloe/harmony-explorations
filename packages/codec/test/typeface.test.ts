@@ -1,29 +1,33 @@
 /**
  * Letters rendered in the codec, `todo-compile-650.md` 10.8: the rasteriser's coverage and ink on shapes
- * whose answer is known, and the nine faces drawn from Oxanium's outlines measured against the letters
- * Pillow drew and 8.2 approved, `oxanium.ts`. The renderer does not hint, so the two differ; these pin by
- * how much, so a change to the renderer that moves the count is seen.
+ * whose answer is known, the nine faces' letters landing on the rows each face states, and the whole of
+ * what the renderer draws pinned by a digest, so a change to the rasteriser or to the font is seen and the
+ * claim that every machine draws the same bytes is checked on each one the suite runs on.
+ *
+ * Against the letters Pillow drew, which these replaced once a preview was approved, 414 of the 855 masks
+ * were identical, 33 a column narrower or wider, and every capital, small letter and digit on the same
+ * rows but the dots of i and j and the tail of Q; measured while both existed, and recorded in `typeface.ts`.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+
 import {
   LETTERING_CHARACTERS,
   LETTERING_FACES,
   OXANIUM_FACE_SPECS,
   oxanium,
+  oxaniumFace,
   rasterise,
-  renderFace,
   type PathCommand,
 } from '../src/index.ts';
-import { OXANIUM_FACES as PILLOW_FACES } from '../src/oxanium.ts';
 
 const box = (x0: number, y0: number, x1: number, y1: number): PathCommand[] =>
   [{ type: 'M', x: x0, y: y0 }, { type: 'L', x: x1, y: y0 }, { type: 'L', x: x1, y: y1 }, { type: 'L', x: x0, y: y1 }, { type: 'Z' }];
 
 test('the rasteriser covers a rectangle exactly, inks the pixels whose centres it holds, and keeps a stroke thinner than a pixel', () => {
-  // From (1.25, 1) to (3.5, 3): a quarter of column 1 and half of column 3 covered on two whole rows.
+  // From (1.25, 1) to (3.5, 3): three quarters of column 1 and half of column 3 covered on two whole rows.
   const r = rasterise(box(1.25, 1, 3.5, 3), 5, 4);
   const row = (y: number) => [...r.coverage.slice(y * 5, y * 5 + 5)];
   assert.deepEqual(row(0), [0, 0, 0, 0, 0]);
@@ -42,42 +46,35 @@ test('the rasteriser covers a rectangle exactly, inks the pixels whose centres i
   assert.equal(thin.ink.reduce((n, v) => n + v, 0), 5);
 });
 
-test('the face table states what the generated letters were drawn with, field for field', () => {
-  for (const face of LETTERING_FACES) {
-    const { glyphs: _g, greys: _r, ...was } = PILLOW_FACES[face];
-    const { rows: _rows, ...now } = OXANIUM_FACE_SPECS[face];
-    assert.deepEqual(now, was, face);
-  }
-});
-
 test('Oxanium is read from the repository\'s own copy of the typeface, and the dependency is pinned exactly', () => {
   assert.equal(oxanium('SemiBold').unitsPerEm, 1000);
   const manifest = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
   assert.equal(manifest.dependencies['opentype.js'], '2.0.0');
 });
 
-test('the nine faces rendered from the outlines: every capital, small letter and digit on the approved rows but the dots of i and j and the tail of Q, the same mask on 414 of 855 letters, a column narrower or wider on 33', () => {
-  let same = 0;
-  let width = 0;
-  const heights: string[] = [];
-  for (const face of LETTERING_FACES) {
-    const made = renderFace(OXANIUM_FACE_SPECS[face], LETTERING_CHARACTERS);
-    const approved = PILLOW_FACES[face];
+test('every face\'s capitals, x-height, ascenders and descenders reach exactly the rows it states', () => {
+  for (const name of LETTERING_FACES) {
+    const face = oxaniumFace(name);
+    const inked = (ch: string) => face.glyphs[ch]!.flatMap((row, y) => (row.includes('#') ? [y] : []));
+    const top = (ch: string) => face.baseline - inked(ch)[0]! + 1;
+    const bottom = (ch: string) => inked(ch).at(-1)! - face.baseline;
+    const rows = OXANIUM_FACE_SPECS[name].rows;
+    assert.deepEqual([top('H'), top('x'), top('d'), bottom('p')], [rows.cap, rows.x, rows.ascender, rows.descender], name);
+    // Every glyph its cell high, a space its stated width, and the box one blank column past the ink.
     for (const ch of LETTERING_CHARACTERS) {
-      const a = approved.glyphs[ch as keyof typeof approved.glyphs] as readonly string[];
-      const b = made.glyphs[ch]!;
-      if (a.join('/') === b.join('/')) same += 1;
-      if (a[0]!.length !== b[0]!.length) width += 1;
-      // The rows a letter's ink spans, which the fitting to the face's rows is for.
-      const span = (rows: readonly string[]) => rows.flatMap((r, y) => (r.includes('#') ? [y] : []));
-      const [sa, sb] = [span(a), span(b)];
-      if (sa[0] !== sb[0] || sa.at(-1) !== sb.at(-1)) heights.push(`${face} ${ch}`);
+      assert.equal(face.glyphs[ch]!.length, face.cell, `${name} '${ch}'`);
+      assert.equal(face.greys[ch]![0]!.length, face.glyphs[ch]![0]!.length, `${name} '${ch}'`);
+      if (ch !== ' ') assert.ok(face.glyphs[ch]!.every((line) => line.endsWith('.')), `${name} '${ch}'`);
     }
+    assert.equal(face.glyphs[' ']![0], '.'.repeat(face.space), name);
   }
-  assert.equal(same, 414);
-  assert.equal(width, 33);
-  // What sits between the heights a face states moves a row: symbols, the dot of an i or a j, the tail of a Q.
-  const alphanumeric = heights.filter((one) => /[A-Za-z0-9]$/.test(one));
-  assert.deepEqual(alphanumeric, ['F14 i', 'F14 j', 'F13 Q', 'F13 i', 'F13 j', 'F11 Q', 'F10 Q', 'R15 i', 'R15 j', 'R13 Q']);
-  assert.equal(heights.length, 121);
+});
+
+test('what the renderer draws, all nine faces\' masks and grey levels, is the same bytes on every machine', () => {
+  const hash = createHash('sha256');
+  for (const name of LETTERING_FACES) {
+    const face = oxaniumFace(name);
+    for (const ch of LETTERING_CHARACTERS) hash.update(`${name} ${ch} ${face.glyphs[ch]!.join('/')} ${face.greys[ch]!.join('/')}\n`);
+  }
+  assert.equal(hash.digest('hex').slice(0, 16), '3cc228b1b060c8fb');
 });

@@ -1,8 +1,9 @@
 /**
- * Our letters rendered from a typeface's outlines in the codec itself, `todo-compile-650.md` 10.8, where
- * `tools/oxanium_glyphs.py` rendered them with Pillow and wrote `oxanium.ts`. The rules are that tool's,
- * kept rule for rule so the two can be compared; what differs is the drawing, `raster.ts`, which does not
- * hint, so a letter can move a pixel against the approved one.
+ * Our letters rendered from a typeface's outlines in the codec itself, `todo-compile-650.md` 10.8. Until
+ * then `tools/oxanium_glyphs.py` rendered them with Pillow into a generated module; the rules are that
+ * tool's, rule for rule. What differs is the drawing, `raster.ts`, which does not hint, so against Pillow's
+ * letters 414 of the 855 masks came out identical and 33 a column narrower or wider; the faces' stated rows
+ * stand in for the vertical half of the hinting. A preview of the two side by side was approved.
  *
  * **A face** is how Logitech draws one of its nine Harmony 650 faces, measured in 8.2: its cell height,
  * the row its baseline sits on, whether a glyph opens with a blank column, and the width of a space; and

@@ -462,7 +462,7 @@ test('8.2.3: in our letters the test setup assembles on Logitech\'s starting com
   // The tally knows our letters with no memory of the build: every glyph byte is ours, none carried, and
   // Logitech's letters count none, in the tests above.
   const a = attributeBytes(out.container);
-  assert.equal(a.generated.letters, 93475);
+  assert.equal(a.generated.letters, 93675);
   assert.equal(a.carried.get('slot-7-glyph'), undefined);
 });
 

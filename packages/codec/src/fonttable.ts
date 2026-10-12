@@ -18,7 +18,7 @@
  * and on the 14 pixel bold sets the median row a capital starts on. The rule was derived on the 13 Harmony
  * 650 compiles in the lab (`work/fonts-8-2/faces.ts`), so on those it is a description; out of sample it
  * places all 18 sets of a fourteenth compile, `harvest_650_two_devices`, in the same groups. Nine faces,
- * `oxanium.ts`, sized to land on Logitech's rows:
+ * `typeface.ts`, sized to land on Logitech's rows:
  *
  * | height | stroke | face |
  * |---|---|---|

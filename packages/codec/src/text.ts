@@ -412,7 +412,7 @@ export function oxaniumAlphabet(): LetteredAlphabet {
       }
     }
   }
-  oxanium = { name: 'oxanium', container: 'tools/oxanium_glyphs.py', shapes, forms, structures };
+  oxanium = { name: 'oxanium', container: 'packages/codec/src/typeface.ts', shapes, forms, structures };
   return oxanium;
 }
 

@@ -50242,10 +50242,70 @@ none carried; Logitech's compiles count none. A blended copy, section 370, is no
 glyphs depend on a colour the copy does not state. What is still Logitech's in that file is the picture
 bank, 361 KB, the infrared blocks, 220 KB, and about 140 KB of lists, screen programs and menus.
 
-* `packages/codec/src/devicemode.ts`, `OXANIUM_LABEL_SIZES`, `TITLE_RUNG`, `ladderOf` and the ladder
+**Corrected twice since, in place.** Since todo 10.7.5 the tally counts a glyph by its form, `letterForm`,
+the ink mask and where its shadow falls, so our letters count in any inks; a space, which has no ink and so
+no form, counts when it has the size of one of our faces' spaces. Since 10.8 the letters are drawn by the
+codec, section 372, and the same assembly counts 93675 glyph bytes, all of them.
+
+* `packages/codec/src/devicemode.ts`, `oxaniumLabelSizes` (`OXANIUM_LABEL_SIZES` until 10.8, when it became
+  a function since the faces are drawn on first use), `TITLE_RUNG`, `ladderOf` and the ladder
   parameter; `families/four-slot/chrome.ts` since the split of todo 10.7.2, `fourSlotLabelLines`,
   `smallerLabelFonts`, `fourSlotCounterX`; `shared/spelling.ts`, `spellsIn`;
-  `assemble.ts`, `ourLetters`.
+  `assemble.ts`, the `letters` choice (`ourLetters` until 10.7.3).
 * `packages/codec/test/devicemode.test.ts`, the ladder and the 13 compiles' sizes; `assemble.test.ts`, the
   assembly in our letters and the smallest compile's refusals; `activityroles.test.ts`, no activity of the
   13 compiles refused and `Antenna`'s pages Logitech's on the second Harmony 700 copy.
+
+## 372. Our letters are drawn from Oxanium's outlines in the codec, and hinting is what had put them on Logitech's rows
+
+`todo-compile-650.md` 10.8. The Harmony 650's letters only, the nine faces of section 368; the rasteriser is
+not tied to a model, and an icon or the Harmony One's drawn button backgrounds go through it when that family
+is built. No firmware or client question arises: how our letters are drawn is ours. Sources checked first:
+`tools/oxanium_glyphs.py`, which drew the approved letters with Pillow, and its output, which every number
+below is measured against.
+
+**The renderer is the tool's rules on a rasteriser of our own.** `raster.ts` takes a path of lines and
+curves, flattened in a fixed sixteen steps, and gives each pixel its exact coverage by accumulating each
+edge's signed area, and its one bit ink by whether its centre is inside by the non-zero rule. Only addition,
+subtraction, multiplication, division and comparison of doubles are used, which IEEE 754 fixes, so every
+machine draws the same bytes; a digest of all nine faces is pinned. `typeface.ts` places the glyph, finds
+the box and slides the grey window exactly as the tool did. The font is read with opentype.js 2.0.0, which
+depends on nothing; fontkit, the other candidate, pulls in nine packages.
+
+**Centre sampling alone reproduced 187 of the 855 masks**, and at nine pixels three letters drew nothing.
+Two things made up most of the rest, and both are what FreeType's hinting did for Pillow:
+
+* **The heights.** Unhinted, F14's capitals are 8.28 rows tall where the approved ones are 9, and at 13
+  pixels the outline is 8.97 rows where the approved capitals are 10, so the hinting did not round, it fitted.
+  Each face now states the rows its capitals, x-height, ascenders and descenders reach, read off the approved
+  letters, and the outline is mapped piecewise linearly through the typeface's own heights of `p`, `x`, `H`
+  and `d` onto them. That alone took the count to 366.
+* **Strokes thinner than a pixel.** A bar or a diagonal's tip that crosses a row or column without holding a
+  pixel centre vanishes under centre sampling. Dropout control, FreeType's and TrueType's rule, inks the pixel
+  the middle of such a span falls in. That took it to 414, and the letters a column narrower or wider than
+  the approved ones from 96 to 33, most of them digits of the two nine pixel faces, which the hinting had
+  widened.
+
+So **414 of the 855 masks are identical** and every capital, small letter and digit spans the same rows but
+the dots of `i` and `j` and the tail of `Q`; 121 letters move a row somewhere, all of them symbols or those.
+The grey levels differ from Pillow's by a third of a level in fifteen on average. Horizontal hinting is not
+reproduced, and the difference was judged by eye rather than measured further: the test setup's screens,
+blended over the state colours, side by side in both letters at three times, were approved for 10.8.3.
+
+**The blended reader tells fewer apart, and reads the same.** A blended letter is named by its structure,
+full coverage against partial, section 370; with fewer of a thin stroke's pixels covered whole, `!` and `I`,
+`]` and `}`, and in F10 `0` and `9` share one in F11, F10 and R13, eight keys where Pillow's letters had
+three, all `I` and `l`. None is a misreading, which the suite shows rather than this argues: a code is
+settled across every set that draws it, the unblended set among them, and by its ASCII value, and every
+assembly and reading test passed unchanged in the new letters. What changed were the counts that described
+the old letters.
+
+**Retired**: the generated module of the approved letters and the tool that wrote it. The face table is in
+`lettering.ts`, `OXANIUM_FACE_SPECS`, and every face is drawn on first use through `oxaniumFace`, so the
+label size table, which was computed from the generated module when the codec loaded, is now a function.
+
+* `packages/codec/src/raster.ts`, `rasterise`; `typeface.ts`, `renderFace`, `renderLetter`, the vertical
+  fitting; `lettering.ts`, `OXANIUM_FACE_SPECS`, `oxaniumFace`; `devicemode.ts`, `oxaniumLabelSizes`;
+  `opentype.d.ts`, the part of opentype.js used.
+* `packages/codec/test/typeface.test.ts`, the rasteriser on known shapes, each face's rows and the digest;
+  `blending.test.ts` and `fonttable.test.ts`, the alphabet's forms and structures in the new letters.

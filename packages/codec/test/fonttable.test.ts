@@ -81,21 +81,18 @@ test('a shadowed letter is white over black one pixel down and right, a plain on
   assert.deepEqual([INKS.shadowed, INKS.plain, INKS.shadow], [0xffff, 0x2104, 0x0000]);
 });
 
-test('our alphabet tells every character apart but I from l, which three faces draw alike, by form and by structure', () => {
+test('our alphabet tells every character apart by form but I from l, which three faces draw alike', () => {
   const alphabet = oxaniumAlphabet();
   // Read by form since 10.7.5, so by no ink: the pixel table is empty and any inks read back.
   assert.deepEqual(alphabet.shapes, {});
   const forms = Object.values(alphabet.forms ?? {});
-  // 9 faces, 2 colourings, 94 characters with ink: 1692, less 70 keys a character shares with itself across
-  // faces, which name one character, and 6 that are `I` and `l` in one shape, in F11, F10 and R13. The
-  // faces drawn in one weight share shapes since the weights were chosen by look (SemiBold for labels,
-  // Regular for the three regular faces).
-  assert.equal(forms.length, 1616);
+  // 9 faces, 2 colourings, 94 characters with ink: 1692, less 52 keys a character shares with itself across
+  // faces, which name one character, and 6 that are `I` and `l` in one shape, in F11 and F10, and in R13
+  // where F13's `I` is the same shape too. The faces drawn in one weight share shapes since the weights were
+  // chosen by look (SemiBold for labels, Regular for the three regular faces).
+  assert.equal(forms.length, 1634);
   assert.deepEqual(forms.filter((one) => one.length > 1), Array(6).fill('Il'));
-  // A blended letter's structure tells them apart as well, but I from l in three.
-  const structures = Object.values(alphabet.structures ?? {});
-  assert.equal(structures.length, 1675);
-  assert.deepEqual(structures.filter((one) => one.length > 1), Array(3).fill('Il'));
+  // A blended letter's structure tells fewer apart, `blending.test.ts`.
 });
 
 test('withOxaniumFonts re-letters all 13 Harmony 650 compiles, every text reading the same, the setup unchanged',
