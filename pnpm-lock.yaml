@@ -41,13 +41,14 @@ importers:
         version: 1.62.1
 
   packages/codec:
+    dependencies:
+      '@harmony/usb':
+        specifier: workspace:*
+        version: link:../usb
     devDependencies:
       '@harmony/lab':
         specifier: workspace:*
         version: link:../lab
-      '@harmony/usb':
-        specifier: workspace:*
-        version: link:../usb
 
   packages/corpus:
     dependencies:
