@@ -36,9 +36,17 @@ import { rgb565, rgbTo565 } from './png.ts';
 /** The two colourings a letter is drawn in, decision 20. */
 export type Lettering = 'shadowed' | 'plain';
 
-export const LETTERING_INK: Readonly<Record<Lettering, number>> = { shadowed: 0xffff, plain: 0x2104 };
-/** The shadow of a shadowed letter, black. Logitech's was dark grey on 130 of the 13 compiles' 196 shadowed sets and black on 66. */
-export const LETTERING_SHADOW = 0x0000;
+/**
+ * The colours our letters are drawn in, as RGB565: the ink of a shadowed letter, the ink of a plain one, and
+ * the shadow. Which colours is a choice, the family's, `FourSlotChoices.letterInks`, `todo-compile-650.md`
+ * 10.7.5; nothing that reads our letters back depends on them, since `letterForm` and the structure a
+ * blended letter keeps read where a letter's ink and shadow are rather than what colour they are.
+ */
+export interface LetterInks {
+  readonly shadowed: number;
+  readonly plain: number;
+  readonly shadow: number;
+}
 
 /** The characters every face holds: printable ASCII, the space included. */
 export const LETTERING_CHARACTERS: readonly string[] = Array.from({ length: 95 }, (_, k) => String.fromCharCode(32 + k));
@@ -72,23 +80,32 @@ export function letterRows(
   face: OxaniumFaceName,
   character: string,
   lettering: Lettering,
+  inks: LetterInks,
   background?: number,
 ): (number | undefined)[][] {
-  if (background !== undefined) return blendedRows(face, character, lettering, background);
-  const mask = (OXANIUM_FACES[face].glyphs as Readonly<Record<string, readonly string[]>>)[character];
-  if (mask === undefined) throw new RangeError(`face ${face} has no letter '${character}'`);
-  const ink = LETTERING_INK[lettering];
+  if (background !== undefined) return blendedRows(face, character, lettering, inks, background);
+  const mask = letterMask(face, character);
+  const ink = inks[lettering];
   return mask.map((line, y) => [...line].map((cell, x): number | undefined => {
     if (cell === '#') return ink;
-    if (lettering === 'shadowed' && y > 0 && x > 0 && mask[y - 1]![x - 1] === '#') return LETTERING_SHADOW;
+    if (lettering === 'shadowed' && y > 0 && x > 0 && mask[y - 1]![x - 1] === '#') return inks.shadow;
     return undefined;
   }));
 }
 
-function blendedRows(face: OxaniumFaceName, character: string, lettering: Lettering, background: number): (number | undefined)[][] {
+/** A character's one bit mask in a face, `#` for ink and anything else for none. */
+function letterMask(face: OxaniumFaceName, character: string): readonly string[] {
+  const mask = (OXANIUM_FACES[face].glyphs as Readonly<Record<string, readonly string[]>>)[character];
+  if (mask === undefined) throw new RangeError(`face ${face} has no letter '${character}'`);
+  return mask;
+}
+
+function blendedRows(
+  face: OxaniumFaceName, character: string, lettering: Lettering, inks: LetterInks, background: number,
+): (number | undefined)[][] {
   const v = letterCoverage(face, character);
-  const ink = rgb565(LETTERING_INK[lettering]);
-  const shadow = rgb565(LETTERING_SHADOW);
+  const ink = rgb565(inks[lettering]);
+  const shadow = rgb565(inks.shadow);
   const paper = rgb565(background);
   return v.map((row, y) => row.map((cover, x): number | undefined => {
     const under = lettering === 'shadowed' && y > 0 && x > 0 ? v[y - 1]![x - 1]! : 0;
@@ -101,28 +118,87 @@ function blendedRows(face: OxaniumFaceName, character: string, lettering: Letter
     // A pixel the letter only partly covers must not come out as an ink, or `letterStructure` would read it
     // as fully covered: on the dark start up screen a light shadow lands on Logitech's dark grey exactly.
     // One blue step off it is a difference no eye sees on this panel.
-    if (cover < 1 && INKS.has(colour)) return (colour & 0x1f) < 0x1f ? colour + 1 : colour - 1;
+    if (cover < 1 && (colour === inks.shadowed || colour === inks.plain)) return (colour & 0x1f) < 0x1f ? colour + 1 : colour - 1;
     return colour;
   }));
 }
 
-const INKS: ReadonlySet<number> = new Set(Object.values(LETTERING_INK));
-
 /** The glyph `letterRows` draws, as `glyphAt` would decode it, less the address and length it has none of yet. */
-export function letterGlyph(face: OxaniumFaceName, character: string, lettering: Lettering, background?: number): Glyph {
-  const rows = letterRows(face, character, lettering, background);
+export function letterGlyph(
+  face: OxaniumFaceName, character: string, lettering: Lettering, inks: LetterInks, background?: number,
+): Glyph {
+  const rows = letterRows(face, character, lettering, inks, background);
   return { address: 0, width: rows[0]!.length, rows, length: 0 };
 }
 
 /**
- * A glyph's structure, which a blended letter keeps whatever it was blended into: per pixel, skipped, the
- * white ink, the dark ink, or anything else. A letter reaches its ink only where it covers the whole pixel,
- * and `letterRows` keeps every part covered pixel off both inks, so the structure is the mask of full
- * coverage plus the mask of any coverage or shadow, whatever the background. That tells the characters of a
- * face apart as the one bit mask does, and a one bit letter has a structure too, its ink and its shadow.
+ * A one bit letter's form, whatever its colours: which pixels are ink and whether a shadow falls one down
+ * and one right of them, `<height>:S:` or `<height>:P:` and the ink's mask, `#` and `.` per pixel, rows
+ * parted by `/`. The ink and shadow it was drawn in come with it. Undefined for anything else: a blended
+ * letter, more than two colours, or two that do not stand to each other as an ink and its shadow, every
+ * pixel of the second one down and one right of the first and no such pixel without it.
+ *
+ * This is what lets the letters' colours be a choice, `todo-compile-650.md` 10.7.5: a configuration is read
+ * by the form of its letters, so whichever inks it was lettered in, the same alphabet reads it.
  */
-export function letterStructure(rows: readonly (readonly (number | undefined)[])[]): string {
+export function letterForm(
+  rows: readonly (readonly (number | undefined)[])[],
+): { form: string; lettering: Lettering; ink: number; shadow?: number } | undefined {
+  const colours = new Set<number>();
+  for (const row of rows) for (const p of row) if (p !== undefined) colours.add(p);
+  const maskOf = (ink: number): string => rows.map((row) => row.map((p) => (p === ink ? '#' : '.')).join('')).join('/');
+  if (colours.size === 1) {
+    const [ink] = colours as unknown as [number];
+    return { form: `${rows.length}:P:${maskOf(ink)}`, lettering: 'plain', ink };
+  }
+  if (colours.size !== 2) return undefined;
+  const [a, b] = [...colours] as [number, number];
+  const shadows = (ink: number, shadow: number): boolean => rows.every((row, y) => row.every((p, x) => {
+    if (p === ink) return true;
+    const under = y > 0 && x > 0 && rows[y - 1]![x - 1] === ink;
+    return (p === shadow) === under;
+  }));
+  const readings = ([[a, b], [b, a]] as const).filter(([ink, shadow]) => shadows(ink, shadow));
+  if (readings.length !== 1) return undefined;
+  const [ink, shadow] = readings[0]!;
+  return { form: `${rows.length}:S:${maskOf(ink)}`, lettering: 'shadowed', ink, shadow };
+}
+
+/** The form `letterForm` reads off a character of a face drawn in either colouring, from its mask alone. */
+export function maskForm(face: OxaniumFaceName, character: string, lettering: Lettering): string {
+  const mask = letterMask(face, character);
+  const body = mask.map((line) => [...line].map((cell) => (cell === '#' ? '#' : '.')).join('')).join('/');
+  return `${mask.length}:${lettering === 'shadowed' ? 'S' : 'P'}:${body}`;
+}
+
+/**
+ * The structure `letterStructure` reads off a character of a face blended into any background, from its
+ * coverage alone: `W` or `D` where it covers the whole pixel, by its colouring, `+` where it covers part of
+ * it or its shadow does, `_` elsewhere. The same string `letterStructure` gives the drawn letter, since
+ * `letterRows` keeps a part covered pixel off both inks, whatever the inks are.
+ */
+export function coverageStructure(face: OxaniumFaceName, character: string, lettering: Lettering): string {
+  const v = letterCoverage(face, character);
+  const full = lettering === 'shadowed' ? 'W' : 'D';
+  return v.map((row, y) => row.map((cover, x) => {
+    const under = lettering === 'shadowed' && y > 0 && x > 0 ? v[y - 1]![x - 1]! : 0;
+    if (cover === 0 && under === 0) return '_';
+    return cover === 1 ? full : '+';
+  }).join('')).join('/');
+}
+
+/**
+ * A glyph's structure, which a blended letter keeps whatever it was blended into: per pixel, skipped, the
+ * shadowed letters' ink, the plain letters' ink, or anything else. A letter reaches its ink only where it
+ * covers the whole pixel, and `letterRows` keeps every part covered pixel off both inks, so the structure is
+ * the mask of full coverage plus the mask of any coverage or shadow, whatever the background. That tells the
+ * characters of a face apart as the one bit mask does. Which colours are the inks the reader learns from the
+ * configuration's one bit letters, `letterForm`.
+ */
+export function letterStructure(
+  rows: readonly (readonly (number | undefined)[])[], inks: { readonly shadowed: number; readonly plain: number },
+): string {
   const symbol = (p: number | undefined): string =>
-    p === undefined ? '_' : p === LETTERING_INK.shadowed ? 'W' : p === LETTERING_INK.plain ? 'D' : '+';
+    p === undefined ? '_' : p === inks.shadowed ? 'W' : p === inks.plain ? 'D' : '+';
   return rows.map((row) => row.map(symbol).join('')).join('/');
 }

@@ -13,11 +13,10 @@ import assert from 'node:assert/strict';
 import { load, skipUnless } from '@harmony/lab';
 import type { Container } from '../src/index.ts';
 import {
+  FOUR_SLOT_CHOICES,
   FontTableError,
   LETTERING_CHARACTERS,
   LETTERING_FACES,
-  LETTERING_INK,
-  LETTERING_SHADOW,
   OXANIUM_FACES,
   checkOxaniumFonts,
   compareViews,
@@ -30,6 +29,9 @@ import {
   takeApart,
   withOxaniumFonts,
 } from '../src/index.ts';
+
+/** The inks our letters are drawn in, the four slot family's default, `todo-compile-650.md` 10.7.5. */
+const INKS = FOUR_SLOT_CHOICES.letterInks;
 
 const H650 = [
   'h650_config_region', 'h650_panasonic_config', 'h650_power_hold_compile', 'h650_power_hold_compile_2',
@@ -61,32 +63,39 @@ test('a shadowed letter is white over black one pixel down and right, a plain on
       const mask = (OXANIUM_FACES[face].glyphs as Record<string, readonly string[]>)[ch]!;
       // Shadowed: the ink where the mask has ink, black exactly where the mask has ink one up and one
       // left and none here, and nothing anywhere else.
-      letterRows(face, ch, 'shadowed').forEach((row, y) => row.forEach((p, x) => {
+      letterRows(face, ch, 'shadowed', INKS).forEach((row, y) => row.forEach((p, x) => {
         const under = y > 0 && x > 0 && mask[y - 1]![x - 1] === '#';
-        if (mask[y]![x] === '#') assert.equal(p, LETTERING_INK.shadowed, `${face} '${ch}'`);
+        if (mask[y]![x] === '#') assert.equal(p, INKS.shadowed, `${face} '${ch}'`);
         else if (under) {
-          assert.equal(p, LETTERING_SHADOW, `${face} '${ch}'`);
+          assert.equal(p, INKS.shadow, `${face} '${ch}'`);
           shadows += 1;
         } else assert.equal(p, undefined, `${face} '${ch}'`);
       }));
       // Plain: the dark ink where the mask has ink, nothing else.
-      letterRows(face, ch, 'plain').forEach((row, y) => row.forEach((p, x) => {
-        assert.equal(p, mask[y]![x] === '#' ? LETTERING_INK.plain : undefined, `${face} '${ch}' plain`);
+      letterRows(face, ch, 'plain', INKS).forEach((row, y) => row.forEach((p, x) => {
+        assert.equal(p, mask[y]![x] === '#' ? INKS.plain : undefined, `${face} '${ch}' plain`);
       }));
     }
   }
   assert.ok(shadows > 0);
-  assert.deepEqual([LETTERING_INK.shadowed, LETTERING_INK.plain, LETTERING_SHADOW], [0xffff, 0x2104, 0x0000]);
+  assert.deepEqual([INKS.shadowed, INKS.plain, INKS.shadow], [0xffff, 0x2104, 0x0000]);
 });
 
-test('our alphabet tells every character apart but I from l, which three faces draw alike', () => {
-  const shapes = Object.values(oxaniumAlphabet().shapes);
+test('our alphabet tells every character apart but I from l, which three faces draw alike, by form and by structure', () => {
+  const alphabet = oxaniumAlphabet();
+  // Read by form since 10.7.5, so by no ink: the pixel table is empty and any inks read back.
+  assert.deepEqual(alphabet.shapes, {});
+  const forms = Object.values(alphabet.forms ?? {});
   // 9 faces, 2 colourings, 94 characters with ink: 1692, less 70 keys a character shares with itself across
   // faces, which name one character, and 6 that are `I` and `l` in one shape, in F11, F10 and R13. The
   // faces drawn in one weight share shapes since the weights were chosen by look (SemiBold for labels,
   // Regular for the three regular faces).
-  assert.equal(shapes.length, 1616);
-  assert.deepEqual(shapes.filter((one) => one.length > 1), Array(6).fill('Il'));
+  assert.equal(forms.length, 1616);
+  assert.deepEqual(forms.filter((one) => one.length > 1), Array(6).fill('Il'));
+  // A blended letter's structure tells them apart as well, but I from l in three.
+  const structures = Object.values(alphabet.structures ?? {});
+  assert.equal(structures.length, 1675);
+  assert.deepEqual(structures.filter((one) => one.length > 1), Array(3).fill('Il'));
 });
 
 test('withOxaniumFonts re-letters all 13 Harmony 650 compiles, every text reading the same, the setup unchanged',
@@ -96,7 +105,7 @@ test('withOxaniumFonts re-letters all 13 Harmony 650 compiles, every text readin
   let glyphs = 0;
   for (const name of H650) {
     const original = containerOf(name);
-    const made = withOxaniumFonts(takeApart(containerOf(name)));
+    const made = withOxaniumFonts(takeApart(containerOf(name)), INKS);
     const out = parse(layOutContainer(made.layout).bytes);
     assert.ok(out.allChecksPass, `${name}: the result fails its own checks`);
     assert.deepEqual(compareViews(setupView(out), setupView(original)), [], `${name}: the setup changed`);
@@ -126,7 +135,7 @@ test('withOxaniumFonts re-letters all 13 Harmony 650 compiles, every text readin
 
 test('the rule holds out of sample: a fourteenth Harmony 650 compile, two devices and no activity, re-letters and checks',
      skipUnless('harvest_650_two_devices'), () => {
-  const made = withOxaniumFonts(takeApart(containerOf('harvest_650_two_devices')));
+  const made = withOxaniumFonts(takeApart(containerOf('harvest_650_two_devices')), INKS);
   const out = parse(layOutContainer(made.layout).bytes);
   assert.ok(out.allChecksPass);
   assert.deepEqual(checkOxaniumFonts(out, made.faces), { sets: 18, glyphs: 18 * 95 });
@@ -138,7 +147,7 @@ test('the rule holds out of sample: a fourteenth Harmony 650 compile, two device
 
 test('the check refuses Logitech\'s own letters and one glyph of ours changed', skipUnless('h650_test_config_clean'), () => {
   const logitech = containerOf('h650_test_config_clean');
-  const made = withOxaniumFonts(takeApart(containerOf('h650_test_config_clean')));
+  const made = withOxaniumFonts(takeApart(containerOf('h650_test_config_clean')), INKS);
   assert.throws(() => checkOxaniumFonts(logitech, made.faces), /does not read our letters/);
   // The first glyph piece is some character of one face, shared by every set of that face and colouring;
   // make one of its pixels `0x12` in its high byte, a colour none of our letters holds.
@@ -152,5 +161,5 @@ test('the check refuses Logitech\'s own letters and one glyph of ours changed', 
 });
 
 test('a Harmony 700 compile is refused, since its fonts were not measured', skipUnless('h700_28_config_region'), () => {
-  assert.throws(() => withOxaniumFonts(takeApart(containerOf('h700_28_config_region'))), /Harmony 650 alone/);
+  assert.throws(() => withOxaniumFonts(takeApart(containerOf('h700_28_config_region')), INKS), /Harmony 650 alone/);
 });

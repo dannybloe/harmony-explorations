@@ -74,7 +74,11 @@ import {
   takeApart,
   taggedList,
   withOxaniumFonts,
+  FOUR_SLOT_CHOICES,
 } from '../src/index.ts';
+
+/** The inks our letters are drawn in, the four slot family's default, `todo-compile-650.md` 10.7.5. */
+const INKS = FOUR_SLOT_CHOICES.letterInks;
 
 // ---------------------------------------------------------------------------------------------------
 // 0. The rules on their own, with nothing from the lab: the cases each rule was read off
@@ -546,7 +550,7 @@ test('8.2.3: re-lettered, every set of the 13 Harmony 650 compiles is the size i
     const tally = new Map<string, number>();
     for (const name of H650_13) {
       const c = open(name);
-      const built = withOxaniumFonts(takeApart(c));
+      const built = withOxaniumFonts(takeApart(c), INKS);
       const ours = parse(layOutContainer(built.layout).bytes);
       const map = characterMap(c)!;
       const oursMap = characterMap(ours)!;

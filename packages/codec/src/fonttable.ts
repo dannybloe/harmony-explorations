@@ -53,7 +53,7 @@ import type { ContainerLayout, ContainerPiece, PieceRef } from './frame.ts';
 import { layOutContainer } from './frame.ts';
 import { IMAGE_TABLE_SLOT, encodeGlyph, fontSets, glyphOf, type FontSet, type Glyph } from './font.ts';
 import { characterMap, type CharacterMap } from './text.ts';
-import { LETTERING_CHARACTERS, letterRows, type Lettering } from './lettering.ts';
+import { LETTERING_CHARACTERS, type LetterInks, letterRows, type Lettering } from './lettering.ts';
 import type { OxaniumFaceName } from './oxanium.ts';
 import { HARMONY_650_SKINS } from './backgrounds.ts';
 
@@ -75,6 +75,11 @@ export interface SetFace {
   capitalTop: number | undefined;
   face: OxaniumFaceName;
   lettering: Lettering;
+  /**
+   * The inks it is lettered in, the family's choice, `todo-compile-650.md` 10.7.5. Absent on a set only
+   * measured, `measureSet`, since Logitech's set was not lettered by us.
+   */
+  inks?: LetterInks;
 }
 
 /** The decoded glyphs of a set with the code each draws. */
@@ -177,7 +182,10 @@ export interface FontTableBuilt {
  * whose texts no character map reads, a glyph whose character it does not settle, a character our letters
  * do not have, a code past seven bits, and a glyph something other than its set points at.
  */
-export function withOxaniumFonts(layout: ContainerLayout): FontTableBuilt {
+export function withOxaniumFonts(layout: ContainerLayout, inks: LetterInks): FontTableBuilt {
+  if (new Set([inks.shadowed, inks.plain, inks.shadow]).size !== 3) {
+    throw new FontTableError('the two inks and the shadow are three colours, or a letter could not be read back');
+  }
   const c = layOutContainer(layout).container;
   if (c.architecture !== 14 || !HARMONY_650_SKINS.has(layout.skin)) {
     throw new FontTableError('the font table is built for the Harmony 650 alone, whose fonts it was measured on');
@@ -224,13 +232,13 @@ export function withOxaniumFonts(layout: ContainerLayout): FontTableBuilt {
   }
   const last = next - 1;
 
-  const faces = sets.map((set) => measureSet(c, set, map));
+  const faces = sets.map((set): SetFace => ({ ...measureSet(c, set, map), inks }));
   const glyphPieces = new Map<string, ContainerPiece>();
   const glyphPiece = (face: SetFace, ch: string): ContainerPiece => {
     const key = `${face.face} ${face.lettering} ${ch}`;
     let piece = glyphPieces.get(key);
     if (piece === undefined) {
-      const rows = letterRows(face.face, ch, face.lettering);
+      const rows = letterRows(face.face, ch, face.lettering, inks);
       piece = { bytes: encodeGlyph(rows[0]!.length, rows), refs: [], owner: 'slot-7-glyph' };
       glyphPieces.set(key, piece);
     }
@@ -304,7 +312,7 @@ export function checkOxaniumFonts(c: Container, faces: readonly SetFace[]): Font
       if (code === undefined) throw new FontTableError(`no code draws '${ch}'`);
       const glyph = glyphOf(c, set, code);
       if (glyph === undefined) throw new FontTableError(`font set ${index} has no glyph for '${ch}'`);
-      const want = letterRows(face.face, ch, face.lettering);
+      const want = letterRows(face.face, ch, face.lettering, lettered(face));
       if (JSON.stringify(glyph.rows) !== JSON.stringify(want)) {
         throw new FontTableError(`font set ${index}'s '${ch}' is not ${face.face} ${face.lettering}`);
       }
@@ -312,4 +320,10 @@ export function checkOxaniumFonts(c: Container, faces: readonly SetFace[]): Font
     }
   });
   return { sets: sets.length, glyphs };
+}
+
+/** The inks a set was lettered in, which only a set `withOxaniumFonts` lettered has. */
+export function lettered(face: SetFace): LetterInks {
+  if (face.inks === undefined) throw new FontTableError(`a ${face.face} set was measured and not lettered`);
+  return face.inks;
 }

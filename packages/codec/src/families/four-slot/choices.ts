@@ -9,7 +9,7 @@
  * firmware is a fact and stays in the module that uses it, with its measurement, however arbitrary it
  * looks: a place on the screen, a font's index, an opcode, the order Logitech's compiler sorts in.
  *
- * **Three kinds of choice stay fixed for now, and why**, so that none is mistaken for a fact:
+ * **Two kinds of choice stay fixed for now, and why**, so that neither is mistaken for a fact:
  *
  * * **The words**, "Devices", "Back", the menus' titles and bottom words, "Starting", the start up
  *   screen's three lines, "Turning system off" and "Exit". They are a language, and a user's to choose.
@@ -17,11 +17,6 @@
  *   English, and several readers find a page by its words (the placeholder, a menu by its title), so a
  *   chosen language would split one remote's screens between two and blind those readers. They become a
  *   choice when a configuration is built rather than patched, todo 11.1.1.
- * * **The letters' colours**, white over a black shadow and dark grey on the bars, decision 20
- *   (`lettering.ts`). The alphabet that reads our letters back recognises a glyph by those exact inks, so
- *   another ink would draw and then not read, and the byte tally counts our letters the same way. They
- *   become a choice once our letters are read by their shape alone, the way a blended letter already is
- *   (`letterStructure`), `todo-compile-650.md` 10.7.5.
  * * **Which of our faces letters each size**, `withOxaniumFonts`'s pick by a set's height and weight. The
  *   composers measure every label, title and counter in a ladder of sizes built from those faces,
  *   `OXANIUM_LABEL_SIZES`, and recognise a configuration in our letters by it, so another face would be
@@ -31,6 +26,7 @@
 import type { ActivityKey } from '../../activitykeys.ts';
 import type { BackgroundColours } from '../../backgrounds.ts';
 import { rgbTo565 } from '../../png.ts';
+import type { LetterInks } from '../../lettering.ts';
 import type { WiringSettings } from '../../wiring.ts';
 import type { CommonChoices, DelayDefaults } from '../family.ts';
 
@@ -45,6 +41,14 @@ export interface FourSlotChoices extends CommonChoices {
    * (`withBlendedLetters`). Only our letters can be blended, since only theirs come with grey levels.
    */
   readonly blendLetters: boolean;
+  /**
+   * The colours our letters are drawn in, `todo-compile-650.md` 10.7.5: any three different colours, since
+   * a letter is read back by its form and not its ink, and two alike would leave its shadow or its colouring
+   * unreadable. The default is decision 20's white over a black shadow, and dark on the bars: Logitech's own
+   * grey, `0x2104`, the one ink all 39 of their bar fonts hold across the 13 Harmony 650 compiles, kept
+   * because the bars stay white; their shadow was dark grey on 130 of the 196 shadowed sets and black on 66.
+   */
+  readonly letterInks: LetterInks;
   /**
    * The backgrounds of the five designed screens: Logitech's pictures, as the donor carries them, or one
    * flat colour per screen state, decision 20, `todo-compile-650.md` 9.1.2.1 (`withStateBackgrounds`).
@@ -77,7 +81,8 @@ export interface FourSlotChoices extends CommonChoices {
 }
 
 /** What a recipe gives: any choice, a settings and colours object in part. */
-export type FourSlotChoicesGiven = Partial<Omit<FourSlotChoices, 'settings' | 'stateColours' | 'delays'>> & {
+export type FourSlotChoicesGiven = Partial<Omit<FourSlotChoices, 'settings' | 'stateColours' | 'delays' | 'letterInks'>> & {
+  readonly letterInks?: Partial<LetterInks>;
   readonly settings?: Partial<WiringSettings>;
   readonly stateColours?: Partial<BackgroundColours>;
   readonly delays?: Partial<DelayDefaults>;
@@ -86,6 +91,7 @@ export type FourSlotChoicesGiven = Partial<Omit<FourSlotChoices, 'settings' | 's
 export const FOUR_SLOT_CHOICES: FourSlotChoices = {
   letters: 'logitech',
   blendLetters: false,
+  letterInks: { shadowed: 0xffff, plain: 0x2104, shadow: 0x0000 },
   backgrounds: 'designed',
   // Decided on 10 October 2026, until a user's setting replaces them.
   stateColours: {
@@ -129,6 +135,7 @@ export function fourSlotChoices(given: FourSlotChoicesGiven = {}): FourSlotChoic
     ['settings', given.settings, FOUR_SLOT_CHOICES.settings],
     ['stateColours', given.stateColours, FOUR_SLOT_CHOICES.stateColours],
     ['delays', given.delays, FOUR_SLOT_CHOICES.delays],
+    ['letterInks', given.letterInks, FOUR_SLOT_CHOICES.letterInks],
   ] as const) {
     for (const key of Object.keys(part ?? {})) {
       if (!(key in defaults)) throw new ChoiceError(`${name} has no ${key}`);
@@ -140,5 +147,6 @@ export function fourSlotChoices(given: FourSlotChoicesGiven = {}): FourSlotChoic
     settings: { ...FOUR_SLOT_CHOICES.settings, ...given.settings },
     stateColours: { ...FOUR_SLOT_CHOICES.stateColours, ...given.stateColours },
     delays: { ...FOUR_SLOT_CHOICES.delays, ...given.delays },
+    letterInks: { ...FOUR_SLOT_CHOICES.letterInks, ...given.letterInks },
   };
 }

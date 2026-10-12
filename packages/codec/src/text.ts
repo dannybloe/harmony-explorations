@@ -43,7 +43,7 @@ import {
 import type { ScreenInstruction } from './screen.ts';
 import { ALPHABETS } from './alphabets.ts';
 import type { Alphabet } from './alphabets.ts';
-import { LETTERING_CHARACTERS, LETTERING_FACES, letterGlyph, letterRows, letterStructure } from './lettering.ts';
+import { LETTERING_CHARACTERS, LETTERING_FACES, coverageStructure, letterForm, letterStructure, maskForm } from './lettering.ts';
 
 /**
  * The glyph code a font set starts at when the codes are ASCII rather than assigned.
@@ -186,6 +186,9 @@ export function glyphsReferencedBy(c: Container, instruction: ScreenInstruction)
 function resolveWith(alphabet: LetteredAlphabet, context: ResolveContext): CharacterMap {
   const candidates = new Map<number, Set<string>>();
   const blankOnly = new Map<number, boolean>();
+  // Our letters are named by their form, whatever colours they are in, and the inks the one bit ones were
+  // drawn in are what tells a blended letter's full coverage apart, `letterStructure`.
+  const inks = alphabet.forms === undefined ? undefined : lettersInks(alphabet.forms, context);
   for (const shape of context.shapes) {
       const { code, blank, key } = shape;
       if (blank) {
@@ -196,7 +199,8 @@ function resolveWith(alphabet: LetteredAlphabet, context: ResolveContext): Chara
       // A glyph no shape names may still be one of our letters blended into a background, which only its
       // structure can say, and only our alphabet has structures to ask.
       const character = alphabet.shapes[key]
-        ?? (alphabet.structures === undefined ? undefined : alphabet.structures[structureOf(shape)]);
+        ?? (alphabet.forms === undefined ? undefined : alphabet.forms[formOf(shape)?.form ?? ''])
+        ?? (alphabet.structures === undefined || inks === undefined ? undefined : alphabet.structures[structureOf(shape, inks)]);
       if (character === undefined) continue;
       const had = candidates.get(code);
       candidates.set(
@@ -286,7 +290,10 @@ interface ResolveContext {
    * One entry per decoded glyph, in set then address order, with its shape already hashed. Its structure,
    * `letterStructure`, is worked out on first asking and kept, since only our alphabet asks for it.
    */
-  shapes: { code: number; blank: boolean; key: string; height: number; glyph: Glyph; structure?: string }[];
+  shapes: {
+    code: number; blank: boolean; key: string; height: number; glyph: Glyph;
+    form?: ReturnType<typeof letterForm> | null; structure?: string;
+  }[];
   ascii: boolean;
   drawn: Set<number>;
 }
@@ -333,23 +340,55 @@ export function characterMap(c: Container): CharacterMap | undefined {
 }
 
 /**
- * An alphabet that can also name a glyph by its `letterStructure`, keyed `height:structure`. Only ours has
- * structures: a blended letter's pixels depend on what it was blended into, its structure does not.
+ * An alphabet that names a glyph by its form, `letterForm`, and by its `letterStructure`, keyed
+ * `height:structure`, as well as by its pixels. Only ours has either: our letters may be in any inks, and a
+ * blended letter's pixels depend on what it was blended into, where its form and structure do not.
  */
 interface LetteredAlphabet extends Alphabet {
+  forms?: Readonly<Record<string, string>>;
   structures?: Readonly<Record<string, string>>;
 }
 
-function structureOf(shape: ResolveContext['shapes'][number]): string {
-  shape.structure ??= `${shape.height}:${letterStructure(shape.glyph.rows)}`;
+function formOf(shape: ResolveContext['shapes'][number]): ReturnType<typeof letterForm> {
+  if (shape.form === undefined) shape.form = letterForm(shape.glyph.rows) ?? null;
+  return shape.form ?? undefined;
+}
+
+function structureOf(shape: ResolveContext['shapes'][number], inks: { shadowed: number; plain: number }): string {
+  shape.structure ??= `${shape.height}:${letterStructure(shape.glyph.rows, inks)}`;
   return shape.structure;
 }
 
 /**
+ * The inks a configuration's one bit letters of ours were drawn in: the most common ink among the glyphs
+ * whose form is one of ours, per colouring. Undefined where there are none, and then no blended letter is
+ * read either, since a blended set is always a copy of a one bit one, `blending.ts`.
+ */
+function lettersInks(
+  forms: Readonly<Record<string, string>>, context: ResolveContext,
+): { shadowed: number; plain: number } | undefined {
+  const counts = { shadowed: new Map<number, number>(), plain: new Map<number, number>() };
+  for (const shape of context.shapes) {
+    if (shape.blank) continue;
+    const form = formOf(shape);
+    if (form === undefined || forms[form.form] === undefined) continue;
+    counts[form.lettering].set(form.ink, (counts[form.lettering].get(form.ink) ?? 0) + 1);
+  }
+  const most = (m: Map<number, number>): number | undefined => [...m].sort((a, b) => b[1] - a[1])[0]?.[0];
+  const shadowed = most(counts.shadowed);
+  const plain = most(counts.plain);
+  if (shadowed === undefined && plain === undefined) return undefined;
+  // A colouring with no one bit letter has no ink to find, and none of its letters is blended either; a
+  // value no RGB565 pixel has keeps its structure symbol from matching anything.
+  return { shadowed: shadowed ?? -1, plain: plain ?? -1 };
+}
+
+/**
  * Our own letters' alphabet, `lettering.ts`: every face in both colourings, made from the masks the letters
- * are drawn from rather than seeded from a configuration, so it has no `codes` to fall back on. A shape two
- * characters share carries both, as a seeded alphabet's does. The blended letters are named by structure,
- * built on black since a structure is the same on every background. Built once, on first use.
+ * are drawn from rather than seeded from a configuration, so it has no `codes` to fall back on. A form two
+ * characters share carries both, as a seeded alphabet's shape does. The one bit letters are named by form
+ * and the blended ones by structure, both made from the masks and the coverage alone, so the alphabet is
+ * the same whatever inks a configuration chose. Built once, on first use.
  */
 let oxanium: LetteredAlphabet | undefined;
 
@@ -361,18 +400,19 @@ export function oxaniumAlphabet(): LetteredAlphabet {
     const had = table[key] ?? '';
     if (!had.includes(ch)) table[key] = had + ch;
   };
+  const forms: Record<string, string> = {};
   for (const face of LETTERING_FACES) {
     for (const lettering of ['shadowed', 'plain'] as const) {
       for (const ch of LETTERING_CHARACTERS) {
-        const glyph = letterGlyph(face, ch, lettering);
-        if (isBlank(glyph)) continue;
-        add(shapes, shapeKey(glyph.rows.length, glyph), ch);
-        const blended = letterRows(face, ch, lettering, 0x0000);
-        add(structures, `${blended.length}:${letterStructure(blended)}`, ch);
+        const form = maskForm(face, ch, lettering);
+        if (!form.includes('#')) continue;
+        add(forms, form, ch);
+        const structure = coverageStructure(face, ch, lettering);
+        add(structures, `${structure.split('/').length}:${structure}`, ch);
       }
     }
   }
-  oxanium = { name: 'oxanium', container: 'tools/oxanium_glyphs.py', shapes, structures };
+  oxanium = { name: 'oxanium', container: 'tools/oxanium_glyphs.py', shapes, forms, structures };
   return oxanium;
 }
 

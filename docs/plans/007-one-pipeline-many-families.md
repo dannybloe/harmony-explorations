@@ -211,7 +211,8 @@ changes no caller at once.
    Fixed for now, with the reason on `FourSlotChoices`: the words, until a configuration is built rather
    than patched (11.1.1); the letters' colours, until our letters are read by shape rather than ink
    (10.7.5); which face letters each size, until the ladder is computed from the faces a configuration
-   carries (10.8). The sort also found facts with two copies outside `compose.ts`, which went to one
+   carries (10.8). The letters' colours became `letterInks` in 10.7.5, once a letter was read by its form and
+   not its ink. The sort also found facts with two copies outside `compose.ts`, which went to one
    home each: the mode push and pop, the silent flag, the deferred instruction, the screen item beep, the
    condition's two arms, the value map's lead byte, the menu marker values, a delay's stated maximum and
    the firmware's variable count. Constants a recipe should never reach stayed facts even where the

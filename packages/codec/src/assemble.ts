@@ -80,7 +80,7 @@ import {
 } from './sections.ts';
 import { numberSenders, timers } from './tables.ts';
 import { SCREEN_QUEUE_INSTRUCTION, SCREEN_TEXT_INLINE, reachablePrograms, screenProgram } from './screen.ts';
-import { characterMap, decode, glyphsReferencedBy } from './text.ts';
+import { characterMap, decode, glyphsReferencedBy, oxaniumAlphabet } from './text.ts';
 import { activities, devices, deviceVariables, SEND_INFRARED, DEVICE_QUANTITY } from './inventory.ts';
 import type { ContainerLayout, ContainerPiece } from './frame.ts';
 import { layOutContainer, takeApart } from './frame.ts';
@@ -98,7 +98,7 @@ import {
 import { buildFirmwareScreens, checkFirmwareScreens, describeFirmwareScreens, withFirmwareScreens } from './firmwarescreens.ts';
 import { buildScreenTexts, checkScreenTexts, describeScreenTexts, withScreenTexts } from './screentexts.ts';
 import { checkOxaniumFonts, withOxaniumFonts, type SetFace } from './fonttable.ts';
-import { LETTERING_FACES, letterRows } from './lettering.ts';
+import { LETTERING_FACES, letterForm, maskForm } from './lettering.ts';
 import { fontSets, glyphOf } from './font.ts';
 import {
   ComposeError, composeActivity, composeActivityDeviceList, composeActivityMenuRow, keepDeviceOn,
@@ -496,7 +496,7 @@ export function assembleSetup(setup: Recipe, options: AssembleOptions): Assemble
   //    step places every text in our letters' widths, `withOxaniumFonts`, decision 19, 8.2.3.
   let faces: SetFace[] | undefined;
   if (choices.letters === 'oxanium') {
-    const lettered = withOxaniumFonts(takeApart(c));
+    const lettered = withOxaniumFonts(takeApart(c), choices.letterInks);
     c = layOutContainer(lettered.layout).container;
     checkOxaniumFonts(c, lettered.faces);
     faces = lettered.faces;
@@ -1020,24 +1020,27 @@ export function attributeBytes(c: Container): AttributedBytes {
     if (at !== undefined) mark(at, one.piece.bytes.length, 'pictures');
   }
 
-  // Our letters, section 368: a glyph that is exactly one of our faces' letters for its character, in
-  // either colouring. Read only where the character map reads our alphabet, so a Logitech compile has
-  // none. A blended copy's glyphs, section 370, are not recognised: their pixels depend on the colour
-  // they were blended for, which the copy does not state, so they count as carried until it is read.
+  // Our letters, section 368: a glyph whose form is one of our faces' letters for its character, in either
+  // colouring and whatever inks, `letterForm`. Read only where the character map reads our alphabet, so a
+  // Logitech compile has none. A blended copy's glyphs, section 370, are not recognised: their pixels depend
+  // on the colour they were blended for, which the copy does not state, so they count as carried until it
+  // is read.
   const lettersMap = characterMap(c);
   if (lettersMap?.alphabet === 'oxanium') {
-    const ours = new Map<string, Set<string>>(); // per character, every one bit drawing of it, as rows
-    for (const ch of new Set(lettersMap.codes.values())) {
-      const drawings = new Set<string>();
-      for (const face of LETTERING_FACES) {
-        for (const lettering of ['shadowed', 'plain'] as const) drawings.add(JSON.stringify(letterRows(face, ch, lettering)));
+    const forms = oxaniumAlphabet().forms ?? {};
+    // A space has no ink and so no form: it is ours when it has the size of one of our faces' spaces.
+    const spaces = new Set(LETTERING_FACES.map((face) => maskForm(face, ' ', 'plain')));
+    const ours = (rows: readonly (readonly (number | undefined)[])[], ch: string): boolean => {
+      if (rows.every((row) => row.every((p) => p === undefined))) {
+        return ch === ' ' && spaces.has(`${rows.length}:P:${rows.map((row) => '.'.repeat(row.length)).join('/')}`);
       }
-      ours.set(ch, drawings);
-    }
+      const form = letterForm(rows);
+      return form !== undefined && (forms[form.form] ?? '').includes(ch);
+    };
     for (const set of fontSets(c) ?? []) {
       for (const [code, ch] of lettersMap.codes) {
         const glyph = glyphOf(c, set, code);
-        if (glyph === undefined || !ours.get(ch)?.has(JSON.stringify(glyph.rows))) continue;
+        if (glyph === undefined || !ours(glyph.rows, ch)) continue;
         const at = c.blobOffsetOf(glyph.address);
         if (at !== undefined) mark(at, glyph.length, 'letters');
       }

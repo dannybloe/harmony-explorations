@@ -29,6 +29,7 @@ import {
   checkBlendedLetters,
   checkOxaniumFonts,
   checkStateBackgrounds,
+  characterMap,
   checkScreenRecords,
   checkScreenTexts,
   checkWiring,
@@ -482,6 +483,44 @@ test('10.7.3: the four slot family\'s choices reach the assembly: state colours 
   checkStateBackgrounds(out.container, takeApart(out.container), FOUR_SLOT_CHOICES.stateColours);
   assert.ok(out.faces !== undefined && out.blended !== undefined && out.blended.length > 0);
   checkBlendedLetters(out.container, out.faces, out.blended);
+});
+
+test('10.7.5: the letters\' colours are a choice, and letters in other inks are read back as ours, by every reader that reads letters',
+     needing(skipWithoutIrArchive(), skipUnless('h650_start_config', 'h650_test_config_clean')), () => {
+  const given = { donor: require_('h650_start_config'), ...composing() };
+  const setup = setupOf('h650-test.json');
+  // Yellow letters on a red shadow and blue ones on the bars: three inks no compile of Logitech's letters in.
+  // Blended over the state colours as the Harmony 650 was written, and plain where the tally reads it, since
+  // the tally knows a device page by its designed backgrounds.
+  const inks = { shadowed: 0xffe0, plain: 0x001f, shadow: 0xf800 };
+  const ours = assembleSetup({ ...setup, choices: { letters: 'oxanium' } }, given);
+  const out = assembleSetup({ ...setup, choices: { letters: 'oxanium', letterInks: inks } }, given);
+  const blended = assembleSetup({ ...setup, choices: {
+    letters: 'oxanium', letterInks: inks, backgrounds: 'state colours', blendLetters: true,
+  } }, given);
+  for (const one of [out, blended]) {
+    assert.ok(one.container.allChecksPass);
+    assert.deepEqual(compareViews(setupView(one.container), setupView(containerOf('h650_test_config_clean')), { menuOrder: false }), []);
+  }
+  // Every set lettered in the inks chosen, and both checks read them back from the pixels.
+  assert.ok(out.faces !== undefined && blended.faces !== undefined && blended.blended !== undefined);
+  assert.ok(out.faces.every((one) => one.inks?.shadowed === 0xffe0 && one.inks.plain === 0x001f && one.inks.shadow === 0xf800));
+  checkOxaniumFonts(out.container, out.faces);
+  checkBlendedLetters(blended.container, blended.faces, blended.blended);
+  // The text reader knows them as our alphabet with no memory of the build, every drawn code resolved, and
+  // reads every text as it reads the same build in the default inks, blended or not.
+  const texts = (c: typeof out.container): string[] => screenStrings(c).map((one) => one.text).sort();
+  for (const one of [out, blended]) {
+    const map = characterMap(one.container);
+    assert.equal(map?.alphabet, characterMap(ours.container)?.alphabet);
+    assert.equal(map?.drawn.resolved, map?.drawn.total);
+    assert.deepEqual(texts(one.container), texts(ours.container));
+  }
+  // The tally counts the same glyph bytes as ours in either inks.
+  assert.equal(attributeBytes(out.container).generated.letters, attributeBytes(ours.container).generated.letters);
+  // Two inks alike would leave a letter's shadow or colouring unreadable, so that is refused.
+  assert.throws(() => assembleSetup({ ...setup, choices: { letters: 'oxanium', letterInks: { shadow: 0xffff } } }, given),
+    /three colours/);
 });
 
 test('the smallest Harmony 650 compile the lab registers, two devices and no activity, takes no composer: the device composer knows the activity menu by its activity rows and it has none, its fonts lack letters, and an activity needs another to be told apart from',

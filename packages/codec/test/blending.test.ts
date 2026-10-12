@@ -16,9 +16,9 @@ import { load, skipUnless } from '@harmony/lab';
 import type { Container } from '../src/index.ts';
 import {
   BLEND_DITHER_STEPS,
+  FOUR_SLOT_CHOICES,
   LETTERING_CHARACTERS,
   LETTERING_FACES,
-  LETTERING_INK,
   OXANIUM_FACES,
   UNDRAWN,
   checkBlendedLetters,
@@ -37,9 +37,11 @@ import {
   takeApart,
   withBlendedLetters,
   withOxaniumFonts,
-  FOUR_SLOT_CHOICES,
   withStateBackgrounds,
 } from '../src/index.ts';
+
+/** The inks our letters are drawn in, the four slot family's default, `todo-compile-650.md` 10.7.5. */
+const INKS = FOUR_SLOT_CHOICES.letterInks;
 
 const H650 = [
   'h650_config_region', 'h650_panasonic_config', 'h650_power_hold_compile', 'h650_power_hold_compile_2',
@@ -53,7 +55,7 @@ const containerOf = (name: string): Container => parse(load(name) as Uint8Array)
 /** Logitech's compile in our state colours and our one bit letters, and the faces its sets were given. */
 function lettered(name: string): { c: Container; faces: ReturnType<typeof withOxaniumFonts>['faces'] } {
   const coloured = parse(layOutContainer(withStateBackgrounds(takeApart(containerOf(name)), FOUR_SLOT_CHOICES.stateColours, FOUR_SLOT_CHOICES.barColour).layout).bytes);
-  const fonts = withOxaniumFonts(takeApart(coloured));
+  const fonts = withOxaniumFonts(takeApart(coloured), INKS);
   return { c: parse(layOutContainer(fonts.layout).bytes), faces: fonts.faces };
 }
 
@@ -80,24 +82,24 @@ test('a blended pixel is the ink where covered, skipped where nothing is, otherw
     for (const lettering of ['shadowed', 'plain'] as const) {
       for (const ch of LETTERING_CHARACTERS) {
         const v = letterCoverage(face, ch);
-        const structure = letterStructure(letterRows(face, ch, lettering, BACKGROUNDS[0]));
+        const structure = letterStructure(letterRows(face, ch, lettering, INKS, BACKGROUNDS[0]), INKS);
         for (const background of BACKGROUNDS) {
-          const rows = letterRows(face, ch, lettering, background);
+          const rows = letterRows(face, ch, lettering, INKS, background);
           rows.forEach((row, y) => row.forEach((p, x) => {
             const shade = lettering === 'shadowed' && y > 0 && x > 0 ? v[y - 1]![x - 1]! : 0;
             const where = `${face} ${lettering} '${ch}' at ${x},${y} on ${background.toString(16)}`;
-            if (v[y]![x] === 1) assert.equal(p, LETTERING_INK[lettering], where);
+            if (v[y]![x] === 1) assert.equal(p, INKS[lettering], where);
             else if (v[y]![x] === 0 && shade === 0) assert.equal(p, undefined, where);
-            else assert.ok(p !== undefined && p !== LETTERING_INK.shadowed && p !== LETTERING_INK.plain, where);
+            else assert.ok(p !== undefined && p !== INKS.shadowed && p !== INKS.plain, where);
           }));
-          assert.equal(letterStructure(rows), structure, `${face} ${lettering} '${ch}' on ${background.toString(16)}`);
+          assert.equal(letterStructure(rows, INKS), structure, `${face} ${lettering} '${ch}' on ${background.toString(16)}`);
         }
       }
     }
   }
   // By hand: F15's `!` covers 12 of 15 of the pixel right of its stem, no shadow over it, on the bench orange
   // 0xfc60, which the panel shows as rgb(255 142 0): white times 0.8 plus orange times 0.2 is rgb(255 232 204).
-  assert.equal(letterRows('F15', '!', 'shadowed', 0xfc60)[2]![2], (31 << 11) | (57 << 5) | 25);
+  assert.equal(letterRows('F15', '!', 'shadowed', INKS, 0xfc60)[2]![2], (31 << 11) | (57 << 5) | 25);
 });
 
 test('our alphabet names a blended letter by its structure, I and l alike in three shadowed faces', () => {
