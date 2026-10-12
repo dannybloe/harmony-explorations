@@ -96,6 +96,19 @@ const nameByKey = new Map(HARMONY_650_PICTURES.map((entry) => [entry.key, entry.
 const flat = (width: number, height: number, colour: number): Uint8Array =>
   encodeBitmap(pictureRows({ kind: 'fill', width, height, colour }));
 
+/** A state's background, the whole screen in its colour, encoded. */
+export const stateBackgroundBytes = (colour: number): Uint8Array => flat(BACKGROUND_SIZE, BACKGROUND_SIZE, colour);
+
+/** A state's battery corner patch, the 12 by 10 a battery program draws at 114, 112, in its colour, encoded. */
+export const statePatchBytes = (colour: number): Uint8Array => flat(PATCH_WIDTH, PATCH_HEIGHT, colour);
+
+/** One of the two bars in one colour, its shape kept: the top bar's sixteen full rows or the bottom bar's rounded band. */
+export function barBytes(name: 'top bar' | 'bottom bar', colour: number): Uint8Array {
+  const drawing = HARMONY_650_PICTURES.find((one) => one.name === name)?.drawing;
+  if (drawing?.kind !== 'band') throw new BackgroundError(`the ${name} is not drawn as a band`);
+  return encodeBitmap(pictureRows({ ...drawing, rows: drawing.rows.map((row) => ({ ...row, end: colour, fill: colour })) }));
+}
+
 /** The most entries of base slot 11 a queued program can reach: the firmware indexes it with one byte, section 369. */
 export const RUNNABLE_SCREEN_PROGRAMS = 256;
 
@@ -277,9 +290,9 @@ export function withStateBackgrounds(layout: ContainerLayout, colours: Readonly<
   rgbCheck(barColour, 'device');
   for (const state of SCREEN_STATES) rgbCheck(colours[state], state);
   const backgrounds = Object.fromEntries(SCREEN_STATES.map((state) =>
-    [state, { bytes: flat(BACKGROUND_SIZE, BACKGROUND_SIZE, colours[state]), refs: [] } as ContainerPiece])) as Record<ScreenState, ContainerPiece>;
+    [state, { bytes: stateBackgroundBytes(colours[state]), refs: [] } as ContainerPiece])) as Record<ScreenState, ContainerPiece>;
   const patches = Object.fromEntries(SCREEN_STATES.map((state) =>
-    [state, { bytes: flat(PATCH_WIDTH, PATCH_HEIGHT, colours[state]), refs: [] } as ContainerPiece])) as Record<ScreenState, ContainerPiece>;
+    [state, { bytes: statePatchBytes(colours[state]), refs: [] } as ContainerPiece])) as Record<ScreenState, ContainerPiece>;
 
   // 1. The idle battery program: the activity menu's, its switch and its patch case copied, the patch the
   // idle one, appended to base slot 11's table. The icon case and the shared tail are named, not copied.
@@ -401,10 +414,8 @@ export function withStateBackgrounds(layout: ContainerLayout, colours: Readonly<
   let bars = 0;
   for (const piece of step.pictures) {
     const name = pictureNameOfPiece(piece);
-    const entry = HARMONY_650_PICTURES.find((one) => one.name === name);
-    if ((name !== 'top bar' && name !== 'bottom bar') || entry?.drawing?.kind !== 'band') continue;
-    const { drawing } = entry;
-    piece.bytes = encodeBitmap(pictureRows({ ...drawing, rows: drawing.rows.map((row) => ({ ...row, end: barColour, fill: barColour })) }));
+    if (name !== 'top bar' && name !== 'bottom bar') continue;
+    piece.bytes = barBytes(name, barColour);
     bars += 1;
   }
   if (bars !== 2) throw new BackgroundError(`the bank holds ${bars} of the two bars`);

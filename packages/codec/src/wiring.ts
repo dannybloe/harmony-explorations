@@ -82,6 +82,9 @@ export const WIRING_SKINS: ReadonlyMap<number, WiringModel> = new Map([
  * frames its four cycling timers enter in turn, and `batteryBlank`, `upgradeBlank` and `learnBlank` are
  * named by their neighbours. **Their count is the event map's base**, 13 of 13.
  */
+/** The screen every status code enters where a configuration carries no status screens: draws nothing, binds no key. */
+export const NO_STATUS_SCREEN = 'upgradeBlank';
+
 export const FIRMWARE_SCREENS: Readonly<Record<WiringModel, readonly string[]>> = {
   'harmony-600': [
     'addActivityHere', 'addActivities', 'usbConnected', 'lowBattery', 'batteryBlank', 'insertBatteries',
@@ -224,7 +227,15 @@ export interface WiringSpec {
    */
   activityCount: number;
   deviceTimers: readonly DeviceTimer[];
-  /** What the generated structures name and do not generate, by the names `wiringSymbols` lists. */
+  /**
+   * Whether the configuration carries the thirty status screens the event map leads to, which every
+   * Logitech compile does and which the firmware never draws from a configuration, section 355. Absent
+   * means they are carried. Without them, `todo-compile-650.md` 11.1.1, the event map's default and every
+   * code name the update and learning screens' blank, `NO_STATUS_SCREEN`, which draws nothing and binds
+   * no key, so that no code names a mode the configuration does not hold.
+   */
+  statusScreens?: boolean;
+  /** What the generated structures name and do not generate, by the names `wiringNeeds` lists. */
   lists: Readonly<Record<string, number>>;
   modes: Readonly<Record<string, number>>;
   variables: Readonly<Record<string, number>>;
@@ -811,6 +822,36 @@ function generatedSymbols(cat: Catalogue, timerOrder: string[]): Symbols {
   return out;
 }
 
+/**
+ * The symbols a description has to supply for these settings, by kind: every one the catalogue names and
+ * does not generate. A builder that numbers a configuration itself, `todo-compile-650.md` 11.1.1, allocates
+ * exactly these; `describeWiring` reads the same ones off a compile.
+ */
+export function wiringNeeds(
+  model: WiringModel, settings: WiringSettings, activityKeys: Readonly<Record<number, number | null>>, activityCount: number,
+): Record<'lists' | 'modes' | 'variables' | 'maps' | 'entries', string[]> & { frontLength: number } {
+  const cat = catalogue(model, settings, activityKeys, activityCount);
+  const generated = generatedSymbols(cat, timerOrder(cat, []));
+  const out = { lists: new Set<string>(), modes: new Set<string>(), variables: new Set<string>(), maps: new Set<string>(), entries: new Set<string>() };
+  const add = (kind: SymbolKind, name: string): void => {
+    if (kind === 'timers' || generated[kind].has(name)) return;
+    if (kind === 'entries' && name.startsWith('activityKey')) return;
+    out[kind].add(name);
+  };
+  const named = (ins: WiringInstruction): void => { for (const [kind, name] of namedBy(ins)) add(kind, name); };
+  for (const [name, body] of cat.lists) { add('lists', name); body.forEach(named); }
+  cat.lead.forEach(named);
+  for (const one of cat.entries) {
+    if (typeof one.index === 'string') add('entries', one.index);
+    for (const ins of one.bindings.values()) named(ins);
+  }
+  for (const one of cat.timers) named(one.instruction);
+  return {
+    lists: [...out.lists], modes: [...out.modes], variables: [...out.variables], maps: [...out.maps], entries: [...out.entries],
+    frontLength: cat.front.length,
+  };
+}
+
 /** The firmware's timers with the device timers at their places: a name per index, `''` for a device's. */
 function timerOrder(cat: Catalogue, deviceTimers: readonly DeviceTimer[]): string[] {
   const total = cat.timers.length + deviceTimers.length;
@@ -904,10 +945,12 @@ export function buildWiring(spec: WiringSpec): BuiltWiring {
   const log = new Writer(8).u16(LOG_AREA.capacity).u24(0).u24(0);
   const logArea = made(log.bytes, 'slot-2-log', [], [{ at: 2, address: LOG_AREA.start }, { at: 5, address: LOG_AREA.limit }]);
 
-  // Base slot 4: status code k enters the firmware screen after the model's own screens.
-  const base = cat.screens.length;
+  // Base slot 4: status code k enters the firmware screen after the model's own screens, or with no status
+  // screens carried, every code the one blank screen that binds nothing.
+  const carried = spec.statusScreens !== false;
+  const base = carried ? cat.screens.length : cat.screens.indexOf(NO_STATUS_SCREEN);
   const event = new Writer(5 + 4 * EVENT_COUNT).u24(base).u16(EVENT_COUNT);
-  for (let k = 0; k < EVENT_COUNT; k += 1) event.u8(k).u24(base + k);
+  for (let k = 0; k < EVENT_COUNT; k += 1) event.u8(k).u24(carried ? base + k : base);
   const eventMap = made(event.bytes, 'slot-4-event', []);
 
   // Base slot 8's leading list.

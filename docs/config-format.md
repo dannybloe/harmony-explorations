@@ -2046,6 +2046,19 @@ the Harmony One 3.4; on the four arch 14 images the table is sought at that one 
 an operand of 256 or more runs entry `operand & 0xff`, and a program of ours has to take a free entry
 below 256 rather than be appended. [findings.md](findings.md) section 369.
 
+**The corner program**, which the codec's readers call a battery program and which draws the sending mark,
+section 369, is one shape on every Harmony 600, 650 and 700 compile, 70 of 70 on 24, three runs back to
+back, section 374:
+
+```
++0x00  12 11 01 00 u24 case0  01 01 03 u24 range   switch on variable 17: case 0, range 1 to 3
++0x0D  11 FA FF 07 00                              the tail: queue 0x07 0xFFFA, end
++0x12  02 72 70 u24 patch  14 u24 tail             case 0: the state's 12 by 10 patch at 114, 112
++0x1C  02 72 70 u24 mark   14 u24 tail             range: the mark at 114, 112
+```
+
+What `0x07 0xFFFA` does is not read.
+
 **A program's storage ends with a `SCREEN_END` byte even where the last instruction is a jump or a
 switch**, which no execution can reach. Confirmed positionally: in the same place, in front of a
 mode page record, 91 to 294 programs per container end with a terminator that is reached, against

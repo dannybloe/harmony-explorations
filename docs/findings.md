@@ -50375,3 +50375,75 @@ where the attribution is rebuilt. The start up icon becomes a FreeHarmony design
   step 15.
 * `packages/codec/test/icons.test.ts`, the names, the placement and the pictures' digest; `assemble.test.ts`,
   the 9.1.2.2 assembly and its refusals.
+
+## 374. An empty Harmony 650 configuration's wiring and screens, built with no Logitech file
+
+`todo-compile-650.md` 11.1.1.2 and 11.1.1.3, plan 008 steps 2 and 3. Sources checked first: the
+generators' own descriptions of Logitech's compiles (`describeWiring`, `describeFirmwareScreens`,
+`describeScreenRecords`), `harvest_650_two_devices`, the one compile with no activity, and
+`h650_start_config` for how a compile with activities routes the menus' keys. No firmware question
+arose that section 369 had not answered.
+
+**`buildEmptyConfiguration` lays out a Harmony 650 configuration of 342055 bytes with no file as input**:
+the skeleton of plan 008's step 1, the wiring with this track's settings, the state tables, the
+firmware's fourteen screens, the device list and the activity menu with no row, and Off. Every number is
+the builder's: the modes are the firmware's fourteen, then the device list, the activity menu and Off; the
+variables after the firmware's eighteen are the activity counter, the location, the start sequence's two,
+the menu marker, the low battery flag, the tour's mark and "USB Connected"'s step counter; base slot 10
+numbers the wiring's front, the clock's hour list, the wiring's lists and the ten "USB Connected" runs.
+
+**What nobody built before, and what it is now**:
+
+* **The value maps' cases.** Six maps, the wiring's three and three the menus' keys go through, each cut
+  to the idle case: Back on the device list maps through a record on the location whose case queues the
+  working screen record, whose idle case queues the location map, which enters the activity menu; Devices
+  on the activity menu maps through a record on the activity counter whose idle case enters the device
+  list. **That is how Logitech's compile with no activity routes both keys too**, `harvest_650_two_devices`'
+  modes 67 and 101 through its maps 3, 6, 4 and 12, and how every compile with activities routes them
+  with none running. **One key differs**: there the activity menu's scan 4 calls a list that pushes the
+  mode and enters the "add Activities" placeholder, `[07 FFFD, 7E 1]`, where ours maps it through the
+  Back record as all 23 compiles with activities do, 151 of 151, which keeps the reader and the first
+  composed activity on one form. With no activity ours therefore stays on the menu where Logitech's shows
+  the placeholder.
+* **The idle map has no case.** On a compile with devices its case switches every device off; with none
+  there is nothing to switch, and a map with no case is one the firmware already meets on the harvest
+  compile. The device composer gives it its case.
+* **The corner program**, which the readers call a battery program after section 317 and which section
+  369 found to be the sending indicator. **70 of 70 on 24 compiles, every Harmony 600, 650 and 700
+  compile the lab holds, are one shape**, byte for byte but their four addresses: a one byte switch on
+  variable 17 with one case, 0, and one range, 1 to 3, then the tail `0x11 FA FF 07 00`; then the case,
+  drawing a 12 by 10 patch at 114, 112 and jumping to the tail; then the range, drawing the mark there
+  and jumping to the tail. Ours is the idle state's, its patch in the idle colour and its mark our icon,
+  and it is base slot 11 entry 0, below the 256 a queued program can reach. What the tail's `0x07 0xFFFA`
+  does is not read.
+
+**Spelling needs a drawn text first.** `characterMap` resolves a configuration's codes from the texts its
+screens draw, and an empty configuration draws none until its screens exist. The builder spells from a
+throwaway layout of the skeleton whose one program draws all 95 characters once, then builds the real one
+without it.
+
+**The page lists' copies ride on the last mode's entry**, all seventeen in mode order, and base slot 9's
+sets follow them, which is the one place `taggedListPools` finds a pool, section 69: it starts at an
+entry's end and has to hold a set.
+
+**Read back**: every container check passes; the wiring and the state variables read back as the
+description they were built from; the firmware screens, described off our file, rebuild byte for byte
+(`checkFirmwareScreens`, 5435 bytes of structure); the menus' keys lead where the records say; every page's
+copy is where the reader finds it; the bank holds the eleven pictures the screens draw; every code drawn
+resolves to a character of ours. The rendered sheet shows all seventeen screens in our letters, our
+pictures and the idle colour.
+
+**Not yet**: `describeScreenRecords` cannot read our device list and activity menu back, because
+`activityMenus` finds the activity menu by its activity rows and an empty one has none, which is plan 008
+step 5's first lookup to move. The bytes are not yet attributed to a generator, and the file has not been
+on a remote: both are 11.1.1.4.
+
+**Falsification**: a Harmony 600, 650 or 700 compile whose corner program has another shape; a bench run
+in which the empty file's Back or Devices key does not reach the other menu.
+
+* `packages/codec/src/families/four-slot/empty.ts`: `EMPTY_MAPS`, `emptyWiring`, `emptyPictures`,
+  `cornerProgram`, `EMPTY_SCREEN_FONTS`, `buildEmptyConfiguration`; `backgrounds.ts`,
+  `stateBackgroundBytes`, `statePatchBytes`, `barBytes`, shared with `withStateBackgrounds`.
+* `packages/codec/test/empty.test.ts`: the wiring and state tables read back, the firmware screens
+  rebuilt, the menus' keys followed, the copies and the bank, and the corner program against all 24
+  compiles, with a control that one changed byte fails it.

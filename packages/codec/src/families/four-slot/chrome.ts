@@ -310,8 +310,8 @@ export const DEVICE_PAGE_BACK_Y = 114;
 /** The bottom word: what the key under the display's centre does on a device page, go back. */
 export const DEVICE_PAGE_BACK_WORD = 'Back';
 
-/** The firmware's own state variable the battery programs switch on, section 317's battery reading. */
-const BATTERY_STATE_VARIABLE = 17;
+/** The firmware's state variable 17, which the battery programs switch on: the sending flag, section 369, which section 317 read as the battery. */
+export const BATTERY_STATE_VARIABLE = 17;
 
 /**
  * The chrome a four slot page draws around its middle, every piece built or located: the background by

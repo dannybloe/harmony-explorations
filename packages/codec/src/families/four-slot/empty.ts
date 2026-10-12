@@ -28,14 +28,36 @@ import { layOutContainer } from '../../frame.ts';
 import { placePieces } from '../../placer.ts';
 import { encodeGlyph } from '../../font.ts';
 import { CLOCK_STATE_MAXIMA } from '../../sections.ts';
-import { buildStateTables, type StateTablesSpec } from '../../statetables.ts';
+import {
+  FIRMWARE_STATE_VARIABLE_COUNT, activityStateVariables, buildStateTables, menuMarkerVariable, startSequenceVariables,
+  type BuiltStateTables, type PieceTarget, type StateTablesSpec, type StateVariableSpec, type ValueMapSpec,
+} from '../../statetables.ts';
+import {
+  ACTIVITY_KEY_SCANS, FIRMWARE_SCREENS, FIXED_ENTRIES, buildWiring, wiringNeeds, type BuiltWiring, type WiringSettings,
+  type WiringSpec,
+} from '../../wiring.ts';
+import {
+  SCREEN_DRAW_IMAGE, SCREEN_END, SCREEN_JUMP, SCREEN_QUEUE_INSTRUCTION, SCREEN_SELECT_FONT, SCREEN_SWITCH_NARROW,
+  SCREEN_TEXT_INLINE,
+} from '../../screen.ts';
+import { actionListBytes } from '../../gspm.ts';
+import { Writer } from '../../emit.ts';
 import { modeZeroKeyList } from '../../modezero.ts';
 import { type SetFace, letterFaceOf } from '../../fonttable.ts';
 import {
   LETTERING_CHARACTERS, OXANIUM_FACE_SPECS, defaultWeight, letterRows, type LetterInks, type Lettering,
   type OxaniumFaceName, type OxaniumWeight,
 } from '../../lettering.ts';
-import { HARMONY_650_SKINS } from '../../backgrounds.ts';
+import { HARMONY_650_SKINS, barBytes, stateBackgroundBytes, statePatchBytes } from '../../backgrounds.ts';
+import { buildOurPictures, buildPictures, type OurPictureChoices, type OurPictureName } from '../../pictures.ts';
+import { ENTER_MODE, MAP_VALUE_OPCODE } from '../../inventory.ts';
+import { STATE_WRITE_BASE } from '../../actions.ts';
+import { BATTERY_STATE_VARIABLE } from './chrome.ts';
+import { type BuiltFirmwareScreens, buildFirmwareScreens, firmwareScreenTemplates } from '../../firmwarescreens.ts';
+import {
+  type BuiltScreen, type BuiltScreenRecords, type ScreenMenuSpec, buildScreenRecords,
+} from '../../screenrecords.ts';
+
 
 /** A refusal, named so a caller can tell a request this does not build from a bug. */
 export class EmptyConfigurationError extends Error {}
@@ -156,6 +178,11 @@ export interface EmptyBuilt {
  * list, laid out. It holds no screen yet, so nothing in it can be shown on a remote.
  */
 export function buildEmptySkeleton(options: EmptyOptions): EmptyBuilt {
+  return layOutSkeleton(options, []);
+}
+
+/** The skeleton with `programs` as base slot 11's entries, which `spellingContainer` uses to draw a probe. */
+function layOutSkeleton(options: EmptyOptions, programs: ContainerPiece[]): EmptyBuilt {
   if (!HARMONY_650_SKINS.has(options.skin)) throw new EmptyConfigurationError(`an empty configuration is built for the Harmony 650, not skin ${options.skin}`);
   const fonts = emptyFontTable(options.inks, options.weights);
   const states = buildStateTables({ clock: clockSpec(options.builtAt), hourList: 0, variables: [], valueMaps: [] });
@@ -170,7 +197,7 @@ export function buildEmptySkeleton(options: EmptyOptions): EmptyBuilt {
   tables[8] = empty('slot-8-list', 1);
   tables[9] = countedTable(1, [], 'slot-9-table');
   tables[10] = countedTable(2, [], 'slot-10-table');
-  tables[11] = countedTable(2, [], 'slot-11-table');
+  tables[11] = countedTable(2, programs, 'slot-11-table');
   tables[12] = countedTable(1, [], 'slot-12-table');
   tables[13] = states.stateTable;
   tables[14] = states.valueMapTable;
@@ -180,10 +207,453 @@ export function buildEmptySkeleton(options: EmptyOptions): EmptyBuilt {
   const keyTable: ContainerPiece = { bytes: modeZeroKeyList('harmony-650'), refs: [], owner: 'key-table' };
   const placed = placePieces({
     architecture: 14, skin: options.skin, builtAt: options.builtAt, keyTable,
-    body: [...states.records, ...states.valueMaps],
+    body: [...programs, ...states.records, ...states.valueMaps],
     tables,
     loose: [...fonts.glyphs, ...fonts.sets],
   });
   const laid = layOutContainer(placed.layout);
   return { bytes: laid.bytes, container: laid.container, faces: fonts.faces };
+}
+
+// ---------------------------------------------------------------------------------------------------
+// Plan 008 step 2: the wiring and the state tables on our own numbers.
+// ---------------------------------------------------------------------------------------------------
+
+/**
+ * The modes of an empty configuration: the model's firmware screens first, `FIRMWARE_SCREENS`, which the
+ * wiring enters by their place, then the three screens every configuration holds. No status screens, no
+ * tour and no Help, plan 008.
+ */
+export const EMPTY_MODES = {
+  idleList: FIRMWARE_SCREENS['harmony-650'].length,
+  activityMenu: FIRMWARE_SCREENS['harmony-650'].length + 1,
+  off: FIRMWARE_SCREENS['harmony-650'].length + 2,
+} as const;
+
+/**
+ * The variables an empty configuration holds after the firmware's own, in index order, by the names the
+ * wiring and the screens use: the two every activity reads, `activityStateVariables`, the start sequence's
+ * two, `startSequenceVariables`, the menu marker, and the three the firmware's screens and the tour's start
+ * list write, each with the range it has on every Harmony 650 compile, `harvest_650_two_devices` read.
+ */
+export const EMPTY_VARIABLES: readonly (readonly [string, StateVariableSpec])[] = [
+  ['activity', activityStateVariables(0)[0]!],
+  ['location', activityStateVariables(0)[1]!],
+  ['start', startSequenceVariables()[0]!],
+  ['flag', startSequenceVariables()[1]!],
+  ['menuMarker', menuMarkerVariable()],
+  ['lowBattery', { first: 0, max: 1 }],
+  ['tourMark', { first: 0, max: 1 }],
+  ['usb', { first: 0, max: 3 }],
+];
+
+/** The variable a name in `EMPTY_VARIABLES` takes: all are one byte, so after the firmware's in that order. */
+export function emptyVariable(name: string): number {
+  const k = EMPTY_VARIABLES.findIndex(([one]) => one === name);
+  if (k < 0) throw new EmptyConfigurationError(`an empty configuration names no variable ${name}`);
+  return FIRMWARE_STATE_VARIABLE_COUNT + k;
+}
+
+/**
+ * The value maps of an empty configuration, by name, in index order: the wiring's three, then the three the
+ * two menus' keys go through, each the one Logitech's compiles with an activity hold, `h650_start_config`
+ * read, cut down to the idle case:
+ *
+ * * `backMap`, on the location: what the key under the display's centre on the device list and scan 4 on
+ *   the activity menu map through, section 352's record back to the running activity. Its case queues the
+ *   working screen record;
+ * * `workingMap`, on the activity counter: the working screen record, whose case per activity enters that
+ *   activity's working screen and whose idle case queues `locationMap`, section 336, which enters the
+ *   activity menu. With no activity only the idle case is left;
+ * * `devicesMap`, on the activity counter: the key under Devices' record on the activity menu, whose idle
+ *   case enters the idle device list, section 330.
+ *
+ * So with nothing running Back on the device list opens the activity menu and Devices on the activity menu
+ * opens the device list, which is what a compile with activities does when none runs and what Logitech's
+ * compile with no activity does, `harvest_650_two_devices`, section 374. There the activity menu's scan 4
+ * shows the "add Activities" placeholder; ours maps it through `backMap`, as every compile with activities
+ * does, so the menu's reader and the first composed activity meet one form.
+ */
+export const EMPTY_MAPS = ['idleEnterMap', 'idleMap', 'locationMap', 'backMap', 'workingMap', 'devicesMap'] as const;
+export type EmptyMapName = (typeof EMPTY_MAPS)[number];
+
+/** A `0x72` operand: the map in the high byte, the variable it is read on in the low. */
+function throughMap(map: EmptyMapName, variable: string): number {
+  return (EMPTY_MAPS.indexOf(map) << 8) | emptyVariable(variable);
+}
+
+/**
+ * A base slot 14 case's program as every compile writes one: queue one action, `0x11` and its operand and
+ * opcode, then the end, five bytes, `activityscreen.ts`'s `caseProgram`.
+ */
+function caseProgram(opcode: number, operand: number): ContainerPiece {
+  return { bytes: new Writer(5).u8(SCREEN_QUEUE_INSTRUCTION).u16(operand).u8(opcode).u8(SCREEN_END).bytes, refs: [], owner: 'slot-11-program' };
+}
+
+/** What the wiring and state tables of an empty configuration came to, numbered. */
+export interface EmptyWiring {
+  spec: WiringSpec;
+  wiring: BuiltWiring;
+  states: BuiltStateTables;
+  /** Base slot 10 index to list: the wiring's, the clock's hour list among them. */
+  lists: Map<number, ContainerPiece>;
+  /** The base slot 11 programs the value maps' cases queue, in table order. */
+  programs: ContainerPiece[];
+  hourList: number;
+}
+
+/**
+ * The wiring with the family's settings, numbered from nothing: the front where the wiring puts it, the
+ * clock's hour list right after it, `[0x1F 0xF203, 0x1F 0xF204]`, which increments the day and the weekday
+ * (docs/config-format.md, the clock's transitions), then every list the wiring names in `wiringNeeds`'
+ * order. No activity, so every activity key enters the "add an Activity" screen and the leftover entry is
+ * the idle one. The value maps hold the idle cases only, `EMPTY_MAPS`, and the wiring's three:
+ *
+ * * `idleEnterMap`, on the location: the running activity set to the counter's idle value, the value it
+ *   holds with nothing running, section 120;
+ * * `idleMap`, on the location: no case. On a Logitech compile its case calls the list that switches every
+ *   device off; with no device there is nothing to switch, and a map with no case is one the firmware
+ *   already meets, `harvest_650_two_devices`' map 11. The device composer gives it its case;
+ * * `locationMap`, on the location: the activity menu, which is where the Remote Assistant's gate leads
+ *   on a compile that has one, `harvest_650_two_devices`' map 4.
+ */
+export function emptyWiring(settings: WiringSettings, builtAt: string): EmptyWiring {
+  const activityKeys = Object.fromEntries(ACTIVITY_KEY_SCANS.map((scan) => [scan, null]));
+  const needs = wiringNeeds('harmony-650', settings, activityKeys, 0);
+  const hourList = needs.frontLength;
+  const listIndex = Object.fromEntries(needs.lists.map((name, k) => [name, hourList + 1 + k]));
+  const modeIndex: Record<string, number> = { off: EMPTY_MODES.off };
+  const variableIndex = Object.fromEntries(needs.variables.map((name) => [name, emptyVariable(name)]));
+  const mapIndex = Object.fromEntries(needs.maps.map((name) => {
+    const k = (EMPTY_MAPS as readonly string[]).indexOf(name);
+    if (k < 0) throw new EmptyConfigurationError(`the wiring names a value map ${name} an empty configuration does not hold`);
+    return [name, k];
+  }));
+  for (const name of needs.modes) if (modeIndex[name] === undefined) throw new EmptyConfigurationError(`the wiring enters a mode ${name} an empty configuration does not hold`);
+  if (needs.entries.some((name) => name !== 'idle')) throw new EmptyConfigurationError(`the wiring names entries ${needs.entries.join(', ')}`);
+  const spec: WiringSpec = {
+    model: 'harmony-650', settings, activityKeys, activityCount: 0, deviceTimers: [], statusScreens: false,
+    lists: listIndex, modes: modeIndex, variables: variableIndex, maps: mapIndex, entries: { idle: FIXED_ENTRIES - 1 },
+  };
+  const wiring = buildWiring(spec);
+
+  // The value maps' cases, each a program of its own.
+  const idle = (EMPTY_VARIABLES.find(([name]) => name === 'activity')?.[1] as StateVariableSpec).first;
+  const enterIdle = caseProgram(STATE_WRITE_BASE + emptyVariable('activity'), idle);
+  const toMenu = caseProgram(ENTER_MODE, EMPTY_MODES.activityMenu);
+  const toWorking = caseProgram(MAP_VALUE_OPCODE, throughMap('workingMap', 'activity'));
+  const toLocation = caseProgram(MAP_VALUE_OPCODE, throughMap('locationMap', 'location'));
+  const toIdleList = caseProgram(ENTER_MODE, EMPTY_MODES.idleList);
+  const one = (value: number, to: ContainerPiece): ValueMapSpec => ({ cases: [{ value, target: { to, offset: 0 } }] });
+  const maps: Record<EmptyMapName, ValueMapSpec> = {
+    idleEnterMap: one(0, enterIdle),
+    idleMap: { cases: [] },
+    locationMap: one(0, toMenu),
+    backMap: one(0, toWorking),
+    workingMap: one(idle, toLocation),
+    devicesMap: one(idle, toIdleList),
+  };
+  const states = buildStateTables({
+    clock: clockSpec(builtAt), hourList,
+    variables: EMPTY_VARIABLES.map(([, variable]) => variable),
+    valueMaps: EMPTY_MAPS.map((name) => maps[name]),
+  });
+  states.indexOf.forEach((index, k) => {
+    if (index !== FIRMWARE_STATE_VARIABLE_COUNT + k) throw new EmptyConfigurationError(`variable ${EMPTY_VARIABLES[k]![0]} took ${index}`);
+  });
+
+  const lists = new Map(wiring.lists);
+  lists.set(hourList, { bytes: actionListBytes([{ opcode: 0x1f, operand: 0xf203 }, { opcode: 0x1f, operand: 0xf204 }]), refs: [], owner: 'slot-10-list' });
+  return { spec, wiring, states, lists, programs: [enterIdle, toMenu, toWorking, toLocation, toIdleList], hourList };
+}
+
+// ---------------------------------------------------------------------------------------------------
+// Plan 008 step 3: the screens, in our look.
+// ---------------------------------------------------------------------------------------------------
+
+/** The look an empty configuration is drawn in: the family's choices it needs. */
+export interface EmptyLook {
+  /** The idle state's colour, which the device list and the activity menu are drawn over. */
+  idleColour: number;
+  /** The two bars' one colour. */
+  barColour: number;
+  /** Our six pictures' icons and colours, `buildOurPictures`. */
+  pictures: OurPictureChoices;
+}
+
+/** The pictures of an empty configuration, each a piece of the bank. */
+export interface EmptyPictures {
+  plain: ContainerPiece;
+  topBar: ContainerPiece;
+  bottomBar: ContainerPiece;
+  idle: ContainerPiece;
+  idlePatch: ContainerPiece;
+  ours: Map<OurPictureName, ContainerPiece>;
+}
+
+/**
+ * Every picture an empty configuration's screens draw: the plain background, Logitech's rule picture the
+ * firmware screens are drawn over, the two bars in the bar colour, the idle state's background and corner
+ * patch, and our six. Nothing else is in the bank, since the placer refuses a picture nothing draws.
+ */
+export function emptyPictures(look: EmptyLook): EmptyPictures {
+  const piece = (bytes: Uint8Array): ContainerPiece => ({ bytes, refs: [], owner: 'picture-bank' });
+  const plain = buildPictures().get('plain background');
+  if (plain === undefined) throw new EmptyConfigurationError('the plain background is no rule picture');
+  return {
+    plain: piece(plain),
+    topBar: piece(barBytes('top bar', look.barColour)),
+    bottomBar: piece(barBytes('bottom bar', look.barColour)),
+    idle: piece(stateBackgroundBytes(look.idleColour)),
+    idlePatch: piece(statePatchBytes(look.idleColour)),
+    ours: new Map([...buildOurPictures(look.pictures)].map(([name, bytes]) => [name as OurPictureName, piece(bytes)])),
+  };
+}
+
+function ourPicture(pictures: EmptyPictures, name: OurPictureName): ContainerPiece {
+  const found = pictures.ours.get(name);
+  if (found === undefined) throw new EmptyConfigurationError(`our picture ${name} was not built`);
+  return found;
+}
+
+/** Where the corner mark and patch are drawn, the screen's bottom right corner. */
+const CORNER = [114, 112] as const;
+/** The corner program's tail, after its switch: queue `0x07 0xFFFA`, then the end. What `0xFFFA` does is not read. */
+const CORNER_TAIL = [SCREEN_QUEUE_INSTRUCTION, 0xfa, 0xff, 0x07, SCREEN_END] as const;
+/** The switch, `0x12`, on variable 17, one case and one range, each with its three byte target. */
+const CORNER_SWITCH_LENGTH = 13;
+
+/**
+ * A corner program, which the codec's readers call a battery program after section 317's reading of
+ * variable 17, which section 369 corrected: the variable is the sending flag, so the program draws the
+ * mark while the remote sends. Written as every Harmony 600, 650 and 700 compile writes one, 70 of 70 on
+ * 24 compiles, section 374: a switch on variable 17 whose case 0 draws the state's patch over the corner
+ * and whose range 1 to 3 draws the mark there, each case then jumping back to the tail. Three pieces in
+ * the compiler's order, the switch with its tail, then the patch case, then the mark case; the first is
+ * the base slot 11 entry.
+ */
+export function cornerProgram(patch: ContainerPiece, mark: ContainerPiece): ContainerPiece[] {
+  const root: ContainerPiece = {
+    bytes: Uint8Array.from([
+      SCREEN_SWITCH_NARROW, BATTERY_STATE_VARIABLE, 1, 0, 0, 0, 0, 1, 1, 3, 0, 0, 0, ...CORNER_TAIL,
+    ]),
+    refs: [], owner: 'slot-11-program',
+  };
+  const draw = (picture: ContainerPiece): ContainerPiece => ({
+    bytes: Uint8Array.from([SCREEN_DRAW_IMAGE, ...CORNER, 0, 0, 0, SCREEN_JUMP, 0, 0, 0]),
+    refs: [{ at: 3, to: picture, offset: 0 }, { at: 7, to: root, offset: CORNER_SWITCH_LENGTH }],
+    owner: 'slot-11-program',
+  });
+  const patchCase = draw(patch);
+  const markCase = draw(mark);
+  root.refs = [{ at: 4, to: patchCase, offset: 0 }, { at: 10, to: markCase, offset: 0 }];
+  return [root, patchCase, markCase];
+}
+
+/** The index of a font set of ours by its face and lettering, `EMPTY_FONT_SETS`. */
+export function emptyFont(face: OxaniumFaceName, lettering: Lettering): number {
+  const k = EMPTY_FONT_SETS.findIndex((one) => one.face === face && one.lettering === lettering);
+  if (k < 0) throw new EmptyConfigurationError(`an empty configuration holds no ${lettering} ${face}`);
+  return k;
+}
+
+/**
+ * The fonts our screens are drawn in, each the face Logitech's compiles draw that text in, measured on
+ * `h650_start_config` and `harvest_650_two_devices`: the firmware screens' body text in the regular 15 and
+ * their large text in the regular 14, the menus' titles and counters in the plain label 14 on the white bar,
+ * and Off in the regular 14, the start up screens' face.
+ */
+export const EMPTY_SCREEN_FONTS = {
+  body: emptyFont('R15', 'shadowed'),
+  large: emptyFont('R14', 'shadowed'),
+  menu: emptyFont('F14', 'plain'),
+  off: emptyFont('R14', 'shadowed'),
+} as const;
+
+/** Which picture each firmware screen draws, by `FIRMWARE_SCREENS` name, on 2 of 2 Harmony 650 compiles read; the rest the plain background. */
+const FIRMWARE_SCREEN_PICTURES: Readonly<Record<string, OurPictureName>> = {
+  usbConnected: 'USB Connected',
+  lowBattery: 'Low Battery',
+  batteryBlank: 'battery blank screen',
+  upgradeBlank: 'upgrade and learn blank screens',
+  learnBlank: 'upgrade and learn blank screens',
+};
+
+/**
+ * A container to spell from: the skeleton with one program that draws every character of ours once. The
+ * screen builders spell through `characterMap`, which resolves a configuration's codes from the texts it
+ * draws, and an empty configuration draws none until its screens exist. The program is not part of the
+ * result.
+ */
+function spellingContainer(options: EmptyOptions): Container {
+  const codes = LETTERING_CHARACTERS.map(emptyCodeOf);
+  const probe: ContainerPiece = {
+    bytes: Uint8Array.from([SCREEN_SELECT_FONT, 0, SCREEN_TEXT_INLINE, 0, 0, ...codes, 0, SCREEN_END]),
+    refs: [], owner: 'slot-11-program',
+  };
+  return layOutSkeleton(options, [probe]).container;
+}
+
+/** The firmware screens with our pictures and fonts, and "USB Connected"'s lists numbered from `firstList`. */
+function emptyFirmwareScreens(
+  spec: WiringSpec, pictures: EmptyPictures, firstList: number, spelling: Container,
+): BuiltFirmwareScreens {
+  const screens = firmwareScreenTemplates('harmony-650');
+  const at = (k: number): number => firstList + k;
+  return buildFirmwareScreens({
+    wiring: spec,
+    fonts: { body: EMPTY_SCREEN_FONTS.body, large: EMPTY_SCREEN_FONTS.large },
+    pictures: screens.map(({ name, template }) => {
+      const ours = FIRMWARE_SCREEN_PICTURES[name];
+      const background = { to: ours === undefined ? pictures.plain : ourPicture(pictures, ours), offset: 0 };
+      return template.exit ? { background, bar: { to: pictures.bottomBar, offset: 0 } } : { background };
+    }),
+    usb: {
+      variable: emptyVariable('usb'), key: at(0), cleared: at(1),
+      steps: [at(2), at(3), at(4)], tests: [at(5), at(6), at(7)], advances: [at(8), at(9)],
+    },
+    order: screens.map((_, k) => k),
+    homes: new Map(),
+  }, spelling);
+}
+
+/** How many lists "USB Connected" runs on the Harmony 600 and 650, `FirmwareUsbSpec`. */
+const USB_LISTS = 10;
+
+/** The device list, the activity menu and Off, empty, over the idle colour, with our start up picture on Off. */
+function emptyScreenRecords(
+  pictures: EmptyPictures, corner: number, homes: Map<string, PieceTarget>, spelling: Container,
+): BuiltScreenRecords {
+  const idle = { to: pictures.idle, offset: 0 };
+  const menu = (kind: ScreenMenuSpec['kind'], mode: number): ScreenMenuSpec => ({
+    kind, mode, rows: [], slots: [],
+    titleFont: EMPTY_SCREEN_FONTS.menu, counterFont: EMPTY_SCREEN_FONTS.menu,
+    backKey: throughMap('backMap', 'location'),
+    ...(kind === 'activity menu' ? { devicesKey: throughMap('devicesMap', 'activity') } : {}),
+    battery: corner, marker: emptyVariable('menuMarker'),
+    pictures: { one: idle, several: idle, topBar: { to: pictures.topBar, offset: 0 }, bottomBar: { to: pictures.bottomBar, offset: 0 } },
+  });
+  return buildScreenRecords({
+    idle: menu('idle device list', EMPTY_MODES.idleList),
+    menu: menu('activity menu', EMPTY_MODES.activityMenu),
+    off: { mode: EMPTY_MODES.off, font: EMPTY_SCREEN_FONTS.off, picture: { to: ourPicture(pictures, 'start up picture'), offset: 0 } },
+    order: ['idle device list', 'activity menu', 'off'],
+    homes,
+  }, spelling);
+}
+
+/** The pieces of a table numbered from 0, refused where an index has nothing. */
+function dense(what: string, byIndex: ReadonlyMap<number, ContainerPiece>): ContainerPiece[] {
+  const out: ContainerPiece[] = [];
+  for (let k = 0; k < byIndex.size; k += 1) {
+    const one = byIndex.get(k);
+    if (one === undefined) throw new EmptyConfigurationError(`${what} ${k} has nothing, and its table names every index below its count`);
+    out.push(one);
+  }
+  return out;
+}
+
+/** Options for the whole empty configuration: the skeleton's, the family's settings and its look. */
+export interface EmptyConfigurationOptions extends EmptyOptions {
+  settings: WiringSettings;
+  look: EmptyLook;
+}
+
+/** What the empty configuration came to, with the numbering a composer continues from. */
+export interface EmptyConfiguration extends EmptyBuilt {
+  wiring: EmptyWiring;
+  pictures: EmptyPictures;
+  /** The base slot 11 index of the idle corner program, which both menus queue. */
+  corner: number;
+  /** Base slot 10 index to list, every one the configuration holds. */
+  lists: Map<number, ContainerPiece>;
+}
+
+/**
+ * An empty configuration: the skeleton, the wiring and the state tables, and the screens. The modes are the
+ * firmware's fourteen, then the device list, the activity menu and Off, `EMPTY_MODES`, each record laid out
+ * as the compiler lays one, its own key map, its programs and page records, then its entry; mode 0's own key
+ * map is the key table. The page lists' second copies, which nothing names, follow the last entry, and base
+ * slot 9's sets follow them, which is where `taggedListPools` finds them on every compile, section 69.
+ */
+export function buildEmptyConfiguration(options: EmptyConfigurationOptions): EmptyConfiguration {
+  if (!HARMONY_650_SKINS.has(options.skin)) throw new EmptyConfigurationError(`an empty configuration is built for the Harmony 650, not skin ${options.skin}`);
+  const fonts = emptyFontTable(options.inks, options.weights);
+  const pictures = emptyPictures(options.look);
+  // The corner program first, so it is base slot 11 entry 0, below the 256 a queued program can reach, section 369.
+  const cornerPieces = cornerProgram(pictures.idlePatch, ourPicture(pictures, 'corner mark'));
+  const corner = 0;
+  const numbered = emptyWiring(options.settings, options.builtAt);
+  const { wiring, states } = numbered;
+
+  const spelling = spellingContainer(options);
+  const firmware = emptyFirmwareScreens(numbered.spec, pictures, numbered.lists.size, spelling);
+  const records = emptyScreenRecords(pictures, corner, firmware.inline, spelling);
+  const lists = new Map([...numbered.lists, ...firmware.lists, ...records.rowLists]);
+  if (firmware.lists.size !== USB_LISTS) throw new EmptyConfigurationError(`USB Connected runs ${firmware.lists.size} lists`);
+
+  const modes: BuiltScreen[] = [
+    ...firmware.screens,
+    records.screens['idle device list'], records.screens['activity menu'], records.screens.off,
+  ];
+  if (modes[EMPTY_MODES.idleList] !== records.screens['idle device list'] || modes[EMPTY_MODES.off] !== records.screens.off) {
+    throw new EmptyConfigurationError('the modes are not in EMPTY_MODES order');
+  }
+  const keyTable = modes[0]!.own;
+  if (keyTable.bytes.join(',') !== modeZeroKeyList('harmony-650').join(',')) {
+    throw new EmptyConfigurationError('mode 0\'s own key map is not the key table mode 0 needs');
+  }
+  // The copies ride on the last entry, the sets right behind them.
+  const last = modes[modes.length - 1]!;
+  const copies = modes.flatMap((one) => one.copies);
+  const tail = new Uint8Array(last.entry.bytes.length + copies.reduce((n, one) => n + one.length, 0));
+  tail.set(last.entry.bytes, 0);
+  let at = last.entry.bytes.length;
+  for (const one of copies) {
+    tail.set(one, at);
+    at += one.length;
+  }
+  const entriesOf = modes.map((one) => (one === last ? { ...one.entry, bytes: tail } : one.entry));
+  const modeBody = modes.flatMap((one, k) => [
+    ...(k === 0 ? [] : [one.own]),
+    ...one.programs.flatMap((program, p) => [program, one.records[p]!]),
+    entriesOf[k]!,
+  ]);
+
+  const listPieces = dense('action list', lists);
+  const sets = dense('base slot 9 entry', wiring.entries);
+  const programs = [cornerPieces[0]!, ...numbered.programs];
+  const tables: (ContainerPiece | undefined)[] = new Array(20).fill(undefined);
+  tables[0] = states.nameTree;
+  tables[2] = wiring.logArea;
+  tables[4] = wiring.eventMap;
+  tables[5] = countedTable(1, [], 'slot-5-table');
+  tables[6] = countedTable(3, entriesOf, 'slot-6-table');
+  tables[7] = fonts.table;
+  tables[8] = wiring.leadingList;
+  tables[9] = countedTable(1, sets, 'slot-9-table');
+  tables[10] = countedTable(2, listPieces, 'slot-10-table');
+  tables[11] = countedTable(2, programs, 'slot-11-table');
+  tables[12] = wiring.timerTable;
+  tables[13] = states.stateTable;
+  tables[14] = states.valueMapTable;
+  tables[15] = wiring.parameterTable;
+  tables[16] = { bytes: new Uint8Array(1), refs: [], owner: 'slot-16-table' };
+  tables[17] = { bytes: new Uint8Array(2), refs: [], owner: 'slot-17-table' };
+  const placed = placePieces({
+    architecture: 14, skin: options.skin, builtAt: options.builtAt, keyTable,
+    body: [
+      ...modeBody, ...sets, ...cornerPieces, ...numbered.programs,
+      ...wiring.timerRecords, ...states.records, ...states.valueMaps,
+    ],
+    tables,
+    loose: [
+      ...fonts.glyphs, ...fonts.sets, ...listPieces, ...wiring.parameterGroups,
+      ...modes.flatMap((one) => one.lists),
+      pictures.plain, pictures.topBar, pictures.bottomBar, pictures.idle, pictures.idlePatch,
+      ...pictures.ours.values(),
+    ],
+  });
+  const laid = layOutContainer(placed.layout);
+  return { bytes: laid.bytes, container: laid.container, faces: fonts.faces, wiring: numbered, pictures, corner, lists };
 }
