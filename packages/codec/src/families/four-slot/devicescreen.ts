@@ -10,7 +10,7 @@ import {
 } from '../../devicemode.ts';
 import { Writer } from '../../emit.ts';
 import {
-  DEVICE_PAGE_BACKGROUND_AT, deviceModeKeyMap, FOUR_SLOT_TITLE_XY, fourSlotCounterX, sentFrame,
+  DEVICE_PAGE_BACKGROUND_AT, deviceModeKeyMap, FOUR_SLOT_TITLE_XY, fourSlotCounterX, inOurLook, sentFrame,
 } from '../../families/four-slot/chrome.ts';
 import {
   FOUR_SLOT_MAX_PAGES, fourSlotMenus, fourSlotPageList, type FourSlotTemplate, fourSlotTemplate, growFourSlotMenu,
@@ -34,6 +34,8 @@ import {
 } from '../../shared/menus.ts';
 import { codesFor, textWidth } from '../../shared/spelling.ts';
 import { characterMap } from '../../text.ts';
+import { FOUR_SLOT_CHOICES } from './choices.ts';
+import { withStateLook } from './statelook.ts';
 
 /** A mode page's program, sized before the block is placed and built once its addresses are known. */
 interface Arch14Program {
@@ -429,6 +431,9 @@ export function composeFourSlotDeviceScreen(
   c: Container, label: string, rows: readonly ComposeRow[], options: ComposeScreenOptions,
 ): ComposedScreen {
   if (rows.length === 0) throw new ComposeError('a device mode needs at least one command on its screen');
+  // A configuration of ours draws its device pages in the device state's look, which an empty one does not
+  // hold until its first device, section 377.
+  if (inOurLook(c)) c = withStateLook(c, FOUR_SLOT_CHOICES.stateColours.device);
   const perPage = FOUR_SLOT_ITEMS.length;
   const pageCount = Math.ceil(rows.length / perPage);
   // The compiler's layout draws a counter of two digits where the compiler does, `pageCounter`; the
@@ -467,13 +472,17 @@ export function composeFourSlotDeviceScreen(
     }
   });
 
-  const found = deviceListMenus(c);
+  // The device lists as `fourSlotMenus` finds them, which finds the idle one with no row too, the only one an
+  // empty configuration has, section 375; on a configuration with a device they are `deviceListMenus`'.
+  const { marker } = deviceListMenus(c);
+  const menus = fourSlotMenus(c);
+  const found = { menus: menus.filter((one) => one.kind !== 'activity menu').map((one) => one.menu), marker };
   if (found.menus.length === 0 || found.marker === undefined) {
     throw new ComposeError('no device list menu found to grow');
   }
   // Which kind each device list is, which decides the bottom word and the background its pages draw,
   // section 334. Read before anything moves; a mode's number does not move when another is added.
-  const kinds = new Map(fourSlotMenus(c).map((one) => [one.menu, one.kind]));
+  const kinds = new Map(menus.map((one) => [one.menu, one.kind]));
   // Counted before anything moves: how many buttons the new device takes on each menu, one corner or
   // a row's two, which is how many row lists step 1 writes for that menu's list and as many again for
   // its copy. A menu whose last page is full gets a new page, `openFourSlotMenuPage`, where the device
@@ -508,7 +517,10 @@ export function composeFourSlotDeviceScreen(
   // The shape is built, `deviceModeKeyMap`, 6.2.7; under the plain layout which command a key sends is
   // still matched by frame against `keysLike`'s device, or the first row's, entry by entry with the tag.
   const shape = deviceModeKeyMap(c, template.device);
-  const keyTemplate = modeRecords(c)?.[template.keyMode]?.entries ?? [];
+  if (template.keyMode === undefined && compiled === undefined) {
+    throw new ComposeError('a plain composition binds its keys like another device\'s, and the configuration holds none');
+  }
+  const keyTemplate = template.keyMode === undefined ? [] : modeRecords(c)?.[template.keyMode]?.entries ?? [];
   const likeByTag = new Map(keyTemplate.map((entry) => [entry.tag, entry]));
   // By frame, and a set rather than a list: two items running one command are one command.
   const ours = new Map<string, Set<number>>();

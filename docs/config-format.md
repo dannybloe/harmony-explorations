@@ -2077,6 +2077,11 @@ back, section 374:
 
 What `0x07 0xFFFA` does is not read.
 
+**A configuration of ours holds one corner program per state it draws**, section 377: the idle one from
+the start at entry 0, and the device state's appended at the table's length when the first device is
+composed, with the state's flat background and patch beside it. Both are this shape, the patch in the
+state's colour and the mark the same picture. Found again by content in the colour, `stateLookOf`.
+
 **A program's storage ends with a `SCREEN_END` byte even where the last instruction is a jump or a
 switch**, which no execution can reach. Confirmed positionally: in the same place, in front of a
 mode page record, 91 to 294 programs per container end with a terminator that is reached, against

@@ -16,8 +16,14 @@ import {
   EMPTY_FONT_SETS, EMPTY_MODES, EMPTY_VARIABLES, buildEmptyConfiguration, buildEmptySkeleton, emptyCodeOf, emptyVariable,
 } from '../src/families/four-slot/empty.ts';
 import { DEVICES_KEY_TAG, DEVICE_MODE_PROGRAM_TAG, cornerPrograms } from '../src/families/four-slot/chrome.ts';
-import { cornerProgramAt } from '../src/families/four-slot/empty.ts';
-import { require_, skipUnless } from '@harmony/lab';
+import { cornerProgramAt, emptyFont } from '../src/families/four-slot/empty.ts';
+import { OUR_LOOK, deviceModeChrome } from '../src/families/four-slot/chrome.ts';
+import { fourSlotMenus, fourSlotTemplate } from '../src/families/four-slot/menus.ts';
+import { stateLookOf } from '../src/families/four-slot/statelook.ts';
+import { composeCatalogueDevices } from '../src/composecatalogue.ts';
+import { bitmapReference } from '../src/screen.ts';
+import { deviceListRows } from '../src/inventory.ts';
+import { IR_ARCHIVE, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
 import { archSlot, parse } from '../src/index.ts';
 import { checkFirmwareScreens } from '../src/firmwarescreens.ts';
 import { checkScreenRecords } from '../src/screenrecords.ts';
@@ -263,4 +269,32 @@ test('section 376: the first device onto the empty configuration is switched off
     assert.equal(report.accounted, report.total);
     assert.ok(c.allChecksPass);
   }
+});
+
+test('section 377: the first catalogue device onto the empty configuration draws its pages in the device colour and our fonts, and the idle device list gains its row', skipWithoutIrArchive(), () => {
+  const empty = buildEmpty().container;
+  const device = FOUR_SLOT_CHOICES.stateColours.device;
+  // An empty configuration holds the idle look alone: its menus are its only screens.
+  assert.equal(stateLookOf(empty, device), undefined);
+  const out = composeCatalogueDevices(empty, IR_ARCHIVE!, [{ manufacturer: 'LG', model: 'OLED65G26LA', label: 'TV', full: true, inputs: true }],
+    { maxDevices: 8, delays: FOUR_SLOT_CHOICES.delays });
+  const c = parse(out.bytes);
+  assert.ok(c.allChecksPass);
+  // The device look was added, its corner program appended below the 256 a screen can queue.
+  const look = stateLookOf(c, device);
+  assert.ok(look !== undefined && look.corner < 256);
+  // Every device page is checked against the chrome built in our look, which is that look.
+  const chrome = deviceModeChrome(c);
+  assert.equal(chrome.look, OUR_LOOK);
+  assert.deepEqual([chrome.crossed, chrome.corner], [look.background, look.corner]);
+  // The pages were drawn in the fonts described for a configuration with no device page; read back off the
+  // pages now there, they are the plain 14 and the shadowed 15 of ours.
+  const template = fourSlotTemplate(c, undefined);
+  assert.deepEqual([template.titleFont, template.counterFont, template.labelFont],
+    [emptyFont('F14', 'plain'), emptyFont('F14', 'plain'), emptyFont('F15', 'shadowed')]);
+  // The idle device list holds the one row, in the idle look still.
+  assert.deepEqual(deviceListRows(c).map((row) => row.label), ['TV']);
+  const idle = fourSlotMenus(c).find((one) => one.kind === 'idle device list')!.menu;
+  const page = screenProgram(c, modeRecords(c)![idle]!.pages[0]!.program)!;
+  assert.equal(bitmapReference(page[0]!), stateLookOf(c, FOUR_SLOT_CHOICES.stateColours.idle)?.background);
 });

@@ -50607,3 +50607,84 @@ or whose idle key map maps through no record of that shape.
 * `packages/codec/test/compose.test.ts`: the four configurations with one device take a second and gain
   the list of both, every byte claimed and the file round tripping; `test/empty.test.ts`: the first and
   second device onto the empty configuration, with a control that a write of 1 fails it.
+
+## 377. The first catalogue device on the empty Harmony 650: its look, its fonts and the idle list's first row
+
+`todo-compile-650.md` 11.1.1.5. After section 376 the device composer stopped at its template, which read
+a new device's look, fonts and keys off an existing device. An empty configuration has no device to read
+them off, and none of Logitech's artwork to find by content. Each lookup is now a description or a
+structural reading, and a catalogue device composes onto the empty configuration: the LG OLED65G26LA as
+"TV", 400390 bytes, both checksums passing, its seven pages drawn in the device colour and the idle device
+list showing it in its top left corner. Looked at on a rendered sheet; not yet written to the remote.
+
+**The device state's look is added where the file holds none**, `withStateLook`. In the state colours,
+section 366, a screen draws its state's flat background and queues a corner program whose case 0 paints
+the corner in the same colour. An empty configuration holds the idle pair alone, since its menus are its
+only screens and the placer refuses a picture nothing draws. So the composer adds the device colour's
+background and patch and a corner program of section 374's shape, each made by the generator that made
+the idle one, the mark being the picture the existing corner program draws. The program is appended to
+base slot 11 at the table's length, six on an empty configuration, which has to stay below the 256 a
+queued program can reach, section 369. Found again by content in the colour, `stateLookOf`, since every
+later step moves addresses; a look held in part, or twice, is refused.
+
+**A file is in our look** when it is a Harmony 650's and holds none of Logitech's device page looks whole,
+of any skin, `inOurLook`. The skin alone does not do: a Logitech compile given the European 650's skin, 74,
+still holds the 72 look's artwork and is refused as an unmeasured look, section 330's control.
+
+**The device page's chrome in our look**: the device background on a page of any number of commands, the
+device corner program, and the two bars the activity menu's first page draws, read off its address fields
+as section 375 reads a menu page's. The bottom word as on Logitech's pages, `bottomWord`. **A page may draw
+its own copy of the bottom word** in our look: with no copy in the file the composer draws one per page,
+and the text pass, `screentexts.ts`, points every later page at the first, which is the compiler's form.
+Logitech's pages stay held to that form.
+
+**A menu's chrome in our look**: the idle device list and the activity menu are the idle state's, read off
+the menu's own first page, its first `0x02` and the one program it queues; every other device list is the
+device state's, a two row list queuing nothing as on Logitech's pages.
+
+**The fonts where no device page exists**: the title and the counter in the first plain set of the title's
+size, the labels in the first set of the largest label size, through `fontsBySize` on our ladder. Measured
+first on the Harmony 600's and 650's compiles, whose device pages draw the title and the counter in the
+plain 14 and the labels in the shadowed 15 and the bottom word in the plain 14, 54 of 54. The label rule
+picks the very set their pages draw, 65 of 65 arch 14 compiles. The title rule picks the face and not
+their set, since those compiles carry several plain 14 sets, title and counter in two of them; an empty
+configuration carries one, the one its menus' titles are drawn in. Logitech's own face measurement,
+`measureSet`, misreads two of our sets, the plain label 14 as a regular 14 and the label 13 as a regular 13,
+which is why our ladder is used. **The reader of a device page's fonts** accepts a page whose counter is
+drawn in the title's font with no select between them, which every page of ours is; Logitech's pages
+select twice.
+
+**The key under Devices with no activity**: the records keyed by the activity hold the idle case alone
+and cannot be told apart by their keys, so the record the activity menu maps the key through is held to
+what the key does then, its idle case entering the idle device list, `idleDeviceList`.
+
+**A menu's first label on a page with none**: a page whose title and bottom word share a font selects no
+font before the word, so a label in another font left its font in effect for the word. The growth step
+selects the word's font again after the closing bar, as the builder does. Logitech's menus never hold a
+page with no label, so this never arose on them.
+
+**The device lists are found by structure** in the device composer too, `fourSlotMenus`, which finds the
+idle list with no row, section 375; on a configuration with a device it lists the same menus as
+`deviceListMenus`.
+
+**One Logitech compile reaches further and stops elsewhere**: `harvest_650_two_devices`, two devices and
+no activity, was refused at the key under Devices and now reaches its two row device list, menu 98, whose
+page draws no title, three label texts under the top bar, a page no composer has met. In our letters the
+same list's page is not the one built, and a device of one command needs the one item background that
+compile does not hold.
+
+**Scope**: arch 14, the Harmony 650 alone, the one model the state colours are built for. The fonts'
+measurement covers the Harmony 600 and 650 compiles; the Harmony 700's look is not checked.
+
+**Falsification**: a device page of ours whose fonts read back off the page differ from the described
+ones, or a composed device list page that `menuPageDifference` refuses.
+
+* `packages/codec/src/families/four-slot/statelook.ts`, `stateLookOf` and `withStateLook`;
+  `families/four-slot/chrome.ts`, `inOurLook`, `ourDeviceModeChrome`, the bottom word's own copy in
+  `checkPageFrames`, `devicesKeyOperand`; `families/four-slot/menus.ts`, `describedFonts`, the font
+  reader in `fourSlotTemplate`, `ourMenuChrome`, the reselect in `growFourSlotMenu`;
+  `families/four-slot/devicescreen.ts`, the look added and the menus found by structure.
+* `packages/codec/test/empty.test.ts`: the LG television onto the empty configuration, the device look
+  absent before and present after, every device page checked against the chrome built in our look, the
+  fonts read back off the pages equal to the described ones, and the idle list's one row in the idle look;
+  `test/assemble.test.ts`: the two device compile's new refusals.

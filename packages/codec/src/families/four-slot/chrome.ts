@@ -11,11 +11,11 @@ import {
 } from '../../devicemode.ts';
 import { Writer } from '../../emit.ts';
 import { activityKeyedRecords } from '../../families/four-slot/activityscreen.ts';
-import { type MenuPart } from '../../families/four-slot/menus.ts';
+import { idleDeviceList, type MenuPart } from '../../families/four-slot/menus.ts';
 import { type FontSet, fontSets, glyphOf } from '../../font.ts';
 import { archSlot, Container, type Instruction } from '../../gspm.ts';
 import {
-  ACTIVITY_STATE_NAME, compilerTagOrder, deviceListRows, FOUR_SLOT_ITEMS, FOUR_SLOT_SCREEN_WIDTH, KEY_EVENT_PRESS,
+  activities, ACTIVITY_STATE_NAME, compilerTagOrder, deviceListRows, FOUR_SLOT_ITEMS, FOUR_SLOT_SCREEN_WIDTH, KEY_EVENT_PRESS,
   KEY_EVENT_SHIFT, MAP_VALUE_OPCODE, RUN_SCREEN_PROGRAM, SEND_INFRARED, stateVariables,
 } from '../../inventory.ts';
 import { irGroups } from '../../ir.ts';
@@ -33,6 +33,9 @@ import { activityMenus } from '../../shared/menus.ts';
 import { codesFor, spellsIn, textWidth } from '../../shared/spelling.ts';
 import { characterMap, referencedStringAddress } from '../../text.ts';
 import { valueMaps } from '../../valuemap.ts';
+import { FOUR_SLOT_CHOICES } from './choices.ts';
+import { stateLookOf } from './statelook.ts';
+import { HARMONY_650_SKINS } from '../../backgrounds.ts';
 
 /*
  * ---- The screen half, arch 14 (Harmony 600, 650 and 700), section 285 ----
@@ -506,8 +509,9 @@ export function holdsLogitechLook(c: Container): boolean {
  * checked against it**, `checkPageFrames`, so a configuration whose own pages disagree is refused
  * rather than extended.
  */
-export function deviceModeChrome(c: Container): DeviceModeChrome {
+export function deviceModeChrome(c: Container, colour: number = FOUR_SLOT_CHOICES.stateColours.device): DeviceModeChrome {
   if (c.architecture !== 14) throw new ComposeError('a device page\'s chrome is built for the Harmony 600, 650 and 700 only');
+  if (inOurLook(c)) return ourDeviceModeChrome(c, colour);
   const skin = (c.versionWord ?? -1) & 0xff;
   const pictures = picturesByContent(c);
   // The look is the one whose pictures the configuration holds, the one item background aside, which
@@ -540,6 +544,56 @@ export function deviceModeChrome(c: Container): DeviceModeChrome {
     crossed: one('crossed'), topBar: one('topBar'), bottomBar: one('bottomBar'),
     corner: deviceCornerProgram(c, look, pictures),
     word: DEVICE_PAGE_BACK_WORD, backFont, backCodes, backX, backHome,
+  };
+  checkPageFrames(c, chrome, [...new Set(deviceListRows(c).map((row) => row.mode))], 'device mode');
+  return chrome;
+}
+
+/** The look a page of ours is drawn in, the state colours, as `PageFrame.look` names it. */
+export const OUR_LOOK = 'state colours';
+
+/**
+ * Whether a configuration's pages are drawn in our look: a Harmony 650's, the one model the state colours
+ * are built for, holding none of Logitech's device page looks whole, of any skin. A Logitech compile whose
+ * skin names a look nobody measured still holds its artwork, so it is refused as an unmeasured look rather
+ * than read as ours.
+ */
+export function inOurLook(c: Container): boolean {
+  if (!HARMONY_650_SKINS.has((c.versionWord ?? -1) & 0xff)) return false;
+  const pictures = picturesByContent(c);
+  return !DEVICE_PAGE_LOOKS.some((look) => (['crossed', 'topBar', 'bottomBar', 'cornerPatch'] as const)
+    .every((role) => (pictures.get(look[role])?.length ?? 0) > 0));
+}
+
+/**
+ * A device mode page's chrome in our look, section 377: the device state's flat background on a page of
+ * any number of commands, its corner program, both `stateLookOf`'s in `colour`, and the two bars the activity
+ * menu's first page draws, read off its address fields, the first and the last `0x03`, as section 375 reads
+ * a menu page's. Every screen of ours draws the same two bar pictures. The bottom word as on Logitech's
+ * pages, `bottomWord`, which finds the plain 14 on a file of ours. A configuration with no device look, an
+ * empty one, is refused here and given one by `withStateLook`. Then every device mode page it holds is checked
+ * against the chrome, as Logitech's are.
+ */
+function ourDeviceModeChrome(c: Container, colour: number): DeviceModeChrome {
+  const look = stateLookOf(c, colour);
+  if (look === undefined) throw new ComposeError('the configuration holds no device look to draw a device page in');
+  const menu = activityMenus(c).menu;
+  const first = menu === undefined ? undefined : modeRecords(c)?.[menu]?.pages[0];
+  const bars = (first === undefined ? [] : screenProgram(c, first.program) ?? [])
+    .filter((one) => one.opcode === SCREEN_DRAW_IMAGE_AT);
+  const top = bars[0];
+  const bottom = bars.at(-1);
+  if (top === undefined || bottom === undefined || bars.length < 2) {
+    throw new ComposeError('the activity menu\'s first page draws no two bars to take the device page\'s from');
+  }
+  const pictureOf = (one: ScreenInstruction): number => u24(one.operands, one.operands.length - 3);
+  const back = bottomWord(c, DEVICE_PAGE_BACK_WORD);
+  const chrome: DeviceModeChrome = {
+    look: OUR_LOOK,
+    single: look.background, crossed: look.background, topBar: pictureOf(top), bottomBar: pictureOf(bottom),
+    corner: look.corner,
+    word: DEVICE_PAGE_BACK_WORD, backFont: back.font, backCodes: back.codes, backX: back.x,
+    backHome: inlineHomes(c).get(back.codes.join(',')),
   };
   checkPageFrames(c, chrome, [...new Set(deviceListRows(c).map((row) => row.mode))], 'device mode');
   return chrome;
@@ -614,7 +668,12 @@ export function checkPageFrames(c: Container, chrome: PageFrame, modes: readonly
       const isHome = word.opcode === SCREEN_TEXT_INLINE && c.flashBase + word.start + 3 === chrome.backHome
         && [...(word.glyphs ?? [])].join(',') === chrome.backCodes.join(',');
       const pointsHome = word.opcode === SCREEN_TEXT_AT && referencedStringAddress(word) === chrome.backHome;
-      if (at !== [chrome.backX, DEVICE_PAGE_BACK_Y].join(',') || !(isHome || pointsHome)) {
+      // In our look a page may draw its own copy: a configuration with no copy yet, an empty one, gets one per
+      // page from the composer, and the text pass, `screentexts.ts`, then points every later page at the
+      // first, which is the compiler's form. Logitech's pages are held to that form as they are. Section 377.
+      const ownCopy = chrome.look === OUR_LOOK && word.opcode === SCREEN_TEXT_INLINE
+        && [...(word.glyphs ?? [])].join(',') === chrome.backCodes.join(',');
+      if (at !== [chrome.backX, DEVICE_PAGE_BACK_Y].join(',') || !(isHome || pointsHome || ownCopy)) {
         throw new ComposeError(`${where}'s bottom word is not '${chrome.word}' at ${chrome.backX}, `
           + `${DEVICE_PAGE_BACK_Y} drawn from its inline copy at the lowest address`);
       }
@@ -751,6 +810,13 @@ export function devicesKeyOperand(c: Container): number {
   }
   const counter = stateVariables(c).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME));
   const record = menuEntry.operand >> 8;
+  // With no activity the records keyed by the activity hold the idle case alone and cannot be told apart by
+  // their keys, so the record is held to what the key does then instead: its idle case enters the idle
+  // device list, `idleDeviceList`, which refuses otherwise. Section 377.
+  if (activities(c).length === 0 && counter !== undefined && (menuEntry.operand & 0xff) === counter.index) {
+    idleDeviceList(c);
+    return menuEntry.operand;
+  }
   if (counter === undefined || (menuEntry.operand & 0xff) !== counter.index
       || !activityKeyedRecords(c).devices.includes(record)) {
     throw new ComposeError(`the activity menu maps the key under Devices through record ${record}, which is not `

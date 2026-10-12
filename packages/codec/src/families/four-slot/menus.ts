@@ -8,11 +8,13 @@ import { TWO_LINE_RISE } from '../../devicemode.ts';
 import { Writer } from '../../emit.ts';
 import {
   cornerPrograms, bottomWord, builtChrome, DEVICE_PAGE_BACKGROUND_AT, DEVICE_PAGE_BOTTOM_BAR_AT, DEVICE_PAGE_LOOKS,
-  DEVICE_PAGE_TOP_BAR_AT, type DeviceModeChrome, deviceModeChrome, type DevicePageLook, DEVICES_KEY_TAG,
+  DEVICE_PAGE_TOP_BAR_AT, type DeviceModeChrome, deviceModeChrome, type DevicePageLook, DEVICES_KEY_TAG, inOurLook,
   FOUR_SLOT_PREFIX, FOUR_SLOT_SUFFIX_OPCODES, FOUR_SLOT_TITLE_XY, fourSlotCounterX, inlineHomes, MENU_BOTTOM_LINE_Y,
   MENU_TOP_LINE_Y, type PageChrome, picturesByContent, programDraws,
 } from '../../families/four-slot/chrome.ts';
-import { type FontSet, fontSets } from '../../font.ts';
+import { type FontSet, fontSets, glyphOf } from '../../font.ts';
+import { fontsBySize, ladderOf, TITLE_RUNG } from '../../devicemode.ts';
+import { letterForm } from '../../lettering.ts';
 import { Container, parse, SCAN_MASK } from '../../gspm.ts';
 import {
   activities, ACTIVITY_STATE_NAME, caseQueued, deviceListRows, ENTER_MODE, FOUR_SLOT_ITEMS, FOUR_SLOT_LABEL_Y,
@@ -59,17 +61,26 @@ export interface FourSlotTemplate {
   crossed: number | undefined;
   /**
    * The device mode whose keys a plain composition binds by frame, `keysLike`'s or the first row's. Only
-   * which command goes on which key is taken from it; the key map's shape is `deviceModeKeyMap`'s.
+   * which command goes on which key is taken from it; the key map's shape is `deviceModeKeyMap`'s. Undefined
+   * on a configuration with no device yet, where only the compiler's layout, whose keys are the caller's,
+   * composes one.
    */
-  keyMode: number;
+  keyMode: number | undefined;
 }
+
+/** The rung of `LABEL_SIZES` the labels of a device page are drawn in, the largest, the 15 pixel label face. */
+const DEVICE_PAGE_LABEL_RUNG = 0;
 
 export function fourSlotTemplate(c: Container, keysLike: string | undefined): FourSlotTemplate {
   const rows = deviceListRows(c);
-  if (rows.length === 0) throw new ComposeError('no device list to take a device mode from');
   const records = modeRecords(c) ?? [];
   const deviceModes = [...new Set(rows.map((row) => row.mode))];
   const chrome = deviceModeChrome(c);
+  if (rows.length === 0) {
+    if (keysLike !== undefined) throw new ComposeError(`no device list row is labelled ${keysLike}, so there is no key map to copy`);
+    return { chrome: builtChrome(chrome), device: chrome, ...describedFonts(c), single: chrome.single, crossed: chrome.crossed,
+      keyMode: undefined };
+  }
 
   // The fonts, from the first device mode page whose program has the measured shape, 6.2.12.
   for (const mode of deviceModes) {
@@ -80,9 +91,12 @@ export function fourSlotTemplate(c: Container, keysLike: string | undefined): Fo
       const texts = (from: number, count: number): boolean => opcodes.slice(from, from + count)
         .every((opcode) => opcode === SCREEN_TEXT_AT || opcode === SCREEN_TEXT_INLINE);
       const suffix = program.slice(-4);
+      // The counter's font select is left out where the counter is drawn in the title's font, as on a page of
+      // ours, which carries one plain 14; Logitech's pages draw the two in two sets. Section 377.
+      const own = opcodes[5] === SCREEN_SELECT_FONT ? 1 : 0;
       if (!FOUR_SLOT_PREFIX.every((opcode, k) => opcodes[k] === opcode)
-          || opcodes[3] !== SCREEN_SELECT_FONT || !texts(4, 1) || opcodes[5] !== SCREEN_SELECT_FONT || !texts(6, 3)
-          || opcodes[9] !== SCREEN_SELECT_FONT
+          || opcodes[3] !== SCREEN_SELECT_FONT || !texts(4, 1) || !texts(5 + own, 3)
+          || opcodes[8 + own] !== SCREEN_SELECT_FONT
           || !FOUR_SLOT_SUFFIX_OPCODES.every((opcode, k) => suffix[k]?.opcode === opcode)
           || !texts(program.length - 2, 1) || suffix[3]?.opcode !== SCREEN_END) continue;
       const keyRow = keysLike === undefined ? rows[0] : rows.find((row) => row.label === keysLike);
@@ -93,8 +107,8 @@ export function fourSlotTemplate(c: Container, keysLike: string | undefined): Fo
         chrome: builtChrome(chrome),
         device: chrome,
         titleFont: program[3]?.operands[0] as number,
-        counterFont: program[5]?.operands[0] as number,
-        labelFont: program[9]?.operands[0] as number,
+        counterFont: program[own === 1 ? 5 : 3]?.operands[0] as number,
+        labelFont: program[8 + own]?.operands[0] as number,
         single: chrome.single,
         crossed: chrome.crossed,
         keyMode: keyRow.mode,
@@ -102,6 +116,35 @@ export function fourSlotTemplate(c: Container, keysLike: string | undefined): Fo
     }
   }
   throw new ComposeError('no device mode page has the shape its fonts are read from');
+}
+
+/**
+ * A device page's fonts where the configuration holds no device page to read them off, section 377: the title
+ * and the counter in the first plain set of the title's size, and the labels in the first set of the largest
+ * label size. On the Harmony 600's and 650's compiles the pages draw the title and counter in the plain 14
+ * and the labels in the shadowed 15, 54 of 54, and the label rule picks the very set their pages draw, 65
+ * of 65 arch 14 compiles; the title rule picks the face and not their set, since they carry several plain 14
+ * sets. A configuration of ours carries one, the one its menus' titles are drawn in.
+ */
+function describedFonts(c: Container): { titleFont: number; counterFont: number; labelFont: number } {
+  const map = characterMap(c);
+  if (map === undefined) throw new ComposeError('the config draws no text this can spell from');
+  const bySize = fontsBySize(c, map, ladderOf(c, map));
+  const sets = fontSets(c) ?? [];
+  const plain = (font: number): boolean => {
+    for (const code of map.codes.keys()) {
+      const glyph = glyphOf(c, sets[font] as FontSet, code);
+      const form = glyph === undefined ? undefined : letterForm(glyph.rows);
+      if (form !== undefined) return form.lettering === 'plain';
+    }
+    return false;
+  };
+  const title = (bySize.get(TITLE_RUNG) ?? []).find(plain);
+  const label = bySize.get(DEVICE_PAGE_LABEL_RUNG)?.[0];
+  if (title === undefined || label === undefined) {
+    throw new ComposeError('no plain set of the title\'s size or no set of the largest label size to draw a device page in');
+  }
+  return { titleFont: title, counterFont: title, labelFont: label };
 }
 
 /**
@@ -230,7 +273,21 @@ export function growFourSlotMenu(
     ...(inEffect === font ? [] : [SCREEN_SELECT_FONT, font]),
     SCREEN_TEXT_INLINE, placed.x, placed.y, ...codes, 0,
   ]);
+  // The font the bottom word is drawn in, which the label must not take from it: a page whose title and
+  // bottom word share a font selects none before the word, which on an empty menu of ours, the only page
+  // with no label, leaves the label's font in effect there. So the word's font is selected again after the
+  // closing bar, as the builder does. Logitech's menus never hold a page with no label, section 377.
+  const tail = program.slice(bar + 1);
+  const wordFont = program.slice(0, bar).findLast((one) => one.opcode === SCREEN_SELECT_FONT)?.operands[0];
+  const reselect = font !== wordFont && tail[0]?.opcode !== SCREEN_SELECT_FONT && wordFont !== undefined
+    ? new Uint8Array([SCREEN_SELECT_FONT, wordFont]) : new Uint8Array(0);
   const insertAt = (program[bar] as ScreenInstruction).start;
+  const reselectAt = insertAt + (program[bar] as ScreenInstruction).length;
+  if (reselect.length > 0) {
+    const reselectHole = relocate(current, reselectAt, reselect.length);
+    reselectHole.bytes.set(reselect, reselectAt);
+    current = parse(reselectHole.bytes);
+  }
   const programHole = relocate(current, insertAt, drawn.length);
   programHole.bytes.set(drawn, insertAt);
   current = parse(programHole.bytes);
@@ -674,6 +731,7 @@ export interface FourSlotMenuChrome {
  */
 export function fourSlotMenuChrome(c: Container, kind: FourSlotMenuKind): FourSlotMenuChrome {
   const device = deviceModeChrome(c);
+  if (inOurLook(c)) return ourMenuChrome(c, kind, device);
   const look = DEVICE_PAGE_LOOKS.find((one) => one.name === device.look) as DevicePageLook;
   const pictures = picturesByContent(c);
   const held = (key: string, role: string): number | undefined => {
@@ -703,6 +761,36 @@ export function fourSlotMenuChrome(c: Container, kind: FourSlotMenuKind): FourSl
   }
   return {
     kind, look: look.name, one, several, corner,
+    topBar: device.topBar, bottomBar: device.bottomBar,
+    ...fourSlotMenuWords(c, kind),
+  };
+}
+
+/**
+ * A menu page's chrome in our look, section 377. The state colours give a menu its state's look, section 366:
+ * the idle device list and the activity menu the idle state's, every other device list the device state's.
+ * The idle pair is read off the menu's own first page, which every configuration holds, an empty one
+ * included: its background, the first `0x02` it draws, and the program it queues. A page of ours draws one
+ * flat background whatever it holds, so that is the background of a page of one place and of several. A two
+ * row device list queues no program, as on Logitech's pages; the other device lists queue the device pages'.
+ */
+function ourMenuChrome(c: Container, kind: FourSlotMenuKind, device: DeviceModeChrome): FourSlotMenuChrome {
+  let one: number | undefined = device.crossed;
+  let corner: number | undefined = kind === 'two row device list' ? undefined : device.corner;
+  if (kind === 'idle device list' || kind === 'activity menu') {
+    const mode = fourSlotMenus(c).find((menu) => menu.kind === kind)?.menu;
+    const first = mode === undefined ? undefined : modeRecords(c)?.[mode]?.pages[0];
+    const program = first === undefined ? [] : screenProgram(c, first.program) ?? [];
+    const background = program.find((ins) => ins.opcode === SCREEN_DRAW_IMAGE);
+    const queued = program.filter((ins) => ins.opcode === SCREEN_QUEUE_INSTRUCTION && ins.operands[2] === RUN_SCREEN_PROGRAM);
+    if (background === undefined || queued.length !== 1) {
+      throw new ComposeError(`the ${kind}'s first page draws no background or queues other than one program`);
+    }
+    one = u24(background.operands, background.operands.length - 3);
+    corner = (queued[0] as ScreenInstruction).operands[0]! | ((queued[0] as ScreenInstruction).operands[1]! << 8);
+  }
+  return {
+    kind, look: device.look, one, several: one, corner,
     topBar: device.topBar, bottomBar: device.bottomBar,
     ...fourSlotMenuWords(c, kind),
   };

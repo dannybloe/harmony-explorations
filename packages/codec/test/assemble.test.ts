@@ -602,21 +602,23 @@ test('9.1.2.2: our pictures replace the six that are no state\'s background, aft
     /icons has no Help/);
 });
 
-test('the smallest Harmony 650 compile the lab registers, two devices and no activity, takes no composer: the device composer meets the records keyed by the activity, which with none cannot be told apart, its fonts lack letters, and an activity needs another to be told apart from',
+test('the smallest Harmony 650 compile the lab registers, two devices and no activity, takes no composer: the device composer meets its two row device list, whose page draws no title, its fonts lack letters, and an activity needs another to be told apart from',
      needing(skipWithoutIrArchive(), skipUnless('harvest_650_two_devices')), () => {
   const smallest = require_('harvest_650_two_devices');
   // Its two devices are the setup's LG television and Denon receiver under the names Logitech gives them.
   assert.deepEqual(devices(parse(smallest)).map((one) => one.name), ['LG_OLED65G26LA', 'Denon_AVR-X4800H']);
   // The file does map the key under Devices through the activity counter, in three modes. What refused here
   // until section 375 was the reader, which picked the activity menu as the mode whose rows select the most
-  // activities; it finds it by its record now, and the device composer goes on to the activity keyed records.
+  // activities; it finds it by its record now. With no activity the key's record is held to its idle case
+  // since section 377, and the device composer goes on to the two row device list, menu 98, which on this
+  // compile draws no title: [bg, top bar, then three label texts], a page no composer has met.
   const c = parse(smallest);
   const counter = stateVariables(c).find((one) => one.label.startsWith(ACTIVITY_STATE_NAME));
   const mapped = (modeRecords(c) ?? []).flatMap((record, index) => record.entries.some((one) =>
     one.tag === DEVICES_KEY_TAG && one.opcode === MAP_VALUE_OPCODE && (one.operand & 0xff) === counter?.index) ? [index] : []);
   assert.deepEqual(mapped, [96, 97, 101]);
   assert.throws(() => assembleSetup(setupOf('h650-test.json'), { donor: smallest, ...composing() }),
-    /composing Plasma, KPN, Kodi, Switch, Sony HT: no activity here, so the records keyed by the activity cannot be told apart/);
+    /composing Plasma, KPN, Kodi, Switch, Sony HT: menu 98's page 1 draws no title/);
   // Each device alone, by its first refusal.
   const alone = (name: string): string => {
     const setup = setupOf('h650-test.json');
@@ -629,14 +631,15 @@ test('the smallest Harmony 650 compile the lab registers, two devices and no act
     }
   };
   assert.deepEqual(Object.fromEntries(['Plasma', 'KPN', 'Kodi', 'Switch', 'Sony HT'].map((name) => [name, alone(name)])), {
-    Plasma: 'no activity here, so the records keyed by the activity cannot be told apart',
+    Plasma: 'menu 98\'s page 1 draws no title',
     KPN: 'font 6 has no glyph for \'K\', so it cannot be drawn',
     Kodi: 'font 6 has no glyph for \'K\', so it cannot be drawn',
-    Switch: 'no activity here, so the records keyed by the activity cannot be told apart',
+    Switch: 'menu 98\'s page 1 draws no title',
     'Sony HT': 'no font in this config spells \'Eject\'',
   });
   // In our letters no refusal names a font, 8.2.3: every set spells every printable character, and what is
-  // left is the activity keyed records, which every device composer meets, plan 008 step 5's next lookup.
+  // left is the same two row list, whose page is not the one built, and for KPN, whose pages hold one command,
+  // the one item background this compile does not hold.
   const ours = (name: string): string => {
     const setup = setupOf('h650-test.json');
     const one = { model: setup.model, devices: setup.devices.filter((d) => ['LG TV', 'Denon', name].includes(d.name)), activities: [] };
@@ -647,9 +650,10 @@ test('the smallest Harmony 650 compile the lab registers, two devices and no act
       return (error as Error).message;
     }
   };
-  for (const name of ['Plasma', 'KPN', 'Kodi', 'Switch', 'Sony HT']) {
-    assert.equal(ours(name), `composing ${name}: no activity here, so the records keyed by the activity cannot be told apart`, name);
+  for (const name of ['Plasma', 'Kodi', 'Switch', 'Sony HT']) {
+    assert.equal(ours(name), `composing ${name}: menu 98's last page is not the page built for it: instruction 5 is not the label built at -1, 35`, name);
   }
+  assert.equal(ours('KPN'), 'composing KPN: no page here draws the background a page needs');
   // And an activity on its own two devices: with an input, the television has no input variable to put it
   // on, nor has the receiver, since this compile gave neither one; without, the activity composer refuses.
   const tv = (input?: string): Recipe => ({
