@@ -50304,6 +50304,21 @@ the old letters.
 `lettering.ts`, `OXANIUM_FACE_SPECS`, and every face is drawn on first use through `oxaniumFace`, so the
 label size table, which was computed from the generated module when the codec loaded, is now a function.
 
+
+**The weight became a choice, 10.8.5, and the size did not.** A face's rows are Logitech's and the outline
+is fitted to them, so what a recipe may choose is the cut it is drawn in, `faceWeights`. For a configuration
+in any weights to be read with no memory of its build, our alphabet holds all seven weights of all nine faces,
+5860 forms where the default weights alone make 1634; rendering them takes under a second. Shared forms grow
+with it, `D` and `O`, `5` and `S`, `!` with `I` and `l`, all in the lightest and heaviest cuts of the small
+faces, and all settled as `I` and `l` are. A set is known as its face and weight by the faces that draw every
+one of its letters, `oxaniumFacesOf`, and the size table is built in the label faces' weights found there,
+`ladderOf`. **One ambiguity is structural**: F15 and R15, and F13 and R13, are one geometry in two weights,
+so a set's letters say only "this weight at this height". Logitech's convention settles it, the label face is
+the bold one, so the reader takes the heavier weight as the label face's and the choice refuses a label face
+lighter than its regular twin. The test setup assembled with bolder labels and lighter regular faces passes
+its checks, reads every text as in the default weights, measures in the table of its weights, and blends;
+with the default weights the assembly is byte equal to before.
+
 * `packages/codec/src/raster.ts`, `rasterise`; `typeface.ts`, `renderFace`, `renderLetter`, the vertical
   fitting; `lettering.ts`, `OXANIUM_FACE_SPECS`, `oxaniumFace`; `devicemode.ts`, `oxaniumLabelSizes`;
   `opentype.d.ts`, the part of opentype.js used.

@@ -30,6 +30,8 @@ import {
   checkOxaniumFonts,
   checkStateBackgrounds,
   characterMap,
+  ladderOf,
+  oxaniumLabelSizes,
   checkScreenRecords,
   checkScreenTexts,
   checkWiring,
@@ -521,6 +523,44 @@ test('10.7.5: the letters\' colours are a choice, and letters in other inks are 
   // Two inks alike would leave a letter's shadow or colouring unreadable, so that is refused.
   assert.throws(() => assembleSetup({ ...setup, choices: { letters: 'oxanium', letterInks: { shadow: 0xffff } } }, given),
     /three colours/);
+});
+
+test('10.8.5: the weight each face is drawn in is a choice, and a configuration in other weights is read and measured in them with no memory of the build',
+     needing(skipWithoutIrArchive(), skipUnless('h650_start_config', 'h650_test_config_clean')), () => {
+  const given = { donor: require_('h650_start_config'), ...composing() };
+  const setup = setupOf('h650-test.json');
+  // Bolder labels, lighter regular screens: every face moved from the weight decided in 8.2.
+  const faceWeights = {
+    F15: 'Bold', F14W: 'Bold', F14: 'Bold', F13: 'Bold', F11: 'Medium', F10: 'Medium', R15: 'Light', R14: 'Light', R13: 'Light',
+  } as const;
+  const ours = assembleSetup({ ...setup, choices: { letters: 'oxanium' } }, given);
+  const out = assembleSetup({ ...setup, choices: { letters: 'oxanium', faceWeights } }, given);
+  assert.ok(out.container.allChecksPass);
+  assert.deepEqual(compareViews(setupView(out.container), setupView(containerOf('h650_test_config_clean')), { menuOrder: false }), []);
+  assert.ok(out.faces !== undefined);
+  assert.ok(out.faces.every((one) => one.weight === faceWeights[one.face]));
+  checkOxaniumFonts(out.container, out.faces);
+  // Read back with no memory of the build: every drawn code resolved, every text as in the default weights,
+  // and the size table the one of these weights, read off the letters.
+  const map = characterMap(out.container)!;
+  assert.equal(map.drawn.resolved, map.drawn.total);
+  const texts = (c: typeof out.container): string[] => screenStrings(c).map((one) => one.text).sort();
+  assert.deepEqual(texts(out.container), texts(ours.container));
+  assert.equal(ladderOf(out.container, map), oxaniumLabelSizes(faceWeights));
+  assert.notEqual(oxaniumLabelSizes(faceWeights), oxaniumLabelSizes());
+  assert.equal(attributeBytes(out.container).generated.letters > 0, true);
+  assert.equal(attributeBytes(out.container).carried.get('slot-7-glyph'), undefined);
+  // Blended, too.
+  const blended = assembleSetup({ ...setup, choices: { letters: 'oxanium', faceWeights, backgrounds: 'state colours', blendLetters: true } }, given);
+  assert.ok(blended.faces !== undefined && blended.blended !== undefined);
+  checkBlendedLetters(blended.container, blended.faces, blended.blended);
+  assert.deepEqual(texts(blended.container), texts(ours.container));
+  // Refused: a weight Oxanium has no cut in, and a label face lighter than the regular face of its height,
+  // which share one geometry and are told apart by Logitech's convention alone.
+  assert.throws(() => assembleSetup({ ...setup, choices: { letters: 'oxanium', faceWeights: { F14: 'Heavy' as never } } }, given),
+    /F14 cannot be drawn in Heavy/);
+  assert.throws(() => assembleSetup({ ...setup, choices: { letters: 'oxanium', faceWeights: { F15: 'Light' } } }, given),
+    /F15 in Light is lighter than R15 in Regular/);
 });
 
 test('the smallest Harmony 650 compile the lab registers, two devices and no activity, takes no composer: the device composer knows the activity menu by its activity rows and it has none, its fonts lack letters, and an activity needs another to be told apart from',

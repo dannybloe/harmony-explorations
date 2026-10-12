@@ -53,7 +53,10 @@ import type { ContainerLayout, ContainerPiece, PieceRef } from './frame.ts';
 import { layOutContainer } from './frame.ts';
 import { IMAGE_TABLE_SLOT, encodeGlyph, fontSets, glyphOf, type FontSet, type Glyph } from './font.ts';
 import { characterMap, type CharacterMap } from './text.ts';
-import { LETTERING_CHARACTERS, type LetterInks, letterRows, type Lettering, type OxaniumFaceName } from './lettering.ts';
+import {
+  LETTERING_CHARACTERS, defaultWeight, letterRows, type LetterFace, type LetterInks, type Lettering, type OxaniumFaceName,
+  type OxaniumWeight,
+} from './lettering.ts';
 import { HARMONY_650_SKINS } from './backgrounds.ts';
 
 /** A refusal, named so a caller can tell a configuration this does not describe from a bug. */
@@ -79,6 +82,8 @@ export interface SetFace {
    * measured, `measureSet`, since Logitech's set was not lettered by us.
    */
   inks?: LetterInks;
+  /** The weight it is lettered in, the family's choice per face, `todo-compile-650.md` 10.8.5. Absent as `inks` is. */
+  weight?: OxaniumWeight;
 }
 
 /** The decoded glyphs of a set with the code each draws. */
@@ -181,7 +186,9 @@ export interface FontTableBuilt {
  * whose texts no character map reads, a glyph whose character it does not settle, a character our letters
  * do not have, a code past seven bits, and a glyph something other than its set points at.
  */
-export function withOxaniumFonts(layout: ContainerLayout, inks: LetterInks): FontTableBuilt {
+export function withOxaniumFonts(
+  layout: ContainerLayout, inks: LetterInks, weights: Readonly<Partial<Record<OxaniumFaceName, OxaniumWeight>>> = {},
+): FontTableBuilt {
   if (new Set([inks.shadowed, inks.plain, inks.shadow]).size !== 3) {
     throw new FontTableError('the two inks and the shadow are three colours, or a letter could not be read back');
   }
@@ -231,13 +238,16 @@ export function withOxaniumFonts(layout: ContainerLayout, inks: LetterInks): Fon
   }
   const last = next - 1;
 
-  const faces = sets.map((set): SetFace => ({ ...measureSet(c, set, map), inks }));
+  const faces = sets.map((set): SetFace => {
+    const measured = measureSet(c, set, map);
+    return { ...measured, inks, weight: weights[measured.face] ?? defaultWeight(measured.face) };
+  });
   const glyphPieces = new Map<string, ContainerPiece>();
   const glyphPiece = (face: SetFace, ch: string): ContainerPiece => {
-    const key = `${face.face} ${face.lettering} ${ch}`;
+    const key = `${face.face} ${face.weight} ${face.lettering} ${ch}`;
     let piece = glyphPieces.get(key);
     if (piece === undefined) {
-      const rows = letterRows(face.face, ch, face.lettering, inks);
+      const rows = letterRows(letterFaceOf(face), ch, face.lettering, inks);
       piece = { bytes: encodeGlyph(rows[0]!.length, rows), refs: [], owner: 'slot-7-glyph' };
       glyphPieces.set(key, piece);
     }
@@ -311,9 +321,9 @@ export function checkOxaniumFonts(c: Container, faces: readonly SetFace[]): Font
       if (code === undefined) throw new FontTableError(`no code draws '${ch}'`);
       const glyph = glyphOf(c, set, code);
       if (glyph === undefined) throw new FontTableError(`font set ${index} has no glyph for '${ch}'`);
-      const want = letterRows(face.face, ch, face.lettering, lettered(face));
+      const want = letterRows(letterFaceOf(face), ch, face.lettering, lettered(face));
       if (JSON.stringify(glyph.rows) !== JSON.stringify(want)) {
-        throw new FontTableError(`font set ${index}'s '${ch}' is not ${face.face} ${face.lettering}`);
+        throw new FontTableError(`font set ${index}'s '${ch}' is not ${face.face} ${face.weight} ${face.lettering}`);
       }
       glyphs += 1;
     }
@@ -325,4 +335,10 @@ export function checkOxaniumFonts(c: Container, faces: readonly SetFace[]): Font
 export function lettered(face: SetFace): LetterInks {
   if (face.inks === undefined) throw new FontTableError(`a ${face.face} set was measured and not lettered`);
   return face.inks;
+}
+
+/** The face a lettered set is drawn in, its weight included. */
+export function letterFaceOf(face: SetFace): LetterFace {
+  if (face.weight === undefined) throw new FontTableError(`a ${face.face} set was measured and not lettered`);
+  return { name: face.face, weight: face.weight };
 }

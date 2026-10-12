@@ -496,7 +496,7 @@ export function assembleSetup(setup: Recipe, options: AssembleOptions): Assemble
   //    step places every text in our letters' widths, `withOxaniumFonts`, decision 19, 8.2.3.
   let faces: SetFace[] | undefined;
   if (choices.letters === 'oxanium') {
-    const lettered = withOxaniumFonts(takeApart(c), choices.letterInks);
+    const lettered = withOxaniumFonts(takeApart(c), choices.letterInks, choices.faceWeights);
     c = layOutContainer(lettered.layout).container;
     checkOxaniumFonts(c, lettered.faces);
     faces = lettered.faces;

@@ -30,7 +30,10 @@ import type { Container } from './gspm.ts';
 import { fontSets, glyphOf, type FontSet } from './font.ts';
 import { blockOfStatedCode, statedCode, statedProtocol, type StatedCode } from './stated.ts';
 import { FOUR_SLOT_LEFT_X, FOUR_SLOT_RIGHT_END, FOUR_SLOT_LABEL_Y } from './inventory.ts';
-import { oxaniumFace } from './lettering.ts';
+import {
+  OXANIUM_WEIGHTS, defaultWeight, letterForm, oxaniumFace, type OxaniumFaceName, type OxaniumWeight,
+} from './lettering.ts';
+import { oxaniumAlphabet } from './text.ts';
 
 // ---------------------------------------------------------------------------------------------------
 // Keys and screen
@@ -238,25 +241,70 @@ export const TITLE_RUNG = 2;
 /** The size the title and the page counter are drawn in, in Logitech's letters. */
 export const TITLE_SIZE = LABEL_SIZES[TITLE_RUNG] as LabelSize;
 
+/** Our six label faces in rung order, the ones `withOxaniumFonts` letters Logitech's six label sizes in. */
+const LABEL_FACES = ['F15', 'F14W', 'F14', 'F13', 'F11', 'F10'] as const satisfies readonly OxaniumFaceName[];
+
 /**
  * The same six sizes in our letters, `todo-compile-650.md` 8.2.3: each rung is the face `withOxaniumFonts`
  * letters Logitech's sets of that size in, `F15`, `F14W`, `F14`, `F13`, `F11` and `F10`, at Logitech's
- * heights and with every printable character's width. A configuration re-lettered by `withOxaniumFonts`
- * carries these widths and no others, so its sizes are recognised by this table and its labels, titles
- * and counters measured in it, `ladderOf`. Built on first use, since the faces are rendered on demand,
- * `todo-compile-650.md` 10.8; the rules themselves, where a label breaks and how far a title
- * may run, are the compiler's in pixels and stay as they are.
+ * heights and with every printable character's width, in the weight given per face and its default
+ * otherwise, 10.8.5. A configuration re-lettered by `withOxaniumFonts` carries these widths and no others,
+ * so its sizes are recognised by this table and its labels, titles and counters measured in it, `ladderOf`.
+ * Built on first use per set of weights, since the faces are rendered on demand, 10.8; the rules
+ * themselves, where a label breaks and how far a title may run, are the compiler's in pixels and stay.
  */
-export function oxaniumLabelSizes(): readonly LabelSize[] {
-  oxaniumSizes ??= (['F15', 'F14W', 'F14', 'F13', 'F11', 'F10'] as const).map((face, k) => ({
-    name: (LABEL_SIZES[k] as LabelSize).name,
-    height: oxaniumFace(face).cell,
-    widths: new Map(Object.entries(oxaniumFace(face).glyphs).map(([ch, rows]) => [ch, (rows[0] as string).length])),
-  }));
-  return oxaniumSizes;
+export function oxaniumLabelSizes(weights: Readonly<Partial<Record<OxaniumFaceName, OxaniumWeight>>> = {}): readonly LabelSize[] {
+  const chosen = LABEL_FACES.map((face) => weights[face] ?? defaultWeight(face));
+  const key = chosen.join(' ');
+  let sizes = oxaniumSizes.get(key);
+  if (sizes === undefined) {
+    sizes = LABEL_FACES.map((face, k) => {
+      const drawn = oxaniumFace(face, chosen[k]);
+      return {
+        name: (LABEL_SIZES[k] as LabelSize).name,
+        height: drawn.cell,
+        widths: new Map(Object.entries(drawn.glyphs).map(([ch, rows]) => [ch, (rows[0] as string).length])),
+      };
+    });
+    oxaniumSizes.set(key, sizes);
+  }
+  return sizes;
 }
 
-let oxaniumSizes: readonly LabelSize[] | undefined;
+const oxaniumSizes = new Map<string, readonly LabelSize[]>();
+
+/**
+ * Which of our faces, in which weights, could have drawn each of a configuration's font sets, as
+ * `F14/SemiBold` and so on: every face and weight that draws all of its one bit letters, by their form,
+ * `oxaniumAlphabet().drawnIn`; empty for a set none does, Logitech's and a blended copy among them. Read off
+ * the letters alone, so a configuration in any weights is known with no memory of how it was built, 10.8.5.
+ *
+ * **More than one is the rule, not an accident**: a label face and the regular face of its height, F15 and
+ * R15, F13 and R13, are one geometry in two weights, so a set in SemiBold is F15 or R15 in SemiBold alike.
+ * `ladderOf` settles that by Logitech's convention, which the choice is held to.
+ */
+export function oxaniumFacesOf(c: Container): readonly (readonly string[])[] {
+  const known = FACES_OF.get(c);
+  if (known !== undefined) return known;
+  const drawnIn = oxaniumAlphabet().drawnIn;
+  const out = (fontSets(c) ?? []).map((set) => {
+    const counts = new Map<string, number>();
+    let letters = 0;
+    set.glyphs.forEach((address, k) => {
+      if (address === undefined) return;
+      const glyph = glyphOf(c, set, set.first + k);
+      const form = glyph === undefined ? undefined : letterForm(glyph.rows);
+      if (form === undefined) return;
+      letters += 1;
+      for (const face of drawnIn[form.form] ?? []) counts.set(face, (counts.get(face) ?? 0) + 1);
+    });
+    return letters === 0 ? [] : [...counts].filter(([, count]) => count === letters).map(([face]) => face);
+  });
+  FACES_OF.set(c, out);
+  return out;
+}
+
+const FACES_OF = new WeakMap<Container, readonly (readonly string[])[]>();
 
 /**
  * The widest a label line may be, in pixels: 59, the widest one line label on the twenty devices' pages,
@@ -542,6 +590,17 @@ export function fontsBySize(
  * Logitech's otherwise. Re-lettering leaves no set of Logitech's widths behind, so the two never mix.
  */
 export function ladderOf(c: Container, map: { codes: ReadonlyMap<number, string> }): readonly LabelSize[] {
-  const ours = oxaniumLabelSizes();
+  // The weights the configuration's label faces are in, read off its letters, 10.8.5. A label face shares
+  // its geometry with the regular face of its height, so its sets and the regular face's both read as
+  // either; by Logitech's convention, which the choice is held to, the label face is the heavier.
+  const weights: Partial<Record<OxaniumFaceName, OxaniumWeight>> = {};
+  for (const candidates of oxaniumFacesOf(c)) {
+    for (const found of candidates) {
+      const [face, weight] = found.split('/') as [OxaniumFaceName, OxaniumWeight];
+      const had = weights[face];
+      if (had === undefined || OXANIUM_WEIGHTS.indexOf(weight) > OXANIUM_WEIGHTS.indexOf(had)) weights[face] = weight;
+    }
+  }
+  const ours = oxaniumLabelSizes(weights);
   return (fontsBySize(c, map, ours).get(TITLE_RUNG) ?? []).length > 0 ? ours : LABEL_SIZES;
 }

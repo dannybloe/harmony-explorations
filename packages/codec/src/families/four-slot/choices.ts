@@ -9,7 +9,7 @@
  * firmware is a fact and stays in the module that uses it, with its measurement, however arbitrary it
  * looks: a place on the screen, a font's index, an opcode, the order Logitech's compiler sorts in.
  *
- * **Two kinds of choice stay fixed for now, and why**, so that neither is mistaken for a fact:
+ * **One kind of choice stays fixed for now, and why**, so that it is not mistaken for a fact:
  *
  * * **The words**, "Devices", "Back", the menus' titles and bottom words, "Starting", the start up
  *   screen's three lines, "Turning system off" and "Exit". They are a language, and a user's to choose.
@@ -17,16 +17,16 @@
  *   English, and several readers find a page by its words (the placeholder, a menu by its title), so a
  *   chosen language would split one remote's screens between two and blind those readers. They become a
  *   choice when a configuration is built rather than patched, todo 11.1.1.
- * * **Which of our faces letters each size**, `withOxaniumFonts`'s pick by a set's height and weight. The
- *   composers measure every label, title and counter in a ladder of sizes built from those faces,
- *   `oxaniumLabelSizes`, and recognise a configuration in our letters by it, so another face would be
- *   measured in the wrong widths. It becomes a choice when the ladder is computed from the faces a
- *   configuration carries, which rendering any face on demand needs anyway, 10.8.
+ *
+ * Which of our faces letters each of Logitech's sizes is not a choice: each face's rows are Logitech's,
+ * measured in 8.2, and the outline is fitted to them. Its weight is, `faceWeights`, since 10.8.5.
  */
 import type { ActivityKey } from '../../activitykeys.ts';
 import type { BackgroundColours } from '../../backgrounds.ts';
 import { rgbTo565 } from '../../png.ts';
-import type { LetterInks } from '../../lettering.ts';
+import {
+  LETTERING_FACES, OXANIUM_WEIGHTS, defaultWeight, type LetterInks, type OxaniumFaceName, type OxaniumWeight,
+} from '../../lettering.ts';
 import type { WiringSettings } from '../../wiring.ts';
 import type { CommonChoices, DelayDefaults } from '../family.ts';
 
@@ -49,6 +49,13 @@ export interface FourSlotChoices extends CommonChoices {
    * because the bars stay white; their shadow was dark grey on 130 of the 196 shadowed sets and black on 66.
    */
   readonly letterInks: LetterInks;
+  /**
+   * The Oxanium weight each of our nine faces is drawn in, `todo-compile-650.md` 10.8.5: decided by look in
+   * 8.2, SemiBold for the six label faces and Regular for the three regular ones Logitech draws its start up,
+   * Off, Remote Assistant, Help and tour screens in. Any of the seven is read back, since our alphabet holds
+   * every weight and a configuration's size table is built from the weights its letters are in, `ladderOf`.
+   */
+  readonly faceWeights: Readonly<Record<OxaniumFaceName, OxaniumWeight>>;
   /**
    * The backgrounds of the five designed screens: Logitech's pictures, as the donor carries them, or one
    * flat colour per screen state, decision 20, `todo-compile-650.md` 9.1.2.1 (`withStateBackgrounds`).
@@ -81,8 +88,9 @@ export interface FourSlotChoices extends CommonChoices {
 }
 
 /** What a recipe gives: any choice, a settings and colours object in part. */
-export type FourSlotChoicesGiven = Partial<Omit<FourSlotChoices, 'settings' | 'stateColours' | 'delays' | 'letterInks'>> & {
+export type FourSlotChoicesGiven = Partial<Omit<FourSlotChoices, 'settings' | 'stateColours' | 'delays' | 'letterInks' | 'faceWeights'>> & {
   readonly letterInks?: Partial<LetterInks>;
+  readonly faceWeights?: Partial<Record<OxaniumFaceName, OxaniumWeight>>;
   readonly settings?: Partial<WiringSettings>;
   readonly stateColours?: Partial<BackgroundColours>;
   readonly delays?: Partial<DelayDefaults>;
@@ -92,6 +100,7 @@ export const FOUR_SLOT_CHOICES: FourSlotChoices = {
   letters: 'logitech',
   blendLetters: false,
   letterInks: { shadowed: 0xffff, plain: 0x2104, shadow: 0x0000 },
+  faceWeights: Object.fromEntries(LETTERING_FACES.map((face) => [face, defaultWeight(face)])) as Record<OxaniumFaceName, OxaniumWeight>,
   backgrounds: 'designed',
   // Decided on 10 October 2026, until a user's setting replaces them.
   stateColours: {
@@ -123,6 +132,9 @@ export const FOUR_SLOT_CHOICES: FourSlotChoices = {
   delays: { powerOn: 15, interDevice: 5 },
 };
 
+/** The label faces drawn on the same geometry as a regular face, `oxaniumFacesOf`. */
+const TWIN_FACES = [['F15', 'R15'], ['F13', 'R13']] as const;
+
 /** A recipe's choice this family does not make, named, so a misspelt one is not silently a default. */
 export class ChoiceError extends Error {}
 
@@ -136,9 +148,24 @@ export function fourSlotChoices(given: FourSlotChoicesGiven = {}): FourSlotChoic
     ['stateColours', given.stateColours, FOUR_SLOT_CHOICES.stateColours],
     ['delays', given.delays, FOUR_SLOT_CHOICES.delays],
     ['letterInks', given.letterInks, FOUR_SLOT_CHOICES.letterInks],
+    ['faceWeights', given.faceWeights, FOUR_SLOT_CHOICES.faceWeights],
   ] as const) {
     for (const key of Object.keys(part ?? {})) {
       if (!(key in defaults)) throw new ChoiceError(`${name} has no ${key}`);
+    }
+  }
+  for (const [face, weight] of Object.entries(given.faceWeights ?? {})) {
+    if (!(OXANIUM_WEIGHTS as readonly string[]).includes(weight)) {
+      throw new ChoiceError(`${face} cannot be drawn in ${weight}: Oxanium's weights are ${OXANIUM_WEIGHTS.join(', ')}`);
+    }
+  }
+  // A label face and the regular face of its height are one geometry in two weights, so a reader tells
+  // them apart only by Logitech's convention, the label face the heavier, `ladderOf`.
+  const weights = { ...FOUR_SLOT_CHOICES.faceWeights, ...given.faceWeights };
+  for (const [label, regular] of TWIN_FACES) {
+    if (OXANIUM_WEIGHTS.indexOf(weights[label]) < OXANIUM_WEIGHTS.indexOf(weights[regular])) {
+      throw new ChoiceError(`${label} in ${weights[label]} is lighter than ${regular} in ${weights[regular]}, `
+        + 'and a label face must not be lighter than the regular face of its height or neither could be read back');
     }
   }
   return {
@@ -148,5 +175,6 @@ export function fourSlotChoices(given: FourSlotChoicesGiven = {}): FourSlotChoic
     stateColours: { ...FOUR_SLOT_CHOICES.stateColours, ...given.stateColours },
     delays: { ...FOUR_SLOT_CHOICES.delays, ...given.delays },
     letterInks: { ...FOUR_SLOT_CHOICES.letterInks, ...given.letterInks },
+    faceWeights: { ...FOUR_SLOT_CHOICES.faceWeights, ...given.faceWeights },
   };
 }

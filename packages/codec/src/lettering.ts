@@ -88,31 +88,60 @@ export interface OxaniumFace extends FaceSpec, RenderedFace {}
 
 export const LETTERING_FACES = Object.keys(OXANIUM_FACE_SPECS) as OxaniumFaceName[];
 
-const faces = new Map<OxaniumFaceName, OxaniumFace>();
+/**
+ * The cuts of Oxanium this repository carries, lightest first, `fonts/Oxanium/static/`. Which one a face is
+ * drawn in is a choice, `FourSlotChoices.faceWeights`, `todo-compile-650.md` 10.8.5; the face's size is
+ * not, since its rows are Logitech's and the outline is fitted to them.
+ */
+export const OXANIUM_WEIGHTS = ['ExtraLight', 'Light', 'Regular', 'Medium', 'SemiBold', 'Bold', 'ExtraBold'] as const;
+export type OxaniumWeight = (typeof OXANIUM_WEIGHTS)[number];
+
+/** A face's weight where none is chosen: the one decided by look in 8.2, `OXANIUM_FACE_SPECS`. */
+export function defaultWeight(name: OxaniumFaceName): OxaniumWeight {
+  return OXANIUM_FACE_SPECS[name].weight;
+}
 
 /**
- * One of our faces with its letters, drawn from Oxanium's outlines by `typeface.ts` on first use and kept.
- * They replaced the letters `tools/oxanium_glyphs.py` drew with Pillow once a preview of the two side by
- * side was approved, `todo-compile-650.md` 10.8.
+ * A face to draw a letter in: one of the nine by name, in its default weight, or with the weight chosen.
+ * What a set lettered by `withOxaniumFonts` records, `SetFace`, is the second.
  */
-export function oxaniumFace(name: OxaniumFaceName): OxaniumFace {
-  let face = faces.get(name);
+export type LetterFace = OxaniumFaceName | { readonly name: OxaniumFaceName; readonly weight: OxaniumWeight };
+
+const faces = new Map<string, OxaniumFace>();
+
+/**
+ * One of our faces with its letters in a weight, its default unless given, drawn from Oxanium's outlines by
+ * `typeface.ts` on first use and kept. They replaced the letters `tools/oxanium_glyphs.py` drew with Pillow
+ * once a preview of the two side by side was approved, `todo-compile-650.md` 10.8.
+ */
+export function oxaniumFace(name: OxaniumFaceName, weight: OxaniumWeight = defaultWeight(name)): OxaniumFace {
+  const key = `${name}/${weight}`;
+  let face = faces.get(key);
   if (face === undefined) {
-    const spec = OXANIUM_FACE_SPECS[name];
+    const spec = { ...OXANIUM_FACE_SPECS[name], weight };
     const letters = renderFace(spec, LETTERING_CHARACTERS);
     face = { ...spec, glyphs: letters.glyphs, greys: letters.greys };
-    faces.set(name, face);
+    faces.set(key, face);
   }
   return face;
+}
+
+/** The face a `LetterFace` names, with its letters. */
+export function faceOf(face: LetterFace): OxaniumFace {
+  return typeof face === 'string' ? oxaniumFace(face) : oxaniumFace(face.name, face.weight);
+}
+
+function nameOf(face: LetterFace): string {
+  return typeof face === 'string' ? face : `${face.name} ${face.weight}`;
 }
 
 /** The highest grey level `typeface.ts` draws, one hexadecimal digit, `0` being no ink. */
 export const LETTERING_GREY_LEVELS = 15;
 
 /** A character's grey coverage on its glyph's box, each pixel from 0 to 1. */
-export function letterCoverage(face: OxaniumFaceName, character: string): number[][] {
-  const greys = oxaniumFace(face).greys[character];
-  if (greys === undefined) throw new RangeError(`face ${face} has no letter '${character}'`);
+export function letterCoverage(face: LetterFace, character: string): number[][] {
+  const greys = faceOf(face).greys[character];
+  if (greys === undefined) throw new RangeError(`face ${nameOf(face)} has no letter '${character}'`);
   return greys.map((line) => [...line].map((cell) => (cell === '.' ? 0 : parseInt(cell, 16) / LETTERING_GREY_LEVELS)));
 }
 
@@ -130,7 +159,7 @@ export function letterCoverage(face: OxaniumFaceName, character: string): number
  * neither covers is skipped, so the background shows through as it does around a one bit letter.
  */
 export function letterRows(
-  face: OxaniumFaceName,
+  face: LetterFace,
   character: string,
   lettering: Lettering,
   inks: LetterInks,
@@ -147,14 +176,14 @@ export function letterRows(
 }
 
 /** A character's one bit mask in a face, `#` for ink and anything else for none. */
-function letterMask(face: OxaniumFaceName, character: string): readonly string[] {
-  const mask = oxaniumFace(face).glyphs[character];
-  if (mask === undefined) throw new RangeError(`face ${face} has no letter '${character}'`);
+function letterMask(face: LetterFace, character: string): readonly string[] {
+  const mask = faceOf(face).glyphs[character];
+  if (mask === undefined) throw new RangeError(`face ${nameOf(face)} has no letter '${character}'`);
   return mask;
 }
 
 function blendedRows(
-  face: OxaniumFaceName, character: string, lettering: Lettering, inks: LetterInks, background: number,
+  face: LetterFace, character: string, lettering: Lettering, inks: LetterInks, background: number,
 ): (number | undefined)[][] {
   const v = letterCoverage(face, character);
   const ink = rgb565(inks[lettering]);
@@ -178,7 +207,7 @@ function blendedRows(
 
 /** The glyph `letterRows` draws, as `glyphAt` would decode it, less the address and length it has none of yet. */
 export function letterGlyph(
-  face: OxaniumFaceName, character: string, lettering: Lettering, inks: LetterInks, background?: number,
+  face: LetterFace, character: string, lettering: Lettering, inks: LetterInks, background?: number,
 ): Glyph {
   const rows = letterRows(face, character, lettering, inks, background);
   return { address: 0, width: rows[0]!.length, rows, length: 0 };
@@ -218,7 +247,7 @@ export function letterForm(
 }
 
 /** The form `letterForm` reads off a character of a face drawn in either colouring, from its mask alone. */
-export function maskForm(face: OxaniumFaceName, character: string, lettering: Lettering): string {
+export function maskForm(face: LetterFace, character: string, lettering: Lettering): string {
   const mask = letterMask(face, character);
   const body = mask.map((line) => [...line].map((cell) => (cell === '#' ? '#' : '.')).join('')).join('/');
   return `${mask.length}:${lettering === 'shadowed' ? 'S' : 'P'}:${body}`;
@@ -230,7 +259,7 @@ export function maskForm(face: OxaniumFaceName, character: string, lettering: Le
  * it or its shadow does, `_` elsewhere. The same string `letterStructure` gives the drawn letter, since
  * `letterRows` keeps a part covered pixel off both inks, whatever the inks are.
  */
-export function coverageStructure(face: OxaniumFaceName, character: string, lettering: Lettering): string {
+export function coverageStructure(face: LetterFace, character: string, lettering: Lettering): string {
   const v = letterCoverage(face, character);
   const full = lettering === 'shadowed' ? 'W' : 'D';
   return v.map((row, y) => row.map((cover, x) => {

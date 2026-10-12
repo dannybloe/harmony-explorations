@@ -43,7 +43,9 @@ import {
 import type { ScreenInstruction } from './screen.ts';
 import { ALPHABETS } from './alphabets.ts';
 import type { Alphabet } from './alphabets.ts';
-import { LETTERING_CHARACTERS, LETTERING_FACES, coverageStructure, letterForm, letterStructure, maskForm } from './lettering.ts';
+import {
+  LETTERING_CHARACTERS, LETTERING_FACES, OXANIUM_WEIGHTS, coverageStructure, letterForm, letterStructure, maskForm,
+} from './lettering.ts';
 
 /**
  * The glyph code a font set starts at when the codes are ASCII rather than assigned.
@@ -384,15 +386,19 @@ function lettersInks(
 }
 
 /**
- * Our own letters' alphabet, `lettering.ts`: every face in both colourings, made from the masks the letters
- * are drawn from rather than seeded from a configuration, so it has no `codes` to fall back on. A form two
- * characters share carries both, as a seeded alphabet's shape does. The one bit letters are named by form
- * and the blended ones by structure, both made from the masks and the coverage alone, so the alphabet is
- * the same whatever inks a configuration chose. Built once, on first use.
+ * Our own letters' alphabet, `lettering.ts`: every face in every weight and both colourings, made from the
+ * masks the letters are drawn from rather than seeded from a configuration, so it has no `codes` to fall
+ * back on. A form two characters share carries both, as a seeded alphabet's shape does. The one bit letters
+ * are named by form and the blended ones by structure, both made from the masks and the coverage alone, so
+ * the alphabet is the same whatever inks a configuration chose; and every weight is in it, so the same
+ * whatever weights, `todo-compile-650.md` 10.8.5. Built once, on first use.
+ *
+ * `drawnIn` says which faces draw a form, `F14/SemiBold` and so on, which is how a configuration's sets are
+ * known as our faces in their weights, `oxaniumFacesOf`.
  */
-let oxanium: LetteredAlphabet | undefined;
+let oxanium: (LetteredAlphabet & { drawnIn: Readonly<Record<string, readonly string[]>> }) | undefined;
 
-export function oxaniumAlphabet(): LetteredAlphabet {
+export function oxaniumAlphabet(): LetteredAlphabet & { drawnIn: Readonly<Record<string, readonly string[]>> } {
   if (oxanium !== undefined) return oxanium;
   const shapes: Record<string, string> = {};
   const structures: Record<string, string> = {};
@@ -401,18 +407,24 @@ export function oxaniumAlphabet(): LetteredAlphabet {
     if (!had.includes(ch)) table[key] = had + ch;
   };
   const forms: Record<string, string> = {};
-  for (const face of LETTERING_FACES) {
-    for (const lettering of ['shadowed', 'plain'] as const) {
-      for (const ch of LETTERING_CHARACTERS) {
-        const form = maskForm(face, ch, lettering);
-        if (!form.includes('#')) continue;
-        add(forms, form, ch);
-        const structure = coverageStructure(face, ch, lettering);
-        add(structures, `${structure.split('/').length}:${structure}`, ch);
+  const drawnIn: Record<string, string[]> = {};
+  for (const name of LETTERING_FACES) {
+    for (const weight of OXANIUM_WEIGHTS) {
+      const face = { name, weight };
+      for (const lettering of ['shadowed', 'plain'] as const) {
+        for (const ch of LETTERING_CHARACTERS) {
+          const form = maskForm(face, ch, lettering);
+          if (!form.includes('#')) continue;
+          add(forms, form, ch);
+          const where = (drawnIn[form] ??= []);
+          if (!where.includes(`${name}/${weight}`)) where.push(`${name}/${weight}`);
+          const structure = coverageStructure(face, ch, lettering);
+          add(structures, `${structure.split('/').length}:${structure}`, ch);
+        }
       }
     }
   }
-  oxanium = { name: 'oxanium', container: 'packages/codec/src/typeface.ts', shapes, forms, structures };
+  oxanium = { name: 'oxanium', container: 'packages/codec/src/typeface.ts', shapes, forms, structures, drawnIn };
   return oxanium;
 }
 

@@ -36,7 +36,7 @@ import { letterRows } from './lettering.ts';
 import { UNDRAWN, renderVariants, type TextDrawn } from './render.ts';
 import { modePages } from './sections.ts';
 import { HARMONY_650_SKINS } from './backgrounds.ts';
-import { FontTableError, type SetFace, lettered } from './fonttable.ts';
+import { FontTableError, type SetFace, letterFaceOf, lettered } from './fonttable.ts';
 
 /** How many appearances of one page are drawn before the page counts as not fully seen. */
 export const BLEND_VARIANT_LIMIT = 64;
@@ -192,7 +192,7 @@ export function withBlendedLetters(layout: ContainerLayout, faces: readonly SetF
       const glyphKey = `${face.face} ${face.lettering} ${background} ${ch}`;
       let piece = glyphPieces.get(glyphKey);
       if (piece === undefined) {
-        const rows = letterRows(face.face, ch, face.lettering, lettered(face), background);
+        const rows = letterRows(letterFaceOf(face), ch, face.lettering, lettered(face), background);
         piece = { bytes: encodeGlyph(rows[0]!.length, rows), refs: [], owner: 'slot-7-glyph' };
         glyphPieces.set(glyphKey, piece);
       }
@@ -263,7 +263,7 @@ export function checkBlendedLetters(c: Container, faces: readonly SetFace[], ble
       const ch = map.codes.get(code);
       const glyph = glyphOf(c, set, code);
       if (ch === undefined || glyph === undefined) continue;
-      if (JSON.stringify(glyph.rows) !== JSON.stringify(letterRows(face.face, ch, face.lettering, lettered(face), one.background))) {
+      if (JSON.stringify(glyph.rows) !== JSON.stringify(letterRows(letterFaceOf(face), ch, face.lettering, lettered(face), one.background))) {
         throw new FontTableError(`font set ${one.set}'s '${ch}' is not ${face.face} ${face.lettering} blended for ${one.background.toString(16)}`);
       }
       glyphs += 1;

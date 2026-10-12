@@ -22,6 +22,7 @@ import {
   compareViews,
   layOutContainer,
   letterRows,
+  maskForm,
   oxaniumAlphabet,
   parse,
   screenStrings,
@@ -81,18 +82,31 @@ test('a shadowed letter is white over black one pixel down and right, a plain on
   assert.deepEqual([INKS.shadowed, INKS.plain, INKS.shadow], [0xffff, 0x2104, 0x0000]);
 });
 
-test('our alphabet tells every character apart by form but I from l, which three faces draw alike', () => {
-  const alphabet = oxaniumAlphabet();
-  // Read by form since 10.7.5, so by no ink: the pixel table is empty and any inks read back.
-  assert.deepEqual(alphabet.shapes, {});
-  const forms = Object.values(alphabet.forms ?? {});
-  // 9 faces, 2 colourings, 94 characters with ink: 1692, less 52 keys a character shares with itself across
-  // faces, which name one character, and 6 that are `I` and `l` in one shape, in F11 and F10, and in R13
-  // where F13's `I` is the same shape too. The faces drawn in one weight share shapes since the weights were
-  // chosen by look (SemiBold for labels, Regular for the three regular faces).
-  assert.equal(forms.length, 1634);
-  assert.deepEqual(forms.filter((one) => one.length > 1), Array(6).fill('Il'));
-  // A blended letter's structure tells fewer apart, `blending.test.ts`.
+test('our alphabet tells every character apart by form but I from l in the weights decided in 8.2, and holds every weight', () => {
+  // In the default weights, measured off the faces directly. 9 faces, 2 colourings, 94 characters with ink:
+  // 1692, less 52 keys a character shares with itself across faces, which name one character, and 6 that
+  // are `I` and `l` in one shape, in F11 and F10, and in R13 where F13's `I` is the same shape too. The faces
+  // drawn in one weight share shapes since the weights were chosen by look (SemiBold for labels, Regular for
+  // the three regular faces).
+  const own = new Map<string, Set<string>>();
+  for (const face of LETTERING_FACES) {
+    for (const lettering of ['shadowed', 'plain'] as const) {
+      for (const ch of LETTERING_CHARACTERS) {
+        const form = maskForm(face, ch, lettering);
+        if (form.includes('#')) (own.get(form) ?? own.set(form, new Set()).get(form)!).add(ch);
+      }
+    }
+  }
+  assert.equal(own.size, 1634);
+  assert.deepEqual([...own.values()].filter((one) => one.size > 1).map((one) => [...one].sort().join('')), Array(6).fill('Il'));
+  // The alphabet holds all seven weights of every face, 10.8.5, so a configuration in any is read. Across
+  // weights more shapes are shared: `D` and `O`, `5` and `S`, and `!` with `I` and `l`, in the lightest and
+  // heaviest cuts of the small faces; a code is still settled across the sets that draw it.
+  const forms = Object.values(oxaniumAlphabet().forms ?? {});
+  assert.equal(forms.length, 5860);
+  const shared: Record<string, number> = {};
+  for (const one of forms) if (one.length > 1) shared[[...one].sort().join('')] = (shared[[...one].sort().join('')] ?? 0) + 1;
+  assert.deepEqual(shared, { '!Il': 4, '5S': 8, DO: 6, Il: 8 });
 });
 
 test('withOxaniumFonts re-letters all 13 Harmony 650 compiles, every text reading the same, the setup unchanged',

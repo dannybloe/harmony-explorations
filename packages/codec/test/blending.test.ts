@@ -25,7 +25,9 @@ import {
   compareViews,
   flatColour,
   layOutContainer,
+  coverageStructure,
   letterCoverage,
+  maskForm,
   letterRows,
   letterStructure,
   modePages,
@@ -105,14 +107,33 @@ test('a blended pixel is the ink where covered, skipped where nothing is, otherw
   assert.equal(letterRows('F15', '!', 'shadowed', INKS, 0xfc60)[10]![2], (31 << 11) | (57 << 5) | 25);
 });
 
-test('our alphabet names a blended letter by its structure, which tells every character apart but eight pairs and triples in the three smallest faces', () => {
+test('our alphabet names a blended letter by its structure, which tells every character apart but eight pairs and triples in the three smallest faces of the weights decided in 8.2', () => {
+  // In the default weights, measured off the faces directly. Drawn from the outlines, 10.8, fewer pixels of
+  // a thin stroke are covered whole than in the letters Pillow hinted, and a structure is full coverage
+  // against any: so `!` is `I`, `]` is `}` and one `0` is a `9` in F11, F10 and R13, where Pillow's left `I`
+  // and `l` alone. None is a misreading: a code is settled across every set that draws it, the unblended set
+  // among them, and by its ASCII value, `characterMap`.
+  const own = new Map<string, Set<string>>();
+  for (const face of LETTERING_FACES) {
+    for (const lettering of ['shadowed', 'plain'] as const) {
+      for (const ch of LETTERING_CHARACTERS) {
+        if (!maskForm(face, ch, lettering).includes('#')) continue;
+        const structure = coverageStructure(face, ch, lettering);
+        const key = `${structure.split('/').length}:${structure}`;
+        (own.get(key) ?? own.set(key, new Set()).get(key)!).add(ch);
+      }
+    }
+  }
+  assert.equal(own.size, 1675);
+  assert.deepEqual([...own.values()].filter((one) => one.size > 1).map((one) => [...one].sort().join('')).sort(),
+    ['!I', '!I', '!Il', '!Il', '09', 'Il', ']}', ']}']);
+  // Every weight, 10.8.5: more shared across the lightest and heaviest cuts, all of them pairs a larger face
+  // of the same configuration tells apart.
   const structures = Object.values(oxaniumAlphabet().structures ?? {});
-  assert.equal(structures.length, 1675);
-  // Drawn from the outlines, 10.8, fewer pixels of a thin stroke are covered whole than in the letters Pillow
-  // hinted, and a structure is full coverage against any: so `!` is `I`, `]` is `}` and one `0` is a `9` in
-  // F11, F10 and R13, where Pillow's left `I` and `l` alone. None is a misreading: a code is settled across
-  // every set that draws it, the unblended set among them, and by its ASCII value, `characterMap`.
-  assert.deepEqual(structures.filter((one) => one.length > 1).sort(), ['!I', '!I', '!Il', '!Il', '09', 'Il', ']}', ']}']);
+  assert.equal(structures.length, 7711);
+  const shared: Record<string, number> = {};
+  for (const one of structures) if (one.length > 1) shared[[...one].sort().join('')] = (shared[[...one].sort().join('')] ?? 0) + 1;
+  assert.deepEqual(shared, { '!I': 6, '!Il': 7, '([': 2, '08': 6, '09': 3, '5S': 6, DO: 2, ']}': 3 });
 });
 
 test('flatColour takes a box of one colour, or dithered by one step, and nothing else', () => {
