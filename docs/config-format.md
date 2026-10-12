@@ -908,7 +908,7 @@ device mode against what they build:
 |---|---|---|
 | background | `OP_IMAGE` at 0, 0: the look's single picture for a page of one item or none, its crossed one for more | 639 of 639 |
 | look | by skin and content key: 72 and 66 the colour look of 2026, 66 that of 2021 and 2023, 71 and 73 the monochrome; the one whose five pictures the configuration holds; 69, 74 and 75 refused | 13 of 13 |
-| queued program | `0x11 lo hi 0x73`, base slot 11's first program no base slot 14 case names that opens with a one byte switch on variable 17; it draws the look's battery icon | 639 of 639 |
+| queued program | `0x11 lo hi 0x73`, base slot 11's first program no base slot 14 case names that opens with a one byte switch on variable 17, the sending flag; it draws the look's corner patch | 639 of 639 |
 | bars | `DRAW_IMAGE_AT 0,0,0,0,128,16` the top bar after the queue; `DRAW_IMAGE_AT 0,0,0,0,128,128` the bottom bar before the word | 639 of 639 |
 | bottom word | font 1, the first set of the title's size; "Back" at `floor((128 - width) / 2)` = 49, y 114; drawn inline once per configuration, every other page `TEXT_AT` pointing at that copy | 639 of 639 |
 | key map tags | presses of the 41 `HARD_KEYS` scans, the four corners and scan 25 (`0x99`), and `0x2D`: 47 | 83 of 83 |
@@ -937,7 +937,7 @@ menu against the page built from its number, its menu's page count, its fonts an
 |---|---|---|
 | kind | the idle device list is the corner list the activity menu's `0x99` entry reaches: `0x72` on `(record << 8) \| counter`, and that record's case for the counter's starting value queues `0x7E` on it; every other corner list is an activity's own; a list whose first page is two row is the two row list | the route lands on a corner list on 13 of 13 compiles; the kind of the other 66 menus follows from it |
 | background | corner lists: section 330's single picture on a page holding one device, its crossed one for more; two row list: the look's `rows` picture on every page, which is the crossed one on both colour looks and one of its own on the monochrome look; activity menu: `activitiesSingle` for one activity, `activitiesFull` for two | 164 of 164 |
-| queued program | corner lists: the device mode pages' battery program; two row list: none; activity menu: the battery program drawing the look's `activitiesBattery` icon, base slot 11's second such program on the colour looks and the first on the monochrome, which is the device pages' own there | 164 of 164 |
+| queued program | corner lists: the device mode pages' corner program; two row list: none; activity menu: the corner program drawing the look's `activitiesPatch`, base slot 11's second such program on the colour looks and the first on the monochrome, which is the device pages' own there | 164 of 164 |
 | bars | as section 330, the top bar after the queue, the bottom bar after the labels | 164 of 164 |
 | title | "Devices" on every device list, "Activities" on the activity menu, at 0, 2 in the font the page selects | 164 of 164 |
 | counter | only where the menu has two pages or more; `n`, `/`, `m` at x `0x6A`, `0x71`, `0x76`, or `0x63`, `0x6A`, `0x6F` on the two row list, y 2 | 164 of 164 |
@@ -1062,7 +1062,7 @@ checks every activity against what is built:
 | start up texts | by reference to the lowest addressed inline copy of the same glyph codes, or that copy | 163 of 163 |
 | start up font | font 2, read off the configuration's start up screens, not built | 40 of 40 |
 | working background | `activitiesSingle` for one command or none, the look's `workingSeveral` for more | 21 and 42 pages |
-| working queued program | the activity menu's battery program | 63 of 63 |
+| working queued program | the activity menu's corner program | 63 of 63 |
 | working chrome | section 330's bars; "Devices" in the bottom word font, centred, 40, 114, by reference to its one inline copy or that copy | 63 of 63 |
 | working record | `0x99` `0x72` on the activity menu's `(record << 8) \| counter`, then `0x2D` `0x73` on the queued program, in `compilerTagOrder` | 40 of 40 |
 | case shape | `11 u16 operand u8 opcode 00`, five bytes, in all four records but the working record's idle case | 186 of 186 |
@@ -1090,7 +1090,7 @@ counts are per configuration; the 22 checked hold 13 distinct sets of devices:
 |---|---|---|
 | rows | every idle list device, the activity's first in its enter list's power order, then the rest in the idle list's order, four to a page in `FOUR_SLOT_ITEMS` order | the rest's order read: it is the two row list's on 23 of 23 and ascending device identifier on 17 of 20, and neither builds it |
 | row lists | `[7E mode, marker := 1]`, one per row on the page and another on its pool copy | 515 of 515 rows bind different lists on the page and the copy |
-| record | `0x99` `0x72` on `(record << 8) \| CurrentLocation`, the one record whose single case, for 0, maps the counter through the working screen record; `0x2D` `0x73` on the device pages' battery program; `compilerTagOrder` | every device list and the activity menu's `0x84`, 151 of 151 on 23 compiles |
+| record | `0x99` `0x72` on `(record << 8) \| CurrentLocation`, the one record whose single case, for 0, maps the counter through the working screen record; `0x2D` `0x73` on the device pages' corner program; `compilerTagOrder` | every device list and the activity menu's `0x84`, 151 of 151 on 23 compiles |
 | pages | `menuPageParts` for an activity device list, "Activity" at 39, 114 in the first font of the title's size spelling it | 149 of 149, texts compared by place and glyph codes |
 | text form | every text by reference to its lowest inline copy where one exists, inline otherwise | section 334's check on 22 of 22 composed configurations |
 | labels | each device's font and glyph lines as the idle list draws it | read: letters and fonts unbuilt |
@@ -2057,7 +2057,7 @@ the Harmony One 3.4; on the four arch 14 images the table is sought at that one 
 an operand of 256 or more runs entry `operand & 0xff`, and a program of ours has to take a free entry
 below 256 rather than be appended. [findings.md](findings.md) section 369.
 
-**The corner program**, which the codec's readers call a battery program and which draws the sending mark,
+**The corner program**, which the codec named a battery program until its names took up section 369, and which draws the sending mark,
 section 369, is one shape on every Harmony 600, 650 and 700 compile, 70 of 70 on 24, three runs back to
 back, section 374:
 

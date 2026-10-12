@@ -52,7 +52,7 @@ import { HARMONY_650_SKINS, barBytes, stateBackgroundBytes, statePatchBytes } fr
 import { buildOurPictures, buildPictures, type OurPictureChoices, type OurPictureName } from '../../pictures.ts';
 import { ENTER_MODE, MAP_VALUE_OPCODE } from '../../inventory.ts';
 import { STATE_WRITE_BASE } from '../../actions.ts';
-import { BATTERY_STATE_VARIABLE } from './chrome.ts';
+import { SENDING_FLAG_VARIABLE } from './chrome.ts';
 import { caseProgram as caseProgramBytes } from './activityscreen.ts';
 import { type BuiltFirmwareScreens, buildFirmwareScreens, firmwareScreenTemplates } from '../../firmwarescreens.ts';
 import {
@@ -425,10 +425,9 @@ const CORNER_TAIL = [SCREEN_QUEUE_INSTRUCTION, 0xfa, 0xff, 0x07, SCREEN_END] as 
 const CORNER_SWITCH_LENGTH = 13;
 
 /**
- * A corner program, which the codec's readers call a battery program after section 317's reading of
- * variable 17, which section 369 corrected: the variable is the sending flag, so the program draws the
- * mark while the remote sends. Written as every Harmony 600, 650 and 700 compile writes one, 70 of 70 on
- * 24 compiles, section 374: a switch on variable 17 whose case 0 draws the state's patch over the corner
+ * A corner program, the sending mark's: variable 17 is the sending flag, section 369, which section 317
+ * had read as the battery, so the program draws the mark while the remote sends. Written as every Harmony
+ * 600, 650 and 700 compile writes one, 70 of 70 on 24 compiles, section 374: a switch on variable 17 whose case 0 draws the state's patch over the corner
  * and whose range 1 to 3 draws the mark there, each case then jumping back to the tail. Three pieces in
  * the compiler's order, the switch with its tail, then the patch case, then the mark case; the first is
  * the base slot 11 entry.
@@ -436,7 +435,7 @@ const CORNER_SWITCH_LENGTH = 13;
 export function cornerProgram(patch: ContainerPiece, mark: ContainerPiece): ContainerPiece[] {
   const root: ContainerPiece = {
     bytes: Uint8Array.from([
-      SCREEN_SWITCH_NARROW, BATTERY_STATE_VARIABLE, 1, 0, 0, 0, 0, 1, 1, 3, 0, 0, 0, ...CORNER_TAIL,
+      SCREEN_SWITCH_NARROW, SENDING_FLAG_VARIABLE, 1, 0, 0, 0, 0, 1, 1, 3, 0, 0, 0, ...CORNER_TAIL,
     ]),
     refs: [], owner: 'slot-11-program',
   };
@@ -561,7 +560,7 @@ function emptyScreenRecords(
     titleFont: EMPTY_SCREEN_FONTS.menu, counterFont: EMPTY_SCREEN_FONTS.menu,
     backKey: throughMap('backMap', 'location'),
     ...(kind === 'activity menu' ? { devicesKey: throughMap('devicesMap', 'activity') } : {}),
-    battery: corner, marker: emptyVariable('menuMarker'),
+    corner: corner, marker: emptyVariable('menuMarker'),
     pictures: { one: idle, several: idle, topBar: { to: pictures.topBar, offset: 0 }, bottomBar: { to: pictures.bottomBar, offset: 0 } },
   });
   return buildScreenRecords({

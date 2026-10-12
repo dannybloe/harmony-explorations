@@ -27,7 +27,7 @@
  *   numbering, the emission order, and not this item's;
  * * the menu marker variable, the title and counter fonts and Off's font, all the configuration's
  *   numbering;
- * * the operands of each record's own key map: the records the two keys map through and the battery
+ * * the operands of each record's own key map: the records the two keys map through and the corner
  *   program queued under the program tag, each an index into a table of somebody else's;
  * * the pictures, by content, `todo-compile-650.md` 9.1's; and the texts drawn by reference, by the
  *   address of the copy they name, which is the configuration's own placement.
@@ -45,7 +45,7 @@
  * reference, through the container itself. None of those decides a byte of the output. So a caller can hand it a reader over bytes
  * overwritten everywhere but the recorded offsets and get the same description back, which is the blind
  * control `test/screenrecords.test.ts` makes. Where it would read a value it can also build, it checks
- * the two agree instead, the battery program against `fourSlotMenuChrome`'s by content route.
+ * the two agree instead, the corner program against `fourSlotMenuChrome`'s by content route.
  *
  * **The machinery is shared since section 357**: `recordReading` reads a mode record's frame and accounts
  * for its bytes, `recordBuilding` makes a record's pieces, `withModeRecords` puts built records in a layout
@@ -55,7 +55,7 @@
  * Arch 14 only, the Harmony 600, 650 and 700. Read only towards hardware: the result is pieces.
  */
 import { ACTIVITY_MENU_MARKER_VALUE, DEVICE_MENU_MARKER_VALUE, menuMarkerOf } from './shared/menus.ts';
-import { SCAN_FOUR_TAG, batteryPrograms, holdsLogitechLook } from './families/four-slot/chrome.ts';
+import { SCAN_FOUR_TAG, cornerPrograms, holdsLogitechLook } from './families/four-slot/chrome.ts';
 import { MAP_VALUE_OPCODE } from './inventory.ts';
 import type { Container, Instruction } from './gspm.ts';
 import {
@@ -159,7 +159,7 @@ export interface ScreenMenuSpec {
   /** The activity menu's alone: the operand its key under the display's centre maps through, section 334. */
   devicesKey?: number;
   /** The base slot 11 program queued under the program tag and on every page. */
-  battery: number;
+  corner: number;
   /** The menu marker variable every row writes, section 329. */
   marker: number;
   pictures: { one?: PieceTarget; several?: PieceTarget; topBar: PieceTarget; bottomBar: PieceTarget };
@@ -547,16 +547,16 @@ export function describeScreenRecords(
     const operandOf = (tag: number): number => value16(f.ownOff + 1 + 4 * tags.indexOf(tag) + 1);
     const backKey = operandOf(kind === 'idle device list' ? DEVICES_KEY_TAG : SCAN_FOUR_TAG);
     const devicesKey = kind === 'activity menu' ? operandOf(DEVICES_KEY_TAG) : undefined;
-    const battery = operandOf(DEVICE_MODE_PROGRAM_TAG);
+    const corner = operandOf(DEVICE_MODE_PROGRAM_TAG);
     // The program queued has to be a corner program, the sending mark's, section 369, by structure; and where
     // Logitech's artwork is held, the one drawing the look's own mark, by content. Our look holds none, section 375.
-    if (!batteryPrograms(c).includes(battery)) {
-      throw new ScreenRecordError(`the ${kind} runs program ${battery}, which is no corner program`);
+    if (!cornerPrograms(c).includes(corner)) {
+      throw new ScreenRecordError(`the ${kind} runs program ${corner}, which is no corner program`);
     }
     if (holdsLogitechLook(c)) {
       const chrome = fourSlotMenuChrome(c, kind);
-      if (chrome.battery !== battery) {
-        throw new ScreenRecordError(`the ${kind} runs program ${battery} where its corner program is ${chrome.battery}`);
+      if (chrome.corner !== corner) {
+        throw new ScreenRecordError(`the ${kind} runs program ${corner} where its corner program is ${chrome.corner}`);
       }
     }
     const rows: ScreenMenuRow[] = [];
@@ -639,7 +639,7 @@ export function describeScreenRecords(
     return {
       frame: f,
       spec: {
-        kind, mode, rows, slots, titleFont, counterFont, backKey, battery, marker: written,
+        kind, mode, rows, slots, titleFont, counterFont, backKey, corner, marker: written,
         ...(devicesKey === undefined ? {} : { devicesKey }),
         pictures: {
           ...(pictures.one === undefined ? {} : { one: pictures.one }),
@@ -836,7 +836,7 @@ export function buildScreenRecords(spec: ScreenRecordsSpec, c: Container): Built
       kind: m.kind as FourSlotMenuKind, look: 'the description\'s',
       one: m.pictures.one === undefined ? undefined : 0,
       several: m.pictures.several === undefined ? undefined : 1,
-      battery: m.battery, topBar: 2, bottomBar: 3, ...words,
+      corner: m.corner, topBar: 2, bottomBar: 3, ...words,
     };
     const pictures = [m.pictures.one, m.pictures.several, m.pictures.topBar, m.pictures.bottomBar];
     const programs: ContainerPiece[] = [];
@@ -870,7 +870,7 @@ export function buildScreenRecords(spec: ScreenRecordsSpec, c: Container): Built
       }
     });
     const operand = (tag: number): number => {
-      if (tag === DEVICE_MODE_PROGRAM_TAG) return m.battery;
+      if (tag === DEVICE_MODE_PROGRAM_TAG) return m.corner;
       if (m.kind === 'activity menu' && tag === DEVICES_KEY_TAG) {
         if (m.devicesKey === undefined) throw new ScreenRecordError('the activity menu names no record for its key under Devices');
         return m.devicesKey;

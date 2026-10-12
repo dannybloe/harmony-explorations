@@ -72,7 +72,7 @@ function withByte(c: Container, at: number, was: number, now: number): Container
 }
 
 /** The base slot 11 programs no value map case names that open with a switch on variable 17. */
-function batteryPrograms(c: Container): number[] {
+function cornerPrograms(c: Container): number[] {
   const table = c.pointerArray(archSlot(14, 11)) ?? [];
   const named = new Set<number>();
   for (const map of valueMaps(c) ?? []) {
@@ -99,7 +99,7 @@ function pictureKeys(c: Container): Map<number, string> {
 test('section 330: every device mode page of the thirteen compiles draws the chrome built for it',
      skipWithoutLab(), () => {
   const looks = new Map<string, number>();
-  const battery = new Map<number, number>();
+  const corner = new Map<number, number>();
   let modes = 0;
   let pages = 0;
   let firstOfSeveral = 0;
@@ -109,25 +109,25 @@ test('section 330: every device mode page of the thirteen compiles draws the chr
     // so getting here is the per page half; the counts are what that half covered.
     const chrome = deviceModeChrome(c);
     looks.set(chrome.look, (looks.get(chrome.look) ?? 0) + 1);
-    battery.set(chrome.battery, (battery.get(chrome.battery) ?? 0) + 1);
+    corner.set(chrome.corner, (corner.get(chrome.corner) ?? 0) + 1);
     for (const mode of deviceModes(c)) {
       modes += 1;
       pages += modeRecords(c)?.[mode]?.pages.length ?? 0;
     }
     assert.deepEqual([chrome.backFont, chrome.backX], [1, 49], `${name}: 'Back' in font 1, centred at 49`);
     assert.ok(chrome.backHome !== undefined, `${name}: an inline 'Back' to point at`);
-    // The battery rule is an order and the look's icon is the check: of the battery programs, the first
-    // is the one drawing that icon, and no later one draws it.
-    const programs = batteryPrograms(c);
-    assert.equal(programs[0], chrome.battery, `${name}: the first battery program`);
+    // The corner rule is an order and the look's patch is the check: of the corner programs, the first
+    // is the one drawing that patch, and no later one draws it.
+    const programs = cornerPrograms(c);
+    assert.equal(programs[0], chrome.corner, `${name}: the first corner program`);
     const keys = pictureKeys(c);
-    // Every picture each battery program reaches, through every arm and jump.
+    // Every picture each corner program reaches, through every arm and jump.
     const table = c.pointerArray(archSlot(14, 11)) ?? [];
     const draws = programs.map((index) => new Set([...reachablePrograms(c, [table[index] as number]).values()]
       .flatMap((program) => program.map((one) => pictureReference(one)))
       .flatMap((address) => (address === undefined ? [] : [keys.get(address)]))));
-    const icon = chrome.look === 'the colour look of 2026' ? 'c7d320f981025b68' : '6a7beeb149ddb000';
-    if (programs.length > 1 && draws[0]?.has(icon) && draws.slice(1).every((one) => !one.has(icon))) firstOfSeveral += 1;
+    const patch = chrome.look === 'the colour look of 2026' ? 'c7d320f981025b68' : '6a7beeb149ddb000';
+    if (programs.length > 1 && draws[0]?.has(patch) && draws.slice(1).every((one) => !one.has(patch))) firstOfSeveral += 1;
   }
   assert.deepEqual(Object.fromEntries([...looks].sort()), {
     'the colour look of 2021 and 2023': 2,
@@ -135,8 +135,8 @@ test('section 330: every device mode page of the thirteen compiles draws the chr
     'the monochrome look': 2,
   });
   // The index is the configuration's own: 1 where the large dynamic program is base slot 11's entry 0.
-  assert.deepEqual(Object.fromEntries([...battery].sort()), { 0: 6, 1: 7 });
-  assert.equal(firstOfSeveral, 13, 'the first battery program alone draws the look\'s icon');
+  assert.deepEqual(Object.fromEntries([...corner].sort()), { 0: 6, 1: 7 });
+  assert.equal(firstOfSeveral, 13, 'the first corner program alone draws the look\'s patch');
   // 83 device modes and 639 pages, every one checked against the chrome built for its configuration.
   assert.deepEqual([modes, pages], [83, 639]);
 });
@@ -174,8 +174,8 @@ test('section 330: the chrome check refuses a page, a look or a bottom word othe
   // The top bar placed one row lower.
   assert.throws(() => deviceModeChrome(withByte(pristine, topBar.start + 1 + 5, 16, 17)),
                 /queued program and top bar are not the ones built/);
-  // The queued battery program the next one.
-  assert.throws(() => deviceModeChrome(withByte(pristine, queued.start + 1, chrome.battery, chrome.battery + 1)),
+  // The queued corner program the next one.
+  assert.throws(() => deviceModeChrome(withByte(pristine, queued.start + 1, chrome.corner, chrome.corner + 1)),
                 /queued program and top bar are not the ones built/);
   // The bottom word a pixel right.
   assert.throws(() => deviceModeChrome(withByte(pristine, word.start + 1, 49, 50)), /bottom word is not 'Back'/);
@@ -310,7 +310,7 @@ test('section 330: the key map check refuses a device mode or an activity menu o
   })();
 
   // One device mode runs the next base slot 11 program under the program tag.
-  assert.throws(() => deviceModeKeyMap(withByte(pristine, entryAt(mode, 0x2d) + 1, chrome.battery, chrome.battery + 1), chrome),
+  assert.throws(() => deviceModeKeyMap(withByte(pristine, entryAt(mode, 0x2d) + 1, chrome.corner, chrome.corner + 1), chrome),
                 /key map entry \d+, tag 0x2d, is not the built one/);
   // One device mode maps the key under Devices through the other, identical, record.
   assert.throws(() => deviceModeKeyMap(withByte(pristine, entryAt(mode, 0x99) + 2, used, other), chrome),

@@ -7,7 +7,7 @@ import { u24 } from '../../bytes.ts';
 import { TWO_LINE_RISE } from '../../devicemode.ts';
 import { Writer } from '../../emit.ts';
 import {
-  batteryPrograms, bottomWord, builtChrome, DEVICE_PAGE_BACKGROUND_AT, DEVICE_PAGE_BOTTOM_BAR_AT, DEVICE_PAGE_LOOKS,
+  cornerPrograms, bottomWord, builtChrome, DEVICE_PAGE_BACKGROUND_AT, DEVICE_PAGE_BOTTOM_BAR_AT, DEVICE_PAGE_LOOKS,
   DEVICE_PAGE_TOP_BAR_AT, type DeviceModeChrome, deviceModeChrome, type DevicePageLook, DEVICES_KEY_TAG,
   FOUR_SLOT_PREFIX, FOUR_SLOT_SUFFIX_OPCODES, FOUR_SLOT_TITLE_XY, fourSlotCounterX, inlineHomes, MENU_BOTTOM_LINE_Y,
   MENU_TOP_LINE_Y, type PageChrome, picturesByContent, programDraws,
@@ -45,7 +45,7 @@ import { valueMaps } from '../../valuemap.ts';
 export interface FourSlotTemplate {
   /** The chrome around a page's middle, built: a device page's, or a working screen's since section 336. */
   chrome: PageChrome;
-  /** The device page chrome as built, whatever `chrome` is, for the key map's battery program. */
+  /** The device page chrome as built, whatever `chrome` is, for the key map's corner program. */
   device: DeviceModeChrome;
   titleFont: number;
   counterFont: number;
@@ -288,7 +288,7 @@ const NEW_PAGE_POINTED: ReadonlySet<string> = new Set(['title', 'bottom']);
  *
  * What is built, by kind, `fourSlotMenuChrome`: the background of a page holding one place, the device
  * mode pages' one item picture on a corner device list, the two row list's own picture, or the activity
- * menu's page of one activity, section 316; the queued battery program or none; the bars; the title and
+ * menu's page of one activity, section 316; the queued corner program or none; the bars; the title and
  * the bottom word, "Activities" on the idle device list, "Activity" on an activity's own and on the two
  * row list, section 294, and "Devices" on the activity menu; the counter at the kind's positions, in the
  * menu's own counter font or the caller's `counterDefault` where no page of the menu draws one; the item
@@ -527,7 +527,7 @@ function paginateFourSlot(
  * `todo-compile-650.md` 6.2.9. Until here a menu that grew took its new page's chrome off its own last
  * page, the instructions above the title and below the labels copied, and a page that grew from one item
  * to two took its background off one of the menu's full pages. Both are built now, the way section 330
- * built a device mode page's: the pictures by content per look, the queued program by the battery icon
+ * built a device mode page's: the pictures by content per look, the queued program by the corner patch
  * it draws, the title and the bottom word by the menu's kind, the counter and the labels by the rules
  * sections 285, 312 and 316 measured, and the page record as six bytes. Every page of every menu of the
  * thirteen compiles is then the built page, `checkFourSlotMenuPages`, and a grown or opened page is
@@ -648,7 +648,7 @@ export interface FourSlotMenuChrome {
   one: number | undefined;
   several: number | undefined;
   /** The base slot 11 entry the page queues with `0x73`, or undefined for a page queueing nothing. */
-  battery: number | undefined;
+  corner: number | undefined;
   topBar: number;
   bottomBar: number;
   title: string;
@@ -664,9 +664,9 @@ export interface FourSlotMenuChrome {
  *   page holding one device and the crossed one on a page holding more; a two row device list draws its
  *   look's `rows` picture on every page whatever it holds; the activity menu its look's
  *   `activitiesSingle` on a page holding one activity and `activitiesFull` on one holding two;
- * * **the queued program**: a corner device list queues the device mode pages' battery program; a two row
- *   device list queues nothing; the activity menu queues the battery program that draws its look's
- *   `activitiesBattery`, which is the second on the colour looks and the first on the monochrome one;
+ * * **the queued program**: a corner device list queues the device mode pages' corner program; a two row
+ *   device list queues nothing; the activity menu queues the corner program that draws its look's
+ *   `activitiesPatch`, which is the second on the colour looks and the first on the monochrome one;
  * * **the title and the bottom word** by the kind, `MENU_TITLE` and `MENU_BOTTOM_WORD`, the word in the
  *   bottom word font and centred, `bottomWord`;
  * * **the counter** at `TWO_ROW_COUNTER_X` on a two row device list and at `FOUR_SLOT_COUNTER_X` on every
@@ -683,26 +683,26 @@ export function fourSlotMenuChrome(c: Container, kind: FourSlotMenuKind): FourSl
   };
   let one: number | undefined;
   let several: number | undefined;
-  let battery: number | undefined;
+  let corner: number | undefined;
   if (kind === 'idle device list' || kind === 'activity device list') {
     one = device.single;
     several = device.crossed;
-    battery = device.battery;
+    corner = device.corner;
   } else if (kind === 'two row device list') {
     one = held(look.rows, 'two row list');
     several = one;
   } else {
     one = held(look.activitiesSingle, 'activity menu one activity');
     several = held(look.activitiesFull, 'activity menu');
-    const icons = pictures.get(look.activitiesBattery) ?? [];
-    const drawing = batteryPrograms(c).filter((index) => programDraws(c, index, icons));
+    const patches = pictures.get(look.activitiesPatch) ?? [];
+    const drawing = cornerPrograms(c).filter((index) => programDraws(c, index, patches));
     if (drawing.length !== 1) {
-      throw new ComposeError(`${drawing.length} battery programs draw ${look.name}'s activity menu battery icon, not one`);
+      throw new ComposeError(`${drawing.length} corner programs draw ${look.name}'s activity menu corner patch, not one`);
     }
-    battery = drawing[0];
+    corner = drawing[0];
   }
   return {
-    kind, look: look.name, one, several, battery,
+    kind, look: look.name, one, several, corner,
     topBar: device.topBar, bottomBar: device.bottomBar,
     ...fourSlotMenuWords(c, kind),
   };
@@ -805,7 +805,7 @@ export function menuPageParts(c: Container, chrome: FourSlotMenuChrome, page: Fo
     throw new ComposeError(`a ${chrome.kind} page holds no ${places} places`);
   }
   const parts: MenuPart[] = [{ op: 'image', address: background }];
-  if (chrome.battery !== undefined) parts.push({ op: 'queue', program: chrome.battery });
+  if (chrome.corner !== undefined) parts.push({ op: 'queue', program: chrome.corner });
   parts.push({ op: 'bar', at: DEVICE_PAGE_TOP_BAR_AT, address: chrome.topBar });
   let font: number | undefined;
   const select = (want: number): void => {

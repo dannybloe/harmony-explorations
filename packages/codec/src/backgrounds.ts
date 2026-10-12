@@ -17,8 +17,8 @@
  * state's picture by repointing the references its pages' programs make, and a reference shared by two
  * states is refused rather than given either colour.
  *
- * **The corner the battery icon sits in has to change with them.** A screen queues one of three battery
- * programs, each a switch on state variable 17 that draws the icon from 1 to 3 and at 0 a patch in the colour
+ * **The corner the sending mark sits in has to change with them.** A screen queues one of three corner
+ * programs, each a switch on state variable 17 that draws the sending mark from 1 to 3 and at 0 a patch in the colour
  * of the background under it, section 363; one program serves every device screen and the idle device list,
  * another the activity menu and every working screen. Two programs cannot paint three colours, so the
  * activity menu's program is copied for the idle state, its patch drawn in the idle colour, the copy given
@@ -37,7 +37,7 @@
  * words on them stay dark. Every other result here reads a bar by its content key, so this runs last, after
  * every composer and every screen generator.
  *
- * What is left as it was: the plain background, the start up picture, the corner icon and the
+ * What is left as it was: the plain background, the start up picture, the sending mark and the
  * firmware screens' pictures, which are not a state's (section 363's other rows). A designed background no
  * screen draws any more is dropped from the picture bank, so the result holds none of the five.
  *
@@ -76,7 +76,7 @@ export const DESIGNED_BACKGROUNDS: readonly string[] = [
   'device page crossed', 'device page of one item', 'activity menu of two', 'activity menu of one', 'working screen crossed',
 ];
 const DEVICE_BACKGROUNDS = new Set(['device page crossed', 'device page of one item']);
-/** The patches a battery program draws at 0, which take the colour of the background under them. */
+/** The patches a corner program draws at 0, which take the colour of the background under them. */
 const STATE_PATCHES = new Set(['corner patch, grey', 'corner patch, red']);
 
 /**
@@ -99,7 +99,7 @@ const flat = (width: number, height: number, colour: number): Uint8Array =>
 /** A state's background, the whole screen in its colour, encoded. */
 export const stateBackgroundBytes = (colour: number): Uint8Array => flat(BACKGROUND_SIZE, BACKGROUND_SIZE, colour);
 
-/** A state's battery corner patch, the 12 by 10 a battery program draws at 114, 112, in its colour, encoded. */
+/** A state's corner patch, the 12 by 10 a corner program draws at 114, 112, in its colour, encoded. */
 export const statePatchBytes = (colour: number): Uint8Array => flat(PATCH_WIDTH, PATCH_HEIGHT, colour);
 
 /**
@@ -174,7 +174,7 @@ function freeLowProgram(c: Container, count: number): number {
   const bytes = c.blob;
   for (let k = 0; k + 2 < bytes.length; k++) if (bytes[k + 1] === 0 && bytes[k + 2] === RUN_SCREEN_PROGRAM) named.add(bytes[k]!);
   for (let i = 0; i < Math.min(count, RUNNABLE_SCREEN_PROGRAMS); i++) if (!named.has(i)) return i;
-  throw new BackgroundError('no base slot 11 entry below 256 is free for the idle battery program');
+  throw new BackgroundError('no base slot 11 entry below 256 is free for the idle corner program');
 }
 
 /** Every piece of a layout, in the order `takeApart` keeps them. */
@@ -251,7 +251,7 @@ function pictureFields(c: Container, roots: readonly number[]): { name: string |
 }
 
 /** The base slot 11 entries a mode's own key map queues under the program tag. */
-function batteryOperands(c: Container, mode: number): number[] {
+function cornerOperands(c: Container, mode: number): number[] {
   return (modeRecords(c)?.[mode]?.entries ?? []).filter((one) => one.tag === DEVICE_MODE_PROGRAM_TAG).map((one) => one.operand);
 }
 
@@ -260,7 +260,7 @@ function batteryOperands(c: Container, mode: number): number[] {
  * result as it reads Logitech's. The idle device list and the activity menu are idle; every other mode the
  * structural readers call a device's or a device list is device mode; and the modes the working screen
  * record enters, one per activity (`activityKeyedRecords`), are activity screens, and so is any other mode
- * queuing their battery program. On the 7.5 file those are the same five modes that draw Logitech's working
+ * queuing their corner program. On the 7.5 file those are the same five modes that draw Logitech's working
  * backgrounds.
  */
 export function screenStates(c: Container, layout: ContainerLayout): Map<number, ScreenState> {
@@ -286,13 +286,13 @@ export function screenStates(c: Container, layout: ContainerLayout): Map<number,
   });
   // An activity's further screens, such as its favourite channels page whose corner item "Commands" leads to
   // the working screen, are entered from it rather than by the record. They queue the working screens'
-  // battery program, which on the 13 compiles only an activity's screens and the activity menu queue, and
+  // corner program, which on the 13 compiles only an activity's screens and the activity menu queue, and
   // the activity menu is idle above, before this pass: the device screens queue their own and every other
   // screen the plain one. Five modes over the 13, all favourite channel pages.
-  const activityBatteries = new Set([...working].flatMap((mode) => batteryOperands(c, mode)));
+  const activityBatteries = new Set([...working].flatMap((mode) => cornerOperands(c, mode)));
   records.forEach((_record, mode) => {
     if (states.has(mode) || mode === special.off) return;
-    if (batteryOperands(c, mode).some((index) => activityBatteries.has(index))) states.set(mode, 'activity');
+    if (cornerOperands(c, mode).some((index) => activityBatteries.has(index))) states.set(mode, 'activity');
   });
   for (const mode of working) {
     if (records[mode] === undefined) throw new BackgroundError(`the working screen record enters mode ${mode}, which does not exist`);
@@ -324,14 +324,14 @@ export interface StateBackgrounds {
   layout: ContainerLayout;
   /** Per state, the modes given its background. */
   modes: Record<ScreenState, number[]>;
-  /** The base slot 11 entry the idle battery program was given, below 256 and named by nothing before. */
-  idleBattery: number;
+  /** The base slot 11 entry the idle corner program was given, below 256 and named by nothing before. */
+  idleCorner: number;
   /** Designed backgrounds dropped from the bank, by name. */
   dropped: string[];
 }
 
 /**
- * The layout with every screen of a state drawn over that state's colour, its battery corner patched in the
+ * The layout with every screen of a state drawn over that state's colour, its corner patched in the
  * same colour, and the designed backgrounds gone. `layout` is a `takeApart` of a Harmony 650 configuration
  * and is left as it was.
  */
@@ -344,25 +344,25 @@ export function withStateBackgrounds(layout: ContainerLayout, colours: Readonly<
   const patches = Object.fromEntries(SCREEN_STATES.map((state) =>
     [state, { bytes: statePatchBytes(colours[state]), refs: [] } as ContainerPiece])) as Record<ScreenState, ContainerPiece>;
 
-  // 1. The idle battery program: the activity menu's, its switch and its patch case copied, the patch the
-  // idle one, appended to base slot 11's table. The icon case and the shared tail are named, not copied.
+  // 1. The idle corner program: the activity menu's, its switch and its patch case copied, the patch the
+  // idle one, appended to base slot 11's table. The mark case and the shared tail are named, not copied.
   let step = fresh(layout);
   step.pictures = [...step.pictures, ...SCREEN_STATES.map((state) => backgrounds[state]), ...SCREEN_STATES.map((state) => patches[state])];
   let { c, at } = fieldLocator(step);
   const special = screenRecordModes(c, step);
-  const [menuBattery] = batteryOperands(c, special['activity menu']);
+  const [menuCorner] = cornerOperands(c, special['activity menu']);
   const slot = archSlot(14, SCREEN_TABLE_SLOT);
   const tableAt = c.pointerArrayAt(slot);
   const table = tableAt?.values;
-  if (menuBattery === undefined || table?.[menuBattery] === undefined || tableAt?.width !== 2) {
-    throw new BackgroundError('the activity menu queues no battery program this reads');
+  if (menuCorner === undefined || table?.[menuCorner] === undefined || tableAt?.width !== 2) {
+    throw new BackgroundError('the activity menu queues no corner program this reads');
   }
-  const root = at(table[menuBattery] - c.flashBase);
-  if (root.at !== 0) throw new BackgroundError('the battery program does not start a piece');
-  const patchFields = pictureFields(c, [table[menuBattery]]).filter((one) => one.name !== undefined && STATE_PATCHES.has(one.name));
-  if (patchFields.length !== 1) throw new BackgroundError(`the activity menu's battery program draws ${patchFields.length} state patches`);
+  const root = at(table[menuCorner] - c.flashBase);
+  if (root.at !== 0) throw new BackgroundError('the corner program does not start a piece');
+  const patchFields = pictureFields(c, [table[menuCorner]]).filter((one) => one.name !== undefined && STATE_PATCHES.has(one.name));
+  if (patchFields.length !== 1) throw new BackgroundError(`the activity menu's corner program draws ${patchFields.length} state patches`);
   const patchCase = at((patchFields[0] as { field: number }).field);
-  if (patchCase.piece === root.piece) throw new BackgroundError('the battery program draws its patch in its own first piece');
+  if (patchCase.piece === root.piece) throw new BackgroundError('the corner program draws its patch in its own first piece');
   const caseCopy: ContainerPiece = {
     bytes: Uint8Array.from(patchCase.piece.bytes),
     refs: patchCase.piece.refs.map((ref) => (ref.at === patchCase.at ? { at: ref.at, to: patches.idle, offset: 0 } : { ...ref })),
@@ -371,12 +371,12 @@ export function withStateBackgrounds(layout: ContainerLayout, colours: Readonly<
     bytes: Uint8Array.from(root.piece.bytes),
     refs: root.piece.refs.map((ref) => ('to' in ref && ref.to === patchCase.piece ? { ...ref, to: caseCopy } : { ...ref })),
   };
-  if (!switchCopy.refs.some((ref) => 'to' in ref && ref.to === caseCopy)) throw new BackgroundError('the battery switch does not name its patch case');
+  if (!switchCopy.refs.some((ref) => 'to' in ref && ref.to === caseCopy)) throw new BackgroundError('the corner program\'s switch does not name its patch case');
   const tablePiece = step.sections[slot]?.head[0];
   if (tablePiece === undefined) throw new BackgroundError('base slot 11 has no table');
-  const idleBattery = freeLowProgram(c, table.length);
-  const entryRef = tablePiece.refs.find((ref) => ref.at === 2 + 3 * idleBattery);
-  if (entryRef === undefined || !('to' in entryRef)) throw new BackgroundError(`base slot 11 entry ${idleBattery} is not a reference`);
+  const idleCorner = freeLowProgram(c, table.length);
+  const entryRef = tablePiece.refs.find((ref) => ref.at === 2 + 3 * idleCorner);
+  if (entryRef === undefined || !('to' in entryRef)) throw new BackgroundError(`base slot 11 entry ${idleCorner} is not a reference`);
   const index = tablePiece.refs.indexOf(entryRef);
   tablePiece.refs[index] = { at: entryRef.at, to: switchCopy, offset: 0 };
   step.body = [...step.body, switchCopy, caseCopy];
@@ -385,7 +385,7 @@ export function withStateBackgrounds(layout: ContainerLayout, colours: Readonly<
   ({ c } = fieldLocator(step));
   const records = describeScreenRecords(c, step);
   for (const menu of [records.spec.idle, records.spec.menu]) {
-    menu.battery = idleBattery;
+    menu.corner = idleCorner;
     if (menu.pictures.one !== undefined) menu.pictures.one = { to: backgrounds.idle, offset: 0 };
     if (menu.pictures.several !== undefined) menu.pictures.several = { to: backgrounds.idle, offset: 0 };
   }
@@ -400,7 +400,7 @@ export function withStateBackgrounds(layout: ContainerLayout, colours: Readonly<
     patches[state] = step.pictures[firstNew + SCREEN_STATES.length + k] as ContainerPiece;
   });
 
-  // 3. Every other screen of a state over its colour, and the two shared battery programs' patches. The
+  // 3. Every other screen of a state over its colour, and the two shared corner programs' patches. The
   // layout is this function's own since step 1, so its pieces are changed in place, and the new pictures
   // keep their identity for the references made below.
   ({ c, at } = fieldLocator(step));
@@ -422,16 +422,16 @@ export function withStateBackgrounds(layout: ContainerLayout, colours: Readonly<
     for (const one of pictureFields(c, (records2[mode]?.pages ?? []).map((page) => page.program))) {
       if (one.name !== undefined && DESIGNED_BACKGROUNDS.includes(one.name)) give(one.field, state, `mode ${mode}'s background`);
     }
-    for (const index of batteryOperands(c, mode)) {
+    for (const index of cornerOperands(c, mode)) {
       const before = batteries.get(index);
-      if (before !== undefined && before !== state) throw new BackgroundError(`battery program ${index} serves a ${before} and a ${state} screen`);
+      if (before !== undefined && before !== state) throw new BackgroundError(`corner program ${index} serves a ${before} and a ${state} screen`);
       batteries.set(index, state);
     }
   }
   const table2 = c.pointerArray(slot) ?? [];
   for (const [index, state] of batteries) {
     for (const one of pictureFields(c, [table2[index] as number])) {
-      if (one.name !== undefined && STATE_PATCHES.has(one.name)) give(one.field, state, `battery program ${index}'s patch`);
+      if (one.name !== undefined && STATE_PATCHES.has(one.name)) give(one.field, state, `corner program ${index}'s patch`);
     }
   }
   for (const [piece, byAt] of given) {
@@ -469,7 +469,7 @@ export function withStateBackgrounds(layout: ContainerLayout, colours: Readonly<
     bars += 1;
   }
   if (bars !== 2) throw new BackgroundError(`the bank holds ${bars} of the two bars`);
-  return { layout: step, modes, idleBattery, dropped };
+  return { layout: step, modes, idleCorner, dropped };
 }
 
 function rgbCheck(colour: number, state: ScreenState): void {
@@ -491,11 +491,11 @@ export interface StateBackgroundsChecked {
 /**
  * Read a configuration back and check it the way a person would look at it: every page of a mode with a
  * state draws exactly one whole screen background besides the bottom bar and it is that state's colour
- * throughout, the battery program its key map queues patches the corner in the same colour, and every
+ * throughout, the corner program its key map queues patches the corner in the same colour, and every
  * program its pages queue is one its key map names. The colours are read from pixels, not from pieces.
  * **Which modes are checked is not independent of the builder**: both take it from `screenStates`, whose
- * second pass reads an activity's further screens off their battery program, so a favourite channels page
- * moved to the device program would leave the check unseen. The 13 device modes with no battery program,
+ * second pass reads an activity's further screens off their corner program, so a favourite channels page
+ * moved to the device program would leave the check unseen. The 13 device modes with no corner program,
  * the two row device list of each compile, have no corner to check. Logitech's shaded bars are refused in the
  * bank, the bars being made flat.
  */
@@ -541,9 +541,9 @@ export function checkStateBackgrounds(c: Container, layout: ContainerLayout,
       if (backgrounds !== 1) throw new BackgroundError(`mode ${mode}, a ${state} screen, draws ${backgrounds} backgrounds on page ${k}`);
       pictures += 1;
     });
-    // A page's own program queues the battery program again, which the record's rebuild has to have
+    // A page's own program queues the corner program again, which the record's rebuild has to have
     // changed as well: every program a page queues has to be one its mode's key map names.
-    const named = new Set(batteryOperands(c, mode));
+    const named = new Set(cornerOperands(c, mode));
     for (const page of record?.pages ?? []) {
       for (const program of reachablePrograms(c, [page.program]).values()) {
         for (const instruction of program) {
@@ -553,7 +553,7 @@ export function checkStateBackgrounds(c: Container, layout: ContainerLayout,
         }
       }
     }
-    for (const index of batteryOperands(c, mode)) {
+    for (const index of cornerOperands(c, mode)) {
       // The firmware runs entry `index & 0xff`, section 369, so a higher entry runs some other program.
       if (index >= RUNNABLE_SCREEN_PROGRAMS) throw new BackgroundError(`mode ${mode} queues base slot 11 entry ${index}, which the firmware runs as entry ${index & 0xff}`);
       const address = table[index];
@@ -567,13 +567,13 @@ export function checkStateBackgrounds(c: Container, layout: ContainerLayout,
           // and ours alike, `todo-compile-650.md` 9.1.2.2, so its shape tells the two apart and not its bytes.
           if (picture === undefined || b?.stride !== PATCH_WIDTH || b.rows !== PATCH_HEIGHT || b.kind === BITMAP_ENCODED) continue;
           if (!flatIn(picture, colours[state], PATCH_WIDTH, PATCH_HEIGHT)) {
-            throw new BackgroundError(`mode ${mode}, a ${state} screen, patches its battery corner in another colour`);
+            throw new BackgroundError(`mode ${mode}, a ${state} screen, patches its corner in another colour`);
           }
           patched += 1;
           pictures += 1;
         }
       }
-      if (patched !== 1) throw new BackgroundError(`mode ${mode}'s battery program draws ${patched} patches`);
+      if (patched !== 1) throw new BackgroundError(`mode ${mode}'s corner program draws ${patched} patches`);
     }
   }
   for (const name of [...DESIGNED_BACKGROUNDS, 'top bar', 'bottom bar']) {

@@ -181,7 +181,7 @@ const DEVICE_LIST_POINTED: ReadonlySet<string> = new Set(['title', 'counter', 'l
  * * **each row runs a list of its own**, `deviceListRowBody`, and the page's pool copy another, as the
  *   compiler writes them, section 285;
  * * **the record's two entries are built**: the centre key mapped through `deviceListCentreKeyOperand`'s
- *   record, and the program tag running the device pages' battery program, `fourSlotMenuChrome`, stored
+ *   record, and the program tag running the device pages' corner program, `fourSlotMenuChrome`, stored
  *   in `compilerTagOrder`'s order;
  * * **the pages are `menuPageParts`'**, section 334: background, queued program, bars, title, counter,
  *   the labels at their places and the bottom word "Activity" spelled in the title's size, `bottomWord`,
@@ -238,12 +238,12 @@ function builtActivityDeviceList(
   const pages = Array.from({ length: Math.ceil(order.length / perPage) }, (_, p) => order.slice(p * perPage, (p + 1) * perPage));
   const firstContent = idleContents[0];
   if (firstContent === undefined) throw new ComposeError('the idle device list has no page');
-  if (chrome.battery === undefined) throw new ComposeError('a corner device list queues no battery program here');
-  const battery = chrome.battery;
+  if (chrome.corner === undefined) throw new ComposeError('a corner device list queues no corner program here');
+  const corner = chrome.corner;
   const centre = deviceListCentreKeyOperand(c, starts);
   const entries = compilerTagOrder([DEVICES_KEY_TAG, DEVICE_MODE_PROGRAM_TAG]).map((tag): KeyMapEntry => (tag === DEVICES_KEY_TAG
     ? { tag, operand: centre, opcode: MAP_VALUE_OPCODE }
-    : { tag, operand: battery, opcode: RUN_SCREEN_PROGRAM }));
+    : { tag, operand: corner, opcode: RUN_SCREEN_PROGRAM }));
   const contents = pages.map((modes, p): FourSlotMenuPageContent => ({
     number: p + 1, total: pages.length, titleFont: firstContent.titleFont, counterFont: firstContent.counterFont,
     labels: modes.map((mode) => labelOf.get(mode) as FourSlotMenuLabel),

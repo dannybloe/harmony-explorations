@@ -4,7 +4,7 @@
  * Three claims. The colours are the ones decided, in the panel's own form. Which state a screen is in is
  * read by structure, and on Logitech's 13 compiles the device and activity states agree with the grey and
  * red looks Logitech draws on every page, which is the closure: the state comes from the mode table, the
- * working screen record and the battery programs, the look from the page's own program; the idle pages
+ * working screen record and the corner programs, the look from the page's own program; the idle pages
  * draw both looks, so no picture of Logitech's shows that state. And `withStateBackgrounds` gives every
  * state its colour on all 13 with the setup unchanged, which `checkStateBackgrounds` reads back from pixels.
  */
@@ -107,9 +107,9 @@ test('withStateBackgrounds gives every state its colour on all 13 compiles and c
     totals.pictures += checked.pictures;
     totals.dropped += made.dropped.length;
     // A free entry below 256 taken over, section 369, the table keeping its length.
-    assert.ok(made.idleBattery < 256, `${name}: the idle battery program is entry ${made.idleBattery}`);
+    assert.ok(made.idleCorner < 256, `${name}: the idle corner program is entry ${made.idleCorner}`);
     assert.equal((out.pointerArray(11) ?? []).length, (original.pointerArray(11) ?? []).length, `${name}: base slot 11 changed length`);
-    entries.push(made.idleBattery);
+    entries.push(made.idleCorner);
   }
   assert.deepEqual(totals, { device: 153, activity: 58, idle: 26, pictures: 1158, dropped: 82 });
   // The lowest entry no `lo 00 0x73` names, per compile in `H650`'s order: 5 on ten, 6 on two, 7 on one.
@@ -132,14 +132,14 @@ test('the check refuses Logitech\'s own backgrounds, a state in another colour, 
   patch.bytes[5] = 0;
   patch.bytes[6] = 0;
   const oddOut = parse(layOutContainer(odd.layout).bytes);
-  assert.throws(() => checkStateBackgrounds(oddOut, takeApart(parse(oddOut.blob)), FOUR_SLOT_CHOICES.stateColours), /patches its battery corner/);
-  // One idle page's own program put back on the activity battery program, its mode's key map unchanged.
+  assert.throws(() => checkStateBackgrounds(oddOut, takeApart(parse(oddOut.blob)), FOUR_SLOT_CHOICES.stateColours), /patches its corner/);
+  // One idle page's own program put back on the activity corner program, its mode's key map unchanged.
   const blob = Uint8Array.from(made.blob);
   const c = parse(blob);
   const idle = screenRecordModes(c, takeApart(parse(made.blob)))['activity menu'];
   const queue = [...reachablePrograms(c, [(modeRecords(c)?.[idle]?.pages[0] as { program: number }).program]).values()]
     .flat().find((one) => one.opcode === 17 && one.operands[2] === 0x73);
-  assert.ok(queue !== undefined, 'the activity menu\'s first page queues its battery program');
+  assert.ok(queue !== undefined, 'the activity menu\'s first page queues its corner program');
   blob[queue.start + 1] = 2;
   blob[queue.start + 2] = 0;
   assert.throws(() => checkStateBackgrounds(parse(blob), takeApart(parse(made.blob)), FOUR_SLOT_CHOICES.stateColours), /a page queuing program 2/);

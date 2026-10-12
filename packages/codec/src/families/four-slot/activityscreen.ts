@@ -459,7 +459,7 @@ export interface ActivityScreenChrome {
   startupKeyMap: KeyMapEntry[];
   /** A working screen page's chrome: a device page's with its own two backgrounds, program and word. */
   working: PageFrame;
-  /** A working screen's own key map: the key under Devices, and the program tag running `working.battery`. */
+  /** A working screen's own key map: the key under Devices, and the program tag running `working.corner`. */
   workingKeyMap: KeyMapEntry[];
   /**
    * The device list the key under Devices opens while no activity runs, which is the list a composed
@@ -514,7 +514,7 @@ function startupPictureIn(look: DevicePageLook, pictures: Map<string, number[]>)
  *   `compilerTagOrder`'s order, and its one page binds nothing;
  * * **the working screen** is a device mode page's chrome, `deviceModeChrome`, with three differences:
  *   the backgrounds, the activity menu's page of one activity for a page of one command or none and the
- *   look's `workingSeveral` for more; the queued program, the activity menu's battery program,
+ *   look's `workingSeveral` for more; the queued program, the activity menu's corner program,
  *   `fourSlotMenuChrome`; and the word, "Devices", in the bottom word font and centred, `bottomWord`. Its
  *   record maps the key under Devices as a device mode does, `devicesKeyOperand`, and runs the queued
  *   program under the program tag;
@@ -542,8 +542,8 @@ export function activityScreenChrome(c: Container): ActivityScreenChrome {
     return found[0];
   };
   const startupPicture = startupPictureIn(look, pictures);
-  if (menu.battery === undefined) throw new ComposeError('the activity menu queues no battery program');
-  const battery = menu.battery;
+  if (menu.corner === undefined) throw new ComposeError('the activity menu queues no corner program');
+  const corner = menu.corner;
   const word = bottomWord(c, WORKING_SCREEN_WORD);
   const starts = arch14Starts(c);
   const press = (scan: number): number => (KEY_EVENT_PRESS << KEY_EVENT_SHIFT) | scan;
@@ -558,13 +558,13 @@ export function activityScreenChrome(c: Container): ActivityScreenChrome {
       look: look.name,
       single: held(look.activitiesSingle, 'working screen one command'),
       crossed: held(look.workingSeveral, 'working screen'),
-      topBar: device.topBar, bottomBar: device.bottomBar, battery,
+      topBar: device.topBar, bottomBar: device.bottomBar, corner,
       word: WORKING_SCREEN_WORD, backFont: word.font, backCodes: word.codes, backX: word.x,
       backHome: inlineHomes(c).get(word.codes.join(',')),
     },
     workingKeyMap: compilerTagOrder([DEVICES_KEY_TAG, DEVICE_MODE_PROGRAM_TAG]).map((tag) => (tag === DEVICES_KEY_TAG
       ? { tag, operand: devicesKey, opcode: MAP_VALUE_OPCODE }
-      : { tag, operand: battery, opcode: RUN_SCREEN_PROGRAM })),
+      : { tag, operand: corner, opcode: RUN_SCREEN_PROGRAM })),
     idleList: idleDeviceList(c),
   };
   checkActivityScreensWith(c, chrome, starts);

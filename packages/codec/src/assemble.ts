@@ -118,7 +118,7 @@ import { activityPauseGroups, composeSequence } from './sequence.ts';
 import { FOUR_SLOT } from './families/four-slot/index.ts';
 import { type FourSlotChoices, type FourSlotChoicesGiven, fourSlotChoices } from './families/four-slot/choices.ts';
 import { checkStateBackgrounds, ourPictureName, withStateBackgrounds } from './backgrounds.ts';
-import { batteryPrograms } from './families/four-slot/chrome.ts';
+import { cornerPrograms } from './families/four-slot/chrome.ts';
 import { cornerProgramAt } from './families/four-slot/empty.ts';
 import { caseProgram } from './families/four-slot/activityscreen.ts';
 import { valueMaps } from './valuemap.ts';
@@ -1049,7 +1049,7 @@ export function attributeBytes(c: Container): AttributedBytes {
   // The corner programs every menu and device page queues, each read as `cornerProgram` builds it, its
   // three pieces whole, section 374's shape, which every compile's 70 hold.
   const screenTable = c.pointerArray(archSlot(14, SCREEN_TABLE_SLOT)) ?? [];
-  for (const index of batteryPrograms(c)) {
+  for (const index of cornerPrograms(c)) {
     const root = screenTable[index];
     for (const one of (root === undefined ? undefined : cornerProgramAt(c, root)) ?? []) mark(one.at, one.length, 'corner programs');
   }

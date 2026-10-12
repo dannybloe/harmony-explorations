@@ -84,7 +84,7 @@ test('section 334: the program each kind of menu queues, the two row picture on 
     const menu = fourSlotMenuChrome(c, 'activity menu');
     const corners = fourSlotMenuChrome(c, 'idle device list');
     const rows = fourSlotMenuChrome(c, 'two row device list');
-    note(`${menu.look}: activity menu queues ${menu.battery} where device pages queue ${device.battery}`);
+    note(`${menu.look}: activity menu queues ${menu.corner} where device pages queue ${device.corner}`);
     // A page opens with its background and then, where it queues one, `0x11 lo hi 0x73`.
     const opening = (kind: string): { picture: number | undefined; queued: number | undefined }[] =>
       fourSlotMenus(c).filter((one) => one.kind === kind).flatMap(({ menu }) =>
@@ -97,10 +97,10 @@ test('section 334: the program each kind of menu queues, the two row picture on 
           };
         }));
     const cornerPages = [...opening('idle device list'), ...opening('activity device list')];
-    note(`corner list pages queue the device pages' program: ${corners.battery === device.battery
-      && cornerPages.every((page) => page.queued === device.battery)}`);
+    note(`corner list pages queue the device pages' program: ${corners.corner === device.corner
+      && cornerPages.every((page) => page.queued === device.corner)}`);
     const rowPages = opening('two row device list');
-    note(`two row list pages queue nothing: ${rows.battery === undefined && rowPages.every((page) => page.queued === undefined)}, `
+    note(`two row list pages queue nothing: ${rows.corner === undefined && rowPages.every((page) => page.queued === undefined)}, `
       + `draw one picture: ${rowPages.every((page) => page.picture === rows.one)}`);
     const working = activityMenuSingle(c);
     note(`one activity picture ${menu.one === undefined ? 'not held' : 'held'}, working screens' route `

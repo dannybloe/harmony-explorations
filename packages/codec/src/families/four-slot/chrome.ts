@@ -1,5 +1,5 @@
 /**
- * The four slot screens' chrome on the Harmony 600, 650 and 700: the bars, the battery corner, the title,
+ * The four slot screens' chrome on the Harmony 600, 650 and 700: the bars, the corner, the title,
  * the counter and the bottom word, the corner labels' lines, and a device mode's key map, built and
  * checked against the configuration's own pages. Plan 007's four slot family, cut out of `compose.ts`
  * unchanged.
@@ -237,12 +237,12 @@ export interface DevicePageLook {
   /** The bar along the top, 128 by 16, and the one along the bottom, drawn over the whole screen. */
   topBar: string;
   bottomBar: string;
-  /** The battery icon the queued program draws first, which is what ties that program to this look. */
-  battery: string;
+  /** The corner patch the queued program draws first, which is what ties that program to this look. */
+  cornerPatch: string;
   /**
    * The menus' own pictures, section 334, `todo-compile-650.md` 6.2.9: the background every page of the
    * two row device list draws, whatever it holds; the activity menu's background on a page holding two
-   * activities and on one holding one; and the battery icon the program the activity menu queues draws.
+   * activities and on one holding one; and the corner patch the program the activity menu queues draws.
    * Measured on the thirteen compiles: the two row list's on all 43 pages of its 13 lists, whether they
    * hold one device or two, the activity menu's full page on all 18 of its pages holding two, and its
    * page of one activity on the 4 there are,
@@ -251,13 +251,13 @@ export interface DevicePageLook {
    * own working screens draw too. A look's menu pictures need not all be held: a configuration holds a
    * picture only where one of its programs draws it, so one whose programs draw no page of one activity,
    * neither a menu page nor an activity's working screen, has no such picture and a page needing it is
-   * refused. Some pictures are drawn only by programs no mode page reaches, the battery icons among
+   * refused. Some pictures are drawn only by programs no mode page reaches, the corner patches among
    * them, which is why it is programs and not pages.
    */
   rows: string;
   activitiesFull: string;
   activitiesSingle: string;
-  activitiesBattery: string;
+  activitiesPatch: string;
   /**
    * An activity's own two screens, section 336, `todo-compile-650.md` 6.2.10: the picture every start up
    * screen draws, one per look and the same for every activity, 40 of 40 on the thirteen compiles, and
@@ -275,23 +275,23 @@ export const DEVICE_PAGE_LOOKS: readonly DevicePageLook[] = [
   {
     name: 'the colour look of 2026', skins: [66, 72],
     single: '0061c06666b425f1', crossed: '45888f139bd13f9c',
-    topBar: 'e247f3ff422472de', bottomBar: '9e81b982b33e2ff5', battery: 'c7d320f981025b68',
+    topBar: 'e247f3ff422472de', bottomBar: '9e81b982b33e2ff5', cornerPatch: 'c7d320f981025b68',
     rows: '45888f139bd13f9c', activitiesFull: '711cbbb1a44ca656', activitiesSingle: '21bc4747e696eba8',
-    activitiesBattery: '4c42bdc959b5ad48', startup: 'a2368d93e91ee138', workingSeveral: 'a0d49b45e9df025c',
+    activitiesPatch: '4c42bdc959b5ad48', startup: 'a2368d93e91ee138', workingSeveral: 'a0d49b45e9df025c',
   },
   {
     name: 'the colour look of 2021 and 2023', skins: [66],
     single: 'fb5f49a2ee63c0f9', crossed: '59a6f04d6ba0e90a',
-    topBar: 'e247f3ff422472de', bottomBar: '564e0ea2da45a0fd', battery: '6a7beeb149ddb000',
+    topBar: 'e247f3ff422472de', bottomBar: '564e0ea2da45a0fd', cornerPatch: '6a7beeb149ddb000',
     rows: '59a6f04d6ba0e90a', activitiesFull: '6ed840035d2f19ba', activitiesSingle: 'adc399032d1d41b0',
-    activitiesBattery: '4c42bdc959b5ad48', startup: 'a56cda25b2f115a2', workingSeveral: '5d94a9eb5d7de1de',
+    activitiesPatch: '4c42bdc959b5ad48', startup: 'a56cda25b2f115a2', workingSeveral: '5d94a9eb5d7de1de',
   },
   {
     name: 'the monochrome look', skins: [71, 73],
     single: 'b632fecee357d2c7', crossed: '7e1f839276f704c9',
-    topBar: 'e247f3ff422472de', bottomBar: '564e0ea2da45a0fd', battery: '6a7beeb149ddb000',
+    topBar: 'e247f3ff422472de', bottomBar: '564e0ea2da45a0fd', cornerPatch: '6a7beeb149ddb000',
     rows: 'c442f1b3a81999ec', activitiesFull: '18a044e60240cbd1', activitiesSingle: 'fb5f49a2ee63c0f9',
-    activitiesBattery: '6a7beeb149ddb000', startup: 'a56cda25b2f115a2', workingSeveral: '59a6f04d6ba0e90a',
+    activitiesPatch: '6a7beeb149ddb000', startup: 'a56cda25b2f115a2', workingSeveral: '59a6f04d6ba0e90a',
   },
 ];
 
@@ -311,8 +311,8 @@ export const DEVICE_PAGE_BACK_Y = 114;
 /** The bottom word: what the key under the display's centre does on a device page, go back. */
 export const DEVICE_PAGE_BACK_WORD = 'Back';
 
-/** The firmware's state variable 17, which the battery programs switch on: the sending flag, section 369, which section 317 read as the battery. */
-export const BATTERY_STATE_VARIABLE = 17;
+/** The firmware's state variable 17, which the corner programs switch on: the sending flag, section 369, which section 317 read as the corner. */
+export const SENDING_FLAG_VARIABLE = 17;
 
 /**
  * The chrome a four slot page draws around its middle, every piece built or located: the background by
@@ -332,7 +332,7 @@ export interface PageFrame {
   topBar: number;
   bottomBar: number;
   /** The base slot 11 entry the page queues, `0x73`, and the mode's key map runs under tag `0x2D`. */
-  battery: number;
+  corner: number;
   /** The bottom word: the word, its font, its glyph codes there, its x, and the address of an inline copy to point at. */
   word: string;
   backFont: number;
@@ -369,32 +369,32 @@ export function picturesByContent(c: Container): Map<string, number[]> {
 }
 
 /**
- * The battery program a device page queues: **the first base slot 11 entry that no base slot 14 case
+ * The corner program a device page queues: **the first base slot 11 entry that no base slot 14 case
  * names and that opens with a switch on the firmware's state variable 17**. There are two such programs
  * on the Harmony 600's compiles and three on the others', and every device mode page queues the first,
  * 639 pages of 639 on the 13 compiles; a page of another mode queues one of them or none. No base slot
  * 14 case names any such program on those compiles, so that half of the rule excludes nothing there and
  * is kept because a program a case names is run by a value, not queued by a page. Its index is the
  * configuration's own, 1 on seven compiles and 0 on the six power hold ones. The rule is an order and
- * the check is the picture: the program found has to draw the look's battery icon, which is a closure
+ * the check is the picture: the program found has to draw the look's corner patch, which is a closure
  * between base slot 11's order and the picture bank's content.
  */
-function batteryProgram(c: Container, look: DevicePageLook, pictures: Map<string, number[]>): number {
-  const index = batteryPrograms(c)[0];
-  if (index === undefined) throw new ComposeError('no base slot 11 program switches on the battery, so a device page has nothing to queue');
-  if (!programDraws(c, index, pictures.get(look.battery) ?? [])) {
-    throw new ComposeError(`base slot 11 entry ${index}, the first battery program, does not draw ${look.name}'s battery icon`);
+function deviceCornerProgram(c: Container, look: DevicePageLook, pictures: Map<string, number[]>): number {
+  const index = cornerPrograms(c)[0];
+  if (index === undefined) throw new ComposeError('no base slot 11 program switches on the sending flag, so a device page has nothing to queue');
+  if (!programDraws(c, index, pictures.get(look.cornerPatch) ?? [])) {
+    throw new ComposeError(`base slot 11 entry ${index}, the first corner program, does not draw ${look.name}'s corner patch`);
   }
   return index;
 }
 
 /**
- * Every base slot 11 entry that no base slot 14 case names and that opens with a switch on the battery,
+ * Every base slot 11 entry that no base slot 14 case names and that opens with a switch on the sending flag,
  * state variable 17, in table order: two on the Harmony 600's compiles and three on the others', each
- * drawing one common picture and one battery icon of its own, section 334. `batteryProgram` takes the
- * first and the activity menu's queued program is the one drawing its look's `activitiesBattery`.
+ * drawing one common picture and one corner patch of its own, section 334. `deviceCornerProgram` takes the
+ * first and the activity menu's queued program is the one drawing its look's `activitiesPatch`.
  */
-export function batteryPrograms(c: Container): number[] {
+export function cornerPrograms(c: Container): number[] {
   const table = c.pointerArray(archSlot(c.architecture as number, SCREEN_TABLE_SLOT)) ?? [];
   const named = new Set<number>();
   for (const map of valueMaps(c) ?? []) {
@@ -405,7 +405,7 @@ export function batteryPrograms(c: Container): number[] {
   table.forEach((address, index) => {
     if (named.has(address)) return;
     const first = screenProgram(c, address)?.[0];
-    if (first?.opcode === SCREEN_SWITCH_NARROW && first.operands[0] === BATTERY_STATE_VARIABLE) out.push(index);
+    if (first?.opcode === SCREEN_SWITCH_NARROW && first.operands[0] === SENDING_FLAG_VARIABLE) out.push(index);
   });
   return out;
 }
@@ -490,13 +490,13 @@ export function holdsLogitechLook(c: Container): boolean {
   const skin = (c.versionWord ?? -1) & 0xff;
   const pictures = picturesByContent(c);
   return DEVICE_PAGE_LOOKS.some((look) => look.skins.includes(skin)
-    && (['crossed', 'topBar', 'bottomBar', 'battery'] as const).every((role) => (pictures.get(look[role])?.length ?? 0) > 0));
+    && (['crossed', 'topBar', 'bottomBar', 'cornerPatch'] as const).every((role) => (pictures.get(look[role])?.length ?? 0) > 0));
 }
 
 /**
  * A device mode page's chrome in this configuration, built, `todo-compile-650.md` 6.2.6: the look its
- * skin and its pictures decide, the five pictures located by content, the battery program by
- * `batteryProgram`, and the bottom word spelled in the first font of the title's size, which is the
+ * skin and its pictures decide, the five pictures located by content, the corner program by
+ * `deviceCornerProgram`, and the bottom word spelled in the first font of the title's size, which is the
  * font it is drawn in on every device page here, centred on its line, and pointed at the inline copy
  * of the same codes, which is where the compiler's own pages point, 13 of 13. Each compile holds exactly
  * one such copy, so taking the lowest addressed never has to choose; on six of them it sits on the first
@@ -512,7 +512,7 @@ export function deviceModeChrome(c: Container): DeviceModeChrome {
   const pictures = picturesByContent(c);
   // The look is the one whose pictures the configuration holds, the one item background aside, which
   // a compile without a device page of one command leaves out; it is located below if it is held.
-  const roles = ['crossed', 'topBar', 'bottomBar', 'battery'] as const;
+  const roles = ['crossed', 'topBar', 'bottomBar', 'cornerPatch'] as const;
   const whole = DEVICE_PAGE_LOOKS.filter((look) => look.skins.includes(skin)
     && roles.every((role) => (pictures.get(look[role])?.length ?? 0) > 0));
   if (whole.length !== 1) {
@@ -538,7 +538,7 @@ export function deviceModeChrome(c: Container): DeviceModeChrome {
     look: look.name,
     single: (pictures.get(look.single)?.length ?? 0) === 0 ? undefined : one('single'),
     crossed: one('crossed'), topBar: one('topBar'), bottomBar: one('bottomBar'),
-    battery: batteryProgram(c, look, pictures),
+    corner: deviceCornerProgram(c, look, pictures),
     word: DEVICE_PAGE_BACK_WORD, backFont, backCodes, backX, backHome,
   };
   checkPageFrames(c, chrome, [...new Set(deviceListRows(c).map((row) => row.mode))], 'device mode');
@@ -546,12 +546,12 @@ export function deviceModeChrome(c: Container): DeviceModeChrome {
 }
 
 /**
- * The chrome above a page's title, after its background: the queued battery program and the top bar.
+ * The chrome above a page's title, after its background: the queued corner program and the top bar.
  * `shifted` maps an address in the container as it is to where it lands once the page is inserted.
  */
 function deviceChromeHead(chrome: PageFrame, shifted: (address: number) => number): number[] {
   return [
-    SCREEN_QUEUE_INSTRUCTION, chrome.battery & 0xff, chrome.battery >> 8, RUN_SCREEN_PROGRAM,
+    SCREEN_QUEUE_INSTRUCTION, chrome.corner & 0xff, chrome.corner >> 8, RUN_SCREEN_PROGRAM,
     SCREEN_DRAW_IMAGE_AT, ...DEVICE_PAGE_TOP_BAR_AT, ...new Writer(3).u24(shifted(chrome.topBar)).bytes,
   ];
 }
@@ -648,7 +648,7 @@ export function builtChrome(chrome: PageFrame): PageChrome {
 /**
  * The tag a press of the key under Devices carries, scan 25, which a device mode maps through a base slot
  * 14 record on the activity counter back to the device list, and the tag with no event bits, scan 45,
- * under which a device mode runs the battery program its pages queue. What the second tag is a press
+ * under which a device mode runs the corner program its pages queue. What the second tag is a press
  * of, if anything, is not read.
  */
 export const DEVICES_KEY_TAG = (KEY_EVENT_PRESS << KEY_EVENT_SHIFT) | 25;
@@ -707,7 +707,7 @@ export type KeyMapEntry = Pick<TaggedEntry, 'tag' | 'operand' | 'opcode'>;
  * entries**, a press of every hard key section 325's `HARD_KEYS` lists, of the four corners and of the
  * key under Devices, and the program tag, stored in `compilerTagOrder`'s order. The key under Devices
  * maps the activity counter through the record the activity menu maps it through, the program tag runs
- * the chrome's battery program, and every other entry is bound to nothing until a caller binds a key.
+ * the chrome's corner program, and every other entry is bound to nothing until a caller binds a key.
  *
  * Then every device mode the configuration holds is checked against it: the same tags in the same
  * order, the same two entries, and every other entry a list or nothing, on all 83 device modes of the
@@ -729,7 +729,7 @@ export function deviceModeKeyMap(c: Container, chrome: DeviceModeChrome): KeyMap
   const devicesKey = devicesKeyOperand(c);
   const built: KeyMapEntry[] = tags.map((tag) => {
     if (tag === DEVICES_KEY_TAG) return { tag, operand: devicesKey, opcode: MAP_VALUE_OPCODE };
-    if (tag === DEVICE_MODE_PROGRAM_TAG) return { tag, operand: chrome.battery, opcode: RUN_SCREEN_PROGRAM };
+    if (tag === DEVICE_MODE_PROGRAM_TAG) return { tag, operand: chrome.corner, opcode: RUN_SCREEN_PROGRAM };
     return { tag, operand: 0, opcode: 0 };
   });
   checkDeviceModeKeyMaps(c, built);

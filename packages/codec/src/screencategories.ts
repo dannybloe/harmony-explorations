@@ -10,7 +10,7 @@
  *
  * * **fixed**: the unit is emitted for every setup and its content does not depend on the setup.
  * * **dynamic**: the unit draws state the remote holds at run time, choosing between alternatives by a
- *   state variable while it runs: the battery icons and the two delay countdowns.
+ *   state variable while it runs: the corner programs' sending mark and the two delay countdowns.
  * * **setup**: whether the unit exists, how many of it there are, or what it holds follows from the
  *   devices, the activities and the names in them.
  *

@@ -15,7 +15,7 @@ import {
 import {
   EMPTY_FONT_SETS, EMPTY_MODES, EMPTY_VARIABLES, buildEmptyConfiguration, buildEmptySkeleton, emptyCodeOf, emptyVariable,
 } from '../src/families/four-slot/empty.ts';
-import { DEVICES_KEY_TAG, DEVICE_MODE_PROGRAM_TAG, batteryPrograms } from '../src/families/four-slot/chrome.ts';
+import { DEVICES_KEY_TAG, DEVICE_MODE_PROGRAM_TAG, cornerPrograms } from '../src/families/four-slot/chrome.ts';
 import { cornerProgramAt } from '../src/families/four-slot/empty.ts';
 import { require_, skipUnless } from '@harmony/lab';
 import { archSlot, parse } from '../src/index.ts';
@@ -131,11 +131,11 @@ test('11.1.1.3: the menus\' keys lead where a compile with activities leads with
   const location = through(working.operand, 'activity', idle);
   assert.equal(location.opcode, MAP_VALUE_OPCODE);
   assert.deepEqual(through(location.operand, 'location', 0), { opcode: ENTER_MODE, operand: EMPTY_MODES.activityMenu });
-  // Both menus queue the battery program, which draws our corner mark when the battery runs low.
+  // Both menus queue the corner program, which draws our sending mark while the remote sends.
   for (const mode of [EMPTY_MODES.idleList, EMPTY_MODES.activityMenu]) {
     assert.deepEqual(own(mode, DEVICE_MODE_PROGRAM_TAG), { tag: DEVICE_MODE_PROGRAM_TAG, operand: 0, opcode: RUN_SCREEN_PROGRAM, flags: undefined });
   }
-  assert.deepEqual(batteryPrograms(c), [0]);
+  assert.deepEqual(cornerPrograms(c), [0]);
 });
 
 test('11.1.1.3: every page has its copy where the reader finds it, and the bank holds what the screens draw', () => {
@@ -187,7 +187,7 @@ test('section 374: our corner program is every compile\'s, byte for byte but its
     for (const name of COMPILES) {
       const c = parse(require_(name));
       const table = c.pointerArray(archSlot(14, 11))!;
-      for (const index of batteryPrograms(c)) {
+      for (const index of cornerPrograms(c)) {
         const pieces = cornerProgramAt(c, table[index]!);
         assert.ok(pieces !== undefined, `${name} entry ${index}`);
         assert.deepEqual(pieces.map((one) => one.length), [18, 10, 10]);
