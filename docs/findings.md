@@ -50138,6 +50138,17 @@ font select at `0x16BA4` bounds its index by the table's count: the copies are s
 Logitech's highest is 18, and the operand is one byte, so at most 256 sets, which `withBlendedLetters`
 refuses past. The bench run of the file is the confirmation of both.
 
+**On the remote**, the bench file written to the Harmony 650 and run as `650-8-2-6-blended.json`
+(`reads/20261012T054744Z-ir-test-...`, photographs in `work/fonts-8-2-6/photos/`). The remote took the
+1156 KB file and every select of a copy past Logitech's 18: the activity and device lists, the KPN page, the
+Plasma kijken screen and the start up screen all drew their letters blended, with no box or halo of another
+colour anywhere, the `j` of `kijken` beside its `i`, the tail of the `y` of `Sony` visible, and the two lines
+of `Starting Plasma` and `kijken` alike. One thing the file does not draw: on the Remote Assistant screen
+that follows All Off, `your system`, the Off screen's third line at y 110, showed behind the bar's `Exit`.
+The Remote Assistant program paints the whole screen with a picture of no skipped pixel before any text, in
+this file and in the 9.1.2 file alike, so something drew the Off screen's line after it; what, and whether
+it is new with this file, is open.
+
 * `tools/oxanium_glyphs.py`, the grey levels and the window; `packages/codec/src/lettering.ts`,
   `letterCoverage`, the blended `letterRows`, `letterStructure`; `text.ts`, the structures in
   `oxaniumAlphabet`; `render.ts`, `TextDrawn`; `blending.ts`, `withBlendedLetters`, `checkBlendedLetters`,
