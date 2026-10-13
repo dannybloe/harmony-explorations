@@ -43,3 +43,7 @@ since section 359 2038021 and 766, since section 361 2038315 and 761, and since 
 - [x] 2.5 Release blocks and toggle bits as Logitech's compiler writes them: about 4360 commands compose and differ from the archive's rendering (was `todo-later.md` 6.15); findings section 365: the rendering is the archive maintainer's and the 4360 has no recorded derivation; Logitech's compiles hold a toggling code as two pointer groups, stated and flipped, which the Harmony 650's and One's firmware alternate, and a release in the third pointer; the composer writes both, 774 of 797 records of eighteen compiled devices word for word, 297861 commands with a second group and 26990 with a release; 189 release codes and 691 whole record row codes whose first block the definition disagrees about stay the row's
 
 The other chapters are decided once the gathering is done, one per kind of knowledge.
+
+## 3. The inputs the composer refuses
+
+- [ ] 3.1 Inputs chosen through a menu: the composer refuses a device whose inputs state a start, finish or previous list, since no compile showed how Logitech's compiler writes one; from `todo-secure-logitech.md` 3.14's compiles, read how a transition from one input to another is written (open the menu, how many steps up or down, confirm), whether it takes the shorter way and whether it assumes the menu opens on the current input or at the top, then compose it; the archive's input types are the service's numbering, 2 a key that cycles, 3 a menu then a key per input, 4 a menu stepped and confirmed, read in MyHarmony's `InputType`
