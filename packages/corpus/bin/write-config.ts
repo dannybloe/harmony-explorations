@@ -239,6 +239,8 @@ const H700_DUMPS = new Set<string>([
   // After the 700's first real write, the Denon's power on delay raised from 60 to 90 tenths: the two
   // bytes the file changed and nothing else. The compare base for putting it back.
   'h700_delay90_region',
+  // Before the empty configuration built from nothing, todo-compile-700 1.4, section 382.
+  'h700_before_empty',
 ]);
 
 /** A remote this may run against, per architecture read off the device. */
