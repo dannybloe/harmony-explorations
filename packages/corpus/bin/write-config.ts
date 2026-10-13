@@ -213,6 +213,8 @@ const H650_DUMPS = new Set([
   'h650_11_2_3_base',
   // Before 11.2.4, the same setup with its letters smoothed: the compare base for that write.
   'h650_11_2_4_base',
+  // With the smoothed setup on it, before the start up icon and the corner mark were moved: that write's base.
+  'h650_11_2_4_look_base',
 ]);
 
 /**

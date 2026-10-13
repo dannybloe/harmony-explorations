@@ -196,12 +196,21 @@ function iconRows(drawing: IconDrawing): (number | undefined)[][] {
 /**
  * Where our own picture of each of Logitech's six artwork pictures that is no state's background draws its
  * icon, measured on Logitech's, section 363, `todo-compile-650.md` 9.1.2.2: the four firmware screen
- * pictures fill the square from 32 to 95 each way, the start up picture's runs from row 32 to 79 since
- * the title is above it and three lines below, and the corner mark is the whole of its 12 by 10. A fact of
- * the screen's layout; the icon in each place is a choice, `OurPictureChoices`.
+ * pictures fill the square from 32 to 95 each way, and the corner mark is the whole of its 12 by 10. A fact
+ * of the screen's layout; the icon in each place is a choice, `OurPictureChoices`.
+ *
+ * **The start up picture is ours to place, and it clears a title of two lines.** Logitech's runs from row
+ * 32 to 79, under a title of one line; ours did too, and on the bench a title wrapped onto its second line,
+ * `Starting Plasma` over `kijken`, touched it, the descender of the `j` in row 31 and the icon from 32. The
+ * band no title and no fixed line draws in is rows 33 to 83: a title is at most two lines, the second's
+ * 14 high cell at y 19 inked down to row 32 by a descender, and the three fixed lines' ink starts at row
+ * 84, two rows into the first one's cell at y 82 (`activityscreen.ts`). So the icon is drawn 42 high and
+ * centred in that band: its whole grid square, rows 38 to 79, lies inside it, so any icon chosen clears a
+ * title of two lines and the fixed lines whatever the title, rather than being sized per screen. Ours
+ * covers rows 38 to 78, five rows clear of both; `test/icons.test.ts` holds the clearance.
  */
 export const OUR_PICTURE_PLACES = {
-  'start up picture': { width: 128, height: 128, centre: [64, 56], size: 48, opaque: true },
+  'start up picture': { width: 128, height: 128, centre: [64, 59], size: 42, opaque: true },
   'corner mark': { width: 12, height: 10, centre: [6, 5], size: 12, opaque: false },
   'USB Connected': { width: 128, height: 128, centre: [64, 64], size: 64, opaque: true },
   'Low Battery': { width: 128, height: 128, centre: [64, 64], size: 64, opaque: true },
@@ -232,6 +241,7 @@ export function buildOurPictures(choices: OurPictureChoices): Map<string, Uint8A
   }
   return out;
 }
+
 
 /**
  * Our pictures read back: `after` holds the bank of `before` picture for picture, with every one of the six

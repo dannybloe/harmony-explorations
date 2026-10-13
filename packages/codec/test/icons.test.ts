@@ -7,7 +7,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 
-import { FOUR_SLOT_CHOICES, IconError, OUR_PICTURE_PLACES, buildOurPictures, drawIcon, iconNames, iconPath } from '../src/index.ts';
+import {
+  FOUR_SLOT_CHOICES, IconError, OUR_PICTURE_PLACES, STARTUP_FIXED_LINE_Y, STARTUP_TITLE_SECOND_Y, buildOurPictures, drawIcon, iconNames, iconPath,
+} from '../src/index.ts';
 
 /** The ink's box on a drawing `width` wide: leftmost, rightmost, top and bottom ink pixel, and the count. */
 function inkBox(ink: Uint8Array, width: number): [number, number, number, number, number] {
@@ -37,6 +39,22 @@ test('an icon is placed by its grid square: the USB icon at 64 pixels sits insid
   assert.deepEqual(moved, [55, 92, 25, 80, 788]);
 });
 
+test('the start up icon clears a title of two lines and the fixed lines below it, and so does any icon chosen in its place', () => {
+  // A start up title is at most two lines, the second's 14 high cell at y 19, inked to row 32 by a descender
+  // on the bench's Starting Plasma kijken; the fixed lines' ink starts at row 84, under the cell at y 82.
+  const place = OUR_PICTURE_PLACES['start up picture'];
+  // Every pixel it covers at all, since the picture blends a partly covered edge into its background.
+  const drawn = drawIcon(FOUR_SLOT_CHOICES.icons['start up picture'], 128, 128, place.centre[0], place.centre[1], place.size);
+  const box = inkBox(Uint8Array.from(drawn.coverage, (v) => (v > 0 ? 1 : 0)), 128);
+  assert.deepEqual([box[2], box[3]], [38, 78]);
+  assert.equal(box[2] - (STARTUP_TITLE_SECOND_Y + 13), 6, 'rows from the second line\'s last to the icon\'s first');
+  assert.equal(STARTUP_FIXED_LINE_Y[0]! + 2 - box[3], 6, 'and from the icon\'s last to the fixed lines\' first');
+  // The whole grid square an icon is drawn in lies between them too, so no icon chosen can reach either.
+  const [squareTop, squareBottom] = [place.centre[1] - place.size / 2, place.centre[1] + place.size / 2 - 1];
+  assert.deepEqual([squareTop, squareBottom], [38, 79]);
+  assert.ok(squareTop > STARTUP_TITLE_SECOND_Y + 13 && squareBottom < STARTUP_FIXED_LINE_Y[0]! + 2);
+});
+
 test('the six pictures are built at the sizes of the pictures they replace, the same bytes every time', () => {
   const made = buildOurPictures({ icons: FOUR_SLOT_CHOICES.icons, colour: FOUR_SLOT_CHOICES.iconColour, background: FOUR_SLOT_CHOICES.iconBackground });
   assert.deepEqual([...made.keys()].sort(), Object.keys(OUR_PICTURE_PLACES).sort());
@@ -45,5 +63,5 @@ test('the six pictures are built at the sizes of the pictures they replace, the 
   for (const [name, bytes] of made) assert.equal(bytes.length, name === 'corner mark' ? 109 : 5 + 128 * 128 * 2, name);
   const digest = createHash('sha256');
   for (const [name, bytes] of made) digest.update(name).update(bytes);
-  assert.equal(digest.digest('hex').slice(0, 16), '59376e0fdc89b070');
+  assert.equal(digest.digest('hex').slice(0, 16), '463bc81f4e3af245');
 });

@@ -29,7 +29,7 @@ import { SCREEN_TABLE_SLOT } from '../../screen.ts';
 import { contentKey } from '../../screencategories.ts';
 import { ComposeError } from '../../shared/core.ts';
 import { cornerPrograms, picturesByContent } from './chrome.ts';
-import { cornerProgram, cornerProgramAt } from './empty.ts';
+import { cornerPlaceAt, cornerProgram, cornerProgramAt } from './empty.ts';
 
 /** Where a state's look sits: its background and its patch as addresses, its corner program as a base slot 11 entry. */
 export interface StateLook {
@@ -96,7 +96,10 @@ export function withStateLook(c: Container, colour: number): Container {
 
   const background: ContainerPiece = { bytes: stateBackgroundBytes(colour), refs: [], owner: 'picture-bank' };
   const patch: ContainerPiece = { bytes: statePatchBytes(colour), refs: [], owner: 'picture-bank' };
-  const program = cornerProgram(patch, mark);
+  // At the place the existing corner program draws, so a state added keeps its patch and mark where the rest are.
+  const place = cornerPlaceAt(c, addresses[existing] as number);
+  if (place === undefined) throw new ComposeError(`corner program ${existing} draws at no known place`);
+  const program = cornerProgram(patch, mark, place);
   const grown = new Uint8Array(table.bytes.length + 3);
   grown.set(table.bytes);
   grown[0] = (count + 1) & 0xff;

@@ -417,8 +417,15 @@ function ourPicture(pictures: EmptyPictures, name: OurPictureName): ContainerPie
   return found;
 }
 
-/** Where the corner mark and patch are drawn, the screen's bottom right corner. */
-const CORNER = [114, 112] as const;
+/**
+ * Where a corner program draws the mark and the patch over it, the screen's bottom right corner. Logitech's
+ * compiles draw them at 114, 112, level with the top of the bottom bar, 70 of 70 on 24 compiles, section 374.
+ * Ours are three rows lower, so the mark's 10 rows are centred on the bar's 16, rows 112 to 127, as was asked
+ * for at the bench after `todo-compile-650.md` 11.2.4. A program is read at either place, and a state's look
+ * added to a configuration takes the place its existing corner program draws at, so patch and mark move together.
+ */
+export const CORNER_PLACES = { logitech: [114, 112], ours: [114, 115] } as const satisfies Record<string, readonly [number, number]>;
+type CornerPlace = (typeof CORNER_PLACES)[keyof typeof CORNER_PLACES];
 /** The corner program's tail, after its switch: queue `0x07 0xFFFA`, then the end. What `0xFFFA` does is not read. */
 const CORNER_TAIL = [SCREEN_QUEUE_INSTRUCTION, 0xfa, 0xff, 0x07, SCREEN_END] as const;
 /** The switch, `0x12`, on variable 17, one case and one range, each with its three byte target. */
@@ -432,7 +439,7 @@ const CORNER_SWITCH_LENGTH = 13;
  * the compiler's order, the switch with its tail, then the patch case, then the mark case; the first is
  * the base slot 11 entry.
  */
-export function cornerProgram(patch: ContainerPiece, mark: ContainerPiece): ContainerPiece[] {
+export function cornerProgram(patch: ContainerPiece, mark: ContainerPiece, place: CornerPlace = CORNER_PLACES.ours): ContainerPiece[] {
   const root: ContainerPiece = {
     bytes: Uint8Array.from([
       SCREEN_SWITCH_NARROW, SENDING_FLAG_VARIABLE, 1, 0, 0, 0, 0, 1, 1, 3, 0, 0, 0, ...CORNER_TAIL,
@@ -440,7 +447,7 @@ export function cornerProgram(patch: ContainerPiece, mark: ContainerPiece): Cont
     refs: [], owner: 'slot-11-program',
   };
   const draw = (picture: ContainerPiece): ContainerPiece => ({
-    bytes: Uint8Array.from([SCREEN_DRAW_IMAGE, ...CORNER, 0, 0, 0, SCREEN_JUMP, 0, 0, 0]),
+    bytes: Uint8Array.from([SCREEN_DRAW_IMAGE, ...place, 0, 0, 0, SCREEN_JUMP, 0, 0, 0]),
     refs: [{ at: 3, to: picture, offset: 0 }, { at: 7, to: root, offset: CORNER_SWITCH_LENGTH }],
     owner: 'slot-11-program',
   });
@@ -455,11 +462,24 @@ export function cornerProgram(patch: ContainerPiece, mark: ContainerPiece): Cont
  * back in the compiler's order, each byte for byte the built one but its address fields, the switch's two
  * cases naming the two pieces behind it and each case jumping back to the tail. Returns each piece's blob
  * offset and length, or undefined where any of that fails. One reading for the calibration, section 374,
- * and for `attributeBytes`, section 375.
+ * and for `attributeBytes`, section 375. At either of `CORNER_PLACES`.
  */
 export function cornerProgramAt(c: Container, root: number): { at: number; length: number }[] | undefined {
+  for (const place of Object.values(CORNER_PLACES)) {
+    const pieces = cornerProgramAtPlace(c, root, place);
+    if (pieces !== undefined) return pieces;
+  }
+  return undefined;
+}
+
+/** Which of `CORNER_PLACES` the corner program at `root` draws at, or undefined where it is none. */
+export function cornerPlaceAt(c: Container, root: number): CornerPlace | undefined {
+  return Object.values(CORNER_PLACES).find((place) => cornerProgramAtPlace(c, root, place) !== undefined);
+}
+
+function cornerProgramAtPlace(c: Container, root: number, place: CornerPlace): { at: number; length: number }[] | undefined {
   const blank = (): ContainerPiece => ({ bytes: new Uint8Array(0), refs: [], owner: 'picture-bank' });
-  const built = cornerProgram(blank(), blank());
+  const built = cornerProgram(blank(), blank(), place);
   const start = c.blobOffsetOf(root);
   if (start === undefined) return undefined;
   const u24 = (o: number): number => (c.blob[o] ?? 0) | ((c.blob[o + 1] ?? 0) << 8) | ((c.blob[o + 2] ?? 0) << 16);

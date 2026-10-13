@@ -16,7 +16,7 @@ import {
   EMPTY_FONT_SETS, EMPTY_MODES, EMPTY_VARIABLES, buildEmptyConfiguration, buildEmptySkeleton, emptyCodeOf, emptyVariable,
 } from '../src/families/four-slot/empty.ts';
 import { DEVICES_KEY_TAG, DEVICE_MODE_PROGRAM_TAG, cornerPrograms } from '../src/families/four-slot/chrome.ts';
-import { cornerProgramAt, emptyFont } from '../src/families/four-slot/empty.ts';
+import { CORNER_PLACES, cornerPlaceAt, cornerProgramAt, emptyFont } from '../src/families/four-slot/empty.ts';
 import { OUR_LOOK, deviceModeChrome, inOurLook } from '../src/families/four-slot/chrome.ts';
 import { fourSlotMenus, fourSlotTemplate } from '../src/families/four-slot/menus.ts';
 import { stateLookOf } from '../src/families/four-slot/statelook.ts';
@@ -190,7 +190,7 @@ const COMPILES = ['h650_config_region', 'h650_panasonic_config', 'h600_config', 
   'h650_assistant_off_config', 'h650_tilt_off_config', 'h650_test_config', 'h650_test_config_clean',
   'h650_issue36_config', 'h650_issue8_config', 'harvest_650_two_devices'] as const;
 
-test('section 374: our corner program is every compile\'s, byte for byte but its four addresses, 70 of 70 on 24',
+test('section 374: our corner program is every compile\'s, byte for byte but its four addresses and its place, 70 of 70 on 24 drawing at Logitech\'s and ours three rows lower',
   skipUnless(...COMPILES), () => {
     // Read by `cornerProgramAt`, the one reading the attribution uses too: the three pieces in the
     // compiler's order, back to back, each compared with its address fields blanked, then the four
@@ -203,10 +203,16 @@ test('section 374: our corner program is every compile\'s, byte for byte but its
         const pieces = cornerProgramAt(c, table[index]!);
         assert.ok(pieces !== undefined, `${name} entry ${index}`);
         assert.deepEqual(pieces.map((one) => one.length), [18, 10, 10]);
+        assert.equal(cornerPlaceAt(c, table[index]!), CORNER_PLACES.logitech, `${name} entry ${index}`);
         count += 1;
       }
     }
     assert.equal(count, 70);
+    // The empty configuration's own, read by the same reading, at our place.
+    const ours = buildEmpty().container;
+    const entry = ours.pointerArray(archSlot(14, 11))![0]!;
+    assert.deepEqual(cornerProgramAt(ours, entry)?.map((one) => one.length), [18, 10, 10]);
+    assert.equal(cornerPlaceAt(ours, entry), CORNER_PLACES.ours);
   });
 
 test('11.1.1.4: the empty configuration reads back as ours, its three screens rebuilt and every byte attributed to a generator, none carried', () => {
