@@ -50770,7 +50770,7 @@ wrong. It is named once per file, by the case 0 program of a record of one case,
 compile of the test setup and another index on 33 of the 55; nothing found maps through it on that compile,
 so what runs it is open. The activity menu's row selects the activity's handler set itself, in the lists
 its two keys run, and the Watch TV key selects it in the wiring, so starting the activity installs its
-keypad map either way; whether returning from device mode keeps it is for the bench.
+keypad map either way; whether returning from device mode keeps it was for the bench, and it does, section 381.
 
 **The wiring has a shape per activity count, and the composer rebuilds it.** Scan 4's front list pushes the
 "add Activities" screen while there is no activity and maps the location once there is one, section 360;
@@ -50907,3 +50907,55 @@ compile's, a name with a space, or a difference `compareViews` finds outside the
   `shared/core.ts`, `nameOfLabel`, used by `shared/devices.ts`, `inputs.ts` and `composecatalogue.ts`.
 * `packages/codec/test/empty.test.ts`: the whole test setup on the empty configuration, its activities,
   every device list's order, its look and what it carries.
+
+## 381. The test setup built from nothing runs on the Harmony 650
+
+The file of section 380, the whole test setup built on the empty configuration by our own generators and
+composers, 703535 bytes, was written to the bench Harmony 650 on 13 October 2026: eleven 64 KiB blocks,
+read back byte for byte identical to the file. The bench test `650-from-nothing.json` was run on it with the
+infrared monitor, ten steps, and every step that sends something sent what the file predicted:
+
+* **Watch TV** starts TV kijken: the LG's power on, the KPN box's power, the Denon's power, the Denon's
+  CBL/SAT and the LG's HDMI 1. Volume up goes to the Denon and Channel up to the KPN box.
+* **Device mode and back.** The device list, the Denon's pages and Volume up there to the Denon; then back
+  to the activity, and Channel up still goes to the KPN box. **So Channel up, pressed after a visit to the
+  Denon's device pages, still went to the KPN box on a file holding no keypad map record**, which section
+  379 left for the bench: whatever keeps or restores TV kijken's handler set on that path does not need the
+  record. The press tells, since the Denon's own screen record binds that key to a Denon code. Whether the
+  set stays selected or is selected again on the way back is not told apart by this run.
+* **Listen to Music** starts Muziek: Kodi's and the Sony's power, the LG's and the Denon's power off, the
+  Sony's Function three times, and nothing to the KPN box. Here and in TV kijken the sends came in another
+  order than the start list writes the states, the inputs last; every device got what its states imply.
+* **Plasma kijken** from page 3 of the activity menu: the Plasma's power on as one held code, Kodi's and the
+  Sony's power, the Plasma's HDMI 1 6.6 seconds after its power began, and nothing to the KPN box.
+* **Radio**, a sequence on Plasma kijken's screen: the KPN box's 1 and its 2 2.2 seconds later.
+* **All Off**: the Plasma's power off and the KPN box's power.
+
+The menus and screens showed as predicted, in our state colours. Their letters are not blended, which is the
+recipe's default, `blendLetters: false`; the blended build of the same setup was not written. The screen
+went dark about 20 seconds after the last key, as predicted, judged by eye rather than timed.
+
+**A camera puts frames into a run.** Photographs taken of the remote during step 4, as said at the bench
+and not recorded in the run, put 21 frames into it that no bench remote's code fits and that decode to no
+number, 5 to 23 durations each. Their shape does not set them all apart: grouping durations within 30
+percent, their flashes fall into two to five lengths and their pauses into one to seven, where the codes
+heard from the bench remotes in this run fall into one to three of each; 7 of the 21 share a combination
+with a code heard on the bench, the other 14 have one no code here has. So the monitor marks such a frame
+`unreadable` rather than calling it noise, the page hides those by default behind a switch and counts what
+it hid, per step and in all, and the lab's log keeps every one. Replayed over the earlier monitor logs the
+same rule marks 988 more frames, about three in ten of everything heard, from sources not recorded, and at
+least one holds a real code's opening inside it, so a code heard through interference is hidden too, as a
+code of ours sent wrongly would be. Every code this setup binds decodes to a number, so none of its own
+would be hidden.
+
+**Scope**: the Harmony 650, one unit, one run, three of the five activities started; Film kijken and Kodi
+kijken were not run. Device mode was visited from TV kijken only, to the Denon only, and one key was pressed
+after returning.
+
+**Falsification**: a later run of this file on which a key pressed after leaving device mode sends nothing
+or the wrong device's code, or an activity's start that differs from the list above.
+
+* `packages/bench/irtests/done/650-from-nothing.json`, the test; its run is in the lab's `reads/`.
+* `packages/bench/src/irmonitor.ts`, `unreadable`; `packages/bench/web/ir.js`, the switch;
+  `packages/bench/test/irmonitor.test.ts`, one of the camera's frames held unreadable and a press, a
+  repeat and a bare repeat not.

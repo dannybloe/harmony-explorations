@@ -320,6 +320,16 @@ export interface HeardFrame {
    */
   readonly bare: boolean;
   /**
+   * True for a frame nothing reads at all: no bench remote's code fits it, it decodes to no number and
+   * it is no repeat. A camera's infrared light does this: taking photographs of the remote at the bench
+   * put 21 such frames in one test run, 5 to 23 durations each. Their shape does not tell them from a
+   * code, since a burst can be as regular as a real one, so this is a statement about the reading and
+   * not a verdict that the frame is noise: the page hides them by default, behind a switch, and counts what it hid, and
+   * the lab's log keeps every one. A code of ours sent wrongly would land here too, which is why it is
+   * counted rather than dropped.
+   */
+  readonly unreadable: boolean;
+  /**
    * The heard durations against the first match's stored ones, each with whether it is within the
    * tolerance, so the page highlights what this module decided rather than deciding again.
    */
@@ -484,6 +494,7 @@ export class IrMonitor {
       guesses: repeatOf === undefined && matches.length === 0 && decoded !== undefined ? book.guess(decoded.key) : [],
       repeatOf,
       bare: repeatOf === undefined && matches.length > 0 && !matches.some((one) => one.opening),
+      unreadable: repeatOf === undefined && matches.length === 0 && decoded === undefined,
       compare: compareWith(matches[0]?.stored, read.pulses),
     };
     if (repeatOf === undefined) this.press = frame;

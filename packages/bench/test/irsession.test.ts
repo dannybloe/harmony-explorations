@@ -33,7 +33,7 @@ function frame(atMs: number, matches: KnownCode[], extra: Partial<HeardFrame> = 
   return {
     seq, at: new Date(START + atMs).toISOString(), gapUs: undefined,
     pulses: [{ mark: true, us: 9000 }, { mark: false, us: 4500 }, { mark: true, us: 560 }],
-    number: undefined, bits: undefined, matches, guesses: [], repeatOf: undefined, bare: false,
+    number: undefined, bits: undefined, matches, guesses: [], repeatOf: undefined, bare: false, unreadable: false,
     compare: { stored: [], within: [] }, ...extra,
   };
 }

@@ -15,6 +15,24 @@ let shown;
 /** Whether a new press replaces the one shown. Off once somebody picks one from the list. */
 let live = true;
 let unknown = 0;
+/**
+ * Whether frames nothing reads are left out of the list, the test's steps and its timeline. A camera
+ * pointed at the remote fills those with them. The monitor decides what is unreadable, this only hides
+ * it, and the count beside the switch says how many were hidden, so nothing goes without a trace.
+ */
+let hideUnreadable = remembered('ir.hideUnreadable', true);
+let unreadable = 0;
+
+/** A per viewer switch kept in the browser; storage may be refused, and then the default holds. */
+function remembered(key, fallback) {
+  try {
+    const value = localStorage.getItem(key);
+    return value === null ? fallback : value === 'true';
+  } catch { return fallback; }
+}
+
+/** A press the switch leaves out. */
+const hidden = (frame) => hideUnreadable && frame.unreadable === true;
 
 const ms = (us) => `${(us / 1000).toFixed(us < 10000 ? 1 : 0)} ms`;
 const clock = (iso) => iso.slice(11, 23);
@@ -70,6 +88,12 @@ function onFrame(frame) {
   }
   const item = document.createElement('li');
   const known = frame.matches.length > 0;
+  if (frame.unreadable) {
+    unreadable += 1;
+    $('count-unreadable').textContent = String(unreadable);
+    item.dataset.unreadable = 'true';
+    item.hidden = hideUnreadable;
+  }
   if (!known) {
     item.className = 'unknown';
     unknown += 1;
@@ -86,7 +110,17 @@ function onFrame(frame) {
   presses.set(frame.seq, press);
   $('count-presses').textContent = String(presses.size);
   $('count-unknown').textContent = String(unknown);
-  if (live || shown === undefined) show(frame.seq);
+  if (!hidden(frame) && (live || shown === undefined)) show(frame.seq);
+}
+
+function setHideUnreadable(on) {
+  hideUnreadable = on;
+  try { localStorage.setItem('ir.hideUnreadable', String(on)); } catch { /* the default holds next time */ }
+  const button = $('hide-unreadable');
+  button.setAttribute('aria-pressed', String(on));
+  button.firstChild.textContent = on ? 'hiding ' : 'showing ';
+  for (const item of $('list').querySelectorAll('li[data-unreadable]')) item.hidden = on;
+  if (run !== undefined && run !== null) showRun(run);
 }
 
 function heldText(press) {
@@ -405,9 +439,15 @@ function showSteps() {
     if (expect.length > 0 && !done && step?.reached !== false) {
       item.append(el('span', `listening for ${expect.map(expectLabel).join(', then ')}`, 'heard'));
     }
-    if (step !== undefined && step.presses.length > 0) {
-      const heard = step.presses.map((press) => `${pressName(press)}${press.repeats > 0 ? `, ${press.repeats + 1} frames` : ''}`);
-      item.append(el('span', `heard: ${heard.join(', ')}`, 'heard'));
+    const heardPresses = (step?.presses ?? []).filter((press) => !hidden(press.frame));
+    // What the switch hid is said per step too, so a step is never shown as silent when it was not.
+    const hiddenCount = (step?.presses.length ?? 0) - heardPresses.length;
+    const hiddenNote = hiddenCount > 0 ? `${hiddenCount} unreadable hidden` : '';
+    if (heardPresses.length > 0) {
+      const heard = heardPresses.map((press) => `${pressName(press)}${press.repeats > 0 ? `, ${press.repeats + 1} frames` : ''}`);
+      item.append(el('span', `heard: ${heard.join(', ')}${hiddenNote === '' ? '' : `, and ${hiddenNote}`}`, 'heard'));
+    } else if (hiddenNote !== '') {
+      item.append(el('span', `heard nothing readable, ${hiddenNote}`, 'heard'));
     } else if (done) {
       item.append(el('span', 'heard nothing', 'heard'));
     }
@@ -439,7 +479,8 @@ function showTimeline() {
   const lanes = clear($('lanes'));
   const table = clear($('run-table'));
   if (run === undefined || run === null) return;
-  const presses = run.steps.flatMap((step, index) => step.presses.map((press) => ({ press, step: index })));
+  const presses = run.steps.flatMap((step, index) => step.presses.filter((press) => !hidden(press.frame))
+    .map((press) => ({ press, step: index })));
   const lane = (press) => (press.frame.bare ? 'repeat signal' : press.frame.matches.length === 0 ? 'unknown'
     : [...new Set(press.frame.matches.map((one) => one.device))].join(' / '));
   const names = [...new Set(presses.map(({ press }) => lane(press)))];
@@ -533,10 +574,14 @@ $('run-next').addEventListener('click', async () => {
 $('run-stop').addEventListener('click', () => void runAction('/api/ir/run/stop'));
 
 $('live').addEventListener('click', () => setLive(!live));
+$('hide-unreadable').addEventListener('click', () => setHideUnreadable(!hideUnreadable));
+setHideUnreadable(hideUnreadable);
 $('clear').addEventListener('click', () => {
   presses.clear();
   shown = undefined;
   unknown = 0;
+  unreadable = 0;
+  $('count-unreadable').textContent = '0';
   clear($('list'));
   $('count-presses').textContent = '0';
   $('count-unknown').textContent = '0';

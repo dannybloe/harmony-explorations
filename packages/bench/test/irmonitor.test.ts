@@ -186,6 +186,31 @@ test('a code no bench remote holds is unknown, decoded where it can be, and offe
   assert.equal(only.bits, 32);
   assert.deepEqual(book.guessed, [only.number]);
   assert.deepEqual(only.guesses.map((one) => one.name), ['PowerToggle']);
+  assert.equal(only.unreadable, false, 'a number is a reading, so an unknown code is never hidden as unreadable');
+});
+
+test('a frame nothing reads is unreadable, and a press, a repeat and a bare repeat are not', () => {
+  // One of the 21 frames a camera put into the bench run of todo-compile-650 11.2.3, as the receiver
+  // printed it: no stored code fits it and it decodes to no number.
+  const { source, book, frames } = monitor();
+  source.feed('+1000000');
+  source.feed('+451 -1642 +216 -4548 +447 -840 +374');
+  source.feed('+1000000');
+  source.feed(necLine(VOLUME_UP));
+  source.feed('+40000');
+  source.feed(REPEAT_LINE);
+  source.feed('+1000000');
+  source.feed(REPEAT_LINE);
+  const [camera, press, repeat, bare] = frames as [HeardFrame, HeardFrame, HeardFrame, HeardFrame];
+  assert.equal(camera.matches.length, 0);
+  assert.equal(camera.number, undefined);
+  assert.deepEqual(book.guessed, [], 'nothing to offer the catalogue without a number');
+  assert.equal(camera.unreadable, true);
+  assert.equal(press.unreadable, false);
+  assert.equal(repeat.repeatOf, press.seq);
+  assert.equal(repeat.unreadable, false);
+  assert.equal(bare.bare, true);
+  assert.equal(bare.unreadable, false);
 });
 
 test('a family that holds a key by sending the whole frame again is one press with repeats', () => {
