@@ -50797,7 +50797,16 @@ page's mode nor the activity's own is chrome, as the device lists' title "Device
 a candidate, so a label some device page happens to draw too is never lost when it is the only one. **It
 does not break a tie the rest of the configuration draws both sides of**, the blind reviewer's finding: one
 activity named as a device is labelled, "LG TV", or as a word of the menus, reads back with no name and the
-assembly refuses it; with a second activity the chrome rules above resolve both. Open.
+assembly refuses it; with a second activity the chrome rules above resolve both. Open until `todo-compile-650.md`
+11.2.2, which closed it with a second tie break after the first: the candidates said by the most of the modes
+the activity enters are kept, the label being said by its start up screen inside "Starting LG TV" and by its
+working screen as the title, the footer "Devices" by the working screen alone; and where what is left is one
+text in several places, an activity called "Devices" over the footer, the name is that text and its place the
+one no page of the activity's own modes draws it at. "LG TV", "Denon", "Devices", "Activities", "Activity",
+"Back", "Exit", "Help" and "Off" each read back as one activity, at the menu label's row. Over the 156
+configurations of the lab register it changes no name and no place of the 530 activities they hold, none of
+them unnamed before. "Back" also needed the device page check to accept a bottom word pointing at an earlier
+copy of the same word, the activity menu's, which the text pass makes the shared copy; only in our look.
 
 **The activity's screens in our look.** The working screen takes the activity state's flat background and
 corner program, added on the first activity as the device state's was on the first device, section 377.

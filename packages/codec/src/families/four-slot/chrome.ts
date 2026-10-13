@@ -31,7 +31,7 @@ import { STATE_WRITE_BASE } from '../../actions.ts';
 import { ComposeError } from '../../shared/core.ts';
 import { activityMenus } from '../../shared/menus.ts';
 import { codesFor, spellsIn, textWidth } from '../../shared/spelling.ts';
-import { characterMap, referencedStringAddress } from '../../text.ts';
+import { characterMap, glyphsReferencedBy, referencedStringAddress } from '../../text.ts';
 import { valueMaps } from '../../valuemap.ts';
 import { FOUR_SLOT_CHOICES } from './choices.ts';
 import { stateLookOf } from './statelook.ts';
@@ -673,7 +673,12 @@ export function checkPageFrames(c: Container, chrome: PageFrame, modes: readonly
       // first, which is the compiler's form. Logitech's pages are held to that form as they are. Section 377.
       const ownCopy = chrome.look === OUR_LOOK && word.opcode === SCREEN_TEXT_INLINE
         && [...(word.glyphs ?? [])].join(',') === chrome.backCodes.join(',');
-      if (at !== [chrome.backX, DEVICE_PAGE_BACK_Y].join(',') || !(isHome || pointsHome || ownCopy)) {
+      // And it may point at an earlier copy of the same word that is no page's bottom word: an activity
+      // named "Back" draws one on the activity menu, lower in the file, and the text pass points every later
+      // copy at the first, todo-compile-650 11.2.2. The glyphs drawn are the word's either way.
+      const pointsAtWord = chrome.look === OUR_LOOK && word.opcode === SCREEN_TEXT_AT
+        && [...(glyphsReferencedBy(c, word) ?? [])].join(',') === chrome.backCodes.join(',');
+      if (at !== [chrome.backX, DEVICE_PAGE_BACK_Y].join(',') || !(isHome || pointsHome || ownCopy || pointsAtWord)) {
         throw new ComposeError(`${where}'s bottom word is not '${chrome.word}' at ${chrome.backX}, `
           + `${DEVICE_PAGE_BACK_Y} drawn from its inline copy at the lowest address`);
       }

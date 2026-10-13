@@ -822,6 +822,34 @@ export function activityNames(c: Container): ActivityName[] {
   }
   if (broken) resolve(drafts);
 
+  // **And a tie the rest of the configuration draws both sides of is broken by the activity's own modes**,
+  // todo-compile-650 11.2.2. One activity named as a device, "LG TV", or as a word of the menus, "Devices",
+  // is drawn on the device pages or the device lists as well, so the rule above finds both candidates
+  // elsewhere and keeps both. What still tells them apart is how many of the modes the activity enters say
+  // the candidate: the label is said by its start up screen, inside "Starting LG TV", and by its working
+  // screen as the title, where the footer "Devices" is said by the working screen alone. So the candidates
+  // said by the most of those modes are kept. Where what is left is one text drawn in several places, an
+  // activity called "Devices" over the footer "Devices", the name is that text either way, and the place
+  // is the one no page of the activity's own modes draws that text at: the footer is drawn at the same
+  // place on its working screen, the menu label is not. Only as a tie break, after both rules above.
+  const placesOf = (mode: number): ScreenString[] => (records[mode]?.pages ?? []).flatMap((page) => textOf(page.program));
+  let tied = false;
+  for (const draft of drafts) {
+    if (assigned.has(draft.binding.activity) || draft.candidates.size < 2) continue;
+    const said = (text: string): number => draft.modes.filter((mode) =>
+      placesOf(mode).some((one) => one.text === text || one.text.includes(text))).length;
+    const most = Math.max(...[...draft.candidates.values()].map((label) => said(label.text)));
+    for (const [key, label] of [...draft.candidates]) if (said(label.text) < most) draft.candidates.delete(key);
+    const texts = new Set([...draft.candidates.values()].map((label) => label.text));
+    if (draft.candidates.size > 1 && texts.size === 1) {
+      const repeated = [...draft.candidates].filter(([, label]) => draft.modes.some((mode) =>
+        placesOf(mode).some((one) => one.text === label.text && one.x === label.x && one.y === label.y)));
+      if (repeated.length < draft.candidates.size) for (const [key] of repeated) draft.candidates.delete(key);
+    }
+    tied = true;
+  }
+  if (tied) resolve(drafts);
+
   // Hop five, and only for what is left: **a label the menu wraps onto a second row**, which is the
   // Harmony 525 and nothing else here. Its menu is two columns of two lines each, so an activity's own
   // label is drawn as two strings on consecutive rows, and matching one row at a time returns a

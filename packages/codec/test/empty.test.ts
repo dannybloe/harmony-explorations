@@ -22,7 +22,7 @@ import { fourSlotMenus, fourSlotTemplate } from '../src/families/four-slot/menus
 import { stateLookOf } from '../src/families/four-slot/statelook.ts';
 import { composeCatalogueDevices } from '../src/composecatalogue.ts';
 import { bitmapReference } from '../src/screen.ts';
-import { activities, deviceListRows } from '../src/inventory.ts';
+import { activities, activityNames, deviceListRows } from '../src/inventory.ts';
 import { activityKeys } from '../src/activitykeys.ts';
 import { IR_ARCHIVE, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
 import { archSlot, checkWiring, parse, readRecipe, screenStrings } from '../src/index.ts';
@@ -373,6 +373,24 @@ test('section 379: the first activity goes onto the empty configuration through 
     for (const state of ['idle', 'device', 'activity'] as const) assert.ok(stateLookOf(c, FOUR_SLOT_CHOICES.stateColours[state]), `${type} ${state}`);
     // The front list the key no longer needs is dropped with the lists nothing names.
     if (key !== undefined) assert.match(out.steps.find((one) => one.step === 'lists dropped')?.detail ?? '', /^1 lists, 7 bytes/);
+  }
+});
+
+test('11.2.2: one activity named as a device or as a word of the menus composes and reads back by its name, at its label on the activity menu', skipWithoutIrArchive(), () => {
+  const donor = buildEmpty().bytes;
+  for (const name of ['LG TV', 'Denon', 'Devices', 'Activities', 'Back']) {
+    const recipe = {
+      model: { name: 'Harmony 650', skin: 72 },
+      devices: [{ name: 'LG TV', device: 'LG/OLED65G26LA' }, { name: 'Denon', device: 'Denon/AVR-X4800H' }],
+      activities: [{ name, type: 'WatchTV', devices: [
+        { device: 'LG TV', input: 'HDMI 1', roles: ['Display'] }, { device: 'Denon', input: 'CBL/SAT', roles: ['Volume'] }] }],
+      choices: { blendLetters: false },
+    } as Recipe;
+    const c = assembleSetup(recipe, { donor, archive: IR_ARCHIVE! }).container;
+    const found = activityNames(c);
+    assert.deepEqual(found.map((one) => one.name), [name], name);
+    // The menu's label, on its first row, and not the title "Activities" at the top or the footer "Devices" below.
+    assert.equal(found[0]!.at?.y, 35, name);
   }
 });
 
