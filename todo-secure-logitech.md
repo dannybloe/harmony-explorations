@@ -77,6 +77,7 @@ is the 650's test setup cut down to its device limit.
 - [ ] 3.10 Long press actions, on the models that declare them; check the compile differs from its control
 - [ ] 3.11 A model at its maximum number of devices and with many activities, so every page break and limit is seen on each model; check every device and activity is in the file
 - [ ] 3.12 More activities, to calibrate which device gets which key in an activity (exact on 20 of 40 compiled activities, about 14 distinct, and on 4 of 6, 223 of 226 keys, in two Harmony 650 configurations other owners posted, section 323); check every activity is in the file
+- [ ] 3.13 Which key a device's command goes on, per kind of device: the device mode table is fitted to 20 devices, and the test setup built from nothing differs from Logitech's compile on the KPN box, Kodi and the Denon, where the choice also follows the kind of device, Kodi's Enter on the Enter key and the receiver's not (`todo-compile-650.md` 11.2.1, section 380); devices of each kind compiled through the harvest, and the table fitted per kind
 
 ## 4. Everything else only the services hold
 

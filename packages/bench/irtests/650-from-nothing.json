@@ -1,0 +1,36 @@
+{
+  "name": "Harmony 650, the test setup built from nothing",
+  "description": "todo-compile-650 11.2.3, one write of lab/work/empty-11-1-5/whole.bin: the whole test setup, seven devices and five activities, built on the empty configuration by our own generators and composers with no Logitech file as input, section 380. Every activity's start writes the same device states as Logitech's compile of the setup, so it should behave as 5.1 and 5.2 measured, with three differences by design: the activity menu is in the setup's order (page 1 TV kijken and Film kijken, page 2 Muziek and Kodi kijken, page 3 Plasma kijken), the screens are in our state colours (green menus, blue activity screens, red device pages), and a few commands sit on a screen page where Logitech puts them on a key (the KPN box's Replay and Advance, Kodi's Skip Backward, Prev and OK, the Denon's Back). Predicted: TV kijken sends the LG's, the KPN box's and the Denon's power, then the LG's HDMI 1 and the Denon's CBL/SAT; its volume goes to the Denon and its channels to the KPN box, also after a visit to the Denon's device pages, which is the one open question (our file holds no keypad map record, section 379); Muziek sends Kodi's and the Sony's power, the Sony's Function three times, the LG's and the Denon's power, and nothing to the KPN box, which is kept on; Plasma kijken sends the Plasma's power on (seven frames), Kodi's and the Sony's power, and about 6.5 s later the Plasma's HDMI 1, and nothing to the KPN box, already on; Radio sends KPN 1 and about 2 s later KPN 2; All Off sends the Plasma's power off and the KPN box's power; the screen goes dark about 20 s after the last key. The three buttons below the screen are the left arrow, the centre button and the right arrow.",
+  "steps": [
+    {
+      "instruction": "Straight after the write the remote restarts. Take it off the cable and point it at the Flirc. Expect the Activities screen, green, 'Activities 1/3' at the top, TV kijken on the upper row and Film kijken on the lower row, 'Devices' at the bottom. Say if it shows anything else first. Mark when it is quiet"
+    },
+    {
+      "instruction": "Press Watch TV. Expect 'Starting TV kijken', the LG's, the KPN box's and the Denon's power, then the LG's HDMI 1 and the Denon's CBL/SAT, then a blue screen titled TV kijken with Teletext upper left and DVR upper right, 'Devices' at the bottom. Mark when it settles"
+    },
+    {
+      "instruction": "Press Volume up once, then Channel up once. Expect the Denon's volume up, then the KPN box's channel up. Mark"
+    },
+    {
+      "instruction": "Press the centre button below the screen ('Devices'). Expect a red 'Devices 1/2': LG TV upper left, KPN upper right, Denon lower left, Plasma lower right, 'Activity' at the bottom. Press the button beside Denon (lower left). Expect the Denon's red pages, 'Denon 1/23'. Press Volume up once: expect the Denon's volume up. Mark"
+    },
+    {
+      "instruction": "Press the centre button ('Back') until the blue TV kijken screen is back: once to the device list, then once more ('Activity'). Then press Channel up once. Expect the KPN box's channel up, as before the visit. If the Denon answers instead, or nothing is heard, say so: that is the open question. Mark"
+    },
+    {
+      "instruction": "Press Listen to Music. Expect 'Starting Muziek', Kodi's and the Sony's power, the Sony's Function three times, the LG's and the Denon's power, and nothing for the KPN box. Then a blue screen titled Muziek with Sleep upper left. Mark when it settles"
+    },
+    {
+      "instruction": "Press More Activities. Expect 'Activities 1/3'. Press the right arrow below the screen twice. Expect 'Activities 3/3' with Plasma kijken alone on the upper row. Press the button beside Plasma kijken. Expect 'Starting Plasma kijken', the Plasma's power on, Kodi's and the Sony's power, about 6.5 s later the Plasma's HDMI 1, and nothing for the KPN box. Then a blue screen with Teletext, DVR, Aspect and Radio in its corners. Mark when it settles"
+    },
+    {
+      "instruction": "Press the button beside Radio (lower right) once and touch nothing. Expect the KPN box's 1 and about 2 s later its 2. Mark when the 2 has been heard, or when 10 s have passed without it"
+    },
+    {
+      "instruction": "Press All Off. Expect the Plasma's power off and the KPN box's power. Mark when it is quiet"
+    },
+    {
+      "instruction": "Touch nothing and watch the screen: note roughly how many seconds after the last press it goes dark, about 20 expected. Then press any key once to wake it, and mark"
+    }
+  ]
+}

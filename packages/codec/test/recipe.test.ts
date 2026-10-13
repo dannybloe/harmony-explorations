@@ -23,10 +23,15 @@ test('every setup file reads as a recipe for the Harmony 650, skin 72, which the
     assert.equal(target.family.name, 'the Harmony 600, 650 and 700', file);
     assert.equal(target.model.maxDevices, 8, file);
   }
-  // Only the test setup states a working screen: Plasma kijken's, the one activity it composes.
+  // Only the test setup states working screens: Plasma kijken's, which it composes onto Logitech's starting
+  // compile, and since todo-compile-650 11.2.1 the other four as Logitech's compile of the setup draws them,
+  // for a build from nothing, which has no compile to take them from.
   const screens = files.flatMap((file) => readRecipe(raw(file)).activities.filter((one) => one.screen !== undefined)
     .map((one) => `${file} ${one.name} ${one.screen?.length}`));
-  assert.deepEqual(screens, ['h650-test.json Plasma kijken 4']);
+  assert.deepEqual(screens, [
+    'h650-test.json TV kijken 2', 'h650-test.json Film kijken 3', 'h650-test.json Muziek 1', 'h650-test.json Kodi kijken 1',
+    'h650-test.json Plasma kijken 4',
+  ]);
 });
 
 test('a model is found by its name, or by its skin where the two must agree, and refused where nothing builds for it', () => {

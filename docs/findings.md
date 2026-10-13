@@ -50869,15 +50869,23 @@ screen's spelling is recovered by turning each underscore back into a space, as 
 **Against Logitech's compile of the same setup, `compareViews` finds 227 differences**, every key and screen
 item of every activity, device mode and the idle state, the activity menu by which activities it holds; it
 found 478 before the names were spelt. Besides the order one device list's copy is read in, each is a rule
-of the composers that Logitech's compiler applies differently, and they are 11.2's to close before the
-bench:
+of the composers that Logitech's compiler applies differently. **Decided on 13 October 2026 that the file
+has to work and not be identical**, so the second kind below is closed by stating the four screens in the
+setup file, which leaves 220, and the first and third stay ours, the first moving to the Logitech gathering
+track as `todo-secure-logitech.md` 3.13:
 
 * **A few commands go on a key in Logitech's compile and on a screen page in ours**: the KPN box's Replay and
-  Advance, Kodi's Skip Backward, Prev and OK, the Denon's Back. That is the device's own map and every
+  Advance, Kodi's Skip Backward, Prev and OK, the Denon's Back. On the Denon and the LG television, which
+  Logitech also compiled freshly added, `harvest_650_two_devices`, the television matches that compile key
+  for key and the Denon differs on the Stop key alone: the Denon has Play and Pause and no Stop, our table
+  puts Pause there and Logitech's compiler Back. The choice follows the kind of device too, Kodi's Enter
+  going on the Enter key and the receiver's not, so the table fitted to 20 devices is not extended from
+  these three. That is the device's own map and every
   activity that uses the device, and on the Denon, whose Back takes a place on page 3, every command after it
   moves one place, which is most of the 164 differences on its pages.
 * **Logitech's compile puts items on the four working screens the setup states nothing for**: 3D, Aspect and
-  Sleep on Film kijken, DVR and Teletext on TV kijken, Sleep on Kodi kijken and on Muziek. Ours draw none.
+  Sleep on Film kijken, DVR and Teletext on TV kijken, Sleep on Kodi kijken and on Muziek. Ours drew none;
+  the setup file states them now, and `compareViews` finds no difference left on any activity's screen.
 * **Some labels break or shorten differently**: "Input Am" against "InputAm", "Large Up" against "LargeUp",
   and long labels cut at other widths, since our letters are not Logitech's.
 
