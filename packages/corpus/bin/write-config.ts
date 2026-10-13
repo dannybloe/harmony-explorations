@@ -211,6 +211,8 @@ const H650_DUMPS = new Set([
   'h650_empty_blended_base',
   // Before todo-compile-650 11.2.3, the test setup built from nothing: the compare base for that write.
   'h650_11_2_3_base',
+  // Before 11.2.4, the same setup with its letters smoothed: the compare base for that write.
+  'h650_11_2_4_base',
 ]);
 
 /**
