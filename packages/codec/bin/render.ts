@@ -7,6 +7,7 @@
  * node packages/codec/bin/render.ts --config one_config --sheet          all of them, tiled
  * node packages/codec/bin/render.ts --config one_config --sheet --every 13 --columns 6
  * node packages/codec/bin/render.ts --config one_config --page 45 --undrawn
+ * node packages/codec/bin/render.ts --file <path> --sheet                  a file no lab name covers, one we built
  * ```
  *
  * **`--sheet` is the one to reach for.** A config has 135 to 340 pages, and a corrupt decode is
@@ -23,8 +24,8 @@
  * The PNG encoding is `src/png.ts`, shared with the bench instrument, which serves the same rasters
  * over HTTP. Two encoders would be two things to keep right.
  */
-import { mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { basename, join } from 'node:path';
 
 import { LAB, load } from '@harmony/lab';
 import {
@@ -42,7 +43,8 @@ const argument = (name: string): string | undefined => {
   return at < 0 ? undefined : process.argv[at + 1];
 };
 
-const config = argument('config') ?? 'one_config';
+const file = argument('file');
+const config = file === undefined ? argument('config') ?? 'one_config' : basename(file).replace(/\.[^.]*$/, '');
 const undrawnVisible = process.argv.includes('--undrawn');
 const sheet = process.argv.includes('--sheet');
 
@@ -54,7 +56,7 @@ if (LAB === undefined) {
 const out = argument('out') ?? join(LAB, 'work', 'render');
 mkdirSync(out, { recursive: true });
 
-const blob = load(config);
+const blob = file === undefined ? load(config) : new Uint8Array(readFileSync(file));
 if (blob === undefined) {
   console.error(`no config called ${config} in the lab`);
   process.exit(1);

@@ -50968,3 +50968,88 @@ or the wrong device's code, or an activity's start that differs from the list ab
 * `packages/bench/src/irmonitor.ts`, `unreadable`; `packages/bench/web/ir.js`, the switch;
   `packages/bench/test/irmonitor.test.ts`, one of the camera's frames held unreadable and a press, a
   repeat and a bare repeat not.
+
+## 382. The empty configuration builds for the Harmony 700, with two choices of ours where no Logitech compile has been read
+
+`todo-compile-700.md` 1.1 and 1.2. The empty builder of plan 008, which named the Harmony 650 throughout,
+takes the model from the skin now: 72 and 74 are the Harmony 650, 66 the Harmony 700, and every other skin is
+refused. What differs on the 700 came from parts already built for it, the wiring of sections 357 and 360,
+the firmware screens of section 357 and mode 0's key list:
+
+* **nineteen firmware screens** where the 650 has fourteen, the four charging frames first and "Please
+  charge your remote" among them, so the device list, the activity menu and Off are modes 19 to 21;
+* **mode 0 is the first charging frame**, and its own key map, which is the key table, is the 700's, whose
+  leading entry sets the low battery variable;
+* **"USB Connected" leaves through the wiring's `usbLeave`**, two calls: the first is the list that clears
+  the USB variable, which the wiring names and the screens write, so the screens number nine lists of their
+  own after every list the wiring numbers; the second compares a variable and maps the location through a
+  value map. That variable, `assistantSeen`, and that map, `usbLeaveMap`, are the empty configuration's
+  one more of each, appended after the 650's so every other keeps its index. The map has no case, as the
+  idle map has none: on Logitech's 700 compiles its case restores the running activity's handler set, and
+  with no activity there is none.
+
+The result is 509983 bytes with our letters unblended, every container check passing, 22 modes, the
+wiring and the state tables read back as built, the nineteen firmware screens and our three rebuilt from
+their own descriptions, and every byte attributed to a generator and none carried.
+
+**Two refusals were lifted, and both are choices of ours rather than readings.** The wiring refused a
+Harmony 700 with the Remote Assistant off, because the USB leave handler compares the variable the
+Assistant's gate compares and no 700 compile with the Assistant off has been read; and it refused a 700 with
+no activity, because only a Harmony 650 compile with none has been read. Off and no activity are what an
+empty configuration of ours is. So the leave handler keeps the shape of Logitech's 700 compiles and compares
+a variable of ours that nothing writes, which holds its first value, 0, and the handler always takes the
+map; and the no activity form is the 650's carried over. Neither is known to be what Logitech's compiler would
+write. The variable is past the firmware's eighteen, so it is one the configuration allocates
+for itself. The Harmony 600 stays refused with no activity until its own track reaches it.
+
+**The pictures follow the 700's compiles, not the 650's.** The 700 puts a battery filling up on its four
+charging frames, the empty battery with a forbidden sign that the 650 draws on its battery blank screen on
+"Please charge your remote" instead, and a full battery with a tick on its battery blank screen. Byte for
+byte on the five 2026 compiles, where "Please charge" is the 650's picture exactly; the two older ones,
+`h700_config` and `h700_config_2`, draw the same subjects in other artwork, by eye. Ours does the same with icons from the font of section 373: the
+charging battery at 20, 50, 80 and 100, the crossed out battery, and a battery with a tick. These five are
+drawn on the 700 alone, so the 650's configuration holds the same pictures as before, byte for byte.
+
+**What `todo-compile-700.md` 1.1 expected and did not find.** It said the empty builder would have to settle
+two differences: the device timer, `0xC9` at 7 on the 700 against `0xCA` at 3 on the 650, and the idle
+wiring's entries, 6 or 7 on the 700's compiles against 8. Neither is a model difference. The 6, 7 and 8 are
+the index of the leftover entry in base slot 9, which sits among the activities' entries and moves per
+compile: 5 to 8 on the Harmony 650's, 6 and 7 on the 700's seven, and 5 on a Harmony 600's; the count of
+entries less the activities is six on every compile of all three models. The device timer's index and
+instruction move per compile too, the instruction being a write to a variable each compile numbers: on the
+700 index 7 with `0xC9` or `0xC6`, index 9 with `0xB9`, or none, and on the 650 index 3 with `0xCA` or
+`0xCB`, index 5, or none. The empty configuration has no device and so no device timer; the timer is chapter
+2's, composed as the 650's is.
+
+### Scope, decision 16
+
+The Harmony 700, skin 66, as a file: nothing here has been written to a remote. Its EMEA twin, skin 69, has
+no compile or unit here and stays refused. The Harmony 650's EMEA skin 74 builds as it did before, though the
+readers that check a build refuse it, since no file of skin 74 has been read. The Harmony 600 is not built.
+The 650's empty configuration is byte for byte what it was before this section, blended and not.
+
+**What is not yet ours on the 700**: whether a page is drawn in our look, `inOurLook`, still answers for the
+Harmony 650 alone, and so does turning Logitech's letters into ours and the state backgrounds; only the
+blending of our own letters takes skin 66. The assembly of chapter 2 is where the first of those is needed.
+
+**The variable compared**, as the blind re-measurement read it: on Logitech's 700 compiles it is written 1 by
+the Remote Assistant's "Turn off Assistant" key and by nothing else, so it reads as "the Assistant was turned
+off", and the handler restores the activity's keys only while it is 0. Ours is never written, so ours
+restores them always, as Logitech's does until somebody turns the Assistant off on the remote.
+
+### Falsification
+
+A Logitech compile of a Harmony 700 with the Remote Assistant off whose USB leave handler is other than this
+shape would show what Logitech writes, and would not make ours wrong for a configuration of ours; the bench
+would, if the 700 running this file shows something other than its charging frame on the adaptor, or does
+not leave "USB Connected" when the cable comes out.
+
+### Where it lands
+
+* `packages/codec/src/families/four-slot/empty.ts`: `emptyModelOf`, `emptyModes`, `emptyVariables`,
+  `emptyMaps` and the pictures per model; `packages/codec/src/wiring.ts`, the two refusals lifted with their
+  reasons; `packages/codec/src/assemble.ts`, mode 0's check with the 700's variable.
+* `packages/codec/test/empty.test.ts`: the 700 built from nothing and the menus' keys on both models;
+  `packages/codec/test/wiring.test.ts`: the Assistant off keeps the 700's leave handler, and the 600 stays
+  refused with no activity; `packages/codec/test/icons.test.ts`: the 650's six pictures unchanged and the
+  700's five pinned.

@@ -55,13 +55,20 @@ test('the start up icon clears a title of two lines and the fixed lines below it
   assert.ok(squareTop > STARTUP_TITLE_SECOND_Y + 13 && squareBottom < STARTUP_FIXED_LINE_Y[0]! + 2);
 });
 
-test('the six pictures are built at the sizes of the pictures they replace, the same bytes every time', () => {
+test('the six pictures are built at the sizes of the pictures they replace and the Harmony 700\'s five at the size of its firmware screens\' pictures, the same bytes every time', () => {
   const made = buildOurPictures({ icons: FOUR_SLOT_CHOICES.icons, colour: FOUR_SLOT_CHOICES.iconColour, background: FOUR_SLOT_CHOICES.iconBackground });
   assert.deepEqual([...made.keys()].sort(), Object.keys(OUR_PICTURE_PLACES).sort());
-  // The five on a solid background are raw, every pixel drawn: a five byte header and 128 by 128 pixels of
+  // The ten on a solid background are raw, every pixel drawn: a five byte header and 128 by 128 pixels of
   // two bytes; the corner mark draws its ink alone and is encoded.
   for (const [name, bytes] of made) assert.equal(bytes.length, name === 'corner mark' ? 109 : 5 + 128 * 128 * 2, name);
-  const digest = createHash('sha256');
-  for (const [name, bytes] of made) digest.update(name).update(bytes);
-  assert.equal(digest.digest('hex').slice(0, 16), '463bc81f4e3af245');
+  // Two digests: the six of the Harmony 650's, which the 700's five were added beside without moving a byte
+  // of, and the 700's five, `todo-compile-700.md` 1.2.
+  const SEVEN_HUNDRED = new Set(['charging 1', 'charging 2', 'charging 3', 'charging 4', 'charged']);
+  const digestOf = (keep: (name: string) => boolean): string => {
+    const digest = createHash('sha256');
+    for (const [name, bytes] of made) if (keep(name)) digest.update(name).update(bytes);
+    return digest.digest('hex').slice(0, 16);
+  };
+  assert.equal(digestOf((name) => !SEVEN_HUNDRED.has(name)), '463bc81f4e3af245');
+  assert.equal(digestOf((name) => SEVEN_HUNDRED.has(name)), '84a4601f659e720f');
 });

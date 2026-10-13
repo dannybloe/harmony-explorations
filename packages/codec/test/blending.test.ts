@@ -207,6 +207,8 @@ test('the check refuses Logitech\'s letters, a text in a copy for another colour
   assert.throws(() => checkBlendedLetters(parse(layOutContainer(made.layout).bytes), faces, made.blended), /is not .* blended for/);
 });
 
-test('a Harmony 700 compile is refused, since its fonts were not measured', skipUnless('h700_28_config_region'), () => {
-  assert.throws(() => withBlendedLetters(takeApart(containerOf('h700_28_config_region')), []), /Harmony 650 alone/);
+test('a Harmony 700 compile of Logitech\'s is refused, since it is not in our letters and the font table that would letter it is the Harmony 650\'s alone, section 382', skipUnless('h700_28_config_region'), () => {
+  const layout = takeApart(containerOf('h700_28_config_region'));
+  assert.throws(() => withBlendedLetters(layout, []), /not lettered in our letters/);
+  assert.throws(() => withOxaniumFonts(layout, FOUR_SLOT_CHOICES.letterInks), /Harmony 650 alone/);
 });

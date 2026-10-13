@@ -583,7 +583,8 @@ function catalogue(
   entry1.set(press(35), { op: 0x0f, operand: 0xffa1 });
   // Scan 4's press maps the location, which reaches the activity menu, or with no activity at all pushes
   // the "add Activities" placeholder. `harvest_650_two_devices`, a Harmony 650, is the one compile with no
-  // activity, so the rule is one sample's and `buildWiring` refuses it on another model.
+  // activity, so the rule is one sample's; on the Harmony 700 it is ours, section 382, and `buildWiring`
+  // refuses it on the Harmony 600.
   const noActivities = activityCount === 0;
   entry1.set(press(4), {
     front: noActivities
@@ -898,17 +899,21 @@ export function buildWiring(spec: WiringSpec): BuiltWiring {
     throw new WiringError(`no ${spec.model} compile carries the boot list's 3F F715`);
   }
   // The Harmony 700's USB leave handler compares the variable the Assistant's gate compares, and no
-  // Harmony 700 compile with the Assistant off has been read, so what it compares then is not known.
-  if (!spec.settings.remoteAssistant && spec.model === 'harmony-700') {
-    throw new WiringError('no Harmony 700 compile with the Remote Assistant off has been read, and its USB leave handler compares the Assistant\'s variable');
-  }
+  // Harmony 700 compile with the Assistant off has been read, so what Logitech's compiler writes then is
+  // not known. Off is a configuration of ours, `todo-compile-700.md` 1.1: the handler keeps the shape of
+  // Logitech's 700 compiles and compares a variable of ours that nothing writes, so it holds its first
+  // value and the handler always maps the location through `usbLeaveMap`. Our choice, section 382; the
+  // variable is the configuration's own, past the firmware's eighteen, so the firmware reads nothing into it.
   // With no activity, scan 4 pushes the "add Activities" placeholder; that is one Harmony 650 compile's.
   // What Logitech's compiler binds there with activities and every activity key empty is not read, and
   // this binds what it binds with any activity, the location map that reaches the activity menu: our
   // choice, for an activity of the Custom type on a configuration of ours, section 379.
   const emptyKeys = ACTIVITY_KEY_SCANS.filter((scan) => spec.activityKeys[scan] === null).length;
   if (!Number.isInteger(spec.activityCount) || spec.activityCount < 0) throw new WiringError(`${spec.activityCount} activities is not a count`);
-  if (spec.activityCount === 0 && spec.model !== 'harmony-650') {
+  // No activity is one Harmony 650 compile's, and on the Harmony 700 a configuration of ours that carries
+  // the 650's form over, `todo-compile-700.md` 1.1, section 382. The Harmony 600 stays refused until its
+  // own track reaches it.
+  if (spec.activityCount === 0 && spec.model === 'harmony-600') {
     throw new WiringError(`no ${spec.model} compile with no activity has been read, only a Harmony 650's`);
   }
   if (spec.activityCount === 0 && emptyKeys !== ACTIVITY_KEY_SCANS.length) throw new WiringError('an activity key selects an entry and there is no activity');

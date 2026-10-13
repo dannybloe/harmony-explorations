@@ -1,0 +1,34 @@
+{
+  "name": "Harmony 700, the empty configuration built from nothing",
+  "description": "todo-compile-700 1.4, one write of lab/work/h700-from-nothing/empty-700-blend.bin: a configuration with no device and no activity built by our own generators with no Logitech file as input, section 382. It holds the firmware's nineteen screens, among them four charging frames, an empty Devices list, an empty Activities screen and the 'Turning system off' screen, in our letters, blended, and our pictures, the two menus over the idle green with white bars. Predicted: no key sends anything, so the Flirc hears nothing at all during the whole run; Devices and Activities lead to each other; an activity button shows the 'add an Activity' screen and More Activities the 'add Activities' one; Off shows 'Turning system off' and comes back to Activities. The three buttons below the screen are the left arrow, the centre button and the right arrow. Not predicted, since nothing here has been seen: what the remote shows while it charges from an adaptor; the file draws a battery filling up with a lightning bolt on its four charging frames.",
+  "steps": [
+    {
+      "instruction": "After the write, with the cable still in, the screen should show 'USB Connected' with our USB symbol. Unplug the cable. Expect 'Turning system off' with our remote icon and three lines below it, then the Activities screen: green, 'Activities' on a white bar at the top, nothing in the middle, 'Devices' on a white bar at the bottom. Say with the mark button what it shows if it differs. The Flirc hears nothing",
+      "expect": []
+    },
+    {
+      "instruction": "Press the centre button below the screen ('Devices'). Expect the Devices screen: green, 'Devices' at the top, nothing in the middle, 'Activities' at the bottom. Press the centre button again ('Activities') and expect the Activities screen. The Flirc hears nothing",
+      "expect": []
+    },
+    {
+      "instruction": "Press Watch TV. Expect a dark screen reading 'Use the Harmony setup software to add an Activity on this button.' with 'Exit' at the bottom. Press the centre button ('Exit') and expect to be back on Activities. Do the same with the other two activity buttons. The Flirc hears nothing",
+      "expect": []
+    },
+    {
+      "instruction": "Press More Activities. Expect a dark screen reading 'Use the Harmony setup software to add Activities.' with 'Exit' at the bottom. Press the centre button ('Exit') and expect Activities again. The Flirc hears nothing",
+      "expect": []
+    },
+    {
+      "instruction": "Press All Off. Expect 'Turning system off' and then the Activities screen. The Flirc hears nothing: there is no device to switch off",
+      "expect": []
+    },
+    {
+      "instruction": "If a USB charger (a phone adaptor, not a computer) is at hand, plug the remote into it. The file draws a battery filling up with a lightning bolt beside it, four pictures in turn; say with the mark button what the screen shows, if anything, and whether it changes. Unplug it and say where the remote goes. Skip this step without a charger. The Flirc hears nothing",
+      "expect": []
+    },
+    {
+      "instruction": "Leave the remote alone. Expect the screen to go dark after the 20 seconds the configuration sets, then wake it with any button and expect the Activities screen. Then press the left and right arrows below the screen and a few number keys: nothing should change and the Flirc hears nothing",
+      "expect": []
+    }
+  ]
+}

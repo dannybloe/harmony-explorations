@@ -649,7 +649,7 @@ test('section 360: checkWiring passes Logitech\'s clean compile and refuses a co
   refused(edited('elevenKeys.again', 0, 0, (spec.lists.stopLights! + 1) & 0xff), /list "stopLights" is \d+ in one place and \d+ in another/);
 });
 
-test('section 360: the "add Activities" rule is keyed on the activity count and refused where it is not read: no activity with an activity key set and no activity outside the Harmony 650; activities with every activity key empty bind scan 4 as any activity does, section 379',
+test('section 360: the "add Activities" rule is keyed on the activity count and refused where it is not read: no activity with an activity key set, and no activity on the Harmony 600, whose track has not reached it; activities with every activity key empty bind scan 4 as any activity does, section 379',
      skipUnless(NO_ACTIVITIES, 'h650_config_region'), () => {
   const none = describeWiring(takeApart(containerOf(NO_ACTIVITIES)));
   const some = describeWiring(takeApart(containerOf('h650_config_region')));
@@ -663,15 +663,22 @@ test('section 360: the "add Activities" rule is keyed on the activity count and 
   assert.deepEqual(scan4(keyless), scan4(some));
   assert.notDeepEqual(scan4(keyless), scan4(none));
   refuses({ ...none, model: 'harmony-600' }, /no harmony-600 compile with no activity/);
-  refuses({ ...none, model: 'harmony-700' }, /no harmony-700 compile with no activity/);
+  // The Harmony 700 with no activity is a configuration of ours since section 382, `emptyWiring`'s test.
   // The control: both as read build.
   buildWiring(none);
   buildWiring(some);
 });
 
-test('section 360: a Harmony 700 with the Remote Assistant off is refused, since no such compile has been read', skipUnless('h700_config'), () => {
+test('section 382: a Harmony 700 with the Remote Assistant off keeps Logitech\'s USB leave handler and changes only the three lists that call the Assistant\'s gate', skipUnless('h700_config'), () => {
   const spec = describeWiring(takeApart(containerOf('h700_config')));
-  assert.throws(() => buildWiring({ ...spec, settings: { ...spec.settings, remoteAssistant: false } }),
-    (e: unknown) => e instanceof WiringError && /Remote Assistant off/.test(e.message));
+  assert.equal(spec.settings.remoteAssistant, true);
+  const on = buildWiring(spec);
+  const off = buildWiring({ ...spec, settings: { ...spec.settings, remoteAssistant: false } });
+  const list = (built: typeof on, name: string): string => built.lists.get(spec.lists[name] ?? wiringFrontIndex(spec, name))!.bytes.join(',');
+  for (const name of ['usbLeave', 'usbLeave.second', 'usbLeave.second.test']) assert.equal(list(off, name), list(on, name), name);
+  // The setting shows in exactly the three lists that call into the gate, which call the location map instead.
+  const differ = Object.keys(spec.lists).filter((name) => on.lists.get(spec.lists[name]!) !== undefined
+    && on.lists.get(spec.lists[name]!)!.bytes.join(',') !== off.lists.get(spec.lists[name]!)?.bytes.join(','));
+  assert.deepEqual(differ.sort(), ['idleEnter.second.then', 'idleResume', 'quiet']);
 });
 

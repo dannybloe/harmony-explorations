@@ -216,9 +216,24 @@ export const OUR_PICTURE_PLACES = {
   'Low Battery': { width: 128, height: 128, centre: [64, 64], size: 64, opaque: true },
   'battery blank screen': { width: 128, height: 128, centre: [64, 64], size: 64, opaque: true },
   'upgrade and learn blank screens': { width: 128, height: 128, centre: [64, 64], size: 64, opaque: true },
+  // The Harmony 700's own, `todo-compile-700.md` 1.2: its four charging frames, mode 0 to 3, and the full
+  // battery of its battery blank screen, each where Logitech's 700 compiles draw theirs, in the same square.
+  'charging 1': { width: 128, height: 128, centre: [64, 64], size: 64, opaque: true },
+  'charging 2': { width: 128, height: 128, centre: [64, 64], size: 64, opaque: true },
+  'charging 3': { width: 128, height: 128, centre: [64, 64], size: 64, opaque: true },
+  'charging 4': { width: 128, height: 128, centre: [64, 64], size: 64, opaque: true },
+  'charged': { width: 128, height: 128, centre: [64, 64], size: 64, opaque: true },
 } as const satisfies Record<string, { width: number; height: number; centre: readonly [number, number]; size: number; opaque: boolean }>;
 
 export type OurPictureName = keyof typeof OUR_PICTURE_PLACES;
+
+/**
+ * The six of ours that replace a picture of Logitech's by its name, which the assembly puts over a Logitech
+ * compile's; the Harmony 700's five draw on screens only a configuration of ours holds pictures of ours on.
+ */
+export const LOGITECH_REPLACED: readonly OurPictureName[] = [
+  'start up picture', 'corner mark', 'USB Connected', 'Low Battery', 'battery blank screen', 'upgrade and learn blank screens',
+];
 
 /** Which icon each of our pictures draws, and in which colours: a family's choice, `FourSlotChoices.pictures`. */
 export interface OurPictureChoices {
@@ -229,10 +244,13 @@ export interface OurPictureChoices {
   readonly background: number;
 }
 
-/** Our six pictures drawn and encoded, by the name of Logitech's picture each replaces. */
-export function buildOurPictures(choices: OurPictureChoices): Map<string, Uint8Array> {
+/** Our pictures drawn and encoded, by the name of Logitech's picture each replaces or, for the Harmony 700's own, by ours. */
+export function buildOurPictures(
+  choices: OurPictureChoices, names: readonly OurPictureName[] = Object.keys(OUR_PICTURE_PLACES) as OurPictureName[],
+): Map<string, Uint8Array> {
   const out = new Map<string, Uint8Array>();
-  for (const [name, place] of Object.entries(OUR_PICTURE_PLACES) as [OurPictureName, (typeof OUR_PICTURE_PLACES)[OurPictureName]][]) {
+  for (const name of names) {
+    const place = OUR_PICTURE_PLACES[name];
     const drawing: IconDrawing = {
       kind: 'icon', width: place.width, height: place.height, icon: choices.icons[name], centre: place.centre, size: place.size,
       colour: choices.colour, ...(place.opaque ? { background: choices.background } : {}),

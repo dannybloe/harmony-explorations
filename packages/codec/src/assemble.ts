@@ -90,10 +90,10 @@ import { layOutContainer, takeApart } from './frame.ts';
 import { LOOSE_KINDS, loosen, placePieces } from './placer.ts';
 import { buildStateTables, describeStateTables, hourListBytes, withStateTables } from './statetables.ts';
 import {
-  buildWiring, builtPieces, checkWiring, describeWiring, withWiring, wiringModelOfSkin, type WiringSettings,
+  buildWiring, builtPieces, checkWiring, describeWiring, withWiring, wiringModelOfSkin, type WiringSettings, type WiringSpec,
 } from './wiring.ts';
 import { modeZeroKeyList } from './modezero.ts';
-import { buildOurPictures, buildPictures, checkOurPictures, checkPictures, describePictures, withPictures } from './pictures.ts';
+import { LOGITECH_REPLACED, buildOurPictures, buildPictures, checkOurPictures, checkPictures, describePictures, withPictures } from './pictures.ts';
 import {
   activityEntriesByName, buildScreenRecords, checkScreenRecords, describeScreenRecords, inActivityOrder,
   withScreenRecords,
@@ -677,7 +677,7 @@ export function assembleSetup(setup: Recipe, options: AssembleOptions): Assemble
   // The piece is written in place, since base slot 6's table names it as mode 0's record: a new object
   // would leave that address naming a piece the layout no longer holds.
   layout = takeApart(c);
-  const zero = modeZeroKeyList(wiring.model);
+  const zero = modeZeroOf(wiring);
   if (zero.length !== layout.keyTable.bytes.length || layout.keyTable.refs.length > 0) {
     throw new AssemblyError(`mode 0's key list is ${zero.length} bytes where the donor's key table piece is ${layout.keyTable.bytes.length}`);
   }
@@ -718,7 +718,7 @@ export function assembleSetup(setup: Recipe, options: AssembleOptions): Assemble
   if (!ours && choices.pictures === 'ours') {
     const before = c;
     layout = takeApart(c);
-    const ours = buildOurPictures({ icons: choices.icons, colour: choices.iconColour, background: choices.iconBackground });
+    const ours = buildOurPictures({ icons: choices.icons, colour: choices.iconColour, background: choices.iconBackground }, LOGITECH_REPLACED);
     c = layOutContainer(withPictures(layout, describePictures(layout), new Map([...buildPictures(), ...ours]))).container;
     note('our pictures', checkOurPictures(before, c, ours).join(', '));
   }
@@ -952,9 +952,20 @@ export function checkAssembled(c: Container): void {
   const layout = takeApart(c);
   const rebuilt = layOutContainer(withStateTables(layout, buildStateTables(describeStateTables(layout)))).bytes;
   if (!sameBytes(rebuilt, c.blob)) throw new AssemblyError('the state tables do not rebuild from their description');
-  if (!sameBytes(layout.keyTable.bytes, modeZeroKeyList(describeWiring(layout).model))) {
+  if (!sameBytes(layout.keyTable.bytes, modeZeroOf(describeWiring(layout)))) {
     throw new AssemblyError('mode 0\'s key list is not the generated one');
   }
+}
+
+/**
+ * Mode 0's key list for a wiring: on the Harmony 700 its leading entry sets the low battery variable the
+ * wiring names, section 357, and on the Harmony 600 and 650 it takes none.
+ */
+function modeZeroOf(wiring: WiringSpec): Uint8Array {
+  if (wiring.model !== 'harmony-700') return modeZeroKeyList(wiring.model);
+  const variable = wiring.variables.lowBattery;
+  if (variable === undefined) throw new AssemblyError('the wiring names no low battery variable for mode 0');
+  return modeZeroKeyList(wiring.model, { variable });
 }
 
 function sameBytes(a: Uint8Array, b: Uint8Array): boolean {
@@ -1090,7 +1101,7 @@ export function attributeBytes(c: Container): AttributedBytes {
   }
   // Mode 0, the key table.
   const zeroAt = c.markerOffset + END_MARKER_LENGTH;
-  if (sameBytes(layout.keyTable.bytes, modeZeroKeyList(describeWiring(layout).model))) mark(zeroAt, layout.keyTable.bytes.length, 'mode 0');
+  if (sameBytes(layout.keyTable.bytes, modeZeroOf(describeWiring(layout)))) mark(zeroAt, layout.keyTable.bytes.length, 'mode 0');
   // The screens and the texts, through what their own descriptions span.
   checkScreenRecords(c);
   const records = describeScreenRecords(c, layout);

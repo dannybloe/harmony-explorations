@@ -35,7 +35,7 @@ import { characterMap } from './text.ts';
 import { letterRows } from './lettering.ts';
 import { UNDRAWN, renderVariants, type TextDrawn } from './render.ts';
 import { modePages } from './sections.ts';
-import { HARMONY_650_SKINS } from './backgrounds.ts';
+import { BLENDED_LETTER_SKINS } from './backgrounds.ts';
 import { FontTableError, type SetFace, letterFaceOf, lettered } from './fonttable.ts';
 
 /** How many appearances of one page are drawn before the page counts as not fully seen. */
@@ -133,8 +133,8 @@ function selectColours(c: Container): Map<number, { font: number; colour?: numbe
 export function withBlendedLetters(layout: ContainerLayout, faces: readonly SetFace[]): LettersBlended {
   const laid = layOutContainer(layout);
   const c = laid.container;
-  if (c.architecture !== 14 || !HARMONY_650_SKINS.has(layout.skin)) {
-    throw new FontTableError('blended letters are built for the Harmony 650 alone, whose fonts they were measured on');
+  if (c.architecture !== 14 || !BLENDED_LETTER_SKINS.has(layout.skin)) {
+    throw new FontTableError('blended letters are built for the Harmony 650, and for the Harmony 700 on a configuration of ours, section 382');
   }
   const map = characterMap(c);
   if (map === undefined || map.alphabet !== 'oxanium') throw new FontTableError('the configuration is not lettered in our letters');

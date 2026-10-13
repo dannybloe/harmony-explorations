@@ -13,8 +13,10 @@ import {
   pageListCopies, screenProgram, stateVariables, takeApart, taggedList, valueMaps,
 } from '../src/index.ts';
 import {
-  EMPTY_FONT_SETS, EMPTY_MODES, EMPTY_VARIABLES, buildEmptyConfiguration, buildEmptySkeleton, emptyCodeOf, emptyVariable,
+  EMPTY_FONT_SETS, EMPTY_VARIABLES, buildEmptyConfiguration, buildEmptySkeleton, emptyCodeOf, emptyModelOf, emptyModes, emptyVariable,
+  emptyVariables,
 } from '../src/families/four-slot/empty.ts';
+import { modeZeroKeyList } from '../src/modezero.ts';
 import { DEVICES_KEY_TAG, DEVICE_MODE_PROGRAM_TAG, cornerPrograms } from '../src/families/four-slot/chrome.ts';
 import { CORNER_PLACES, cornerPlaceAt, cornerProgramAt, emptyFont } from '../src/families/four-slot/empty.ts';
 import { OUR_LOOK, deviceModeChrome, inOurLook } from '../src/families/four-slot/chrome.ts';
@@ -76,9 +78,9 @@ const LOOK = {
   pictures: { icons: FOUR_SLOT_CHOICES.icons, colour: FOUR_SLOT_CHOICES.iconColour, background: FOUR_SLOT_CHOICES.iconBackground },
 };
 
-function buildEmpty(blendLetters = false) {
+function buildEmpty(blendLetters = false, skin = 72) {
   return buildEmptyConfiguration({
-    skin: 72, builtAt: BUILT_AT, inks: FOUR_SLOT_CHOICES.letterInks, settings: FOUR_SLOT_CHOICES.settings, look: LOOK, blendLetters,
+    skin, builtAt: BUILT_AT, inks: FOUR_SLOT_CHOICES.letterInks, settings: FOUR_SLOT_CHOICES.settings, look: LOOK, blendLetters,
   });
 }
 
@@ -117,8 +119,13 @@ test('11.1.1.3: the firmware screens rebuild byte for byte from their own descri
   assert.equal(checked.lists, 10);
 });
 
-test('11.1.1.3: the menus\' keys lead where a compile with activities leads with none running', () => {
-  const c = buildEmpty().container;
+test('11.1.1.3, and todo-compile-700.md 1.1 on the Harmony 700: the menus\' keys lead where a compile with activities leads with none running', () => {
+  for (const skin of [72, 66]) menusLead(skin);
+});
+
+function menusLead(skin: number): void {
+  const c = buildEmpty(false, skin).container;
+  const EMPTY_MODES = emptyModes(emptyModelOf(skin));
   const records = modeRecords(c)!;
   assert.equal(records.length, EMPTY_MODES.off + 1);
   const maps = valueMaps(c)!;
@@ -148,7 +155,7 @@ test('11.1.1.3: the menus\' keys lead where a compile with activities leads with
     assert.deepEqual(own(mode, DEVICE_MODE_PROGRAM_TAG), { tag: DEVICE_MODE_PROGRAM_TAG, operand: 0, opcode: RUN_SCREEN_PROGRAM, flags: undefined });
   }
   assert.deepEqual(cornerPrograms(c), [0]);
-});
+}
 
 test('11.1.1.3: every page has its copy where the reader finds it, and the bank holds what the screens draw', () => {
   const built = buildEmpty();
@@ -227,6 +234,44 @@ test('11.1.1.4: the empty configuration reads back as ours, its three screens re
   assert.equal(Object.values(a.generated).reduce((n, v) => n + v, 0), a.total);
 });
 
+test('todo-compile-700.md 1.1 to 1.3: the Harmony 700 built from nothing: its wiring and state tables read back, its nineteen firmware screens and three of ours rebuild, mode 0\'s key table is the charging frame\'s, and every byte attributed to a generator, none carried', () => {
+  const built = buildEmpty(false, 66);
+  const c = built.container;
+  assert.ok(c.allChecksPass);
+  assert.equal(c.architecture, 14);
+  assert.equal(c.versionWord! & 0xff, 66);
+  const layout = takeApart(c);
+  const wiring = describeWiring(layout);
+  assert.equal(wiring.model, 'harmony-700');
+  assert.deepEqual(
+    { lists: wiring.lists, maps: wiring.maps, variables: wiring.variables, modes: wiring.modes, entries: wiring.entries, settings: wiring.settings },
+    { lists: built.wiring.spec.lists, maps: built.wiring.spec.maps, variables: built.wiring.spec.variables, modes: built.wiring.spec.modes, entries: built.wiring.spec.entries, settings: built.wiring.spec.settings },
+  );
+  // The 650's variables, then the Assistant's mark the USB leave handler compares, section 382.
+  assert.deepEqual(describeStateTables(layout).variables, emptyVariables('harmony-700').map(([, one]) => ({ transitions: [], ...one })));
+  assert.equal(emptyVariables('harmony-700').length, EMPTY_VARIABLES.length + 1);
+  assert.deepEqual(checkFirmwareScreens(c), { structure: 8864, screens: 19, lists: 10 });
+  assert.equal(modeRecords(c)!.length, emptyModes('harmony-700').off + 1);
+  // Mode 0's own key map is the key table, and it is the charging frame's, which sets the low battery flag.
+  assert.deepEqual([...layout.keyTable.bytes], [...modeZeroKeyList('harmony-700', { variable: emptyVariable('lowBattery') })]);
+  assert.deepEqual(checkScreenRecords(c), { structure: 485, rows: 0, pages: 3 });
+  // The plain background, the two bars, the idle background and patch, and the eleven of ours the 700 draws:
+  // the 650's six and its four charging frames and full battery.
+  assert.equal(takeApart(c).pictures.length, 16);
+  assert.equal(characterMap(c)?.drawn.resolved, characterMap(c)?.drawn.total);
+  const a = attributeBytes(c);
+  assert.deepEqual(Object.fromEntries(a.carried), {});
+  assert.deepEqual(a.generated, {
+    frame: 136, addresses: 3069, description: 676, 'mode 0': 653, wiring: 1497, 'state tables': 497, 'screen records': 451,
+    'firmware screens': 8124, 'corner programs': 38, texts: 0, pictures: 401140, letters: 93702,
+  });
+  assert.equal(Object.values(a.generated).reduce((n, v) => n + v, 0), a.total);
+  // With our letters blended, as it will be written, every drawn code still reads.
+  const blended = buildEmpty(true, 66).container;
+  assert.ok(blended.allChecksPass);
+  assert.equal(characterMap(blended)?.drawn.resolved, characterMap(blended)?.drawn.total);
+});
+
 test('section 375: the activity menu and the menu marker found by structure are the ones the rows find on 23 compiles, and found with no row on the other and on ours',
   skipUnless(...COMPILES), () => {
     let agree = 0;
@@ -248,7 +293,7 @@ test('section 375: the activity menu and the menu marker found by structure are 
     assert.equal(agree, 23);
     const ours = buildEmpty().container;
     assert.equal(activityMenuByRows(ours), undefined);
-    assert.equal(fourSlotActivityMenu(ours), EMPTY_MODES.activityMenu);
+    assert.equal(fourSlotActivityMenu(ours), emptyModes('harmony-650').activityMenu);
     assert.equal(fourSlotMenuMarkerWriter(ours), emptyVariable('menuMarker'));
   });
 
