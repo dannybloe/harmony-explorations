@@ -67,7 +67,7 @@ The Harmony One is a different type, with a touch screen and its own screens, so
   - [ ] 5.2.2 A composed device: refused while its device list is full (section 285)
   - [ ] 5.2.3 A composed activity and its own device list: against its file only (sections 289, 290 and 294)
   - [ ] 5.2.4 A delay saved on the remote overrides the configuration's (section 303), so a written delay can do nothing
-- [ ] 5.3 The Harmony 700: confirm the 650's track
+- [ ] 5.3 The Harmony 700: confirm the 650's track; a build from nothing is its own track since 13 October 2026, [todo-compile-700.md](todo-compile-700.md)
   - [x] 5.3.1 A whole configuration written (sections 300 and 301)
   - [ ] 5.3.2 A composed device: refused while its device list is full (section 285)
   - [ ] 5.3.3 A composed activity and its own device list: against its file only, and never on the remote (was 1.2.11)
