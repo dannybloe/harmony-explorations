@@ -30,6 +30,7 @@ import { readFileSync } from 'node:fs';
 import { checkFirmwareScreens } from '../src/firmwarescreens.ts';
 import { checkScreenRecords } from '../src/screenrecords.ts';
 import { assembleSetup, attributeBytes } from '../src/assemble.ts';
+import { OUR_FOUR_SLOT_CHOICES } from '../src/index.ts';
 import type { Recipe } from '../src/index.ts';
 import { fourSlotActivityMenu, fourSlotMenuMarkerWriter } from '../src/families/four-slot/chrome.ts';
 import { activityMenuByRows, menuMarkerOf } from '../src/shared/menus.ts';
@@ -320,6 +321,26 @@ test('section 378: the assembly takes the empty configuration as its donor, runs
   ]);
   // A blended donor holds more sets than the description, and blending runs once, last.
   assert.throws(() => assembleSetup(recipe, { donor: buildEmpty(true).bytes, archive: IR_ARCHIVE! }), /is blended or not one of ours/);
+});
+
+test('a build on the empty configuration takes our look as its defaults, smoothed letters included, where one on Logitech\'s compiles keeps theirs', skipWithoutIrArchive(), () => {
+  assert.deepEqual([OUR_FOUR_SLOT_CHOICES.letters, OUR_FOUR_SLOT_CHOICES.backgrounds, OUR_FOUR_SLOT_CHOICES.pictures, OUR_FOUR_SLOT_CHOICES.blendLetters],
+    ['oxanium', 'state colours', 'ours', true]);
+  assert.deepEqual([FOUR_SLOT_CHOICES.letters, FOUR_SLOT_CHOICES.backgrounds, FOUR_SLOT_CHOICES.pictures, FOUR_SLOT_CHOICES.blendLetters],
+    ['logitech', 'designed', 'logitech', false]);
+  // The rest are one set of defaults: only those four top level choices differ.
+  const differ = Object.keys(FOUR_SLOT_CHOICES).filter((key) => JSON.stringify(FOUR_SLOT_CHOICES[key as keyof typeof FOUR_SLOT_CHOICES])
+    !== JSON.stringify(OUR_FOUR_SLOT_CHOICES[key as keyof typeof OUR_FOUR_SLOT_CHOICES])).sort();
+  assert.deepEqual(differ, ['backgrounds', 'blendLetters', 'letters', 'pictures']);
+  // A recipe stating no choice: on the empty configuration it is assembled and blended, where before the
+  // assembly refused it for asking a donor of ours for Logitech's look.
+  const recipe = { model: { name: 'Harmony 650', skin: 72 }, devices: [{ name: 'TV', device: 'LG/OLED65G26LA' }], activities: [] } as unknown as Recipe;
+  const out = assembleSetup(recipe, { donor: buildEmpty().bytes, archive: IR_ARCHIVE! });
+  assert.ok(out.steps.some((one) => one.step === 'blended letters'));
+  assert.ok((out.blended?.length ?? 0) > 0);
+  // And smoothing stays a choice a recipe can turn off.
+  const plain = assembleSetup({ ...recipe, choices: { blendLetters: false } } as Recipe, { donor: buildEmpty().bytes, archive: IR_ARCHIVE! });
+  assert.ok(!plain.steps.some((one) => one.step === 'blended letters'));
 });
 
 test('section 379: the first activity goes onto the empty configuration through the assembly, on the Watch TV key or on none, and its wiring, its name and its looks read back', skipWithoutIrArchive(), () => {

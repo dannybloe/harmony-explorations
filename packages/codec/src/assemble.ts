@@ -116,7 +116,9 @@ import { inputPlan, inputTarget } from './inputs.ts';
 import { catalogueDriving } from './driving.ts';
 import { activityPauseGroups, composeSequence } from './sequence.ts';
 import { FOUR_SLOT } from './families/four-slot/index.ts';
-import { FOUR_SLOT_CHOICES, type FourSlotChoices, type FourSlotChoicesGiven, fourSlotChoices } from './families/four-slot/choices.ts';
+import {
+  FOUR_SLOT_CHOICES, OUR_FOUR_SLOT_CHOICES, type FourSlotChoices, type FourSlotChoicesGiven, fourSlotChoices,
+} from './families/four-slot/choices.ts';
 import { SCREEN_STATES, checkStateBackgrounds, ourPictureName, withStateBackgrounds } from './backgrounds.ts';
 import { cornerPrograms, inOurLook } from './families/four-slot/chrome.ts';
 import { cornerProgramAt, emptyFontTable } from './families/four-slot/empty.ts';
@@ -486,7 +488,10 @@ export function assembleSetup(setup: Recipe, options: AssembleOptions): Assemble
   if (c.architecture !== 14) throw new AssemblyError(`the assembly is arch 14's, and the donor is arch ${c.architecture}`);
   const skin = (c.versionWord ?? -1) & 0xff;
   if (skin !== target.skin) throw new AssemblyError(`the recipe is for skin ${target.skin}, and the donor is skin ${skin}`);
-  const choices = fourSlotChoices(setup.choices as FourSlotChoicesGiven | undefined);
+  // A donor of ours, an empty configuration, section 377, takes our look as its defaults, smoothed letters
+  // included; one of Logitech's compiles takes theirs, which its byte for byte tests are held to.
+  const ours = inOurLook(c);
+  const choices = fourSlotChoices(setup.choices as FourSlotChoicesGiven | undefined, ours ? OUR_FOUR_SLOT_CHOICES : FOUR_SLOT_CHOICES);
   if (choices.blendLetters && choices.letters !== 'oxanium') {
     throw new AssemblyError('only our letters can be blended, since only theirs come with grey levels');
   }
@@ -506,7 +511,6 @@ export function assembleSetup(setup: Recipe, options: AssembleOptions): Assemble
   // are the empty configuration's description, held to its font sets byte for byte, so blending, the one
   // look step left, letters exactly the sets it holds; it has to be unblended, since blending runs once,
   // last, over every text the composers add.
-  const ours = inOurLook(c);
   let faces: SetFace[] | undefined;
   if (ours) {
     if (choices.letters !== 'oxanium' || choices.backgrounds !== 'state colours' || choices.pictures !== 'ours') {

@@ -170,7 +170,27 @@ const TWIN_FACES = [['F15', 'R15'], ['F13', 'R13']] as const;
 export class ChoiceError extends Error {}
 
 /** The family's choices with a recipe's over its defaults. */
-export function fourSlotChoices(given: FourSlotChoicesGiven = {}): FourSlotChoices {
+/**
+ * The defaults of a build from nothing, on a donor of ours, the empty configuration, `todo-compile-650.md` 11:
+ * our letters, the state colours and our pictures, which such a donor already is and the assembly refuses
+ * any other for, and our letters blended, decided on 13 October 2026. `FOUR_SLOT_CHOICES` keeps the values
+ * the constants had, Logitech's look, because an assembly on one of Logitech's compiles is held to their
+ * compile byte for byte with those defaults, and only our letters can be blended.
+ */
+export const OUR_FOUR_SLOT_CHOICES: FourSlotChoices = {
+  ...FOUR_SLOT_CHOICES,
+  letters: 'oxanium',
+  blendLetters: true,
+  pictures: 'ours',
+  backgrounds: 'state colours',
+};
+
+/**
+ * A recipe's choices over the defaults, checked: `FOUR_SLOT_CHOICES` on one of Logitech's compiles and
+ * `OUR_FOUR_SLOT_CHOICES` on a donor of ours. The two differ in four top level choices only, so the
+ * parts given in part are completed from either.
+ */
+export function fourSlotChoices(given: FourSlotChoicesGiven = {}, defaults: FourSlotChoices = FOUR_SLOT_CHOICES): FourSlotChoices {
   for (const name of Object.keys(given)) {
     if (!(name in FOUR_SLOT_CHOICES)) throw new ChoiceError(`the Harmony 600, 650 and 700 make no choice called ${name}`);
   }
@@ -204,7 +224,7 @@ export function fourSlotChoices(given: FourSlotChoicesGiven = {}): FourSlotChoic
     }
   }
   return {
-    ...FOUR_SLOT_CHOICES,
+    ...defaults,
     ...given,
     settings: { ...FOUR_SLOT_CHOICES.settings, ...given.settings },
     stateColours: { ...FOUR_SLOT_CHOICES.stateColours, ...given.stateColours },

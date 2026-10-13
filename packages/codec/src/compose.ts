@@ -259,7 +259,7 @@ export function composeActivity(c: Container, activity: ComposeActivity): Compos
 }
 
 export {
-  ChoiceError, FOUR_SLOT_CHOICES, type FourSlotChoices, type FourSlotChoicesGiven, fourSlotChoices,
+  ChoiceError, FOUR_SLOT_CHOICES, OUR_FOUR_SLOT_CHOICES, type FourSlotChoices, type FourSlotChoicesGiven, fourSlotChoices,
 } from './families/four-slot/choices.ts';
 export { TOUCH_CHOICES, type TouchChoices } from './families/touch/choices.ts';
 export type { CommonChoices, DelayDefaults, FamilyTraits, WithChoices } from './families/family.ts';
