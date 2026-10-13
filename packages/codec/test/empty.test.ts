@@ -17,7 +17,7 @@ import {
 } from '../src/families/four-slot/empty.ts';
 import { DEVICES_KEY_TAG, DEVICE_MODE_PROGRAM_TAG, cornerPrograms } from '../src/families/four-slot/chrome.ts';
 import { cornerProgramAt, emptyFont } from '../src/families/four-slot/empty.ts';
-import { OUR_LOOK, deviceModeChrome } from '../src/families/four-slot/chrome.ts';
+import { OUR_LOOK, deviceModeChrome, inOurLook } from '../src/families/four-slot/chrome.ts';
 import { fourSlotMenus, fourSlotTemplate } from '../src/families/four-slot/menus.ts';
 import { stateLookOf } from '../src/families/four-slot/statelook.ts';
 import { composeCatalogueDevices } from '../src/composecatalogue.ts';
@@ -25,7 +25,8 @@ import { bitmapReference } from '../src/screen.ts';
 import { activities, deviceListRows } from '../src/inventory.ts';
 import { activityKeys } from '../src/activitykeys.ts';
 import { IR_ARCHIVE, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
-import { archSlot, checkWiring, parse } from '../src/index.ts';
+import { archSlot, checkWiring, parse, readRecipe, screenStrings } from '../src/index.ts';
+import { readFileSync } from 'node:fs';
 import { checkFirmwareScreens } from '../src/firmwarescreens.ts';
 import { checkScreenRecords } from '../src/screenrecords.ts';
 import { assembleSetup, attributeBytes } from '../src/assemble.ts';
@@ -346,4 +347,43 @@ test('section 379: the first activity goes onto the empty configuration through 
     // The front list the key no longer needs is dropped with the lists nothing names.
     if (key !== undefined) assert.match(out.steps.find((one) => one.step === 'lists dropped')?.detail ?? '', /^1 lists, 7 bytes/);
   }
+});
+
+test('section 380: the whole test setup assembles on the empty configuration, with no Logitech file as input, every device list page by page in the order taken from Logitech\'s compile of the same setup, and nothing carried but what the composers make', skipWithoutIrArchive(), () => {
+  const setup = readRecipe(JSON.parse(readFileSync(new URL('../../corpus/setups/h650-test.json', import.meta.url), 'utf8')));
+  const recipe = { ...setup, choices: { letters: 'oxanium', backgrounds: 'state colours', pictures: 'ours', blendLetters: false } } as Recipe;
+  // The two inputs: a configuration our generators built from nothing, and the catalogue.
+  const out = assembleSetup(recipe, { donor: buildEmpty().bytes, archive: IR_ARCHIVE! });
+  const c = out.container;
+  // None of Logitech's device page looks held whole; that every picture byte is a rule's or ours is the
+  // attribution's, below, where no picture kind is carried.
+  assert.ok(inOurLook(c));
+  assert.deepEqual(activities(c).map((one) => one.name?.replaceAll('_', ' ')), setup.activities.map((one) => one.name));
+  assert.deepEqual(deviceListRows(c).map((row) => row.label).sort(), setup.devices.map((one) => one.name).sort());
+  // Each device list's labels, page by page, as the menus draw them: the idle one first, then each
+  // activity's in the setup's order. The order is taken from Logitech's compile of this setup,
+  // `h650_test_config_clean`, which draws every one of them so, four and then three.
+  const strings = screenStrings(c, characterMap(c)!);
+  const records = modeRecords(c)!;
+  const drawn = fourSlotMenus(c).filter((one) => one.kind !== 'activity menu').map((one) => records[one.menu]!.pages
+    .map((page) => strings.filter((s) => s.program === page.program).map((s) => s.text)
+      .filter((text) => !['Devices', 'Activities', 'Activity', '1', '2', '/'].includes(text))));
+  assert.deepEqual(drawn, [
+    [['LG TV', 'Plasma', 'Denon', 'KPN'], ['Kodi', 'Switch', 'Sony HT']],
+    [['LG TV', 'KPN', 'Denon', 'Plasma'], ['Kodi', 'Switch', 'Sony HT']],
+    [['Plasma', 'Kodi', 'Denon', 'LG TV'], ['KPN', 'Switch', 'Sony HT']],
+    [['Kodi', 'Sony HT', 'LG TV', 'Plasma'], ['Denon', 'KPN', 'Switch']],
+    [['LG TV', 'Kodi', 'Switch', 'Plasma'], ['Denon', 'KPN', 'Sony HT']],
+    [['Plasma', 'KPN', 'LG TV', 'Denon'], ['Kodi', 'Switch', 'Sony HT']],
+  ]);
+  // The names are spelt as Logitech's compilers spell them, an underscore for a space, none of 5397 of theirs
+  // holding a space: `LG_TV_Power_2` for the device the screen calls LG TV.
+  assert.ok(stateVariables(c).some((one) => one.label === 'LG_TV_Power'));
+  assert.deepEqual(stateVariables(c).filter((one) => one.label?.includes(' ')).map((one) => one.label), []);
+  // What no describing generator rebuilds is the composers' own: the devices' infrared, lists, modes and
+  // pages with their copies, the activities' key maps and the programs of their screens.
+  assert.deepEqual([...attributeBytes(c).carried.keys()].sort(), [
+    'slot-10-list reached', 'slot-10-list reached by nothing', 'slot-11-program', 'slot-5-block', 'slot-5-group', 'slot-5-header',
+    'slot-6-entry', 'slot-6-mode', 'slot-6-page-list', 'slot-6-page-list-copy', 'slot-9-list',
+  ]);
 });

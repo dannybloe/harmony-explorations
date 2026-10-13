@@ -145,6 +145,17 @@ export function stateRecordEnd(c: Container): number {
 }
 
 /**
+ * A label as base slot 0 spells it, a space written as an underscore: Logitech's compilers write no space
+ * in a name, none of 5397 names across 128 configurations of five architectures, and spell a device
+ * "LG TV" as `LG_TV_Power_2`, section 86. A label itself holds no underscore, `composeDeviceFor`, so the
+ * screen's spelling is the name's with each underscore a space again, which is how every reader here
+ * reads it back. Section 380.
+ */
+export function nameOfLabel(label: string): string {
+  return label.replaceAll(' ', '_');
+}
+
+/**
  * Name a state variable: a level 1 node added to the name tree's frame, the frame's own length grown
  * to say so, and then the level 1 nodes put back in the compiler's order, `orderNameTree`.
  *

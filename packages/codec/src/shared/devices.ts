@@ -24,7 +24,7 @@ import {
 } from '../sections.ts';
 import { arch14Starts } from '../shared/activities.ts';
 import {
-  ACTION_TABLE_SLOT, appendActionLists, appendNameNode, appendNarrowStateVariable, appendValueMap, ComposeError,
+  ACTION_TABLE_SLOT, appendActionLists, appendNameNode, appendNarrowStateVariable, appendValueMap, ComposeError, nameOfLabel,
   nextDeviceIdentifier, queueing, restamped, STATE_WRITE_LIMIT, stateRecordEnd,
 } from '../shared/core.ts';
 import { appendTableEntries, type ComposeCommand, composeIrGroup, type ComposePowerStep } from '../shared/infrared.ts';
@@ -321,7 +321,7 @@ export function composeDeviceFor(
   // variables needed the same insertion: one copy of the derivation rather than two, and the record
   // built here is handed over whole. The name tree node is `<label>_Power_2`, indexed by the new
   // variable.
-  const appended = appendNarrowStateVariable(current, record.bytes, `${device.label}_Power_2`);
+  const appended = appendNarrowStateVariable(current, record.bytes, `${nameOfLabel(device.label)}_Power_2`);
   const variable = appended.variable;
   const named = parse(appended.bytes);
 

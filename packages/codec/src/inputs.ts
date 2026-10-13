@@ -98,6 +98,7 @@ import { STATE_WRITE_BASE } from './actions.ts';
 import { ACTION_LIST_INDEX_OPCODE, STATE_RECORD_HEADER, STATE_VALUE_LENGTH, stateTable } from './sections.ts';
 import { DEVICE_QUANTITY, INPUT_PROPERTY, SEND_INFRARED, deviceVariables, stateVariables } from './inventory.ts';
 import { relocate } from './relocate.ts';
+import { nameOfLabel } from './shared/core.ts';
 import { Writer } from './emit.ts';
 import {
   ACTION_TABLE_SLOT, ComposeError, type ComposeActivityTarget, type ComposedDevice, SILENT_WRITE,
@@ -519,7 +520,7 @@ export function composeDeviceInputs(c: Container, inputs: ComposeInputs): Compos
   let current = c;
   for (const [k, variable] of variables.entries()) {
     const appended = appendNarrowStateVariable(
-      current, records[k]!, `${inputs.label}_${variable.property}_${variable.values.length}`);
+      current, records[k]!, `${nameOfLabel(inputs.label)}_${variable.property}_${variable.values.length}`);
     if (appended.variable !== indexOf.get(variable.property)) {
       throw new ComposeError(`${variable.property} landed at ${appended.variable}, not where its writes name it`);
     }

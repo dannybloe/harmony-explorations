@@ -62,6 +62,7 @@ import {
   type ToggledCode,
 } from './compose.ts';
 import { devices, stateVariables } from './inventory.ts';
+import { nameOfLabel } from './shared/core.ts';
 
 /** One catalogue device to compose, with the options `compose-device.ts` takes as flags. */
 export interface CatalogueDeviceRequest {
@@ -799,6 +800,7 @@ function finalVariables(c: Container, composed: readonly ComposedCatalogueDevice
   const all = stateVariables(c);
   return composed.map((one) => {
     const label = one.request.label;
+    const named = nameOfLabel(label);
     const identifier = one.device.delay?.identifier;
     const byName = new Map<string, number>();
     for (const variable of all) {
@@ -806,12 +808,12 @@ function finalVariables(c: Container, composed: readonly ComposedCatalogueDevice
       const delay = DELAY_VARIABLE.exec(name);
       // `<label>_<property>_<values>` with a property of no underscore, so that a composed `Panasonic`
       // does not claim an existing `Panasonic_TV_Power_2`.
-      const rest = name.startsWith(`${label}_`) ? name.slice(label.length + 1) : undefined;
+      const rest = name.startsWith(`${named}_`) ? name.slice(named.length + 1) : undefined;
       const mine = (rest !== undefined && /^[^_]+_\d+$/.test(rest))
         || (delay !== null && identifier !== undefined && Number(delay[2]) === identifier);
       if (mine) byName.set(name, variable.index);
     }
-    const power = byName.get(`${label}_Power_2`);
+    const power = byName.get(`${named}_Power_2`);
     if (power !== one.device.variable) {
       throw new ComposeError(`${label}'s power variable reads back as ${power}, not ${one.device.variable}`);
     }

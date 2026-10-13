@@ -281,6 +281,12 @@ export function checkActivityDeviceLists(c: Container): ActivityDeviceListsCheck
   const allPages = modePages(c);
   const chrome = fourSlotMenuChrome(c, 'activity device list');
   const idleMode = idleDeviceList(c);
+  // The idle list's entries are an activity list's but for the corner program, which is its own state's:
+  // the same program on Logitech's compiles, the idle state's where an activity's list draws the device
+  // state's in our look, section 380.
+  const idleCorner = fourSlotMenuChrome(c, 'idle device list').corner;
+  const idleEntries = (entries: readonly KeyMapEntry[]): KeyMapEntry[] => entries.map((one) =>
+    (one.tag === DEVICE_MODE_PROGRAM_TAG && idleCorner !== undefined ? { ...one, operand: idleCorner } : one));
   const checked: ActivityDeviceListsChecked = { lists: 0, pages: 0, rows: 0, ownRowLists: 0 };
   const sameEntries = (mode: number, built: readonly KeyMapEntry[]): boolean => {
     const own = records[mode]?.entries ?? [];
@@ -294,7 +300,7 @@ export function checkActivityDeviceLists(c: Container): ActivityDeviceListsCheck
     const mode = queued.operand;
     const where = `activity ${activity}'s device list ${mode}`;
     const built = builtActivityDeviceList(c, activity, starts, chrome);
-    if (!sameEntries(idleMode, built.entries)) throw new ComposeError('the idle device list\'s own entries are not the ones built');
+    if (!sameEntries(idleMode, idleEntries(built.entries))) throw new ComposeError('the idle device list\'s own entries are not the ones built');
     if (!sameEntries(mode, built.entries)) throw new ComposeError(`${where}: its own entries are not the ones built`);
     const record = records[mode];
     if (record === undefined || record.pages.length !== built.pages.length) {

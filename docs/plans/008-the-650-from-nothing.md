@@ -1,6 +1,6 @@
 # Plan 008: the Harmony 650 from nothing
 
-**Status: open.** Written 12 October 2026 for `todo-compile-650.md` 11.1.1, which carries out plan 007's
+**Status: done.** Written 12 October 2026 for `todo-compile-650.md` 11.1.1, which carries out plan 007's
 step 4. The sub-items of 11.1.1 are this plan's steps.
 
 ## What it is for

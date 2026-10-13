@@ -178,8 +178,10 @@ export function composeFourSlotActivityRow(
   // The picture a page of one activity draws is built by content per look, section 334, and checked
   // against the second route section 316 found it by, the working screens' own one command background
   // through base slot 14, wherever that route answers: two routes with nothing in common but the bytes.
+  // Not in our look, whose activity menu is the idle state's and draws the idle background on every page,
+  // where an activity's working screens draw the activity state's: two colours by design, section 366.
   const menuChrome = fourSlotMenuChrome(c, 'activity menu');
-  const working = activityMenuSingle(c);
+  const working = menuChrome.look === OUR_LOOK ? undefined : activityMenuSingle(c);
   if (working !== undefined && menuChrome.one !== undefined && working !== menuChrome.one) {
     throw new ComposeError(`the activity menu's page of one activity would draw ${menuChrome.look}'s picture and `
       + 'the working screens of one command draw another');
@@ -200,7 +202,8 @@ export function composeFourSlotActivityRow(
   const bar = lastProgram.findLastIndex((one) => one.opcode === SCREEN_DRAW_IMAGE_AT);
   // A page with no label has only its title's font in effect there, so the first label takes the device
   // pages' label font, the first set of the largest label size: the font of 87 of the 99 labelled activity
-  // menu pages on the arch 14 compiles, the rest smaller ones for long names. Section 379.
+  // menu pages on the Harmony 600, 650 and 700 files in the lab; 3 of the rest are long labels a size
+  // smaller and 9 one file of ours. Section 379.
   const preferred = layout.used === 0 ? fourSlotTemplate(c, undefined).labelFont
     : lastProgram.slice(0, bar < 0 ? 0 : bar).findLast((one) => one.opcode === SCREEN_SELECT_FONT)?.operands[0];
   if (preferred === undefined) throw new ComposeError("the activity menu's last page selects no label font");
@@ -408,7 +411,8 @@ export function activityMaps(c: Container, starts: Arch14Starts): ActivityMaps {
       select.push(index);
     }
   });
-  // The keypad map record is in every Logitech compile, 55 of 55 distinct arch 14 ones, and in none of ours,
+  // The keypad map record is in every file here that holds an activity, 55 of 55 distinct Harmony 600, 650
+  // and 700 files, Logitech's and ours built on them alike, and in none built on our empty configuration,
   // whose first activity was composed with no record to add a case to, section 379.
   if (working.length !== 1 || devices.length === 0 || select.length > 1) {
     throw new ComposeError(`the activity keyed records read as ${working.length} working screen, `

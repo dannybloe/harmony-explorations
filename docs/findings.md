@@ -50747,8 +50747,8 @@ whose attribution carries anything but the composed device.
 
 `todo-compile-650.md` 11.1.1.5. The assembly composes the first activity onto the empty configuration now:
 two catalogue devices, the LG television and the Denon receiver, and an activity "TV" over both, assemble
-to 540784 bytes with every check of the assembly passing, on the Watch TV key or, as a Custom activity, on
-no key. The pages render as the state colours mean them: the activity menu green with its one row, the
+with every check of the assembly passing, to 540784 bytes on the Watch TV key and to 540794 as a Custom
+activity on no key, which keeps the empty key's front list. The pages render as the state colours mean them: the activity menu green with its one row, the
 start up screen in Off's picture and font, the working screen blue with "Devices" in its corner, and the
 device pages red. Six things stood in the way, each a reading of a file with activities met by a file
 with none.
@@ -50758,16 +50758,19 @@ holds the idle case alone, so the keys that tell them apart on a compile, sectio
 Among the records mapped through on the activity counter, `0x72` on it from a mode's key map, an action
 list or a case's program, the working screen record's idle case queues a further record, the one that
 enters the activity menu, section 336, and each record under the key under Devices enters a mode, the idle
-device list, section 330. The counter is the condition: the location's records hold an idle looking case
+device list, sections 330 and 336. The counter is the condition: the location's records hold an idle looking case
 too, and without it two working screen records are found.
 
 **An empty configuration holds no keypad map record, and the first activity adds none.** On a compile it is
-the record whose case per activity selects that activity's handler set, `1F FF00 + set`, in 55 of 55
-distinct arch 14 compiles, and with no activity it has no case to hold. An earlier scan here read it as
-named by nothing; that was wrong. It is named once per file, by the case 0 program of record 32, which
-nothing found here maps through, so what runs it is open. The activity's own start lists select its
-handler set themselves, four of them on the composed file, so starting the activity installs its keypad
-map either way; whether returning from device mode keeps it is for the bench.
+the record whose case per activity selects that activity's handler set inline, `1F FF00 + set`, in every
+configuration here that holds an activity: 55 of 55 distinct Harmony 600, 650 and 700 files, Logitech's
+compiles and our files built on them alike. Logitech's one compile with no activity has none, and neither
+does a file built on our empty configuration. An earlier scan here read it as named by nothing; that was
+wrong. It is named once per file, by the case 0 program of a record of one case, record 32 on Logitech's
+compile of the test setup and another index on 33 of the 55; nothing found maps through it on that compile,
+so what runs it is open. The activity menu's row selects the activity's handler set itself, in the lists
+its two keys run, and the Watch TV key selects it in the wiring, so starting the activity installs its
+keypad map either way; whether returning from device mode keeps it is for the bench.
 
 **The wiring has a shape per activity count, and the composer rebuilds it.** Scan 4's front list pushes the
 "add Activities" screen while there is no activity and maps the location once there is one, section 360;
@@ -50776,7 +50779,8 @@ the first activity, or one put on an empty key, left a wiring that describes not
 after it refused, the first of them with "map locationMap is 2 in one place and 255 in another": scan 4's
 list still held the push, `07 FFFD`, where a map was expected. The activity composer describes the wiring
 before it builds anything and rebuilds it at the end from that description and the shape the file has now,
-`rewiredForActivities`; the symbols are unchanged, since a composer appends lists, modes and entries and
+`rewiredForActivities`, while no activity key holds an activity or when an empty key takes one; the symbols
+are unchanged, since a composer appends lists, modes and entries and
 renumbers none. A donor whose wiring is already right for the activity is left as it was. The front list
 the shorter front no longer holds is named by nothing; the assembly's step 12 drops it, which it does now
 for every list the donor named and nothing names, not only for those named after the composers.
@@ -50790,19 +50794,24 @@ activity, which goes on no key, is reachable from the activity menu.
 reader need a second activity, so the activity read back with no name and the assembly could not find it.
 A tie is broken by the rest of the configuration: a candidate drawn identically on a screen of neither the
 page's mode nor the activity's own is chrome, as the device lists' title "Devices" is. Only where it leaves
-a candidate, so a label some device page happens to draw too is never lost when it is the only one.
+a candidate, so a label some device page happens to draw too is never lost when it is the only one. **It
+does not break a tie the rest of the configuration draws both sides of**, the blind reviewer's finding: one
+activity named as a device is labelled, "LG TV", or as a word of the menus, reads back with no name and the
+assembly refuses it; with a second activity the chrome rules above resolve both. Open.
 
 **The activity's screens in our look.** The working screen takes the activity state's flat background and
 corner program, added on the first activity as the device state's was on the first device, section 377.
 The start up screen takes Off's picture and font off Off's own page, since All Off's screen is a start up
 screen with another title, section 356, and the empty configuration has no other; where start up screens
 exist their font is read off them. The menu's first row takes the device pages' label font, the first set
-of the largest label size, which is the font of 87 of the 99 labelled activity menu pages on the arch 14
-compiles, and an empty page of the activity menu reads as the two row layout it is.
+of the largest label size, which is the font of 87 of the 99 labelled activity menu pages on the Harmony
+600, 650 and 700 files in the lab; of the other 12, 3 are long labels in the next smaller size and 9 are
+three reads of one file of ours, `h650_8_2_6_*`, in none of Logitech's sizes. An empty page of the activity menu reads as the two row layout it is.
 
-**Scope**: the Harmony 650, the one model whose empty configuration is built. The wiring's rebuild and the
-name reader's tie break are arch 14 and generic respectively; the tie break changes no name on the corpus,
-which the inventory tests hold.
+**Scope**: the Harmony 650, the one model whose empty configuration is built. The wiring's rebuild runs
+for any Harmony 600, 650 or 700 donor and is exercised on the Harmony 650's empty configuration only. The
+name reader's tie break is in shared code; it fires on none of the 153 configurations in the lab register,
+so it changes no name there, and the inventory tests hold that every activity still resolves.
 
 **Falsification**: a composed activity whose name does not read back, whose wiring `checkWiring` refuses,
 or a bench run on which pressing a key after returning from device mode sends nothing.
@@ -50815,3 +50824,78 @@ or a bench run on which pressing a key after returning from device mode sends no
   none, its name, its key, its wiring, the three looks and the dropped front list; `test/wiring.test.ts`:
   scan 4 with every key empty built as with its keys set; `test/assemble.test.ts`: the two device
   compile's new refusal.
+
+## 380. The whole test setup on the empty Harmony 650 configuration
+
+`todo-compile-650.md` 11.1. The test setup, seven devices and five activities, one of them with its own
+screen and a sequence, assembles on the empty configuration of section 375 with every check of the
+assembly passing: 703435 bytes, with no Logitech file as input. Its two inputs are the empty
+configuration, which our generators build from nothing and whose every byte is attributed to one of them,
+section 375, and the third party archive of Logitech's device database, decision 15. With
+blended letters it assembles too, and reading a blended file's attribution back stays open as in section
+375.
+
+**Every byte comes from one of our generators, in two kinds.** 467817 are claimed by `attributeBytes`,
+which counts a byte for a generator only where that generator rebuilds it byte for byte or, for our
+letters, recognises each glyph's form whatever its inks: 433323 so, 303311 of them pictures and 93702 letters, 13086 a description the generators read off the
+file, a list index or a word's glyph codes, and 21408 address fields the frame lays inside pieces that are
+otherwise carried. The other 235618 are carried, the composers' own, which no describing generator rebuilds
+yet: the devices' infrared, 189154 bytes of blocks, headers and groups; the devices' and the activities'
+lists, modes and pages with the pages' copies; the activities' key maps; and the screens' programs. None
+is unclaimed. They came from the composers because nothing else went in; the attribution names
+them by kind and the test holds the list of kinds, so a carried kind that is not a composer's is refused.
+No picture came in with a composer that is not drawn by a rule or one of ours: every picture byte is
+attributed, and the file holds none of Logitech's device page looks whole, `inOurLook`.
+
+**Every activity's device list draws its devices in the order Logitech's compile of the same setup does**,
+`h650_test_config_clean`, all five, page by page: the activity's devices first in the order it switches
+them on, then the idle list's. The idle device list matches it as well. What differs is by design: the
+activity menu is in the setup's order, as every assembly makes it, and there is no two row device list,
+which nothing enters on the Harmony 650, section 326. The lists nothing reaches number 38, where Logitech's
+compile of the setup leaves 323. 33 are shapes it leaves too: 11 send lists for commands no key binds, one
+or two per device, and their 22 chain lists. The other 5 are the activity composer's select list, one per
+activity, which is the Harmony One's menu row list; Logitech's Harmony 650 compile holds no such list, since
+a Harmony 650 menu row runs a list of its own that selects the set.
+
+**The composers spelt a name with a space, which Logitech's compilers never do.** A device the screen calls
+"LG TV" became `LG TV_Power_2` in the name tree, where Logitech's compile of the setup holds `LG_TV_Power_2`:
+none of the 5397 names across 128 configurations of five architectures in the lab holds a space but two in a
+bench file of ours. The tree is read by the host alone, section 81, so the remote never saw it, but every
+reader that keys a device by its name did, and the comparison below counted each such device twice. The
+device and input composers now write the label with an underscore for each space, `nameOfLabel`, and the
+catalogue composer reads its variables back by that spelling; a label itself holds no underscore, so the
+screen's spelling is recovered by turning each underscore back into a space, as every reader here does.
+
+**Against Logitech's compile of the same setup, `compareViews` finds 227 differences**, every key and screen
+item of every activity, device mode and the idle state, the activity menu by which activities it holds; it
+found 478 before the names were spelt. Besides the order one device list's copy is read in, each is a rule
+of the composers that Logitech's compiler applies differently, and they are 11.2's to close before the
+bench:
+
+* **A few commands go on a key in Logitech's compile and on a screen page in ours**: the KPN box's Replay and
+  Advance, Kodi's Skip Backward, Prev and OK, the Denon's Back. That is the device's own map and every
+  activity that uses the device, and on the Denon, whose Back takes a place on page 3, every command after it
+  moves one place, which is most of the 164 differences on its pages.
+* **Logitech's compile puts items on the four working screens the setup states nothing for**: 3D, Aspect and
+  Sleep on Film kijken, DVR and Teletext on TV kijken, Sleep on Kodi kijken and on Muziek. Ours draw none.
+* **Some labels break or shorten differently**: "Input Am" against "InputAm", "Large Up" against "LargeUp",
+  and long labels cut at other widths, since our letters are not Logitech's.
+
+**Two of Logitech's rules stopped the second activity, both about colours our look gives differently.**
+The activity menu's page of one activity draws, on Logitech's compiles, the background of a working screen
+of one command, section 316, and the row composer held the two to each other; in our look the activity menu
+is the idle state's and a working screen the activity state's, section 366, so the check is not made there.
+And the check of the activity device lists held the idle device list's keys to theirs; they differ in our
+look by the corner program, the idle state's against the device state's, so the idle list is held to the
+same keys with its own corner program, which on Logitech's compiles is the same one.
+
+**Scope**: the Harmony 650, the one model whose empty configuration is built.
+
+**Falsification**: a carried kind that is not a composer's, a device list in another order than the
+compile's, a name with a space, or a difference `compareViews` finds outside the three kinds above.
+
+* `packages/codec/src/families/four-slot/activityscreen.ts`, the page of one activity's check;
+  `families/four-slot/devicelist.ts`, the idle list's corner program in `checkActivityDeviceLists`;
+  `shared/core.ts`, `nameOfLabel`, used by `shared/devices.ts`, `inputs.ts` and `composecatalogue.ts`.
+* `packages/codec/test/empty.test.ts`: the whole test setup on the empty configuration, its activities,
+  every device list's order, its look and what it carries.
