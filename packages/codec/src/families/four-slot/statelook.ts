@@ -25,7 +25,8 @@ import type { ContainerPiece, PieceRef } from '../../frame.ts';
 import { layOutContainer, takeApart } from '../../frame.ts';
 import { archSlot, type Container, parse } from '../../gspm.ts';
 import {
-  type BackgroundColours, RUNNABLE_SCREEN_PROGRAMS, SCREEN_STATES, stateBackgroundColour, statePatchBytes, stateBackgroundBytes,
+  type BackgroundColours, ONE_LOOK_SKINS, RUNNABLE_SCREEN_PROGRAMS, SCREEN_STATES, stateBackgroundColour, statePatchBytes,
+  stateBackgroundBytes,
 } from '../../backgrounds.ts';
 import { deviceListRows } from '../../inventory.ts';
 import { SCREEN_TABLE_SLOT, bitmapReference, screenProgram } from '../../screen.ts';
@@ -131,18 +132,13 @@ function blank(): ContainerPiece {
  * patch is what makes a fill a state's: the firmware screens of an empty configuration draw over a dark fill
  * of their own, which has none. A state the file has no page of
  * yet, an empty configuration's device and activity states, is left out, and so is every state on a
- * configuration not drawn in our look.
+ * configuration not drawn in our look. On a model drawn in one look, `ONE_LOOK_SKINS`, every state is the
+ * idle state's colour, so a composer adding the first device or activity page draws it in that look.
  */
 export function ourStateColours(c: Container): Partial<BackgroundColours> {
-  const records = modeRecords(c) ?? [];
-  const background = (mode: number | undefined): number | undefined => {
-    const program = mode === undefined ? undefined : records[mode]?.pages[0]?.program;
-    const draw = program === undefined ? undefined : (screenProgram(c, program) ?? []).find((one) => bitmapReference(one) !== undefined);
-    const at = draw === undefined ? undefined : c.blobOffsetOf(bitmapReference(draw) as number);
-    return at === undefined ? undefined : stateBackgroundColour(c.blob.subarray(at));
-  };
-  const idle = background(activityMenus(c).menu);
-  const device = background(deviceListRows(c)[0]?.mode);
+  const idle = modeBackgroundColour(c, activityMenus(c).menu);
+  if (oneLook(c)) return idle === undefined ? {} : { idle, device: idle, activity: idle };
+  const device = modeBackgroundColour(c, deviceListRows(c)[0]?.mode);
   const others = new Set<number>();
   const pictures = picturesByContent(c);
   for (const addresses of pictures.values()) {
@@ -160,6 +156,19 @@ export function ourStateColours(c: Container): Partial<BackgroundColours> {
   };
 }
 
+/** Whether the configuration is of a model drawn in one look for every state, `ONE_LOOK_SKINS`. */
+export function oneLook(c: Container): boolean {
+  return ONE_LOOK_SKINS.has((c.versionWord ?? -1) & 0xff);
+}
+
+/** The state background a mode's first page draws first, as its colour; undefined where it draws none. */
+function modeBackgroundColour(c: Container, mode: number | undefined): number | undefined {
+  const program = mode === undefined ? undefined : (modeRecords(c) ?? [])[mode]?.pages[0]?.program;
+  const draw = program === undefined ? undefined : (screenProgram(c, program) ?? []).find((one) => bitmapReference(one) !== undefined);
+  const at = draw === undefined ? undefined : c.blobOffsetOf(bitmapReference(draw) as number);
+  return at === undefined ? undefined : stateBackgroundColour(c.blob.subarray(at));
+}
+
 /**
  * A configuration of ours redrawn in other state colours: each state's background and corner patch, found by
  * `stateLookOf` in the colour it has, written over in the colour it is given. Both are a fill stored raw, so a
@@ -168,10 +177,15 @@ export function ourStateColours(c: Container): Partial<BackgroundColours> {
  * states apart. Run before the letters are smoothed, which reads the colour under each text.
  */
 export function recolouredStates(c: Container, to: Readonly<BackgroundColours>): Container {
-  if (new Set(SCREEN_STATES.map((state) => to[state])).size !== SCREEN_STATES.length) {
-    throw new ComposeError('the three state colours have to differ, or a state\'s look cannot be found again');
+  const colours = new Set(SCREEN_STATES.map((state) => to[state])).size;
+  if (oneLook(c) ? colours !== 1 : colours !== SCREEN_STATES.length) {
+    throw new ComposeError(oneLook(c)
+      ? 'a model drawn in one look takes one colour for all three states'
+      : 'the three state colours have to differ, or a state\'s look cannot be found again');
   }
-  const from = ourStateColours(c);
+  // On one look the three states are one background and one patch, written over once.
+  const read = ourStateColours(c);
+  const from: Partial<BackgroundColours> = oneLook(c) ? (read.idle === undefined ? {} : { idle: read.idle }) : read;
   const blob = Uint8Array.from(c.blob);
   for (const state of SCREEN_STATES) {
     const colour = from[state];

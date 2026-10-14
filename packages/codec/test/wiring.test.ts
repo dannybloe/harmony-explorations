@@ -649,7 +649,7 @@ test('section 360: checkWiring passes Logitech\'s clean compile and refuses a co
   refused(edited('elevenKeys.again', 0, 0, (spec.lists.stopLights! + 1) & 0xff), /list "stopLights" is \d+ in one place and \d+ in another/);
 });
 
-test('section 360: the "add Activities" rule is keyed on the activity count and refused where it is not read: no activity with an activity key set, and no activity on the Harmony 600, whose track has not reached it; activities with every activity key empty bind scan 4 as any activity does, section 379',
+test('section 360: the "add Activities" rule is keyed on the activity count and refused where it is not read, no activity with an activity key set; activities with every activity key empty bind scan 4 as any activity does, section 379; and the Harmony 600 with no activity takes the 650\'s scan 4, section 387',
      skipUnless(NO_ACTIVITIES, 'h650_config_region'), () => {
   const none = describeWiring(takeApart(containerOf(NO_ACTIVITIES)));
   const some = describeWiring(takeApart(containerOf('h650_config_region')));
@@ -662,8 +662,9 @@ test('section 360: the "add Activities" rule is keyed on the activity count and 
   const keyless = { ...some, activityKeys: none.activityKeys };
   assert.deepEqual(scan4(keyless), scan4(some));
   assert.notDeepEqual(scan4(keyless), scan4(none));
-  refuses({ ...none, model: 'harmony-600' }, /no harmony-600 compile with no activity/);
-  // The Harmony 700 with no activity is a configuration of ours since section 382, `emptyWiring`'s test.
+  // The Harmony 600 with no activity is a configuration of ours since `todo-compile-600.md` 1.1, section 387,
+  // the 650's form carried over as the Harmony 700's is since section 382, `emptyWiring`'s test.
+  assert.deepEqual(scan4({ ...none, model: 'harmony-600' }), scan4(none));
   // The control: both as read build.
   buildWiring(none);
   buildWiring(some);

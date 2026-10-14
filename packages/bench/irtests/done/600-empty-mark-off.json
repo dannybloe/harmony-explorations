@@ -1,0 +1,22 @@
+{
+  "name": "Harmony 600, the empty configuration with the Off screen's mark at 0",
+  "description": "todo-compile-600 1.4.1, one write of lab/work/h600-from-nothing/empty-600-73-markoff.bin: the empty configuration of 600-empty.json with one change, the mark the 'Turning system off' screen is tested against started at 0 instead of 1, as the empty Harmony 650 and 700 files had it when they showed that screen; read 0 over USB after the write's restart. On the previous file, with the mark read 1, the screen showed neither when the cable came out nor on All Off, section 387. If it shows now, the mark is what kept it away on the 600; if it does not, the 600 does not draw it or draws it too briefly to see. Predicted, from the 650: it shows, for a moment, on All Off. No key sends anything, so the Flirc hears nothing. Please write in each step's note what you saw, also when it is what the step expects, since a step with no note records nothing.",
+  "steps": [
+    {
+      "instruction": "The cable is in and the screen should show 'USB Connected'. Watch the screen closely and unplug the cable. Note whether 'Turning system off' showed, even for a moment, before the Activities screen. The Flirc hears nothing",
+      "expect": []
+    },
+    {
+      "instruction": "On the Activities screen, note how it looks on this screen: whether the background is dark, light or a grey, whether the bars at the top and bottom stand out from it, and whether the words are easy to read",
+      "expect": []
+    },
+    {
+      "instruction": "Watch the screen closely and press All Off. Note whether 'Turning system off' showed, even for a moment, before the Activities screen. Press All Off twice more and note the same. The Flirc hears nothing",
+      "expect": []
+    },
+    {
+      "instruction": "Press More Activities and note what the screen shows; the file binds it to a screen reading 'Use the Harmony setup software to add Activities.' with 'Exit' at the bottom. Press the centre button below the screen ('Exit') and note where it goes. The Flirc hears nothing",
+      "expect": []
+    }
+  ]
+}

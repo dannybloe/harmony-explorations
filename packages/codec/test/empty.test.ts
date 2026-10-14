@@ -562,7 +562,8 @@ test('decision 20 on a build from nothing: the state colours are a choice, writt
 
 test('todo-compile-700.md 2.3: a file of ours starts the mark the Off screen waits for at 1, and draws its start up and Off titles two rows below Logitech\'s', () => {
   // Logitech's compiles start it at 0 and set it from the tour, which a file of ours does not hold; at 0 the
-  // bench Harmony 700 never showed "Turning system off", section 386.
+  // bench Harmony 700 did not show "Turning system off" on the test setup, section 386, though its empty
+  // configuration did, section 383, and on the Harmony 600 it did not show with the mark read 1, section 387.
   assert.deepEqual(emptyVariables('harmony-700').find(([name]) => name === 'tourMark')?.[1], { first: 1, max: 1 });
   // And in the file as built, where the remote's restart seeds it from, on each model of ours.
   for (const skin of [66, 72, 73]) {
@@ -599,4 +600,28 @@ test('todo-compile-600.md 1.1: the Harmony 600 built from nothing, skins 73 and 
   });
   assert.equal(runs.length, 3);
   assert.deepEqual([...h600.subarray(runs[1]![0], runs[1]![1] + 1)], [1, 0, 3, 0, 5]);
+});
+
+test('todo-compile-600.md 1.2.4: the Harmony 600 draws every state in one look, so its first device\'s pages take the idle look and add none, and a recolouring takes one colour', skipWithoutIrArchive(), () => {
+  const empty = buildEmpty(false, 73).container;
+  const idle = FOUR_SLOT_CHOICES.stateColours.idle;
+  // Before any page of theirs, the device and activity states read as the idle one.
+  assert.deepEqual(ourStateColours(empty), { idle, device: idle, activity: idle });
+  const out = composeCatalogueDevices(empty, IR_ARCHIVE!, [{ manufacturer: 'LG', model: 'OLED65G26LA', label: 'TV', full: true, inputs: true }],
+    { maxDevices: 5, delays: FOUR_SLOT_CHOICES.delays });
+  const c = parse(out.bytes);
+  assert.ok(c.allChecksPass);
+  // No look in the device colour was added: the device pages draw the idle look's background and corner program.
+  assert.equal(stateLookOf(c, FOUR_SLOT_CHOICES.stateColours.device), undefined);
+  const look = stateLookOf(c, idle)!;
+  const chrome = deviceModeChrome(c);
+  assert.deepEqual([chrome.crossed, chrome.corner], [look.background, look.corner]);
+  assert.deepEqual(ourStateColours(c), { idle, device: idle, activity: idle });
+  // One colour recolours the one look; three are refused, since one background cannot take three.
+  const grey = rgbTo565(128, 128, 128);
+  assert.deepEqual(ourStateColours(recolouredStates(c, { idle: grey, device: grey, activity: grey })),
+    { idle: grey, device: grey, activity: grey });
+  assert.throws(() => recolouredStates(c, FOUR_SLOT_CHOICES.stateColours), /one colour for all three/);
+  // The Harmony 650 keeps its three.
+  assert.deepEqual(ourStateColours(buildEmpty(false, 72).container), { idle });
 });

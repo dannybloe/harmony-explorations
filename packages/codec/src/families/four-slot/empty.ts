@@ -168,7 +168,8 @@ export function clockSpec(builtAt: string): StateTablesSpec['clock'] {
 export type EmptyModel = 'harmony-600' | 'harmony-650' | 'harmony-700';
 /**
  * The skins an empty configuration is built for. The Harmony 600's two since `todo-compile-600.md` 1.1: 73,
- * the European 600 the bench unit is and its own compile `h600_config` states, and 71, `calibration_h600`'s.
+ * the European 600 that Logitech's compile of the bench unit's configuration, `h600_config`, states, and 71,
+ * `calibration_h600`'s and the one the bench unit itself reports, section 387.
  */
 const EMPTY_MODELS: ReadonlyMap<number, EmptyModel> = new Map([
   [71, 'harmony-600'], [73, 'harmony-600'], [72, 'harmony-650'], [74, 'harmony-650'], [66, 'harmony-700'],

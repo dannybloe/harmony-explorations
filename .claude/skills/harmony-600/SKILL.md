@@ -78,7 +78,9 @@ take its batteries out first. The 650 skill's notes on idle disconnects and out 
 to this architecture as a whole.
 
 **The 600 has no clock on its screen.** A clock is checked by reading memory over USB, and on the cable
-the 600 has not loaded its configuration, findings section 110, so ask before relying on a live read.
+the 600's state variables are live, from `0xE10` on build 0.2: the clock in variables 0 to 6 ticks between
+two reads, findings section 387, and section 303 read its delays there. Findings section 110 measured
+another kind of variable and is not a reason to distrust such a read.
 
 ## 3. Bench tests
 

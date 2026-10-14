@@ -54,7 +54,10 @@ Harmony 700's 2.8.
 
 Section 110 measured that a connected 600 has not loaded its configuration; section 283 read
 configuration derived variables live on a Harmony 650. The two are not reconciled anywhere here, see the
-650's [usb.md](../harmony-650/usb.md), and this page does not reconcile them.
+650's [usb.md](../harmony-650/usb.md), and this page does not reconcile them. **On a 600 itself the
+configuration's variables are live on the cable**: section 303 read its delays there, and section 387 read its
+clock ticking between two reads and a variable at the value its configuration starts it at, both from `0xE10`
+on build 0.2.
 
 ## Not checked
 

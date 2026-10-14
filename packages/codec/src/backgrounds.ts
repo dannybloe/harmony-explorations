@@ -101,6 +101,14 @@ export const BLENDED_LETTER_SKINS: ReadonlySet<number> = new Set([...HARMONY_650
  * until 1.2 has settled what its monochrome panel makes of a colour pixel.
  */
 export const OUR_LOOK_SKINS: ReadonlySet<number> = new Set([...BLENDED_LETTER_SKINS, 71, 73]);
+
+/**
+ * The skins a configuration of ours draws in one look for every state, `todo-compile-600.md` 1.2.4: the Harmony
+ * 600's, decided on 14 October 2026, since its panel has no colour to tell the states apart by. The idle,
+ * device and activity screens then share one background, one corner patch and one corner program, in the
+ * idle state's colour, where the other models of ours draw three, decision 20.
+ */
+export const ONE_LOOK_SKINS: ReadonlySet<number> = new Set([71, 73]);
 const BACKGROUND_SIZE = 128;
 /** The two state patches' size, 12 by 10, at 114, 112. */
 const PATCH_WIDTH = 12;

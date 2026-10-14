@@ -19,8 +19,8 @@ says where the remote's facts are and holds the 600's write procedure.
 * the bench unit **reports skin 71** in its version block while Logitech's compile of its own configuration,
   `h600_config`, states **73**, the European 600, as ours does; nothing on the remote reads the
   configuration's skin, section 81; `calibration_h600` is skin 71;
-* on the cable it has **not loaded its configuration**, section 110, so a memory read there is not a
-  live one, where the 700's was.
+* its state variables **are live on the cable**, from `0xE10` on build 0.2, as section 303 read its
+  delays and section 387 its clock and the Off screen's mark; section 110's journal is another kind.
 
 **The route**: the empty configuration for the 600, checked and written, then the test setup on it, then a
 bench test, as the 700's chapters 1 and 2 did.
@@ -34,10 +34,12 @@ bench test, as the 700's chapters 1 and 2 did.
   - [x] 1.2.1 Read in the 0.2 image: the firmware sends every pixel to the panel unchanged, in the same sixteen bit mode as the 650, by the same display driver byte for byte; so what a colour pixel looks like is decided in the display module and the image cannot say
   - [x] 1.2.2 The panel's identity byte read over USB, data memory `0x384`: 0, as the 650's, so the same panel set up; whether 0 is an identity or a byte the read left unwritten the firmware does not say
   - [ ] 1.2.3 A test picture on the bench 600: ramps of red, green, blue and grey and a mid grey beside a checkerboard, to count its grey levels and see which channels count
-  - [ ] 1.2.4 Our look chosen on that: the state colours, the letters' inks and smoothing, and the icons
+  - [ ] 1.2.4 Our look chosen on that: the letters' inks and smoothing, and the icons
+    - [x] 1.2.4.1 One look for every state, decided on 14 October 2026: the idle, device and activity screens share one background, patch and corner program, `ONE_LOOK_SKINS`
+    - [ ] 1.2.4.2 Its grey, picked off the 1.2.3 picture; Logitech's own 600 screens are three quarters black, and our green showed as a light grey that wants to be a lot darker, section 387
 - [x] 1.3 Checked: it rebuilds, every screen rebuilds, every byte attributed to a generator and none carried, as the 650's 11.1.1.4
 - [x] 1.4 Written to the bench 600 with a bench test: it starts, Devices and Activities lead to each other, an activity key shows the placeholder, All Off returns; the region read into the lab first, and the delays saved on the remote read
-  - [ ] 1.4.1 "Turning system off" did not show on the 600, on leaving the cable or on All Off, where the 650 and 700 showed it: whether it is not drawn or too brief for this panel, section 387
+  - [ ] 1.4.1 "Turning system off" did not show on the 600, on leaving the cable or on All Off, with its mark read 1, where the empty 650 and 700 files showed it with the mark at 0; nor with the mark at 0 on the 600, so the mark is not it: section 387
 
 ## 2. The test setup on it
 
