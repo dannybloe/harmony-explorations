@@ -241,6 +241,8 @@ const H700_DUMPS = new Set<string>([
   'h700_delay90_region',
   // Before the empty configuration built from nothing, todo-compile-700 1.4, section 382.
   'h700_before_empty',
+  // With the empty configuration on it, section 383: the compare base for putting the original back.
+  'h700_empty_on',
 ]);
 
 /** A remote this may run against, per architecture read off the device. */
