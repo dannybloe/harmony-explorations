@@ -433,6 +433,13 @@ export function checkRenumbering(before: Container, after: Container, dropped: r
  */
 export const ASSEMBLY_SKINS: ReadonlySet<number> = new Set([72]);
 
+/**
+ * The skins the assembly takes on a donor of ours alone, an empty configuration in our look: the Harmony
+ * 700's 66, `todo-compile-700.md` 2.1. None of Logitech's 700 compiles has had the chain run on it, so one
+ * of them as the donor is refused.
+ */
+export const OUR_DONOR_SKINS: ReadonlySet<number> = new Set([66]);
+
 export interface AssembleOptions {
   /** The container every part no generator builds is taken from: a Logitech compile, or a library. */
   readonly donor: Uint8Array;
@@ -481,8 +488,8 @@ const spoken = (name: string | undefined): string => (name ?? '').replaceAll('_'
 export function assembleSetup(setup: Recipe, options: AssembleOptions): Assembled {
   // The recipe's model, whose definition says what it can hold and whose family builds for it.
   const target = recipeTarget(setup);
-  if (target.family !== FOUR_SLOT || !ASSEMBLY_SKINS.has(target.skin)) {
-    throw new AssemblyError(`the assembly is measured on the Harmony 650, skin 72, and the recipe is for the ${setup.model.name}`);
+  if (target.family !== FOUR_SLOT || !(ASSEMBLY_SKINS.has(target.skin) || OUR_DONOR_SKINS.has(target.skin))) {
+    throw new AssemblyError(`the assembly is measured on the Harmony 650, skin 72, and the 700, skin 66, on a donor of ours, and the recipe is for the ${setup.model.name}`);
   }
   let c = parse(options.donor);
   if (c.architecture !== 14) throw new AssemblyError(`the assembly is arch 14's, and the donor is arch ${c.architecture}`);
@@ -491,6 +498,9 @@ export function assembleSetup(setup: Recipe, options: AssembleOptions): Assemble
   // A donor of ours, an empty configuration, section 377, takes our look as its defaults, smoothed letters
   // included; one of Logitech's compiles takes theirs, which its byte for byte tests are held to.
   const ours = inOurLook(c);
+  if (!ASSEMBLY_SKINS.has(target.skin) && !ours) {
+    throw new AssemblyError(`the assembly takes the ${setup.model.name} on a donor of ours alone, an empty configuration, and this donor is Logitech's`);
+  }
   const choices = fourSlotChoices(setup.choices as FourSlotChoicesGiven | undefined, ours ? OUR_FOUR_SLOT_CHOICES : FOUR_SLOT_CHOICES);
   if (choices.blendLetters && choices.letters !== 'oxanium') {
     throw new AssemblyError('only our letters can be blended, since only theirs come with grey levels');

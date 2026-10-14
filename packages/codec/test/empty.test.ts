@@ -28,7 +28,7 @@ import { bitmapReference } from '../src/screen.ts';
 import { activities, activityNames, deviceListRows } from '../src/inventory.ts';
 import { activityKeys } from '../src/activitykeys.ts';
 import { IR_ARCHIVE, require_, skipUnless, skipWithoutIrArchive } from '@harmony/lab';
-import { archSlot, checkWiring, parse, readRecipe, screenStrings } from '../src/index.ts';
+import { archSlot, checkWiring, compareViews, parse, readRecipe, screenStrings, setupView } from '../src/index.ts';
 import { readFileSync } from 'node:fs';
 import { checkFirmwareScreens } from '../src/firmwarescreens.ts';
 import { checkScreenRecords } from '../src/screenrecords.ts';
@@ -485,4 +485,55 @@ test('section 380: the whole test setup assembles on the empty configuration, wi
     'slot-10-list reached', 'slot-10-list reached by nothing', 'slot-11-program', 'slot-5-block', 'slot-5-group', 'slot-5-header',
     'slot-6-entry', 'slot-6-mode', 'slot-6-page-list', 'slot-6-page-list-copy', 'slot-9-list',
   ]);
+});
+
+/** Each device list a file draws, the idle one first, as its labels page by page. */
+function drawnDeviceLists(c: Container): string[][][] {
+  const strings = screenStrings(c, characterMap(c)!);
+  const records = modeRecords(c)!;
+  return fourSlotMenus(c).filter((one) => one.kind !== 'activity menu').map((one) => records[one.menu]!.pages
+    .map((page) => strings.filter((s) => s.program === page.program).map((s) => s.text)
+      .filter((text) => !['Devices', 'Activities', 'Activity', '1', '2', '/'].includes(text))));
+}
+
+test('todo-compile-700.md 2.1: the whole test setup assembles on the Harmony 700\'s empty configuration in our look, and the setup comparison finds nothing different from the Harmony 650\'s in 627 slots, nor in the activity keys and the six drawn device lists, smoothed letters or not', skipWithoutIrArchive(), () => {
+  const setup = readRecipe(JSON.parse(readFileSync(new URL('../../corpus/setups/h650-test.json', import.meta.url), 'utf8')));
+  const on = (skin: number, name: string, blendLetters: boolean) => assembleSetup({
+    ...setup, model: { name, skin }, choices: { letters: 'oxanium', backgrounds: 'state colours', pictures: 'ours', blendLetters },
+  } as Recipe, { donor: buildEmpty(false, skin).bytes, archive: IR_ARCHIVE! }).container;
+  const seven = on(66, 'Harmony 700', false);
+  const six = on(72, 'Harmony 650', false);
+  assert.ok(seven.allChecksPass);
+  assert.ok(inOurLook(seven));
+  // The 700's empty configuration ends base slot 14 with a record of no cases, which the first composed
+  // device once met as "base slot 14 stopped reading"; the 650's last record has one.
+  assert.deepEqual(valueMaps(buildEmpty(false, 66).container)?.at(-1)?.entries, []);
+  assert.notDeepEqual(valueMaps(buildEmpty(false, 72).container)?.at(-1)?.entries, []);
+  const view = setupView(seven);
+  assert.equal(view.size, 627);
+  assert.deepEqual(compareViews(setupView(six), view, { menuOrder: true }), []);
+  // What the view holds no slot for: the always installed map's activity keys, and the device lists as drawn.
+  const keys = (c: Container) => activityKeys(c).map((one) => [one.key, one.kind, one.set ?? null]);
+  assert.deepEqual(keys(seven), keys(six));
+  assert.equal(drawnDeviceLists(seven).length, 6);
+  assert.deepEqual(drawnDeviceLists(seven), drawnDeviceLists(six));
+  // Smoothing the letters is the assembly's last step, after the checks that rebuild the screens, and
+  // changes nothing a person sees by this comparison.
+  assert.deepEqual(compareViews(view, setupView(on(66, 'Harmony 700', true)), { menuOrder: true }), []);
+  // What no describing generator rebuilds is the composers' own, as on the Harmony 650.
+  assert.deepEqual([...attributeBytes(seven).carried.keys()].sort(), [...attributeBytes(six).carried.keys()].sort());
+});
+
+test('todo-compile-700.md 2.1: Logitech\'s seven Harmony 700 compiles do not read as our look, and the assembly refuses one as a donor', skipUnless(
+  'h700_config', 'h700_config_2', 'h700_28_config_region', 'h700_power_hold_compile', 'h700_power_hold_compile_2',
+  'h700_power_hold_compile_3', 'h700_power_hold_compile_4'), () => {
+  for (const name of ['h700_config', 'h700_config_2', 'h700_28_config_region', 'h700_power_hold_compile',
+    'h700_power_hold_compile_2', 'h700_power_hold_compile_3', 'h700_power_hold_compile_4']) {
+    const c = parse(new Uint8Array(require_(name)));
+    assert.equal((c.versionWord ?? -1) & 0xff, 66, name);
+    assert.equal(inOurLook(c), false, name);
+  }
+  const setup = readRecipe(JSON.parse(readFileSync(new URL('../../corpus/setups/h650-test.json', import.meta.url), 'utf8')));
+  assert.throws(() => assembleSetup({ ...setup, model: { name: 'Harmony 700', skin: 66 } } as Recipe, { donor: require_('h700_config') }),
+    /on a donor of ours alone, an empty configuration, and this donor is Logitech's/);
 });

@@ -317,7 +317,9 @@ export function appendActionLists(
  * onto what was composed. **Last and last**, because on all five arch 14 configurations a record's
  * address rises with its index and so does its first program's, and the last record's end and its
  * programs' end are where the records and the programs end; a configuration where either is not
- * true is refused rather than guessed at.
+ * true is refused rather than guessed at. A record with no cases is passed over for the stand in and for
+ * where the programs end, since the Harmony 700's empty configuration ends its table with one, section
+ * 382; the new record still goes after the last record, cases or not.
  *
  * Two offsets are read again after the insertion that moves them, and both were once reused, section
  * 287: the header's, which put the pointer into base slot 13, and the last record's programs', which
@@ -364,7 +366,11 @@ export function appendValueMap(
   const stride = VALUE_MAP_KEY_WIDTH + 3;
   const tableLength = 1 + counter + stride * keys.length + 1;
   current = parse(relocate(current, tableAt, tableLength).bytes);
-  const stand = (valueMaps(current) ?? [])[table - 1]?.entries[0]?.[1];
+  // Any program the table already names will do as the stand in, and the last record may have none:
+  // the Harmony 700's record for leaving USB mode is the last of an empty configuration's and has no
+  // cases, section 382.
+  const stand = (valueMaps(current) ?? []).slice(0, table).filter((one) => one.entries.length > 0)
+    .at(-1)?.entries[0]?.[1];
   if (stand === undefined) throw new ComposeError('base slot 14 stopped reading');
   const record = new Writer(tableLength).u8(VALUE_MAP_LEAD);
   if (counter === 2) record.u16(keys.length);
@@ -385,7 +391,8 @@ export function appendValueMap(
     return last.start + last.length;
   };
   const before = (valueMaps(current) ?? []).slice(0, table);
-  const lastRecord = before.at(-1);
+  // The last record **with cases**, for the same reason as the stand in above.
+  const lastRecord = before.filter((one) => one.entries.length > 0).at(-1);
   if (lastRecord === undefined) throw new ComposeError('base slot 14 stopped reading');
   const programsAt = Math.max(...lastRecord.entries.map(([, target]) => programEnd(target)));
   if (before.some((one) => one.entries.some(([, target]) => programEnd(target) > programsAt))) {

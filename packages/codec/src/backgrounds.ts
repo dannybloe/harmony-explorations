@@ -91,7 +91,8 @@ export const HARMONY_650_SKINS: ReadonlySet<number> = new Set([72, 74]);
  * Harmony 700's 66, whose screens are the 650's raster, faces and bars, section 382. Only a configuration
  * already lettered in our letters is blended, and turning Logitech's letters into ours, the font table, and
  * the state backgrounds stay the Harmony 650's alone, so no Logitech 700 compile passes through this. Its
- * EMEA twin 69 has no compile or unit here and stays out until one is read.
+ * EMEA twin 69 has no compile or unit here and stays out until one is read. Since `todo-compile-700.md` 2.1 it
+ * also says which skins `inOurLook` can answer for, the same three for the same reason.
  */
 export const BLENDED_LETTER_SKINS: ReadonlySet<number> = new Set([...HARMONY_650_SKINS, 66]);
 const BACKGROUND_SIZE = 128;

@@ -51218,3 +51218,73 @@ lines are measured both high at the test on which it shows no charging screen an
 * `reference/remotes/harmony-700/display.md` and `hardware.md`: when the charging screens show.
 * The lab's `work/charging-700/`: the listings of the 700 2.8 and 650 0.2 and 0.4 images the reading was
   done on.
+
+## 385. The test setup assembles on the Harmony 700's empty configuration, and the setup comparison finds nothing different from the Harmony 650's
+
+`todo-compile-700.md` 2.1: the assembly takes skin 66, and every measurement a composer or the assembly holds
+for the Harmony 650 alone is checked against the 700's compiles, the device timer against section 382's
+figures for them. Measured on files only.
+
+**One composer refused, and it was a shape of the 700's empty configuration rather than a measurement of the
+650's.** Composing the first device stopped with "base slot 14 stopped reading". `appendValueMap` takes two
+things from the last base slot 14 record: a program any case may name while the new record is laid, and the
+end of the programs, where the new ones go. The 700's empty configuration ends that table with the record of
+leaving USB mode, section 382's `usbLeaveMap`, which has no cases, so it has neither. Both are now taken from
+the last record **with** cases; the new record still goes after the last record, cases or not. The check that
+every record's programs end at or before that point is unchanged, and no test pins its refusal. Control: with the second of the two taken
+from the last record again, one device onto the 700's empty file is refused, "the last base slot 14 record's
+programs do not end where the programs end"; on the 650's, whose last record has cases, nothing changes.
+
+**The setup comparison finds nothing different between the two models.** The Harmony 650's test setup, seven
+devices and five activities, assembled by the same code on each model's empty configuration, compares equal by
+`compareViews` with the menu's order compared too: 627 slots on each, 188 keys of the activities' maps, 5
+starts, 11 activity page slots, 207 device page slots, 210 keys of the devices' screen records, 5 of the
+activity menu and the one device list slot the view reads, and 0 differences. The view holds no slot for the
+always installed key map that carries the activity keys, so those were compared separately: `activityKeys`
+reads scans 5, 1 and 7 selecting sets 6, 7 and 8 on both. Nor does it compare the six device lists a file
+draws, the idle one and one per activity, so those were compared page by page as drawn: the same on both.
+Smoothing the letters on the 700 changes none of the 627 either. The bytes no describing generator rebuilds
+are of the same eleven kinds on both unsmoothed files, the composers' own.
+
+**The measurements the todo names, one by one:**
+
+| measurement | on the Harmony 700 |
+|---|---|
+| where a start up title wraps, 126 pixels, section 358 | inside the 700's own bounds: its compiles draw 123 on one line and break nothing narrower than 163, so they do not contradict 126 and do not say where from 124 to 163 the break begins |
+| the activity keys, scans 5, 1 and 7 | read on seven of the 700's compiles among section 314's thirteen, where Listen to Music is the placeholder's call on some; the 650's and 700's builds bind them alike |
+| each activity's device list: the activity's devices, then the rest in the idle list's order | that shape holds on all five of `h700_config`'s activity lists, with each activity's devices taken from its start's power writes rather than from the list; in what order an activity's own devices lead is not checked on a 700 compile, and no test pins this |
+| the device timer | not composed on either model: Logitech's compile of this setup for the 650 carries one, 30 seconds at index 3, writing the LG's `LG_TV_OnlinePower_2`, and neither of our builds does; the 700's compiles carry one at 7 or 9 or none, section 382. It writes 1 into a device's `<label>_OnlinePower_2`, section 347, the connected app machinery section 321 leaves out as not composed |
+| `inOurLook` | answered for skin 66 now, through `BLENDED_LETTER_SKINS`; `h700_config`, `h700_config_2` and the five other Logitech 700 compiles still read as not ours, each holding one of Logitech's device page looks whole |
+| turning Logitech's letters and backgrounds into ours, `fonttable.ts` and `backgrounds.ts` | stay the 650's: the 700 is assembled on a donor of ours alone, `OUR_DONOR_SKINS`, which needs neither |
+
+**The 700's file is larger by exactly its empty configuration's difference**: unsmoothed, 871463 bytes against
+the 650's 703535, and 509983 against 342055 for the two empty ones, 167928 each time, and the same with the
+letters smoothed. By the attribution of the empty files that is 163865 bytes of pictures, five of 32773, 3412
+of firmware screens, the 700 having nineteen to the 650's fourteen, and 651 of wiring, addresses, description,
+state tables and mode 0. Logitech's two five activity compiles for the 700 are 979184 and 979242 bytes.
+
+**The rebuild check refuses a smoothed file on both models alike.** `checkScreenRecords` on the test setup or
+on one device with smoothed letters stops on the 650's build and the 700's, while the same build unsmoothed
+passes. Smoothing is the assembly's last step, after the checks that rebuild the screens, so this is a limit
+of when the check can run and not a 700 matter; the comparison above is what is asserted on the smoothed file.
+
+### Scope, decision 16
+
+The Harmony 700, skin 66, as a file: nothing here has been written to a remote. The Harmony 650, skin 72, as
+the other side of the comparison. No Logitech compile of this setup for the 700 exists, so the comparison is
+ours against ours, and what Logitech's compiler would make of it for a 700 is not measured.
+
+### What this does not establish
+
+* Anything on the remote, which is 2.3.
+* What the comparison leaves out: the firmware screens, which differ by design, nineteen with the charging
+  frames against fourteen; the start up and Off titles, which section 358 says it does not look at; page
+  titles; pauses; and the look, where a picture or a text is drawn.
+* Whether a seventh device is taken on the 700, which is 2.2.
+
+### Where it lands
+
+* `packages/codec/src/shared/core.ts`: `appendValueMap` passes over a record with no cases.
+* `packages/codec/test/empty.test.ts`: the test setup on both models' empty configurations, compared by the
+  setup comparison, the activity keys and the drawn device lists; and a Logitech 700 compile read as not ours
+  and refused as a donor.
